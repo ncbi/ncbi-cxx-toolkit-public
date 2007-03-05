@@ -145,33 +145,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2007/01/09 19:56:57  yazhuk
-* Fixed a warning, changed the default value for m_Extension
-*
-* Revision 1.6  2006/12/11 20:43:42  yazhuk
-* Extended CAlnUserOptions.
-*
-* Revision 1.5  2006/12/06 20:09:43  todorov
-* MergeOptions => MergeAlgo
-*
-* Revision 1.4  2006/12/01 21:23:25  todorov
-* - NCBI_XALNMGR_EXPORT
-*
-* Revision 1.3  2006/12/01 17:53:32  todorov
-* + NCBI_XALNMGR_EXPORT
-*
-* Revision 1.2  2006/11/22 00:46:16  todorov
-* Fixed the flags and options.
-*
-* Revision 1.1  2006/11/17 05:34:35  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
-
 #endif  // OBJTOOLS_ALNMGR___ALN_USER_OPTIONS__HPP

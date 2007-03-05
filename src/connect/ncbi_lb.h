@@ -63,17 +63,4 @@ extern size_t LB_Select(SERV_ITER     iter,
 }  /* extern "C" */
 #endif
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2006/01/11 20:17:53  lavr
- * Unconditionally disable definition of NCBI_LB_DEBUG macro generation
- *
- * Revision 1.1  2005/12/16 15:59:40  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_LB__H */

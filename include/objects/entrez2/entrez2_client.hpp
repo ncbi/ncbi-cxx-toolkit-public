@@ -151,53 +151,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.11  2006/04/18 21:17:24  lavr
-* Added affinity mechanism of the request
-*
-* Revision 1.10  2005/03/28 16:09:25  jcherry
-* Gave Query method the ability to pass back the CEntrez2_reply
-* from the server
-*
-* Revision 1.9  2005/01/21 14:44:48  dicuccio
-* Added simple API to retrieve docsums for UIDs
-*
-* Revision 1.8  2004/09/09 20:00:58  jcherry
-* Changed CEntrez2Client::FilterIds to handle large sets of query uids
-* more intelligently.
-*
-* Revision 1.7  2004/06/16 11:55:52  dicuccio
-* Altered Query() API - added default arguments for starting offset and length of
-* UID list to retrieve
-*
-* Revision 1.6  2004/03/11 17:25:05  dicuccio
-* Added API to retrieve neighbors for multiple UIDs at once
-*
-* Revision 1.5  2004/01/20 05:36:56  jcherry
-* Added missing '&' on argument to FilterIds (pass by reference)
-*
-* Revision 1.4  2003/10/16 20:10:24  jcherry
-* Added some simplified interfaces for querying
-*
-* Revision 1.3  2003/10/08 19:18:01  jcherry
-* Added a simplified interface for getting neighbors
-*
-* Revision 1.2  2003/07/31 16:43:58  dicuccio
-* Added missing export specifier
-*
-* Revision 1.1  2003/04/09 16:00:12  ucko
-* Give all RPC clients unique basenames.
-*
-* Revision 1.1  2002/11/13 20:13:41  ucko
-* Add datatool-generated client classes
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ENTREZ2_ENTREZ2_CLIENT_HPP
 /* Original file checksum: lines: 93, chars: 2440, CRC32: 16aa1713 */

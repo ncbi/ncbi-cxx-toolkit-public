@@ -84,21 +84,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/02/15 18:26:08  lavr
- * IReader/IWriter moved to corelib
- *
- * Revision 1.2  2005/04/12 14:50:30  ucko
- * Add an export declaration.
- *
- * Revision 1.1  2005/04/11 17:59:46  ucko
- * CWriter_HTMLEncoder -- HTML-encode supplied data on the fly before
- * passing it to a standard ostream.  (Initial revision.)
- *
- * ===========================================================================
- */
-
 #endif  /* HTML___WRITER_HTMLENC__HPP */

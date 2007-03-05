@@ -93,21 +93,3 @@ END_NCBI_SCOPE
 #include "fastme_common.h"
 #include <corelib/ncbistd.hpp>
 #endif   /*  FASTME_H */
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/14 19:59:17  jcherry
- * Eliminated compiler warnings and fixed static/extern in header files
- *
- * Revision 1.2  2004/02/10 20:24:22  ucko
- * Get rid of any previous definition of INFINITY before supplying our
- * own, since some compilers (such as IBM VisualAge) forbid immediate
- * redefinitions.
- *
- * Revision 1.1  2004/02/10 15:16:01  jcherry
- * Initial version
- *
- * ===========================================================================
- */

@@ -84,24 +84,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/03/28 17:37:25  jcherry
-* Added export specifier
-*
-* Revision 1.1  2003/04/09 16:00:13  ucko
-* Give all RPC clients unique basenames.
-*
-* Revision 1.1  2002/11/15 17:17:24  ucko
-* Pull in Error_val.hpp to ensure our operator << is visible to the code
-* in client_.cpp.
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_MLA_MLA_CLIENT_HPP
 /* Original file checksum: lines: 93, chars: 2368, CRC32: da8f8793 */

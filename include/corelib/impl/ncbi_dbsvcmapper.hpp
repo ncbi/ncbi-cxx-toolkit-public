@@ -170,23 +170,4 @@ m_Port(port)
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/01/26 11:54:14  ssikorsk
- * Removed IDBServiceMapper::GetName;
- * Added template class CDBServiceMapperTraits;
- *
- * Revision 1.2  2006/01/05 15:23:38  ssikorsk
- * Spelling correction
- *
- * Revision 1.1  2006/01/03 19:19:58  ssikorsk
- * Initial version of a service name to a database mapping interface.
- *
- * ===========================================================================
- */
-
 #endif  // CORELIB___DB_SERVICE_MAPPER__HPP
-

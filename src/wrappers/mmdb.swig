@@ -341,18 +341,3 @@ objects/ncbimime/Ncbi_mime_asn1_.hpp
 objects/ncbimime/NCBI_Mime_module.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/02/17 17:56:33  jcherry
- * Added PCSubstance_id headers
- *
- * Revision 1.2  2005/10/27 12:37:18  jcherry
- * Added *_module.hpp
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

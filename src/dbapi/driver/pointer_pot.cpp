@@ -196,28 +196,6 @@ CPointerPot& CPointerPot::operator= (CPointerPot& pot)
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2004/05/17 21:11:38  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2001/11/06 17:59:53  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.1  2001/09/21 23:40:00  vakatov
- * -----  Initial (draft) revision.  -----
- * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
- * of the DBAPI "driver" libs originally written by Vladimir Soussov.
- * The revamp involved massive code shuffling and grooming, numerous local
- * API redesigns, adding comments and incorporating DBAPI to the C++ Toolkit.
- *
- * ===========================================================================
- */
-
-
 #if 0
 
 #include <stdlib.h>

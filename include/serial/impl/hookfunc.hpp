@@ -120,39 +120,3 @@ typedef void (*TVariantSkipFunction)(CObjectIStream& in,
 END_NCBI_SCOPE
 
 #endif  /* HOOKFUNC__HPP */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/10/12 15:07:28  gouriano
-* Some header files moved into impl
-*
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.6  2003/07/29 18:47:46  vasilche
-* Fixed thread safeness of object stream hooks.
-*
-* Revision 1.5  2003/04/15 14:50:09  ucko
-* Add missing close-comment delimiter!
-*
-* Revision 1.4  2003/04/15 14:15:18  siyan
-* Added doxygen support
-*
-* Revision 1.3  2003/03/26 16:13:32  vasilche
-* Removed TAB symbols. Some formatting.
-*
-* Revision 1.2  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.1  2000/10/03 17:22:31  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* ===========================================================================
-*/

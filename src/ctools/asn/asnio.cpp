@@ -27,51 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2004/05/17 20:59:07  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.11  2001/02/13 20:44:23  vakatov
-* Use `reinterpret_cast<IoFuncType>(WriteAsn)' instead of a more safe
-* (but not-compilable by MIPSpro7.3 compiler on IRIX) `extern "C"'
-* pre-declaration.
-*
-* Revision 1.10  2001/02/10 05:00:17  lavr
-* ctools added in #includes
-*
-* Revision 1.9  2000/11/29 17:25:16  vasilche
-* Added possibility to change ASNIO mode (mainly for XML output).
-* Fixed warnings on 64 bit compilers.
-*
-* Revision 1.8  1999/10/21 16:57:11  golikov
-* AsnMemoryWrite mode param added
-*
-* Revision 1.7  1999/10/21 16:20:44  golikov
-* Mode param added
-*
-* Revision 1.6  1999/05/15 23:00:59  vakatov
-* Moved "asnio" and "asnwrite" modules to the (new) library
-* "xasn"(project "asn")
-*
-* Revision 1.5  1999/04/16 17:45:33  vakatov
-* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
-*
-* Revision 1.4  1999/04/15 21:58:24  vakatov
-* Use NcbiMin instead of MIN
-*
-* Revision 1.3  1999/04/14 19:11:51  vakatov
-* Added "LIBCALLBACK" to AsnRead/Write proto (MSVC++ feature)
-*
-* Revision 1.2  1999/04/14 17:25:41  vasilche
-* Fixed warning about mixing pointers to "C" and "C++" functions.
-*
-* Revision 1.1  1999/02/17 22:03:12  vasilche
-* Assed AsnMemoryRead & AsnMemoryWrite.
-* Pager now may return NULL for some components if it contains only one
-* page.
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

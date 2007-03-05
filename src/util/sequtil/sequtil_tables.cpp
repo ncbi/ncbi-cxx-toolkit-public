@@ -2951,33 +2951,3 @@ const bool CNcbi8naAmbig::scm_Table[256] = {
 
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/09/19 17:44:09  ucko
-* Reinstate the 28-letter version of ncbistdaa, for which BLAST is now ready.
-*
-* Revision 1.6  2006/06/27 16:38:15  ucko
-* Mostly back out the previous revision per the BLAST group's request,
-* restoring the historical definition of ncbistdaa (sans J or O).
-*
-* Revision 1.5  2006/04/03 16:19:25  ucko
-* Add AA codes J (Xle) and O (Pyl) with respective ncbistdaa values of 27 and 26.
-*
-* Revision 1.4  2004/07/07 13:08:42  jcherry
-* Iupac complements: n, s, w -> N, S, W, not n, s, w
-*
-* Revision 1.3  2004/07/06 20:19:17  jcherry
-* Fixed iupac complements for U, V, Y, and all lowercase
-*
-* Revision 1.2  2004/05/17 21:08:53  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/10/08 13:36:31  shomrat
-* Initial version
-*
-*
-* ===========================================================================
-*/

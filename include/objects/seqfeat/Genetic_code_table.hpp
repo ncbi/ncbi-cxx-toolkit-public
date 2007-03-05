@@ -280,52 +280,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.12  2004/12/28 21:20:15  grichenk
-* auto_ptr replaced with AutoPtr
-*
-* Revision 1.11  2004/12/14 16:41:47  ucko
-* +CGen_code_table::LoadTransTable to support optionally replacing the
-* builtin copy.
-*
-* Revision 1.10  2003/06/19 21:49:32  johnson
-* bug fix: IsOrfStop now calls GetCodonResidue instead of GetStartResidue
-*
-* Revision 1.9  2003/04/14 19:12:36  ivanov
-* Added export specifier for class CTrans_table
-*
-* Revision 1.8  2003/01/03 19:17:30  shomrat
-* Added Win32 export specifier
-*
-* Revision 1.7  2002/12/26 12:43:27  dicuccio
-* Added Win32 export specifiers
-*
-* Revision 1.6  2002/11/26 18:40:16  shomrat
-* Add convenience method for codon conversions and ncbieaa string retrieval
-*
-* Revision 1.5  2002/09/13 00:44:58  ucko
-* #include <memory> for auto_ptr<> template
-*
-* Revision 1.4  2002/09/12 19:58:09  kans
-* CGen_code_table_imp instantiated after type info system (diccucio)
-*
-* Revision 1.3  2002/09/10 21:30:09  kans
-* k_ATG_state into two inline functions because MSVC compiler will not allow
-* a constant inside a class
-*
-* Revision 1.2  2002/09/10 15:18:08  kans
-* added GetCodeTable method
-*
-* Revision 1.1  2002/09/09 20:58:06  kans
-* added CTrans_table and CGen_code_table classes
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQFEAT_GENETIC_CODE_TABLE_HPP
 /* Original file checksum: lines: 93, chars: 2557, CRC32: e1e5ca57 */

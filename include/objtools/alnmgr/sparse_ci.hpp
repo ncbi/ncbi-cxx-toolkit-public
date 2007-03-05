@@ -137,42 +137,4 @@ protected:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2007/01/04 21:15:48  todorov
- * Fixed some typedefs.
- *
- * Revision 1.2  2006/12/01 17:54:05  todorov
- * + NCBI_XALNMGR_EXPORT
- *
- * Revision 1.1  2006/11/16 13:48:12  todorov
- * Moved over from gui/widgets/aln_data and refactored to adapt to the
- * new aln framework.
- *
- * Revision 1.5  2006/09/05 12:35:26  dicuccio
- * White space changes: tabs -> spaces; trim trailing spaces
- *
- * Revision 1.4  2006/07/03 14:32:43  yazhuk
- * Fixed iteration on inserts
- *
- * Revision 1.3  2005/09/19 12:21:04  dicuccio
- * White space changes: trim trailing white space; use spaces not tabs
- *
- * Revision 1.2  2005/06/27 14:37:04  yazhuk
- * Added destructor, TAlignRangeColl renamed to TAlignColl
- *
- * Revision 1.1  2005/06/13 19:02:43  yazhuk
- * Initial revision
- *
- * Revision 1.2  2005/05/09 18:23:29  ucko
- * CSparseSegment: Accept CConstRef<TChunk> by value, not reference!
- *
- * Revision 1.1  2005/05/09 17:54:07  yazhuk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // __OBJTOOLS_ALNMGR___SPARSE_ITERATOR__HPP
-

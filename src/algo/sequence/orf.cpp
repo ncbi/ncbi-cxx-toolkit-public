@@ -313,35 +313,3 @@ COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/12/05 17:18:20  jcherry
- * Better handling of case of no ORFs found
- *
- * Revision 1.7  2005/02/10 19:43:01  jcherry
- * Added ability to require ORFs to start with particular codons
- * (e.g., ATG).  Tweaked naming of file-local functions.
- *
- * Revision 1.6  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/10/15 20:25:05  dicuccio
- * Fixed access of seq-loc - don't assume interval...
- *
- * Revision 1.4  2003/09/04 21:10:42  ucko
- * MakeCDSAnnot: remove redundant (and illegal) default for id.
- *
- * Revision 1.3  2003/09/04 19:27:53  jcherry
- * Made an ORF include the stop codon, and marked certain ORFs as
- * partial.  Put ability to construct a feature table into COrf.
- *
- * Revision 1.2  2003/08/21 13:39:53  dicuccio
- * Fixed compilation error - dependent type 'Seq' must be a typename
- *
- * Revision 1.1  2003/08/21 12:00:53  dicuccio
- * Added private implementation file for COrf
- *
- * ===========================================================================
- */

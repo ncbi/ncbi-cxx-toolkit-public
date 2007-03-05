@@ -65,17 +65,3 @@ END_NCBI_SCOPE
 
 
 #endif // ALGCDTREEDEFS_HPP
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2006/11/16 20:21:16  cliu
- * remove some problematic tyepdef
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

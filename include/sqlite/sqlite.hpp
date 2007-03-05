@@ -150,20 +150,4 @@ protected:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/06 14:47:25  ucko
- * Use NCBI_DEPRECATED_CTOR to compensate fully for compilers' syntax variations.
- *
- * Revision 1.2  2006/12/04 13:47:51  dicuccio
- * Deprecate sqlite
- *
- * Revision 1.1  2003/09/29 12:24:40  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // SQLITE___SQLITE__HPP

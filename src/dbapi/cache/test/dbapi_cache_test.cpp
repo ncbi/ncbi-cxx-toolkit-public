@@ -239,23 +239,3 @@ int main(int argc, const char* argv[])
 {
     return CDBAPI_CacheTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/12/21 14:48:40  kuznets
- * warning fixed
- *
- * Revision 1.3  2005/11/15 17:05:21  ssikorsk
- * Load ncbi_xcache_dbapi dynamically
- *
- * Revision 1.2  2005/11/10 14:44:56  ssikorsk
- * Remove dependency on CDriverManager
- *
- * Revision 1.1  2004/07/26 14:07:35  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

@@ -30,40 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2001/05/17 14:49:59  lavr
-* Typos corrected
-*
-* Revision 1.8  2001/02/10 05:00:04  lavr
-* ctools added in #includes
-*
-* Revision 1.7  2000/11/29 17:25:11  vasilche
-* Added possibility to change ASNIO mode (mainly for XML output).
-* Fixed warnings on 64 bit compilers.
-*
-* Revision 1.6  1999/11/24 20:18:09  golikov
-* flush moved from CreateSubNodes to PrintChildren -> loose of text fixed
-*
-* Revision 1.5  1999/05/15 23:00:56  vakatov
-* Moved "asnio" and "asnwrite" modules to the (new) library
-* "xasn"(project "asn")
-*
-* Revision 1.4  1999/04/14 17:26:49  vasilche
-* Fixed warning about mixing pointers to "C" and "C++" functions.
-*
-* Revision 1.3  1999/02/26 21:03:29  vasilche
-* CAsnWriteNode made simple node. Use CHTML_pre explicitly.
-* Fixed bug in CHTML_table::Row.
-* Added CHTML_table::HeaderCell & DataCell methods.
-*
-* Revision 1.2  1999/02/18 18:42:14  vasilche
-* Added autoflushing.
-*
-* Revision 1.1  1999/01/28 15:11:06  vasilche
-* Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>

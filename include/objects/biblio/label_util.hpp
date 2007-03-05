@@ -74,16 +74,3 @@ END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif  /* OBJECTS_BIBLIO___LABEL_UTIL__HPP */
-
- /*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2004/02/25 14:35:36  dicuccio
- * Added export specifier
- *
- * Revision 1.1  2004/02/24 15:52:23  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
- */

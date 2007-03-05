@@ -178,24 +178,3 @@ CRef< CSeq_align > BlockFormater::formatOneRow(const BlockModel& guide, CRef< CS
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2006/07/13 20:56:05  cliu
- * format existing alignments
- *
- * Revision 1.2  2006/06/13 13:02:35  cliu
- * add BlockFormater with the bug fix.
- *
- * Revision 1.1  2006/06/06 20:44:37  cliu
- * add BlockFormater
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */
-

@@ -90,30 +90,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/10/18 17:37:38  bollin
-* Added functions for getting organelle name from genome value and genome value
-* from organelle name.
-*
-* Revision 1.4  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.3  2005/05/20 13:36:22  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.2  2002/12/26 12:43:27  dicuccio
-* Added Win32 export specifiers
-*
-* Revision 1.1  2002/11/26 18:45:28  shomrat
-* Add GetGenCode
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQFEAT_BIOSOURCE_HPP
 /* Original file checksum: lines: 93, chars: 2400, CRC32: 29efac3b */

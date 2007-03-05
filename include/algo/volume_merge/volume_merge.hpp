@@ -321,24 +321,4 @@ protected:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/11/30 10:59:42  kuznets
- * added BLOB read from the merge store (merge-update)
- *
- * Revision 1.3  2006/11/21 14:38:58  kuznets
- * WaitReady() declared const
- *
- * Revision 1.2  2006/11/21 06:52:05  kuznets
- * Use CFastMutex as pool locking parameter
- *
- * Revision 1.1  2006/11/17 07:29:32  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* ALGO_MERGE_HPP */
-

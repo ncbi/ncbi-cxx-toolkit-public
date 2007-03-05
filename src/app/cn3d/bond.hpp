@@ -83,32 +83,3 @@ const Bond* MakeBond(StructureBase *parent,
 END_SCOPE(Cn3D)
 
 #endif // CN3D_BOND__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2004/02/19 17:04:44  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.7  2003/02/03 19:20:01  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.6  2001/03/23 04:18:20  thiessen
-* parse and display disulfides
-*
-* Revision 1.5  2000/08/11 12:59:13  thiessen
-* added worm; get 3d-object coords from asn1
-*
-* Revision 1.4  2000/08/03 15:12:29  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.3  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.2  2000/07/16 23:18:33  thiessen
-* redo of drawing system
-*
-* Revision 1.1  2000/07/11 13:49:26  thiessen
-* add modules to parse chemical graph; many improvements
-*
-*/

@@ -127,33 +127,4 @@ void BlastXML_FormatReport(CBlastOutput& bxmlout,
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/08/14 19:15:35  jianye
-* handles genetic code
-*
-* Revision 1.6  2005/12/21 15:18:13  jcherry
-* Added export specifiers
-*
-* Revision 1.5  2005/10/17 19:35:39  camacho
-* Fix compiler warning
-*
-* Revision 1.4  2005/08/29 16:10:14  camacho
-* Fix to previous commit
-*
-* Revision 1.3  2005/08/29 14:40:05  camacho
-* From Ilya Dondoshansky:
-* SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to
-* the xblast library
-*
-* Revision 1.1  2005/07/20 18:15:44  dondosha
-* API for formatting BLAST results in XML form
-*
-*
-* ===========================================================================
-*/
-
 #endif /* OBJTOOLS_BLASTFORMAT___BLASTXML_FORMAT__HPP */
-

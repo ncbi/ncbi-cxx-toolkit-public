@@ -44,26 +44,3 @@ string ParentDir(const string& dir_abs)
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/04/12 19:06:51  ucko
- * Explicitly include <corelib/ncbifile.hpp>
- *
- * Revision 1.4  2004/10/12 16:17:57  ivanov
- * + CSrcToFilterInserterWithPch::InsertFile(). Some cosmetics.
- *
- * Revision 1.3  2004/05/21 21:41:41  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2004/02/20 22:53:59  gorelenk
- * Added analysis of ASN projects depends.
- *
- * Revision 1.1  2004/02/06 23:10:33  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */
-
-

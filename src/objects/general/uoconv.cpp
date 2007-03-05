@@ -688,23 +688,3 @@ CObjectInfo UnpackUserObject(const CUser_object& uo, const CTypeInfo* ti)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/07/26 19:07:00  ucko
-* Handle BitString and AnyContent fields.
-*
-* Revision 1.3  2005/01/21 13:14:50  dicuccio
-* Include user-object header in implementation, not header
-*
-* Revision 1.2  2004/10/28 18:41:12  dicuccio
-* Dropped unused local variables in exceptions - clears compiler warning
-*
-* Revision 1.1  2004/07/27 15:13:18  ucko
-* Add a somewhat rough implementation of User-object <-> ObjectInfo conversion.
-*
-*
-* ===========================================================================
-*/

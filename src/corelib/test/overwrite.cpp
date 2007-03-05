@@ -122,17 +122,3 @@ int main()
     ERR_POST(Info << "Test passed successfully");
     return 0;
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.4  2004/05/14 13:59:51  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 6.3  2002/04/16 18:49:06  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * ==========================================================================
- */

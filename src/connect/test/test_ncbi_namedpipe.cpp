@@ -337,35 +337,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2004/09/08 15:13:18  ucko
- * Kill any definition of pipe as a macro (which may occur on OSF/1)
- *
- * Revision 1.7  2004/05/19 15:29:57  ivanov
- * Added additional cmd line parameter to create unique pipe name
- *
- * Revision 1.6  2004/05/17 20:58:22  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/09/04 19:13:43  ivanov
- * Added loop for read/write operations
- *
- * Revision 1.4  2003/09/02 19:54:25  ivanov
- * Changed name of the test pipe. Remove test pipe if it is already exists.
- * Increased default timeout to 2 sec.
- *
- * Revision 1.3  2003/08/25 16:40:45  lavr
- * Get rid of CNamedPipe:: prefix in kDefaultTimeout
- *
- * Revision 1.2  2003/08/20 14:24:06  ivanov
- * Replaced _TRACE with LOG_POST
- *
- * Revision 1.1  2003/08/18 19:23:07  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

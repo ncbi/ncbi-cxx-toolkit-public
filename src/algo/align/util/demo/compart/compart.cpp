@@ -238,13 +238,3 @@ int main(int argc, const char* argv[])
 {
     return CCompartApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/09/11 19:49:31  kapustin
- * Initial revision
- *
- * ===========================================================================
- */

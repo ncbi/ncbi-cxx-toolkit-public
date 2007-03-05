@@ -165,30 +165,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2007/01/03 21:56:34  kuznets
- * Added private copy-ctor, etc.
- *
- * Revision 1.4  2006/12/29 20:25:37  kuznets
- * + CIReaderLineReader class
- *
- * Revision 1.3  2006/12/13 17:46:54  ucko
- * Export ILineReader (for the sake of New)
- *
- * Revision 1.2  2006/12/13 16:47:41  ucko
- * Add a static convenience method (ILineReader::New) for constructing a
- * line reader corresponding to a filename; to facilitate that, allow
- * CStreamLineReader to take ownership.
- *
- * Revision 1.1  2006/04/13 14:42:15  ucko
- * Add a lightweight interface for getting lines of data with minimal
- * memory copying, along with two implementations -- one for input
- * streams and one for memory regions (strings or mapped files).
- *
- * ===========================================================================
- */
-
 #endif  /* UTIL___LINE_READER__HPP */

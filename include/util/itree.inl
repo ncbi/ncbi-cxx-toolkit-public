@@ -347,36 +347,4 @@ void CIntervalTree::Assign(iterator& dst, const iterator& src)
     dst.m_NextNode = src.m_NextNode;
 }
 
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/01/24 17:04:46  vasilche
-* Safe boolean operators.
-*
-* Revision 1.7  2004/11/30 23:41:55  lewisg
-* get rid of dereference in GetValue
-*
-* Revision 1.6  2003/02/07 17:37:40  vasilche
-* Removed parameters' default values from method definition.
-*
-* Revision 1.5  2003/02/07 16:54:01  vasilche
-* Pass all structures with size > sizeof int by reference.
-* Move cvs log to the end of files.
-*
-* Revision 1.4  2002/04/29 17:33:59  ucko
-* Add explicit "typename" in three places.
-*
-* Revision 1.3  2001/05/17 15:01:19  lavr
-* Typos corrected
-*
-* Revision 1.2  2001/01/29 15:18:39  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.1  2001/01/11 15:00:38  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
-* ===========================================================================
-*/
-
 #endif /* def ITREE__HPP  &&  ndef ITREE__INL */

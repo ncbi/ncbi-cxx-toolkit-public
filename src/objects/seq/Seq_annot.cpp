@@ -167,39 +167,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.7  2005/05/20 13:34:26  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.6  2004/05/19 17:25:14  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.5  2004/04/22 13:09:31  dicuccio
-* Added helper functions to add specific kinds of descriptions: dates, user
-* objects.  Added SetTitle() - should replace AddTitle() (LOG_POST warning in
-* place about deprecation)
-*
-* Revision 1.4  2003/05/07 17:44:12  dicuccio
-* oops - make sure not to dereference end() of list in AddName()
-*
-* Revision 1.3  2003/05/07 17:30:01  dicuccio
-* Fix potential coredump in CSeq_annot::AddName()
-*
-* Revision 1.2  2003/05/07 13:08:09  dicuccio
-* Alternate implementation of SetTitle() - work-around for MSVC's broken
-* implementation of list::remove_if()
-*
-* Revision 1.1  2003/05/07 10:57:29  clausen
-* Added AddName, AddTitle, AddComment
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1875, CRC32: 377b3912 */

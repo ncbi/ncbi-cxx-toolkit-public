@@ -334,12 +334,3 @@ void CBMARefinerEngine::CleanUp(bool deleteOriginalAlignment)
 
 
 END_SCOPE(align_refine)
-
-/*
- * ===========================================================================
- * $Log: RefinerEngine.cpp,v 
- * Revision 1.1  2005/05/24 22:31:43  lanczyc
- * initial versions:  app builds but not yet tested
- *
- * ===========================================================================
- */

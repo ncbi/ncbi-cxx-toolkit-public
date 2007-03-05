@@ -78,27 +78,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2004/10/12 16:19:35  ivanov
- * CMsvcPrjFilesCollector class: use private members instead of a lot of
- * function arguments
- *
- * Revision 1.4  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.3  2004/03/18 17:41:03  gorelenk
- * Aligned classes member-functions parameters inside declarations.
- *
- * Revision 1.2  2004/03/05 20:36:20  gorelenk
- * Added declarations of class CMsvcPrjFilesCollector member-functions.
- *
- * Revision 1.1  2004/03/05 18:11:06  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */
-
-
 #endif //PROJECT_TREE_BUILDER__MSVC_PRJ_FILES_COLLECTOR__HPP

@@ -71,27 +71,3 @@ void CFtableGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2004/11/24 16:52:50  shomrat
-* Standardize flat-file customization flags
-*
-* Revision 1.4  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.3  2004/04/22 15:58:27  shomrat
-* Changes in context
-*
-* Revision 1.2  2004/04/07 14:51:24  shomrat
-* Fixed typo
-*
-* Revision 1.1  2004/04/07 14:26:40  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/

@@ -90,17 +90,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/08/19 13:08:07  dicuccio
- * Added export specifiers
- *
- * Revision 1.1  2004/06/07 20:42:35  ucko
- * Add a reader for CIGAR alignments, as used by GFF 3.
- *
- * ===========================================================================
- */
-
 #endif  /* OBJTOOLS_READERS___CIGAR__HPP */

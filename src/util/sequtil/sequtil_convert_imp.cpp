@@ -1247,24 +1247,3 @@ bool CSeqConvert_imp::x_HasAmbigNcbi8na(const char* src, size_t length)
 
 
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/06/03 17:04:10  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 1.3  2005/03/04 14:46:18  lavr
-* Add default cases to make GCC less annoying with warnings
-*
-* Revision 1.2  2004/05/17 21:08:53  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/10/08 13:34:59  shomrat
-* Initial version
-*
-*
-* ===========================================================================
-*/

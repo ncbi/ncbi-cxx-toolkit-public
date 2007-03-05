@@ -265,42 +265,4 @@ void BDB_PrintQueryTree(CNcbiOstream& os, const CBDB_Query& query);
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2004/05/17 19:34:53  gorelenk
- * Added missed export prefix to BDB_PrintQueryTree
- *
- * Revision 1.9  2004/03/23 14:50:43  kuznets
- * Implemented logical NOT
- *
- * Revision 1.8  2004/03/11 13:17:02  kuznets
- * Added alternative value to the tree node
- *
- * Revision 1.7  2004/03/10 14:22:55  kuznets
- * CBDB_FileScanner relaxed private to protected for m_File member
- *
- * Revision 1.6  2004/03/01 14:01:59  kuznets
- * Add non const GetValue() accessor to query node
- *
- * Revision 1.5  2004/02/24 16:30:47  kuznets
- * Improved doxygen documentation
- *
- * Revision 1.4  2004/02/24 14:11:44  kuznets
- * Some improvement of CBDB_Query here and there. Additional constructor
- * parameter, NewOperatorNode helper function.
- *
- * Revision 1.3  2004/02/19 17:35:15  kuznets
- * + BDB_PrintQueryTree (tree printing utility function for debugging)
- *
- * Revision 1.2  2004/02/17 19:06:27  kuznets
- * GCC warning fix
- *
- * Revision 1.1  2004/02/17 17:26:29  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif

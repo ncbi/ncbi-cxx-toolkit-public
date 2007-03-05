@@ -204,16 +204,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CNmer_repeatsApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/05/21 21:41:40  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/12/19 16:56:53  jcherry
- * Initial version
- *
- * ===========================================================================
- */

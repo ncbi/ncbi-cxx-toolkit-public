@@ -115,17 +115,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2003/10/02 17:50:00  dicuccio
- * Moved table reader into the data loader project, as it depends on SQLite
- *
- * Revision 1.1  2003/10/02 17:33:33  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // OBJTOOLS_DATA_LOADERS___SQLITE_TABLE__HPP

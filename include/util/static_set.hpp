@@ -440,37 +440,4 @@ CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/10/27 13:29:17  vasilche
- * Avoid virtual methods by key/value getter.
- * Moved x_Validate() back to base search class.
- *
- * Revision 1.5  2005/10/26 18:44:49  vasilche
- * Fixed x_Validate() lookup.
- *
- * Revision 1.4  2005/10/26 18:27:28  ludwigf
- * Fixed x_Validate() diagnostics for CStaticArraySet and CStaticArrayMap.
- *
- * Revision 1.3  2005/05/04 15:59:46  ucko
- * Suggest PNocase_CStr when using const char*; make validation errors clearer.
- *
- * Revision 1.2  2004/08/19 13:10:09  dicuccio
- * Added include for ncbistd.hpp for standard definitions
- *
- * Revision 1.1  2004/01/23 18:02:23  vasilche
- * Cleaned implementation of CStaticArraySet & CStaticArrayMap.
- * Added test utility test_staticmap.
- *
- * Revision 1.2  2004/01/22 14:51:03  dicuccio
- * Fixed erroneous variable names
- *
- * Revision 1.1  2004/01/22 13:22:12  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // UTIL___STATIC_SET__HPP

@@ -166,35 +166,4 @@ void CFlatItem::x_SetSkip(void)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.6  2005/01/12 17:24:26  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.5  2004/04/22 15:37:04  shomrat
-* Changes in context
-*
-* Revision 1.4  2004/02/12 20:21:00  shomrat
-* using pointer instead of CRef
-*
-* Revision 1.3  2004/02/11 16:34:43  shomrat
-* inlined implementation
-*
-* Revision 1.2  2003/12/18 17:42:18  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 19:48:27  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___ITEM_BASE_ITEM__HPP */

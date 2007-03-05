@@ -207,28 +207,3 @@ END_NCBI_SCOPE
 /* @} */
 
 #endif
-
-
-/* 
-*============================================================
-*$Log: vectorscreen.hpp,v $
-*Revision 1.5  2006/10/04 20:06:27  jianye
-*expose internal alninfo list and remove VecscreenDisplay
-*
-*Revision 1.4  2005/12/21 15:18:13  jcherry
-*Added export specifiers
-*
-*Revision 1.3  2005/09/27 16:25:39  zaretska
-*~CVS: ----------------------------------------------------------------------
-*added new functions ProcessSeqAlign() and  VecscreenPrint()
-*~
-*
-*Revision 1.2  2005/06/08 16:12:57  jianye
-*move AlnFromRangeAscendingSort to .cpp
-*
-*Revision 1.1  2005/05/25 16:17:59  jianye
-*initial checkin
-*
-
-*===========================================================
-*/

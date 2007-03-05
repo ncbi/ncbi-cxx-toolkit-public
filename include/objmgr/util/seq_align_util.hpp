@@ -84,24 +84,4 @@ END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2006/12/11 19:29:41  ucko
-* RemapAlignToLoc: make scope optional again, as it may legally be NULL
-* and not all callers supply it.
-*
-* Revision 1.3  2006/12/11 17:14:11  grichenk
-* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
-*
-* Revision 1.2  2006/11/13 16:54:15  grichenk
-* Fixed comments and default value.
-*
-* Revision 1.1  2006/11/06 17:45:22  grichenk
-* Initial revisioon
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* SEQ_ALIGN_UTIL__HPP */

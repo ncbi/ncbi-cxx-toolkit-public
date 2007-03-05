@@ -73,33 +73,3 @@ public:
 END_NCBI_SCOPE
 
 #endif
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2006/10/18 12:59:07  gouriano
-* Moved Log to bottom
-*
-* Revision 1.4  2006/05/03 14:37:38  gouriano
-* Added parsing attribute definition and include
-*
-* Revision 1.3  2000/11/20 17:26:10  vasilche
-* Fixed warnings on 64 bit platforms.
-*
-* Revision 1.2  2000/04/07 19:26:06  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.1  2000/02/01 21:46:13  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.3  1999/11/15 19:36:12  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
-*/

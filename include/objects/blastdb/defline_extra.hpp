@@ -55,33 +55,4 @@ enum LinkoutTypes {
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/07/28 15:38:05  jianye
-* Add eHitInMapviewer, eAnnotatedInMapviewer
-*
-* Revision 1.6  2006/07/25 17:00:24  jianye
-* changed flag naming
-*
-* Revision 1.5  2006/06/16 15:15:16  jianye
-* adding more flags
-*
-* Revision 1.4  2006/06/14 21:47:45  jianye
-* added eInMapviewer
-*
-* Revision 1.3  2004/08/19 13:03:47  dicuccio
-* Added missing include for ncbistd.hpp (to get BEGIN_NCBI_SCOPE/END_NCBI_SCOPE)
-*
-* Revision 1.2  2004/08/10 20:08:27  jianye
-* Added gene linkout
-*
-* Revision 1.1  2003/08/06 16:13:00  jianye
-* Add new blastdb spec (aka fastdl in the C Toolkit)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJECTS_BLASTDB___DEFLINE_EXTRA__HPP */

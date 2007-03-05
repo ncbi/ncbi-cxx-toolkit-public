@@ -67,16 +67,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/06/23 16:18:45  dicuccio
- * Added ability to inspect image's information (size, width, height, depth)
- *
- * Revision 1.1  2003/12/16 15:48:11  dicuccio
- * Added support for RAW image files
- *
- * ===========================================================================
- */
-
 #endif  // UTIL_IMAGE__IMAGE_IO_RAW__HPP

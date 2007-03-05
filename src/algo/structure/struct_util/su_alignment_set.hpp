@@ -99,25 +99,3 @@ public:
 END_SCOPE(struct_util)
 
 #endif // SU_ALIGNMENT_SET__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2004/05/26 14:45:11  gorelenk
-* UNALIGNED->eUnaligned
-*
-* Revision 1.4  2004/05/26 01:57:47  ucko
-* Move #include <corelib/ncbi_limits.hpp> from su_alignment_set.cpp for
-* kMax_UInt.
-*
-* Revision 1.3  2004/05/25 21:22:28  ucko
-* Some compilers don't support static const members, so make
-* MasterSlaveAlignment::UNALIGNED a member of an (anonymous) enum instead.
-*
-* Revision 1.2  2004/05/25 15:52:17  thiessen
-* add BlockMultipleAlignment, IBM algorithm
-*
-* Revision 1.1  2004/05/24 23:04:05  thiessen
-* initial checkin
-*
-*/

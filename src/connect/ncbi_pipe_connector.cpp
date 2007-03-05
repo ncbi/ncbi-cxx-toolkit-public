@@ -275,34 +275,3 @@ extern CONNECTOR PIPE_CreateConnector
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.8  2006/01/11 20:21:52  lavr
- * Uniform creation/fill-up of connector structures
- *
- * Revision 1.7  2004/05/17 20:58:13  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.6  2003/11/12 17:46:38  lavr
- * Few (non-functional) rearrangements
- *
- * Revision 1.5  2003/11/12 16:41:36  ivanov
- * Close: return eIO_Success if pipe is already closed
- *
- * Revision 1.4  2003/09/23 21:09:26  lavr
- * Allow to create on top of (unowned) CPipe object
- *
- * Revision 1.3  2003/09/03 14:35:30  ivanov
- * Fixed previous accidentally commited log message
- *
- * Revision 1.2  2003/09/03 14:29:58  ivanov
- * Cosmetic changes
- *
- * Revision 1.1  2003/09/02 20:33:04  ivanov
- * Initial revision
- *
- * ==========================================================================
- */

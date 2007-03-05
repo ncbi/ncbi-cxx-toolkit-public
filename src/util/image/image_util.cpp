@@ -205,28 +205,3 @@ void CImageUtil::FlipY(CImage& image)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/04/20 18:51:08  ivanov
- * Get rid of warnings on 64-bit Sun Workshop compiler
- *
- * Revision 1.5  2004/08/11 15:23:33  vakatov
- * Compilation warning fix (unused local vars)
- *
- * Revision 1.4  2004/05/17 21:07:58  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/12/18 13:50:54  dicuccio
- * Added FlipX() and FlipY() routines to flip an image about an axis
- *
- * Revision 1.2  2003/12/16 16:16:56  dicuccio
- * Fixed compiler warnings
- *
- * Revision 1.1  2003/11/03 15:12:09  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

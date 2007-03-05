@@ -136,26 +136,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2007/01/03 15:52:31  todorov
-* Allow negative offsets in OffsetRow
-*
-* Revision 1.3  2006/07/12 23:03:24  todorov
-* Added CheckNumRows() and Validate() methods.
-*
-* Revision 1.2  2006/07/12 21:26:02  todorov
-* Added OffsetRow.
-*
-* Revision 1.1  2005/07/06 19:06:06  todorov
-* Added GetSeq{Start,Stop,Range} methods
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQALIGN_DENSE_DIAG_HPP
 /* Original file checksum: lines: 94, chars: 2608, CRC32: ba2ec5bc */

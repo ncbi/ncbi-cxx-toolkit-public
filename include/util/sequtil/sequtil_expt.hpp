@@ -70,17 +70,3 @@ END_NCBI_SCOPE
 
 
 #endif  /* UTIL_SEQUTIL___SEQUTIL_EXPT__HPP */
-
- /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/08/19 13:11:49  dicuccio
-* Dropped export specifier on inlined exception
-*
-* Revision 1.1  2003/10/08 13:29:12  shomrat
-* Initial version.
-*
-*
-* ===========================================================================
-*/

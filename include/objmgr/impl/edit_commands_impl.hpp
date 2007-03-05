@@ -549,24 +549,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2006/12/06 17:54:03  didenko
-* Fixed compilation warning on MSVC
-*
-* Revision 1.3  2006/05/01 16:56:45  didenko
-* Attach SeqEntry edit command revamp
-*
-* Revision 1.2  2005/11/15 21:54:07  ucko
-* Portability fixes: make default CMDReturn yield a bool (false) rather
-* than void, which confuses some compilers (WorkShop and MIPSpro); also
-* unqualify std::size_t for MIPSpro's sake.
-*
-* Revision 1.1  2005/11/15 19:22:07  didenko
-* Added transactions and edit commands support
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OBJMGR_IMPL___EDIT_COMMNADS_IMPL__HPP

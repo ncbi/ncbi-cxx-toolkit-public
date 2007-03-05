@@ -159,33 +159,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 6.7  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 6.6  2005/10/26 13:50:13  ludwigf
-* Extended BasicCleanup() to cover additional items.
-*
-* Revision 6.5  2005/05/20 13:34:26  shomrat
-* Added BasicCleanup()
-*
-* Revision 6.4  2004/05/19 17:25:14  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 6.3  2003/03/11 15:53:25  kuznets
-* iterate -> ITERATE
-*
-* Revision 6.2  2002/10/03 19:09:42  clausen
-* Removed extra whitespace
-*
-* Revision 6.1  2002/10/03 16:50:56  clausen
-* Added GetLabel()
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1873, CRC32: d5933a71 */

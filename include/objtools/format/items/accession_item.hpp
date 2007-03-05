@@ -123,32 +123,4 @@ const CSeq_loc& CAccessionItem::GetRegion(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.5  2005/03/28 17:13:26  shomrat
-* Support for complex user location (REGION)
-*
-* Revision 1.4  2005/03/02 16:26:49  shomrat
-* Changed contaier type for secondary accessions
-*
-* Revision 1.3  2004/04/22 15:33:58  shomrat
-* Changes in context; + Region
-*
-* Revision 1.2  2004/04/13 16:41:54  shomrat
-* + GetWGSAccession(); inlined methods
-*
-* Revision 1.1  2003/12/17 19:44:34  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___ACCESSION_ITEM__HPP */

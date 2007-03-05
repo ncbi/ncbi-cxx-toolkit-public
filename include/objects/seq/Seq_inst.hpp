@@ -118,23 +118,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/11/07 15:37:17  vasilche
-* Inlined IsNa() & IsAa() methods.
-*
-* Revision 1.2  2002/12/26 12:42:59  dicuccio
-* Added Win32 export specifiers
-*
-* Revision 1.1  2002/12/19 20:10:12  kans
-* added IsNa and IsAa methods
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQ_SEQ_INST_HPP
 /* Original file checksum: lines: 93, chars: 2363, CRC32: 8de74472 */

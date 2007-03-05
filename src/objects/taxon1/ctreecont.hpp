@@ -341,35 +341,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-
-/*
- * $Log$
- * Revision 6.6  2004/02/04 16:14:44  domrach
- * New iterator types (modes of operation) are introduced. They include:
- * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
- * IsTerminal(), IsFirstChild(), and IsLastChild() has been moved from
- * ITreeNode to ITreeIterator. Node loading f-ns() now return the ITreeNode
- * for tax id.
- *
- * Revision 6.5  2003/05/09 22:08:15  domrach
- * Destructor of CTreeContNodeBase made virtual
- *
- * Revision 6.4  2003/05/08 16:00:07  ucko
- * Remove inappropriate dynamic_cast<>.
- *
- * Revision 6.3  2003/05/06 19:53:53  domrach
- * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
- *
- * Revision 6.2  2003/01/21 19:37:19  domrach
- * GetRoot method added to CTreeCont class.
- *
- * Revision 6.1  2002/01/30 16:13:37  domrach
- * Changes made to pass through MSVC compiler. Some src files renamed
- *
- * Revision 6.1  2002/01/28 19:56:11  domrach
- * Initial checkin of the library implementation files
- *
- */
 #endif // NCBI_OBJECTS_CTREECONT_HPP
-

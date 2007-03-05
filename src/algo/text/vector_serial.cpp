@@ -326,22 +326,3 @@ void Decode<string, float>(const vector<unsigned char>& data,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2007/01/10 16:06:29  ucko
- * One more tweak for WorkShop 5.3.
- *
- * Revision 1.3  2007/01/05 13:45:01  dicuccio
- * Compilation fixes for Solaris
- *
- * Revision 1.2  2006/12/17 17:20:02  dicuccio
- * Removed unnecessary typedefs
- *
- * Revision 1.1  2006/12/17 14:13:20  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

@@ -139,18 +139,4 @@ void CMergeBitsetBlob<BV>::Reset()
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/11/27 14:25:56  dicuccio
- * Stripped trailing line feeds
- *
- * Revision 1.1  2006/11/17 07:29:32  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* ALGO_MERGE_HPP */
-

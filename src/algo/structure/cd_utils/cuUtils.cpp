@@ -281,23 +281,3 @@ bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* 
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2007/01/10 15:20:54  lanczyck
- * generalize Make_GI_or_PDB_String to Make_SeqID_String; remove old commented code; fix compiler warnings
- *
- * Revision 1.3  2005/06/03 16:23:47  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.2  2005/04/19 22:05:04  ucko
- * +<stdio.h> due to use of sprintf()
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

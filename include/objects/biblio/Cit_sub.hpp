@@ -84,26 +84,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/03/14 20:21:50  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.3  2005/05/20 13:32:18  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.2  2004/10/22 14:13:33  shomrat
-* Add unique option to GetLabel
-*
-* Revision 1.1  2004/02/24 15:52:22  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BIBLIO_CIT_SUB_HPP
 /* Original file checksum: lines: 93, chars: 2380, CRC32: 7fc8278d */

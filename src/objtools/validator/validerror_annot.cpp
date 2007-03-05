@@ -83,34 +83,3 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/01/24 16:21:03  rsmith
-* Validate Seq-annot handles not bare Seq-annots.
-* Get Seq entry handle one time and use it more.
-*
-* Revision 1.6  2004/05/21 21:42:56  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.5  2003/04/24 16:16:00  vasilche
-* Added missing includes and forward class declarations.
-*
-* Revision 1.4  2003/03/31 14:40:49  shomrat
-* $id: -> $id$
-*
-* Revision 1.3  2003/03/11 16:04:09  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.2  2002/12/24 16:52:53  shomrat
-* Changes to include directives
-*
-* Revision 1.1  2002/12/23 20:16:04  shomrat
-* Initial submission after splitting former implementation
-*
-*
-* ===========================================================================
-*/

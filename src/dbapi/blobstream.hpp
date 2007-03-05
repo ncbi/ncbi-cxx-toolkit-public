@@ -31,29 +31,6 @@
 * Author:  Michael Kholodov
 *   
 * File Description: stream implementation for reading and writing BLOBs
-*
-* $Log$
-* Revision 1.6  2004/11/16 19:59:46  kholodov
-* Added: GetBlobOStream() with explicit connection
-*
-* Revision 1.5  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.4  2002/08/26 15:35:56  kholodov
-* Added possibility to disable transaction log
-* while updating BLOBs
-*
-* Revision 1.3  2002/07/08 16:04:15  kholodov
-* Reformatted
-*
-* Revision 1.2  2002/05/13 19:08:44  kholodov
-* Modified: source code is included in NCBI namespace
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
 */
 
 #include "bytestreambuf.hpp"

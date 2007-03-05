@@ -57,13 +57,4 @@ inline bool IsStrictConsensusSplice(const string& splice5,
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/10/18 15:50:16  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_SEQ__CONSENSUS_SPLICE__HPP

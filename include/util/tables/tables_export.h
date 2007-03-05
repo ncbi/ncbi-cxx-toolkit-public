@@ -81,26 +81,4 @@
 
 /* @} */
 
-
-/*
- * ==========================================================================
- *
- * $Log$
- * Revision 1.4  2004/03/15 17:17:39  gorelenk
- * Removed #undef NCBI_DLL_BUILD when defined _LIB .
- *
- * Revision 1.3  2004/03/12 19:37:20  gorelenk
- * Changed export prefixes defines for tables to be used as a dll
- * on MSVC 7.10 dll build.
- *
- * Revision 1.2  2004/03/11 20:32:20  gorelenk
- * Conditionaly changed definition of NCBI_TABLES_EXPORT export prefix.
- *
- * Revision 1.1  2003/08/21 19:48:19  ucko
- * Add tables library (shared with C) for raw score matrices, etc.
- *
- *
- * ==========================================================================
- */
-
 #endif  /*  UTIL_TABLES___TABLES_EXPORT__H  */

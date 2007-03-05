@@ -118,13 +118,3 @@ private:
 END_SCOPE(align_refine)
 
 #endif // AR_REFINERENGINE__HPP
-
-/*
- * ===========================================================================
- * $Log: RefinerEngine.hpp,v 
- * Revision 1.1  2005/05/24 22:31:43  lanczyc
- * initial versions:  app builds but not yet teste
- *
- * ===========================================================================
- */
-

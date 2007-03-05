@@ -228,25 +228,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/09/28 16:27:08  avagyanv
- * Fixed some comments on member functions
- *
- * Revision 1.2  2006/09/28 15:55:36  avagyanv
- * Fixed whitespace issues
- *
- * Revision 1.1  2006/09/28 15:43:29  avagyanv
- * Header file for the alignment filtering class
- *
- * Revision 1.2  2006/09/28 15:35:36  avagyanv
- * Alginment filtering class
- *
- * Revision 1.1  2006/09/28 15:31:47  avagyanv
- * Header file containing the alignment filtering class
- *
- * ===========================================================================
- */
-
 #endif  /* ___SEQALIGN_FILTER__HPP */

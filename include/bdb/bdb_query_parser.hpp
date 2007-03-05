@@ -59,15 +59,4 @@ void NCBI_BDB_EXPORT BDB_ParseQuery(const char* query_str, CBDB_Query* query);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/02/24 16:32:57  kuznets
- * Initial revision
- *
- *
- * ==========================================================================
- */
-
 #endif

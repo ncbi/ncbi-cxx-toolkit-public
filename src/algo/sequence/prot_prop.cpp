@@ -128,22 +128,3 @@ double CProtProp::GetProteinCharge(const vector<TSeqPos>& aacount,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2004/05/14 01:24:15  jcherry
- * Pass vector by reference
- *
- * Revision 1.2  2003/07/01 19:01:13  ucko
- * Fix scope use
- *
- * Revision 1.1  2003/07/01 15:10:40  jcherry
- * Initial versions of nuc_prop and prot_prop
- *
- * ===========================================================================
- */

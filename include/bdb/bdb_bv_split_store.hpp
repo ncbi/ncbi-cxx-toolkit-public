@@ -297,34 +297,4 @@ CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::WriteVector(const Key& key,
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/12/14 13:11:31  dicuccio
- * Added components for creating split blob stores with arbitrarily defined key
- * spaces (including multi-component keys)
- *
- * Revision 1.6  2006/12/05 19:45:58  dicuccio
- * Drop unneeded LOG_POST
- *
- * Revision 1.5  2006/12/05 19:34:49  dicuccio
- * Wrap long lines.  Use BV split store shim
- *
- * Revision 1.4  2006/12/04 12:55:02  dicuccio
- * Added template parameter for underlying BV store
- *
- * Revision 1.3  2006/12/01 13:16:38  dicuccio
- * Use standard buffer types.  Permit dictionary to be supplied externally
- *
- * Revision 1.2  2006/11/28 17:11:31  dicuccio
- * Use enumerated bv op type for serialization
- *
- * Revision 1.1  2006/11/21 13:52:39  dicuccio
- * Large-scale reorganization of indexing.  Support multiple index types, split
- * dictionary-based index stores.
- *
- * ===========================================================================
- */
-
 #endif  // BDB___BV_DICT_IDX__HPP

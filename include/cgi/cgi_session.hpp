@@ -335,36 +335,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/06/27 18:52:33  didenko
- * Added methods which allow modifing the session id
- *
- * Revision 1.7  2006/06/12 18:44:34  didenko
- * Fixed cgi sessionid logging
- *
- * Revision 1.6  2006/06/08 15:58:10  didenko
- * Added possibility to set an expiration date for a session cookie
- *
- * Revision 1.5  2005/12/21 14:35:05  ucko
- * Restore include of <memory> for auto_ptr<>!
- *
- * Revision 1.4  2005/12/20 20:36:02  didenko
- * Comments cosmetics
- * Small interace changes
- *
- * Revision 1.3  2005/12/20 01:28:46  ucko
- * +<memory> for auto_ptr<>, and rearrange other headers slightly.
- *
- * Revision 1.2  2005/12/19 16:55:03  didenko
- * Improved CGI Session implementation
- *
- * Revision 1.1  2005/12/15 18:21:15  didenko
- * Added CGI session support
- *
- * ===========================================================================
- */
-
 #endif  /* CGI___SESSION__HPP */

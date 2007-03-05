@@ -738,28 +738,3 @@ int main(int argc, const char* argv[])
 {
     return CNetBVStoreDApp().AppMain(argc, argv, 0, eDS_Default);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/07 19:25:44  kuznets
- * warning fix
- *
- * Revision 1.5  2006/11/30 16:52:50  vasilche
- * Fixed for new API.
- *
- * Revision 1.4  2006/11/30 14:23:50  dicuccio
- * Update to use buffer typedefs from CBDB_RawFile
- *
- * Revision 1.3  2006/06/07 15:48:09  kuznets
- * commented out socket send delay
- *
- * Revision 1.2  2006/06/06 16:12:56  kuznets
- * minor fix
- *
- * Revision 1.1  2006/06/02 12:44:55  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

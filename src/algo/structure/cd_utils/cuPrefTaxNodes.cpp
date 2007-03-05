@@ -293,27 +293,3 @@ int CPriorityTaxNodes::GetPriorityTaxnode(int taxid, string& nodeName, TaxClient
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-
-/* 
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/04/21 15:29:49  lanczyck
- * bug fix:  wasn't setting m_loaded to false when file failed to be read.
- *
- * Revision 1.4  2005/07/13 19:46:32  lanczyck
- * minor mods to remove compiler warnings
- *
- * Revision 1.3  2005/07/07 19:43:42  lanczyck
- * use implicit 'current' directoyr for txnodes.asn file for one-argument ctor
- *
- * Revision 1.2  2005/07/07 17:29:21  lanczyck
- * major mods:  rename CPrefTaxNodes class CPriorityTaxNodes; API mods;
- * list of tax nodes is no longer static
- *
- * Revision 1.1  2005/06/30 23:53:16  lanczyck
- * extract preferred tax nodes/model organism code from CDTree's algTaxDataSource and repackage for use here
- *
- * ===========================================================================
- */
-

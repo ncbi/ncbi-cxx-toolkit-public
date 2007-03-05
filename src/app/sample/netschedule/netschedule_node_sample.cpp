@@ -201,21 +201,3 @@ int main(int argc, const char* argv[])
 {
     return CSampleNetScheduleNode().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/03/22 18:56:36  kuznets
- * Reflecting changes in connect library layout
- *
- * Revision 1.2  2005/03/07 17:39:25  kuznets
- * Fixed GCC warning
- *
- * Revision 1.1  2005/03/07 17:32:47  kuznets
- * Initial revision
- *
- *
- *
- * ===========================================================================
- */

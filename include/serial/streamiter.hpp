@@ -293,20 +293,3 @@ public:
 END_NCBI_SCOPE
 
 #endif  /* STREAMITER__HPP */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/12/14 19:33:18  gouriano
-* Added documentation
-*
-* Revision 1.2  2006/12/07 18:59:31  gouriano
-* Reviewed doxygen groupping, added documentation
-*
-* Revision 1.1  2005/12/13 19:42:13  gouriano
-* Initial revision
-*
-*
-* ===========================================================================
-*/

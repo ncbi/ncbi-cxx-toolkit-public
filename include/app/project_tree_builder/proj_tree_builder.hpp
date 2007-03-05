@@ -339,49 +339,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.12  2005/07/06 19:12:39  gouriano
- * Recognize and process macros inside a larger string
- *
- * Revision 1.11  2005/02/14 18:09:11  vakatov
- * Get rid of trailing comma in TAsnType definition
- *
- * Revision 1.10  2005/01/31 16:38:00  gouriano
- * Keep track of subproject types and propagate it down the project tree
- *
- * Revision 1.9  2004/12/20 15:20:30  gouriano
- * Process macros in library dependencies
- *
- * Revision 1.8  2004/09/13 13:49:36  gouriano
- * Make it to rely more on UNIX makefiles
- *
- * Revision 1.7  2004/08/04 13:24:58  gouriano
- * Added processing of EXPENDABLE projects
- *
- * Revision 1.6  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.5  2004/05/10 19:48:21  gorelenk
- * + SMsvcProjectT .
- *
- * Revision 1.4  2004/04/06 17:12:37  gorelenk
- * Added member-functions IsConfigurableDefine and StripConfigurableDefine
- * to struct SMakeProjectT .
- *
- * Revision 1.3  2004/03/18 17:41:03  gorelenk
- * Aligned classes member-functions parameters inside declarations.
- *
- * Revision 1.2  2004/03/16 23:54:49  gorelenk
- * Changed parameters list of member-function CreateNcbiCToolkitLibs
- * of struct SAppProjectT.
- *
- * Revision 1.1  2004/03/02 16:35:16  gorelenk
- * Initial revision.
- *
-  * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__PROJ_TREE_BUILDER__HPP
-

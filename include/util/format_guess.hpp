@@ -85,32 +85,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/09/25 14:57:26  kuznets
- * Added memory based method for format prediction
- *
- * Revision 1.6  2006/08/17 13:19:57  ludwigf
- * ADDED: Simple test that will identify *some* alignment files.
- *
- * Revision 1.5  2006/06/15 17:45:40  dicuccio
- * Added recognition of Glimmer3 predictions
- *
- * Revision 1.4  2006/06/05 15:06:36  ludwigf
- * ADDED: IDs for the PHRAP ACE, GTF, AGP, and Newick tree file types.
- *
- * Revision 1.3  2004/03/23 22:29:50  jcherry
- * Added Format(CNcbiIstream& input)
- *
- * Revision 1.2  2003/05/13 15:16:13  kuznets
- * added sequence type guessing function
- *
- * Revision 1.1  2003/05/08 19:45:55  kuznets
- * Initial revision
- *
- * ===========================================================================
- */
-
- #endif
-
+#endif

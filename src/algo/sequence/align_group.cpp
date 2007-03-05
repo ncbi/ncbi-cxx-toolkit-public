@@ -535,28 +535,3 @@ CConstRef<COrg_ref> CAlignGroup::x_GetOrgRef(const CSeq_id_Handle& id,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/10/23 14:54:10  dicuccio
- * Moved over from gui plugin tree
- *
- * Revision 1.4  2006/04/27 17:08:04  dicuccio
- * Formatting changes:
- *   - trim trailing white space
- *   - tabs to spaces
- *
- * Revision 1.3  2006/03/15 15:50:30  dicuccio
- * Provide better handling of alignment names
- *
- * Revision 1.2  2006/03/09 15:16:09  ucko
- * Fix compilation on WorkShop, which is picky about pair<> type mismatches.
- *
- * Revision 1.1  2006/03/08 12:55:16  dicuccio
- * Added two new tools: general alignment clean-up function; alignment
- * subcategorization and grouping function
- *
- * ===========================================================================
- */

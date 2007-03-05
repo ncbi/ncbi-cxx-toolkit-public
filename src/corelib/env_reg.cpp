@@ -317,24 +317,3 @@ string CNcbiEnvRegMapper::GetPrefix(void) const
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/01/03 19:39:43  ucko
- * x_Get: tolerate fPersistent when accompanied by fTransient.
- *
- * Revision 1.4  2005/04/28 14:03:47  ivanov
- * Replace internal REV_ITERATE with REVERSE_ITERATE macro from ncbimisc.hpp
- *
- * Revision 1.3  2005/04/25 20:21:55  ivanov
- * Get rid of Workshop compilation warnings
- *
- * Revision 1.2  2005/03/14 18:12:20  ucko
- * Tweak for compatibility with WorkShop's STL implementation.
- *
- * Revision 1.1  2005/03/14 15:52:09  ucko
- * Support taking settings from the environment.
- *
- * ===========================================================================
- */

@@ -165,28 +165,3 @@ int main(int argc, const char* argv[])
 {
     return CTestUtf8().AppMain(argc, argv);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/05/17 21:09:26  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2002/06/30 03:24:08  vakatov
- * Get rid of warnings caused by constless char* initialization
- *
- * Revision 1.4  2002/04/16 18:52:16  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 1.3  2002/01/18 19:25:26  ivanov
- * Polish source code. Appended one more test string.
- *
- * Revision 1.2  2001/04/18 16:32:24  ivanov
- * Change types TUnicodeChar, TUnicodeString to simple types.
- * TUnicode char to long, TUnicodeString to vector<long>.
- *
- * Revision 1.1  2001/04/06 19:16:04  ivanov
- * Initial revision
- * ===========================================================================
- */

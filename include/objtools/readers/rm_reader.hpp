@@ -73,13 +73,3 @@ END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___RMREADER__HPP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/04/18 11:34:37  ludwigf
- * INITIAL: Interface for reading RepeatMasker OUT files.
- *
- *
- * ===========================================================================
- */

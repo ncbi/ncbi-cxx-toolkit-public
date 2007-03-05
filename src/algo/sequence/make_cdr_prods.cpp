@@ -130,20 +130,3 @@ CRef<CBioseq_set> CMakeCdrProds::MakeCdrProds(CRef<CSeq_annot> annot,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2003/11/10 18:23:10  ucko
- * Tweak call to string::insert to address WorkShop-reported ambiguity.
- *
- * Revision 1.1  2003/11/10 16:37:06  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

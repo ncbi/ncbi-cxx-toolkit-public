@@ -27,58 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.14  2005/03/17 21:07:42  vasilche
-* Removed enforced check for call of IsValid().
-*
-* Revision 1.13  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.12  2004/01/05 14:25:20  gouriano
-* Added possibility to set serialization hooks by stack path
-*
-* Revision 1.11  2003/10/01 14:40:12  vasilche
-* Fixed CanGet() for members wihout 'set' flag.
-*
-* Revision 1.10  2003/09/30 17:11:57  gouriano
-* Modified TypeIterators to skip unset optional members
-*
-* Revision 1.9  2003/08/14 20:03:58  vasilche
-* Avoid memory reallocation when reading over preallocated object.
-* Simplified CContainerTypeInfo iterators interface.
-*
-* Revision 1.8  2003/08/11 15:25:52  grichenk
-* Added possibility to reset an object member from
-* a read hook (including non-optional members).
-*
-* Revision 1.7  2003/07/29 18:47:47  vasilche
-* Fixed thread safeness of object stream hooks.
-*
-* Revision 1.6  2003/07/17 22:49:48  vasilche
-* Added missing methods.
-*
-* Revision 1.5  2003/07/17 20:02:51  vasilche
-* Added update of 'set' flag for non const class member dereference.
-* Added choice switch for non const choice variant dereference.
-*
-* Revision 1.4  2003/04/29 18:30:37  gouriano
-* object data member initialization verification
-*
-* Revision 1.3  2003/03/10 18:54:26  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.2  2001/05/17 15:07:08  lavr
-* Typos corrected
-*
-* Revision 1.1  2000/10/20 15:51:40  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

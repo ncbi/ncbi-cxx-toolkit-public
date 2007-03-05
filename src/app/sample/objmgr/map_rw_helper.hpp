@@ -151,14 +151,4 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/01/25 19:00:55  didenko
- * Redisigned bio objects edit facility
- *
- * ===========================================================================
- */
-
 #endif // __MAP_RW_HELPER__HPP

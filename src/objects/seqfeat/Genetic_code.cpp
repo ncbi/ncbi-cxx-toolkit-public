@@ -112,21 +112,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 6.3  2004/05/19 17:26:04  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 6.2  2003/04/18 19:40:38  kans
-* changed iterate to ITERATE
-*
-* Revision 6.1  2002/11/26 18:52:11  shomrat
-* Add convenience methods for the retrieval of internal data
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1892, CRC32: dc2193d9 */

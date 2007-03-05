@@ -278,15 +278,3 @@ void CScopeSubTransaction_Impl::x_Finish()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/11/15 21:34:44  ucko
- * Add a redundant cast to x_CanCommitRollBack for GCC 2.95.
- *
- * Revision 1.1  2005/11/15 19:22:08  didenko
- * Added transactions and edit commands support
- *
- * ===========================================================================
- */

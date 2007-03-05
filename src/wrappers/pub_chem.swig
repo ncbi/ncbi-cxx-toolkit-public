@@ -128,21 +128,3 @@ objects/pcassay/PC_ResultType_.hpp
 objects/pcassay/NCBI_PCAssay_module.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/12/13 22:50:28  jcherry
- * Added headers
- *
- * Revision 1.3  2005/10/27 12:37:18  jcherry
- * Added *_module.hpp
- *
- * Revision 1.2  2005/07/29 14:36:47  jcherry
- * Reflect new pcassay spec
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

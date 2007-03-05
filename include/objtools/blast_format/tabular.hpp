@@ -526,49 +526,4 @@ inline void CBlastTabularInfo::x_PrintGaps(void)
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.12  2006/07/26 18:07:02  jianye
-* adjust parameters due to proto type in GetScoreString
-*
-* Revision 1.11  2006/03/15 02:09:04  ucko
-* +<algorithm> (once indirectly included?) for sort().
-*
-* Revision 1.10  2006/03/01 20:52:20  jianye
-* move eMaxTabularField to the end
-*
-* Revision 1.9  2006/03/01 18:38:28  jianye
-* added positives and frame info
-*
-* Revision 1.8  2005/12/21 15:18:13  jcherry
-* Added export specifiers
-*
-* Revision 1.7  2005/08/08 18:23:45  dondosha
-* Added option to use different separators between fields; added doxygen comments
-*
-* Revision 1.6  2005/08/01 14:57:51  dondosha
-* Added API for choosing an arbitrary list of fields to show
-*
-* Revision 1.5  2005/05/25 13:00:40  camacho
-* Do not pull objects namespace
-*
-* Revision 1.4  2005/05/11 16:21:51  dondosha
-* Small doxygen fix
-*
-* Revision 1.3  2005/05/02 17:32:58  dondosha
-* Changed return value of SetFields to int, to allow error return
-*
-* Revision 1.2  2005/04/28 19:28:17  dondosha
-* Changed CBioseq_Handle argument in PrintHeader to CBioseq, needed for web formatting
-*
-* Revision 1.1  2005/03/14 20:12:06  dondosha
-* Tabular formatting of BLAST results
-*
-*
-* ===========================================================================
-*/
-
 #endif /* OBJTOOLS_BLASTFORMAT___TABULAR__HPP */
-

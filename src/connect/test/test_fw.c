@@ -128,34 +128,3 @@ extern int main(int argc, char** argv)
 
     return 0;
 }
-
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2002/12/04 16:59:51  lavr
- * Open log file in append mode
- *
- * Revision 6.7  2002/10/17 20:49:25  lavr
- * SOCK_Write(): forgotten write mode argument added
- *
- * Revision 6.6  2002/08/07 16:38:08  lavr
- * EIO_ReadMethod enums changed accordingly; log moved to end
- *
- * Revision 6.5  2002/03/22 19:46:22  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.4  2002/01/16 21:23:14  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.3  2001/09/10 21:28:11  lavr
- * Typo fix
- *
- * Revision 6.2  2001/03/02 20:03:48  lavr
- * Typos fixed
- *
- * Revision 6.1  2000/11/17 22:36:22  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

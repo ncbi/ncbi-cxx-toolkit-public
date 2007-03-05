@@ -1021,20 +1021,3 @@ void CEditsSaver::Remove(const CSeq_entry_Handle& entry,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/07/17 14:33:30  ucko
- * Fully qualify calls from templates to static functions to fix
- * compilation under VisualAge.
- *
- * Revision 1.2  2006/05/01 16:56:45  didenko
- * Attach SeqEntry edit command revamp
- *
- * Revision 1.1  2006/01/25 18:59:04  didenko
- * Redisgned bio objects edit facility
- *
- * ===========================================================================
- */

@@ -358,48 +358,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 6.12  2004/05/19 17:21:39  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 6.11  2004/04/12 16:51:46  vasilche
- * Fixed conversion warnings.
- *
- * Revision 6.10  2004/01/06 14:36:06  dicuccio
- * Removed unnecessary #include of ncbiapp.hpp and ncbireg.hpp.  Added <set> where
- * needed.
- *
- * Revision 6.9  2003/10/15 19:07:09  ucko
- * Fix some logic errors with lt/gt limits in CInt_fuzz::Add
- *
- * Revision 6.8  2003/10/15 17:37:15  ucko
- * Fix a couple of instances of unintentional fall-through.
- *
- * Revision 6.7  2003/10/15 16:22:24  ucko
- * Sigh, add missing parenthesis.
- *
- * Revision 6.6  2003/10/15 16:20:09  ucko
- * portability fixes to use of double in CInt_fuzz::Add
- *
- * Revision 6.5  2003/10/15 15:43:07  ucko
- * Add more operations: AssignTranslated, Add, Subtract, and Negate/Negative.
- *
- * Revision 6.4  2002/12/26 12:46:37  dicuccio
- * Removed spurious dependency on Seq_point.hpp
- *
- * Revision 6.3  2002/10/08 18:52:21  clausen
- * Changed TSeqPos from 0 based to 1 based in GetLabel()
- *
- * Revision 6.2  2002/10/03 19:11:02  clausen
- * Removed extra whitespace
- *
- * Revision 6.1  2002/10/03 16:47:26  clausen
- * Added GetLabel()
- *
- * ===========================================================================
- */
-
 /* Original file checksum: lines: 61, chars: 1885, CRC32: bf6aceba */

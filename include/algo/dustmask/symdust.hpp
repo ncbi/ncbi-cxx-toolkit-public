@@ -330,26 +330,3 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.13  2006/09/20 17:20:49  morgulis
- * Optimization of a case of long single letter sequences in the same way
- * it was done in the original DUST.
- *
- * Revision 1.12  2005/10/31 20:55:14  morgulis
- * Refactoring of the library code to better correspond to the pseudocode
- * in the paper text.
- *
- * Revision 1.11  2005/09/19 14:37:09  morgulis
- * Added API to return masked intervals as CRef< CPacked_seqint >.
- *
- * Revision 1.10  2005/07/18 14:55:59  morgulis
- * Removed position lists maintanance.
- *
- * Revision 1.9  2005/07/13 18:29:50  morgulis
- * operator() can mask part of the sequence
- *
- *
- */

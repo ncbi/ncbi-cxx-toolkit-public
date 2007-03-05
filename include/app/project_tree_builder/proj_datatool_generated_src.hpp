@@ -72,23 +72,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.3  2004/03/10 16:48:14  gorelenk
- * Added declarations of operators == and < to class CDataToolGeneratedSrc.
- *
- * Revision 1.2  2004/02/13 23:06:45  gorelenk
- * Added data members-abstraction of datatool generated files.
- *
- * Revision 1.1  2004/01/30 20:37:37  gorelenk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__PROJ_DATATOOL_GENERATED_SRC__HPP
-

@@ -28,42 +28,6 @@
 * Author:  Michael Kholodov
 *   
 * File Description:  Base class for database access
-*
-*
-* $Log$
-* Revision 1.9  2006/06/19 17:16:12  kholodov
-* Restored old IsAlive() behavior, added additional checks for valid connection
-*
-* Revision 1.8  2005/11/02 15:02:25  ssikorsk
-* Catch all exceptions in destructors.
-*
-* Revision 1.7  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.6  2004/04/12 14:25:33  kholodov
-* Modified: resultset caching scheme, fixed single connection handling
-*
-* Revision 1.5  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.4  2004/03/08 22:15:19  kholodov
-* Added: 3 new Get...() methods internally
-*
-* Revision 1.3  2002/10/03 18:49:59  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.2  2002/09/18 18:49:27  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.1  2002/09/16 19:34:40  kholodov
-* Added: bulk insert support
-*
-*
-*
 */
 
 #include <ncbi_pch.hpp>

@@ -85,26 +85,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.4  2006/02/06 16:38:49  cliu
- * remove c dependency
- *
- * Revision 1.3  2006/01/12 16:08:07  cliu
- * const change
- *
- * Revision 1.2  2005/07/18 19:43:19  cliu
- * use multimap
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

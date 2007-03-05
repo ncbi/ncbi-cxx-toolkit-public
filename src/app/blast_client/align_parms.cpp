@@ -56,16 +56,3 @@ void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
     disp.SetAlignType(CDisplaySeqalign::eProt);
     disp.SetMiddleLineStyle(CDisplaySeqalign::eChar);
 }
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2004/05/21 21:41:38  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */

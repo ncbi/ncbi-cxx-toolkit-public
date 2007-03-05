@@ -754,35 +754,3 @@ int main(int argc, const char* argv[])
     CThreadedApp app;
     return app.AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.8  2004/08/23 16:32:46  grichenk
- * Fixed problem with stuck threads on BSD.
- *
- * Revision 6.7  2004/05/14 13:59:51  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 6.6  2002/11/04 21:29:05  grichenk
- * Fixed usage of const CRef<> and CRef<> constructor
- *
- * Revision 6.5  2002/09/19 20:05:43  vasilche
- * Safe initialization of static mutexes
- *
- * Revision 6.4  2002/04/16 18:49:09  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 6.3  2002/03/13 05:02:09  vakatov
- * sNumThreads = 35;  sSpawnBy = 6;
- *
- * Revision 6.2  2001/04/03 18:21:23  grichenk
- * + test for CThread::Exit()
- *
- * Revision 6.1  2001/03/13 22:45:20  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

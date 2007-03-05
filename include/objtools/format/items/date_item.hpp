@@ -73,24 +73,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/13 17:16:21  jcherry
-* Added export specifier.  Changed forward declaration of CDate to
-* #include of Date.hpp to accomodate MSVC.
-*
-* Revision 1.2  2004/04/22 15:35:16  shomrat
-* Changes in context
-*
-* Revision 1.1  2003/12/17 19:45:43  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___DATE_ITEM__HPP */

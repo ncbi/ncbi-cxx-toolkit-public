@@ -68,29 +68,4 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnectorEx(BUF buf);
 
 /* @} */
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.6  2006/03/30 17:39:24  lavr
- * MEMORY_Connector: Remove unnecessary lock
- *
- * Revision 6.5  2004/10/27 18:44:14  lavr
- * +MEMORY_CreateConnectorEx()
- *
- * Revision 6.4  2003/04/09 19:05:45  siyan
- * Added doxygen support
- *
- * Revision 6.3  2003/01/08 01:59:33  lavr
- * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
- *
- * Revision 6.2  2002/09/19 18:01:14  lavr
- * Header file guard macro changed; log moved to the end
- *
- * Revision 6.1  2002/02/20 19:29:35  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_MEMORY_CONNECTOR__H */

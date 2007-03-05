@@ -150,27 +150,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/02/23 18:34:44  kuznets
- * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
- *
- * Revision 1.4  2004/09/03 13:32:38  kuznets
- * + support of async. transactions
- *
- * Revision 1.3  2004/06/21 18:41:04  kuznets
- * Change in comments
- *
- * Revision 1.2  2003/12/29 17:07:13  kuznets
- * GetTxn() - relaxed function visibility restriction to public
- *
- * Revision 1.1  2003/12/10 19:10:53  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
-
 #endif  /* BDB_ENV__HPP */

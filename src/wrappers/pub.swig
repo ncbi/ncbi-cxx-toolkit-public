@@ -146,15 +146,3 @@ objects/pubmed/Pubmed_url_.hpp
 objects/pubmed/NCBI_PubMed_module.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/10/27 12:37:18  jcherry
- * Added *_module.hpp
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

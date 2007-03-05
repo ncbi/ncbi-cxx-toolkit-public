@@ -654,31 +654,3 @@ public:
     }
 #endif
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/10/05 16:57:33  jcherry
- * Prepend "ncbi_" to specialization macros to avoid conflict with swig lib
- *
- * Revision 1.6  2005/10/28 15:48:41  jcherry
- * Reflect change to blast ASN.1 spec
- *
- * Revision 1.5  2005/10/27 12:37:18  jcherry
- * Added *_module.hpp
- *
- * Revision 1.4  2005/08/03 14:57:10  jcherry
- * Added headers
- *
- * Revision 1.3  2005/07/15 15:27:29  jcherry
- * Added list<CRef<CGenetic_code_Base::C_E> >
- *
- * Revision 1.2  2005/05/26 15:22:00  jcherry
- * Added objects/blast/Blast4_get_queries_*.hpp
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

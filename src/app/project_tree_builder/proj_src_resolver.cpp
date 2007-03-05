@@ -158,27 +158,3 @@ void CProjSRCResolver::PrepereResolver(void)
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/10/05 16:44:31  shomrat
- * rollback last change
- *
- * Revision 1.5  2004/10/05 16:15:52  shomrat
- * Use in place NStr::TruncateSpaces
- *
- * Revision 1.4  2004/05/21 21:41:41  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2004/02/12 23:15:30  gorelenk
- * Implemented utility projects creation and configure re-build of the app.
- *
- * Revision 1.2  2004/02/10 18:05:48  gorelenk
- * Implemented recursive resolving for makefiles from different dirs.
- *
- * Revision 1.1  2004/02/04 23:36:45  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */

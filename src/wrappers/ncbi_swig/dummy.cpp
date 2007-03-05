@@ -30,17 +30,3 @@
  */
 
 #include <ncbi_pch.hpp>
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/06/06 17:02:43  jcherry
- * Don't use namespace macros, which aren't defined
- *
- * Revision 1.1  2005/05/25 20:12:40  tereshko
- * Added makefiles for _ncbi library
- *
- * ===========================================================================
- */
- 

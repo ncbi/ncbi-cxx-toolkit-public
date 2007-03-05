@@ -362,19 +362,3 @@ void CQueryParseTree::Parse(const char*   query_str,
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log: parser.cpp,v $
- * Revision 1.2  2007/01/11 14:49:51  kuznets
- * Many cosmetic fixes and functional development
- *
- * Revision 1.1  2007/01/10 16:14:01  kuznets
- * initial revision
- *
- *
- * ==========================================================================
- */
-
-
-

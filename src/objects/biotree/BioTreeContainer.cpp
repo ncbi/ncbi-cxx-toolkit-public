@@ -87,15 +87,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/27 12:25:27  dicuccio
-* Initial revision: added statistics reporting functions
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1912, CRC32: 94c35062 */

@@ -600,16 +600,3 @@ void CTextUtil::DecodeFreqs(CTextUtil::TWordFreq& freq,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2007/01/05 13:45:01  dicuccio
- * Compilation fixes for Solaris
- *
- * Revision 1.1  2006/12/17 14:13:20  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

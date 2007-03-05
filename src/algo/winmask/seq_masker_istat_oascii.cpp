@@ -205,15 +205,3 @@ Uint4 CSeqMaskerIstatOAscii::at( Uint4 unit ) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2006/11/13 18:19:58  morgulis
- * Check if the requested t_low is less than the computed one and issue a warning.
- *
- * Revision 1.1  2005/05/02 14:27:46  morgulis
- * Implemented hash table based unit counts formats.
- *
- * ========================================================================
- */

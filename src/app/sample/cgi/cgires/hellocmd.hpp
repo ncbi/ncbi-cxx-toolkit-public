@@ -30,29 +30,6 @@
 *
 * File Description:  These are the commands triggered by cgi parameters.
 *   These command classes construct the html pages returned to the user.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2004/05/04 14:44:21  kuznets
-* MOving from the root "hello" to the new location
-*
-* Revision 1.5  2000/03/20 22:48:18  vakatov
-* Get rid of the "unused var" warning on compilation
-*
-* Revision 1.4  1999/11/10 20:10:57  lewisg
-* clean out unnecessary code
-*
-* Revision 1.3  1999/11/10 01:01:48  lewisg
-* get rid of namespaces
-*
-* Revision 1.2  1999/10/28 20:08:29  lewisg
-* add commands and  comments
-*
-* Revision 1.1  1999/10/25 21:19:31  lewisg
-* first draft of simple cgi app
-*
-*
-* ===========================================================================
 */
 
 #include "hellores.hpp"

@@ -217,45 +217,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.10  2006/06/13 15:36:49  bollin
-* added ShowSubclauses method (used for debugging)
-*
-* Revision 1.9  2006/06/12 15:43:22  bollin
-* coding region, gene, and mRNA features are needed for their protein/gene
-* information on segment definition lines, but should not be listed unless the
-* feature itself ends on the segment.
-*
-* Revision 1.8  2006/05/15 12:03:23  bollin
-* changes to handle segmented sets
-*
-* Revision 1.7  2006/04/27 17:25:12  dicuccio
-* Make dtor virtual
-*
-* Revision 1.6  2006/04/26 12:52:21  bollin
-* fixed method for determining whether a feature type is lonely
-*
-* Revision 1.5  2006/04/25 14:19:07  ucko
-* Drop CAutoDefExonListClause's (broken and unneeded) destructor.
-*
-* Revision 1.4  2006/04/25 13:36:28  bollin
-* added misc_feat processing and removal of unwanted features
-*
-* Revision 1.3  2006/04/18 20:12:37  bollin
-* added option to suppress transposon and insertion sequence subfeatures
-*
-* Revision 1.2  2006/04/17 17:39:36  ucko
-* Fix capitalization of header filenames.
-*
-* Revision 1.1  2006/04/17 16:25:01  bollin
-* files for automatically generating definition lines, using a combination
-* of modifiers to make definition lines unique within a set and listing the
-* relevant features on the sequence.
-*
-*
-* ===========================================================================
-*/
-
 #endif //OBJMGR_UTIL_AUTODEF_FEATURE_CLAUSE_BASE__HPP

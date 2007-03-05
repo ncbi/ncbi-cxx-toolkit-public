@@ -77,29 +77,3 @@ void TruncateCache(unsigned int maxSize);
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CACHE__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2005/10/19 17:28:18  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.6  2004/01/17 00:17:29  thiessen
-* add Biostruc and network structure load
-*
-* Revision 1.5  2003/04/02 17:49:18  thiessen
-* allow pdb id's in structure import dialog
-*
-* Revision 1.4  2003/02/03 19:20:02  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.3  2002/09/30 17:13:02  thiessen
-* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
-*
-* Revision 1.2  2002/02/27 16:29:41  thiessen
-* add model type flag to general mime type
-*
-* Revision 1.1  2001/10/30 02:54:12  thiessen
-* add Biostruc cache
-*
-*/

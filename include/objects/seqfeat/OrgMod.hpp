@@ -104,23 +104,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/10/18 17:38:39  bollin
-* Added function for getting OrgMod subtype name from subtype value.
-*
-* Revision 1.2  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.1  2005/05/20 13:36:22  shomrat
-* Added BasicCleanup()
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQFEAT_ORGMOD_HPP
 /* Original file checksum: lines: 94, chars: 2521, CRC32: 79cf88de */

@@ -184,27 +184,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/12/01 21:20:36  todorov
-* - NCBI_XALNMGR_EXPORT
-*
-* Revision 1.4  2006/12/01 17:52:43  todorov
-* + NCBI_XALNMGR_EXPORT
-*
-* Revision 1.3  2006/11/16 18:08:49  todorov
-* Doxygenized comments.
-*
-* Revision 1.2  2006/10/19 17:08:33  todorov
-* + #include <objmgr/scope.hpp>
-*
-* Revision 1.1  2006/10/17 19:21:47  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
-
 #endif  // OBJTOOLS_ALNMGR___ALN_ASN_READER__HPP

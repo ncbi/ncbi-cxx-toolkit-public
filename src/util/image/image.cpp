@@ -285,29 +285,3 @@ void CImage::Flip(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/05/17 21:07:58  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/12/16 15:49:35  dicuccio
- * Large re-write of image handling.  Added improved error-handling and support
- * for streams-based i/o (via hooks into each client library).
- *
- * Revision 1.4  2003/10/02 15:37:33  ivanov
- * Get rid of compilation warnings
- *
- * Revision 1.3  2003/06/12 19:49:56  dicuccio
- * Added Flip() to flip an image along the y-axis
- *
- * Revision 1.2  2003/06/09 19:27:53  dicuccio
- * Added GetAspectRatio()
- *
- * Revision 1.1  2003/06/03 15:17:13  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */

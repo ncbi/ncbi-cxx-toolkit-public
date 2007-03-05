@@ -223,36 +223,4 @@ void CByteSwap::PutDouble(unsigned char* ptr, double value)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2004/02/03 17:23:06  kuznets
- * Improved comments describing CByteSwap design
- *
- * Revision 1.7  2004/01/29 18:53:33  siyan
- * Prefixed conditional compilation macro with CORELIB___ since this is now
- * part of Corelib.
- *
- * Revision 1.6  2003/09/11 16:05:24  kuznets
- * Fixed minor misprint
- *
- * Revision 1.5  2003/09/10 16:44:47  kuznets
- * Fixed a bug with bit shifting without casting to a proper (16,32,64 bit) type.
- * Thanks Eugene Vasilchenko for submitting it.
- *
- * Revision 1.4  2003/09/10 15:13:30  kuznets
- * Fixed minor compilation issues.
- *
- * Revision 1.3  2003/09/09 19:52:25  kuznets
- * Added support for big-little endian byte orders.
- *
- * Revision 1.2  2003/09/09 14:28:54  kuznets
- * All functions joined into one CByteSwap class.
- *
- * Revision 1.1  2003/09/08 20:36:51  kuznets
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif /* NCBI_BSWAP__HPP */

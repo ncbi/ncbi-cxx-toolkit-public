@@ -501,29 +501,4 @@ class CIntergenic : public CHMM_State
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/10/05 15:32:05  souvorov
- * Implementation of anchors for intergenics
- *
- * Revision 1.4  2006/03/06 15:52:53  souvorov
- * Changes needed for ChanceOfIntronLongerThan(int l)
- *
- * Revision 1.3  2005/10/06 15:51:43  chetvern
- * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
- * moved several most frequently called methods implementations into class definitions to make them inline
- *
- * Revision 1.2  2005/09/16 18:04:16  ucko
- * kBadScore has been replaced with an inline BadScore function that
- * always returns the same value to avoid lossage in optimized WorkShop
- * builds.
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___HMM__HPP

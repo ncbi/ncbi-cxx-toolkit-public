@@ -40,23 +40,3 @@ int main( int argc, char * argv[] )
 {
     return CWinMaskApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2005/02/25 21:32:54  dicuccio
- * Rearranged winmasker files:
- * - move demo/winmasker to a separate app directory (src/app/winmasker)
- * - move win_mask_* to app directory
- *
- * Revision 1.2  2005/02/12 19:58:04  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
- */
-

@@ -72,39 +72,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2005/11/03 23:18:47  camacho
- * explicitely set filtering to false
- *
- * Revision 1.8  2005/11/03 22:15:01  camacho
- * Add method to override query options defaults to enforce no filtering of the query
- *
- * Revision 1.7  2005/10/06 19:43:08  camacho
- * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
- * Fixes problem with uninitializes program and service name for CRemoteBlast.
- *
- * Revision 1.6  2005/06/02 16:19:01  camacho
- * Remove LookupTableOptions::use_pssm
- *
- * Revision 1.5  2005/05/24 14:07:44  madden
- * CPSIBlastOptionsHandle now derived from CBlastAdvancedProteinOptionsHandle
- *
- * Revision 1.4  2004/12/20 20:12:01  camacho
- * + option to set use of pssm in lookup table
- *
- * Revision 1.3  2004/05/21 21:41:02  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2004/05/17 19:33:23  bealer
- * - Update sources to new macro spelling.
- *
- * Revision 1.1  2004/05/17 18:55:46  bealer
- * - Add PSI-Blast support.
- *
- *
- * ===========================================================================
- */

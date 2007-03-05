@@ -441,20 +441,3 @@ void CRemoteAppResultSB_Executer::Log(const string& prefix)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/09/19 14:34:41  didenko
- * Code clean up
- * Catch and log all exceptions in destructors
- *
- * Revision 1.2  2006/07/18 19:43:34  didenko
- * Fixed compilation error on MSVC 8
- *
- * Revision 1.1  2006/07/13 14:32:39  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * ===========================================================================
- */
- 

@@ -440,21 +440,3 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
     }
     x_UnsetChars();
 }
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2005/03/16 19:32:29  todorov
- * Added independent (from CAlnVec) default end & gap characters for the
- * printers.
- *
- * Revision 1.2  2005/03/15 22:17:32  todorov
- * + PrintSeqPos
- *
- * Revision 1.1  2005/03/15 17:43:36  todorov
- * Initial revision
- *
- * ===========================================================================
- */

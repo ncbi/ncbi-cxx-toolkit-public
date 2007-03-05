@@ -74,29 +74,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_PREFERENCES_DIALOG__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2003/11/15 16:08:36  thiessen
-* add stereo
-*
-* Revision 1.6  2003/02/03 19:20:04  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.5  2003/01/31 17:18:58  thiessen
-* many small additions and changes...
-*
-* Revision 1.4  2002/08/15 22:13:15  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.3  2002/04/27 16:32:13  thiessen
-* fix small leaks/bugs found by BoundsChecker
-*
-* Revision 1.2  2001/10/30 02:54:13  thiessen
-* add Biostruc cache
-*
-* Revision 1.1  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-*/

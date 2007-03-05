@@ -189,18 +189,3 @@ TField B4Param_WordThreshold         ("WordThreshold",         CBlast4_value::e_
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/12/13 18:58:47  ucko
-* Actually define m_Fields.
-*
-* Revision 1.1  2006/12/13 18:15:32  bealer
-* - Define standard set of parameters for blast4.
-*
-*
-* ===========================================================================
-*/

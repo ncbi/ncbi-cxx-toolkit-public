@@ -100,36 +100,4 @@ void CActiveObject::SetIdent(const string& name)
   m_ident = name;
 }
 
-/*
-* $Log$
-* Revision 1.9  2005/05/25 21:09:44  kholodov
-* Added: mutex for guarding access to the listener list
-*
-* Revision 1.8  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.7  2004/02/27 14:37:32  kholodov
-* Modified: set collection replaced by list for listeners
-*
-* Revision 1.6  2002/12/16 18:56:50  kholodov
-* Fixed: memory leak in CStatement object
-*
-* Revision 1.5  2002/10/22 22:14:01  vakatov
-* Get rid of a compilation warning
-*
-* Revision 1.4  2002/09/18 18:47:30  kholodov
-* Modified: CActiveObject inherits directly from IEventListener
-* Added: Additional trace output
-*
-* Revision 1.3  2002/09/09 20:48:56  kholodov
-* Added: Additional trace output about object life cycle
-* Added: CStatement::Failed() method to check command status
-*
-* Revision 1.2  2002/02/05 17:16:23  kholodov
-* Put into right scope, invalidobjex retired
-*
-* Revision 1.1  2002/01/30 14:51:20  kholodov
-* User DBAPI implementation, first commit
-*
-*/
 END_NCBI_SCOPE

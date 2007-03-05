@@ -27,56 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2005/04/01 16:15:24  gouriano
-* Fixed compiler warnings
-*
-* Revision 1.10  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.9  2003/08/11 15:25:52  grichenk
-* Added possibility to reset an object member from
-* a read hook (including non-optional members).
-*
-* Revision 1.8  2003/07/29 19:14:31  vasilche
-* Added missing methods.
-*
-* Revision 1.7  2003/07/29 18:47:47  vasilche
-* Fixed thread safeness of object stream hooks.
-*
-* Revision 1.6  2002/09/19 14:00:38  grichenk
-* Implemented CObjectHookGuard for write and copy hooks
-* Added DefaultRead/Write/Copy methods to base hook classes
-*
-* Revision 1.5  2001/05/17 15:07:08  lavr
-* Typos corrected
-*
-* Revision 1.4  2000/10/20 15:51:40  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.3  2000/09/26 17:38:21  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.2  2000/09/18 20:00:23  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.1  2000/08/15 19:44:48  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

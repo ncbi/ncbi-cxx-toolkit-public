@@ -106,32 +106,4 @@ bool CSequenceItem::IsFirst(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.5  2005/03/28 17:16:04  shomrat
-* Modifying internal representation
-*
-* Revision 1.4  2004/11/24 16:47:33  shomrat
-* Inlined methods
-*
-* Revision 1.3  2004/04/22 15:39:54  shomrat
-* Changes in context
-*
-* Revision 1.2  2004/02/19 17:50:06  shomrat
-* correct typo
-*
-* Revision 1.1  2003/12/17 19:50:01  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___SEQUENCE_ITEM__HPP */

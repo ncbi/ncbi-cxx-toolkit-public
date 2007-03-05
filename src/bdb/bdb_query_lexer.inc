@@ -186,37 +186,3 @@ int yylex(YYSTYPE *lvalp, void* param)
     /* return single chars */
     return c;
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2005/06/03 16:43:30  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.7  2004/03/23 16:37:55  kuznets
- * Implemented NOT predicate
- *
- * Revision 1.6  2004/03/23 14:51:19  kuznets
- * Implemented logical NOT, <, <=, >, >=
- *
- * Revision 1.5  2004/03/18 17:24:36  kuznets
- * Minor bug fix
- *
- * Revision 1.4  2004/03/18 13:39:31  kuznets
- * Changed algorithm of identification of numbers in the query
- *
- * Revision 1.3  2004/02/25 13:42:24  kuznets
- * Improved lexer to recognize AND OR as string tokens,
- * not just '&' '|' characters
- *
- * Revision 1.2  2004/02/24 19:26:14  kuznets
- * Fix compilation(GCC & SUN Workshop)
- *
- * Revision 1.1  2004/02/24 16:37:38  kuznets
- * Initial revision
- *
- *
- * ==========================================================================
- */
-

@@ -66,19 +66,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/09/07 16:04:53  shomrat
-* Added export specifier
-*
-* Revision 1.1  2003/12/17 19:48:07  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___ITEM__HPP */

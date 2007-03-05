@@ -260,35 +260,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/11/29 13:55:39  gouriano
- * Moved GetErrorCodeString method into cpp
- *
- * Revision 1.7  2006/07/17 17:56:26  didenko
- * + DeleteStorage method
- *
- * Revision 1.6  2006/05/02 18:00:24  ivanov
- * Get rid of unused variables warnings
- *
- * Revision 1.5  2006/04/04 20:14:04  didenko
- * Disabled copy constractors and assignment operators
- *
- * Revision 1.4  2006/03/15 17:20:35  didenko
- * +IsValidKey method
- * Added new CBlobStorageExecption error codes
- *
- * Revision 1.3  2006/02/27 14:50:21  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.2  2006/02/10 18:40:46  didenko
- * Added CBlobStorageFactory_Null
- *
- * Revision 1.1  2005/12/20 17:13:34  didenko
- * Added new IBlobStorage interface
- *
- * ===========================================================================
- */
-
 #endif /* __BLOB_STORAGE_IFACE__HPP */

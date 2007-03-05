@@ -143,39 +143,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CSubImageApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/10/31 14:12:25  dicuccio
- * Cosmetic changes
- *
- * Revision 1.7  2006/06/21 13:17:30  dicuccio
- * Revert previous change; open stream in binary mode
- *
- * Revision 1.6  2006/06/21 13:05:02  dicuccio
- * Temporary fix: avoid using streams-based image retrieval without a specified
- * type
- *
- * Revision 1.5  2004/05/17 21:08:03  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.4  2003/12/20 17:49:25  dicuccio
- * Changed sub_image to use streams instead of file names.  Changed to us implicit
- * format guessing.
- *
- * Revision 1.3  2003/12/16 16:16:43  dicuccio
- * Added more options - raw files
- *
- * Revision 1.2  2003/11/03 15:19:57  dicuccio
- * Added optional compression parameter
- *
- * Revision 1.1  2003/06/03 15:17:14  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-

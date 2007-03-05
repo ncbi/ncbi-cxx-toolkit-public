@@ -135,34 +135,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/07/03 14:30:27  yazhuk
- * Clean-up
- *
- * Revision 1.6  2005/09/19 12:21:04  dicuccio
- * White space changes: trim trailing white space; use spaces not tabs
- *
- * Revision 1.5  2005/06/13 21:53:19  yazhuk
- * Virtual destructor for IAlnSegment
- *
- * Revision 1.4  2005/06/13 19:06:39  yazhuk
- * Changed EAlignType, added GetType(), IsInvalidType(), IsReversed(), removed
- * operator-- from IAlnSegmentIterator
- *
- * Revision 1.3  2005/05/16 15:09:40  yazhuk
- * Added EFlags, TRange
- *
- * Revision 1.2  2005/05/09 18:52:28  yazhuk
- * Added virtual destructor
- *
- * Revision 1.1  2005/05/09 17:52:24  yazhuk
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif  // OBJTOOLS_ALNMGR___ALN_EXPLORER__HPP

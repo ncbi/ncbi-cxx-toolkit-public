@@ -186,24 +186,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif // CU_FASTA_IO_WRAPPER__HPP
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2006/11/01 17:36:09  lanczyck
- * add methods to access raw/active fasta strings
- *
- * Revision 1.4  2006/10/12 15:08:34  lanczyck
- * deprecate use of old ReadFasta method in favor of CFastaReader class
- *
- * Revision 1.3  2006/09/07 17:34:14  lanczyck
- * fixes so can read in file w/ a single sequence
- *
- * Revision 1.2  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.1  2006/03/29 15:35:59  lanczyck
- * add files for fasta->cd converter
- *
- * ---------------------------------------------------------------------------
- */

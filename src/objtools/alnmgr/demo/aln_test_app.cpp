@@ -232,32 +232,3 @@ int main(int argc, const char* argv[])
 {
     return CAlnTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/12/13 02:54:47  todorov
-* Updated per latest changes.
-*
-* Revision 1.6  2006/11/17 05:36:51  todorov
-* hints -> stats
-*
-* Revision 1.5  2006/11/08 22:30:18  todorov
-* Using Dump() methods.
-*
-* Revision 1.4  2006/11/08 17:48:20  todorov
-* Included all latest aln stats.
-*
-* Revision 1.3  2006/10/17 21:54:55  todorov
-* Printing the query seq-id.
-*
-* Revision 1.2  2006/10/17 21:11:50  todorov
-* InsertAln returns bool for portability.
-*
-* Revision 1.1  2006/10/17 19:26:50  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/

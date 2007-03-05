@@ -120,38 +120,4 @@ CONN CreateAsnConn_Service
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2004/11/23 16:14:25  lavr
- * +<connect/ncbi_service_connector.h>
- *
- * Revision 1.8  2003/11/13 15:58:47  lavr
- * Guard macro changed
- *
- * Revision 1.7  2003/04/11 17:46:29  siyan
- * Added doxygen support
- *
- * Revision 1.6  2003/01/17 15:39:38  lavr
- * Slightly modify API description for clarity
- *
- * Revision 1.5  2002/03/14 22:45:45  vakatov
- * Warn against explicit destruction of ASN streams
- *
- * Revision 1.4  2001/12/02 21:17:28  lavr
- * Fix in comment
- *
- * Revision 1.3  2001/09/24 20:32:34  lavr
- * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
- *
- * Revision 1.2  2001/06/28 23:01:53  vakatov
- * Typo fixed (self-#include)
- *
- * Revision 1.1  2001/06/28 21:59:24  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CTOOLS___ASN_CONNECTION__H */

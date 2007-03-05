@@ -316,47 +316,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2005/06/13 15:44:53  grichenk
-* Implemented splitting of assembly. Added splitting of seqdesc objects
-* into multiple chunks.
-*
-* Revision 1.11  2004/10/18 14:00:17  vasilche
-* Updated splitter for new SeqSplit specs.
-*
-* Revision 1.10  2004/08/19 14:18:54  vasilche
-* Added splitting of whole Bioseqs.
-*
-* Revision 1.9  2004/08/05 18:25:42  vasilche
-* CAnnotName and CAnnotTypeSelector are moved in separate headers.
-*
-* Revision 1.8  2004/08/04 14:48:49  vasilche
-* Added exports for MSVC. Added joining of very small chunks with skeleton.
-*
-* Revision 1.7  2004/07/12 15:05:32  grichenk
-* Moved seq-id mapper from xobjmgr to seq library
-*
-* Revision 1.6  2004/07/01 15:42:59  vasilche
-* Put Seq-data of short sequences (proteins) tegether with annotations.
-*
-* Revision 1.5  2004/06/30 20:56:32  vasilche
-* Added splitting of Seqdesr objects (disabled yet).
-*
-* Revision 1.4  2004/06/15 14:05:49  vasilche
-* Added splitting of sequence.
-*
-* Revision 1.3  2004/01/07 17:36:20  vasilche
-* Moved id2_split headers to include/objmgr/split.
-* Fixed include path to genbank.
-*
-* Revision 1.2  2003/11/26 23:04:59  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:31  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_OBJECT_SPLITINFO__HPP

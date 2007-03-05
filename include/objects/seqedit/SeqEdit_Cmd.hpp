@@ -98,23 +98,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/01/26 17:34:30  didenko
-* Added NCBI_SEQEDIT_EXPORT specifier
-*
-* Revision 1.2  2006/01/26 16:19:02  dicuccio
-* Temporary fix: provide export specifier
-*
-* Revision 1.1  2006/01/25 17:10:59  didenko
-* Added Edit Commands ASN definition
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQEDIT_SEQEDIT_CMD_HPP
 /* Original file checksum: lines: 94, chars: 2601, CRC32: 155a5602 */

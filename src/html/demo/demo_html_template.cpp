@@ -319,22 +319,3 @@ int main(int argc, const char* argv[])
     // Execute main application function.
     return theDemoApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/05/17 20:59:56  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2004/02/10 18:49:38  ivanov
- * Get rid of compilation warning
- *
- * Revision 1.2  2004/02/02 15:14:26  ivanov
- * Lines wrapped at 79th column
- *
- * Revision 1.1  2004/02/02 14:34:00  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

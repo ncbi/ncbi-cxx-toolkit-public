@@ -56,24 +56,3 @@ BEGIN_SCOPE(align_refine)
 END_SCOPE(align_refine)
 
 #endif // AR_DIAGNOSTIC_DEFS__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2005/11/07 14:39:24  lanczyck
-* define a macro for plain info-level messages
-*
-* Revision 1.1  2005/06/28 13:45:25  lanczyck
-* block multiple alignment refiner code from internal/structure/align_refine
-*
-* Revision 1.4  2005/01/21 23:24:19  lanczyck
-* change info message define to use LOG_POST
-*
-* Revision 1.3  2004/09/03 22:19:52  lanczyck
-* add 'always accept' functionality to simulated annealer; tested w/ new block editor but not activated
-*
-* Revision 1.2  2004/06/22 19:53:01  lanczyck
-* fix message reporting; add a couple cmd options
-*
-*
-*/

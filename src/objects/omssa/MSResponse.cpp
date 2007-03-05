@@ -148,33 +148,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/05/25 17:11:56  lewisg
-* one filtered spectrum per precursor charge state
-*
-* Revision 1.6  2006/01/23 17:39:59  lewisg
-* fix csv header
-*
-* Revision 1.5  2005/11/08 22:08:14  lewisg
-* stop using depricated oid
-*
-* Revision 1.4  2005/11/07 19:57:20  lewisg
-* iterative search
-*
-* Revision 1.3  2005/10/27 17:12:04  lewisg
-* iterative search, addition to csv output
-*
-* Revision 1.2  2005/05/23 19:00:27  lewisg
-* don't output gi or accession if not available
-*
-* Revision 1.1  2005/05/09 18:28:54  mxu
-* add csv
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1890, CRC32: 485ecdcb */

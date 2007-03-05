@@ -123,15 +123,3 @@ meEdge *topFirstTraverse(meTree *T, meEdge *e)
 
 END_SCOPE(fastme)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2004/02/10 15:16:04  jcherry
- * Initial version
- *
- * ===========================================================================
- */

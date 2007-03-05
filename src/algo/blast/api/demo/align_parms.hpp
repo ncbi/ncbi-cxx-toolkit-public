@@ -98,21 +98,4 @@ private:
     TOptInteger m_NumAlgn;
 };
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2005/06/23 16:18:46  camacho
- * Doxygen fixes
- *
- * Revision 1.2  2005/02/22 14:25:33  camacho
- * Moved showalign.[hc]pp to objtools/blast_format
- *
- * Revision 1.1  2004/02/18 17:04:41  bealer
- * - Adapt blast_client code for Remote Blast API, merging code into the
- *   remote_blast demo application.
- *
- * ===========================================================================
- */
-
 #endif // ALGO_BLAST_API_DEMO___ALIGN_PARMS__HPP

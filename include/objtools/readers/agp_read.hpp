@@ -68,21 +68,3 @@ AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
 END_NCBI_SCOPE
 
 #endif  // OBJTOOLS_READERS___AGP_READ__HPP
-
-/*
- * =========================================================================
- * $Log$
- * Revision 1.4  2006/10/05 18:29:12  jcherry
- * Optionally set Seq-gap based on gap type and linkage in file
- *
- * Revision 1.3  2005/01/26 20:58:48  jcherry
- * More robust and controllable handling of component ids
- *
- * Revision 1.2  2004/08/19 13:07:53  dicuccio
- * Repositioned export specifier to precede function declaration's return value
- *
- * Revision 1.1  2003/12/08 15:49:33  jcherry
- * Initial version
- *
- * =========================================================================
- */

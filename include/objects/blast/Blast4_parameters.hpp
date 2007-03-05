@@ -179,21 +179,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/10/26 13:58:23  ucko
-* Drop extraneous CBlast4_parameters:: qualifiers from in-class
-* declarations per GCC 4.1; indent with spaces rather than tabs.
-*
-* Revision 1.1  2006/10/25 15:15:19  zaretska
-* Added Blast4_parameters helper functions
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BLAST_BLAST4_PARAMETERS_HPP
 /* Original file checksum: lines: 94, chars: 2723, CRC32: 4fd4a8e6 */

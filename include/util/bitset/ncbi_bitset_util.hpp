@@ -61,20 +61,4 @@ void BV_Serialize(const TBV&                   bv,
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.3  2006/12/14 19:05:25  kuznets
-* fixed typo
-*
-* Revision 1.2  2006/12/14 19:00:14  kuznets
-* fixed typo
-*
-* Revision 1.1  2006/12/13 20:25:19  kuznets
-* initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif /* UTIL___BITSET_UTIL__HPP */

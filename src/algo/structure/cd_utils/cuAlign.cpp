@@ -1589,21 +1589,3 @@ int GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err) {
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/11/01 17:45:42  lanczyck
- * add method:  ChangeSeqIdInSeqAlign
- *
- * Revision 1.3  2006/01/10 16:54:51  lanczyck
- * eliminate unused variable warnings
- *
- * Revision 1.2  2005/04/19 22:05:04  ucko
- * +<stdio.h> due to use of sprintf()
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- * ===========================================================================
- */

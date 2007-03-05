@@ -279,31 +279,3 @@ void CNSCWrapperExclusive::UnRegisterClient(unsigned short udp_port)
 */
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.5  2006/06/28 16:01:57  didenko
- * Redone job's exlusivity processing
- *
- * Revision 6.4  2006/05/22 18:11:43  didenko
- * Added an option to fail a job if a remote app returns non zore code
- *
- * Revision 6.3  2006/05/10 19:54:21  didenko
- * Added JobDelayExpiration method to CWorkerNodeContext class
- * Added keep_alive_period and max_job_run_time parmerter to the config
- * file of remote_app
- *
- * Revision 6.2  2006/02/27 14:50:21  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 6.1  2006/02/15 15:19:03  didenko
- * Implemented an optional possibility for a worker node to have a permanent connection
- * to a NetSchedule server.
- * To expedite the job exchange between a worker node and a NetSchedule server,
- * a call to CNetScheduleClient::PutResult method is replaced to a
- * call to CNetScheduleClient::PutResultGetJob method.
- *
- * ===========================================================================
- */
- 

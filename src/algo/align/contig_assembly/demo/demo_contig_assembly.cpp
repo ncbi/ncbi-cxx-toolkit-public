@@ -152,19 +152,3 @@ int main(int argc, char** argv)
 {
     return CDemoContigAssemblyApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/10 21:48:09  jcherry
- * Write out an annot rather than a series of alignments
- *
- * Revision 1.2  2006/10/10 20:28:59  jcherry
- * Take bandwidths as a parameter.  Change default minimum identity
- * from 0.98 to 0.985.
- *
- * Revision 1.1  2005/06/16 17:30:23  jcherry
- * Initial version
- *
- * ===========================================================================
- */

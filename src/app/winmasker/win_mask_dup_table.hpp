@@ -66,34 +66,4 @@ void CheckDuplicates( const vector< string > & input,
 
 END_NCBI_SCOPE
 
-/*
- * ========================================================================
- * $Log$
- * Revision 1.3  2005/11/21 16:49:15  morgulis
- * 1. Fixed a bug causing infinite loop in the case of empty genome.
- * 2. Added possibility to use substring matching with -ids and -exclude-ids
- *    options.
- *
- * Revision 1.2  2005/03/24 16:50:21  morgulis
- * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
- *
- * Revision 1.1  2005/02/25 21:32:54  dicuccio
- * Rearranged winmasker files:
- * - move demo/winmasker to a separate app directory (src/app/winmasker)
- * - move win_mask_* to app directory
- *
- * Revision 1.3  2005/02/12 20:24:39  dicuccio
- * Dropped use of std:: (not needed)
- *
- * Revision 1.2  2005/02/12 19:58:03  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
- */
-
 #endif
-

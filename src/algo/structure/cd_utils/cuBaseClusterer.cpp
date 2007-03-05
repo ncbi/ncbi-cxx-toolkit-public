@@ -98,27 +98,3 @@ void CBaseClusterer::ResetClusters(unsigned int dim) {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/07/08 01:26:25  ucko
-* Rework to avoid sprintf(), which hasn't necessarily been declared.
-*
-* Revision 1.1  2005/07/07 17:31:41  lanczyck
-* move refactored classes supporting non-redundification from CDTree to cd_utils
-*
-* Revision 1.3  2005/06/30 14:48:11  lanczyck
-* refactor base clusterer and criteria classes; make separate class hierarchy for non-redundifier items (vs. being a struct in the clusterer)
-*
-* Revision 1.2  2005/03/03 20:07:28  lanczyck
-* change how initializing vector of clusters
-*
-* Revision 1.1  2005/02/23 20:08:57  lanczyck
-* initial checkin:  files for new non-redundifier
-*
-*
-* ===========================================================================
-*/
-

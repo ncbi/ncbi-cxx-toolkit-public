@@ -164,24 +164,4 @@ private:
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-#endif 
-
-/* 
- * ===========================================================================
- * 
- * $Log$
- * Revision 1.4  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2006/05/18 20:01:14  cliu
- * To enable read-only SeqTreeAPI
- *
- * Revision 1.2  2005/06/21 13:10:20  cliu
- * add tree layout.
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- * 
- * ===========================================================================
- */
+#endif

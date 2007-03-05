@@ -459,31 +459,3 @@ int main(int argc, const char* argv[])
 {
     return CTestApp().AppMain(argc, argv);
 }
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2006/05/05 14:59:24  vasilche
-* Added printing difference in error messages.
-*
-* Revision 1.5  2006/02/24 19:28:21  ivanov
-* All test must include <test/test_assert.h>
-*
-* Revision 1.4  2005/11/01 16:50:54  grichenk
-* Added test for annot-ci.
-* Do not check order of objects in the tests.
-*
-* Revision 1.3  2005/10/27 16:48:49  grichenk
-* Redesigned CTreeNode (added search methods),
-* removed CPairTreeNode.
-*
-* Revision 1.2  2005/10/25 16:15:34  ucko
-* Explicitly tag CTestResult<string>::Check with EMPTY_TEMPLATE.
-*
-* Revision 1.1  2005/10/24 22:04:07  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/

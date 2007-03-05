@@ -80,29 +80,3 @@ public:
 END_SCOPE(struct_util)
 
 #endif // SU_SEQUENCE_SET__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/08/09 18:38:10  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.1  2004/06/14 13:49:16  thiessen
-* make BlockMultipleAlignment and Sequence classes public
-*
-* Revision 1.5  2004/05/28 09:46:57  thiessen
-* restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
-*
-* Revision 1.4  2004/05/27 21:34:08  thiessen
-* add PSSM calculation (requires C-toolkit)
-*
-* Revision 1.3  2004/05/25 16:12:30  thiessen
-* fix GCC warnings
-*
-* Revision 1.2  2004/05/25 15:52:18  thiessen
-* add BlockMultipleAlignment, IBM algorithm
-*
-* Revision 1.1  2004/05/24 23:04:05  thiessen
-* initial checkin
-*
-*/

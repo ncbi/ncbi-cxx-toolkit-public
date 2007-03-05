@@ -60,22 +60,4 @@
 #  error Configuration-specific <ncbiconf.h> not found; check your search path.
 #endif
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2004/06/18 15:39:07  ucko
- * Support using a canned ncbiconf.h with xcode.
- *
- * Revision 1.2  2003/09/23 20:44:40  ucko
- * Fix the C++-style comment that slipped in.
- * Add a long comment explaining how to avoid triggering the #error on Unix.
- *
- * Revision 1.1  2003/09/23 15:56:50  ucko
- * Added as a smart forwarding header; should do away with the need to
- * copy a version in when using project files.
- *
- * ===========================================================================
- */
-
 #endif  /* FORWARDING_NCBICONF_H */

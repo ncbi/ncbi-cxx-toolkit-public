@@ -205,30 +205,3 @@ string CFastaIOWrapper::GetRawSequence(unsigned int index) const
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/11/02 01:19:54  ucko
- * GetNumRead(): support WorkShop's nonstandard (archaic) signature for count().
- *
- * Revision 1.6  2006/11/01 21:37:09  ucko
- * +<algorithm> for count(); get rid of DOS/Windows line endings.
- *
- * Revision 1.5  2006/11/01 17:35:50  lanczyck
- * add methods to access raw/active fasta strings
- *
- * Revision 1.4  2006/10/12 15:08:48  lanczyck
- * deprecate use of old ReadFasta method in favor of CFastaReader class
- *
- * Revision 1.3  2006/09/07 17:35:24  lanczyck
- * fixes so can read in file w/ a single sequence
- *
- * Revision 1.2  2006/07/07 16:54:46  lanczyck
- * use a try/catch around ReadFasta; modify diagnostic level altering code
- *
- * Revision 1.1  2006/03/29 15:44:07  lanczyck
- * add files for fasta->cd converter; change Makefile accordingly
- *
- * ===========================================================================
- */

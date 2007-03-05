@@ -99,29 +99,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/10/06 19:43:08  camacho
- * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
- * Fixes problem with uninitializes program and service name for CRemoteBlast.
- *
- * Revision 1.5  2004/05/21 21:41:02  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.4  2004/03/19 15:13:34  camacho
- * Move to doxygen group AlgoBlast
- *
- * Revision 1.3  2004/01/16 21:49:27  bealer
- * - Add locality flag for Blast4 API
- *
- * Revision 1.2  2003/12/03 16:42:33  dondosha
- * SetDbGeneticCode takes care of setting both integer and string now
- *
- * Revision 1.1  2003/11/26 18:24:01  camacho
- * +Blast Option Handle classes
- *
- * ===========================================================================
- */

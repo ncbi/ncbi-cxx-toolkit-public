@@ -1,4 +1,3 @@
-
 #ifndef OBJECTS_ALNMGR___ALNMATCH__HPP
 #define OBJECTS_ALNMGR___ALNMATCH__HPP
 
@@ -141,25 +140,5 @@ public:
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/08/03 18:18:44  jcherry
-* Added export specifiers
-*
-* Revision 1.3  2005/07/25 20:32:26  todorov
-* Added genetic code params to TCalcScoreMethod
-*
-* Revision 1.2  2005/06/22 22:14:33  todorov
-* Added an option to process stronger input alns first
-*
-* Revision 1.1  2005/03/01 17:28:49  todorov
-* Rearranged CAlnMix classes
-*
-* ===========================================================================
-*/
 
 #endif // OBJECTS_ALNMGR___ALNMATCH__HPP

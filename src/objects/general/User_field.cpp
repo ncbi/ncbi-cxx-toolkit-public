@@ -337,40 +337,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2006/04/05 14:00:12  dicuccio
-* Added additional check to see if the final field lands on the current object
-*
-* Revision 1.7  2005/03/16 13:40:00  rsmith
-* Add DeleteField() method.
-*
-* Revision 1.6  2005/02/22 20:02:45  rsmith
-* Do not allow a subkey to overwrite a leaf key
-*
-* Revision 1.5  2005/02/07 15:51:08  dicuccio
-* Revert previous commit pending review
-*
-* Revision 1.4  2005/02/04 18:52:32  rsmith
-* When accessing user fields, match a user field if and only if both the key and
-* the user field have lower levels.
-*
-* Revision 1.3  2004/12/06 23:00:39  ucko
-* GetFieldRef: when encountering unexpected structures, return null
-* rather than generating CInvalidChoiceSelection.
-*
-* Revision 1.2  2004/11/24 15:55:19  dicuccio
-* Fixed bugs in identifying last iterator; fixed handling of tail fields (favor
-* tags not fields)
-*
-* Revision 1.1  2004/11/22 16:03:19  dicuccio
-* Added subfield access to a user field, with delimited hierarchichal access; the
-* API is similar to that in CUser_object
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1886, CRC32: 5dc82940 */

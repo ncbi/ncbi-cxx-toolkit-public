@@ -64,18 +64,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/08/19 13:04:16  dicuccio
-* Dropped export specifiers on exceptions.  Included ncbistr for CParseException
-*
-* Revision 1.1  2003/02/24 20:04:09  gouriano
-* use template-based exceptions instead of errno and parse exceptions
-*
-*
-* ===========================================================================
-*/
-
 #endif // NCBI_GENERAL_EXCEPTION__HPP

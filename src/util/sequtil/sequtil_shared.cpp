@@ -193,17 +193,3 @@ size_t GetBasesPerByte(CSeqUtil::TCoding coding)
 
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/05/17 21:08:53  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/10/08 13:36:10  shomrat
-* Initial version
-*
-*
-* ===========================================================================
-*/

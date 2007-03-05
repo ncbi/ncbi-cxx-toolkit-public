@@ -159,18 +159,3 @@ void CLDS_Manager::DeleteDB()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/05 15:02:05  didenko
- * Added an implementation for DeleteDB method
- *
- * Revision 1.2  2006/10/03 14:45:26  didenko
- * gcc 2.95 does not support auto_ptrs assignment. Replaced with reset - release calls
- *
- * Revision 1.1  2006/10/02 14:36:48  didenko
- * Added new class CLDS_Manager to replace CLDS_Managemnt class
- *
- * ===========================================================================
-*/

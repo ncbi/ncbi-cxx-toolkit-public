@@ -140,20 +140,3 @@ int CReadresult::Run()
 	
     return 0;
 }
-
-
-
-/*
-$Log$
-Revision 1.3  2004/05/21 21:41:03  gorelenk
-Added PCH ncbi_pch.hpp
-
-Revision 1.2  2003/10/29 22:22:50  lewisg
-added comments
-
-Revision 1.1  2003/10/27 20:10:56  lewisg
-demo program to read out omssa results
-
-  
-	
-*/

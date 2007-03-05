@@ -90,50 +90,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.12  2005/09/14 17:46:11  lewisg
-* treat n-term methionine cut as cleavage
-*
-* Revision 1.11  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-* Revision 1.10  2004/12/07 23:38:22  lewisg
-* add modification handling code
-*
-* Revision 1.9  2004/11/30 23:39:57  lewisg
-* fix interval query
-*
-* Revision 1.8  2004/11/17 23:42:11  lewisg
-* add cterm pep mods, fix prob for tophitnum
-*
-* Revision 1.7  2004/11/01 22:04:01  lewisg
-* c-term mods
-*
-* Revision 1.6  2004/06/23 22:34:36  lewisg
-* add multiple enzymes
-*
-* Revision 1.5  2004/06/21 21:19:27  lewisg
-* new mods (including n term) and sample perl parser
-*
-* Revision 1.4  2004/06/08 19:46:21  lewisg
-* input validation, additional user settable parameters
-*
-* Revision 1.3  2004/05/27 20:52:15  lewisg
-* better exception checking, use of AutoPtr, command line parsing
-*
-* Revision 1.2  2004/03/04 02:22:49  lewisg
-* add msvc defines
-*
-* Revision 1.1  2004/03/01 18:24:07  lewisg
-* better mod handling
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSMOD_HPP
 /* Original file checksum: lines: 63, chars: 1907, CRC32: 6c23d0ae */

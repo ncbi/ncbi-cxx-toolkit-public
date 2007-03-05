@@ -92,33 +92,3 @@ public:
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.5  2005/08/30 14:35:19  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * Revision 1.4  2005/04/13 13:47:48  dicuccio
- * Added export specifiers.  White space changes: reindented class body
- *
- * Revision 1.3  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * Revision 1.2  2005/03/30 17:53:54  ivanov
- * Added export specifiers
- *
- * Revision 1.1  2005/03/28 22:41:06  morgulis
- * Moved win_mask_ustat* files to library and renamed them.
- *
- * Revision 1.1  2005/03/28 21:33:26  morgulis
- * Added -sformat option to specify the output format for unit counts file.
- * Implemented framework allowing usage of different output formats for
- * unit counts. Rewrote the code generating the unit counts file using
- * that framework.
- *
- * ========================================================================
- */

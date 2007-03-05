@@ -95,24 +95,3 @@ private:
 END_SCOPE(align_refine)
 
 #endif // BMA_REFINER_APP__HPP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/14 17:02:26  lanczyck
- * add version to app
- *
- * Revision 1.2  2006/03/27 16:44:49  lanczyck
- * add selection-order option; modify parameter printing; fix block freezing for consistency between LOO and BE phases
- *
- * Revision 1.1  2005/06/28 13:44:35  lanczyck
- * block multiple alignment refiner code from internal/structure/align_refine
- *
- * Revision 1.2  2005/05/26 18:49:52  lanczyck
- * consistent results w/ original version:  bug fixes; modify messages for consistency
- *
- * Revision 1.1  2005/05/24 22:31:43  lanczyck
- * initial versions:  app builds but not yet tested
- *
- * ===========================================================================
- */

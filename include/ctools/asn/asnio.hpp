@@ -30,31 +30,6 @@
 *
 * File Description:
 *   ASN.1 <-> memory buffer converter
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2001/10/15 22:49:42  vakatov
-* AsnMemoryWrite::Size() -- get rid of the meaningless "const" qualifier
-*
-* Revision 1.5  1999/10/21 16:57:05  golikov
-* AsnMemoryWrite mode param added
-*
-* Revision 1.4  1999/10/21 16:20:38  golikov
-* Mode param added
-*
-* Revision 1.3  1999/04/14 19:11:48  vakatov
-* Added "LIBCALLBACK" to AsnRead/Write proto (MSVC++ feature)
-*
-* Revision 1.2  1999/04/14 17:25:45  vasilche
-* Fixed warning about mixing pointers to "C" and "C++" functions.
-*
-* Revision 1.1  1999/02/17 22:03:08  vasilche
-* Assed AsnMemoryRead & AsnMemoryWrite.
-* Pager now may return NULL for some components if it contains only one
-* page.
-*
-* 
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>

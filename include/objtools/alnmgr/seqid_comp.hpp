@@ -95,23 +95,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/11/22 00:47:17  todorov
-* Fixed the usage of CompareOrdered
-*
-* Revision 1.3  2006/11/20 18:48:02  todorov
-* + const
-*
-* Revision 1.2  2006/10/17 21:25:32  todorov
-* + #include <objmgr/scope.hpp>
-*
-* Revision 1.1  2006/10/17 19:24:15  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
 #endif  // OBJTOOLS_ALNMGR___SEQID_COMP__HPP

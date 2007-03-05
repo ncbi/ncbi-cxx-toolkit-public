@@ -68,30 +68,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/06/24 15:16:44  gouriano
-* Added version info
-*
-* Revision 1.5  2005/06/07 19:21:48  gouriano
-* Allow multiple -m and -M command line arguments
-*
-* Revision 1.4  2005/04/13 15:56:07  gouriano
-* Handle paths with spaces
-*
-* Revision 1.3  2003/05/23 19:19:08  gouriano
-* modules of unknown type are assumed to be ASN
-* all modules must have the same type
-*
-* Revision 1.2  2002/08/06 17:03:47  ucko
-* Let -opm take a comma-delimited list; move relevant CVS logs to end.
-*
-* Revision 1.1  2000/11/27 18:19:30  vasilche
-* Datatool now conforms CNcbiApplication requirements.
-*
-* ===========================================================================
-*/
-
 #endif  /* DATATOOL__HPP */

@@ -103,21 +103,3 @@ int main(int argc, const char* argv[])
 {
     return CTestDateApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/05/19 17:22:13  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.2  2002/10/08 20:25:23  ucko
-* Make sure that passing booleans and string literals to GetDate works properly.
-*
-* Revision 1.1  2002/10/04 14:45:10  ucko
-* Add a generic date formatter with flexible support for missing fields.
-*
-*
-* ===========================================================================
-*/

@@ -226,26 +226,3 @@ void CCpGIslands::MergeIslesWithin(TSeqPos range)
 }
 
 END_NCBI_SCOPE
-
-/*===========================================================================
-* $Log$
-* Revision 1.6  2004/11/03 17:33:51  kskatz
-* Added a check to MergeIslesWithin() that will only do the merge if after merging the resulting composite would still pass the required thresholds of m_GC and m_CpG
-*
-* Revision 1.5  2004/11/01 16:19:50  kskatz
-* Changed CpGIslands constructor arguments "GC" and "CpG" from double to unsigned int
-*
-* Revision 1.4  2004/05/21 21:41:04  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.3  2003/12/12 20:05:19  johnson
-* refactoring to accommodate MSVC 7
-*
-* Revision 1.2  2003/07/21 15:53:35  johnson
-* added reference in header comment
-*
-* Revision 1.1  2003/06/17 15:33:33  johnson
-* initial revision
-*
-*============================================================================
-*/

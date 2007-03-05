@@ -101,39 +101,4 @@ MakeBioTreeContainer(const TPhyTreeNode *tree);
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2005/08/09 19:32:21  jcherry
- * Removed pointless #include of alignment_file.hpp, along with corresponding
- * commented-out method
- *
- * Revision 1.8  2005/02/16 15:42:55  jcherry
- * Made tree-building methods throw if distance matrix contains
- * NaNs or Infs.  Added CDistMethods::AllFinite to check this.
- *
- * Revision 1.7  2004/07/01 21:11:23  jcherry
- * Added export specifier
- *
- * Revision 1.6  2004/07/01 19:44:53  jcherry
- * Added function for making CBioTreeContainer from TPhyTreeNode
- *
- * Revision 1.5  2004/02/19 16:43:46  jcherry
- * Temporarily disable one form of Divergence() method
- *
- * Revision 1.4  2004/02/19 13:21:58  dicuccio
- * Roll back to version 1.2
- *
- * Revision 1.2  2004/02/10 17:02:28  dicuccio
- * Formatting changes.  Added export specifiers
- *
- * Revision 1.1  2004/02/10 15:15:56  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-
-
 #endif  // ALGO_PHY_TREE___DIST_METHODS__HPP

@@ -116,27 +116,3 @@ void CFileObsolete::Remove(const string&  mask,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/02/01 21:47:15  grichenk
- * Fixed warnings
- *
- * Revision 1.4  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2004/01/09 17:57:15  lavr
- * Resolve signed/unsigned comparison issues
- * Avoid file removal should Remove() get bad "tmode"
- *
- * Revision 1.2  2003/12/05 18:50:23  kuznets
- * Fixed potential overflow on unsigned int arithmetics
- *
- * Revision 1.1  2003/12/01 15:46:48  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

@@ -313,21 +313,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2007/01/09 22:12:04  vasilche
- * Use exact pair<> type for WorkShop.
- *
- * Revision 1.3  2006/11/30 11:07:17  kuznets
- * added BLOB read from the merge store (merge-update)
- *
- * Revision 1.2  2006/11/20 16:31:48  kuznets
- * Fixed buffer leak in the demo code
- *
- * Revision 1.1  2006/11/17 07:30:47  kuznets
- * initial revision
- *
- * ===========================================================================
- */

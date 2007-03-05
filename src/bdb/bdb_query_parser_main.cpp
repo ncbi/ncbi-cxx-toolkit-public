@@ -213,31 +213,3 @@ void BDB_ParseQuery(const char* query_str, CBDB_Query* query)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2005/06/03 16:43:46  lavr
- * bdb_query_lexer.cpp -> bdb_query_lexer.inc
- *
- * Revision 1.6  2005/02/02 19:49:54  grichenk
- * Fixed more warnings
- *
- * Revision 1.5  2004/05/17 20:55:11  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.4  2004/03/10 16:19:24  kuznets
- * Improved parser to handle single word requests
- *
- * Revision 1.3  2004/02/25 13:40:39  kuznets
- * + CBDB_QueryParserEnvironment::Skip
- *
- * Revision 1.2  2004/02/24 19:26:14  kuznets
- * Fix compilation(GCC & SUN Workshop)
- *
- * Revision 1.1  2004/02/24 16:37:38  kuznets
- * Initial revision
- *
- *
- * ==========================================================================
- */

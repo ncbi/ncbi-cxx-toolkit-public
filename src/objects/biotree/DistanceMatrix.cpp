@@ -211,21 +211,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/06/08 18:08:08  jcherry
-* Made AsMatrix const
-*
-* Revision 1.2  2006/06/01 15:52:13  jcherry
-* BUGZID: 507  Added method to read format used by Phylip
-*
-* Revision 1.1  2006/05/15 15:38:37  jcherry
-* Initial version: provide interconversion with CNcbiMatrix<double>
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1906, CRC32: af87b363 */

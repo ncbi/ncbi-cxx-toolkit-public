@@ -177,37 +177,3 @@ SAnnotTypeSelector CAnnotType_Index::GetTypeSelector(size_t index)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2006/11/14 19:21:58  vasilche
-* Added feature ids index and retrieval.
-*
-* Revision 1.8  2006/09/18 14:29:29  vasilche
-* Store annots indexing information to allow reindexing after modification.
-*
-* Revision 1.7  2006/02/14 15:47:41  grichenk
-* Added methods for collecting types of annotations.
-*
-* Revision 1.6  2005/05/23 14:09:55  grichenk
-* Fixed indexing of feature types
-*
-* Revision 1.5  2004/09/30 18:38:12  vasilche
-* Added thread safety to CAnnot_Index::x_InitIndexTables().
-*
-* Revision 1.4  2004/08/05 18:26:15  vasilche
-* CAnnotName and CAnnotTypeSelector are moved in separate headers.
-*
-* Revision 1.3  2004/05/21 21:42:12  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.2  2004/03/16 15:47:27  vasilche
-* Added CBioseq_set_Handle and set of EditHandles
-*
-* Revision 1.1  2004/02/04 18:03:21  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/

@@ -63,16 +63,4 @@ void NodeToDistMat(const CBioTreeDynamic::CBioNode& node,
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/06/19 14:17:37  jcherry
- * BUGZID: 508  Initial version
- *
- * ===========================================================================
- */
-
-
 #endif  // ALGO_PHY_TREE___TREE_TO_DIST_MAT__HPP

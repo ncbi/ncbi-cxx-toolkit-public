@@ -111,30 +111,3 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
 END_NCBI_SCOPE
 
 /* @} */
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/19 19:41:06  didenko
- * Spelling fix
- *
- * Revision 1.4  2006/02/27 14:50:21  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.3  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.2  2005/08/15 21:05:50  ucko
- * Adjust for CNetScheduleStorageFactory_NetCache API changes.
- *
- * Revision 1.1  2005/05/25 14:09:39  didenko
- * Added helper function for redirecting cgi's to cgi_tunnel2grid.cgi
- *
- * ===========================================================================
- */

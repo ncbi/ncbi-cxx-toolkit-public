@@ -298,17 +298,3 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log: netschedule_api_submitter.cpp,v $
- * Revision 6.2  2007/01/10 16:01:56  ucko
- * +<stdio.h> for sprintf(); tweak for GCC 2.95's string implementation,
- * whose operator [] const returns a value rather than a reference.
- *
- * Revision 6.1  2007/01/09 15:29:55  didenko
- * Added new API for NetSchedule service
- *
- * ===========================================================================
- */

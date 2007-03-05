@@ -50,38 +50,3 @@ public:
 END_NCBI_SCOPE
 
 #endif // CAV_MAIN__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2003/03/19 19:05:42  thiessen
-* move again
-*
-* Revision 1.1  2003/03/19 05:33:43  thiessen
-* move to src/app/cddalignview
-*
-* Revision 1.8  2003/02/03 17:52:03  thiessen
-* move CVS Log to end of file
-*
-* Revision 1.7  2003/01/21 12:32:23  thiessen
-* move includes into src dir
-*
-* Revision 1.6  2002/11/08 19:38:15  thiessen
-* add option for lowercase unaligned in FASTA
-*
-* Revision 1.5  2001/01/29 18:13:41  thiessen
-* split into C-callable library + main
-*
-* Revision 1.4  2001/01/25 20:18:39  thiessen
-* fix in-memory asn read/write
-*
-* Revision 1.3  2001/01/25 00:50:51  thiessen
-* add command-line args; can read asn data from stdin
-*
-* Revision 1.2  2001/01/22 15:54:11  thiessen
-* correctly set up ncbi namespacing
-*
-* Revision 1.1  2001/01/22 13:15:52  thiessen
-* initial checkin
-*
-*/

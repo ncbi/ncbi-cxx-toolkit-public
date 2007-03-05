@@ -98,15 +98,3 @@ void CSeqMaskerOstatBin::doSetParam( const string & name, Uint4 value )
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2005/04/12 22:17:03  ucko
- * s/ios_base/IOS_BASE/ for portability, at least to GCC 2.95.
- *
- * Revision 1.1  2005/04/12 13:35:34  morgulis
- * Support for binary format of unit counts file.
- *
- * ========================================================================
- */

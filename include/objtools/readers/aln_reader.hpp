@@ -316,36 +316,3 @@ void CAlnReader::SetAllGap(const string& value)
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___ALN_READER__HPP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/09/26 18:36:34  bollin
- * added CAlnErrror class
- *
- * Revision 1.4  2006/09/13 18:37:18  bollin
- * added methods to allow access to errors and warnings from alignment reading,
- * added flag to indicate whether "alignment" being read is a guess - stricter
- * rules apply in this case
- *
- * Revision 1.3  2005/04/26 17:28:12  dicuccio
- * Added Fasta + Gap API
- *
- * Revision 1.2  2004/03/01 15:26:32  dicuccio
- * Code clean-up.  Added enum for standard alphabets.  Added new APIs to set
- * standard parameters for other alignment types (implemented with unclear details
- * currently).  Added better exception handling.
- *
- * Revision 1.1  2004/02/19 16:55:27  todorov
- * File moved from util/creaders and renamed to aln_reader
- *
- * Revision 1.2  2004/02/18 22:29:17  todorov
- * Converted to single class. Added methods for creating Seq-align and Seq-entry. A working version, but still need to polish: seq-ids, na/aa recognition, etc.
- *
- * Revision 1.1  2004/02/09 16:02:36  jcherry
- * Initial versionnnn
- *
- * ===========================================================================
- */
-
-

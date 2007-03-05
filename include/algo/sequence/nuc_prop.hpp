@@ -68,28 +68,3 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___NUC_PROP__HPP
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2003/08/18 17:23:34  jcherry
- * Changed string parameter to be passed by reference.
- *
- * Revision 1.5  2003/08/04 15:43:20  dicuccio
- * Modified export specifiers to be more flexible
- *
- * Revision 1.4  2003/07/28 11:54:02  dicuccio
- * Changed calling semantics of Int2Nmer to use std::string
- *
- * Revision 1.3  2003/07/01 19:00:44  ucko
- * Drop gratuitous GUI header inclusion; minor formal cleanups
- *
- * Revision 1.2  2003/07/01 17:31:25  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.1  2003/07/01 15:11:24  jcherry
- * Initial versions of nuc_prop and prot_prop
- *
- * ===========================================================================
- */

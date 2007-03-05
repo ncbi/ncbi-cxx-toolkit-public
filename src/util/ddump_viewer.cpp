@@ -1,4 +1,3 @@
-
 /*  $Id$
  * ===========================================================================
  *
@@ -231,34 +230,3 @@ void CDebugDumpViewer::Bpt(
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/02/28 19:15:49  gouriano
- * MSVC x64 tuneup
- *
- * Revision 1.7  2006/02/06 16:07:34  ivanov
- * Use 0 instead of NStr::fStringToNumDefault
- *
- * Revision 1.6  2005/08/04 11:23:29  ivanov
- * Use "flag" version of NStr::StringToULong()
- *
- * Revision 1.5  2005/02/01 21:47:15  grichenk
- * Fixed warnings
- *
- * Revision 1.4  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2002/06/04 16:34:58  gouriano
- * added possibility to enable/disable debug dump breakpoints from registry
- *
- * Revision 1.2  2002/06/03 20:37:52  gouriano
- * added include <typeinfo>
- *
- * Revision 1.1  2002/06/03 20:25:32  gouriano
- * added debug dump viewer class
- *
- *
- * ===========================================================================
- */

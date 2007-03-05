@@ -210,23 +210,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.3  2004/05/10 19:47:39  gorelenk
- * Changed CreateFrom in CProjectItemsTree.
- *
- * Revision 1.2  2004/03/18 17:41:03  gorelenk
- * Aligned classes member-functions parameters inside declarations.
- *
- * Revision 1.1  2004/03/02 16:35:16  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__PROJ_TREE__HPP
-

@@ -213,45 +213,4 @@ int CGridClientSampleApp::Run(void)
 int main(int argc, const char* argv[])
 {
     return CGridClientSampleApp().AppMain(argc, argv);
-} 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/10/02 18:10:58  didenko
- * added pm and nopc command line parameters
- *
- * Revision 1.10  2006/06/19 19:41:06  didenko
- * Spelling fix
- *
- * Revision 1.9  2006/03/15 21:59:54  ucko
- * +<algorithm> for remove().
- *
- * Revision 1.8  2006/03/15 17:39:33  didenko
- * Added jobs parameter
- *
- * Revision 1.7  2005/04/18 13:36:15  didenko
- * Changed program version
- *
- * Revision 1.6  2005/04/07 16:49:29  didenko
- * + Program Version checking
- *
- * Revision 1.5  2005/03/28 15:01:37  didenko
- * Added some comments
- *
- * Revision 1.4  2005/03/28 14:54:01  didenko
- * Added job cancelation check
- *
- * Revision 1.3  2005/03/25 16:29:38  didenko
- * Rewritten to use new Grid Client framework
- *
- * Revision 1.2  2005/03/24 15:35:35  didenko
- * Made it compile on Unixes
- *
- * Revision 1.1  2005/03/24 15:10:41  didenko
- * Added samples for Worker node framework
- *
- * ===========================================================================
- */
- 
+}

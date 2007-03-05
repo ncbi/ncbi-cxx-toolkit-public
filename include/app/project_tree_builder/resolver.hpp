@@ -83,32 +83,4 @@ string FilterDefine(const string& define);
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/08/01 16:01:43  gouriano
- * Corrected macro resolving
- *
- * Revision 1.8  2005/09/15 18:25:04  gouriano
- * Recognize and process local (within a single makefile) macros
- *
- * Revision 1.7  2005/07/06 19:12:39  gouriano
- * Recognize and process macros inside a larger string
- *
- * Revision 1.6  2004/07/20 13:39:29  gouriano
- * Added conditional macro definition
- *
- * Revision 1.5  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.4  2004/02/04 23:11:43  gorelenk
- * StripDefine helper promoted to class CSymResolver member. FilterDefine was
- * moved here from proj_src_resolver.cpp module.
- *
- * Revision 1.3  2004/01/22 17:57:09  gorelenk
- * first version
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__RESOLVER__HPP

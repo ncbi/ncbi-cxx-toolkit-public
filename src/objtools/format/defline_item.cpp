@@ -82,27 +82,3 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2004/08/19 16:29:34  shomrat
-* Fixed defline format
-*
-* Revision 1.4  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.3  2004/04/22 15:55:41  shomrat
-* Changes in context
-*
-* Revision 1.2  2003/12/18 17:43:32  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:19:43  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

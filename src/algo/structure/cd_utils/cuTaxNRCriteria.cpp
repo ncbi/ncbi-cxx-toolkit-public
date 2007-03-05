@@ -260,31 +260,3 @@ bool CTaxNRCriteria::ConnectToServer() {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/10/18 17:05:46  lanczyck
-* update isTaxConnected flag when connect to server
-*
-* Revision 1.5  2005/08/23 20:53:47  lanczyck
-* add a ConnectToServer method; accompanying changes when initializing m_taxClient
-*
-* Revision 1.4  2005/07/18 19:13:39  lanczyck
-* add m_shouldMatch member to toggle whether do or do not want identified priority nodes;
-* add a pair of convenience methods to extract items & ids;
-* improve messages
-*
-* Revision 1.3  2005/07/14 14:51:34  lanczyck
-* add new ctor
-*
-* Revision 1.2  2005/07/13 19:46:32  lanczyck
-* minor mods to remove compiler warnings
-*
-* Revision 1.1  2005/07/07 17:31:41  lanczyck
-* move refactored classes supporting non-redundification from CDTree to cd_utils
-*
-*
-* ===========================================================================
-*/

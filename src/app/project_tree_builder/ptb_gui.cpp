@@ -136,18 +136,3 @@ bool  CProjBulderApp::ConfirmConfiguration(void)
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/02/21 15:44:34  gouriano
- * Use 64bits-compatible code
- *
- * Revision 1.1  2005/05/09 17:01:46  gouriano
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
-

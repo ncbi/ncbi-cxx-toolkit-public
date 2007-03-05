@@ -65,17 +65,3 @@ void SetDiagUserAndHost(TDiagUserAndHost flags)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2006/06/15 02:45:37  lavr
- * Use CORE_GetUsername, now from <ncbi_util.h>
- *
- * Revision 1.1  2006/01/30 19:55:27  grichenk
- * Initial revision
- *
- * ===========================================================================
- */

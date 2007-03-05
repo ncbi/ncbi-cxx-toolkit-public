@@ -54,21 +54,3 @@ objects/general/uoconv.hpp
 objects/general/NCBI_General_module.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/03/15 15:34:57  jcherry
- * Adjusted header list
- *
- * Revision 1.3  2005/10/27 12:37:18  jcherry
- * Added *_module.hpp
- *
- * Revision 1.2  2005/08/03 14:57:10  jcherry
- * Added headers
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

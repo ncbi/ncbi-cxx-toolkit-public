@@ -171,23 +171,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif   //  CDT_SCORING_MATRIX__HPP
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2006/02/06 16:38:49  cliu
- * remove c dependency
- *
- * Revision 1.2  2005/06/03 16:20:29  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

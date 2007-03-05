@@ -322,30 +322,3 @@ MasterSlaveAlignment::MasterSlaveAlignment(const ncbi::objects::CSeq_align& seqA
 }
 
 END_SCOPE(struct_util)
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2004/06/14 13:49:51  thiessen
-* make BlockMultipleAlignment and Sequence classes public
-*
-* Revision 1.6  2004/05/26 14:45:11  gorelenk
-* UNALIGNED->eUnaligned
-*
-* Revision 1.5  2004/05/26 01:58:05  ucko
-* Move #include <corelib/ncbi_limits.hpp> to su_alignment_set.hpp.
-*
-* Revision 1.4  2004/05/25 21:23:03  ucko
-* Remove definition of MasterSlaveAlignment::UNALIGNED (now part of an enum)
-*
-* Revision 1.3  2004/05/25 16:12:30  thiessen
-* fix GCC warnings
-*
-* Revision 1.2  2004/05/25 15:52:17  thiessen
-* add BlockMultipleAlignment, IBM algorithm
-*
-* Revision 1.1  2004/05/24 23:04:05  thiessen
-* initial checkin
-*
-*/

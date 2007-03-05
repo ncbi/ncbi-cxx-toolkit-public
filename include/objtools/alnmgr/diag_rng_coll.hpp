@@ -140,30 +140,4 @@ void CDiagRngColl::TrimSecondTo(TAlnRng& rng, int trim)
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2006/11/14 20:35:35  todorov
-* Trim methods are static; m_Extender is mutable.
-*
-* Revision 1.5  2006/11/06 19:56:51  todorov
-* Eliminated basewidths.  Positions are stored in pseudo coords.
-*
-* Revision 1.4  2006/10/19 18:49:47  todorov
-* Fixed a typo.
-*
-* Revision 1.3  2006/10/19 17:21:14  todorov
-* Added exceptions.
-*
-* Revision 1.2  2006/10/19 17:18:05  todorov
-* A few minor fixes.
-*
-* Revision 1.1  2006/10/19 17:07:07  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
-
 #endif // UTIL__DIAG_RNG_COLL__HPP

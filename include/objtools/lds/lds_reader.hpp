@@ -55,28 +55,4 @@ NCBI_LDS_EXPORT LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/10/20 15:33:46  kuznets
- * Implemented duplicate id check
- *
- * Revision 1.5  2005/01/13 17:38:00  kuznets
- * LoadTSE added trace to top level entry option
- *
- * Revision 1.4  2003/07/14 19:46:26  kuznets
- * + annotation reading function
- *
- * Revision 1.3  2003/06/11 15:35:44  kuznets
- * + DLL export/import specifier
- *
- * Revision 1.2  2003/06/09 18:05:12  kuznets
- * Changed prototype of the CSeq_entry reading function (LDS_LoadTSE)
- *
- * Revision 1.1  2003/06/06 20:01:45  kuznets
- * Initial revision.
- *
- * ===========================================================================
- */
-
 #endif

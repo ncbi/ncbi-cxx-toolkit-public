@@ -90,25 +90,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/02/23 19:40:53  hassant
-* Changed GetLabel to use GeneID as prefix instead of GeneId
-*
-* Revision 1.3  2006/01/27 19:17:59  hassant
-* Updated GetLabel to a default gene name (Unknown) in case geneid is missing
-*
-* Revision 1.2  2006/01/25 18:15:52  ucko
-* Move x_GetGeneidLabel up for the sake of WorkShop 5.3, which insists
-* that inline functions must be defined before they are called.
-*
-* Revision 1.1  2006/01/24 22:48:05  hassant
-* Added method GetLabel that implements the logic for getting gene label
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1891, CRC32: 815c60b3 */

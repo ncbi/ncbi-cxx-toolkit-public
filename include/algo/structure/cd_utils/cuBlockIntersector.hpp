@@ -66,24 +66,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2006/05/30 21:11:58  cliu
- * Make a new CD changes
- *
- * Revision 1.2  2006/01/03 16:15:29  lanczyck
- * fixes for IBM;
- * add overload of 'getIntersectedAlignment' to force specific block boundaries
- *
- * Revision 1.1  2005/04/19 14:28:00  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

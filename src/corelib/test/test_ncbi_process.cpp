@@ -248,27 +248,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/05/11 14:00:41  ivanov
- * Fixed accordingly to last changes in CExec
- *
- * Revision 1.4  2004/08/18 16:00:50  ivanov
- * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
- *
- * Revision 1.3  2004/05/18 17:05:31  ivanov
- * CPIDGuard tests:
- *     Use CExec::SpawnL() instead System() to run child process.
- *     Added some new asserts.
- *
- * Revision 1.2  2004/05/14 13:59:51  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 1.1  2003/09/25 16:59:11  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

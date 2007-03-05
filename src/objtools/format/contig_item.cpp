@@ -99,33 +99,3 @@ void CContigItem::x_GatherInfo(CBioseqContext& ctx)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2004/11/15 20:06:21  shomrat
-* Code cleanup
-*
-* Revision 1.6  2004/08/30 13:37:19  shomrat
-* allow contig for segmented with far segments
-*
-* Revision 1.5  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.4  2004/04/22 15:51:43  shomrat
-* Changes in context
-*
-* Revision 1.3  2004/02/19 18:04:01  shomrat
-* Implemented Contig item
-*
-* Revision 1.2  2003/12/18 17:43:32  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:19:04  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

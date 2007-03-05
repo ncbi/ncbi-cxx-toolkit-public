@@ -69,28 +69,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2004/08/04 14:48:49  vasilche
-* Added exports for MSVC. Added joining of very small chunks with skeleton.
-*
-* Revision 1.5  2004/01/07 17:36:19  vasilche
-* Moved id2_split headers to include/objmgr/split.
-* Fixed include path to genbank.
-*
-* Revision 1.4  2003/12/03 19:40:57  kuznets
-* Minor file rename
-*
-* Revision 1.3  2003/12/03 19:30:44  kuznets
-* Misprint fixed
-*
-* Revision 1.2  2003/11/26 23:04:57  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:24  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_BLOB_SPLITTER__HPP

@@ -1,4 +1,3 @@
-
 /*  $Id$
  * ===========================================================================
  *
@@ -213,16 +212,3 @@ int main(int argc, const char* argv[])
 {
     return CSampleSoapClientApplication().AppMain(argc, argv);
 }
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2005/01/12 17:25:25  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.1  2004/11/17 19:44:34  gouriano
-* Initial revision
-*
-*
-*
-* ===========================================================================
-*/

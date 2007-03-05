@@ -34,25 +34,3 @@
 #define NCBI_COUNTER_IMPLEMENTATION
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiatomic.hpp>
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2004/05/14 13:59:27  gorelenk
-* Added include of ncbi_pch.hpp
-*
-* Revision 1.3  2003/10/01 12:02:51  ucko
-* Fix header for SwapPointers
-*
-* Revision 1.2  2003/06/27 17:28:08  ucko
-* +SwapPointers
-*
-* Revision 1.1  2002/05/23 22:24:22  ucko
-* Use low-level atomic operations for reference counts
-*
-*
-* ===========================================================================
-*/
-
-

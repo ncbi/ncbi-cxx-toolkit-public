@@ -407,26 +407,3 @@ int main(int argc, const char* argv[])
 {
     return CTestTransmission().AppMain(argc, argv);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/03/27 15:23:01  didenko
- * Added an option which tells CTransmissionWriter to send the EOF
- * packet when it is destructed.
- *
- * Revision 1.4  2006/01/09 12:53:37  ivanov
- * Use LOG_POST instead of cout
- *
- * Revision 1.3  2005/04/20 20:09:13  lavr
- * Comment out unused functions' parameters
- *
- * Revision 1.2  2005/04/20 18:41:28  lavr
- * Pointer subtraction results in ptrdiff_t not compatible with size_t - fixed
- *
- * Revision 1.1  2005/04/14 13:49:30  kuznets
- * Initial revision
- *
- * ===========================================================================
- */

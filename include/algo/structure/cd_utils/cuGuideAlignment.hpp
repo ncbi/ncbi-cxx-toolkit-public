@@ -187,20 +187,3 @@ END_NCBI_SCOPE
 
 
 #endif // CU_GUIDEALIGNMENT_HPP
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2007/01/11 21:51:45  lanczyck
- * last minute pre-Subversion conversion changes
- *
- * Revision 1.2  2007/01/09 19:28:32  lanczyck
- * refactor guide alignment class; add some method to guide alignment factory
- *
- * Revision 1.1  2006/12/18 17:04:54  lanczyck
- * initial version
- *
- *
- * ===========================================================================
- */

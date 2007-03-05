@@ -57,23 +57,3 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_SHOW_HIDE_CALLBACK__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2003/02/03 19:20:06  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.4  2001/10/08 14:18:56  thiessen
-* fix show/hide dialog under wxGTK
-*
-* Revision 1.3  2001/03/09 15:48:43  thiessen
-* major changes to add initial update viewer
-*
-* Revision 1.2  2000/12/15 15:52:08  thiessen
-* show/hide system installed
-*
-* Revision 1.1  2000/11/17 19:47:38  thiessen
-* working show/hide alignment row
-*
-*/

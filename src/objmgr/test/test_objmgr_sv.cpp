@@ -283,14 +283,3 @@ int main(int argc, const char* argv[])
 {
     return CTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/03/16 14:29:03  vasilche
-* Added test for CSeqVector.
-*
-*
-* ===========================================================================
-*/

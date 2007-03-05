@@ -1102,24 +1102,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/09/25 12:56:41  dicuccio
-* Return by const reference, not by value
-*
-* Revision 1.3  2006/04/03 17:10:08  rsmith
-* make Err values permanent. Move into objects/valerr
-*
-* Revision 1.2  2006/03/16 14:14:46  rsmith
-* add IsSetObject()
-*
-* Revision 1.1  2006/02/07 15:07:45  rsmith
-* initial checkin
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1875, CRC32: 4cb3d7e3 */

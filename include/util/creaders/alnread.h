@@ -162,46 +162,4 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
 }
 #endif
 
-/*
- * ==========================================================================
- *
- * $Log$
- * Revision 1.7  2006/09/14 13:31:00  bollin
- * make alphabet in SequenceInfo struct const
- *
- * Revision 1.6  2006/09/13 18:34:41  bollin
- * added flag to indicate whether alignment formatting clues were found
- *
- * Revision 1.5  2005/10/21 15:18:36  bollin
- * added function to allow the gap, missing, and match characters to be read
- * from NEXUS comments for an alignment
- *
- * Revision 1.4  2004/11/24 15:26:18  dicuccio
- * Swap extern and export specifier; white space changes
- *
- * Revision 1.3  2004/05/20 19:39:40  bollin
- * added num_segments member to SAlignmentFile structure to allow reading of
- * alignments of segmented sets.
- *
- * Revision 1.2  2004/02/05 15:43:32  bollin
- * fixed portability issue for windows function pointers
- *
- * Revision 1.1  2004/02/03 16:46:55  ucko
- * Add Colleen Bollin's Toolkit-independent alignment reader.
- *
- * Revision 1.10  2004/01/29 17:58:36  bollin
- * fixed member alignment in SErrorInfo
- *
- * Revision 1.9  2004/01/29 17:41:54  bollin
- * added comment block, id tags, log
- *
- * Revision 1.8  2004/01/29 17:30:14  bollin
- * fixed all struct names
- *
- * Revision 1.7  2004/01/29 15:15:13  bollin
- * added formatting bitts
- *
- * ==========================================================================
- */
-
 #endif /* UTIL_CREADERS___ALNREAD__H */

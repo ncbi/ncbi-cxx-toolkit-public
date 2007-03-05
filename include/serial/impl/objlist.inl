@@ -151,39 +151,3 @@ CWriteObjectList::TObjectIndex CWriteObjectList::NextObjectIndex(void) const
 }
 
 #endif /* def OBJLIST__HPP  &&  ndef OBJLIST__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.6  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.5  2000/10/17 18:45:25  vasilche
-* Added possibility to turn off object cross reference detection in
-* CObjectIStream and CObjectOStream.
-*
-* Revision 1.4  2000/08/15 19:44:41  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.3  2000/04/06 16:10:51  vasilche
-* Fixed bug with iterators in choices.
-* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
-* Added output buffering to text ASN.1 data.
-*
-* Revision 1.2  1999/06/07 20:42:58  vasilche
-* Fixed compilation under MS VS
-*
-* Revision 1.1  1999/06/04 20:51:33  vasilche
-* First compilable version of serialization.
-*
-* ===========================================================================
-*/

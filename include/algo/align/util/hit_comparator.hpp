@@ -195,33 +195,4 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/11/27 14:46:53  kapustin
- * +eQueryIdSubjIdSubjStrand
- *
- * Revision 1.6  2005/10/24 17:31:59  kapustin
- * Add eSubjIdQueryId sort criterion
- *
- * Revision 1.5  2005/09/27 14:38:19  rsmith
- * Sorting CRefs not CConstRefs
- *
- * Revision 1.4  2005/09/12 16:21:34  kapustin
- * Add compartmentization algorithm
- *
- * Revision 1.3  2005/07/28 14:55:25  kapustin
- * Use std::pair instead of array to fix gcc304 complains
- *
- * Revision 1.2  2005/07/28 12:29:26  kapustin
- * Convert to non-templatized classes where causing compilation incompatibility
- *
- * Revision 1.1  2005/07/27 18:53:16  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif /* ALGO_ALIGN_UTIL_HITFILTER__HPP */

@@ -84,23 +84,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/08/17 14:35:23  dicuccio
-* Export CMolInfo
-*
-* Revision 1.2  2002/10/03 19:05:23  clausen
-* Removed extra whitespace
-*
-* Revision 1.1  2002/10/03 16:54:56  clausen
-* Added GetLabel()
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQ_MOLINFO_HPP
 /* Original file checksum: lines: 93, chars: 2350, CRC32: 19009c50 */

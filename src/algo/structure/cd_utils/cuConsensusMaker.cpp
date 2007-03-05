@@ -243,23 +243,3 @@ void ConsensusMaker::degapCdAlignmentToPending(CCdCore* cd)
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/03/09 19:17:23  cliu
- * export the inclusionThreshold parameter
- *
- * Revision 1.3  2005/08/25 20:22:22  cliu
- * conditionally skip long insert
- *
- * Revision 1.2  2005/04/19 22:03:35  ucko
- * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

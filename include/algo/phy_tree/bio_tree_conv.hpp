@@ -630,43 +630,6 @@ public:
 /* @} */
 
 
-END_NCBI_SCOPE 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2004/11/17 17:53:40  kuznets
- * Reimplemented Tree to Dynamic tree converters. More universal templates
- *
- * Revision 1.8  2004/11/10 19:26:24  kuznets
- * Added coverter from CTreeNode<> to dynamic
- *
- * Revision 1.7  2004/10/08 11:15:44  kuznets
- * Doxygen formatting (group Tree)
- *
- * Revision 1.6  2004/08/18 12:14:35  kuznets
- * Type castings for compatibility with new CBioTree node
- *
- * Revision 1.5  2004/06/28 17:01:20  ckenny
- * + conv from part tax tree to CBioTreeContainer
- *
- * Revision 1.4  2004/06/09 13:38:40  kuznets
- * Fixed compilation errors (GCC)
- *
- * Revision 1.3  2004/06/07 11:54:12  kuznets
- * + converters for taxon1 protocol
- *
- * Revision 1.2  2004/06/01 15:20:48  kuznets
- * + coversion function ASN.1 -> dynamic tree
- *
- * Revision 1.1  2004/05/26 15:15:19  kuznets
- * Initial revision. Tree conversion algorithms moved from bio_tree.hpp
- *
- *
- * ===========================================================================
- */
-
+END_NCBI_SCOPE
 
 #endif
-

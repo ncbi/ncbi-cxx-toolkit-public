@@ -156,40 +156,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.10  2006/03/14 20:21:51  rsmith
- * Move BasicCleanup functionality from objects to objtools/cleanup
- *
- * Revision 6.9  2005/05/20 13:33:24  shomrat
- * Added BasicCleanup()
- *
- * Revision 6.8  2004/10/22 14:17:09  shomrat
- * call CCit_sub::GetLabel with unique
- *
- * Revision 6.7  2004/05/19 17:24:52  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 6.6  2004/02/24 15:53:48  grichenk
- * Redesigned GetLabel(), moved most functionality from pub to biblio
- *
- * Revision 6.5  2003/11/21 14:45:02  grichenk
- * Replaced runtime_error with CException
- *
- * Revision 6.4  2002/07/11 18:20:27  ucko
- * Move include of Pub.hpp to top and CVS log to bottom.
- *
- * Revision 6.3  2002/06/30 03:24:52  vakatov
- * Get rid of warnings caused by constless char* initialization
- *
- * Revision 6.2  2002/01/12 07:33:28  vakatov
- * Get rid of unused variables (in CATCH())
- *
- * Revision 6.1  2002/01/10 19:38:00  clausen
- * Added GetLabel
- *
- * ===========================================================================
- */
-
 /* Original file checksum: lines: 61, chars: 1862, CRC32: d27bbf43 */

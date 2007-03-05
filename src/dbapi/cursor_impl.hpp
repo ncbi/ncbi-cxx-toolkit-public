@@ -98,54 +98,7 @@ private:
 };
 
 //====================================================================
-/*
-* $Log$
-* Revision 1.13  2006/02/23 15:55:36  kholodov
-* Removed the referece to the blobstream.hpp
-*
-* Revision 1.12  2006/02/21 14:59:23  kholodov
-* Streams implemented thru Reader/Writer interface
-*
-* Revision 1.11  2005/12/13 17:27:04  kholodov
-* Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
-*
-* Revision 1.10  2004/07/28 17:00:10  rsmith
-* make header independent by adding declaration of CConnection.
-*
-* Revision 1.9  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.8  2004/04/22 14:22:25  kholodov
-* Added: Cancel()
-*
-* Revision 1.7  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.6  2002/10/21 20:38:08  kholodov
-* Added: GetParentConn() method to get the parent connection from IStatement,
-* ICallableStatement and ICursor objects.
-* Fixed: Minor fixes
-*
-* Revision 1.5  2002/09/18 18:49:27  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.4  2002/08/26 15:35:56  kholodov
-* Added possibility to disable transaction log
-* while updating BLOBs
-*
-* Revision 1.3  2002/07/08 16:06:37  kholodov
-* Added GetBlobOStream() implementation
-*
-* Revision 1.2  2002/02/08 21:29:55  kholodov
-* SetDataBase() restored, connection cloning algorithm changed
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
-*/
+
 END_NCBI_SCOPE
 
 #endif // _CURSOR_IMPL_HPP_

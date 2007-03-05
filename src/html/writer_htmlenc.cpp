@@ -101,15 +101,3 @@ ERW_Result CWriter_HTMLEncoder::Flush(void)
 
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/04/11 17:59:51  ucko
-* CWriter_HTMLEncoder -- HTML-encode supplied data on the fly before
-* passing it to a standard ostream.  (Initial revision.)
-*
-*
-* ===========================================================================
-*/

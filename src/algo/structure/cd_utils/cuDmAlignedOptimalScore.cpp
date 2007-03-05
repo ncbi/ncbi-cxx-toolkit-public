@@ -157,12 +157,3 @@ void DMAlignedOptimalScore::convertScoreToDistance()
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/04/19 14:27:18  lanczyck
-* initial version under algo/structure
-*
-*
-*/

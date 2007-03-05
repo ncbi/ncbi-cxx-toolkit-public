@@ -146,24 +146,3 @@ Uint4 CSeqMaskerIstatBin::at( Uint4 unit ) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.5  2006/11/13 18:19:58  morgulis
- * Check if the requested t_low is less than the computed one and issue a warning.
- *
- * Revision 1.4  2005/05/02 17:58:01  morgulis
- * Fixed a few warnings for solaris.
- *
- * Revision 1.3  2005/05/02 14:27:46  morgulis
- * Implemented hash table based unit counts formats.
- *
- * Revision 1.2  2005/04/12 22:17:03  ucko
- * s/ios_base/IOS_BASE/ for portability, at least to GCC 2.95.
- *
- * Revision 1.1  2005/04/12 13:35:34  morgulis
- * Support for binary format of unit counts file.
- *
- * ========================================================================
- */

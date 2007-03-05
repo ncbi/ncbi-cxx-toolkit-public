@@ -154,20 +154,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.3  2005/04/20 20:06:59  lavr
- * More changes to use [s]size_t instead of plain int's
- *
- * Revision 1.2  2005/04/20 18:40:09  lavr
- * Change buffer sizes from being 'int' to 'size_t'
- *
- * Revision 1.1  2004/05/06 18:14:53  gouriano
- * Imported from pubmed/xmldb
- *
- * ==========================================================================
- */
-
 #endif  /* UTIL_UNICODE__H */

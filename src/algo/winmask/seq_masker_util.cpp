@@ -65,20 +65,3 @@ Uint4 CSeqMaskerUtil::reverse_complement( Uint4 seq, Uint1 size )
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.3  2005/03/17 20:21:22  morgulis
- * Only store half of the units in unit counts file.
- *
- * Revision 1.2  2005/02/12 19:58:04  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
- */
-

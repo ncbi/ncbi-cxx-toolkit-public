@@ -152,33 +152,4 @@ int Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
 }
 #endif
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.6  2006/11/21 17:06:51  papadopo
- * rearrange headers
- *
- * Revision 1.5  2005/02/25 19:47:45  camacho
- * Added documentation
- *
- * Revision 1.4  2005/02/23 17:24:41  camacho
- * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
- * 2. Removed unneeded fields from Kappa_compactSearchItems
- * 3. Doxygen fixes
- *
- * Revision 1.3  2005/02/23 14:20:51  camacho
- * Remove compiler warnings
- *
- * Revision 1.2  2005/02/22 22:48:30  camacho
- * doxygen fixes
- *
- * Revision 1.1  2005/02/14 14:05:53  camacho
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* !ALGO_BLAST_CORE__BLAST_POSIT__H */
-

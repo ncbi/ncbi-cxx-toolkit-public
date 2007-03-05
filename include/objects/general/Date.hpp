@@ -160,40 +160,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.9  2003/02/10 21:55:43  ucko
- * Make time_t-based ctors explicit, and explicitly construct temporary CTimes.
- *
- * Revision 1.8  2002/12/26 12:40:33  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.7  2002/12/09 17:30:10  ucko
- * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
- *
- * Revision 1.6  2002/12/06 20:03:15  ucko
- * Support conversion to/from CTime and from time_t
- *
- * Revision 1.5  2002/10/08 20:24:34  ucko
- * Add explicit wrapper around new version of GetDate to avoid trouble from
- * compilers that would rather convert const char* to bool than to string.
- *
- * Revision 1.4  2002/10/04 17:32:45  ucko
- * Drop spurious "return" from GetDate wrapper.
- *
- * Revision 1.3  2002/10/04 14:45:07  ucko
- * Add a generic date formatter with flexible support for missing fields.
- *
- * Revision 1.2  2002/01/10 19:46:44  clausen
- * Added GetDate
- *
- * Revision 1.1  2001/11/16 20:54:50  ucko
- * Added comparison for dates.
- *
- * ===========================================================================
- */
-
 #endif // OBJECTS_GENERAL_DATE_HPP
 /* Original file checksum: lines: 90, chars: 2320, CRC32: 5affaceb */

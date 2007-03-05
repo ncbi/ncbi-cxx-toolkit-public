@@ -98,35 +98,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.20  2006/03/14 20:21:51  rsmith
- * Move BasicCleanup functionality from objects to objtools/cleanup
- *
- * Revision 1.19  2005/07/01 15:07:55  shomrat
- * Added Class specific methods
- *
- * Revision 1.18  2005/05/20 13:34:53  shomrat
- * Added BasicCleanup()
- *
- * Revision 1.17  2002/12/26 12:44:06  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.16  2002/10/03 18:58:33  clausen
- * Removed extra whitespace
- *
- * Revision 1.15  2002/10/03 17:19:23  clausen
- * Added GetLabel()
- *
- * Revision 1.14  2001/06/25 18:52:03  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.13  2000/11/01 20:35:13  vasilche
- * Removed ECanDelete enum and related constructors.
- *
- *
- * ===========================================================================
- */
 #endif // OBJECTS_SEQSET_BIOSEQ_SET_HPP

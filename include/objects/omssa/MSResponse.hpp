@@ -112,20 +112,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/11/07 19:57:20  lewisg
-* iterative search
-*
-* Revision 1.1  2005/05/09 18:28:54  mxu
-* add csv
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSRESPONSE_HPP
 /* Original file checksum: lines: 94, chars: 2590, CRC32: 3dc9dbf1 */

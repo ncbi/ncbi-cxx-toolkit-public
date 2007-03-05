@@ -74,25 +74,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/04/13 14:44:00  ucko
-* Add a new class-based FASTA reader, but leave the existing reader
-* alone for now.
-*
-* Revision 1.3  2004/08/19 13:09:12  dicuccio
-* Dropped export specifier on inlined exceptions
-*
-* Revision 1.2  2003/06/06 13:46:04  ucko
-* Use the right _EXPORT macro.
-*
-* Revision 1.1  2003/06/04 17:27:36  ucko
-* Created based on seqset_exception.hpp
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJTOOLS_READERS___READER_EXCEPTION__HPP

@@ -135,37 +135,3 @@ void SetupCToolkitErrPost(void)
     Nlm_CallErrHandlerOnly(TRUE);
     Nlm_ErrSetHandler(reinterpret_cast<ErrHookProc>(s_c2cxxErrorHandler));
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.9  2005/07/06 19:44:07  lavr
- * Fix previous change log entry
- *
- * Revision 1.8  2005/07/06 19:41:38  lavr
- * Severity conversion routines added
- *
- * Revision 1.7  2004/05/17 20:59:00  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.6  2003/11/13 16:01:48  lavr
- * Log moved to end
- *
- * Revision 1.5  2001/02/12 19:27:42  lavr
- * Now unnecessary intermediate function call eliminated
- *
- * Revision 1.4  2001/02/11 22:45:04  thiessen
- * put outside NCBI namespace, since it requires C linkage
- *
- * Revision 1.3  2001/02/11 02:15:39  lavr
- * extern "C" replaced with reinterpret_cast to accepted by MSVC
- *
- * Revision 1.2  2001/02/10 04:13:35  lavr
- * Extra semicolon removed
- *
- * Revision 1.1  2001/02/09 17:39:12  lavr
- * Initial revision
- *
- * ==========================================================================
- */

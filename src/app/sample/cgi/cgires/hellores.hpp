@@ -37,20 +37,6 @@
 *
 *   CNcbiCommand: classes executed when particular CGI parameters are
 *       received.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2004/05/04 14:44:21  kuznets
-* MOving from the root "hello" to the new location
-*
-* Revision 1.2  1999/11/10 01:01:48  lewisg
-* get rid of namespaces
-*
-* Revision 1.1  1999/10/25 21:19:31  lewisg
-* first draft of simple cgi app
-*
-*
-* ===========================================================================
 */
 
 #include <cgi/ncbires.hpp>

@@ -361,47 +361,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.8  2005/08/30 14:35:19  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * Revision 1.7  2005/07/15 02:07:18  ucko
- * Use TSeqPos rather than string::size_type in TMaskedInterval for
- * consistency with CSeqVector et al.
- *
- * Revision 1.6  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * Revision 1.5  2005/03/21 13:19:26  dicuccio
- * Updated API: use object manager functions to supply data, instead of passing
- * data as strings.
- *
- * Revision 1.4  2005/03/08 17:02:30  morgulis
- * Changed unit counts file to include precomputed threshold values.
- * Changed masking code to pick up threshold values from the units counts file.
- * Unit size is computed automatically from the genome length.
- * Added extra option for specifying genome length.
- * Removed all experimental command line options.
- * Fixed id strings in duplicate sequence checking code.
- *
- * Revision 1.3  2005/02/14 12:15:17  dicuccio
- * More typedef changes: mlist -> TMList.  Use exlicit bracing to scope if/else
- * statements
- *
- * Revision 1.2  2005/02/12 19:58:03  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
- */
 #endif
-

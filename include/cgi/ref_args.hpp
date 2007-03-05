@@ -91,22 +91,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2005/02/18 17:45:53  grichenk
-* IsListedHost() accepts referrer string rather than host name.
-*
-* Revision 1.3  2005/02/17 20:27:25  grichenk
-* Added IsListedHost()
-*
-* Revision 1.2  2004/12/09 16:35:45  grichenk
-* Added GetDefaultDefinitions. Doxygenized comments.
-*
-* Revision 1.1  2004/12/07 18:51:58  grichenk
-* Initial revision
-*
-* ==========================================================================
-*/
-
 #endif  /* REF_ARGS__HPP */

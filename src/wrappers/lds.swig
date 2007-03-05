@@ -45,18 +45,3 @@ objtools/lds/lds_set.hpp
 objtools/lds/lds_util.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/05 16:55:08  jcherry
- * Added lds_manager.hpp
- *
- * Revision 1.2  2005/09/23 19:18:02  jcherry
- * Reflect merging of directories/libraries
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

@@ -235,26 +235,3 @@ bool CNetBVStoreClient::x_CheckErrTrim(string& answer)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/12 19:53:43  kuznets
- * fixed bug with reconnection
- *
- * Revision 1.4  2006/06/07 16:19:36  kuznets
- * code cleanup
- *
- * Revision 1.3  2006/06/07 15:44:06  kuznets
- * CheckAlive made optional and disabled by default
- *
- * Revision 1.2  2006/06/06 18:21:06  kuznets
- * fixed bug with buffer read
- *
- * Revision 1.1  2006/06/02 12:47:03  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */

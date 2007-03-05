@@ -165,35 +165,3 @@ CONN CreateAsnConn_Service(const char*     service,
     return CreateAsnConn_ServiceEx(service, input_fmt, input,
                                    output_fmt, output, fSERV_Any, 0, 0);
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.8  2004/11/23 16:15:29  lavr
- * -<connect/ncbi_service_connector.h> now included from <ctools/asn_connectionh>
- *
- * Revision 1.7  2004/03/23 02:29:19  lavr
- * Remove redundant inits in I/O callbacks
- *
- * Revision 1.6  2004/02/23 15:23:50  lavr
- * New (last) parameter "how" added in CONN_Write() API call
- *
- * Revision 1.5  2003/11/13 16:01:31  lavr
- * Included headers revised
- *
- * Revision 1.4  2002/08/07 16:38:18  lavr
- * EIO_ReadMethod enums changed accordingly; log moved to end
- *
- * Revision 1.3  2001/09/24 20:32:44  lavr
- * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
- *
- * Revision 1.2  2001/06/29 14:04:17  lavr
- * Close callback removes itself when called; fixes not to add callbacks
- * in CreateAsnConn_ServiceEx, because they are already there!
- *
- * Revision 1.1  2001/06/28 21:58:23  lavr
- * Initial revision
- *
- * ==========================================================================
- */

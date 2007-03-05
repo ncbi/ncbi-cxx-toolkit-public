@@ -87,20 +87,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/04/06 14:19:10  kuznets
- * +RequestDoJob()
- *
- * Revision 1.2  2005/03/30 13:41:42  kuznets
- * Use semaphore to stop thread
- *
- * Revision 1.1  2004/10/07 18:00:48  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif

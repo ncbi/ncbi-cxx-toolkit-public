@@ -102,16 +102,3 @@ string CCgiException::sx_GetStdStatusMessage(EStatusCode code)
 
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.2  2006/01/18 19:45:23  ssikorsk
-* Added an extra argument to CException::x_Init
-*
-* Revision 1.1  2006/01/04 18:37:52  grichenk
-* Initial revision
-*
-*
-* ==========================================================================
-*/

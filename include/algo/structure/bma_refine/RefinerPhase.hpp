@@ -202,39 +202,3 @@ private:
 END_SCOPE(align_refine)
 
 #endif  //  AR_REFINERPHASE__HPP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/08/09 18:33:51  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.4  2006/03/27 16:38:18  lanczyck
- * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
- *
- * Revision 1.3  2005/11/23 01:01:14  lanczyck
- * freeze specified blocks in both LOO and BE phases;
- * add support for a callback for a progress meter
- *
- * Revision 1.2  2005/06/28 16:00:12  lanczyck
- * add virtual check to see if a phase was skipped or not
- *
- * Revision 1.1  2005/06/28 13:45:25  lanczyck
- * block multiple alignment refiner code from internal/structure/align_refine
- *
- * Revision 1.4  2005/05/27 21:21:13  lanczyck
- * avoid multiple deletion of m_rowSelector
- *
- * Revision 1.3  2005/05/26 19:20:36  lanczyck
- * remove INFO level messages so can independently keep/suppress info level messages in struct_util/dp libraries
- *
- * Revision 1.2  2005/05/26 18:49:52  lanczyck
- * consistent results w/ original version:  bug fixes; modify messages for consistency
- *
- * Revision 1.1  2005/05/24 22:31:43  lanczyck
- * initial versions:  app builds but not yet tested
- *
- * ===========================================================================
- */
-
-

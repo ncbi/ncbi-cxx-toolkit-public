@@ -254,23 +254,3 @@ bool TaxClient::IsTaxDescendant(int taxid1, int taxid2)
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/05/18 20:00:59  cliu
- * To enable read-only SeqTreeAPI
- *
- * Revision 1.3  2005/07/07 17:27:01  lanczyck
- * add GetOrgRef method
- *
- * Revision 1.2  2005/06/30 23:57:02  lanczyck
- * correct comment; protect against null m_taxonomyClient object
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

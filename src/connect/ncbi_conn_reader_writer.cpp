@@ -103,31 +103,3 @@ ERW_Result CSocketReaderWriter::Write(const void* buf,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.7  2006/12/14 04:45:21  lavr
- * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
- *
- * Revision 1.6  2006/02/01 16:22:50  lavr
- * Introduce CConnReaderWriterBase to be able to init connect lib if needed
- *
- * Revision 1.5  2006/01/25 20:28:41  lavr
- * CSocketReaderWriter::PendingCount():  Return success on timeout (poll)
- *
- * Revision 1.4  2006/01/18 03:00:13  lavr
- * CSocketReaderWriter::PendingCount() fixed not to use buffer when peeking
- *
- * Revision 1.3  2005/02/01 19:06:47  lavr
- * Fix save/restore in CSocketReaderWriter::PendingCount()
- *
- * Revision 1.2  2005/02/01 19:04:47  lavr
- * Proper timeout save/restore in CSocketReaderWriter::PendingCount()
- *
- * Revision 1.1  2004/10/01 18:56:09  lavr
- * Initial revision
- *
- * ===========================================================================
- */

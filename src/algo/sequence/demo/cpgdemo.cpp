@@ -249,37 +249,3 @@ int main(int argc, char** argv)
     CCpGDemoApp theApp;
     return theApp.AppMain(argc, argv, NULL, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2005/07/01 16:40:36  ucko
- * Adjust for CSeq_id's use of CSeqIdException to report bad input.
- *
- * Revision 1.7  2004/11/01 16:15:38  kskatz
- * Reflects change in CCpGIslands where arguments percent GC and CpG observed/expected are now unsigned int instead of double
- *
- * Revision 1.6  2004/07/21 15:51:24  grichenk
- * CObjectManager made singleton, GetInstance() added.
- * CXXXXDataLoader constructors made private, added
- * static RegisterInObjectManager() and GetLoaderNameFromArgs()
- * methods.
- *
- * Revision 1.5  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.4  2004/01/07 17:39:28  vasilche
- * Fixed include path to genbank loader.
- *
- * Revision 1.3  2003/12/12 20:06:34  johnson
- * accommodate MSVC 7 refactoring; also made more features accessible from
- * command line
- *
- * Revision 1.2  2003/06/17 15:35:12  johnson
- * remove stray char
- *
- * Revision 1.1  2003/06/17 15:12:24  johnson
- * initial revision
- *
- * ===========================================================================
- */

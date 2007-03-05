@@ -338,33 +338,3 @@ objects/valerr/ValidError_.hpp
 objects/valerr/NCBI_ValErrors_module.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/05/16 16:53:31  jcherry
- * Added DistanceMatrix headers
- *
- * Revision 1.7  2006/02/17 17:56:01  jcherry
- * Added objects/valerr and other headers
- *
- * Revision 1.6  2005/11/10 19:06:50  jcherry
- * Big change to docsum ASN.1 spec again
- *
- * Revision 1.5  2005/10/27 12:37:18  jcherry
- * Added *_module.hpp
- *
- * Revision 1.4  2005/10/19 15:35:58  jcherry
- * Reflect rollback of docsum ASN.1 specification
- *
- * Revision 1.3  2005/10/18 15:52:58  jcherry
- * Reflect big change to docsum ASN.1 spec
- *
- * Revision 1.2  2005/08/03 14:57:10  jcherry
- * Added headers
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

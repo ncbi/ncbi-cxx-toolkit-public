@@ -463,37 +463,4 @@ template<> struct hash<string>
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.12  2006/07/17 14:25:35  ucko
- * Add configuration-dependent defines for VisualAge (the same as for MSVC, FWIW)
- *
- * Revision 1.11  2005/07/22 14:13:07  ucko
- * Fix for ICC 8.0, whose predefined symbols are the same in -cxxlib-gcc
- * and -cxxlib-icc mode, by adding a check for an include guard from a
- * header found only in Intel's (really Dinkumware's) version of the library.
- *
- * Revision 1.10  2005/07/19 20:12:08  ucko
- * Properly handle ICC in -cxxlib-gcc mode.
- *
- * Revision 1.9  2005/05/24 14:49:24  ucko
- * Don't forget <vector>!
- *
- * Revision 1.8  2005/04/18 13:43:46  rsmith
- * Codewarrior + _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
- *
- * Revision 1.7  2005/03/28 20:59:05  rsmith
- * add defines for Metrowerks/Codewarrior compiler.
- *
- * Revision 1.6  2005/02/09 21:29:14  grichenk
- * Fixed GCC 2.9.5 options
- *
- * Revision 1.5  2005/02/09 19:11:41  grichenk
- * Added CVS log
- *
- *
- * ===========================================================================
- */
-
 #endif /* STLP_DEFS__HPP */

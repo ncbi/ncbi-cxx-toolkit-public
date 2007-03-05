@@ -56,17 +56,3 @@ cursor.execute('select qq = 57 + 33')
 result = cursor.fetchone()
 
 print result
-
-# ===========================================================================
-#
-# $Log$
-# Revision 1.3  2005/04/07 16:50:12  ssikorsk
-# Added '#! /usr/bin/env python' to each sample
-#
-# Revision 1.2  2005/02/08 18:50:14  ssikorsk
-# Adapted to the "simple mode" interface
-#
-# Revision 1.1  2005/01/21 22:15:28  ssikorsk
-# Added: python samples for the NCBI DBAPI extension module.
-#
-# ===========================================================================

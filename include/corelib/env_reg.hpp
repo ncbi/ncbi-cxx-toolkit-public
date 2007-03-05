@@ -189,19 +189,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/03/14 18:11:44  ucko
- * Move full declaration of IEnvRegMapper to above CEnvironmentRegistry
- * (and its use of CConstRef<IEnvRegMapper> as a parameter of multimap<>).
- * Sprinkle in more NCBI_XNCBI_EXPORT tags for good measure.
- *
- * Revision 1.1  2005/03/14 15:52:09  ucko
- * Support taking settings from the environment.
- *
- * ===========================================================================
- */
-
 #endif  /* CORELIB___ENV_REG__HPP */

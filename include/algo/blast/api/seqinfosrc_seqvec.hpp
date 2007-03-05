@@ -83,42 +83,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.10  2006/05/24 21:01:54  camacho
- * Added missing closing doxygen brackets
- *
- * Revision 1.9  2006/03/07 16:07:39  bealer
- * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
- *
- * Revision 1.8  2005/11/09 20:56:26  camacho
- * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
- * as CBl2Seq and reduce redundant code.
- *
- * Revision 1.7  2005/09/28 18:21:34  camacho
- * Rearrangement of headers/functions to segregate object manager dependencies.
- *
- * Revision 1.6  2005/09/26 21:17:15  camacho
- * Minor
- *
- * Revision 1.5  2005/03/31 16:17:26  dondosha
- * Some doxygen fixes
- *
- * Revision 1.4  2004/10/18 20:33:24  dondosha
- * Pass TSeqLocVector to constructor by reference
- *
- * Revision 1.3  2004/10/06 17:47:34  dondosha
- * Removed ncbi_pch.hpp
- *
- * Revision 1.2  2004/10/06 17:45:35  dondosha
- * Removed USING_SCOPE; qualify objects classes directly
- *
- * Revision 1.1  2004/10/06 14:51:37  dondosha
- * Implementation of IBlastSeqInfoSrc with TSeqLocVector
- *
- *
- * ===========================================================================
- */
 #endif  /* ALGO_BLAST_API__SEQINFOSRC_SEQVEC_HPP */

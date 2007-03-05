@@ -243,37 +243,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2004/05/17 20:58:22  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.8  2004/02/23 15:23:43  lavr
- * New (last) parameter "how" added in CONN_Write() API call
- *
- * Revision 1.7  2003/12/04 16:35:54  ivanov
- * Removed unused function Delay()
- *
- * Revision 1.6  2003/11/15 15:35:36  ucko
- * +<stdio.h> (no longer included by ncbi_pipe.hpp)
- *
- * Revision 1.5  2003/09/09 19:47:34  ivanov
- * Fix for previous commit
- *
- * Revision 1.4  2003/09/09 19:42:19  ivanov
- * Added more checks
- *
- * Revision 1.3  2003/09/05 14:04:20  ivanov
- * CONN_Read(..., eIO_ReadPersist) can return eIO_Closed also
- *
- * Revision 1.2  2003/09/03 21:37:25  ivanov
- * Removed Linux ESPIPE workaround
- *
- * Revision 1.1  2003/09/02 20:39:40  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

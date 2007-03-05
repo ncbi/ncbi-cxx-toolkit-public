@@ -131,16 +131,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2004/08/17 14:38:47  dicuccio
-* Added export specifiers
-*
-* Revision 1.1  2004/01/05 14:24:09  gouriano
-* Added possibility to set serialization hooks by stack path
-*
-*
-* ===========================================================================
-*/

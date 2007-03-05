@@ -81,26 +81,3 @@ void* CThreadNonStop::Main(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/08/17 21:09:17  kuznets
- * + RequestDoJob()
- *
- * Revision 1.4  2005/04/06 14:19:26  kuznets
- * +RequestDoJob()
- *
- * Revision 1.3  2005/03/30 16:03:42  kuznets
- * Code cleanup
- *
- * Revision 1.2  2005/03/30 13:41:54  kuznets
- * Use semaphore to stop thread
- *
- * Revision 1.1  2004/10/07 18:01:00  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

@@ -77,26 +77,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.5  2003/04/09 17:58:38  siyan
- * Added doxygen support
- *
- * Revision 6.4  2003/01/17 18:53:16  lavr
- * Explicitly include <connect/connect_export.h>
- *
- * Revision 6.3  2002/12/19 14:51:48  dicuccio
- * Added export specifier for Win32 DLL builds.
- *
- * Revision 6.2  2002/09/19 17:59:46  lavr
- * Header file guard macro changed; log moved to the end
- *
- * Revision 6.1  2001/11/19 15:20:19  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- * ===========================================================================
- */
-
 #endif  /* CONNECT___EMAIL_DIAG_HANDLER__HPP */

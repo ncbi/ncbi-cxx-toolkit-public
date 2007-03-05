@@ -91,18 +91,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/07/24 14:00:19  ucko
- * Include ncbiobj.hpp, not just ncbistd.hpp, for CRef<>.
- *
- * Revision 1.1  2006/07/24 13:16:45  dicuccio
- * Added CScoreBuilder, a general class to provide support for generating scores
- * for alignments
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_ALIGN_UTIL___SCORE_BUILDER__HPP

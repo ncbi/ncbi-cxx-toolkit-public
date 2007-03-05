@@ -289,28 +289,3 @@ CT_POS_TYPE CIReaderLineReader::GetPosition(void) const
     return 0; // TODO: implement position counter
 }
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/12/29 20:25:27  kuznets
-* + CIReaderLineReader class
-*
-* Revision 1.3  2006/12/13 16:47:47  ucko
-* Add a static convenience method (ILineReader::New) for constructing a
-* line reader corresponding to a filename; to facilitate that, allow
-* CStreamLineReader to take ownership.
-*
-* Revision 1.2  2006/11/17 19:16:29  ucko
-* CMemoryLineReader::operator++: make sure to advance m_Pos (to m_End)
-* in the absence of a final delimiter.
-*
-* Revision 1.1  2006/04/13 14:42:47  ucko
-* Add a lightweight interface for getting lines of data with minimal
-* memory copying, along with two implementations -- one for input
-* streams and one for memory regions (strings or mapped files).
-*
-*
-* ===========================================================================
-*/

@@ -97,29 +97,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* $Log$
-* Revision 1.6  2005/11/15 15:56:13  vasilche
-* Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
-*
-* Revision 1.5  2005/09/20 15:46:13  vasilche
-* AttachAnnot takes non-const object.
-*
-* Revision 1.4  2005/08/09 15:39:24  vasilche
-* Store parsed SNP tables in separate class to simplify forward declarations.
-* Added x_LoadSeq_entry() to chunk and split infos.
-*
-* Revision 1.3  2004/08/12 14:19:30  vasilche
-* Allow SNP Seq-entry in addition to SNP Seq-annot.
-*
-* Revision 1.2  2004/01/13 16:55:53  vasilche
-* CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
-* Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
-*
-* Revision 1.1  2003/08/14 20:05:18  vasilche
-* Simple SNP features are stored as table internally.
-* They are recreated when needed using CFeat_CI.
-*
-*/
-
 #endif // READER_SNP__HPP_INCLUDED

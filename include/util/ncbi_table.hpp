@@ -451,31 +451,4 @@ CNcbiTable<TValue, TRow, TColumn>::GetCell(unsigned int row_idx,
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/04 14:50:57  gouriano
- * Moved GetErrCodeString method into src
- *
- * Revision 1.5  2004/12/27 20:58:34  vakatov
- * Remove an extraneous comma in enum to get rid of a warning
- *
- * Revision 1.4  2004/09/14 18:34:21  kuznets
- * ASSERT protection replaced with exception throw
- *
- * Revision 1.3  2004/09/02 13:33:42  kuznets
- * Added comments, copy-ctor, assignment op
- *
- * Revision 1.2  2004/09/01 13:04:03  kuznets
- * Use typename to make GCC happy
- *
- * Revision 1.1  2004/09/01 12:27:54  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif  /* UTIL_NCBITABLE__HPP */

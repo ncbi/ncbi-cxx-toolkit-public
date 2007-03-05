@@ -248,18 +248,3 @@ END_NCBI_SCOPE
 
 
 #endif  /* UTIL_SEQUTIL___SEQUTIL_CONVERT_IMP__HPP */
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2003/10/14 14:51:02  ucko
-* Fix for GCC 2.95, whose operator[] const returns a copy rather than a
-* const reference, by substituting *x.begin().
-*
-* Revision 1.1  2003/10/08 13:35:10  shomrat
-* Initial version
-*
-*
-* ===========================================================================
-*/

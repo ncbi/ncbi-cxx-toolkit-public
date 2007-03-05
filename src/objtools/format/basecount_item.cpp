@@ -96,39 +96,3 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2005/04/11 15:25:14  vasilche
-* Use lower case for base counting.
-*
-* Revision 1.8  2005/04/07 18:19:37  shomrat
-* Removed toupper
-*
-* Revision 1.7  2005/03/28 17:17:17  shomrat
-* Optimizing base count
-*
-* Revision 1.6  2004/12/06 17:54:10  grichenk
-* Replaced calls to deprecated methods
-*
-* Revision 1.5  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.4  2004/04/22 15:50:56  shomrat
-* Changes in context
-*
-* Revision 1.3  2004/03/05 18:43:30  shomrat
-* Use ITERATE instead of for
-*
-* Revision 1.2  2003/12/18 17:43:31  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:18:05  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

@@ -62,17 +62,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/09/17 18:27:56  lewisg
-* add ion names
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSIONTYPE_HPP
 /* Original file checksum: lines: 65, chars: 2004, CRC32: 6428d4a3 */

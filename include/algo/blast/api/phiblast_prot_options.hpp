@@ -90,18 +90,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/06/16 19:36:25  dondosha
- * Derive PHI BLAST protein options handle directly from general protein options handle
- *
- * Revision 1.1  2005/05/26 14:35:30  dondosha
- * PHI BLAST options handle classes
- *
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_BLAST_API___PHIBLAST_PROT_OPTIONS__HPP */

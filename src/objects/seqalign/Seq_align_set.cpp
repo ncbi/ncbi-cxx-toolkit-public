@@ -70,18 +70,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/05/19 17:25:43  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.1  2004/05/05 19:16:25  johnson
-* Added SwapRows method for 'disc' seq-align / seq-align-set
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1897, CRC32: 9a5a711e */

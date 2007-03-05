@@ -141,31 +141,3 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/03/23 14:43:48  vasilche
- * Removed non-MT-safe "created" flag.
- * CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.
- *
- * Revision 1.5  2004/12/21 21:40:20  grichenk
- * Moved obj_store and plugin_manager_store to corelib
- *
- * Revision 1.4  2004/08/05 20:09:01  ucko
- * Remove semicolons after {BEGIN,END}_NCBI_SCOPE; they aren't necessary,
- * and some compilers forbid the resulting null declarations.
- *
- * Revision 1.3  2004/08/05 18:41:26  kuznets
- * test case for plugin manager put to ncbi namespace(GCC compilation fix)
- *
- * Revision 1.2  2004/08/05 18:15:11  kuznets
- * +test for plugin manager store
- *
- * Revision 1.1  2004/08/02 13:47:09  kuznets
- * Initial revision
- *
- *
- * ==========================================================================
- */

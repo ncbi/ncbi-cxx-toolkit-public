@@ -155,26 +155,4 @@ const string& CLocusItem::GetDate(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.3  2004/08/19 16:17:17  shomrat
-* Added inline methods
-*
-* Revision 1.2  2004/04/22 15:37:32  shomrat
-* Changes in context
-*
-* Revision 1.1  2003/12/17 19:48:58  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___LOCUS_ITEM__HPP */

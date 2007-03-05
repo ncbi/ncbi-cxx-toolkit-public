@@ -57,26 +57,4 @@ void SetupCToolkitErrPost(void);
 
 /* @} */
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2005/07/06 19:43:08  lavr
- * Note the file is intended for use in pure C code
- *
- * Revision 1.4  2003/11/13 15:59:44  lavr
- * Guard macro changed; log moved to end
- *
- * Revision 1.3  2003/04/11 17:46:32  siyan
- * Added doxygen support
- *
- * Revision 1.2  2001/02/12 15:34:34  lavr
- * Extra semicolon removed
- *
- * Revision 1.1  2001/02/09 17:31:27  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif  /* CTOOLS___CTOOLS__H */

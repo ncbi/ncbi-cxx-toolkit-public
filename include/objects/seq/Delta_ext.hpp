@@ -105,17 +105,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/11/07 13:50:40  dicuccio
-* Added programmatic API for appending segments onto a delta-seq
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQ_DELTA_EXT_HPP
 /* Original file checksum: lines: 94, chars: 2559, CRC32: 732ab450 */

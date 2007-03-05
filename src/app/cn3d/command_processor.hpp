@@ -98,24 +98,3 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // COMMAND_PROCESSOR__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2004/02/19 17:04:53  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.4  2003/09/02 19:34:52  thiessen
-* implement Exit message
-*
-* Revision 1.3  2003/07/10 13:47:22  thiessen
-* add LoadFile command
-*
-* Revision 1.2  2003/03/20 20:33:51  thiessen
-* implement Highlight command
-*
-* Revision 1.1  2003/03/14 19:23:06  thiessen
-* add CommandProcessor to handle file-message commands; fixes for GCC 2.9
-*
-*/
-

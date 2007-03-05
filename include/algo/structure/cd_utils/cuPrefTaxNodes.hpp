@@ -161,28 +161,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif // CU_PREFTAXNODES_HPP
-
-/* 
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.5  2006/04/27 17:18:40  dicuccio
- * Drop hanging comma in enum list
- *
- * Revision 1.4  2005/07/13 19:47:03  lanczyck
- * minor mods to remove compiler warnings
- *
- * Revision 1.3  2005/07/07 19:42:08  lanczyck
- * modify comment
- *
- * Revision 1.2  2005/07/07 17:30:31  lanczyck
- * major mods:  rename CPrefTaxNodes class CPriorityTaxNodes; API mods;
- * list of tax nodes is no longer static
- *
- * Revision 1.1  2005/06/30 23:53:42  lanczyck
- * extract preferred tax nodes/model organism code from CDTree's algTaxDataSource and repackage for use here
- *
- * ===========================================================================
- */

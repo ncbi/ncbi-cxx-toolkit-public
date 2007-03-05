@@ -400,47 +400,4 @@ bool CResizingIterator<TSeq, TVal>::AtEnd() const
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.10  2006/03/10 21:13:52  ucko
-* Take more care not to dereference or increment m_RawIterator when it's
-* already hit m_End.  (Based on a patch from A. Gourianov, who found the bug.)
-*
-* Revision 1.9  2004/04/26 14:50:59  ucko
-* Fix a typo caught by GCC 3.4.
-*
-* Revision 1.8  2004/03/05 18:25:26  dicuccio
-* Fixed logic in AtEnd(): return avail < goal
-*
-* Revision 1.7  2004/02/12 21:42:45  ucko
-* Rework AtEnd() to avoid distance(), which has no portable form.
-*
-* Revision 1.6  2004/02/12 20:09:46  ucko
-* Add safeguards to avoid overshooting when misaligned.
-*
-* Revision 1.5  2004/02/06 18:32:35  vasilche
-* Added missing typename keyword.
-*
-* Revision 1.4  2003/10/14 19:00:18  ucko
-* CResizingIterator::operator =: don't store empty partial elements (led
-* to off-by-one errors in some cases)
-*
-* Revision 1.3  2003/04/17 17:50:28  siyan
-* Added doxygen support
-*
-* Revision 1.2  2002/12/30 20:38:14  ucko
-* Miscellaneous cleanups: CVS log moved to end, .inl folded in,
-* test for MSVC fixed, AtEnd made const, useless comments dropped,
-* kBitsPerByte changed to CHAR_BIT (using 8 as a fallback).
-*
-* Revision 1.1  2001/09/04 14:06:30  ucko
-* Add resizing iterators for sequences whose representation uses an
-* unnatural unit size -- for instance, ASN.1 octet strings corresponding
-* to sequences of 32-bit integers or of packed nucleotides.
-*
-* ===========================================================================
-*/
-
 #endif  /* RESIZE_ITER__HPP */

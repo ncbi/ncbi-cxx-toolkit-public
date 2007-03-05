@@ -115,44 +115,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.9  2005/06/29 19:15:53  ucko
- * Refactor, dropping multiargument constructor in favor of a public Set
- * method that can be called multiple times.
- * Move CVS log to end.
- *
- * Revision 1.8  2003/02/06 22:23:29  vasilche
- * Added CSeq_id::Assign(), CSeq_loc::Assign().
- * Added int CSeq_id::Compare() (not safe).
- * Added caching of CSeq_loc::GetTotalRange().
- *
- * Revision 1.7  2002/12/26 12:43:42  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.6  2001/08/31 16:00:36  clausen
- * Added new constructors for FastA construction.
- *
- * Revision 1.5  2001/06/25 18:52:02  grichenk
- * Prohibited copy constructor and assignment operator
- *
- * Revision 1.4  2000/12/08 22:18:41  ostell
- * changed MakeFastString to AsFastaString and to use ostream instead of string
- *
- * Revision 1.3  2000/12/08 20:45:56  ostell
- * added MakeFastaString()
- *
- * Revision 1.2  2000/11/30 21:53:39  ostell
- * typo fixed
- *
- * Revision 1.1  2000/11/30 18:40:23  ostell
- * added Textseq_id.Match
- *
- *
- * ===========================================================================
- */
-
 #endif // OBJECTS_SEQLOC_TEXTSEQ_ID_HPP
 /* Original file checksum: lines: 85, chars: 2258, CRC32: fc9c35de */

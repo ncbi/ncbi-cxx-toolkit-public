@@ -215,36 +215,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/02/15 20:39:39  lavr
- * CRWStream moved to corelib
- *
- * Revision 1.7  2005/04/11 18:00:51  ucko
- * Test/demonstrate CWriter_HTMLEncoder.
- *
- * Revision 1.6  2004/05/17 21:00:08  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2002/04/16 19:05:21  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 1.4  2002/01/17 23:40:28  ivanov
- * Added test to print HTML tables in plain text mode
- *
- * Revision 1.3  2001/08/14 16:59:08  ivanov
- * Moved test for JavaScript popup menu in individual file "test_jsmenu"
- *
- * Revision 1.2  2001/07/16 13:57:43  ivanov
- * Added test for JavaScript popup menus (CHTMLPopupMenu).
- * Chanded application skeleton, now it based on CNCBIApplication.
- *
- * Revision 1.1  2001/06/08 19:05:27  ivanov
- * Initialization. Test application for html library
- *
- * ===========================================================================
- */

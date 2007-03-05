@@ -145,18 +145,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2007/01/09 16:05:02  didenko
- * Moved CNetScheduleExceptions to the new NetSchedule API
- *
- * Revision 1.1  2007/01/09 15:29:54  didenko
- * Added new API for NetSchedule service
- *
- * ===========================================================================
- */
-
-
 #endif  /* CONNECT_SERVICES___NETSERVICE_API__HPP */

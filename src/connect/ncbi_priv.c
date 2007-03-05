@@ -89,38 +89,3 @@ extern char* g_CORE_RegistryGET
     CORE_UNLOCK;
     return ret_value;
 }
-
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2005/10/25 18:53:10  lavr
- * Fix ADDEND spelling (finally, hopefully)
- *
- * Revision 6.8  2005/07/11 18:14:14  lavr
- * Fix ADDEND spelling
- *
- * Revision 6.7  2005/05/03 13:56:40  lavr
- * +<connect/ncbi_socket.h> for non-UNIX, non-Windows platforms
- *
- * Revision 6.6  2005/05/03 11:50:19  ivanov
- * Added MS Win specific for NCBI_CONNECT_SRAND_ADDEND, removing dependency
- * from socket library.
- *
- * Revision 6.5  2005/05/02 16:04:20  lavr
- * Use global random seed
- *
- * Revision 6.4  2002/09/24 15:06:40  lavr
- * Log moved to end
- *
- * Revision 6.3  2002/06/18 18:39:38  ucko
- * Explicitly initialize global variables to avoid a MacOS X linker bug.
- *
- * Revision 6.2  2002/03/22 19:52:17  lavr
- * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.1  2000/03/24 22:53:35  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

@@ -93,32 +93,3 @@ inline bool IsMetal(int atomicNumber)
 END_SCOPE(Cn3D)
 
 #endif // CN3D_PERIODICTABLE__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/11/01 02:44:07  thiessen
-* fix GCC warnings; switch threader to C++ PSSMs
-*
-* Revision 1.7  2005/10/19 17:28:19  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.6  2004/02/19 17:05:02  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.5  2003/02/03 19:20:04  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.4  2000/10/04 17:40:46  thiessen
-* rearrange STL #includes
-*
-* Revision 1.3  2000/08/24 18:43:15  thiessen
-* tweaks for transparent sphere display
-*
-* Revision 1.2  2000/07/27 13:30:10  thiessen
-* remove 'using namespace ...' from all headers
-*
-* Revision 1.1  2000/07/12 23:30:47  thiessen
-* now draws basic CPK model
-*
-*/

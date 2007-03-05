@@ -172,21 +172,4 @@ END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/06/22 14:31:22  vasilche
-* Added constness of CSeq_annot_Handle argument.
-*
-* Revision 1.2  2005/03/02 13:44:52  shomrat
-* Fixed warning
-*
-* Revision 1.1  2004/06/16 15:19:08  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_EDIT___PROMOTE__HPP */

@@ -124,14 +124,3 @@ CSessionManagementThread::x_FindSession(const string& host,
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/01/17 16:49:31  kuznets
- * Added session management(auto-shutdown), cleaned-up code
- *
- *
- * ===========================================================================
- */
-

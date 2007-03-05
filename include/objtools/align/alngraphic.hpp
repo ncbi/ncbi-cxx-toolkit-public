@@ -150,22 +150,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/* 
-*============================================================
-*$Log$
-*Revision 1.4  2006/10/26 20:57:09  jianye
-*add ability to show only the sub-region of master sequence
-*
-*Revision 1.3  2004/05/03 17:42:13  jianye
-*Added def directives
-*
-*Revision 1.2  2004/05/03 15:10:04  jianye
-*Added export symbol
-*
-*Revision 1.1  2004/04/30 15:44:15  jianye
-*Initial checkin
-*
-
-*===========================================================
-*/
 #endif

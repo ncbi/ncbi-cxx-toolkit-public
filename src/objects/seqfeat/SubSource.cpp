@@ -129,21 +129,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log: SubSource.cpp,v $
-* Revision 1.3  2006/03/14 20:21:52  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.2  2005/05/20 13:36:54  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.1  2005/02/23 20:24:19  dicuccio
-* Initial revision - added GetLabel()
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1891, CRC32: 7724f0c5 */

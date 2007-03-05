@@ -327,40 +327,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 6.9  2005/09/09 19:05:51  ucko
- * AsCTime: press on even if some fields are unavailable, defaulting to
- * the lowest legal value in each case.
- * In general, replace IsSetXxx() with CanGetXxx().
- *
- * Revision 6.8  2005/06/03 16:51:39  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 6.7  2004/05/19 17:21:39  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 6.6  2003/03/11 15:38:42  kuznets
- * iterate -> ITERATE
- *
- * Revision 6.5  2003/02/24 20:02:36  gouriano
- * use template-based exceptions instead of errno and parse exceptions
- *
- * Revision 6.4  2002/12/09 17:30:11  ucko
- * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
- *
- * Revision 6.3  2002/12/06 20:03:16  ucko
- * Support conversion to/from CTime and from time_t
- *
- * Revision 6.2  2002/10/04 14:45:09  ucko
- * Add a generic date formatter with flexible support for missing fields.
- *
- * Revision 6.1  2001/11/16 20:54:52  ucko
- * Added comparison for dates.
- *
- * ===========================================================================
- */
-
 /* Original file checksum: lines: 61, chars: 1885, CRC32: 4ef42d28 */

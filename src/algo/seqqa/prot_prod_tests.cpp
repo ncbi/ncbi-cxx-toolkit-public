@@ -251,32 +251,3 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/12/26 21:09:51  jcherry
- * Eliminated compiler warnings
- *
- * Revision 1.6  2006/07/12 13:58:46  jcherry
- * Run Entrez neigbors test only if the is is resolvable to a gi
- * (required for Entrez query)
- *
- * Revision 1.5  2005/12/05 15:13:08  jcherry
- * Speed-up for entrez neighbors
- *
- * Revision 1.4  2005/12/01 15:56:57  jcherry
- * Test the taxid for zero, not the bioseq handle
- *
- * Revision 1.3  2005/01/24 17:17:27  vasilche
- * Use bool operator to check handles.
- *
- * Revision 1.2  2004/11/01 19:33:08  grichenk
- * Removed deprecated methods
- *
- * Revision 1.1  2004/10/06 19:57:15  jcherry
- * Initial version
- *
- * ===========================================================================
- */

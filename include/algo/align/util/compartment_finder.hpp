@@ -756,41 +756,4 @@ bool CCompartmentAccessor<THit>::GetNext(THitRefs& compartment) {
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/09/26 15:27:00  kapustin
- * Core implementation redesigned for more accurate target evaluation
- *
- * Revision 1.10  2006/08/01 15:06:10  kapustin
- * Max intron length up to 1M
- *
- * Revision 1.9  2006/06/27 14:23:58  kapustin
- * Cosmetics
- *
- * Revision 1.8  2006/04/12 16:28:25  kapustin
- * Use intron penalities only when discirminating between extension candidates
- *
- * Revision 1.7  2006/03/21 16:16:12  kapustin
- * +max_singleton_matches parameter
- *
- *
- * Revision 1.5  2005/10/04 19:33:53  kapustin
- * Limit min distance btw compartments by unaligned term query space only.
- *
- * Revision 1.4  2005/09/21 14:14:16  kapustin
- * Fix the problem with initial (dummy) score. Replace size_t => TCoord.
- *
- * Revision 1.3  2005/09/13 15:56:15  kapustin
- * kMax* => numeric_limits<>
- *
- * Revision 1.2  2005/09/12 20:15:16  ucko
- * Use TCoord rather than size_t for m_box for consistency with THitFilter.
- *
- * Revision 1.1  2005/09/12 16:21:34  kapustin
- * Add compartmentization algorithm
- *
- * ==========================================================================
- */
-
 #endif

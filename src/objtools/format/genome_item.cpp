@@ -65,24 +65,3 @@ void CGenomeItem::x_GatherInfo(CBioseqContext& ctx)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.3  2004/04/22 16:00:44  shomrat
-* Changes in context
-*
-* Revision 1.2  2003/12/18 17:43:34  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:22:30  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

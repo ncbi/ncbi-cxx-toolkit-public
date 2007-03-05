@@ -77,22 +77,4 @@ END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2004/11/22 16:04:07  grichenk
-* Fixed/added doxygen comments
-*
-* Revision 1.3  2002/12/26 19:45:50  dicuccio
-* Added export specifier for feature::GetLabel()
-*
-* Revision 1.2  2002/06/07 16:09:52  ucko
-* Move everything into the "feature" namespace.
-*
-* Revision 1.1  2002/06/06 18:46:38  clausen
-* Initial version
-*
-* ===========================================================================
-*/
-
 #endif  /* FEAT__HPP */

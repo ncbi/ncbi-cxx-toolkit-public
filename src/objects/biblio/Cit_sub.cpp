@@ -70,32 +70,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.5  2005/11/14 18:28:20  ludwigf
-* FIXED: The submission date would get lost during the processing of the
-* submission citation data. This happened when the date object got obsoleted
-* while it was still shared into the post-processing data structure.
-*
-* Revision 1.4  2005/05/20 13:32:48  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.3  2004/10/22 14:15:39  shomrat
-* GetLabel - add unique, changed date format
-*
-* Revision 1.2  2004/05/19 17:18:17  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.1  2004/02/24 15:52:25  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1875, CRC32: ed1dd5e3 */

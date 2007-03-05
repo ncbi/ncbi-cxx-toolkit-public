@@ -82,29 +82,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.4  2004/08/30 15:06:56  shomrat
-* use multimap for denseseg map
-*
-* Revision 1.3  2004/04/22 15:38:48  shomrat
-* New implementation of Primary item
-*
-* Revision 1.2  2004/02/12 20:21:38  shomrat
-* added include directive
-*
-* Revision 1.1  2003/12/17 19:49:08  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___PRIMARY_ITEM__HPP */

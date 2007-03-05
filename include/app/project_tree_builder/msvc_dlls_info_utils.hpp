@@ -63,20 +63,4 @@ inline void GetHostedLibs (const CPtbRegistry& registry,
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/09/26 18:50:52  gouriano
- * Added CNcbiRegistry wrapper to speed up the execution
- *
- * Revision 1.2  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.1  2004/04/20 14:07:59  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */
-
-
 #endif //PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP

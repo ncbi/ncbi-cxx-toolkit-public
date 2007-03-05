@@ -30,29 +30,6 @@
 *
 * File Description:
 *   CLightString - class with "light" strings: char pointer + string length
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2005/08/04 18:02:39  ivanov
-* Added operator CTempString() and constructor from CTempString
-*
-* Revision 1.5  2003/04/17 17:50:18  siyan
-* Added doxygen support
-*
-* Revision 1.4  2001/01/05 20:08:52  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.3  2000/07/03 18:42:34  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.2  2000/06/01 20:43:53  vasilche
-* cstring header is missing on IRIX.
-*
-* Revision 1.1  2000/06/01 19:06:56  vasilche
-* Added parsing of XML data.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>

@@ -285,27 +285,4 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
 int main(int argc, const char* argv[])
 {
     return CRemoteAppClientSampleApp().AppMain(argc, argv);
-} 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/19 19:41:06  didenko
- * Spelling fix
- *
- * Revision 1.4  2006/04/04 19:15:34  didenko
- * Added ShowBlob method
- *
- * Revision 1.3  2006/03/16 15:14:41  didenko
- * Renamed CRemoteJob... to CRemoteApp...
- *
- * Revision 1.2  2006/03/15 17:34:09  didenko
- * Added remote_app_client_sample
- *
- * Revision 1.1  2006/03/07 17:24:00  didenko
- * Added a workernode for running external applications
- *
- * ===========================================================================
- */
- 
+}

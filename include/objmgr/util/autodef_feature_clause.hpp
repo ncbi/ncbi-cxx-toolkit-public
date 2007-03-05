@@ -204,31 +204,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.6  2006/05/17 12:00:12  bollin
-* changed method for determining whether feature clause is pseudo
-*
-* Revision 1.5  2006/05/15 12:03:23  bollin
-* changes to handle segmented sets
-*
-* Revision 1.4  2006/04/25 13:36:28  bollin
-* added misc_feat processing and removal of unwanted features
-*
-* Revision 1.3  2006/04/18 16:54:22  bollin
-* added support for parsing misc_RNA features
-*
-* Revision 1.2  2006/04/17 17:39:36  ucko
-* Fix capitalization of header filenames.
-*
-* Revision 1.1  2006/04/17 16:25:01  bollin
-* files for automatically generating definition lines, using a combination
-* of modifiers to make definition lines unique within a set and listing the
-* relevant features on the sequence.
-*
-*
-* ===========================================================================
-*/
-
 #endif //OBJMGR_UTIL_AUTODEF_FEATURE_CLAUSE__HPP

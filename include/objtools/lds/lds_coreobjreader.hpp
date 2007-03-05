@@ -140,44 +140,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/11/07 13:04:50  kuznets
- * Use streampos (portability fix)
- *
- * Revision 1.2  2005/10/12 12:18:04  kuznets
- * Use 64-bit file sizes and offsets
- *
- * Revision 1.1  2005/09/19 14:39:37  kuznets
- * Merjing lds admin and lds libs together
- *
- * Revision 1.9  2005/03/29 19:21:21  jcherry
- * Added export specifier
- *
- * Revision 1.8  2004/08/30 18:16:28  gouriano
- * Use CNcbiStreamoff instead of size_t for stream offset operations
- *
- * Revision 1.7  2003/10/09 16:43:05  kuznets
- * +ClearObjectsVector()
- *
- * Revision 1.6  2003/10/07 20:44:44  kuznets
- * + Reset() method
- *
- * Revision 1.5  2003/06/03 14:07:46  kuznets
- * Include paths changed to reflect the new directory structure
- *
- * Revision 1.4  2003/05/30 20:31:51  kuznets
- * Added SObjectDetails::ext_id (database id)
- *
- * Revision 1.2  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.1  2003/05/22 18:57:17  kuznets
- * Work in progress
- *
- * ===========================================================================
- */
-
 #endif

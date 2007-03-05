@@ -123,23 +123,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/02/10 15:26:17  ivanov
- * Added comments
- *
- * Revision 1.3  2004/02/09 19:37:45  ivanov
- * Moved from "cgi/redirect" to "misc/cgi_redirect" directory
- *
- * Revision 1.2  2004/02/09 17:58:13  ivanov
- * Added and changed comments (by Denis Vakatov)
- *
- * Revision 1.1  2004/02/09 17:10:19  ivanov
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif // MISC___CGI_REDIRECT__REDIRECT__HPP

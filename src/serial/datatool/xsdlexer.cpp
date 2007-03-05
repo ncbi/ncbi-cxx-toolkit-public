@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -239,20 +238,3 @@ void  XSDLexer::AddElement(void)
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.3  2006/05/10 18:54:01  gouriano
- * Added documentation parsing
- *
- * Revision 1.2  2006/05/03 14:38:08  gouriano
- * Added parsing attribute definition and include
- *
- * Revision 1.1  2006/04/20 14:00:11  gouriano
- * Added XML schema parsing
- *
- *
- * ==========================================================================
- */

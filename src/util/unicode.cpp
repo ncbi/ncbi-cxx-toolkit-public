@@ -322,36 +322,3 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
 
 END_SCOPE(utf8)
 END_NCBI_SCOPE
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.9  2006/02/16 19:29:33  gouriano
- * Use unicode_plans.inl
- *
- * Revision 1.8  2005/04/25 19:05:24  ivanov
- * Fixed compilation warnings on 64-bit Worshop compiler
- *
- * Revision 1.7  2005/04/20 20:07:11  lavr
- * More changes to use [s]size_t instead of plain int's
- *
- * Revision 1.6  2005/04/20 18:40:26  lavr
- * Change buffer sizes from being 'int' to 'size_t'
- *
- * Revision 1.5  2005/02/07 16:02:28  ivanov
- * Fixed Workshop compiler warnings in 64bit mode
- *
- * Revision 1.4  2004/12/22 18:07:18  osipov
- * Fixed bug: wrong convertation of 0-31 characters
- *
- * Revision 1.3  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2004/05/13 21:18:12  ucko
- * Respect constness in UnicodeToAscii.
- *
- * Revision 1.1  2004/05/06 18:15:29  gouriano
- * Imported from pubmed/xmldb
- *
- * ==========================================================================
- */

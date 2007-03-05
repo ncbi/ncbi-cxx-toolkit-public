@@ -50,15 +50,3 @@ CNcbiDiag* YesDefineFromCpp()
 {
    return new CNcbiDiag(DIAG_COMPILE_INFO);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/09/23 18:43:11  kononenk
- * Test fixed for MSVC++ precompiled header
- *
- * Revision 1.1  2004/09/21 18:15:46  kononenk
- * Added tests for "Diagnostic Message Filtering"
- *
- * ===========================================================================
- */

@@ -215,31 +215,4 @@ unsigned int CAutoDefModifierCombo::GetHIVCloneIsolateRule()
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.6  2006/05/04 11:44:40  bollin
-* improvements to method for finding unique organism description
-*
-* Revision 1.5  2006/05/03 15:45:37  bollin
-* added functions for handling country, clone, and isolate for HIV organism descriptions
-*
-* Revision 1.4  2006/05/02 14:12:18  bollin
-* moved organism description code out of CAutoDef into CAutoDefModCombo
-*
-* Revision 1.3  2006/05/02 13:03:27  bollin
-* added labels for modifiers, implemented organism description dialog options
-*
-* Revision 1.2  2006/04/17 17:39:36  ucko
-* Fix capitalization of header filenames.
-*
-* Revision 1.1  2006/04/17 16:25:01  bollin
-* files for automatically generating definition lines, using a combination
-* of modifiers to make definition lines unique within a set and listing the
-* relevant features on the sequence.
-*
-*
-* ===========================================================================
-*/
-
 #endif //OBJMGR_UTIL_AUTODEF_MOD_COMBO__HPP

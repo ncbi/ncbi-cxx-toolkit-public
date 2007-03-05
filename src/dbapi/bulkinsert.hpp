@@ -31,28 +31,6 @@
 * Author:  Michael Kholodov
 *   
 * File Description:  Array template class
-*
-*
-* $Log$
-* Revision 1.4  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.3  2002/10/03 18:50:00  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.2  2002/09/18 18:49:26  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.1  2002/09/16 19:34:41  kholodov
-* Added: bulk insert support
-*
-*
-*
-*
 */
 
 #include <dbapi/dbapi.hpp>

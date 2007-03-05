@@ -51,17 +51,4 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER    iter,
 }  /* extern "C" */
 #endif
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2006/04/19 14:46:37  lavr
- * Formatting -- the API should be considered fully functional
- *
- * Revision 1.1  2006/03/28 18:27:32  lavr
- * Initial revision (not yet working)
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_LOCAL__H */

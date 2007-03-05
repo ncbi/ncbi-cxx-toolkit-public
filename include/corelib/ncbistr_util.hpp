@@ -288,24 +288,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/29 00:07:51  ucko
- * CStrTokenize::Do(): make TPosContainer mandatory because giving non-const
- * references default values can be problematic (particularly under MIPSpro).
- *
- * Revision 1.3  2006/12/28 20:40:47  vasilche
- * Fixed incorrect constructor call.
- *
- * Revision 1.2  2006/12/28 16:58:27  vasilche
- * Fixed compilation errors.
- *
- * Revision 1.1  2006/12/28 16:09:32  kuznets
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // CORELIB___STR_UTIL__HPP

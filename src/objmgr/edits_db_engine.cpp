@@ -45,12 +45,3 @@ IEditsDBEngine::~IEditsDBEngine()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/01/25 18:59:04  didenko
- * Redisgned bio objects edit facility
- *
- * ===========================================================================
- */

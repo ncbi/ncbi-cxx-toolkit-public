@@ -29,37 +29,6 @@
 --      ASN.1 definitions for scoring matrix
 --
 -- ===========================================================================
--- $Log: scoremat.asn,v $
--- Revision 1.10  2004/10/12 14:05:52  camacho
--- Reorganization and documentation of score matrix specification.
---
--- Revision 1.9  2004/08/05 17:29:47  camacho
--- Changes to Score-matrix specification:
--- 1. is_protein has a default value of TRUE
--- 2. identifier becomes optional
--- 3. unassigned and other members of freq-Ratios are removed.
---
--- Revision 1.8  2004/07/19 17:34:54  papadopo
--- change weights and position frequencies to type REAL, remove their 
--- associated scaling factors
---
--- Revision 1.7  2004/02/23 15:42:24  camacho
--- 1. Gave default value to Score-matrix::byrow field
--- 2. Updated documentation
---
--- Revision 1.6  2003/08/25 19:03:28  bauer
--- added raw frequencies and weights as optional score-matrix components
---
--- Revision 1.5  2003/06/16 12:19:56  madden
--- Do not use Blast4-ka-block, other changes worked out with structure group
---
--- Revision 1.2  2002/12/03 14:01:45  camacho
--- Data type changes
---
--- Revision 1.1  2002/12/02 22:15:27  camacho
--- Initial revision
---
--- ===========================================================================
 
 NCBI-ScoreMat DEFINITIONS ::= BEGIN
 

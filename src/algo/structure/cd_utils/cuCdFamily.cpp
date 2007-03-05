@@ -513,25 +513,3 @@ bool CDFamily::findChildren(CCdCore* cd, vector<CCdCore*>& cds, set<int>& childr
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2007/01/09 19:29:21  lanczyck
- * add createFamilies
- *
- * Revision 1.3  2006/12/18 17:02:34  lanczyck
- * add convergeTo and findCDByAccession to CDFamily
- *
- * Revision 1.2  2005/04/19 22:00:22  ucko
- * Don't try to use find() on a tree<>, because it's not 100% STL-compatible.
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */
-

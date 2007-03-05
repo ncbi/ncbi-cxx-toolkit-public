@@ -82,33 +82,3 @@ CClassTypeInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
 }
 
 #endif /* def CLASSINFO__HPP  &&  ndef CLASSINFO__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.4  2002/12/26 19:33:06  gouriano
-* changed XML I/O streams to properly handle object copying
-*
-* Revision 1.3  2002/12/23 18:38:50  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.2  2000/10/03 17:22:30  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.1  2000/09/18 20:00:00  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
-*/

@@ -37,27 +37,6 @@
  *   It generates uniform random numbers between 0 and 2^31 - 1 (inclusive).
  *
  *   More details and literature refs are provided in "random_gen.cpp".
- *
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2003/04/17 17:50:23  siyan
- * Added doxygen support
- *
- * Revision 1.4  2002/12/19 14:51:00  dicuccio
- * Added export specifier for Win32 DLL builds.
- *
- * Revision 1.3  2001/07/06 11:49:21  clausen
- * Added GetRand(min,max)
- *
- * Revision 1.2  2001/07/05 16:55:40  vakatov
- * Added typedef CRandom::TValue and CRandom::GetMax() to allow for
- * seamless extension of this API in the future
- *
- * Revision 1.1  2001/07/03 18:36:07  clausen
- * Initial check in
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>

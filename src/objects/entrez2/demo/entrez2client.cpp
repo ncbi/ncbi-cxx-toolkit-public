@@ -417,30 +417,3 @@ int main(int argc, const char* argv[])
 {
     return CEntrez2ClientApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/04/19 14:18:56  lavr
- * Remove explicit [default] CONNECT_Init() -- no longer necessary
- *
- * Revision 1.5  2005/02/02 19:49:54  grichenk
- * Fixed more warnings
- *
- * Revision 1.4  2004/05/19 17:21:09  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 1.3  2003/11/20 15:41:17  ucko
- * Update for new (saner) treatment of ASN.1 NULLs.
- *
- * Revision 1.2  2003/07/31 18:12:26  dicuccio
- * Code clean-up.  Added limits for docsum retrieval (start pos / max number of
- * records)
- *
- * Revision 1.1  2003/07/31 17:38:51  dicuccio
- * Added subproject demo with a single applicaiton, a command-line demo app
- *
- * ===========================================================================
- */
-

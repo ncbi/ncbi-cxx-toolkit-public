@@ -140,25 +140,4 @@ TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq);
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log: seq_map_switch.hpp,v $
-* Revision 1.5  2006/10/18 17:24:32  vasilche
-* SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
-*
-* Revision 1.4  2006/10/05 13:52:53  vasilche
-* Added export.
-*
-* Revision 1.3  2006/10/04 19:31:07  vasilche
-* Allow inexact match in segment switch.
-*
-* Revision 1.2  2006/09/27 21:51:56  vasilche
-* Added exports.
-*
-* Revision 1.1  2006/09/27 21:28:59  vasilche
-* Added functions to calculate switch points.
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OBJMGR___SEQ_MAP_SWITCH__HPP

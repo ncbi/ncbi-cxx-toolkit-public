@@ -300,36 +300,3 @@ double CCoiledCoil::PredictRegions(const objects::CSeqVector& seq,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/12/26 20:53:00  jcherry
- * Eliminated compiler warning
- *
- * Revision 1.7  2006/12/19 22:04:48  jcherry
- * Eliminate compiler warning
- *
- * Revision 1.6  2006/12/12 15:01:59  jcherry
- * Bug fix (was working on linux, but not on windows)
- *
- * Revision 1.5  2005/01/04 17:47:49  jcherry
- * Casts to eliminate compiler warnings
- *
- * Revision 1.4  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/09/09 18:30:55  ucko
- * Fixes for WorkShop, which (still) doesn't let templates access
- * anything file-static.
- *
- * Revision 1.2  2003/09/09 16:10:20  dicuccio
- * Fxes for MSVC.  Moved templated functions into implementation file to avoid
- * naming / export conflicts.  Moved lookup table to implementation file.
- *
- * Revision 1.1  2003/09/08 16:15:12  jcherry
- * Initial version
- *
- * ===========================================================================
- */

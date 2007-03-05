@@ -63,13 +63,3 @@ bool CMaskRegexp::Match(const string& str, NStr::ECase use_case) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/11/21 20:59:06  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

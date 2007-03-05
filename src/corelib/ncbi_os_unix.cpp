@@ -133,23 +133,3 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.4  2006/03/07 16:51:05  lavr
- * Make empty string for the logfile to cause use of "/dev/null"
- * Always check redirect-into-self for dup'ed file descriptors
- *
- * Revision 1.3  2005/11/30 11:53:29  ivanov
- * Cosmetics
- *
- * Revision 1.2  2004/05/14 13:59:26  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 1.1  2003/09/30 20:53:56  lavr
- * Initial revision
- *
- * ==========================================================================
- */

@@ -103,38 +103,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2005/08/15 16:24:18  vakatov
-* DOXY fix
-*
-* Revision 1.7  2005/08/15 16:02:48  shomrat
-* Added explanation for ESeqLocExtremes
-*
-* Revision 1.6  2005/02/18 14:58:34  shomrat
-* + ESeqLocExtremes
-*
-* Revision 1.5  2004/08/16 17:59:26  grichenk
-* Added IsForward()
-*
-* Revision 1.4  2004/02/19 18:00:50  shomrat
-* changed logic to match C toolkit
-*
-* Revision 1.3  2003/12/18 02:55:52  ucko
-* Rework Reverse to avoid warnings about unhandled cases.
-*
-* Revision 1.2  2003/08/27 14:20:27  vasilche
-* Added Reverse(ENa_strand).
-*
-* Revision 1.1  2002/11/12 19:53:25  ucko
-* Add simple utilities to distinguish forward- and reverse-orientation strands.
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQLOC_NA_STRAND_HPP
 /* Original file checksum: lines: 63, chars: 1928, CRC32: 1071d9d3 */

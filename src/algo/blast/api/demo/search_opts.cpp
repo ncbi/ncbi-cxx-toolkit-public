@@ -229,38 +229,3 @@ void COptionWalker::ReadOpt(const CArgs & args,
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.8  2004/11/02 17:53:02  camacho
- * Add SKIP_DOXYGEN_PROCESSING to rcsid string
- *
- * Revision 1.7  2004/06/21 16:36:31  bealer
- * - Adjust scope usage for doxygen's sake.
- *
- * Revision 1.6  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.5  2004/05/19 14:52:02  camacho
- * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
- * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
- *    location
- * 3. Added use of @todo doxygen keyword
- *
- * Revision 1.4  2004/04/15 21:18:56  bealer
- * - Remove semi-colons so that solaris compiler will not choke.
- *
- * Revision 1.3  2004/03/22 20:46:22  bealer
- * - Fix non-literate comments to look less like doxygen comments.
- *
- * Revision 1.2  2004/03/18 13:49:04  camacho
- * Correct use of namespaces
- *
- * Revision 1.1  2004/02/18 17:04:42  bealer
- * - Adapt blast_client code for Remote Blast API, merging code into the
- *   remote_blast demo application.
- *
- * ===========================================================================
- */

@@ -221,21 +221,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2007/01/04 15:05:12  kuznets
- * Minor warning fix
- *
- * Revision 1.2  2006/11/30 14:23:50  dicuccio
- * Update to use buffer typedefs from CBDB_RawFile
- *
- * Revision 1.1  2006/06/02 12:44:55  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
-
 #endif

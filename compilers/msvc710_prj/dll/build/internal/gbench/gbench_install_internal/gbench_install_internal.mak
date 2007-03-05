@@ -134,28 +134,3 @@ contig :
     @if exist $(DLLBIN)\dload_contig.pdb copy $(DLLBIN)\dload_contig.pdb $(GBENCH)\extra\contig\dload_contig.pdb
     @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
-
-#################################################################
-# $Log$
-# Revision 1.3  2006/12/18 19:54:15  dicuccio
-# MAGIC rewire Proteus library
-#
-# Revision 1.2  2006/06/27 15:48:29  jcherry
-# MAGIC  Added contig plugins
-#
-# Revision 1.1  2006/03/15 15:28:36  dicuccio
-# MAGIC: moved from source tree to compiler tree
-#
-# Revision 1.4  2005/06/20 13:43:15  dicuccio
-# Move ncbi_gbench_internal into standard build and install
-#
-# Revision 1.3  2005/06/02 13:40:50  dicuccio
-# INstall NCBI subproject
-#
-# Revision 1.2  2005/01/13 23:21:21  vakatov
-# THIRDPARTY_MAKEFILES_DIR += "..\"
-#
-# Revision 1.1  2005/01/13 13:44:23  dicuccio
-# Initial revision
-#
-#################################################################

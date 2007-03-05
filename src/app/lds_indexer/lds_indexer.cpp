@@ -170,15 +170,3 @@ int main(int argc, const char* argv[])
         CLDSIndexerApplication().AppMain(
                     argc, argv, 0, eDS_Default );
 }
-
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/10/02 14:39:59  didenko
- * Added lds_indexer utility
- *
- * ===========================================================================
- */

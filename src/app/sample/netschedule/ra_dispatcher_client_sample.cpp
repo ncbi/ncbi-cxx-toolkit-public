@@ -133,24 +133,4 @@ int CRADispatcherClientSampleApp::Run(void)
 int main(int argc, const char* argv[])
 {
     return CRADispatcherClientSampleApp().AppMain(argc, argv);
-} 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/07/20 16:26:01  didenko
- * Cosmetics
- *
- * Revision 1.3  2006/07/20 15:45:00  didenko
- * Cosmetics
- *
- * Revision 1.2  2006/07/17 17:59:00  didenko
- * + Comments
- *
- * Revision 1.1  2006/07/13 14:44:05  didenko
- * Added the example for CRADispatcherClient
- *
- * ===========================================================================
- */
- 
+}

@@ -139,29 +139,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2006/02/02 14:31:23  vasilche
-* Operator bool.
-*
-* Revision 1.5  2005/06/22 14:14:38  vasilche
-* Avoid exporting inlined methods.
-*
-* Revision 1.4  2005/01/12 17:16:14  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.3  2004/12/22 15:56:13  vasilche
-* Removed bool operator to avoid ambiguity on Sun.
-*
-* Revision 1.2  2004/04/12 16:49:16  vasilche
-* Allow null scope in CSeqMap_CI and CSeqVector.
-*
-* Revision 1.1  2004/03/16 15:47:26  vasilche
-* Added CBioseq_set_Handle and set of EditHandles
-*
-*
-* ===========================================================================
-*/
-
 #endif//OBJMGR_IMPL_HEAP_SCOPE__HPP

@@ -184,27 +184,3 @@ namespace std {
         string& operator+=(const string& rhs);
     };
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/12 13:58:34  jcherry
- * Added string::substr.  Use unsigned long for size_type.
- *
- * Revision 1.4  2005/08/18 22:01:49  jcherry
- * Wrap more std::string constructors
- *
- * Revision 1.3  2005/05/16 15:23:10  jcherry
- * Make return type of operator+= non-const; this is correct, and necessary
- * for proper behavior of += in Python
- *
- * Revision 1.2  2005/05/13 14:59:34  jcherry
- * __getitem__: raise IndexError on out-of-range to support iteration;
- * support Python-style negative indices
- *
- * Revision 1.1  2005/05/11 21:30:44  jcherry
- * Initial version
- *
- * ===========================================================================
- */

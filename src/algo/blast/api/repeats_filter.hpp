@@ -88,44 +88,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.11  2006/02/22 18:34:17  bealer
-* - Blastx filtering support, CBlastQueryVector class.
-*
-* Revision 1.10  2006/01/26 14:18:04  camacho
-* Doxygen fix
-*
-* Revision 1.9  2006/01/24 15:35:08  camacho
-* Overload Blast_FindRepeatFilterLoc with repeats database filtering arguments
-*
-* Revision 1.8  2005/08/08 16:28:17  dondosha
-* Removed unused header
-*
-* Revision 1.7  2005/05/24 12:56:57  camacho
-* Doxygen fixes
-*
-* Revision 1.6  2005/03/31 20:43:14  madden
-* Blast_FindRepeatFilterLoc now takes CBlastOptionsHandle rather than char*
-*
-* Revision 1.5  2005/03/29 15:58:54  dondosha
-* Added blast scope
-*
-* Revision 1.4  2005/02/08 20:34:49  dondosha
-* Moved auxiliary functions and definitions for repeats filtering from C++ api into core; renamed FindRepeatFilterLoc into Blast_FindRepeatFilterLoc
-*
-* Revision 1.3  2004/08/11 11:59:07  ivanov
-* Added export specifier NCBI_XBLAST_EXPORT
-*
-* Revision 1.2  2004/07/02 19:52:51  dondosha
-* Added doxygen comments
-*
-* Revision 1.1  2004/06/15 19:09:10  dondosha
-* Repeats filtering code, moved from internal/blast/SplitDB/blastd
-*
-* ===========================================================================
-*/
-
 #endif /* ALGO_BLAST_API___BLAST_OPTION__HPP */

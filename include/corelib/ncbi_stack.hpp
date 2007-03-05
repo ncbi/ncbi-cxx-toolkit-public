@@ -93,17 +93,4 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const CStackTrace& stack_trace)
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/11/15 15:38:53  grichenk
- * Added methods to fromat and output stack trace.
- *
- * Revision 1.1  2006/11/06 17:35:19  grichenk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // CORELIB___NCBI_STACK__HPP

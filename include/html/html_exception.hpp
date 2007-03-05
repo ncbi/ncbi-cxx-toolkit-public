@@ -120,46 +120,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/05/10 14:49:32  ivanov
- * + eNotFound
- *
- * Revision 1.8  2006/01/18 19:45:22  ssikorsk
- * Added an extra argument to CException::x_Init
- *
- * Revision 1.7  2004/09/22 13:32:16  kononenk
- * "Diagnostic Message Filtering" functionality added.
- * Added function SetDiagFilter()
- * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
- * Module, class and function attribute added to CNcbiDiag and CException
- * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
- * Macro NCBI_MODULE can be used to set default module name in cpp files
- *
- * Revision 1.6  2004/07/04 19:11:23  vakatov
- * Do not use "throw()" specification after constructors and assignment
- * operators of exception classes inherited from "std::exception" -- as it
- * causes ICC 8.0 generated code to abort in Release mode.
- *
- * Revision 1.5  2004/03/10 20:15:18  ivanov
- * + eEndlessRecursion
- *
- * Revision 1.4  2003/12/23 17:59:51  ivanov
- * Added exception tracing. Moved code to separate .cpp file.
- *
- * Revision 1.3  2003/11/03 17:02:53  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.2  2003/11/03 14:43:21  ivanov
- * + eWrite
- *
- * Revision 1.1  2003/07/08 17:12:40  gouriano
- * changed thrown exceptions to CException-derived ones
- *
- * ===========================================================================
- */
-
 #endif  /* HTML___EXCEPTION__HPP */

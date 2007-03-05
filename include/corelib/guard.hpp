@@ -204,30 +204,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/11 16:26:50  vasilche
- * Prevent accidental incorrect use of guards by explicit empty constructor.
- *
- * Revision 1.5  2006/03/24 22:06:37  grichenk
- * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
- *
- * Revision 1.4  2005/06/17 15:20:19  vasilche
- * Changed CGuard<> to store locking and unlocking objects using pair_base_member.
- * Changed Lock::() and Unlock::() to return void because it was not used anyway.
- *
- * Revision 1.3  2004/10/06 16:14:02  kuznets
- * try and ignore exceptions in ~CGuard
- *
- * Revision 1.2  2004/06/17 19:20:12  vasilche
- * Simplify CGuard code - no exceptions or return values.
- *
- * Revision 1.1  2004/06/16 11:31:08  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // CORELIB___GUARD__HPP

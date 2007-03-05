@@ -85,12 +85,3 @@ void CScopeTransaction::x_Set(IScopeTransaction_Impl& impl)
 } 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2005/11/15 19:22:08  didenko
- * Added transactions and edit commands support
- *
- * ===========================================================================
- */

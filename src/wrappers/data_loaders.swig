@@ -54,15 +54,3 @@ objtools/data_loaders/genbank/statistics.hpp
 objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp
 
 %%
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/05/30 18:36:33  jcherry
- * Added headers
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

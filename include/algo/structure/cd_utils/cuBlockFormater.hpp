@@ -73,26 +73,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2006/07/13 20:55:41  cliu
- * format existing alignments
- *
- * Revision 1.2  2006/06/13 13:04:04  cliu
- * fix the compiling error on lynux
- *
- * Revision 1.1  2006/06/06 20:45:33  cliu
- * add BlockFormater
- *
- * Revision 1.1  2005/04/19 14:28:00  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

@@ -119,21 +119,4 @@ class CSeqScores
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/10/20 19:34:12  souvorov
- * Penalty for nonconsensus starts/stops/splices
- *
- * Revision 1.2  2005/10/06 15:53:02  chetvern
- * removed dependency on hmm.hpp
- * moved CSeqScores::OpenNonCodingRegion implementation into the class definition to make it inline
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___SCORE__HPP

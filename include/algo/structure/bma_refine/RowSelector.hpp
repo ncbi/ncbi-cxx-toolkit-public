@@ -180,36 +180,3 @@ private:
 END_SCOPE(align_refine)
 
 #endif // AR_ROW_SELECTOR__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/08/09 18:33:51  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.2  2006/03/27 16:38:18  lanczyck
-* refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
-*
-* Revision 1.1  2005/06/28 13:45:25  lanczyck
-* block multiple alignment refiner code from internal/structure/align_refine
-*
-* Revision 1.6  2004/11/02 23:52:08  lanczyck
-* remove CCdCore in favor of CCdd & AlignmentUtility anticipating deployment w/i cn3d
-*
-* Revision 1.5  2004/10/04 19:11:44  lanczyck
-* add shift analysis; switch to use of cd_utils vs my own class; rename output CDs w/ trial number included; default T = 3e6
-*
-* Revision 1.4  2004/07/27 16:53:35  lanczyck
-* give RowSelector a CRandom member; change seed parameter handling in main app
-*
-* Revision 1.3  2004/07/21 22:11:31  lanczyck
-* allow for row exclusions; not yet used in the main app for blocking LOO for structure rows
-*
-* Revision 1.2  2004/06/22 19:53:01  lanczyck
-* fix message reporting; add a couple cmd options
-*
-* Revision 1.1  2004/06/21 20:09:02  lanczyck
-* Initial version w/ LOO & scoring vs. PSSM
-*
-*
-*/

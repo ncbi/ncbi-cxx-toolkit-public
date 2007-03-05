@@ -453,36 +453,3 @@ void CRmReader::CloseReader( CRmReader* pReader )
 
 END_objects_SCOPE
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/21 17:41:48  dicuccio
- * Fix compiler warnings
- *
- * Revision 1.4  2006/06/05 14:54:52  ludwigf
- * ADDED: Error reporting. The first 5 bad records are reported to the log.
- *  After that, we abort reading and throw, in the expectation that the upper
- *  layer will turn the expectation into an error message.
- *
- * CHANGED: Parsing no longer insists in the three header lines to consider
- *  the given stream good RMO. If there is no header, then we expect the data
- *  to start right away.
- *
- * CHANGED: Parsing now uses NStr functions instead of istream iterators.
- *
- * Revision 1.3  2006/05/05 20:06:38  dicuccio
- * Tweaks to repeat mask reading: use CNcbiIstrstream instead of naked istrstream;
- * corrected coordinates (use proper interval ranges, adjust for 1-based
- * coordinates, insure that from <= to)
- *
- * Revision 1.2  2006/04/18 16:05:19  ucko
- * Use NStr::{Int,Double}ToString rather than printf, which might not
- * have been declared.
- *
- * Revision 1.1  2006/04/18 11:36:35  ludwigf
- * INIT: Implementation of the RepeatMasker OUT file reader.
- *
- *
- * ===========================================================================
- */

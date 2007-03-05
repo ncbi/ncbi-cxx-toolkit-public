@@ -27,41 +27,6 @@
 *
 * File Description:
 *   Alias type info
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2004/08/05 18:32:12  vasilche
-* Added EXPORT to CStdAliasBase<> and CStringAliasBase<>.
-*
-* Revision 1.9  2004/08/04 14:44:48  vasilche
-* Added EXPORT to CAliasInfo to workaround bug in MSVC 7.
-*
-* Revision 1.8  2004/05/17 21:03:02  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.7  2004/05/13 18:31:07  gouriano
-* Corrected GetRealTypeInfo
-*
-* Revision 1.6  2004/03/25 15:57:08  gouriano
-* Added possibility to copy and compare serial object non-recursively
-*
-* Revision 1.5  2003/12/08 22:14:41  grichenk
-* Fixed CAliasTypeInfo::IsType()
-*
-* Revision 1.4  2003/11/24 14:10:05  grichenk
-* Changed base class for CAliasTypeInfo to CPointerTypeInfo
-*
-* Revision 1.3  2003/11/18 18:11:48  grichenk
-* Resolve aliased type info before using it in CObjectTypeInfo
-*
-* Revision 1.2  2003/10/21 21:08:46  grichenk
-* Fixed aliases-related bug in XML stream
-*
-* Revision 1.1  2003/10/21 13:45:23  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

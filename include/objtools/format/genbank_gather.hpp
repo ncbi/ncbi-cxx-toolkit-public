@@ -60,28 +60,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.4  2004/04/22 15:45:40  shomrat
-* Changes in context
-*
-* Revision 1.3  2004/03/25 20:31:51  shomrat
-* Use handles
-*
-* Revision 1.2  2004/01/14 15:55:08  shomrat
-* *** empty log message ***
-*
-* Revision 1.1  2003/12/17 19:53:18  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT___GENBANK_GATHER__HPP */

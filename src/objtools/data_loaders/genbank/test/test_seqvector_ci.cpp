@@ -479,37 +479,3 @@ int main(int argc, const char* argv[])
 {
     return CTestApp().AppMain(argc, argv);
 }
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2004/05/21 21:42:52  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/12/16 17:51:23  kuznets
-* Code reorganization
-*
-* Revision 1.6  2003/11/12 20:16:15  vasilche
-* Fixed error: Attempt to delete Object Manager with open scopes.
-*
-* Revision 1.5  2003/08/29 13:34:48  vasilche
-* Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
-* CSeqVector::operator[] made significantly faster.
-* Added possibility to have platform dependent byte unpacking functions.
-*
-* Revision 1.4  2003/08/06 20:51:54  grichenk
-* Use CRandom class
-*
-* Revision 1.3  2003/07/09 18:49:33  grichenk
-* Added arguments (seed and cycles), default random cycles set to 20.
-*
-* Revision 1.2  2003/06/26 17:02:52  grichenk
-* Simplified output, decreased number of cycles.
-*
-* Revision 1.1  2003/06/24 19:50:02  grichenk
-* Added test for CSeqVector_CI
-*
-*
-* ===========================================================================
-*/
-

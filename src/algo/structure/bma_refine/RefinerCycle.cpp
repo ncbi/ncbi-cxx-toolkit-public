@@ -236,37 +236,3 @@ bool CBMARefinerCycle::IsConverged() const {
 }
 
 END_SCOPE(align_refine)
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/11/23 01:02:10  lanczyck
- * freeze specified blocks in both LOO and BE phases;
- * add support for a callback for a progress meter
- *
- * Revision 1.5  2005/11/07 14:42:11  lanczyck
- * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
- *
- * Revision 1.4  2005/07/07 22:55:21  lanczyck
- * fix out-of-range iteration index bug when testing for convergence when there were no changes in any of a cycle's phases
- *
- * Revision 1.3  2005/06/28 15:59:15  lanczyck
- * extract final score from last phase not skipped vs. last phase
- *
- * Revision 1.2  2005/06/28 14:25:23  lanczyck
- * don't treat cases of skipped phases as errors
- *
- * Revision 1.1  2005/06/28 13:44:23  lanczyck
- * block multiple alignment refiner code from internal/structure/align_refine
- *
- * Revision 1.3  2005/05/26 19:20:36  lanczyck
- * remove INFO level messages so can independently keep/suppress info level messages in struct_util/dp libraries
- *
- * Revision 1.2  2005/05/26 18:49:52  lanczyck
- * consistent results w/ original version:  bug fixes; modify messages for consistency
- *
- * Revision 1.1  2005/05/24 22:31:43  lanczyck
- * initial versions:  app builds but not yet tested
- *
- * ===========================================================================
- */

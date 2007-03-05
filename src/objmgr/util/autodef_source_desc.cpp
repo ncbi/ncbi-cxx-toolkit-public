@@ -145,35 +145,3 @@ bool CAutoDefSourceDescription::IsTrickyHIV()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.7  2006/12/07 16:30:59  bollin
-* Use IsSet rather than CanGet.
-*
-* Revision 1.6  2006/05/04 11:44:52  bollin
-* improvements to method for finding unique organism description
-*
-* Revision 1.5  2006/04/27 16:00:46  bollin
-* fixed bug in adding modifiers to descriptions for automatic definition lines
-*
-* Revision 1.4  2006/04/20 19:00:59  ucko
-* Stop including <objtools/format/context.hpp> -- there's (thankfully!)
-* no need to do so, and it confuses SGI's MIPSpro compiler.
-*
-* Revision 1.3  2006/04/17 17:42:21  ucko
-* Drop extraneous and disconcerting inclusion of gui headers.
-*
-* Revision 1.2  2006/04/17 17:39:37  ucko
-* Fix capitalization of header filenames.
-*
-* Revision 1.1  2006/04/17 16:25:05  bollin
-* files for automatically generating definition lines, using a combination
-* of modifiers to make definition lines unique within a set and listing the
-* relevant features on the sequence.
-*
-*
-* ===========================================================================
-*/
-

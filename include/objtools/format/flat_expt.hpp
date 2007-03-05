@@ -71,22 +71,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.2  2004/01/14 15:51:53  shomrat
-* Added invalid parameter exception type
-*
-* Revision 1.1  2003/12/17 19:51:41  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT___FLAT_EXPT__HPP */

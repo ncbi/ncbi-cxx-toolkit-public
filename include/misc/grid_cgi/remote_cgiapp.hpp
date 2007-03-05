@@ -88,42 +88,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.2  2005/09/30 14:58:56  didenko
- * Added optional parameter to PutProgressMessage methods which allows
- * sending progress messages regardless of the rate control.
- *
- * Revision 1.1  2005/06/07 20:14:16  didenko
- * CGridWorkerCgiApp class renamed to CRemoteCgiApp
- *
- * Revision 1.5  2005/06/01 20:29:37  didenko
- * Added progress reporting
- *
- * Revision 1.4  2005/05/31 15:21:32  didenko
- * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
- *
- * Revision 1.3  2005/05/25 18:52:37  didenko
- * Moved grid worker node application functionality to the separate class
- *
- * Revision 1.2  2005/05/25 14:20:57  didenko
- * - #inlcude <cgi/cgiapp_iface.hpp>
- *
- * Revision 1.1  2005/05/25 14:13:40  didenko
- * Added new Application class from easy transfer existing cgis to worker nodes
- *
- * ===========================================================================
- */
-
-
 #endif //__MISC__GRID_CGI__REMOTE_CGIAPP_HPP

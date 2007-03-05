@@ -469,23 +469,3 @@ double NCBI_ErfC(double x)
 	}
 #endif
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/12/11 16:14:01  ucko
-* s_IEEE754_Exp: mark the intentional overflow case with NCBI_FAKE_WARNING.
-*
-* Revision 1.3  2005/12/20 22:39:19  vakatov
-* Typo fixed
-*
-* Revision 1.2  2005/12/20 22:27:34  vakatov
-* <util/math/miscmath.h> moved to <util/miscmath.h>
-*
-* Revision 1.1  2005/08/12 14:58:33  ucko
-* Ensure that implementations of erf and erfc are always available.
-*
-*
-* ===========================================================================
-*/

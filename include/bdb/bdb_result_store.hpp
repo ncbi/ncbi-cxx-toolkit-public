@@ -396,21 +396,4 @@ EBDB_ErrCode CBDB_ResultStore<TBV>::Insert(unsigned      subset,
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/11/30 14:23:09  kuznets
- * Compilation fixes
- *
- * Revision 1.2  2006/11/29 12:41:39  kuznets
- * Compilation fixes (MSVC)
- *
- * Revision 1.1  2006/11/29 11:42:32  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* RESULTSET_STORE_HPP_ */
-

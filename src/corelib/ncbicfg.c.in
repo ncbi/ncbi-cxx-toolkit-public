@@ -66,25 +66,3 @@ void NCBI_SetRunpath(const char* runpath)
 {
     s_Runpath = runpath;
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/05/18 14:00:28  ivanov
- * Do not use C++ comments in the .c files
- *
- * Revision 1.4  2004/10/13 16:56:37  ivanov
- * Do not use 'ncbi_runpath' with @ in comments
- *
- * Revision 1.3  2004/10/13 16:07:34  ivanov
- * Added comments about ncbi_runpath
- *
- * Revision 1.2  2002/04/11 21:08:01  ivanov
- * CVS log moved to end of the file
- *
- * Revision 1.1  2002/03/11 15:30:12  ucko
- * Dropped NCBI_RUNPATH from ncbiconf.h in favor of new API in corelib/ncbicfg.h
- *
- * ===========================================================================
- */

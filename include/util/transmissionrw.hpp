@@ -133,31 +133,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/06/27 18:53:42  didenko
- * Added missing include ncbidiag for _ASSERT
- *
- * Revision 1.5  2006/03/27 15:23:01  didenko
- * Added an option which tells CTransmissionWriter to send the EOF
- * packet when it is destructed.
- *
- * Revision 1.4  2006/02/15 17:40:25  lavr
- * IReader/IWriter API moved (along with RWStream[buf]) to corelib
- *
- * Revision 1.3  2005/06/08 13:17:10  kuznets
- * Added accessor functions for underlying IReader/IWriter
- *
- * Revision 1.2  2005/04/14 16:28:00  kuznets
- * Added ownership flags
- *
- * Revision 1.1  2005/04/14 13:46:59  kuznets
- * Initial release
- *
- *
- * ===========================================================================
- */
-
 #endif /* UTIL___TRANSMISSIONRW__HPP */

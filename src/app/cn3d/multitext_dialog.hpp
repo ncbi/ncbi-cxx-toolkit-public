@@ -98,35 +98,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_MULTITEXT_DIALOG__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2005/01/04 16:06:59  thiessen
-* make MultiTextDialog remember its position+size
-*
-* Revision 1.8  2003/02/03 19:20:04  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.7  2002/08/15 22:13:15  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.6  2002/06/12 15:09:15  thiessen
-* kludge to avoid initial selected-all state
-*
-* Revision 1.5  2001/10/18 14:48:46  thiessen
-* remove class name from member function
-*
-* Revision 1.4  2001/10/16 21:48:28  thiessen
-* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
-*
-* Revision 1.3  2001/10/11 14:18:20  thiessen
-* make MultiTextDialog non-modal
-*
-* Revision 1.2  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.1  2001/07/10 16:39:33  thiessen
-* change selection control keys; add CDD name/notes dialogs
-*
-*/

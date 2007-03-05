@@ -122,19 +122,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.3  2006/12/01 21:21:35  todorov
-* - NCBI_XALNMGR_EXPORT
-*
-* Revision 1.2  2006/12/01 17:53:11  todorov
-* + NCBI_XALNMGR_EXPORT
-*
-* Revision 1.1  2006/10/17 19:20:35  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
-
 #endif  // OBJTOOLS_ALNMGR___ALN_CONTAINER__HPP

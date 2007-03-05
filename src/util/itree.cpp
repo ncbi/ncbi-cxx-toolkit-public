@@ -277,34 +277,4 @@ void CIntervalTree::Stat(const TTreeNode* node, SStat& stat) const
     Stat(node->m_Left, stat);
 }
 
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2004/05/17 21:06:02  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.6  2003/02/07 16:54:02  vasilche
-* Pass all structures with size > sizeof int by reference.
-* Move cvs log to the end of files.
-*
-* Revision 1.5  2001/05/30 15:59:28  vakatov
-* CIntervalTree::AllocNode[Intervals]() -- explicit cast of "0" to
-* make the ICC compiler understand what's going on
-*
-* Revision 1.4  2001/01/29 15:18:46  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.3  2001/01/11 15:16:28  vasilche
-* On MSVC second argument of allocator::allocate() is not optional.
-*
-* Revision 1.2  2001/01/11 15:08:20  vasilche
-* Removed missing header.
-*
-* Revision 1.1  2001/01/11 15:00:44  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
-* ===========================================================================
-*/
-
 END_NCBI_SCOPE

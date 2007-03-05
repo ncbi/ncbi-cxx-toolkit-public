@@ -86,20 +86,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/07/17 20:58:08  camacho
-* Added boolean argument for molecule type to SortBySeqIdRank
-*
-* Revision 1.1  2006/06/05 15:14:50  camacho
-* + SortBySeqIdRank
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BLASTDB_BLAST_DEF_LINE_SET_HPP
 /* Original file checksum: lines: 94, chars: 2754, CRC32: 8066bf8c */

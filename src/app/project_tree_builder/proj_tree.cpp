@@ -483,36 +483,3 @@ void CProjectTreeFolders::CreatePath(const string& root_src_dir,
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2005/11/17 20:45:23  gouriano
- * corrected dependency analysis when some projects are missing
- *
- * Revision 1.8  2005/01/31 16:37:38  gouriano
- * Keep track of subproject types and propagate it down the project tree
- *
- * Revision 1.7  2004/12/20 15:29:01  gouriano
- * Preserve original dependency chain for reporting
- *
- * Revision 1.6  2004/12/06 18:12:20  gouriano
- * Improved diagnostics
- *
- * Revision 1.5  2004/09/13 13:49:08  gouriano
- * Make it to rely more on UNIX makefiles
- *
- * Revision 1.4  2004/08/04 13:27:24  gouriano
- * Added processing of EXPENDABLE projects
- *
- * Revision 1.3  2004/05/21 21:41:41  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2004/05/10 19:50:05  gorelenk
- * Changed CProjectItemsTree::CreateFrom .
- *
- * Revision 1.1  2004/03/02 16:23:57  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */

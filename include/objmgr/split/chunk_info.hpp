@@ -103,41 +103,4 @@ struct SChunkInfo
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2006/07/17 14:31:49  ucko
-* Pull in place_id.hpp, as a simple predeclaration isn't enough for VisualAge.
-*
-* Revision 1.9  2005/06/13 15:44:53  grichenk
-* Implemented splitting of assembly. Added splitting of seqdesc objects
-* into multiple chunks.
-*
-* Revision 1.8  2004/10/18 14:00:17  vasilche
-* Updated splitter for new SeqSplit specs.
-*
-* Revision 1.7  2004/08/19 14:18:54  vasilche
-* Added splitting of whole Bioseqs.
-*
-* Revision 1.6  2004/08/04 14:48:49  vasilche
-* Added exports for MSVC. Added joining of very small chunks with skeleton.
-*
-* Revision 1.5  2004/06/30 20:56:32  vasilche
-* Added splitting of Seqdesr objects (disabled yet).
-*
-* Revision 1.4  2004/06/15 14:05:49  vasilche
-* Added splitting of sequence.
-*
-* Revision 1.3  2004/01/07 17:36:20  vasilche
-* Moved id2_split headers to include/objmgr/split.
-* Fixed include path to genbank.
-*
-* Revision 1.2  2003/11/26 23:04:59  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:30  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_CHUNK_INFO__HPP

@@ -151,32 +151,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.7  2007/01/11 19:09:24  bollin
- * Bug fixes for ExtendedCleanup
- *
- * Revision 1.6  2006/12/11 17:11:32  bollin
- * Added new flag to CCleanupChange
- *
- * Revision 1.5  2006/10/24 12:12:19  bollin
- * Added more change flags for ExtendedCleanup
- *
- * Revision 1.4  2006/10/11 14:46:39  bollin
- * added more flags for ExtendedCleanup
- *
- * Revision 1.3  2006/10/10 13:45:51  bollin
- * added change flags for Extended Cleanup
- *
- * Revision 1.2  2006/07/26 19:35:27  rsmith
- * add new change types.
- *
- * Revision 1.1  2006/06/23 17:09:20  rsmith
- * moved from cleanup.hpp
- *
- */ 
-
 #endif  /* CLEANUP___CLEANUP_CHANGE__HPP */

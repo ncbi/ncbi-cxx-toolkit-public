@@ -90,17 +90,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/11/07 19:57:20  lewisg
-* iterative search
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSREQUEST_HPP
 /* Original file checksum: lines: 94, chars: 2571, CRC32: dd4a491 */

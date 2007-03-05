@@ -55,17 +55,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/05/31 15:21:32  didenko
- * Added NCBI_XGRDICGI_EXPORT to the class and function declaration
- *
- * Revision 1.1  2005/05/25 14:09:39  didenko
- * Added helper function for redirecting cgi's to cgi_tunnel2grid.cgi
- *
- * ===========================================================================
- */
-
 #endif  /* MISC_GRID_CGI___CGI2GRID__HPP */

@@ -225,28 +225,4 @@ inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore>
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/12/14 13:11:31  dicuccio
- * Added components for creating split blob stores with arbitrarily defined key
- * spaces (including multi-component keys)
- *
- * Revision 1.4  2006/12/05 19:38:35  dicuccio
- * Use new bv store ship
- *
- * Revision 1.3  2006/12/04 12:54:42  dicuccio
- * Added template parameter for underlying BV store
- *
- * Revision 1.2  2006/12/01 13:16:38  dicuccio
- * Use standard buffer types.  Permit dictionary to be supplied externally
- *
- * Revision 1.1  2006/11/21 13:52:39  dicuccio
- * Large-scale reorganization of indexing.  Support multiple index types, split
- * dictionary-based index stores.
- *
- * ===========================================================================
- */
-
 #endif  // BDB___BV_PROPERTY_STORE__HPP

@@ -28,25 +28,6 @@
 *
 * File Description:
 *   Sample to test OS-independent C++ exceptions
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  1998/12/03 21:24:25  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.4  1998/11/13 00:26:31  vakatov
-* Incorporated into "ncbiexpt.[ch]pp"
-*
-* Revision 1.3  1998/11/05 21:45:15  sandomir
-* std:: deleted
-*
-* Revision 1.2  1998/11/02 22:10:15  sandomir
-* CNcbiApplication added; netest sample updated
-*
-* Revision 1.1  1998/11/02 15:31:56  sandomir
-* Portable exception classes
-*
-* ===========================================================================
 */
 
 #define __EXTENSIONS__

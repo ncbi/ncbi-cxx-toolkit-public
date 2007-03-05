@@ -97,15 +97,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/04/26 14:31:49  shomrat
-* Initial Revision. Added GetStart, GetStop and GetStrand
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1886, CRC32: b0b23470 */

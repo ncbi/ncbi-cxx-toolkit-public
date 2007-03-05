@@ -151,21 +151,3 @@ void CRemoveTSE_EditCommand::Undo()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/08/07 15:25:08  vasilche
- * Avoid unnecessary GetEditHandle() calls.
- *
- * Revision 1.3  2006/05/01 16:56:45  didenko
- * Attach SeqEntry edit command revamp
- *
- * Revision 1.2  2006/01/25 18:59:04  didenko
- * Redisgned bio objects edit facility
- *
- * Revision 1.1  2005/11/15 19:22:08  didenko
- * Added transactions and edit commands support
- *
- * ===========================================================================
- */

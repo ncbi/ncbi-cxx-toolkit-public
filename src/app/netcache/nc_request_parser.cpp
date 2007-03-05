@@ -459,32 +459,3 @@ void CNetCacheServer::ParseRequestNC(const string& reqstr, SNC_Request* req)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/05/18 13:27:51  kuznets
- * Implemented cache cleaning function
- *
- * Revision 1.6  2006/03/09 21:06:37  kuznets
- * Added Get2 command (with client driven disconnect)
- *
- * Revision 1.5  2006/01/18 17:04:17  kuznets
- * Fixed bug in request parsing (missing request code eGet)
- *
- * Revision 1.4  2006/01/10 14:36:27  kuznets
- * Fixing bugs in ICache network protocol
- *
- * Revision 1.3  2006/01/04 19:09:56  kuznets
- * Fixed command parsing
- *
- * Revision 1.2  2006/01/04 18:19:04  ucko
- * Drop spurious semicolon after BEGIN_NCBI_SCOPE, as some versions of
- * WorkShop object to the resulting empty statement.
- *
- * Revision 1.1  2006/01/03 15:42:17  kuznets
- * Added support for network ICache interface
- *
- *
- * ===========================================================================
- */

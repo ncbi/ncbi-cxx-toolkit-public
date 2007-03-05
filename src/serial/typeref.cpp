@@ -27,54 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.14  2005/08/25 13:12:22  gouriano
-* Avoid race condition in MT builds
-*
-* Revision 1.13  2004/05/17 21:03:04  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.12  2003/03/10 18:54:26  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.11  2003/02/12 16:43:39  vasilche
-* Use CTypeRef instead of TTypeInfo.
-*
-* Revision 1.10  2003/02/12 15:06:29  vasilche
-* Added missing CTypeRef constructors for map/multimap.
-*
-* Revision 1.9  2002/09/19 20:05:44  vasilche
-* Safe initialization of static mutexes
-*
-* Revision 1.8  2002/08/30 16:20:56  vasilche
-* Avoid MT lock in CTypeRef::Get()
-*
-* Revision 1.7  2002/08/14 17:14:57  grichenk
-* Another improvement to MT-safety
-*
-* Revision 1.6  2002/08/13 13:56:06  grichenk
-* Improved MT-safety in CTypeInfo and CTypeRef
-*
-* Revision 1.5  2000/09/26 17:38:23  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.4  1999/12/17 19:05:05  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.3  1999/09/14 18:54:22  vasilche
-* Fixed bugs detected by gcc & egcs.
-* Removed unneeded includes.
-*
-* Revision 1.2  1999/08/13 15:53:52  vasilche
-* C++ analog of asntool: datatool
-*
-* Revision 1.1  1999/06/04 20:51:52  vasilche
-* First compilable version of serialization.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

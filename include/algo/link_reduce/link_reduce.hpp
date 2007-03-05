@@ -179,17 +179,4 @@ void CLinkReduce<TBV, TMapFunc1, TMapFunc2>::Remap(TBV& src_set, TBV& dst_set)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/12/21 20:07:37  kuznets
- * Fixed immediate compilation issues
- *
- * Revision 1.1  2006/12/21 19:05:24  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif

@@ -79,17 +79,4 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
 
 /* @} */
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2005/05/18 18:17:02  lavr
- * Add EFCDC_Flags and TFCDC_Flags to better control underlying SOCK logs
- *
- * Revision 1.1  2004/12/06 17:48:19  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_FTP_CONNECTOR__H */

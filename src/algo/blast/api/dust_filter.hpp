@@ -94,23 +94,3 @@ END_NCBI_SCOPE
 /* @} */
 
 #endif /* ALGO_BLAST_API__DUST_FILTER_HPP */
-
-/*
-* ===========================================================================
-*
- *  $Log$
- *  Revision 1.4  2006/02/22 18:34:17  bealer
- *  - Blastx filtering support, CBlastQueryVector class.
- *
- *  Revision 1.3  2006/01/24 15:34:14  camacho
- *  Overload Blast_FindDustFilterLoc with dust filtering arguments
- *
- *  Revision 1.2  2005/09/28 18:21:34  camacho
- *  Rearrangement of headers/functions to segregate object manager dependencies.
- *
- *  Revision 1.1  2005/07/19 14:04:51  madden
- *  Header file for Blast_FindDustFilterLoc
- *
- *
- * ===========================================================================
- */

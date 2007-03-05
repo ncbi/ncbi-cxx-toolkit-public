@@ -276,37 +276,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2007/01/03 15:51:57  todorov
-* Allow negative offsets in OffsetRow
-*
-* Revision 1.7  2006/06/06 22:42:54  todorov
-* Added OffsetRow method.
-* Marked RemapToLoc for deprecation.
-*
-* Revision 1.6  2006/05/09 15:58:09  todorov
-* Added another debug-mode ids consistency check.
-*
-* Revision 1.5  2006/05/09 15:46:41  todorov
-* Improved the check for ids equality in RemapToLoc.
-*
-* Revision 1.4  2006/05/08 21:42:51  todorov
-* Added a RemapToLoc method.
-*
-* Revision 1.3  2005/02/02 19:49:54  grichenk
-* Fixed more warnings
-*
-* Revision 1.2  2004/05/19 17:25:43  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.1  2003/09/16 16:17:12  todorov
-* Added validation methods. Added seq range methods
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1879, CRC32: d01e569e */

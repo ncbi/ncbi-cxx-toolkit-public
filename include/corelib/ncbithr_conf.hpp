@@ -126,34 +126,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2003/11/18 11:58:06  siyan
- * Changed so @addtogroup does not cross namespace boundary
- *
- * Revision 1.7  2003/08/18 16:03:33  siyan
- * Added CORELIB___ prefix to the #ifndef/#define file inclusion check macros.
- *
- * Revision 1.6  2003/08/04 12:41:19  siyan
- * Documentation changes.
- *
- * Revision 1.5  2003/06/03 18:24:28  rsmith
- * wrap includes of sched.h (explicit and implicit) in extern "c" blocks, since Apples headers do not do it themselves.
- *
- * Revision 1.4  2003/03/31 13:30:52  siyan
- * Minor changes to doxygen support
- *
- * Revision 1.3  2003/03/31 13:16:59  siyan
- * Added doxygen support
- *
- * Revision 1.2  2002/09/20 14:14:05  vasilche
- * Fixed inconsistency of NCBI_*_THREADS macros
- *
- * Revision 1.1  2002/09/19 20:05:41  vasilche
- * Safe initialization of static mutexes
- *
- * ===========================================================================
- */
 #endif

@@ -334,28 +334,3 @@ void CNetSrvConnectorPoll::x_Rebalance()
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.6  2007/01/10 16:02:50  ucko
- * Fix compilation with GCC 2.95's (not quite standard) string implementation.
- *
- * Revision 6.5  2007/01/09 19:02:18  vasilche
- * Use explicit pair<> type instead of private typedef.
- *
- * Revision 6.4  2007/01/09 17:02:42  ucko
- * Re-fix WorkShop compilation (taking care to use precisely correct pair<> types)
- *
- * Revision 6.3  2007/01/09 15:29:55  didenko
- * Added new API for NetSchedule service
- *
- * Revision 6.2  2006/12/06 16:41:37  ucko
- * Fix compilation errors on WorkShop, which restricts pair<> conversion.
- *
- * Revision 6.1  2006/12/06 15:00:00  didenko
- * Added service connections template classes
- *
- * ===========================================================================
- */
- 

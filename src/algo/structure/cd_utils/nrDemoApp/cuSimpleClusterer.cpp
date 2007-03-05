@@ -185,25 +185,3 @@ TreeAlgorithm::Rootedness CSimpleClusterer::GetRootednessForTree() const {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/07/18 19:49:45  lanczyck
-* files to build non-redundification demo app, including some test data
-*
-* Revision 1.3  2005/07/18 19:09:50  lanczyck
-* use ERR_POST macros for messages
-*
-* Revision 1.2  2005/07/14 14:43:52  lanczyck
-* use _ASSERT; minor output mods
-*
-* Revision 1.1  2005/07/13 19:04:26  lanczyck
-* classes for building a SLC non-redundifier that does not depend on CCdd-related classes
-*
-*
-* ===========================================================================
-*/
-

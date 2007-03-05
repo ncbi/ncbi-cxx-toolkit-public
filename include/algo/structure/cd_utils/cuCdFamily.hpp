@@ -139,29 +139,3 @@ private:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 #endif
-
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2007/01/09 19:29:00  lanczyck
- * add createFamilies
- *
- * Revision 1.3  2006/12/18 17:02:10  lanczyck
- * add convergeTo and findCDByAccession to CDFamily
- *
- * Revision 1.2  2006/08/09 18:42:34  lanczyck
- * add export macros for ncbi_algo_structure.dll;
- * includes commented out declarations for new methods
- *
- * Revision 1.1  2005/04/19 14:28:00  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */
-
-           
-        
-

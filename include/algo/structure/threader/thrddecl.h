@@ -32,65 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/08/09 19:04:13  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.3  2006/01/09 12:52:44  thiessen
-* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
-*
-* Revision 1.2  2005/10/31 21:57:16  thiessen
-* MSVC fix
-*
-* Revision 1.1  2005/10/31 21:26:38  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.14  2001/04/26 17:23:38  thiessen
-* fix bug in updating aligned residue types
-*
-* Revision 1.13  2001/04/25 15:43:29  hurwitz
-* initial check-in of Anna's code to fix problem of duplicate alignments with different scores
-*
-* Revision 1.12  2001/03/02 23:14:12  hurwitz
-* run threading faster for PSSM weight=1, bug fix
-*
-* Revision 1.11  2001/01/16 17:17:58  hurwitz
-* changed Int4s to ints, added PrintSeqMtf
-*
-* Revision 1.10  2000/12/20 18:56:41  hurwitz
-* new random num gen, more debug printing
-*
-* Revision 1.9  2000/12/14 21:07:58  hurwitz
-* adding debugging routines, scaling-factor fixes
-*
-* Revision 1.8  2000/12/06 23:36:50  hurwitz
-* sort the results by score in atd
-*
-* Revision 1.7  2000/12/05 20:52:21  hurwitz
-* put threading results in order
-*
-* Revision 1.6  2000/11/02 20:54:16  hurwitz
-* added options for z-score calculations, fixed initialization prob
-*
-* Revision 1.5  2000/09/22 22:31:33  hurwitz
-* added memory management of ThdTbl (results structure)
-*
-* Revision 1.4  2000/09/14 22:23:39  hurwitz
-* adding memory management for contact-potential, annealing-schedule, and folding-motif
-*
-* Revision 1.3  2000/08/30 21:33:55  hurwitz
-* added new and free functions for Seq_Mtf and Qry_Seq
-*
-* Revision 1.2  2000/08/23 20:10:42  hurwitz
-* added memory management functions for Cor_Def and extern C in .h files
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 #if !defined(THRDDECL_H)

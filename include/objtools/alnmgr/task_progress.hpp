@@ -101,16 +101,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.2  2005/08/29 14:45:50  todorov
-* + virtual ~ITaskProgressCallback() {}
-*
-* Revision 1.1  2005/08/18 16:56:41  todorov
-* Initial revision
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ALNMGR___TASK_PROGRESS__HPP

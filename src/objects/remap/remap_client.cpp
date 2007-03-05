@@ -114,18 +114,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/07/29 19:46:59  jcherry
-* Added convenience methods for remapping
-*
-* Revision 1.1  2004/07/28 15:09:48  jcherry
-* Arranged to contact experimental server, which is not a named service
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1871, CRC32: d108ad95 */

@@ -205,21 +205,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2005/10/27 15:04:27  vasilche
-* Moved code dealing with type_info to *.cpp to avoid warning on MSVC.
-*
-* Revision 1.2  2005/10/26 15:37:41  vasilche
-* Removed EXPORT from completely inlined classes.
-*
-* Revision 1.1  2005/10/26 14:36:37  vasilche
-* Added new CBlobId interface.
-*
-* ===========================================================================
-*/
-
 #endif  // OBJECTS_OBJMGR___BLOB_ID__HPP

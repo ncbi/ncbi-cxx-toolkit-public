@@ -161,26 +161,4 @@ CSeqFeatData::ESubtype CAnnotType_Index::GetSubtypeForIndex(size_t index)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2006/11/14 19:21:58  vasilche
-* Added feature ids index and retrieval.
-*
-* Revision 1.4  2006/09/18 14:29:29  vasilche
-* Store annots indexing information to allow reindexing after modification.
-*
-* Revision 1.3  2006/02/14 15:47:41  grichenk
-* Added methods for collecting types of annotations.
-*
-* Revision 1.2  2005/05/23 14:09:55  grichenk
-* Fixed indexing of feature types
-*
-* Revision 1.1  2004/02/04 18:03:21  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif// OBJECTS_OBJMGR_IMPL___ANNOT_TYPE_INDEX__HPP

@@ -221,36 +221,3 @@ void CPrimaryItem::x_CollectSegments
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2005/02/17 15:58:42  grichenk
-* Changes sequence::GetId() to return CSeq_id_Handle
-*
-* Revision 1.7  2004/10/18 18:47:11  shomrat
-* Use sequence::GetId
-*
-* Revision 1.6  2004/10/05 15:47:28  shomrat
-*  USe CScope::GetIds
-*
-* Revision 1.5  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.4  2004/05/06 17:58:28  shomrat
-* Do not add spaces if plus strand
-*
-* Revision 1.3  2004/04/22 15:57:36  shomrat
-* New implementation of Primary item
-*
-* Revision 1.2  2003/12/18 17:43:35  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:23:55  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

@@ -83,29 +83,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/12 15:07:01  gouriano
-* Moved from parent folder
-*
-* Revision 1.4  2004/08/17 14:39:06  dicuccio
-* Added export specifiers
-*
-* Revision 1.3  2003/04/15 16:18:47  siyan
-* Added doxygen support
-*
-* Revision 1.2  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.1  2000/10/13 16:28:32  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* ===========================================================================
-*/
-
 #endif  /* SERIALASNDEF__HPP */

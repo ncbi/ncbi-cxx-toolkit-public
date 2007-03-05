@@ -94,38 +94,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/08/28 19:36:56  didenko
- * Changed threads' order starting
- *
- * Revision 1.5  2006/05/12 15:13:37  didenko
- * Added infinit loop detection mechanism in job executions
- *
- * Revision 1.4  2006/04/04 20:14:04  didenko
- * Disabled copy constractors and assignment operators
- *
- * Revision 1.3  2006/01/18 17:47:42  didenko
- * Added JobWatchers mechanism
- * Reimplement worker node statistics as a JobWatcher
- * Added JobWatcher for diag stream
- * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
- *
- * Revision 1.2  2005/05/27 12:55:11  didenko
- * Added IRequestProcessor interface and Processor classes implementing this interface
- *
- * Revision 1.1  2005/05/23 15:51:13  didenko
- * Moved grid_control_thread.hpp grid_debug_context.hpp from
- * srv/connect/service
- *
- * Revision 6.2  2005/05/11 18:57:39  didenko
- * Added worker node statictics
- *
- * Revision 6.1  2005/05/10 15:42:53  didenko
- * Moved grid worker control thread to its own file
- *
- * ===========================================================================
- */
- 
 #endif // _GRID_CONTROL_THREADD_HPP_

@@ -1310,36 +1310,3 @@ void CHitParser::x_Combine(double dProximity)
 }
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.10  2005/09/27 17:59:25  kapustin
-* Remove obsolete comment
-*
-* Revision 1.9  2004/12/16 23:12:26  kapustin
-* algo/align rearrangement
-*
-* Revision 1.8  2004/06/08 20:48:42  kapustin
-* Fix SLC memory issue
-*
-* Revision 1.7  2004/05/24 16:13:57  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.6  2004/05/18 21:43:40  kapustin
-* Code cleanup
-*
-* Revision 1.5  2004/05/03 21:53:57  kapustin
-* Eliminate OM-dependant code
-*
-* Revision 1.4  2004/04/26 16:52:44  ucko
-* Add an explicit "typename" annotation required by GCC 3.4, and adjust
-* the code to take advantage of the ITERATE macro.
-*
-* Revision 1.3  2004/04/23 14:37:44  kapustin
-* *** empty log message ***
-*
-* 
-* ===========================================================================
-*/

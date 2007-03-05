@@ -89,26 +89,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/11/01 17:34:21  lanczyck
- * add accessor method for m_inclusionRule
- *
- * Revision 1.4  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2006/03/09 19:17:41  cliu
- * export the inclusionThreshold parameter
- *
- * Revision 1.2  2005/08/25 20:22:48  cliu
- * conditionally skip long insert
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

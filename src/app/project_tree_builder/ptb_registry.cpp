@@ -64,15 +64,3 @@ string CPtbRegistry::GetString(const string& section,
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/09/26 18:50:20  gouriano
- * Added CNcbiRegistry wrapper to speed up the execution
- *
- *
- * ===========================================================================
- */
-
-

@@ -86,30 +86,4 @@ bool CChecksum::ValidChecksumLine(const string& line) const
     return ValidChecksumLine(line.data(), line.size());
 }
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/11/21 14:30:36  vasilche
-* Implemented ZIP style CRC32.
-*
-* Revision 1.5  2003/07/29 22:11:42  vakatov
-* Typo fixed (extra return op)
-*
-* Revision 1.4  2003/07/29 21:29:26  ucko
-* Add MD5 support (cribbed from the C Toolkit)
-*
-* Revision 1.3  2003/04/15 16:12:09  kuznets
-* GetChecksum() method implemented
-*
-* Revision 1.2  2001/01/05 20:08:52  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.1  2000/11/22 16:26:22  vasilche
-* Added generation/checking of checksum to user files.
-*
-* ===========================================================================
-*/
-
 #endif /* def CHECKSUM__HPP  &&  ndef CHECKSUM__INL */

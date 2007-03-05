@@ -180,28 +180,3 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/04/03 15:21:43  kapustin
- * Do not reset starting model id
- *
- * Revision 1.4  2006/04/03 15:02:18  kuznets
- * implementation of AgrsToSplign()
- *
- * Revision 1.3  2006/03/31 19:11:20  kapustin
- * Refine common argument set
- *
- * Revision 1.2  2006/03/31 17:14:27  kuznets
- * +ArgsToSplign()
- *
- * Revision 1.1  2006/03/31 16:56:57  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-

@@ -195,43 +195,4 @@ void NCBI_EntryPoint_xcache_netcache(
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/02/15 18:42:44  lavr
- * Remove inclusion of unnecessary header files
- *
- * Revision 1.9  2006/01/17 16:50:40  kuznets
- * Added base class for all NC derived clients, +session management
- *
- * Revision 1.8  2006/01/11 17:57:23  kuznets
- * Fixed race condition in socket pooling
- *
- * Revision 1.7  2006/01/11 15:19:49  kuznets
- * Reflecting changes in ICache
- *
- * Revision 1.6  2006/01/10 20:09:16  kuznets
- * Implemented thread syncronization in neticache client
- *
- * Revision 1.5  2006/01/10 14:45:24  kuznets
- * Save sockets: + connection pool
- *
- * Revision 1.4  2006/01/09 16:39:25  vakatov
- * Heed the warning -- added EOL at EOF
- *
- * Revision 1.3  2006/01/05 17:38:30  kuznets
- * Implemented plugin manager entry point
- *
- * Revision 1.2  2006/01/04 19:04:58  kuznets
- * Cleanup
- *
- * Revision 1.1  2006/01/03 15:35:57  kuznets
- * Added network ICache client
- *
- *
- * ===========================================================================
- */
-
-
 #endif  /* CONNECT_SERVICES___NETICACHE_CLIENT__HPP */

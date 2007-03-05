@@ -128,12 +128,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2005/04/26 14:07:22  vasilche
- * Implemented class CObjectMemoryPool.
- *
- *
- */
 #endif /* CORELIB___NCBIMEMPOOL__HPP */

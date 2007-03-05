@@ -126,41 +126,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2005/05/09 20:08:48  bealer
- * - Add program and service strings to CBlastOptions for remote blast.
- * - New CBlastOptionsHandle constructor for CRemoteBlast.
- * - Prohibit copy construction/assignment for CRemoteBlast.
- * - Code in each BlastOptionsHandle derived class to set program+service.
- *
- * Revision 1.8  2004/08/16 19:46:34  dondosha
- * Added setting of longest intron length
- *
- * Revision 1.7  2004/06/08 22:41:04  camacho
- * Add missing doxygen comments
- *
- * Revision 1.6  2004/05/04 13:09:20  camacho
- * Made copy-ctor & assignment operator private
- *
- * Revision 1.5  2004/03/19 14:53:24  camacho
- * Move to doxygen group AlgoBlast
- *
- * Revision 1.4  2004/01/20 15:19:24  camacho
- * Provide missing default parameters to default ctor
- *
- * Revision 1.3  2004/01/16 20:42:58  bealer
- * - Add locality flag for blast options handle classes.
- *
- * Revision 1.2  2003/12/09 12:40:22  camacho
- * Added windows export specifiers
- *
- * Revision 1.1  2003/11/26 18:22:17  camacho
- * +Blast Option Handle classes
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_BLAST_API___BLASTX_OPTIONS__HPP */

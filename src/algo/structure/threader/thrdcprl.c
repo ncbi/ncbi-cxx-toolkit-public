@@ -32,20 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/01/09 12:52:38  thiessen
-* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
-*
-* Revision 1.1  2005/10/31 21:26:05  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 
@@ -265,4 +251,3 @@ free(fs);
 free(cs);
 
 }
-

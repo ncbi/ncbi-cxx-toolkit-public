@@ -132,45 +132,4 @@ private:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
-#endif // 
-
-/* 
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/08/29 18:43:41  cliu
- * no message
- *
- * Revision 1.11  2006/06/29 16:46:44  lanczyck
- * change variable names:  nrSize/SeqNum -> dbSize/SeqNum
- *
- * Revision 1.10  2006/04/24 20:29:34  lanczyck
- * move 'refreshNrStats' into new file 'algBlastUtils'
- *
- * Revision 1.9  2006/04/19 20:50:12  cliu
- * useing global setting for NR size info.
- *
- * Revision 1.8  2006/03/22 21:45:12  cliu
- * add code to get nr db stats for future use.
- *
- * Revision 1.7  2006/03/17 20:49:09  cliu
- * add code for using ObjMgr API.
- *
- * Revision 1.6  2006/02/13 19:44:24  hurwitz
- * putative changes to improve blast tree performance
- *
- * Revision 1.5  2006/02/06 16:39:33  cliu
- * remove c dependency
- *
- * Revision 1.4  2005/12/15 18:56:09  cliu
- * add a new constructor for coverage test.
- *
- * Revision 1.3  2005/12/06 21:51:53  hurwitz
- * working on cross-hits using C++ toolkit
- *
- * Revision 1.2  2005/12/06 18:20:10  cliu
- * bug fix
- *
- * Revision 1.1  2005/11/28 20:13:59  cliu
- * Do blast2seq for CDs.
- *
- */
+#endif //

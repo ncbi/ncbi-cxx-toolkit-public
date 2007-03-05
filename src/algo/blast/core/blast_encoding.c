@@ -114,30 +114,3 @@ const char NCBISTDAA_TO_AMINOACID[BLASTAA_SIZE] = {
 
 const Uint1 kProtSentinel = NULLB;
 const Uint1 kNuclSentinel = 0xF;
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/08/29 21:56:34  camacho
- * +NCBISTDAA_TO_AMINOACID
- *
- * Revision 1.5  2006/03/31 17:32:40  camacho
- * Added constants for sentinel values
- *
- * Revision 1.4  2006/02/16 18:47:18  camacho
- * + encoding translations for O and J
- *
- * Revision 1.3  2004/11/02 17:56:48  camacho
- * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
- *
- * Revision 1.2  2004/05/19 14:52:02  camacho
- * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
- * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
- *    location
- * 3. Added use of @todo doxygen keyword
- *
- * Revision 1.1  2004/04/07 03:10:56  camacho
- * Initial revision
- *
- * ===========================================================================
- */

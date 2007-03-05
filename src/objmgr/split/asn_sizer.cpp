@@ -84,25 +84,3 @@ size_t CAsnSizer::GetCompressedSize(const SSplitterParams& params)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2004/05/21 21:42:13  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.4  2004/01/07 17:36:21  vasilche
-* Moved id2_split headers to include/objmgr/split.
-* Fixed include path to genbank.
-*
-* Revision 1.3  2003/12/30 16:06:13  vasilche
-* Compression methods moved to separate header: id2_compress.hpp.
-*
-* Revision 1.2  2003/11/26 23:04:56  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:24  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/

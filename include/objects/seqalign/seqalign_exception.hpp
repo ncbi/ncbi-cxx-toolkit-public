@@ -70,39 +70,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2006/08/01 20:08:41  todorov
-* + eInvalidSeqId
-*
-* Revision 1.7  2004/08/19 13:04:59  dicuccio
-* Dropped export specifier on exceptions
-*
-* Revision 1.6  2004/04/27 19:20:23  johnson
-* {BEGIN,END}_objects_SCOPE not defined by includes; replaced with
-* {BEGIN,END}_SCOPE(objects)
-*
-* Revision 1.5  2003/11/04 14:45:54  todorov
-* +eInvalidInputData
-*
-* Revision 1.4  2003/09/16 15:31:59  todorov
-* Added validation methods. Added seq range methods
-*
-* Revision 1.3  2003/08/26 20:28:38  johnson
-* added 'SwapRows' method
-*
-* Revision 1.2  2003/08/19 21:09:39  todorov
-* +eInvalidInputAlignment
-*
-* Revision 1.1  2003/08/13 18:11:03  johnson
-* initial revision; created so CSeq_align::Reverse can throw if asked to
-* reverse an (as yet) unsupported segment type
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQALIGN_SEQALIGN_EXCEPTION_HPP

@@ -594,37 +594,3 @@ int main(int argc, const char* argv[])
 {
     return CTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.9  2007/01/04 17:54:26  didenko
-* Got rid of compilation warnings
-*
-* Revision 1.8  2006/12/19 21:34:01  ucko
-* Tweak once more to fix compilation errors under MIPSpro.  (Oops.)
-*
-* Revision 1.7  2006/12/19 18:35:36  ucko
-* Replace newly added using declarations with wrappers for the sake of GCC 2.95.
-*
-* Revision 1.6  2006/12/19 15:16:10  didenko
-* Got rid of compilation warning
-*
-* Revision 1.5  2006/09/28 18:45:50  vasilche
-* Fixed warning and add test for TakeAnnot().
-*
-* Revision 1.4  2006/05/01 16:56:45  didenko
-* Attach SeqEntry edit command revamp
-*
-* Revision 1.3  2006/01/25 18:59:04  didenko
-* Redisgned bio objects edit facility
-*
-* Revision 1.2  2005/11/16 21:11:56  didenko
-* Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
-*
-* Revision 1.1  2005/11/15 19:25:22  didenko
-* Added bioseq_edit_sample sample
-*
-* ===========================================================================
-*/
-

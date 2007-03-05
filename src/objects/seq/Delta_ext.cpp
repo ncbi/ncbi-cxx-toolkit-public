@@ -203,15 +203,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/11/07 13:50:40  dicuccio
-* Added programmatic API for appending segments onto a delta-seq
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1883, CRC32: 149e396a */

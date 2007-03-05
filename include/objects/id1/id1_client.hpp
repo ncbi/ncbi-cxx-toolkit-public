@@ -103,30 +103,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/07/01 15:45:50  ucko
-* Overload Ask to add descriptive text to known error codes, using
-* information from Michael Kimelman.
-*
-* Revision 1.2  2004/05/20 18:23:21  jcherry
-* Added a simplified interface for retrieving entries
-*
-* Revision 1.1  2003/04/09 16:00:13  ucko
-* Give all RPC clients unique basenames.
-*
-* Revision 1.2  2003/03/21 16:00:03  shomrat
-* Added export specifier
-*
-* Revision 1.1  2002/11/13 20:13:42  ucko
-* Add datatool-generated client classes
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ID1_ID1_CLIENT_HPP
 /* Original file checksum: lines: 93, chars: 2368, CRC32: 45b6687e */

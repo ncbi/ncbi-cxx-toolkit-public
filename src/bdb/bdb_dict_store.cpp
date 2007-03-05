@@ -116,17 +116,3 @@ Uint4 CBDB_BlobDictionary<string>::PutKey(const string& key)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/12/14 13:11:31  dicuccio
- * Added components for creating split blob stores with arbitrarily defined key
- * spaces (including multi-component keys)
- *
- * Revision 1.1  2006/11/21 13:53:08  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

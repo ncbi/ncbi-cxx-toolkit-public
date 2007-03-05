@@ -162,37 +162,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/03/16 18:04:28  papadopo
- * add scratch array used by performance optimizations in the aligner
- *
- * Revision 1.7  2005/11/07 18:23:52  papadopo
- * minor cleanup
- *
- * Revision 1.6  2005/08/02 17:34:28  papadopo
- * 1. Add separate open and extend penalties for start and end gaps
- * 2. Minor cleanup
- *
- * Revision 1.5  2005/04/04 16:32:23  kapustin
- * Distinguish matches from mismatches in raw transcripts
- *
- * Revision 1.4  2004/12/15 20:16:50  kapustin
- * Fix after algo/align rearrangement
- *
- * Revision 1.3  2004/11/29 15:41:40  ucko
- * Remove declaration of obsolete virtual method CNWAligner::x_ScoreByTranscript.
- *
- * Revision 1.2  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
- *
- * Revision 1.1  2004/10/05 19:26:33  papadopo
- * Semantics identical to CNWAligner but allowing for one or both input
- * sequences to be represented as profiles
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO___NW_PSSM_ALIGNER__HPP */

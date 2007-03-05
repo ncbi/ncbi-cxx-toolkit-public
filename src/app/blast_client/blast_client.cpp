@@ -188,19 +188,3 @@ int main(int argc, const char* argv[])
 {
     return CBlast_clientApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2004/05/21 21:41:38  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2003/09/26 20:01:13  bealer
- * - Fix compile warning.
- *
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */

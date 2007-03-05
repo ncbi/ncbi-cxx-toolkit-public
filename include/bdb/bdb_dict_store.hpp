@@ -329,29 +329,4 @@ CBDB_BlobDictStore<Key, Dictionary, BvStore>::UpdateInsert(Uint4 uid,
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/12/14 13:11:31  dicuccio
- * Added components for creating split blob stores with arbitrarily defined key
- * spaces (including multi-component keys)
- *
- * Revision 1.4  2006/12/05 19:33:43  dicuccio
- * Added bv split store shim to call Save() in the dtor
- *
- * Revision 1.3  2006/12/04 12:54:17  dicuccio
- * Added template parameter for underlying BV store
- *
- * Revision 1.2  2006/12/01 13:15:11  dicuccio
- * Various clean-ups.  Permit a dictionary to be passed in from the outside,
- * pre-opened.  Use standard buffer types
- *
- * Revision 1.1  2006/11/21 13:52:39  dicuccio
- * Large-scale reorganization of indexing.  Support multiple index types, split
- * dictionary-based index stores.
- *
- * ===========================================================================
- */
-
 #endif  // BDB___BDB_DICT_STORE__HPP

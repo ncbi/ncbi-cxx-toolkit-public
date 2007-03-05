@@ -195,22 +195,3 @@ CT_INT_TYPE CIndentingStreambuf::pbackfail(CT_INT_TYPE c)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/05/17 20:59:50  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/11/03 17:03:08  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.2  2003/02/24 18:10:55  ucko
- * Avoid spurious indentation in some cases.
- *
- * Revision 1.1  2003/02/14 16:16:57  ucko
- * Introduce CIndentingOstream, and the underlying CIndentingStreambuf.
- *
- * ===========================================================================
- */

@@ -116,29 +116,3 @@ CConstRef<TObj> SOAP_GetKnownObject(const CSoapMessage& msg,
 END_NCBI_SCOPE
 
 #endif  /* SOAP_MESSAGE__HPP */
-
-
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2004/06/30 13:49:34  gouriano
-* Corrected GetKnownObject function
-*
-* Revision 1.5  2004/06/28 19:22:53  gouriano
-* Added GetKnownObject function template
-*
-* Revision 1.4  2004/06/24 20:38:28  gouriano
-* Added default object namespace name
-*
-* Revision 1.3  2003/12/04 20:55:02  gouriano
-* correct parameter names
-*
-* Revision 1.2  2003/09/25 19:46:21  gouriano
-* Added soap Fault object
-*
-* Revision 1.1  2003/09/22 20:58:20  gouriano
-* Initial revision
-*
-*
-* ===========================================================================
-*/

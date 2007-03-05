@@ -300,24 +300,3 @@ private:
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.4  2006/11/13 18:19:58  morgulis
- * Check if the requested t_low is less than the computed one and issue a warning.
- *
- * Revision 1.3  2005/08/30 14:35:19  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * Revision 1.2  2005/04/13 13:47:48  dicuccio
- * Added export specifiers.  White space changes: reindented class body
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * ========================================================================
- */

@@ -82,20 +82,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.1  2005/10/26 13:50:13  ludwigf
-* Extended BasicCleanup() to cover additional items.
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQBLOCK_GB_BLOCK_HPP
 /* Original file checksum: lines: 94, chars: 2570, CRC32: 87b5476e */

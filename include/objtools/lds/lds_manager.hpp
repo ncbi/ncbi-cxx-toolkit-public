@@ -129,17 +129,3 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/11/08 15:08:15  didenko
- * Added comments
- *
- * Revision 1.2  2006/10/02 15:31:28  didenko
- * added <memory> include
- *
- * Revision 1.1  2006/10/02 14:36:48  didenko
- * Added new class CLDS_Manager to replace CLDS_Managemnt class
- *
- * ===========================================================================
-*/

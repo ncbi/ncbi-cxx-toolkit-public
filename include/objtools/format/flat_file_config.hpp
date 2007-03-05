@@ -376,45 +376,4 @@ void CFlatFileConfig::SetRefSeqConventions(void)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2006/09/06 16:32:00  ludwigf
-* FIXED: Removed prototype CFlatFileConfig::SetCodonRecognizedToNote(). This
-*  class of flags isn't supposed to have setters.
-*
-* Revision 1.8  2006/08/31 17:13:00  ludwigf
-* ADDED: Extra mode flag that controls whether codon_recognized becomes a
-*  qualifier or part of the note in the flat file. As implemented, it will
-*  be part of the note in release and entrez modes, and its own qualifier in
-*  gbench and dump modes.
-*
-* Revision 1.7  2005/04/27 17:09:43  shomrat
-* Modify for RefSeq
-*
-* Revision 1.6  2005/03/02 16:25:30  shomrat
-* Added NeverTranslateCDS
-*
-* Revision 1.5  2004/11/24 16:47:04  shomrat
-* Standardize customization flags
-*
-* Revision 1.4  2004/09/01 20:00:38  shomrat
-* Added missing setter/getter for flags
-*
-* Revision 1.3  2004/06/21 18:51:13  ucko
-* Add a GFF3 format, and fix a typo in the definition of fViewAll.
-*
-* Revision 1.2  2004/04/23 14:13:48  gorelenk
-* Added missed export prefix to declaration of class CFlatFileConfig.
-*
-* Revision 1.1  2004/04/22 15:48:36  shomrat
-* Initial Revision (adapted from context.hpp)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___FLAT_FILE_CONFIG__HPP */

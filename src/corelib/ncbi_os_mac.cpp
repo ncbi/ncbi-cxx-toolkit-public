@@ -564,31 +564,3 @@ extern OSErr MacFSSpec2FullPathname(const FSSpec *inFSS, char **outPathname)
 
 
 END_NCBI_SCOPE
-
-
-/* --------------------------------------------------------------------------
- * $Log$
- * Revision 1.8  2004/05/14 13:59:26  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 1.7  2003/05/23 20:34:14  lavr
- * Show permitting Apple's notice about changes in original "MoreFiles" code
- *
- * Revision 1.6  2003/05/23 20:22:59  ucko
- * Correct author list; include Jim Luther, who wrote the MoreFiles code.
- *
- * Revision 1.4  2003/02/27 22:03:59  lebedev
- * COSErrException_Mac changed from runtime_error to exception
- *
- * Revision 1.3  2001/12/18 21:40:39  juran
- * Copy in MoreFiles fucntions that we need.
- *
- * Revision 1.2  2001/12/03 22:00:55  juran
- * Add g_Mac_SpecialEnvironment global.
- *
- * Revision 1.1  2001/11/19 18:11:08  juran
- * Implements Mac OS-specific header.
- * Inital check-in.
- *
- * ==========================================================================
- */

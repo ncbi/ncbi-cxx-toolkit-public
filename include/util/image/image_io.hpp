@@ -139,39 +139,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/06/23 16:18:45  dicuccio
- * Added ability to inspect image's information (size, width, height, depth)
- *
- * Revision 1.8  2006/06/21 13:22:37  dicuccio
- * Ooops, add optional type to filename-based variants of ReadImage(),
- * ReadSubImage()
- *
- * Revision 1.7  2006/06/21 13:20:31  dicuccio
- * ReadImage(), ReadSubImage(): accept optional type argument
- *
- * Revision 1.6  2004/12/27 20:54:49  vakatov
- * Remove an extraneous comma in enum to get rid of a warning
- *
- * Revision 1.5  2003/12/16 15:49:38  dicuccio
- * Large re-write of image handling.  Added improved error-handling and support
- * for streams-based i/o (via hooks into each client library).
- *
- * Revision 1.4  2003/11/03 15:17:29  dicuccio
- * Added optional compression parameter
- *
- * Revision 1.3  2003/08/27 16:44:32  ivanov
- * Changed class export specifier to NCBI_XIMAGE_EXPORT
- *
- * Revision 1.2  2003/06/03 20:04:24  dicuccio
- * Added export specifiers
- *
- * Revision 1.1  2003/06/03 15:17:41  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-
 #endif  // GUI_IMAGE___IMAGE_READER__HPP

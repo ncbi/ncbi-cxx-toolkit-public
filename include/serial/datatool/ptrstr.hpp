@@ -93,37 +93,3 @@ public:
 END_NCBI_SCOPE
 
 #endif
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2006/10/18 13:04:26  gouriano
-* Moved Log to bottom
-*
-* Revision 1.7  2003/04/29 18:29:34  gouriano
-* object data member initialization verification
-*
-* Revision 1.6  2000/08/25 15:58:47  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.5  2000/07/11 20:36:01  vasilche
-* Removed unnecessary generation of namespace references for enum members.
-* Removed obsolete methods.
-*
-* Revision 1.4  2000/06/16 16:31:13  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.3  2000/04/17 19:11:05  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.2  2000/04/07 19:26:11  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.1  2000/03/07 14:06:05  vasilche
-* Added generation of reference counted objects.
-*
-* ===========================================================================
-*/

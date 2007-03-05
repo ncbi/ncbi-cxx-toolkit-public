@@ -90,17 +90,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/06/08 20:10:47  lewisg
-* add search settings
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSSEARCHSETTINGS_HPP
 /* Original file checksum: lines: 94, chars: 2699, CRC32: 1885fd46 */

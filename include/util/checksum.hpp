@@ -147,46 +147,4 @@ inline Uint4 ComputeFileCRC32(const string& path)
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.11  2006/08/17 20:35:42  vasilche
-* Added implementation of faster Adler32 checksum.
-*
-* Revision 1.10  2005/11/21 14:30:22  vasilche
-* Replaced inclusion of util/md5.hpp with forward declaration of CMD5.
-* Implemented ZIP style CRC32.
-*
-* Revision 1.9  2005/11/15 17:47:54  kuznets
-* InitTables made public to open a way to avoid MT races
-*
-* Revision 1.8  2003/08/11 16:45:52  kuznets
-* Added Reset() function to clear the accumulated checksum and reuse the object
-* for consecutive checksum calculations
-*
-* Revision 1.7  2003/07/29 21:29:26  ucko
-* Add MD5 support (cribbed from the C Toolkit)
-*
-* Revision 1.6  2003/05/08 19:10:21  kuznets
-* + ComputeFileCRC32 function
-*
-* Revision 1.5  2003/04/17 17:50:13  siyan
-* Added doxygen support
-*
-* Revision 1.4  2003/04/15 16:12:09  kuznets
-* GetChecksum() method implemented
-*
-* Revision 1.3  2002/12/19 14:51:00  dicuccio
-* Added export specifier for Win32 DLL builds.
-*
-* Revision 1.2  2001/01/05 20:08:52  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.1  2000/11/22 16:26:21  vasilche
-* Added generation/checking of checksum to user files.
-*
-* ===========================================================================
-*/
-
 #endif  /* CHECKSUM__HPP */

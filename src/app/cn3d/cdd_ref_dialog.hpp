@@ -76,23 +76,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CDD_REF_DIALOG__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2003/06/13 19:12:58  thiessen
-* add move up/down buttons, selection control
-*
-* Revision 1.4  2003/02/03 19:20:01  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.3  2002/08/15 22:13:12  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.2  2002/04/09 14:38:23  thiessen
-* add cdd splash screen
-*
-* Revision 1.1  2001/10/09 18:57:26  thiessen
-* add CDD references editing dialog
-*
-*/

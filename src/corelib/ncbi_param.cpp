@@ -343,29 +343,3 @@ const char* CParamException::GetErrCodeString(void) const
 
 
 END_NCBI_SCOPE
-
-
-/* --------------------------------------------------------------------------
- * $Log$
- * Revision 1.6  2007/01/08 16:49:20  grichenk
- * Use normal (non-fast) mutex in CParam.
- *
- * Revision 1.5  2006/11/29 13:56:29  gouriano
- * Moved GetErrorCodeString method into cpp
- *
- * Revision 1.4  2006/09/11 18:01:04  grichenk
- * Check for null pointer in GetEnvVarName().
- *
- * Revision 1.3  2006/01/05 20:40:17  grichenk
- * Added explicit environment variable name for params.
- * Added default value caching flag to CParam constructor.
- *
- * Revision 1.2  2005/12/07 18:11:21  grichenk
- * Convert names of environment variables to upper case.
- *
- * Revision 1.1  2005/11/17 18:43:46  grichenk
- * Initial revision
- *
- *
- * ==========================================================================
- */

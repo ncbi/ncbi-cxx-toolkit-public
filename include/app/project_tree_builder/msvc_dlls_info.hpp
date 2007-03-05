@@ -94,46 +94,4 @@ void CollectDllsDepends(const list<string>& dll_ids,
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/09/26 18:50:52  gouriano
- * Added CNcbiRegistry wrapper to speed up the execution
- *
- * Revision 1.10  2006/01/04 13:45:16  gouriano
- * Corrected analyzing build configurations for DLL build
- *
- * Revision 1.9  2004/10/12 16:19:04  ivanov
- * Cosmetics
- *
- * Revision 1.8  2004/10/04 15:31:32  gouriano
- * Take into account LIB_OR_DLL Makefile parameter
- *
- * Revision 1.7  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.6  2004/06/07 13:45:39  gorelenk
- * Class CMsvcDllsInfo separated from application config.
- *
- * Revision 1.5  2004/03/15 21:22:44  gorelenk
- * Added declaration of function CollectDllsDepends.
- *
- * Revision 1.4  2004/03/10 16:36:03  gorelenk
- * Added definition of functions FilterOutDllHostedProjects,
- * CreateDllBuildTree and CreateDllsList.
- *
- * Revision 1.3  2004/03/08 23:27:40  gorelenk
- * Added declarations of member-functions  IsDllHosted,
- * GetDllHost, GetLibPrefixes to class CMsvcDllsInfo.
- *
- * Revision 1.2  2004/03/03 22:17:33  gorelenk
- * Added declaration of class CMsvcDllsInfo.
- *
- * Revision 1.1  2004/03/03 17:08:32  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */
-
-
 #endif //PROJECT_TREE_BULDER__MSVC_DLLS_INDO__HPP

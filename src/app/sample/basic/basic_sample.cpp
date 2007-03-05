@@ -211,32 +211,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CSampleBasicApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2004/12/16 21:13:11  ucko
- * Run: Populate "args" by const reference, not value!
- *
- * Revision 1.2  2004/05/21 21:41:41  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2002/04/18 16:05:09  ucko
- * Add centralized tree for sample apps.
- *
- * Revision 6.4  2002/04/16 18:49:07  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 6.3  2001/06/01 15:36:21  vakatov
- * Fixed for the case when "logfile" is not provided in the cmd.line
- *
- * Revision 6.2  2001/06/01 15:17:57  vakatov
- * Workaround a bug in SUN WorkShop 5.1 compiler
- *
- * Revision 6.1  2001/05/31 16:32:51  ivanov
- * Initialization
- *
- * ===========================================================================
- */

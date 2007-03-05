@@ -301,33 +301,3 @@ int main(int argc, const char* argv[])
 {
     return CMultiApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*-----------------------------------------------------------------------
-  $Log$
-  Revision 1.8  2006/09/11 16:30:17  papadopo
-  allow the tree-building method to vary
-
-  Revision 1.7  2006/03/10 19:27:43  papadopo
-  allow pairwise user-specified constraints to be read from file
-
-  Revision 1.6  2006/03/10 16:54:12  papadopo
-  make RPS residue frequencies optional
-
-  Revision 1.5  2006/03/07 22:53:45  papadopo
-  add comment
-
-  Revision 1.4  2006/01/11 23:17:56  papadopo
-  make default e-value match that of aligner
-
-  Revision 1.3  2005/12/16 23:31:50  papadopo
-  make iteration optional, add pseudocount input
-
-  Revision 1.2  2005/11/08 17:44:18  papadopo
-  1. Do not automatically assume blast namespace
-  2. Fix rcsid
-  3. Minor cleanup
-
-  Revision 1.1  2005/11/07 18:14:01  papadopo
-  Initial revision
-
------------------------------------------------------------------------*/

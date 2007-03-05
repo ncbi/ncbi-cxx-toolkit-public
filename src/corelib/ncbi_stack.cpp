@@ -78,26 +78,3 @@ void CStackTrace::Write(CNcbiOstream& os) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/11/15 15:50:05  ucko
- * Directly #include <corelib/ncbistd.hpp> to fix compilation errors when
- * using ncbi_stack_default.cpp.
- *
- * Revision 1.4  2006/11/15 15:38:54  grichenk
- * Added methods to fromat and output stack trace.
- *
- * Revision 1.3  2006/11/13 17:43:41  grichenk
- * Disable stack trace on 64-bit MSWIN.
- *
- * Revision 1.2  2006/11/07 15:56:04  ucko
- * Don't use ncbi_stack_solaris.cpp on versions too old to support walkcontext().
- *
- * Revision 1.1  2006/11/06 17:37:39  grichenk
- * Initial revision
- *
- * ===========================================================================
- */

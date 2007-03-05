@@ -114,19 +114,4 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-/* ====================================================================
- * $Log$
- * Revision 1.3  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.2  2005/11/15 20:10:29  papadopo
- * add doxygen
- *
- * Revision 1.1  2005/11/10 15:37:59  papadopo
- * Initial version
- *
- * ====================================================================
- */
-
 #endif /* ALGO_COBALT___RESFREQ__HPP */

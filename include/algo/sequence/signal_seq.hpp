@@ -77,17 +77,3 @@ private:
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___SIGNAL_SEQ__HPP
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/03/11 17:12:07  dicuccio
- * Removed member static const arrays in favor of private static arrays
- *
- * Revision 1.1  2003/09/10 15:31:34  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

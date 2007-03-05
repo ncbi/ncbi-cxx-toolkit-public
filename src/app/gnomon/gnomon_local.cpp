@@ -158,21 +158,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CGnomon_localApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/11/21 21:36:31  chetvern
- * PrintGenes is standalone function now
- *
- * Revision 1.3  2005/09/30 19:20:01  chetvern
- * removed use of a priori frameshifts
- *
- * Revision 1.2  2005/09/16 14:24:07  chetvern
- * Added header and trailer comments
- *
- * Revision 1.1  2005/09/16 10:07:25  chetvern
- * Initial revision
- *
- * ===========================================================================
- */

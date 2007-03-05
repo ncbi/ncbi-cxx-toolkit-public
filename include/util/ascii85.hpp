@@ -50,18 +50,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2003/07/16 21:56:12  meric
- * Added NCBI_XUTIL_EXPORT qualifier to CAscii85
- *
- * Revision 1.1  2003/07/16 20:07:31  meric
- * Initial version
- *
- * ===========================================================================
- */
-
 #endif  // UTIL___ASCII85__HPP
-

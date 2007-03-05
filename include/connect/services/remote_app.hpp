@@ -177,20 +177,4 @@ string JoinCmdLine(const vector<string>& args);
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/19 13:42:46  didenko
- * Got rid of compilation warning
- *
- * Revision 1.2  2006/07/13 15:25:18  didenko
- * Added missing  NCBI_XCONNECT_EXPORT
- *
- * Revision 1.1  2006/07/13 14:32:38  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__REMOTE_APP_HPP

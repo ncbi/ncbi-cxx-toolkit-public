@@ -1,4 +1,3 @@
-
 #ifndef APP_BLAST_CLIENT___SEARCH_OPTS__HPP
 #define APP_BLAST_CLIENT___SEARCH_OPTS__HPP
 
@@ -400,33 +399,6 @@ private:
     void x_CreateInterface2(CArgDescriptions & ui);
 };
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.6  2006/12/18 17:46:15  bealer
- * - Fix warning.
- *
- * Revision 1.5  2003/12/29 19:48:30  bealer
- * - Change code to accomodate first half of new ASN changes.
- *
- * Revision 1.4  2003/11/21 20:42:13  bealer
- * - Add entrez_query option to blast_client
- *
- * Revision 1.3  2003/11/13 22:59:18  bealer
- * - Remove 'default' handling from filter string option - convert into a
- *   type 'Same' parameter.
- *
- * Revision 1.2  2003/11/10 23:10:10  bealer
- * - Add filter_string option w/ default to "L;"
- *
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */
-
 END_NCBI_SCOPE
 
 #endif // APP_BLAST_CLIENT___SEARCH_OPTS__HPP
-

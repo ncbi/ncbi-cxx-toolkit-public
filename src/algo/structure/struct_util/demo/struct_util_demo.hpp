@@ -51,11 +51,3 @@ public:
 END_SCOPE(struct_util)
 
 #endif // STRUCT_UTIL_DEMO__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2004/05/24 23:04:05  thiessen
-* initial checkin
-*
-*/

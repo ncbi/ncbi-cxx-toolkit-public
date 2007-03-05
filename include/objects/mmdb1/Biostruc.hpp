@@ -87,17 +87,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/05 20:36:01  thiessen
-* add RemoveSIDs()
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_MMDB1_BIOSTRUC_HPP
 /* Original file checksum: lines: 94, chars: 2552, CRC32: 8fca473a */

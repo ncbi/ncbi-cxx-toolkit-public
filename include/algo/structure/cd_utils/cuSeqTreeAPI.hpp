@@ -106,34 +106,4 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 
-#endif 
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.8  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.7  2006/05/18 20:01:14  cliu
- * To enable read-only SeqTreeAPI
- *
- * Revision 1.6  2006/05/15 18:52:49  cliu
- * do not create new tree if m_loadOnly=true
- *
- * Revision 1.5  2005/08/04 21:33:23  cliu
- * annotate with Tax work
- *
- * Revision 1.4  2005/07/27 18:52:20  cliu
- * guard against failure to make a tree for a CD.
- *
- * Revision 1.2  2005/07/20 20:52:41  ucko
- * Properly (irregularly) capitalize cuSeqtree.hpp.
- *
- * Revision 1.1  2005/07/20 20:04:32  cliu
- * redesign SeqTreeAPI
- *
- *
- *
- * ===========================================================================
- */
+#endif

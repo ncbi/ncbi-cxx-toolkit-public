@@ -91,26 +91,3 @@ END_NCBI_SCOPE
 
 
 #endif // ALGUTILS_HPP
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2007/01/10 15:19:00  lanczyck
- * generalize Make_GI_or_PDB_String to Make_SeqID_String
- *
- * Revision 1.4  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2005/11/16 21:19:19  hurwitz
- * changed a color in the color cycle
- *
- * Revision 1.2  2005/11/09 20:47:46  hurwitz
- * make a common color cycle
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

@@ -845,30 +845,3 @@ static void s_MB_IdbGetResults(
 } /* extern "C" */
 
 /* @} */
-
-/*
- * ===========================================================================
- * $Log: blast_dbindex.cpp,v $
- * Revision 1.7  2007/01/08 19:54:06  morgulis
- * Umapping unused portions of index after search is complete.
- *
- * Revision 1.5  2006/12/07 20:58:32  morgulis
- * Fixed CheckOid().
- *
- * Revision 1.4  2006/11/20 20:20:02  papadopo
- * from Alex Morgulis: remove compiler warning
- *
- * Revision 1.3  2006/11/15 23:24:10  papadopo
- * From Alex Morgulis:
- * 1. Allow individual volumes of an indexed database to be searched
- * 2. Add utility routines
- * 3. Add doxygen
- *
- * Revision 1.2  2006/10/05 15:59:21  papadopo
- * GetResults is static now
- *
- * Revision 1.1  2006/10/04 19:19:45  papadopo
- * interface for indexed blast databases
- *
- * ===========================================================================
- */

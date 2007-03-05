@@ -239,26 +239,3 @@ END_NCBI_SCOPE
 
 
 #endif // NEWCDCCD_HPP
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/11/16 20:23:04  cliu
- * remove a pragma
- *
- * Revision 1.4  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.3  2006/04/05 19:28:12  lanczyck
- * allow for changing order of phases in a cycle
- *
- * Revision 1.2  2005/04/19 21:46:20  ucko
- * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
- *
- * Revision 1.1  2005/04/19 14:28:00  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

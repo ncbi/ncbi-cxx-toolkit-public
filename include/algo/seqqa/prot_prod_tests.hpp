@@ -70,18 +70,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/07/12 13:58:45  jcherry
- * Run Entrez neigbors test only if the is is resolvable to a gi
- * (required for Entrez query)
- *
- * Revision 1.1  2004/10/06 19:58:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_SEQQA___PROT_PROD_TESTS__HPP

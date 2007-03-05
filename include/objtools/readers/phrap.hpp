@@ -86,31 +86,4 @@ CRef<CSeq_entry> ReadPhrap(CNcbiIstream& in,
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/20 18:49:20  grichenk
-* Add descriptor to indicate complemented reads.
-*
-* Revision 1.5  2005/09/16 18:43:16  grichenk
-* Changed features' coordinates to reflect aligned segment.
-* Added padding shift as int-fuzz.
-*
-* Revision 1.4  2005/08/08 14:58:04  grichenk
-* Adjusted version flags to autodetect ACE version by default.
-*
-* Revision 1.3  2005/08/04 18:11:27  grichenk
-* Optimized loading. Added support for the old ACE format.
-*
-* Revision 1.2  2005/07/25 20:26:25  grichenk
-* Fixed forward declaration of CSeq_entry
-*
-* Revision 1.1  2005/05/02 13:10:18  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_READERS___PHRAP__HPP */

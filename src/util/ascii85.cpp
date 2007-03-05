@@ -105,26 +105,3 @@ size_t CAscii85::s_Encode(const char* src_buf, size_t src_len,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/02/07 16:02:28  ivanov
- * Fixed Workshop compiler warnings in 64bit mode
- *
- * Revision 1.4  2005/02/01 21:47:14  grichenk
- * Fixed warnings
- *
- * Revision 1.3  2004/06/30 21:58:40  vasilche
- * Fixed cast warning.
- *
- * Revision 1.2  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/07/16 20:05:58  meric
- * Initial version
- *
- * ===========================================================================
- */
-

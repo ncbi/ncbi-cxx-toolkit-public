@@ -185,37 +185,4 @@ void NCBI_EntryPoint_xloader_Patcher(
 
 END_NCBI_SCOPE
 
-/* ========================================================================== 
- * $Log$
- * Revision 1.9  2006/01/25 19:59:23  ucko
- * -#include <objmgr/seq_id_translator.hpp> (removed, and no longer needed)
- *
- * Revision 1.8  2006/01/25 18:59:03  didenko
- * Redisgned bio objects edit facility
- *
- * Revision 1.7  2005/12/05 19:45:58  rsmith
- * take out illegal class sepcifier in class def.
- *
- * Revision 1.6  2005/11/15 19:22:07  didenko
- * Added transactions and edit commands support
- *
- * Revision 1.5  2005/10/26 14:36:44  vasilche
- * Updated for new CBlobId interface. Fixed load lock logic.
- *
- * Revision 1.4  2005/09/06 20:05:17  ucko
- * Include datapatcher_iface.hpp rather than just forward-declaring
- * IDataPatcher, as some compiler versions (such as GCC 2.95) otherwise
- * take issue with the use of CRef<IDataPatcher>.
- *
- * Revision 1.3  2005/09/06 13:22:11  didenko
- * IDataPatcher interface moved to a separate file
- *
- * Revision 1.2  2005/08/31 19:36:44  didenko
- * Reduced the number of objects copies which are being created while doing PatchSeqIds
- *
- * Revision 1.1  2005/08/25 14:06:44  didenko
- * Added data loader patcher
- *
- * ========================================================================== */
-
 #endif  // __LOADER_PATCHER_HPP__

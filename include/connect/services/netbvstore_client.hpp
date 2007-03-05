@@ -139,22 +139,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/06/07 15:43:52  kuznets
- * CheckAlive made optional and disabled by default
- *
- * Revision 1.2  2006/06/05 16:21:57  vasilche
- * Fixed _EXPORT.
- *
- * Revision 1.1  2006/06/02 12:46:26  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-
-
 #endif  

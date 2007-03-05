@@ -30,16 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2003/04/17 17:50:19  siyan
-* Added doxygen support
-*
-* Revision 1.1  2001/01/29 15:18:39  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>

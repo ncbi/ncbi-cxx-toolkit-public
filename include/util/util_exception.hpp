@@ -99,24 +99,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/04 14:50:57  gouriano
- * Moved GetErrCodeString method into src
- *
- * Revision 1.3  2004/08/19 13:10:35  dicuccio
- * Dropped export specifier on inlined exceptions
- *
- * Revision 1.2  2003/04/17 17:50:40  siyan
- * Added doxygen support
- *
- * Revision 1.1  2003/02/26 21:34:05  gouriano
- * modify C++ exceptions thrown by this library
- *
- *
- * ===========================================================================
- */
-
 #endif  /* UTIL_EXCEPTION__HPP */

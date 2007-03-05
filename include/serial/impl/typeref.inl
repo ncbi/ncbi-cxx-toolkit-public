@@ -79,35 +79,3 @@ TTypeInfo CTypeRef::Get(void) const
 }
 
 #endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.7  2005/01/24 17:05:48  vasilche
-* Safe boolean operators.
-*
-* Revision 1.6  2002/12/23 18:38:52  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.5  2002/08/30 16:18:25  vasilche
-* Avoid MT lock in CTypeRef::Get()
-*
-* Revision 1.4  1999/12/17 19:04:55  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.3  1999/08/13 15:53:46  vasilche
-* C++ analog of asntool: datatool
-*
-* Revision 1.2  1999/07/13 20:18:13  vasilche
-* Changed types naming.
-*
-* Revision 1.1  1999/06/24 14:44:48  vasilche
-* Added binary ASN.1 output.
-*
-* ===========================================================================
-*/

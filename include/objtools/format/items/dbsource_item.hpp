@@ -74,29 +74,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.4  2004/12/06 17:23:07  shomrat
-* Use CSeq_id_Handle instead of CSeq_id
-*
-* Revision 1.3  2004/04/22 15:35:34  shomrat
-* Changes in context
-*
-* Revision 1.2  2004/03/18 15:26:38  shomrat
-* Added missing forward decleration
-*
-* Revision 1.1  2003/12/17 19:46:04  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___DBSOURCE_ITEM__HPP */

@@ -58,12 +58,3 @@ class CMkIndexApplication : public CNcbiApplication
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2006/09/27 15:29:06  morgulis
- * Adding makeindex project.
- *
- * ========================================================================
- */

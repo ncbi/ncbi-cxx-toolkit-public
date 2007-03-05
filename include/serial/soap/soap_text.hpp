@@ -276,15 +276,3 @@ END_NCBI_SCOPE
 
 
 #endif // SOAP_TEXT_HPP
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2005/01/12 17:00:09  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.1  2003/09/25 19:46:21  gouriano
-* Added soap Fault object
-*
-*
-* ===========================================================================
-*/

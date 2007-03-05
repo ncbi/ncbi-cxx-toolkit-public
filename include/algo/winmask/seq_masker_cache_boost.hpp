@@ -97,19 +97,3 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerCacheBoost
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.3  2005/12/29 16:13:35  jcherry
- * Added export specifier for CSeqMaskerCacheBoost
- *
- * Revision 1.2  2005/08/31 16:47:28  morgulis
- * Adding comments.
- *
- * Revision 1.1  2005/08/30 14:35:19  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * ========================================================================
- */

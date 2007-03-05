@@ -183,36 +183,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/05/08 15:54:35  ucko
- * Tweak settings-retrieval APIs to account for the fact that the
- * supplied default string value may be a reference to a temporary, and
- * therefore unsafe to return by reference.
- *
- * Revision 1.6  2006/01/05 17:04:21  kuznets
- * Use template arg instead of CBDB_Cache
- *
- * Revision 1.5  2004/11/03 17:53:47  kuznets
- * All time related parameters made unsigned
- *
- * Revision 1.4  2004/11/03 17:07:05  kuznets
- * ICache revision2. Add individual timeouts
- *
- * Revision 1.3  2004/09/21 15:28:45  kuznets
- * Use this-> instead of TParent:: when calling parent functions
- *
- * Revision 1.2  2004/09/21 14:39:56  kuznets
- * Fixed minor GCC bug
- *
- * Revision 1.1  2004/09/21 14:26:34  kuznets
- * Class factory configurator for all ICache interfaces
- *
- *
- * ===========================================================================
- */
-
 #endif  /* UTIL_EXCEPTION__HPP */

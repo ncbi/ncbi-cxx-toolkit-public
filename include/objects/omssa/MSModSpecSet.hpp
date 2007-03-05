@@ -221,23 +221,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/14 15:30:18  lewisg
-* neutral loss
-*
-* Revision 1.2  2005/04/21 21:54:03  lewisg
-* fix Jeri's mem bug, split off mod file, add aspn and gluc
-*
-* Revision 1.1  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSMODSPECSET_HPP
 /* Original file checksum: lines: 94, chars: 2623, CRC32: 8e1d1026 */

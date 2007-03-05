@@ -157,21 +157,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CSampleObjectsApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/05/21 21:41:41  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.2  2003/03/10 18:48:48  kuznets
-* iterate->ITERATE
-*
-* Revision 1.1  2002/04/18 16:05:13  ucko
-* Add centralized tree for sample apps.
-*
-*
-* ===========================================================================
-*/

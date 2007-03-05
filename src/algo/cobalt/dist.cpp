@@ -211,31 +211,3 @@ CDistances::ComputeMatrix(vector<CSequence>& query_data,
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
-
-/* ====================================================================
- * $Log$
- * Revision 1.7  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.6  2006/01/27 20:56:54  papadopo
- * input a Karlin block for computing raw scores to bit scores before calculating distances
- *
- * Revision 1.5  2005/11/18 20:18:35  papadopo
- * 1. Use raw scores instead of bit scores
- * 2. Add documentation, add doxygen
- *
- * Revision 1.4  2005/11/08 19:49:19  papadopo
- * fix solaris compile warnings
- *
- * Revision 1.3  2005/11/08 18:42:16  papadopo
- * assert -> _ASSERT
- *
- * Revision 1.2  2005/11/08 17:52:39  papadopo
- * ASSERT -> assert
- *
- * Revision 1.1  2005/11/07 18:14:00  papadopo
- * Initial revision
- *
- * ====================================================================
- */

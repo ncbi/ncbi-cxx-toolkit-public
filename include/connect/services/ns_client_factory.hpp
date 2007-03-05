@@ -99,24 +99,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/01/09 16:18:26  vakatov
- * Removed extraneous comma
- *
- * Revision 1.1  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES___NS_CLIENT_FACTORY__HPP

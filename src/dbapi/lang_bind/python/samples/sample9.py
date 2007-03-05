@@ -62,15 +62,3 @@ print "SQL:", sql, "total_row:", cursor.rowcount
 
 if cursor.rowcount == 0 :
         print "No data existed in database ", db_name, ". Taxonomy table with taxid =", taxid
-
-# ===========================================================================
-#
-# $Log$
-# Revision 1.2  2005/04/07 16:50:12  ssikorsk
-# Added '#! /usr/bin/env python' to each sample
-#
-# Revision 1.1  2005/02/22 15:56:20  ssikorsk
-# Sample9 initial version
-#
-# ===========================================================================
-

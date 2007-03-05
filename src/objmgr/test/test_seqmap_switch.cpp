@@ -28,22 +28,6 @@
 *
 * File Description:
 *           Set for CSeqMap switch logic
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2007/01/05 14:43:01  vasilche
-* Implemented seq-map switch editing.
-*
-* Revision 1.3  2006/10/18 17:25:31  vasilche
-* SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
-*
-* Revision 1.2  2006/10/04 19:31:40  vasilche
-* Added program arguments.
-*
-* Revision 1.1  2006/09/27 21:29:40  vasilche
-* Added test application for sequence switch points.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -177,4 +161,3 @@ int main( int argc, const char* argv[])
 {
     return CTestSeqMapSwitch().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-

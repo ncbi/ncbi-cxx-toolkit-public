@@ -106,25 +106,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.1  2005/05/23 15:51:13  didenko
- * Moved grid_control_thread.hpp grid_debug_context.hpp from
- * srv/connect/service
- *
- * Revision 6.1  2005/05/05 15:18:51  didenko
- * Added debugging facility to worker nodes
- *
- * ===========================================================================
- */
- 
 #endif // _GRID_DEBUG_CONTEXT_HPP_

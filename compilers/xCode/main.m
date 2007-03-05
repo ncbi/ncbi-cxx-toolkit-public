@@ -38,16 +38,3 @@ int main(int argc, const char *argv[])
     ASKInitialize();
     return NSApplicationMain(argc, argv);
 }
-
-
-/*
- * ===========================================================================
- * $Log: main.m,v $
- * Revision 1.2  2005/09/27 18:48:13  lebedev
- * Startup reworked
- *
- * Revision 1.1  2004/06/23 17:09:52  lebedev
- * Initial revision
- *
- * ===========================================================================
- */

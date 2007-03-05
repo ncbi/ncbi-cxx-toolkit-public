@@ -281,27 +281,3 @@ bool BlockBoundaryAlgorithm::CanBlocksShrink() const {
 END_SCOPE(align_refine)
 
 #endif // AR_BLOCK_BOUNDARY_ALGORITHM__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/08/09 18:33:51  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.1  2005/06/28 13:45:25  lanczyck
-* block multiple alignment refiner code from internal/structure/align_refine
-*
-* Revision 1.4  2005/03/08 21:30:59  lanczyck
-* changes to add greedy extension algorithm
-*
-* Revision 1.3  2004/12/03 02:05:12  lanczyck
-* big changes...\nadd compound column scorer; modify boundary algorithms to take multiple scorers; new options in application to support new scoring options
-*
-* Revision 1.2  2004/11/16 23:06:02  lanczyck
-* perform block edits after LOO; add new options for block editing; rename extend/shrink class to reflect can now both extend AND shrink (vs. OR)
-*
-* Revision 1.1  2004/11/13 00:02:40  lanczyck
-* BlockBoundaryAlgorithm.cpp
-*
-* ---------------------------------------------------------------------------
-*/

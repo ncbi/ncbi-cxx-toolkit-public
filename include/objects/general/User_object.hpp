@@ -171,46 +171,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2004/11/08 17:20:37  dicuccio
-* Added GetFieldRef() and SetFieldRef() - returns the CConstRef<>/CRef<>
-* corresponding to the named field.  White space changes.
-*
-* Revision 1.8  2004/10/28 18:38:57  dicuccio
-* Doxygenated comments. Extended SetField() to take a type string for sub-object
-* creation
-*
-* Revision 1.7  2004/09/21 15:07:42  kans
-* added EParseField parameter to AddField so it can optionally interpret the string value as numeric
-*
-* Revision 1.6  2004/07/27 15:12:03  ucko
-* Use vectors for User-field.data SEQUENCE-OF choices.
-*
-* Revision 1.5  2003/09/29 15:17:14  dicuccio
-* Fleshed out CUser_object API.  Added API to retrieve fields based on a
-* delimited key.  Added ability to encode a CUser_object as one of a number of
-* standard types (only experiment types are supported currently)
-*
-* Revision 1.4  2003/06/19 00:53:56  dicuccio
-* Added interface functions for adding defined key-value pairs as CUser_field
-* sub-objects
-*
-* Revision 1.3  2002/12/26 12:40:33  dicuccio
-* Added Win32 export specifiers
-*
-* Revision 1.2  2002/10/03 19:01:02  clausen
-* Removed extra whitespace
-*
-* Revision 1.1  2002/10/03 17:00:33  clausen
-* Added GetLabel()
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_GENERAL_USER_OBJECT_HPP
 /* Original file checksum: lines: 93, chars: 2438, CRC32: 8ba203fc */

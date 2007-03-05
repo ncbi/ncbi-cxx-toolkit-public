@@ -135,21 +135,3 @@ private:
 END_NCBI_SCOPE
 
 #endif
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/10/18 13:13:01  gouriano
-* Added comments into typestrings and generated code
-*
-* Revision 1.3  2005/04/26 14:18:50  vasilche
-* Allow allocation of objects in CObjectMemoryPool.
-*
-* Revision 1.2  2004/09/07 14:09:45  grichenk
-* Fixed assignment of default value to aliased types
-*
-* Revision 1.1  2003/10/21 13:45:23  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/

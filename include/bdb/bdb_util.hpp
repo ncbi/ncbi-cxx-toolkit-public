@@ -167,33 +167,5 @@ int NCBI_BDB_EXPORT BDB_get_rowid(const CBDB_File& dbf);
 
 
 END_NCBI_SCOPE
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/03/13 14:30:57  kuznets
- * +BDB_batch_delete_recs()
- *
- * Revision 1.6  2005/10/06 15:27:03  kuznets
- * + BDB_iterate_file() (can iterate file using result set iterators
- *
- * Revision 1.5  2004/06/28 12:14:05  kuznets
- * BDB_find_field improved to search in non text fields too
- *
- * Revision 1.4  2004/03/10 14:02:55  kuznets
- * + BDB_get_rowid
- *
- * Revision 1.3  2004/03/08 13:33:19  kuznets
- * + BDB_find_field
- *
- * Revision 1.2  2003/06/10 20:07:27  kuznets
- * Fixed header files not to repeat information from the README file
- *
- * Revision 1.1  2003/06/06 16:34:57  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 
 #endif

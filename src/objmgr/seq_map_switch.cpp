@@ -661,32 +661,3 @@ TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log: seq_map_switch.cpp,v $
-* Revision 1.7  2007/01/05 14:43:00  vasilche
-* Implemented seq-map switch editing.
-*
-* Revision 1.6  2006/10/18 17:24:32  vasilche
-* SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
-*
-* Revision 1.5  2006/10/04 20:03:35  ucko
-* SMatch::GetMatchOrdered: comment out uncompilable _TRACE statements
-* (CRange<> objects aren't directly printable at present).
-*
-* Revision 1.4  2006/10/04 19:31:08  vasilche
-* Allow inexact match in segment switch.
-*
-* Revision 1.3  2006/09/27 22:41:27  vasilche
-* Added exception in case of error.
-*
-* Revision 1.2  2006/09/27 22:37:40  vasilche
-* GCC 2.95 does not understand BEGIN_SCOPE() without arguments.
-*
-* Revision 1.1  2006/09/27 21:28:58  vasilche
-* Added functions to calculate switch points.
-*
-* ===========================================================================
-*/

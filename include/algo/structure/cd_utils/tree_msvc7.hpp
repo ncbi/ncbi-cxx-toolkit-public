@@ -1981,21 +1981,3 @@ typename tree<T, tree_node_allocator>::tree_node *tree<T, tree_node_allocator>::
 // Local variables:
 // default-tab-width: 3
 // End:
-
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.2  2005/04/19 21:46:20  ucko
- * Clean up includes; particularly avoid <cassert>, which MIPSpro lacks.
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

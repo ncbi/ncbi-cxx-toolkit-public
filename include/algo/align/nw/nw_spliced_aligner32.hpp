@@ -92,37 +92,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.12  2005/04/04 16:32:23  kapustin
- * Distinguish matches from mismatches in raw transcripts
- *
- * Revision 1.11  2005/03/16 15:48:26  jcherry
- * Allow use of std::string for specifying sequences
- *
- * Revision 1.10  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
- *
- * Revision 1.9  2004/06/29 20:46:04  kapustin
- * Support simultaneous segment computing
- *
- * Revision 1.8  2004/04/23 14:39:22  kapustin
- * Add Splign librry and other changes
- *
- * Revision 1.4  2003/12/29 13:02:03  kapustin
- * Make x_GetElemSize() public and rename.
- *
- * Revision 1.3  2003/09/26 14:43:01  kapustin
- * Remove exception specifications
- *
- * Revision 1.2  2003/09/10 20:12:47  kapustin
- * Update Doxygen tags
- *
- * Revision 1.1  2003/09/02 22:27:44  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_ALIGN_SPLICEDALIGNER32__HPP */

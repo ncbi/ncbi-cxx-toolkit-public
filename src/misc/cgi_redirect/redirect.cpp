@@ -258,31 +258,3 @@ TCgiEntries& CCgiRedirectApplication::RemapEntries(CCgiContext& ctx,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/05/17 21:01:48  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2004/03/19 16:10:42  ivanov
- * ProcessRequest(): use ctx.GetConfig()
- *
- * Revision 1.4  2004/02/17 16:21:38  ivanov
- * Changed method of using another variables from "&var" to "&{var}".
- * Also, all new string values in the registry file must be specified
- * in the URL-encoded format.
- *
- * Revision 1.3  2004/02/10 15:25:37  ivanov
- * Enclosed mapped tag names with undescores to avoid conflicts default tags
- * with names of automaticaly mapped entries.
- *
- * Revision 1.2  2004/02/10 13:31:44  ivanov
- * Added missed \n in the default template
- *
- * Revision 1.1  2004/02/09 19:32:34  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

@@ -263,28 +263,4 @@ EPolyTail FindPolyTail(Iterator begin, Iterator end,
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.6  2004/05/12 19:13:36  johnson
-* make sure no iterator ever goes past end
-*
-* Revision 1.5  2004/05/11 18:36:56  johnson
-* made reverse iterator more standard (== base-1); avoid add a value to the
-* iterator that could potentially take it past the end
-*
-* Revision 1.4  2004/04/28 15:19:46  johnson
-* Uses templated iterators; no longer accepts user suggestion for cleavage
-* site
-*
-* Revision 1.3  2003/12/31 20:41:39  johnson
-* FindPolySite takes cleavage prompt for both 3' poly-A and 5' poly-T
-*
-* Revision 1.2  2003/12/30 21:28:31  johnson
-* added msvc export specifiers
-*
-* ===========================================================================
-*/
-
 #endif /*ALGO_SEQUENCE___POLYA__HPP*/

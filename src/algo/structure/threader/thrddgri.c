@@ -32,23 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2005/10/31 21:26:05  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.3  2001/04/25 15:43:29  hurwitz
-* initial check-in of Anna's code to fix problem of duplicate alignments with different scores
-*
-* Revision 1.2  2000/08/17 16:31:25  hurwitz
-* got rid of C++ style comments
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 
@@ -162,5 +145,3 @@ tdg->dg=tdg->ps+tdg->ms+tdg->cs+tdg->ls;
 return(tdg->dg);
 
 }
-
-

@@ -93,23 +93,4 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnectorEx
 
 /* @} */
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.4  2003/04/09 17:58:50  siyan
- * Added doxygen support
- *
- * Revision 6.3  2003/01/08 01:59:32  lavr
- * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
- *
- * Revision 6.2  2002/09/19 18:00:42  lavr
- * Header file guard macro changed; log moved to the end
- *
- * Revision 6.1  2000/04/12 15:18:10  vakatov
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_FILE_CONNECTOR__H */

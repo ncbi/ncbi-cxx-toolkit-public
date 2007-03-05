@@ -78,41 +78,4 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2005/06/13 15:44:53  grichenk
-* Implemented splitting of assembly. Added splitting of seqdesc objects
-* into multiple chunks.
-*
-* Revision 1.9  2004/08/19 14:18:54  vasilche
-* Added splitting of whole Bioseqs.
-*
-* Revision 1.8  2004/08/04 14:48:49  vasilche
-* Added exports for MSVC. Added joining of very small chunks with skeleton.
-*
-* Revision 1.7  2004/06/15 14:05:49  vasilche
-* Added splitting of sequence.
-*
-* Revision 1.6  2004/03/05 17:40:34  vasilche
-* Added 'verbose' option to splitter parameters.
-*
-* Revision 1.5  2003/12/30 16:06:14  vasilche
-* Compression methods moved to separate header: id2_compress.hpp.
-*
-* Revision 1.4  2003/12/18 21:15:35  vasilche
-* Fixed long -> double conversion warning.
-*
-* Revision 1.3  2003/11/26 23:04:58  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.2  2003/11/26 17:56:02  vasilche
-* Implemented ID2 split in ID1 cache.
-* Fixed loading of splitted annotations.
-*
-* Revision 1.1  2003/11/12 16:18:29  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_BLOB_SPLITTER_PARAMS__HPP

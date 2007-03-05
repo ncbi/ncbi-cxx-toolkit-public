@@ -327,19 +327,4 @@ struct CMDReturn<CAttachAnnot_EditCommand<Annot> > {
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.3  2006/05/01 16:56:45  didenko
-* Attach SeqEntry edit command revamp
-*
-* Revision 1.2  2006/01/25 18:59:03  didenko
-* Redisgned bio objects edit facility
-*
-* Revision 1.1  2005/11/15 19:22:07  didenko
-* Added transactions and edit commands support
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OBJMGR_IMPL___SEQ_ENTRY_EDIT_COMMNADS__HPP

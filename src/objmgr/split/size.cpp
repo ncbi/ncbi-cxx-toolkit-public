@@ -68,22 +68,3 @@ CNcbiOstream& CSize::Print(CNcbiOstream& out) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2004/05/21 21:42:14  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.3  2004/01/07 17:36:28  vasilche
-* Moved id2_split headers to include/objmgr/split.
-* Fixed include path to genbank.
-*
-* Revision 1.2  2003/11/26 23:05:00  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:31  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/

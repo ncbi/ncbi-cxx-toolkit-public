@@ -128,12 +128,3 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOAscii
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2005/05/02 14:27:46  morgulis
- * Implemented hash table based unit counts formats.
- *
- * ========================================================================
- */

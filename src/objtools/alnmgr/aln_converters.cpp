@@ -684,38 +684,3 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
 
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.9  2007/01/10 18:22:06  todorov
-* + ConvertSparseToPairwiseAln.
-*
-* Revision 1.8  2007/01/05 18:32:07  todorov
-* Added support for Dense_diag.
-*
-* Revision 1.7  2007/01/04 21:28:50  todorov
-* Allow for out-of-frame alignments by using a convention to split the
-* segment if the nuc sequence is shorter, resulting in a one partial
-* segment with length less than 3 (in pseudo-nuc coords).
-*
-* Revision 1.6  2006/12/13 23:33:16  todorov
-* CAlnRng -> CPairwiseAln::TAlnRng and comment out experimental code.
-*
-* Revision 1.5  2006/12/13 18:58:26  todorov
-* Cosmetic.
-*
-* Revision 1.4  2006/12/13 18:45:03  todorov
-* Moved definitions from .hpp
-*
-* Revision 1.3  2006/11/21 20:04:33  todorov
-* Comment out this file until the code is reused in aln_converters.hpp
-*
-* Revision 1.2  2006/11/06 19:54:04  todorov
-* CSeqAlignToAnchored converts alignments given hints and using CPairwiseAln.
-*
-* Revision 1.1  2006/10/19 17:23:01  todorov
-* Initial draft.
-*
-* ===========================================================================
-*/

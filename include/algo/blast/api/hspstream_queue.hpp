@@ -83,26 +83,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/03/30 16:21:27  jcherry
-* Added export specifier
-*
-* Revision 1.4  2005/03/29 15:58:54  dondosha
-* Added blast scope
-*
-* Revision 1.3  2004/08/11 11:59:07  ivanov
-* Added export specifier NCBI_XBLAST_EXPORT
-*
-* Revision 1.2  2004/06/22 16:24:39  dondosha
-* Added doxygen comments
-*
-* Revision 1.1  2004/06/15 16:25:23  dondosha
-* Implementation of an HSP list queue
-*
-*
-* ===========================================================================
-*/
 #endif /* ALGO_BLAST_API___HSPSTREAM_QUEUE_HPP */

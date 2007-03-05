@@ -65,23 +65,3 @@ private:
 END_NCBI_SCOPE
 
 #endif // DTDLEXER_HPP
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.4  2006/04/20 14:00:56  gouriano
- * Added XML schema parsing
- *
- * Revision 1.3  2005/01/06 20:21:13  gouriano
- * Added name property to lexers - for better diagnostics
- *
- * Revision 1.2  2002/10/18 14:35:42  gouriano
- * added parsing of internal parsed entities
- *
- * Revision 1.1  2002/10/15 13:50:15  gouriano
- * DTD lexer and parser. first version
- *
- *
- * ==========================================================================
- */

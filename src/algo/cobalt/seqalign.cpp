@@ -298,36 +298,3 @@ CMultiAligner::GetSeqalignResults(vector<int>& indices)
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
-
-/* =======================================================================
- * $Log$
- * Revision 1.9  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.8  2006/03/08 15:51:24  papadopo
- * convert assertions to exceptions
- *
- * Revision 1.7  2005/11/22 18:41:33  papadopo
- * add function to retrieve a subset of a Seq-align
- *
- * Revision 1.6  2005/11/21 21:03:00  papadopo
- * fix documentation, add doxygen
- *
- * Revision 1.5  2005/11/18 22:27:25  papadopo
- * handle Seq_locs of type Seq_interval
- *
- * Revision 1.4  2005/11/18 20:25:22  papadopo
- * Make main seqalign generator private, and add extra member to extract a subset of the complete aligned results
- *
- * Revision 1.3  2005/11/08 19:49:19  papadopo
- * fix solaris compile warnings
- *
- * Revision 1.2  2005/11/08 17:35:00  papadopo
- * fix file description
- *
- * Revision 1.1  2005/11/08 17:32:25  papadopo
- * Initial revision
- *
- * =======================================================================
- */

@@ -573,35 +573,3 @@ BOOST_AUTO_UNIT_TEST(s_UsPatId)
     
     s_RemoveFiles(files);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/09/07 17:23:21  bealer
- * - Only construct object manager once.
- *
- * Revision 1.6  2006/08/30 19:53:27  camacho
- * Make verbose output less restrictive
- *
- * Revision 1.5  2006/08/30 19:29:02  bealer
- * - Remove 'static' modifier causing cleanup order issue.
- *
- * Revision 1.4  2006/08/24 20:03:11  ucko
- * - #include <boost/current_function.hpp>, and use BOOST_CURRENT_FUNCTION
- *   in lieu of __FUNCTION__, which not all compilers actually support.
- * - Tweak s_RemoveFiles to compile under GCC 3.3.x.
- *
- * Revision 1.3  2006/08/21 16:23:12  bealer
- * - Verbosity mode (controlled by VERBOSE_UT envar).
- *
- * Revision 1.2  2006/08/21 16:04:37  bealer
- * - Fix makefile include/lib paths.
- * - Change to use in-class enumeration definition.
- *
- * Revision 1.1  2006/08/21 15:46:19  bealer
- * - Add Boost unit test for writedb.
- *
- *
- * ===========================================================================
- */
-

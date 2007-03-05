@@ -193,35 +193,4 @@ protected:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/08/09 18:41:24  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.6  2006/03/13 15:31:50  vakatov
-* Removed extraneous CTaxNRCriteria:: scope qualifier that confused GCC 4.1.0
-*
-* Revision 1.5  2005/10/18 17:06:51  lanczyck
-* make TaxClient a virtual base class;
-* add methods CanBeApplied and GetCriteriaError in base criteria
-*
-* Revision 1.4  2005/08/23 20:53:08  lanczyck
-* add a ConnectToServer method
-*
-* Revision 1.3  2005/07/18 19:06:44  lanczyck
-* add m_shouldMatch member to toggle whether do or do not want identified priority nodes;
-* add a pair of convenience methods to extract items & ids
-*
-* Revision 1.2  2005/07/14 14:50:25  lanczyck
-* add new ctor
-*
-* Revision 1.1  2005/07/07 17:31:25  lanczyck
-* move refactored classes supporting non-redundification from CDTree to cd_utils
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* CU_TAXNRCRITERIA__HPP */

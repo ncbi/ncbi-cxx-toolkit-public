@@ -89,35 +89,3 @@ void CWinMaskWriterFasta::Print( CBioseq_Handle& bsh,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.4  2005/06/06 15:28:17  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.3  2005/04/06 15:57:10  morgulis
- * Fix in the output fasta formatter for skipping a base in the case of two
- * adjacent masked intervals.
- * Fix in the interval merging code for not merging adjacent intervals.
- *
- * Revision 1.2  2005/03/21 13:19:26  dicuccio
- * Updated API: use object manager functions to supply data, instead of passing
- * data as strings.
- *
- * Revision 1.1  2005/02/25 21:32:55  dicuccio
- * Rearranged winmasker files:
- * - move demo/winmasker to a separate app directory (src/app/winmasker)
- * - move win_mask_* to app directory
- *
- * Revision 1.2  2005/02/12 19:58:04  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
- */
-

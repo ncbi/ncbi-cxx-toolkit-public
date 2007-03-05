@@ -564,27 +564,3 @@ void CCleanup_imp::BasicCleanup(CUser_object& uo)
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/11/01 13:57:52  rsmith
- * dbtags: MGD -> MGI, IFO -> NBRC
- *
- * Revision 1.4  2006/09/11 17:14:28  ludwigf
- * CHANGED: Do not consider names in paretheses (like nicknames) when making
- *  the list of initials.
- *
- * Revision 1.3  2006/07/31 14:29:37  rsmith
- * Add change reporting
- *
- * Revision 1.2  2006/03/23 18:32:24  rsmith
- * move cleanup of User object/fields here. String changes.
- *
- * Revision 1.1  2006/03/14 20:21:50  rsmith
- * Move BasicCleanup functionality from objects to objtools/cleanup
- *
- *
- * ===========================================================================
- */

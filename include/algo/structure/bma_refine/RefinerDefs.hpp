@@ -281,35 +281,3 @@ typedef RefinedAlignments::value_type RefinedAlignmentsVT;
 END_SCOPE(align_refine)
 
 #endif // AR_REFINERDEFS__HPP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/03/27 16:38:18  lanczyck
- * refactor RowSelector into polymorphic class hierarchy; add an alignment-based selection class; always shuffle row selection for random row selector
- *
- * Revision 1.6  2005/11/28 21:47:40  lanczyck
- * remove unnecessary static (?!) callback fn definition
- *
- * Revision 1.5  2005/11/23 01:01:14  lanczyck
- * freeze specified blocks in both LOO and BE phases;
- * add support for a callback for a progress meter
- *
- * Revision 1.4  2005/10/05 13:55:08  lanczyck
- * new defaults for 3.3.3 parameters
- *
- * Revision 1.3  2005/09/06 18:49:44  lanczyck
- * add leave-N-out variable to LOO param struct; add LNO error codes
- *
- * Revision 1.2  2005/06/28 14:26:36  lanczyck
- * add 'error' code for a skipped phase
- *
- * Revision 1.1  2005/06/28 13:45:25  lanczyck
- * block multiple alignment refiner code from internal/structure/align_refine
- *
- * Revision 1.1  2005/05/24 22:31:43  lanczyck
- * initial versions:  app builds but not yet tested
- *
- * ===========================================================================
- */
-

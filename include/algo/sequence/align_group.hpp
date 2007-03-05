@@ -158,24 +158,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/23 20:39:19  ucko
- * +<memory> for auto_ptr<>
- *
- * Revision 1.2  2006/10/23 15:05:08  dicuccio
- * Drop unimplemented function
- *
- * Revision 1.1  2006/10/23 14:54:10  dicuccio
- * Moved over from gui plugin tree
- *
- * Revision 1.1  2006/03/08 12:55:16  dicuccio
- * Added two new tools: general alignment clean-up function; alignment
- * subcategorization and grouping function
- *
- * ===========================================================================
- */
-
 #endif  // GUI_PLUGINS_ALGO_ALIGN___ALIGN_GROUP__HPP

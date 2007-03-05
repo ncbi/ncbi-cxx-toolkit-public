@@ -77,12 +77,3 @@ else:
         print 'ncbi_cobjects.i changed'
     print 'Running SWIG again...'; sys.stdout.flush()
     os.system('%s ncbi_swig_python.py -DWINDOWS ncbi.swig' % python_exe)
-
-
-
-# ===========================================================================
-# $Log$
-# Revision 1.1  2005/07/12 15:46:21  jcherry
-# Initial version
-#
-# ===========================================================================

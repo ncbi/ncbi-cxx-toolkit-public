@@ -152,27 +152,4 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CSeqsRange& info)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2005/01/24 17:09:36  vasilche
-* Safe boolean operators.
-*
-* Revision 1.5  2004/07/12 15:05:32  grichenk
-* Moved seq-id mapper from xobjmgr to seq library
-*
-* Revision 1.4  2004/06/15 14:05:49  vasilche
-* Added splitting of sequence.
-*
-* Revision 1.3  2003/12/01 18:37:10  vasilche
-* Separate different annotation types in split info to reduce memory usage.
-*
-* Revision 1.2  2003/11/26 23:04:59  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:30  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_ID_RANGE__HPP

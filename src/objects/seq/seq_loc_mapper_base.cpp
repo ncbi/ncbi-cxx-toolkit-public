@@ -1997,13 +1997,3 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::x_GetMappedSeq_loc(void)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/12/11 17:11:34  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/

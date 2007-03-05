@@ -159,16 +159,5 @@ void CGetFeature::x_Clear(){
     
 }
 
-  
-/* 
-*===========================================
-*$Log$
-*Revision 1.1  2004/08/05 16:19:37  jianye
-*initial check in
-*
-
-*===========================================
-*/
-
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -159,28 +159,3 @@ void CAntigenic::PredictSites(const objects::CSeqVector& seq,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/14 20:23:19  jcherry
- * Eliminate compiler warning
- *
- * Revision 1.5  2005/01/04 17:47:49  jcherry
- * Casts to eliminate compiler warnings
- *
- * Revision 1.4  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/09/10 16:20:40  ucko
- * Tweak to avoid undefined symbols with WorkShop.
- *
- * Revision 1.2  2003/09/09 16:09:38  dicuccio
- * Moved lookup table to implementation file
- *
- * Revision 1.1  2003/09/02 14:53:11  jcherry
- * Initial version
- *
- * ===========================================================================
- */

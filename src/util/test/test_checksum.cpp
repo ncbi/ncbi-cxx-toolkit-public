@@ -302,25 +302,3 @@ int main(int argc, char** argv)
 {
     return CChecksumTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/08/17 20:36:42  vasilche
-* Added timing tests for individual checksum methods.
-* Added selftest for Adler32 checksum.
-*
-* Revision 1.3  2005/11/21 14:34:01  vasilche
-* Check ZIP style CRC32.
-* Added option for printing CRC32 table code.
-*
-* Revision 1.2  2004/05/17 21:09:26  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/07/29 21:29:26  ucko
-* Add MD5 support (cribbed from the C Toolkit)
-*
-*
-* ===========================================================================
-*/

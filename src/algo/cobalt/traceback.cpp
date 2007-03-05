@@ -504,30 +504,3 @@ CEditScript::VerifyScript(TRange seq1_range, TRange seq2_range)
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
-
-/* ========================================================================
- * $Log$
- * Revision 1.7  2006/09/20 19:41:44  papadopo
- * add member to initialize traceback from an ASN.1 denseg
- *
- * Revision 1.6  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.5  2006/02/15 15:53:36  ucko
- * Change GapEditScript to use arrays rather than be a linked list.
- *
- * Revision 1.4  2005/11/21 21:03:00  papadopo
- * fix documentation, add doxygen
- *
- * Revision 1.3  2005/11/08 18:42:16  papadopo
- * assert -> _ASSERT
- *
- * Revision 1.2  2005/11/08 17:56:45  papadopo
- * ASSERT -> assert
- *
- * Revision 1.1  2005/11/07 18:14:01  papadopo
- * Initial revision
- *
- * ========================================================================
- */

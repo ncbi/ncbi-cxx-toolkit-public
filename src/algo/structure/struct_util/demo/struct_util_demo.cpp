@@ -220,32 +220,3 @@ int main(int argc, const char* argv[])
     SUApp app;
     return app.AppMain(argc, argv, NULL, eDS_Default, NULL);    // don't use config file
 }
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/10/24 23:24:24  thiessen
-* switch to C++ PSSM generation
-*
-* Revision 1.7  2004/07/29 18:44:24  thiessen
-* adjust info message
-*
-* Revision 1.6  2004/07/28 23:06:03  thiessen
-* show all scores before and after
-*
-* Revision 1.5  2004/06/14 13:50:23  thiessen
-* make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
-*
-* Revision 1.4  2004/05/27 22:22:12  thiessen
-* add ctools/C-Toolkit stuff
-*
-* Revision 1.3  2004/05/26 02:40:24  thiessen
-* progress towards LOO - all but PSSM and row ordering
-*
-* Revision 1.2  2004/05/25 15:52:18  thiessen
-* add BlockMultipleAlignment, IBM algorithm
-*
-* Revision 1.1  2004/05/24 23:04:05  thiessen
-* initial checkin
-*
-*/

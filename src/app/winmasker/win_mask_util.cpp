@@ -71,20 +71,3 @@ bool CWinMaskUtil::consider( const CBioseq_Handle & bsh,
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.3  2005/11/21 16:49:15  morgulis
- * 1. Fixed a bug causing infinite loop in the case of empty genome.
- * 2. Added possibility to use substring matching with -ids and -exclude-ids
- *    options.
- *
- * Revision 1.2  2005/07/11 14:36:17  morgulis
- * Fixes for performance problems with large number of short sequences.
- * Windowmasker is now statically linked against object manager libs.
- *
- * Revision 1.1  2005/03/24 16:50:22  morgulis
- * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
- *
- */

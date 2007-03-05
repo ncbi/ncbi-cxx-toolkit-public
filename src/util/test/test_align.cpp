@@ -1257,18 +1257,3 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 
     return test;
 }
-
-
-/* ===========================================================================
- * $Log$
- * Revision 1.3  2005/12/05 16:41:09  ucko
- * Add support for Boost 1.33.x, which is now installed on Solaris 10.
- *
- * Revision 1.2  2005/06/14 19:54:50  yazhuk
- * Fixed GCC warnings
- *
- * Revision 1.1  2005/06/13 19:31:36  yazhuk
- * Initial revision
- *
- * ===========================================================================
- */

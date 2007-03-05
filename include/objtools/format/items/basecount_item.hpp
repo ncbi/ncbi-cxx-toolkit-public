@@ -94,23 +94,4 @@ void CBaseCountItem::GetCounts
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.2  2004/04/22 15:34:12  shomrat
-* Changes in context
-*
-* Revision 1.1  2003/12/17 19:44:53  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___BASECOUNT_ITEM__HPP */

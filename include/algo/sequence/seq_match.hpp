@@ -177,25 +177,3 @@ CSeqMatch::EMatch CSeqMatch::CompareNcbi8na(char s, char q)
 END_NCBI_SCOPE
 
 #endif   // GUI_CORE_ALGO_BASIC___SEQ_MATCH__HPP
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2003/08/18 20:07:04  dicuccio
- * Corrected export specifiers
- *
- * Revision 1.4  2003/08/18 20:01:06  jcherry
- * Changed function argument name to avoid confusion with std::compare
- *
- * Revision 1.3  2003/08/18 19:22:13  jcherry
- * Moved orf and seq_match to algo/sequence
- *
- * Revision 1.2  2003/08/13 16:42:11  dicuccio
- * Compilation fixes for MSVC
- *
- * Revision 1.1  2003/08/12 18:52:58  jcherry
- * Initial version
- *
- * ===========================================================================
- */

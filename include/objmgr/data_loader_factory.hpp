@@ -126,37 +126,4 @@ protected:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2004/08/02 17:34:43  grichenk
-* Added data_loader_factory.cpp.
-* Renamed xloader_cdd to ncbi_xloader_cdd.
-* Implemented data loader factories for all loaders.
-*
-* Revision 1.6  2004/07/28 14:02:56  grichenk
-* Improved MT-safety of RegisterInObjectManager(), simplified the code.
-*
-* Revision 1.5  2004/07/26 19:15:39  friedman
-* Templates can not be exported. As per Mike D.
-*
-* Revision 1.4  2004/07/26 14:13:31  grichenk
-* RegisterInObjectManager() return structure instead of pointer.
-* Added CObjectManager methods to manipuilate loaders.
-*
-* Revision 1.3  2002/12/26 20:51:35  dicuccio
-* Added Win32 export specifier
-*
-* Revision 1.2  2002/07/08 20:50:56  grichenk
-* Moved log to the end of file
-* Replaced static mutex (in CScope, CDataSource) with the mutex
-* pool. Redesigned CDataSource data locking.
-*
-* Revision 1.1  2002/01/11 19:04:00  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
-*/
-
 #endif // DATA_LOADER_FACTORY__HPP

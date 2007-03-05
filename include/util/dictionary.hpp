@@ -217,31 +217,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/02/23 14:50:03  dicuccio
- * Use case-insensitive string comparison
- *
- * Revision 1.4  2005/12/29 19:28:19  dicuccio
- * Split text utility classes out of dictionary.[hc]pp and placed them in a
- * separate compilation unit (dictionary_util.[hc]pp).  Added an implementation of
- * Porter's stemming algorithm
- *
- * Revision 1.3  2004/08/17 13:26:39  dicuccio
- * Large update.  Added more constructors for CSimpleDictionary; support
- * pre-computed metaphone keys in CSimpleDictionary; fixed several bugs in edit
- * distance computation
- *
- * Revision 1.2  2004/08/02 15:09:15  dicuccio
- * Parameterized metaphone key size.  Made data members of CSimpleDictionary
- * protected (not private)
- *
- * Revision 1.1  2004/07/16 15:32:55  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /// UTIL___DICTIONARY__HPP

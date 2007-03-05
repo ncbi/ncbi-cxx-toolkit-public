@@ -52,18 +52,4 @@ CObjectInfo UnpackUserObject(const CUser_object& uo, const CTypeInfo* ti);
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/01/21 13:08:54  dicuccio
-* Favor predeclaration to include
-*
-* Revision 1.1  2004/07/27 15:13:18  ucko
-* Add a somewhat rough implementation of User-object <-> ObjectInfo conversion.
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJECTS_GENERAL___UOCONV__HPP */

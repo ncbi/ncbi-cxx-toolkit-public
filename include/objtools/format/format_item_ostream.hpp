@@ -64,23 +64,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.2  2004/02/12 20:22:53  shomrat
-* pointer instead of auto_ptr
-*
-* Revision 1.1  2003/12/17 19:52:18  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___FORMAT_ITEM_OSTREAM_HPP */

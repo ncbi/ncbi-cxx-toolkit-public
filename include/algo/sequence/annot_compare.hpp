@@ -150,18 +150,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/07/31 21:00:43  ucko
- * Drop spurious semicolons after BEGIN_/END_SCOPE(objects), which make
- * WorkShop complain of empty declarations.
- *
- * Revision 1.1  2006/07/31 18:02:53  dicuccio
- * Initial revision: split out from annotation comparison widget
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_SEQ__ANNOT_COMPARE__HPP

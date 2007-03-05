@@ -505,33 +505,3 @@ bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq)
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.7  2006/11/16 20:18:48  cliu
- * get ncbistd from bioseq
- *
- * Revision 1.6  2006/08/02 14:04:28  cliu
- * add function GetAccAndVersion
- *
- * Revision 1.5  2005/06/30 23:59:00  lanczyck
- * move a few includes from .cpp to .hpp; add an IsEnvironmentalSeq method
- *
- * Revision 1.4  2005/06/30 17:54:39  lanczyck
- * change return value in GetTaxIdInBioseq to reflect conventions in CTaxon1 class
- *
- * Revision 1.3  2005/06/30 15:39:37  lanczyck
- * add method GetTaxIdInBioseq; remove a couple compiler warnings
- *
- * Revision 1.2  2005/04/19 22:03:35  ucko
- * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

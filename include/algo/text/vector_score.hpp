@@ -367,17 +367,4 @@ float Overlap(iterator1 iter1, iterator1 end1,
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/12/17 17:20:02  dicuccio
- * Removed unnecessary typedefs
- *
- * Revision 1.1  2006/12/17 14:12:19  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_TEXT___VECTOR_SCORE__HPP

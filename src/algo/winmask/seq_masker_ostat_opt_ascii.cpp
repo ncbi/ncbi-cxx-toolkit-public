@@ -70,12 +70,3 @@ void CSeqMaskerOstatOptAscii::write_out( const params & p ) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2005/05/02 14:27:46  morgulis
- * Implemented hash table based unit counts formats.
- *
- * ========================================================================
- */

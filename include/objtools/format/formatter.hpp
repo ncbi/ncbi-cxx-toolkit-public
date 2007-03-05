@@ -115,42 +115,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2005/01/12 16:42:42  shomrat
-* FormatAlignment made pure virtual
-*
-* Revision 1.8  2004/11/24 16:48:02  shomrat
-* Handle gap items
-*
-* Revision 1.7  2004/06/21 18:50:03  ucko
-* Add a virtual FormatAlignment method, defined to do nothing by
-* default because most formats can't represent them anyway.
-*
-* Revision 1.6  2004/04/22 15:43:27  shomrat
-* End/Start section changed
-*
-* Revision 1.5  2004/02/19 17:58:23  shomrat
-* Added method to format Origin item
-*
-* Revision 1.4  2004/02/12 20:24:22  shomrat
-* removed unnecessary include
-*
-* Revision 1.3  2004/02/11 22:46:45  shomrat
-* using types in flag file
-*
-* Revision 1.2  2004/01/14 15:53:12  shomrat
-* const removed
-*
-* Revision 1.1  2003/12/17 19:52:30  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___FORMATTER_HPP */

@@ -104,21 +104,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/01/26 14:17:24  camacho
- * Doxygen fix
- *
- * Revision 1.2  2006/01/23 19:57:28  camacho
- * Allow new varieties of composition based statistics
- *
- * Revision 1.1  2005/05/24 14:03:19  madden
- * Advanced (e.g., composition-based) protein options
- *
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_BLAST_API___ADVPROT_OPTIONS__HPP */

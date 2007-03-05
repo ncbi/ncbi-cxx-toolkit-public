@@ -253,16 +253,3 @@ CAnnotCompare::CompareFeats(const CSeq_feat& feat1,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/10/23 14:54:35  dicuccio
- * Remove unused variable
- *
- * Revision 1.1  2006/07/31 18:02:53  dicuccio
- * Initial revision: split out from annotation comparison widget
- *
- * ===========================================================================
- */

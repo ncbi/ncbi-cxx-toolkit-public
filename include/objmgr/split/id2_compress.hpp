@@ -72,16 +72,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2004/08/04 14:48:49  vasilche
-* Added exports for MSVC. Added joining of very small chunks with skeleton.
-*
-* Revision 1.1  2003/12/30 16:06:14  vasilche
-* Compression methods moved to separate header: id2_compress.hpp.
-*
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_ID2_COMPRESS__HPP

@@ -90,27 +90,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/09/12 19:13:22  jang
-* moved from HomoloGeneEntry.hpp
-*
-* Revision 1.2  2005/09/02 13:21:36  vasilche
-* Returning void value is incorrect.
-*
-* Revision 1.1  2005/09/01 17:46:09  dicuccio
-* Initial revision - moved over from internal tree
-*
-* Revision 1.1  2004/02/04 20:35:48  lee
-* Added domains to asn spec.  Renamed "core-genes" to "genes" and created
-* aliases so that old code won't break.
-*
-*
-* ===========================================================================
-*/
-
 #endif // HOMOLOGENEENTRY_HPP
 /* Original file checksum: lines: 93, chars: 2441, CRC32: 722077fa */

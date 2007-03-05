@@ -124,21 +124,3 @@ CxBlobWriter::~CxBlobWriter()
 
 
 END_NCBI_SCOPE
-/*
-* $Log$
-* Revision 1.5  2006/02/21 14:59:23  kholodov
-* Streams implemented thru Reader/Writer interface
-*
-* Revision 1.4  2005/12/13 17:27:04  kholodov
-* Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
-*
-* Revision 1.3  2005/11/02 15:02:25  ssikorsk
-* Catch all exceptions in destructors.
-*
-* Revision 1.2  2005/01/31 14:21:46  kholodov
-* Added: use of CDB_ITDescriptor for writing BLOBs
-*
-* Revision 1.1  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-*/

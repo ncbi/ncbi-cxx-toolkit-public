@@ -91,15 +91,4 @@ CSeq_annot_Finder::CSeq_annot_Finder(CTSE_Info& tse)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/01/25 18:59:03  didenko
- * Redisgned bio objects edit facility
- *
- * ===========================================================================
- */
-
 #endif //OBJECTS_OBJMGR_IMPL___ANNOT_FINDER__HPP
-
-

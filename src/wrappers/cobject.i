@@ -122,19 +122,3 @@
 %ignore ncbi::CObject::ReleaseReference;
 %ignore ncbi::CObject::DoNotDeleteThisObject;
 %ignore ncbi::CObject::DoDeleteThisObject;
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/05 17:19:14  jcherry
- * Ruby support
- *
- * Revision 1.2  2005/05/12 15:26:01  jcherry
- * Removed __deref__ extension method (was there for backwards compatibiliy
- * with code that expected a CRef proxy)
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

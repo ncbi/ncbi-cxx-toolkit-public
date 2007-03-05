@@ -92,39 +92,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/01/24 22:50:27  hassant
-* Added method GetLabel that implements the logic for getting gene label
-*
-* Revision 1.1  2005/09/12 19:13:09  jang
-* moved from Gene.hpp
-*
-* Revision 1.2  2005/09/01 20:09:27  vasilche
-* Fixed compilation error.
-*
-* Revision 1.1  2005/09/01 17:46:09  dicuccio
-* Initial revision - moved over from internal tree
-*
-* Revision 1.4  2004/03/17 17:15:57  lee
-* Fixed typo
-*
-* Revision 1.3  2004/03/17 17:12:46  lee
-* Added typedef for TLinks
-*
-* Revision 1.2  2004/03/16 20:47:56  lee
-* Fixed typedef error (TLinks -> TGene_links)
-*
-* Revision 1.1  2004/03/16 20:21:32  lee
-* Changed ASN specs (added protein-links to Gene, recip-best to Stats,
-* version to HomoloGeneEntry)
-*
-*
-* ===========================================================================
-*/
-
 #endif // INTERNAL_HOMOLOGENE_GENE_HPP
 /* Original file checksum: lines: 93, chars: 2334, CRC32: d8674688 */

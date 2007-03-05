@@ -150,25 +150,3 @@ int main(int argc, const char* argv[])
 {
     return CLocalFinderApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/10/05 17:38:20  ucko
- * Update for recent API changes.
- *
- * Revision 1.4  2005/09/15 21:22:13  chetvern
- * Updated to match new API
- *
- * Revision 1.3  2005/06/03 16:23:19  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.2  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/10/24 15:07:25  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

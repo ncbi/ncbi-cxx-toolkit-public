@@ -114,27 +114,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/03/14 20:21:52  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.4  2005/05/20 13:36:54  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.3  2004/05/19 17:26:04  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.2  2003/04/18 19:40:39  kans
-* changed iterate to ITERATE
-*
-* Revision 1.1  2003/03/10 16:36:21  ucko
-* +GetFlatName
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1877, CRC32: 38972243 */

@@ -40,14 +40,3 @@ int main( int argc, char * argv[] )
 {
     return CDustMaskApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2005/05/31 14:41:32  morgulis
- * Initial checkin of the dustmasker project.
- *
- * ========================================================================
- */
-

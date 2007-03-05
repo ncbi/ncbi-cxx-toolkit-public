@@ -78,14 +78,3 @@ private:
 END_NCBI_SCOPE
 
 #endif // __PTB_REGISTRY__
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/09/26 18:50:52  gouriano
- * Added CNcbiRegistry wrapper to speed up the execution
- *
- *
- * ===========================================================================
- */
-

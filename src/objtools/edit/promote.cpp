@@ -666,31 +666,3 @@ void PromotePub(CBioseq_Handle& seq, CSeq_feat_Handle& feat)
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/20 15:03:11  vasilche
-* AttachAnnot takes non-const object.
-*
-* Revision 1.5  2005/06/22 14:31:22  vasilche
-* Added constness of CSeq_annot_Handle argument.
-*
-* Revision 1.4  2005/02/18 15:06:27  shomrat
-* CSeq_loc interface changes
-*
-* Revision 1.3  2004/12/06 17:54:10  grichenk
-* Replaced calls to deprecated methods
-*
-* Revision 1.2  2004/11/01 19:33:09  grichenk
-* Removed deprecated methods
-*
-* Revision 1.1  2004/06/16 15:22:21  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-

@@ -81,39 +81,5 @@ private:
 
 //====================================================================
 END_NCBI_SCOPE
-/*
-* $Log$
-* Revision 1.9  2005/12/28 15:08:50  kholodov
-* Moved log to the end, empty SendSql() definition to the header file
-*
-* Revision 1.8  2005/12/13 17:25:32  kholodov
-* Modified: Execute() method deprecated
-*
-* Revision 1.7  2004/04/26 14:16:56  kholodov
-* Modified: recreate the command objects each time the Get...() is called
-*
-* Revision 1.6  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.5  2002/10/03 18:50:00  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.4  2002/04/05 19:33:08  kholodov
-* Added: ExecuteUpdate() to skip all resultsets returned (if any)
-*
-* Revision 1.3  2002/02/08 21:29:55  kholodov
-* SetDataBase() restored, connection cloning algorithm changed
-*
-* Revision 1.2  2002/02/05 17:24:02  kholodov
-* Put into NCBI scope
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
-*/
+
 #endif // _CSTMT_IMPL_HPP_

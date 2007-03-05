@@ -104,24 +104,3 @@ static string s_EncodeLabel(const string& label) {
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2004/02/11 21:50:23  jcherry
- * Added Nexus format output
- *
- * Revision 1.2  2004/02/10 17:01:42  dicuccio
- * Use basic_string::append() instead of push_back, as the latter isn't found on
- * MSVC
- *
- * Revision 1.1  2004/02/10 15:15:58  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

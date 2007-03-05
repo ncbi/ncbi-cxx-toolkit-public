@@ -93,17 +93,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2006/06/08 19:58:26  morgulis
- * Removed NCBI_XALGOWINMASK_EXPORT qualifier from CDustMasker and CSDustMasker.
- *
- * Revision 1.1  2005/07/14 21:10:52  morgulis
- * Initial check in.
- *
- * ========================================================================
- */
-
 #endif
-

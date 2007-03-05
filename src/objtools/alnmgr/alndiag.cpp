@@ -200,22 +200,3 @@ void CDiagRangeCollection::x_DiffSecond(const TAlnRng& rng,
 
 
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2006/07/19 16:12:20  ivanov
-* Mark fake WorkShop warnings using NCBI_FAKE_WARNING
-*
-* Revision 1.3  2006/02/23 14:50:58  dicuccio
-* Qualify lower_bound with std:: to match API shift
-*
-* Revision 1.2  2005/08/10 20:20:51  vasilche
-* Include <algorithm> for lower_bound().
-*
-* Revision 1.1  2005/08/10 19:35:49  todorov
-* Preliminary revision.
-*
-* ===========================================================================
-*/

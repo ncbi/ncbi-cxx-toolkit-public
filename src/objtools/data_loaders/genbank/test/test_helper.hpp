@@ -27,56 +27,6 @@
 *
 * File Description:
 *   Bio sequence data generator to test Object Manager
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2003/12/16 17:51:17  kuznets
-* Code reorganization
-*
-* Revision 1.10  2003/06/02 16:06:39  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
-*
-* Revision 1.9  2003/03/04 16:43:53  grichenk
-* +Test CFeat_CI with eResolve_All flag
-*
-* Revision 1.8  2003/02/28 16:37:47  vasilche
-* Fixed expected feature count.
-* Added optional flags to testobjmgr to dump generated data and found features.
-*
-* Revision 1.7  2002/12/26 16:39:24  vasilche
-* Object manager class CSeqMap rewritten.
-*
-* Revision 1.6  2002/05/09 14:21:50  grichenk
-* Turned GetTitle() test on, removed unresolved seq-map test
-*
-* Revision 1.5  2002/05/06 03:28:53  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.4  2002/05/03 21:28:12  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.3  2002/04/22 20:07:45  grichenk
-* Commented calls to CBioseq::ConstructExcludedSequence()
-*
-* Revision 1.2  2002/03/18 21:47:15  grichenk
-* Moved most includes to test_helper.cpp
-* Added test for CBioseq::ConstructExcludedSequence()
-*
-* Revision 1.1  2002/03/13 18:06:31  gouriano
-* restructured MT test. Put common functions into a separate file
-*
-*
-* ===========================================================================
 */
 
 #include <objmgr/object_manager.hpp>
@@ -130,4 +80,3 @@ public:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-

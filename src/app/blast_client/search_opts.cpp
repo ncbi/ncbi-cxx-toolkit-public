@@ -214,23 +214,3 @@ void COptionWalker::ReadOpt(const ncbi::CArgs & args,
 {
     field = CheckArgsString(args[key]);
 }
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2004/05/21 21:41:38  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/12/29 19:48:30  bealer
- * - Change code to accomodate first half of new ASN changes.
- *
- * Revision 1.2  2003/09/26 20:00:48  bealer
- * - Fix compile warning.
- *
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */
-

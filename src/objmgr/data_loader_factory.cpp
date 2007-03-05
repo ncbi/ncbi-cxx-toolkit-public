@@ -120,24 +120,3 @@ bool CDataLoaderFactory::ValidParams(
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/05/08 15:54:37  ucko
-* Tweak settings-retrieval APIs to account for the fact that the
-* supplied default string value may be a reference to a temporary, and
-* therefore unsafe to return by reference.
-*
-* Revision 1.3  2004/12/22 19:34:19  grichenk
-* Do not check node id of params
-*
-* Revision 1.2  2004/08/02 21:08:31  grichenk
-* Check params before calling GetParam().
-*
-* Revision 1.1  2004/08/02 17:17:41  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/

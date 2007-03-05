@@ -531,18 +531,3 @@ void CSeqAlignFilter::ReadGiVector(const string& fname, vector<int>& vec_gis, bo
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log: seqalignfilter.cpp,v $
- * Revision 1.3  2006/09/28 15:58:01  avagyanv
- * Fixed whitespace issues
- *
- * Revision 1.2  2006/09/28 15:44:49  avagyanv
- * Changed header file from .h to .hpp
- *
- * Revision 1.1  2006/09/28 15:36:45  avagyanv
- * Implementation of the alignment filtering class
- *
- * ===========================================================================
- */

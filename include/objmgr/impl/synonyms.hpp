@@ -111,49 +111,4 @@ bool CSynonymsSet::empty(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.7  2005/07/19 20:19:52  ucko
- * Include scope_info.hpp because some compilers (ICC 9, perhaps also G++ 4)
- * require a full declaration of SSeq_id_ScopeInfo when iterating through
- * CSynonymSet.
- *
- * Revision 1.6  2004/07/12 15:05:31  grichenk
- * Moved seq-id mapper from xobjmgr to seq library
- *
- * Revision 1.5  2003/09/30 16:22:01  vasilche
- * Updated internal object manager classes to be able to load ID2 data.
- * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
- * Scope caches results of requests for data to data loaders.
- * Optimized CSeq_id_Handle for gis.
- * Optimized bioseq lookup in scope.
- * Reduced object allocations in annotation iterators.
- * CScope is allowed to be destroyed before other objects using this scope are
- * deleted (feature iterators, bioseq handles etc).
- * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
- * Added 'adaptive' option to objmgr_demo application.
- *
- * Revision 1.4  2003/06/02 16:01:37  dicuccio
- * Rearranged include/objects/ subtree.  This includes the following shifts:
- *     - include/objects/alnmgr --> include/objtools/alnmgr
- *     - include/objects/cddalignview --> include/objtools/cddalignview
- *     - include/objects/flat --> include/objtools/flat
- *     - include/objects/objmgr/ --> include/objmgr/
- *     - include/objects/util/ --> include/objmgr/util/
- *     - include/objects/validator --> include/objtools/validator
- *
- * Revision 1.3  2003/05/12 19:18:28  vasilche
- * Fixed locking of object manager classes in multi-threaded application.
- *
- * Revision 1.2  2003/02/28 21:54:16  grichenk
- * +CSynonymsSet::empty(), removed _ASSERT() in CScope::GetSynonyms()
- *
- * Revision 1.1  2003/02/28 20:02:03  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif  /* OBJECTS_OBJMGR_IMPL___SYNONYMS__HPP */

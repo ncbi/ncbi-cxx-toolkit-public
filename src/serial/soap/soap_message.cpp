@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -272,35 +271,3 @@ CSoapMessage::GetAnyContentObject(const string& name,
 
 
 END_NCBI_SCOPE
-
-
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/02/01 21:47:14  grichenk
-* Fixed warnings
-*
-* Revision 1.7  2004/06/24 20:52:33  gouriano
-* Check if default namespace was set before using it
-*
-* Revision 1.6  2004/06/24 20:39:13  gouriano
-* Added default object namespace name
-*
-* Revision 1.5  2004/06/18 18:17:59  gouriano
-* Use SOAP v1.1 namespace for envelope
-*
-* Revision 1.4  2004/05/17 21:03:24  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.3  2003/12/04 20:56:03  gouriano
-* correct parameter names
-*
-* Revision 1.2  2003/09/25 19:45:33  gouriano
-* Added soap Fault object
-*
-* Revision 1.1  2003/09/22 21:00:04  gouriano
-* Initial revision
-*
-*
-* ===========================================================================
-*/

@@ -298,24 +298,3 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 
     return suite;
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2007/01/04 12:42:35  dicuccio
- * Restore TruncateSpaces() for CTempString.  Added additional checks for TruncateSpaces() functionality in unit test
- *
- * Revision 1.3  2006/12/22 13:12:34  dicuccio
- * Temporarily remove tests of NStr::TruncateSpaces()
- *
- * Revision 1.2  2006/12/22 12:43:22  dicuccio
- * Split CTempString into its own header.  Added NStr::TruncateSpaces() variant to
- * handle CTempString.
- *
- * Revision 1.1  2006/12/20 13:44:37  dicuccio
- * Added unit test for CTempString
- *
- * ===========================================================================
- */

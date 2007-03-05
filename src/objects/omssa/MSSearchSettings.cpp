@@ -579,36 +579,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2006/09/05 18:03:48  lewisg
-* auto mass tolerance and get rid of warnings
-*
-* Revision 1.7  2006/08/21 15:18:21  lewisg
-* asn.1 changes, bug fixes
-*
-* Revision 1.6  2005/11/07 19:57:20  lewisg
-* iterative search
-*
-* Revision 1.5  2005/10/24 21:46:13  lewisg
-* exact mass, peptide size limits, validation, code cleanup
-*
-* Revision 1.4  2005/01/31 17:30:57  lewisg
-* adjustable intensity, z dpendence of precursor mass tolerance
-*
-* Revision 1.3  2004/09/29 19:43:52  lewisg
-* allow setting of ions
-*
-* Revision 1.2  2004/09/15 18:35:55  lewisg
-* cz ions
-*
-* Revision 1.1  2004/06/08 19:46:20  lewisg
-* input validation, additional user settable parameters
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1885, CRC32: ffa5fdc2 */

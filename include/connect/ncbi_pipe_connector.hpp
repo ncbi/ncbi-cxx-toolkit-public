@@ -69,23 +69,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/02/01 16:24:42  lavr
- * Comment fixup
- *
- * Revision 1.3  2006/01/27 16:56:26  lavr
- * Headers rearranged to pickup corelib stuff first
- *
- * Revision 1.2  2003/09/23 21:04:08  lavr
- * Allow to create the connector on top of existing pipe (and don't delete it!)
- *
- * Revision 1.1  2003/09/02 20:25:29  ivanov
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_PIPE_CONNECTOR__HPP */

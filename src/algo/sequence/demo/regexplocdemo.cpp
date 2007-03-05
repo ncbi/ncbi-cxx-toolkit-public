@@ -149,28 +149,3 @@ int main(int argc, char** argv)
     CRegexpLocApp theApp;
     return theApp.AppMain(argc, argv, NULL, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/07/01 16:40:36  ucko
- * Adjust for CSeq_id's use of CSeqIdException to report bad input.
- *
- * Revision 1.4  2004/07/21 15:51:24  grichenk
- * CObjectManager made singleton, GetInstance() added.
- * CXXXXDataLoader constructors made private, added
- * static RegisterInObjectManager() and GetLoaderNameFromArgs()
- * methods.
- *
- * Revision 1.3  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2004/01/07 17:39:28  vasilche
- * Fixed include path to genbank loader.
- *
- * Revision 1.1  2003/07/16 19:22:00  clausen
- * Initial version
- *
- *
- * ===========================================================================
- */

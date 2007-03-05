@@ -240,35 +240,3 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 }
 
 #endif /* def OBJECTINFO__HPP  &&  ndef OBJECTINFO__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.6  2005/01/24 17:05:48  vasilche
-* Safe boolean operators.
-*
-* Revision 1.5  2003/11/24 14:10:04  grichenk
-* Changed base class for CAliasTypeInfo to CPointerTypeInfo
-*
-* Revision 1.4  2003/11/18 18:11:47  grichenk
-* Resolve aliased type info before using it in CObjectTypeInfo
-*
-* Revision 1.3  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.2  2001/05/17 14:57:22  lavr
-* Typos corrected
-*
-* Revision 1.1  2000/10/20 15:51:24  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
-*/

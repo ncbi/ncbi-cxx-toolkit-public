@@ -82,12 +82,3 @@ Uint4 CSeqMaskerUsetArray::get_info( Uint4 unit ) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2005/04/12 13:35:34  morgulis
- * Support for binary format of unit counts file.
- *
- * ========================================================================
- */

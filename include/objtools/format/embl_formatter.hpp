@@ -83,28 +83,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.4  2004/04/22 15:42:24  shomrat
-* EndSection() signature changed
-*
-* Revision 1.3  2004/02/19 17:57:40  shomrat
-* removed commented code
-*
-* Revision 1.2  2004/01/14 15:51:12  shomrat
-* const removed
-*
-* Revision 1.1  2003/12/17 19:51:12  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT___EMBL_FORMATTER__HPP */

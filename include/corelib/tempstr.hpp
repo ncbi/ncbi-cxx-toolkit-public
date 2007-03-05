@@ -623,25 +623,4 @@ bool CTempString::operator<(const CTempString& str) const
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/29 15:39:52  vasilche
- * Implemented clear() and bunch of assign() methods.
- *
- * Revision 1.3  2006/12/28 17:02:24  vasilche
- * Deprecate ambigious constructors.
- * Fixed CTempString::assign().
- * Some formatting.
- *
- * Revision 1.2  2006/12/28 16:10:05  kuznets
- * +assign()
- *
- * Revision 1.1  2006/12/22 12:42:06  dicuccio
- * Initial revision - split out from ncbistr.hpp
- *
- * ===========================================================================
- */
-
 #endif  // CORELIB___TEMPSTR__HPP

@@ -244,17 +244,3 @@ int main(int argc, const char** argv)
 {
     return CFeatOverlapTester().AppMain(argc, argv);
 }
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2005/07/01 16:40:37  ucko
- * Adjust for CSeq_id's use of CSeqIdException to report bad input.
- *
- * Revision 1.1  2005/04/11 14:43:27  dicuccio
- * Added test for feature overlap variants
- *
- *
- * ===========================================================================
- */

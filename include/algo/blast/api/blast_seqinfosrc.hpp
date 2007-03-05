@@ -81,45 +81,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.11  2006/09/27 18:01:16  avagyanv
- * Moved GetSequenceLengthAndId declaration to the blast_seqinfosrc_aux header file
- *
- * Revision 1.10  2006/05/24 21:01:54  camacho
- * Added missing closing doxygen brackets
- *
- * Revision 1.9  2006/03/07 16:07:39  bealer
- * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
- *
- * Revision 1.8  2005/11/09 20:56:26  camacho
- * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
- * as CBl2Seq and reduce redundant code.
- *
- * Revision 1.7  2005/10/14 13:44:53  camacho
- * Remove unneeded forward declaration
- *
- * Revision 1.6  2005/09/29 15:32:11  jcherry
- * Added export specifiers
- *
- * Revision 1.5  2005/09/28 18:21:34  camacho
- * Rearrangement of headers/functions to segregate object manager dependencies.
- *
- * Revision 1.4  2004/11/29 20:08:29  camacho
- * + virtual destructor, as the class is meant to be subclassed
- *
- * Revision 1.3  2004/10/06 17:47:34  dondosha
- * Removed ncbi_pch.hpp
- *
- * Revision 1.2  2004/10/06 17:45:35  dondosha
- * Removed USING_SCOPE; qualify objects classes directly
- *
- * Revision 1.1  2004/10/06 14:51:04  dondosha
- * Abstract base class IBlastSeqInfoSrc for sequence id and length retrieval in BLAST API
- *
- *
- * ===========================================================================
- */
 #endif  /* ALGO_BLAST_API__BLAST_SEQINFOSRC_HPP */

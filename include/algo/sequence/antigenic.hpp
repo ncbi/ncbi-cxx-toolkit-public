@@ -74,23 +74,3 @@ private:
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___ANTIGENIC__HPP
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2003/09/12 15:05:08  jcherry
- * Removed inappropriate CAntigenic:: in class body
- *
- * Revision 1.3  2003/09/10 16:20:35  ucko
- * Tweak to avoid undefined symbols with WorkShop.
- *
- * Revision 1.2  2003/09/09 16:08:20  dicuccio
- * Moved lookup table to implementation file
- *
- * Revision 1.1  2003/09/02 14:53:11  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

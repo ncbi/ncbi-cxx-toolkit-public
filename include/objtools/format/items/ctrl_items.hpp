@@ -122,29 +122,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.3  2004/04/22 15:35:01  shomrat
-* Changes in context
-*
-* Revision 1.2  2004/03/05 18:48:59  shomrat
-* reset comment count at start of a new section
-*
-* Revision 1.1  2004/01/14 15:57:49  shomrat
-* Initial Revision
-*
-* Revision 1.1  2003/12/17 19:46:33  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___CTRL_ITEM__HPP */

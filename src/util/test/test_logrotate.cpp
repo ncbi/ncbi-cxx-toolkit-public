@@ -202,38 +202,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTestLogrotateApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2005/11/22 16:33:25  vakatov
- * Use regular rather than ('volatile') var for the err.posting of s_Signal
- *
- * Revision 1.6  2005/04/25 19:05:24  ivanov
- * Fixed compilation warnings on 64-bit Worshop compiler
- *
- * Revision 1.5  2004/09/22 20:12:10  ucko
- * Tweak to avoid confusing older GCC versions.
- *
- * Revision 1.4  2004/09/22 13:32:18  kononenk
- * "Diagnostic Message Filtering" functionality added.
- * Added function SetDiagFilter()
- * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
- * Module, class and function attribute added to CNcbiDiag and CException
- * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
- * Macro NCBI_MODULE can be used to set default module name in cpp files
- *
- * Revision 1.3  2004/05/17 21:09:26  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2002/12/30 20:56:18  ucko
- * Bound the main loop to avoid "statement is unreachable" warnings.
- *
- * Revision 1.1  2002/11/25 17:21:01  ucko
- * Add support for automatic log rotation (CRotatingLogStream)
- *
- *
- * ===========================================================================
- */

@@ -69,14 +69,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_ANIMATION_CONTROLS__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2003/12/03 15:56:33  thiessen
-* remove unused function
-*
-* Revision 1.1  2003/12/03 15:07:09  thiessen
-* add more sophisticated animation controls
-*
-*/

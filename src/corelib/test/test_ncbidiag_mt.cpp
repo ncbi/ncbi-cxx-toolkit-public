@@ -151,39 +151,3 @@ int main(int argc, const char* argv[])
     CTestDiagApp app;
     return app.AppMain(argc, argv, 0, eDS_ToStdlog, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.9  2006/10/31 18:41:17  grichenk
- * Redesigned diagnostics setup.
- * Moved the setup function to ncbidiag.cpp.
- *
- * Revision 6.8  2004/05/14 13:59:51  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 6.7  2003/05/17 15:00:39  grichenk
- * Fixed number of message lines
- *
- * Revision 6.6  2003/05/08 20:50:12  grichenk
- * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
- *
- * Revision 6.5  2002/09/19 20:05:43  vasilche
- * Safe initialization of static mutexes
- *
- * Revision 6.4  2002/04/23 13:11:50  gouriano
- * test_mt.cpp/hpp moved into another location
- *
- * Revision 6.3  2002/04/16 18:49:08  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 6.2  2001/04/06 16:44:14  grichenk
- * Redesigned to use MT test suite API from "test_mt.[ch]pp"
- *
- * Revision 6.1  2001/03/30 22:46:59  grichenk
- * Initial revision
- *
- * ===========================================================================
- */

@@ -60,24 +60,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/09/12 15:01:31  ssikorsk
- * Fixed code to use new version of NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION.
- *
- * Revision 1.3  2005/04/04 13:03:56  ssikorsk
- * Revamp of DBAPI exception class CDB_Exception
- *
- * Revision 1.2  2003/11/04 22:27:14  vakatov
- * CDbapiException to inherit from CDB_ClientEx.
- * Minor style fixes.
- *
- * Revision 1.1  2002/01/30 14:51:23  kholodov
- * User DBAPI implementation, first commit
- * ===========================================================================
- */
-
-
 #endif  /* DBAPI___DBEXCEPTION__HPP */

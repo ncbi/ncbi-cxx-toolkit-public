@@ -125,15 +125,3 @@ char    *tempnam (const char *, const char *);
 int      fileno (FILE *);
 
 #endif /* NCBI_MSLEXTRAS__H */
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.2  2003/04/04 20:43:52  rsmith
- * add declaration of inet_addr from arpa/inet.h for ncbi_socket.c
- *
- * Revision 1.1  2003/04/02 13:50:22  rsmith
- * Provide declarations missing from Codewarriors MSL headers.
- *
- * ==========================================================================
- */

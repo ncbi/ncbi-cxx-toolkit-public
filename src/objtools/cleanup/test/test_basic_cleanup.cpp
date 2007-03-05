@@ -402,29 +402,3 @@ int main(int argc, const char* argv[])
 {
     return CTest_cleanupApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-
-/*
- * ===========================================================================
- *
- * $Log: test_basic_cleanup.cpp,v $
- * Revision 1.5  2006/11/15 13:49:15  rsmith
- * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
- *
- * Revision 1.4  2006/09/12 19:43:58  rsmith
- * fix reporting for changes.
- *
- * Revision 1.3  2006/07/13 17:11:28  rsmith
- * change reporting changed.
- *
- * Revision 1.2  2006/06/23 18:02:32  rsmith
- * new CCleanupChange class
- *
- * Revision 1.1  2006/03/20 16:17:58  rsmith
- * initial checkin
- *
- *
- * ===========================================================================
- */

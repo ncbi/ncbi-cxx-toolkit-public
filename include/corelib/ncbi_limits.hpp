@@ -204,47 +204,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.11  2006/10/24 19:11:55  ivanov
- * Cosmetics: replaced tabulation with spaces
- *
- * Revision 1.10  2006/09/20 14:02:10  ucko
- * Don't assume wchar.h actually supplies WCHAR_XXX.  (FreeBSD 4's doesn't.)
- *
- * Revision 1.9  2006/09/19 14:54:04  ucko
- * Ensure that numeric_limits<wchar_t> exists if wchar.h is available.
- *
- * Revision 1.8  2005/12/05 17:00:02  ucko
- * WorkShop 5.5 (finally) introduced support for std::numeric_limits<long long>.
- *
- * Revision 1.7  2004/06/01 12:09:45  kuznets
- * + get_limits
- *
- * Revision 1.6  2003/04/01 14:18:50  siyan
- * Added doxygen support
- *
- * Revision 1.5  2002/11/04 21:47:56  ucko
- * Use system numeric_limits<> whenever <limits> exists, except on
- * WorkShop (which has "long long" but not numeric_limits<long long>).
- *
- * Revision 1.4  2002/04/11 20:39:15  ivanov
- * CVS log moved to end of the file
- *
- * Revision 1.3  2002/02/14 17:15:44  kans
- * use standard numeric limits on MacOS (AU)
- *
- * Revision 1.2  2001/05/30 16:17:23  vakatov
- * Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
- * only when absolutely necessary (otherwise it conflicted with
- * "long long" for the Intel C++ compiler).
- *
- * Revision 1.1  2001/01/03 17:35:23  vakatov
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* NCBI_LIMITS__HPP */

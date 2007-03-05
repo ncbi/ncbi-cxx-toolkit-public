@@ -75,22 +75,4 @@ Int4 QueueAndPoll(string                program,
                   bool                  async_mode,
                   string                get_RID);
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2006/03/01 21:26:57  camacho
- * Add support for user-specified query masking locations
- *
- * Revision 1.2  2004/11/01 18:25:15  coulouri
- * doxygen fixes
- *
- * Revision 1.1  2004/02/18 17:04:42  bealer
- * - Adapt blast_client code for Remote Blast API, merging code into the
- *   remote_blast demo application.
- *
- * ===========================================================================
- */
-
 #endif // ALGO_BLAST_API_DEMO___QUEUE_POLL__HPP
-

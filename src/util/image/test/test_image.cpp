@@ -223,26 +223,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CImageTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/06/16 12:04:14  dicuccio
- * Added include for image_util.hpp
- *
- * Revision 1.3  2004/05/17 21:08:10  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2003/12/16 15:49:38  dicuccio
- * Large re-write of image handling.  Added improved error-handling and support
- * for streams-based i/o (via hooks into each client library).
- *
- * Revision 1.1  2003/06/03 15:17:14  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-

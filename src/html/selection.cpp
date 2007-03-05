@@ -73,34 +73,3 @@ void CSelection::CreateSubNodes(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2005/08/01 15:54:56  ivanov
- * Explicitly convert StringTo*() parameter to string
- *
- * Revision 1.7  2004/05/17 20:59:50  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.6  2003/11/03 17:03:08  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.5  2001/01/04 16:26:09  golikov
- * fix
- *
- * Revision 1.4  1999/05/11 02:53:57  vakatov
- * Moved CGI API from "corelib/" to "cgi/"
- *
- * Revision 1.3  1999/03/26 22:00:01  sandomir
- * checked option in Radio button fixed; minor fixes in Selection
- *
- * Revision 1.2  1999/01/21 16:18:06  sandomir
- * minor changes due to NStr namespace to contain string utility functions
- *
- * Revision 1.1  1999/01/20 17:39:46  vasilche
- * Selection as separate class CSelection.
- *
- * ===========================================================================
- */

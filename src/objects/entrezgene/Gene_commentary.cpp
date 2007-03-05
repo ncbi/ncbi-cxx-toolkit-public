@@ -78,15 +78,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/09/18 13:39:43  kskatz
-* Added three predicate classes for finding commentaries by heading, type, or both
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1915, CRC32: edceba08 */

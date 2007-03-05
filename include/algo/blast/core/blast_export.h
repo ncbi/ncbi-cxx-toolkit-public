@@ -63,22 +63,4 @@
 
 #endif
 
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.4  2006/05/24 21:03:14  camacho
- * Minor doxygen fix
- *
- * Revision 1.3  2005/02/01 21:25:23  camacho
- * Doxygen fixes
- *
- * Revision 1.2  2004/07/06 15:28:28  dondosha
- * Added end of group doxygen comment
- *
- * Revision 1.1  2004/04/21 17:58:53  gorelenk
- * Initial revision.
- *
- * ==========================================================================
- */
-
 #endif  /*  BLAST_EXPORT__H  */

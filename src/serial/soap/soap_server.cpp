@@ -1,4 +1,3 @@
-
 /*  $Id$
  * ===========================================================================
  *
@@ -259,25 +258,3 @@ CSoapServerApplication::AddMessageListener(TWebMethod listener,
 
 
 END_NCBI_SCOPE
-
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2005/04/12 17:35:33  ucko
-* Explicitly include <corelib/ncbifile.hpp>
-*
-* Revision 1.4  2004/06/28 15:16:20  gouriano
-* More fixes for GCC 2.95
-*
-* Revision 1.3  2004/06/25 17:24:00  gouriano
-* Added incoming object types registration. Corrected for GCC 2.95
-*
-* Revision 1.2  2004/06/24 20:53:10  gouriano
-* Set default namespace in SoapMessage
-*
-* Revision 1.1  2004/06/24 20:40:00  gouriano
-* Initial revision
-*
-*
-* ===========================================================================
-*/

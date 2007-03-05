@@ -71,32 +71,3 @@ struct CLessTypeInfo
 END_NCBI_SCOPE
 
 #endif  /* STDTYPEINFO__HPP */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/10/12 15:07:28  gouriano
-* Some header files moved into impl
-*
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.4  2003/04/15 16:18:56  siyan
-* Added doxygen support
-*
-* Revision 1.3  2003/03/26 16:13:33  vasilche
-* Removed TAB symbols. Some formatting.
-*
-* Revision 1.2  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.1  2000/09/18 20:00:10  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
-*/

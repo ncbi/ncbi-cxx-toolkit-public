@@ -347,49 +347,4 @@ void DebugDumpPairsValuePtr( CDebugDumpContext& _this, const string& name,
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2005/05/09 18:45:08  ucko
- * Ensure that widely-included classes with virtual methods have virtual dtors.
- *
- * Revision 1.9  2003/12/09 21:13:27  ucko
- * Re-tweak logging of 64-bit numbers, as the previous revision broke
- * when __int64 and long long were synonymous.  (Now uses Int8/Uint8
- * everywhere, but only when sizeof(long) < 8.)
- *
- * Revision 1.8  2003/12/09 17:25:51  gouriano
- * Corrected previously defined Log() functions to avoid conflicts
- * on 64 bit platforms
- *
- * Revision 1.7  2003/12/09 16:55:12  gouriano
- * Added Log() methods for Int8 and Uint8
- *
- * Revision 1.6  2003/11/12 20:15:23  gouriano
- * Added more Log() methods: for short, int, and char* types
- *
- * Revision 1.5  2003/05/19 21:05:39  vakatov
- * x_InsertPageBreak() --  title: "" -> kEmptyStr,  len:  int -> unsigned int.
- * Fixed code indentation and simplified some code.
- *
- * Revision 1.4  2002/12/18 22:53:21  dicuccio
- * Added export specifier for building DLLs in windows.  Added global list of
- * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
- *
- * Revision 1.3  2002/05/29 21:15:08  gouriano
- * changed formatter interface: added value type
- *
- * Revision 1.2  2002/05/28 17:57:11  gouriano
- * all DebugDump-related classes were put in one header
- * templates adjusted and debugged on multiple platforms
- *
- * Revision 1.1  2002/05/17 14:25:39  gouriano
- * added DebugDump base class and function to CObject
- *
- *
- *
- * ===========================================================================
- */
-
 #endif // DDUMPABLE__HPP

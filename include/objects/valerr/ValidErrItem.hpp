@@ -415,29 +415,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/09/25 12:56:41  dicuccio
-* Return by const reference, not by value
-*
-* Revision 1.4  2006/04/03 17:10:08  rsmith
-* make Err values permanent. Move into objects/valerr
-*
-* Revision 1.3  2006/03/16 14:14:41  rsmith
-* add IsSetObject()
-*
-* Revision 1.2  2006/02/08 16:30:31  rsmith
-* fix export specs
-*
-* Revision 1.1  2006/02/07 18:35:41  rsmith
-* initial checkin
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_VALERR_VALIDERRITEM_HPP
 /* Original file checksum: lines: 94, chars: 2634, CRC32: d01b90f9 */

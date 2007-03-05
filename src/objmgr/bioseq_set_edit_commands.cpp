@@ -41,12 +41,3 @@ BEGIN_SCOPE(objects)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2005/11/15 19:22:07  didenko
- * Added transactions and edit commands support
- *
- * ===========================================================================
- */

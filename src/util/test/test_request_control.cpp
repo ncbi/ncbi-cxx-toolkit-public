@@ -201,31 +201,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/01/09 12:32:55  ivanov
- * Do not use deprecated constructor of CStopWatch class.
- * Use LOG_POST instead of cout.
- *
- * Revision 1.5  2005/09/26 10:58:39  ivanov
- * Increased checked time intervals for elapsed time
- *
- * Revision 1.4  2005/03/03 15:03:07  ivanov
- * Fixed a race conditions on fast machines
- *
- * Revision 1.3  2005/03/03 12:16:45  ivanov
- * Added diagnostic messages
- *
- * Revision 1.2  2005/03/02 18:58:38  ivanov
- * Renaming:
- *    file test_request_throttler.cpp -> test_request_control.cpp
- *    class CRequestThrottler -> CRequestRateControl
- *
- * Revision 1.1  2005/03/02 13:53:06  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

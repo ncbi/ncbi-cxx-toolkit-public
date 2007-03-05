@@ -77,14 +77,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CDD_BOOK_REF_DIALOG__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/08/31 15:48:58  thiessen
-* fix edit bug in book refs dialog
-*
-* Revision 1.1  2003/09/26 17:12:46  thiessen
-* add book reference dialog
-*
- */

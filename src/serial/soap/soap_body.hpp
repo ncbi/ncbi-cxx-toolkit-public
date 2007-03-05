@@ -198,15 +198,3 @@ CSoapBody::operator std::list< CRef< CSoapBody::C_E > >& (void)
 END_NCBI_SCOPE
 
 #endif // SOAP_BODY_HPP
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2005/01/12 17:00:09  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.2  2003/09/25 19:45:33  gouriano
-* Added soap Fault object
-*
-*
-* ===========================================================================
-*/

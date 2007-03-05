@@ -211,39 +211,3 @@ TTypeInfoGetter GetStdTypeInfoGetter(const CTime* )
 END_NCBI_SCOPE
 
 #endif  /* TIMETYPEINFO__HPP */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2006/10/12 15:08:28  gouriano
-* Some header files moved into impl
-*
-* Revision 1.8  2006/10/05 19:23:04  gouriano
-* Some headers moved into impl
-*
-* Revision 1.7  2005/04/26 14:18:49  vasilche
-* Allow allocation of objects in CObjectMemoryPool.
-*
-* Revision 1.6  2004/08/17 14:39:40  dicuccio
-* Dropped unnecessary export specifiers
-*
-* Revision 1.5  2004/03/25 15:57:55  gouriano
-* Added possibility to copy and compare serial object non-recursively
-*
-* Revision 1.4  2003/09/29 21:22:43  golikov
-* fix GetStdTypeInfoGetter to actually work, remove unused vars warnings
-*
-* Revision 1.3  2003/04/15 16:19:05  siyan
-* Added doxygen support
-*
-* Revision 1.2  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.1  2002/11/19 15:12:03  grichenk
-* Initial Revision
-*
-*
-* ===========================================================================
-*/

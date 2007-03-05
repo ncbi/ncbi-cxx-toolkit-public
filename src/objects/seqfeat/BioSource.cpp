@@ -182,38 +182,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 6.8  2006/10/18 17:37:42  bollin
-* Added functions for getting organelle name from genome value and genome value
-* from organelle name.
-*
-* Revision 6.7  2006/03/14 20:21:52  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 6.6  2005/06/03 16:52:28  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 6.5  2005/05/20 20:57:57  ucko
-* Rework x_SubtypeCleanup to build against WorkShop's STL implementation,
-* which doesn't allow sorting lists via custom comparators.
-*
-* Revision 6.4  2005/05/20 13:36:54  shomrat
-* Added BasicCleanup()
-*
-* Revision 6.3  2004/05/19 17:26:04  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 6.2  2002/11/26 19:01:11  shomrat
-* Bug fix in GetGenCode
-*
-* Revision 6.1  2002/11/26 18:50:31  shomrat
-* Add GetGenCode
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1883, CRC32: e1194deb */

@@ -168,20 +168,3 @@ bool IdentifierToSeqId(const string& identifier, CRef < ncbi::objects::CSeq_id >
 END_NCBI_SCOPE
 
 #endif // FILE_MESSAGING__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2003/10/20 23:03:33  thiessen
-* send pending commands before messenger is destroyed
-*
-* Revision 1.3  2003/03/19 14:44:36  thiessen
-* fix char/traits problem
-*
-* Revision 1.2  2003/03/13 18:55:04  thiessen
-* add messenger destroy function
-*
-* Revision 1.1  2003/03/13 14:26:18  thiessen
-* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
-*
-*/

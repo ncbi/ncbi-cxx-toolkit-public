@@ -208,26 +208,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.17  2004/10/21 22:21:41  yasmax
- * Added javaless pager view for queryd
- *
- * Revision 1.16  2004/07/19 17:58:40  golikov
- * GetPages fixed
- *
- * Revision 1.15  2004/07/12 21:26:58  golikov
- * additions for tab view
- *
- * Revision 1.14  2003/11/05 18:41:06  dicuccio
- * Added export specifiers
- *
- * Revision 1.13  2003/11/03 17:02:53  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * ===========================================================================
- */
-
 #endif  /* HTML___PAGER__HPP */

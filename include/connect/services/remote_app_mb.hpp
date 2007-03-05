@@ -218,47 +218,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/07/13 14:32:38  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * Revision 1.9  2006/06/28 16:01:42  didenko
- * Redone job's exlusivity processing
- *
- * Revision 1.8  2006/06/19 19:41:05  didenko
- * Spelling fix
- *
- * Revision 1.7  2006/06/19 13:36:27  didenko
- * added logging information
- *
- * Revision 1.6  2006/05/15 15:26:53  didenko
- * Added support for running exclusive jobs
- *
- * Revision 1.5  2006/05/10 19:54:21  didenko
- * Added JobDelayExpiration method to CWorkerNodeContext class
- * Added keep_alive_period and max_job_run_time parmerter to the config
- * file of remote_app
- *
- * Revision 1.4  2006/05/08 15:16:42  didenko
- * Added support for an optional saving of a remote application's stdout
- * and stderr into files on a local file system
- *
- * Revision 1.3  2006/03/16 15:13:59  didenko
- * Remaned CRemoteJob... to CRemoteApp...
- * + Comments
- *
- * Revision 1.2  2006/03/15 17:30:11  didenko
- * Added ability to use embedded NetSchedule job's storage as a job's input/output
- * data instead of using it as a NetCache blob key. This reduces network traffic 
- * and increases job submittion speed.
- *
- * Revision 1.1  2006/03/07 17:17:12  didenko
- * Added facility for running external applications throu NetSchedule service
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__REMOTE_APP_MB_HPP

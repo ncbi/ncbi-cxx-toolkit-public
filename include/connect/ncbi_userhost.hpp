@@ -67,14 +67,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.1  2006/01/30 19:55:27  grichenk
- * Initial revision
- *
- *
- */
-
 #endif  /* CONNECT___NCBI_USERHOST__HPP */

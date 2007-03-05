@@ -97,49 +97,4 @@ void NCBI_EntryPoint_xloader_cdd(
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2005/10/26 14:36:44  vasilche
- * Updated for new CBlobId interface. Fixed load lock logic.
- *
- * Revision 1.9  2004/08/10 16:56:10  grichenk
- * Fixed dll export declarations, moved entry points to cpp.
- *
- * Revision 1.8  2004/08/04 19:35:08  grichenk
- * Renamed entry points to be found by dll resolver.
- * GB loader uses CPluginManagerStore to get/put
- * plugin manager for readers.
- *
- * Revision 1.7  2004/08/04 14:56:34  vasilche
- * Updated to changes in TSE locking scheme.
- *
- * Revision 1.6  2004/08/02 17:34:43  grichenk
- * Added data_loader_factory.cpp.
- * Renamed xloader_cdd to ncbi_xloader_cdd.
- * Implemented data loader factories for all loaders.
- *
- * Revision 1.5  2004/07/28 14:02:57  grichenk
- * Improved MT-safety of RegisterInObjectManager(), simplified the code.
- *
- * Revision 1.4  2004/07/26 14:13:31  grichenk
- * RegisterInObjectManager() return structure instead of pointer.
- * Added CObjectManager methods to manipuilate loaders.
- *
- * Revision 1.3  2004/07/21 15:51:23  grichenk
- * CObjectManager made singleton, GetInstance() added.
- * CXXXXDataLoader constructors made private, added
- * static RegisterInObjectManager() and GetLoaderNameFromArgs()
- * methods.
- *
- * Revision 1.2  2003/11/28 13:14:38  dicuccio
- * Dropped const from EChoice to match base class API
- *
- * Revision 1.1  2003/10/20 17:48:05  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // OBJTOOLS_DATA_LOADERS_CDD___CDD__HPP

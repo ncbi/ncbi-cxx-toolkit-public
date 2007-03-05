@@ -119,35 +119,3 @@ END_NCBI_SCOPE
 
 
 #endif // ALGSEQUENCE_HPP
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.8  2006/11/16 20:21:41  cliu
- * get ncbistd from bioseq
- *
- * Revision 1.7  2006/08/29 18:43:41  cliu
- * no message
- *
- * Revision 1.6  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.5  2006/08/02 14:04:51  cliu
- * add function GetAccAndVersion
- *
- * Revision 1.4  2005/06/30 23:58:42  lanczyck
- * move a few includes from .cpp to .hpp; add an IsEnvironmentalSeq method
- *
- * Revision 1.3  2005/06/30 17:54:55  lanczyck
- * change return value in GetTaxIdInBioseq to reflect conventions in CTaxon1 class
- *
- * Revision 1.2  2005/06/30 15:38:54  lanczyck
- * add method GetTaxIdInBioseq
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

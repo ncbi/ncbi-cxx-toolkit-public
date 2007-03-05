@@ -99,43 +99,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/10/20 15:33:46  kuznets
- * Implemented duplicate id check
- *
- * Revision 1.2  2005/10/12 12:18:04  kuznets
- * Use 64-bit file sizes and offsets
- *
- * Revision 1.1  2005/09/19 14:39:37  kuznets
- * Merjing lds admin and lds libs together
- *
- * Revision 1.7  2003/10/06 20:15:47  kuznets
- * Added support for sub directories and option to disable CRC32 for files
- *
- * Revision 1.6  2003/06/16 14:54:08  kuznets
- * lds splitted into "lds" and "lds_admin"
- *
- * Revision 1.5  2003/06/03 19:14:02  kuznets
- * Added lds dll export/import specifications
- *
- * Revision 1.4  2003/06/03 14:07:46  kuznets
- * Include paths changed to reflect the new directory structure
- *
- * Revision 1.3  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.2  2003/05/22 18:57:17  kuznets
- * Work in progress
- *
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif
-

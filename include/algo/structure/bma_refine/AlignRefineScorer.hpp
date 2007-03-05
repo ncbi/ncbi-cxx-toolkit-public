@@ -97,27 +97,3 @@ AlignmentScoringMethod RowScorer::GetMethod() {
 END_SCOPE(align_refine)
 
 #endif // AR_ALIGN_REFINE_SCORER__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/08/09 18:33:51  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.2  2006/07/17 14:36:39  ucko
-* Place forward declarations within BEGIN_/END_SCOPE blocks per VisualAge.
-*
-* Revision 1.1  2005/06/28 13:45:25  lanczyck
-* block multiple alignment refiner code from internal/structure/align_refine
-*
-* Revision 1.3  2004/11/05 22:15:58  lanczyck
-* change class name to RowScorer
-*
-* Revision 1.2  2004/10/22 16:56:42  lanczyck
-* add block score analysis; modify output formatting and default ERR_POST flags
-*
-* Revision 1.1  2004/06/23 22:52:47  lanczyck
-* initial checkin:  base class for different scoring methods
-*
-*
-*/

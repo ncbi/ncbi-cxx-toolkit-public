@@ -28,23 +28,6 @@
 * File Description:
 *   testmedline test program for checking size of application which uses
 *   generated objects.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2004/05/19 17:24:27  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.1  2003/06/02 17:02:51  dicuccio
-* Changed file name
-*
-* Revision 1.7  2000/04/13 14:51:01  vasilche
-* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
-*
-* Revision 1.6  2000/04/12 15:38:05  vasilche
-* Added copyright header.
-* testmedline code moved out of ncbi namespace.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

@@ -678,16 +678,3 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/12/04 13:48:24  dicuccio
- * LOg address of offending failed symbol
- *
- * Revision 1.1  2006/11/06 17:37:39  grichenk
- * Initial revision
- *
- * ===========================================================================
- */

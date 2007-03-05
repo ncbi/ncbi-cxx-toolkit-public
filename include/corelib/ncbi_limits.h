@@ -230,33 +230,3 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 
 
 /* @} */
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.7  2006/09/20 14:02:10  ucko
- * Don't assume wchar.h actually supplies WCHAR_XXX.  (FreeBSD 4's doesn't.)
- *
- * Revision 1.6  2006/09/19 14:54:04  ucko
- * Ensure that numeric_limits<wchar_t> exists if wchar.h is available.
- *
- * Revision 1.5  2005/05/13 18:23:30  ivanov
- * Do not use C++ comments in the .h files
- *
- * Revision 1.4  2003/04/01 14:18:44  siyan
- * Added doxygen support
- *
- * Revision 1.3  2002/04/11 20:39:15  ivanov
- * CVS log moved to end of the file
- *
- * Revision 1.2  2001/05/30 16:17:23  vakatov
- * Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
- * only when absolutely necessary (otherwise it conflicted with
- * "long long" for the Intel C++ compiler).
- *
- * Revision 1.1  2001/01/03 17:34:56  vakatov
- * Initial revision
- *
- * ==========================================================================
- */

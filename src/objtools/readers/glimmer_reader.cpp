@@ -315,16 +315,3 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/10/06 17:31:27  dicuccio
- * Always assign frame=1
- *
- * Revision 1.1  2006/06/15 17:45:03  dicuccio
- * Added reader/parser for Glimmer3 predictions
- *
- * ===========================================================================
- */

@@ -188,48 +188,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.12  2006/10/05 16:38:54  todorov
-* Removed the deprecated CAlnMix::fGen2EST and CAlnMix::fTryOtherMethodOnFail.
-*
-* Revision 1.11  2006/03/14 22:37:35  todorov
-* + fRemoveLeadTrailGaps
-*
-* Revision 1.10  2006/02/21 15:56:21  todorov
-* CAlnMixSeq::TStarts -> CAlnMixStarts.
-*
-* Revision 1.9  2005/08/18 17:03:50  todorov
-* Derive from CTaskProgressReporter
-*
-* Revision 1.8  2005/08/10 19:49:46  todorov
-* Delegated truncation to CDiagRangeCollection.
-*
-* Revision 1.7  2005/08/03 18:18:44  jcherry
-* Added export specifiers
-*
-* Revision 1.6  2005/07/25 20:31:53  todorov
-* TCalcScoreMethod now defined in CAlnMixMatches.
-*
-* Revision 1.5  2005/07/22 15:30:37  todorov
-* + fAllowTranslocation as a merge option
-*
-* Revision 1.4  2005/07/11 13:57:02  todorov
-* + eTranslocation
-*
-* Revision 1.3  2005/06/22 22:14:33  todorov
-* Added an option to process stronger input alns first
-*
-* Revision 1.2  2005/03/10 19:33:00  todorov
-* Moved a few routines out of the merger to their corresponding classes
-*
-* Revision 1.1  2005/03/01 17:28:49  todorov
-* Rearranged CAlnMix classes
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ALNMGR___ALNMERGER__HPP

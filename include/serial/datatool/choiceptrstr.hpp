@@ -85,18 +85,3 @@ public:
 END_NCBI_SCOPE
 
 #endif  /* CHOICEPTRSTR__HPP */
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/10/18 13:13:02  gouriano
-* Added comments into typestrings and generated code
-*
-* Revision 1.2  2006/05/09 15:16:14  gouriano
-* Added XML namespace definition possibility
-*
-* Revision 1.1  2000/09/26 17:38:17  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* ===========================================================================
-*/

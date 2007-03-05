@@ -56,14 +56,3 @@ BEGIN_NCBI_SCOPE
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2002/04/09 14:31:07  lanczyck
-* cvs log to end of templates
-*
-*
-* ===========================================================================
-*/

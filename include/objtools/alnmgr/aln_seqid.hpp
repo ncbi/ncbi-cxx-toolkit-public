@@ -141,20 +141,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/12/13 18:11:47  todorov
-* Move inlined methods to the .cpp and add NCBI_XALNMGR_EXPORT.
-*
-* Revision 1.2  2006/12/13 14:51:36  dicuccio
-* Drop unneeded export specifiers
-*
-* Revision 1.1  2006/12/12 20:18:17  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
 #endif  // OBJTOOLS_ALNMGR___ALN_SEQID__HPP

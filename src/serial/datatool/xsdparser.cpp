@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -918,38 +917,3 @@ void XSDParser::PrintDocumentTree(void)
 #endif
 
 END_NCBI_SCOPE
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.9  2006/10/31 20:01:33  gouriano
- * Added data spec source line info
- *
- * Revision 1.8  2006/08/03 17:21:10  gouriano
- * Preserve comments when parsing schema
- *
- * Revision 1.7  2006/06/27 18:00:57  gouriano
- * Parse attributes as SET
- *
- * Revision 1.6  2006/06/19 17:34:40  gouriano
- * Corrected parsing of simpleContent
- *
- * Revision 1.5  2006/06/05 15:33:14  gouriano
- * Implemented local elements when parsing XML schema
- *
- * Revision 1.4  2006/05/10 18:54:23  gouriano
- * Added documentation parsing
- *
- * Revision 1.3  2006/05/09 15:16:43  gouriano
- * Added XML namespace definition possibility
- *
- * Revision 1.2  2006/05/03 14:38:08  gouriano
- * Added parsing attribute definition and include
- *
- * Revision 1.1  2006/04/20 14:00:11  gouriano
- * Added XML schema parsing
- *
- *
- * ==========================================================================
- */

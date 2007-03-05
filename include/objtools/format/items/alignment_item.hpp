@@ -67,22 +67,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.2  2005/04/13 14:36:56  ucko
-* Accept const Seq_align objects, as there's no reason not to.
-*
-* Revision 1.1  2004/06/21 18:48:43  ucko
-* Add an item type for Seq-aligns (handled by GFF 3)
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___ALIGNMENT_ITEM__HPP */

@@ -765,24 +765,3 @@ void CIntergenic::Init(const string& file, int cgcontent, int seqlen)
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.4  2006/03/06 15:52:53  souvorov
- * Changes needed for ChanceOfIntronLongerThan(int l)
- *
- * Revision 1.3  2005/10/06 15:51:20  chetvern
- * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
- *
- * Revision 1.2  2005/09/16 18:04:16  ucko
- * kBadScore has been replaced with an inline BadScore function that
- * always returns the same value to avoid lossage in optimized WorkShop
- * builds.
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ==========================================================================
- */

@@ -148,14 +148,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/07/13 14:34:20  didenko
- * Added client for remote application dispatcher
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__RA_DISPATCHER_CLIENT_HPP

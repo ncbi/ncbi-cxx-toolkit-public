@@ -102,32 +102,3 @@ void CSeqMaskerScoreMean::FillScores()
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.5  2005/08/30 14:35:20  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * Revision 1.4  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * Revision 1.3  2005/02/25 21:09:18  morgulis
- * 1. Reduced the number of binary searches by the factor of 2 by locally
- *    caching some search results.
- * 2. Automatically compute -lowscore value if it is not specified on the
- *    command line during the counts generation pass.
- *
- * Revision 1.2  2005/02/12 19:58:04  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
- * ========================================================================
- */
-

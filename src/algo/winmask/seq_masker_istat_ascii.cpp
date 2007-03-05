@@ -185,23 +185,3 @@ Uint4 CSeqMaskerIstatAscii::at( Uint4 unit ) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.4  2006/11/13 18:19:58  morgulis
- * Check if the requested t_low is less than the computed one and issue a warning.
- *
- * Revision 1.3  2006/02/06 16:13:41  ivanov
- * Replace NStr::fStringToNumDefault to 0
- *
- * Revision 1.2  2005/08/04 13:10:52  ivanov
- * Use 'flag' version of NStr::StringTo*()
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * ========================================================================
- */

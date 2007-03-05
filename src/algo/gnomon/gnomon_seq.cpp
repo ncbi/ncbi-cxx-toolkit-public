@@ -74,14 +74,3 @@ void Complement(const CEResidueVec& src, CEResidueVec& dst)
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ==========================================================================
- */
-

@@ -763,22 +763,3 @@ bool  CSeqAnnotFromFasta::BuildMasterSlaveSeqAlign(const CRef<CSeq_id>& masterSe
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/09/07 17:35:24  lanczyck
- * fixes so can read in file w/ a single sequence
- *
- * Revision 1.3  2006/06/07 20:34:16  lanczyck
- * comment out debugging code
- *
- * Revision 1.2  2006/03/29 20:06:27  ucko
- * Ensure that min's arguments have the same type in MakeAsIsSeqAnnot.
- * Add an include directive for <algorithm>, which may help the MSVC build.
- *
- * Revision 1.1  2006/03/29 15:44:07  lanczyck
- * add files for fasta->cd converter; change Makefile accordingly
- *
- * ===========================================================================
- */

@@ -150,18 +150,3 @@ int main(int argc, char** argv)
 {
     return CDemoSeqQaApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/07/01 16:40:36  ucko
- * Adjust for CSeq_id's use of CSeqIdException to report bad input.
- *
- * Revision 1.2  2004/12/21 18:40:49  vasilche
- * Added missing include Seq_align.hpp.
- *
- * Revision 1.1  2004/10/06 19:57:15  jcherry
- * Initial version
- *
- * ===========================================================================
- */

@@ -73,12 +73,3 @@ cursor.execute('execute sp_server_info 1')
 result = cursor.fetchall()
 # Retrieve return status
 rc = cursor.get_proc_return_status()
-
-
-# ===========================================================================
-#
-# $Log$
-# Revision 1.1  2005/06/07 18:23:46  ssikorsk
-# Added a new Python sample
-#
-# ===========================================================================

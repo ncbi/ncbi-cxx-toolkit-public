@@ -220,36 +220,4 @@ protected:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/05/02 16:09:33  lavr
- * Use XNCBI export macro
- *
- * Revision 1.7  2006/03/07 14:35:57  vasilche
- * Fixed static mutex use.
- *
- * Revision 1.6  2005/03/07 14:39:31  ssikorsk
- * Replaced static member m_Lock with a static function GetMutex
- *
- * Revision 1.5  2004/12/23 18:08:25  vasilche
- * Fixed use of static variables in template class.
- *
- * Revision 1.4  2004/08/02 16:35:16  kuznets
- * Added missing static
- *
- * Revision 1.3  2004/08/02 14:12:51  kuznets
- * Cosmetics..
- *
- * Revision 1.2  2004/08/02 14:11:02  kuznets
- * GCC compilation fix (proper use of typename)
- *
- * Revision 1.1  2004/08/02 13:43:46  kuznets
- * Initial revision
- *
- *
- * ==========================================================================
- */
-
 #endif 

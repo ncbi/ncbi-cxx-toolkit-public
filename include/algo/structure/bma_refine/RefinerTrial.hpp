@@ -112,32 +112,3 @@ protected:
 END_SCOPE(align_refine)
 
 #endif // AR_REFINERTRIAL__HPP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/08/09 18:33:51  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.4  2006/04/05 19:28:12  lanczyck
- * allow for changing order of phases in a cycle
- *
- * Revision 1.3  2005/11/23 01:01:14  lanczyck
- * freeze specified blocks in both LOO and BE phases;
- * add support for a callback for a progress meter
- *
- * Revision 1.2  2005/10/19 16:44:04  lanczyck
- * promote the cyclesCreated local variable to be a class member
- *
- * Revision 1.1  2005/06/28 13:45:25  lanczyck
- * block multiple alignment refiner code from internal/structure/align_refine
- *
- * Revision 1.2  2005/05/26 18:49:52  lanczyck
- * consistent results w/ original version:  bug fixes; modify messages for consistency
- *
- * Revision 1.1  2005/05/24 22:31:43  lanczyck
- * initial versions:  app builds but not yet tested
- *
- * ===========================================================================
- */
-

@@ -316,30 +316,3 @@ char CodeToChar(const long src, EConversionStatus* status)
 
 END_SCOPE(utf8)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/03/20 20:54:18  gouriano
- * Changed enum names to avoid conflicts
- *
- * Revision 1.6  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2002/01/24 20:10:21  vinokuro
- * Skip characters processing has been fixed in StringToAscii function.
- *
- * Revision 1.4  2002/01/18 19:24:13  ivanov
- * Changed result char's upper limit from 0xFF to 0x7F in StringToChar()
- *
- * Revision 1.3  2001/05/17 15:07:15  lavr
- * Typos corrected
- *
- * Revision 1.2  2001/04/18 16:31:59  ivanov
- * Change types TUnicodeChar, TUnicodeString to simple types.
- * TUnicode char to long, TUnicodeString to vector<long>.
- *
- * Revision 1.1  2001/04/06 19:14:37  ivanov
- * Initial revision
- * ===========================================================================
- */

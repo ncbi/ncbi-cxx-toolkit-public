@@ -138,36 +138,3 @@ void ProgressMeter::SetValue(int value, bool doYield)
 }
 
 END_SCOPE(Cn3D)
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2005/10/19 17:28:19  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.8  2004/05/21 21:41:39  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.7  2004/02/19 17:05:04  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.6  2003/02/03 19:20:05  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.5  2002/08/15 22:13:15  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.4  2001/10/25 17:17:23  thiessen
-* use wxYield + modal for wxMac, too
-*
-* Revision 1.3  2001/10/25 00:06:29  thiessen
-* fix concurrent rendering problem in wxMSW PNG output
-*
-* Revision 1.2  2001/10/24 17:07:30  thiessen
-* add PNG output for wxGTK
-*
-* Revision 1.1  2001/10/23 13:53:40  thiessen
-* add PNG export
-*
-*/

@@ -99,46 +99,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/02/23 16:59:38  kapustin
- * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
- *
- * Revision 1.1  2004/12/16 22:38:08  kapustin
- * Move to algo/align/nw/demo/nwa
- *
- * Revision 1.9  2004/05/17 14:50:57  kapustin
- * Add/remove/rearrange some includes and object declarations
- *
- * Revision 1.8  2004/04/30 12:49:47  kuznets
- * throw -> THROWS (fixes warning in MSVC7)
- *
- * Revision 1.7  2003/09/10 19:11:50  kapustin
- * Add eNotSupported exception for multithreading availability checking
- *
- * Revision 1.6  2003/06/17 17:20:44  kapustin
- * CNWAlignerException -> CAlgoAlignException
- *
- * Revision 1.5  2003/01/24 16:49:36  kapustin
- * Add write file exception type
- *
- * Revision 1.4  2003/01/08 15:58:33  kapustin
- * Read offset parameter from fasta reading routine
- *
- * Revision 1.3  2002/12/12 17:59:30  kapustin
- * Enable spliced alignments
- *
- * Revision 1.2  2002/12/09 15:47:36  kapustin
- * Declare exception class before the application
- *
- * Revision 1.1  2002/12/06 17:44:26  ivanov
- * Initial revision
- *
- * ===========================================================================
- */
-
-
 #endif

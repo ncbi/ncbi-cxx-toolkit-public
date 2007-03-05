@@ -380,18 +380,3 @@ void TreeAlgorithm::midpointRootIfNeeded() {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2005/12/22 19:19:04  lanczyck
- * sync cd_utils with midpoint-root bug fix;
- * add a line left out when transferred over 'at least 3 sequences' criteria for NJ
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

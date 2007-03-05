@@ -316,16 +316,3 @@ specialize_std_list(ncbi::CRef<T>, CRefCheck_XXX, CRefToCpp_XXX, CRefFromCpp_XXX
 %enddef
 
 #endif  // SWIGPERL
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/10/05 19:45:42  jcherry
- * Reflect renaming of specialization macros, plus Ruby stuff
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

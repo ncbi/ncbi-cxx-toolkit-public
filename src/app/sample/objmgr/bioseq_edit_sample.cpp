@@ -767,33 +767,3 @@ int main(int argc, const char* argv[])
 {
     return CEditBioseqSampleApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/12/19 14:23:46  didenko
- * Fixed if statments
- *
- * Revision 1.6  2006/12/07 20:04:10  didenko
- * Fixed an empty if statment
- *
- * Revision 1.5  2006/10/12 14:45:00  didenko
- * Fixed problem with CRemoveFeatChecker
- *
- * Revision 1.4  2006/09/18 20:04:01  vasilche
- * Avoid calling deprecated method.
- *
- * Revision 1.3  2006/05/01 16:56:45  didenko
- * Attach SeqEntry edit command revamp
- *
- * Revision 1.2  2006/01/25 19:00:55  didenko
- * Redisigned bio objects edit facility
- *
- * Revision 1.1  2005/11/15 19:25:22  didenko
- * Added bioseq_edit_sample sample
- *
- * ===========================================================================
- */

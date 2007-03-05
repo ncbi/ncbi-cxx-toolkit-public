@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -425,45 +424,3 @@ XSDEntityLexer::~XSDEntityLexer(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.11  2006/10/31 20:01:33  gouriano
- * Added data spec source line info
- *
- * Revision 1.10  2006/07/24 18:57:39  gouriano
- * Preserve comments when parsing DTD
- *
- * Revision 1.9  2006/06/05 15:33:14  gouriano
- * Implemented local elements when parsing XML schema
- *
- * Revision 1.8  2006/05/23 18:24:48  gouriano
- * Make XML attributes optional by default
- *
- * Revision 1.7  2006/05/09 15:16:43  gouriano
- * Added XML namespace definition possibility
- *
- * Revision 1.6  2006/05/03 14:38:08  gouriano
- * Added parsing attribute definition and include
- *
- * Revision 1.5  2006/04/20 14:00:11  gouriano
- * Added XML schema parsing
- *
- * Revision 1.4  2005/06/03 17:05:33  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.3  2005/01/06 20:22:14  gouriano
- * Added name property to lexers - for better diagnostics
- *
- * Revision 1.2  2004/05/17 21:03:13  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2002/11/14 21:02:15  gouriano
- * auxiliary classes to use by DTD parser
- *
- *
- *
- * ==========================================================================
- */

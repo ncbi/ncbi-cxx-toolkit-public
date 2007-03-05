@@ -954,32 +954,3 @@ void BlockModelPair::reverse()
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.7  2007/01/09 19:27:39  lanczyck
- * add assignment operator to BlockModelPair; protect against null ptr in copy ctor; make mapTo... and getBlockNumber methods const
- *
- * Revision 1.6  2007/01/08 20:46:44  cliu
- * return the number of aligned residues for the remaster()
- *
- * Revision 1.5  2006/12/18 17:01:11  lanczyck
- * add a reset method for BlockModelPair
- *
- * Revision 1.4  2006/01/10 16:54:51  lanczyck
- * eliminate unused variable warnings
- *
- * Revision 1.3  2005/11/29 19:28:18  cliu
- * add offset
- *
- * Revision 1.2  2005/05/03 15:30:37  lanczyck
- * make 'getTotalBlockLength' const
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

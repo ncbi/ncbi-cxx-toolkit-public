@@ -101,30 +101,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2007/01/03 15:52:31  todorov
-* Allow negative offsets in OffsetRow
-*
-* Revision 1.4  2006/06/06 22:44:47  todorov
-* Added OffsetRow method.
-* Marked RemapToLoc for deprecation.
-*
-* Revision 1.3  2006/05/08 21:43:11  todorov
-* Added a RemapToLoc method.
-*
-* Revision 1.2  2004/08/19 13:04:37  dicuccio
-* Added missing include for CRange
-*
-* Revision 1.1  2003/09/16 16:16:56  todorov
-* Added validation methods. Added seq range methods
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQALIGN_STD_SEG_HPP
 /* Original file checksum: lines: 93, chars: 2392, CRC32: 7f149965 */

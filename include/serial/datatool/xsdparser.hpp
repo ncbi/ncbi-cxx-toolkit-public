@@ -123,29 +123,3 @@ private:
 END_NCBI_SCOPE
 
 #endif // XSDPARSER_HPP
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.6  2006/08/03 17:23:02  gouriano
- * Preserve comments when parsing schema
- *
- * Revision 1.5  2006/06/27 17:58:24  gouriano
- * Parse attributes as SET
- *
- * Revision 1.4  2006/06/05 15:33:32  gouriano
- * Implemented local elements when parsing XML schema
- *
- * Revision 1.3  2006/05/10 18:48:52  gouriano
- * Added documentation parsing
- *
- * Revision 1.2  2006/05/03 14:37:38  gouriano
- * Added parsing attribute definition and include
- *
- * Revision 1.1  2006/04/20 14:00:56  gouriano
- * Added XML schema parsing
- *
- *
- * ==========================================================================
- */

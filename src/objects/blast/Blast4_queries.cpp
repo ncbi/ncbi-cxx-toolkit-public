@@ -80,15 +80,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/02/22 19:55:33  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1902, CRC32: d1082e32 */

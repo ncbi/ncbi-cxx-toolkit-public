@@ -231,17 +231,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CBDB_MergeTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/11/21 14:42:43  kuznets
- * use async. interfaces for testing
- *
- * Revision 1.1  2006/11/20 16:26:17  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

@@ -68,18 +68,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/05/19 17:26:25  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.1  2004/01/28 17:18:38  shomrat
-* Added methods to ease the construction of objects
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1893, CRC32: 2c08e51f */

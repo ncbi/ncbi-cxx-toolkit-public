@@ -95,31 +95,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/03/07 17:14:12  didenko
- * Added virtual functions which allow tunning up a NetCache client
- *
- * Revision 1.4  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.3  2005/04/07 16:46:28  didenko
- * + Program Version checking
- *
- * Revision 1.2  2005/03/28 16:49:00  didenko
- * Added virtual desturctors to all new interfaces to prevent memory leaks
- *
- * Revision 1.1  2005/03/25 16:23:43  didenko
- * Initail version
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES_GRID__GRID_CLIENT_APP__HPP

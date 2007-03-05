@@ -1,38 +1,4 @@
 --$Id$
---
---$Revision$
---**********************************************************************
---
---  ASN.1 for simplified BLAST output in XML
---  by James Ostell, Yuri Wolf and Sergey Shavirin, 2000
---
---
--- $Log: blastxml.asn,v $
--- Revision 6.8  2006/09/18 15:17:51  bealer
--- - Use BigInt type name for db-len integer.
---
--- Revision 6.7  2002/07/17 22:28:13  dondosha
--- Added support for megablast XML output
---
--- Revision 6.6  2001/05/03 17:52:16  shavirin
--- Adopted for usage with mani-iterational XML definition.
---
--- Revision 6.4  2000/11/08 20:07:20  shavirin
--- Added new parameter align_len analogos to the number reported in
--- the Traditional Blast Output.
---
--- Revision 6.3  2000/10/23 20:24:03  shavirin
--- Few parameters were changed to OPTIONAL to allow XML without results:
--- failure or no hits found condition.
---
--- Revision 6.2  2000/08/11 17:48:35  shavirin
--- Small fix.
---
--- Revision 6.1  2000/08/09 20:43:12  shavirin
--- Initial revision.
---
---
---**********************************************************************
 
 NCBI-BlastOutput DEFINITIONS ::=
 BEGIN

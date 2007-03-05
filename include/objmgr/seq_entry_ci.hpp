@@ -240,36 +240,4 @@ const CSeq_entry_EditHandle* CSeq_entry_I::operator->(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2005/01/24 17:09:36  vasilche
-* Safe boolean operators.
-*
-* Revision 1.4  2004/10/01 19:47:20  kononenk
-* Fixed typo in doxygen documentation
-*
-* Revision 1.3  2004/10/01 14:54:54  kononenk
-* Added doxygen formatting
-*
-* Revision 1.2  2004/03/31 17:08:06  vasilche
-* Implemented ConvertSeqToSet and ConvertSetToSeq.
-*
-* Revision 1.1  2004/03/16 15:47:26  vasilche
-* Added CBioseq_set_Handle and set of EditHandles
-*
-* Revision 1.3  2004/02/09 19:18:50  grichenk
-* Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
-* and CSeqdesc_CI to avoid using data directly.
-*
-* Revision 1.2  2003/12/03 16:40:03  grichenk
-* Added GetParentEntry()
-*
-* Revision 1.1  2003/11/28 15:12:30  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif//OBJMGR__SEQ_ENTRY_CI__HPP

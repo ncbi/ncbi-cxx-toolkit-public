@@ -164,16 +164,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/12/13 18:15:32  bealer
-* - Define standard set of parameters for blast4.
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BLAST_NAMES_HPP

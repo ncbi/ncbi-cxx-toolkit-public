@@ -32,29 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/01/09 12:52:38  thiessen
-* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
-*
-* Revision 1.1  2005/10/31 21:26:05  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.4  2001/05/25 19:12:54  vakatov
-* Nested comment typo fixed
-*
-* Revision 1.3  2001/04/25 15:43:29  hurwitz
-* initial check-in of Anna's code to fix problem of duplicate alignments with different scores
-*
-* Revision 1.2  2001/04/24 17:43:03  hurwitz
-* bug fix
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 
@@ -206,4 +183,3 @@ for(i=0;i<(nrt-1);i++)ntot+=spc->rt[i];
 psm->ww0=((float)s0)/ntot;
 
 }
-

@@ -214,12 +214,3 @@ void CMastersClassicalGuideAlignment::MakeChains(const CCdCore* cd1, const CCdCo
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- *
- * ===========================================================================
- */
-

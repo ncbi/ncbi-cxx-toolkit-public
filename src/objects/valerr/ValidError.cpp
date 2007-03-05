@@ -204,15 +204,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/02/07 15:07:45  rsmith
-* initial checkin
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1869, CRC32: b677bbc2 */

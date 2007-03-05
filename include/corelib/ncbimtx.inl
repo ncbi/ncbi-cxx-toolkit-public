@@ -340,32 +340,4 @@ bool CMutex::TryLock(void)
     return m_Mutex.TryLock();
 }
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/06/16 11:37:33  dicuccio
- * Refactored CMutexGuard, CFastMutexGuard, CReadLockGuard, and CWriteLockGuard to
- * use a templated implementation (CGuard<>).  Provided typedefs for forward and
- * backward compatibility.
- *
- * Revision 1.5  2003/09/02 16:08:48  vasilche
- * Fixed race condition with optimization on some compilers - added 'volatile'.
- * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.
- *
- * Revision 1.4  2003/09/02 15:41:05  ucko
- * Re-sync preprocessor guards with ncbimtx.hpp.
- *
- * Revision 1.3  2003/06/19 19:16:37  vasilche
- * Added CMutexGuard and CFastMutexGuard constructors.
- *
- * Revision 1.2  2002/09/20 20:02:07  vasilche
- * Added public Lock/Unlock/TryLock
- *
- * Revision 1.1  2002/09/19 20:05:41  vasilche
- * Safe initialization of static mutexes
- *
- * ===========================================================================
- */
-
 #endif

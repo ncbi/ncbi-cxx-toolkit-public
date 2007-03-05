@@ -54,29 +54,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/05/04 14:44:21  kuznets
- * MOving from the root "hello" to the new location
- *
- * Revision 1.4  2002/04/16 18:50:30  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 1.3  1999/11/10 20:11:00  lewisg
- * clean out unnecessary code
- *
- * Revision 1.2  1999/11/10 01:01:06  lewisg
- * get rid of namespace
- *
- * Revision 1.1  1999/10/25 21:15:54  lewisg
- * first draft of simple cgi app
- *
- * ===========================================================================
- */ 
-
 #endif /* NCBI_HELLOAPP__HPP */
-
-

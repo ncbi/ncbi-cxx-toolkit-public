@@ -296,22 +296,3 @@ CItemInfo* CStreamPathHookBase::FindItem(const CObjectStack& stk)
 }
 
 END_NCBI_SCOPE
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/10/05 19:24:28  gouriano
-* Some headers moved into impl
-*
-* Revision 1.3  2004/08/11 16:40:32  vasilche
-* Fast check if there are no path hooks.
-*
-* Revision 1.2  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2004/01/05 14:25:22  gouriano
-* Added possibility to set serialization hooks by stack path
-*
-*
-* ===========================================================================
-*/

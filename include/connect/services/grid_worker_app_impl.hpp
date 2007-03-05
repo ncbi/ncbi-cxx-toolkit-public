@@ -132,47 +132,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/11/30 15:33:33  didenko
- * Moved to a new log system
- *
- * Revision 1.8  2006/05/12 15:13:37  didenko
- * Added infinit loop detection mechanism in job executions
- *
- * Revision 1.7  2006/04/04 19:54:34  didenko
- * Disabled copy constractor and assignment operator
- *
- * Revision 1.6  2006/04/04 19:15:01  didenko
- * Added max_failed_jobs parameter to a worker node configuration.
- *
- * Revision 1.5  2006/02/01 16:39:01  didenko
- * Added Idle Task facility to the Grid Worker Node Framework
- *
- * Revision 1.4  2006/01/18 17:47:42  didenko
- * Added JobWatchers mechanism
- * Reimplement worker node statistics as a JobWatcher
- * Added JobWatcher for diag stream
- * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
- *
- * Revision 1.3  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.2  2005/07/26 15:25:00  didenko
- * Added logging type parameter
- *
- * Revision 1.1  2005/05/25 18:52:37  didenko
- * Moved grid worker node application functionality to the separate class
- *
- * ===========================================================================
- */
-
-
-
 #endif //CONNECT_SERVICES__GRID_WORKER_APP_IMPL_HPP

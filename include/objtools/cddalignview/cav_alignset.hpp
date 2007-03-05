@@ -98,29 +98,3 @@ END_NCBI_SCOPE
 
 
 #endif // CAV_ALIGNMENT_SET__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2003/03/19 19:05:31  thiessen
-* move again
-*
-* Revision 1.1  2003/03/19 05:33:43  thiessen
-* move to src/app/cddalignview
-*
-* Revision 1.5  2003/02/03 17:52:03  thiessen
-* move CVS Log to end of file
-*
-* Revision 1.4  2003/01/21 12:28:30  thiessen
-* move includes into src dir
-*
-* Revision 1.3  2001/01/29 18:13:40  thiessen
-* split into C-callable library + main
-*
-* Revision 1.2  2001/01/22 15:54:10  thiessen
-* correctly set up ncbi namespacing
-*
-* Revision 1.1  2001/01/22 13:15:50  thiessen
-* initial checkin
-*
-*/

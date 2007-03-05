@@ -32,12 +32,3 @@
 
 // This will produce different object file from "compress" source:
 #include "compress.c"
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/03/12 18:52:40  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */

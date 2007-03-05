@@ -121,44 +121,4 @@ public:
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/11/01 23:12:36  souvorov
- * Start score evaluation for CCodingPropensity::GetScore
- *
- * Revision 1.10  2006/10/05 15:30:58  souvorov
- * Implementation of anchors for intergenics
- *
- * Revision 1.9  2006/06/29 19:19:22  souvorov
- * Confirmed start implementation
- *
- * Revision 1.8  2006/03/06 15:53:23  souvorov
- * Changes needed for ChanceOfIntronLongerThan(int l)
- *
- * Revision 1.7  2005/11/29 15:21:37  jcherry
- * Added export specifier
- *
- * Revision 1.6  2005/11/21 21:25:54  chetvern
- * Extracted PartialModelStepBack from PrintGenes
- *
- * Revision 1.5  2005/10/20 19:34:46  souvorov
- * Penalty for nonconsensus starts/stops/splices
- *
- * Revision 1.4  2005/10/06 14:34:25  souvorov
- * CGnomonEngine::GetSeqName() introduced
- *
- * Revision 1.3  2005/09/15 21:16:01  chetvern
- * redesigned API
- *
- * Revision 1.2  2004/03/16 15:37:43  vasilche
- * Added required include
- *
- * Revision 1.1  2003/10/24 15:06:30  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___GNOMON__HPP

@@ -78,16 +78,4 @@ inline string CMD5::GetHexSum(void)
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2003/07/29 21:29:26  ucko
-* Add MD5 support (cribbed from the C Toolkit)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* UTIL___MD5__HPP */

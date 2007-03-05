@@ -138,31 +138,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.6  2006/01/25 19:22:18  didenko
-* Redesigned bio object edit facility
-*
-* Revision 1.5  2005/11/15 15:54:31  vasilche
-* Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
-*
-* Revision 1.4  2005/08/31 19:36:44  didenko
-* Reduced the number of objects copies which are being created while doing PatchSeqIds
-*
-* Revision 1.3  2005/08/31 14:47:14  didenko
-* Changed the object parameter type for LoadAnnot and LoadBioseq methods
-*
-* Revision 1.2  2005/08/29 16:15:01  didenko
-* Modified default implementation of ITSE_Assigner in a way that it can be used as base class for
-* the user's implementations of this interface
-*
-* Revision 1.1  2005/08/25 14:05:36  didenko
-* Restructured TSE loading process
-*
-*
-* ===========================================================================
-*/
-
 #endif //OBJECTS_OBJMGR_IMPL___TSE_ASSIGNER__HPP

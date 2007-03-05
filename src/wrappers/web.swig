@@ -71,28 +71,3 @@ cgi/ref_args.hpp
 misc/cgi_redirect/redirect.hpp
 
 %%
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/06/12 13:59:04  jcherry
- * Added headers
- *
- * Revision 1.5  2005/08/03 14:57:10  jcherry
- * Added headers
- *
- * Revision 1.4  2005/07/06 21:58:00  jcherry
- * Use conditional processing
- *
- * Revision 1.3  2005/07/01 17:18:21  jcherry
- * Really made wrapping of caf_plain.hpp and caf_encoded.hpp UNIX-only
- *
- * Revision 1.2  2005/07/01 14:08:02  jcherry
- * Made wrapping of caf_plain.hpp and caf_encoded.hpp UNIX-only
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

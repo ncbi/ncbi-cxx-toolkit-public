@@ -155,29 +155,3 @@ int main(int argc, const char* argv[])
 {
     return CNetCacheCheck().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/07/25 16:38:14  kuznets
- * Fixed bug in diagnostic print, added delay to avoid call jitter
- *
- * Revision 1.5  2005/04/22 13:19:18  kuznets
- * Removed dead code
- *
- * Revision 1.4  2005/04/04 18:13:41  kuznets
- * Reflecting changes in client API
- *
- * Revision 1.3  2005/03/22 18:55:18  kuznets
- * Reflecting changes in connect library layout
- *
- * Revision 1.2  2005/02/15 19:07:48  kuznets
- * IsAlive call removed
- *
- * Revision 1.1  2005/02/07 18:33:45  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

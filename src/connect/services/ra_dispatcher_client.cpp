@@ -183,13 +183,3 @@ CRADispatcherClient::EResId CRADispatcherClient::x_ReadResponseId()
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.1  2006/07/13 14:34:20  didenko
- * Added client for remote application dispatcher
- *
- * ===========================================================================
- */
- 

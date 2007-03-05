@@ -144,43 +144,4 @@ TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj, EAsnConn_Format format)
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/04/14 20:08:50  lavr
- * Formally reformatted to fit 80-column page
- *
- * Revision 1.9  2006/04/06 15:56:07  ucko
- * ToC: properly honor requests to use text mode, and ensure that Int8
- * fields get handled correctly in binary mode as well.
- *
- * Revision 1.8  2006/04/05 17:03:00  ucko
- * Add optional format arguments to FromC and ToC, but continue to
- * default to binary mode for efficiency.
- *
- * Revision 1.7  2006/03/30 18:15:20  lavr
- * Use CConn_MemoryStream directly
- *
- * Revision 1.6  2006/03/30 18:12:34  lavr
- * Adjust for lock-less MEMORY_Connector API
- *
- * Revision 1.5  2003/11/13 16:00:05  lavr
- * Guard macro changed; log moved to end
- *
- * Revision 1.4  2003/06/12 15:58:06  lavr
- * +#include <serial/serial.hpp>
- *
- * Revision 1.3  2003/05/28 14:53:51  lavr
- * Reduce the number of included headers
- *
- * Revision 1.2  2003/04/11 17:46:30  siyan
- * Added doxygen support
- * 
- * Revision 1.1  2002/08/08 18:18:01  ucko
- * Add central template class for converting ASN.1-based objects between
- * C and C++ representations.
- *
- * ===========================================================================
- */
-
 #endif /* CTOOLS___ASN_CONVERTER__HPP */

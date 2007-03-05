@@ -95,28 +95,3 @@ ICursor::~ICursor()
 IBulkInsert::~IBulkInsert()
 {
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/12/13 19:11:47  ucko
-* Actually define [IC]CallableStatement::SendSql, and move CVS logs to the end.
-*
-* Revision 1.5  2005/10/20 15:49:52  kholodov
-* Added: set and get application name
-*
-* Revision 1.4  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.3  2004/04/26 14:16:56  kholodov
-* Modified: recreate the command objects each time the Get...() is called
-*
-* Revision 1.2  2002/09/16 19:34:41  kholodov
-* Added: bulk insert support
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
-* ===========================================================================
-*/

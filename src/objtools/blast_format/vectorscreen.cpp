@@ -682,32 +682,3 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* @} */
-
-
-/* 
-*============================================================
-*$Log: vectorscreen.cpp,v $
-*Revision 1.7  2006/10/04 20:05:05  jianye
-*print with xhtml tags and remove VecscreenDisplay
-*
-*Revision 1.6  2005/09/27 16:22:35  zaretska
-*added new functions ProcessSeqAlign() and  VecscreenPrint()
-*
-*Revision 1.5  2005/09/07 20:58:58  jianye
-*fixed typo
-*
-*Revision 1.4  2005/09/07 20:12:33  jianye
-*no output if no above-threshhold seqalign
-*
-*Revision 1.3  2005/06/20 14:47:09  jianye
-*modify redundancy filtering
-*
-*Revision 1.2  2005/06/08 16:12:10  jianye
-*merge to higher score only within the same catagory
-*
-*Revision 1.1  2005/05/25 16:18:12  jianye
-*initial checkin
-*
-
-*===========================================================
-*/

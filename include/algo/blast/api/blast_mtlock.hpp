@@ -53,21 +53,4 @@ END_SCOPE(blast)
 END_NCBI_SCOPE
 /* @} */
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/03/30 16:21:27  jcherry
-* Added export specifier
-*
-* Revision 1.3  2005/03/29 15:58:54  dondosha
-* Added blast scope
-*
-* Revision 1.2  2004/07/06 15:43:59  dondosha
-* Added doxygen comments
-*
-* ===========================================================================
-*/
-
-
 #endif /* ALGO_BLAST_API___BLAST_MTLOCK_HPP */

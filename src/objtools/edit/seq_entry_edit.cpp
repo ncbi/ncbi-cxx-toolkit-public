@@ -308,16 +308,3 @@ void AddBioseqToBioseqSet(const CBioseq_set_Handle& set, const CBioseq_Handle& s
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/06/16 15:22:21  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-

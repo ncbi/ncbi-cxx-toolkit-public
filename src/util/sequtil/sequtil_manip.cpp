@@ -732,25 +732,3 @@ SIZE_TYPE CSeqManip::ReverseComplement
 }
 
 END_NCBI_SCOPE
-
-
- /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/03/04 14:46:32  lavr
-* Add default cases to make GCC less annoying with warnings
-*
-* Revision 1.3  2004/05/17 21:08:53  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2003/10/14 14:51:14  ucko
-* Fix for GCC 2.95, whose operator[] const returns a copy rather than a
-* const reference, by substituting *x.begin().
-*
-* Revision 1.1  2003/10/08 13:35:24  shomrat
-* Initial version
-*
-*
-* ===========================================================================
-*/

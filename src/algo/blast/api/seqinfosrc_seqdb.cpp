@@ -95,30 +95,3 @@ END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /* @} */
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.6  2006/03/07 16:07:39  bealer
- * - Add HasGiList() to IBlastSeqInfoSrc and classes derived thereof.
- *
- * Revision 1.5  2005/11/09 20:56:26  camacho
- * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
- * as CBl2Seq and reduce redundant code.
- *
- * Revision 1.4  2005/08/08 16:29:36  dondosha
- * Added constructor from a CSeqDB instance
- *
- * Revision 1.3  2005/04/18 15:38:31  bealer
- * - Remove usage of deprecated SeqDB parts.
- *
- * Revision 1.2  2004/11/02 17:58:27  camacho
- * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
- *
- * Revision 1.1  2004/10/06 14:52:45  dondosha
- * Implementation of IBlastSeqInfoSrc with CSeqDB
- *
- *
- * ===========================================================================
- */

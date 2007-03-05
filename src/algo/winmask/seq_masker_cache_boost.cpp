@@ -80,13 +80,3 @@ bool CSeqMaskerCacheBoost::Check()
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.1  2005/08/30 14:35:19  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * ========================================================================
- */

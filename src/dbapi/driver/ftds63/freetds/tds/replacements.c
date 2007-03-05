@@ -81,19 +81,3 @@
 #undef software_version
 #undef no_unused_var_warn
 #endif
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/07/21 00:27:04  ucko
-* Avoid multiple definitions of software_version and no_unused_var_warn
-* via preprocessor tricks.
-*
-* Revision 1.1  2005/07/20 22:42:57  ucko
-* Add a meta-source file including replacements for system functions
-* lacking on some platforms.
-*
-*
-* ===========================================================================
-*/

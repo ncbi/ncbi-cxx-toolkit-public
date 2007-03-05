@@ -50,20 +50,4 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size,
 }
 #endif
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2006/03/05 17:37:14  lavr
- * New proto for HINFO_Create
- *
- * Revision 6.2  2002/10/28 21:55:38  lavr
- * LBSM_HINFO introduced for readability to replace plain "const void*"
- *
- * Revision 6.1  2002/10/28 20:13:45  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_HOST_INFOP__H */

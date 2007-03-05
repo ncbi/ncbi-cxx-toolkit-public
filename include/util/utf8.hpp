@@ -127,29 +127,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/03/20 20:53:58  gouriano
- * Changed enum names to avoid conflicts
- *
- * Revision 1.5  2004/03/11 22:55:43  gorelenk
- * Added export prefixes NCBI_XUTIL_EXPORT to functions.
- *
- * Revision 1.4  2003/04/17 17:50:39  siyan
- * Added doxygen support
- *
- * Revision 1.3  2002/01/18 19:21:52  ivanov
- * Polish source code
- *
- * Revision 1.2  2001/04/18 16:26:04  ivanov
- * Change types TUnicodeChar, TUnicodeString to simple types.
- * TUnicode char to long, TUnicodeString to vector<long>.
- *
- * Revision 1.1  2001/04/06 19:14:36  ivanov
- * Initial revision
- * ===========================================================================
- */
-
 #endif  /* UTIL_UTF8__H */

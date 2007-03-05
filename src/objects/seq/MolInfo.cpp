@@ -89,25 +89,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 6.4  2004/05/19 17:25:14  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 6.3  2003/01/29 16:57:45  ucko
-* Store enums as TFoo (with no cast) rather than EFoo, in preparation
-* for introducing CIntEnum<>.
-*
-* Revision 6.2  2002/10/03 19:08:36  clausen
-* Removed extra whitespace
-*
-* Revision 6.1  2002/10/03 16:56:19  clausen
-* Added GetLabel()
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1873, CRC32: ae3bbfec */

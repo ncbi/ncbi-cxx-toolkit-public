@@ -255,17 +255,3 @@ int main(int argc, const char* argv[])
     SetDiagFixedPostLevel(eDiag_Trace);
     return CCgiIOTestApplication().AppMain(argc, argv, 0, eDS_ToStdlog);
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/11/08 16:06:04  vakatov
- * Conditionalize signal handling on NCBI_OS_UNIX
- *
- * Revision 1.1  2006/11/07 20:45:45  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

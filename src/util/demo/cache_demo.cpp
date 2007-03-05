@@ -343,25 +343,3 @@ int main(int argc, const char* argv[])
     CCacheDemoApp app;
     return app.AppMain(argc, argv);
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/07/31 18:52:13  joukovv
- * CCache template parameters reordered, got rid of traits
- *
- * Revision 1.5  2006/07/20 17:01:18  grichenk
- * Fixed warnings.
- * Replaced CFastMutex with CMutex.
- *
- * Revision 1.4  2006/06/05 15:28:06  grichenk
- * Added CreateElement() callback, improved indexing, added comments.
- *
- * Revision 1.3  2006/03/24 22:06:37  grichenk
- * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
- *
- *
- * ===========================================================================
- */

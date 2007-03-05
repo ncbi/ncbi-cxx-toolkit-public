@@ -183,31 +183,3 @@ void GetLabelContent(string*            label,
 
 END_objects_SCOPE
 END_NCBI_SCOPE
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.7  2005/02/02 19:49:54  grichenk
- * Fixed more warnings
- *
- * Revision 1.6  2004/10/22 17:54:49  shomrat
- * Bug fix
- *
- * Revision 1.5  2004/10/22 14:16:27  shomrat
- * fixed generation of unique label
- *
- * Revision 1.4  2004/09/29 14:05:34  shomrat
- * Fixes to match GetLabelContent to C version.
- *
- * Revision 1.3  2004/08/18 13:36:35  shomrat
- * Fixed GetLabelContent to match C version
- *
- * Revision 1.2  2004/05/19 17:18:17  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 1.1  2004/02/24 15:52:25  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
- */

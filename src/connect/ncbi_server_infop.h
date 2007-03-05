@@ -105,36 +105,4 @@ const char* SERV_NameOfInfo
 }  /* extern "C" */
 #endif
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2005/12/29 16:28:09  dicuccio
- * Drop #include that was confusing the C toolkit's build
- *
- * Revision 6.7  2005/12/29 12:47:12  dicuccio
- * Export a couple of internal functions needed by connext
- *
- * Revision 6.6  2005/12/14 21:24:23  lavr
- * Name parameter for SERV_ReadInfoEx() (instead of "add")
- * +SERV_CopyInfoEx(), +SERV_NameOfInfo()
- *
- * Revision 6.5  2005/07/11 18:13:52  lavr
- * Introduce *Ex constructors to take additinal mem size to allocate at end
- *
- * Revision 6.4  2002/10/28 20:15:21  lavr
- * +<connect/ncbi_server_info.h>
- *
- * Revision 6.3  2002/09/19 18:08:38  lavr
- * Header file guard macro changed; log moved to end
- *
- * Revision 6.2  2001/11/25 22:12:06  lavr
- * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
- *
- * Revision 6.1  2001/11/16 20:25:53  lavr
- * +g_SERV_LocalServerDefault as a private global parameter
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_SERVER_INFOP__H */

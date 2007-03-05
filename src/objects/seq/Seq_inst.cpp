@@ -56,21 +56,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 6.3  2005/11/07 15:37:17  vasilche
-* Inlined IsNa() & IsAa() methods.
-*
-* Revision 6.2  2004/05/19 17:25:14  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 6.1  2002/12/19 20:11:06  kans
-* added IsNa and IsAa methods
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1872, CRC32: f553d25a */

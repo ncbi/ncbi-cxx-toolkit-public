@@ -45,21 +45,4 @@ int TEST_StreamPushback(iostream&    ios,
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2002/04/16 18:52:15  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 1.2  2002/02/05 16:05:59  lavr
- * List of included header files revised
- *
- * Revision 1.1  2002/01/29 16:02:19  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* PBACKTEST__HPP */

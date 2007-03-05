@@ -106,20 +106,4 @@ TSeqPos CGapItem::GetEstimatedLength(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.1  2004/11/24 16:48:31  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___GAP_ITEM__HPP */

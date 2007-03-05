@@ -277,39 +277,3 @@ int main(int argc, const char* argv[])
 {
     return CTestICClient().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.9  2006/05/18 16:26:01  vakatov
- * Remember to comment out a couple of unused vars
- *
- * Revision 6.8  2006/05/18 13:28:57  kuznets
- * +test for Purge()
- *
- * Revision 6.7  2006/05/05 00:41:31  ucko
- * Tweak vector<unsigned char> -> string conversion to compile under
- * WorkShop 5.3.
- *
- * Revision 6.6  2006/05/03 14:58:26  didenko
- * Added test for IReader/IWriter
- *
- * Revision 6.5  2006/01/27 15:06:16  kuznets
- * Code cleanup
- *
- * Revision 6.4  2006/01/17 16:51:35  kuznets
- * + test of session management
- *
- * Revision 6.3  2006/01/10 14:44:59  kuznets
- * More tests
- *
- * Revision 6.2  2006/01/05 14:51:06  kuznets
- * tests implemented
- *
- * Revision 6.1  2006/01/03 15:38:57  kuznets
- * + test for net ICache
- *
- *
- * ===========================================================================
- */

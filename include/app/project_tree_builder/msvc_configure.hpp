@@ -72,29 +72,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/11/09 17:37:17  gouriano
- * Changed generation rules for ncbiconf_msvc_site.h
- *
- * Revision 1.5  2004/07/20 13:39:29  gouriano
- * Added conditional macro definition
- *
- * Revision 1.4  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.3  2004/03/18 17:41:03  gorelenk
- * Aligned classes member-functions parameters inside declarations.
- *
- * Revision 1.2  2004/02/06 23:15:39  gorelenk
- * Implemented support of ASN projects, semi-auto configure,
- * CPPFLAGS support. Second working version.
- *
- * Revision 1.1  2004/02/04 23:05:48  gorelenk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BULDER__MSVC_CONFIGURE__HPP

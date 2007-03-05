@@ -88,31 +88,4 @@ private:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
-#endif 
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.6  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.5  2006/05/18 20:01:14  cliu
- * To enable read-only SeqTreeAPI
- *
- * Revision 1.4  2005/10/18 17:06:51  lanczyck
- * make TaxClient a virtual base class;
- * add methods CanBeApplied and GetCriteriaError in base criteria
- *
- * Revision 1.3  2005/07/07 17:29:54  lanczyck
- * add GetOrgRef method
- *
- * Revision 1.2  2005/06/30 23:54:29  lanczyck
- * correct comment
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */
+#endif

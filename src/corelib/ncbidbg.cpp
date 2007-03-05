@@ -73,32 +73,3 @@ EValidateAction xncbi_GetValidateAction(void)
 
 
 END_NCBI_SCOPE
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/03/02 16:33:58  vakatov
- * Code formatting, and nothing else
- *
- * Revision 1.6  2006/02/28 18:58:47  gouriano
- * MSVC x64 tuneup
- *
- * Revision 1.5  2004/05/14 13:59:27  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 1.4  2002/09/24 18:27:18  vasilche
- * Removed redundant "extern" keyword
- *
- * Revision 1.3  2002/04/11 21:08:01  ivanov
- * CVS log moved to end of the file
- *
- * Revision 1.2  2001/12/14 17:58:53  gouriano
- * changed GetValidateAction so it never returns Default
- *
- * Revision 1.1  2001/12/13 19:46:58  gouriano
- * added xxValidateAction functions
- *
- * ===========================================================================
- */

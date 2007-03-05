@@ -52,15 +52,3 @@ int main( int argc, char * argv[] )
 { 
     return CMkIndexApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2006/09/27 16:55:05  morgulis
- * Changes needed to make makeindex compile.
- *
- * Revision 1.1  2006/09/27 15:29:06  morgulis
- * Adding makeindex project.
- *
- * ========================================================================
- */

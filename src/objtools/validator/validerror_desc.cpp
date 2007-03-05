@@ -223,39 +223,3 @@ void CValidError_desc::ValidateMolInfo
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2005/06/28 17:40:29  shomrat
-* Errors from Seqdesc must contain a context
-*
-* Revision 1.8  2004/05/21 21:42:56  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.7  2003/09/03 18:27:17  shomrat
-* Check that RefGenTrackking object has Status field
-*
-* Revision 1.6  2003/05/28 16:28:18  shomrat
-* Use the comment variable
-*
-* Revision 1.5  2003/03/31 14:40:24  shomrat
-* $id: -> $id$
-*
-* Revision 1.4  2003/02/12 17:55:39  shomrat
-* Implemented checks for obsolete, comment and molinfo descriptors
-*
-* Revision 1.3  2003/02/07 21:17:21  shomrat
-* Added check IsTPA
-*
-* Revision 1.2  2002/12/24 16:53:35  shomrat
-* Changes to include directives
-*
-* Revision 1.1  2002/12/23 20:16:22  shomrat
-* Initial submission after splitting former implementation
-*
-*
-* ===========================================================================
-*/

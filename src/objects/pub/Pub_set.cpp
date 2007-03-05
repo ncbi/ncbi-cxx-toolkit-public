@@ -108,24 +108,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 6.4  2004/05/19 17:24:52  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 6.3  2004/04/26 16:48:38  ucko
- * Add an explicit "typename" annotation required by GCC 3.4.
- * Move CVS log to end per current practice.
- *
- * Revision 6.2  2003/03/11 15:51:42  kuznets
- * iterate -> ITERATE
- *
- * Revision 6.1  2002/01/10 19:40:10  clausen
- * Added GetLabel
- *
- * ===========================================================================
- */
-
 /* Original file checksum: lines: 61, chars: 1874, CRC32: 8b72a069 */

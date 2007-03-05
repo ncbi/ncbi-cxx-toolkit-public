@@ -259,27 +259,3 @@ int main(int argc, const char* argv[])
 {
     return CBDB_BLobDemo1().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/08/03 12:58:54  kuznets
- * Demo case for composite key BLOB
- *
- * Revision 1.5  2004/06/22 12:04:32  kuznets
- * Use single table in file variant of Open
- *
- * Revision 1.4  2004/05/17 20:55:18  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/05/27 18:07:12  kuznets
- * Fixed compilation warnings
- *
- * Revision 1.2  2003/05/02 16:23:14  kuznets
- * Cosmetic fixes
- *
- * Revision 1.1  2003/05/01 19:51:46  kuznets
- * Initial revision
- *
- * ===========================================================================
- */

@@ -53,15 +53,4 @@ CNcbiDiag *MakeDiagInHeader()
 
 END_NCBI_SCOPE
 
-
-/*
- * ==========================================================================
- *
- * $Log$
- * Revision 1.1  2004/09/21 18:15:46  kononenk
- * Added tests for "Diagnostic Message Filtering"
- *
- * ==========================================================================
- */
-
 #endif  /* CORELIB___TESTNCBIDIAG_P__HPP */

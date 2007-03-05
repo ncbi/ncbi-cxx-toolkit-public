@@ -95,38 +95,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2005/01/12 17:16:14  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.6  2004/08/04 14:48:49  vasilche
-* Added exports for MSVC. Added joining of very small chunks with skeleton.
-*
-* Revision 1.5  2004/01/22 20:10:39  vasilche
-* 1. Splitted ID2 specs to two parts.
-* ID2 now specifies only protocol.
-* Specification of ID2 split data is moved to seqsplit ASN module.
-* For now they are still reside in one resulting library as before - libid2.
-* As the result split specific headers are now in objects/seqsplit.
-* 2. Moved ID2 and ID1 specific code out of object manager.
-* Protocol is processed by corresponding readers.
-* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
-* 3. Updated OBJMGR_LIBS correspondingly.
-*
-* Revision 1.4  2003/12/03 19:30:46  kuznets
-* Misprint fixed
-*
-* Revision 1.3  2003/12/02 19:12:24  vasilche
-* Fixed compilation on MSVC.
-*
-* Revision 1.2  2003/11/26 23:05:00  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:33  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_SPLITTED_BLOB__HPP

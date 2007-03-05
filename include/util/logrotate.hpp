@@ -110,45 +110,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2006/04/21 20:28:47  ucko
-* Fully DOXYGENize; move destructor out of line.
-*
-* Revision 1.8  2006/04/21 18:57:36  ucko
-* Move CRotatingLogStreamBuf's full declaration from logrotate.hpp to
-* logrotate.cpp, as there's no real need to expose it.
-*
-* Revision 1.7  2004/09/01 15:45:25  ucko
-* Use more appropriate typedefs (CNcbiStreamfoo, not CT_FOO_TYPE).
-* Rotate now indicates how much data it rotated.
-*
-* Revision 1.6  2004/02/19 22:57:53  ucko
-* Accommodate stricter implementations of CT_POS_TYPE.
-*
-* Revision 1.5  2003/04/17 17:50:21  siyan
-* Added doxygen support
-*
-* Revision 1.4  2003/02/12 16:41:04  ucko
-* Always supply CRotatingLogStreamBuf::sync, and avoid double-counting
-* via run-time rather than compile-time logic.
-*
-* Revision 1.3  2002/12/19 14:51:00  dicuccio
-* Added export specifier for Win32 DLL builds.
-*
-* Revision 1.2  2002/11/25 19:19:13  ucko
-* Adjust CRotatingLogStream's constructor to compile under GCC 3, and
-* generally be slightly more efficient.
-* Remember to clean up the buffer in its destructor.
-*
-* Revision 1.1  2002/11/25 17:20:59  ucko
-* Add support for automatic log rotation (CRotatingLogStream)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* UTIL___LOGROTATE__HPP */

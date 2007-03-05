@@ -78,30 +78,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/14 17:46:11  lewisg
-* treat n-term methionine cut as cleavage
-*
-* Revision 1.5  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-* Revision 1.4  2004/06/08 19:46:21  lewisg
-* input validation, additional user settable parameters
-*
-* Revision 1.3  2004/05/21 21:41:03  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.2  2004/03/16 20:18:54  gorelenk
-* Changed includes of private headers.
-*
-* Revision 1.1  2004/03/01 18:24:07  lewisg
-* better mod handling
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 59, chars: 1831, CRC32: 7e7a0ad6 */

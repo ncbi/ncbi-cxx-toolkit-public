@@ -116,28 +116,3 @@ int main(int argc, const char* argv[])
     CORE_SetLOG(0);
     return 0;
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.6  2005/04/20 18:23:11  lavr
- * +"../ncbi_assert.h"
- *
- * Revision 6.5  2004/02/23 15:23:43  lavr
- * New (last) parameter "how" added in CONN_Write() API call
- *
- * Revision 6.4  2002/08/07 16:38:08  lavr
- * EIO_ReadMethod enums changed accordingly; log moved to end
- *
- * Revision 6.3  2002/03/22 19:47:09  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.2  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.1  2000/04/12 15:22:43  vakatov
- * Initial revision
- *
- * ==========================================================================
- */

@@ -131,35 +131,3 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/02 14:34:58  didenko
- * CLDS_Management class is deprecated now
- *
- * Revision 1.2  2005/10/20 15:33:46  kuznets
- * Implemented duplicate id check
- *
- * Revision 1.1  2005/09/19 14:39:37  kuznets
- * Merjing lds admin and lds libs together
- *
- * Revision 1.6  2003/10/09 18:11:27  kuznets
- * Create() reimplemented.
- *
- * Revision 1.5  2003/10/06 20:15:47  kuznets
- * Added support for sub directories and option to disable CRC32 for files
- *
- * Revision 1.4  2003/07/03 18:04:25  kuznets
- * + newline at the end of the file to make GCC happy
- *
- * Revision 1.3  2003/06/25 18:27:47  kuznets
- * +OpenCreateDB() class method
- *
- * Revision 1.2  2003/06/16 16:24:16  kuznets
- * Fixed #include paths (lds <-> lds_admin separation)
- *
- * Revision 1.1  2003/06/16 14:54:08  kuznets
- * lds splitted into "lds" and "lds_admin"
- *
- * 
-*/

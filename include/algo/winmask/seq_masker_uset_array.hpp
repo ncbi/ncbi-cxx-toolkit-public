@@ -155,15 +155,3 @@ inline bool operator<( const CSeqMaskerUsetArray::entry & lhs,
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2005/08/03 18:07:02  jcherry
- * Added export specifiers
- *
- * Revision 1.1  2005/04/12 13:35:34  morgulis
- * Support for binary format of unit counts file.
- *
- * ========================================================================
- */

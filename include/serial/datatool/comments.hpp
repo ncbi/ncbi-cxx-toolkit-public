@@ -99,21 +99,3 @@ bool CComments::OneLine(void) const
 END_NCBI_SCOPE
 
 #endif  /* COMMENTS__HPP */
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/10/18 13:13:02  gouriano
-* Added comments into typestrings and generated code
-*
-* Revision 1.3  2006/07/24 18:57:13  gouriano
-* Preserve comments when parsing DTD
-*
-* Revision 1.2  2001/05/17 15:00:42  lavr
-* Typos corrected
-*
-* Revision 1.1  2000/11/29 17:42:29  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* ===========================================================================
-*/

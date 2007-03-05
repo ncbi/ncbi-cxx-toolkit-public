@@ -141,25 +141,3 @@ int main(int argc, const char* argv[])
 {
     return CGi2TaxIdApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/03/09 21:47:39  sapojnik
- * Do not try to convert -gi argument if it is not defined (while -file may be defined)
- *
- * Revision 1.3  2005/07/01 16:40:36  ucko
- * Adjust for CSeq_id's use of CSeqIdException to report bad input.
- *
- * Revision 1.2  2004/05/21 21:41:40  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2004/02/05 13:33:57  dicuccio
- * Moved from taxon1/demo - this now makes use of CID1Client
- *
- * Revision 1.1  2003/10/16 16:13:20  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

@@ -87,17 +87,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/05 20:37:04  thiessen
-* add RemoveSIDs()
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_NCBIMIME_NCBI_MIME_ASN1_HPP
 /* Original file checksum: lines: 94, chars: 2684, CRC32: cdec7be8 */

@@ -139,27 +139,3 @@ int main(int argc, const char* argv[])
 {
     return CTestNSStorage().AppMain(argc, argv);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.4  2005/12/21 15:51:58  kuznets
- * Fixed compilation warning
- *
- * Revision 6.3  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 6.2  2005/10/27 13:15:45  kuznets
- * Fixed bug with exception handling and memory management
- *
- * Revision 6.1  2005/10/26 16:37:44  didenko
- * Added for non-blocking read for netschedule storage
- *
- * ===========================================================================
- */

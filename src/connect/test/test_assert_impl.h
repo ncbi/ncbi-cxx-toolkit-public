@@ -144,14 +144,4 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #endif
 #define _DEBUG_ARG(arg) arg
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.1  2006/03/07 18:22:09  lavr
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* TEST_ASSERT_IMPL__H */

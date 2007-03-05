@@ -69,20 +69,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2004/08/19 13:10:56  dicuccio
- * Dropped export specifier on inlined exceptions
- *
- * Revision 1.2  2003/08/27 16:43:48  ivanov
- * Added export specifier to class definition
- *
- * Revision 1.1  2003/06/03 15:17:41  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-
 #endif  // UTIL_IMAGE___IMAGE_EXCEPTION__HPP

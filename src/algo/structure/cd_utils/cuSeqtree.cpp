@@ -703,22 +703,3 @@ void SeqTree::setMembershipColor(const RowMembershipColor* rowColorMap)
 }
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/05/18 20:00:59  cliu
- * To enable read-only SeqTreeAPI
- *
- * Revision 1.3  2005/06/21 13:09:43  cliu
- * add tree layout.
- *
- * Revision 1.2  2005/04/19 22:05:04  ucko
- * +<stdio.h> due to use of sprintf()
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

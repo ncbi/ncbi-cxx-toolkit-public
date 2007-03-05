@@ -61,14 +61,4 @@ DECLARE_SINGLE_ALN_TEST(All);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/10/06 19:58:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_SEQQA___SINGLE_ALN_TESTS__HPP

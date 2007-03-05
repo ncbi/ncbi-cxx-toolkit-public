@@ -78,15 +78,3 @@ void CResetIds_EditCommand::Undo()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/01/25 18:59:04  didenko
- * Redisgned bio objects edit facility
- *
- * Revision 1.1  2005/11/15 19:22:07  didenko
- * Added transactions and edit commands support
- *
- * ===========================================================================
- */

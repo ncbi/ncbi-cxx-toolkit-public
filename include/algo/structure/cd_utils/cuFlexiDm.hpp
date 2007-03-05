@@ -94,24 +94,4 @@ private:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2006/10/17 18:15:11  cliu
- * speed it up
- *
- * Revision 1.2  2006/09/18 19:53:50  cliu
- * bug fixes
- *
- * Revision 1.1  2006/08/29 18:43:41  cliu
- * no message
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */
-
 #endif /*  CU_FlexiDm__HPP  */

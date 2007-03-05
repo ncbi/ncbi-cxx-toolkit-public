@@ -79,20 +79,4 @@ CFlatItemOStream& operator<<(CFlatItemOStream& os, const IFlatItem* item)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/02/12 20:25:45  shomrat
-* forward delaration instead of include
-*
-* Revision 1.1  2003/12/17 19:53:49  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___ITEM_OSTREAM_HPP */

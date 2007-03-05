@@ -97,18 +97,3 @@ int main(int argc, const char* argv[])
 {
     return CSampleAsnApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/12/06 17:23:47  ucko
- * Include NCBI_Sample_ASN_Type.hpp by basename only to work better with
- * new_project.sh.
- *
- * Revision 1.1  2006/11/24 23:46:03  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

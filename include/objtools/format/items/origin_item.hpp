@@ -68,23 +68,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.2  2004/04/22 15:37:43  shomrat
-* Changes in context
-*
-* Revision 1.1  2004/02/19 17:48:41  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___ORIGIN_ITEM__HPP */

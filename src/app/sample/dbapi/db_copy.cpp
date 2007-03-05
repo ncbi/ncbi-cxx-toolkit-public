@@ -225,13 +225,3 @@ int main(int argc, const char* argv[])
 {
     return ncbi::CDbCopyApp().AppMain(argc, argv);
 }
-
-/* ===========================================================================
- *
- * $Log$
- * Revision 1.2  2006/10/19 15:30:59  ssikorsk
- * Removed dependency on the load-balancer.
- *
- * ===========================================================================
- */
-

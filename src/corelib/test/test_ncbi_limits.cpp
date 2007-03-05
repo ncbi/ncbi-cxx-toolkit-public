@@ -132,36 +132,3 @@ int main()
     // Success
     return 0;
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.8  2004/07/22 15:27:31  vakatov
- * Eliminate "unused var" warning
- *
- * Revision 6.7  2004/06/01 14:12:33  kuznets
- * Fixed compilation (GCC)
- *
- * Revision 6.6  2004/06/01 12:10:35  kuznets
- * + test for get_limits
- *
- * Revision 6.5  2004/05/14 13:59:51  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 6.4  2004/02/10 16:31:45  ucko
- * s_TestType: store the result of min() and max() in locals to work
- * around a platform-dependent GCC 2.95 bug.
- *
- * Revision 6.3  2002/04/16 18:49:07  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 6.2  2001/09/19 17:55:17  ucko
- * Fix GCC 3 build.
- *
- * Revision 6.1  2001/01/03 17:40:31  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

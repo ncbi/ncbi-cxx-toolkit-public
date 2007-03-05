@@ -71,17 +71,3 @@ int main(int argc, char** argv)
 {
     return CUOConvTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/01/21 18:44:29  vasilche
-* Added include general/User_object.hpp since it was removed from uoconv.hpp.
-*
-* Revision 1.1  2004/07/27 15:13:18  ucko
-* Add a somewhat rough implementation of User-object <-> ObjectInfo conversion.
-*
-*
-* ===========================================================================
-*/

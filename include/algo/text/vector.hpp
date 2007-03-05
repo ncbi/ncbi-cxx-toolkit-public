@@ -257,19 +257,4 @@ END_NCBI_SCOPE
 
 #include <algo/text/vector_impl.hpp>
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2007/01/05 13:45:01  dicuccio
- * Compilation fixes for Solaris
- *
- * Revision 1.2  2006/12/17 17:20:02  dicuccio
- * Removed unnecessary typedefs
- *
- * Revision 1.1  2006/12/17 14:12:19  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_TEXT___VECTOR__HPP

@@ -80,17 +80,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/09/13 19:22:55  jcherry
- * Added export specifiers
- *
- * Revision 1.1  2004/06/21 18:52:25  ucko
- * New formatter for GFF version 3.
- *
- * ===========================================================================
- */
-
 #endif  /* OBJTOOLS_FORMAT___GFF3_FORMATTER__HPP */

@@ -83,17 +83,3 @@ Uint4 CSeqMaskerUsetSimple::get_info( Uint4 unit ) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2005/04/12 13:35:34  morgulis
- * Support for binary format of unit counts file.
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * ========================================================================
- */

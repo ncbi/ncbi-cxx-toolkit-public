@@ -80,26 +80,3 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_OBJECT_3D__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2004/02/19 17:05:00  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.5  2003/02/03 19:20:04  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.4  2001/02/08 23:01:14  thiessen
-* hook up C-toolkit stuff for threading; working PSSM calculation
-*
-* Revision 1.3  2000/08/16 14:18:20  thiessen
-* map 3-d objects to molecules
-*
-* Revision 1.2  2000/08/13 02:42:13  thiessen
-* added helix and strand objects
-*
-* Revision 1.1  2000/08/11 18:24:41  thiessen
-* add 3-d objects code
-*
-*/

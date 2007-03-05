@@ -134,29 +134,4 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-/* ====================================================================
- * $Log$
- * Revision 1.6  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.5  2006/03/08 15:49:08  papadopo
- * 1. Add exception include
- * 2. Remove dead code
- *
- * Revision 1.4  2005/11/15 20:10:29  papadopo
- * add doxygen
- *
- * Revision 1.3  2005/11/14 16:17:40  papadopo
- * remove unneeded member
- *
- * Revision 1.2  2005/11/08 17:42:17  papadopo
- * Rearrange includes to be self-sufficient
- *
- * Revision 1.1  2005/11/07 18:15:52  papadopo
- * Initial revision
- *
- * ====================================================================
- */
-
 #endif // ALGO_COBALT___SEQ__HPP

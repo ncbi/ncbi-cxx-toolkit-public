@@ -52,16 +52,3 @@ void CCommandProcessor::operator delete(void*)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/11/16 16:17:58  ucko
- * Add a (dummy) body for CCommandProcessor::operator delete for the
- * sake of GCC 2.95.
- *
- * Revision 1.1  2005/11/15 19:22:08  didenko
- * Added transactions and edit commands support
- *
- * ===========================================================================
- */

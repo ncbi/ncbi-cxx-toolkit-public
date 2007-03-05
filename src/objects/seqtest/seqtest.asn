@@ -34,14 +34,3 @@ Seq-test-result ::= SEQUENCE {
 
 
 END
-
---
--- $Log: seqtest.asn,v $
--- Revision 1.2  2004/10/28 19:13:03  jcherry
--- Made seq-id in SeqTestResults a Seq-id rather than a string
---
--- Revision 1.1  2004/08/19 16:28:10  jcherry
--- Initial version
---
---
-

@@ -69,20 +69,6 @@
  *   http://www.evensen.org/marsaglia/.
  *
  *   class CRandom:: 
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2001/07/05 16:55:41  vakatov
- * Added typedef CRandom::TValue and CRandom::GetMax() to allow for
- * seamless extension of this API in the future
- *
- * Revision 1.1  2001/07/03 18:35:30  clausen
- * Initial check in
- *
- * ===========================================================================
  */
 
 #include <ncbi_pch.hpp>
@@ -157,4 +143,3 @@ void CRandom::SetSeed(TValue seed)
 
 
 END_NCBI_SCOPE
-

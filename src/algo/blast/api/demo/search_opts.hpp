@@ -762,52 +762,6 @@ private:
     void x_CreateInterface2(CArgDescriptions & ui);
 };
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.12  2006/05/01 13:31:29  camacho
- * Added missing includes
- *
- * Revision 1.11  2005/08/29 20:32:17  bealer
- * - Avoid compiler warning.
- *
- * Revision 1.10  2005/01/12 16:28:07  bealer
- * - Remove incorrect code and fold into other case.
- *
- * Revision 1.9  2005/01/12 15:07:44  vasilche
- * Commented out incorrect code.
- *
- * Revision 1.8  2004/11/30 22:08:30  ucko
- * Tweak OPT_HANDLER_SUPPORT to unconfuse GCC 2.95.
- *
- * Revision 1.7  2004/11/01 19:39:51  bealer
- * - More doxygen.
- *
- * Revision 1.6  2004/11/01 19:22:26  bealer
- * - Doxyg. docs for search_opts.hpp.
- *
- * Revision 1.5  2004/04/16 14:30:03  bealer
- * - Fix compiler warnings.
- *
- * Revision 1.4  2004/04/15 21:18:56  bealer
- * - Remove semi-colons so that solaris compiler will not choke.
- *
- * Revision 1.3  2004/03/16 19:41:56  vasilche
- * Namespace qualifier is invalid in extern declaration. Removed extra semicolons
- *
- * Revision 1.2  2004/02/18 18:29:59  bealer
- * - Fix entrez query and add support (to Apply) for Remote Blast program
- *   options.
- *
- * Revision 1.1  2004/02/18 17:04:43  bealer
- * - Adapt blast_client code for Remote Blast API, merging code into the
- *   remote_blast demo application.
- *
- * ===========================================================================
- */
-
 END_NCBI_SCOPE
 
 #endif // ALGO_BLAST_API_DEMO___SEARCH_OPTS__HPP
-

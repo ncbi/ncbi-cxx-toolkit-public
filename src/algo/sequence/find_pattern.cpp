@@ -94,37 +94,3 @@ void CFindPattern::FindNucNmerRepeats(const string& seq,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2004/11/22 18:05:43  ivanov
- * Use CRegexp::fCompile_* flags instead PCRE_*
- *
- * Revision 1.10  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.9  2004/04/01 14:14:02  lavr
- * Spell "occurred", "occurrence", and "occurring"
- *
- * Revision 1.8  2003/12/16 18:02:22  jcherry
- * Moved find_pattern to algo/sequence
- *
- * Revision 1.7  2003/12/15 21:20:02  jcherry
- * Added simple repeat searches
- *
- * Revision 1.6  2003/12/15 20:16:09  jcherry
- * Changed CFindPattern::Find to take a string rather than a CSeqVector
- *
- * Revision 1.5  2003/12/15 19:51:07  jcherry
- * CRegexp::GetMatch now takes a string&, not a char*
- *
- * Revision 1.4  2003/07/08 22:08:00  jcherry
- * Clear 'starts' and 'ends' before using them!
- *
- * Revision 1.3  2003/07/03 19:14:12  jcherry
- * Initial version
- *
- * ===========================================================================
- */

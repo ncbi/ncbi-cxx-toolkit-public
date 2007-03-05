@@ -166,20 +166,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif   /*  CU_SIMPLESLC__HPP  */
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.1  2005/07/18 19:49:45  lanczyck
- * files to build non-redundification demo app, including some test data
- *
- * Revision 1.1  2005/07/13 19:06:03  lanczyck
- * classes for building a SLC non-redundifier that does not depend on CCdd-related classes
- *
- *
- * ===========================================================================
- */
-
-
-

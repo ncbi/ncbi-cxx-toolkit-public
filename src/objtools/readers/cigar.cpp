@@ -195,23 +195,3 @@ CRef<CSeq_align> SCigarAlignment::operator()(const CSeq_interval& ref,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/06/03 17:01:15  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 1.3  2004/11/08 14:46:10  dicuccio
-* iterate -> ITERATE
-*
-* Revision 1.2  2004/06/21 18:44:07  ucko
-* Fix GFF 3 alignment parsing logic.
-*
-* Revision 1.1  2004/06/07 20:42:35  ucko
-* Add a reader for CIGAR alignments, as used by GFF 3.
-*
-*
-* ===========================================================================
-*/

@@ -65,17 +65,4 @@ bool NW_RequestNewThread(const unsigned int max_threads);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/12/16 22:42:22  kapustin
- * Move to algo/align/nw
- *
- * Revision 1.1  2004/06/29 20:28:48  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO___NW_ALIGNER_THREADS_HPP */

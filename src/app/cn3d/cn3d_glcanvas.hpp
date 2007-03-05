@@ -84,11 +84,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_GLCANVAS__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2003/03/13 14:26:18  thiessen
-* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
-*
-*/

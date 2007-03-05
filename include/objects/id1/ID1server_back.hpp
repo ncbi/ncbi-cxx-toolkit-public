@@ -86,17 +86,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/07/01 15:57:59  ucko
-* +GetErrorString
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ID1_ID1SERVER_BACK_HPP
 /* Original file checksum: lines: 94, chars: 2649, CRC32: 29953fbc */

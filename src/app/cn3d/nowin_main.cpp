@@ -250,8 +250,3 @@ int main(int argc, char *argv[])
 {
     return Cn3DNoWin().AppMain(argc, argv, 0, eDS_Default, NULL);
 }
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-*/

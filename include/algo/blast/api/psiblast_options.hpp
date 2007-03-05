@@ -98,43 +98,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2005/11/03 22:14:53  camacho
- * Add method to override query options defaults to enforce no filtering of the query
- *
- * Revision 1.8  2005/06/02 16:18:17  camacho
- * Remove LookupTableOptions::use_pssm
- *
- * Revision 1.7  2005/05/24 14:04:47  madden
- * CPSIBlastOptionsHandle now derived from CBlastAdvancedProteinOptionsHandle
- *
- * Revision 1.6  2005/05/09 20:08:48  bealer
- * - Add program and service strings to CBlastOptions for remote blast.
- * - New CBlastOptionsHandle constructor for CRemoteBlast.
- * - Prohibit copy construction/assignment for CRemoteBlast.
- * - Code in each BlastOptionsHandle derived class to set program+service.
- *
- * Revision 1.5  2005/03/10 13:17:27  madden
- * Changed type from short to int for [GS]etPseudoCount
- *
- * Revision 1.4  2004/12/20 20:10:55  camacho
- * + option to set composition based statistics
- * + option to use pssm in lookup table
- *
- * Revision 1.3  2004/06/08 23:11:58  camacho
- * fix to previous commit
- *
- * Revision 1.2  2004/06/08 22:41:04  camacho
- * Add missing doxygen comments
- *
- * Revision 1.1  2004/05/17 18:54:09  bealer
- * - Add PSI-Blast support.
- *
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_BLAST_API___PSIBLAST_OPTIONS__HPP */

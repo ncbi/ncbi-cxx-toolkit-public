@@ -165,43 +165,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/06/22 13:52:35  didenko
- * Returned back a temporary fix for CStdPoolOfThreads
- * Added check_status_period configuration paramter
- * Fixed exclusive mode checking
- *
- * Revision 1.6  2006/05/15 15:26:53  didenko
- * Added support for running exclusive jobs
- *
- * Revision 1.5  2006/05/12 15:13:37  didenko
- * Added infinit loop detection mechanism in job executions
- *
- * Revision 1.4  2006/04/04 19:15:01  didenko
- * Added max_failed_jobs parameter to a worker node configuration.
- *
- * Revision 1.3  2006/02/16 15:39:09  didenko
- * If an instance of a job's class could not be create then the worker node
- * should shutdown itself.
- *
- * Revision 1.2  2006/02/15 20:27:45  didenko
- * Added new optional config parameter "reuse_job_object" which allows
- * reusing IWorkerNodeJob objects in the jobs' threads instead of
- * creating a new object for each job.
- *
- * Revision 1.1  2006/02/15 15:19:03  didenko
- * Implemented an optional possibility for a worker node to have a permanent connection
- * to a NetSchedule server.
- * To expedite the job exchange between a worker node and a NetSchedule server,
- * a call to CNetScheduleClient::PutResult method is replaced to a
- * call to CNetScheduleClient::PutResultGetJob method.
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES___GRID_GLOBALS__HPP

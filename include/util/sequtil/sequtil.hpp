@@ -77,20 +77,3 @@ END_NCBI_SCOPE
 
 
 #endif  /* UTIL_SEQUTIL___SEQUTIL__HPP */
-
- /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/08/17 13:21:58  dicuccio
-* Added export specifier
-*
-* Revision 1.2  2003/11/06 16:10:09  shomrat
-* added e_not_set as a coding option
-*
-* Revision 1.1  2003/10/08 13:28:41  shomrat
-* Initial version.
-*
-*
-* ===========================================================================
-*/

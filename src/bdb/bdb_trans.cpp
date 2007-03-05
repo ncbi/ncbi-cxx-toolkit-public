@@ -126,26 +126,3 @@ void CBDB_Transaction::RemoveFile(CBDB_RawFile* dbfile)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/02/23 18:35:30  kuznets
- * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
- *
- * Revision 1.4  2004/09/03 13:32:52  kuznets
- * + support of async. transactions
- *
- * Revision 1.3  2004/05/17 20:55:11  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2003/12/16 13:44:47  kuznets
- * Added disconnect call to dependent file objects when transaction closes.
- *
- * Revision 1.1  2003/12/10 19:10:09  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

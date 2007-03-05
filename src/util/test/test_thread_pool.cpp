@@ -119,14 +119,3 @@ int main(int argc, const char* argv[])
 {
     return CThreadPoolTester().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/06/26 20:18:51  ucko
-* Add a straight-up test of the thread-pool code.
-*
-*
-* ===========================================================================
-*/

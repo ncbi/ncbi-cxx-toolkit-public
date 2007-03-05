@@ -132,32 +132,4 @@ extern NCBI_XCONNECT_EXPORT const char* HINFO_AffinityArgvalue
 
 /* @} */
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.7  2006/03/06 20:23:59  lavr
- * Added "const" qualifier to all host-infos when passed to getters
- *
- * Revision 6.6  2006/03/05 17:33:15  lavr
- * +HINFO_AffinityArgument, +HINFO_AffinityArgvalue
- *
- * Revision 6.5  2003/04/09 19:05:42  siyan
- * Added doxygen support
- *
- * Revision 6.4  2003/02/08 21:03:51  lavr
- * Unimportant change in comments
- *
- * Revision 6.3  2003/01/08 01:59:32  lavr
- * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
- *
- * Revision 6.2  2002/11/08 17:16:11  lavr
- * NULL parameter acceptance explicitly stated
- *
- * Revision 6.1  2002/10/28 20:12:02  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_HOST_INFO__H */

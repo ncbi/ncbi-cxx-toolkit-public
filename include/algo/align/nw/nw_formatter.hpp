@@ -141,32 +141,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log: nw_formatter.hpp,v $
- * Revision 1.7  2005/04/04 16:30:55  kapustin
- * Specify which score to include when formatting as seq-align
- *
- * Revision 1.6  2005/02/23 16:58:45  kapustin
- * Use CSeq_id's instead of strings. Modify AsSeqAlign to allow specification 
- * of alignment's starts and strands.
- *
- * Revision 1.5  2004/05/17 14:50:46  kapustin
- * Add/remove/rearrange some includes and object declarations
- *
- * Revision 1.4  2003/10/27 20:46:41  kapustin
- * Derive from CObject.
- *
- * Revision 1.3  2003/09/26 14:43:01  kapustin
- * Remove exception specifications
- *
- * Revision 1.2  2003/09/10 20:12:47  kapustin
- * Update Doxygen tags
- *
- * Revision 1.1  2003/09/02 22:26:34  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_ALIGN__NW_FORMAT__HPP */

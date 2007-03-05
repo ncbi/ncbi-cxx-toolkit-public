@@ -279,35 +279,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2007/01/10 18:12:49  todorov
-* TAlnSeqIdVector -> TAlnIdVec
-*
-* Revision 1.6  2007/01/08 16:38:20  todorov
-* Added an assertion.
-* Fixed the comments.
-*
-* Revision 1.5  2007/01/04 21:12:02  todorov
-* + IsCanonicalMultiple()
-*
-* Revision 1.4  2006/12/12 20:48:58  todorov
-* + #include <objtools/alnmgr/aln_seqid.hpp>
-*
-* Revision 1.3  2006/12/12 20:40:01  todorov
-* Stats are now generated upon construction and offer multiple views of the
-* relationships between ids and alignments.
-*
-* Revision 1.2  2006/11/20 18:43:23  todorov
-* anchor rows and base widtsh are now const refs.
-*
-* Revision 1.1  2006/11/17 05:33:35  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
-
 #endif  // OBJTOOLS_ALNMGR___ALN_STATS__HPP

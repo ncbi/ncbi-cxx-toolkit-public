@@ -56,20 +56,4 @@ public:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-
-/* ======================================================================
- *   $Log$
- *   Revision 1.3  2006/04/27 17:19:05  dicuccio
- *   Drop hanging comma in enum list
- *
- *   Revision 1.2  2006/03/22 19:23:17  dicuccio
- *   Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- *   specifiers
- *
- *   Revision 1.1  2006/03/08 15:43:01  papadopo
- *   multiple aligner exception class
- *
- * ======================================================================
- */
-
 #endif  /* ALGO_COBALT___EXCEPTION__HPP */

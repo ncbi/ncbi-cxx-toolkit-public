@@ -80,33 +80,4 @@
 
 /* @} */
 
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 6.7  2006/01/24 21:56:50  lavr
- * Fix comment
- *
- * Revision 6.6  2004/03/15 17:16:10  gorelenk
- * Removed #undef NCBI_DLL_BUILD when defined _LIB .
- *
- * Revision 6.5  2003/08/28 19:36:58  lavr
- * Rollback to R6.3
- *
- * Revision 6.4  2003/08/28 18:46:15  ucko
- * #include <ncbiconf.h> so that other connect headers (on the C++ side,
- * anyway) can pick up its settings.
- *
- * Revision 6.3  2003/07/18 21:07:56  ivanov
- * Use WIN32 definition instead of NCBI_MS_WIN
- *
- * Revision 6.2  2003/04/09 17:58:37  siyan
- * Added doxygen support
- *
- * Revision 6.1  2003/01/07 21:58:23  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif  /*  CONNECT___CONNECT_EXPORT__H  */

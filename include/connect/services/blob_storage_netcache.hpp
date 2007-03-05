@@ -163,41 +163,4 @@ void BlobStorage_RegisterDriver_NetCache(void);
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/07/20 15:50:17  didenko
- * Changed the way a key for an output stream is stored
- *
- * Revision 1.7  2006/05/30 16:41:05  didenko
- * Improved error handling
- *
- * Revision 1.6  2006/04/04 20:14:04  didenko
- * Disabled copy constractors and assignment operators
- *
- * Revision 1.5  2006/03/15 17:20:35  didenko
- * +IsValidKey method
- * Added new CBlobStorageExecption error codes
- *
- * Revision 1.4  2006/02/27 14:50:20  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.3  2006/02/15 20:38:42  lavr
- * Remove inclusion of unnecessary header files
- *
- * Revision 1.2  2005/12/23 15:22:35  didenko
- * Added comments
- *
- * Revision 1.1  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__BLOB_STORAGE_NETCACHE_HPP

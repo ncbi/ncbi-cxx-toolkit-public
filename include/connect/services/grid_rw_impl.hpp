@@ -151,31 +151,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/07/19 16:23:14  didenko
- * + x_Init method
- * Corrected calculation of m_MaxBuffSize
- *
- * Revision 1.5  2006/05/19 13:34:41  didenko
- * Now reader/writer can take an ownership of a blobstorage
- *
- * Revision 1.4  2006/05/08 15:16:42  didenko
- * Added support for an optional saving of a remote application's stdout
- * and stderr into files on a local file system
- *
- * Revision 1.3  2006/04/04 20:14:04  didenko
- * Disabled copy constractors and assignment operators
- *
- * Revision 1.2  2006/03/16 15:13:08  didenko
- * Fixed writer algorithm
- * + Comments
- *
- * Revision 1.1  2006/03/15 17:22:25  didenko
- * Added CStringOrBlobStorage{Reader,Writer} classes
- *
- * ===========================================================================
- */
- 
 #endif // __GRID_RW_IMPL_HPP_

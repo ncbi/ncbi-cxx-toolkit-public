@@ -30,44 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2006/11/30 20:15:15  vasilche
-* Allow direct reading from memory in CIStreamBuffer.
-*
-* Revision 1.10  2005/11/07 18:39:33  gouriano
-* Use Int8 in stream position calculations
-*
-* Revision 1.9  2005/11/03 15:12:44  gouriano
-* Use streampos instead of streamoff for positioning
-*
-* Revision 1.8  2005/04/26 14:11:04  vasilche
-* Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
-*
-* Revision 1.7  2005/02/23 21:06:13  vasilche
-* Added HasMore().
-*
-* Revision 1.6  2004/08/30 18:14:23  gouriano
-* use CNcbiStreamoff instead of size_t for stream offset operations
-*
-* Revision 1.5  2004/05/24 18:12:44  gouriano
-* In text output files make indentation optional
-*
-* Revision 1.4  2001/08/15 20:53:09  juran
-* Heed warnings.
-*
-* Revision 1.3  2001/03/14 17:59:24  vakatov
-* COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
-* to avoid clash with MS-Win system headers' #define
-*
-* Revision 1.2  2001/01/05 20:08:53  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.1  2000/12/26 22:23:45  vasilche
-* Fixed errors of compilation on Mac.
-*
-* ===========================================================================
 */
 
 inline

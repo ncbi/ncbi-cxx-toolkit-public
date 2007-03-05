@@ -142,24 +142,4 @@ inline TResidue toACGT(EResidue c)
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/10/24 17:38:52  souvorov
- * Case sensetive Complement
- *
- * Revision 1.3  2005/10/06 15:50:42  chetvern
- * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
- * renamed template parameter VecIt to more exact BidirectionalIterator
- *
- * Revision 1.2  2005/09/30 19:08:34  chetvern
- * added in-place sequence Complement function
- *
- * Revision 1.1  2005/09/15 21:28:07  chetvern
- * Sync with Sasha's working tree
- *
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___GNOMON_SEQ__HPP

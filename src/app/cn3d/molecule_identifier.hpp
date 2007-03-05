@@ -114,32 +114,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_MOLECULE_IDENTIFIER__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/10/28 15:42:34  thiessen
-* more graceful handling of same accession multiple gi version conflict
-*
-* Revision 1.7  2005/10/19 17:28:18  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.6  2003/02/03 19:20:04  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.5  2002/02/22 14:24:01  thiessen
-* sort sequences in reject dialog ; general identifier comparison
-*
-* Revision 1.4  2001/11/27 16:26:08  thiessen
-* major update to data management system
-*
-* Revision 1.3  2001/07/04 19:38:55  thiessen
-* finish user annotation system
-*
-* Revision 1.2  2001/06/29 18:12:53  thiessen
-* initial (incomplete) user annotation system
-*
-* Revision 1.1  2001/06/21 02:01:16  thiessen
-* major update to molecule identification and highlighting ; add toggle highlight (via alt)
-*
-*/

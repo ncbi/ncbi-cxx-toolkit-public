@@ -118,30 +118,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2006/05/25 17:11:56  lewisg
-* one filtered spectrum per precursor charge state
-*
-* Revision 1.5  2005/10/24 21:46:13  lewisg
-* exact mass, peptide size limits, validation, code cleanup
-*
-* Revision 1.4  2005/09/14 15:30:18  lewisg
-* neutral loss
-*
-* Revision 1.3  2005/04/21 21:54:03  lewisg
-* fix Jeri's mem bug, split off mod file, add aspn and gluc
-*
-* Revision 1.2  2005/04/07 16:35:27  lewisg
-* fix array out of bounds
-*
-* Revision 1.1  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1896, CRC32: ed716b4 */

@@ -93,34 +93,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/09/05 18:03:48  lewisg
-* auto mass tolerance and get rid of warnings
-*
-* Revision 1.6  2005/06/06 15:29:56  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 1.5  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-* Revision 1.4  2004/12/08 19:21:12  lewisg
-* start sequence position by 1
-*
-* Revision 1.3  2004/12/08 19:12:43  lewisg
-* const
-*
-* Revision 1.2  2004/12/08 02:00:08  ucko
-* Use string::erase() rather than string::clear(), which is not 100%
-* portable.  (GCC 2.95.x continues not to support it....)
-*
-* Revision 1.1  2004/12/07 23:38:22  lewisg
-* add modification handling code
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1878, CRC32: e17e37ca */

@@ -1265,20 +1265,3 @@ TPhyTreeNode *ReadNewickTree(CNcbiIstream& is)
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/03/30 21:40:38  jcherry
- * #include <ncbi_pch.hpp> must come before #define's
- *
- * Revision 1.2  2004/05/25 14:42:45  jcherry
- * #include <ncbi_pch.hpp>
- *
- * Revision 1.1  2004/02/11 17:40:56  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

@@ -124,12 +124,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif // CU_SIMPLEB2SWRAPPER_HPP
-
-/* 
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/11/30 16:25:46  lanczyck
- * simple wrapper to blast 2 sequences
- *
- * ===========================================================================
- */

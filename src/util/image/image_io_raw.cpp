@@ -165,28 +165,3 @@ void CImageIORaw::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/06/23 16:18:45  dicuccio
- * Added ability to inspect image's information (size, width, height, depth)
- *
- * Revision 1.3  2005/02/01 21:47:15  grichenk
- * Fixed warnings
- *
- * Revision 1.2  2004/05/17 21:07:58  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/12/16 15:48:11  dicuccio
- * Added support for RAW image files
- *
- * Revision 1.2  2003/11/03 15:19:57  dicuccio
- * Added optional compression parameter
- *
- * Revision 1.1  2003/06/03 15:17:13  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-

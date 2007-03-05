@@ -80,19 +80,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/09/28 20:02:25  avagyanv
- * Added NCBI_XBLAST_EXPORT to function declarations
- *
- * Revision 1.2  2006/09/27 21:02:10  avagyanv
- * unix line endings
- *
- * Revision 1.1  2006/09/27 17:47:03  avagyanv
- * Added a new header file with auxiliary functions dealing with IBlastSeqInfoSrc.
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_BLAST_API___BLAST_SEQINFOSRC_AUX__HPP */

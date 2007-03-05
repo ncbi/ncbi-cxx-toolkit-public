@@ -334,46 +334,4 @@ END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.11  2006/08/24 16:16:48  grichenk
-* Renamed x_TestForOverlap() to TestForOverlap64().
-* Added comments.
-*
-* Revision 1.10  2006/07/20 22:19:01  grichenk
-* Added eOverlap_CheckIntRev, use it in GetBestXXXForCds().
-*
-* Revision 1.9  2005/02/18 15:01:32  shomrat
-* Changes to GetStop/GetStart
-*
-* Revision 1.8  2004/12/10 16:52:55  shomrat
-* Restore previous semantics for IsSameBioseq()
-*
-* Revision 1.7  2004/12/06 14:54:39  shomrat
-* Added GetIdHandle and IsSameBioseq for CSeq_id_Handles
-*
-* Revision 1.6  2004/12/01 14:29:52  grichenk
-* Removed old SeqLocMerge
-*
-* Revision 1.5  2004/11/18 21:27:40  grichenk
-* Removed default value for scope argument in seq-loc related functions.
-*
-* Revision 1.4  2004/11/18 15:56:51  grichenk
-* Added Doxigen comments, removed THROWS.
-*
-* Revision 1.3  2004/11/17 21:25:13  grichenk
-* Moved seq-loc related functions to seq_loc_util.[hc]pp.
-* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
-*
-* Revision 1.2  2004/11/15 15:07:57  grichenk
-* Moved seq-loc operations to CSeq_loc, modified flags.
-*
-* Revision 1.1  2004/10/20 18:09:43  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* SEQ_LOC_UTIL__HPP */

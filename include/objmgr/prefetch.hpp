@@ -180,48 +180,4 @@ CBioseq_Handle CPrefetchTokenOld::NextBioseqHandle(CScope& scope)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2006/02/09 17:35:11  vasilche
-* Fixed renamed class.
-*
-* Revision 1.11  2006/02/02 14:35:32  vasilche
-* Renamed old prefetch classes.
-*
-* Revision 1.10  2005/02/22 17:51:58  grichenk
-* Fixed enum warning
-*
-* Revision 1.9  2005/01/24 17:09:36  vasilche
-* Safe boolean operators.
-*
-* Revision 1.8  2005/01/12 17:16:14  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.7  2004/12/13 15:19:20  grichenk
-* Doxygenized comments
-*
-* Revision 1.6  2004/11/15 22:21:48  grichenk
-* Doxygenized comments, fixed group names.
-*
-* Revision 1.5  2004/07/12 15:05:31  grichenk
-* Moved seq-id mapper from xobjmgr to seq library
-*
-* Revision 1.4  2004/05/07 13:47:34  grichenk
-* Removed single-id constructors.
-* Added non-locking prefetch mode.
-*
-* Revision 1.3  2004/04/21 15:34:28  gorelenk
-* Removed export prefix from inline class CPrefetchToken.
-*
-* Revision 1.2  2004/04/19 14:52:29  grichenk
-* Added prefetch depth limit, redesigned prefetch queue.
-*
-* Revision 1.1  2004/04/16 13:30:34  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  // PREFETCH__HPP

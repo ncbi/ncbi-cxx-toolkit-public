@@ -415,34 +415,3 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
                                doBinarySearch,
                                sbp) == TRUE)? 0 : 1);
 }
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.7  2006/11/21 17:06:43  papadopo
- * rearrange headers
- *
- * Revision 1.6  2005/02/23 17:24:41  camacho
- * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
- * 2. Removed unneeded fields from Kappa_compactSearchItems
- * 3. Doxygen fixes
- *
- * Revision 1.5  2005/02/23 15:58:10  camacho
- * Fix compiler warning
- *
- * Revision 1.4  2005/02/23 14:20:51  camacho
- * Remove compiler warnings
- *
- * Revision 1.3  2005/02/22 22:48:52  camacho
- * Use matrix data in sbp in Kappa_compactSearchItemsNew
- *
- * Revision 1.2  2005/02/14 15:04:05  camacho
- * Fix compiler warnings
- *
- * Revision 1.1  2005/02/14 14:05:53  camacho
- * Initial revision
- *
- *
- * ===========================================================================
- */

@@ -392,29 +392,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/07 19:22:42  kuznets
- * warning fix
- *
- * Revision 1.5  2004/11/17 17:54:15  kuznets
- * New test
- *
- * Revision 1.4  2004/11/10 19:26:50  kuznets
- * New test
- *
- * Revision 1.3  2004/08/18 12:15:22  kuznets
- * Test for node feature access
- *
- * Revision 1.2  2004/06/09 13:39:05  kuznets
- * Fixed compilation errors
- *
- * Revision 1.1  2004/06/08 15:33:31  kuznets
- * Initial revision
- *
- *
- *
- * ===========================================================================
- */

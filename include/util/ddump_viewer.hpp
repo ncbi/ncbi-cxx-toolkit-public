@@ -78,24 +78,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2003/04/17 17:50:15  siyan
- * Added doxygen support
- *
- * Revision 1.3  2002/12/19 14:51:00  dicuccio
- * Added export specifier for Win32 DLL builds.
- *
- * Revision 1.2  2002/06/04 16:35:27  gouriano
- * added possibility to enable/disable debug dump breakpoints from registry
- *
- * Revision 1.1  2002/06/03 20:26:10  gouriano
- * initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif // DEBUGDUMP_VIEWER__H

@@ -346,36 +346,3 @@ CNcbiOstream& CGFF3_Formatter::x_AppendEncoded(CNcbiOstream& os,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2006/12/04 15:26:54  vasilche
-* Include ncbitime.hpp
-*
-* Revision 1.7  2006/04/05 14:01:35  dicuccio
-* Cosmetic changes
-*
-* Revision 1.6  2005/09/08 16:16:46  shomrat
-* Fixed match type
-*
-* Revision 1.5  2005/08/16 15:09:46  shomrat
-* Added scores; Match type based on both reference and target sequences
-*
-* Revision 1.4  2005/08/05 20:21:41  dicuccio
-* Updated GFF3 output: Fixed representation of strand; include optional target
-* strand always; adjusted tags used for matches.
-*
-* Revision 1.3  2005/04/14 14:38:22  shomrat
-* Changed CAlnMap flag
-*
-* Revision 1.2  2004/06/22 15:31:40  ucko
-* Remove debugging output.
-*
-* Revision 1.1  2004/06/21 18:53:52  ucko
-* New formatter for GFF version 3.
-*
-*
-* ===========================================================================
-*/

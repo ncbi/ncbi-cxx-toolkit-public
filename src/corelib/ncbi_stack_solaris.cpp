@@ -78,19 +78,3 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/11/13 19:14:02  grichenk
- * Fixed compilation on solaris.
- *
- * Revision 1.2  2006/11/06 23:00:58  grichenk
- * Fixed type casts on 64-bit solaris
- *
- * Revision 1.1  2006/11/06 17:37:39  grichenk
- * Initial revision
- *
- * ===========================================================================
- */

@@ -53,18 +53,3 @@ void* x_SwapPointers(void * volatile * nv_loc, void* new_value)
 END_NCBI_SCOPE
 
 #endif//NCBI_SLOW_ATOMIC_SWAP
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/05/14 13:59:27  gorelenk
- * Added include of ncbi_pch.hpp
- *
- * Revision 1.1  2003/09/17 15:20:46  vasilche
- * Moved atomic counter swap functions to separate file.
- * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
- *
- * Revision 1.28  2003/06/27 17:28:08  ucko
- * +SwapPointers
- * ===========================================================================
- */

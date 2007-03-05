@@ -106,41 +106,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2004/01/16 15:12:31  ivanov
- * Minor cosmetic changes
- *
- * Revision 1.9  2003/11/03 17:02:53  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.8  2003/04/25 13:45:24  siyan
- * Added doxygen groupings
- *
- * Revision 1.7  2002/07/10 18:42:59  ucko
- * Use proper typedefs in order to work with CCgiEntry.
- *
- * Revision 1.6  1999/05/11 02:53:42  vakatov
- * Moved CGI API from "corelib/" to "cgi/"
- *
- * Revision 1.5  1998/12/28 23:29:02  vakatov
- * New CVS and development tree structure for the NCBI C++ projects
- *
- * Revision 1.4  1998/12/28 21:48:11  vasilche
- * Made Lewis's 'tool' compilable
- *
- * Revision 1.3  1998/12/23 14:28:06  vasilche
- * Most of closed HTML tags made via template.
- *
- * Revision 1.2  1998/12/09 23:02:54  lewisg
- * update to new cgiapp class
- *
- * Revision 1.1  1998/12/01 19:09:07  lewisg
- * uses CCgiApplication and new page factory
- *
- * ===========================================================================
- */
-
 #endif  /* HTML___FACTORY__HPP */

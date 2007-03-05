@@ -78,38 +78,3 @@ CAsnBinaryDefs::GetTagClassAndConstructed(TByte tag_byte)
 }
 
 #endif /* def OBJSTRASNB__HPP  &&  ndef OBJSTRASNB__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.6  2005/04/27 17:01:38  vasilche
-* Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
-* Used enums to represent ASN.1 constants whenever possible.
-*
-* Revision 1.5  2005/04/26 14:13:27  vasilche
-* Optimized binary ASN.1 parsing.
-*
-* Revision 1.4  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.3  2001/08/15 20:53:06  juran
-* Heed warnings.
-*
-* Revision 1.2  2000/12/15 21:28:49  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.1  2000/09/18 20:00:08  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
-*/

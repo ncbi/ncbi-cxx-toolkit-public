@@ -382,16 +382,3 @@ void CNetScheduleExecuter::UnRegisterClient(unsigned short udp_port) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log: netschedule_api_executer.cpp,v $
- * Revision 6.2  2007/01/10 16:02:50  ucko
- * Fix compilation with GCC 2.95's (not quite standard) string implementation.
- *
- * Revision 6.1  2007/01/09 15:29:55  didenko
- * Added new API for NetSchedule service
- *
- * ===========================================================================
- */

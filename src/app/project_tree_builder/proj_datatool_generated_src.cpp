@@ -233,33 +233,3 @@ void CDataToolGeneratedSrc::SetFrom(const CDataToolGeneratedSrc& src)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2005/01/31 16:37:38  gouriano
- * Keep track of subproject types and propagate it down the project tree
- *
- * Revision 1.7  2004/12/06 18:12:20  gouriano
- * Improved diagnostics
- *
- * Revision 1.6  2004/11/17 19:54:30  gouriano
- * Ignore missing module file
- *
- * Revision 1.5  2004/05/21 21:41:41  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.4  2004/03/10 16:48:53  gorelenk
- * Implemented operators == and < of class CDataToolGeneratedSrc.
- *
- * Revision 1.3  2004/02/20 22:53:58  gorelenk
- * Added analysis of ASN projects depends.
- *
- * Revision 1.2  2004/02/13 23:07:38  gorelenk
- * Added data members-abstraction of datatool generated files.
- *
- * Revision 1.1  2004/01/30 20:44:22  gorelenk
- * Initial revision.
- *
- * ===========================================================================
- */

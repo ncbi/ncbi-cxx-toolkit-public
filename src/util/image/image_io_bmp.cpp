@@ -76,26 +76,3 @@ void CImageIOBmp::WriteImage(const CImage&, CNcbiOstream&,
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/23 16:18:45  dicuccio
- * Added ability to inspect image's information (size, width, height, depth)
- *
- * Revision 1.4  2004/05/17 21:07:58  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/12/16 15:49:36  dicuccio
- * Large re-write of image handling.  Added improved error-handling and support
- * for streams-based i/o (via hooks into each client library).
- *
- * Revision 1.2  2003/11/03 15:19:57  dicuccio
- * Added optional compression parameter
- *
- * Revision 1.1  2003/06/03 15:17:13  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-

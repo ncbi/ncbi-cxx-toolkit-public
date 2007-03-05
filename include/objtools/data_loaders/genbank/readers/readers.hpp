@@ -47,20 +47,4 @@ extern void NCBI_XREADER_CACHE_EXPORT    GenBankWriters_Register_Cache (void);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/03/11 00:02:50  vasilche
- * Register functions made exported from their dlls.
- *
- * Revision 1.2  2005/03/10 20:55:06  vasilche
- * New CReader/CWriter schema of CGBDataLoader.
- *
- * Revision 1.1  2004/12/22 19:30:36  grichenk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* GENBANK___READERS__HPP */

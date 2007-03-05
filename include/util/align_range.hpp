@@ -319,19 +319,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/02/23 14:44:36  dicuccio
-* Bug fix: use correct range start and stop
-*
-* Revision 1.2  2005/06/13 20:48:02  ucko
-* Portability fixes, needed at least by GCC.
-*
-* Revision 1.1  2005/06/13 18:55:11  yazhuk
-* Initial revision
-*
-* ===========================================================================
-*/
-
 #endif  /* UTIL___ALIGN_RANGE__HPP */

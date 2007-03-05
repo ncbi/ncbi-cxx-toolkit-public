@@ -92,35 +92,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/12/14 04:43:17  lavr
- * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
- *
- * Revision 1.7  2006/02/15 18:25:50  lavr
- * IReader/IWriter moved to corelib
- *
- * Revision 1.6  2006/02/01 16:22:27  lavr
- * Introduce CConnReaderWriterBase to be able to init connect lib if needed
- *
- * Revision 1.5  2006/01/27 16:55:57  lavr
- * Headers rearranged to pickup corelib stuff first
- *
- * Revision 1.4  2004/10/08 12:30:12  lavr
- * m_Owned -> m_IsOwned
- *
- * Revision 1.3  2004/10/01 18:55:19  lavr
- * CSocketReader->CSocketReaderWriter plus .cpp file with bulky methods
- *
- * Revision 1.2  2004/10/01 18:36:04  lavr
- * Fix compilation errors
- *
- * Revision 1.1  2004/10/01 18:27:41  lavr
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* CONNECT___NCBI_CONN_READER_WRITER__HPP */

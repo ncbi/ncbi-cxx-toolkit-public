@@ -123,23 +123,3 @@ const char* CBlobStorageException::GetErrCodeString(void) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/11/29 13:56:29  gouriano
- * Moved GetErrorCodeString method into cpp
- *
- * Revision 1.3  2006/07/17 17:56:26  didenko
- * + DeleteStorage method
- *
- * Revision 1.2  2006/02/27 14:50:21  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.1  2005/12/20 17:13:34  didenko
- * Added new IBlobStorage interface
- *
- * ===========================================================================
- */
-

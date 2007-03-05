@@ -192,38 +192,3 @@ string CChoicePtrRefTypeStrings::GetRef(const CNamespace& ns) const
 }
 
 END_NCBI_SCOPE
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2006/10/18 13:12:36  gouriano
-* Added comments into typestrings and generated code
-*
-* Revision 1.8  2006/05/09 15:16:43  gouriano
-* Added XML namespace definition possibility
-*
-* Revision 1.7  2004/05/17 21:03:13  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.6  2003/03/11 20:06:47  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.5  2002/08/14 17:14:25  grichenk
-* Fixed function name conflict on Win32: renamed
-* GetClassName() -> GetClassNameDT()
-*
-* Revision 1.4  2002/07/01 15:42:08  grichenk
-* Fixed 'unused variable' warnings, removed commented code.
-*
-* Revision 1.3  2001/05/17 15:07:11  lavr
-* Typos corrected
-*
-* Revision 1.2  2000/11/29 17:42:42  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* Revision 1.1  2000/09/26 17:38:25  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* ===========================================================================
-*/

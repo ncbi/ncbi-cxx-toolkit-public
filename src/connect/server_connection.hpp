@@ -110,25 +110,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.4  2006/12/11 16:17:42  joukovv
- * Dangerous warning fixed.
- *
- * Revision 6.3  2006/10/19 20:38:20  joukovv
- * Works in thread-per-request mode. Errors in BDB layer fixed.
- *
- * Revision 6.2  2006/09/27 21:26:06  joukovv
- * Thread-per-request is finally implemented. Interface changed to enable
- * streams, line-based message handler added, netscedule adapted.
- *
- * Revision 6.1  2006/09/13 18:32:21  joukovv
- * Added (non-functional yet) framework for thread-per-request thread pooling model,
- * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.
- *
- * ===========================================================================
- */
-
 #endif  /* CONNECT___SERVER_CONNECTION__HPP */

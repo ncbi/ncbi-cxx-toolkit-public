@@ -499,23 +499,3 @@ int main(int argc, const char* argv[])
 {
     return CId2FetchApp().AppMain(argc, argv /*, 0, eDS_Default, 0*/);
 }
-
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.4  2006/05/02 16:33:49  vasilche
- * Added option -count to issue repeated queries.
- *
- * Revision 1.3  2005/08/12 14:11:55  grichenk
- * Use unique serial numbers for requests
- *
- * Revision 1.2  2005/08/11 15:42:29  grichenk
- * Decode and dump ID2-Reply-Data. Get complete data for gi.
- *
- * Revision 1.1  2005/08/10 18:42:51  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
- */

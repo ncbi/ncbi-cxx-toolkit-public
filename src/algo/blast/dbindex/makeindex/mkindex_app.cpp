@@ -156,29 +156,3 @@ int CMkIndexApplication::Run()
 
     return 0;
 }
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.5  2006/12/27 19:30:25  morgulis
- * Implementation of version 5 of index structure:
- * 	1. Combining of short sequences to improve performance in nt-like
- *            databases.
- * 	2. Suitable to feed sequence data to BLAST for extension directly from
- *            index.
- *
- * Revision 1.4  2006/11/16 20:40:11  morgulis
- * Optimization changes:
- * 	0-terminated offset lists;
- * 	list-based tracked seed containers;
- * 	reordered offset lists;
- * 	limits on max number of roots to avoid memory allocation problems.
- *
- * Revision 1.2  2006/09/27 16:55:05  morgulis
- * Changes needed to make makeindex compile.
- *
- * Revision 1.1  2006/09/27 15:29:06  morgulis
- * Adding makeindex project.
- *
- * ========================================================================
- */

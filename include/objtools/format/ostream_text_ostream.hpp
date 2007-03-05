@@ -88,23 +88,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/01/17 18:23:38  ludwigf
-* ADDED: Declarations for a new AddLine() method.
-*
-* Revision 1.2  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.1  2003/12/17 19:54:04  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___OSTREAM_TEXT_OSTREAM_HPP */

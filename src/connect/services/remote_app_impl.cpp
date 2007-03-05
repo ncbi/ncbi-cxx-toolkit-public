@@ -106,13 +106,3 @@ void IRemoteAppResult_Impl::Reset()
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/07/13 14:32:38  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * ===========================================================================
- */
- 

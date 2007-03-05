@@ -427,38 +427,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2005/01/24 17:04:46  vasilche
-* Safe boolean operators.
-*
-* Revision 1.8  2004/06/30 20:21:41  jcherry
-* Removed qualifiers for the sake of MSVC6.
-*
-* Revision 1.7  2004/06/30 16:42:28  jcherry
-* Qualified some type names in nested structures for SWIG.
-*
-* Revision 1.6  2003/04/17 17:50:16  siyan
-* Added doxygen support
-*
-* Revision 1.5  2003/02/07 16:54:01  vasilche
-* Pass all structures with size > sizeof int by reference.
-* Move cvs log to the end of files.
-*
-* Revision 1.4  2002/12/19 14:51:00  dicuccio
-* Added export specifier for Win32 DLL builds.
-*
-* Revision 1.3  2001/05/17 15:01:19  lavr
-* Typos corrected
-*
-* Revision 1.2  2001/01/29 15:18:38  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.1  2001/01/11 15:00:37  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
-* ===========================================================================
-*/
-
 #endif  /* ITREE__HPP */

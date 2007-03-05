@@ -108,14 +108,3 @@ int main(int argc, char** argv)
     return CTestMultipartCgiApplication().AppMain(argc, argv, 0,
                                                   eDS_Default, 0);
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/09/14 13:51:30  ucko
-* Add a simple test for multipart CGI responses.
-*
-*
-* ===========================================================================
-*/

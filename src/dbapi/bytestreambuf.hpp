@@ -31,26 +31,6 @@
 * Author:  Michael Kholodov
 *   
 * File Description:  streambuf implementation for BLOBs
-*
-*
-* $Log$
-* Revision 1.5  2004/07/20 20:23:33  ucko
-* Place forward declarations outside classes to avoid confusing WorkShop.
-*
-* Revision 1.4  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.3  2002/05/14 19:51:48  kholodov
-* Fixed: incorrect column no handling for detecting end of column
-*
-* Revision 1.2  2002/05/13 19:11:53  kholodov
-* Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
 */
 
 #include <corelib/ncbistd.hpp>

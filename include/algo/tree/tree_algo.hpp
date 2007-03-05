@@ -943,45 +943,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2005/10/27 16:48:48  grichenk
- * Redesigned CTreeNode (added search methods),
- * removed CPairTreeNode.
- *
- * Revision 1.9  2004/11/01 19:57:09  kuznets
- * Code clenaup
- *
- * Revision 1.8  2004/06/15 13:03:53  ckenny
- * + TreeCompare function
- *
- * Revision 1.7  2004/04/27 12:39:34  kuznets
- * Minimal set changed to work with ignore list of ids
- *
- * Revision 1.6  2004/04/22 17:58:07  kuznets
- * + more comments on minimal set
- *
- * Revision 1.5  2004/04/22 13:52:09  kuznets
- * + CTreeMinimalSet
- *
- * Revision 1.4  2004/04/21 16:42:18  kuznets
- * + AND, OR operations on node lists
- *
- * Revision 1.3  2004/04/21 13:27:18  kuznets
- * Bug fix: typename in templates
- *
- * Revision 1.2  2004/04/21 12:56:34  kuznets
- * Added tree related algorithms and utilities based on sets algebra
- * (TreeListToSet, TreeMakeParentsSet, TreeMakeSet, TreeSetToNodeList
- * CTreeNonRedundantSet)
- *
- * Revision 1.1  2004/04/19 16:02:06  kuznets
- * Initial revision. Migrated from <corelib/ncbi_tree.hpp>
- *
- *
- * ==========================================================================
- */
-
 #endif

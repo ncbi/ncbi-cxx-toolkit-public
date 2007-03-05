@@ -116,29 +116,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 6.6  2004/05/19 17:21:39  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 6.5  2002/12/09 17:30:11  ucko
- * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
- *
- * Revision 6.4  2002/12/06 20:03:16  ucko
- * Support conversion to/from CTime and from time_t
- *
- * Revision 6.3  2002/10/04 14:45:08  ucko
- * Add a generic date formatter with flexible support for missing fields.
- *
- * Revision 6.2  2002/01/10 19:44:09  clausen
- * Added GetDate
- *
- * Revision 6.1  2001/11/16 20:54:51  ucko
- * Added comparison for dates.
- *
- * ===========================================================================
- */
-
 /* Original file checksum: lines: 61, chars: 1873, CRC32: d1b93689 */

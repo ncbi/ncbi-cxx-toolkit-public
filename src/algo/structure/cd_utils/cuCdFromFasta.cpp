@@ -373,24 +373,3 @@ void CCdFromFasta::WriteToFile(const string& outputFile) const
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2007/01/09 19:23:51  lanczyck
- * comment out testing code
- *
- * Revision 1.4  2006/10/12 15:08:48  lanczyck
- * deprecate use of old ReadFasta method in favor of CFastaReader class
- *
- * Revision 1.3  2006/09/01 15:32:46  lanczyck
- * bug fix: swapped name and accession
- *
- * Revision 1.2  2006/08/21 17:05:07  lanczyck
- * use .cn3 extension instead of .acd
- *
- * Revision 1.1  2006/05/22 17:13:37  lanczyck
- * new file:  CCdCore subclass for a Fasta-generated CD
- *
- * ===========================================================================
- */

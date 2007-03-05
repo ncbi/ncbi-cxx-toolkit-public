@@ -85,39 +85,3 @@ bool CIStreamContainerIterator::HaveMore(void) const
 }
 
 #endif /* def OBJECTIO__HPP  &&  ndef OBJECTIO__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.7  2005/01/24 17:05:48  vasilche
-* Safe boolean operators.
-*
-* Revision 1.6  2003/10/24 17:50:27  vasilche
-* CIStreamContainerIterator::operator++() moved to *.cpp file.
-*
-* Revision 1.5  2003/10/24 15:54:27  grichenk
-* Removed or blocked exceptions in destructors
-*
-* Revision 1.4  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.3  2001/05/17 14:58:29  lavr
-* Typos corrected
-*
-* Revision 1.2  2001/01/22 23:23:57  vakatov
-* Added   CIStreamClassMemberIterator
-* Renamed CIStreamContainer --> CIStreamContainerIterator
-*
-* Revision 1.1  2000/10/20 15:51:25  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
-*/

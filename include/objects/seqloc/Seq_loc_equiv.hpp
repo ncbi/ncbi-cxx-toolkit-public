@@ -83,17 +83,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/01/28 17:16:11  shomrat
-* Added methods to ease the construction of objects
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQLOC_SEQ_LOC_EQUIV_HPP
 /* Original file checksum: lines: 93, chars: 2482, CRC32: 2b652d4f */

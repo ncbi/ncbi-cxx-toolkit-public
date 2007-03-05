@@ -63,23 +63,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/10/24 21:46:13  lewisg
-* exact mass, peptide size limits, validation, code cleanup
-*
-* Revision 1.3  2005/01/31 17:30:57  lewisg
-* adjustable intensity, z dpendence of precursor mass tolerance
-*
-* Revision 1.1  2004/06/08 19:46:21  lewisg
-* input validation, additional user settable parameters
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSSEARCHTYPE_HPP
 /* Original file checksum: lines: 65, chars: 2022, CRC32: c2e493be */

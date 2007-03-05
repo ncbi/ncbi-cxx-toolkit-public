@@ -174,24 +174,3 @@ int main(int argc, const char** argv)
 {
     return CLoaderPatcherTester().AppMain(argc, argv);
 }
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.5  2006/01/25 19:32:10  didenko
-* Removed unsed files
-*
-* Revision 1.4  2005/11/16 21:11:56  didenko
-* Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
-*
-* Revision 1.3  2005/11/15 19:22:08  didenko
-* Added transactions and edit commands support
-*
-* Revision 1.2  2005/09/06 13:22:11  didenko
-* IDataPatcher interface moved to a separate file
-*
-* Revision 1.1  2005/09/01 15:29:25  didenko
-* Added a test for data loader patcher
-*
-* ===========================================================================
-*/

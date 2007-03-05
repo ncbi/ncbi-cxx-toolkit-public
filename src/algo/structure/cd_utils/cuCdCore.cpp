@@ -2352,33 +2352,3 @@ void CCdCore::SetClassicalParentAccession(string Parent, int Version) {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2007/01/10 16:14:53  lanczyck
- * add type test when getting seq-id strings; restore use of old unsupported type message when not pass test
- *
- * Revision 1.7  2006/05/31 20:32:42  cliu
- * fix a bug in GetBlockStartsForRow
- *
- * Revision 1.6  2006/05/01 13:13:45  lanczyck
- * allow SetAccession to work even if there was no existing 'gid' type
- *
- * Revision 1.5  2006/01/10 16:54:51  lanczyck
- * eliminate unused variable warnings
- *
- * Revision 1.4  2005/12/28 17:25:44  lanczyck
- * bug fix transferred from CDTree:  IsInPendingList no longer counts master of a pending alignment as pending
- *
- * Revision 1.3  2005/05/10 20:11:31  cliu
- * make and save trees
- *
- * Revision 1.2  2005/04/19 22:05:04  ucko
- * +<stdio.h> due to use of sprintf()
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- * ===========================================================================
- */

@@ -150,28 +150,3 @@ int main(int argc, const char* argv[])
 {
     return CThreadedServerApp().AppMain(argc, argv);
 }
-
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.6  2004/10/18 18:15:09  ucko
- * Support a clean server shutdown request.
- *
- * Revision 6.5  2004/10/08 12:41:49  lavr
- * Cosmetics
- *
- * Revision 6.4  2004/05/17 20:58:22  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 6.3  2002/01/25 15:39:30  ucko
- * Completely reorganized threaded servers.
- *
- * Revision 6.2  2002/01/15 22:24:43  ucko
- * Take advantage of MT_LOCK_cxx2c
- *
- * Revision 6.1  2001/12/11 19:55:24  ucko
- * Introduce thread-pool-based servers.
- *
- * ===========================================================================
- */

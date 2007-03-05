@@ -61,25 +61,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-/*
- * =======================================================================
- * $Log$
- * Revision 1.5  2005/10/06 19:43:08  camacho
- * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
- * Fixes problem with uninitializes program and service name for CRemoteBlast.
- *
- * Revision 1.4  2004/09/21 13:51:21  dondosha
- * Set query genetic code; no need to set database genetic code
- *
- * Revision 1.3  2004/05/21 21:41:02  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.2  2004/04/23 13:51:07  papadopo
- * derived from BlastRPSOptionsHandle
- *
- * Revision 1.1  2004/04/16 14:07:32  papadopo
- * options handle for translated RPS blast
- *
- * =======================================================================
- */

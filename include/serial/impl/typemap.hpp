@@ -81,34 +81,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/12 15:07:01  gouriano
-* Moved from parent folder
-*
-* Revision 1.5  2003/04/15 16:19:09  siyan
-* Added doxygen support
-*
-* Revision 1.4  2002/12/23 18:38:52  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.3  2000/11/07 17:25:14  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.2  2000/10/13 16:28:33  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.1  1999/07/13 20:18:11  vasilche
-* Changed types naming.
-*
-* ===========================================================================
-*/

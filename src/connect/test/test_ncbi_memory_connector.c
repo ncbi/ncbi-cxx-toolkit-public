@@ -60,25 +60,3 @@ int main(void)
     CORE_SetLOG(0);
     return 0;
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.5  2006/03/30 17:46:40  lavr
- * Adjust for lock-less MEMORY_Connector API
- *
- * Revision 6.4  2002/12/04 16:58:49  lavr
- * Move change log to end
- *
- * Revision 6.3  2002/03/22 19:47:31  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.2  2002/02/20 20:53:48  lavr
- * Use xconntest to perform standard tests
- *
- * Revision 6.1  2002/02/20 19:14:40  lavr
- * Initial revision
- *
- * ==========================================================================
- */

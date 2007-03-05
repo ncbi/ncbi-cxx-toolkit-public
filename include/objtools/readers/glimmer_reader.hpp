@@ -58,14 +58,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/06/15 17:45:03  dicuccio
- * Added reader/parser for Glimmer3 predictions
- *
- * ===========================================================================
- */
-
 #endif  // __GLIMMER_READER__HPP

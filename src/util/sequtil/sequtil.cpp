@@ -69,21 +69,3 @@ CSeqUtil::ECodingType CSeqUtil::GetCodingType(TCoding coding)
 
 
 END_NCBI_SCOPE
-
-
- /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/08/11 15:24:31  vakatov
-* Compilation warning fix (unhandled variant in switch, e_not_set)
-*
-* Revision 1.2  2004/05/17 21:08:53  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/10/08 13:34:10  shomrat
-* Initial version
-*
-*
-* ===========================================================================
-*/

@@ -141,18 +141,4 @@ void CDiagRangeCollection::TrimSecondTo(TAlnRng& rng, int trim)
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/12/27 19:48:55  gouriano
-* Adjustments for MSVC 2005 Express
-*
-* Revision 1.1  2005/08/10 19:36:09  todorov
-* Preliminary revision.
-*
-* ===========================================================================
-*/
-
 #endif // UTIL__DIAG_RANGE_COLL__HPP

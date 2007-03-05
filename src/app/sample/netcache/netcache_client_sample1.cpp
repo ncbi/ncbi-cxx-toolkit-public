@@ -135,23 +135,3 @@ int main(int argc, const char* argv[])
 {
     return CSampleNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/12/08 16:06:16  kuznets
- * Made sample simplier (only LB client illustrated)
- *
- * Revision 1.3  2005/12/07 19:21:16  kuznets
- * Comments
- *
- * Revision 1.2  2005/12/07 19:05:13  kuznets
- * Cosmetics
- *
- * Revision 1.1  2005/12/07 19:02:57  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

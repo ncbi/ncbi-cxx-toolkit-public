@@ -326,24 +326,3 @@ void CMergeVolumes::x_ResetMinKey()
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2007/01/05 13:26:03  dicuccio
- * Initialize all variables in ctor
- *
- * Revision 1.4  2006/11/30 11:13:03  kuznets
- * code cleanup
- *
- * Revision 1.3  2006/11/30 11:07:04  kuznets
- * added BLOB read from the merge store (merge-update)
- *
- * Revision 1.2  2006/11/27 14:25:21  dicuccio
- * Stripped trailing line feeds
- *
- * Revision 1.1  2006/11/17 07:30:47  kuznets
- * initial revision
- *
- * ===========================================================================
- */

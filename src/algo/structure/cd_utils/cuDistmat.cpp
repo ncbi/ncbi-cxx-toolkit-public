@@ -304,16 +304,3 @@ void DistanceMatrix::writeMat(ostream& os, bool triangular) const {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/04/19 21:53:51  ucko
-* Accommodate GCC 2.95, which lacks a distinct ios_base and
-* manipulators such as LEFT.
-*
-* Revision 1.1  2005/04/19 14:27:18  lanczyck
-* initial version under algo/structure
-*
-*
-*/

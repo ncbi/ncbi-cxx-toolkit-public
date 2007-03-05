@@ -99,20 +99,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2002/12/26 12:43:27  dicuccio
-* Added Win32 export specifiers
-*
-* Revision 1.1  2002/11/26 18:47:57  shomrat
-* Add convenience method for retrieval of internal data
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQFEAT_GENETIC_CODE_HPP
 /* Original file checksum: lines: 93, chars: 2451, CRC32: b121101b */

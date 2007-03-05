@@ -327,11 +327,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * $Log$
- * Revision 1.1  2005/09/12 18:02:13  kapustin
- * Move splign_hit to src
- *
- */
-
 #endif

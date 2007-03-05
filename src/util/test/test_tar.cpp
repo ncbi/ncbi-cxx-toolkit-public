@@ -248,31 +248,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/08/15 15:50:31  lavr
- * Fix typo
- *
- * Revision 1.9  2006/07/13 18:00:55  lavr
- * Throw "Must specify file(s)" instead of ambiguous "filename(s)" [cf. usage]
- *
- * Revision 1.8  2006/03/03 18:34:14  lavr
- * Mark non-standard options so
- *
- * Revision 1.7  2006/03/03 18:31:11  lavr
- * Added option -U (update existing only)
- *
- * Revision 1.6  2005/06/23 15:13:30  ucko
- * Adjust usage of auto_ptr<> for compatibility with GCC 2.95.
- *
- * Revision 1.5  2005/06/22 20:04:20  lavr
- * Proper test -- simplified tar command line utility
- *
- * Revision 1.4  2005/06/14 00:34:41  lavr
- * True CTar test suite (Initial revision)
- *
- * ===========================================================================
- */

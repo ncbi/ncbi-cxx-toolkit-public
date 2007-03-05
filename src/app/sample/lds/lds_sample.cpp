@@ -252,31 +252,3 @@ int main(int argc, const char* argv[])
         CSampleLdsApplication().AppMain(
                     argc, argv, 0, eDS_Default, "lds_sample.ini");
 }
-
-
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/11/13 20:03:27  didenko
- * Moved to the new LDS manager implementaion
- *
- * Revision 1.4  2006/05/08 15:54:36  ucko
- * Tweak settings-retrieval APIs to account for the fact that the
- * supplied default string value may be a reference to a temporary, and
- * therefore unsafe to return by reference.
- *
- * Revision 1.3  2005/09/19 14:41:43  kuznets
- * Reflecting changes in lds lib
- *
- * Revision 1.2  2005/01/13 17:40:34  kuznets
- * Sample improvements
- *
- * Revision 1.1  2005/01/11 20:41:47  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

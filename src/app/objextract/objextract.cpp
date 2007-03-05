@@ -285,13 +285,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CObjExtractApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/05/23 13:26:09  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */

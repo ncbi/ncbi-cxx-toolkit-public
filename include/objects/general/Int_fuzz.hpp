@@ -128,29 +128,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2004/02/17 21:10:07  vasilche
- * Fixed 'non-const reference to temp var' warning.
- * Reordered inlined method to allow inlining.
- *
- * Revision 1.4  2003/10/15 15:42:58  ucko
- * Add more operations: AssignTranslated, Add, Subtract, and Negate/Negative.
- *
- * Revision 1.3  2002/12/26 12:40:33  dicuccio
- * Added Win32 export specifiers
- *
- * Revision 1.2  2002/10/03 19:02:27  clausen
- * Removed extra whitespace
- *
- * Revision 1.1  2002/10/03 16:42:36  clausen
- * First version
- *
- * ===========================================================================
-*/
-
-
 #endif // OBJECTS_GENERAL_INT_FUZZ_HPP
 /* Original file checksum: lines: 90, chars: 2388, CRC32: e4127209 */

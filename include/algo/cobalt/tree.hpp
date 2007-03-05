@@ -161,31 +161,4 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-/* ====================================================================
- * $Log$
- * Revision 1.7  2006/09/11 16:31:22  papadopo
- * use neighbor-joining or FastME to generate trees
- *
- * Revision 1.6  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.5  2005/11/30 19:05:58  papadopo
- * document the tree output format
- *
- * Revision 1.4  2005/11/18 20:33:34  papadopo
- * set default bias for ListTreeLeaves
- *
- * Revision 1.3  2005/11/15 20:10:29  papadopo
- * add doxygen
- *
- * Revision 1.2  2005/11/08 17:42:17  papadopo
- * Rearrange includes to be self-sufficient
- *
- * Revision 1.1  2005/11/07 18:15:52  papadopo
- * Initial revision
- *
- * ====================================================================
- */
-
 #endif // ALGO_COBALT___TREE__HPP

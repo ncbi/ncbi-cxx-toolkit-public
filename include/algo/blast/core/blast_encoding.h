@@ -102,47 +102,4 @@ extern const Uint1 kNuclSentinel;
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.12  2006/11/21 16:37:56  papadopo
- * minor
- *
- * Revision 1.11  2006/08/29 21:56:30  camacho
- * +NCBISTDAA_TO_AMINOACID
- *
- * Revision 1.10  2006/07/05 15:42:22  papadopo
- * change the amino acid alphabet size from 26 to 28
- *
- * Revision 1.9  2006/04/28 20:43:41  camacho
- * Remove C++-style comments
- *
- * Revision 1.8  2006/03/31 17:31:49  camacho
- * Added constants for sentinel values
- *
- * Revision 1.7  2005/12/19 16:19:18  papadopo
- * add define for size of ncbi2na alphabet
- *
- * Revision 1.6  2005/05/10 16:07:35  camacho
- * Changed *_ENCODING #defines to EBlastEncoding enumeration
- *
- * Revision 1.5  2004/11/24 16:00:39  dondosha
- * Added and/or fixed doxygen comments
- *
- * Revision 1.4  2004/06/21 12:53:54  camacho
- * Remove PSI_ALPHABET_SIZE as it is identical to BLASTAA_SIZE
- *
- * Revision 1.3  2004/04/09 14:48:05  camacho
- * Added doxygen comments
- *
- * Revision 1.2  2004/04/07 19:05:44  camacho
- * Minor fix in #ifdef guards
- *
- * Revision 1.1  2004/04/07 03:10:20  camacho
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_BLAST_CORE___BLAST_ENCODING__H */

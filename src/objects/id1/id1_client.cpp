@@ -121,35 +121,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2004/07/01 15:58:29  ucko
-* Error decoding moved to base ID1 library.
-*
-* Revision 1.5  2004/07/01 15:46:01  ucko
-* Overload Ask to add descriptive text to known error codes, using
-* information from Michael Kimelman.
-*
-* Revision 1.4  2004/05/20 18:44:57  ucko
-* Don't attempt to pass temporary Seq-ids, even by const reference, as
-* that technically requires a public copy constructor.
-*
-* Revision 1.3  2004/05/20 18:23:21  jcherry
-* Added a simplified interface for retrieving entries
-*
-* Revision 1.2  2004/05/19 17:22:32  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.1  2003/04/09 16:00:14  ucko
-* Give all RPC clients unique basenames.
-*
-* Revision 1.1  2002/11/13 20:13:44  ucko
-* Add datatool-generated client classes
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1872, CRC32: cedfdc3e */

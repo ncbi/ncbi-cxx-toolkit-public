@@ -484,21 +484,3 @@ string NJ_TreeAlgorithm::toString() {
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2005/12/22 19:19:04  lanczyck
- * sync cd_utils with midpoint-root bug fix;
- * add a line left out when transferred over 'at least 3 sequences' criteria for NJ
- *
- * Revision 1.2  2005/07/27 14:55:40  lanczyck
- * fix bug when do NJ with < 3 sequences
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

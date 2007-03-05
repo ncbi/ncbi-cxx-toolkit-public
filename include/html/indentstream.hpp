@@ -59,26 +59,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2004/01/16 15:12:32  ivanov
- * Minor cosmetic changes
- *
- * Revision 1.4  2003/11/05 18:41:06  dicuccio
- * Added export specifiers
- *
- * Revision 1.3  2003/11/03 17:02:53  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.2  2003/04/25 13:45:30  siyan
- * Added doxygen groupings
- *
- * Revision 1.1  2003/02/14 16:16:39  ucko
- * Introduce CIndentingOstream (to be used by CHTMLListElement in text mode).
- *
- * ===========================================================================
- */
-
 #endif  /* HTML___INDENTSTREAM__HPP */

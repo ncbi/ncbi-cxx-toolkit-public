@@ -65,15 +65,3 @@ void CGapItem::Format(IFormatter& formatter, IFlatTextOStream& text_os) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/11/24 16:49:33  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/

@@ -81,38 +81,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2005/10/20 15:33:46  kuznets
- * Implemented duplicate id check
- *
- * Revision 1.6  2004/09/22 13:32:16  kononenk
- * "Diagnostic Message Filtering" functionality added.
- * Added function SetDiagFilter()
- * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
- * Module, class and function attribute added to CNcbiDiag and CException
- * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
- * Macro NCBI_MODULE can be used to set default module name in cpp files
- *
- * Revision 1.5  2004/08/19 13:07:14  dicuccio
- * Dropped export specifiers on inlined exceptions
- *
- * Revision 1.4  2003/08/12 14:07:56  kuznets
- * Added eCannotCreateDir exception type
- *
- * Revision 1.3  2003/06/09 16:35:28  kuznets
- * Added new error codes.
- *
- * Revision 1.2  2003/06/03 19:14:02  kuznets
- * Added lds dll export/import specifications
- *
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif

@@ -65,23 +65,4 @@ public:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/01/17 18:23:38  ludwigf
-* ADDED: Declarations for a new AddLine() method.
-*
-* Revision 1.2  2005/04/14 14:42:37  shomrat
-* IFlatTextOStream inherits from CObject
-*
-* Revision 1.1  2003/12/17 19:54:16  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___TEXT_OSTREAM_HPP */

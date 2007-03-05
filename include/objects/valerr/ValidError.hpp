@@ -208,20 +208,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/02/08 16:30:31  rsmith
-* fix export specs
-*
-* Revision 1.1  2006/02/07 18:35:41  rsmith
-* initial checkin
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_VALERR_VALIDERROR_HPP
 /* Original file checksum: lines: 94, chars: 2596, CRC32: 9c930424 */

@@ -100,18 +100,4 @@ private:
     TOptInteger m_NumAlgn;
 };
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2005/02/22 14:27:45  camacho
- * Moved showalign.[hc]pp to objtools/blast_format
- *
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */
-
 #endif // APP_BLAST_CLIENT___ALIGN_PARMS__HPP
-

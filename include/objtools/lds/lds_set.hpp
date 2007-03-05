@@ -40,22 +40,7 @@ BEGIN_SCOPE(objects)
 
 typedef bm::bvector<>   CLDS_Set;
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/10/06 16:17:15  kuznets
- * Implemented SeqId index
- *
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-

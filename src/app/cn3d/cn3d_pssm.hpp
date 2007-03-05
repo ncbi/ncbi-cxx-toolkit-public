@@ -77,29 +77,3 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_PSSM__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2006/02/10 14:14:59  thiessen
-* add user title to pssm
-*
-* Revision 1.6  2005/12/07 18:58:17  thiessen
-* toss my BMA->PSIMsa conversion, use PssmMaker instead to generate consensus-based PSSMs
-*
-* Revision 1.5  2005/11/05 12:09:40  thiessen
-* special handling of B,Z,U
-*
-* Revision 1.4  2005/11/04 20:45:31  thiessen
-* major reorganization to remove all C-toolkit dependencies
-*
-* Revision 1.3  2005/11/01 02:44:07  thiessen
-* fix GCC warnings; switch threader to C++ PSSMs
-*
-* Revision 1.2  2005/06/07 12:18:52  thiessen
-* add PSSM export
-*
-* Revision 1.1  2005/03/08 17:22:31  thiessen
-* apparently working C++ PSSM generation
-*
-*/

@@ -272,31 +272,4 @@ private:
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
 
-/* ====================================================================
- * $Log$
- * Revision 1.7  2006/09/20 19:43:51  papadopo
- * add member to convert from a CDense_seg
- *
- * Revision 1.6  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.5  2005/11/18 20:15:58  papadopo
- * remove m_BitScore
- *
- * Revision 1.4  2005/11/17 22:32:18  papadopo
- * remove hit rate member; also change Copy() to Clone()
- *
- * Revision 1.3  2005/11/15 23:24:15  papadopo
- * add doxygen
- *
- * Revision 1.2  2005/11/08 17:42:17  papadopo
- * Rearrange includes to be self-sufficient
- *
- * Revision 1.1  2005/11/07 18:15:52  papadopo
- * Initial revision
- *
- * ====================================================================
- */
-
 #endif // ALGO_COBALT___HIT__HPP

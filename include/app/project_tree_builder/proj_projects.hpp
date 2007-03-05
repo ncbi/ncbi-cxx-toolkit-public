@@ -139,37 +139,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2005/03/29 20:40:35  gouriano
- * Allow inclusion of LST file into LST file
- *
- * Revision 1.9  2004/09/14 17:27:28  gouriano
- * Corrected ProjectsLstFileFilter
- *
- * Revision 1.8  2004/09/13 13:49:36  gouriano
- * Make it to rely more on UNIX makefiles
- *
- * Revision 1.7  2004/08/04 13:24:58  gouriano
- * Added processing of EXPENDABLE projects
- *
- * Revision 1.6  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.5  2004/03/18 19:11:12  gorelenk
- * Added m_LstFileContentsExclude member to class CProjectsLstFileFilter.
- *
- * Revision 1.4  2004/02/26 21:26:11  gorelenk
- * Removed all older class declarations. Added declaration of classes that
- * implements IProjectFilter interface: CProjectDummyFilter,
- * CProjectOneNodeFilter and CProjectsLstFileFilter.
- *
- * Revision 1.3  2004/02/18 23:34:30  gorelenk
- * Added declaration of class CProjProjectsSets.
- *
- * ===========================================================================
- */
-
-
 #endif //PROJECT_TREE_BUILDER__PROJ_PROJECTS__HPP

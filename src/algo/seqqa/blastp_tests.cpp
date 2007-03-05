@@ -170,34 +170,3 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/04/12 14:16:18  jcherry
- * Added "e_value_top_match" result
- *
- * Revision 1.6  2006/01/18 15:19:12  jcherry
- * Added id and title of top match of interest
- *
- * Revision 1.5  2004/12/21 18:40:49  vasilche
- * Added missing include Seq_align.hpp.
- *
- * Revision 1.4  2004/10/25 14:29:39  jcherry
- * Don't get taxid of a hit (expensive) unless its score is the
- * highest seen yet.  Don't do pointless check that descriptor
- * has type "source".
- *
- * Revision 1.3  2004/10/21 20:38:16  jcherry
- * Don't throw when a matched protein lacks a taxid; just ignore it.
- *
- * Revision 1.2  2004/10/20 18:36:58  jcherry
- * Explicitly report whether there is an appropriate blast hit.
- * Look for source organism using CSeqdesc_CI, not just in Bioseq.
- *
- * Revision 1.1  2004/10/06 19:57:15  jcherry
- * Initial version
- *
- * ===========================================================================
- */

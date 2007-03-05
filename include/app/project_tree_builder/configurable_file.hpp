@@ -47,13 +47,4 @@ string ConfigurableFileSuffix(const string& config_name);
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/10/12 14:35:30  ivanov
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__CONFIGURABLE_FILE__HPP

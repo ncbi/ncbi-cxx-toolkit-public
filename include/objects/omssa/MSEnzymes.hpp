@@ -80,29 +80,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/11/07 19:57:20  lewisg
-* iterative search
-*
-* Revision 1.4  2005/08/01 13:44:18  lewisg
-* redo enzyme classes, no-enzyme, fix for fixed mod enumeration
-*
-* Revision 1.3  2005/05/19 16:59:17  lewisg
-* add top-down searching, fix variable mod bugs
-*
-* Revision 1.2  2005/04/21 21:54:03  lewisg
-* fix Jeri's mem bug, split off mod file, add aspn and gluc
-*
-* Revision 1.1  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSENZYMES_HPP
 /* Original file checksum: lines: 65, chars: 2004, CRC32: 85fbd6b8 */

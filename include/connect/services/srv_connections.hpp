@@ -452,20 +452,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2007/01/09 18:58:16  ucko
- * Make CNetSrvConnectorPoll's internal typedefs public.
- *
- * Revision 1.2  2007/01/09 15:29:55  didenko
- * Added new API for NetSchedule service
- *
- * Revision 1.1  2006/12/06 15:00:00  didenko
- * Added service connections template classes
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__SRV_CONNECTIONS_HPP

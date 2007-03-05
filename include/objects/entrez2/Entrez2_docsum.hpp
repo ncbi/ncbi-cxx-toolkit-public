@@ -89,17 +89,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2003/12/04 18:04:38  dicuccio
-* Added simple accessors for named fields
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ENTREZ2_ENTREZ2_DOCSUM_HPP
 /* Original file checksum: lines: 93, chars: 2505, CRC32: 564e58b1 */

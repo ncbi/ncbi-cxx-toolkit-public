@@ -87,16 +87,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/05/01 16:56:45  didenko
- * Attach SeqEntry edit command revamp
- *
- * Revision 1.1  2006/01/25 19:00:55  didenko
- * Redisigned bio objects edit facility
- *
- * ===========================================================================
- */
-
 #endif // __FILE_DB_ENGINE__HPP

@@ -199,38 +199,4 @@ private:
 
 END_NCBI_SCOPE
 
-
- 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/07/17 14:28:27  ucko
- * Don't declare references (to CFastMutex) to be mutable, as they can't
- * be repointed anyway.
- *
- * Revision 1.5  2006/06/28 16:01:42  didenko
- * Redone job's exlusivity processing
- *
- * Revision 1.4  2006/05/22 18:11:43  didenko
- * Added an option to fail a job if a remote app returns non zore code
- *
- * Revision 1.3  2006/05/10 19:54:21  didenko
- * Added JobDelayExpiration method to CWorkerNodeContext class
- * Added keep_alive_period and max_job_run_time parmerter to the config
- * file of remote_app
- *
- * Revision 1.2  2006/02/27 14:50:20  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.1  2006/02/15 15:19:03  didenko
- * Implemented an optional possibility for a worker node to have a permanent connection
- * to a NetSchedule server.
- * To expedite the job exchange between a worker node and a NetSchedule server,
- * a call to CNetScheduleClient::PutResult method is replaced to a
- * call to CNetScheduleClient::PutResultGetJob method.
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES___NS_CLIENT_WRAPPERS__HPP

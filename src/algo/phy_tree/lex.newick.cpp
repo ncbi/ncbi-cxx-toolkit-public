@@ -1651,26 +1651,3 @@ void newick_flex_reset(void)
    newickrestart(0);  // flush flex buffer
    BEGIN 0;
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/05/03 17:43:19  jcherry
- * Reflect move of stream_utils.hpp to corelib
- *
- * Revision 1.4  2004/05/25 14:42:45  jcherry
- * #include <ncbi_pch.hpp>
- *
- * Revision 1.3  2004/02/12 02:30:35  ucko
- * More portability fixes for newick parser.
- *
- * Revision 1.2  2004/02/11 22:18:16  ucko
- * erase() strings rather than clear()ing them for older compilers' sake.
- *
- * Revision 1.1  2004/02/11 17:40:53  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

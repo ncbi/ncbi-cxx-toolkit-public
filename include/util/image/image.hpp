@@ -194,29 +194,4 @@ void CImage::SetBlue(unsigned char val)
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2003/11/03 15:15:08  dicuccio
- * Fixed indexing of images - operator() now returns (row, column)
- *
- * Revision 1.5  2003/08/27 16:44:32  ivanov
- * Changed class export specifier to NCBI_XIMAGE_EXPORT
- *
- * Revision 1.4  2003/06/12 19:44:39  dicuccio
- * Added function to flip an image along the y-axis
- *
- * Revision 1.3  2003/06/09 19:17:32  dicuccio
- * Added GetAspectRatio()
- *
- * Revision 1.2  2003/06/03 20:04:24  dicuccio
- * Added export specifiers
- *
- * Revision 1.1  2003/06/03 15:17:41  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-
 #endif  // UTIL_IMAGE___IMAGE__HPP

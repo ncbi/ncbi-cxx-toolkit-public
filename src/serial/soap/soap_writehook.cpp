@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -66,23 +65,3 @@ void CSoapWriteHook::WriteObject(CObjectOStream& out,
 
 
 END_NCBI_SCOPE
-
-
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2004/06/22 15:01:20  gouriano
-* Corrected checking namespace name of AnyContentObjects
-*
-* Revision 1.3  2004/05/17 21:03:24  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2004/01/22 20:43:48  gouriano
-* Added check for non-empty namespace
-*
-* Revision 1.1  2003/09/22 21:00:04  gouriano
-* Initial revision
-*
-*
-* ===========================================================================
-*/

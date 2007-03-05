@@ -390,21 +390,3 @@ meEdge *depthFirstTraverse(meTree *T, meEdge *e);
 
 END_SCOPE(fastme)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/14 19:59:17  jcherry
- * Eliminated compiler warnings and fixed static/extern in header files
- *
- * Revision 1.3  2006/01/09 19:47:51  jcherry
- * Removed unused variables
- *
- * Revision 1.2  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2004/02/10 15:16:03  jcherry
- * Initial version
- *
- * ===========================================================================
- */

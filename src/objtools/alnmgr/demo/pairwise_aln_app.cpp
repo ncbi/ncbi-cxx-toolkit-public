@@ -265,26 +265,3 @@ int main(int argc, const char* argv[])
 {
     return CPairwiseAlnApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/12/12 23:12:55  todorov
-* Updated per latest changes.
-*
-* Revision 1.4  2006/11/17 05:37:08  todorov
-* hints -> stats
-*
-* Revision 1.3  2006/11/08 22:26:29  todorov
-* Using Dump(os) methods.
-*
-* Revision 1.2  2006/11/08 18:13:50  todorov
-* Using aln_hints to determine base widths.
-*
-* Revision 1.1  2006/10/19 20:35:47  todorov
-* Initial revision
-*
-* ===========================================================================
-*/

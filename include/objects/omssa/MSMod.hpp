@@ -70,29 +70,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/08/23 21:33:04  lewisg
-* rearrange file parsing
-*
-* Revision 1.4  2006/05/25 17:11:56  lewisg
-* one filtered spectrum per precursor charge state
-*
-* Revision 1.3  2005/10/24 21:46:13  lewisg
-* exact mass, peptide size limits, validation, code cleanup
-*
-* Revision 1.2  2005/03/14 22:29:54  lewisg
-* add mod file input
-*
-* Revision 1.1  2004/12/07 23:38:22  lewisg
-* add modification handling code
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_OMSSA_MSMOD_HPP
 /* Original file checksum: lines: 65, chars: 1980, CRC32: a05bf8ae */

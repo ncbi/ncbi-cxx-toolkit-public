@@ -107,17 +107,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/25 20:11:41  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BLAST_BLAST4_DATABASE_HPP
 /* Original file checksum: lines: 94, chars: 2685, CRC32: a03b1a96 */

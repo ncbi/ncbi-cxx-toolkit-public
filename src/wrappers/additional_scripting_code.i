@@ -962,25 +962,3 @@ void Spec(const CSerialObject& obj, bool web = false)
 };
 
 #endif
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/08/31 16:06:24  jcherry
- * Changed URL for ASN.1 specs.  Added serial object cloning and
- * CvsWeb.  Added experimental ruby stuff from some time ago.
- *
- * Revision 1.4  2005/05/19 17:58:32  jcherry
- * Fixes for Python modules set to None, which exist under Windows
- *
- * Revision 1.3  2005/05/18 13:46:05  jcherry
- * Minor output formatting tweak
- *
- * Revision 1.2  2005/05/17 21:35:30  jcherry
- * Added module introspection
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

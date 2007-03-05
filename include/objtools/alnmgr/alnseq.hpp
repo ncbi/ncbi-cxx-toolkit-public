@@ -226,34 +226,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/12/04 13:46:45  dicuccio
-* Added dtor, private copy ctor/assignment operator
-*
-* Revision 1.6  2006/02/21 15:59:20  todorov
-* CAlnMixSeq::TStarts -> CAlnMixStarts.
-* + CAlnMixSeq::m_ChildIdx
-*
-* Revision 1.5  2005/08/03 18:18:44  jcherry
-* Added export specifiers
-*
-* Revision 1.4  2005/06/23 18:00:50  todorov
-* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
-*
-* Revision 1.3  2005/06/22 22:14:33  todorov
-* Added an option to process stronger input alns first
-*
-* Revision 1.2  2005/03/10 19:33:00  todorov
-* Moved a few routines out of the merger to their corresponding classes
-*
-* Revision 1.1  2005/03/01 17:28:49  todorov
-* Rearranged CAlnMix classes
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ALNMGR___ALNSEQ__HPP

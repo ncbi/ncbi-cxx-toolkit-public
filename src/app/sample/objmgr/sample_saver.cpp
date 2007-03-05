@@ -118,13 +118,3 @@ void CSampleEditSaver::x_CleanUp()
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2005/11/15 19:25:22  didenko
- * Added bioseq_edit_sample sample
- *
- * ===========================================================================
- */

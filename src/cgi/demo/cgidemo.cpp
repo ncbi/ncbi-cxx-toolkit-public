@@ -66,31 +66,3 @@ int main(int argc, char *argv[])
 
     return 0;  
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2004/05/17 20:57:01  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.6  2003/02/21 22:02:23  vakatov
- * Minor code amendment to get rid of a compilation warning
- *
- * Revision 1.5  2002/04/16 18:47:08  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 1.4  1999/07/08 16:25:05  vakatov
- * Get rid of the redundant `extern "C"' at "main()"
- *
- * Revision 1.3  1999/05/11 03:11:55  vakatov
- * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
- *
- * Revision 1.2  1999/01/13 19:21:47  lewisg
- * check for end of multimap
- *
- * Revision 1.1  1999/01/13 14:46:45  lewisg
- * simple cgi demo
- * ===========================================================================
- */

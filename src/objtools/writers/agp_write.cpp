@@ -267,36 +267,3 @@ static char s_DetermineComponentType(const CSeq_id& id, CScope& scope)
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2005/08/31 20:16:49  jcherry
- * Eliminated prefixed (like "gb|") on component id strings
- *
- * Revision 1.6  2005/05/02 16:07:36  dicuccio
- * Updated AgpWrite(): added additional constructors to write data from CSeqMap,
- * CBioseqHandle, and CBioseqHandle with sequence range.  Refactored internals.
- * Dump best seq-id instead of gi for component accession
- *
- * Revision 1.5  2004/07/09 11:54:52  dicuccio
- * Dropped version of AgpWrite() that takes the object manager - use only one API,
- * taking a CScope
- *
- * Revision 1.4  2004/07/08 16:53:31  yazhuk
- * commented #include <objtools/data_loaders/genbank/gbloader.hpp>
- *
- * Revision 1.3  2004/07/07 21:45:07  jcherry
- * Removed form of AgpWrite that creates its own object manager
- *
- * Revision 1.2  2004/06/29 16:26:59  ucko
- * Move E(Agp)Type's definition out of s_DetermineComponentType because
- * templates (namely, max) can't necessarily use local types.
- *
- * Revision 1.1  2004/06/29 13:29:29  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

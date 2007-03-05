@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -325,44 +324,3 @@ bool  DTDLexer::EndPrevToken(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.11  2006/07/24 18:57:39  gouriano
- * Preserve comments when parsing DTD
- *
- * Revision 1.10  2005/06/03 17:05:33  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.9  2005/01/06 20:27:51  gouriano
- * Find out the end of an identifier name to process compound identifiers
- *
- * Revision 1.8  2005/01/03 16:51:15  gouriano
- * Added parsing of conditional sections
- *
- * Revision 1.7  2004/05/17 21:03:14  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.6  2004/01/16 19:56:52  gouriano
- * Minor correction when parsing end-of-line
- *
- * Revision 1.5  2002/12/17 16:24:43  gouriano
- * replaced _ASSERTs by throwing an exception
- *
- * Revision 1.4  2002/11/14 21:05:27  gouriano
- * added support of XML attribute lists
- *
- * Revision 1.3  2002/10/21 16:09:46  gouriano
- * added more DTD tokens
- *
- * Revision 1.2  2002/10/18 14:38:56  gouriano
- * added parsing of internal parsed entities
- *
- * Revision 1.1  2002/10/15 13:54:01  gouriano
- * DTD lexer and parser, first version
- *
- *
- * ==========================================================================
- */

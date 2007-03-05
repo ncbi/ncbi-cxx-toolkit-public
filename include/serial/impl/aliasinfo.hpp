@@ -30,35 +30,6 @@
 *
 * File Description:
 *   Alias type info
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2006/12/07 18:59:30  gouriano
-* Reviewed doxygen groupping, added documentation
-*
-* Revision 1.7  2004/06/07 13:59:30  gouriano
-* Corrected reading of class aliases (set proper Create() function)
-*
-* Revision 1.6  2004/04/30 13:28:39  gouriano
-* Remove obsolete function declarations
-*
-* Revision 1.5  2004/03/25 15:56:27  gouriano
-* Added possibility to copy and compare serial object non-recursively
-*
-* Revision 1.4  2003/12/08 22:14:40  grichenk
-* Fixed CAliasTypeInfo::IsType()
-*
-* Revision 1.3  2003/11/24 14:10:03  grichenk
-* Changed base class for CAliasTypeInfo to CPointerTypeInfo
-*
-* Revision 1.2  2003/10/21 21:08:45  grichenk
-* Fixed aliases-related bug in XML stream
-*
-* Revision 1.1  2003/10/21 13:45:22  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 #include <serial/impl/ptrinfo.hpp>

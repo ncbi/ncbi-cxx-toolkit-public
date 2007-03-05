@@ -27,46 +27,6 @@
 *
 * File Description:
 *   Serialization classes.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/11/17 20:24:42  vasilche
-* Use bool consistently to prevent indexing.
-*
-* Revision 1.7  2005/04/26 14:18:50  vasilche
-* Allow allocation of objects in CObjectMemoryPool.
-*
-* Revision 1.6  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.5  2002/10/25 15:15:54  vasilche
-* Fixed check for NCBI C toolkit.
-*
-* Revision 1.4  2002/10/25 15:05:44  vasilche
-* Moved more code to libxcser library.
-*
-* Revision 1.3  2000/10/13 16:28:40  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.2  1999/11/22 21:29:27  vasilche
-* Fixed compilation on Windows
-*
-* Revision 1.1  1999/11/22 21:04:42  vasilche
-* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
-*
-* Revision 1.3  1999/06/04 20:51:49  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.2  1999/05/19 19:56:57  vasilche
-* Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:12:04  vasilche
-* Beginning of serialization library.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

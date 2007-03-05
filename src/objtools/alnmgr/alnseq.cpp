@@ -374,32 +374,3 @@ CAlnMixSeq::~CAlnMixSeq()
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2007/01/04 19:19:56  todorov
-* Use CBioseq_Handle::IsProtein().
-*
-* Revision 1.6  2006/12/04 13:46:59  dicuccio
-* Added dtor
-*
-* Revision 1.5  2006/02/21 15:58:59  todorov
-* CAlnMixSeq::TStarts -> CAlnMixStarts.
-* + CAlnMixSeq::m_ChildIdx
-*
-* Revision 1.4  2005/06/22 22:14:33  todorov
-* Added an option to process stronger input alns first
-*
-* Revision 1.3  2005/03/10 19:33:00  todorov
-* Moved a few routines out of the merger to their corresponding classes
-*
-* Revision 1.2  2005/03/01 21:30:57  ucko
-* Remember to include <algorithm> for stable_sort
-*
-* Revision 1.1  2005/03/01 17:28:49  todorov
-* Rearranged CAlnMix classes
-*
-* ===========================================================================
-*/

@@ -1034,15 +1034,3 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2005/12/29 19:28:19  dicuccio
- * Split text utility classes out of dictionary.[hc]pp and placed them in a
- * separate compilation unit (dictionary_util.[hc]pp).  Added an implementation of
- * Porter's stemming algorithm
- *
- * ===========================================================================
- */

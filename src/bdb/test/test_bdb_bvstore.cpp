@@ -364,20 +364,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CBDB_TestThreads().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/01/09 12:47:28  kuznets
- * Reflected changes in CStopWatch
- *
- * Revision 1.1  2005/11/08 19:26:04  kuznets
- * Added test for bv storage
- *
- * Revision 1.1  2005/08/29 16:14:55  kuznets
- * Added thread test for BDB transactions
- *
- *
- * ===========================================================================
- */

@@ -97,19 +97,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.3  2006/09/19 19:18:04  vasilche
-* Fixed last name.
-*
-* Revision 1.2  2005/11/15 21:37:14  ucko
-* Don't qualify size_t with std::, which confuses MIPSpro.
-*
-* Revision 1.1  2005/11/15 19:22:06  didenko
-* Added transactions and edit commands support
-*
-* ===========================================================================
-*/
-
 #endif  // __OBJMGR__SCOPE_TRANSACTION__HPP

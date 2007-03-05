@@ -284,18 +284,6 @@ inline COptional<T> COptional<T>::Invert(const COptional<T> & v)
     return result;
 }
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */
-
 END_NCBI_SCOPE
 
 #endif // APP_BLAST_CLIENT___OPTIONAL__HPP
-
-

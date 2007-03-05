@@ -603,28 +603,3 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
     CAlgoTreeTestApplication theTestApplication;
     return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
-
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.5  2006/12/21 17:30:23  gouriano
- * Fixed memory leaks
- *
- * Revision 1.4  2006/12/07 19:20:38  kuznets
- * warning fix
- *
- * Revision 1.3  2005/10/27 16:48:48  grichenk
- * Redesigned CTreeNode (added search methods),
- * removed CPairTreeNode.
- *
- * Revision 1.2  2004/07/22 16:31:19  kuznets
- * + test for CTreePairNode::FindSubNode
- *
- * Revision 1.1  2004/07/21 18:21:21  kuznets
- * Moved tree test from corelib
- *
- *
- *
- * ==========================================================================
- */

@@ -206,23 +206,3 @@ int main(int argc, const char* argv[])
 {
     return CDBAPI_CacheAdmin().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/07/21 18:54:59  kuznets
- * Code cleanup
- *
- * Revision 1.3  2005/04/04 13:03:56  ssikorsk
- * Revamp of DBAPI exception class CDB_Exception
- *
- * Revision 1.2  2004/07/21 15:33:46  kuznets
- * Fixed auto-login name and application parameters
- *
- * Revision 1.1  2004/07/20 18:14:05  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

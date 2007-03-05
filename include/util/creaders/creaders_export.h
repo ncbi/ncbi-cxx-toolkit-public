@@ -80,19 +80,4 @@
 
 /* @} */
 
-
-/*
- * ==========================================================================
- *
- * $Log$
- * Revision 1.2  2004/03/15 17:17:14  gorelenk
- * Removed #undef NCBI_DLL_BUILD when defined _LIB .
- *
- * Revision 1.1  2004/02/03 16:46:57  ucko
- * Add Colleen Bollin's Toolkit-independent alignment reader.
- *
- *
- * ==========================================================================
- */
-
 #endif  /*  UTIL_CREADERS___CREADERS_EXPORT__H  */

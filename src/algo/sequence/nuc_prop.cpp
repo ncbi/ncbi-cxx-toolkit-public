@@ -158,30 +158,3 @@ int CNucProp::GetPercentGC(const CSeqVector& seqvec)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/08/18 17:35:29  jcherry
- * Fixed CountNmers to alter result vectors size, not just its capacity.
- * Made Int2Nmer build its string from scratch, and do so properly.
- *
- * Revision 1.4  2003/07/28 20:41:01  jcherry
- * Changed GetPercentGC() to round properly
- *
- * Revision 1.3  2003/07/28 11:54:34  dicuccio
- * Changed Int2Nmer to use std::string instead of char*
- *
- * Revision 1.2  2003/07/01 19:01:13  ucko
- * Fix scope use
- *
- * Revision 1.1  2003/07/01 15:10:40  jcherry
- * Initial versions of nuc_prop and prot_prop
- *
- * ===========================================================================
- */
-

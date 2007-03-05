@@ -72,42 +72,4 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights);
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.11  2004/11/22 21:40:01  grichenk
-* Doxygenized comments, replaced exception with CObjmgrUtilException.
-*
-* Revision 1.10  2004/08/19 13:06:18  dicuccio
-* Dropped export specifiers on inlined exceptions
-*
-* Revision 1.9  2004/05/25 15:38:12  ucko
-* Remove inappropriate THROWS declaration from GetProteinWeight.
-*
-* Revision 1.8  2002/12/30 20:48:01  ostell
-* added NCBI_XOBJUTIL_EXPORT and #includes needed
-*
-* Revision 1.7  2002/12/26 12:44:39  dicuccio
-* Added Win32 export specifiers
-*
-* Revision 1.6  2002/12/24 16:11:54  ucko
-* Make handle const per recent changes to CFeat_CI.
-*
-* Revision 1.5  2002/06/07 18:19:59  ucko
-* Reworked to take advantage of CBioseq_Handle::GetSequenceView.
-*
-* Revision 1.4  2002/05/06 16:11:55  ucko
-* Update for new OM; move CVS log to end.
-*
-* Revision 1.3  2002/05/03 21:28:05  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.2  2002/04/19 17:50:03  ucko
-* Add forward declaration for CBioseqHandle.
-*
-* Revision 1.1  2002/03/06 22:08:39  ucko
-* Add code to calculate protein weights.
-* ===========================================================================
-*/
-
 #endif  /* WEIGHT__HPP */

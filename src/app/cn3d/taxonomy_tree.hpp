@@ -97,20 +97,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_TAXONOMY_TREE__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2003/02/03 19:20:08  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.3  2002/10/07 18:51:53  thiessen
-* add abbreviated taxonomy tree
-*
-* Revision 1.2  2002/10/04 18:45:28  thiessen
-* updates to taxonomy viewer
-*
-* Revision 1.1  2002/09/09 22:51:19  thiessen
-* add basic taxonomy tree viewer
-*
-*/

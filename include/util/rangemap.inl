@@ -30,13 +30,6 @@
 *
 * File Description:
 *   Generic map with range as key: inline methods
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2000/12/21 21:52:41  vasilche
-* Added CRangeMap<> template for sorting integral ranges (Seq-loc).
-*
-* ===========================================================================
 */
 
 #endif /* def RANGEMAP__HPP  &&  ndef RANGEMAP__INL */

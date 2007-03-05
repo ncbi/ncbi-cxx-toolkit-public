@@ -166,37 +166,3 @@ CMultiAligner::FindPatternHits()
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
-
-/* ====================================================================
- * $Log$
- * Revision 1.9  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.8  2006/02/01 23:36:35  papadopo
- * fix to previous commit
- *
- * Revision 1.7  2006/01/31 19:27:39  papadopo
- * fix compile warnings
- *
- * Revision 1.6  2005/12/16 23:32:55  papadopo
- * protect against empty patterns; also assign a small score to pattern hits so they do *not* override other alignments
- *
- * Revision 1.5  2005/11/21 21:03:00  papadopo
- * fix documentation, add doxygen
- *
- * Revision 1.4  2005/11/10 16:18:31  papadopo
- * Allow hitlists to be regenerated cleanly
- *
- * Revision 1.3  2005/11/08 18:42:16  papadopo
- * assert -> _ASSERT
- *
- * Revision 1.2  2005/11/08 17:54:00  papadopo
- * 1. do not assume blast namespace
- * 2. ASSERT -> assert
- *
- * Revision 1.1  2005/11/07 18:14:00  papadopo
- * Initial revision
- *
- * ====================================================================
- */

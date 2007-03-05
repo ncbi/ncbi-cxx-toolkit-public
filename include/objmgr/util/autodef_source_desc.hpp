@@ -85,25 +85,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.4  2006/05/12 01:03:13  ucko
-* Drop redundant extra qualification from GetComboDescription per GCC 4.1.
-*
-* Revision 1.3  2006/05/04 11:44:40  bollin
-* improvements to method for finding unique organism description
-*
-* Revision 1.2  2006/04/17 17:39:37  ucko
-* Fix capitalization of header filenames.
-*
-* Revision 1.1  2006/04/17 16:25:01  bollin
-* files for automatically generating definition lines, using a combination
-* of modifiers to make definition lines unique within a set and listing the
-* relevant features on the sequence.
-*
-*
-* ===========================================================================
-*/
-
 #endif //OBJMGR_UTIL_AUTODEF_SOURCE_DESC__HPP

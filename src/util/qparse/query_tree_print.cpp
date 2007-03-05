@@ -206,14 +206,3 @@ void CQueryParseTree::Print(CNcbiOstream& os) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log: query_tree_print.cpp,v $
- * Revision 1.1  2007/01/11 14:50:23  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-

@@ -71,15 +71,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/11/07 19:57:20  lewisg
-* iterative search
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1887, CRC32: e05c346d */

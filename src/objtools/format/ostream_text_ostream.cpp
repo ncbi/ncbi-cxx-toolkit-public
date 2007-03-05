@@ -76,30 +76,3 @@ void COStreamTextOStream::AddLine(
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2006/01/17 18:27:40  ludwigf
-* ADDED: Implementation for the new AddLine() method.
-*
-* Revision 1.5  2005/04/07 18:25:01  shomrat
-* Use \n instead of endl
-*
-* Revision 1.4  2005/03/31 21:15:38  vasilche
-* Do not flush after every line.
-*
-* Revision 1.3  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.2  2004/04/22 15:59:35  shomrat
-* Removed unused code
-*
-* Revision 1.1  2003/12/17 20:23:45  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

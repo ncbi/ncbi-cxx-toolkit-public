@@ -183,39 +183,3 @@ int main(int argc, const char* argv[])
 {
     return CTestID1ClientApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2004/10/05 16:46:09  shomrat
-* rollback last change
-*
-* Revision 1.8  2004/10/05 16:16:49  shomrat
-* Use in place NStr::TruncateSpaces
-*
-* Revision 1.7  2004/07/01 15:47:09  ucko
-* Report exceptions thrown by RunCommand, rather than letting them kill
-* the program.
-*
-* Revision 1.6  2004/05/19 17:22:59  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.5  2003/04/09 16:00:14  ucko
-* Give all RPC clients unique basenames.
-*
-* Revision 1.4  2003/03/11 15:39:12  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.3  2002/12/23 15:32:08  dicuccio
-* Added 'help' command.  Implemented getgihist and getgirev commands.
-*
-* Revision 1.2  2002/11/13 21:12:52  ucko
-* Fixed code introduced without a test compile.  (Oops.)
-*
-* Revision 1.1  2002/11/13 20:13:46  ucko
-* Add datatool-generated client classes
-*
-*
-* ===========================================================================
-*/

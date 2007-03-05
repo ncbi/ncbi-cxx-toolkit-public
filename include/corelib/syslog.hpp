@@ -130,26 +130,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/10/31 18:41:16  grichenk
- * Redesigned diagnostics setup.
- * Moved the setup function to ncbidiag.cpp.
- *
- * Revision 1.4  2006/08/30 18:05:02  ucko
- * Add an HonorRegistrySettings method to support tuning the default facility.
- *
- * Revision 1.3  2005/12/29 15:39:26  jcherry
- * Added export specifier for CSysLog
- *
- * Revision 1.2  2005/07/28 17:24:14  ucko
- * Shift flags down one place to stay clear of the sign bit.
- *
- * Revision 1.1  2005/07/27 15:25:36  ucko
- * Add a new diagnostic handler class encapsulating system logging facilities.
- *
- * ===========================================================================
- */
-
 #endif  /* CORELIB___SYSLOG__HPP */

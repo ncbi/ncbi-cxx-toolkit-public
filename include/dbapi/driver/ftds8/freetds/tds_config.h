@@ -67,23 +67,4 @@
 #  endif
 #endif
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2004/10/16 20:48:42  vakatov
- * +  #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
- * to allow the renaming (and the use of the renamed) DBLIB symbols in
- * the built-in FreeTDS.
- *
- * Revision 1.1  2003/02/18 07:53:11  vakatov
- * Initial revision
- * (Replaces generated version -- as the latter is actually platform- and
- * theoretically compiler- and compilation-mode- dependent
- * and therefore should not be here.)
- *
- * ===========================================================================
- */
-
 #endif  /* DBAPI_DRIVER_FTDS8_FREETDS___FTDS_CONFIG__H */

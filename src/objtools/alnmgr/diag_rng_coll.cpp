@@ -198,23 +198,3 @@ void CDiagRngColl::x_DiffSecond(const TAlnRng& rng,
 
 
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/11/14 20:36:34  todorov
-* Diff is const.
-*
-* Revision 1.3  2006/11/06 19:56:35  todorov
-* Eliminated basewidths.  Positions are stored in pseudo coords.
-*
-* Revision 1.2  2006/10/19 17:17:36  todorov
-* Include file fix.
-*
-* Revision 1.1  2006/10/19 17:07:23  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/

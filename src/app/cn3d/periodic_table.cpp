@@ -181,29 +181,3 @@ PeriodicTableClass::~PeriodicTableClass(void)
 }
 
 END_SCOPE(Cn3D)
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2005/10/19 17:28:19  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.6  2004/05/21 21:41:39  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.5  2004/03/15 18:27:12  thiessen
-* prefer prefix vs. postfix ++/-- operators
-*
-* Revision 1.4  2004/02/19 17:05:01  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.3  2003/02/03 19:20:04  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.2  2000/08/03 15:12:23  thiessen
-* add skeleton of style and show/hide managers
-*
-* Revision 1.1  2000/07/12 23:27:50  thiessen
-* now draws basic CPK model
-*
-*/

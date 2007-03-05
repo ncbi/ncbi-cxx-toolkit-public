@@ -123,17 +123,3 @@ void CFastaAlignmentBuilder::AddData(TSeqPos       alignment_pos,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/13 14:44:18  ucko
-* Add a new class-based FASTA reader, but leave the existing reader
-* alone for now.
-*
-*
-* ===========================================================================
-*/
-
-

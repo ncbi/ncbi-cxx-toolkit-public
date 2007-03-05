@@ -30,13 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  1999/01/28 15:11:07  vasilche
-* Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
-*
-* ===========================================================================
 */
 
 

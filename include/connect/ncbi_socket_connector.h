@@ -118,38 +118,4 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 
 /* @} */
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2003/05/14 03:48:51  lavr
- * SOCKET_CreateConnectorOnTopEx(): init_data and init_size parameters removed
- *
- * Revision 6.8  2003/04/09 19:05:57  siyan
- * Added doxygen support
- *
- * Revision 6.7  2003/01/08 01:59:33  lavr
- * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
- *
- * Revision 6.6  2002/09/19 18:05:34  lavr
- * Header file guard macro changed; log moved to end
- *
- * Revision 6.5  2002/08/07 16:31:40  lavr
- * Added eSCC_SetReadOnWrite to constructor flags; log moved to end
- *
- * Revision 6.4  2002/01/12 22:15:28  lavr
- * Fixed function description to use not former but current parameter names
- *
- * Revision 6.3  2001/12/04 15:54:29  lavr
- * +SOCK_CreateConnectorOnTop(), +SOCK_CreateConnectorOnTopEx()
- *
- * Revision 6.2  2001/01/23 23:09:18  lavr
- * Flags added to 'Ex' constructor
- *
- * Revision 6.1  2000/04/07 20:05:37  vakatov
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_SOCKET_CONNECTOR__H */

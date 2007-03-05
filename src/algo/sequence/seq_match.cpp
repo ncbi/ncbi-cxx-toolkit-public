@@ -127,27 +127,3 @@ void CSeqMatch::CompNcbi8na(string& seq)
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.4  2003/08/18 19:23:33  jcherry
- * Moved seq_match to algo/sequence
- *
- * Revision 1.3  2003/08/13 17:40:26  dicuccio
- * Formatting fixes.  Changes some pass-by-val to pass-by-reference.  Fixed
- * complement table
- *
- * Revision 1.2  2003/08/13 16:42:11  dicuccio
- * Compilation fixes for MSVC
- *
- * Revision 1.1  2003/08/12 18:52:58  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

@@ -287,26 +287,3 @@ void CSysLog::HonorRegistrySettings(IRegistry* reg)
 }
 
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/08/30 18:05:12  ucko
-* Add an HonorRegistrySettings method to support tuning the default facility.
-*
-* Revision 1.3  2005/07/28 17:25:23  ucko
-* Post: check for fNoOverride rather than default m_Priority when
-* deciding whether to reconnect.
-*
-* Revision 1.2  2005/07/27 20:06:47  ucko
-* Consult m_Flags rather than flags outside the constructor.
-*
-* Revision 1.1  2005/07/27 15:26:58  ucko
-* Add a new diagnostic handler class encapsulating system logging facilities.
-* (Only fully implemented on Unix [including Mac OS X] so far; other
-* platforms just write to clog.)
-*
-*
-* ===========================================================================
-*/

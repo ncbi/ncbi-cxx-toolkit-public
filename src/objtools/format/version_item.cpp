@@ -112,33 +112,3 @@ void CVersionItem::x_GatherInfo(CBioseqContext& ctx)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.6  2004/05/06 18:01:29  shomrat
-* Get accession from context
-*
-* Revision 1.5  2004/04/22 15:52:35  shomrat
-* Changes in context
-*
-* Revision 1.4  2004/03/25 20:48:19  shomrat
-* remove redundant include directive
-*
-* Revision 1.3  2004/03/10 21:28:06  shomrat
-* Limit Seq-id type for version
-*
-* Revision 1.2  2003/12/18 17:43:36  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:25:19  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

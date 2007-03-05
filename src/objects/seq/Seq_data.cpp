@@ -185,30 +185,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2004/05/19 17:25:14  gorelenk
-* Added include of PCH - ncbi_pch.hpp
-*
-* Revision 1.4  2003/10/21 13:48:50  grichenk
-* Redesigned type aliases in serialization library.
-* Fixed the code (removed CRef-s, added explicit
-* initializers etc.)
-*
-* Revision 1.3  2003/01/03 02:56:05  ucko
-* Fixed spelling of DoConstruct in more places.
-*
-* Revision 1.2  2003/01/03 01:24:00  ucko
-* Dropped CException:: from calls to NCBI_THROW; fixed spelling of DoConstruct.
-*
-* Revision 1.1  2003/01/02 15:01:56  friedman
-* Added constructors; one that accepts a string and the other that accepts a
-* vecor<char> as an arguement.
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 64, chars: 1872, CRC32: 4f4e2fd */

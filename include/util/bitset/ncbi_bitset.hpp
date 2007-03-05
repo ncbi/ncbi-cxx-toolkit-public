@@ -48,24 +48,4 @@
 
 #include <util/bitset/bm.h>
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/12/06 21:41:39  kuznets
-* new serialization implementation
-*
-* Revision 1.2  2006/03/15 16:05:49  kuznets
-* Use NCBI_RESTRICT and NCBI_FORCEINLINE
-*
-* Revision 1.1  2004/04/14 12:50:14  kuznets
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif /* UTIL___BITSET_BM__HPP */
-
-
-

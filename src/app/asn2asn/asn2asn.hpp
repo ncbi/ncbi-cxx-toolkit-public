@@ -27,19 +27,6 @@
 *
 * File Description:
 *   asn2asn test program
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/08/30 16:22:47  vasilche
-* Added MT mode to asn2asn
-*
-* Revision 1.2  2000/12/12 14:28:33  vasilche
-* Changed the way arguments are processed.
-*
-* Revision 1.1  2000/01/05 19:46:58  vasilche
-* Added asn2asn test application.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbiapp.hpp>

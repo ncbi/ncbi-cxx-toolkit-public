@@ -270,22 +270,3 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/07/25 20:33:06  todorov
-* Passing the default genetic code to x_CalculateScore
-*
-* Revision 1.3  2005/06/23 18:00:50  todorov
-* Abstracted sequence fetcthing in CAlnMixSeq::GetSeqString
-*
-* Revision 1.2  2005/06/22 22:14:33  todorov
-* Added an option to process stronger input alns first
-*
-* Revision 1.1  2005/03/01 17:28:49  todorov
-* Rearranged CAlnMix classes
-*
-* ===========================================================================
-*/

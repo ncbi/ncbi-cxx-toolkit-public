@@ -73,17 +73,4 @@ extern void CONN_TestConnector
 }  /* extern "C" */
 #endif
 
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.2  2003/02/10 20:36:24  lavr
- * Move log to end
- *
- * Revision 6.1  2000/04/07 20:03:02  vakatov
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* NCBI_CONNTEST__H */

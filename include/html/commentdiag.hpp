@@ -87,26 +87,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2003/11/05 18:41:05  dicuccio
- * Added export specifiers
- *
- * Revision 1.4  2003/11/03 17:02:53  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.3  2003/11/03 14:41:15  ivanov
- * Log moved to end
- *
- * Revision 1.2  2003/04/25 13:45:21  siyan
- * Added doxygen groupings
- *
- * Revision 1.1  2001/11/19 15:20:22  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- * ===========================================================================
- */
-
 #endif  /* HTML___COMMENTDIAG__HPP */

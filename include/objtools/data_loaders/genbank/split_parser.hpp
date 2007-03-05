@@ -98,44 +98,4 @@ protected:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* $Log$
-* Revision 1.9  2006/11/14 19:23:30  vasilche
-* Added parsing of feature ids information.
-*
-* Revision 1.8  2005/06/09 15:17:29  grichenk
-* Added support for split history assembly.
-*
-* Revision 1.7  2004/10/18 14:01:28  vasilche
-* Updated split parser for new SeqSplit specs.
-*
-* Revision 1.6  2004/08/19 14:18:36  vasilche
-* Added splitting of whole Bioseqs.
-*
-* Revision 1.5  2004/07/12 16:59:53  vasilche
-* Added parsing of information of where split data is to be inserted.
-*
-* Revision 1.4  2004/06/15 14:08:22  vasilche
-* Added parsing split info with split sequences.
-*
-* Revision 1.3  2004/01/28 20:53:42  vasilche
-* Added CSplitParser::Attach().
-*
-* Revision 1.2  2004/01/22 22:28:31  vasilche
-* Added export specifier.
-*
-* Revision 1.1  2004/01/22 20:10:33  vasilche
-* 1. Splitted ID2 specs to two parts.
-* ID2 now specifies only protocol.
-* Specification of ID2 split data is moved to seqsplit ASN module.
-* For now they are still reside in one resulting library as before - libid2.
-* As the result split specific headers are now in objects/seqsplit.
-* 2. Moved ID2 and ID1 specific code out of object manager.
-* Protocol is processed by corresponding readers.
-* ID2 split parsing is processed by ncbi_xreader library - used by all readers.
-* 3. Updated OBJMGR_LIBS correspondingly.
-*
-*
-*/
-
 #endif//ID2_PARSER__HPP_INCLUDED

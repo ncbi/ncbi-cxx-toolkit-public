@@ -305,30 +305,3 @@ void CompoundColumnScorer::ColumnScores(const BMA& bma, unsigned int alignmentIn
 
 
 END_SCOPE(align_refine)
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/01/24 15:06:13  lanczyck
-* implement ColumnScore for InfoContent scorer
-*
-* Revision 1.2  2005/06/29 00:35:07  ucko
-* Fix GCC 2.95 build errors.
-*
-* Revision 1.1  2005/06/28 13:44:23  lanczyck
-* block multiple alignment refiner code from internal/structure/align_refine
-*
-* Revision 1.4  2005/05/26 18:51:50  lanczyck
-* make invalid score constant consistent w/ RefinerDefs.hpp
-*
-* Revision 1.3  2005/01/18 18:42:39  lanczyck
-* add eUseRawScoreUnderBased score usage type
-*
-* Revision 1.2  2004/12/03 02:05:12  lanczyck
-* big changes...\nadd compound column scorer; modify boundary algorithms to take multiple scorers; new options in application to support new scoring options
-*
-* Revision 1.1  2004/11/16 23:06:02  lanczyck
-* perform block edits after LOO; add new options for block editing; rename extend/shrink class to reflect can now both extend AND shrink (vs. OR)
-*
-* ---------------------------------------------------------------------------
-*/

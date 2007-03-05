@@ -192,28 +192,3 @@ void CAlnMapPrinter::Chunks(CAlnMap::TGetChunkFlags flags)
         }
     }
 }
-
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2007/01/04 19:42:56  todorov
- * Introduced delimiter as a default parameter.
- *
- * Revision 1.4  2005/03/17 16:59:19  ucko
- * Use our portable IOS_BASE macro rather than hardcoding ios_base,
- * which GCC 2.95 lacks.
- *
- * Revision 1.3  2005/03/15 22:16:44  todorov
- * + PrintSeqPos
- *
- * Revision 1.2  2005/03/15 19:17:16  todorov
- * + PrintRow
- *
- * Revision 1.1  2005/03/15 17:43:36  todorov
- * Initial revision
- *
- * ===========================================================================
- */

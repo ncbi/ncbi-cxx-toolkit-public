@@ -422,18 +422,3 @@ void NNIWithPartialMatrix(meTree *T,double **D,double **A,int *count)
 
 END_SCOPE(fastme)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/01/13 17:09:25  papadopo
- * add workaround to prevent infinite loops when compiled with optimization
- *
- * Revision 1.2  2004/05/21 21:41:03  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.1  2004/02/10 15:16:00  jcherry
- * Initial version
- *
- * ===========================================================================
- */

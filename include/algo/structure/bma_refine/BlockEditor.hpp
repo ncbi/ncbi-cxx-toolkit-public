@@ -147,37 +147,3 @@ private:
 END_SCOPE(align_refine)
 
 #endif // AR_BLOCK_EDITOR__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/08/09 18:33:51  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.3  2006/07/17 14:36:39  ucko
-* Place forward declarations within BEGIN_/END_SCOPE blocks per VisualAge.
-*
-* Revision 1.2  2005/11/23 01:01:14  lanczyck
-* freeze specified blocks in both LOO and BE phases;
-* add support for a callback for a progress meter
-*
-* Revision 1.1  2005/06/28 13:45:25  lanczyck
-* block multiple alignment refiner code from internal/structure/align_refine
-*
-* Revision 1.5  2004/11/16 23:06:02  lanczyck
-* perform block edits after LOO; add new options for block editing; rename extend/shrink class to reflect can now both extend AND shrink (vs. OR)
-*
-* Revision 1.4  2004/11/13 00:03:31  lanczyck
-* allow shrinking blocks when editing alignment
-*
-* Revision 1.3  2004/11/09 22:36:48  lanczyck
-* add code to perform the actual boundary move operation
-*
-* Revision 1.2  2004/11/05 22:17:56  lanczyck
-* change class name to CBlockedAlignmentEditor; make ExtendableBlock a global namespace struct; change GetExtendableBlocks to give only requested extensions
-*
-* Revision 1.1  2004/09/03 22:18:21  lanczyck
-* initial version
-*
-*
-*/

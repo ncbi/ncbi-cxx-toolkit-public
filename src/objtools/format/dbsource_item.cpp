@@ -535,33 +535,3 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2004/12/06 17:23:45  shomrat
-* Fixed ID order
-*
-* Revision 1.6  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.5  2004/04/22 15:55:04  shomrat
-* Changes in context
-*
-* Revision 1.4  2004/03/25 20:36:31  shomrat
-* Use handles
-*
-* Revision 1.3  2004/03/16 19:07:25  vasilche
-* Use CConstRef<CSeq_id> to store returned CConstRef<CSeq_id>.
-*
-* Revision 1.2  2003/12/18 17:43:32  shomrat
-* context.hpp moved
-*
-* Revision 1.1  2003/12/17 20:19:33  shomrat
-* Initial Revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/

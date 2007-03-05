@@ -124,24 +124,3 @@ CProfileData::Clear()
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
-
-/* ====================================================================
- * $Log$
- * Revision 1.5  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.4  2005/11/21 21:03:00  papadopo
- * fix documentation, add doxygen
- *
- * Revision 1.3  2005/11/10 15:38:26  papadopo
- * Use custom header for CProfileData
- *
- * Revision 1.2  2005/11/08 17:54:41  papadopo
- * fix typo
- *
- * Revision 1.1  2005/11/07 18:14:00  papadopo
- * Initial revision
- *
- * ====================================================================
- */

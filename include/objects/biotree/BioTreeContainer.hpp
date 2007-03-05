@@ -85,17 +85,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/27 12:25:27  dicuccio
-* Initial revision: added statistics reporting functions
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BIOTREE_BIOTREECONTAINER_HPP
 /* Original file checksum: lines: 94, chars: 2716, CRC32: ccfc4edf */

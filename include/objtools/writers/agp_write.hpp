@@ -73,28 +73,3 @@ void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/05/02 16:07:30  dicuccio
- * Updated AgpWrite(): added additional constructors to write data from CSeqMap,
- * CBioseqHandle, and CBioseqHandle with sequence range.  Refactored internals.
- * Dump best seq-id instead of gi for component accession
- *
- * Revision 1.4  2004/07/09 11:54:52  dicuccio
- * Dropped version of AgpWrite() that takes the object manager - use only one API,
- * taking a CScope
- *
- * Revision 1.3  2004/07/07 21:45:07  jcherry
- * Removed form of AgpWrite that creates its own object manager
- *
- * Revision 1.2  2004/07/06 13:21:10  jcherry
- * Added export specifiers
- *
- * Revision 1.1  2004/06/29 13:29:29  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

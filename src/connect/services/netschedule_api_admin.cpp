@@ -273,13 +273,3 @@ void CNetScheduleAdmin::Select(const string& query, const vector<string>& fields
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log: netschedule_api_admin.cpp,v $
- * Revision 6.1  2007/01/09 15:29:55  didenko
- * Added new API for NetSchedule service
- *
- * ===========================================================================
- */

@@ -76,18 +76,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/08/23 21:31:30  lewisg
-* rearrange file parsing
-*
-* Revision 1.1  2006/07/20 21:00:21  lewisg
-* move functions out of COMSSA, create laddercontainer
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1884, CRC32: 7c1f0b36 */

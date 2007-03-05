@@ -32,17 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2005/10/31 21:26:05  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 
@@ -96,4 +85,3 @@ for(i=0; i<pvl->n; i++) pvl->p[i]=pvl->p[i]/sb;
 return(rsmp(pvl));
 
 }
-

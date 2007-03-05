@@ -234,26 +234,3 @@ int main(int argc, const char* argv[])
     int result = CCgiSampleApplication().AppMain(argc, argv);
     return result;
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/02/27 16:44:56  ucko
- * Use CBlobStorageFactory rather than CBSF_NetCache, which seems to have
- * vanished; adjust include directives accordingly (and drop redundant ones).
- *
- * Revision 1.2  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.1  2005/12/12 15:18:08  didenko
- * Added new sample which shows how the NetCache can be used from a cgi application.
- *
- * ===========================================================================
- */

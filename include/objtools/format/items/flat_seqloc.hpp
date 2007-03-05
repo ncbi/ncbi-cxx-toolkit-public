@@ -98,30 +98,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/13 17:16:38  jcherry
-* Added export specifiers
-*
-* Revision 1.5  2004/08/19 16:43:15  shomrat
-* changed return type from void to bool for x_Add methods
-*
-* Revision 1.4  2004/04/22 15:36:25  shomrat
-* Changes in context
-*
-* Revision 1.3  2004/03/05 18:50:25  shomrat
-* clean code
-*
-* Revision 1.2  2004/02/19 17:53:47  shomrat
-* add flag to differentiate between loaction and genome assembly formatting
-*
-* Revision 1.1  2003/12/17 19:47:33  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT_ITEMS___FLAT_SEQLOC__HPP */

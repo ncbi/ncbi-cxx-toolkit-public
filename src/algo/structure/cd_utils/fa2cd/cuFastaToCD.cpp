@@ -702,28 +702,3 @@ int main(int argc, const char* argv[])
     fasta2Cd.AppMain(argc, argv, 0, eDS_Default, 0);
     return 0;
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/12 16:18:38  lanczyck
- * change version number to '1.1.0'
- *
- * Revision 1.5  2006/09/01 15:44:05  lanczyck
- * add -v (version) flag
- *
- * Revision 1.4  2006/08/23 19:42:18  lanczyck
- * change defaults and arguments for public release with CDTree
- *
- * Revision 1.3  2006/06/07 20:31:36  lanczyck
- * add <algorithm> to includes for PC; remove unused variables
- *
- * Revision 1.2  2006/05/22 17:15:44  lanczyck
- * use new CCdCore subclass for a Fasta-generated CDs
- *
- * Revision 1.1  2006/03/29 15:44:07  lanczyck
- * add files for fasta->cd converter; change Makefile accordingly
- *
- * ===========================================================================
- */

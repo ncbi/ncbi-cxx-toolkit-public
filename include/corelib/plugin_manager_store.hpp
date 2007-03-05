@@ -149,41 +149,4 @@ void RegisterEntryPoint(typename CPluginManager<TInterface>::
 
 END_NCBI_SCOPE
 
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.9  2006/12/04 13:57:49  dicuccio
- * Added logging, asserts
- *
- * Revision 1.8  2005/06/09 15:06:11  ucko
- * Guard against multiple inclusion.
- *
- * Revision 1.7  2005/03/23 14:41:45  vasilche
- * Do not use non-portable CSingletonObjectStore.
- * Removed non-MT-safe "created" flag.
- * CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.
- *
- * Revision 1.6  2004/12/27 16:10:41  vasilche
- * Force linking in CSingletonObjectStore::s_obj_store on GCC.
- *
- * Revision 1.5  2004/12/22 19:25:49  grichenk
- * +RegisterEntryPoint() template
- *
- * Revision 1.4  2004/12/21 21:40:15  grichenk
- * Moved obj_store and plugin_manager_store to corelib
- *
- * Revision 1.3  2004/08/05 18:42:44  kuznets
- * +CPMMake::Get() accepting interface name
- *
- * Revision 1.2  2004/08/05 18:10:04  kuznets
- * Added plugin manager maker template
- *
- * Revision 1.1  2004/08/02 13:43:46  kuznets
- * Initial revision
- *
- *
- * ==========================================================================
- */
-
 #endif  /* CORELIB___PLUGIN_MANAGER_STORE__HPP */

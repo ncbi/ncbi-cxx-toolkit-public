@@ -134,47 +134,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2006/02/02 14:35:32  vasilche
-* Renamed old prefetch classes.
-*
-* Revision 1.9  2005/03/29 19:21:56  jcherry
-* Added export specifiers
-*
-* Revision 1.8  2005/01/25 14:34:23  vasilche
-* Moved bool operator to public section.
-*
-* Revision 1.7  2005/01/24 17:09:36  vasilche
-* Safe boolean operators.
-*
-* Revision 1.6  2004/12/22 15:56:24  vasilche
-* Use typedefs for internal containers.
-* Use SSeqMatch_DS instead of CSeqMatch_Info.
-*
-* Revision 1.5  2004/08/04 14:53:26  vasilche
-* Revamped object manager:
-* 1. Changed TSE locking scheme
-* 2. TSE cache is maintained by CDataSource.
-* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
-* 4. Fixed processing of split data.
-*
-* Revision 1.4  2004/05/07 13:47:34  grichenk
-* Removed single-id constructors.
-* Added non-locking prefetch mode.
-*
-* Revision 1.3  2004/04/21 15:35:06  gorelenk
-* Added export prefix to class CPrefetchToken_Impl .
-*
-* Revision 1.2  2004/04/19 14:52:29  grichenk
-* Added prefetch depth limit, redesigned prefetch queue.
-*
-* Revision 1.1  2004/04/16 13:30:34  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  // PREFETCH_IMPL__HPP

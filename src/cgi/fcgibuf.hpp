@@ -78,43 +78,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.11  2006/05/18 19:05:26  grichenk
- * Added byte counter
- *
- * Revision 1.10  2003/10/16 15:18:55  lavr
- * Multiple flush bug fixed from R1.13
- *
- * Revision 1.8  2003/10/09 20:57:06  lavr
- * Bugfixes for the attempt to make I/O buffers fully buffered on top
- * of respective implementations of FCGI buffers in the FCGI library
- *
- * Revision 1.6  2003/10/07 14:40:28  lavr
- * CCgiIBuffer: made buffered on internal FGCX_Stream storage
- * CCgiOBuffer: buffering is done entirely on internal FGCX_Stream storage
- * Log moved to end; guard macro standardized
- *
- * Revision 1.5  2001/10/15 18:26:32  ucko
- * Implement sync; fix a typo
- *
- * Revision 1.4  1999/10/21 14:50:49  sandomir
- * optimization for overflow() (internal buffer added)
- *
- * Revision 1.3  1999/06/08 21:36:29  vakatov
- * #HAVE_NO_CHAR_TRAITS::  use "CT_XXX_TYPE" instead of "xxx_type" for
- * xxx = { "int", "char", "pos", "off" }
- *
- * Revision 1.2  1999/04/28 16:54:19  vasilche
- * Implemented stream input processing for FastCGI applications.
- *
- * Revision 1.1  1999/04/27 14:49:49  vasilche
- * Added FastCGI interface.
- * CNcbiContext renamed to CCgiContext.
- *
- * ===========================================================================
- */
-
 #endif  /* CGI___FCGIBUF__HPP */

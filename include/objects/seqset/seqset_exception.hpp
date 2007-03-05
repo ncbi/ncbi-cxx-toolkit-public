@@ -65,21 +65,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/08/19 13:05:57  dicuccio
-* Added include for ncbistr (for CParseTemplException)
-*
-* Revision 1.2  2004/08/17 14:35:42  dicuccio
-* Don't export inline classes
-*
-* Revision 1.1  2003/02/24 20:03:49  gouriano
-* use template-based exceptions instead of errno and parse exceptions
-*
-*
-* ===========================================================================
-*/
-
 #endif // NCBI_SEQSET_EXCEPTION__HPP

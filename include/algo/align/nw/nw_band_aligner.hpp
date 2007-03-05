@@ -109,37 +109,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/08/07 17:33:43  kapustin
- * Support off-main diagonal bands
- *
- * Revision 1.7  2006/07/18 19:34:17  kapustin
- * Save terminal backtrace index in a member
- *
- * Revision 1.6  2005/04/04 16:32:23  kapustin
- * Distinguish matches from mismatches in raw transcripts
- *
- * Revision 1.5  2005/03/16 15:48:26  jcherry
- * Allow use of std::string for specifying sequences
- *
- * Revision 1.4  2004/12/15 20:16:50  kapustin
- * Fix after algo/align rearrangement
- *
- * Revision 1.3  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. 
- * x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters 
- * to specify starting coordinates.
- *
- * Revision 1.2  2004/11/15 22:21:48  grichenk
- * Doxygenized comments, fixed group names.
- *
- * Revision 1.1  2004/09/16 19:26:05  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_ALIGN___NW_BAND_ALIGNER__HPP */

@@ -107,20 +107,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/10/26 18:30:14  jcherry
-* Added export specifiers
-*
-* Revision 1.1  2006/09/18 13:56:22  kskatz
-* Added three predicate classes for finding commentaries by heading, type, or both
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ENTREZGENE_GENE_COMMENTARY_HPP
 /* Original file checksum: lines: 94, chars: 2715, CRC32: 55ab55f7 */

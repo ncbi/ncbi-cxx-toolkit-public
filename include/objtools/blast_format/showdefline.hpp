@@ -333,37 +333,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*===========================================
-$Log$
-Revision 1.9  2006/12/13 17:08:11  camacho
-+ kBlastFmtDflt_NumDescriptions, kBlastFmtDflt_NumAlignments
-
-Revision 1.8  2006/11/28 15:40:37  jianye
-adding sorting seqalign functions
-
-Revision 1.7  2005/12/21 15:18:13  jcherry
-Added export specifiers
-
-Revision 1.6  2005/07/21 16:24:50  dondosha
-Added 3 static functions for extraction of defline parts
-
-Revision 1.5  2005/02/02 16:31:57  jianye
-int to size_t to get rid of compiler warning
-
-Revision 1.4  2005/02/01 21:28:42  camacho
-Doxygen fixes
-
-Revision 1.3  2005/01/31 17:43:02  jianye
-change unsigned int to size_t
-
-Revision 1.2  2005/01/25 17:34:13  jianye
-add NCBI_XBLASTFORMAT_EXPORT label
-
-Revision 1.1  2005/01/25 15:37:25  jianye
-Initial check in
-
-
-*===========================================
-*/
 #endif

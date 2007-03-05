@@ -227,17 +227,3 @@ int main(int argc, const char* argv[])
     _TRACE("back to normal diags");
     return result;
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/02/27 14:50:21  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.1  2005/06/08 16:23:42  didenko
- * Added remote cgi sample application
- *
-  * ===========================================================================
- */

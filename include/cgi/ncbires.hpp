@@ -31,26 +31,6 @@
 *
 * File Description:
 *   Basic Resource class
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.31  2003/11/05 18:40:55  dicuccio
-* Added export specifiers
-*
-* Revision 1.30  2003/04/10 19:01:46  siyan
-* Added doxygen support
-*
-* Revision 1.29  1999/08/11 18:33:03  sandomir
-* class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
-*
-* Revision 1.28  1999/05/11 03:11:47  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
-*
-* Revision 1.27  1999/05/06 20:32:51  pubmed
-* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
-*
-*
-* ===========================================================================
 */
 
 #include <cgi/ncbicgi.hpp>
@@ -218,4 +198,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-

@@ -111,15 +111,3 @@ private:
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2005/04/13 13:47:48  dicuccio
- * Added export specifiers.  White space changes: reindented class body
- *
- * Revision 1.1  2005/04/12 13:35:34  morgulis
- * Support for binary format of unit counts file.
- *
- * ========================================================================
- */

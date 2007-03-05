@@ -331,26 +331,3 @@ int main(int argc, const char* argv[])
 {
     return NCBI_NS_NCBI::CTestHash().AppMain(argc, argv);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/04/25 20:52:29  ivanov
- * Get rid of 64-bit Workshop compilation warnings
- *
- * Revision 1.4  2005/04/12 16:55:18  ucko
- * Explicitly include <corelib/ncbitime.hpp>
- *
- * Revision 1.3  2005/02/10 16:13:49  grichenk
- * Reduced number of test cycles
- *
- * Revision 1.2  2005/02/09 16:33:02  grichenk
- * Improved test
- *
- * Revision 1.1  2005/02/08 18:45:51  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
- */

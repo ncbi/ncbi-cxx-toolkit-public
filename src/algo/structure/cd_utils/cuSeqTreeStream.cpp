@@ -302,16 +302,3 @@ CdTreeStream::~CdTreeStream()
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-/*
- * ===========================================================================
- * 
- * $Log$
- * Revision 1.2  2005/06/03 16:23:32  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- * 
- * ===========================================================================
- */

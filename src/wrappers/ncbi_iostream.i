@@ -376,19 +376,3 @@ namespace std {
 %}
 %constant std::ostream& my_endl(std::ostream& ostr);
 #endif
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/11/01 14:34:29  jcherry
- * Added streamoff and streampos
- *
- * Revision 1.2  2006/06/12 14:00:15  jcherry
- * "string" -> "std::string"
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

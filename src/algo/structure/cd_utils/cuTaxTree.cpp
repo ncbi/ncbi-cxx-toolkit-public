@@ -569,30 +569,3 @@ TaxTreeIterator TaxTreeData::getParentAtRank(int row, string rankName)
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-        
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.5  2006/01/10 16:54:51  lanczyck
- * eliminate unused variable warnings
- *
- * Revision 1.4  2005/08/09 20:58:22  cliu
- * take care of no rank viruses.
- *
- * Revision 1.3  2005/07/20 20:05:08  cliu
- * redesign SeqTreeAPI
- *
- * Revision 1.2  2005/04/19 21:59:08  ucko
- * +stdio.h() due to use of sprintf(); don't try to use find() on a
- * tree<>, because it's not 100% STL-compatible.
- *
- * Revision 1.1  2005/04/19 14:27:18  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */
-

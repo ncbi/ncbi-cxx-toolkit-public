@@ -118,21 +118,3 @@ END_NCBI_SCOPE
 
 
 #endif //  CU_CDFROMFASTA_HPP
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2006/10/12 15:08:34  lanczyck
- * deprecate use of old ReadFasta method in favor of CFastaReader class
- *
- * Revision 1.2  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.1  2006/05/22 17:13:22  lanczyck
- * new file:  CCdCore subclass for a Fasta-generated CD
- *
- *
- * ===========================================================================
- */

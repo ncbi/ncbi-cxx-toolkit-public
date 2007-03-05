@@ -90,19 +90,3 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.3  2005/08/30 14:35:19  morgulis
- * NMer counts optimization using bit arrays. Performance is improved
- * by about 20%.
- *
- * Revision 1.2  2005/08/03 18:07:02  jcherry
- * Added export specifiers
- *
- * Revision 1.1  2005/05/02 14:27:46  morgulis
- * Implemented hash table based unit counts formats.
- *
- * ========================================================================
- */

@@ -120,27 +120,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/03/14 22:38:09  todorov
-* + remove_leading_and_trailing_gaps
-*
-* Revision 1.4  2006/02/21 15:57:31  todorov
-* CAlnMixSeq::TStarts -> CAlnMixStarts.
-*
-* Revision 1.3  2005/08/03 18:18:44  jcherry
-* Added export specifiers
-*
-* Revision 1.2  2005/03/10 19:33:00  todorov
-* Moved a few routines out of the merger to their corresponding classes
-*
-* Revision 1.1  2005/03/01 17:28:49  todorov
-* Rearranged CAlnMix classes
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_ALNMGR___ALNSEGMENTS__HPP

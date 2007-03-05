@@ -174,21 +174,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTestAsnConverterApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/05/17 20:59:15  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2003/12/23 19:37:30  ucko
-* Add a Score test that treats IN as the real number to try converting.
-*
-* Revision 1.1  2002/08/08 18:18:46  ucko
-* Add test for <ctools/asn_converter.hpp>
-*
-*
-* ===========================================================================
-*/

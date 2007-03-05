@@ -41,14 +41,4 @@
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbimisc.hpp>
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.67  2003/10/02 17:45:39  vakatov
- * All real proto and code has been moved to NCBIMISC.HPP
- *
- * ==========================================================================
- */
-
 #endif  /* CORELIB___NCBISTD__HPP */

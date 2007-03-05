@@ -129,16 +129,3 @@ public:
     };
 #endif
 };
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/05/19 18:41:43  jcherry
- * Make sure that binary ASN.1 files are opened in binary mode for reading
- *
- * Revision 1.1  2005/05/11 21:27:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */

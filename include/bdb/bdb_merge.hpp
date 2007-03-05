@@ -688,38 +688,4 @@ void CBDB_MergeBlobWalkerAsync<BF>::Close()
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2007/01/05 13:25:49  dicuccio
- * Add _ASSERT() as a safeguard in multifetch
- *
- * Revision 1.8  2006/11/30 14:19:43  kuznets
- * Removed buf_size parameter (ReadRealloc()) size passed as vector property
- *
- * Revision 1.7  2006/11/30 11:34:48  kuznets
- * half implemented ReadBlob
- *
- * Revision 1.6  2006/11/30 11:08:18  kuznets
- * added BLOB read from the merge store (merge-update)
- *
- * Revision 1.5  2006/11/22 10:28:56  kuznets
- * Fixed race condition
- *
- * Revision 1.4  2006/11/22 06:21:33  kuznets
- * Implemented multirow fetch mode when Fetch signals back about buffer ends
- *
- * Revision 1.3  2006/11/21 14:41:21  kuznets
- * added async. implementations
- *
- * Revision 1.2  2006/11/20 16:24:34  kuznets
- * compilation fixes
- *
- * Revision 1.1  2006/11/20 08:24:03  kuznets
- * initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* BDB_BLOB_MERGE_HPP_ */

@@ -153,33 +153,3 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2004/05/21 21:42:56  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.6  2003/06/16 21:17:44  shomrat
-* Changed error messages
-*
-* Revision 1.5  2003/03/31 14:40:19  shomrat
-* $id: -> $id$
-*
-* Revision 1.4  2003/03/11 16:04:09  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.3  2003/02/12 17:58:05  shomrat
-* Addition of descriptor types in switch statement for future use
-*
-* Revision 1.2  2002/12/24 16:53:43  shomrat
-* Changes to include directives
-*
-* Revision 1.1  2002/12/23 20:16:26  shomrat
-* Initial submission after splitting former implementation
-*
-*
-* ===========================================================================
-*/

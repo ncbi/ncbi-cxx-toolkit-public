@@ -200,15 +200,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/10/25 15:15:48  zaretska
-* Added Blast4_parameters helper functions
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1911, CRC32: c0649b03 */

@@ -143,34 +143,3 @@ int main(int argc, const char* argv[])
     CORE_SetLOG(0);
     return 0/*okay*/;
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.8  2003/05/14 03:58:43  lavr
- * Match changes in respective APIs of the tests
- *
- * Revision 6.7  2002/12/04 19:50:31  lavr
- * #include "../ncbi_ansi_ext.h" instead of <string.h> to define strcasecmp()
- *
- * Revision 6.6  2002/12/04 16:57:11  lavr
- * Toggle verbose logging from environment; move change log to end
- *
- * Revision 6.5  2002/03/22 19:47:55  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.4  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.3  2001/12/04 15:55:33  lavr
- * +Test for SOCK_CreateConnectorOnTop()
- *
- * Revision 6.2  2000/04/12 15:21:15  vakatov
- * Moved the log initialization to after the cmd.line args' parsing
- *
- * Revision 6.1  2000/04/07 20:06:45  vakatov
- * Initial revision
- *
- * ==========================================================================
- */

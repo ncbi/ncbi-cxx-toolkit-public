@@ -86,19 +86,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/01/06 18:35:38  shomrat
-* Added constructor from CObjectIStream
-*
-* Revision 1.1  2004/05/19 14:40:22  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  //  UTILS___GB_RELEASE_FILE__HPP

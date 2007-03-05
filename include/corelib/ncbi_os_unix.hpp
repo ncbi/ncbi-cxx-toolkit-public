@@ -79,16 +79,4 @@ bool Daemonize(const char* logfile = 0, TDaemonFlags flags = 0);
 
 END_NCBI_SCOPE
 
-
-/* --------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2006/03/07 16:49:56  lavr
- * Make empty string for the logfile to cause use of "/dev/null"
- *
- * Revision 1.1  2003/09/30 20:52:56  lavr
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif  /* CORELIB___NCBI_OS_UNIX__HPP */

@@ -110,28 +110,3 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
         memcpy(fsm->s[aa1], fsm->s[toupper((unsigned char) aa1)], NCBI_FSM_DIM);
     }
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/09/26 12:12:24  madden
- * Add OJ to kNCBIstdaa
- *
- * Revision 1.5  2006/09/25 19:29:34  madden
- * Added the BLOSUM50 and BLOSUM90 matrices. [from Mike Gertz]
- *
- * Revision 1.4  2005/06/03 17:04:16  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.3  2003/12/29 21:25:50  ucko
- * +PAM250
- *
- * Revision 1.2  2003/10/02 15:37:34  ivanov
- * Get rid of compilation warnings
- *
- * Revision 1.1  2003/08/21 19:48:20  ucko
- * Add tables library (shared with C) for raw score matrices, etc.
- *
- * ===========================================================================
- */

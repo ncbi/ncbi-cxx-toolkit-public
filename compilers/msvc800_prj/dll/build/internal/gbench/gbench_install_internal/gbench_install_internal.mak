@@ -125,25 +125,3 @@ radar :
     @if exist $(DLLBIN)\view_radar.pdb copy $(DLLBIN)\view_radar.pdb $(GBENCH)\extra\radar\view_radar.pdb
     @if exist $(SRCDIR)\internal\gbench\plugins\radar\plugin\radar-config.asn copy $(SRCDIR)\internal\gbench\plugins\radar\plugin\radar-config.asn $(GBENCH)\extra\radar\radar-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\radar
-
-#################################################################
-# $Log$
-# Revision 1.1  2006/03/16 19:15:59  gouriano
-# Added projects for MSVC 2005
-#
-# Revision 1.1  2006/03/15 15:28:36  dicuccio
-# MAGIC: moved from source tree to compiler tree
-#
-# Revision 1.4  2005/06/20 13:43:15  dicuccio
-# Move ncbi_gbench_internal into standard build and install
-#
-# Revision 1.3  2005/06/02 13:40:50  dicuccio
-# INstall NCBI subproject
-#
-# Revision 1.2  2005/01/13 23:21:21  vakatov
-# THIRDPARTY_MAKEFILES_DIR += "..\"
-#
-# Revision 1.1  2005/01/13 13:44:23  dicuccio
-# Initial revision
-#
-#################################################################

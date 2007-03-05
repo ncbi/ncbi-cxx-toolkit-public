@@ -61,21 +61,4 @@ double NCBI_ErfC(double x);
 }
 #endif
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/12/20 22:18:18  vakatov
- * Moved from <util/math/> to <util/>
- *
- * Revision 1.2  2005/08/15 19:10:02  ucko
- * Take care to ensure proper linkage in all cases.
- *
- * Revision 1.1  2005/08/12 14:58:33  ucko
- * Ensure that implementations of erf and erfc are always available.
- *
- * ===========================================================================
- */
-
 #endif  /* UTIL___MISCMATH__HPP */

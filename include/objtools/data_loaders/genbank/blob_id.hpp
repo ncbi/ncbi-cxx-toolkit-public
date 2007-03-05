@@ -160,23 +160,4 @@ typedef int TBlobContentsMask;
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* $Log$
-* Revision 1.4  2006/01/25 18:59:03  didenko
-* Redisgned bio objects edit facility
-*
-* Revision 1.3  2005/10/26 14:36:46  vasilche
-* Updated for new CBlobId interface.
-*
-* Revision 1.2  2004/10/25 16:53:38  vasilche
-* Added suppord for orphan annotations.
-*
-* Revision 1.1  2004/08/04 14:55:17  vasilche
-* Changed TSE locking scheme.
-* TSE cache is maintained by CDataSource.
-* Added ID2 reader.
-* CSeqref is replaced by CBlobId.
-*
-*/
-
 #endif//BLOB_ID__HPP_INCLUDED

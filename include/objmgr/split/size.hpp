@@ -123,22 +123,4 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CSize& size)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2005/01/24 17:09:36  vasilche
-* Safe boolean operators.
-*
-* Revision 1.3  2003/11/26 23:05:00  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.2  2003/11/26 17:56:02  vasilche
-* Implemented ID2 split in ID1 cache.
-* Fixed loading of splitted annotations.
-*
-* Revision 1.1  2003/11/12 16:18:32  vasilche
-* First implementation of ID2 blob splitter withing cache.
-*
-* ===========================================================================
-*/
 #endif//NCBI_OBJMGR_SPLIT_SIZE__HPP

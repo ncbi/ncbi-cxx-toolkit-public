@@ -190,14 +190,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/07/13 14:32:38  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__REMOTE_APP_SB_HPP

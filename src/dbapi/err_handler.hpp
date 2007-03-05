@@ -61,18 +61,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/04/04 13:03:56  ssikorsk
- * Revamp of DBAPI exception class CDB_Exception
- *
- * Revision 1.2  2004/11/01 22:58:01  kholodov
- * Modified: CDBMultiEx object is replace instead of whole handler
- *
- * Revision 1.1  2002/11/25 15:18:30  kholodov
- * First commit
- * ===========================================================================
- */
-
 #endif // _ARRAY_HPP_

@@ -52,17 +52,4 @@ string NCBI_XUTIL_EXPORT Sgml2Ascii(const string& sgml);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.1  2004/10/18 19:16:12  shomrat
- * Initial Revision
- *
- *
- * ===========================================================================
- */
-
-
 #endif  // UTIL___SGML_ENTITY__HPP

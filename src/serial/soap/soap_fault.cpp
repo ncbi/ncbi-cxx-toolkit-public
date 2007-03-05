@@ -124,15 +124,3 @@ CSoapFault::~CSoapFault(void)
 }
 
 END_NCBI_SCOPE
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2004/05/17 21:03:24  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2003/09/25 19:45:33  gouriano
-* Added soap Fault object
-*
-*
-* ===========================================================================
-*/

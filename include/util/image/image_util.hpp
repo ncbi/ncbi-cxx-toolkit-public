@@ -61,20 +61,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2004/04/19 12:08:41  dicuccio
- * Added export specifier
- *
- * Revision 1.2  2003/12/18 13:51:26  dicuccio
- * Added FlipX() and FlipY() to flip an image about an axis
- *
- * Revision 1.1  2003/11/03 15:12:46  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // UTIL_IMAGE___IMAGE_UTIL__HPP

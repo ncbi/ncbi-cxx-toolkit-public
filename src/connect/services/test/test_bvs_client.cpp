@@ -118,14 +118,3 @@ int main(int argc, const char* argv[])
 {
     return CTestBVSClient().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/06/02 12:48:51  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

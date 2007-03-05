@@ -367,26 +367,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/07/05 18:53:09  ivanov
- * Enable some tests, seems that it has been accidentally commented out.
- *
- * Revision 1.4  2005/04/14 20:27:03  ssikorsk
- * Retrieve a class name and a method/function name if NCBI_SHOW_FUNCTION_NAME is defined
- *
- * Revision 1.3  2005/03/15 15:05:34  dicuccio
- * Fixed typo: pathes -> paths
- *
- * Revision 1.2  2004/12/13 14:40:28  kuznets
- * Test for severity filtering
- *
- * Revision 1.1  2004/09/21 18:15:46  kononenk
- * Added tests for "Diagnostic Message Filtering"
- *
- * ===========================================================================
- */

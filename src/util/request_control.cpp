@@ -220,27 +220,3 @@ const char* CRequestRateControlException::GetErrCodeString(void) const
 /* @} */
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/12/04 14:51:28  gouriano
- * Moved GetErrCodeString method into src
- *
- * Revision 1.4  2005/06/24 12:07:40  ivanov
- * Heed Workshop compiler warnings in Approve()
- *
- * Revision 1.3  2005/03/02 18:58:01  ivanov
- * Renaming:
- *    file request_throttler.cpp -> request_control.cpp
- *    class CRequestThrottler -> CRequestRateControl
- *
- * Revision 1.2  2005/03/02 15:52:11  ivanov
- * + CRequestThrottler::Reset()
- *
- * Revision 1.1  2005/03/02 13:53:06  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

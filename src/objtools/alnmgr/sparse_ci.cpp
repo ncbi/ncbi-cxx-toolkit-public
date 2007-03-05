@@ -344,27 +344,3 @@ const CSparse_CI::value_type* CSparse_CI::operator->() const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/11/16 13:47:46  todorov
- * Moved over from gui/widgets/aln_data and refactored to adapt to the
- * new aln framework.
- *
- * Revision 1.4  2006/07/03 14:46:39  yazhuk
- * Fixed inserts iterating
- *
- * Revision 1.3  2005/09/19 12:21:08  dicuccio
- * White space changes: trim trailing white space; use spaces not tabs
- *
- * Revision 1.2  2005/06/27 14:38:29  yazhuk
- * Fixed constructor, TAlignRangeColl renamed to TAlignColl
- *
- * Revision 1.1  2005/06/13 19:32:35  yazhuk
- * Initial revision
- *
- * ===========================================================================
- */
-

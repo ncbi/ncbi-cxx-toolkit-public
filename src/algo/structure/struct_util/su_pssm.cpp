@@ -547,17 +547,3 @@ BLAST_Matrix::~BLAST_Matrix(void)
 }
 
 END_SCOPE(struct_util)
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/08/02 15:59:58  thiessen
-* adjust for 28-character ncbistdaa
-*
-* Revision 1.2  2005/10/24 23:39:13  thiessen
-* GCC warning fixes
-*
-* Revision 1.1  2005/10/24 23:24:24  thiessen
-* switch to C++ PSSM generation
-*
-*/

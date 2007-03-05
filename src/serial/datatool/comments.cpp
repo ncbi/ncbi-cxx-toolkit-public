@@ -146,27 +146,3 @@ CNcbiOstream& CComments::PrintASN(CNcbiOstream& out,
 }
 
 END_NCBI_SCOPE
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2006/10/18 13:12:36  gouriano
-* Added comments into typestrings and generated code
-*
-* Revision 1.5  2006/07/24 18:57:39  gouriano
-* Preserve comments when parsing DTD
-*
-* Revision 1.4  2004/05/17 21:03:13  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.3  2003/03/11 20:06:47  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.2  2001/05/17 15:07:11  lavr
-* Typos corrected
-*
-* Revision 1.1  2000/11/29 17:42:44  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* ===========================================================================
-*/

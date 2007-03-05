@@ -80,16 +80,4 @@ _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios);
 }
 #endif
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.2  2004/05/06 15:28:11  camacho
- * Provide an interface to retrive the matrices' frequency ratios
- *
- *
- * ===========================================================================
- */
-
 #endif /* !ALGO_BLAST_CORE__MATRIX_FREQ_RATIOS__H */
-

@@ -80,26 +80,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2004/11/05 15:54:01  kapustin
- * Remove unused exception classes
- *
- * Revision 1.4  2004/06/07 13:47:37  kapustin
- * Throw when no hits returned from Blast
- *
- * Revision 1.3  2004/03/01 20:07:26  kapustin
- * Add eBadData type
- *
- * Revision 1.2  2003/11/05 20:25:17  kapustin
- * Update exception code list for splign app exception
- *
- * Revision 1.1  2003/10/30 19:37:20  kapustin
- * Initial toolkit revision
- *
-  * ===========================================================================
- */
-
 #endif

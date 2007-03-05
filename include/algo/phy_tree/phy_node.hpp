@@ -103,25 +103,4 @@ TPhyTreeNode *ReadNewickTree(CNcbiIstream& is);
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/02/11 21:50:23  jcherry
- * Added Nexus format output
- *
- * Revision 1.3  2004/02/11 17:54:43  jcherry
- * Added parser for Newick format tree files
- *
- * Revision 1.2  2004/02/10 17:02:29  dicuccio
- * Formatting changes.  Added export specifiers
- *
- * Revision 1.1  2004/02/10 15:15:57  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-
-
 #endif  // ALGO_PHY_TREE___PHY_NODE__HPP

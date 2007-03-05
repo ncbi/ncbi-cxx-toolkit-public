@@ -82,18 +82,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2005/10/26 18:44:23  morgulis
- * Added -oformat option to specify the output format.
- * Added support for acclist and fasta output formats.
- *
- * Revision 1.1  2005/05/31 14:41:32  morgulis
- * Initial checkin of the dustmasker project.
- *
- * ========================================================================
- */
-
 #endif

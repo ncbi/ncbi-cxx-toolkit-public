@@ -161,49 +161,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/06/27 18:52:33  didenko
- * Added methods which allow modifing the session id
- *
- * Revision 1.9  2006/03/28 17:01:13  didenko
- * - CCgiSessionNCException
- * Throw en exception when a requested attribute is not found in the session
- *
- * Revision 1.8  2006/02/27 14:50:21  didenko
- * Redone an implementation of IBlobStorage interface based on NetCache as a plugin
- *
- * Revision 1.7  2006/01/09 16:17:28  vakatov
- * Removed extraneous comma
- *
- * Revision 1.6  2005/12/23 15:02:44  didenko
- * Added comments
- * Added one more constructor
- *
- * Revision 1.5  2005/12/23 14:25:26  didenko
- * Renamed CCgiSession_Netcache to CCgiSession_NetCache
- *
- * Revision 1.4  2005/12/20 20:36:02  didenko
- * Comments cosmetics
- * Small interace changes
- *
- * Revision 1.3  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.2  2005/12/19 16:55:04  didenko
- * Improved CGI Session implementation
- *
- * Revision 1.1  2005/12/15 18:21:15  didenko
- * Added CGI session support
- *
- * ===========================================================================
- */
-
 #endif  /* MISC_GRID_CGI___CGI_SESSION_NETCACHE__HPP */

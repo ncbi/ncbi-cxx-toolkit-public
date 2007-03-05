@@ -320,14 +320,3 @@ void CScoreBuilder::AddScore(CScope& scope,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/07/24 13:16:45  dicuccio
- * Added CScoreBuilder, a general class to provide support for generating scores
- * for alignments
- *
- * ===========================================================================
- */

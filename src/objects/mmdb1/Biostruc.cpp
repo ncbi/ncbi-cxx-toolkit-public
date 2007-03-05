@@ -77,15 +77,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2006/04/05 20:33:21  thiessen
-* add RemoveSid()
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1884, CRC32: 9409229f */

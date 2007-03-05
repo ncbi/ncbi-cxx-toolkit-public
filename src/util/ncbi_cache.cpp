@@ -50,20 +50,3 @@ const char* CCacheException::GetErrCodeString(void) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/06/05 15:28:06  grichenk
- * Added CreateElement() callback, improved indexing, added comments.
- *
- * Revision 1.2  2006/03/06 18:28:25  grichenk
- * Moved ncbi_cache from corelib to util.
- *
- * Revision 1.1  2006/02/28 16:24:05  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
- */

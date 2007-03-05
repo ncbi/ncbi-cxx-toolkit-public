@@ -111,32 +111,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/12/05 13:05:08  dicuccio
-* Reinstate removal of ncbitime.hpp
-*
-* Revision 1.5  2006/12/04 13:46:01  dicuccio
-* Predeclare CTime instead of including ncbitime.hpp
-*
-* Revision 1.4  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.3  2005/05/20 13:34:02  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.2  2004/04/22 13:09:58  dicuccio
-* Added helper functions to set dates in descriptions
-*
-* Revision 1.1  2003/05/07 10:59:14  clausen
-* Added AddName, AddTitle, AddCmment
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQ_SEQ_ANNOT_HPP
 /* Original file checksum: lines: 93, chars: 2396, CRC32: bdd8950d */

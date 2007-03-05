@@ -350,41 +350,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ==========================================================================
- * $Log$
- * Revision 1.7  2006/10/24 18:56:17  ivanov
- * Cosmetics: replaced tabulation with spaces
- *
- * Revision 1.6  2006/07/27 21:16:51  grichenk
- * Accept both slashes as path start in SetDiagFilter.
- *
- * Revision 1.5  2005/04/26 14:46:28  ssikorsk
- * Changed semantic of the "!" (negation) operator from *NOT* to *AND NOT*
- * with the DIAG_FILTER expression evaluation.
- *
- * Revision 1.4  2004/12/13 14:38:32  kuznets
- * Implemented severity filtering
- *
- * Revision 1.3  2004/09/22 22:39:15  vakatov
- * CDiagFilter -- NCBI_XNCBI_EXPORT, as it is used by test applications
- *
- * Revision 1.2  2004/09/22 16:52:39  ucko
- * Remove redundant headers, particularly <istream> (which is not
- * available everywhere); as ncbiutil.hpp includes ncbistd.hpp, it
- * should suffice by itself.
- *
- * Revision 1.1  2004/09/22 13:32:17  kononenk
- * "Diagnostic Message Filtering" functionality added.
- * Added function SetDiagFilter()
- * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
- * Module, class and function attribute added to CNcbiDiag and CException
- * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * CDiagCompileInfo + fixes on derived classes and their usage
- * Macro NCBI_MODULE can be used to set default module name in cpp files
- *
- * ==========================================================================
- */
-
 #endif  /* CORELIB___NCBIDIAG_P__HPP */

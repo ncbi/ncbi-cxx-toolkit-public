@@ -64,20 +64,4 @@ public:
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/09/15 21:16:01  chetvern
- * redesigned API
- *
- * Revision 1.2  2004/08/19 12:42:48  dicuccio
- * Dropped unnecessary export specifier
- *
- * Revision 1.1  2003/10/24 15:06:30  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_GNOMON___GNOMON_EXCEPTION__HPP

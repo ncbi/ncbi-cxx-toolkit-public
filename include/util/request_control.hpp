@@ -168,28 +168,4 @@ private:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/12/04 14:50:57  gouriano
- * Moved GetErrCodeString method into src
- *
- * Revision 1.4  2005/03/02 18:56:38  ivanov
- * Renaming:
- *    file request_throttler.hpp -> request_control.hpp
- *    class CRequestThrottler -> CRequestRateControl
- *
- * Revision 1.3  2005/03/02 17:20:43  ivanov
- * Use deque instead vector to improve performance
- *
- * Revision 1.2  2005/03/02 15:52:19  ivanov
- * + CRequestThrottler::Reset()
- *
- * Revision 1.1  2005/03/02 13:53:18  ivanov
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* UTIL___REQUEST_CONTROL__HPP */

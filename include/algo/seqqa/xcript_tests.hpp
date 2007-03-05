@@ -148,27 +148,4 @@ DECLARE_TRANSCRIPT_TEST(CountAmbiguities);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/02/13 14:53:42  jcherry
- * Added counts of ambiguous residues
- *
- * Revision 1.4  2006/01/05 19:01:43  jcherry
- * Added ORF extension test
- *
- * Revision 1.3  2004/10/21 21:02:03  jcherry
- * Added test for code-breaks in CDS feature and recording of
- * lengths of protein product and translation.
- *
- * Revision 1.2  2004/10/18 21:07:46  jcherry
- * Added premature stop codon test
- *
- * Revision 1.1  2004/10/06 19:58:35  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_SEQQA___XSCRIPT_TESTS__HPP

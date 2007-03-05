@@ -97,18 +97,3 @@ private:
 END_NCBI_SCOPE
 
 #endif /*REGEXP__LOC__HPP*/
-
-/*===========================================================================
-* $Log$
-* Revision 1.3  2003/08/18 20:07:04  dicuccio
-* Corrected export specifiers
-*
-* Revision 1.2  2003/07/17 12:27:56  ucko
-* +<memory> for auto_ptr<>
-*
-* Revision 1.1  2003/07/16 19:16:59  clausen
-* Initial version
-*
-*
-* ===========================================================================
-*/

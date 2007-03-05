@@ -73,23 +73,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CDD_SPLASH_DIALOG__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2003/03/13 14:26:18  thiessen
-* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
-*
-* Revision 1.4  2003/02/03 19:20:02  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.3  2002/08/15 22:13:13  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.2  2002/04/09 23:59:09  thiessen
-* add cdd annotations read-only option
-*
-* Revision 1.1  2002/04/09 14:38:24  thiessen
-* add cdd splash screen
-*
-*/

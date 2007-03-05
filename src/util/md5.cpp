@@ -275,29 +275,3 @@ void CMD5::Transform(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/10/01 21:15:15  ivanov
- * Get rid of compilation warnings; some formal code rearrangement
- *
- * Revision 1.4  2003/07/30 12:42:22  ucko
- * Properly initialize m_Finalized to false in the default constructor.
- *
- * Revision 1.3  2003/07/29 23:58:43  ucko
- * Fix log for last revision, sigh.
- *
- * Revision 1.2  2003/07/29 23:57:33  ucko
- * CMD5::GetHexSum: go up to 16 rather than sizeof(digest), as the latter
- * is really just sizeof(unsigned char*) in this context.
- *
- * Revision 1.1  2003/07/29 21:29:26  ucko
- * Add MD5 support (cribbed from the C Toolkit)
- *
- * ===========================================================================
- */

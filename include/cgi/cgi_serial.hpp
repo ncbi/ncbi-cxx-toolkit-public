@@ -284,40 +284,4 @@ ReadEnvironment(CNcbiIstream& is, CNcbiEnvironment& cont);
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.9  2005/05/31 13:35:50  didenko
-* Added an optional parameter to flush method for COstreamHelper class which controls
-* if we need to write an empty data to a stream
-*
-* Revision 1.8  2005/05/27 13:51:47  didenko
-* Fix COstreamHelper
-*
-* Revision 1.7  2005/05/25 14:03:53  didenko
-* Added stream checking
-*
-* Revision 1.6  2005/05/23 17:39:39  ucko
-* Fix for previous commit: remember to specify "typename"
-*
-* Revision 1.5  2005/05/23 17:01:51  ucko
-* Tweak ReadMap for compatibility with WorkShop's gratuitously strict STL.
-*
-* Revision 1.4  2005/05/23 15:02:02  didenko
-* Added Read/Write a container from/to a stream
-* Code restructure
-*
-* Revision 1.3  2005/05/18 13:27:55  didenko
-* Added NCBI_XCGI_EXPORT to the new functions
-*
-* Revision 1.2  2005/05/17 19:49:50  didenko
-* Added Read/Write cookies and environment
-*
-* Revision 1.1  2005/04/25 20:01:59  didenko
-* Added Cgi Entries serialization
-*
-* ===========================================================================
-*/
-
 #endif  /* CGI___CGI_SERIAL__HPP */

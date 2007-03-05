@@ -47,24 +47,4 @@
 
 #define NCBI_OBJMGR_VERSION 20040831
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2004/08/31 17:02:25  grichenk
- * Removed duplicate methods in CSeqMap and SAnnotSelector::SetCombineMethod()
- *
- * Revision 1.3  2004/08/19 17:05:31  vasilche
- * Mark latest changes in object manager.
- *
- * Revision 1.2  2004/08/16 18:55:37  vasilche
- * CSeqref is replaced by CBlob_id. New CTSE_Lock and CTSE_LoadLock classes.
- *
- * Revision 1.1  2004/06/07 20:53:14  vakatov
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* OBJMGR___OBJMGR_VERSION__HPP */

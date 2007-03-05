@@ -64,21 +64,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_PROGRESS_METER__HPP
-
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2003/02/03 19:20:05  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.3  2002/08/15 22:13:16  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.2  2001/10/24 17:07:30  thiessen
-* add PNG output for wxGTK
-*
-* Revision 1.1  2001/10/23 13:53:40  thiessen
-* add PNG export
-*
-*/

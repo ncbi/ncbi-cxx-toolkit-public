@@ -180,13 +180,3 @@ CBlastFastaInputSource::GetNextSequence()
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
-
-/*---------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2006/10/30 20:27:27  papadopo
- * correct sanity checks for sequence ranges
- *
- * Revision 1.4  2006/09/26 21:44:12  papadopo
- * add to blast scope; add CVS log
- *
- *-------------------------------------------------------------------*/

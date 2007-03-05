@@ -189,34 +189,4 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/12/12 20:46:26  todorov
-* Pairwise aln now contains it's ids.
-*
-* Revision 1.6  2006/12/06 20:08:31  todorov
-* 1) Preserve the order of seq-ids.
-* 2) MergeOption -> MergeAlgo
-*
-* Revision 1.5  2006/12/01 21:21:02  todorov
-* - NCBI_XALNMGR_EXPORT
-*
-* Revision 1.4  2006/12/01 17:53:00  todorov
-* + NCBI_XALNMGR_EXPORT
-*
-* Revision 1.3  2006/11/27 19:37:57  todorov
-* using comp.
-*
-* Revision 1.2  2006/11/22 00:45:10  todorov
-* Added support for three merging modes.
-*
-* Revision 1.1  2006/11/17 05:35:11  todorov
-* Initial revision.
-*
-* ===========================================================================
-*/
-
 #endif  // OBJTOOLS_ALNMGR___ALN_BUILDERS__HPP

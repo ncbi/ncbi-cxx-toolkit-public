@@ -182,37 +182,4 @@ void CBDB_FileDumper::SetBlobFormat(TBlobFormat bf)
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2004/06/29 12:27:36  kuznets
- * Added option to copy all db records to another file
- *
- * Revision 1.7  2004/06/28 12:18:24  kuznets
- * Added setting to dump BLOB to a file
- *
- * Revision 1.6  2004/06/23 19:38:04  kuznets
- * Added counter for dumped records
- *
- * Revision 1.5  2004/06/22 18:28:22  kuznets
- * Added BLOB dumping flags
- *
- * Revision 1.4  2004/06/21 15:08:27  kuznets
- * file dumper changed to work with cursors
- *
- * Revision 1.3  2003/10/28 14:56:51  kuznets
- * Added option to print field names when dumping the data
- *
- * Revision 1.2  2003/10/27 14:27:07  kuznets
- * Minor compilation bug fixed.
- *
- * Revision 1.1  2003/10/27 14:17:57  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif

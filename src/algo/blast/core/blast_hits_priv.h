@@ -83,22 +83,4 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start);
 }
 #endif
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2006/11/21 17:02:37  papadopo
- * rearrange headers
- *
- * Revision 1.2  2006/02/07 14:24:47  madden
- * Add prototype for BlastMergeTwoHSPs
- *
- * Revision 1.1  2005/01/18 14:53:08  camacho
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* !ALGO_BLAST_CORE__BLAST_HITS_PRIV__H */
-

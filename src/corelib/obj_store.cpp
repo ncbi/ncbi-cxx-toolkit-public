@@ -45,24 +45,3 @@ CObjectStoreProtectedBase::GetMutex(void)
 
 
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/03/07 14:35:57  vasilche
-* Fixed static mutex use.
-*
-* Revision 1.3  2005/03/07 14:39:31  ssikorsk
-* Replaced static member m_Lock with a static function GetMutex
-*
-* Revision 1.2  2004/12/21 21:40:17  grichenk
-* Moved obj_store and plugin_manager_store to corelib
-*
-* Revision 1.1  2004/08/02 13:44:49  kuznets
-* Initial revision
-*
-*
-* ===========================================================================
-*/

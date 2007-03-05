@@ -113,30 +113,3 @@ bool CCpGIslands::x_IsIsland(const SCpGIsland &isle) const
 END_NCBI_SCOPE
 
 #endif /*ALGO_SEQUENCE___CPG__HPP*/
-
-/*===========================================================================
-* $Log$
-* Revision 1.7  2004/11/01 16:21:03  kskatz
-* Changed CpGIslands constructor arguments "GC" and "CpG" from double to unsigned int
-*
-* Revision 1.6  2003/12/12 20:19:20  ivanov
-* Rollback to 1.4
-*
-* Revision 1.5  2003/12/12 20:15:55  ivanov
-* Added unimplemented SCpGIsland:: operators < and == to avoid compilation
-* on MSVC 7
-*
-* Revision 1.4  2003/12/12 20:05:18  johnson
-* refactoring to accommodate MSVC 7
-*
-* Revision 1.3  2003/08/04 15:43:20  dicuccio
-* Modified export specifiers to be more flexible
-*
-* Revision 1.2  2003/06/17 19:44:13  dicuccio
-* Minor code reformatting.  Added export specifiers
-*
-* Revision 1.1  2003/06/17 15:32:27  johnson
-* initial revision
-*
-* ===========================================================================
-*/

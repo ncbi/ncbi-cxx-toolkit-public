@@ -215,18 +215,3 @@ END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif  /* ALGO_BLAST_BLASTINPUT___BLAST_INPUT__HPP */
-
-/*---------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2006/10/03 19:42:14  ivanov
- * Added NCBI_XBLAST_EXPORT export specifier.
- * MSVC: blastinput added to ncbi_algo.dll.
- *
- * Revision 1.4  2006/10/03 19:12:24  ivanov
- * Remove NCBI_BLAST_EXPORT from CBlastInput declaration,
- * because on MSVC blastinput builds as static lib, not dll.
- *
- * Revision 1.3  2006/09/26 21:45:38  papadopo
- * add to blast scope; add CVS log
- *
- *-------------------------------------------------------------------*/

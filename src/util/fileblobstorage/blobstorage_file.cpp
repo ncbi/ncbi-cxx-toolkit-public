@@ -226,19 +226,3 @@ void BlobStorage_RegisterDriver_File(void)
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/07/20 13:05:53  didenko
- * Added binary flag for storage files
- *
- * Revision 1.2  2006/07/13 14:40:35  didenko
- * Added DeleteStorage method
- *
- * Revision 1.1  2006/07/05 19:10:48  didenko
- * Added an implementation of IBlobStorage interface based on files
- *
- * ===========================================================================
- */
- 

@@ -101,24 +101,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/08/09 18:35:33  jcherry
-* Don't use unnecessary Tparent:: qualifier for return type of Size()
-* (it's a private typedef, and is a problem for automated wrapping)
-*
-* Revision 1.2  2006/07/25 21:58:03  camacho
-* + Size() and IsEmpty()
-*
-* Revision 1.1  2004/05/05 19:16:25  johnson
-* Added SwapRows method for 'disc' seq-align / seq-align-set
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQALIGN_SEQ_ALIGN_SET_HPP
 /* Original file checksum: lines: 93, chars: 2494, CRC32: 9bd35138 */

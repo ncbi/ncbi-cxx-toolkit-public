@@ -189,13 +189,3 @@ string INetServiceAPI::SendCmdWaitResponse(CNetSrvConnector& conn, const string&
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.1  2007/01/09 16:05:02  didenko
- * Moved CNetScheduleExceptions to the new NetSchedule API
- *
- * ===========================================================================
- */

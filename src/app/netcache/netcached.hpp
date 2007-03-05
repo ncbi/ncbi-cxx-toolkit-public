@@ -540,44 +540,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/11/27 16:24:16  joukovv
- * New option, use_hostname introduced and default for NC key changed - with
- * new option on, it inserts server name into the key, by default it uses IP
- * address.
- *
- * Revision 1.9  2006/05/18 13:27:51  kuznets
- * Implemented cache cleaning function
- *
- * Revision 1.8  2006/04/14 16:09:00  kuznets
- * Fixed bug when session management shutdowns the server even if we do not want to
- *
- * Revision 1.7  2006/03/22 14:01:08  kuznets
- * Missing buffer size declaration
- *
- * Revision 1.6  2006/03/21 23:21:41  ucko
- * Attempt to supply SNC_ThreadData::buffer_size properly.
- *
- * Revision 1.5  2006/03/09 21:06:37  kuznets
- * Added Get2 command (with client driven disconnect)
- *
- * Revision 1.4  2006/01/17 16:49:31  kuznets
- * Added session management(auto-shutdown), cleaned-up code
- *
- * Revision 1.3  2006/01/10 15:05:31  kuznets
- * +End-line at the end of file
- *
- * Revision 1.2  2006/01/10 14:36:27  kuznets
- * Fixing bugs in ICache network protocol
- *
- * Revision 1.1  2006/01/03 15:42:17  kuznets
- * Added support for network ICache interface
- *
- *
- * ===========================================================================
- */
-
-
 #endif

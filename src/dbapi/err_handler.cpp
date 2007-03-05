@@ -28,23 +28,6 @@
 * Author:  Michael Kholodov
 *
 * File Description:  DataSource implementation
-*
-*
-* $Log$
-* Revision 1.4  2005/04/04 13:03:56  ssikorsk
-* Revamp of DBAPI exception class CDB_Exception
-*
-* Revision 1.3  2005/02/23 19:17:43  kholodov
-* Added: tracing received exceptions
-*
-* Revision 1.2  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.1  2002/11/25 15:18:30  kholodov
-* First commit
-*
-*
-*
 */
 
 #include <ncbi_pch.hpp>

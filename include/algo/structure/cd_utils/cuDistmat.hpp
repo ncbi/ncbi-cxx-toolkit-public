@@ -168,22 +168,3 @@ protected:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 #endif
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/08/29 18:43:41  cliu
- * no message
- *
- * Revision 1.3  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.2  2005/07/06 14:33:59  lanczyck
- * change global default tree parameters to NJ + SAR
- *
- * Revision 1.1  2005/04/19 14:28:01  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

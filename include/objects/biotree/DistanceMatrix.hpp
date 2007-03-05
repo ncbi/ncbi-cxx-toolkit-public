@@ -99,23 +99,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/06/08 18:08:08  jcherry
-* Made AsMatrix const
-*
-* Revision 1.2  2006/06/01 15:52:12  jcherry
-* BUGZID: 507  Added method to read format used by Phylip
-*
-* Revision 1.1  2006/05/15 15:38:37  jcherry
-* Initial version: provide interconversion with CNcbiMatrix<double>
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_BIOTREE_DISTANCEMATRIX_HPP
 /* Original file checksum: lines: 94, chars: 2678, CRC32: a1f7b9a8 */

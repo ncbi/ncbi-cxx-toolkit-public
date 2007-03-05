@@ -97,40 +97,4 @@ protected:
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/11/27 17:40:05  kapustin
- * Fix a typo in a parameter's name
- *
- * Revision 1.8  2006/11/27 14:47:55  kapustin
- * Support a raw transcript construction
- *
- * Revision 1.7  2006/09/13 16:29:06  kapustin
- * Add local id option when creating from a blast string
- *
- * Revision 1.6  2006/03/21 16:16:44  kapustin
- * Support edit transcript string
- *
- * Revision 1.5  2005/09/12 16:21:34  kapustin
- * Add compartmentization algorithm
- *
- * Revision 1.4  2005/07/28 15:17:02  kapustin
- * Add export specifiers
- *
- * Revision 1.3  2005/07/28 12:29:26  kapustin
- * Convert to non-templatized classes where causing compilation incompatibility
- *
- * Revision 1.2  2005/06/03 16:20:21  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.1  2005/04/18 15:23:00  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif /* ALGO_ALIGN_UTIL_BLAST_TABULAR__HPP  */
-

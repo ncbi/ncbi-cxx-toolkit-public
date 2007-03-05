@@ -122,31 +122,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.5  2005/03/02 13:45:20  shomrat
-* Fixed warning
-*
-* Revision 1.4  2004/06/21 18:52:13  ucko
-* Refactor to ease subclassing by the GFF 3 formatter.
-*
-* Revision 1.3  2004/05/08 12:13:56  dicuccio
-* Added x_GetTranscripID() for handling transcript IDs
-*
-* Revision 1.2  2004/04/22 15:45:57  shomrat
-* Changes in context
-*
-* Revision 1.1  2004/01/14 15:59:50  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT___GFF_FORMATTER__HPP */

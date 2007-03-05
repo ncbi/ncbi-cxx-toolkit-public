@@ -45,14 +45,4 @@ BEGIN_NCBI_SCOPE
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/07/13 14:32:38  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__REMOTE_JOB_HPP

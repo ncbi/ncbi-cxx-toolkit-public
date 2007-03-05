@@ -122,34 +122,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.6  2005/12/20 13:57:44  gouriano
-* Modified Compare to please MS Visual Studio 2005
-*
-* Revision 1.5  2003/07/29 18:59:21  vasilche
-* Fixed compilation errors.
-*
-* Revision 1.4  2003/07/29 18:47:46  vasilche
-* Fixed thread safeness of object stream hooks.
-*
-* Revision 1.3  2003/04/15 14:15:16  siyan
-* Added doxygen support
-*
-* Revision 1.2  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.1  2000/10/13 16:28:30  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* ===========================================================================
-*/

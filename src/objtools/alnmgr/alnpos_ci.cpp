@@ -70,14 +70,3 @@ CAlnPos_CI::CAlnPos_CI(const CAlnMap& alnmap,
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2004/09/20 15:00:12  todorov
-* Initial revision
-*
-*
-* ===========================================================================
-*/

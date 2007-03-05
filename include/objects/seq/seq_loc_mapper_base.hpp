@@ -616,17 +616,4 @@ CRef<CSeq_align> CSeq_loc_Mapper_Base::Map(const CSeq_align& src_align,
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/12/11 20:48:23  ucko
-* Add a forward declaration for CSeq_align_Mapper_Base.
-*
-* Revision 1.1  2006/12/11 17:11:34  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  // SEQ_LOC_MAPPER_BASE__HPP

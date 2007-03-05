@@ -63,37 +63,4 @@ struct SCompliment
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.10  2005/11/21 16:06:38  kapustin
- * Move gpipe-sensitive items to the app level
- *
- * Revision 1.9  2005/09/12 16:24:00  kapustin
- * Move compartmentization to xalgoalignutil.
- *
- * Revision 1.8  2005/05/24 19:36:08  kapustin
- * -RLE()
- *
- * Revision 1.7  2005/01/26 21:33:12  kapustin
- * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
- *
- * Revision 1.6  2004/12/16 23:12:26  kapustin
- * algo/align rearrangement
- *
- * Revision 1.5  2004/11/29 15:55:55  kapustin
- * -ScoreByTranscript
- *
- * Revision 1.4  2004/05/04 15:23:45  ucko
- * Split splign code out of xalgoalign into new xalgosplign.
- *
- * Revision 1.3  2004/04/23 14:37:44  kapustin
- * *** empty log message ***
- *
- *
- * ===========================================================================
- */
-
-
 #endif

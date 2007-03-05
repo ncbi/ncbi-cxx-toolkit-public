@@ -136,45 +136,4 @@ NCBI_PROMOTE2_TRAITS(float, double, double);
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/08/19 13:11:35  dicuccio
- * Added include for ncbistd.hpp
- *
- * Revision 1.5  2004/03/10 14:14:26  dicuccio
- * Changed include guard to be consistent.  Moved commented portion to
- * gui-specific directory.  Cleaned up error in template macros - add space around
- * types to avoid '>>' on brain-dead compilers
- *
- * Revision 1.4  2004/02/26 18:35:17  gorelenk
- * Added (_MSC_VER <= 1200) for definition of NCBI_PROMOTE - typename presents
- * causes a compilation error on MSVC 6.0.
- *
- * Revision 1.3  2004/02/26 17:44:29  dicuccio
- * Restore preprocessor guard for 'typename' in SPromote<>
- *
- * Revision 1.2  2004/02/26 16:52:34  gorelenk
- * Changed definition of NCBI_PROMOTE(a,b). MSVC compilers also demands
- * "typename" in this case.
- *
- * Revision 1.1  2004/02/09 17:34:12  dicuccio
- * Moved from gui/math
- *
- * Revision 1.4  2004/01/23 13:54:53  dicuccio
- * Lots of fixes.  Wrapped promote type designation in a macro.  Dropped use of
- * partial template specialization due to lack of support in MSVC
- *
- * Revision 1.3  2003/12/22 19:14:21  dicuccio
- * Fixed lots of bugs in referencing non-existent functions
- *
- * Revision 1.2  2003/06/09 19:45:19  dicuccio
- * Fixed promotion rules - defined TPromote in traits base class
- *
- * Revision 1.1  2003/06/09 19:30:50  dicuccio
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  // UTIL_MATH___PROMOTE___HPP

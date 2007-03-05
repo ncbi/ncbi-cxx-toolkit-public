@@ -392,33 +392,3 @@ CHit::Clone()
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
-
-/* ========================================================================
- * $Log$
- * Revision 1.8  2006/09/20 19:41:25  papadopo
- * add member to initialize a hit from an ASN.1 denseg
- *
- * Revision 1.7  2006/03/22 19:23:17  dicuccio
- * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
- * specifiers
- *
- * Revision 1.6  2006/03/15 02:26:32  ucko
- * +<algorithm> (once indirectly included?) for sort().
- *
- * Revision 1.5  2005/11/18 20:19:02  papadopo
- * add documentation
- *
- * Revision 1.4  2005/11/17 22:28:45  papadopo
- * rename Copy() to Clone()
- *
- * Revision 1.3  2005/11/08 18:42:16  papadopo
- * assert -> _ASSERT
- *
- * Revision 1.2  2005/11/08 17:52:59  papadopo
- * ASSERT -> assert
- *
- * Revision 1.1  2005/11/07 18:14:00  papadopo
- * Initial revision
- *
- * ======================================================================
- */

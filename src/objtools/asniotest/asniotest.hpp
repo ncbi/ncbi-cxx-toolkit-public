@@ -49,11 +49,3 @@ public:
 END_NCBI_SCOPE
 
 #endif // ASNIOTEST__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2003/11/21 14:48:52  thiessen
-* initial checkin
-*
-*/

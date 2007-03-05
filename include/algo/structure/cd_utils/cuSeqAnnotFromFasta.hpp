@@ -148,18 +148,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif // CU_SEQANNOT_FROM_FASTA__HPP
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2006/09/07 17:34:14  lanczyck
- * fixes so can read in file w/ a single sequence
- *
- * Revision 1.2  2006/08/09 18:41:24  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.1  2006/03/29 15:35:59  lanczyck
- * add files for fasta->cd converter
- *
- * ---------------------------------------------------------------------------
- */

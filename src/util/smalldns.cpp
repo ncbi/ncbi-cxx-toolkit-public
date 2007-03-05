@@ -176,28 +176,3 @@ string CSmallDNS::LocalBackResolveDNS(const string& ip) const
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2005/04/25 19:05:24  ivanov
- * Fixed compilation warnings on 64-bit Worshop compiler
- *
- * Revision 1.8  2004/05/18 14:58:25  gorelenk
- * Roll-back to inclusion of winsock2.h on MSVC
- *
- * Revision 1.7  2004/05/17 23:01:23  gorelenk
- * Fixed condition of include of winsock2.h
- *
- * Revision 1.6  2004/05/17 21:06:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/10/21 14:16:20  ivanov
- * Fixed GetLocalHost(): use MAXHOSTNAMELEN as buffer size (by Anton Lavrentiev)
- *
- * Revision 1.4  2003/10/20 21:16:56  ivanov
- * Replaced uname() with gethostname(). Some code rearrangement.
- *
- * ===========================================================================
- */

@@ -165,26 +165,3 @@ int BDB_get_rowid(const CBDB_File& dbf)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2004/06/28 12:13:31  kuznets
- * BDB_find_field improved to search in non text fields too
- *
- * Revision 1.4  2004/05/17 20:55:12  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2004/03/11 13:15:40  kuznets
- * Minor bugfix
- *
- * Revision 1.2  2004/03/10 14:03:11  kuznets
- * + BDB_get_rowid
- *
- * Revision 1.1  2004/03/08 13:34:06  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-

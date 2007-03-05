@@ -313,22 +313,4 @@ void CBDB_RangeMap<TBV>::Remap(const TBitVector& bv_src,
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/14 19:08:51  kuznets
- * Compilation fixes
- *
- * Revision 1.2  2006/12/14 17:22:47  kuznets
- * Added implementation
- *
- * Revision 1.1  2006/12/12 21:56:14  kuznets
- * initial revision
- *
- * ===========================================================================
- */
-
 #endif  // BDB__RANGE_MAP_HPP
-
-

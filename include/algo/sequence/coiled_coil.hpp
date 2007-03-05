@@ -108,25 +108,3 @@ private:
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___COILED_COIL__HPP
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2003/09/10 14:22:11  ucko
- * Remove a redundant occurrence of CCoiledCoil::.
- *
- * Revision 1.3  2003/09/09 18:30:48  ucko
- * Fixes for WorkShop, which (still) doesn't let templates access
- * anything file-static.
- *
- * Revision 1.2  2003/09/09 16:09:08  dicuccio
- * Fixes for MSVC.  Moved member template into implementation file to avoid
- * naming / export conflicts.  Moved lookup table to implementation file.
- *
- * Revision 1.1  2003/09/08 16:15:13  jcherry
- * Initial version
- *
- * ===========================================================================
- */
-

@@ -88,24 +88,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2003/04/14 19:11:25  ivanov
-* Added export specifier for class CSeq_data
-*
-* Revision 1.2  2003/01/03 01:24:39  ucko
-* Fixed spelling of DoConstruct.
-*
-* Revision 1.1  2003/01/02 15:02:24  friedman
-* Added constructors; one that accepts a string and the other that accepts a
-* vecor<char> as an arguement.
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQ_SEQ_DATA_HPP
 /* Original file checksum: lines: 93, chars: 2363, CRC32: 75ace36f */

@@ -56,32 +56,3 @@ CEmailDiagHandler::~CEmailDiagHandler(void)
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
-
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.4  2005/01/21 13:10:49  dicuccio
- * Only send mail if the diagnostics body is not empty
- *
- * Revision 6.3  2004/05/17 20:58:13  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 6.2  2003/01/17 19:44:46  lavr
- * Reduce dependencies
- *
- * Revision 6.1  2001/11/19 15:20:21  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- *
- * Old log (as cgi_email_diag_handler.cpp):
- *
- * Revision 6.2  2001/10/05 14:56:33  ucko
- * Minor interface tweaks for CCgiStreamDiagHandler and descendants.
- *
- * Revision 6.1  2001/10/04 18:17:56  ucko
- * Accept additional query parameters for more flexible diagnostics.
- * Support checking the readiness of CGI input and output streams.
- *
- * ===========================================================================
- */

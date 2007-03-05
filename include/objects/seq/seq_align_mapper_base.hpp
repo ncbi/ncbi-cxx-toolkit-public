@@ -237,14 +237,4 @@ CSeq_align_Mapper_Base::GetSegments(void) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/12/11 17:11:34  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  // SEQ_ALIGN_MAPPER_BASE__HPP

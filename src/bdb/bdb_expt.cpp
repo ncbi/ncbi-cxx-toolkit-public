@@ -85,34 +85,3 @@ bool CBDB_ErrnoException::IsRecovery() const
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/04/12 13:29:07  kuznets
- * +IsRecovery()
- *
- * Revision 1.7  2005/12/12 14:12:23  ivanov
- * + #include <corelib/ncbidbg.hpp>
- *
- * Revision 1.6  2005/12/12 13:49:38  ivanov
- * + CBDB_StrErrAdapt::GetErrCode()
- * Renamed CBDB_StrErrAdapt::streror() -> GetErrCodeString()
- *
- * Revision 1.5  2005/11/09 14:02:16  kuznets
- * +IsBufferSmall()
- *
- * Revision 1.4  2005/11/08 19:13:42  kuznets
- * +CBDB_ErrnoException::IsDeadLock()
- *
- * Revision 1.3  2005/11/07 19:36:14  kuznets
- * CBDB_ErrnoException: +IsNoMem() method
- *
- * Revision 1.2  2004/05/17 20:55:11  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/06/27 18:56:36  dicuccio
- * Uninlined strerror() adaptor
- *
- * ===========================================================================
- */

@@ -70,19 +70,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.2  2004/02/10 18:04:42  gorelenk
- * Added list of Makefiles (m_MakefileDirs) for class CProjSRCResolver.
- *
- * Revision 1.1  2004/02/04 23:07:40  gorelenk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__PROJ_SRC_RESOLVER__HPP

@@ -74,31 +74,4 @@ public:
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/05/18 13:21:37  dicuccio
- * Updated enum name - should be fDensegAsExon
- *
- * Revision 1.5  2006/05/17 20:10:50  dicuccio
- * Added option to consider each dense-seg in a source alignment as a single exon and map accordingly.
- *
- * Revision 1.4  2006/05/01 13:30:35  dicuccio
- * Added option to instantiate transcript sequence from genome.  Changed
- * specification of transcript and protein sequences to include date stamp
- *
- * Revision 1.3  2006/04/24 13:54:38  dicuccio
- * Added new options to create mRNA feature optionally instead ofalways and to
- * force translation of the CDS feature instead of using a supplied product
- *
- * Revision 1.2  2005/04/15 01:47:51  ucko
- * Remove illegal semicolon after END_SCOPE macro.
- *
- * Revision 1.1  2005/04/14 16:48:38  dicuccio
- * Initial revision of CGeneModel
- *
- * ===========================================================================
- */
-
 #endif  // ALGO_SEQUENCE___GENE_MODEL__HPP

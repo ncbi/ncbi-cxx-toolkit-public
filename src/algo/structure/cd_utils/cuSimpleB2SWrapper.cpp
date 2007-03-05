@@ -272,12 +272,3 @@ CRef< CSeq_align > CSimpleB2SWrapper::extractOneSeqAlign(CRef< CSeq_align > seqA
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
-
-/* 
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/11/30 16:27:44  lanczyck
- * simple wrapper to blast 2 sequences
- *
- * ===========================================================================
- */

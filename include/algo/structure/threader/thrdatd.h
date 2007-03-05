@@ -32,38 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2005/10/31 21:26:38  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.8  2001/04/25 15:43:29  hurwitz
-* initial check-in of Anna's code to fix problem of duplicate alignments with different scores
-*
-* Revision 1.7  2001/03/02 23:14:12  hurwitz
-* run threading faster for PSSM weight=1, bug fix
-*
-* Revision 1.6  2001/01/18 22:33:00  hurwitz
-* fix for print PSSM routine, small change to Gib_Scd
-*
-* Revision 1.5  2000/09/22 22:31:33  hurwitz
-* added memory management of ThdTbl (results structure)
-*
-* Revision 1.4  2000/08/30 21:33:55  hurwitz
-* added new and free functions for Seq_Mtf and Qry_Seq
-*
-* Revision 1.3  2000/08/23 20:10:42  hurwitz
-* added memory management functions for Cor_Def and extern C in .h files
-*
-* Revision 1.2  2000/08/17 15:31:56  kans
-* changed Ptr to portable Pointer from toolkit
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 /* atd.h - structure and function declarations for adaptive threading  */

@@ -249,35 +249,3 @@ void CSignalSeq::Predict(const CSeqVector& seq, EDomain domain,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/12/14 21:06:08  jcherry
- * Eliminated compiler warning.  Throw exception on bad parameters.
- *
- * Revision 1.7  2004/05/21 21:41:04  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.6  2004/03/16 19:40:09  vasilche
- * Made static const arrays accessible from template on ForteCC
- *
- * Revision 1.5  2004/03/15 12:30:19  dicuccio
- * Changed name of const arrays
- *
- * Revision 1.4  2004/03/12 19:59:31  dicuccio
- * Dropped static on private arrays as WorkShop doesn't let templates use such
- * arrays
- *
- * Revision 1.3  2004/03/11 17:27:16  dicuccio
- * Changed static member arrays to private static arrays
- *
- * Revision 1.2  2003/09/10 17:55:04  ucko
- * Add a cast to fix 64-bit compilation.
- *
- * Revision 1.1  2003/09/10 15:31:34  jcherry
- * Initial version
- *
- * ===========================================================================
- */

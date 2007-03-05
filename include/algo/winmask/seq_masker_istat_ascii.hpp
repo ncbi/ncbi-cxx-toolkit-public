@@ -127,17 +127,3 @@ private:
 END_NCBI_SCOPE
 
 #endif
-
-/*
- * ========================================================================
- * $Log$
- * Revision 1.2  2005/04/13 13:47:48  dicuccio
- * Added export specifiers.  White space changes: reindented class body
- *
- * Revision 1.1  2005/04/04 14:28:46  morgulis
- * Decoupled reading and accessing unit counts information from seq_masker
- * core functionality and changed it to be able to support several unit
- * counts file formats.
- *
- * ========================================================================
- */

@@ -124,22 +124,3 @@ string ConfigurableFileSuffix(const string& config_name)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/07/20 15:52:40  ivanov
- * Add "lib/<buildtype>" to generated runpath, if NCBI_INSTALL_PATH
- * environment variable was set.
- *
- * Revision 1.3  2004/12/06 18:12:20  gouriano
- * Improved diagnostics
- *
- * Revision 1.2  2004/10/26 14:40:31  gouriano
- * Update ncbicfg.*.c only when needed
- *
- * Revision 1.1  2004/10/12 14:35:12  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

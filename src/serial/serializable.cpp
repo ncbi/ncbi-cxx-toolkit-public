@@ -27,31 +27,6 @@
 *
 * File Description:
 *   General serializable interface for different output formats
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.5  2004/01/16 22:10:44  ucko
-* Tweak to use a proxy class to avoid clashing with new support for
-* feeding CSerialObject to streams.
-*
-* Revision 1.4  2003/03/10 18:54:26  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.3  2001/05/21 14:38:32  kholodov
-* Added: method WriteAsString() for string representation of an object.
-*
-* Revision 1.2  2001/04/17 04:08:27  vakatov
-* Redesigned from a pure interface (ISerializable) into a regular
-* base class (CSerializable) to make its usage safer, more formal and
-* less bulky.
-*
-* Revision 1.1  2001/04/12 17:01:11  kholodov
-* General serializable interface for different output formats
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

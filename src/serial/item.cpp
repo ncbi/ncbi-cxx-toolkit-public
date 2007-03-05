@@ -27,23 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2004/05/17 21:03:02  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2000/10/13 20:22:55  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.1  2000/09/18 20:00:22  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

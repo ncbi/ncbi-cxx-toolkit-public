@@ -32,35 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2006/01/09 13:11:43  thiessen
-* preclude GCC warnings, mainly by initializing vars
-*
-* Revision 1.3  2006/01/09 12:52:38  thiessen
-* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
-*
-* Revision 1.2  2005/10/31 21:57:32  thiessen
-* MSVC fix
-*
-* Revision 1.1  2005/10/31 21:26:06  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.4  2000/12/14 21:07:58  hurwitz
-* adding debugging routines, scaling-factor fixes
-*
-* Revision 1.3  2000/11/02 20:54:16  hurwitz
-* added options for z-score calculations, fixed initialization prob
-*
-* Revision 1.2  2000/08/16 21:18:57  hurwitz
-* fix dangerous warnings found by MS Visual C++, replace rand48 functions with toolkit functions
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 #ifdef _MSC_VER

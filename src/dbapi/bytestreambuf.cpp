@@ -26,47 +26,6 @@
 * Author: Michael Kholodov
 *
 * File Description: streambuf implementation for BLOBs
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2005/11/02 15:02:25  ssikorsk
-* Catch all exceptions in destructors.
-*
-* Revision 1.10  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.9  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.8  2002/07/12 13:34:11  kholodov
-* Fixed: incorrect length reported for NULL BLOB
-*
-* Revision 1.7  2002/06/21 14:41:32  kholodov
-* Fixed: reset total bytes written for debug output
-*
-* Revision 1.6  2002/05/16 22:09:19  kholodov
-* Fixed: incorrect start of BLOB column
-*
-* Revision 1.5  2002/05/14 19:51:47  kholodov
-* Fixed: incorrect column no handling for detecting end of column
-*
-* Revision 1.4  2002/05/13 19:11:53  kholodov
-* Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
-*
-* Revision 1.3  2002/04/03 20:06:25  ucko
-* Always return >= 1 from showmanyc() to avoid spurious "EOF"s.
-* Pass status messages to _TRACE rather than writing them to cout.
-* #if out buggy code in destructor.
-*
-* Revision 1.2  2002/02/14 00:59:40  vakatov
-* Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

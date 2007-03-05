@@ -504,17 +504,3 @@ int main(int argc, const char* argv[])
 {
     return CTestNetCacheStress().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/04/25 15:10:05  kuznets
- * Implemented stress test
- *
- * Revision 1.1  2005/04/22 13:17:28  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

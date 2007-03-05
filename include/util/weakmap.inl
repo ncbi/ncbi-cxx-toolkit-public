@@ -30,45 +30,6 @@
 *
 * File Description:
 *   Inline methods for classes defined in weakmap.hpp
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/01/21 13:10:24  dicuccio
-* Use typename to make SWIG happy
-*
-* Revision 1.7  2001/05/17 15:01:19  lavr
-* Typos corrected
-*
-* Revision 1.6  2001/01/05 20:08:54  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.5  2000/12/26 22:23:46  vasilche
-* Fixed errors of compilation on Mac.
-*
-* Revision 1.4  2000/10/20 15:51:28  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.3  2000/10/13 16:28:34  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.2  2000/09/29 20:14:30  vasilche
-* Fixed name conflict (map).
-*
-* Revision 1.1  2000/09/29 16:18:16  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* ===========================================================================
 */
 
 template<class Object>

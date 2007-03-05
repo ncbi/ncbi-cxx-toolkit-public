@@ -69,42 +69,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.14  2006/09/07 15:09:24  gouriano
- * Disable MS Visual Studio-specific code on UNIX
- *
- * Revision 1.13  2006/02/15 19:47:44  gouriano
- * Exclude projects with unmet requirements from BUILD-ALL
- *
- * Revision 1.12  2004/10/12 16:19:04  ivanov
- * Cosmetics
- *
- * Revision 1.11  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.10  2004/05/10 19:49:07  gorelenk
- * Changed Generate in CMsvcProjectGenerator .
- *
- * Revision 1.9  2004/03/05 20:35:30  gorelenk
- * Removed declaration of CollectSources,  CollectHeaders, CollectInlines and
- * CollectResources member-functions of class CMsvcProjectGenerator.
- *
- * Revision 1.8  2004/02/23 20:43:42  gorelenk
- * Added support of MSVC ResourceCompiler tool.
- *
- * Revision 1.7  2004/02/12 16:22:40  gorelenk
- * Changed generation of command line for custom build info.
- *
- * Revision 1.6  2004/01/26 19:25:41  gorelenk
- * += MSVC meta makefile support
- * += MSVC project makefile support
- *
- * Revision 1.5  2004/01/22 17:57:08  gorelenk
- * first version
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__MSVC_PRJ_GENERATOR__HPP

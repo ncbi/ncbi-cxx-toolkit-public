@@ -267,29 +267,3 @@ void Cn3DGLCanvas::OnEraseBackground(wxEraseEvent& event)
 }
 
 END_SCOPE(Cn3D)
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2005/11/01 02:44:07  thiessen
-* fix GCC warnings; switch threader to C++ PSSMs
-*
-* Revision 1.6  2005/10/19 17:28:18  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.5  2004/05/21 21:41:39  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.4  2004/03/15 18:23:01  thiessen
-* prefer prefix vs. postfix ++/-- operators
-*
-* Revision 1.3  2004/02/19 17:04:50  thiessen
-* remove cn3d/ from include paths; add pragma to disable annoying msvc warning
-*
-* Revision 1.2  2003/03/14 19:22:59  thiessen
-* add CommandProcessor to handle file-message commands; fixes for GCC 2.9
-*
-* Revision 1.1  2003/03/13 14:26:18  thiessen
-* add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
-*
-*/

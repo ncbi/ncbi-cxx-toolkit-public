@@ -194,27 +194,3 @@ int main(int argc, const char* argv[])
 {
     return CSampleNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2005/12/20 17:26:22  didenko
- * Reorganized netschedule storage facility.
- * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
- * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
- * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
- * to separate files
- * Moved CNetScheduleClientFactory to separate files
- *
- * Revision 1.3  2005/12/08 17:27:29  kuznets
- * Cosmetics
- *
- * Revision 1.2  2005/12/08 17:22:58  kuznets
- * Added sample3 to the build, fixed bugs, added comments
- *
- * Revision 1.1  2005/12/08 17:08:21  ivanov
- * Initial revision
- *
- * ===========================================================================
- */

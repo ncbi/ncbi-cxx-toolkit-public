@@ -250,23 +250,3 @@ END_NCBI_SCOPE
 
 
 #endif // ALGALIGN_HPP
-
-/* 
- * ===========================================================================
- *
- * $Log$
- * Revision 1.4  2006/11/16 20:23:29  cliu
- * move some typedef here
- *
- * Revision 1.3  2006/11/01 17:45:24  lanczyck
- * add method:  ChangeSeqIdInSeqAlign
- *
- * Revision 1.2  2006/08/09 18:41:23  lanczyck
- * add export macros for ncbi_algo_structure.dll
- *
- * Revision 1.1  2005/04/19 14:28:00  lanczyck
- * initial version under algo/structure
- *
- *
- * ===========================================================================
- */

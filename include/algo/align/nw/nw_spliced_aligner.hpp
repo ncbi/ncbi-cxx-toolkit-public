@@ -90,40 +90,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.13  2006/06/27 15:14:06  kapustin
- * +m_cds_*
- *
- * Revision 1.12  2005/07/26 16:43:22  kapustin
- * Move MakePattern() to CNWAligner
- *
- * Revision 1.11  2005/03/16 15:48:26  jcherry
- * Allow use of std::string for specifying sequences
- *
- * Revision 1.10  2004/04/23 14:39:22  kapustin
- * Add Splign librry and other changes
- *
- * Revision 1.6  2003/12/12 19:41:46  kapustin
- * Valuable comments added
- *
- * Revision 1.5  2003/10/27 20:56:50  kapustin
- * Move static GetDefaultWi to descendants
- *
- * Revision 1.4  2003/09/30 19:49:32  kapustin
- * Make use of standard score matrix interface
- *
- * Revision 1.3  2003/09/26 14:43:01  kapustin
- * Remove exception specifications
- *
- * Revision 1.2  2003/09/10 20:12:47  kapustin
- * Update Doxygen tags
- *
- * Revision 1.1  2003/09/02 22:27:44  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* ALGO_ALIGN___SPLICED_ALIGNER__HPP */

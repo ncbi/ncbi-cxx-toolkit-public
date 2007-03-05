@@ -359,23 +359,4 @@ struct SDll
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2004/12/29 16:21:10  gouriano
- * Added comment about VCProjectEngine type library location
- *
- * Revision 1.5  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.4  2004/01/26 19:25:42  gorelenk
- * += MSVC meta makefile support
- * += MSVC project makefile support
- *
- * Revision 1.3  2004/01/22 17:57:09  gorelenk
- * first version
- *
- * ===========================================================================
- */
-
 #endif //PROJECT_TREE_BUILDER__MSVC_TRAITS__HPP

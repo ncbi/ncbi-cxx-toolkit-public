@@ -155,17 +155,4 @@ bool CMaskFileName::Match(const string& str, NStr::ECase use_case) const
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/03/16 15:29:29  ivanov
- * Match(): Added parameter for case sensitive/insensitive matching
- *
- * Revision 1.1  2005/01/31 11:42:25  ivanov
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif /* CORELIB___NCBI_MASK__HPP */

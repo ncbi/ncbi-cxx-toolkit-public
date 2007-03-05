@@ -127,21 +127,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2005/03/16 13:40:00  rsmith
-* Add DeleteField() method.
-*
-* Revision 1.1  2004/11/22 16:03:19  dicuccio
-* Added subfield access to a user field, with delimited hierarchichal access; the
-* API is similar to that in CUser_object
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_GENERAL_USER_FIELD_HPP
 /* Original file checksum: lines: 93, chars: 2437, CRC32: 222a2c32 */

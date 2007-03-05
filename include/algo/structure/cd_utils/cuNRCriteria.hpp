@@ -175,34 +175,4 @@ protected:
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/08/09 18:41:24  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.3  2005/10/18 17:06:51  lanczyck
-* make TaxClient a virtual base class;
-* add methods CanBeApplied and GetCriteriaError in base criteria
-*
-* Revision 1.2  2005/07/18 19:05:07  lanczyck
-* add IsItemKept method
-*
-* Revision 1.1  2005/07/07 17:31:25  lanczyck
-* move refactored classes supporting non-redundification from CDTree to cd_utils
-*
-* Revision 1.3  2005/06/30 14:48:11  lanczyck
-* refactor base clusterer and criteria classes; make separate class hierarchy for non-redundifier items (vs. being a struct in the clusterer)
-*
-* Revision 1.2  2005/02/28 23:51:01  lanczyck
-* make saving detailed logging info optional
-*
-* Revision 1.1  2005/02/23 20:08:57  lanczyck
-* initial checkin:  files for new non-redundifier
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* CU_NRCRITERIA__HPP */

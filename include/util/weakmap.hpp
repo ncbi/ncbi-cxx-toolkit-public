@@ -33,33 +33,6 @@
 *       it automatically forgets entries with key which are deleted.
 *       To do this, key type is fixed - CWeakMapKey<Object>.
 *   CWeakMap<Object> defines mostly used methods from map<>.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2003/04/17 17:50:41  siyan
-* Added doxygen support
-*
-* Revision 1.4  2002/12/19 14:51:00  dicuccio
-* Added export specifier for Win32 DLL builds.
-*
-* Revision 1.3  2001/01/05 20:08:53  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.2  2000/10/13 16:28:34  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.1  2000/09/29 16:18:16  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>

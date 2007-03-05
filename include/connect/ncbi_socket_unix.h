@@ -72,14 +72,4 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateUNIX
 
 /* @} */
 
-
-/*
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.1  2004/10/26 14:44:44  lavr
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif /* CONNECT___NCBI_SOCKET_UNIX__H */

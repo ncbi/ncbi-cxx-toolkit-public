@@ -131,20 +131,3 @@ END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 #endif    //  CU_SIMPLE_NONREDUNDIFIER__HPP
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2005/07/18 19:49:45  lanczyck
-* files to build non-redundification demo app, including some test data
-*
-* Revision 1.3  2005/07/18 19:07:27  lanczyck
-* use a different id->item mapping for each criteria object
-*
-* Revision 1.2  2005/07/14 14:49:13  lanczyck
-* add comment
-*
-*
-* ===========================================================================
-*/

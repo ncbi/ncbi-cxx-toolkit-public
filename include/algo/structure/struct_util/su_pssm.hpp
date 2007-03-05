@@ -77,17 +77,3 @@ NCBI_STRUCTUTIL_EXPORT char LookupCharacterFromNCBIStdaaNumber(unsigned char n);
 END_SCOPE(struct_util)
 
 #endif // STRUCT_UTIL_PSSM__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2006/08/09 18:38:10  lanczyck
-* add export macros for ncbi_algo_structure.dll
-*
-* Revision 1.2  2006/08/02 16:00:51  thiessen
-* adjust for 28-character ncbistdaa
-*
-* Revision 1.1  2005/10/24 23:26:59  thiessen
-* switch to C++ PSSM generation
-*
-*/

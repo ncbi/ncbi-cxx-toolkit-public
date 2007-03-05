@@ -90,14 +90,4 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 
 #endif /*defined(NCBI_OS_...)*/
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/09/28 15:51:50  ivanov
- * Initial revision. Copied from test/test_assert.h.
- *
- * ===========================================================================
- */
-
 #endif  /* CORELIB___MSWIN_NO_POPUP__H */

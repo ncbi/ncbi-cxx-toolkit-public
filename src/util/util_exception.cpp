@@ -1,4 +1,3 @@
-
 /* $Id$
 * ===========================================================================
 *
@@ -85,21 +84,3 @@ const char* CNcbiTable_Exception::GetErrCodeString(void) const
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/04 21:31:57  ucko
- * -#include <util/regexp.hpp> (no longer needed, and problematic on WorkShop)
- *
- * Revision 1.2  2006/12/04 16:12:20  gouriano
- * Moved CRegexpException::GetErrCodeString
- *
- * Revision 1.1  2006/12/04 14:51:28  gouriano
- * Moved GetErrCodeString method into src
- *
- *
- *
- * ===========================================================================
- */

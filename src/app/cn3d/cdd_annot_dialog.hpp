@@ -125,38 +125,3 @@ public:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_CDD_ANNOT_DIALOG__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2003/02/03 19:20:01  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.9  2002/08/15 22:13:12  thiessen
-* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
-*
-* Revision 1.8  2002/02/12 21:15:59  thiessen
-* add move up/down to CDD annotations
-*
-* Revision 1.7  2001/10/14 09:27:27  thiessen
-* add cdd evidence move up/down
-*
-* Revision 1.6  2001/10/01 16:03:58  thiessen
-* make CDD annotation window non-modal; add SetWindowTitle to viewers
-*
-* Revision 1.5  2001/09/26 15:27:58  thiessen
-* tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
-*
-* Revision 1.4  2001/08/27 00:06:35  thiessen
-* add structure evidence to CDD annotation
-*
-* Revision 1.3  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.2  2001/07/19 19:12:46  thiessen
-* working CDD alignment annotator ; misc tweaks
-*
-* Revision 1.1  2001/07/12 17:34:22  thiessen
-* change domain mapping ; add preliminary cdd annotation GUI
-*
-*/

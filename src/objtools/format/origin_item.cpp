@@ -76,21 +76,3 @@ void COriginItem::x_GatherInfo(CBioseqContext& ctx)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2004/05/21 21:42:54  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.2  2004/04/22 15:59:03  shomrat
-* Changes in context
-*
-* Revision 1.1  2004/02/19 18:15:55  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/

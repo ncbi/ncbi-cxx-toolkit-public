@@ -121,32 +121,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2006/03/09 18:28:34  camacho
-* Update comment
-*
-* Revision 1.6  2005/11/04 13:26:23  camacho
-* Use CPsiBlastImpl class
-*
-* Revision 1.5  2005/10/20 12:48:29  camacho
-* Doxygen fix
-*
-* Revision 1.4  2005/10/20 00:08:19  camacho
-* + protein bl2seq interface (in progress)
-*
-* Revision 1.3  2005/10/14 12:18:58  camacho
-* Make CPsiBl2Seq use CBlastTracebackSearch
-*
-* Revision 1.2  2005/10/12 13:52:45  camacho
-* Doxygen fixes
-*
-* Revision 1.1  2005/10/11 12:19:53  camacho
-* Initial revision
-*
-* ===========================================================================
-*/
-
 #endif  /* ALGO_BLAST_API___PSIBL2SEQ__HPP */

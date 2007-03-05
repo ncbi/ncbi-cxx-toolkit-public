@@ -74,18 +74,4 @@ END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2004/08/19 13:06:45  dicuccio
-* Dropped export specifiers on inlined exceptions
-*
-* Revision 1.1  2004/06/16 15:19:08  shomrat
-* Initial Revision
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_EDIT___EDIT_EXCEPTION__HPP */

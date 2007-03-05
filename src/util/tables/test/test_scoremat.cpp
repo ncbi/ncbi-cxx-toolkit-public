@@ -189,32 +189,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CSMTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.7  2006/09/26 12:19:13  madden
- * Add blosum50, blosum90, and pam250 to tested matrices
- *
- * Revision 1.6  2005/06/13 18:24:56  lavr
- * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
- *
- * Revision 1.5  2005/06/03 17:04:20  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.4  2005/05/04 18:35:01  lavr
- * CSMTestApplication::Run(): Always init psm
- *
- * Revision 1.3  2004/05/17 21:09:13  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2003/08/22 01:32:36  ucko
- * Fix for GCC 2.95.
- *
- * Revision 1.1  2003/08/21 19:48:21  ucko
- * Add tables library (shared with C) for raw score matrices, etc.
- *
- * ===========================================================================
- */

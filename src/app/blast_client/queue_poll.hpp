@@ -66,15 +66,5 @@ Int4 QueueAndPoll(string                program,
                   bool                  trust_defline,
                   bool                  raw_asn,
                   CAlignParms         & alparms);
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.1  2003/09/26 16:53:49  bealer
- * - Add blast_client project for netblast protocol, initial code commit.
- *
- * ===========================================================================
- */
 
 #endif // APP_BLAST_CLIENT___QUEUE_POLL__HPP
-

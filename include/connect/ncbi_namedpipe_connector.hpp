@@ -72,29 +72,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/01/27 16:56:20  lavr
- * Headers rearranged to pickup corelib stuff first
- *
- * Revision 1.5  2004/03/22 17:00:17  ivanov
- * Replaced CNamedPipe::kDefaultPipeSize with 0 -- default pipe buffer size.
- *
- * Revision 1.4  2003/09/23 21:02:21  lavr
- * Rename BufferSize into PipeSize; accept string instead of char*
- *
- * Revision 1.3  2003/09/03 13:56:11  ivanov
- * Renamed to .hpp
- *
- * Revision 1.2  2003/08/21 20:07:54  ivanov
- * Added NAMEDPIPE_CreateConnectorEx
- *
- * Revision 1.1  2003/08/18 19:17:32  ivanov
- * Initial revision
- *
- * ==========================================================================
- */
-
 #endif /* CONNECT___NCBI_NAMEDPIPE_CONNECTOR__HPP */

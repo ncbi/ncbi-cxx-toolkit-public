@@ -64,17 +64,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.1  2002/11/15 17:16:51  ucko
-* Add sane operator << for EError_val (needed by KCC)
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_MLA_ERROR_VAL_HPP
 /* Original file checksum: lines: 63, chars: 1913, CRC32: 7d6a3053 */

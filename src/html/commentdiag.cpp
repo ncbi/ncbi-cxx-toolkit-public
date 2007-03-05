@@ -45,26 +45,3 @@ void CCommentDiagHandler::Post(const SDiagMessage& mess)
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2004/05/17 20:59:50  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.4  2003/11/03 17:03:08  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.3  2001/11/19 15:20:23  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- * Revision 1.2  2001/10/05 14:56:38  ucko
- * Minor interface tweaks for CCgiStreamDiagHandler and descendants.
- *
- * Revision 1.1  2001/10/04 18:17:57  ucko
- * Accept additional query parameters for more flexible diagnostics.
- * Support checking the readiness of CGI input and output streams.
- *
- * ===========================================================================
-*/

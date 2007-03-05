@@ -51,23 +51,4 @@ inline void CSelectDescription::Add(int value)
     Add(NStr::IntToString(value));
 }
 
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.3  2003/11/03 17:02:53  ivanov
- * Some formal code rearrangement. Move log to end.
- *
- * Revision 1.2  2003/11/03 15:08:19  ucko
- * Prepended HTML___ to include guards, per change to components.hpp.
- * Moved CVS log to end.
- *
- * Revision 1.1  1999/01/21 21:12:53  vasilche
- * Added/used descriptions for HTML submit/select/text.
- * Fixed some bugs in paging.
- *
- * ===========================================================================
- */
-
 #endif /* def HTML___COMPONENTS__HPP  &&  ndef HTML___COMPONENTS__INL */

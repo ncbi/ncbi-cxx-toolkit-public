@@ -28,43 +28,6 @@
 * Author:  Michael Kholodov
 *   
 * File Description: stream implementation for reading and writing BLOBs
-*
-*
-* $Log$
-* Revision 1.11  2005/11/02 15:02:25  ssikorsk
-* Catch all exceptions in destructors.
-*
-* Revision 1.10  2005/06/14 15:35:49  kholodov
-* Fixed: uninitialized m_destroyConn
-*
-* Revision 1.9  2004/11/16 19:59:46  kholodov
-* Added: GetBlobOStream() with explicit connection
-*
-* Revision 1.8  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.7  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.6  2004/03/12 16:27:09  sponomar
-* correct nested querys
-*
-* Revision 1.4  2002/08/26 15:35:56  kholodov
-* Added possibility to disable transaction log
-* while updating BLOBs
-*
-* Revision 1.3  2002/07/08 16:04:15  kholodov
-* Reformatted
-*
-* Revision 1.2  2002/05/13 19:08:44  kholodov
-* Modified: source code is included in NCBI namespace
-*
-* Revision 1.1  2002/01/30 14:51:20  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
-*
 */
 
 #include <ncbi_pch.hpp>

@@ -156,28 +156,3 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CConvImageApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/23 16:17:47  dicuccio
- * Add gif as an explicit format option
- *
- * Revision 1.4  2004/06/16 12:04:14  dicuccio
- * Added include for image_util.hpp
- *
- * Revision 1.3  2004/05/17 21:08:03  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2003/12/16 16:16:43  dicuccio
- * Added more options - raw files
- *
- * Revision 1.1  2003/06/03 15:17:14  dicuccio
- * Initial revision of image library
- *
- * ===========================================================================
- */
-

@@ -27,50 +27,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.10  2004/03/30 20:28:15  gouriano
-* Corrected stream iterators to handle implicit containers
-*
-* Revision 1.9  2004/02/02 15:46:30  gouriano
-* corrected CIstreamContainerIterator constructor to handle empty containers
-*
-* Revision 1.8  2003/10/24 17:50:37  vasilche
-* CIStreamContainerIterator::operator++() moved to *.cpp file.
-*
-* Revision 1.7  2003/10/24 15:54:28  grichenk
-* Removed or blocked exceptions in destructors
-*
-* Revision 1.6  2002/10/25 14:49:27  vasilche
-* NCBI C Toolkit compatibility code extracted to libxcser library.
-* Serial streams flags names were renamed to fXxx.
-*
-* Names of flags
-*
-* Revision 1.5  2001/08/31 20:05:45  ucko
-* Fix ICC build.
-*
-* Revision 1.4  2001/05/17 15:07:07  lavr
-* Typos corrected
-*
-* Revision 1.3  2001/01/22 23:23:58  vakatov
-* Added   CIStreamClassMemberIterator
-* Renamed CIStreamContainer --> CIStreamContainerIterator
-*
-* Revision 1.2  2000/10/20 19:29:36  vasilche
-* Adapted for MSVC which doesn't like explicit operator templates.
-*
-* Revision 1.1  2000/10/20 15:51:40  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>

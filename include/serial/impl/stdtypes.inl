@@ -119,39 +119,3 @@ void CPrimitiveTypeInfo::SetValueULong(TObjectPtr objectPtr,
 }
 
 #endif /* def STDTYPES__HPP  &&  ndef STDTYPES__INL */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.6  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.5  2000/12/15 15:38:02  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.4  2000/10/13 16:28:32  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.3  2000/09/18 20:00:10  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.2  1999/06/04 20:51:39  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:30  vasilche
-* Commit just in case.
-*
-* ===========================================================================
-*/

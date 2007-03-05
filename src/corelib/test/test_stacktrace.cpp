@@ -106,17 +106,3 @@ int main(int argc, const char* argv[])
 {
     return CTestStackTrace().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/11/15 15:38:54  grichenk
- * Added methods to fromat and output stack trace.
- *
- * Revision 1.1  2006/11/06 17:41:26  grichenk
- * Initial revision
- *
- * ===========================================================================
- */

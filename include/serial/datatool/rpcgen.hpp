@@ -71,27 +71,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2006/06/19 17:33:33  gouriano
-* Redesigned generation of XML schema
-*
-* Revision 1.4  2005/02/02 19:08:59  gouriano
-* Corrected DTD generation
-*
-* Revision 1.3  2003/05/14 14:42:55  gouriano
-* added generation of XML schema
-*
-* Revision 1.2  2003/04/08 20:40:08  ucko
-* Get client name(s) from [-]clients rather than hardcoding "client"
-*
-* Revision 1.1  2002/11/13 00:46:06  ucko
-* Add RPC client generator; CVS logs to end in generate.?pp
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* SERIAL_DATATOOL___RPCGEN__HPP */

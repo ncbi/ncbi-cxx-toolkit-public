@@ -124,34 +124,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.7  2005/09/13 19:22:55  jcherry
-* Added export specifiers
-*
-* Revision 1.6  2005/03/29 18:15:25  shomrat
-* Added barcode comment formatting
-*
-* Revision 1.5  2004/11/24 16:48:02  shomrat
-* Handle gap items
-*
-* Revision 1.4  2004/04/22 15:45:27  shomrat
-* Changes in context
-*
-* Revision 1.3  2004/02/19 17:58:41  shomrat
-* Added method to format Origin item
-*
-* Revision 1.2  2004/01/14 15:54:28  shomrat
-* const removed
-*
-* Revision 1.1  2003/12/17 19:53:06  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
 #endif  /* OBJTOOLS_FORMAT___GENBANK_FORMATTER__HPP */

@@ -304,31 +304,4 @@ void CPackStringChoiceHook::ReadChoiceVariant(CObjectIStream& in,
 
 END_NCBI_SCOPE
 
-/*
- * $Log$
- * Revision 1.1  2003/08/19 18:32:38  vasilche
- * Optimized reading and writing strings.
- * Avoid string reallocation when checking char values.
- * Try to reuse old string data when string reference counting is not working.
- *
- * Revision 1.4  2003/08/15 19:19:15  vasilche
- * Fixed memory leak in string packing hooks.
- * Fixed processing of 'partial' flag of features.
- * Allow table packing of non-point SNP.
- * Allow table packing of SNP with long alleles.
- *
- * Revision 1.3  2003/08/14 20:05:18  vasilche
- * Simple SNP features are stored as table internally.
- * They are recreated when needed using CFeat_CI.
- *
- * Revision 1.2  2003/07/22 21:55:11  vasilche
- * Allow correct packing with limited reference counter (MSVC - 254 max).
- *
- * Revision 1.1  2003/07/17 20:07:55  vasilche
- * Reduced memory usage by feature indexes.
- * SNP data is loaded separately through PUBSEQ_OS.
- * String compression for SNP data.
- *
- */
-
 #endif // PACK_STRING__HPP_INCLUDED

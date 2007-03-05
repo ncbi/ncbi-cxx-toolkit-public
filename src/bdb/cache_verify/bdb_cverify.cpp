@@ -130,13 +130,3 @@ int main(int argc, const char* argv[])
 {
     return CBDB_CacheVerifyApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/08/18 16:14:09  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

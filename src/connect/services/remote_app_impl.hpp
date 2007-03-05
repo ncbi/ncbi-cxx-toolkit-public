@@ -143,17 +143,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/09/12 14:59:20  didenko
- * Got rid of memory leaks
- *
- * Revision 1.1  2006/07/13 14:32:38  didenko
- * Modified the implemention of remote application's request and result classes
- *
- * ===========================================================================
- */
-
-
 #endif // CONNECT_SERVICES__REMOTE_APP_IMPL_HPP

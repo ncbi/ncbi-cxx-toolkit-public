@@ -144,19 +144,3 @@ int main(int argc, const char* argv[])
         "http://ncbi.nlm.nih.gov/").AppMain(argc, argv, 0, eDS_Default);
     return result;
 }
-
-/* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2005/01/12 17:25:25  vasilche
-* Avoid performance warning on MSVC.
-*
-* Revision 1.1  2004/11/17 19:45:09  gouriano
-* Initial revision
-*
-* Revision 1.1  2004/07/06 13:48:49  gouriano
-* Initial revision: sample SOAP server and client
-*
-*
-* ===========================================================================
-*/
-

@@ -94,13 +94,4 @@ static bool s_WaitNotification(unsigned       wait_time,
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 6.1  2007/01/09 15:29:55  didenko
- * Added new API for NetSchedule service
- *
- * ===========================================================================
- */
- 
 #endif // __NETSCHEDULE_API_WAIT_HPP_

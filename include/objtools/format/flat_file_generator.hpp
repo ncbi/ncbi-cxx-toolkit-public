@@ -102,47 +102,4 @@ private:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.11  2005/03/02 16:26:12  shomrat
-* Added single feature formatting
-*
-* Revision 1.10  2005/02/07 14:56:21  shomrat
-* unconst Seq-submit objects
-*
-* Revision 1.9  2004/05/19 14:46:24  shomrat
-* + Reset()
-*
-* Revision 1.8  2004/04/22 15:47:30  shomrat
-* API changes
-*
-* Revision 1.7  2004/03/31 17:13:38  shomrat
-* name changes
-*
-* Revision 1.6  2004/03/25 20:30:53  shomrat
-* Use Handles
-*
-* Revision 1.5  2004/02/11 22:46:01  shomrat
-* enumerations moved to flat_file_flags.hpp
-*
-* Revision 1.4  2004/02/11 16:40:33  shomrat
-* added HideCDDFeats flag
-*
-* Revision 1.3  2004/01/15 16:57:08  dicuccio
-* Added private unimplemented copy ctor to satisfy MSVC
-*
-* Revision 1.2  2004/01/14 15:52:40  shomrat
-* Added GFF format
-*
-* Revision 1.1  2003/12/17 19:51:49  shomrat
-* Initial revision (adapted from flat lib)
-*
-*
-* ===========================================================================
-*/
-
-
 #endif  /* OBJTOOLS_FORMAT___FLAT_FILE_GENERATOR__HPP */

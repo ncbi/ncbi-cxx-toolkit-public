@@ -128,36 +128,4 @@ extern OSErr MacFSSpec2FullPathname(const FSSpec *inFSS, char **outPathname);
 
 END_NCBI_SCOPE
 
-
-
-/* --------------------------------------------------------------------------
- * $Log$
- * Revision 1.7  2006/10/24 19:11:55  ivanov
- * Cosmetics: replaced tabulation with spaces
- *
- * Revision 1.6  2003/02/27 22:04:20  lebedev
- * COSErrException_Mac changed from runtime_error to exception
- *
- * Revision 1.5  2002/07/11 14:17:53  gouriano
- * exceptions replaced by CNcbiException-type ones
- *
- * Revision 1.4  2001/12/18 21:40:01  juran
- * Copy Pascal-string-related functions from Josh's pstring.c.  (Public domain)
- * Move PStr from ncbifile.cpp, rename to PString.
- * Add extern prototypes for MoreFiles functions copied to our .cpp.
- *
- * Revision 1.3  2001/12/03 22:59:04  juran
- * Don't forget MacTypes.h.
- *
- * Revision 1.2  2001/12/03 22:00:34  juran
- * Add g_Mac_SpecialEnvironment global.
- * Include prerequisite corelib headers.
- *
- * Revision 1.1  2001/11/19 18:06:58  juran
- * Mac OS-specific header.
- * Initial check-in.
- *
- * ==========================================================================
- */
-
 #endif  /* NCBI_OS_MAC__HPP */

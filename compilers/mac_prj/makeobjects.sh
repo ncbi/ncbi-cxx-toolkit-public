@@ -26,15 +26,3 @@ case `pwd` in
 	$NCBI/c++${version}/Release/build/new_module.sh  ||  echo "Failed to generate config serialization classes" 
 	;;
 esac
-# 
-#  ===========================================================================
-#  PRODUCTION $Log$
-#  PRODUCTION Revision 1.3  2006/11/15 13:49:14  rsmith
-#  PRODUCTION return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
-#  PRODUCTION
-#  PRODUCTION Revision 1000.0  2003/10/29 14:31:48  gouriano
-#  PRODUCTION PRODUCTION: IMPORTED [ORIGINAL] Dev-tree R1.2
-#  PRODUCTION
-#  ===========================================================================
-# 
-

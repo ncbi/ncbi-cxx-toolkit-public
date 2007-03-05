@@ -285,12 +285,3 @@ void CSeq_annot_Finder::x_Find(const CSeq_entry_Info& entry,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/01/25 18:59:04  didenko
- * Redisgned bio objects edit facility
- *
- * ===========================================================================
- */

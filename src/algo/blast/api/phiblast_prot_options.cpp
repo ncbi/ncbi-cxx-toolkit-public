@@ -55,21 +55,3 @@ END_NCBI_SCOPE
 
 
 /* @} */
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2005/10/06 19:43:08  camacho
- * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
- * Fixes problem with uninitializes program and service name for CRemoteBlast.
- *
- * Revision 1.2  2005/06/16 19:36:44  dondosha
- * Derive PHI BLAST protein options handle directly from general protein options handle
- *
- * Revision 1.1  2005/05/26 14:35:04  dondosha
- * Implementation of PHI BLAST options handle classes
- *
- *
- * ===========================================================================
- */

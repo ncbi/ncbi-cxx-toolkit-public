@@ -127,29 +127,3 @@ BEGIN_NCBI_SCOPE
 END_NCBI_SCOPE
 
 #endif  /* OBJISTRIMPL__HPP */
-
-
-
-/* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2006/10/05 19:23:37  gouriano
-* Moved from parent folder
-*
-* Revision 1.4  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.3  2000/12/26 22:23:44  vasilche
-* Fixed errors of compilation on Mac.
-*
-* Revision 1.2  2000/11/20 17:24:36  vasilche
-* Added prototypes of internal functions.
-*
-* Revision 1.1  2000/09/18 20:00:05  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
-*/

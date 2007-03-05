@@ -184,18 +184,3 @@ int main(int argc, const char* argv[])
     CTestIdMux app; 
     return app.AppMain(argc, argv);
 }
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/03/23 17:07:46  kuznets
- * Fixed typo
- *
- * Revision 1.2  2006/03/23 13:50:55  kuznets
- * more tests
- *
- * Revision 1.1  2006/03/22 19:31:57  kuznets
- * initial revision
- *
- * ===========================================================================
- */

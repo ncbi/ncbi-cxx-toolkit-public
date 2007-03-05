@@ -32,29 +32,6 @@
 * $Revision$
 *
 * File Description: threader
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2006/01/09 13:11:43  thiessen
-* preclude GCC warnings, mainly by initializing vars
-*
-* Revision 1.1  2005/10/31 21:26:06  thiessen
-* check in threader to C++ toolkit, with no C toolkit dependencies
-*
-* Revision 1.4  2001/04/25 15:43:29  hurwitz
-* initial check-in of Anna's code to fix problem of duplicate alignments with different scores
-*
-* Revision 1.3  2000/12/20 18:56:41  hurwitz
-* new random num gen, more debug printing
-*
-* Revision 1.2  2000/08/16 21:18:57  hurwitz
-* fix dangerous warnings found by MS Visual C++, replace rand48 functions with toolkit functions
-*
-* Revision 1.1  2000/08/16 20:45:21  hurwitz
-* initial check in of threading routines
-*
-* ==========================================================================
 */
 
 
@@ -221,5 +198,3 @@ if(ct!=in) {
 
 return(1);
 }
-
-

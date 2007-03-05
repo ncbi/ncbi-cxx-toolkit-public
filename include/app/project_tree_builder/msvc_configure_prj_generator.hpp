@@ -110,38 +110,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/09/07 15:09:24  gouriano
- * Disable MS Visual Studio-specific code on UNIX
- *
- * Revision 1.8  2006/01/23 18:26:33  gouriano
- * Generate project GUID early, sort projects in solution by GUID
- *
- * Revision 1.7  2006/01/10 17:39:42  gouriano
- * Corrected solution generation for MSVC 2005 Express
- *
- * Revision 1.6  2005/05/10 17:29:09  gouriano
- * Added configure_dialog project
- *
- * Revision 1.5  2005/03/23 19:32:32  gouriano
- * Make it possible to exclude PTB build when configuring
- *
- * Revision 1.4  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.3  2004/03/10 21:26:19  gorelenk
- * Changed CMsvcConfigureProjectGenerator constructor.
- *
- * Revision 1.2  2004/02/12 17:48:11  gorelenk
- * Re-designed of projects saving. Added member-function GetPath().
- *
- * Revision 1.1  2004/02/12 16:21:12  gorelenk
- * Initial Revision.
- *
- * ===========================================================================
- */
-
-
 #endif //PROJECT_TREE_BULDER__MSVC_CONFIGURE_PRJ_GENERATOR__HPP

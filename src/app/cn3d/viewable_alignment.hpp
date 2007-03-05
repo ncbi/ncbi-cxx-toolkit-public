@@ -103,17 +103,3 @@ public:
 };
 
 #endif // WX_VIEWABLE_ALIGNMENT__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2005/10/19 17:28:20  thiessen
-* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
-*
-* Revision 1.2  2003/02/03 19:20:08  thiessen
-* format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
-*
-* Revision 1.1  2001/05/03 14:38:32  thiessen
-* put ViewableAlignment in its own (non-wx) header
-*
-*/

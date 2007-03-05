@@ -91,32 +91,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.6  2006/03/14 20:21:51  rsmith
-* Move BasicCleanup functionality from objects to objtools/cleanup
-*
-* Revision 1.5  2005/10/26 13:50:13  ludwigf
-* Extended BasicCleanup() to cover additional items.
-*
-* Revision 1.4  2005/05/20 13:34:02  shomrat
-* Added BasicCleanup()
-*
-* Revision 1.3  2002/12/27 21:46:59  kuznets
-* class Seqdesc received NCBI_SEQ_EXPORT declaration.
-*
-* Revision 1.2  2002/10/03 19:04:17  clausen
-* Removed extra whitespace
-*
-* Revision 1.1  2002/10/03 16:52:55  clausen
-* Added GetLabel()
-*
-*
-* ===========================================================================
-*/
-
 #endif // OBJECTS_SEQ_SEQDESC_HPP
 /* Original file checksum: lines: 93, chars: 2350, CRC32: a6859469 */

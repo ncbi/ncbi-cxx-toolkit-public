@@ -940,29 +940,3 @@ CTreeIterator::ForEachUpwardLimited(ForEachFunc ucb, void* user_data,
 
 END_objects_SCOPE
 END_NCBI_SCOPE
-
-
-
-/*
- * $Log$
- * Revision 6.5  2004/05/19 17:27:10  gorelenk
- * Added include of PCH - ncbi_pch.hpp
- *
- * Revision 6.4  2003/05/06 19:53:53  domrach
- * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
- *
- * Revision 6.3  2002/10/22 22:15:41  vakatov
- * Get rid of a compilation warning
- *
- * Revision 6.2  2002/01/31 00:31:26  vakatov
- * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
- * Get rid of "std::" which is unnecessary and sometimes un-compilable.
- * Also done some source identation/beautification.
- *
- * Revision 6.1  2002/01/30 16:13:37  domrach
- * Changes made to pass through MSVC compiler. Some src files renamed
- *
- * Revision 6.1  2002/01/28 19:56:11  domrach
- * Initial checkin of the library implementation files
- *
- */

@@ -112,38 +112,3 @@ private:
 END_SCOPE(Cn3D)
 
 #endif // CN3D_REFINER_INTERFACE__HPP
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.9  2005/11/28 21:24:01  thiessen
-* whoops, forgot std::
-*
-* Revision 1.8  2005/11/28 21:14:38  thiessen
-* add block and row selection mechanism to refiner
-*
-* Revision 1.7  2005/11/23 01:03:04  lanczyck
-* freeze specified blocks in both LOO and BE phases;
-* add support for a callback for a progress meter
-*
-* Revision 1.6  2005/11/22 19:06:35  lanczyck
-* make block/row selection work properly
-*
-* Revision 1.5  2005/11/04 12:27:49  thiessen
-* oops, missed another std::
-*
-* Revision 1.4  2005/11/04 12:25:45  thiessen
-* use std:: in header
-*
-* Revision 1.3  2005/11/02 20:32:43  lanczyck
-* add API to specify blocks to refine and rows to exclude from refinement;
-* turn block extension on
-*
-* Revision 1.2  2005/10/21 21:59:49  thiessen
-* working refiner integration
-*
-* Revision 1.1  2005/10/18 21:38:33  lanczyck
-* initial versions (still containing CJL hacks incompatible w/ official cn3d)
-*
-* ---------------------------------------------------------------------------
-*/

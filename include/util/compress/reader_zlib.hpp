@@ -161,48 +161,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/02/15 18:27:48  lavr
- * IReader/IWriter already included by <util/bytesrc.hpp>
- *
- * Revision 1.5  2005/03/14 17:31:54  vasilche
- * Removed obsolete methods and data members.
- *
- * Revision 1.4  2005/03/10 20:51:49  vasilche
- * Implemented IReader filter for NlmZip format.
- *
- * Revision 1.3  2004/08/09 15:59:07  vasilche
- * Implemented CNlmZipBtRdr::Pushback() for uncompressed data.
- *
- * Revision 1.2  2004/04/07 16:12:00  ivanov
- * Cosmeic changes. Fixed header and footer.
- *
- * Revision 1.1  2003/12/23 17:01:32  kuznets
- *  Moved from objmgr to util/compress
- *
- * Revision 1.5  2003/10/21 14:27:35  vasilche
- * Added caching of gi -> sat,satkey,version resolution.
- * SNP blobs are stored in cache in preprocessed format (platform dependent).
- * Limit number of connections to GenBank servers.
- * Added collection of ID1 loader statistics.
- *
- * Revision 1.4  2003/10/15 13:43:57  vasilche
- * Removed obsolete class CResultZBtSrc.
- * Some code formatting.
- *
- * Revision 1.3  2003/10/14 22:35:09  ucko
- * Add missing declaration of CResultZBtSrcRdr::GetCompressedSize.
- *
- * Revision 1.2  2003/07/24 20:41:43  vasilche
- * Added private constructor to make MSVC-DLL happy.
- *
- * Revision 1.1  2003/07/24 19:28:08  vasilche
- * Implemented SNP split for ID1 loader.
- *
- * ===========================================================================
- */ 
-
 #endif // READER_ZLIB__HPP_INCLUDED

@@ -153,21 +153,4 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2006/07/17 20:57:55  camacho
-* Added boolean argument for molecule type to SortBySeqIdRank
-*
-* Revision 1.2  2006/06/06 15:23:12  camacho
-* Replace CSeq_id::BestRank for CSeq_id::WorstRank
-*
-* Revision 1.1  2006/06/05 15:14:26  camacho
-* + SortBySeqIdRank
-*
-*
-* ===========================================================================
-*/
 /* Original file checksum: lines: 65, chars: 1918, CRC32: 1109a8b4 */

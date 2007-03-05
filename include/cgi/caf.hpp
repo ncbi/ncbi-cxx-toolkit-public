@@ -69,33 +69,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2003/11/05 18:40:55  dicuccio
- * Added export specifiers
- *
- * Revision 1.6  2003/05/28 19:57:38  lavr
- * +<stddef.h> for size_t
- *
- * Revision 1.5  2003/05/19 22:14:39  vakatov
- * CCookieAffinity_Plain::GetHostIP() -- use SIZE_T for the buf.size arg.
- * Get the code into accordance with the C++ Toolkit coding style.
- *
- * Revision 1.4  2003/04/14 11:24:57  siyan
- * Fixed group name
- *
- * Revision 1.3  2003/04/10 19:01:34  siyan
- * Added doxygen support
- *
- * Revision 1.2  2003/02/25 14:10:56  kuznets
- * Added support of CCookieAffinity service interface, host IP address,
- * cookie encoding
- *
- * Revision 1.1  2003/02/21 20:27:39  kuznets
- * + cookie affinity lib (caf)
- * ===========================================================================
- */
-
 #endif  /* CGI___CAF__HPP */

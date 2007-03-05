@@ -401,35 +401,3 @@ const char* CServerException::GetErrCodeString(void) const
 }
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 6.7  2007/01/10 19:12:30  joukovv
- * Race when server is shutting down with outstanding requests fixed.
- *
- * Revision 6.6  2006/12/14 04:45:22  lavr
- * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
- *
- * Revision 6.5  2006/12/04 14:53:54  gouriano
- * Moved GetErrCodeString method into src
- *
- * Revision 6.4  2006/10/19 23:34:02  ucko
- * Replace debugging printf() (potentially undeclared) with _TRACE().
- *
- * Revision 6.3  2006/10/19 20:38:20  joukovv
- * Works in thread-per-request mode. Errors in BDB layer fixed.
- *
- * Revision 6.2  2006/09/27 21:26:06  joukovv
- * Thread-per-request is finally implemented. Interface changed to enable
- * streams, line-based message handler added, netscedule adapted.
- *
- * Revision 6.1  2006/09/13 18:32:21  joukovv
- * Added (non-functional yet) framework for thread-per-request thread pooling model,
- * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.
- *
- *
- * ===========================================================================
- */

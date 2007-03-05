@@ -121,32 +121,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/02/15 19:47:44  gouriano
- * Exclude projects with unmet requirements from BUILD-ALL
- *
- * Revision 1.8  2005/01/31 16:38:00  gouriano
- * Keep track of subproject types and propagate it down the project tree
- *
- * Revision 1.7  2004/07/20 13:39:29  gouriano
- * Added conditional macro definition
- *
- * Revision 1.6  2004/06/10 15:12:54  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.5  2004/02/17 23:21:56  gorelenk
- * Cosmetic changes.
- *
- * Revision 1.4  2004/01/30 20:39:43  gorelenk
- * second revision
- *
- * Revision 1.3  2004/01/22 17:57:08  gorelenk
- * first version
- *
- * ===========================================================================
- */
-
-
 #endif //PROJECT_TREE_BUILDER__FILE_CONTENTS__HPP

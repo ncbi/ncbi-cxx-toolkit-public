@@ -98,32 +98,3 @@ extern EIO_Status METACONN_Add
 
     return eIO_Success;
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.7  2002/08/13 19:29:49  lavr
- * Log moved to end
- *
- * Revision 6.6  2002/04/26 16:31:06  lavr
- * Minor style changes in call-by-pointer functions
- *
- * Revision 6.5  2002/03/22 22:17:29  lavr
- * No <stdlib.h> needed in here, removed
- *
- * Revision 6.4  2001/03/02 20:07:56  lavr
- * Typo fixed
- *
- * Revision 6.3  2001/01/25 16:57:08  lavr
- * METACONN_Remove revoked call to free() with connector:
- * connector's DESTROY method is now (back) responsible to call free().
- *
- * Revision 6.2  2001/01/12 23:51:38  lavr
- * Message logging modified for use LOG facility only
- *
- * Revision 6.1  2000/12/29 17:49:29  lavr
- * Initial revision
- *
- * ==========================================================================
- */

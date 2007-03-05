@@ -46,14 +46,4 @@ extern void DataLoaders_Register_Trace      (void);
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2004/12/22 19:31:11  grichenk
- * Initial revision
- *
- * ===========================================================================
- */
-
 #endif  /* DATA_LOADERS___LOADERS__HPP */

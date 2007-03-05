@@ -71,19 +71,3 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
 END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.3  2006/12/11 17:14:12  grichenk
-* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
-*
-* Revision 1.2  2006/11/20 17:49:49  grichenk
-* Fixed problems with scope.
-*
-* Revision 1.1  2006/11/06 17:45:23  grichenk
-* Initial revisioon
-*
-*
-* ===========================================================================
-*/

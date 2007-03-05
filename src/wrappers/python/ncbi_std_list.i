@@ -371,25 +371,3 @@ namespace std {
 
 
 }  // namespace std
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/10/05 16:57:33  jcherry
- * Prepend "ncbi_" to specialization macros to avoid conflict with swig lib
- *
- * Revision 1.4  2006/05/12 14:39:16  jcherry
- * Added specialization for size_t.  Added front() and back().
- *
- * Revision 1.3  2006/04/03 13:58:21  jcherry
- * Fixed memory leak in "out" typemaps
- *
- * Revision 1.2  2005/08/01 17:24:05  jcherry
- * Fixed handling of pass by const & and const *
- *
- * Revision 1.1  2005/05/11 21:30:44  jcherry
- * Initial version
- *
- * ===========================================================================
- */
