@@ -231,6 +231,11 @@ version  1 # of file format
 2+6  EJ  gb_gss
 2+6  EK  gb_gss
 2+6  EL  gb_est
+2+6  EM  gb_con
+2+6  EN  gb_con
+2+6  EO  gb_other_nuc # allocated but left unused to avoid O/0 confusion
+2+6  EP  gb_con
+2+6  EQ  gb_con
 2+6  ??  unreserved_nuc
 
 # SPECIAL CASES
@@ -378,6 +383,7 @@ special  CAI99158-CAI99163  embl_tpa_prot
 special  CAI99872           embl_tpa_prot
 special  CAJ00225-CAJ00252  embl_tpa_prot
 special  CAJ13823-CAJ13825  embl_tpa_prot
+special  CAJ29275           embl_tpa_prot
 special  CAJ29301-CAJ29302  embl_tpa_prot
 special  CAJ30479           embl_tpa_prot
 special  CAJ30481-CAJ30484  embl_tpa_prot
