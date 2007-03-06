@@ -35,7 +35,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <util/stream_utils.hpp>
+#include <corelib/stream_utils.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
