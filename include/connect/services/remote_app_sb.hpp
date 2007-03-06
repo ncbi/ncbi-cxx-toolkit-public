@@ -70,7 +70,7 @@ public:
     /// the command line for the remote application. When the file is transfered 
     /// the the executer side it gets stored to a temprary directory and then its
     /// original name in the command line will be replaced with the new temprary name.
-    void AddFileForTransfer(const string& fname);
+    void AddFileForTransfer(const string& fname, ETrasferType tt = eBlobStorage);
 
     void Send(CNcbiOstream& os);
 

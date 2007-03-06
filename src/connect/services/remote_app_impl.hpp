@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/blob_storage.hpp>
+#include <connect/services/remote_app.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -67,9 +68,9 @@ public:
     void SetAppRunTimeout(unsigned int sec) { m_AppRunTimeout = sec; }
     unsigned int GetAppRunTimeout() const { return m_AppRunTimeout; }
    
-    void AddFileForTransfer(const string& fname) 
+    void AddFileForTransfer(const string& fname, IRemoteAppRequest::ETrasferType tt) 
     { 
-        m_Files.insert(fname); 
+        m_Files[fname] = tt; 
     }
     const string& GetWorkingDir() const { return m_TmpDirName; }
 
@@ -78,7 +79,7 @@ public:
     static const string& GetTempDir();
         
 protected:
-    typedef set<string> TFiles;
+    typedef map<string, IRemoteAppRequest::ETrasferType> TFiles;
     
     IBlobStorage& GetInBlob() { return *m_InBlob; }
     const TFiles& GetFileNames() const { return m_Files; }

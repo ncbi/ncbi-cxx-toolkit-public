@@ -40,6 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
+const string kLocalFSSign = "LFS";
 /// Remote Application Request (client side)
 ///
 /// It is used by a client application which wants to run a remote application
@@ -49,6 +50,11 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT IRemoteAppRequest
 {
 public:
+    enum ETrasferType {
+        eBlobStorage,  ///< transfer files througth blobstorage
+        eLocalFS       ///< copy files througth local FS
+    };
+
     virtual ~IRemoteAppRequest();
 
     /// Get an output stream to write data to a remote application stdin
@@ -63,7 +69,8 @@ public:
     /// the command line for the remote application. When the file is transfered 
     /// the the executer side it gets stored to a temprary directory and then its
     /// original name in the command line will be replaced with the new temprary name.
-    virtual void AddFileForTransfer(const string& fname) = 0;
+    virtual void AddFileForTransfer(const string& fname, 
+                                    ETrasferType tt = eBlobStorage ) = 0;
 
     virtual void SetAppRunTimeout(unsigned int sec) = 0;
 

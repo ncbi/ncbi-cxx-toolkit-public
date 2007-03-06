@@ -133,7 +133,7 @@ void CRemoteAppRequestSB_Impl::Serialize(CNcbiOstream& os)
     s_WriteBlob(os, m_StdInKey, GetInBlob());
     TFiles checked_files;
     ITERATE(TFiles, it, GetFileNames()) {
-        const string& fname = *it;
+        const string& fname = it->first;
         CFile file(fname);
         if (!file.Exists()) {
             LOG_POST(Warning << "File :\"" << fname << "\" does not exist.");
@@ -143,11 +143,11 @@ void CRemoteAppRequestSB_Impl::Serialize(CNcbiOstream& os)
             LOG_POST(Warning << "File :\"" << fname << "\" is not found in cmdline. Skipping.");
             continue;
         }
-        checked_files.insert(fname);
+        checked_files[fname] = it->second;
     }
     os << checked_files.size() << " ";
     ITERATE(TFiles, it, checked_files) {
-        const string& fname = *it;
+        const string& fname = it->first;
         CFile file(fname);
         Int8 len = file.GetLength();
         ifstream ifstr(fname.c_str());
@@ -240,9 +240,9 @@ void CRemoteAppRequestSB::SetAppRunTimeout(unsigned int sec)
     m_Impl->SetAppRunTimeout(sec);
 }
 
-void CRemoteAppRequestSB::AddFileForTransfer(const string& fname)
+void CRemoteAppRequestSB::AddFileForTransfer(const string& fname, ETrasferType )
 {
-    m_Impl->AddFileForTransfer(fname);
+    m_Impl->AddFileForTransfer(fname, eBlobStorage);
 }
 
 void CRemoteAppRequestSB::Send(CNcbiOstream& os)

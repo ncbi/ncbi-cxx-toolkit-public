@@ -216,6 +216,9 @@ private:
     string m_StdOutFileName;
     EStdOutErrStorageType m_StorageType;
     bool m_ExlusiveMode;
+
+    bool x_CopyLocalFile(const string& old_fname, string& new_fname);
+
 };
 
 
@@ -226,7 +229,11 @@ void CRemoteAppRequestMB_Impl::Serialize(CNcbiOstream& os)
     typedef map<string,string> TFmap;
     TFmap file_map;
     ITERATE(TFiles, it, GetFileNames()) {
-        const string& fname = *it;
+        const string& fname = it->first;
+        if (it->second == IRemoteAppRequest::eLocalFS) {
+            file_map[fname] = kLocalFSSign;
+            continue;
+        }
         CFile file(fname);
         string blobid;
         if (!file.Exists()) {
@@ -243,7 +250,7 @@ void CRemoteAppRequestMB_Impl::Serialize(CNcbiOstream& os)
             CNcbiOstream& of = GetInBlob().CreateOStream(blobid);
             of << inf.rdbuf();
             GetInBlob().Reset();
-            file_map[blobid] = fname;
+            file_map[fname] = blobid;
         }
     }
 
@@ -265,6 +272,20 @@ void CRemoteAppRequestMB_Impl::Serialize(CNcbiOstream& os)
     Reset();
 }
 
+static void s_ReplaceArg( vector<string>& args, const string& old_fname,
+                          const string& new_fname)
+{
+    for(vector<string>::iterator it = args.begin();
+        it != args.end(); ++it) {
+        string& arg = *it;
+        SIZE_TYPE pos = NStr::Find(arg, old_fname);
+        if (pos == NPOS)
+            return;
+        if ( (pos == 0 || !isalnum((unsigned char)arg[pos-1]) )
+             && pos + old_fname.size() == arg.size())
+            arg = NStr::Replace(arg, old_fname, new_fname);
+    }
+}
 
 void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
 {
@@ -286,26 +307,22 @@ void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
             x_CreateWDir();
 
         string blobid, fname;
-        ReadStrWithLen(is, blobid);
         ReadStrWithLen(is, fname);
+        ReadStrWithLen(is, blobid);
         if (!is.good()) return;
-        CFile file(fname);
-        string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator() 
-            + file.GetName();
-        CNcbiOfstream of(nfname.c_str());
-        if (of.good()) {
-            CNcbiIstream& is = GetInBlob().GetIStream(blobid);
-            of << is.rdbuf();
-            GetInBlob().Reset();
-            for(vector<string>::iterator it = args.begin();
-                it != args.end(); ++it) {
-                string& arg = *it;
-                SIZE_TYPE pos = NStr::Find(arg, fname);
-                if (pos == NPOS)
-                    continue;
-                if ( (pos == 0 || !isalnum((unsigned char)arg[pos-1]) )
-                     && pos + fname.size() == arg.size())
-                    arg = NStr::Replace(arg, fname, nfname);
+        if (blobid == kLocalFSSign) {
+            string nfname;
+            if ( x_CopyLocalFile(fname, nfname) ) 
+                s_ReplaceArg(args, fname, nfname);
+        } else {
+            string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator() 
+                + blobid;
+            CNcbiOfstream of(nfname.c_str());
+            if (of.good()) {
+                CNcbiIstream& is = GetInBlob().GetIStream(blobid);
+                of << is.rdbuf();
+                GetInBlob().Reset();
+                s_ReplaceArg(args, fname, nfname);
             }
         }
     }
@@ -327,6 +344,12 @@ void CRemoteAppRequestMB_Impl::Deserialize(CNcbiIstream& is)
 
 }
 
+bool CRemoteAppRequestMB_Impl::x_CopyLocalFile(const string& old_fname, 
+                                               string& new_fname)
+{
+    return false;
+}
+
 void CRemoteAppRequestMB_Impl::Reset()
 {
     IRemoteAppRequest_Impl::Reset();
@@ -346,9 +369,9 @@ CRemoteAppRequestMB::~CRemoteAppRequestMB()
 {
 }
 
-void CRemoteAppRequestMB::AddFileForTransfer(const string& fname)
+void CRemoteAppRequestMB::AddFileForTransfer(const string& fname, ETrasferType tt)
 {
-    m_Impl->AddFileForTransfer(fname);
+    m_Impl->AddFileForTransfer(fname, tt);
 }
 
 void CRemoteAppRequestMB::Send(CNcbiOstream& os)
