@@ -230,7 +230,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     //const CCgiRequest& request  = ctx.GetRequest();
-    CCgiResponse&      response = ctx.GetResponse();
+    CCgiResponse& response = ctx.GetResponse();
+    m_Response = &response;
 
 
     // Create a HTML page (using template HTML file "grid_cgi_sample.html")
@@ -369,7 +370,7 @@ void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
 
     CHTMLPlainText* h_url = new CHTMLPlainText(url,true);
     page.AddTagMap("REDIRECT_URL",h_url);               
-
+    m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
 }
 
 
@@ -384,6 +385,8 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
     grid_ctx.SetJobOutput(job_status.GetJobOutput());
             
     bool finished = false;
+    grid_ctx.GetCGIContext().GetResponse().
+        SetHeaderValue("NCBI-RCGI-JobStatus", CNetScheduleAPI::StatusToString(status));
     switch (status) {
     case CNetScheduleAPI::eDone:
         // a job is done
@@ -416,8 +419,7 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
         
     case CNetScheduleAPI::eRunning:
         // A job is being processed by a worker node
-        grid_ctx.SetJobProgressMessage(
-                                       job_status.GetProgressMessage());
+        grid_ctx.SetJobProgressMessage(job_status.GetProgressMessage());
         OnJobRunning(grid_ctx);
         break;
         
