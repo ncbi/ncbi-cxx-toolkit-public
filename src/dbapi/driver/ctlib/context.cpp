@@ -1123,12 +1123,13 @@ CDbapiCtlibCFBase::CreateInstance(
 
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
-        // Mandatory parameters ....
-        bool reuse_context = true;
 
+        // Mandatory parameters ....
 #ifdef FTDS_IN_USE
+        bool reuse_context = false; // Be careful !!!
         int  tds_version   = 80;
 #else
+        bool reuse_context = true;
         int  tds_version   = NCBI_CTLIB_TDS_VERSION;
 #endif
 
