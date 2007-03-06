@@ -40,13 +40,19 @@
 ///   CStopWatch - stop watch class to measure elasped time.
 ///
 /// NOTE about CTime:
+///
+///   - The time zone database in most Windows-based computer systems usually
+///     stores only a single start and end rule for each zone, regardless
+///     of year. One of the problems of this approach is that using time-zone
+///     information will get incorrect results if referring to a year with
+///     rules that are different from those currently in the database.
+///
 ///   - Do not use Local time and time_t and its dependent functions with
 ///     dates outside range January 1, 1970 to January 18, 2038.
 ///     Also avoid to use GMT -> Local time conversion functions.
 ///
 ///   - Do not use DataBase conversion functions with dates
 ///     less than January 1, 1900.
-
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitype.h>
