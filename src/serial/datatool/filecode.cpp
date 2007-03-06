@@ -393,6 +393,7 @@ CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out, bool header) cons
 
 CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out)
 {
+#if 0
     out << "\n"
         "/*\n"
         "* ===========================================================================\n"
@@ -401,6 +402,7 @@ CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out)
         "*\n"
         "* ===========================================================================\n"
         "*/\n";
+#endif
     return out;
 }
 
