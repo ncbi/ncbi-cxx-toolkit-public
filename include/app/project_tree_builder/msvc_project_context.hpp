@@ -234,7 +234,7 @@ public:
 
     string ConfigurationName(void) const
     {
-        return m_Config.m_Name;
+        return m_Config.GetConfigFullName();
     }
 
     const CMsvcMetaMakefile& GetMsvcMetaMakefile(void) const

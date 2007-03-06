@@ -188,7 +188,7 @@ public:
     SUPPORT_COMPILER_OPTION(MinimalRebuild)
     virtual string BasicRuntimeChecks(void) const
     {
-        if (GetApp().m_TweakVTune) {
+        if (m_Config.m_VTuneAddon) {
             return "0";
         }
         return GetCompilerOpt(m_MsvcMetaMakefile,
@@ -207,7 +207,7 @@ public:
     SUPPORT_COMPILER_OPTION(Detect64BitPortabilityProblems)
     virtual string DebugInformationFormat(void) const
     {
-        if (GetApp().m_TweakVTune) {
+        if (m_Config.m_VTuneAddon) {
             return "3";
         }
         return GetCompilerOpt(m_MsvcMetaMakefile,
@@ -333,7 +333,7 @@ public:
     SUPPORT_LINKER_OPTION(LargeAddressAware)
     virtual string GenerateDebugInformation(void) const
     {
-        if (GetApp().m_TweakVTune) {
+        if (m_Config.m_VTuneAddon) {
             return "TRUE";
         }
         return GetLinkerOpt(m_MsvcMetaMakefile,
@@ -386,7 +386,7 @@ public:
 
     virtual string FixedBaseAddress(void) const
     {
-        if (GetApp().m_TweakVTune) {
+        if (m_Config.m_VTuneAddon) {
             return "1";
         }
         return GetLinkerOpt(m_MsvcMetaMakefile,

@@ -108,10 +108,12 @@ struct SConfigInfo
                 bool          debug, 
                 const string& runtime_library);
     void DefineRtType();
+    string GetConfigFullName(void) const;
 
     string m_Name;
-    bool   m_Debug;
     string m_RuntimeLibrary;
+    bool   m_Debug;
+    bool   m_VTuneAddon;
     enum {
         rtMultiThreaded = 0,
         rtMultiThreadedDebug = 1,
