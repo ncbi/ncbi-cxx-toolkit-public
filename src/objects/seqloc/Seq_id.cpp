@@ -916,6 +916,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  EO  gb_other_nuc # allocated but left unused to avoid O/0 confusion",
     "2+6  EP  gb_con",
     "2+6  EQ  gb_con",
+    "2+6  ER  gb_gss",
     "2+6  ??  unreserved_nuc",
     "",
     "# SPECIAL CASES",
