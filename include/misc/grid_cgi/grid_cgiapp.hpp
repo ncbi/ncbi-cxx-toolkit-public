@@ -261,9 +261,9 @@ protected:
     ///
     void InitGridClient();
 
-    static void RenderRefresh(CHTMLPage& page, 
-                              const string& url,
-                              int delay);
+    void RenderRefresh(CHTMLPage& page, 
+                       const string& url,
+                       int delay);
 private:
     int m_RefreshDelay;
     int m_FirstDelay;
@@ -273,7 +273,7 @@ private:
     auto_ptr<CNetScheduleAPI> m_NSClient;
     auto_ptr<IBlobStorage> m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
-    
+    CCgiResponse* m_Response;
 };
 
 /////////////////////////////////////////////////////////////////////////////
