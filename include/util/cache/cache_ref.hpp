@@ -84,6 +84,13 @@ public:
                             const string& hashed_content, 
                             const string& ref_value);
 
+    /// Get writer to store hashed content
+    ///
+    /// @return content writer pointer (caller takes ownership)
+    ///
+    IWriter* StoreHashedContent(const string& hash_str, 
+                                const string& hashed_content);
+
 
     /// Get hashed content
     /// Method compares both hash value and hashed content.
@@ -101,10 +108,21 @@ public:
                           const string& hashed_content, 
                           string*       ref_value);
 
+    /// Return reader interface on cached BLOB
+    /// @return NULL
+    ///    - BLOB not found (caller takes ownership)
+    ///
+    IReader* GetHashedContent(const string& hash_str, 
+                              const string& hashed_content);
+
     /// Remove hash content
     ///
     void RemoveHashedContent(const string& hash_str);
 
+protected:
+    /// Returns TRUE if hash verification is successfull
+    bool x_CheckHashContent(const string& hash_str, 
+                            const string& hashed_content);
 
 private:
     CCacheHashedContent(const CCacheHashedContent&);
@@ -159,9 +177,83 @@ void CCacheHashedContent::StoreHashedContent(const string& hash_str,
 }
 
 inline
+IWriter* 
+CCacheHashedContent::StoreHashedContent(const string& hash_str, 
+                                        const string& hashed_content)
+{
+    const void* data = hashed_content.c_str();
+    m_ICache.Store(hash_str,
+                   0,
+                   m_HashContentSubKey,
+                   data,
+                   hashed_content.length());
+    // TODO: needs ICache change to get Writer for a newly created BLOB
+    // (current spec says ICache returns NULL writer if BLOB not found
+    //
+    IWriter* wrt = m_ICache.GetWriteStream(hash_str, 0, m_RefValueSubKey);
+    if (wrt) {
+        return wrt;
+    }
+    // create empty BLOB
+    m_ICache.Store(hash_str,
+                   0,
+                   m_RefValueSubKey,
+                   (const void*)0,
+                   0);
+    return m_ICache.GetWriteStream(hash_str, 0, m_RefValueSubKey);
+}
+
+
+inline
 bool CCacheHashedContent::GetHashedContent(const string& hash_str, 
                                            const string& hashed_content, 
                                            string*       ref_value)
+{
+    bool hash_ok = x_CheckHashContent(hash_str, hashed_content);
+    if (!hash_ok) {
+        return false;
+    }
+
+    const size_t buf_size = 4 * 1024;
+    char buf[buf_size];
+
+    ICache::SBlobAccessDescr blob_access(buf, buf_size);
+
+    // read the reference
+    //
+
+    m_ICache.GetBlobAccess(hash_str, 0, m_RefValueSubKey, &blob_access);
+    if (!blob_access.blob_found) {
+        return false;
+    }
+    if (blob_access.reader.get()) {
+        // TODO: implement reader operation
+        return false;
+    } else {
+        if (ref_value) {
+            ref_value->resize(0);
+            ref_value->append(blob_access.buf, blob_access.buf_size);
+        }
+    }
+    return true;
+}
+
+inline
+IReader* 
+CCacheHashedContent::GetHashedContent(const string& hash_str, 
+                                      const string& hashed_content)
+{
+    bool hash_ok = x_CheckHashContent(hash_str, hashed_content);
+    if (!hash_ok) {
+        return 0;
+    }
+    return m_ICache.GetReadStream(hash_str, 0, m_RefValueSubKey);
+}
+
+inline
+bool 
+CCacheHashedContent::x_CheckHashContent(const string& hash_str, 
+                                        const string& hashed_content)
 {
     const size_t buf_size = 4 * 1024;
     char buf[buf_size];
@@ -188,23 +280,6 @@ bool CCacheHashedContent::GetHashedContent(const string& hash_str,
                          blob_access.blob_size);
         if (cmp != 0) {
             return false;
-        }
-    }
-
-    // read the reference
-    //
-
-    m_ICache.GetBlobAccess(hash_str, 0, m_RefValueSubKey, &blob_access);
-    if (!blob_access.blob_found) {
-        return false;
-    }
-    if (blob_access.reader.get()) {
-        // TODO: implement reader operation
-        return false;
-    } else {
-        if (ref_value) {
-            ref_value->resize(0);
-            ref_value->append(blob_access.buf, blob_access.buf_size);
         }
     }
     return true;
