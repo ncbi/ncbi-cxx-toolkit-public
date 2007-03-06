@@ -6257,7 +6257,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.GetDriverName() == "ctlib"
-        // || args.GetDriverName() == "ftds64_ctlib" // signal: memory access violation
+        || args.GetDriverName() == "ftds64_ctlib" // signal: memory access violation
         || args.GetDriverName() == "odbc"
         || args.GetDriverName() == "ftds64_odbc"
         ) {
