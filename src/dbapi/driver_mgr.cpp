@@ -175,8 +175,8 @@ void CDriverManager::DestroyDs(const IDataSource* ds)
 
     for (; iter != eiter; ++iter) {
         if (iter->second == ds) {
-            m_ds_list.erase(iter);
             delete iter->second;
+            m_ds_list.erase(iter);
             break;
         }
     }
