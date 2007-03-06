@@ -74,7 +74,8 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
         pApp->m_BuildPtb       = IsDlgButtonChecked(hDlg,IDC_CHECK_NOPTB) != BST_CHECKED;
         pApp->m_AddMissingLibs = IsDlgButtonChecked(hDlg,IDC_CHECK_EXT)   == BST_CHECKED;
         pApp->m_ScanWholeTree  = IsDlgButtonChecked(hDlg,IDC_CHECK_NWT)   != BST_CHECKED;
-        pApp->m_TweakVTune     = IsDlgButtonChecked(hDlg,IDC_CHECK_VTUNE) == BST_CHECKED;
+        pApp->m_TweakVTuneR    = IsDlgButtonChecked(hDlg,IDC_CHECK_VTUNER) == BST_CHECKED;
+        pApp->m_TweakVTuneD    = IsDlgButtonChecked(hDlg,IDC_CHECK_VTUNED) == BST_CHECKED;
     } else {
 
         SetDlgItemText( hDlg,IDC_EDIT_ROOT,    pApp->m_Root.c_str());
@@ -87,7 +88,8 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
         CheckDlgButton( hDlg,IDC_CHECK_NOPTB, !pApp->m_BuildPtb);
         CheckDlgButton( hDlg,IDC_CHECK_EXT,    pApp->m_AddMissingLibs);
         CheckDlgButton( hDlg,IDC_CHECK_NWT,   !pApp->m_ScanWholeTree);
-        CheckDlgButton( hDlg,IDC_CHECK_VTUNE,  pApp->m_TweakVTune);
+        CheckDlgButton( hDlg,IDC_CHECK_VTUNER,  pApp->m_TweakVTuneR);
+        CheckDlgButton( hDlg,IDC_CHECK_VTUNED,  pApp->m_TweakVTuneD);
     }
     return TRUE;
 }

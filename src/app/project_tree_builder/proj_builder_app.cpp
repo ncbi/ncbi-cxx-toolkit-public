@@ -236,7 +236,8 @@ CProjBulderApp::CProjBulderApp(void)
     m_Dll = false;
     m_AddMissingLibs = false;
     m_ScanWholeTree  = true;
-    m_TweakVTune = false;
+    m_TweakVTuneR = false;
+    m_TweakVTuneD = false;
     m_CurrentBuildTree = 0;
     m_ConfirmCfg = false;
 }
@@ -448,7 +449,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     }
     string str_log("Configurations: ");
     ITERATE(list<SConfigInfo>, p , *configurations) {
-        str_log += p->m_Name + " ";
+        str_log += p->GetConfigFullName() + " ";
     }
     LOG_POST(Info << str_log);
 
@@ -649,7 +650,7 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
 
     base_path = CDirEntry::ConcatPath(base_path, GetBuildType().GetTypeStr());
     ITERATE(list<SConfigInfo>, c , *configs) {
-        string file_path = CDirEntry::ConcatPath(base_path, c->m_Name);
+        string file_path = CDirEntry::ConcatPath(base_path, c->GetConfigFullName());
         string enabled = CDirEntry::ConcatPath(file_path, 
             "features_and_packages.txt");
         string disabled = CDirEntry::ConcatPath(file_path, 
@@ -679,7 +680,7 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
             ofs << "DLL" << endl;
         }
         const set<string>& epackages =
-            CMsvcPrjProjectContext::GetEnabledPackages(c->m_Name);
+            CMsvcPrjProjectContext::GetEnabledPackages(c->GetConfigFullName());
         ITERATE(set<string>, e, epackages) {
             ofs << *e << endl;
         }
@@ -691,7 +692,7 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         }
 
         const set<string>& dpackages =
-            CMsvcPrjProjectContext::GetDisabledPackages(c->m_Name);
+            CMsvcPrjProjectContext::GetDisabledPackages(c->GetConfigFullName());
         ITERATE(set<string>, d, dpackages) {
             ofsd << *d << endl;
         }

@@ -53,11 +53,11 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
         string unmet, unmet_req;
         // Check config availability
         if ( !project_context.IsConfigEnabled(cfg_info, &unmet, &unmet_req) ) {
-            str_log += " " + cfg_info.m_Name + "(because of " + unmet + ")";
+            str_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet + ")";
         } else {
             if (!unmet_req.empty()) {
                 ++failed;
-                req_log += " " + cfg_info.m_Name + "(because of " + unmet_req + ")";
+                req_log += " " + cfg_info.GetConfigFullName() + "(because of " + unmet_req + ")";
             }
             project_configs.push_back(cfg_info);
         }

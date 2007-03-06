@@ -411,7 +411,7 @@ void CMsvcSite::GetLibInclude(const string& lib_id,
         return;
     } else {
         if (!lib_info.IsEmpty()) {
-            LOG_POST(Warning << lib_id << "|" << cfg_info.m_Name
+            LOG_POST(Warning << lib_id << "|" << cfg_info.GetConfigFullName()
                           << " unavailable: library include ignored: "
                           << NStr::Join(lib_info.m_IncludeDir,","));
         }
@@ -553,7 +553,7 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
                         if (!lib_info.IsEmpty()) {
                             LOG_POST(Warning << "Macro " << macro
                                 << " cannot be resolved for "
-                                << component << "|" << config.m_Name);
+                                << component << "|" << config.GetConfigFullName());
                         }
 //                      res = false;
 //                      break;

@@ -394,7 +394,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
             }
         } else {
             if (!lib_info.IsEmpty()) {
-                LOG_POST(Warning << requires << "|" << cfg_info.m_Name
+                LOG_POST(Warning << requires << "|" << cfg_info.GetConfigFullName()
                               << " unavailable: additional libraries ignored: "
                               << NStr::Join(lib_info.m_Libs,","));
 
@@ -410,8 +410,8 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
 
     const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
     if (all_projects) {
-        string static_lib_dir  = CDirEntry::ConcatPath(m_StaticLibRoot, cfg_info.m_Name);
-        string dynamic_lib_dir = CDirEntry::ConcatPath(m_DynamicLibRoot, cfg_info.m_Name);
+        string static_lib_dir  = CDirEntry::ConcatPath(m_StaticLibRoot, cfg_info.GetConfigFullName());
+        string dynamic_lib_dir = CDirEntry::ConcatPath(m_DynamicLibRoot, cfg_info.GetConfigFullName());
         ITERATE(list<CProjKey>, n, m_Project.m_Depends) {
             const CProjKey& depend_id = *n;
             if (depend_id.Type() == CProjKey::eLib || depend_id.Type() == CProjKey::eDll) {
@@ -490,7 +490,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
             }
         } else {
             if (!lib_info.IsEmpty()) {
-                LOG_POST(Warning << requires << "|" << cfg_info.m_Name
+                LOG_POST(Warning << requires << "|" << cfg_info.GetConfigFullName()
                               << " unavailable: library folder  ignored: "
                               << lib_info.m_LibPath);
             }
@@ -626,9 +626,9 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
                    != libs_required.end()) {
                 result = false;
             }
-            s_DisabledPackages[config.m_Name].insert(requires);
+            s_DisabledPackages[config.GetConfigFullName()].insert(requires);
         } else {
-            s_EnabledPackages[config.m_Name].insert(requires);
+            s_EnabledPackages[config.GetConfigFullName()].insert(requires);
         }
 
         if ( !site.IsLibOk(lib_info,true) && !site.Is3PartyLibWithChoice(requires) ) {
@@ -720,7 +720,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     }
 
     output_dir_abs = 
-        CDirEntry::ConcatPath(output_dir_abs, /*config.m_Name*/"$(ConfigurationName)");
+        CDirEntry::ConcatPath(output_dir_abs, "$(ConfigurationName)");
     m_OutputDirectory = 
         CDirEntry::CreateRelativePath(prj_context.ProjectDir(), 
                                       output_dir_abs);
@@ -757,7 +757,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
 
     //output to ..static\DebugDLL or ..dll\DebugDLL
     string output_dir_abs = 
-        CDirEntry::ConcatPath(output_dir_prefix, config.m_Name);
+        CDirEntry::ConcatPath(output_dir_prefix, config.GetConfigFullName());
     m_OutputDirectory = 
         CDirEntry::CreateRelativePath(project_dir, output_dir_abs);
 #endif

@@ -230,10 +230,10 @@ CMsvcPrjFilesCollector::CollectSources(void)
                     const SConfigInfo& cfg_info = *p;
                     string file_dst_path;
                     file_dst_path = dst_path + "." +
-                                    ConfigurableFileSuffix(cfg_info.m_Name)+
+                                    ConfigurableFileSuffix(cfg_info.GetConfigFullName())+
                                     orig_ext;
                     CreateConfigurableFile(abs_path + ext, file_dst_path,
-                                           cfg_info.m_Name);
+                                           cfg_info.GetConfigFullName());
                 }
                 dst_path += ".@config@" + orig_ext;
                 m_SourceFiles.push_back(

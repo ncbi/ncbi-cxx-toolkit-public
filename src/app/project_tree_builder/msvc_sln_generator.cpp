@@ -187,7 +187,7 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported MSVC version");
     }
     ITERATE(list<SConfigInfo>, p, m_Configs) {
-        string config = (*p).m_Name;
+        string config = (*p).GetConfigFullName();
         if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
             config = ConfigName(config);
         }
@@ -495,7 +495,7 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
         
 //        bool config_enabled = context.IsConfigEnabled(cfg_info, 0);
 
-        const string& config = cfg_info.m_Name;
+        const string& config = cfg_info.GetConfigFullName();
         string cfg1 = config;
         if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
             cfg1 = ConfigName(config);
@@ -526,7 +526,7 @@ void CMsvcSolutionGenerator::WriteProjectConfigurations(
     ITERATE(list<string>, p, projects) {
         ITERATE(list<SConfigInfo>, c, m_Configs) {
             const SConfigInfo& cfg_info = *c;
-            const string& config = cfg_info.m_Name;
+            const string& config = cfg_info.GetConfigFullName();
             string cfg1 = config;
             if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
                 cfg1 = ConfigName(config);
@@ -546,7 +546,7 @@ CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& 
 {
     ITERATE(list<SConfigInfo>, p, m_Configs) {
 
-        const string& config = (*p).m_Name;
+        const string& config = (*p).GetConfigFullName();
         string cfg1 = config;
         if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
             cfg1 = ConfigName(config);

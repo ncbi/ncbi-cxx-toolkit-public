@@ -255,7 +255,7 @@ string SourceFileExt(const string& file_path)
 
 //-----------------------------------------------------------------------------
 SConfigInfo::SConfigInfo(void)
-    :m_Debug(false), m_rtType(rtUnknown)
+    :m_Debug(false), m_VTuneAddon(false), m_rtType(rtUnknown)
 {
 }
 
@@ -263,8 +263,9 @@ SConfigInfo::SConfigInfo(const string& name,
                          bool debug, 
                          const string& runtime_library)
     :m_Name          (name),
-     m_Debug         (debug),
      m_RuntimeLibrary(runtime_library),
+     m_Debug         (debug),
+     m_VTuneAddon(false),
      m_rtType(rtUnknown)
 {
     DefineRtType();
@@ -287,6 +288,15 @@ void SConfigInfo::DefineRtType()
     }
 }
 
+string SConfigInfo::GetConfigFullName(void) const
+{
+    if (m_VTuneAddon) {
+        return string("VTune_") + m_Name;
+    } else {
+        return m_Name;
+    }
+}
+
 void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
                            const list<string>&  config_names, 
                            list<SConfigInfo>*   configs)
@@ -304,6 +314,12 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
                                                      "0");
         config.DefineRtType();
         configs->push_back(config);
+        if (( config.m_Debug && GetApp().m_TweakVTuneD) ||
+            (!config.m_Debug && GetApp().m_TweakVTuneR))
+        {
+            config.m_VTuneAddon = true;
+            configs->push_back(config);
+        }
     }
 }
 
@@ -479,7 +495,7 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
     //
     // For each configuration
     ITERATE(list<SConfigInfo>, iconfig, m_Configs) {
-        const string& config = (*iconfig).m_Name;
+        const string& config = (*iconfig).GetConfigFullName();
         CRef<CFileConfiguration> file_config(new CFileConfiguration());
         file_config->SetAttlist().SetName(ConfigName(config));
         if ( !enable_cfg.empty()  &&  enable_cfg != config ) {
@@ -529,7 +545,7 @@ CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter,
         // Exclude from build all file versions
         // except one for current configuration.
         ITERATE(list<SConfigInfo>, icfg, m_Configs) {
-            const string& cfg = (*icfg).m_Name;
+            const string& cfg = (*icfg).GetConfigFullName();
             string source_file = NStr::Replace(rel_source_file,
                                                ".@config@", "." + cfg);
             InsertFile(filter, source_file, cfg);
@@ -923,7 +939,7 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
 
     ITERATE(list<SConfigInfo>, n, configs) {
         // Iterate all configurations
-        const string& config = (*n).m_Name;
+        const string& config = (*n).GetConfigFullName();
 
         CRef<CFileConfiguration> file_config(new CFileConfiguration());
         file_config->SetAttlist().SetName(ConfigName(config));
@@ -969,7 +985,7 @@ void CreateUtilityProject(const string&            name,
 
     ITERATE(list<SConfigInfo>, p , configs) {
         // Iterate all configurations
-        const string& config = (*p).m_Name;
+        const string& config = (*p).GetConfigFullName();
         
         CRef<CConfiguration> conf(new CConfiguration());
 

@@ -70,7 +70,7 @@ static void s_CreateThirdPartyLibsInstallMakefile
                               GetApp().GetRegSettings().m_CompilersSubdir);
 
     makefile_path = CDirEntry::ConcatPath(makefile_path, build_type.GetTypeStr());
-    makefile_path = CDirEntry::ConcatPath(makefile_path, config.m_Name);
+    makefile_path = CDirEntry::ConcatPath(makefile_path, config.GetConfigFullName());
     makefile_path = CDirEntry::ConcatPath(makefile_path, 
                                           "Makefile.third_party.mk");
 
@@ -108,11 +108,11 @@ static void s_CreateThirdPartyLibsInstallMakefile
 
                 s_ResetLibInstallKey(dir, lib);
             } else {
-                LOG_POST(Warning << lib << "|" << config.m_Name << ": "
+                LOG_POST(Warning << lib << "|" << config.GetConfigFullName() << ": "
                                  << bin_dir << " not found");
             }
         } else {
-            LOG_POST(Warning << lib << "|" << config.m_Name << ": LIBPATH is empty");
+            LOG_POST(Warning << lib << "|" << config.GetConfigFullName() << ": LIBPATH is empty");
         }
     }
 }
@@ -134,12 +134,16 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     const CBuildType static_build(false);
     const CBuildType dll_build(true);
     ITERATE(list<SConfigInfo>, p, configs) {
-        AnalyzeDefines( site, root_dir, *p, static_build);
+        if (!p->m_VTuneAddon) {
+            AnalyzeDefines( site, root_dir, *p, static_build);
+        }
     }
     list<SConfigInfo> dlls;
     GetApp().GetDllsInfo().GetBuildConfigs(&dlls);
     ITERATE(list<SConfigInfo>, p, dlls) {
-        AnalyzeDefines( site, root_dir, *p, dll_build);
+        if (!p->m_VTuneAddon) {
+            AnalyzeDefines( site, root_dir, *p, dll_build);
+        }
     }
 
     LOG_POST(Info << "*** Creating Makefile.third_party.mk files ***");
@@ -206,7 +210,7 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
         if ( !site.IsLibOk(lib_info) ) {
             if (!lib_info.IsEmpty()) {
                 LOG_POST(Warning << define << " is disabled because of "
-                                 << component << "|" << config.m_Name);
+                                 << component << "|" << config.GetConfigFullName());
             }
             return false;
         }
