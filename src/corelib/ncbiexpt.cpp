@@ -144,13 +144,6 @@ typedef NCBI_PARAM_TYPE(EXCEPTION, Abort_If_Critical) TAbortIfCritical;
 static TAbortIfCritical s_AbortIfCritical;
 
 
-inline bool SeverityEqualOrAbove(EDiagSev level, EDiagSev reference)
-{
-    return reference == eDiag_Trace  ||
-        (level != eDiag_Trace  &&  level >= reference);
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CException implementation
 
@@ -167,7 +160,7 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false)
 {
-    if (SeverityEqualOrAbove(severity, eDiag_Critical)  &&
+    if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical.Get()) {
         abort();
     }
@@ -222,7 +215,7 @@ void CException::AddBacklog(const CDiagCompileInfo& info,
 
 void CException::SetSeverity(EDiagSev severity)
 {
-    if (SeverityEqualOrAbove(severity, eDiag_Critical)  &&
+    if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical.Get()) {
         abort();
     }
@@ -320,7 +313,7 @@ void CException::ReportExtra(ostream& /*out*/) const
 const CStackTrace* CException::GetStackTrace(void) const
 {
     if (!m_StackTrace.get()  ||  m_StackTrace->Empty()  ||
-        !SeverityEqualOrAbove(m_Severity, GetStackTraceLevel())) {
+        CompareDiagPostLevel(m_Severity, GetStackTraceLevel()) < 0) {
         return NULL;
     }
     return m_StackTrace.get();
@@ -430,7 +423,7 @@ void CException::x_GetStackTrace(void)
     if ( m_StackTrace.get() ) {
         return;
     }
-    if (!SeverityEqualOrAbove(m_Severity, GetStackTraceLevel())) {
+    if (CompareDiagPostLevel(m_Severity, GetStackTraceLevel()) < 0) {
         return;
     }
     m_StackTrace.reset(new CStackTrace);
