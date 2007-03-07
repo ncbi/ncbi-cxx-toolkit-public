@@ -309,7 +309,7 @@ CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
         opt.SetMatchReward(args["match"].AsInteger());
     }
     if (args["thresh"].AsInteger()) {
-        opt.SetWordThreshold(args["thresh"].AsInteger());
+        opt.SetWordThreshold(args["thresh"].AsDouble());
     }
     if (args["window"].AsInteger()) {
         opt.SetWindowSize(args["window"].AsInteger());

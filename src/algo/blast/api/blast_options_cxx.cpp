@@ -743,7 +743,7 @@ CBlastOptions::SetProgram(EProgram p)
 }
 
 /******************* Lookup table options ***********************/
-int 
+double 
 CBlastOptions::GetWordThreshold() const
 {
     if (! m_Local) {
@@ -753,7 +753,7 @@ CBlastOptions::GetWordThreshold() const
 }
 
 void 
-CBlastOptions::SetWordThreshold(int w)
+CBlastOptions::SetWordThreshold(double w)
 {
     if (m_Local) {
         m_Local->SetWordThreshold(w);

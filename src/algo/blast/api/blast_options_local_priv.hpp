@@ -71,8 +71,8 @@ public:
     void SetProgram(EProgram p);
 
     /******************* Lookup table options ***********************/
-    int GetWordThreshold() const;
-    void SetWordThreshold(int w);
+    double GetWordThreshold() const;
+    void SetWordThreshold(double w);
 
     ELookupTableType GetLookupTableType() const;
     void SetLookupTableType(ELookupTableType type);
@@ -389,14 +389,14 @@ CBlastOptionsLocal::SetMatrixName(const char* matrix)
     m_ScoringOpts->matrix = strdup(matrix);
 }
 
-inline int
+inline double
 CBlastOptionsLocal::GetWordThreshold() const
 {
     return m_LutOpts->threshold;
 }
 
 inline void
-CBlastOptionsLocal::SetWordThreshold(int w)
+CBlastOptionsLocal::SetWordThreshold(double w)
 {
     m_LutOpts->threshold = w;
 }
