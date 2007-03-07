@@ -60,7 +60,7 @@ public:
 
     /******************* Lookup table options ***********************/
     /// Returns WordThreshold
-    int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
+    double GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
     /// Returns WordSize
     int GetWordSize() const { return m_Opts->GetWordSize(); }
 

@@ -123,10 +123,10 @@ public:
 
     /******************* Lookup table options ***********************/
     /// Returns WordThreshold
-    int GetWordThreshold() const;
+    double GetWordThreshold() const;
     /// Sets WordThreshold
     /// @param w WordThreshold [in]
-    void SetWordThreshold(int w);
+    void SetWordThreshold(double w);
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
