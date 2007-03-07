@@ -759,7 +759,7 @@ CBlastOptions::SetWordThreshold(double w)
         m_Local->SetWordThreshold(w);
     }
     if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_WordThreshold, w);
+        m_Remote->SetValue(eBlastOpt_WordThreshold, static_cast<int>(w));
     }
 }
 
