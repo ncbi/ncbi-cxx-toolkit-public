@@ -148,6 +148,9 @@ PRE_LIBS =
 # To add directory /foo to the list to search at runtime, you can add
 # $(RUNPATH_FLAG)/foo to your LDFLAGS.
 RUNPATH_FLAG = @f_runpath@
+# Special case: add the searcher's current location (only works on
+# Linux and Solaris)
+RUNPATH_ORIGIN = @RUNPATH_ORIGIN@
 
 ### Debug/release suffixes
 # "Debug" for debugging, "Release" for release
