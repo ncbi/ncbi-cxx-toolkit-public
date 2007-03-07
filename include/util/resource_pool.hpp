@@ -41,6 +41,15 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+ /// Default class factory for resource pool (C++ new/delete)
+ /// 
+template<class Value>
+struct CResoursePool_NewClassFactory
+{
+public:
+    static Value* Create() { return new Value; }
+    static void Delete(Value* v) { delete v; }
+};
 
 /// General purpose resource pool.
 ///
@@ -52,35 +61,55 @@ BEGIN_NCBI_SCOPE
 /// Class can be used syncronized across threads 
 /// (use CFastMutex as Lock parameter)
 ///
-template<class Value, class Lock=CNoLock>
+/// Default creation/destruction protocol is C++ new/delete.
+/// Can be overloaded using CF parameter
+///
+template<class Value, 
+        class Lock = CNoLock, 
+        class CF   = CResoursePool_NewClassFactory<Value> >
 class CResourcePool
 {
 public: 
     typedef Value                          TValue;
     typedef Lock                           TLock;
     typedef typename Lock::TWriteLockGuard TWriteLockGuard;
+    typedef CF                             TClassFactory;
     typedef Value*                         TValuePtr;
     typedef deque<Value*>                  TPoolList;
 
 public:
-    CResourcePool()
+    /// Construction
+    ///
+    /// @param upper_limit
+    ///     Max pool size. Everything coming to pool above this limit is
+    ///     destroyed right away. 0 - upper limit not set
+    ///
+    CResourcePool(size_t               capacity_upper_limit = 0, 
+                  const TClassFactory& cf = TClassFactory()
+                  )
+        : m_CF(cf),
+          m_UpperLimit(capacity_upper_limit)
     {}
 
     ~CResourcePool()
     {
-        TWriteLockGuard guard(m_Lock);
+        FreeAll();
+    }
 
-        ITERATE(typename TPoolList, it, m_FreeObjects) {
-            Value* v = *it;
-            delete v;
-        }
+    /// Return max pool size.
+    size_t GetCapacityLimit() const { return m_UpperLimit; }
+
+    /// Set upper limit for pool capacity (everything above this is deleted)
+    void SetCapacityLimit(size_t capacity_upper_limit)
+    {
+        m_UpperLimit = capacity_upper_limit;
     }
 
     /// Get object from the pool. 
     ///
     /// Pool makes no reinitialization or constructor 
     /// call and object is returned in the same state it was put.
-    /// If pool has no vacant objects, new is called to produce an object.
+    /// If pool has no vacant objects, class factory is called to produce an object.
     /// Caller is responsible for deletion or returning object back to the pool.
     Value* Get()
     {
@@ -88,7 +117,7 @@ public:
 
         Value* v;
         if (m_FreeObjects.empty()) {
-            v = new Value;
+            v = m_CF.Create();
         } else {
             typename TPoolList::iterator it = m_FreeObjects.end();
             v = *(--it);
@@ -120,11 +149,15 @@ public:
     /// and return it to another pool.
     /// Method does NOT immidiately destroy the object v. 
     void Put(Value* v)
-    {
+    {        
         TWriteLockGuard guard(m_Lock);
 
         _ASSERT(v);
-        m_FreeObjects.push_back(v);
+        if (m_UpperLimit && (m_FreeObjects.size() >= m_UpperLimit)) {
+            m_CF.Delete(v);
+        } else {
+            m_FreeObjects.push_back(v);
+        }
     }
 
     void Return(Value* v) 
@@ -165,6 +198,22 @@ public:
         m_FreeObjects.clear();
     }
 
+    /// Free all pool objects.
+    ///
+    /// Method removes all objects from the internal list and
+    /// deallocates the objects.
+    void FreeAll()
+    {
+        TWriteLockGuard guard(m_Lock);
+
+        ITERATE(typename TPoolList, it, m_FreeObjects) {
+            Value* v = *it;
+            m_CF.Delete(v);
+        }
+        m_FreeObjects.clear();
+    }
+
+
     /// Get internal list of free objects
     ///
     /// Be very careful with this function! It does not provide MT sync.
@@ -186,8 +235,10 @@ protected:
     CResourcePool& operator=(const CResourcePool&);
 
 protected:
-    TPoolList   m_FreeObjects;
-    TLock       m_Lock;
+    TPoolList                 m_FreeObjects;
+    TLock                     m_Lock;
+    TClassFactory             m_CF;
+    size_t                    m_UpperLimit; ///< Upper limit how much to pool
 };
 
 
