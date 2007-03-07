@@ -1188,6 +1188,10 @@ if test -z "$CONF_f_runpath" ; then
       ;;
    esac
 fi
+case "$host_os" in
+    linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath \$\$ORIGIN" ;;
+    * )               RUNPATH_ORIGIN= ;;
+esac  
 
 case "$compiler:$compiler_version:$with_bin_release" in
   GCC:*:yes )
@@ -5410,6 +5414,7 @@ AC_SUBST(FAST_LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(C_LIBS)
 AC_SUBST(GCCPCH)
+AC_SUBST(RUNPATH_ORIGIN)
 
 AC_SUBST(D_SFX)
 AC_SUBST(DEBUG_SFX)
