@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <deque>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -51,6 +52,18 @@ public:
     static void Delete(Value* v) { delete v; }
 };
 
+ /// C-array oriented class factory for resource pool (delete [])
+ /// 
+template<class Value>
+struct CResoursePool_NewArrayClassFactory
+{
+public:
+    static Value* Create() { return new Value; }
+    static void Delete(Value* v) { delete [] v; }
+};
+
+
+
 /// General purpose resource pool.
 ///
 /// Intended use is to store reusable objects.
@@ -65,8 +78,8 @@ public:
 /// Can be overloaded using CF parameter
 ///
 template<class Value, 
-        class Lock = CNoLock, 
-        class CF   = CResoursePool_NewClassFactory<Value> >
+         class Lock = CNoLock, 
+         class CF   = CResoursePool_NewClassFactory<Value> >
 class CResourcePool
 {
 public: 
@@ -283,6 +296,112 @@ private:
 private:
     Pool&                     m_Pool;
     typename Pool::TValue*    m_Value;
+};
+
+
+/// Bucket of resourse pools.
+///
+/// This object is a wrap on a vector of resource pools, it
+/// automates management of multiple resource pools. 
+/// 
+template<class Value,
+         class Lock = CNoLock,
+         class RPool = CResourcePool<Value, Lock> >
+class CBucketPool
+{
+public:
+    typedef Value                           TValue;
+    typedef Lock                            TLock;
+    typedef typename Lock::TWriteLockGuard  TWriteLockGuard;
+    typedef RPool                           TResourcePool;
+
+public:
+    /// Construction
+    ///
+    /// @param bucket_ini
+    ///     Initial size of pool bucket. 
+    ///     Backet resized dynamically if it needs to.
+    /// @param resource_pool_capacity_limit
+    ///     Upper limit for how many objects pool can store
+    ///
+    CBucketPool(size_t bucket_ini = 0, 
+                size_t resource_pool_capacity_limit = 0)
+        : m_Bucket(bucket_ini),
+          m_ResourcePoolUpperLimit(resource_pool_capacity_limit)
+    {
+        for (size_t i = 0; i < m_Bucket.size(); ++i) {
+            m_Bucket[i] = 0;
+        }
+    }
+
+    ~CBucketPool() 
+    { 
+        TWriteLockGuard guard(m_Lock);
+        x_FreeAll_NoLock(); 
+    }
+
+    /// Free all objects in all pools
+    ///
+    void FreeAllPools()
+    {
+        // code here optimized for MT competitive execution
+        // it does not hold the top level lock for a long time
+        //
+        size_t bsize;
+        {{
+        TWriteLockGuard guard(m_Lock);
+        bsize = m_Bucket.size();
+        }}
+        for (size_t i = 0; i < bsize; ++i) {
+            TResourcePool* rp = 0;
+            {{
+                TWriteLockGuard guard(m_Lock);
+                if (m_Bucket.size() < i) {
+                    break;
+                }
+                TResourcePool* rp = m_Bucket[i];
+            }}
+            if (rp) {
+                rp = FreeAll();
+            }
+        } // for
+    }
+
+    /// Get resource pool for the specified backet
+    /// 
+    /// Backet grows automatically upon request
+    ///
+    TResourcePool* GetResourcePool(size_t backet)
+    {
+        TWriteLockGuard guard(m_Lock);
+
+        // bucket resize
+        while (m_Bucket.size() < backet) {
+            m_Bucket.push_back(0);
+        }
+        TResourcePool* rp = m_Bucket[backet];
+        if (!rp) {
+            rp = new TResourcePool(m_ResourcePoolUpperLimit);
+            m_Bucket[backet] = rp;
+        }
+        return rp;
+    }
+
+private:
+    CBucketPool(const CBucketPool&);
+    CBucketPool& operator=(const CBucketPool&);
+private:
+    void x_FreeAll_NoLock()
+    {
+        for (size_t i = 0; i < m_Bucket.size(); ++i) {
+            delete m_Bucket[i]; m_Bucket[i] = 0;
+        }
+    }
+
+protected:
+    vector<TResourcePool*>  m_Bucket;
+    TLock                   m_Lock;
+    size_t                  m_ResourcePoolUpperLimit;
 };
 
 
