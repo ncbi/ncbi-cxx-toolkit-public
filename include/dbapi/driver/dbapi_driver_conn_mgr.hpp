@@ -64,6 +64,8 @@ public:
 
     virtual ~IConnValidator(void);
 
+    // All CException-derived exceptions will be caught by CDBConnectionFactory.
+    // Please use other tools to report validation information to a user.
     virtual EConnStatus Validate(CDB_Connection& conn) = 0;
 };
 

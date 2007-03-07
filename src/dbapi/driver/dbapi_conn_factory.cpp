@@ -218,7 +218,7 @@ CDBConnectionFactory::MakeDBConnection(
                 cur_conn_attr.srv_name = dsp_srv->GetName();
 
                 // MakeValidConnection may return NULL here because a newly
-                // create connection may not pass validation.
+                // created connection may not pass validation.
                 t_con = MakeValidConnection(ctx, cur_conn_attr, validator);
 
             } catch(const CDB_Exception&) {
@@ -300,10 +300,22 @@ CDBConnectionFactory::MakeValidConnection(
 {
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, conn_attr));
 
-    if (conn.get() &&
-        validator &&
-        validator->Validate(*conn) == IConnValidator::eInvalidConn) {
-        return NULL;
+    if (conn.get() && validator) {
+        try {
+            if (validator->Validate(*conn) == IConnValidator::eInvalidConn) {
+                return NULL;
+            }
+        } catch (const CException& ex) {
+            ERR_POST(Warning << ex.ReportAll() << " when trying to connect to "
+                     << "server '" << conn_attr.srv_name << "' as user '"
+                     << conn_attr.user_name << "'");
+            return NULL;
+        } catch (...) {
+            ERR_POST(Warning << "Unknown exception when trying to connect to "
+                     << "server '" << conn_attr.srv_name << "' as user '"
+                     << conn_attr.user_name << "'");
+            throw;
+        }
     }
     return conn.release();
 }
@@ -425,32 +437,28 @@ CTrivialConnValidator::~CTrivialConnValidator(void)
 IConnValidator::EConnStatus
 CTrivialConnValidator::Validate(CDB_Connection& conn)
 {
-    try {
-        // Try to change a database ...
-        {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
-            set_cmd->Send();
-            set_cmd->DumpResults();
-        }
-
-        if (m_Attr & eCheckSysobjects) {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
-            set_cmd->Send();
-            set_cmd->DumpResults();
-        }
-
-        // Go back to the original (master) database ...
-        if (m_Attr & eRestoreDefaultDB) {
-            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
-            set_cmd->Send();
-            set_cmd->DumpResults();
-        }
-    }
-    catch (const CDB_Exception&) {
-        // Database exceptions -- validation failed...
-        return eInvalidConn;
+    // Try to change a database ...
+    {
+        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
+        set_cmd->Send();
+        set_cmd->DumpResults();
     }
 
+    if (m_Attr & eCheckSysobjects) {
+        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+        set_cmd->Send();
+        set_cmd->DumpResults();
+    }
+
+    // Go back to the original (master) database ...
+    if (m_Attr & eRestoreDefaultDB) {
+        auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
+        set_cmd->Send();
+        set_cmd->DumpResults();
+    }
+
+    // All exceptions are supposed to be caught and processed by
+    // CDBConnectionFactory ...
     return eValidConn;
 }
 
