@@ -85,6 +85,8 @@ public:
     };
     EBDB_ErrCode WriteVector(const TKey& key, const TBitVector& bv,
                              ECompact compact);
+    EBDB_ErrCode WriteVectorById(TKeyId key_id, const TBitVector& bv,
+                                 ECompact compact);
 
 protected:
 
@@ -102,6 +104,10 @@ private:
 
     /// temp block for bitvector serialization
     bm::word_t*   m_STmpBlock;
+
+    void x_SerializeBitVector(const TBitVector& bv,
+                              CBDB_RawFile::TBuffer& buffer,
+                              ECompact compact);
 };
 
 
@@ -261,12 +267,11 @@ CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::ReadVectorAndById(TKeyId ke
 ///
 /// Public write interface
 ///
-
 template <typename Key, typename Dictionary, typename BvStore, typename BV>
-inline EBDB_ErrCode
-CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::WriteVector(const Key& key,
-                                                             const TBitVector& bv,
-                                                             ECompact compact)
+inline void CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>
+::x_SerializeBitVector(const TBitVector& bv,
+                       CBDB_RawFile::TBuffer& buffer,
+                       ECompact compact)
 {
     if ( !m_STmpBlock ) {
         m_STmpBlock = m_TmpVec.allocate_tempblock();
@@ -290,8 +295,31 @@ CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::WriteVector(const Key& key,
     size_t size = bm::serialize(*bv_to_store, (unsigned char*)&m_Buffer[0], 
                                 m_STmpBlock, bm::BM_NO_BYTE_ORDER);
     m_Buffer.resize(size);
+}
+
+
+template <typename Key, typename Dictionary, typename BvStore, typename BV>
+inline EBDB_ErrCode
+CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::WriteVector(const Key& key,
+                                                             const TBitVector& bv,
+                                                             ECompact compact)
+{
+    x_SerializeBitVector(bv, m_Buffer, compact);
     return Write(key, m_Buffer);
 }
+
+
+template <typename Key, typename Dictionary, typename BvStore, typename BV>
+inline EBDB_ErrCode
+CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::WriteVectorById(TKeyId key_id,
+                                                             const TBitVector& bv,
+                                                             ECompact compact)
+{
+    x_SerializeBitVector(bv, m_Buffer, compact);
+    return TParent::WriteById(key_id, m_Buffer);
+}
+
+
 
 
 

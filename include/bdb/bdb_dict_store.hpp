@@ -188,8 +188,10 @@ public:
 
     EBDB_ErrCode Read    (const Key& key, CBDB_RawFile::TBuffer& data);
     EBDB_ErrCode ReadById(TKeyId     key, CBDB_RawFile::TBuffer& data);
-    EBDB_ErrCode Write(const Key& key, const CBDB_RawFile::TBuffer& data);
-    EBDB_ErrCode Write(const Key& key, const void* data, size_t size);
+    EBDB_ErrCode Write    (const Key& key, const CBDB_RawFile::TBuffer& data);
+    EBDB_ErrCode Write    (const Key& key, const void* data, size_t size);
+    EBDB_ErrCode WriteById(TKeyId key_id, const CBDB_RawFile::TBuffer& data);
+    EBDB_ErrCode WriteById(TKeyId key_id, const void* data, size_t size);
     EBDB_ErrCode UpdateInsert(Uint4 uid,
                               const void* data,
                               size_t size);
@@ -314,6 +316,25 @@ CBDB_BlobDictStore<Key, Dictionary, BvStore>::Write(const Key& key,
         }
     }
     return UpdateInsert(key_id, data, size);
+}
+
+
+template <typename Key, typename Dictionary, typename BvStore>
+inline EBDB_ErrCode
+CBDB_BlobDictStore<Key, Dictionary, BvStore>::WriteById(TKeyId key_id,
+                                                        const void* data,
+                                                        size_t size)
+{
+    return UpdateInsert(key_id, data, size);
+}
+
+
+template <typename Key, typename Dictionary, typename BvStore>
+inline EBDB_ErrCode
+CBDB_BlobDictStore<Key, Dictionary, BvStore>::WriteById(TKeyId key_id,
+                                                        const CBDB_RawFile::TBuffer& data)
+{
+    return UpdateInsert(key_id, &data[0], data.size());
 }
 
 

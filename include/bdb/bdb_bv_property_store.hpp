@@ -61,9 +61,10 @@ public:
     TKeyId GetCurrentUid() const;
 
     EBDB_ErrCode Read(TKeyId* key_idx);
-    EBDB_ErrCode Read(const PropKey& prop,
-                      const PropValue& value,
+    EBDB_ErrCode Read(const TKey& key, TKeyId* key_idx);
+    EBDB_ErrCode Read(const PropKey& prop, const PropValue& value,
                       TKeyId* key_idx);
+    EBDB_ErrCode Write(const TKey& key, TKeyId key_idx);
     EBDB_ErrCode Write(const PropKey& prop,
                        const PropValue& value,
                        TKeyId key_idx);
@@ -178,6 +179,17 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Read(TKeyId* key_idx)
 
 template <class PropKey, class PropValue>
 inline EBDB_ErrCode
+CBDB_PropertyDictionary<PropKey, PropValue>::Read(const TKey& key,
+                                                  TKeyId* key_idx)
+{
+    m_PropKey = key.first;
+    m_PropVal = key.second;
+    return Read(key_idx);
+}
+
+
+template <class PropKey, class PropValue>
+inline EBDB_ErrCode
 CBDB_PropertyDictionary<PropKey, PropValue>::Read(const PropKey& prop,
                                                   const PropValue& value,
                                                   TKeyId* key_idx)
@@ -185,6 +197,18 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Read(const PropKey& prop,
     m_PropKey = prop;
     m_PropVal = value;
     return Read(key_idx);
+}
+
+
+template <class PropKey, class PropValue>
+inline EBDB_ErrCode
+CBDB_PropertyDictionary<PropKey, PropValue>::Write(const TKey& key,
+                                                   TKeyId key_idx)
+{
+    m_PropKey = key.first;
+    m_PropVal = key.second;
+    m_Uid     = key_idx;
+    return UpdateInsert();
 }
 
 
