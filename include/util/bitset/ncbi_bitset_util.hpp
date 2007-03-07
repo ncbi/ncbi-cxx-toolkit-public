@@ -41,12 +41,12 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Serialize bitset into a vector<char> buffer
+/// Serialize bitset into a vector<char> compatible buffer
 ///
-template<class TBV>
-void BV_Serialize(const TBV&                   bv, 
-                  vector<unsigned char>&       buf,
-                  bm::word_t*                  tmp_block = 0)
+template<class TBV, class TBuffer>
+void BV_Serialize(const TBV&     bv, 
+                  TBuffer&       buf,
+                  bm::word_t*    tmp_block = 0)
 {
     typename TBV::statistics st;
     bv.calc_stat(&st);
@@ -57,7 +57,6 @@ void BV_Serialize(const TBV&                   bv,
     size_t size = bm::serialize(bv, &buf[0], tmp_block);
     buf.resize(size);
 }
-
 
 END_NCBI_SCOPE
 
