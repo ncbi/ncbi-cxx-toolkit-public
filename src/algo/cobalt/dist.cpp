@@ -200,8 +200,12 @@ CDistances::ComputeMatrix(vector<CSequence>& query_data,
     for (int i = 0; i < num_queries; i++) {
         m_Matrix(i, i) = 0.0;
         for (int j = 0; j < i; j++) {
-            // clamp to zero any distances that are too small
+            // clamp to zero any distances that are negative
+            // or too small
             if (fabs(m_Matrix(j, i)) < 1e-6)
+                m_Matrix(j, i) = 0;
+
+            if (m_Matrix(j, i) < 0)
                 m_Matrix(j, i) = 0;
 
             m_Matrix(i, j) = m_Matrix(j, i);
