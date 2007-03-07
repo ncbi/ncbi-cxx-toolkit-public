@@ -376,7 +376,7 @@ public:
         TWriteLockGuard guard(m_Lock);
 
         // bucket resize
-        while (m_Bucket.size() < backet) {
+        while (m_Bucket.size() < backet+1) {
             m_Bucket.push_back(0);
         }
         TResourcePool* rp = m_Bucket[backet];
