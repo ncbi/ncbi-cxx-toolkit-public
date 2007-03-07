@@ -362,7 +362,7 @@ public:
                 TResourcePool* rp = m_Bucket[i];
             }}
             if (rp) {
-                rp = FreeAll();
+                rp->FreeAll();
             }
         } // for
     }
