@@ -86,6 +86,12 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
        }
       break;
 
+   case eCompressedAaLookupTable:
+      BlastCompressedAaLookupTableNew(query, lookup_segments,
+                         (BlastCompressedAaLookupTable* *) &(lookup_wrap->lut), 
+                         lookup_options, sbp);
+      break;
+
    case eIndexedMBLookupTable:
       /* for indexed megablast, lookup table data is initialized
          in the API layer, not here */
@@ -200,6 +206,12 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
       lookup->lut = (void*) 
          BlastAaLookupTableDestruct((BlastAaLookupTable*)lookup->lut);
       break;
+
+   case eCompressedAaLookupTable:
+      lookup->lut = (void*) 
+         BlastCompressedAaLookupTableDestruct(
+                       (BlastCompressedAaLookupTable*)lookup->lut);
+      break;
    }
 
    sfree(lookup);
@@ -218,6 +230,10 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
    case eAaLookupTable: 
       offset_array_size = OFFSET_ARRAY_SIZE + 
          ((BlastAaLookupTable*)lookup->lut)->longest_chain;
+      break;
+   case eCompressedAaLookupTable: 
+      offset_array_size = OFFSET_ARRAY_SIZE + 
+         ((BlastCompressedAaLookupTable*)lookup->lut)->longest_chain;
       break;
    case eSmallNaLookupTable:
       offset_array_size = OFFSET_ARRAY_SIZE + 

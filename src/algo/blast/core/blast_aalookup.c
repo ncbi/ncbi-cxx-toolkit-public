@@ -730,3 +730,523 @@ static void s_AddPSSMWordHitsCore(NeighborInfo * info, Int4 score,
         }
     }
 }
+
+/* Add a single query offset to the compressed
+ * alphabet protein lookup table
+ * @param lookup The lookup table [in]
+ * @param index The hashtable index into which the query offset goes [in]
+ * @param query_offset Query offset to add [in]
+ */
+static void s_CompressedLookupAddWordHit(
+                                  BlastCompressedAaLookupTable * lookup,
+                                  Int4 index,
+                                  Int4 query_offset)
+{
+    CompressedLookupBackboneCell *cell = lookup->backbone + index;
+    Int4 num_entries = cell->num_used;
+    Int4 i;
+
+    if (num_entries < COMPRESSED_HITS_PER_BACKBONE_CELL) {
+        cell->payload.query_offsets[num_entries] = query_offset;
+    } 
+    else if (num_entries == COMPRESSED_HITS_PER_BACKBONE_CELL) {
+        /* start using an overflow cell. The index of the cell
+           to use is stored as the first element in the backbone
+           cell, and the first hit in the backbone spills into
+           the overflow cell (along with an entry for query_offset) */
+
+        CompressedOverflowCell *overflow_cell;
+
+        if (lookup->overflow_used == lookup->overflow_alloc) {
+
+            /* this should not normally happen */
+
+            Int4 new_size = lookup->overflow_alloc * 1.4;
+
+#ifdef LOOKUP_VERBOSE
+            printf("WARNING: OverFlow reallocation (entries: %d).\n",
+                                       lookup->overflow_alloc);
+#endif
+            lookup->overflow = (CompressedOverflowCell *)realloc(
+                                     lookup->overflow, new_size * 
+                                     sizeof(CompressedOverflowCell));
+            ASSERT(lookup->overflow);
+            lookup->overflow_alloc = new_size;
+        }
+
+        overflow_cell = lookup->overflow + lookup->overflow_used;
+        overflow_cell->query_offsets[0] = cell->payload.query_offsets[0];
+        overflow_cell->query_offsets[1] = query_offset;
+        cell->payload.query_offsets[0] = lookup->overflow_used++;
+    } 
+    else if (num_entries < COMPRESSED_SPILLOVER) {
+        /* just add to the overflow cell */
+        CompressedOverflowCell *overflow_cell = lookup->overflow +
+                                        cell->payload.query_offsets[0];
+        overflow_cell->query_offsets[num_entries - 
+                        (COMPRESSED_HITS_PER_BACKBONE_CELL - 1)] = query_offset;
+    } 
+    else if (num_entries == COMPRESSED_SPILLOVER) {
+        
+        /* empty the backbone cell, and turn it into a dynamic array.
+           Put the hits of the backbone cell, and query_offset, into
+           the dynamic array */
+
+        const Int4 chain_size = COMPRESSED_HITS_PER_BACKBONE_CELL + 5;
+        Int4 overflow_idx = cell->payload.query_offsets[0];
+        Int4 *chain = (Int4 *)malloc(chain_size * sizeof(Int4));
+ 
+        for (i = 1; i < COMPRESSED_HITS_PER_BACKBONE_CELL; i++)
+            chain[i+1] = cell->payload.query_offsets[i];
+       
+        chain[0] = chain_size;
+        chain[1] = COMPRESSED_HITS_PER_BACKBONE_CELL;
+        chain[i+1] = query_offset;
+ 
+        /* update the dynamic array structure */
+        cell->payload.overflow_array.overflow_cell_idx = overflow_idx;
+        cell->payload.overflow_array.array = chain;
+    } 
+    else {
+        /* add directly to the dynamic array */
+
+        Int4 *chain = cell->payload.overflow_array.array; 
+        Int4 chain_size = chain[0];
+        
+        if (chain_size == chain[1] + 2) { /* allocate more */
+            chain_size = chain_size * 2;
+            chain = (Int4 *) realloc(chain, chain_size * sizeof(Int4));
+            ASSERT(chain != NULL);
+            cell->payload.overflow_array.array = chain;
+            chain[0] = chain_size;
+        }
+        
+        /* add the hit */
+        chain[chain[1] + 2] = query_offset;
+        chain[1] += 1;      
+    }
+
+    cell->num_used++;
+}
+
+/** Add a single query offset to the compressed lookup table.
+ * The index is computed using the letters in w[], which is 
+ * assumed to already be converted to the compressed alphabet
+ * @param lookup Pointer to the lookup table. [in][out]
+ * @param s word to add [in]
+ * @param query_offset the offset in the query where the word occurs [in]
+ */
+static void s_CompressedLookupAddEncoded(
+                                     BlastCompressedAaLookupTable * lookup,
+                                     Uint1* w,
+                                     Int4 query_offset)
+{
+    Int4 alphabet_size = lookup->compressed_alphabet_size;
+    Int4 word_length = lookup->word_length;
+    Int4 index = 0;
+    Int4 i;
+
+    for (i = word_length - 1; i >= 0; i--)
+        index = index * alphabet_size + w[i];
+    
+    s_CompressedLookupAddWordHit(lookup, index, query_offset);
+}
+
+/** Add a single query offset to the compressed lookup table.
+ * The index is computed using the letters in w[], which is 
+ * assumed to be in the standard alphabet (i.e. not compressed)
+ * @param lookup Pointer to the lookup table. [in][out]
+ * @param w word to add [in]
+ * @param query_offset the offset in the query where the word occurs [in]
+ */
+static void s_CompressedLookupAddUnencoded(
+                               BlastCompressedAaLookupTable * lookup,
+                               Uint1* w,
+                               Int4 query_offset)
+{
+  Int4 skip = 0;
+  Int4 index = s_ComputeCompressedIndex(lookup->word_length, w, 
+                                        lookup->compressed_alphabet_size,
+                                        &skip, lookup);
+  ASSERT(skip == 0);
+  s_CompressedLookupAddWordHit(lookup, index, query_offset);
+}
+
+/** Structure containing information needed for adding neighboring words 
+ * (specific to compressed lookup table)
+ */
+typedef struct CompressedNeighborInfo {
+    BlastCompressedAaLookupTable *lookup; /**< Lookup table */
+    Uint1 *query_word;   /**< the word whose neighbors we are computing */
+    Uint1 *subject_word; /**< the computed neighboring word */
+    Int4 compressed_alphabet_size;  /**< for use with compressed alphabet */
+    Int4 wordsize;       /**< number of residues in a word */
+    Int4 **matrix;       /**< the substitution matrix */
+    Int4 *row_max;       /**< maximum possible score for each row of the matrix */
+    Int4 query_offset;   /**< a single query offset to index */
+    Int4 threshold;      /**< the score threshold for neighboring words */
+} CompressedNeighborInfo;
+
+/** Very similar to s_AddWordHitsCore
+ * @param info Pointer to the NeighborInfo structure.
+ * @param score The partial sum of the score.
+ * @param current_pos The current offset.
+ */
+static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info, 
+                                        Int4 score, Int4 current_pos)
+{
+    Int4 compressed_alphabet_size = info->compressed_alphabet_size;
+    Int4 threshold = info->threshold;
+    Int4 wordsize = info->wordsize;
+    Uint1 *query_word = info->query_word;
+    Uint1 *subject_word = info->subject_word;
+    Int4 *row;
+    Int4 i;
+    
+    /* remove the maximum score of letters that align with the query letter
+       at position 'current_pos'. Later code will align the entire alphabet
+       with this letter, and compute the exact score each time. Also point to 
+       the row of the score matrix corresponding to the query letter at
+       current_pos */
+
+    score -= info->row_max[query_word[current_pos]];
+    row = info->matrix[query_word[current_pos]];
+    
+    if (current_pos == wordsize - 1) {
+        
+        /* The recursion has bottomed out, and we can produce complete
+           subject words. Pass the entire alphabet through the last position
+           in the subject word, then save the query offset in all lookup
+           table positions corresponding to subject words that yield a high
+           enough score */
+
+        BlastCompressedAaLookupTable *lookup = info->lookup;
+        Int4 query_offset = info->query_offset;
+        
+        for (i = 0; i < compressed_alphabet_size; i++) {
+            if (score + row[i] >= threshold) {
+                subject_word[current_pos] = i;
+                s_CompressedLookupAddEncoded(lookup, subject_word, 
+                                             query_offset);
+#ifdef LOOKUP_VERBOSE
+                lookup->neighbor_matches++;
+#endif
+            }
+        }
+        return;
+    }
+
+    /* Otherwise, pass the entire alphabet through position current_pos of
+       the subject word, and recurse on all words that could possibly exceed
+       the threshold later */
+
+    for (i = 0; i < compressed_alphabet_size; i++) {
+        if (score + row[i] >= threshold) {
+            subject_word[current_pos] = i;
+            s_CompressedAddWordHitsCore(info, score + row[i], 
+                                        current_pos + 1);
+        }
+    }
+}
+
+/** Add neighboring words to the lookup table (compressed alphabet).
+ * @param lookup Pointer to the lookup table.
+ * @param compressed_matrix Pointer to the substitution matrix.
+ * @param query Pointer to the query sequence.
+ * @param query_offset offset where the word occurs in the query
+ * @param row_max maximum possible score for each row of the matrix
+ */
+static void s_CompressedAddWordHits(BlastCompressedAaLookupTable * lookup,
+                                Int4 ** compressed_matrix,
+                                Uint1 * query, Int4 query_offset,
+                                Int4 * row_max)
+{
+    Uint1 *w = query + query_offset;
+    Uint1 s[32];   /* larger than any possible wordsize */
+    Int4 score;
+    Int4 i;
+    CompressedNeighborInfo info;
+
+#ifdef LOOKUP_VERBOSE
+    lookup->exact_matches++;
+#endif
+
+    /* Compute the self-score of the query word */
+
+    score = 0;
+    for (i = 0; i < lookup->word_length; i++) {
+        int c = lookup->compress_table[w[i]]; 
+
+        if (c >= lookup->compressed_alphabet_size) /* "non-20 aa": skip it*/
+            return;
+
+        score += compressed_matrix[w[i]][c];
+    }
+
+    /* If the self-score is above the threshold, then the neighboring
+       computation will automatically add the word to the lookup table.
+       Otherwise, either the score is too low or neighboring is not done at
+       all, so that all of these exact matches must be explicitly added to
+       the lookup table */
+
+    if (lookup->threshold == 0 || score < lookup->threshold) {
+        s_CompressedLookupAddUnencoded(lookup, w, query_offset);
+    } 
+    else {
+#ifdef LOOKUP_VERBOSE
+        lookup->neighbor_matches--;
+#endif
+    }
+
+    /* check if neighboring words need to be found */
+
+    if (lookup->threshold == 0)
+        return;
+
+    /* Set up the structure of information to be used during the recursion */
+
+    info.lookup = lookup;
+    info.query_word = w;
+    info.subject_word = s;
+    info.compressed_alphabet_size = lookup->compressed_alphabet_size;
+    info.wordsize = lookup->word_length;
+    info.matrix = compressed_matrix;
+    info.row_max = row_max;
+    info.query_offset = query_offset;
+    info.threshold = lookup->threshold;
+
+    /* compute the largest possible score that any neighboring word can have; 
+       this maximum will gradually be replaced by exact scores as subject
+       words are built up */
+
+    score = row_max[w[0]];
+    for (i = 1; i < lookup->word_length; i++)
+        score += row_max[w[i]];
+
+    s_CompressedAddWordHitsCore(&info, score, 0);
+}
+
+/**
+ * Index a query sequence; i.e. fill a lookup table with the offsets
+ * of query words
+ *
+ * @param lookup the lookup table [in/modified]
+ * @param matrix the substitution matrix [in]
+ * @param query the query sequence [in]
+ * @param query_bias number added to each offset put into lookup table
+ *                      (ordinarily 0; a nonzero value allows a succession of
+ *                      query sequences to update the same lookup table)
+ * @param location the list of ranges of query offsets to examine 
+ *                 for indexing [in]
+ */
+static void s_CompressedAddNeighboringWords(
+                                  BlastCompressedAaLookupTable * lookup,
+                                  Int4 ** compressed_matrix,
+                                  BLAST_SequenceBlk * query, 
+                                  BlastSeqLoc * location)
+{
+    Int4 i, j;
+    Int4 row_max[BLASTAA_SIZE];
+    BlastSeqLoc *loc;
+    Int4 offset;
+
+    ASSERT(lookup->alphabet_size <= BLASTAA_SIZE);
+
+    /* Determine the maximum possible score for each 
+       row of the score matrix */
+
+    for (i = 0; i < lookup->alphabet_size; i++) {
+        row_max[i] = compressed_matrix[i][0];
+        for (j = 1; j < lookup->compressed_alphabet_size; j++)
+            row_max[i] = MAX(row_max[i], compressed_matrix[i][j]);
+    }
+
+    /* Walk through the query and index all the words */
+
+    for (loc = location; loc; loc = loc->next){
+        Int4 from = loc->ssr->left;
+        Int4 to = loc->ssr->right - lookup->word_length + 1;
+
+        for (offset = from; offset <= to; offset++){
+            s_CompressedAddWordHits(lookup, compressed_matrix, 
+                                    query->sequence, offset, row_max);
+        }
+    }
+}
+
+/** Complete the construction of a compressed protein
+ * lookup table
+ * @param lookup The lookup table [in][out]
+ * @return Always 0
+ */
+static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
+{
+    Int4 i;
+    Int4 longest_chain = 0;
+    PV_ARRAY_TYPE *pv;
+#ifdef LOOKUP_VERBOSE
+#define HISTSIZE 30
+    Int4 histogram[HISTSIZE] = {0};
+    Int4 backbone_occupancy = 0;
+    Int4 num_overflows = 0;
+    Int4 num_spills = 0;
+#endif
+    
+    pv = lookup->pv = (PV_ARRAY_TYPE *)calloc(
+                              (lookup->backbone_size >> PV_ARRAY_BTS) + 1,
+                              sizeof(PV_ARRAY_TYPE));
+    ASSERT(pv != NULL);
+    
+    /* compute the longest chain size and initialize the PV array */
+
+    for (i = 0; i < lookup->backbone_size; i++) {
+        Int4 count = lookup->backbone[i].num_used;
+
+        if (count > 0) {
+            /* set the corresponding bit in the pv_array */
+            PV_SET(pv, i, PV_ARRAY_BTS);
+            longest_chain = MAX(count, longest_chain);
+            
+#ifdef LOOKUP_VERBOSE
+            if (count > COMPRESSED_HITS_PER_BACKBONE_CELL) {
+                num_overflows++;
+                if (count > COMPRESSED_SPILLOVER)
+                    num_spills++;
+            }
+            if (count >= HISTSIZE)
+                count = HISTSIZE-1;
+#endif
+        }
+        
+#ifdef LOOKUP_VERBOSE
+        histogram[count]++;
+#endif
+    }
+    
+    lookup->longest_chain = longest_chain;
+    
+#ifdef LOOKUP_VERBOSE
+    backbone_occupancy = lookup->backbone_size - histogram[0];
+
+    printf("backbone size: %d\n", lookup->backbone_size);
+    printf("backbone occupancy: %d (%f%%)\n", backbone_occupancy,
+                 100.0 * backbone_occupancy / lookup->backbone_size); 
+    printf("num_overflows: %d\n", num_overflows);
+    printf("num_spills: %d\n", num_spills);
+    printf("longest chain: %d\n", longest_chain);
+    printf("exact matches: %d\n", lookup->exact_matches);
+    printf("neighbor matches: %d\n", lookup->neighbor_matches);
+    printf("Lookup table histogram:\n");
+    for (i = 0; i < HISTSIZE; i++) {
+        printf("%d\t%d\n", i, histogram[i]);
+    }
+#endif
+
+    return 0;
+}
+
+Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
+                                     BlastSeqLoc* locations,
+                                     BlastCompressedAaLookupTable * *lut,
+                                     const LookupTableOptions * opt,
+                                     BlastScoreBlk *sbp)
+{
+    Int4 i;
+    SCompressedAlphabet* new_alphabet;
+    const double kMatrixScale = 100.0;
+    const Int4 kInitialOverflowSize = 350000;
+    Int4 word_size = opt->word_size;
+    Int4 table_scale;
+    BlastCompressedAaLookupTable *lookup = *lut =
+              (BlastCompressedAaLookupTable *) calloc(1, 
+                                  sizeof(BlastCompressedAaLookupTable));
+    
+    ASSERT(lookup != NULL);
+    ASSERT(word_size == 6 || word_size == 7);
+
+    /* set word size and threshold information. The reciprocals
+       below are 2^32 / (compressed alphabet size) */
+
+    lookup->word_length = word_size;
+    lookup->threshold = kMatrixScale * opt->threshold;
+    lookup->alphabet_size = BLASTAA_SIZE;
+    if (word_size == 6) {
+        lookup->compressed_alphabet_size = 15;
+        lookup->reciprocal_alphabet_size = 286331154;
+    }
+    else {
+        lookup->compressed_alphabet_size = 10;
+        lookup->reciprocal_alphabet_size = 429496730;
+    }
+
+    /* compute a custom score matrix, for use only
+       with lookup table creation. The matrix dimensions
+       are BLASTAA_SIZE x compressed_alphabet_size, and
+       the score entries are scaled up by kMatrixScale */
+
+    new_alphabet = SCompressedAlphabetNew(sbp,
+                                lookup->compressed_alphabet_size,
+                                kMatrixScale);
+    if (new_alphabet == NULL)
+        return -1;
+
+    /* allocate the backbone and overflow array */
+
+    lookup->backbone_size = pow(lookup->compressed_alphabet_size,
+                                word_size) + 1;
+    lookup->backbone = (CompressedLookupBackboneCell* )calloc(
+                                    lookup->backbone_size, 
+                                    sizeof(CompressedLookupBackboneCell));
+    lookup->overflow = (CompressedOverflowCell *) malloc(
+                                         kInitialOverflowSize *
+                                         sizeof(CompressedOverflowCell));
+    lookup->overflow_used = 0;
+    lookup->overflow_alloc = kInitialOverflowSize;
+    ASSERT(lookup->backbone != NULL);
+    ASSERT(lookup->overflow != NULL);
+
+    /* copy the mapping from protein to compressed 
+       representation; also save a scaled version of the
+       mapping, for use in the scanning phase */
+
+    lookup->compress_table = (Uint1 *)malloc(BLASTAA_SIZE * sizeof(Uint1));
+    lookup->scaled_compress_table = (Int4 *)malloc(
+                                       BLASTAA_SIZE * sizeof(Int4));
+    table_scale = iexp(lookup->compressed_alphabet_size, word_size - 1);
+    for (i = 0; i < BLASTAA_SIZE; i++) {
+        Uint1 letter = new_alphabet->compress_table[i];
+        lookup->compress_table[i] = letter;
+        
+        if (letter >= lookup->compressed_alphabet_size)
+            lookup->scaled_compress_table[i] = -1;
+        else
+            lookup->scaled_compress_table[i] = table_scale * letter;
+    }
+
+    /* index the query and finish up */
+
+    s_CompressedAddNeighboringWords(lookup, new_alphabet->matrix->data, 
+                                    query, locations);
+    s_CompressedLookupFinalize(lookup);
+    SCompressedAlphabetFree(new_alphabet);
+    return 0;
+}
+
+BlastCompressedAaLookupTable *BlastCompressedAaLookupTableDestruct(
+                                 BlastCompressedAaLookupTable * lookup)
+{
+    Int4 i;
+
+    for (i = 0; i < lookup->backbone_size; i++) {
+        if (lookup->backbone[i].num_used > COMPRESSED_SPILLOVER)
+            sfree(lookup->backbone[i].payload.overflow_array.array);
+    }
+
+    sfree(lookup->compress_table);
+    sfree(lookup->scaled_compress_table);
+    sfree(lookup->backbone);
+    sfree(lookup->overflow);
+    sfree(lookup->pv);
+    sfree(lookup);
+    return NULL;
+}

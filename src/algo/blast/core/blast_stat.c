@@ -4280,6 +4280,248 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
     return returnMatrix;
 }
 
+/*------------------- compressed alphabet functions --------------------*/
+
+/** 2-D array mapping compressed letters to sets
+ * of ordinary protein letters
+ */
+typedef Int1 CompressedReverseLookup[BLASTAA_SIZE+1]
+                                    [BLASTAA_SIZE+1];
+
+/** parse the string defining the conversion between the
+ * ordinary protein alphabet and a compressed alphabet
+ * @param trans_string The alphabet mappig [in]
+ * @param table A map from protein letter to compressed letter.
+ *              Protein letter that have no compressed equivalent
+ *              will translate to value alphabet_size [out]
+ * @param compressed_alphabet_size The anticipated size of the
+ *              compressed alphabet [in]
+ * @param rev_table A (one-to-many) mapping from compressed letter to
+ *              protein letter. The list of protein letters in each
+ *              row of the table ends with a negative value [out]
+ */
+static void s_BuildCompressedTranslation(const char *trans_string,
+                               Uint1 *table,
+                               Int4 compressed_alphabet_size,
+                               CompressedReverseLookup rev_table)
+{
+    Int4 i, j;
+    Int4 compressed_letter;
+
+    for (i = 0; i < BLASTAA_SIZE; i++)
+        table[i] = compressed_alphabet_size;
+
+    for (i = j = compressed_letter = 0; trans_string[i] != 0; i++) {
+        
+        Int4 c = trans_string[i];
+
+        if (isspace(c)) {
+            compressed_letter++;
+            j = 0;
+        }
+        else if (isalpha(c)) {
+            Int4 aa_letter = AMINOACID_TO_NCBISTDAA[c];
+            table[aa_letter] = compressed_letter;
+            rev_table[compressed_letter][j++] = aa_letter;
+            rev_table[compressed_letter][j] = -1;
+        }
+    }
+
+    ASSERT(compressed_letter == compressed_alphabet_size - 1);
+}
+
+/** Calculate conditional probability of each letter in each group
+ * @param sbp Structure containing alphabet information [in]
+ * @param compressed_prob Array containing final probabilities [out]
+ * @param compressed_alphabet_size size of the alphabet [in]
+ * @param rev_table A (one-to-many) mapping from compressed letter to
+ *              protein letter. The list of protein letters in each
+ *              row of the table ends with a negative value [in]
+ */
+static Int2 s_GetCompressedProbs(BlastScoreBlk *sbp,
+                                 double* compressed_prob, 
+                                 Int4 compressed_alphabet_size,
+                                 CompressedReverseLookup rev_table)
+{
+    Int4 i, letter;
+    Blast_ResFreq *rfp;
+
+    rfp = Blast_ResFreqNew(sbp);
+    if (rfp == NULL)
+        return -1;
+
+    /* get the normalized background residue frequencies
+       for the protein alphabet */
+
+    Blast_ResFreqStdComp(sbp, rfp);
+
+    for (i = 0; i < BLASTAA_SIZE; i++)
+        compressed_prob[i] = 0.0;
+
+    for (letter = 0; letter < compressed_alphabet_size; letter++) {
+        double prob_sum = 0.; 
+
+        /* sum the frequencies of the protein letters making
+           up this compressed letter */
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            Int4 aa = rev_table[letter][i];
+
+            if (aa < 0)
+                break;
+            prob_sum += rfp->prob[aa];
+        }
+
+        /* compute P(i | letter) */
+
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            Int4 aa = rev_table[letter][i];
+
+            if (aa < 0)
+                break;
+            compressed_prob[aa] = rfp->prob[aa] / prob_sum;
+        }
+    }
+
+    Blast_ResFreqFree(rfp);
+    return 0;
+}
+
+/** Compute a (non-square) score matrix for a compressed alphabet
+ * @param sbp Structure containing alphabet and scoring information [in]
+ * @param new_alphabet Structure defining the new alphabet, including the
+ *                     final score matrix [in][out]
+ * @param scale_factor Score matrix entries are scaled by this value [in]
+ * @param rev_table A (one-to-many) mapping from compressed letter to
+ *              protein letter. The list of protein letters in each
+ *              row of the table ends with a negative value [in]
+ */
+static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
+                                        SCompressedAlphabet *new_alphabet,
+                                        double matrix_scale_factor,
+                                        CompressedReverseLookup rev_table)
+{
+    double compressed_prob[BLASTAA_SIZE]; 
+    double lambda;
+    SFreqRatios * std_freqs;
+    SBlastScoreMatrix *new_matrix;
+    Int4 compressed_alphabet_size = 
+                    new_alphabet->compressed_alphabet_size;
+
+    /* get the ungapped lambda for the protein score matrix */
+
+    lambda = RPSfindUngappedLambda(sbp->name);
+    if (lambda <= 0)
+      return -1;
+
+    matrix_scale_factor /= lambda;
+
+    /* get the frequency ratios for the protein score matrix */
+
+    std_freqs = _PSIMatrixFrequencyRatiosNew(sbp->name);
+    if (std_freqs == NULL)
+        return -2;
+
+    /* sum the background frequencies of each compressed letter */
+
+    if (s_GetCompressedProbs(sbp, compressed_prob, 
+                             compressed_alphabet_size, 
+                             rev_table) < 0) {
+        _PSIMatrixFrequencyRatiosFree(std_freqs);
+        return -3;
+    }
+
+    new_matrix = new_alphabet->matrix = SBlastScoreMatrixNew(
+                                 BLASTAA_SIZE, compressed_alphabet_size);
+    if (new_matrix) {
+        Int4 **scores = new_matrix->data;
+        Int4 i, q, s, letter;
+        const double min_freq = BLAST_SCORE_MIN / matrix_scale_factor;
+    
+        for (q = 0; q < BLASTAA_SIZE; q++) {
+            for (s = 0; s < compressed_alphabet_size; s++) {
+
+                double val = 0; /* combined frequency ratio */
+                
+                for (i = 0; i < BLASTAA_SIZE; i++) {
+
+                    Int4 aa = rev_table[s][i];
+                    if (aa < 0)
+                        break;
+
+                    /* find the frequency of the original letter, then
+                       adjust using letter's weight */
+
+                    val += std_freqs->data[q][aa] * compressed_prob[aa];
+                }
+                
+                val = (val < 1e-8) ? min_freq : log(val);
+                scores[q][s] = BLAST_Nint(val * matrix_scale_factor);
+            }
+        }
+    }
+  
+    _PSIMatrixFrequencyRatiosFree(std_freqs);
+    return 0;
+}
+
+/* for more information see Edgar RC, "Local homology 
+   recognition and distance measures in linear time using 
+   compressed amino acid alphabets." PMID: 14729922.
+   The strings below have letter groups sorted in order
+   of decreasing combined residue frequency */
+
+/** 23-to-10 letter compressed alphabet. Based on SE-V(10) */
+static const char* s_alphabet10 = "IJLMV AST BDENZ KQR G FY P H C W";
+/** 23-to-15 letter compressed alphabet. Based on SE_B(14) */
+static const char* s_alphabet15 = "ST IJV LM KR EQZ A G BD P N F Y H C W";
+
+SCompressedAlphabet*
+SCompressedAlphabetNew(BlastScoreBlk *sbp,
+                       Int4 compressed_alphabet_size,
+                       double matrix_scale_factor)
+{
+    SCompressedAlphabet *new_alphabet;
+    CompressedReverseLookup rev_table;
+    const char* alphabet_string = compressed_alphabet_size == 10 ?
+                                    s_alphabet10 : s_alphabet15;
+
+    ASSERT(compressed_alphabet_size == 10 ||
+           compressed_alphabet_size == 15);
+
+    new_alphabet = (SCompressedAlphabet*)calloc(1, 
+                                sizeof(SCompressedAlphabet));
+
+    /* parse the compressed alphabet */
+
+    new_alphabet->compressed_alphabet_size = compressed_alphabet_size;
+    new_alphabet->compress_table = (Uint1*)malloc(BLASTAA_SIZE * sizeof(Uint1));
+
+    s_BuildCompressedTranslation(alphabet_string,
+                                 new_alphabet->compress_table,
+                                 compressed_alphabet_size,
+                                 rev_table);
+
+    /* build the corresponding score matrix */
+
+    if (s_BuildCompressedScoreMatrix(sbp, new_alphabet,
+                                 matrix_scale_factor, rev_table) < 0) {
+        return SCompressedAlphabetFree(new_alphabet);
+    }
+    
+    return new_alphabet;
+}
+
+SCompressedAlphabet*
+SCompressedAlphabetFree(SCompressedAlphabet *alphabet)
+{
+    if (alphabet) {
+        SBlastScoreMatrixFree(alphabet->matrix);
+        sfree(alphabet->compress_table);
+        sfree(alphabet);
+    }
+    return NULL;
+}
+
 /** 
  * Computes the adjustment to the lengths of the query and database sequences
  * that is used to compensate for edge effects when computing evalues. 
@@ -4406,3 +4648,549 @@ BLAST_ComputeLengthAdjustment(double K,
 
     return converged ? 0 : 1;
 }
+
+/*
+ * ===========================================================================
+ *
+ * $Log: blast_stat.c,v $
+ * Revision 1.153  2007/01/21 08:45:12  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
+ * Revision 1.152  2006/11/21 17:08:28  papadopo
+ * rearrange headers
+ *
+ * Revision 1.151  2006/10/02 12:33:59  madden
+ * Add ifdef for BLOSUM62_20
+ *
+ * Revision 1.150  2006/09/27 18:09:16  papadopo
+ * remove unused variable
+ *
+ * Revision 1.149  2006/09/25 19:32:44  madden
+ *   Added the BLOSUM50 and BLOSUM90 matrices to
+ *   BlastScoreBlkGetCompiledInMatrix. [from Mike Gertz]
+ *
+ * Revision 1.148  2006/09/14 14:49:07  papadopo
+ * doxygen fixes
+ *
+ * Revision 1.147  2006/08/22 19:45:06  papadopo
+ * 1. Alphabet size must be variable in RPSFillScores
+ * 2. In RPSRescalePssm, only initialize the portion of the
+ *    array of score counts that is actually used
+ *
+ * Revision 1.146  2006/07/05 15:33:35  papadopo
+ * 1. Copy the 'X' columns in score matrices into the columns
+ *    for 'U', 'O', 'J'
+ * 2. When rebuilding RPS database profiles to account for the
+ *    composition of the query, allow for the returned score matrix
+ *    to have an alphabet size different from the input score matrix
+ *
+ * Revision 1.145  2006/06/08 15:36:37  madden
+ * In Blast_ScoreBlkMatrixFill check that matrix was found, or return -1
+ *
+ * Revision 1.144  2006/06/07 16:49:31  madden
+ *     - Renamed BlastKarlinPtoE as BLAST_KarlinPtoE and made it external;
+ *       it is need by the composition adjustment routines.
+ *     - Added a Blast_KarlinEtoP routine, the inverse of
+ *       BLAST_KarlinPtoE.
+ *     (from Mike Gertz).
+ *
+ * Revision 1.143  2006/06/05 13:27:33  madden
+ * Add support for GET_MATRIX_PATH callback
+ *
+ * Revision 1.142  2006/05/24 17:19:02  madden
+ * Add BlastScoreBlkGetCompiledInMatrix
+ *
+ * Revision 1.141  2006/04/20 19:28:30  madden
+ * Prototype change for Blast_MessageWrite
+ *
+ * Revision 1.140  2006/04/07 13:45:04  madden
+ * Improved the comment for NlmKarlinLambdaNR.  Reformatted the
+ * function prototype to fit in 80 characters. (from Mike Gertz).
+ *
+ * Revision 1.139  2006/03/30 14:53:36  madden
+ * Doxygen comment
+ *
+ * Revision 1.138  2006/01/12 20:36:37  camacho
+ * Changes to Blast_ScoreBlkKbpUngappedCalc to set invalid contexts
+ *
+ * Revision 1.137  2005/12/12 13:39:14  madden
+ * Correction on how gap costs are set if they exceed maximum
+ *
+ * Revision 1.136  2005/11/14 15:55:42  madden
+ * Correct comment
+ *
+ * Revision 1.135  2005/11/04 13:48:09  madden
+ * Doxygen fixes
+ *
+ * Revision 1.134  2005/11/01 18:49:01  madden
+ * Changes to s_GetNuclValuesArray and calling functions to support (for blastn) reward and penalty values that are multiples of already supported values
+ *
+ * Revision 1.133  2005/10/31 14:05:24  madden
+ * 1.) add support for blastn reward/penalty values of 1/-5, 3/-4, and 3/-2.
+ * 2.) BLAST_GetNucleotideGapExistenceExtendParams now validates value as well as suggesting a
+ * reasonable value.
+ *
+ * Revision 1.132  2005/10/14 17:29:22  madden
+ * Add preliminary support for vecscreen parameters
+ *
+ * Revision 1.131  2005/10/12 19:15:47  madden
+ * Fix bug in s_GetNuclValuesArray
+ *
+ * Revision 1.130  2005/09/27 14:43:56  madden
+ * Centralize round_down decision in s_GetNuclValuesArray
+ *
+ * Revision 1.129  2005/09/16 14:01:45  madden
+ * 1.) BLAST_GetGapExistenceExtendParams renamed to BLAST_GetProteinGapExistenceExtendParams
+ * 2.) Added BLAST_GetNucleotideGapExistenceExtendParams
+ * 3.) Added informative error message to s_GetNuclValuesArray
+ *
+ * Revision 1.128  2005/09/12 19:16:38  coulouri
+ * Enable precomputed statistical parameters for blastn
+ *
+ * Revision 1.127  2005/09/08 14:48:11  ucko
+ * Tweak Blast_KarlinBlkNuclGappedCalc and Blast_GetNuclAlphaBeta to
+ * declare kValues unconditionally, to fix compilation errors when
+ * NEW_BLASTN_STAT is undefined.
+ *
+ * Revision 1.126  2005/09/08 13:40:34  coulouri
+ * Call s_GetNuclValuesArray iff NEW_BLASTN_STAT
+ *
+ * Revision 1.125  2005/08/30 15:42:58  madden
+ * BLAST_GetGapExistenceExtendParams now takes program_number as an argument so it can properly identify blastn queries
+ *
+ * Revision 1.124  2005/08/29 13:52:05  madden
+ * Add BLAST_GetGapExistenceExtendParams
+ *
+ * Revision 1.123  2005/08/19 17:56:18  dondosha
+ * Removed unnecessary redefinition of HUGE_VAL
+ *
+ * Revision 1.122  2005/08/15 20:41:44  dondosha
+ * New blastn statistics can be enabled with a -DNEW_BLASTN_STAT only with a compilation flag
+ *
+ * Revision 1.121  2005/08/15 16:11:43  dondosha
+ * Use precomputed statistical parameters for blastn
+ *
+ * Revision 1.120  2005/08/09 14:16:03  dondosha
+ * From A. Schaffer: added comments to clarify usage of BlastKarlinPtoE
+ *
+ * Revision 1.119  2005/08/01 17:30:31  dondosha
+ * Added functions to return Lambda, K, alpha, beta for nucleotide search, given substitution and gap scores
+ *
+ * Revision 1.118  2005/07/12 22:57:03  bealer
+ * - Change "BlastQueryInfo*" to "const BlastQueryInfo*" in several places.
+ *
+ * Revision 1.117  2005/06/20 13:09:36  madden
+ * Rename BlastSeverity enums in line with C++ tookit convention
+ *
+ * Revision 1.116  2005/06/03 16:22:37  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
+ * Revision 1.115  2005/04/27 17:20:15  papadopo
+ * copy X scores to U scores when building score matrix
+ *
+ * Revision 1.114  2005/02/14 14:09:00  camacho
+ * Replaced SBLASTMatrixStructure by SBlastScoreMatrix.
+ * Added SPsiBlastScoreMatrix structure to support PSSMs.
+ * Removed obsolete fields from the BlastScoreBlk.
+ * Renamed RPSCalculatePSSM to RPSRescalePssm.
+ * Renamed functions to read/load protein scoring matrices.
+ *
+ * Revision 1.113  2005/01/31 16:59:19  dondosha
+ * Bug fix in BlastKarlinLHtoK when penalty == -reward
+ *
+ * Revision 1.112  2005/01/28 13:50:43  madden
+ * Fix typos in doxygen comments
+ *
+ * Revision 1.111  2005/01/27 13:59:17  madden
+ * Minor doxygen fix
+ *
+ * Revision 1.110  2005/01/27 13:17:16  madden
+ * 1.) moved #define BLAST_SUMP_EPSILON_DEFAULT to a const variable within s_BlastSumPCalc.
+ * 2.) made static arrays tab[234] etc. const static arrays within one function.
+ * 3.) introduced structure SRombergCbackArgs to replace confusing use of #defines starting with ARG_
+ * 4.) renamed Romberg callbacks f and g to s_OuterIntegralCback and s_InnerIntegralCback
+ * 5.) cleaned up and removed extra variables from s_BlastSumPCalc
+ * 6.) renamed some static functions to start with s_ per C++ toolkit naming convention.
+ * 7.) added doxygen comments
+ *
+ * Revision 1.109  2005/01/25 17:30:24  madden
+ * Doxygen fixes
+ *
+ * Revision 1.108  2004/12/09 16:13:33  dondosha
+ * Cast Uint1* to char* in call to Blast_ResFreqString, to remove SunOS compiler warning
+ *
+ * Revision 1.107  2004/12/09 16:05:36  dondosha
+ * Added return on success in Blast_KarlinBlkCopy
+ *
+ * Revision 1.106  2004/12/09 15:56:55  dondosha
+ * Return type of Blast_KarlinBlkCopy changed to Int2: check for null arguments; removed no-longer-relevant comments; removed all tabs
+ *
+ * Revision 1.105  2004/12/09 15:22:56  dondosha
+ * Renamed some functions dealing with BlastScoreBlk and Blast_KarlinBlk structures
+ *
+ * Revision 1.104  2004/11/30 18:34:28  camacho
+ * Rename Blast_KarlinBlkStandardCalc to Blast_ScoreBlkChooseUngappedOrIdealKbp
+ *
+ * Revision 1.103  2004/11/30 15:27:16  camacho
+ * Rename Blast_ResFreqDestruct to Blast_ResFreqFree
+ *
+ * Revision 1.102  2004/11/29 13:53:23  camacho
+ * Renamed Blast_ScoreFreq structure free function
+ *
+ * Revision 1.101  2004/11/24 16:02:51  dondosha
+ * Added and/or fixed doxygen comments
+ *
+ * Revision 1.100  2004/11/23 21:47:56  camacho
+ * Changed signature of Blast_ScoreBlkKbpIdealCalc so that it is used only
+ * to initialize kbp_ideal field of BlastScoreBlk.
+ * Rename Blast_KarlinBlk* allocation/deallocation structures
+ * to follow standard naming conventions.
+ *
+ * Revision 1.99  2004/11/15 16:34:45  dondosha
+ * Changed constants names in accordance with C++ toolkit guidelines
+ *
+ * Revision 1.98  2004/11/02 17:56:48  camacho
+ * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
+ *
+ * Revision 1.97  2004/10/05 21:32:55  camacho
+ * Return 1 to indicate error in BlastScoreBlkMatrixLoad
+ *
+ * Revision 1.96  2004/10/04 13:38:53  camacho
+ * Do not use hard coded constants in RPSfindUngappedLambda
+ *
+ * Revision 1.95  2004/10/01 14:52:05  camacho
+ * Add PAM250 to list of matrices to load from tables library
+ *
+ * Revision 1.94  2004/10/01 13:58:59  camacho
+ * Remove extra PSSM column for RPS-BLAST
+ *
+ * Revision 1.93  2004/09/29 20:39:59  papadopo
+ * Retrieve the ungapped lambda from the actual score matrix underlying an RPS search, not just that of BLOSUM62
+ *
+ * Revision 1.92  2004/09/28 16:23:15  papadopo
+ * From Michael Gertz:
+ * 1. Pass the effective size of the search space into
+ *    BLAST_SmallGapSumE, BLAST_LargeGapSumE and BLAST_UnevenGapSumE.
+ *    The routines use this value in a simplified formula to compute the
+ *    e-value of singleton sets.
+ * 2. Caused all routines for calculating the significance of multiple
+ *    distinct alignments (BLAST_SmallGapSumE, BLAST_LargeGapSumE and
+ *    BLAST_UnevenGapSumE) to use
+ *
+ *        sum_{i in linked_set} (\lambda_i s_i - \ln K_i)
+ *
+ *    as the weighted sum score, where (\lambda_i, K_i) are taken from
+ *    the appropriate query context.
+ *
+ * Revision 1.91  2004/08/13 17:44:27  dondosha
+ * Doxygenized comments for BLAST_UnevenGapSumE
+ *
+ * Revision 1.90  2004/08/03 21:06:15  dondosha
+ * Removed unused variable
+ *
+ * Revision 1.89  2004/08/03 20:12:57  dondosha
+ * Renamed BlastScoreBlkMatCreate to BlastScoreBlkNuclMatrixCreate and made it public
+ *
+ * Revision 1.88  2004/07/16 14:00:20  camacho
+ * documentation fixes
+ *
+ * Revision 1.87  2004/07/15 14:50:34  madden
+ * Doxygen fix
+ *
+ * Revision 1.86  2004/07/14 18:04:52  camacho
+ * Add const type qualifier to BlastScoreBlk in BlastScoreFreqCalc & Blast_ScoreBlkKbpIdealCalc
+ *
+ * Revision 1.85  2004/06/21 12:52:05  camacho
+ * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
+ *
+ * Revision 1.84  2004/06/18 14:01:32  madden
+ * Doxygen fixes, made some input params const, do not set deprecated sbp->maxscore
+ *
+ * Revision 1.83  2004/06/16 19:34:26  madden
+ * Doxygen fixes, made some params const
+ *
+ * Revision 1.82  2004/06/10 13:21:24  madden
+ * Rename RPSFillResidueProbability to Blast_FillResidueProbability, made public.
+ * Removed usage of BLAST_SCORE_1MIN/MAX, simply use BLAST_SCORE_MIN/MAX instead
+ * Removed useless defines DIMOFP0 and DIMOFP0_MAX
+ * Moved over some defines from blast_stat.h
+ *
+ * Revision 1.81  2004/06/08 15:05:05  madden
+ * Doxygen fixes
+ *
+ * Revision 1.80  2004/06/07 20:03:34  coulouri
+ * use floating point constants for comparisons with floating point variables
+ *
+ * Revision 1.79  2004/06/07 14:44:01  madden
+ * Doxygen fixes
+ *
+ * Revision 1.78  2004/06/07 14:20:41  dondosha
+ * Set matrix dimensions to 26 when matrix is read from a file, to make it the same as when matrix is loaded from a library
+ *
+ * Revision 1.77  2004/05/24 15:09:40  camacho
+ * Fixed conflict
+ *
+ * Revision 1.76  2004/05/24 13:26:27  madden
+ * Fix PC compiler warnings
+ *
+ * Revision 1.75  2004/05/20 16:29:30  madden
+ * Make searchsp an Int8 consistent with rest of blast
+ *
+ * Revision 1.74  2004/05/19 15:34:38  dondosha
+ * Moved Blast_ResComp definition from header file
+ *
+ * Revision 1.73  2004/05/19 14:52:03  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
+ * Revision 1.72  2004/05/17 10:37:38  camacho
+ * Rename BLAST_ScoreFreq, BLASTMatrixStructure and BLAST_ResComp to avoid conflicts with C toolkit
+ *
+ * Revision 1.71  2004/05/07 15:23:47  papadopo
+ * add initialization of scale factor to ScoreBlkNew
+ *
+ * Revision 1.70  2004/05/06 15:59:29  camacho
+ * Made Blast_KarlinBlkCalc non-static
+ *
+ * Revision 1.69  2004/05/06 15:05:13  camacho
+ * Fix to previous commit
+ *
+ * Revision 1.68  2004/05/06 14:44:27  camacho
+ * Made Blast_ScoreFreqFree non-static
+ *
+ * Revision 1.67  2004/05/05 21:16:24  camacho
+ * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
+ *
+ * Revision 1.66  2004/05/04 13:00:02  madden
+ * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_ScoreBlkKbpIdealCalc, make public
+ *
+ * Revision 1.65  2004/04/30 14:39:44  papadopo
+ * 1. Remove unneeded #defines
+ * 2. use BLAST_SCORE_RANGE_MAX during RPS PSSM creation instead of
+ *    (possibly incompatible) RPS_SCORE_MAX
+ * 3. return NULL instead of FALSE on an error
+ *
+ * Revision 1.64  2004/04/30 12:58:49  camacho
+ * Replace RPSKarlinLambdaNR by Blast_KarlinLambdaNR
+ *
+ * Revision 1.63  2004/04/29 20:32:38  papadopo
+ * remove RPS_SCORE_MIN, since it turned out to be a workaround for a bug that has since been fixed
+ *
+ * Revision 1.62  2004/04/29 19:58:03  camacho
+ * Use generic matrix allocator/deallocator from blast_psi_priv.h
+ *
+ * Revision 1.61  2004/04/28 14:40:23  madden
+ * Changes from Mike Gertz:
+ * - I created the new routine BLAST_GapDecayDivisor that computes a
+ *   divisor used to weight the evalue of a collection of distinct
+ *   alignments.
+ * - I removed  BLAST_GapDecay and BLAST_GapDecayInverse which had become
+ *   redundant.
+ * - I modified the BLAST_Cutoffs routine so that it uses the value
+ *   returned by BLAST_GapDecayDivisor to weight evalues.
+ * - I modified BLAST_SmallGapSumE, BLAST_LargeGapSumE and
+ *   BLAST_UnevenGapSumE no longer refer to the gap_prob parameter.
+ *   Replaced the gap_decay_rate parameter of each of these routines with
+ *   a weight_divisor parameter.  Added documentation.
+ *
+ * Revision 1.60  2004/04/23 19:06:33  camacho
+ * Do NOT use lowercase names for #defines
+ *
+ * Revision 1.59  2004/04/23 13:49:20  madden
+ * Cleaned up ifndef in BlastKarlinLHtoK
+ *
+ * Revision 1.58  2004/04/23 13:21:25  madden
+ * Rewrote BlastKarlinLHtoK to do the following and more:
+ * 1. fix a bug whereby the wrong formula was used when high score == 1
+ *    and low score == -1;
+ * 2. fix a methodological error of truncating the first sum
+ *    and trying to make it converge quickly by adding terms
+ *    of a geometric progression, even though the geometric progression
+ *    estimate is not correct in all cases;
+ *    the old adjustment code is left in for historical purposes but
+ *    #ifdef'd out
+ * 3. Eliminate the Boolean bi_modal_score variable.  The old test that
+ *    set the value of bi_modal_score would frequently fail to choose the
+ *    correct value due to rounding error.
+ * 4. changed numerous local variable names to make them more meaningful;
+ * 5. added substantial comments to explain what the procedure
+ *    is doing and what each variable represents
+ *
+ * Revision 1.57  2004/04/19 12:58:18  madden
+ * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkFree public
+ *
+ * Revision 1.56  2004/04/12 18:57:31  madden
+ * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqFree, and Blast_ResFreqStdComp non-static
+ *
+ * Revision 1.55  2004/04/08 13:53:10  papadopo
+ * fix doxygen warning
+ *
+ * Revision 1.54  2004/04/07 03:06:16  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
+v * Revision 1.53  2004/04/05 18:53:35  madden
+ * Set dimensions if matrix from memory
+ *
+ * Revision 1.52  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
+ * Revision 1.51  2004/03/31 17:50:09  papadopo
+ * Mike Gertz' changes for length adjustment calculations
+ *
+ * Revision 1.50  2004/03/11 18:52:41  camacho
+ * Remove THREADS_IMPLEMENTED
+ *
+ * Revision 1.49  2004/03/10 18:00:06  camacho
+ * Remove outdated references to blastkar
+ *
+ * Revision 1.48  2004/03/05 17:52:33  papadopo
+ * Allow 32-bit context numbers for queries
+ *
+ * Revision 1.47  2004/03/04 21:07:51  papadopo
+ * add RPS BLAST functionality
+ *
+ * Revision 1.46  2004/02/19 21:16:48  dondosha
+ * Use enum type for severity argument in Blast_MessageWrite
+ *
+ * Revision 1.45  2003/12/05 16:03:57  camacho
+ * Remove compiler warnings
+ *
+ * Revision 1.44  2003/11/28 22:39:11  camacho
+ * + static keyword to BlastKarlinLtoH
+ *
+ * Revision 1.43  2003/11/28 15:03:48  camacho
+ * Added static keyword to BlastKarlinLtoH
+ *
+ * Revision 1.42  2003/11/26 19:12:13  madden
+ * code to simplify some routines and use NlmKarlinLambdaNR in place of BlastKarlinLambdaBis (following Mike Gertzs changes to blastkar.c )
+ *
+ * Revision 1.41  2003/11/24 23:18:32  dondosha
+ * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
+ *
+ * Revision 1.40  2003/11/19 15:17:42  dondosha
+ * Removed unused members from Karlin block structure
+ *
+ * Revision 1.39  2003/10/16 15:55:22  coulouri
+ * fix uninitialized variables
+ *
+ * Revision 1.38  2003/10/16 15:52:08  coulouri
+ * fix uninitialized variables
+ *
+ * Revision 1.37  2003/10/15 16:59:43  coulouri
+ * type correctness fixes
+ *
+ * Revision 1.36  2003/10/02 22:08:34  dondosha
+ * Corrections for one-strand translated searches
+ *
+ * Revision 1.35  2003/09/26 19:01:59  madden
+ * Prefix ncbimath functions with BLAST_
+ *
+ * Revision 1.34  2003/09/09 14:21:39  coulouri
+ * change blastkar.h to blast_stat.h
+ *
+ * Revision 1.33  2003/09/02 21:12:07  camacho
+ * Fix small memory leak
+ *
+ * Revision 1.32  2003/08/26 15:23:51  dondosha
+ * Rolled back previous change as it is not necessary any more
+ *
+ * Revision 1.31  2003/08/25 22:29:07  dondosha
+ * Default matrix loading is defined only in C++ toolkit
+ *
+ * Revision 1.30  2003/08/25 18:05:41  dondosha
+ * Moved assert statement after variables declarations
+ *
+ * Revision 1.29  2003/08/25 16:23:33  camacho
+ * +Loading protein scoring matrices from utils/tables
+ *
+ * Revision 1.28  2003/08/11 15:01:59  dondosha
+ * Added algo/blast/core to all #included headers
+ *
+ * Revision 1.27  2003/08/01 17:27:04  dondosha
+ * Renamed external functions to avoid collisions with ncbitool library; made other functions static
+ *
+ * Revision 1.26  2003/07/31 18:48:49  dondosha
+ * Use Int4 instead of BLAST_Score
+ *
+ * Revision 1.25  2003/07/31 17:48:06  madden
+ * Remove call to FileLength
+ *
+ * Revision 1.24  2003/07/31 14:31:41  camacho
+ * Replaced Char for char
+ *
+ * Revision 1.23  2003/07/31 14:19:28  camacho
+ * Replaced FloatHi for double
+ *
+ * Revision 1.22  2003/07/31 00:32:37  camacho
+ * Eliminated Ptr notation
+ *
+ * Revision 1.21  2003/07/30 22:08:09  dondosha
+ * Process of finding path to the matrix is moved out of the blast library
+ *
+ * Revision 1.20  2003/07/30 21:52:41  camacho
+ * Follow conventional structure definition
+ *
+ * Revision 1.19  2003/07/30 19:39:14  camacho
+ * Remove PNTRs
+ *
+ * Revision 1.18  2003/07/30 17:58:25  dondosha
+ * Changed ValNode to ListNode
+ *
+ * Revision 1.17  2003/07/30 17:15:00  dondosha
+ * Minor fixes for very strict compiler warnings
+ *
+ * Revision 1.16  2003/07/30 17:06:40  camacho
+ * Removed old cvs log
+ *
+ * Revision 1.15  2003/07/30 16:32:02  madden
+ * Use ansi functions when possible
+ *
+ * Revision 1.14  2003/07/30 15:29:37  madden
+ * Removed MemSets
+ *
+ * Revision 1.13  2003/07/29 14:42:31  coulouri
+ * use strdup() instead of StringSave()
+ *
+ * Revision 1.12  2003/07/28 19:04:15  camacho
+ * Replaced all MemNews for calloc
+ *
+ * Revision 1.11  2003/07/28 03:41:49  camacho
+ * Use f{open,close,gets} instead of File{Open,Close,Gets}
+ *
+ * Revision 1.10  2003/07/25 21:12:28  coulouri
+ * remove constructions of the form "return sfree();" and "a=sfree(a);"
+ *
+ * Revision 1.9  2003/07/25 18:58:43  camacho
+ * Avoid using StrUpper and StringHasNoText
+ *
+ * Revision 1.8  2003/07/25 17:25:43  coulouri
+ * in progres:
+ *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
+ *  * add sfree() macro and __sfree() helper function to util.[ch]
+ *  * use sfree() instead of MemFree()
+ *
+ * Revision 1.7  2003/07/24 22:37:33  dondosha
+ * Removed some unused function parameters
+ *
+ * Revision 1.6  2003/07/24 22:01:44  camacho
+ * Removed unused variables
+ *
+ * Revision 1.5  2003/07/24 21:31:06  dondosha
+ * Changed to calls to BlastConstructErrorMessage to API from blast_message.h
+ *
+ * Revision 1.4  2003/07/24 20:38:30  dondosha
+ * Removed LIBCALL etc. macros
+ *
+ * Revision 1.3  2003/07/24 17:37:46  dondosha
+ * Removed MakeBlastScore function that is dependent on objalign.h
+ *
+ * Revision 1.2  2003/07/24 15:50:49  dondosha
+ * Commented out mutex operations
+ *
+ * Revision 1.1  2003/07/24 15:18:09  dondosha
+ * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
+ *
+ * ===========================================================================
+ */

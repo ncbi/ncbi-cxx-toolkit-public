@@ -38,10 +38,13 @@
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_rps.h>
+#include <algo/blast/core/blast_stat.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* --------------- protein blast defines -----------------------------*/
 
 #define AA_HITS_PER_CELL 3 /**< maximum number of hits in one lookup
                                 table cell */
@@ -95,6 +98,7 @@ typedef struct BlastAaLookupTable {
     Boolean use_pssm;      /**< if TRUE, lookup table construction will assume
                                 that the underlying score matrix is position-
                                 specific */
+    void *scansub_callback;/**< function for scanning subject sequences */
 
     Int4 neighbor_matches; /**< the number of neighboring words found while 
                                 indexing the queries, used for informational/
@@ -145,7 +149,138 @@ void BlastAaLookupIndexQuery(BlastAaLookupTable* lookup,
 			     BlastSeqLoc* unmasked_regions,
                              Int4 query_bias);
 
-/* RPS blast structures and functions */
+/* ------------ compressed alphabet protein blast defines ---------------*/
+
+/** number of query offsets to store in a backbone cell */
+#define COMPRESSED_HITS_PER_BACKBONE_CELL 3
+
+/** number of query offsets to store in an overflow cell */
+#define COMPRESSED_HITS_PER_OVERFLOW_CELL 16
+
+/** number of query offsets needed before a dynamically
+    allocated array is needed to hold them */
+#define COMPRESSED_SPILLOVER (COMPRESSED_HITS_PER_BACKBONE_CELL + \
+                              COMPRESSED_HITS_PER_OVERFLOW_CELL - 1)
+
+/** dynamically allocated array for holding query offsets */
+typedef struct FreeOverflowArray{
+    Int4 overflow_cell_idx;  /**< needed to find the CompressedOverflowCell
+                                  that contains additional query offsets */
+    Int4* array;        /**< list of query offsets */
+} FreeOverflowArray;
+
+/** fixed-size allocated array for holding query offsets */
+typedef struct CompressedOverflowCell{
+    /** the list of query offsets */
+    Int4 query_offsets[COMPRESSED_HITS_PER_OVERFLOW_CELL];
+} CompressedOverflowCell;
+
+/** structure for hashtable of indexed query offsets */
+typedef struct CompressedLookupBackboneCell {
+    Int4 num_used;       /**< number of hits stored for this cell */
+
+    union {
+        /** either a fixed number of hits, or an offset to
+            an overflow cell plus (number of hits - 1) */
+        Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL];
+
+        /** dynamically allocated array for (many) query offsets */
+        FreeOverflowArray overflow_array;
+    } payload;
+} CompressedLookupBackboneCell;
+
+/** The lookup table structure for protein searches
+ * using a compressed alphabet
+ */
+typedef struct BlastCompressedAaLookupTable {
+    Int4 threshold;        /**< the score threshold for neighboring words */
+    Int4 word_length;      /**< Length in letters of the full word match 
+                                required to trigger extension */
+    Int4 alphabet_size; /**< number of letters in the alphabet */
+    Int4 compressed_alphabet_size; /**< letters in the compressed alphabet */
+    Int4 reciprocal_alphabet_size; /**< 2^32 / compressed_alphabet_size */
+    Int4 longest_chain;    /**< length of the longest chain on the backbone */
+    Int4 backbone_size;    /**< number of cells in the backbone */
+    CompressedLookupBackboneCell * backbone; /**< hashtable for storing
+                                                  indexed query offsets */
+    CompressedOverflowCell * overflow;    /**< array of batches of query
+                                           offsets that are too numerous to
+                                           fit in backbone cells */
+    Int4 overflow_used;       /**< number of overflow cells in use */
+    Int4 overflow_alloc;   /**< number of overflow cells allocated */
+    PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
+                                are set indicate that the corresponding thick
+                                backbone cell contains hits */
+    Uint1* compress_table;  /**< translation table (protein->compressed) */
+    Int4* scaled_compress_table;  /**< scaled_version of compress_table */
+    void *scansub_callback;/**< function for scanning subject sequences */
+
+
+    Int4 neighbor_matches; /**< the number of neighboring words found while 
+                                indexing the queries, used for informational/
+                                debugging purposes */
+    Int4 exact_matches;    /**< the number of exact matches found while 
+                                indexing the queries, used for informational/
+                                debugging purposes */
+} BlastCompressedAaLookupTable;
+  
+/** Create a new compressed protein lookup table.
+ * @param query The query sequence block (if concatenated sequence, the 
+ *        individual strands/sequences must be separated by a sentinel byte)[in]
+ * @param locations The locations to be included in the lookup table,
+ *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
+ * @param lut Pointer to the lookup table to be created [out]
+ * @param opt Options for lookup table creation [in]
+ * @param sbp pointer to score matrix information [in]
+ * @return 0 if successful, nonzero on failure
+ */
+Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
+                                BlastSeqLoc* locations,
+                                BlastCompressedAaLookupTable * *lut,
+                                const LookupTableOptions * opt,
+                                BlastScoreBlk *sbp);
+
+/** Free the compressed lookup table.
+ *  @param lookup The lookup table structure to be freed
+ *  @return NULL
+ */
+BlastCompressedAaLookupTable* BlastCompressedAaLookupTableDestruct(
+                                      BlastCompressedAaLookupTable* lookup);
+
+/** Compute "high" index for a word
+  * @param wordsize Number of consecutive letters in a word [in]
+  * @param word Sequence in "regular" AA alphabet [in]
+  * @param skip If a letter is encountered that cannot be
+  *            compressed, the offset from word[] where 
+  *            index computation can begin again [out]
+  * @param lookup Translation tables etc [in]
+  * @return Index calculated from scratch [out]
+  */
+static NCBI_INLINE Int4 s_ComputeCompressedIndex(Int4 wordsize,
+                              const Uint1* word,
+                              Int4 compressed_alphabet_size,
+                              Int4* skip,
+                              BlastCompressedAaLookupTable* lookup)
+{
+    Int4 i;
+    Int4 index = 0;
+    Int4 *scaled_compress_table = lookup->scaled_compress_table;
+  
+    *skip = 0;
+    for(i = 0; i < wordsize; i++) {
+        Int4 ch = scaled_compress_table[word[i]];
+                    
+        if (ch < 0){
+            *skip = i + 2;
+            ch = 0;
+        }
+        index = index / compressed_alphabet_size +  ch;
+    }
+
+    return index;
+}
+
+/* ----------------------- rpsblast defines -----------------------------*/
 
 #define RPS_HITS_PER_CELL 3 /**< maximum number of hits in an RPS backbone
                                  cell; this may be redundant (have the same

@@ -454,8 +454,7 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                            BlastInitHitList * ungapped_hsps,
                            BlastUngappedStats * ungapped_stats)
 {
-    BlastAaLookupTable *lookup = NULL;
-    Boolean use_pssm;
+    Boolean use_pssm = FALSE;
     Int4 wordsize;
     Int4 i;
     Int4 hits = 0;
@@ -473,6 +472,7 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     Int4 curr_context;
     BlastUngappedCutoffs *cutoffs;
     BLAST_DiagTable * diag = ewp->diag_table;
+    TAaScanSubjectFunction scansub;
 
     ASSERT(diag != NULL);
 
@@ -484,14 +484,24 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     diag_mask = diag->diag_mask;
     window = diag->window;
 
-    lookup = (BlastAaLookupTable *) lookup_wrap->lut;
-    wordsize = lookup->word_length;
+    if (lookup_wrap->lut_type == eAaLookupTable) {
+        BlastAaLookupTable *lookup = 
+                        (BlastAaLookupTable *)(lookup_wrap->lut);
+        scansub = (TAaScanSubjectFunction)(lookup->scansub_callback);
+        wordsize = lookup->word_length;
+        use_pssm = lookup->use_pssm;
+    }
+    else {
+        BlastCompressedAaLookupTable *lookup = 
+                        (BlastCompressedAaLookupTable *)(lookup_wrap->lut);
+        scansub = (TAaScanSubjectFunction)(lookup->scansub_callback);
+        wordsize = lookup->word_length;
+    }
     last_offset = subject->length - wordsize;
-    use_pssm = lookup->use_pssm;
 
     while (first_offset <= last_offset) {
         /* scan the subject sequence for hits */
-        hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
+        hits = scansub(lookup_wrap, subject, &first_offset,
                                   offset_pairs, array_size);
 
         totalhits += hits;
@@ -698,8 +708,7 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
                            BlastInitHitList * ungapped_hsps,
                            BlastUngappedStats * ungapped_stats)
 {
-    BlastAaLookupTable *lookup = NULL;
-    Boolean use_pssm;
+    Boolean use_pssm = FALSE;
     Int4 wordsize;
     Int4 hits = 0;
     Int4 totalhits = 0;
@@ -713,6 +722,7 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     DiagStruct *diag_array;
     Int4 hits_extended = 0;
     BLAST_DiagTable * diag = ewp->diag_table;
+    TAaScanSubjectFunction scansub;
 
     ASSERT(diag != NULL);
 
@@ -722,15 +732,25 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
 
     diag_mask = diag->diag_mask;
 
-    lookup = (BlastAaLookupTable *) lookup_wrap->lut;
-    wordsize = lookup->word_length;
+    if (lookup_wrap->lut_type == eAaLookupTable) {
+        BlastAaLookupTable *lookup = 
+                        (BlastAaLookupTable *)(lookup_wrap->lut);
+        scansub = (TAaScanSubjectFunction)(lookup->scansub_callback);
+        wordsize = lookup->word_length;
+        use_pssm = lookup->use_pssm;
+    }
+    else {
+        BlastCompressedAaLookupTable *lookup = 
+                        (BlastCompressedAaLookupTable *)(lookup_wrap->lut);
+        scansub = (TAaScanSubjectFunction)(lookup->scansub_callback);
+        wordsize = lookup->word_length;
+    }
     last_offset = subject->length - wordsize;
-    use_pssm = lookup->use_pssm;
 
     while (first_offset <= last_offset) {
         /* scan the subject sequence for hits */
-        hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
-                                  offset_pairs, array_size);
+        hits = scansub(lookup_wrap, subject, &first_offset,
+                       offset_pairs, array_size);
 
         totalhits += hits;
         /* for each hit, */

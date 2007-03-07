@@ -165,6 +165,7 @@ typedef enum {
     eSmallNaLookupTable,  /**< lookup table for blastn with small query*/
     eNaLookupTable,  /**< blastn lookup table */
     eAaLookupTable,  /**< standard protein (blastp) lookup table */
+    eCompressedAaLookupTable,  /**< compressed alphabet (blastp) lookup table */
     ePhiLookupTable,  /**< protein lookup table specialized for phi-blast */
     ePhiNaLookupTable,  /**< nucleotide lookup table for phi-blast */
     eRPSLookupTable, /**< RPS lookup table (rpsblast and rpstblastn) */
@@ -175,7 +176,9 @@ typedef enum {
  * Also needed: query sequence and query length.
  */
 typedef struct LookupTableOptions {
-   Int4 threshold; /**< Score threshold for putting words in a lookup table */
+   double threshold; /**< Score threshold for putting words in a lookup table
+                          (fractional values are allowed, and could be
+                          important if there is scaling involved) */
    ELookupTableType lut_type; /**< What kind of lookup table to construct? */
    Int4 word_size; /**< Determines the size of the lookup table */
    Uint1 mb_template_length; /**< Length of the discontiguous words */
@@ -749,13 +752,16 @@ Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *optio
  * @param options The options [in] [out]
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param is_megablast Megablast (instead of blastn) if TRUE [in]
- * @param threshold Threshold value for finding neighboring words [in]
+ * @param threshold Threshold value for finding neighboring words
+                    (fractional values are allowed, though unless
+                    the engine scales up alignment scores a fractional
+                    threshold will be rounded down) [in]
  * @param word_size Number of matched residues in an initial word [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
-   EBlastProgramType program, Boolean is_megablast, Int4 threshold,
+   EBlastProgramType program, Boolean is_megablast, double threshold,
    Int4 word_size);
 
 
@@ -904,7 +910,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  */
 Int2 BLAST_GetSuggestedThreshold(EBlastProgramType program_number, 
                                  const char* matrixName, 
-                                 Int4* threshold);
+                                 double* threshold);
 
 /** Get window sizes for two hit algorithm suggested by Stephen Altschul.
  *

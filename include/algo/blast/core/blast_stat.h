@@ -172,6 +172,34 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
    Boolean  round_down; /**< Score must be rounded down to nearest even score if odd. */
 } BlastScoreBlk;
 
+/** Scoring matrix data used for compressed protein alphabets */
+typedef struct SCompressedAlphabet {
+    Int4  compressed_alphabet_size;  /**< letters in the compressed alphabet */
+    SBlastScoreMatrix* matrix;    /**< score matrix */
+    Uint1* compress_table;  /**< translation table (AA->compressed)*/
+} SCompressedAlphabet;
+
+/** Allocate a new compressed alphabet and score matrix
+ * @param sbp Current score matrix information [in]
+ * @param compressed_alphabet_size Desired size of compressed
+ *                  alphabet (current choices are limited to 10 or 15) [in]
+ * @param scale_factor Score matrix entries are scaled by this value [in]
+ * @return the new alphabet, or NULL on failure
+ */
+NCBI_XBLAST_EXPORT
+SCompressedAlphabet*
+SCompressedAlphabetNew(BlastScoreBlk *sbp,
+                       Int4 compressed_alphabet_size, 
+                       double scale_factor);
+
+/** Free a compressed alphabet and score matrix
+ * @param alphabet The compressed alphabet structure
+ * @return Always NULL
+ */
+NCBI_XBLAST_EXPORT
+SCompressedAlphabet*
+SCompressedAlphabetFree(SCompressedAlphabet *alphabet);
+
 /** 
 Stores the letter frequency of a sequence or database.
 */

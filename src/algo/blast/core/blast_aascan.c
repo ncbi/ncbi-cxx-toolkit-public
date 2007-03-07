@@ -36,11 +36,25 @@ static char const rcsid[] =
     "$Id$";
 #endif                          /* SKIP_DOXYGEN_PROCESSING */
 
-Int4 BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
-                        const BLAST_SequenceBlk * subject,
-                        Int4 * offset,
-                        BlastOffsetPair * NCBI_RESTRICT offset_pairs,
-                        Int4 array_size)
+/**
+ * Scans the subject sequence from "offset" to the end of the sequence.
+ * Copies at most array_size hits.
+ * Returns the number of hits found.
+ * If there isn't enough room to copy all the hits, return early, and update
+ * "offset". 
+ *
+ * @param lookup_wrap the lookup table [in]
+ * @param subject the subject sequence [in]
+ * @param offset the offset in the subject at which to begin scanning [in/out]
+ * @param offset_pairs Array to which hits will be copied [out]
+ * @param array_size length of the offset arrays [in]
+ * @return The number of hits found.
+ */
+static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
+                                 const BLAST_SequenceBlk * subject,
+                                 Int4 * offset,
+                                 BlastOffsetPair * NCBI_RESTRICT offset_pairs,
+                                 Int4 array_size)
 {
     Int4 index;
     Uint1 *s;
@@ -116,6 +130,170 @@ Int4 BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
     return totalhits;
 }
 
+/**
+ * Scans the subject sequence from "offset" to the end of the sequence,
+ * assuming a compressed protein alphabet
+ * Copies at most array_size hits.
+ * Returns the number of hits found.
+ * If there isn't enough room to copy all the hits, return early, and update
+ * "offset". 
+ *
+ * @param lookup_wrap the lookup table [in]
+ * @param subject the subject sequence [in]
+ * @param offset the offset in the subject at which to begin scanning [in/out]
+ * @param offset_pairs Array to which hits will be copied [out]
+ * @param array_size length of the offset arrays [in]
+ * @return The number of hits found.
+ */
+static Int4 s_BlastCompressedAaScanSubject(
+                              const LookupTableWrap * lookup_wrap,
+                              const BLAST_SequenceBlk * subject,
+                              Int4 * offset,
+                              BlastOffsetPair * NCBI_RESTRICT offset_pairs,
+                              Int4 array_size)
+{
+    Int4 index;
+    Uint1 *s;
+    Uint1 *s_first;
+    Uint1 *s_last;
+    Int4 numhits = 0;     /* number of hits found for one subject offset */
+    Int4 totalhits = 0;         /* cumulative number of hits found */
+    PV_ARRAY_TYPE *pv;
+    BlastCompressedAaLookupTable *lookup;
+
+    Int4 word_length;
+    Int4 recip;               /* reciprocal of compressed word size */
+    Int4* scaled_compress_table;
+    Int4 skip = 0;         /* skip counter - how many letters left to skip*/
+    Uint1 next_char;           /* prefetch variable */
+    Int4 compressed_char;     /* translated letter */
+    Int4 *query_offsets;
+    Int4 compressed_alphabet_size;
+               
+    ASSERT(lookup_wrap->lut_type == eCompressedAaLookupTable);
+    lookup = (BlastCompressedAaLookupTable *) lookup_wrap->lut;
+    word_length = lookup->word_length;
+    compressed_alphabet_size = lookup->compressed_alphabet_size;
+    scaled_compress_table = lookup->scaled_compress_table;
+    recip = lookup->reciprocal_alphabet_size;
+    s_first = subject->sequence + *offset;
+    s_last = subject->sequence + subject->length - word_length;
+    pv = lookup->pv;
+
+    /* prime the index */
+    index = s_ComputeCompressedIndex(word_length - 1, s_first,
+                                     compressed_alphabet_size,
+                                     &skip, lookup);
+
+    next_char = ((subject->length > word_length)? s_first[word_length-1] : 0);
+
+    for (s = s_first; s <= s_last; s++) {
+       /* compute the index value */
+
+       compressed_char = scaled_compress_table[next_char];
+       next_char = s[word_length];
+
+       if (compressed_char < 0) {
+          /* skip all words containing this (ignored) letter */
+          skip = word_length; 
+          continue;
+       } 
+       else {
+          /* we have to remove the oldest letter from the
+             index and add in the next letter. The latter is easy,
+             but since the compressed alphabet size is not a
+             power of two the former requires a remainder and
+             multiply, assuming the old letter is in the high part
+             of the index. For this reason, we reverse the order
+             of the letters and keep the oldest in the low part
+             of index, so that a single divide (implemented via
+             reciprocal multiplication) does the removal */
+
+          index = ((((Int8)index) * recip) >> 32) + compressed_char;
+
+          if (skip) {
+             if (--skip) /* still skipping? */
+                continue;
+          }
+       }
+      
+
+       /* if there are hits */
+       if (PV_TEST(pv, index, PV_ARRAY_BTS)) {
+          Int4 s_off = s - subject->sequence;
+          CompressedLookupBackboneCell *cell = lookup->backbone + index;
+
+          numhits = cell->num_used;
+          ASSERT(numhits != 0);
+         
+          /* and there is enough space in the destination array */
+          if (numhits <= (array_size - totalhits)) {
+
+             /* copy the hits to the destination */
+             
+             Int4 i;
+             BlastOffsetPair *dest = offset_pairs + totalhits;
+
+             if (numhits <= COMPRESSED_HITS_PER_BACKBONE_CELL) {
+                /* hits all live in the backbone */
+
+                query_offsets = cell->payload.query_offsets;
+                for (i = 0; i < numhits; i++) {
+                   dest[i].qs_offsets.q_off = query_offsets[i];
+                   dest[i].qs_offsets.s_off = s_off;
+                }
+             } 
+             else if (numhits <= COMPRESSED_SPILLOVER) {
+                /* hits live in the backbone cell plus an overflow cell */
+
+                CompressedOverflowCell *overflow = lookup->overflow +
+                                        cell->payload.query_offsets[0];
+                Int4 bias = COMPRESSED_HITS_PER_BACKBONE_CELL;
+ 
+                query_offsets = cell->payload.query_offsets;
+                for(i = 1; i < COMPRESSED_HITS_PER_BACKBONE_CELL; i++) {
+                   dest[i-1].qs_offsets.q_off = query_offsets[i];
+                   dest[i-1].qs_offsets.s_off = s_off;
+                }
+                query_offsets = overflow->query_offsets;
+                for(; i <= numhits; i++) {
+                   dest[i-1].qs_offsets.q_off = query_offsets[i - bias];
+                   dest[i-1].qs_offsets.s_off = s_off;
+                }
+             } 
+             else {
+                /* hits live in the overflow cell plus a free array */
+                CompressedOverflowCell *overflow = lookup->overflow +
+                              cell->payload.overflow_array.overflow_cell_idx;
+                Int4 bias = COMPRESSED_HITS_PER_OVERFLOW_CELL;
+ 
+                query_offsets = overflow->query_offsets;
+                for(i = 0; i < COMPRESSED_HITS_PER_OVERFLOW_CELL; i++) {
+                   dest[i].qs_offsets.q_off = query_offsets[i];
+                   dest[i].qs_offsets.s_off = s_off;
+                }
+                query_offsets = cell->payload.overflow_array.array + 2;
+                for(; i < numhits; i++) {
+                   dest[i].qs_offsets.q_off = query_offsets[i - bias];
+                   dest[i].qs_offsets.s_off = s_off;
+                }
+             }
+
+             totalhits += numhits;
+          } 
+          else {
+             /* not enough space in the destination array */
+             break;
+          }
+       }
+    }
+
+    /* if we get here, we fell off the end of the sequence */
+    *offset = s - subject->sequence;
+
+    return totalhits;
+}
+
 /** Add one query-subject pair to the list of such pairs retrieved
  *  from the RPS blast lookup table.
  * @param b the List in which the current pair will be placed [in/out]
@@ -138,8 +316,21 @@ static void s_AddToRPSBucket(RPSBucket * b, Uint4 q_off, Uint4 s_off)
     b->num_filled++;
 }
 
+/**
+ * Scans the RPS query sequence from "offset" to the end of the sequence.
+ * Copies at most array_size hits.
+ * Returns the number of hits found.
+ * If there isn't enough room to copy all the hits, return early, and update
+ * "offset". 
+ *
+ * @param lookup_wrap the lookup table [in]
+ * @param sequence the subject sequence [in]
+ * @param offset the offset in the subject at which to begin scanning [in/out]
+ * @return The number of hits found.
+ */
 Int4 BlastRPSScanSubject(const LookupTableWrap * lookup_wrap,
-                         const BLAST_SequenceBlk * sequence, Int4 * offset)
+                         const BLAST_SequenceBlk * sequence,
+                         Int4 * offset)
 {
     Int4 index;
     Int4 table_correction;
@@ -241,4 +432,17 @@ Int4 BlastRPSScanSubject(const LookupTableWrap * lookup_wrap,
     *offset = s - abs_start;
 
     return totalhits;
+}
+
+void BlastChooseProteinScanSubject(LookupTableWrap *lookup_wrap)
+{
+    if (lookup_wrap->lut_type == eAaLookupTable) {
+        BlastAaLookupTable *lut = (BlastAaLookupTable *)(lookup_wrap->lut);
+        lut->scansub_callback = (void *)s_BlastAaScanSubject;
+    }
+    else if (lookup_wrap->lut_type == eCompressedAaLookupTable) {
+        BlastCompressedAaLookupTable *lut = 
+                        (BlastCompressedAaLookupTable *)(lookup_wrap->lut);
+        lut->scansub_callback = (void *)s_BlastCompressedAaScanSubject;
+    }
 }

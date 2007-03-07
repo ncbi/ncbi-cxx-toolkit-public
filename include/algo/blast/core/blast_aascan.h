@@ -41,25 +41,18 @@
 extern "C" {
 #endif
 
-/**
- * Scans the subject sequence from "offset" to the end of the sequence.
- * Copies at most array_size hits.
- * Returns the number of hits found.
- * If there isn't enough room to copy all the hits, return early, and update
- * "offset". 
- *
- * @param lookup_wrap the lookup table [in]
- * @param subject the subject sequence [in]
- * @param offset the offset in the subject at which to begin scanning [in/out]
- * @param offset_pairs Array to which hits will be copied [out]
- * @param array_size length of the offset arrays [in]
- * @return The number of hits found.
+/** Generic prototype for nucleotide subject scanning routines */
+typedef Int4 (*TAaScanSubjectFunction)(const LookupTableWrap* lookup_wrap,
+                                  const BLAST_SequenceBlk* subject,
+                                  Int4 *start_offset,
+                                  BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                                  Int4 max_hits);
+
+/** Choose the most appropriate function to scan through
+ * protein subject sequences
+ * @param lookup_wrap Structure containing lookup table [in][out]
  */
-Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
-                        const BLAST_SequenceBlk *subject,
-                        Int4* offset,
-                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
-                        Int4 array_size);
+void BlastChooseProteinScanSubject(LookupTableWrap *lookup_wrap);
 
 /**
  * Scans the RPS query sequence from "offset" to the end of the sequence.

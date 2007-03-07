@@ -61,6 +61,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_aalookup.h>
+#include <algo/blast/core/blast_aascan.h>
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/blast_nascan.h>
 #include <algo/blast/core/blast_sw.h>
@@ -642,7 +643,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
 {
    Int2 status = 0;
    BlastCoreAuxStruct* aux_struct;
-   Boolean blastp = (lookup_wrap->lut_type == eAaLookupTable);
+   Boolean blastp = (lookup_wrap->lut_type == eAaLookupTable ||
+                     lookup_wrap->lut_type == eCompressedAaLookupTable);
    Boolean rpsblast = (lookup_wrap->lut_type == eRPSLookupTable);
    Boolean indexed_mb_lookup = (lookup_wrap->lut_type == eIndexedMBLookupTable);
    Boolean phi_lookup = (lookup_wrap->lut_type == ePhiLookupTable ||
@@ -667,6 +669,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    } else if (phi_lookup) {
       aux_struct->WordFinder = PHIBlastWordFinder;
    } else if (blastp) {
+      BlastChooseProteinScanSubject(lookup_wrap);
       aux_struct->WordFinder = BlastAaWordFinder;
    } else if (rpsblast) {
       aux_struct->WordFinder = BlastRPSWordFinder;
