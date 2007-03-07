@@ -101,6 +101,7 @@ public:
     virtual ~CGFFReader() { }
 
     CRef<CSeq_entry> Read(CNcbiIstream& in, TFlags flags = fDefaults);
+    CRef<CSeq_entry> Read(ILineReader& in, TFlags flags = fDefaults);
 
     struct NCBI_XOBJREAD_EXPORT SRecord : public CObject
     {
@@ -134,7 +135,7 @@ public:
         string       key;
         string       score;
         TAttrs       attrs;
-        int frame;
+        int          frame;
         unsigned int line_no;
         EType        type;
 
@@ -143,6 +144,9 @@ public:
     };
 
 protected:
+    typedef CTempString  TStr;
+    typedef vector<TStr> TStrVec;
+
     virtual void            x_Warn(const string& message,
                                    unsigned int line = 0);
 
@@ -150,26 +154,25 @@ protected:
     virtual void            x_Reset(void);
 
     TFlags                  x_GetFlags(void) const { return m_Flags; }
-    bool                    x_GetNextLine(string& line);
     unsigned int            x_GetLineNumber(void) { return m_LineNumber; }
 
-    virtual void            x_ParseStructuredComment(const string& line);
-    virtual void            x_ParseDateComment(const string& date);
-    virtual void            x_ParseTypeComment(const string& moltype,
-                                               const string& seqname);
-    virtual void            x_ReadFastaSequences(CNcbiIstream& in);
+    virtual void            x_ParseStructuredComment(const TStr& line);
+    virtual void            x_ParseDateComment(const TStr& date);
+    virtual void            x_ParseTypeComment(const TStr& moltype,
+                                               const TStr& seqname);
+    virtual void            x_ReadFastaSequences(ILineReader& in);
 
-    virtual CRef<SRecord>    x_ParseFeatureInterval(const string& line);
+    virtual CRef<SRecord>    x_ParseFeatureInterval(const TStr& line);
     virtual CRef<SRecord>    x_NewRecord(void)
         { return CRef<SRecord>(new SRecord); }
     virtual CRef<CSeq_feat>  x_ParseFeatRecord(const SRecord& record);
     virtual CRef<CSeq_align> x_ParseAlignRecord(const SRecord& record);
     virtual CRef<CSeq_loc>   x_ResolveLoc(const SRecord::TLoc& loc);
     virtual void             x_ParseV2Attributes(SRecord& record,
-                                                 const vector<string>& v,
+                                                 const TStrVec& v,
                                                  SIZE_TYPE& i);
     virtual void             x_ParseV3Attributes(SRecord& record,
-                                                 const vector<string>& v,
+                                                 const TStrVec& v,
                                                  SIZE_TYPE& i);
     virtual void             x_AddAttribute(SRecord& record,
                                             vector<string>& attr);
@@ -194,7 +197,7 @@ protected:
     virtual CRef<CSeq_id>   x_ResolveNewSeqName(const string& name);
 
     /// Falls back to x_ResolveNewID on cache misses.
-    virtual CRef<CBioseq>   x_ResolveID(const CSeq_id& id, const string& mol);
+    virtual CRef<CBioseq>   x_ResolveID(const CSeq_id& id, const TStr& mol);
 
     /// The base version just constructs a shell so as not to depend
     /// on the object manager, but derived versions may consult it.
@@ -219,7 +222,7 @@ private:
     string           m_DefMol;
     unsigned int     m_LineNumber;
     TFlags           m_Flags;
-    CNcbiIstream*    m_Stream;
+    ILineReader*     m_LineReader;
     int              m_Version;
 };
 

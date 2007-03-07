@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/readers/gff_reader.hpp>
 
+#include <corelib/ncbistr_util.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/stream_utils.hpp>
@@ -64,7 +65,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-static string& s_URLDecode(const string& s, string& out) {
+static string& s_URLDecode(const CTempString& s, string& out) {
     SIZE_TYPE pos = 0;
     out.erase();
     out.reserve(s.size());
@@ -95,27 +96,34 @@ static string& s_URLDecode(const string& s, string& out) {
 
 CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 {
+    CStreamLineReader lr(in);
+    return Read(lr);
+}
+
+CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
+{
     x_Reset();
     m_Flags  = flags;
-    m_Stream = &in;
+    m_LineReader = &in;
 
-    size_t line_no = 0;
-    string line;
-    while (x_GetNextLine(line)) {
-        ++line_no;
-        if (NStr::StartsWith(line, "##")) {
-            x_ParseStructuredComment(line);
-        } else if (NStr::StartsWith(line, "#")) {
-            // regular comment; ignore
-        } else if (NStr::StartsWith(line, ">")) {
+    TStr line;
+    while ( !in.AtEOF() ) {
+        ++m_LineNumber;
+        char c = in.PeekChar();
+        if (c == '#') {
+            line = *++in;
+            if (line.size() > 2  &&  line[1] == '#') {
+                x_ParseStructuredComment(line);
+                // ignore regular comments
+            }
+        } else if (c == '>') {
             // implicit ##FASTA
-            line += '\n';
-            CStreamUtils::Pushback(in, line.data(), line.size());
             x_ReadFastaSequences(in);
         } else {
+            line = *++in;
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
-                record->line_no = line_no;
+                record->line_no = m_LineNumber;
                 string id = x_FeatureID(*record);
                 if (id.empty()) {
                     x_ParseAndPlace(*record);
@@ -345,31 +353,30 @@ void CGFFReader::x_Reset(void)
 }
 
 
-bool CGFFReader::x_GetNextLine(string& line)
+void CGFFReader::x_ParseStructuredComment(const TStr& line)
 {
-    ++m_LineNumber;
-    return NcbiGetlineEOL(*m_Stream, line)  ||  !line.empty();
-}
-
-
-void CGFFReader::x_ParseStructuredComment(const string& line)
-{
-    vector<string> v;
-    NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
+    TStrVec v;
+    // NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
+    typedef CStrTokenize<TStr, TStrVec> TTokenizer;
+    TTokenizer::TPosContainer pos_container;
+    TTokenizer::Do(line, "# \t", v, TTokenizer::eMergeDelims, pos_container);
+    if (v.empty()) {
+        return;
+    }
     if (v[0] == "date"  &&  v.size() > 1) {
         x_ParseDateComment(v[1]);
     } else if (v[0] == "Type"  &&  v.size() > 1) {
-        x_ParseTypeComment(v[1], v.size() > 2 ? v[2] : kEmptyStr);
+        x_ParseTypeComment(v[1], v.size() > 2 ? v[2] : TStr());
     } else if (v[0] == "gff-version"  &&  v.size() > 1) {
         m_Version = NStr::StringToInt(v[1]);
     } else if (v[0] == "FASTA") {
-        x_ReadFastaSequences(*m_Stream);
+        x_ReadFastaSequences(*m_LineReader);
     }
     // etc.
 }
 
 
-void CGFFReader::x_ParseDateComment(const string& date)
+void CGFFReader::x_ParseDateComment(const TStr& date)
 {
     try {
         CRef<CSeqdesc> desc(new CSeqdesc);
@@ -382,8 +389,7 @@ void CGFFReader::x_ParseDateComment(const string& date)
 }
 
 
-void CGFFReader::x_ParseTypeComment(const string& moltype,
-                                    const string& seqname)
+void CGFFReader::x_ParseTypeComment(const TStr& moltype, const TStr& seqname)
 {
     if (seqname.empty()) {
         m_DefMol = moltype;
@@ -394,9 +400,10 @@ void CGFFReader::x_ParseTypeComment(const string& moltype,
 }
 
 
-void CGFFReader::x_ReadFastaSequences(CNcbiIstream& in)
+void CGFFReader::x_ReadFastaSequences(ILineReader& in)
 {
-    CRef<CSeq_entry> seqs = ReadFasta(in, fReadFasta_AssumeNuc);
+    CFastaReader reader(in, fReadFasta_AssumeNuc);
+    CRef<CSeq_entry> seqs = reader.ReadSet();
     for (CTypeIterator<CBioseq> it(*seqs);  it;  ++it) {
         if (it->GetId().empty()) { // can this happen?
             CRef<CSeq_entry> parent(new CSeq_entry);
@@ -417,13 +424,17 @@ void CGFFReader::x_ReadFastaSequences(CNcbiIstream& in)
 
 
 CRef<CGFFReader::SRecord>
-CGFFReader::x_ParseFeatureInterval(const string& line)
+CGFFReader::x_ParseFeatureInterval(const TStr& line)
 {
-    vector<string> v;
-    bool           misdelimited = false;
-    NStr::Tokenize(line, "\t", v, NStr::eNoMergeDelims);
+    typedef CStrTokenize<TStr, TStrVec> TTokenizer;
+    TTokenizer::TPosContainer           pos_container;
+    TStrVec                             v;
+    bool                                misdelimited = false;
+
+    TTokenizer::Do(line, "\t", v, TTokenizer::eNoMergeDelims, pos_container);
     if (v.size() < 8) {
-        NStr::Tokenize(line, " \t", v, NStr::eMergeDelims);
+        v.clear();
+        TTokenizer::Do(line, " \t", v, TTokenizer::eMergeDelims, pos_container);
         if (v.size() < 8) {
             x_Warn("Skipping line due to insufficient fields",
                    x_GetLineNumber());
@@ -464,8 +475,9 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
         strand = eNa_strand_plus;
     } else if (v[6] == "-") {
         strand = eNa_strand_minus;
-    } else if (v[6] != ".") {
-        x_Warn("Bad strand " + v[6] + " (should be [+-.])", x_GetLineNumber());
+    } else if ( !(v[6] == ".") ) {
+        x_Warn("Bad strand " + string(v[6]) + " (should be [+-.])",
+               x_GetLineNumber());
     }
 
     if (v[7] == "0"  ||  v[7] == "1"  ||  v[7] == "2") {
@@ -473,7 +485,8 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
     } else if (v[7] == ".") {
         record->frame = -1;
     } else {
-        x_Warn("Bad frame " + v[7] + " (should be [012.])", x_GetLineNumber());
+        x_Warn("Bad frame " + string(v[7]) + " (should be [012.])",
+               x_GetLineNumber());
         record->frame = -1;
     }
 
@@ -723,7 +736,7 @@ CRef<CSeq_loc> CGFFReader::x_ResolveLoc(const SRecord::TLoc& loc)
 }
 
 
-void CGFFReader::x_ParseV2Attributes(SRecord& record, const vector<string>& v,
+void CGFFReader::x_ParseV2Attributes(SRecord& record, const TStrVec& v,
                                      SIZE_TYPE& i)
 {
     string         attr_last_value;
@@ -731,7 +744,7 @@ void CGFFReader::x_ParseV2Attributes(SRecord& record, const vector<string>& v,
     char           quote_char = 0;
 
     for (;  i < v.size();  ++i) {
-        string s = v[i] + ' ';
+        string s = string(v[i]) + ' ';
         SIZE_TYPE pos = 0;
         while (pos < s.size()) {
             SIZE_TYPE pos2;
@@ -811,7 +824,7 @@ void CGFFReader::x_ParseV2Attributes(SRecord& record, const vector<string>& v,
 }
 
 
-void CGFFReader::x_ParseV3Attributes(SRecord& record, const vector<string>& v,
+void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
                                      SIZE_TYPE& i)
 {
     vector<string> v2, attr;
@@ -1159,7 +1172,7 @@ CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
 }
 
 
-CRef<CBioseq> CGFFReader::x_ResolveID(const CSeq_id& id, const string& mol)
+CRef<CBioseq> CGFFReader::x_ResolveID(const CSeq_id& id, const TStr& mol)
 {
     CRef<CBioseq>& seq = m_SeqCache[CConstRef<CSeq_id>(&id)];
     if ( !seq ) {
