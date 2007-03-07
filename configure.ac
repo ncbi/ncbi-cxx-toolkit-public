@@ -1189,7 +1189,7 @@ if test -z "$CONF_f_runpath" ; then
    esac
 fi
 case "$host_os" in
-    linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath\$\$ORIGIN" ;;
+    linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath'\$\$ORIGIN'" ;;
     * )               RUNPATH_ORIGIN= ;;
 esac  
 
