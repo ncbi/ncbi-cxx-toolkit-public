@@ -823,6 +823,19 @@ public:
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 
+/// Compare two severities.
+/// @return
+///   The return value is negative if the first value is lower than
+/// the second one, positive if it's higher than the second one,
+/// 0 if the severities are equal.
+NCBI_XNCBI_EXPORT
+extern int CompareDiagPostLevel(EDiagSev sev1, EDiagSev sev2);
+
+/// Check if the specified severity is higher or equal to the currently
+/// selected post level and will be printed by LOG_POST/ERR_POST.
+NCBI_XNCBI_EXPORT
+extern bool IsVisibleDiagPostLevel(EDiagSev sev);
+
 /// Disable change the diagnostic post level.
 ///
 /// Consecutive using SetDiagPostLevel() will not have effect.

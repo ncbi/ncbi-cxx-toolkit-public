@@ -2405,6 +2405,26 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 }
 
 
+extern int CompareDiagPostLevel(EDiagSev sev1, EDiagSev sev2)
+{
+    if (sev1 == sev2) return 0;
+    if (sev1 == eDiag_Trace) return -1;
+    if (sev2 == eDiag_Trace) return 1;
+    return sev1 - sev2;
+}
+
+
+extern bool IsVisibleDiagPostLevel(EDiagSev sev)
+{
+    EDiagSev sev2;
+    {{
+        CMutexGuard LOCK(s_DiagMutex);
+        sev2 = CDiagBuffer::sm_PostSeverity;
+    }}
+    return CompareDiagPostLevel(sev, sev2) >= 0;
+}
+
+
 extern void SetDiagFixedPostLevel(const EDiagSev post_sev)
 {
     SetDiagPostLevel(post_sev);

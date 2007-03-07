@@ -78,6 +78,8 @@ class CDiagBuffer
     NCBI_XNCBI_EXPORT
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
     NCBI_XNCBI_EXPORT
+    friend bool IsVisibleDiagPostLevel(EDiagSev sev);
+    NCBI_XNCBI_EXPORT
     friend void SetDiagFixedPostLevel(EDiagSev post_sev);
     NCBI_XNCBI_EXPORT
     friend bool DisableDiagPostLevelChange(bool disable_change);
