@@ -313,10 +313,10 @@ void
 CWordThresholdArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // lookup table word score threshold
-    arg_desc.AddOptionalKey(kArgWordScoreThreshold, "int_value", 
+    arg_desc.AddOptionalKey(kArgWordScoreThreshold, "float_value", 
                  "Minimum word score such that the word is added to the "
                  "BLAST lookup table",
-                 CArgDescriptions::eInteger);
+                 CArgDescriptions::eDouble);
     arg_desc.SetConstraint(kArgWordScoreThreshold, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 }
@@ -326,9 +326,9 @@ CWordThresholdArg::ExtractAlgorithmOptions(const CArgs& args,
                                            CBlastOptions& opt)
 {
     if (args[kArgWordScoreThreshold]) {
-        opt.SetWordThreshold(args[kArgWordScoreThreshold].AsInteger());
+        opt.SetWordThreshold(args[kArgWordScoreThreshold].AsDouble());
     } else {
-        int threshold = -1;
+        double threshold = -1;
         BLAST_GetSuggestedThreshold(opt.GetProgramType(),
                                     opt.GetMatrixName(),
                                     &threshold);
