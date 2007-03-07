@@ -55,6 +55,12 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Http_Referer, false, eParam_NoThread,
 static NCBI_PARAM_TYPE(CGI, Print_Http_Referer) s_PrintRefererParam;
 
 
+NCBI_PARAM_DECL(bool, CGI, Print_Self_Url);
+NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, false, eParam_NoThread,
+                  CGI_PRINT_SELF_URL);
+static NCBI_PARAM_TYPE(CGI, Print_Self_Url) s_PrintSelfUrlParam;
+
+
 ///////////////////////////////////////////////////////
 // IO streams with byte counting for CGI applications
 //
@@ -200,6 +206,10 @@ int CCgiApplication::Run(void)
                     ref += "?" + args;
                 }
                 GetConfig().Set("CONN", "HTTP_REFERER", ref);
+                // Print script URL
+                if ( s_PrintSelfUrlParam.Get() ) {
+                    GetDiagContext().PrintExtra("SELF_URL=" + ref);
+                }
             }
             // Print HTTP_REFERER
             if ( s_PrintRefererParam.Get() ) {
