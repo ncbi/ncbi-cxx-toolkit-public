@@ -250,6 +250,7 @@ typedef CFastaReader::TFlags TReadFastaFlags;
 /// Traditional interface for reading FASTA files.  The
 /// USE_NEW_IMPLEMENTATION parameter governs whether to use
 /// CFastaReader or the traditional implementation.
+/// @deprecated
 /// @sa CFastaReader
 NCBI_DEPRECATED
 NCBI_XOBJREAD_EXPORT
