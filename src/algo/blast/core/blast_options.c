@@ -1154,14 +1154,14 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
            Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "Tblastn with word size > 5 requires a "
                          "compressed alphabet lookup table");
-           return BLASTERR_OPTION_PROGRAM_INVALID;
+           return BLASTERR_OPTION_VALUE_INVALID;
         }
         else if (options->lut_type == eCompressedAaLookupTable &&
                  options->word_size != 6 && options->word_size != 7) {
            Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "Compressed alphabet lookup table requires "
                          "word size 6 or 7");
-           return BLASTERR_OPTION_PROGRAM_INVALID;
+           return BLASTERR_OPTION_VALUE_INVALID;
         }
     }
 
