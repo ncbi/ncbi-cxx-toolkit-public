@@ -2377,7 +2377,7 @@ s_BlastHitListInsertHSPListInHeap(BlastHitList* hit_list,
  * @param hit_list object containing the hsplist_array to grow [in]
  * @return zero on success, 1 if full already.
  */
-Int2 s_Blast_HitListGrowHSPListArray(BlastHitList* hit_list)
+static Int2 s_Blast_HitListGrowHSPListArray(BlastHitList* hit_list)
 
 {
     const int kStartValue = 100; /* default number of hsplist_array to start with. */

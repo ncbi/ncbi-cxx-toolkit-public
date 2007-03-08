@@ -962,7 +962,7 @@ Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
  * @param reverse_sequence Do reverse the sequence [in]
  * @return The best alignment score found.
  */
-Int4 
+static Int4 
 s_RestrictedGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
    Int4* a_offset, Int4* b_offset,
    BlastGapAlignStruct* gap_align, 

@@ -572,7 +572,7 @@ static BlastSeqSrc * s_GetForwardSeqSrc( void * handle )
 
 //------------------------------------------------------------------------------
 /** C language wrapper around CIndexedDb::GetSeqDb(). */
-void * s_GetForwardSeqDb( void * handle )
+static void * s_GetForwardSeqDb( void * handle )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
     return idb_handle->idb_->GetSeqDb();
