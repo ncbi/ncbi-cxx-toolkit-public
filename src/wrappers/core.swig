@@ -213,7 +213,6 @@ util/smalldns.hpp
 util/static_map.hpp
 util/static_set.hpp
 util/strbuffer.hpp
-util/stream_utils.hpp
 util/strsearch.hpp
 util/thread_nonstop.hpp
 util/thread_pool.hpp
