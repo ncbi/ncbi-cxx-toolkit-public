@@ -179,9 +179,10 @@ typedef struct CompressedOverflowCell{
 typedef struct CompressedLookupBackboneCell {
     Int4 num_used;       /**< number of hits stored for this cell */
 
+    /** either a fixed number of hits, or an offset to
+        an overflow cell plus (number of hits - 1) */
     union {
-        /** either a fixed number of hits, or an offset to
-            an overflow cell plus (number of hits - 1) */
+        /** fixed number of query offsets stored locally */
         Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL];
 
         /** dynamically allocated array for (many) query offsets */
@@ -250,6 +251,8 @@ BlastCompressedAaLookupTable* BlastCompressedAaLookupTableDestruct(
 /** Compute "high" index for a word
   * @param wordsize Number of consecutive letters in a word [in]
   * @param word Sequence in "regular" AA alphabet [in]
+  * @param compressed_alphabet_size Number of letters in the compressed
+  *                   alphabet [in]
   * @param skip If a letter is encountered that cannot be
   *            compressed, the offset from word[] where 
   *            index computation can begin again [out]

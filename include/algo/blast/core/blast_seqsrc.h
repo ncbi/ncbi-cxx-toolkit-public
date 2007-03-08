@@ -64,7 +64,7 @@ extern "C" {
  *    BlastSeqSrcIterator abstraction, as well as resetting of any applicable
  *    implementation internal 'bookmarks' which keep track of the iteration
  *    progress, as to allow multiple passes over the set of sequences (@sa
- *    BlastSeqSrcResetChunkIterator).
+ *    BlastSeqSrcResetChunkIterator)
  *  .
  *
  *  Currently available client implementations of the BlastSeqSrc API include:
