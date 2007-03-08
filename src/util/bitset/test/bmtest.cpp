@@ -32,15 +32,20 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
+#include <util/bitset/ncbi_bitset_alloc.hpp>
 
 #include <test/test_assert.h>
 
 USING_NCBI_SCOPE;
 
+typedef CBV_PoolBlockAlloc<bm::block_allocator, CFastMutex> TBlockAlloc;
+typedef bm::mem_alloc<TBlockAlloc, bm::ptr_allocator>       TMemAlloc;
+typedef bm::bvector<TMemAlloc>                              TBitVector;
+
 static
 void s_TEST_SetBit()
 {
-    bm::bvector<>   bv;    // Bitvector variable declaration.
+    TBitVector   bv;    // Bitvector variable declaration.
 
     unsigned cnt = bv.count();
     assert(cnt == 0);
