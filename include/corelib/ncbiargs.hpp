@@ -681,6 +681,13 @@ public:
     /// @param arg_name
     ///    The real argument's name.
     void AddAlias(const string& alias, const string& arg_name);
+    /// Add negated alias for a flag argument. Using the alias in the
+    /// command line produces the same effect as using the original
+    /// flag with the opposite value. If 'arg_name' does not describe
+    /// a flag argument, an exception is thrown.
+    /// @sa
+    ///   AddAlias()
+    void AddNegatedFlagAlias(const string& alias, const string& arg_name);
 
     /// Flag to invert constraint logically
     enum EConstraintNegate {
@@ -825,10 +832,16 @@ private:
     // Internal methods
 
     /// Helper method to find named parameter.
-    TArgsI  x_Find(const string& name);
+    /// 'negative' (if provided) will indicate if the name refered to a
+    /// negative alias.
+    TArgsI  x_Find(const string& name,
+                   bool*         negative = NULL);
 
     /// Helper method to find named parameter -- const version.
-    TArgsCI x_Find(const string& name) const;
+    /// 'negative' (if provided) will indicate if the name refered to a
+    /// negative alias.
+    TArgsCI x_Find(const string& name,
+                   bool*         negative = NULL) const;
 
     /// Get group index. Returns group index in the m_ArgGroups, 0 for empty
     /// group name or the next group number for undefined group.

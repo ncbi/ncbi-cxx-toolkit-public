@@ -436,6 +436,9 @@ public:
     virtual CArgValue* ProcessArgument(const string& value) const;
     virtual CArgValue* ProcessDefault(void) const;
 
+    void SetNegativeFlag(bool value) { m_NegativeFlag = value; }
+    bool GetNegativeFlag(void) const { return m_NegativeFlag; }
 private:
     string m_ArgName;
+    bool   m_NegativeFlag;
 };

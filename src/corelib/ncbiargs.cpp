@@ -1071,7 +1071,8 @@ string CArgDesc_KeyDef::GetUsageSynopsis(bool name_only) const
 CArgDesc_Alias::CArgDesc_Alias(const string& alias,
                                const string& arg_name)
     : CArgDesc(alias, kEmptyStr),
-      m_ArgName(arg_name)
+      m_ArgName(arg_name),
+      m_NegativeFlag(false)
 {
 }
 
@@ -1591,6 +1592,24 @@ void CArgDescriptions::AddAlias(const string& alias,
 }
 
 
+void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
+                                              const string& arg_name)
+{
+    // Make sure arg_name describes a flag
+    TArgsCI orig = x_Find(arg_name);
+    if (orig == m_Args.end()  ||  !s_IsFlag(**orig)) {
+        NCBI_THROW(CArgException, eArgType,
+            "Attempt to negate a non-flag argument: "+ arg_name);
+    }
+
+    auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name));
+    arg->SetNegativeFlag(true);
+
+    x_AddDesc(*arg);
+    arg.release();
+}
+
+
 void CArgDescriptions::SetConstraint(const string&      name, 
                                      CArgAllow*         constraint,
                                      EConstraintNegate  negate)
@@ -1703,7 +1722,8 @@ private:
     virtual CArgValue* ProcessDefault(void) const {return 0;}
 };
 
-CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name) const
+CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name,
+                                                   bool* negative) const
 {
     CArgDescriptions::TArgsCI arg =
         m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
@@ -1711,13 +1731,17 @@ CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name) const
         const CArgDesc_Alias* al =
             dynamic_cast<const CArgDesc_Alias*>(arg->get());
         if ( al ) {
-            return x_Find(al->GetAliasedName());
+            if ( negative ) {
+                *negative = al->GetNegativeFlag();
+            }
+            return x_Find(al->GetAliasedName(), negative);
         }
     }
     return arg;
 }
 
-CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name)
+CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name,
+                                                   bool* negative)
 {
     CArgDescriptions::TArgsI arg =
         m_Args.find(AutoPtr<CArgDesc> (new CArgDesc_NameOnly(name)));
@@ -1725,7 +1749,10 @@ CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name)
         const CArgDesc_Alias* al =
             dynamic_cast<const CArgDesc_Alias*>(arg->get());
         if ( al ) {
-            return x_Find(al->GetAliasedName());
+            if ( negative ) {
+                *negative = al->GetNegativeFlag();
+            }
+            return x_Find(al->GetAliasedName(), negative);
         }
     }
     return arg;
@@ -1892,11 +1919,12 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     bool arg2_used = false;
     bool no_separator = false;
     bool eq_separator = false;
+    bool negative = false;
 
     // Get arg. description
-    TArgsCI it = x_Find(name);
+    TArgsCI it = x_Find(name, &negative);
     if (it == m_Args.end()  &&  m_NoSeparator.find(name[0]) != NPOS) {
-        it = x_Find(name.substr(0, 1));
+        it = x_Find(name.substr(0, 1), &negative);
         _ASSERT(it != m_Args.end());
         no_separator = true;
     }
@@ -1964,7 +1992,14 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     CArgValue* av = 0;
     try {
         // Process the "raw" argument value into "CArgValue"
-        av = arg.ProcessArgument(*value);
+        if ( negative  &&  s_IsFlag(arg) ) {
+            // Negative flag - use default value rather than
+            // normal one.
+            av = arg.ProcessDefault();
+        }
+        else {
+            av = arg.ProcessArgument(*value);
+        }
     }
     catch (CArgException) {
         const CArgErrorHandler* err_handler = arg.GetErrorHandler();
@@ -2231,11 +2266,18 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     }
 
     // Add aliases for non-positional arguments
+    list<string> negatives;
     if ( !s_IsPositional(arg) ) {
         ITERATE(CArgDescriptions::TArgs, it, m_Args) {
             const CArgDesc_Alias* alias =
                 dynamic_cast<const CArgDesc_Alias*>(it->get());
-            if (alias  &&  alias->GetAliasedName() == arg.GetName()) {
+            if (!alias  ||  alias->GetAliasedName() != arg.GetName()) {
+                continue;
+            }
+            if ( alias->GetNegativeFlag() ) {
+                negatives.push_back(alias->GetName());
+            }
+            else {
                 intro += ", -" + alias->GetName();
             }
         }
@@ -2292,6 +2334,25 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     }
     if ( !exclude.empty() ) {
         s_PrintCommentBody(arr, " * Incompatible with:  " + exclude, width);
+    }
+    if ( !negatives.empty() ) {
+        string neg_info;
+        ITERATE(list<string>, neg, negatives) {
+            if ( !neg_info.empty() ) {
+                neg_info += ", ";
+            }
+            neg_info += *neg;
+        }
+        SIZE_TYPE indent = neg_info.find(", ");
+        if (indent == NPOS  ||  indent > width / 2) {
+            indent = 0;
+        }
+        neg_info = " -" + neg_info;
+        NStr::Wrap(neg_info, width, arr, NStr::fWrap_Hyphenate,
+                string(indent + 2, ' '), kEmptyStr);
+
+        // Print description
+        s_PrintCommentBody(arr, "Negative for " + arg.GetName(), width);
     }
 }
 
