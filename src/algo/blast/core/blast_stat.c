@@ -4390,7 +4390,7 @@ static Int2 s_GetCompressedProbs(BlastScoreBlk *sbp,
  * @param sbp Structure containing alphabet and scoring information [in]
  * @param new_alphabet Structure defining the new alphabet, including the
  *                     final score matrix [in][out]
- * @param scale_factor Score matrix entries are scaled by this value [in]
+ * @param matrix_scale_factor Score matrix entries are scaled by this value [in]
  * @param rev_table A (one-to-many) mapping from compressed letter to
  *              protein letter. The list of protein letters in each
  *              row of the table ends with a negative value [in]

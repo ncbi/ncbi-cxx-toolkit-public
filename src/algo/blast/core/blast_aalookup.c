@@ -731,7 +731,7 @@ static void s_AddPSSMWordHitsCore(NeighborInfo * info, Int4 score,
     }
 }
 
-/* Add a single query offset to the compressed
+/** Add a single query offset to the compressed
  * alphabet protein lookup table
  * @param lookup The lookup table [in]
  * @param index The hashtable index into which the query offset goes [in]
@@ -833,8 +833,8 @@ static void s_CompressedLookupAddWordHit(
  * The index is computed using the letters in w[], which is 
  * assumed to already be converted to the compressed alphabet
  * @param lookup Pointer to the lookup table. [in][out]
- * @param s word to add [in]
- * @param query_offset the offset in the query where the word occurs [in]
+ * @param w Word to add [in]
+ * @param query_offset The offset in the query where the word occurs [in]
  */
 static void s_CompressedLookupAddEncoded(
                                      BlastCompressedAaLookupTable * lookup,
@@ -1030,13 +1030,10 @@ static void s_CompressedAddWordHits(BlastCompressedAaLookupTable * lookup,
  * Index a query sequence; i.e. fill a lookup table with the offsets
  * of query words
  *
- * @param lookup the lookup table [in/modified]
- * @param matrix the substitution matrix [in]
- * @param query the query sequence [in]
- * @param query_bias number added to each offset put into lookup table
- *                      (ordinarily 0; a nonzero value allows a succession of
- *                      query sequences to update the same lookup table)
- * @param location the list of ranges of query offsets to examine 
+ * @param lookup The lookup table [in/modified]
+ * @param compressed_matrix The substitution matrix [in]
+ * @param query The query sequence [in]
+ * @param location List of ranges of query offsets to examine 
  *                 for indexing [in]
  */
 static void s_CompressedAddNeighboringWords(
