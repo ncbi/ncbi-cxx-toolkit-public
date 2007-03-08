@@ -394,10 +394,10 @@ void CDiagContext::SetAutoWrite(bool value)
 }
 
 
-void PropTlsCleanup(CDiagContext::TProperties* value, void* /*cleanup_data*/)
+void PropTlsCleanup(CDiagContext::TProperties* value, void* cleanup_data)
 {
     // Copy properties from the main thread's TLS to the global properties
-    if ( !CThread::GetSelf() ) {
+    if ( cleanup_data ) {
         CMutexGuard LOCK(s_DiagMutex);
         GetDiagContext().m_Properties.insert(value->begin(), value->end());
     }
@@ -412,7 +412,11 @@ CDiagContext::x_GetThreadProps(bool force_create) const
     TProperties* props = s_ThreadProperties->GetValue();
     if ( !props  &&  force_create ) {
         props = new TProperties;
-        s_ThreadProperties->SetValue(props, PropTlsCleanup);
+        // Cleanup data set to null for any thread except the main one.
+        // This value is used as a flag to copy threads' properties to global
+        // upon TLS cleanup.
+        s_ThreadProperties->SetValue(props, PropTlsCleanup,
+            CThread::GetSelf() ? 0 : (void*)(1));
     }
     return props;
 }
@@ -865,7 +869,7 @@ static const char* kLogName_Memory   = "MEMORY";
 string GetDefaultLogLocation(CNcbiApplication& app)
 {
     static const char* kToolkitRcPath = "/etc/toolkitrc";
-    static const char* kWebDirToPort = "Web_dir_to_port";
+    static const char* kWebDirToPort = "Web_dir_to_token";
 
     string log_path = "/log/";
 
