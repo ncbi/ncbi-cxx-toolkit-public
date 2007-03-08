@@ -396,6 +396,11 @@ void CDiagContext::SetAutoWrite(bool value)
 
 void PropTlsCleanup(CDiagContext::TProperties* value, void* /*cleanup_data*/)
 {
+    // Copy properties from the main thread's TLS to the global properties
+    if ( !CThread::GetSelf() ) {
+        CMutexGuard LOCK(s_DiagMutex);
+        GetDiagContext().m_Properties.insert(value->begin(), value->end());
+    }
     delete value;
 }
 
@@ -465,7 +470,7 @@ string CDiagContext::GetProperty(const string& name,
                                  EPropertyMode mode) const
 {
     if (mode == eProp_Thread  ||
-        (mode ==  eProp_Default  &&  !IsGlobalProperty(name))) {
+        (mode == eProp_Default  &&  !IsGlobalProperty(name))) {
         TProperties* props = x_GetThreadProps(false);
         if ( props ) {
             TProperties::const_iterator tprop = props->find(name);
