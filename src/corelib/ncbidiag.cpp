@@ -869,7 +869,7 @@ static const char* kLogName_Memory   = "MEMORY";
 string GetDefaultLogLocation(CNcbiApplication& app)
 {
     static const char* kToolkitRcPath = "/etc/toolkitrc";
-    static const char* kWebDirToPort = "Web_dir_to_token";
+    static const char* kWebDirToPort = "Web_dir_to_port";
 
     string log_path = "/log/";
 
