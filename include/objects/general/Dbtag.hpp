@@ -76,6 +76,7 @@ public:
         eDbtagType_ENSEMBL,
         eDbtagType_ERIC,
         eDbtagType_ESTLIB,
+        eDbtagType_EcoGene,
         eDbtagType_FANTOM_DB,
         eDbtagType_FLYBASE,
         eDbtagType_GABI,
