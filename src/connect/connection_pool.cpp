@@ -75,15 +75,16 @@ CStdRequest* CServer_ControlConnection::CreateRequest(
 CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
         m_MaxConnections(max_connections)
 {
-    // Create internal signalling connection from m_ControlSocket to
+    // Create internal signaling connection from m_ControlSocket to
     // m_ControlSocketForPoll
-    unsigned short port = 2049;
+    unsigned short port;
     CListeningSocket listener;
     for (port = 2049; port < 65535; ++port) {
         if (eIO_Success == listener.Listen(port, 5, fLSCE_BindLocal))
             break;
     }
     m_ControlSocket.Connect("127.0.0.1", port);
+    m_ControlSocket.DisableOSSendDelay();
     listener.Accept(dynamic_cast<CSocket&>(m_ControlSocketForPoll));
 }
 
