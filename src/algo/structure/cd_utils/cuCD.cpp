@@ -552,12 +552,14 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 	CTaxon1 taxServer;
 	if (!taxServer.Init())
 		return orgRef;
-	int num = cd->GetNumSequences();
+	int num = cd->GetNumRows();
 	for (int i = 0; i < num; i++)
 	{
-		int gi = cd->GetGIFromSequenceList(i);
+		int gi = -1;
+		cd->GetGI(i,gi,false);
 		int taxid = 0;
-		taxServer.GetTaxId4GI(gi, taxid);
+		if (gi > 0)
+			taxServer.GetTaxId4GI(gi, taxid);
 		if (taxid == 0)
 		{
 			CRef< CBioseq > bioseq;
