@@ -258,6 +258,10 @@ public:
 
     string ExecQuery(const string& query, const string& action,
                      const string& fields);
+    typedef vector<vector<string> > TResultSet;
+    TResultSet x_ExecSelect(SLockedQueue& q,
+                            const TNSBitVector* ids,
+                            const string& str_fields);
     /// Queue dump
     void PrintJobDbStat(unsigned job_id, 
                         CNcbiOstream & out,

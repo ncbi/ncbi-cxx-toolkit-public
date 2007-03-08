@@ -199,17 +199,37 @@ struct SQueueStatictics
 
 typedef pair<string, string> TNSTag;
 typedef list<TNSTag> TNSTagList;
+
+// Forward for bv-pooled structures
+struct SLockedQueue;
+
 // key, value -> bitvector of job ids
 typedef map<TNSTag, TNSBitVector*> TNSTagMap;
 // Safe container for tag map
-struct SLockedQueue;
 class CNSTagMap
 {
 public:
     CNSTagMap(SLockedQueue& queue);
     ~CNSTagMap();
-    TNSTagMap m_TagMap;
+    TNSTagMap& operator*() { return m_TagMap; }
 private:
+    TNSTagMap m_TagMap;
+    TNSBVPool* m_BVPool;
+};
+
+
+// another representation key -> value, bitvector
+typedef pair<string, TNSBitVector*> TNSTagValue;
+typedef vector<TNSTagValue> TNSTagDetails;
+// Safe container for tag details
+class CNSTagDetails
+{
+public:
+    CNSTagDetails(SLockedQueue& queue);
+    ~CNSTagDetails();
+    TNSTagDetails& operator*() { return m_TagDetails; }
+private:
+    TNSTagDetails m_TagDetails;
     TNSBVPool* m_BVPool;
 };
 
@@ -242,6 +262,10 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     auto_ptr<CBDB_FileCursor>    m_Cursor;         ///< DB cursor
     CFastMutex                   lock;             ///< db, cursor lock
     CJobStatusTracker            status_tracker;   ///< status FSA
+
+    // Main DB field info
+    map<string, int> m_FieldMap;
+    int m_NKeys;
 
     // affinity dictionary does not need a mutex, because 
     // CAffinityDict is a syncronized class itself (mutex included)
@@ -331,6 +355,10 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     ~SLockedQueue();
 
     void Open(CBDB_Env& env, const string& path);
+    void x_ReadFieldInfo(void);
+
+    int GetFieldIndex(const string& name);
+    string SLockedQueue::GetField(int index);
 
     /// get next job id (counter increment)
     unsigned int GetNextId();
@@ -348,6 +376,8 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     bool ReadTag(const string& key, const string& val,
                  TBuffer* buf);
     void ReadTags(const string& key, TNSBitVector* bv);
+    void ReadTagDetailsFor(const TNSBitVector* ids, const string& key,
+        CNSTagDetails& tag_details);
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
     CFastMutex& GetTagLock() { return m_TagLock; }
 

@@ -73,10 +73,10 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.12  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.13  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
-    "protocol=1;dyn_queues;tags"
+    "protocol=1;dyn_queues;tags;tags_select"
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -806,10 +806,10 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 
 void CNetScheduleHandler::x_ParseTags(string strtags, TNSTagList& tags)
 {
-    tags.clear();
     list<string> tokens;
     NStr::Split(NStr::ParseEscapes(strtags), "\t",
         tokens, NStr::eNoMergeDelims);
+    tags.clear();
     for (list<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
         string key(*it); ++it;
         if (it != tokens.end()){

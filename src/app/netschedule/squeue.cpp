@@ -135,6 +135,24 @@ CNSTagMap::~CNSTagMap()
 
 
 
+CNSTagDetails::CNSTagDetails(SLockedQueue& queue) :
+    m_BVPool(&queue.m_BVPool)
+{
+}
+
+
+CNSTagDetails::~CNSTagDetails()
+{
+    NON_CONST_ITERATE(TNSTagDetails, it, m_TagDetails) {
+        if (it->second) {
+            m_BVPool->Return(it->second);
+            it->second = 0;
+        }
+    }
+}
+
+
+
 SLockedQueue::SLockedQueue(const string& queue_name,
                            const string& qclass_name,
                            TQueueKind queue_kind)
@@ -200,6 +218,7 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
 
     db.RevSplitOff();
     db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    x_ReadFieldInfo();
     files.push_back(path + fname);
 
     fname = prefix + "_affid.idx";
@@ -217,6 +236,52 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
     m_TagDb.RevSplitOff();
     m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
     files.push_back(path + fname);
+}
+
+
+void SLockedQueue::x_ReadFieldInfo(void)
+{
+    // Build field map
+    const CBDB_BufferManager* key  = db.GetKeyBuffer();
+    const CBDB_BufferManager* data = db.GetDataBuffer();
+
+    m_NKeys = 0;
+    if (key) {
+        for (unsigned i = 0; i < key->FieldCount(); ++i) {
+            const CBDB_Field& fld = key->GetField(i);
+            m_FieldMap[fld.GetName()] = i;
+        }
+        m_NKeys = key->FieldCount();
+    }
+
+    if (data) {
+        for (unsigned i = 0; i < data->FieldCount(); ++i) {
+            const CBDB_Field& fld = data->GetField(i);
+            m_FieldMap[fld.GetName()] = m_NKeys + i;
+        }
+    }
+}
+
+
+int SLockedQueue::GetFieldIndex(const string& name)
+{
+    map<string, int>::iterator i = m_FieldMap.find(name);
+    if (i == m_FieldMap.end()) return -1;
+    return i->second;
+}
+
+
+string SLockedQueue::GetField(int index)
+{
+    const CBDB_BufferManager* bm;
+    if (index < m_NKeys) {
+        bm = db.GetKeyBuffer();
+    } else {
+        bm = db.GetDataBuffer();
+        index -= m_NKeys;
+    }
+    const CBDB_Field& fld = bm->GetField(index);
+    return fld.GetString();
 }
 
 
@@ -264,7 +329,7 @@ void SLockedQueue::AppendTags(CNSTagMap& tag_map, TNSTagList& tags, unsigned job
     ITERATE(TNSTagList, it, tags) {
         TNSBitVector *bv = m_BVPool.Get();
         pair<TNSTagMap::iterator, bool> tag_map_it =
-            tag_map.m_TagMap.insert(TNSTagMap::value_type((*it), bv));
+            (*tag_map).insert(TNSTagMap::value_type((*it), bv));
         if (!tag_map_it.second)
             m_BVPool.Return(bv);
         (tag_map_it.first)->second->set(job_id);
@@ -276,10 +341,13 @@ void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
 {
     CFastMutexGuard guard(m_TagLock);
     m_TagDb.SetTransaction(&trans);
-    NON_CONST_ITERATE(TNSTagMap, it, tag_map.m_TagMap) {
+    NON_CONST_ITERATE(TNSTagMap, it, *tag_map) {
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
         EBDB_ErrCode err = m_TagDb.ReadVector(it->second, bm::set_OR);
+        if (err != eBDB_Ok && err != eBDB_NotFound) {
+            // TODO: throw db error
+        }
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
         it->second->optimize();
@@ -287,7 +355,7 @@ void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
         m_BVPool.Return(it->second);
         it->second = 0;
     }
-    tag_map.m_TagMap.clear();
+    (*tag_map).clear();
 }
 
 
@@ -311,10 +379,6 @@ bool SLockedQueue::ReadTag(const string& key,
 void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 {
     // Guarded by m_TagLock through GetTagLock()
-    //CBDB_Transaction trans(*m_TagDb.GetEnv(), 
-    //                    CBDB_Transaction::eTransASync,
-    //                    CBDB_Transaction::eNoAssociation);
-    //m_TagDb.SetTransaction(&trans);
     CBDB_FileCursor cur(m_TagDb);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key;
@@ -323,13 +387,38 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
     EBDB_ErrCode err;
     while ((err = cur.Fetch(&buf)) == eBDB_Ok) {
         bm::operation_deserializer<TNSBitVector>::deserialize(
-            *bv,&(buf[0]), 0, op_code);
+            *bv, &(buf[0]), 0, op_code);
         op_code = bm::set_OR;
     }
     if (err != eBDB_Ok  &&  err != eBDB_NotFound) {
         // TODO: signal disaster somehow, e.g. throw CBDB_Exception
     }
 }
+
+void SLockedQueue::ReadTagDetailsFor(const TNSBitVector* ids,
+                                     const string&       key,
+                                     CNSTagDetails&      tag_details)
+{
+    CBDB_FileCursor cur(m_TagDb);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << key;
+    TBuffer buf;
+    EBDB_ErrCode err;
+    while ((err = cur.Fetch(&buf)) == eBDB_Ok) {
+        TNSBitVector *bv = m_BVPool.Get();
+        bv->clear();
+        bm::operation_deserializer<TNSBitVector>::deserialize(
+            *bv, &(buf[0]), 0, bm::set_OR);
+        *bv &= *ids;
+        if (bv->any()) {
+            TNSTagValue tag_value(string(m_TagDb.val), bv);
+            (*tag_details).push_back(tag_value);
+        } else {
+            m_BVPool.Return(bv);
+        }
+    }
+}
+
 
 
 void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
