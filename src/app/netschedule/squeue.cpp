@@ -406,9 +406,9 @@ void SLockedQueue::ReadTagDetailsFor(const TNSBitVector* ids,
     EBDB_ErrCode err;
     while ((err = cur.Fetch(&buf)) == eBDB_Ok) {
         TNSBitVector *bv = m_BVPool.Get();
-        bv->clear();
+        //bv->clear();
         bm::operation_deserializer<TNSBitVector>::deserialize(
-            *bv, &(buf[0]), 0, bm::set_OR);
+            *bv, &(buf[0]), 0, bm::set_ASSIGN);
         *bv &= *ids;
         if (bv->any()) {
             TNSTagValue tag_value(string(m_TagDb.val), bv);
