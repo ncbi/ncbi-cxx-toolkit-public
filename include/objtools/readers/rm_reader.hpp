@@ -59,8 +59,16 @@ public:
 public:
     static CRmReader* OpenReader( CNcbiIstream& );
     static void CloseReader( CRmReader* );
-    
-    virtual void Read( CRef<CSeq_annot> ) =0;
+
+    enum ERmFlags {
+        fIncludeStatistics   = 0x01,
+        fIncludeRepeatName   = 0x02,
+        fIncludeRepeatClass  = 0x04,
+
+        fDefaults = fIncludeRepeatName
+    };
+    typedef int TFlags;
+    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults) =0;
 
     //
     //  data:

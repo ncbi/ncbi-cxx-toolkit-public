@@ -103,7 +103,7 @@ public:
     //  interface:
     //
 public:
-    virtual void Read( CRef<CSeq_annot> );
+    virtual void Read( CRef<CSeq_annot>, TFlags flags = fDefaults);
 
     //
     //  internal helpers:
@@ -114,7 +114,7 @@ protected:
     
     virtual bool ParseRecord( const string& record, CMaskData& );
     virtual bool VerifyData( const CMaskData& );
-    virtual bool MakeFeature( const CMaskData&, CRef<CSeq_feat>& );
+    virtual bool MakeFeature( const CMaskData&, CRef<CSeq_feat>&, TFlags flags);
     
     //
     //  data:
@@ -165,7 +165,7 @@ CRmOutReader::~CRmOutReader()
 }
 
 
-void CRmOutReader::Read( CRef<CSeq_annot> entry )
+void CRmOutReader::Read( CRef<CSeq_annot> entry, TFlags flags )
 {
     const size_t MAX_ERROR_COUNT = 5;
     
@@ -214,7 +214,7 @@ void CRmOutReader::Read( CRef<CSeq_annot> entry )
             }
         }
         
-        if ( ! MakeFeature( mask_data, feat ) ) {
+        if ( ! MakeFeature( mask_data, feat, flags ) ) {
             // we don't tolerate even a few errors here!
             error_counter = MAX_ERROR_COUNT;
             LOG_POST( Error << "Rmo Reader: Unable to create feature table for record " 
@@ -363,7 +363,8 @@ bool CRmOutReader::VerifyData( const CMaskData& mask_data )
 }
 
 
-bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& feat )
+bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& feat,
+                                TFlags flags )
 {
     feat.Reset( new CSeq_feat );
     feat->ResetLocation();
@@ -386,39 +387,47 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
     location->SetId(*FindBestChoice(ids, CSeq_id::Score));
 
     feat->SetLocation( *location );
-    
+
     //  qualifiers:
-    CSeq_feat::TQual& qual_list = feat->SetQual();
-    
-    CRef<CGb_qual> repeat( new CGb_qual );
-    repeat->SetQual( "repeat_region" );
-    repeat->SetVal( mask_data.matching_repeat );
-    qual_list.push_back( repeat );
-    
-    CRef<CGb_qual> rpt_family( new CGb_qual );
-    rpt_family->SetQual( "rpt_family" );
-    rpt_family->SetVal( mask_data.repeat_class_family );
-    qual_list.push_back( rpt_family );
-    
-    CRef<CGb_qual> sw_score( new CGb_qual );
-    sw_score->SetQual( "sw_score" );
-    sw_score->SetVal( NStr::IntToString( mask_data.sw_score ) );
-    qual_list.push_back( sw_score );
-    
-    CRef<CGb_qual> perc_div( new CGb_qual );
-    perc_div->SetQual( "perc_div" );
-    perc_div->SetVal( NStr::DoubleToString( mask_data.perc_div ) );
-    qual_list.push_back( perc_div );
-    
-    CRef<CGb_qual> perc_del( new CGb_qual );
-    perc_del->SetQual( "perc_del" );
-    perc_del->SetVal( NStr::DoubleToString( mask_data.perc_del ) );
-    qual_list.push_back( perc_del );
-    
-    CRef<CGb_qual> perc_ins( new CGb_qual );
-    perc_ins->SetQual( "perc_ins" );
-    perc_ins->SetVal( NStr::DoubleToString( mask_data.perc_ins ) );
-    qual_list.push_back( perc_ins );
+    if (flags) {
+        CSeq_feat::TQual& qual_list = feat->SetQual();
+        
+        if (flags & fIncludeRepeatName) {
+            CRef<CGb_qual> repeat( new CGb_qual );
+            repeat->SetQual( "repeat_region" );
+            repeat->SetVal( mask_data.matching_repeat );
+            qual_list.push_back( repeat );
+        }
+
+        if (flags & fIncludeRepeatClass) {
+            CRef<CGb_qual> rpt_family( new CGb_qual );
+            rpt_family->SetQual( "rpt_family" );
+            rpt_family->SetVal( mask_data.repeat_class_family );
+            qual_list.push_back( rpt_family );
+        }
+
+        if (flags & fIncludeStatistics) {
+            CRef<CGb_qual> sw_score( new CGb_qual );
+            sw_score->SetQual( "sw_score" );
+            sw_score->SetVal( NStr::IntToString( mask_data.sw_score ) );
+            qual_list.push_back( sw_score );
+            
+            CRef<CGb_qual> perc_div( new CGb_qual );
+            perc_div->SetQual( "perc_div" );
+            perc_div->SetVal( NStr::DoubleToString( mask_data.perc_div ) );
+            qual_list.push_back( perc_div );
+            
+            CRef<CGb_qual> perc_del( new CGb_qual );
+            perc_del->SetQual( "perc_del" );
+            perc_del->SetVal( NStr::DoubleToString( mask_data.perc_del ) );
+            qual_list.push_back( perc_del );
+            
+            CRef<CGb_qual> perc_ins( new CGb_qual );
+            perc_ins->SetQual( "perc_ins" );
+            perc_ins->SetVal( NStr::DoubleToString( mask_data.perc_ins ) );
+            qual_list.push_back( perc_ins );
+        }
+    }
     
     return true;
 }
