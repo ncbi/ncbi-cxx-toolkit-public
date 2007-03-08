@@ -56,7 +56,8 @@ public:
 public:
     static bm::word_t* allocate(size_t n, const void *p)
     {
-        TBacketPool::TResourcePool* rp = x_Instance().GetResourcePool(n);
+        typename TBacketPool::TResourcePool* rp
+            = x_Instance().GetResourcePool(n);
         bm::word_t* block = rp->GetIfAvailable();
         if (!block) {
             block = allocator_type::allocate(n, p);
@@ -66,7 +67,8 @@ public:
 
     static void deallocate(bm::word_t* p, size_t n)
     {
-        TBacketPool::TResourcePool* rp = x_Instance().GetResourcePool(n);
+        typename TBacketPool::TResourcePool* rp
+            = x_Instance().GetResourcePool(n);
         rp->Put(p);
     }
 
