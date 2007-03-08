@@ -225,7 +225,7 @@ void s_yylex_extract_string(CQueryParserEnv*  env,
 /// @internal
 ///
 static
-int yylex(CQueryParseTree::TNode** lvalp, void* param)
+int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(param);
     bool verbose = env->IsVerbose();

@@ -3,6 +3,13 @@
 
 #define YYBISON 1  /* Identify Bison output.  */
 
+#define yyparse ncbi_q_parse
+#define yylex ncbi_q_lex
+#define yyerror ncbi_q_error
+#define yylval ncbi_q_lval
+#define yychar ncbi_q_char
+#define yydebug ncbi_q_debug
+#define yynerrs ncbi_q_nerrs
 # define	IDENT	257
 # define	STRING	258
 # define	NUM_INT	259

@@ -43,8 +43,8 @@
 
 USING_NCBI_SCOPE;
 
-/* extern "C" */ static int yyerror (const char *s);
-/* extern "C" */ static int yylex (CQueryParseTree::TNode** lvalp, void* param);
+/* extern "C" */ static int ncbi_q_error (const char *s);
+/* extern "C" */ static int ncbi_q_lex (CQueryParseTree::TNode** lvalp, void* param);
 
 BEGIN_NCBI_SCOPE
 
@@ -303,7 +303,7 @@ END_NCBI_SCOPE
 
 /// Called by yyparse on error 
 static
-int yyerror (const char *s) 
+int ncbi_q_error (const char *s) 
 {
     _TRACE("Parsing error!!!");
 //    NCBI_THROW(CQueryParseException, eParserError, "Syntax error!");
@@ -332,7 +332,7 @@ void CQueryParseTree::Parse(const char*   query_str,
     env.SetVerbose(verbose);
     env.SetParserTolerance(syntax_check);
 
-    int res = yyparse((void*) &env);
+    int res = ncbi_q_parse((void*) &env);
     if (res != 0) {
         NCBI_THROW(CQueryParseException, eParserError, "Parsing error.");
     }
