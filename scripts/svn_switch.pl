@@ -49,6 +49,8 @@ while (<$ReadHandle>)
     $Root = $1 if m/^Repository Root: (.*)\n$/
 }
 
+close($ReadHandle);
+
 waitpid $PID, 0;
 
 die "$ScriptName\: unable to detect repository URL.\n" unless $Root;
