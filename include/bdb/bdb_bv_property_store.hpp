@@ -79,18 +79,20 @@ private:
 
 template <typename PropKey, typename PropValue,
           typename Dictionary = CBDB_PropertyDictionary<PropKey, PropValue>,
-          typename BvStore    = CBDB_PersistentSplitStore< bm::bvector<> >
+          typename BvStore    = CBDB_PersistentSplitStore< bm::bvector<> >,
+          typename BV         = bm::bvector<>
           >
 class CBDB_BvPropertyStore
     : public CBDB_BvSplitDictStore< pair<PropKey, PropValue>,
-                                    Dictionary, BvStore >
+                                    Dictionary, BvStore, BV >
 {
 public:
     typedef CBDB_BvSplitDictStore< pair<PropKey, PropValue>,
-                                   Dictionary, BvStore > TParent;
+                                   Dictionary, BvStore, BV > TParent;
     typedef pair<PropKey, PropValue> TKey;
     typedef Dictionary               TDictionary;
     typedef BvStore                  TStore;
+    typedef BV                       TBitVector;
     typedef Uint4                    TKeyId;
 
     CBDB_BvPropertyStore(const string& demux_path = kEmptyStr);
@@ -228,8 +230,8 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Write(const PropKey& prop,
 /////////////////////////////////////////////////////////////////////////////
 
 template <typename PropKey, typename PropValue,
-          typename Dictionary, typename BvStore>
-inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore>
+          typename Dictionary, typename BvStore, typename BV>
+inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore, BV>
 ::CBDB_BvPropertyStore(const string& demux_path)
 : TParent(demux_path)
 {
@@ -237,8 +239,8 @@ inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore>
 
 
 template <typename PropKey, typename PropValue,
-          typename Dictionary, typename BvStore>
-inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore>
+          typename Dictionary, typename BvStore, typename BV>
+inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore, BV>
 ::CBDB_BvPropertyStore(TDictionary& dict,
                        TStore& store,
                        EOwnership own)
