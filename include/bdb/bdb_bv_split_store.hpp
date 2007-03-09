@@ -63,7 +63,7 @@ public:
 
     CBDB_BvSplitDictStore(const string& demux_path = kEmptyStr);
     CBDB_BvSplitDictStore(Dictionary& dict, BvStore& store,
-                      EOwnership own = eTakeOwnership);
+                          EOwnership own = eTakeOwnership);
     ~CBDB_BvSplitDictStore();
 
     /// read a vector by the relevant key, performing a logical operation
