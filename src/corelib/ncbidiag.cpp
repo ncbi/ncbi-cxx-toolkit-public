@@ -408,7 +408,8 @@ void PropTlsCleanup(CDiagContext::TProperties* value, void* cleanup_data)
 CDiagContext::TProperties*
 CDiagContext::x_GetThreadProps(bool force_create) const
 {
-    static CSafeStaticRef< CTls<TProperties> > s_ThreadProperties(0);
+    static CSafeStaticRef< CTls<TProperties> > s_ThreadProperties(0,
+        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
     TProperties* props = s_ThreadProperties->GetValue();
     if ( !props  &&  force_create ) {
         props = new TProperties;
