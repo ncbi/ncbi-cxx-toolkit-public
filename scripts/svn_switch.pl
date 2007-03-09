@@ -46,7 +46,7 @@ my $Root;
 
 while (<$ReadHandle>)
 {
-    $Root = $1 if m/^Repository Root: (.*)\n$/
+    $Root = $1 if m/^Repository Root: (.*?)[\r\n]*$/os
 }
 
 close($ReadHandle);

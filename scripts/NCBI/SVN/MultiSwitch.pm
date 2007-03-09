@@ -24,7 +24,7 @@ sub new
 
     while (<FILE>)
     {
-        chomp;
+        s/[\r\n]+$//os;
 
         my ($FromDir, $ToDir) = split;
 
@@ -60,7 +60,7 @@ sub SwitchUsingMap
 
     while (<$ReadHandle>)
     {
-        $AlreadySwitched{$1} = undef if m/^....S..(.*)\n$/
+        $AlreadySwitched{$1} = undef if m/^....S..(.*?)[\r\n]*$/os
     }
 
     close($ReadHandle);
@@ -78,11 +78,11 @@ sub SwitchUsingMap
 
         while (<$ReadHandle>)
         {
-            if (m/^Path: (.*)\n$/)
+            if (m/^Path: (.*?)[\r\n]*$/os)
             {
                 $Path = $1
             }
-            elsif (m/^URL: (.*)\n$/)
+            elsif (m/^URL: (.*?)[\r\n]*$/os)
             {
                 $AlreadySwitched{$Path} = $1
             }
