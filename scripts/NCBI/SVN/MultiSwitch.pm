@@ -40,6 +40,7 @@ sub new
 
     close FILE;
 
+    $Self->{WorkingDir} ||= '.';
     $Self->{SwitchPlan} = \@SwitchPlan;
 
     return $Self
@@ -47,14 +48,15 @@ sub new
 
 sub SwitchUsingMap
 {
-    my ($Self, $Repos) = @_;
+    my ($Self) = @_;
 
+    my $Repos;
     my %AlreadySwitched;
 
     my ($ReadHandle, $WriteHandle);
 
     my $PID = open2($ReadHandle, $WriteHandle,
-        'svn', 'stat', '--non-interactive', $Self->{WorkingDir} || '.');
+        'svn', 'stat', '--non-interactive', $Self->{WorkingDir});
 
     close($WriteHandle);
 
@@ -67,31 +69,36 @@ sub SwitchUsingMap
 
     waitpid $PID, 0;
 
-    if (%AlreadySwitched)
+    $PID = open2($ReadHandle, $WriteHandle, 'svn', 'info',
+        '--non-interactive', $Self->{WorkingDir}, keys %AlreadySwitched);
+
+    close($WriteHandle);
+
+    my $Path;
+
+    while (<$ReadHandle>)
     {
-        $PID = open2($ReadHandle, $WriteHandle,
-            'svn', 'info', '--non-interactive', keys %AlreadySwitched);
-
-        close($WriteHandle);
-
-        my $Path;
-
-        while (<$ReadHandle>)
+        if (m/^Path: (.*?)[\r\n]*$/os)
         {
-            if (m/^Path: (.*?)[\r\n]*$/os)
-            {
-                $Path = $1
-            }
-            elsif (m/^URL: (.*?)[\r\n]*$/os)
-            {
-                $AlreadySwitched{$Path} = $1
-            }
+            $Path = $1
         }
-
-        close($ReadHandle);
-
-        waitpid $PID, 0
+        elsif (m/^URL: (.*?)[\r\n]*$/os)
+        {
+            $AlreadySwitched{$Path} = $1
+        }
+        elsif (!$Repos && m/^Repository Root: (.*?)[\r\n]*$/os)
+        {
+            $Repos = $1
+        }
     }
+
+    close($ReadHandle);
+
+    waitpid $PID, 0;
+
+    die "$Self->{MyName}\: unable to detect repository URL.\n" unless $Repos;
+
+    my $WorkingDirURL = delete $AlreadySwitched{$Self->{WorkingDir}} or die;
 
     for (@{$Self->{SwitchPlan}})
     {
@@ -117,7 +124,7 @@ sub SwitchUsingMap
     {
         print "Unswitching '$Dir'...\n";
 
-        system $Self->{SvnPath}, 'switch', "$Repos/$Dir", $Dir
+        system $Self->{SvnPath}, 'switch', "$WorkingDirURL/$Dir", $Dir
     }
 }
 

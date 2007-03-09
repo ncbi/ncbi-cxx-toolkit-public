@@ -36,27 +36,7 @@ EOF
 
 die "$ScriptName\: must be in a working copy directory.\n" unless -d '.svn';
 
-my ($ReadHandle, $WriteHandle);
-
-my $PID = open2($ReadHandle, $WriteHandle, 'svn', 'info', '--non-interactive');
-
-close($WriteHandle);
-
-my $Root;
-
-while (<$ReadHandle>)
-{
-    $Root = $1 if m/^Repository Root: (.*?)[\r\n]*$/os
-}
-
-close($ReadHandle);
-
-waitpid $PID, 0;
-
-die "$ScriptName\: unable to detect repository URL.\n" unless $Root;
-
 NCBI::SVN::MultiSwitch->
-    new(MyName => $ScriptName, MapFileName => $ARGV[0])->
-    SwitchUsingMap($Root);
+    new(MyName => $ScriptName, MapFileName => $ARGV[0])->SwitchUsingMap();
 
 exit 0

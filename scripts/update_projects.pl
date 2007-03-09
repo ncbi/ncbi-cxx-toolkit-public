@@ -349,7 +349,7 @@ chdir $BuildDir;
 
 $Update->UpdateDirList(@Paths);
 
-$MultiSwitch->SwitchUsingMap($RepositoryURL) if $MultiSwitch;
+$MultiSwitch->SwitchUsingMap() if $MultiSwitch;
 
 exit 0 if $^O eq 'MSWin32';
 
