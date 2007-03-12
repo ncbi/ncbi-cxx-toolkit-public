@@ -2045,30 +2045,56 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                 break;
             case set_AND: case set_ASSIGN:
                 // clear the rest of the target vector
-                for (; bv_block_idx < bm::set_total_blocks; ++bv_block_idx)
                 {
-                    int no_more_blocks;
-                    bm::word_t* blk = 
-                        bman.get_block(bv_block_idx, &no_more_blocks);
-                    if (no_more_blocks)
-                        break;
-                    if (blk)
-                        bman.zero_block(bv_block_idx);
-                } // for
+                unsigned i, j;
+                bman.get_block_coord(bv_block_idx, &i, &j);
+                bm::word_t*** blk_root = bman.get_rootblock();
+                unsigned effective_top_size = bman.top_block_size();
+                for (;i < effective_top_size; ++i) 
+                {
+                    bm::word_t** blk_blk = blk_root[i];
+                    if (blk_blk == 0) 
+                    {
+                        bv_block_idx+=bm::set_array_size-j;
+                        j = 0;
+                        continue;
+                    }
+                    for (;j < bm::set_array_size; ++j, ++bv_block_idx)
+                    {
+                        if (blk_blk[j])
+                            bman.zero_block(bv_block_idx);
+                    } // for j
+                    j = 0;
+                } // for i
+
+                }
                 break;
             case set_COUNT_A: case set_COUNT_OR: case set_COUNT_XOR:
             case set_COUNT_SUB_AB:
                 // count bits in the target vector
-                for ( ;bv_block_idx < bm::set_total_blocks; ++bv_block_idx)
                 {
-                    int no_more_blocks;
-                    bm::word_t* blk = 
-                        bman.get_block(bv_block_idx, &no_more_blocks);
-                    if (no_more_blocks)
-                        break;
-                    if (blk)
-                        count += bman.block_bitcount(blk, bv_block_idx);
-                } // for
+                unsigned i, j;
+                bman.get_block_coord(bv_block_idx, &i, &j);
+                bm::word_t*** blk_root = bman.get_rootblock();
+                unsigned effective_top_size = bman.top_block_size();
+                for (;i < effective_top_size; ++i) 
+                {
+                    bm::word_t** blk_blk = blk_root[i];
+                    if (blk_blk == 0) 
+                    {
+                        bv_block_idx+=bm::set_array_size-j;
+                        j = 0;
+                        continue;
+                    }
+                    for (;j < bm::set_array_size; ++j, ++bv_block_idx)
+                    {
+                        if (blk_blk[j])
+                            count += bman.block_bitcount(blk_blk[j], bv_block_idx);
+                    } // for j
+                    j = 0;
+                } // for i
+
+                }
                 break;
             default:
                 BM_ASSERT(0);

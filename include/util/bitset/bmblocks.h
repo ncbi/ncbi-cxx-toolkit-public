@@ -703,6 +703,18 @@ public:
         return blk_blk ? blk_blk[nb & bm::set_array_mask] : 0;
     }
 
+    /** 
+    Recalculate absolute block address into coordinates
+    */
+    void get_block_coord(unsigned nb, unsigned* i, unsigned* j) const
+    {
+        BM_ASSERT(i);
+        BM_ASSERT(j);
+
+        *i = nb >> bm::set_array_shift; // top block address
+        *j = nb &  bm::set_array_mask;  // address in sub-block
+    }
+
     bool is_no_more_blocks(unsigned nb) const
     {
         unsigned block = nb;
