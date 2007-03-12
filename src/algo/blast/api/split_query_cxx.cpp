@@ -45,8 +45,6 @@ static char const rcsid[] =
 
 #include "split_query_aux_priv.hpp"
 #include "blast_setup.hpp"
-#include "/home/camacho/work/debug_lib/scoped_tracer.hpp"
-#include "/home/camacho/work/debug_lib/new_blast_debug.h"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
