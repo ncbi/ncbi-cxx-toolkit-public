@@ -1099,6 +1099,12 @@ public:
     CDiagContext(void);
     ~CDiagContext(void);
 
+    typedef Uint8 TPID;
+    // Get cached PID (read real PID if not cached yet).
+    static TPID GetPID(void);
+    // Reset PID cache (e.g. after fork).
+    static void UpdatePID(void);
+
     typedef SDiagMessage::TUID TUID;
 
     /// Return (create if not created yet) unique diagnostic ID.
@@ -1242,6 +1248,9 @@ private:
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;
+
+    // Cached process ID
+    static TPID            sm_PID;
 
     mutable TUID           m_UID;
     TProperties            m_Properties;

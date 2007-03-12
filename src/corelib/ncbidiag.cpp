@@ -312,6 +312,23 @@ CDiagContext::~CDiagContext(void)
 }
 
 
+CDiagContext::TPID CDiagContext::sm_PID = 0;
+
+CDiagContext::TPID CDiagContext::GetPID(void)
+{
+    if ( !sm_PID ) {
+        sm_PID = CProcess::GetCurrentPid();
+    }
+    return sm_PID;
+}
+
+
+void CDiagContext::UpdatePID(void)
+{
+    sm_PID = 0;
+}
+
+
 CDiagContext::TUID CDiagContext::GetUID(void) const
 {
     if ( !m_UID ) {
@@ -597,7 +614,7 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
 {
     CDiagBuffer& buf = GetDiagBuffer();
 
-    SDiagMessage::TPID pid = msg ? msg->m_PID : buf.m_PID;
+    SDiagMessage::TPID pid = msg ? msg->m_PID : GetPID();
     SDiagMessage::TTID tid = msg ? msg->m_TID : buf.m_TID;
     string uid = GetStringUID(msg ? msg->GetUID() : 0);
     int rid = msg ? msg->m_RequestId : GetDiagRequestId();
@@ -774,7 +791,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                       0, 0, // err code/subcode
                       NULL,
                       0, 0, 0, // module/class/function
-                      buf.m_PID, buf.m_TID,
+                      GetPID(), buf.m_TID,
                       CDiagBuffer::GetProcessPostNumber(true),
                       ++buf.m_ThreadPostCount,
                       GetDiagRequestId());
@@ -1209,7 +1226,6 @@ inline Uint8 s_GetThreadId(void)
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
-      m_PID(CProcess::GetCurrentPid()),
       m_TID(s_GetThreadId()),
       m_ThreadPostCount(0)
 {
@@ -1314,7 +1330,7 @@ void CDiagBuffer::Flush(void)
                           m_Diag->GetModule(),
                           m_Diag->GetClass(),
                           m_Diag->GetFunction(),
-                          m_PID, m_TID,
+                          CDiagContext::GetPID(), m_TID,
                           GetProcessPostNumber(true),
                           ++m_ThreadPostCount,
                           GetDiagRequestId());
@@ -2426,6 +2442,9 @@ extern int CompareDiagPostLevel(EDiagSev sev1, EDiagSev sev2)
 
 extern bool IsVisibleDiagPostLevel(EDiagSev sev)
 {
+    if (sev == eDiag_Trace) {
+        return CDiagBuffer::GetTraceEnabled();
+    }
     EDiagSev sev2;
     {{
         CMutexGuard LOCK(s_DiagMutex);

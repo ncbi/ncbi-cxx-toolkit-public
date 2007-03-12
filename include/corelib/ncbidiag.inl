@@ -124,9 +124,6 @@ private:
     TPrefixList m_PrefixList;
 
     typedef Uint8 TTID;
-    typedef Uint8 TPID;
-    // Cached process ID
-    TPID m_PID;
     // Cached thread ID
     TTID m_TID;
     // Count of posted messages for the thread
