@@ -1255,9 +1255,6 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
                     i->cName<<"))";
             }
-            if (i->nonEmpty) {
-                methods << "->SetNonEmpty()";
-            }
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
             }
@@ -1283,6 +1280,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         methods << "->SetCompressed()";
                     }
                 }
+            }
+            if (i->nonEmpty) {
+                methods << "->SetNonEmpty()";
             }
             methods << ";\n";
         }
