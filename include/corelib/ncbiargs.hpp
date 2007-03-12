@@ -1188,10 +1188,9 @@ protected:
 private:
     /// Type of the container that contains the allowed string values
     /// @sa m_Strings
-    typedef set<string, PNocase> TStrings;
+    typedef set<string, PNocase_Conditional> TStrings;
 
     TStrings     m_Strings;  ///< Set of allowed string values
-    NStr::ECase  m_UseCase;  ///< If to ignore the case of the chars
 };
 
 

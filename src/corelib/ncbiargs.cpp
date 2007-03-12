@@ -2706,7 +2706,7 @@ string CArgAllow_String::GetUsage(void) const
 
 CArgAllow_Strings::CArgAllow_Strings(NStr::ECase use_case)
     : CArgAllow(),
-      m_UseCase(use_case)
+      m_Strings(PNocase_Conditional(use_case))
 {
     return;
 }
@@ -2722,10 +2722,7 @@ CArgAllow_Strings* CArgAllow_Strings::Allow(const string& value)
 bool CArgAllow_Strings::Verify(const string& value) const
 {
     TStrings::const_iterator it = m_Strings.find(value);
-    if (it == m_Strings.end())
-        return false;
-
-    return (m_UseCase == NStr::eCase) ? NStr::EqualCase(*it, value) : true;
+    return it != m_Strings.end();
 }
 
 
@@ -2745,7 +2742,7 @@ CArgAllow_Strings::GetUsage(void) const
         ++it;
         if (it == m_Strings.end()) {
             str += "'";
-            if (m_UseCase == NStr::eNocase) {
+            if ( m_Strings.key_comp()("a", "A") ) {
                 str += "  {case insensitive}";
             }
             break;
