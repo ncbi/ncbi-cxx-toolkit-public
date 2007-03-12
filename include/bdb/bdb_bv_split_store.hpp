@@ -160,19 +160,39 @@ CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::Deserialize(TBitVector* bv,
     }
     switch (op) {
     case eOp_Replace:
+        /**
         bv->clear(true);
         bm::deserialize(*bv, (const unsigned char*)buf, m_STmpBlock);
+        **/
+
+        bm::operation_deserializer<BV>::deserialize(*bv,
+                                                    buf,
+                                                    m_STmpBlock,
+                                                    bm::set_ASSIGN);
         break;
 
     case eOp_Or:
+        /**
         bm::deserialize(*bv, (const unsigned char*)buf, m_STmpBlock);
+        **/
+        bm::operation_deserializer<BV>::deserialize(*bv,
+                                                    buf,
+                                                    m_STmpBlock,
+                                                    bm::set_OR);
         break;
 
     case eOp_And:
         {{
+            /**
              m_TmpVec.clear(true);
              bm::deserialize(m_TmpVec, (const unsigned char*)buf, m_STmpBlock);
              *bv &= m_TmpVec;
+             **/
+
+             bm::operation_deserializer<BV>::deserialize(*bv,
+                                                         buf,
+                                                         m_STmpBlock,
+                                                         bm::set_AND);
          }}
         break;
 
@@ -282,7 +302,7 @@ inline void CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>
         m_TmpVec.clear(true); // clear vector by memory deallocation
         m_TmpVec = bv;
         m_TmpVec.optimize();
-        m_TmpVec.optimize_gap_size();
+        //m_TmpVec.optimize_gap_size();
         bv_to_store = &m_TmpVec;
     }
 
