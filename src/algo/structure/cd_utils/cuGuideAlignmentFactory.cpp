@@ -200,11 +200,11 @@ bool CGuideAlignmentFactory::RemapGuideToConsensus(CGuideAlignment_Base& gaToMap
     bmpMaster.reverse();
     bmpSlave.reverse();
 
-    LOG_POST("RemapGuideToConsensus:  before:\n" << gaToMap.ToString());
-    LOG_POST("\nOriginal master:  consensus:\n" << bmpMaster.getMaster().toString());
-    LOG_POST("\nOriginal master:      row 1:\n" << bmpMaster.getSlave().toString());
-    LOG_POST("\nOriginal slave:   consensus:\n" << bmpSlave.getMaster().toString());
-    LOG_POST("\nOriginal slave:       row 1:\n" << bmpSlave.getSlave().toString());
+    _TRACE("RemapGuideToConsensus:  before:\n" << gaToMap.ToString());
+    _TRACE("\nOriginal master:  consensus:\n" << bmpMaster.getMaster().toString());
+    _TRACE("\nOriginal master:      row 1:\n" << bmpMaster.getSlave().toString());
+    _TRACE("\nOriginal slave:   consensus:\n" << bmpSlave.getMaster().toString());
+    _TRACE("\nOriginal slave:       row 1:\n" << bmpSlave.getSlave().toString());
 
 
     if (isMasterCons || isSlaveCons) {
@@ -218,7 +218,7 @@ bool CGuideAlignmentFactory::RemapGuideToConsensus(CGuideAlignment_Base& gaToMap
         }
     }
 
-    LOG_POST("RemapGuideToConsensus:  after (result = " << result << "):\n" << gaToMap.ToString());
+    _TRACE("RemapGuideToConsensus:  after (result = " << result << "):\n" << gaToMap.ToString());
 
     return result;
 } 

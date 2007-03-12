@@ -147,8 +147,8 @@ bool CMastersClassicalGuideAlignment::Make(const CCdCore* cd1, const CCdCore* cd
         cd1->Get_GI_or_PDB_String_FromAlignment(0, master1Str, false, 0);
         cd2->Get_GI_or_PDB_String_FromAlignment(0, master2Str, false, 0);
 
-        LOG_POST("cd1 " << cd1->GetAccession() << " master " << master1 << "; " << master1Str);
-        LOG_POST("cd2 " << cd2->GetAccession() << " master " << master2 << "; " << master2Str);
+        _TRACE("cd1 " << cd1->GetAccession() << " master " << master1 << "; " << master1Str);
+        _TRACE("cd2 " << cd2->GetAccession() << " master " << master2 << "; " << master2Str);
 
         if (master1 >= 0 && master2 >= 0) {
             m_guideBlockModelPair.getMaster() = ma->getBlockModel(master1);
