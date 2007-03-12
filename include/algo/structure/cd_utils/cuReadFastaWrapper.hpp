@@ -70,22 +70,17 @@ public:
     }
 
 
-    virtual unsigned int GetNumRead() const;   //  uses active string; just counts # of '>'
+//    virtual unsigned int GetNumRead() const;   //  uses active string; just counts # of '>'
+    virtual unsigned int GetNumRead() const;   //  returns number of bioseqs in m_seqEntry
     virtual string GetActiveDefline(unsigned int index) const;
-    virtual string GetActiveSequence(unsigned int index) const;
+    virtual string GetActiveSequence(unsigned int index, bool removeWhitespace = true) const;  
     virtual string GetRawDefline(unsigned int index) const;  //  returns empty string if raw string not cached
-    virtual string GetRawSequence(unsigned int index) const; //  returns empty string if raw string not cached
+    virtual string GetRawSequence(unsigned int index, bool removeWhitespace = true) const; //  returns empty string if raw string not cached
 
 
     //  Subclasses have option to fill in a CSeq_entry.
     bool HasSeqEntry() const {return m_seqEntry.NotEmpty();}
     const CRef<CSeq_entry>& GetSeqEntry() const {return m_seqEntry;}
-
-    virtual bool ParseString(const string& fastaString) {
-        if (m_cacheRawFasta) m_rawFastaString = fastaString;
-        m_activeFastaString = fastaString;
-        return m_cacheRawFasta;
-    }
 
     //  Allows users to manipulate the active fasta string.
     virtual string& GetActiveFastaString() {

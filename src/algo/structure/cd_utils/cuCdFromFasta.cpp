@@ -53,18 +53,21 @@ BEGIN_SCOPE(cd_utils)
 
 // destructor
 CCdFromFasta::~CCdFromFasta(void) {
+    CleanUpFastaIO();
 }
 
 // constructor
 CCdFromFasta::CCdFromFasta()
 {
     m_fastaInputErrorMsg = "";
+    m_ownsFastaIO = true;
     InitializeParameters();
 }
 
 CCdFromFasta::CCdFromFasta(const Fasta2CdParams& params) 
 {
     m_fastaInputErrorMsg = "";
+    m_ownsFastaIO = true;
     InitializeParameters(&params);
 }
     
@@ -73,6 +76,7 @@ CCdFromFasta::CCdFromFasta(const string& fastaFile, const Fasta2CdParams& params
 
     m_fastaInputErrorMsg = "";
     m_fastaIO = fastaIOWrapper;
+    m_ownsFastaIO = (m_fastaIO == NULL);  // if m_fastaIO is null, we'll create it and then need to destroy it
     InitializeParameters(&params);
     ImportAlignmentData(fastaFile);
 
@@ -102,9 +106,8 @@ void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
 
 
 
-bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
+bool CCdFromFasta::ImportAlignmentData(const string& fastaFile, bool cleanUp)
 {
-    bool cleanUpFastaIO = (m_fastaIO == NULL);
     unsigned int len, masterIndex, nSeq = 1;
     string test, err;
     TReadFastaFlags fastaFlags = fReadFasta_AssumeProt;
@@ -128,7 +131,7 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
 
     if (fastaFile.size() == 0) {
         m_fastaInputErrorMsg = "Unable to open file:  filename has size zero (?) \n";
-        if (cleanUpFastaIO) delete m_fastaIO;
+        if (cleanUp) CleanUpFastaIO();
         return false;
     }
 
@@ -140,7 +143,7 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
     //  that the Seq-entry in the 'fastaIO' object remains unaltered.
     if (!fastaSeqAnnot.MakeSeqAnnotFromFasta(ifs, *m_fastaIO, m_parameters.masterMethod, m_parameters.masterIndex)) {
         m_fastaInputErrorMsg = "Unable to extract an alignment from file " + fastaFile + "\n" + m_fastaIO->GetError() + "\n";
-        if (cleanUpFastaIO) delete m_fastaIO;
+        if (cleanUp) CleanUpFastaIO();
         return false;
     }
 
@@ -202,9 +205,118 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
     CRef<CSeq_annot> alignment(fastaSeqAnnot.GetSeqAnnot());
     SetSeqannot().push_back(alignment);
 
-    if (cleanUpFastaIO) delete m_fastaIO;
+    if (cleanUp) CleanUpFastaIO();
 
     return true;
+}
+
+string CCdFromFasta::GetDeflineReadFromFile(unsigned int index) const
+{
+    string result = "";
+    unsigned int nRead = (m_fastaIO) ? m_fastaIO->GetNumRead() : 0;
+    
+    if (index < nRead) {
+        result = m_fastaIO->GetActiveDefline(index);
+    }
+    return result;
+}
+
+string CCdFromFasta::GetSequenceReadFromFile(unsigned int index) const
+{
+    string result = "";
+    unsigned int nRead = (m_fastaIO) ? m_fastaIO->GetNumRead() : 0;
+    
+    if (index < nRead) {
+        result = m_fastaIO->GetActiveSequence(index);
+    }
+    return result;
+}
+
+
+string CCdFromFasta::GetColumnReadFromFile(unsigned int column) const
+{
+    static const string gap("-");
+    string result = "";
+    string rowSequence;
+    unsigned int row = 0, nNoSuchColumn = 0;
+    unsigned int nRead = (m_fastaIO) ? m_fastaIO->GetNumRead() : 0;
+
+    for (; row < nRead; ++row) {
+        rowSequence = m_fastaIO->GetActiveSequence(row);
+        if (column < rowSequence.length()) {
+            column += rowSequence[column];
+        } else {
+            result += gap;
+            ++nNoSuchColumn;
+        }
+    }
+
+    //  If column index out of range for all rows, return empty string.
+    if (nNoSuchColumn == nRead) {
+        result.erase();
+    }
+
+    return result;
+}
+
+unsigned int CCdFromFasta::GetAllColumnsReadFromFile(map<unsigned int, string>& columns) const {
+    return GetColumnsReadFromFile(columns, false);
+}
+unsigned int CCdFromFasta::GetGaplessColumnsReadFromFile(map<unsigned int, string>& gaplessColumns) const {
+    return GetColumnsReadFromFile(gaplessColumns, true);
+}
+
+unsigned int CCdFromFasta::GetColumnsReadFromFile(map<unsigned int, string>& columns, bool skipGappedColumns) const
+{
+    static const string gap("-");
+    static const string letters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+
+    string result = "";
+    string rowSequence, columnString;
+    unsigned int nColumns, col, nonLetterPosition;  
+    unsigned int row = 0, nNoSuchColumn = 0;
+    unsigned int nRead = (m_fastaIO) ? m_fastaIO->GetNumRead() : 0;
+    map<unsigned int, string> activeSequences;
+
+    columns.clear();
+
+    for (; row < nRead; ++row) {
+//        rowSequence = m_fastaIO->GetActiveSequence(row);
+        activeSequences[row] = m_fastaIO->GetActiveSequence(row, true);
+    }
+
+    //  by convention, each character in the first row of the FASTA is a column.
+    nColumns = activeSequences[0].length();
+    for (col = 0; col < nColumns; ++col) {
+
+        columnString.erase();
+        for (row = 0; row < nRead; ++row) {
+            if (col < activeSequences[row].length()) {
+                columnString += activeSequences[row][col];
+            } else {
+                columnString += gap;
+                ++nNoSuchColumn;
+            }
+        }
+
+        if (nNoSuchColumn == nRead) {
+            columnString.erase();
+        }
+
+        if (skipGappedColumns) {
+            nonLetterPosition = columnString.find_first_not_of(letters);
+            if (nonLetterPosition != string::npos) {
+//                cerr << "found gap in column " << col << " (" << columnString[nonLetterPosition] << " at position " << nonLetterPosition << "); column string:\n" << columnString << endl;
+                columnString.erase();
+            }
+        }
+            
+        if (columnString.length() > 0) {
+            columns[col] = columnString;
+        }
+    }
+
+    return columns.size();
 }
 
 

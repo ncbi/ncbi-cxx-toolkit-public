@@ -74,7 +74,12 @@ public:
     virtual ~CCdFromFasta(void);
 
     void SetParameters(const Fasta2CdParams& params) {InitializeParameters(&params);}
-    bool ImportAlignmentData(const string& fastaFile);
+
+    //  Get the data from the fasta file and instantiate the CD from it.
+    //  When 'cleanUp' is true and this has ownership of the m_fastaIO object, which caches the raw data read
+    //  from the file, m_fastaIO is deleted on exiting ths method.  Thereafter, methods that try to get at
+    //  the missing data will not work.
+    bool ImportAlignmentData(const string& fastaFile, bool cleanUp = false);
 
     //  These add a specific type of Cdd-descr to the CD
     bool AddComment(const string& comment);
@@ -90,13 +95,48 @@ public:
     bool   WasInputError() const { return m_fastaInputErrorMsg.length() > 0; }
     string GetFastaInputErrorMsg() const { return m_fastaInputErrorMsg;}
 
+    //  **  The following methods rely on the cached data in the m_fastaIO object.
+    //  **  They will fail if ImportAlignmentData was called with 'cleanUp' option set to true.
+
+    //  Access the data from the FASTA file used to initialize the CD; the file 
+    //  is not re-read as the fasta reader object maintains a record of what it read.
+    //  Any gap characters in the input sequence are preserved.
+    //  If the index is out of bounds (based on the number of sequences originally read),
+    //  an empty string is returned.
+    string GetDeflineReadFromFile(unsigned int index) const;
+    string GetSequenceReadFromFile(unsigned int index) const;
+
+    //  Access the data from the FASTA file used to initialize the CD; the file 
+    //  is not re-read as the fasta reader object maintains a record of what it read.
+    //  If the column index is out of bounds on any particular row, a gap character is
+    //  inserted in its place.  If column index is out of bounds on all rows, an empty string is returned.
+    string GetColumnReadFromFile(unsigned int column) const;
+
+    //  Return all columns, indexed by position on the first row of the FASTA used to create this CD.
+    //  Return value is the numbers of such columns.
+    unsigned int GetAllColumnsReadFromFile(map<unsigned int, string>& columns) const;
+
+    //  Return all gapless columns, indexed by position on the first row of the FASTA used to create this CD.
+    //  Return value is the numbers of such columns.
+    //  A gapless column is one containing only letters.
+    unsigned int GetGaplessColumnsReadFromFile(map<unsigned int, string>& gaplessColumns) const;
+
 private:
 
     string m_fastaInputErrorMsg;
     Fasta2CdParams m_parameters;
 
     //  Fasta I/O object that uses NCBI C++ toolkit ReadFasta and CFastaReader classes.
+    bool m_ownsFastaIO;
     CBasicFastaWrapper* m_fastaIO;
+
+    //  Only cleans up the object if this object has ownership.
+    void CleanUpFastaIO() {
+        if (m_ownsFastaIO) {
+            delete m_fastaIO;
+            m_fastaIO = NULL;
+        }
+    }
 
     //  Also sets the accession and shortname.
     void InitializeParameters(const Fasta2CdParams* params = NULL);
@@ -106,6 +146,8 @@ private:
 
     //  Removes any CCdd_descr of the specified choice type.
     bool RemoveCddDescrsOfType(int cddDescrChoice);
+
+    unsigned int GetColumnsReadFromFile(map<unsigned int, string>& columns, bool skipGappedColumns) const;
 
     // Prohibit copy constructor and assignment operator
     CCdFromFasta(const CCdFromFasta& value);

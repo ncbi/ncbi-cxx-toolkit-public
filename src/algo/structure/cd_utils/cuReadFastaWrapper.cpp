@@ -132,13 +132,40 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
 
 unsigned int CFastaIOWrapper::GetNumRead() const
 {
+    unsigned int n = 0;
+    if (m_seqEntry.NotEmpty()) {
+        if (m_seqEntry->IsSet()) {
+            n = m_seqEntry->GetSet().GetSeq_set().size();
+        } else {
+            n = 1;  //  other option is type 'seq', which is a single bioseq
+        }
+    }
+    return n;
+
+/*
 #ifdef NCBI_COMPILER_WORKSHOP
     unsigned int n = 0;
     count(m_activeFastaString.begin(), m_activeFastaString.end(), gt, n);
     return n;
 #else
-    return count(m_activeFastaString.begin(), m_activeFastaString.end(), gt);
+    cerr << "m_activeFastaString:  " << m_activeFastaString << endl;
+    vector<string> tokenizedString;
+    string delim(&gt);
+    NStr::TokenizePattern(m_activeFastaString, delim, tokenizedString);
+    cerr << "tokenizer:  #strings = " << tokenizedString.size() << endl;
+    
+    unsigned int counter = 0;
+    string::size_type pos = 0;
+    while (pos = m_activeFastaString.find_first_of(delim, pos) != string::npos) {
+        ++counter;
+        ++pos;
+    }
+    cerr << "while loop:  #delims = " << counter << endl;
+    return counter;
+
+//    return count(m_activeFastaString.begin(), m_activeFastaString.end(), gt);
 #endif
+*/
 }
 
 string CFastaIOWrapper::GetSubstring(const string& s, unsigned int index, bool isDefline) const
@@ -181,9 +208,24 @@ string CFastaIOWrapper::GetActiveDefline(unsigned int index) const
     return GetSubstring(m_activeFastaString, index, true);
 }
 
-string CFastaIOWrapper::GetActiveSequence(unsigned int index) const
+string RemoveWhitespace_CJL(const string& s) {
+    string newString;
+    unsigned int i, len = s.length();
+    for (i = 0; i < len; ++i) {
+        if (!isspace(s[i])) {
+            newString += s[i];
+        }
+    }
+    return newString;
+}
+
+string CFastaIOWrapper::GetActiveSequence(unsigned int index, bool removeWhitespace) const
 {
-    return GetSubstring(m_activeFastaString, index, false);
+    string s = GetSubstring(m_activeFastaString, index, false);
+    if (removeWhitespace) {
+        s = RemoveWhitespace_CJL(s);
+    }
+    return s;
 }
 
 string CFastaIOWrapper::GetRawDefline(unsigned int index) const
@@ -194,12 +236,16 @@ string CFastaIOWrapper::GetRawDefline(unsigned int index) const
         return GetSubstring(m_rawFastaString, index, true);
 }
 
-string CFastaIOWrapper::GetRawSequence(unsigned int index) const
+string CFastaIOWrapper::GetRawSequence(unsigned int index, bool removeWhitespace) const
 {
-    if (!m_cacheRawFasta) 
-        return "";
-    else
-        return GetSubstring(m_rawFastaString, index, false);
+    string s = "";
+    if (m_cacheRawFasta) {
+        s = GetSubstring(m_rawFastaString, index, false);
+        if (removeWhitespace) {
+            s = RemoveWhitespace_CJL(s);
+        }
+    }
+    return s;
 }
 
 
