@@ -37,6 +37,7 @@
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <serial/datatool/classstr.hpp>
+#include <serial/datatool/enumstr.hpp>
 #include <serial/serialdef.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -193,12 +194,13 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         "{\n" <<
         "}\n" <<
         "\n";
+    m_RefType->GenerateTypeCode(ctx);
     if ( is_class ) {
         code.ClassPublic() <<
             "    // type info\n"
             "    DECLARE_INTERNAL_TYPE_INFO();\n"
             "\n";
-        m_RefType->GenerateTypeCode(ctx);
+//        m_RefType->GenerateTypeCode(ctx);
         code.ClassPublic() <<
             "    // parent type getter/setter\n" <<
             "    const " << ref_name << "& Get(void) const;\n" <<
@@ -235,7 +237,11 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
     {
 //        code.CPPIncludes().insert("serial/aliasinfo");
         CNcbiOstream& methods = code.Methods();
-        methods << "BEGIN_ALIAS_INFO(\""
+        methods << "BEGIN";
+        if (dynamic_cast<const CEnumRefTypeStrings*>(m_RefType.get())) {
+            methods << "_ENUM";
+        }
+        methods << "_ALIAS_INFO(\""
             << GetExternalName() << "\", "
             << GetClassName() << ", "
             << m_RefType->GetRef(ns) << ")\n"
