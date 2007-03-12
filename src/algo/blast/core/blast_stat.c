@@ -4434,7 +4434,7 @@ static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
                                  BLASTAA_SIZE, compressed_alphabet_size);
     if (new_matrix) {
         Int4 **scores = new_matrix->data;
-        Int4 i, q, s, letter;
+        Int4 i, q, s;
         const double min_freq = BLAST_SCORE_MIN / matrix_scale_factor;
     
         for (q = 0; q < BLASTAA_SIZE; q++) {
