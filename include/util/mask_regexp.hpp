@@ -32,7 +32,7 @@
 
 /// @file mask_regexp.hpp
 /// 
-/// CMaskRegexp -- regexp based ñlass to match string against set of masks.
+/// CMaskRegexp -- regexp based class to match string against set of masks.
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_mask.hpp>
