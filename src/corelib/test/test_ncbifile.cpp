@@ -495,7 +495,7 @@ static void s_TEST_File(void)
         // Use 1 hour to compare modification times of the file,
         // because mtime_new and SetTime() can be affected by
         // Daylight Saving Time changes.
-        assert(mtime - mtime_new <= CTimeSpan(1,0));
+        assert(mtime - mtime_new <= CTimeSpan(3600,0));
         
         // Remove the file
         assert( f.Remove() );
