@@ -1558,7 +1558,7 @@ string CQueue::ExecQuery(const string& query, const string& action,
         new CQueryFunctionEQ(q));
 
     {{
-        CFastMutexGuard(q->GetTagLock());
+        CFastMutexGuard guard(q->GetTagLock());
         q->SetTagDbTransaction(NULL);
         qexec.Evaluate(qtree);
     }}
@@ -1591,10 +1591,10 @@ string CQueue::ExecQuery(const string& query, const string& action,
     } else if (action == "FRES") {
     } else if (action == "SLCT") {
         // Form result
-        TResultSet result_set = 
+        TRecordSet record_set = 
             x_ExecSelect(q.GetObject(), bv.get(), fields);
         list<string> prepared_set;
-        ITERATE(TResultSet, it, result_set) {
+        ITERATE(TRecordSet, it, record_set) {
             prepared_set.push_back(NStr::Join(*it, "\t"));
         }
         result_str = NStr::Join(prepared_set, "\n");
@@ -1605,7 +1605,7 @@ string CQueue::ExecQuery(const string& query, const string& action,
 }
 
 
-CQueue::TResultSet CQueue::x_ExecSelect(SLockedQueue& q,
+CQueue::TRecordSet CQueue::x_ExecSelect(SLockedQueue& q,
                             const TNSBitVector* ids,
                             const string& str_fields)
 {
@@ -1622,7 +1622,6 @@ CQueue::TResultSet CQueue::x_ExecSelect(SLockedQueue& q,
         if (i < 0) {
             if (NStr::StartsWith(*it, "tag.")) {
                 tag_pos_map[(*it).substr(4)] = fnums.size();
-//                i = -(fnums.size()+1);
             } else {
                 NCBI_THROW(CNetScheduleException, eQuerySyntaxError,
                     string("Unknown field: ") + (*it));
@@ -1631,55 +1630,63 @@ CQueue::TResultSet CQueue::x_ExecSelect(SLockedQueue& q,
         fnums.push_back(i);
     }
 
-    int result_size = fnums.size();
+    int record_size = fnums.size();
 
-    //// retrieve tags
-    //ITERATE(TTagPos, it, tag_pos_map) {
-    //    TNSBitVector bv;
-    //    q.ReadTags(it->first, &bv);
-    //}
+    TRecordSet record_set;
 
+    // Retrieve regular fields, building index for
+    // tags merging
     map<unsigned, unsigned> id_to_record;
-    // retrieve regular fields
-    TResultSet result_set;
+    unsigned first_id, last_id;
     TNSBitVector::enumerator en(ids->first());
-    for (unsigned rec_num = 0 ; en.valid(); ++en) {
-        unsigned id = *en;
-        q.db.id = id;
-        if (q.db.Fetch() != eBDB_Ok)
-            continue;
-        vector<string> result(result_size);
-        for (int i = 0; i < result_size; ++i) {
-            int fnum = fnums[i];
-            if (fnum < 0) continue;
-            result[i] = q.GetField(fnum);
+    {{
+        CFastMutexGuard guard(q.lock);
+        q.db.SetTransaction(NULL);
+        for (unsigned rec_num = 0; en.valid(); ++en) {
+            unsigned id = *en;
+            q.db.id = id;
+            if (q.db.Fetch() != eBDB_Ok)
+                continue;
+            if (!rec_num) first_id = id;
+            last_id = id;
+            vector<string> record(record_size);
+            for (int i = 0; i < record_size; ++i) {
+                int fnum = fnums[i];
+                if (fnum < 0) continue;
+                record[i] = q.GetField(fnum);
+            }
+            id_to_record[id] = rec_num++;
+            record_set.push_back(record);
         }
-        id_to_record[id] = rec_num++;
-        result_set.push_back(result);
-    }
+    }}
 
-    // merge tags into result set
-    ITERATE(TTagPos, it_tag, tag_pos_map) {
-        CNSTagDetails tag_details(q);
-        q.ReadTagDetailsFor(ids, it_tag->first, tag_details);
-        int tag_pos = it_tag->second;
-        ITERATE(TNSTagDetails, it, *tag_details) {
-            const string& value = it->first;
-            const TNSBitVector* bv = it->second;
-            TNSBitVector::enumerator en(bv->first());
-            for ( ; en.valid(); ++en) {
-                unsigned id = *en;
-                map<unsigned, unsigned>::iterator it_rec =
-                    id_to_record.find(id);
-                if (it_rec == id_to_record.end())
-                    continue;
-                unsigned rec_num = it_rec->second;
-                result_set[rec_num][tag_pos] = value;
+    // Merge tags into record set
+    {{
+        CFastMutexGuard guard(q.GetTagLock());
+        q.SetTagDbTransaction(NULL);
+
+        ITERATE(TTagPos, it_tag, tag_pos_map) {
+            CNSTagDetails tag_details(q);
+            q.ReadTagDetailsFor(ids, it_tag->first, tag_details);
+            int tag_pos = it_tag->second;
+            ITERATE(TNSTagDetails, it, *tag_details) {
+                const string& value = it->first;
+                const TNSBitVector* bv = it->second;
+                TNSBitVector::enumerator en(bv->first());
+                for ( ; en.valid(); ++en) {
+                    unsigned id = *en;
+                    map<unsigned, unsigned>::iterator it_rec =
+                        id_to_record.find(id);
+                    if (it_rec == id_to_record.end())
+                        continue;
+                    unsigned rec_num = it_rec->second;
+                    record_set[rec_num][tag_pos] = value;
+                }
             }
         }
-    }
+    }}
 
-    return result_set;
+    return record_set;
 }
 
 

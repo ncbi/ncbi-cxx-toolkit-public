@@ -399,6 +399,7 @@ void SLockedQueue::ReadTagDetailsFor(const TNSBitVector* ids,
                                      const string&       key,
                                      CNSTagDetails&      tag_details)
 {
+    // Guarded by m_TagLock through GetTagLock()
     CBDB_FileCursor cur(m_TagDb);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key;
