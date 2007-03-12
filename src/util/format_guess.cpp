@@ -777,6 +777,7 @@ CFormatGuess::Format(const unsigned char* buffer,
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
     unsigned seq_length = (unsigned)buffer_size;
+    unsigned txt_length = 0;
 
     unsigned alpha_content = 0;
 
@@ -822,6 +823,63 @@ CFormatGuess::Format(const unsigned char* buffer,
         }
         if (prot_content > 0.7 && a_content > 0.91) {
             return eFasta;  // Protein fasta file
+        }
+
+        if (a_content > 0.8) {
+            // Second FASTA hypothesis: short sequences - long descriptions
+            // in this case buffer holds several small FASTA entries
+            unsigned ATGC_content_txt = 0;
+            unsigned amino_acid_content_txt = 0;
+
+            ATGC_content = 0;
+            amino_acid_content = 0;
+            seq_length = txt_length = 0;
+
+            CNcbiIstrstream istr(reinterpret_cast<const char *>(buffer), buffer_size);
+            string line;
+            while (!istr.fail()) {
+                NcbiGetline(istr, line, "\n\r");
+                if (line[0] == '>') {  // header line
+                    txt_length += line.length();
+                    for (size_t i = 0; i < line.length(); ++i) {
+                        unsigned char ch = line[i];
+                        char upch = toupper(ch);
+                        if (isDNA_Alphabet(upch)) {
+                            ++ATGC_content_txt;
+                        }
+                        if (isProtein_Alphabet(upch)) {
+                            ++amino_acid_content_txt;
+                        }                        
+                    } // for
+                } else { // sequence line
+                    seq_length += line.length();
+                    for (size_t i = 0; i < line.length(); ++i) {
+                        unsigned char ch = line[i];
+                        char upch = toupper(ch);
+                        if (isDNA_Alphabet(upch)) {
+                            ++ATGC_content;
+                        }
+                        if (isProtein_Alphabet(upch)) {
+                            ++amino_acid_content;
+                        }                        
+                    } // for
+                }
+            } // while
+            double dna_content = 
+                (double)ATGC_content / (double)seq_length;
+            double prot_content = 
+                (double)amino_acid_content / (double)seq_length;
+            double dna_content_txt = 
+                (double)ATGC_content_txt / (double)txt_length;
+            double prot_content_txt = 
+                (double)amino_acid_content_txt / (double)txt_length;
+            // check for high seq content in seq.lines and low in txt lines
+            if (dna_content > 0.91 && dna_content_txt < 0.5) {
+                return eFasta;  // DNA fasta file
+            }
+            if (prot_content > 0.91 && prot_content_txt < 0.5) {
+                return eFasta;  // Protein fasta file
+            }
         }
     }
 
