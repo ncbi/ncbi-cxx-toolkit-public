@@ -356,7 +356,8 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
 
          Blast_HSPListAdjustOffsets(hsp_list, offset);
          status = Blast_HSPListsMerge(&hsp_list, &combined_hsp_list,  
-                                      kHspNumMax, offset);
+                                      kHspNumMax, &offset, INT4_MIN,
+                                      DBSEQ_CHUNK_OVERLAP);
       } /* End loop on chunks of subject sequence */
 
       hsp_list = Blast_HSPListFree(hsp_list);  /* In case this was not freed in above loop. */

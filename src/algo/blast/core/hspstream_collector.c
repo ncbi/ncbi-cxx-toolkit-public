@@ -39,6 +39,7 @@ static char const rcsid[] =
 
 
 #include <algo/blast/core/hspstream_collector.h>
+#include <algo/blast/core/blast_util.h>
 
 /** Default hit saving stream methods */
 
@@ -197,6 +198,154 @@ s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
 
    return kBlastHSPStream_Success;
 }
+/*#define _DEBUG_VERBOSE 0*/
+/** Merge two HSPStreams. The HSPs from the first stream are
+ *  moved to the second stream.
+ * @param hsp_stream The stream to merge [in][out]
+ * @param combined_hsp_stream The stream that will contain the
+ *         HSPLists of the first stream [in][out]
+ */
+static int
+s_BlastHSPListCollectorMerge(SSplitQueryBlk *squery_blk,
+                             Uint4 chunk_num,
+                             BlastHSPStream* hsp_stream,
+                             BlastHSPStream* combined_hsp_stream)
+{
+    Int4 i, j, k;
+   BlastHSPListCollectorData* stream1 = 
+      (BlastHSPListCollectorData*) GetData(hsp_stream);
+   BlastHSPListCollectorData* stream2 = 
+      (BlastHSPListCollectorData*) GetData(combined_hsp_stream);
+   BlastHSPResults *results1 = stream1->results;
+   BlastHSPResults *results2 = stream2->results;
+   Int4 contexts_per_query = BLAST_GetNumberOfContexts(stream2->program);
+#ifdef _DEBUG
+   size_t num_queries = 0, num_ctx = 0, num_ctx_offsets = 0;
+   Int4 max_ctx;
+#endif
+
+   Uint4 *query_list = NULL, *offset_list = NULL, num_contexts = 0;
+   Int4 *context_list = NULL;
+
+   SplitQueryBlk_GetQueryIndicesForChunk(squery_blk, chunk_num, &query_list);
+   SplitQueryBlk_GetQueryContextsForChunk(squery_blk, chunk_num, 
+                                          &context_list, &num_contexts);
+   SplitQueryBlk_GetContextOffsetsForChunk(squery_blk, chunk_num, &offset_list);
+
+#if defined(_DEBUG_VERBOSE)
+   fprintf(stderr, "Queries : ");
+   for (num_queries = 0; query_list[num_queries] != UINT4_MAX; num_queries++)
+       fprintf(stderr, "%d ", query_list[num_queries]);
+   fprintf(stderr, "\n");
+   fprintf(stderr, "Contexts : ");
+   for (num_ctx = 0; num_ctx < num_contexts; num_ctx++)
+       fprintf(stderr, "%d ", context_list[num_ctx]);
+   fprintf(stderr, "\n");
+   fprintf(stderr, "Context starting offsets : ");
+   for (num_ctx_offsets = 0; offset_list[num_ctx_offsets] != UINT4_MAX;
+        num_ctx_offsets++)
+       fprintf(stderr, "%d ", offset_list[num_ctx_offsets]);
+   fprintf(stderr, "\n");
+#elif defined(_DEBUG)
+   for (num_queries = 0; query_list[num_queries] != UINT4_MAX; num_queries++) ;
+   for (num_ctx = 0, max_ctx = INT4_MIN; num_ctx < num_contexts; num_ctx++) 
+       max_ctx = MAX(max_ctx, context_list[num_ctx]);
+   for (num_ctx_offsets = 0; offset_list[num_ctx_offsets] != UINT4_MAX;
+        num_ctx_offsets++) ;
+#endif
+
+   for (i = 0; i < results1->num_queries; i++) {
+       BlastHitList *hitlist = results1->hitlist_array[i];
+       Int4 global_query = query_list[i];
+       Int4 split_points[NUM_FRAMES];
+#ifdef _DEBUG
+       ASSERT(i < num_queries);
+#endif
+
+       if (hitlist == NULL) {
+fprintf(stderr, "No hits to query %d\n", global_query);
+           continue;
+       }
+
+       /* we will be mapping HSPs from the local context to
+          their place on the unsplit concatenated query. Once
+          that's done, overlapping HSPs need to get merged, and
+          to do that we must know the offset within each context
+          where the last chunk ended and the current chunk begins */
+       for (j = 0; j < contexts_per_query; j++) {
+           Int4 local_context = i * contexts_per_query + j;
+           split_points[context_list[local_context] % contexts_per_query] = 
+                                offset_list[local_context];
+       }
+
+#if defined(_DEBUG)
+       fprintf(stderr, "query %d split points: ", i);
+       for (j = 0; j < contexts_per_query; j++) {
+           fprintf(stderr, "%d ", split_points[j]);
+       }
+       fprintf(stderr, "\n");
+#endif
+
+       for (j = 0; j < hitlist->hsplist_count; j++) {
+           BlastHSPList *hsplist = hitlist->hsplist_array[j];
+
+           for (k = 0; k < hsplist->hspcnt; k++) {
+               BlastHSP *hsp = hsplist->hsp_array[k];
+               Int4 local_context = hsp->context;
+#ifdef _DEBUG
+               ASSERT(local_context <= max_ctx);
+               ASSERT(local_context < num_ctx);
+               ASSERT(local_context < num_ctx_offsets);
+#endif
+
+               hsp->context = context_list[local_context];
+               hsp->query.offset += offset_list[local_context];
+               hsp->query.end += offset_list[local_context];
+               hsp->query.gapped_start += offset_list[local_context];
+               hsp->query.frame = BLAST_ContextToFrame(stream2->program,
+                                                       hsp->context);
+           }
+
+           hsplist->query_index = global_query;
+       }
+
+       Blast_HitListMerge(results1->hitlist_array + i,
+                          results2->hitlist_array + global_query,
+                          contexts_per_query, split_points,
+                          SplitQueryBlk_GetChunkOverlapSize(squery_blk));
+   }
+
+   stream2->results_sorted = FALSE;
+
+#if _DEBUG_VERBOSE
+   fprintf(stderr, "new results: %d queries\n", results2->num_queries);
+   for (i = 0; i < results2->num_queries; i++) {
+       BlastHitList *hitlist = results2->hitlist_array[i];
+       if (hitlist == NULL)
+           continue;
+
+       for (j = 0; j < hitlist->hsplist_count; j++) {
+           BlastHSPList *hsplist = hitlist->hsplist_array[j];
+           fprintf(stderr, 
+                   "query %d OID %d\n", hsplist->query_index, hsplist->oid);
+
+           for (k = 0; k < hsplist->hspcnt; k++) {
+               BlastHSP *hsp = hsplist->hsp_array[k];
+               fprintf(stderr, "c %d q %d-%d s %d-%d score %d\n", hsp->context,
+                      hsp->query.offset, hsp->query.end,
+                      hsp->subject.offset, hsp->subject.end,
+                      hsp->score);
+           }
+       }
+   }
+#endif
+
+   sfree(query_list);
+   sfree(context_list);
+   sfree(offset_list);
+
+   return kBlastHSPStream_Success;
+}
 
 /** Initialize function pointers and data structure in a collector HSP stream.
  * @param hsp_stream The stream to initialize [in] [out]
@@ -214,6 +363,8 @@ s_BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args)
     SetMethod(hsp_stream, eRead, fnptr);
     fnptr.method = &s_BlastHSPListCollectorWrite;
     SetMethod(hsp_stream, eWrite, fnptr);
+    fnptr.mergeFn = &s_BlastHSPListCollectorMerge;
+    SetMethod(hsp_stream, eMerge, fnptr);
     fnptr.closeFn = &s_BlastHSPListCollectorClose;
     SetMethod(hsp_stream, eClose, fnptr);
 

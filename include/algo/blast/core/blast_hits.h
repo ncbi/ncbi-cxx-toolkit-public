@@ -540,14 +540,23 @@ Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
  * @param hsp_list Contains HSPs from the new chunk [in]
  * @param combined_hsp_list_ptr Contains HSPs from previous chunks [in] [out]
  * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if INT4_MAX) [in]
- * @param start Offset where the current subject chunk starts [in]
+ * @param split_points Offset The sequence offset (query or subject) that is 
+ *             the boundary between HSPs in combined_hsp_list and hsp_list. [in]
+ * @param contexts_per_query If positive, the number of query contexts
+ *                    that hits can contain. If negative, the (one) split
+ *                    point occurs on the subject sequence [in]
+ * @param chunk_overlap_size The length of the overlap region between the
+ *                    sequence region containing hsp_list and that
+ *                    containing combined_hsp_list [in]
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list, 
                    BlastHSPList** combined_hsp_list_ptr, 
-                   Int4 hsp_num_max, Int4 start);
-
+                   Int4 hsp_num_max, Int4* split_points, 
+                   Int4 contexts_per_query,
+                   Int4 chunk_overlap_size);
+                   
 /** Adjust subject offsets in an HSP list if only part of the subject sequence
  * was searched. Used when long subject sequence is split into more manageable
  * chunks.
@@ -626,6 +635,27 @@ Int2 Blast_HitListHSPListsFree(BlastHitList* hitlist);
 */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
+
+/** Combine two hitlists; both HitLists must contain HSPs that
+ * represent alignments to the same query sequence
+ * @param old_hit_list_ptr Pointer to original HitList, will be NULLed 
+ *                          out on return [in|out]
+ * @param combined_hsp_list_ptr Pointer to the combined list of HSPs [in|out]
+ * @param contexts_per_query The number of different contexts that can
+ *             occur in hits from old_hit_list and combined_hit_list [in]
+ * @param split_offsets the query offset that marks the boundary between
+ *             combined_hit_list and old_hit_list. HSPs in old_hit_list
+ *             that hit to context i are assumed to lie to the right 
+ *             of split_offsets[i] [in]
+ * @param chunk_overlap_size The length of the overlap region between the
+ *                    sequence region containing hit_list and that
+ *                    containing combined_hit_list [in]
+*/
+NCBI_XBLAST_EXPORT
+Int2 Blast_HitListMerge(BlastHitList** old_hit_list_ptr,
+                        BlastHitList** combined_hit_list_ptr,
+                        Int4 contexts_per_query, Int4 *split_offsets,
+                        Int4 chunk_overlap_size);
 
 /** Purges a BlastHitList of NULL HSP lists.
  * @param hit_list BLAST hit list to purge. [in] [out]

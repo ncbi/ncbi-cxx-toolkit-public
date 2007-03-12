@@ -38,6 +38,10 @@
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_results.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <algo/blast/api/query_data.hpp>        // for IQueryFactory
+#include <algo/blast/api/blast_options.hpp>     // for CBlastOptions
+#include <algo/blast/api/setup_factory.hpp>     // for SInternalData
+#include <algo/blast/api/split_query.hpp>       // for CQuerySplitter
 
 /** @addtogroup AlgoBlast
  *
@@ -110,6 +114,33 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
 /// error_code passed as this function's argument
 string
 BlastErrorCode2String(Int2 error_code);
+
+/// Return type of BlastSetupPreliminarySearch
+struct SBlastSetupData : public CObject {
+    SBlastSetupData(CRef<IQueryFactory> qf,
+                    CRef<CBlastOptions> opts)
+    : m_InternalData(new SInternalData), 
+      m_QuerySplitter(new CQuerySplitter(qf, opts))
+    {}
+
+    CRef<SInternalData> m_InternalData;
+    CRef<CQuerySplitter> m_QuerySplitter;
+    TSeqLocInfoVector m_Masks;
+    TSearchMessages m_Messages;
+};
+
+/// Set up internal data structures used by the BLAST CORE engine
+CRef<SBlastSetupData>
+BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
+                            CRef<CBlastOptions> options,
+                            bool is_multi_threaded = false);
+
+CRef<SBlastSetupData>
+BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
+                              CRef<CBlastOptions> options,
+                              CConstRef<CPssmWithParameters> pssm,
+                              const string& rps_dbname,
+                              bool is_multi_threaded);
 
 /// Build a CSearchResultSet from internal BLAST data structures
 CSearchResultSet

@@ -40,8 +40,12 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include "psiblast_aux_priv.hpp"
+#include "blast_memento_priv.hpp"
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
+#include "/home/camacho/work/debug_lib/scoped_tracer.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -134,6 +138,115 @@ BlastErrorCode2String(Int2 error_code)
     Blast_PerrorEx(&blast_msg, error_code, __FILE__, __LINE__, -1);
     string retval(blast_msg->message);
     blast_msg = Blast_MessageFree(blast_msg);
+    return retval;
+}
+
+CRef<SBlastSetupData>
+BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
+                            CRef<CBlastOptions> options,
+                            bool is_multi_threaded /* = false */)
+{
+    return BlastSetupPreliminarySearchEx(query_factory, options,
+                                         CRef<CPssmWithParameters>(),
+                                         string(), is_multi_threaded);
+}
+
+CRef<SBlastSetupData>
+PsiBlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
+                            CRef<CBlastOptions> options,
+                            CConstRef<objects::CPssmWithParameters> pssm,
+                            bool is_multi_threaded /* = false */)
+{
+    return BlastSetupPreliminarySearchEx(query_factory, options, pssm,
+                                         string(), is_multi_threaded);
+}
+
+CRef<SBlastSetupData>
+RpsBlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
+                            CRef<CBlastOptions> options,
+                            const string& rps_dbname,
+                            bool is_multi_threaded /* = false */)
+{
+    return BlastSetupPreliminarySearchEx(query_factory, options,
+                                         CRef<CPssmWithParameters>(),
+                                         rps_dbname, is_multi_threaded);
+}
+
+CRef<SBlastSetupData>
+BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
+                              CRef<CBlastOptions> options,
+                              CConstRef<CPssmWithParameters> pssm,
+                              const string& rps_dbname,
+                              bool is_multi_threaded)
+{
+    CRef<SBlastSetupData> retval(new SBlastSetupData(qf, options));
+    TSearchMessages m;
+    options->Validate();
+
+    // 1. Initialize the query data (borrow it from the factory)
+    CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&*options));
+    retval->m_InternalData->m_Queries = query_data->GetSequenceBlk();
+    retval->m_InternalData->m_QueryInfo = query_data->GetQueryInfo();
+    // get any warning messages from instantiating the queries
+    query_data->GetMessages(m);
+    retval->m_Messages.resize(query_data->GetNumQueries());
+    retval->m_Messages.Combine(m);
+
+    // 2. Take care of any rps information
+    if (Blast_ProgramIsRpsBlast(options->GetProgramType())) {
+        retval->m_InternalData->m_RpsData =
+            CSetupFactory::CreateRpsStructures(rps_dbname, options);
+    }
+
+    // 3. Create the options memento
+    auto_ptr<const CBlastOptionsMemento> opts_memento
+        (options->CreateSnapshot());
+
+    // 4. Create the BlastScoreBlk
+    BlastSeqLoc* lookup_segments = NULL;
+    BlastScoreBlk* sbp = 
+        CSetupFactory::CreateScoreBlock(opts_memento.get(), query_data, 
+                                        &lookup_segments, retval->m_Messages, 
+                                        &retval->m_Masks, 
+                                        retval->m_InternalData->m_RpsData);
+    retval->m_InternalData->m_ScoreBlk.Reset
+        (new TBlastScoreBlk(sbp, BlastScoreBlkFree));
+    if (pssm.NotEmpty()) {
+        PsiBlastSetupScoreBlock(sbp, pssm, retval->m_Messages, options);
+    }
+
+    // 5. Create the lookup table
+    if ( !retval->m_QuerySplitter->IsQuerySplit() ) {
+        LookupTableWrap* lut =
+            CSetupFactory::CreateLookupTable(query_data, opts_memento.get(),
+                                             sbp, lookup_segments,
+                                             retval->m_InternalData->m_RpsData);
+        retval->m_InternalData->m_LookupTable.Reset
+            (new TLookupTableWrap(lut, LookupTableWrapFree));
+    }
+    lookup_segments = BlastSeqLocFree(lookup_segments);
+    _ASSERT(lookup_segments == NULL);
+
+    // 6. Create diagnostics
+    BlastDiagnostics* diags = is_multi_threaded
+        ? CSetupFactory::CreateDiagnosticsStructureMT()
+        : CSetupFactory::CreateDiagnosticsStructure();
+    retval->m_InternalData->m_Diagnostics.Reset
+        (new TBlastDiagnostics(diags, Blast_DiagnosticsFree));
+
+    // 7. Create the HSP stream
+    BlastHSPStream* hsp_stream = is_multi_threaded
+        ? CSetupFactory::CreateHspStreamMT(opts_memento.get(),
+                                           query_data->GetNumQueries())
+        : CSetupFactory::CreateHspStream(opts_memento.get(),
+                                         query_data->GetNumQueries());
+    retval->m_InternalData->m_HspStream.Reset
+        (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
+
+    // 8. Get errors/warnings
+    query_data->GetMessages(m);
+    retval->m_Messages.Combine(m);
+
     return retval;
 }
 

@@ -37,6 +37,7 @@
 
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
+#include <algo/blast/api/split_query.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -74,8 +75,6 @@ public:
                        CRef<CBlastOptions> options,
                        BlastSeqSrc* seqsrc,
                        CConstRef<objects::CPssmWithParameters> pssm = null);
-
-    ~CBlastPrelimSearch();
 
     /// Borrow the internal data and results results. 
     CRef<SInternalData> Run();
@@ -116,13 +115,16 @@ private:
     /// produced by it.
     CRef<IQueryFactory>             m_QueryFactory;
     CRef<SInternalData>             m_InternalData;
-    auto_ptr<const CBlastOptionsMemento>     m_OptsMemento;
+    CRef<CBlastOptions>             m_Options;
 
     /// Warnings and error messages
     TSearchMessages                 m_Messages;
 
     /// Query masking information
     TSeqLocInfoVector               m_MasksForAllQueries;
+
+    /// Query splitting data structure (used only if applicable)
+    CRef<CQuerySplitter>            m_QuerySplitter;
 };
 
 inline TSearchMessages

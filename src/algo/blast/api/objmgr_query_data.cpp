@@ -406,7 +406,8 @@ CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
 }
 
 CObjMgr_QueryFactory::CObjMgr_QueryFactory(CBlastQueryVector & queries)
-    : m_QueryVector(& queries), m_SeqLocs(0), m_OwnSeqLocs(false)
+    : m_SSeqLocVector(0), m_QueryVector(& queries), 
+    m_SeqLocs(0), m_OwnSeqLocs(false)
 {
     if (queries.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Empty CBlastQueryVector");
@@ -437,6 +438,67 @@ CObjMgr_QueryFactory::~CObjMgr_QueryFactory()
     if (m_OwnSeqLocs) {
         delete m_SeqLocs;
     }
+}
+
+vector< CRef<CScope> >
+CObjMgr_QueryFactory::ExtractScopes()
+{
+    vector< CRef<CScope> > retval;
+    if (m_SSeqLocVector) {
+        _ASSERT( !m_SSeqLocVector->empty() );
+        NON_CONST_ITERATE(TSeqLocVector, itr, *m_SSeqLocVector)
+            retval.push_back(itr->scope);
+    } else if (m_QueryVector.NotEmpty()) {
+        for (CBlastQueryVector::size_type i = 0; i < m_QueryVector->Size(); i++)
+            retval.push_back(m_QueryVector->GetScope(i));
+    } else if (m_SeqLocs) {
+        retval.assign(m_SeqLocs->size(), CSimpleOM::NewScope());
+    } else {
+        abort();
+    }
+    return retval;
+}
+
+/// Auxiliary function to help guess the program type from a CSeq-loc. This
+/// should only be used in the context of 
+/// CObjMgr_QueryFactory::ExtractUserSpecifiedMasks
+static EBlastProgramType
+s_GuessProgram(CConstRef<CSeq_loc> mask)
+{
+    // if we cannot safely determine the program from the mask, specifying
+    // nucleotide query for a protein will result in a duplicate mask in the
+    // worst case... not great, but acceptable.
+    EBlastProgramType retval = eBlastTypeBlastn;
+    if (mask.Empty() || mask->GetStrand() == eNa_strand_unknown) {
+        return retval;
+    }
+
+    return retval;
+}
+
+TSeqLocInfoVector
+CObjMgr_QueryFactory::ExtractUserSpecifiedMasks()
+{
+    TSeqLocInfoVector retval;
+    if (m_SSeqLocVector) {
+        _ASSERT( !m_SSeqLocVector->empty() );
+        const EBlastProgramType kProgram = 
+            s_GuessProgram(m_SSeqLocVector->front().mask);
+        NON_CONST_ITERATE(TSeqLocVector, itr, *m_SSeqLocVector) {
+            TMaskedQueryRegions mqr = 
+                PackedSeqLocToMaskedQueryRegions(itr->mask, kProgram,
+                                                 itr->ignore_strand_in_mask);
+            retval.push_back(mqr);
+        }
+    } else if (m_QueryVector.NotEmpty()) {
+        for (CBlastQueryVector::size_type i = 0; i < m_QueryVector->Size(); i++)
+            retval.push_back(m_QueryVector->GetMaskedRegions(i));
+    } else if (m_SeqLocs) {
+        retval.assign(m_SeqLocs->size(), TMaskedQueryRegions());
+    } else {
+        abort();
+    }
+    return retval;
 }
 
 CRef<ILocalQueryData>

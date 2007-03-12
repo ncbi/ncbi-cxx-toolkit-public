@@ -61,7 +61,10 @@ objmgrfree_query_data \
 bioseq_extract_data_priv \
 effsearchspace_calc \
 blast_seqinfosrc_aux \
-blast_dbindex
+blast_dbindex \
+split_query_cxx \
+split_query_aux_priv \
+split_query_blk
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 

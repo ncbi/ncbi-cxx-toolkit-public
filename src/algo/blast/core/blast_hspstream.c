@@ -47,6 +47,7 @@ struct BlastHSPStream {
    
    BlastHSPStreamMethod      WriteFnPtr;  /**< Write to BlastHSPStream */
    BlastHSPStreamMethod      ReadFnPtr;   /**< Read from BlastHSPStream */
+   BlastHSPStreamMergeFnType MergeFnPtr;  /**< Merge two BlastHSPStreams */
    BlastHSPStreamCloseFnType CloseFnPtr;  /**< Close BlastHSPStream for
                                              writing */
    void* DataStructure;                   /**< ADT holding HSPStream */
@@ -95,6 +96,30 @@ BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream)
     }
 
     return (BlastHSPStream*) (*destructor_fnptr)(hsp_stream);
+}
+
+int BlastHSPStreamMerge(SSplitQueryBlk *squery_blk,
+                        Uint4 chunk_num,
+                        BlastHSPStream* hsp_stream,
+                        BlastHSPStream* combined_hsp_stream)
+{
+    BlastHSPStreamMergeFnType merge_fnptr = NULL;
+
+    if (!hsp_stream || !combined_hsp_stream)
+       return kBlastHSPStream_Error;
+
+    /* Make sure the input streams are compatible */
+    if (hsp_stream->MergeFnPtr != hsp_stream->MergeFnPtr)
+       return kBlastHSPStream_Error;
+
+    /** Merge functionality is optional. If merge function is not provided,
+        just do nothing. */
+    if ( !(merge_fnptr = (*hsp_stream->MergeFnPtr))) {
+       return kBlastHSPStream_Success;
+    }
+
+    return (*merge_fnptr)(squery_blk, chunk_num, 
+                          hsp_stream, combined_hsp_stream);
 }
 
 void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
@@ -215,6 +240,10 @@ int SetMethod(BlastHSPStream* hsp_stream,
 
     case eWrite:
         hsp_stream->WriteFnPtr = fnptr_type.method;
+        break;
+
+    case eMerge:
+        hsp_stream->MergeFnPtr = fnptr_type.mergeFn;
         break;
 
     case eClose:

@@ -59,6 +59,16 @@ public:
     CObjMgr_QueryFactory(const TSeqLocs& seqlocs);
     ~CObjMgr_QueryFactory();
 
+    /// Retrieve the CScope objects associated with the query sequences
+    /// associated with this object. In the case when CSeq_loc or TSeqLocs are
+    /// provided, a newly constructed CScope object will be returned per query
+    /// @note This method is intended to be used for query splitting only
+    vector< CRef<objects::CScope> > ExtractScopes();
+
+    /// Retrieve any user specified masking locations
+    /// @note This method is intended to be used for query splitting only
+    TSeqLocInfoVector ExtractUserSpecifiedMasks();
+
 protected:
     CRef<ILocalQueryData> x_MakeLocalQueryData(const CBlastOptions* opts);
     CRef<IRemoteQueryData> x_MakeRemoteQueryData();

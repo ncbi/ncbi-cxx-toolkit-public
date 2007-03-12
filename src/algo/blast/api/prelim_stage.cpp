@@ -44,6 +44,8 @@ static char const rcsid[] =
 #include "prelim_search_runner.hpp"
 #include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
+#include "split_query_aux_priv.hpp"
+#include <sstream>
 
 #include <algo/blast/api/blast_dbindex.hpp>
 
@@ -59,7 +61,8 @@ BEGIN_SCOPE(blast)
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
                                        const CSearchDatabase& dbinfo)
-    : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
+    : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
+    m_Options(options)
 {
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(dbinfo);
     x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
@@ -70,7 +73,8 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
                                        CRef<CLocalDbAdapter> db)
-    : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
+    : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
+    m_Options(options)
 {
     BlastSeqSrc* seqsrc = db->MakeSeqSrc();
     x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
@@ -81,14 +85,11 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                CRef<CBlastOptions> options,
                                BlastSeqSrc* seqsrc,
                                CConstRef<objects::CPssmWithParameters> pssm)
-    : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
+    : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
+    m_Options(options)
 {
     x_Init(query_factory, options, pssm, seqsrc);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
-}
-
-CBlastPrelimSearch::~CBlastPrelimSearch()
-{
 }
 
 void
@@ -97,84 +98,17 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CConstRef<objects::CPssmWithParameters> pssm,
                            BlastSeqSrc* seqsrc )
 {
-    const string & dbname = BlastSeqSrcGetName(seqsrc);
-    TSearchMessages m;
-    options->Validate();
+    const char* name = BlastSeqSrcGetName(seqsrc);
+    const string dbname(name ? name : "");
 
-    // 1. Initialize the query data (borrow it from the factory)
-    CRef<ILocalQueryData>
-        query_data(query_factory->MakeLocalQueryData(&*options));
-    m_InternalData->m_Queries = query_data->GetSequenceBlk();
-    m_InternalData->m_QueryInfo = query_data->GetQueryInfo();
-    // get any warning messages from instantiating the queries
-    query_data->GetMessages(m); 
-    m_Messages.resize(query_data->GetNumQueries());
-    m_Messages.Combine(m);
-
-    // 2. Take care of any rps information
-    if (Blast_ProgramIsRpsBlast(options->GetProgramType())) {
-        m_InternalData->m_RpsData =
-            CSetupFactory::CreateRpsStructures(dbname, options);
-    }
-
-    // 3. Create the options memento
-    m_OptsMemento.reset(options->CreateSnapshot());
-
-    // 4. Create the BlastScoreBlk
-    BlastSeqLoc* lookup_segments(0);
-    BlastScoreBlk* sbp =
-        CSetupFactory::CreateScoreBlock(m_OptsMemento.get(), query_data,
-                                        &lookup_segments, 
-                                        m_Messages,
-                                        &m_MasksForAllQueries,
-                                        m_InternalData->m_RpsData);
-    m_InternalData->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp,
-                                                       BlastScoreBlkFree));
-    if (pssm.NotEmpty()) {
-        PsiBlastSetupScoreBlock(sbp, pssm, m_Messages, options);
-    }
-
-    // 5. Create lookup table
-    LookupTableWrap* lut =
-        CSetupFactory::CreateLookupTable(query_data, m_OptsMemento.get(),
-                                     m_InternalData->m_ScoreBlk->GetPointer(),
-                                     lookup_segments, 
-                                     m_InternalData->m_RpsData);
-
-    // The following call is non trivial only for indexed seed search.
-    GetDbIndexPreSearchFn()(
-            seqsrc,
-            lut,
-            query_data->GetSequenceBlk(),
-            lookup_segments,
-            m_OptsMemento.get()->m_LutOpts,
-            m_OptsMemento.get()->m_InitWordOpts
-    );
-
-    m_InternalData->m_LookupTable.Reset
-        (new TLookupTableWrap(lut, LookupTableWrapFree));
-    lookup_segments = BlastSeqLocFree(lookup_segments);
-    _ASSERT(lookup_segments == NULL);
-
-    // 6. Create diagnostics
-    BlastDiagnostics* diags = IsMultiThreaded()
-        ? CSetupFactory::CreateDiagnosticsStructureMT()
-        : CSetupFactory::CreateDiagnosticsStructure();
-    m_InternalData->m_Diagnostics.Reset
-        (new TBlastDiagnostics(diags, Blast_DiagnosticsFree));
-
-    // 7. Create HSP stream
-    BlastHSPStream* hsp_stream = IsMultiThreaded()
-        ? CSetupFactory::CreateHspStreamMT(m_OptsMemento.get(), 
-                                           query_data->GetNumQueries())
-        : CSetupFactory::CreateHspStream(m_OptsMemento.get(), 
-                                         query_data->GetNumQueries());
-    m_InternalData->m_HspStream.Reset
-        (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
-
-    // 8. Get errors/warnings
-    query_data->GetMessages(m);
-    m_Messages.Combine(m);
+    CRef<SBlastSetupData> setup_data =
+        BlastSetupPreliminarySearchEx(query_factory, options, pssm, dbname,
+                                      IsMultiThreaded());
+    m_InternalData = setup_data->m_InternalData;
+    m_QuerySplitter = setup_data->m_QuerySplitter;
+    copy(setup_data->m_Masks.begin(), setup_data->m_Masks.end(),
+         back_inserter(m_MasksForAllQueries));
+    m_Messages = setup_data->m_Messages;
 }
 
 int
@@ -183,12 +117,14 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
     typedef vector< CRef<CPrelimSearchThread> > TBlastThreads;
     TBlastThreads the_threads(GetNumberOfThreads());
 
+    auto_ptr<const CBlastOptionsMemento> opts_memento
+        (m_Options->CreateSnapshot());
     _TRACE("Launching BLAST with " << GetNumberOfThreads() << " threads");
 
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
         thread->Reset(new CPrelimSearchThread(*m_InternalData, 
-                                              m_OptsMemento.get()));
+                                              opts_memento.get()));
         if (thread->Empty()) {
             NCBI_THROW(CBlastSystemException, eOutOfMemory,
                        "Failed to create preliminary search thread");
@@ -221,12 +157,64 @@ CRef<SInternalData>
 CBlastPrelimSearch::Run()
 {
     BlastSeqSrcResetChunkIterator(m_InternalData->m_SeqSrc->GetPointer());
-    int retval =
-        (IsMultiThreaded()
-         ? x_LaunchMultiThreadedSearch()
-         : CPrelimSearchRunner(*m_InternalData, m_OptsMemento.get())());
+    // N.B.: this changes the options!
+    SplitQuery_SetEffectiveSearchSpace(m_Options, m_QueryFactory,
+                                       m_InternalData);
+
+    int retval = 0;
+    if (IsMultiThreaded()) {
+         x_LaunchMultiThreadedSearch();
+    } else {
+
+        auto_ptr<const CBlastOptionsMemento> opts_memento
+            (m_Options->CreateSnapshot());
+        if (m_QuerySplitter->IsQuerySplit()) {
+
+            CRef<CSplitQueryBlk> split_query_blk = m_QuerySplitter->Split();
+
+            for (Uint4 i = 0; i < m_QuerySplitter->GetNumberOfChunks(); i++) {
+                try {
+                    CRef<IQueryFactory> chunk_qf = 
+                        m_QuerySplitter->GetQueryFactoryForChunk(i);
+//cerr << "Chunk " << i << "/" << m_QuerySplitter->GetNumberOfChunks() << endl;
+                    CRef<SInternalData> chunk_data =
+                        SplitQuery_CreateChunkData(chunk_qf, m_Options,
+                                                   m_InternalData);
+#if 0
+                SplitQuery_AdjustInternalDataToFullLength(chunk_data,
+                                                          m_Options,
+                                                          m_QueryFactory,
+                                                          m_InternalData);
+#endif
+//s_PrintEffSearchSpaces(m_InternalData);
+                    retval = 
+                        CPrelimSearchRunner(*chunk_data, opts_memento.get())();
+
+                    _ASSERT(chunk_data->m_HspStream->GetPointer());
+                    BlastHSPStreamMerge(split_query_blk->GetCStruct(), i,
+                                    chunk_data->m_HspStream->GetPointer(),
+                                    m_InternalData->m_HspStream->GetPointer());
+                    _ASSERT(m_InternalData->m_HspStream->GetPointer());
+                } catch (const CBlastException& e) {
+                    // This error message is safe to ignore for a given chunk,
+                    // because the chunks might end up producing a region of
+                    // the query for which ungapped Karlin-Altschul blocks
+                    // cannot be calculated
+                    const string err_msg("search cannot proceed due to errors "
+                                         "in all contexts/frames of query "
+                                         "sequences");
+                    if (e.GetMsg().find(err_msg) == NPOS) {
+                        throw;
+                    }
+                }
+            }
+
+        } else {
+            retval = CPrelimSearchRunner(*m_InternalData, opts_memento.get())();
+        }
+
+    }
     
-    _ASSERT(retval == 0);
     if (retval) {
         NCBI_THROW(CBlastException, eCoreBlastError,
                    BlastErrorCode2String(retval));
@@ -240,14 +228,17 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
                                            Uint4 max_num_hsps,
                                            bool* rm_hsps) const
 {
+    auto_ptr<const CBlastOptionsMemento> opts_memento
+        (m_Options->CreateSnapshot());
+
     _ASSERT(m_InternalData->m_QueryInfo->num_queries > 0);
     Boolean removed_hsps = FALSE;
     BlastHSPResults* retval =
         Blast_HSPResultsFromHSPStreamWithLimit(stream,
            (Uint4) m_InternalData->m_QueryInfo->num_queries,
-           m_OptsMemento->m_HitSaveOpts,
-           m_OptsMemento->m_ExtnOpts,
-           m_OptsMemento->m_ScoringOpts,
+           opts_memento->m_HitSaveOpts,
+           opts_memento->m_ExtnOpts,
+           opts_memento->m_ScoringOpts,
            max_num_hsps,
            &removed_hsps);
     if (rm_hsps) {

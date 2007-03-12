@@ -62,17 +62,6 @@ Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count);
 int
 ScoreCompareHSPs(const void* h1, const void* h2);
 
-/** Merges two HSPs if possible.  
- * Only the part of the alignments with substitution is considered and right now 
- * only if two segments on the same diagonal are found. 
- * @param hsp1 first HSP to be considered [in]
- * @param hsp2 second HSP to be considered [in]
- * @param start starting offset beyond which an attempt will be made
- *   to merge the HSPs [in]
- */
-Boolean
-BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start);
-
 /** TRUE if c is between a and b; f between d and e.  Determines if the
  * coordinates are already in an HSP that has been evaluated. 
 */
