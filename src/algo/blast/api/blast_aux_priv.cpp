@@ -45,7 +45,6 @@ static char const rcsid[] =
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
-#include "/home/camacho/work/debug_lib/scoped_tracer.hpp"
 
 /** @addtogroup AlgoBlast
  *
