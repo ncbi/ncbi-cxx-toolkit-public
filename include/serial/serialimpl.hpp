@@ -549,6 +549,26 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     BEGIN_ALIAS_INFO_METHOD(AliasName, ClassName, \
     NCBI_NAME2(ClassName,_Base), \
     SERIAL_ALIAS(RefType), RefCode)
+
+#define BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
+const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
+{ \
+    static NCBI_NS_NCBI::CAliasTypeInfo* volatile s_info = 0; \
+    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info; \
+    if ( !info ) { \
+        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
+        info = s_info; \
+        if ( !info ) { \
+            typedef ClassName CClass; \
+            typedef BaseClassName CClass_Base; \
+            DECLARE_BASE_OBJECT(ClassName); \
+            info = new NCBI_NS_NCBI::CAliasTypeInfo(AliasName, SerialRef Code); \
+            NCBI_NS_NCBI::RegisterTypeInfoObject(info);
+#define BEGIN_ENUM_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
+    BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName, ClassName, \
+    NCBI_NAME2(ClassName,_Base), \
+    SERIAL_ALIAS(RefType), RefCode)
+
 #define SET_STD_ALIAS_DATA_PTR \
     info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(GetDataPtr(BASE_OBJECT())))
 #define SET_CLASS_ALIAS_DATA_PTR \

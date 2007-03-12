@@ -334,7 +334,7 @@ class NCBI_XSERIAL_EXPORT CStdAliasBase : public CAliasBase<TStd>
     typedef CStdAliasBase<TStd> TThis;
 public:
     CStdAliasBase(void)
-        : TParent(0) {}
+        : TParent((TStd)0) {}
     explicit CStdAliasBase(const TStd& value)
         : TParent(value) {}
 };
