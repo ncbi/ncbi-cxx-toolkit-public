@@ -66,12 +66,13 @@ struct NCBI_BDB_EXPORT SVolumesDB : public CBDB_File
     {
         DisableNull();
 
-        BindKey("volume_id",   &volume_id);
+        BindKey ("volume_id",      &volume_id);
 
         BindData("type",           &type);
         BindData("status",         &status);
         BindData("raw_status",     &raw_status);
         BindData("lock",           &lock);
+        BindData("version",        &version);
         BindData("date_from",      &date_from);
         BindData("date_to",        &date_to);
         BindData("mtimestamp",     &mtimestamp);
