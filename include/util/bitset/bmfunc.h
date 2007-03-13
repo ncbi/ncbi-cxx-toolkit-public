@@ -38,6 +38,48 @@ namespace bm
 {
 
 
+/*!
+    @brief Structure with statistical information about bitset's memory 
+            allocation details. 
+    @ingroup bvector
+*/
+struct bv_statistics
+{
+    /// Number of bit blocks.
+    unsigned bit_blocks; 
+    /// Number of GAP blocks.
+    unsigned gap_blocks;  
+    /// Estimated maximum of memory required for serialization.
+    unsigned max_serialize_mem;
+    /// Memory used by bitvector including temp and service blocks
+    unsigned  memory_used;
+    /// Array of all GAP block lengths in the bvector.
+    gap_word_t   gap_length[bm::set_total_blocks];
+    /// GAP lengths used by bvector
+    gap_word_t  gap_levels[bm::gap_levels];
+
+
+
+    /// cound bit block
+    void add_bit_block()
+    {
+        ++bit_blocks;
+        unsigned mem_used = sizeof(bm::word_t) * bm::set_block_size;
+        memory_used += mem_used;
+        max_serialize_mem += mem_used;
+    }
+
+    /// count gap block
+    void add_gap_block(unsigned capacity, unsigned length)
+    {
+        ++gap_blocks;
+        unsigned mem_used = capacity * sizeof(gap_word_t);
+        memory_used += mem_used;
+        max_serialize_mem += length * sizeof(gap_word_t);
+    }
+};
+
+
 /*! @defgroup gapfunc GAP functions
  *  GAP functions implement different opereations on GAP compressed blocks
  *  and serve as a minimal building blocks.
@@ -490,25 +532,40 @@ template<typename T> unsigned gap_test(const T* buf, unsigned pos)
 /*! For each non-zero block executes supplied function.
 */
 template<class T, class F> 
-void for_each_nzblock(T*** root, unsigned size1, unsigned size2, F& f)
+void for_each_nzblock(T*** root, unsigned size1, unsigned size2, 
+                      F& f)
 {
     unsigned block_idx = 0;
-
     for (unsigned i = 0; i < size1; ++i)
     {
         T** blk_blk = root[i];
 
         if (!blk_blk) 
         {
-            block_idx += bm::set_array_size;
+            f.on_empty_top(i);
+            block_idx += size2;
             continue;
         }
 
+        unsigned non_empty_top = 0;
         for (unsigned j = 0;j < size2; ++j, ++block_idx)
         {
-            if (blk_blk[j]) f(blk_blk[j], block_idx);
+            if (blk_blk[j]) 
+            {
+                f(blk_blk[j], block_idx);
+                // re-check (blk_blk[j]): could be a mutation
+                non_empty_top += (blk_blk[j] != 0);
+            }
+            else
+            {
+                f.on_empty_block(block_idx);
+            }
+        } // for j
+        if (non_empty_top == 0)
+        {
+            f.on_empty_top(i);
         }
-    }  
+    }  // for i
 }
 
 /*! For each non-zero block executes supplied function-predicate.
@@ -518,7 +575,6 @@ template<class T, class F>
 bool for_each_nzblock_if(T*** root, unsigned size1, unsigned size2, F& f)
 {
     unsigned block_idx = 0;
-
     for (unsigned i = 0; i < size1; ++i)
     {
         T** blk_blk = root[i];

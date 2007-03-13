@@ -112,26 +112,9 @@ public:
     /** Type used to count bits in the bit vector */
     typedef bm::id_t                   size_type; 
 
-    /*!
-       @brief Structure with statistical information about bitset's memory 
-              allocation details. 
-       @ingroup bvector
-    */
-    struct statistics
-    {
-        /// Number of bit blocks.
-        unsigned bit_blocks; 
-        /// Number of GAP blocks.
-        unsigned gap_blocks;  
-        /// Estimated maximum of memory required for serialization.
-        unsigned max_serialize_mem;
-        /// Memory used by bitvector including temp and service blocks
-        unsigned  memory_used;
-        /// Array of all GAP block lengths in the bvector.
-        gap_word_t   gap_length[bm::set_total_blocks];
-        /// GAP lengths used by bvector
-        gap_word_t  gap_levels[bm::gap_levels];
-    };
+    /** Statistical information about bitset's memory allocation details. */
+    struct statistics : public bv_statistics
+    {};
 
     /**
         @brief Class reference implements an object for bit assignment.
@@ -1338,10 +1321,14 @@ public:
        with a regular structure, frees some memory. This function is recommended
        after a bulk modification of the bitvector using set_bit, clear_bit or
        logical operations.
+
+       Optionally function can calculate vector post optimization statistics
        
        @sa optmode, optimize_gap_size
     */
-    void optimize(bm::word_t* temp_block=0, optmode opt_mode = opt_compress);
+    void optimize(bm::word_t* temp_block = 0, 
+                  optmode opt_mode       = opt_compress,
+                  statistics* stat       = 0);
 
     /*!
        \brief Optimize sizes of GAP blocks
@@ -1802,7 +1789,9 @@ bool bvector<Alloc, MS>::get_bit(bm::id_t n) const
 // -----------------------------------------------------------------------
 
 template<typename Alloc, typename MS> 
-void bvector<Alloc, MS>::optimize(bm::word_t* temp_block, optmode opt_mode)
+void bvector<Alloc, MS>::optimize(bm::word_t* temp_block, 
+                                  optmode     opt_mode,
+                                  statistics* stat)
 {
     word_t*** blk_root = blockman_.blocks_root();
 
@@ -1812,9 +1801,31 @@ void bvector<Alloc, MS>::optimize(bm::word_t* temp_block, optmode opt_mode)
     typename 
         blocks_manager_type::block_opt_func  opt_func(blockman_, 
                                                 temp_block, 
-                                                (int)opt_mode);
-    for_each_nzblock(blk_root, blockman_.top_block_size(),
-                                bm::set_array_size, opt_func);
+                                                (int)opt_mode,
+                                                stat);
+    if (stat)
+    {
+        stat->bit_blocks = stat->gap_blocks 
+                         = stat->max_serialize_mem 
+                         = stat->memory_used 
+                         = 0;
+        ::memcpy(stat->gap_levels, 
+                blockman_.glen(), sizeof(gap_word_t) * bm::gap_levels);
+        stat->max_serialize_mem = sizeof(id_t) * 4;
+
+    }
+
+    for_each_nzblock(blk_root, blockman_.effective_top_block_size(),
+                               bm::set_array_size, opt_func);
+
+    if (stat)
+    {
+        unsigned safe_inc = stat->max_serialize_mem / 10; // 10% increment
+        if (!safe_inc) safe_inc = 256;
+        stat->max_serialize_mem += safe_inc;
+        stat->memory_used += sizeof(*this) - sizeof(blockman_);
+        stat->memory_used += blockman_.mem_used();
+    }
 }
 
 // -----------------------------------------------------------------------
@@ -2005,8 +2016,9 @@ void bvector<Alloc, MS>::calc_stat(typename bvector<Alloc, MS>::statistics* st) 
 
     unsigned block_idx = 0;
 
+    unsigned top_size = blockman_.effective_top_block_size();
     // Walk the blocks, calculate statistics.
-    for (unsigned i = 0; i < blockman_.top_block_size(); ++i)
+    for (unsigned i = 0; i < top_size; ++i)
     {
         const bm::word_t* const* blk_blk = blockman_.get_topblock(i);
 
@@ -2057,8 +2069,9 @@ void bvector<Alloc, MS>::calc_stat(typename bvector<Alloc, MS>::statistics* st) 
         }
     }  
 
-
-    st->max_serialize_mem += st->max_serialize_mem / 10; // 10% increment
+    unsigned safe_inc = st->max_serialize_mem / 10; // 10% increment
+    if (!safe_inc) safe_inc = 256;
+    st->max_serialize_mem += safe_inc;
 
     // Calc size of different odd and temporary things.
 
