@@ -675,6 +675,8 @@ void CBDB_BufferManager::PrepareDBT_ForWrite(DBT* dbt)
     Pack();
     dbt->data = m_Buffer;
     dbt->size = (unsigned)m_PackedSize;
+    dbt->ulen = (unsigned)m_BufferSize;
+    dbt->flags = DB_DBT_USERMEM;
 }
 
 void CBDB_BufferManager::PrepareDBT_ForRead(DBT* dbt)
