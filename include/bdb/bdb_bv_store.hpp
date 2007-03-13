@@ -612,18 +612,16 @@ CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv,
     }
 
     const TBitVector* bv_to_store;
+    typename TBitVector::statistics st1;
     if (compact == eCompact) {
         m_TmpBVec.clear(true); // clear vector by memory deallocation
         m_TmpBVec = bv;
-        m_TmpBVec.optimize();
-        //m_TmpBVec.optimize_gap_size();
+        m_TmpBVec.optimize(0, TBitVector::opt_compress, &st1);
         bv_to_store = &m_TmpBVec;
     } else {
         bv_to_store = &bv;
+        bv_to_store->calc_stat(&st1);
     }
-
-    typename TBitVector::statistics st1;
-    bv_to_store->calc_stat(&st1);
 
     if (st1.max_serialize_mem > m_Buffer.size()) {
         m_Buffer.resize_mem(st1.max_serialize_mem);

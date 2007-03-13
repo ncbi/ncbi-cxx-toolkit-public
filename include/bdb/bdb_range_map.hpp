@@ -171,9 +171,8 @@ EBDB_ErrCode CBDB_RangeMap<TBV>::Save()
 {
     _ASSERT(m_FreeList);
 
-    m_FreeList->optimize();
     TBuffer buf;
-    BV_Serialize(*m_FreeList, buf);
+    BV_Serialize(*m_FreeList, buf, 0, true /*optimize*/);
 
     return UpdateInsert(buf);
 }
