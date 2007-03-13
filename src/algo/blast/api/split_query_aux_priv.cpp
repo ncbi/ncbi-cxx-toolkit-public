@@ -229,7 +229,7 @@ CContextTranslator::GetContextInChunk(size_t chunk_num,
     if (itr == context_indices.end()) {
         return kInvalidContext;
     }
-    return distance(context_indices.begin(), itr);
+    return itr - context_indices.begin();
 }
 
 int
