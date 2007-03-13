@@ -746,11 +746,38 @@ unsigned SerializationOperation(bvect*             bv_target,
     {
         check_reverse = false;
     }
+
     // serialize input vectors
+    bvect::statistics *st1_op, *st2_op;
+    st1_op = new bvect::statistics;
+    st2_op = new bvect::statistics;
+
+    bv1.optimize(0, bvect::opt_compress, st1_op);
+    bv2.optimize(0, bvect::opt_compress, st2_op);
+
 
    struct bvect::statistics st1, st2;
    bv1.calc_stat(&st1);
    bv2.calc_stat(&st2);
+
+
+   if (st1.max_serialize_mem > st1_op->max_serialize_mem)
+   {
+       cout << "Optimize failed to compute max_serialize_mem" << endl;
+       cout << "calc_stat=" << st1.max_serialize_mem << endl;
+       cout << "optimize=" << st1_op->max_serialize_mem << endl;
+       exit(1);
+   }
+   if (st2.max_serialize_mem > st2_op->max_serialize_mem)
+   {
+       cout << "Optimize failed to compute max_serialize_mem" << endl;
+       cout << "calc_stat=" << st2.max_serialize_mem << endl;
+       cout << "optimize=" << st2_op->max_serialize_mem << endl;
+       exit(1);
+   }
+
+   delete st1_op;
+   delete st2_op;
 
    unsigned char* smem1 = new unsigned char[st1.max_serialize_mem];
    unsigned char* smem2 = new unsigned char[st2.max_serialize_mem];
@@ -771,6 +798,7 @@ unsigned SerializationOperation(bvect*             bv_target,
    }
 //   PrintSet(cout, *bv_target);
 //bv2.stat();
+
     count=
        operation_deserializer<bvect>::deserialize(*bv_target,
                                                   smem2,
@@ -844,7 +872,7 @@ void SerializationOperation2Test(bvect*        bv_target,
 
         cout << endl << "target:" << endl;
         bv_target->stat();
-        cout << endl << endl << "reference" << endl;
+        cout << endl << endl << "Reference" << endl;
         if (op_combine == set_AND)
         {
             bv1 &= bv2;
@@ -2091,7 +2119,6 @@ void XorOperationsTest()
     assert(ITERATIONS < BITVECT_SIZE);
 
     cout << "----------------------------------- XorOperationTest" << endl;
-
     {
 
     bvect_mini   bvect_min1(256);
@@ -2148,7 +2175,6 @@ void XorOperationsTest()
     CheckCountRange(bvect_full1, 128, 256);
 
     }
-
     {
         bvect  bvect1;
         bvect_mini  bvect_min1(BITVECT_SIZE);
@@ -3184,7 +3210,9 @@ void StressTest(int repetitions)
 //    bvect_full1->stat();
 
         cout << "Serialization...";
-        unsigned slen = bm::serialize(*bvect_full1, sermem);
+        unsigned slen = 
+            bm::serialize(*bvect_full1, sermem, 
+                          BM_NO_GAP_LENGTH|BM_NO_BYTE_ORDER);
         cout << "Ok" << endl;
 
         delete bvect_full1;
