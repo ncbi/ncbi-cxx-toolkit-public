@@ -404,25 +404,25 @@ CPythonDBAPITest::Test_SelectStmt(void)
 
             sql =
             "CREATE TABLE #Overlaps ( \n"
-            "	pairId int NOT NULL , \n"
-            "	overlapNum smallint NOT NULL , \n"
-            "	start1 int NOT NULL , \n"
-            "	start2 int NOT NULL , \n"
-            "	stop1 int NOT NULL , \n"
-            "	stop2 int NOT NULL , \n"
-            "	orient char (2) NOT NULL , \n"
-            "	gaps int NOT NULL , \n"
-            "	mismatches int NOT NULL , \n"
-            "	adjustedLen int NOT NULL , \n"
-            "	length int NOT NULL , \n"
-            "	contained tinyint NOT NULL , \n"
-            "	seq_align text  NULL , \n"
-            "	merged_sa char (1) NOT NULL , \n"
-            "	PRIMARY KEY \n"
-            "	( \n"
-            "		pairId, \n"
-            "		overlapNum \n"
-            "	) \n"
+            "   pairId int NOT NULL , \n"
+            "   overlapNum smallint NOT NULL , \n"
+            "   start1 int NOT NULL , \n"
+            "   start2 int NOT NULL , \n"
+            "   stop1 int NOT NULL , \n"
+            "   stop2 int NOT NULL , \n"
+            "   orient char (2) NOT NULL , \n"
+            "   gaps int NOT NULL , \n"
+            "   mismatches int NOT NULL , \n"
+            "   adjustedLen int NOT NULL , \n"
+            "   length int NOT NULL , \n"
+            "   contained tinyint NOT NULL , \n"
+            "   seq_align text  NULL , \n"
+            "   merged_sa char (1) NOT NULL , \n"
+            "   PRIMARY KEY \n"
+            "   ( \n"
+            "       pairId, \n"
+            "       overlapNum \n"
+            "   ) \n"
             ") \n";
 
             ExecuteSQL(sql);
@@ -657,17 +657,19 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 
     // Specify USAGE context
     arg_desc->SetUsageContext(arguments.GetProgramBasename(),
-                              "dbapi_unit_test");
+                              "python_ncbi_dbapi_unit_test");
 
     // Describe the expected command-line arguments
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
+                      "gateway", "ftds64", "ftds64_odbc"
 #else
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
+                      "ftds64", "ftds64_odbc"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",

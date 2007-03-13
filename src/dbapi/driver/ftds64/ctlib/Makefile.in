@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = ncbi_xdbapi_ftds64_ctlib
+LIB_PROJ = ncbi_xdbapi_ftds64
 SUB_PROJ = samples
 
 REQUIRES = FreeTDS

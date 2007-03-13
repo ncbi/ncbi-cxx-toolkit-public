@@ -1200,7 +1200,7 @@ class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
 {
 public:
     CDbapiCtlibCF_ftds64_ctlib(void)
-    : CDbapiCtlibCFBase("ftds64_ctlib")
+    : CDbapiCtlibCFBase("ftds64")
     {
     }
 };
@@ -1238,7 +1238,7 @@ END_SCOPE(ftds64_ctlib)
 #if defined(FTDS_IN_USE)
 
 void
-NCBI_EntryPoint_xdbapi_ftds64_ctlib(
+NCBI_EntryPoint_xdbapi_ftds64(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
@@ -1260,8 +1260,8 @@ NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
 DBAPI_RegisterDriver_FTDS(void)
 {
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_ctlib );
+    RegisterEntryPoint<I_DriverContext>(NCBI_EntryPoint_xdbapi_ftds);
+    RegisterEntryPoint<I_DriverContext>(NCBI_EntryPoint_xdbapi_ftds64);
 }
 
 
@@ -1270,7 +1270,7 @@ void
 DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("ftds", ftds64_ctlib::CTLIB_CreateContext);
-    mgr.RegisterDriver("ftds64_tlib", ftds64_ctlib::CTLIB_CreateContext);
+    mgr.RegisterDriver("ftds64", ftds64_ctlib::CTLIB_CreateContext);
     DBAPI_RegisterDriver_FTDS();
 }
 

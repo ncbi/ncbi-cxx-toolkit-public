@@ -48,7 +48,7 @@ extern "C"
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
-NCBI_EntryPoint_xdbapi_ftds64_ctlib(
+NCBI_EntryPoint_xdbapi_ftds64(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 

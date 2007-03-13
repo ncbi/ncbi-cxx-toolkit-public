@@ -6257,7 +6257,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.GetDriverName() == "ctlib"
-        || args.GetDriverName() == "ftds64_ctlib" // signal: memory access violation
+        || args.GetDriverName() == "ftds64"
         || args.GetDriverName() == "odbc"
         || args.GetDriverName() == "ftds64_odbc"
         ) {
@@ -6280,7 +6280,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         || args.GetDriverName() == "dblib"
         || args.GetDriverName() == "msdblib"
         || (args.GetDriverName() == "ctlib" && !Solaris)
-        || args.GetDriverName() == "ftds64_ctlib"
+        || args.GetDriverName() == "ftds64"
         || args.GetDriverName() == "ftds64_odbc"
         || args.GetDriverName() == "odbc"
         || args.GetDriverName() == "odbcw"
@@ -6294,11 +6294,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // There is a problem with ftds driver
     // on GCC_340-ReleaseMT--i686-pc-linux2.4.23
-    // There is a problem with ftds64_ctlib driver
+    // There is a problem with ftds64 driver
     // on orkShop55_550-ReleaseMT
     if (args.GetDriverName() != "ftds" &&
         args.GetDriverName() != "msdblib" &&
-        !(args.GetDriverName() == "ftds64_ctlib" && Solaris)
+        !(args.GetDriverName() == "ftds64" && Solaris)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
                                    DBAPIInstance);
@@ -6309,7 +6309,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetServerType() == CTestArguments::eMsSql &&
         (args.GetDriverName() == "ftds64_odbc"
-         || args.GetDriverName() == "ftds64_ctlib")
+         || args.GetDriverName() == "ftds64")
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
                                    DBAPIInstance);
@@ -6322,7 +6322,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception,
                               DBAPIInstance));
 
-    if (!(args.GetDriverName() == "ftds64_ctlib"
+    if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase) // Something
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy,
@@ -6332,7 +6332,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     //
-    if (!(args.GetDriverName() == "ftds64_ctlib"
+    if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase) // Something
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Multiple_Close,
@@ -6373,7 +6373,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             || args.GetDriverName() == "odbcw"
             // || args.GetDriverName() == "msdblib" // doesn't work ...
             || args.GetDriverName() == "ftds64_odbc"
-            || args.GetDriverName() == "ftds64_ctlib"
+            || args.GetDriverName() == "ftds64"
             || args.GetDriverName() == "ftds64_dblib"
             ) {
             //
@@ -6454,7 +6454,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
         }
 
-        // ctlib/ftds64_ctlib will work in case of protocol version 12.5 only
+        // ctlib/ftds64 will work in case of protocol version 12.5 only
         // ftds + Sybase and dblib won't work because of the early
         // protocol versions.
         if ((((args.GetDriverName() == "ftds"
@@ -6465,7 +6465,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
               || args.GetDriverName() == "ftds64_odbc"
               // !!! This driver won't work with Sybase because it supports
               // CS_VERSION_110 only. !!!
-              || (args.GetDriverName() == "ftds64_ctlib"
+              || (args.GetDriverName() == "ftds64"
                   && args.GetServerType() == CTestArguments::eMsSql)
               || args.GetDriverName() == "ftds64_dblib"
               ))
@@ -6499,7 +6499,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if ( (args.GetDriverName() == "ftds"
           || args.GetDriverName() == "ftds63"
           || args.GetDriverName() == "ftds64_dblib"
-          // || args.GetDriverName() == "ftds64_ctlib" // Need to fix this some day ...
+          // || args.GetDriverName() == "ftds64" // Need to fix this some day ...
           // || args.GetDriverName() == "ftds64_odbc"  // This is a big problem ....
           ) &&
          args.GetServerType() == CTestArguments::eMsSql ) {
@@ -6529,7 +6529,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() == "odbcw"
 //         args.GetDriverName() == "ftds63" ||
 //         args.GetDriverName() == "ftds64_odbc" ||
-//         || args.GetDriverName() == "ftds64_ctlib"
+//         || args.GetDriverName() == "ftds64"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode,
                                    DBAPIInstance);
@@ -6619,18 +6619,18 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "gateway", "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", \
+                      "gateway", "ftds64_dblib", "ftds64_odbc", "ftds64", \
                       "odbcw", "mtds"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", "mtds"
+                      "ftds64_dblib", "ftds64_odbc", "ftds64", "mtds"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ftds", "ftds63", "gateway", \
-                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", "mtds"
+                      "ftds64_dblib", "ftds64_odbc", "ftds64", "mtds"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -6756,7 +6756,7 @@ CTestArguments::SetDatabaseParameters(void)
             if (GetServerType() == eSybase) {
                 m_DatabaseParameters["version"] = "50";
             }
-        } else if (GetDriverName() == "ftds64_ctlib"  &&
+        } else if (GetDriverName() == "ftds64"  &&
                    GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "125";
         }
@@ -6766,7 +6766,7 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( (GetDriverName() == "ftds" ||
           GetDriverName() == "ftds63" ||
-//           GetDriverName() == "ftds64_ctlib" ||
+//           GetDriverName() == "ftds64" ||
 //           GetDriverName() == "ftds64_odbc" ||
           GetDriverName() == "ftds64_dblib") &&
         GetServerType() == eMsSql) {
