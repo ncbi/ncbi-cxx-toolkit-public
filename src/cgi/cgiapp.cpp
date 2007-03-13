@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_PARAM_DECL(bool, CGI, Print_Http_Referer);
-NCBI_PARAM_DEF_EX(bool, CGI, Print_Http_Referer, false, eParam_NoThread,
+NCBI_PARAM_DEF_EX(bool, CGI, Print_Http_Referer, true, eParam_NoThread,
                   CGI_PRINT_HTTP_REFERER);
 static NCBI_PARAM_TYPE(CGI, Print_Http_Referer) s_PrintRefererParam;
 
