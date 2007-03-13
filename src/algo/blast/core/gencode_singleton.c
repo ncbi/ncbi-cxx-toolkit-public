@@ -60,7 +60,9 @@ GenCodeSingletonFini()
 Int2
 GenCodeSingletonAdd(Uint4 gen_code_id, Char* gen_code_str)
 {
-    SGenCodeNode node = { gen_code_id, gen_code_str };
+    SGenCodeNode node;
+    node.gc_id = gen_code_id;
+    node.gc_str = gen_code_str;
     ASSERT(g_theInstance);
     return DynamicSGenCodeNodeArray_Append(g_theInstance, node);
 }
