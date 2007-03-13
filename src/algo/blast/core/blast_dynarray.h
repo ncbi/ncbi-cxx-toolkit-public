@@ -48,7 +48,7 @@ typedef struct SDynamicUint4Array {
     Uint4* data;         /**< array of Uint4 */
 } SDynamicUint4Array;
 
-/** Initial number of queries allocated per chunk */
+/** Initial number of elements allocated */
 #define INIT_NUM_ELEMENTS 8
 
 /** Allocate a dynamic array of Uint4 with the initial size of
@@ -108,6 +108,7 @@ NCBI_XBLAST_EXPORT Boolean
 DynamicUint4Array_AreEqual(const SDynamicUint4Array* a,
                            const SDynamicUint4Array* b);
 
+/* ========================================================================== */
 /** Data structure to maintain a dynamically allocated array of Int4 */
 typedef struct SDynamicInt4Array {
     Uint4 num_used;      /**< number of elements used in this array */
@@ -137,6 +138,61 @@ DynamicInt4ArrayFree(SDynamicInt4Array* arr);
  */
 NCBI_XBLAST_EXPORT Int2
 DynamicInt4Array_Append(SDynamicInt4Array* arr, Int4 element);
+
+/* ========================================================================== */
+/** Elements of the SDynamicSGenCodeNodeArray dynamic array */
+typedef struct SGenCodeNode {
+    Uint4   gc_id;      /**< Genetic code id */
+    Char*   gc_str;     /**< Genetic code string */
+} SGenCodeNode;
+
+/** Initial number of elements allocated, based on the fact that there are only
+ * a handful of genetic codes available in the NCBI toolkits */
+#define INIT_NUM_GEN_CODES 30
+
+/** Data structure to maintain a dynamically allocated array of SGenCodeNode */
+typedef struct SDynamicSGenCodeNodeArray {
+    Uint4 num_used;      /**< number of elements used in this array */
+    Uint4 num_allocated; /**< size of array below */
+    SGenCodeNode* data;          /**< array of SGenCodeNode */
+} SDynamicSGenCodeNodeArray;
+
+/** Allocate a dynamic array of SGenCodeNode with the initial size of
+ * INIT_NUM_ELEMENTS
+ * @return NULL if out of memory otherwise, newly allocated structure
+ */
+NCBI_XBLAST_EXPORT SDynamicSGenCodeNodeArray* 
+DynamicSGenCodeNodeArrayNew();
+
+/** Deallocates a dynamic array structure 
+ * @param arr data structure to free [in]
+ * @return NULL
+ */
+NCBI_XBLAST_EXPORT SDynamicSGenCodeNodeArray* 
+DynamicSGenCodeNodeArrayFree(SDynamicSGenCodeNodeArray* arr);
+
+/** Append a SGenCodeNode to the dynamic array structure
+ * @note No duplicate elements will be inserted
+ * @param arr data structure to manipulate [in]
+ * @param element element to add [in]
+ * @return 0 on success or BLASTERR_MEMORY if memory reallocation was needed
+ * and this failed, or BLASTERR_INVALIDPARAM if the genetic string field of the
+ * element is NULL.
+ */
+NCBI_XBLAST_EXPORT Int2
+DynamicSGenCodeNodeArray_Append(SDynamicSGenCodeNodeArray* arr, 
+                                SGenCodeNode element);
+
+/** Searches the dynamic array for any element that matches the requested
+ * genetic code id
+ * @param arr dynamic array to search [in]
+ * @param gen_code_id genetic code id to search [in]
+ * @return genetic code string (owned by this structure) or NULL if not found
+ */
+Char*
+DynamicSGenCodeNodeArray_Find(const SDynamicSGenCodeNodeArray* arr,
+                              Uint4 gen_code_id);
+
 
 #ifdef __cplusplus
 }

@@ -540,6 +540,9 @@ FindGeneticCode(int genetic_code)
 
     TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
             CSeq_data::e_Ncbistdaa);
+    if (nconv == 0) {
+        return retval;
+    }
 
     _ASSERT(gc_ncbistdaa.IsNcbistdaa());
     _ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());

@@ -73,8 +73,6 @@ CBlastOptionsLocal::~CBlastOptionsLocal()
 {
 }
 
-#define GENCODE_STRLEN 64
-
 void 
 CBlastOptionsLocal::SetDbGeneticCode(int gc)
 {

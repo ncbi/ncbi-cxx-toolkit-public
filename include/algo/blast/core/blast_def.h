@@ -92,6 +92,11 @@ extern const int kUngappedHSPNumMax;
 #define NUM_STRANDS 2
 #endif
 
+/** Length of the genetic code string */
+#ifndef GENCODE_STRLEN
+#define GENCODE_STRLEN 64
+#endif
+
 /**
  * A macro expression that returns 1, 0, -1 if a is greater than,
  * equal to or less than b, respectively.  This macro evaluates its

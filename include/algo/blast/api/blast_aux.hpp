@@ -132,6 +132,7 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp);
 /** Retrieves the requested genetic code in Ncbistdaa format. 
  * @param genetic_code numeric identifier for genetic code requested [in]
  * @return NULL if memory allocation failure, otherwise genetic code string.
+ * @note the returned string has length GENCODE_STRLEN
  */
 NCBI_XBLAST_EXPORT
 TAutoUint1ArrayPtr

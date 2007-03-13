@@ -225,3 +225,178 @@ DynamicInt4Array_Append(SDynamicInt4Array* arr, Int4 element)
     arr->data[arr->num_used++] = element;
     return retval;
 }
+
+SDynamicSGenCodeNodeArray* 
+DynamicSGenCodeNodeArrayFree(SDynamicSGenCodeNodeArray* arr)
+{
+    if ( !arr ) {
+        return NULL;
+    }
+    if (arr->data) {
+        Uint4 i = 0;
+        for (i = 0; i < arr->num_used; i++) {
+            sfree(arr->data[i].gc_str);
+        }
+        sfree(arr->data);
+    }
+    sfree(arr);
+    return NULL;
+}
+
+SDynamicSGenCodeNodeArray* DynamicSGenCodeNodeArrayNew()
+{
+    SDynamicSGenCodeNodeArray* retval = 
+        (SDynamicSGenCodeNodeArray*) calloc(1, 
+                                            sizeof(SDynamicSGenCodeNodeArray));
+    if ( !retval ) {
+        return NULL;
+    }
+    retval->data = (SGenCodeNode*) calloc(INIT_NUM_GEN_CODES, 
+                                          sizeof(SGenCodeNode));
+    if ( !retval->data ) {
+        return DynamicSGenCodeNodeArrayFree(retval);
+    }
+    retval->num_allocated = INIT_NUM_GEN_CODES;
+
+    return retval;
+}
+
+/** Grow a dynamic array of SGenCodeNode elements
+ * @param arr Structure of array data [in][out]
+ * @return zero on success
+ */
+static Int2
+s_DynamicSGenCodeNodeArray_ReallocIfNecessary(SDynamicSGenCodeNodeArray* arr)
+{
+    ASSERT(arr);
+
+    if (arr->num_used+1 > arr->num_allocated) {
+        /* we need more room for elements */
+        arr->num_allocated *= 2;
+        arr->data = (SGenCodeNode*) realloc(arr->data, 
+                                     arr->num_allocated * sizeof(SGenCodeNode));
+        if ( !arr->data ) {
+            return BLASTERR_MEMORY;
+        }
+    }
+    return 0;
+}
+
+/** Determine if the array is sorted
+ * @param arr array to examine [in]
+ */
+static Boolean
+s_DynamicSGenCodeNodeArray_IsSorted(const SDynamicSGenCodeNodeArray* arr)
+{
+    Int4 index;
+
+    if ( !arr || arr->num_used <= 1) {
+        return TRUE;
+    }
+
+    for (index = arr->num_used - 1; index > 0; index--) {
+        if (arr->data[index].gc_id < arr->data[index-1].gc_id) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+/** Compare function for sorting SGenCodeNode elements
+ * @param a first element to compare [in]
+ * @param b second element to compare [in]
+ */
+static int
+s_SGenCodeNodeCompare(const void* a, const void* b)
+{
+    SGenCodeNode* ptr1 = (SGenCodeNode*) a;
+    SGenCodeNode* ptr2 = (SGenCodeNode*) b;
+    return BLAST_CMP(ptr1->gc_id, ptr2->gc_id);
+}
+
+/** Sort the dynamic array structure
+ * @note this function should be called prior to invoking
+ * DynamicSGenCodeNodeArray_Find
+ * @param arr data structure to manipulate [in]
+ */
+static void
+s_DynamicSGenCodeNodeArray_Sort(SDynamicSGenCodeNodeArray* arr)
+{
+    if ( !arr || arr->num_used <= 1) {
+        return;
+    }
+
+    if ( !s_DynamicSGenCodeNodeArray_IsSorted(arr) ) {
+        qsort(arr->data, arr->num_used, sizeof(SGenCodeNode),
+              s_SGenCodeNodeCompare);
+    }
+}
+
+Int2
+DynamicSGenCodeNodeArray_Append(SDynamicSGenCodeNodeArray* arr, 
+                                SGenCodeNode element)
+{
+    Int2 retval = 0;
+    ASSERT(arr);
+
+    if (element.gc_str == NULL) {
+        return BLASTERR_INVALIDPARAM;
+    }
+
+    if (DynamicSGenCodeNodeArray_Find(arr, element.gc_id)) {
+        return retval;
+    }
+
+    if ( (retval = s_DynamicSGenCodeNodeArray_ReallocIfNecessary(arr)) != 0) {
+        return retval;
+    }
+    arr->data[arr->num_used].gc_str = (Char*) calloc(GENCODE_STRLEN, 
+                                                     sizeof(Char));
+    if ( arr->data[arr->num_used].gc_str == NULL) {
+        return BLASTERR_MEMORY;    
+    }
+    arr->data[arr->num_used].gc_id = element.gc_id;
+    memcpy((void*) arr->data[arr->num_used].gc_str, 
+           (void*) element.gc_str, 
+           GENCODE_STRLEN);
+    arr->num_used++;
+    s_DynamicSGenCodeNodeArray_Sort(arr);
+    return retval;
+}
+
+/** Perform a binary search for the element containing gen_code_id 
+ * @param arr dynamic array to search [in]
+ * @param gen_code_id genetic code to find [in]
+ * @return index where the genetic code was found
+ */
+static Int4
+s_DynamicSGenCodeNodeArray_BinSearch(const SDynamicSGenCodeNodeArray* arr,
+                                     Uint4 gen_code_id)
+{
+    Int4 m = 0, b = 0, e = 0, size = 0;
+
+    size = (Int4)arr->num_used;
+    b = 0;
+    e = size;
+    while (b < e - 1) {
+        m = (b + e) / 2;
+        if (arr->data[m].gc_id > gen_code_id) {
+            e = m;
+        } else {
+            b = m;
+        }
+    }
+    return b;
+}
+
+Char*
+DynamicSGenCodeNodeArray_Find(const SDynamicSGenCodeNodeArray* arr,
+                              Uint4 gen_code_id)
+{
+    Uint4 index = (Uint4)s_DynamicSGenCodeNodeArray_BinSearch(arr, gen_code_id);
+    if (index < arr->num_used && arr->data[index].gc_id == gen_code_id) {
+        return arr->data[index].gc_str;
+    }
+    return NULL;
+}
+
