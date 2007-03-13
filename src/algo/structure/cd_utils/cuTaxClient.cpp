@@ -227,7 +227,7 @@ std::string TaxClient::GetTaxNameForTaxID(int taxid)
     // get parent for taxid
 int TaxClient::GetParentTaxID(int taxid)
 {
-	int parent;
+	int parent = 0;
 	if (IsAlive())
 		parent = m_taxonomyClient->GetParent(taxid);
     return parent;

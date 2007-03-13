@@ -88,7 +88,7 @@ bool CMastersClassicalGuideAlignment::Make(const CCdCore* cd1, const CCdCore* cd
 
     if (result) {
         maAll.setAlignment(*family, fit);
-        result = Make(cd1, cd2, &maAll);
+        result = MakeFromMultipleAlignment(cd1, cd2, &maAll);
         if (result) {
             MakeChains(cd1, cd2, fit->cd, family);
         }
@@ -125,7 +125,7 @@ bool CMastersClassicalGuideAlignment::MakeGuideToRoot(const CCdCore* cd, CDFamil
 
         Reset();
 //        LOG_POST("about to call Make(root, cd, ma)\n");
-        result = Make(root, cd, ma);
+        result = MakeFromMultipleAlignment(root, cd, ma);
         if (result) {
             MakeChains(root, cd, root, family);
         }
@@ -135,7 +135,7 @@ bool CMastersClassicalGuideAlignment::MakeGuideToRoot(const CCdCore* cd, CDFamil
 }
 
 
-bool CMastersClassicalGuideAlignment::Make(const CCdCore* cd1, const CCdCore* cd2, MultipleAlignment* ma)
+bool CMastersClassicalGuideAlignment::MakeFromMultipleAlignment(const CCdCore* cd1, const CCdCore* cd2, MultipleAlignment* ma)
 {
     int master1, master2;
     string master1Str, master2Str;

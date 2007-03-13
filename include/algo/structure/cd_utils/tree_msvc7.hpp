@@ -347,7 +347,7 @@ class NCBI_CDUTILS_EXPORT tree {
     tree reroot(iterator newRoot) {
 
         tree newTree;
-        iterator attachNode, oldParent, oldHead, z, zz;
+        iterator attachNode, oldParent, z, zz;
         int nChildren;
         int nTopLevelNodes = number_of_siblings(begin());
         

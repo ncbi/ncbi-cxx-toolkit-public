@@ -85,6 +85,16 @@ public:
     //  Never uses the cache as the cached alignment may represent a different subfamily than needed.
     virtual bool Make(const CCdCore* cd1, const CCdCore* cd2, CDFamily* family);
 
+    //  Overrides base-class version to always return false unless the families are the same.  
+    //  (A classical guide should be for one hierarchy by definition!)
+    virtual bool Make(const CCdCore* cd1, CDFamily* family1, const CCdCore* cd2, CDFamily* family2) {
+        bool result = false;
+        if (family1 == family2) {
+            result = Make(cd1, cd2, family1);
+        }
+        return result;
+    }
+
     //  Convenience method for when one of the two CDs is the family's root node.
     //  Caches the multiple alignment object if 'cache' is true.
     bool MakeGuideToRoot(const CCdCore* cd, CDFamily* family, bool cache = false);
@@ -102,7 +112,7 @@ private:
     void MakeChains(const CCdCore* cd1, const CCdCore* cd2, const CCdCore* commonCd, CDFamily* family);
 
     //  In cases where the cache is used, pass the cached alignment.
-    bool Make(const CCdCore* cd1, const CCdCore* cd2, MultipleAlignment* ma);
+    bool MakeFromMultipleAlignment(const CCdCore* cd1, const CCdCore* cd2, MultipleAlignment* ma);
 
 };
 

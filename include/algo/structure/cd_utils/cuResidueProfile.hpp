@@ -105,13 +105,15 @@ BEGIN_SCOPE(cd_utils)
  {
  public:
 	 virtual void read(ColumnResidueProfile& crp) = 0;
+     virtual ~ColumnReader() {};
  };
 
 class NCBI_CDUTILS_EXPORT MasterColumnCounter : public ColumnReader
 {
 public:
 	MasterColumnCounter():m_count(0){};
-	void read(ColumnResidueProfile& crp) {m_count++; m_seq += crp.getResidueByRow(0); }
+    virtual ~MasterColumnCounter() {};
+	virtual void read(ColumnResidueProfile& crp) {m_count++; m_seq += crp.getResidueByRow(0); }
 	int getCount()const {return m_count;}
 	string& getSeq() {return m_seq;} 
 private:

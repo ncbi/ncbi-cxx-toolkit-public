@@ -73,6 +73,7 @@ public:
     virtual string GetTaxNameForTaxID(int taxid);
     virtual string GetSuperKingdom(int taxid);
 
+    //  Returns zero if the client is not alive (i.e., IsAlive() returns false).
     virtual int GetParentTaxID(int taxid);
 	//is tax2 the descendant of tax1?
     virtual bool IsTaxDescendant(int tax1, int tax2);

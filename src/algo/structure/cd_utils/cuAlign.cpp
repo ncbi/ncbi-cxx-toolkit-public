@@ -199,6 +199,7 @@ void MakeMaskedSeqAlign(const CRef< CSeq_align >& originalAlign, const CRef< CSe
     } else if (SeqIdsMatch(slaveId, maskId)) {
         useOriginalMaster = false;
     } else {
+        useOriginalMaster = false;
         inputOK = false;
     }
 
@@ -942,8 +943,7 @@ int ddLen(TDendiag * pDD)
         
         for (pp=pDD->begin(); pp!=pDD->end(); pp++) 
         {
-                CDense_diag::TStarts::const_iterator pos=(*pp)->GetStarts().begin();
-                staLen+=((*pp)->GetLen());
+            staLen+=((*pp)->GetLen());
         }
         
         return staLen;
@@ -1205,7 +1205,12 @@ int ddRemap(TDendiag * pSrcDD,int iSeq,TDendiag * pGuideDD, int iMaster,TDendiag
 		int iFollow=-1;
 
         // allocate the buffer to keep coverage ALICORDs
-        ALICORD * allArr=(ALICORD * )malloc(sizeof(ALICORD)* maxLen);if(!allArr){err="remapDD error: couldn't allocate enough memory.";return NULL;}
+        ALICORD* allArr=(ALICORD * )malloc(sizeof(ALICORD)* maxLen);
+        if(!allArr) {
+            err="remapDD error: couldn't allocate enough memory.";
+            return 0;
+        }
+
         memset(allArr,0,maxLen*sizeof(ALICORD));
 
         // accumulate ALICORDS
