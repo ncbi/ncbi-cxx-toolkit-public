@@ -3193,7 +3193,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                 s_BlastDynProgNtGappedAlignment will still round 
                 the start point up to the first 4-base boundary 
                 on the subject sequence */
-            if (s_end >= init_hsp->offsets.qs_offsets.s_off + 8) {
+            if (s_end >= (Int4)init_hsp->offsets.qs_offsets.s_off + 8) {
                init_hsp->offsets.qs_offsets.s_off += 3;
                init_hsp->offsets.qs_offsets.q_off += 3;
             }

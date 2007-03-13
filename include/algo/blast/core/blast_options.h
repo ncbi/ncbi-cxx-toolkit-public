@@ -181,8 +181,8 @@ typedef struct LookupTableOptions {
                           important if there is scaling involved) */
    ELookupTableType lut_type; /**< What kind of lookup table to construct? */
    Int4 word_size; /**< Determines the size of the lookup table */
-   Uint1 mb_template_length; /**< Length of the discontiguous words */
-   Uint1 mb_template_type; /**< Type of a discontiguous word template */
+   Int4 mb_template_length; /**< Length of the discontiguous words */
+   Int4 mb_template_type; /**< Type of a discontiguous word template */
    char* phi_pattern;  /**< PHI-BLAST pattern */
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */

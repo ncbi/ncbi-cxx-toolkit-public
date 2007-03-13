@@ -233,7 +233,7 @@ typedef struct BlastMBLookupTable {
    Int4 lut_word_length;  /**< number of letters in a lookup table word */
    Int4 hashsize;       /**< = 4^(lut_word_length) */ 
    Boolean discontiguous; /**< Are discontiguous words used? */
-   Uint1 template_length; /**< Length of the discontiguous word template */
+   Int4 template_length; /**< Length of the discontiguous word template */
    EDiscTemplateType template_type; /**< Type of the discontiguous 
                                         word template */
    Boolean two_templates; /**< Use two templates simultaneously */

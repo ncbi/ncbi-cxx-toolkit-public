@@ -2365,12 +2365,12 @@ static Int4 s_MB_DiscWordScanSubject_1(const LookupTableWrap* lookup_wrap,
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
-   Uint4 s_off = start_offset;
+   Int4 s_off = start_offset;
    Int4 index;
    Uint8 accum = 0;
    EDiscTemplateType template_type = mb_lt->template_type;
-   Uint4 template_length = mb_lt->template_length;
-   Uint4 last_offset = subject->length - template_length;
+   Int4 template_length = mb_lt->template_length;
+   Int4 last_offset = subject->length - template_length;
 
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    max_hits -= mb_lt->longest_chain;
@@ -2457,13 +2457,13 @@ static Int4 s_MB_DiscWordScanSubject_TwoTemplates_1(
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
-   Uint4 s_off = start_offset;
+   Int4 s_off = start_offset;
    Int4 index, index2;
    Uint8 accum = 0;
    EDiscTemplateType template_type = mb_lt->template_type;
    EDiscTemplateType second_template_type = mb_lt->second_template_type;
-   Uint4 template_length = mb_lt->template_length;
-   Uint4 last_offset = subject->length - template_length;
+   Int4 template_length = mb_lt->template_length;
+   Int4 last_offset = subject->length - template_length;
 
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    max_hits -= mb_lt->longest_chain;
@@ -2553,10 +2553,10 @@ static Int4 s_MB_DiscWordScanSubject_11_18_1(
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
-   Uint4 s_off = start_offset;
+   Int4 s_off = start_offset;
    Int4 index;
-   const Uint4 kTemplateLength = 18;
-   Uint4 last_offset = subject->length - kTemplateLength;
+   const Int4 kTemplateLength = 18;
+   Int4 last_offset = subject->length - kTemplateLength;
    Uint4 lo = 0; 
    Uint4 hi = 0;
 
@@ -2670,10 +2670,10 @@ static Int4 s_MB_DiscWordScanSubject_11_21_1(
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
-   Uint4 s_off = start_offset;
+   Int4 s_off = start_offset;
    Int4 index;
-   const Uint4 kTemplateLength = 21;
-   Uint4 last_offset = subject->length - kTemplateLength;
+   const Int4 kTemplateLength = 21;
+   Int4 last_offset = subject->length - kTemplateLength;
    Uint4 lo = 0; 
    Uint4 hi = 0;
 

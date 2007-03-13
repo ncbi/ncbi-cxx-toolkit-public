@@ -1140,7 +1140,8 @@ Blast_RunFullSearch(EBlastProgramType program_number,
 
    if (Blast_ProgramIsPhiBlast(program_number)) {
        pattern_blk = ((SPHIPatternSearchBlk*) lookup_wrap->lut);
-       pattern_blk->num_patterns_db = diagnostics->ungapped_stat->lookup_hits;
+       pattern_blk->num_patterns_db = 
+                        (Int4)diagnostics->ungapped_stat->lookup_hits;
    } 
 
    if ((status = 

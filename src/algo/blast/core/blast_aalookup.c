@@ -248,7 +248,7 @@ Int4 BlastAaLookupTableNew(const LookupTableOptions * opt,
 
     lookup->mask = (1 << (opt->word_size * lookup->charsize)) - 1;
     lookup->alphabet_size = BLASTAA_SIZE;
-    lookup->threshold = opt->threshold;
+    lookup->threshold = (Int4)opt->threshold;
     lookup->thin_backbone =
         (Int4 **) calloc(lookup->backbone_size, sizeof(Int4 *));
     ASSERT(lookup->thin_backbone != NULL);
@@ -1165,7 +1165,7 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
        below are 2^32 / (compressed alphabet size) */
 
     lookup->word_length = word_size;
-    lookup->threshold = kMatrixScale * opt->threshold;
+    lookup->threshold = (Int4)(kMatrixScale * opt->threshold);
     lookup->alphabet_size = BLASTAA_SIZE;
     if (word_size == 6) {
         lookup->compressed_alphabet_size = 15;
@@ -1189,8 +1189,8 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
 
     /* allocate the backbone and overflow array */
 
-    lookup->backbone_size = pow(lookup->compressed_alphabet_size,
-                                word_size) + 1;
+    lookup->backbone_size = (Int4)pow(lookup->compressed_alphabet_size,
+                                        word_size) + 1;
     lookup->backbone = (CompressedLookupBackboneCell* )calloc(
                                     lookup->backbone_size, 
                                     sizeof(CompressedLookupBackboneCell));

@@ -209,7 +209,7 @@ static Int4 s_BlastCompressedAaScanSubject(
              of index, so that a single divide (implemented via
              reciprocal multiplication) does the removal */
 
-          index = ((((Int8)index) * recip) >> 32) + compressed_char;
+          index = (Int4)((((Int8)index) * recip) >> 32) + compressed_char;
 
           if (skip) {
              if (--skip) /* still skipping? */
