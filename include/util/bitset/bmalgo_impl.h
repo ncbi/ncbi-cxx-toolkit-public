@@ -335,6 +335,261 @@ void combine_count_operation_with_block(const bm::word_t* blk,
 
      } // for it
 }
+
+/*!
+    \brief Internal function computes different existense of distance metric.
+    \internal 
+    \ingroup  distance
+     
+*/
+inline
+void combine_any_operation_with_block(const bm::word_t* blk,
+                                      unsigned gap,
+                                      const bm::word_t* arg_blk,
+                                      int arg_gap,
+                                      bm::word_t* temp_blk,
+                                      distance_metric_descriptor* dmit,
+                                      distance_metric_descriptor* dmit_end)
+                                            
+{
+     gap_word_t* res=0;
+     
+     gap_word_t* g1 = BMGAP_PTR(blk);
+     gap_word_t* g2 = BMGAP_PTR(arg_blk);
+     
+     if (gap) // first block GAP-type
+     {
+         if (arg_gap)  // both blocks GAP-type
+         {
+             gap_word_t tmp_buf[bm::gap_max_buff_len * 3]; // temporary result
+             
+             for (distance_metric_descriptor* it = dmit;it < dmit_end; ++it)
+             {
+                 distance_metric_descriptor& dmd = *it;
+                 if (dmd.result)
+                 {
+                     continue;
+                 }
+                 
+                 switch (dmd.metric)
+                 {
+                 case bm::COUNT_AND:
+                     res = gap_operation_and(g1, g2, tmp_buf);
+                     break;
+                 case bm::COUNT_OR:
+                     res = gap_operation_or(g1, g2, tmp_buf);
+                     break;
+                 case bm::COUNT_SUB_AB:
+                     res = gap_operation_sub(g1, g2, tmp_buf); 
+                     break;
+                 case bm::COUNT_SUB_BA:
+                     res = gap_operation_sub(g2, g1, tmp_buf); 
+                     break;
+                 case bm::COUNT_XOR:
+                     res = gap_operation_xor(g1, g2, tmp_buf); 
+                    break;
+                 case bm::COUNT_A:
+                    res = g1;
+                    break;
+                 case bm::COUNT_B:
+                    res = g2;
+                    break;
+                 } // switch
+                 
+                 if (res)
+                     dmd.result += !gap_is_all_zero(res, bm::gap_max_bits);
+                    
+             } // for it
+             
+             return;
+
+         }
+         else // first block - GAP, argument - BITSET
+         {
+             for (distance_metric_descriptor* it = dmit;it < dmit_end; ++it)
+             {
+                 distance_metric_descriptor& dmd = *it;
+                 if (dmd.result)
+                 {
+                     continue;
+                 }
+                 
+                 switch (dmd.metric)
+                 {
+                 case bm::COUNT_AND:
+                     if (arg_blk)
+                        dmd.result += gap_bitset_and_count(arg_blk, g1);
+                     break;
+                 case bm::COUNT_OR:
+                     if (!arg_blk)
+                        dmd.result += !gap_is_all_zero(g1, bm::gap_max_bits);
+                     else
+                        dmd.result += gap_bitset_or_count(arg_blk, g1); 
+                     break;
+                 case bm::COUNT_SUB_AB:
+                     gap_convert_to_bitset((bm::word_t*) temp_blk, g1);
+                     dmd.result += 
+                       bit_operation_sub_count((bm::word_t*)temp_blk, 
+                          ((bm::word_t*)temp_blk) + bm::set_block_size,
+                           arg_blk);
+                 
+                     break;
+                 case bm::COUNT_SUB_BA:
+                     dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
+                     combine_count_operation_with_block(arg_blk,
+                                                        arg_gap,
+                                                        blk,
+                                                        gap,
+                                                        temp_blk,
+                                                        it, it+1);
+                     dmd.metric = bm::COUNT_SUB_BA; // restore status quo
+                     break;
+                 case bm::COUNT_XOR:
+                     if (!arg_blk)
+                        dmd.result += !gap_is_all_zero(g1, bm::gap_max_bits);
+                     else
+                        dmd.result += gap_bitset_xor_count(arg_blk, g1);
+                     break;
+                 case bm::COUNT_A:
+                    if (g1)
+                        dmd.result += !gap_is_all_zero(g1, bm::gap_max_bits);
+                    break;
+                 case bm::COUNT_B:
+                    if (arg_blk)
+                    {
+                        dmd.result += 
+                          bit_block_calc_count(arg_blk, 
+                                               arg_blk + bm::set_block_size);
+                    }
+                    break;
+                 } // switch
+                                     
+             } // for it
+             
+             return;
+         
+         }
+     } 
+     else // first block is BITSET-type
+     {     
+         if (arg_gap) // second argument block is GAP-type
+         {
+             for (distance_metric_descriptor* it = dmit;it < dmit_end; ++it)
+             {
+                 distance_metric_descriptor& dmd = *it;
+                 if (dmd.result)
+                 {
+                     continue;
+                 }
+                 
+                 switch (dmd.metric)
+                 {
+                 case bm::COUNT_AND:
+                     if (blk) 
+                        dmd.result += gap_bitset_and_count(blk, g2);                         
+                     break;
+                 case bm::COUNT_OR:
+                     if (!blk)
+                        dmd.result += gap_bit_count(g2);
+                     else
+                        dmd.result += gap_bitset_or_count(blk, g2);
+                     break;
+                 case bm::COUNT_SUB_AB:
+                     if (blk)
+                        dmd.result += gap_bitset_sub_count(blk, g2);
+                     break;
+                 case bm::COUNT_SUB_BA:
+                     dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
+                     combine_count_operation_with_block(arg_blk,
+                                                        arg_gap,
+                                                        blk,
+                                                        gap,
+                                                        temp_blk,
+                                                        it, it+1);
+                     dmd.metric = bm::COUNT_SUB_BA; // restore status quo
+                     break;
+                 case bm::COUNT_XOR:
+                     if (!blk)
+                        dmd.result += gap_bit_count(g2);
+                     else
+                        dmd.result += gap_bitset_xor_count(blk, g2); 
+                    break;
+                 case bm::COUNT_A:
+                    if (blk)
+                    {
+                        dmd.result += 
+                            bit_block_calc_count(blk, 
+                                                 blk + bm::set_block_size);
+                    }
+                    break;
+                 case bm::COUNT_B:
+                    if (g2)
+                        dmd.result += !gap_is_all_zero(g2, bm::gap_max_bits);
+                    break;
+                 } // switch
+                                     
+             } // for it
+             
+             return;
+         }
+     }
+
+     // --------------------------------------------
+     //
+     // Here we combine two plain bitblocks 
+
+     const bm::word_t* blk_end;
+     const bm::word_t* arg_end;
+
+     blk_end = blk + (bm::set_block_size);
+     arg_end = arg_blk + (bm::set_block_size);
+
+
+     for (distance_metric_descriptor* it = dmit; it < dmit_end; ++it)
+     {
+        distance_metric_descriptor& dmd = *it;
+        if (dmd.result)
+        {
+            continue;
+        }
+
+        switch (dmd.metric)
+        {
+        case bm::COUNT_AND:
+            dmd.result += 
+            bit_operation_and_any(blk, blk_end, arg_blk);
+            break;
+        case bm::COUNT_OR:
+            dmd.result += 
+            bit_operation_or_any(blk, blk_end, arg_blk);
+            break;
+        case bm::COUNT_SUB_AB:
+            dmd.result += 
+            bit_operation_sub_any(blk, blk_end, arg_blk);
+            break;
+        case bm::COUNT_SUB_BA:
+            dmd.result += 
+            bit_operation_sub_any(arg_blk, arg_end, blk);
+            break;
+        case bm::COUNT_XOR:
+            dmd.result += 
+            bit_operation_xor_any(blk, blk_end, arg_blk);
+            break;
+        case bm::COUNT_A:
+            if (blk)
+                dmd.result += !bit_is_all_zero(blk, blk_end);
+            break;
+        case bm::COUNT_B:
+            if (arg_blk)
+                dmd.result += !bit_is_all_zero(arg_blk, arg_end);
+            break;
+        } // switch
+
+     } // for it
+}
+
+
+
 /*!
     Convenience internal function to compute combine count for one metric
     \internal
@@ -355,6 +610,29 @@ unsigned combine_count_operation_with_block(const bm::word_t* blk,
                                        &dmd, &dmd+1);
     return dmd.result;
 }
+
+
+/*!
+    Convenience internal function to compute combine any for one metric
+    \internal
+    \ingroup  distance
+*/
+inline
+unsigned combine_any_operation_with_block(const bm::word_t* blk,
+                                          unsigned gap,
+                                          const bm::word_t* arg_blk,
+                                          int arg_gap,
+                                          bm::word_t* temp_blk,
+                                          distance_metric metric)
+{
+    distance_metric_descriptor dmd(metric);
+    combine_any_operation_with_block(blk, gap, 
+                                     arg_blk, arg_gap, 
+                                     temp_blk,
+                                     &dmd, &dmd+1);
+    return dmd.result;
+}
+
 
 /*!
     \brief Distance computing template function.
@@ -473,6 +751,123 @@ void distance_operation(const BV& bv1,
 
 
 /*!
+    \brief Distance screening template function.
+
+    Function receives two bitvectors and an array of distance metrics
+    (metrics pipeline). Function computes possybility of a metric(any bit) 
+    saves result into corresponding pipeline results 
+    (distance_metric_descriptor::result)
+    An important detail is that function reuses metric descriptors, 
+    incrementing received values. It allows you to accumulate results 
+    from different calls in the pipeline.
+    
+    \param bv1      - argument bitvector 1 (A)
+    \param bv2      - argument bitvector 2 (B)
+    \param dmit     - pointer to first element of metric descriptors array
+                      Input-Output parameter, receives metric code as input,
+                      computation is added to "result" field
+    \param dmit_end - pointer to (last+1) element of metric descriptors array
+    \ingroup  distance
+    
+*/
+
+template<class BV>
+void distance_operation_any(const BV& bv1, 
+                            const BV& bv2, 
+                            distance_metric_descriptor* dmit,
+                            distance_metric_descriptor* dmit_end)
+{
+    const typename BV::blocks_manager_type& bman1 = bv1.get_blocks_manager();
+    const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
+    
+    bm::word_t* temp_blk = 0;
+    
+    {
+        for (distance_metric_descriptor* it = dmit; it < dmit_end; ++it)
+        {
+            if (it->metric == bm::COUNT_SUB_AB || 
+                it->metric == bm::COUNT_SUB_BA)
+            {
+                temp_blk = bv1.allocate_tempblock();
+                break;
+            }
+        }
+    }
+    
+  
+    bm::word_t*** blk_root = bman1.get_rootblock();
+    unsigned block_idx = 0;
+    unsigned i, j;
+    
+    const bm::word_t* blk;
+    const bm::word_t* arg_blk;
+    bool  blk_gap;
+    bool  arg_gap;
+
+    BM_SET_MMX_GUARD
+
+    for (i = 0; i < bman1.top_block_size(); ++i)
+    {
+        bm::word_t** blk_blk = blk_root[i];
+
+        if (blk_blk == 0) // not allocated
+        {
+            const bm::word_t* const* bvbb = bman2.get_topblock(i);
+            if (bvbb == 0) 
+            {
+                block_idx += bm::set_array_size;
+                continue;
+            }
+
+            blk = 0;
+            blk_gap = false;
+
+            for (j = 0; j < bm::set_array_size; ++j,++block_idx)
+            {                
+                arg_blk = bman2.get_block(i, j);
+                arg_gap = BM_IS_GAP(bman2, arg_blk, block_idx);
+
+                if (!arg_blk) 
+                    continue;
+                combine_any_operation_with_block(blk, blk_gap,
+                                                 arg_blk, arg_gap,
+                                                 temp_blk,
+                                                 dmit, dmit_end);
+            } // for j
+            continue;
+        }
+
+        for (j = 0; j < bm::set_array_size; ++j, ++block_idx)
+        {
+            blk = blk_blk[j];
+            arg_blk = bman2.get_block(i, j);
+
+            if (blk == 0 && arg_blk == 0)
+                continue;
+                
+            arg_gap = BM_IS_GAP(bman2, arg_blk, block_idx);
+            blk_gap = BM_IS_GAP(bman1, blk, block_idx);
+            
+            combine_any_operation_with_block(blk, blk_gap,
+                                             arg_blk, arg_gap,
+                                             temp_blk,
+                                             dmit, dmit_end);
+            
+
+        } // for j
+
+    } // for i
+    
+    if (temp_blk)
+    {
+        bv1.free_tempblock(temp_blk);
+    }
+
+}
+
+
+
+/*!
    \brief Computes bitcount of AND operation of two bitsets
    \param bv1 - Argument bit-vector.
    \param bv2 - Argument bit-vector.
@@ -487,6 +882,23 @@ bm::id_t count_and(const BV& bv1, const BV& bv2)
     distance_operation(bv1, bv2, &dmd, &dmd+1);
     return dmd.result;
 }
+
+/*!
+   \brief Computes if there is any bit in AND operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  distance
+*/
+template<class BV>
+bm::id_t any_and(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_AND);
+    
+    distance_operation_any(bv1, bv2, &dmd, &dmd+1);
+    return dmd.result;
+}
+
 
 
 /*!
@@ -504,6 +916,23 @@ bm::id_t count_xor(const BV& bv1, const BV& bv2)
     distance_operation(bv1, bv2, &dmd, &dmd+1);
     return dmd.result;
 }
+
+/*!
+   \brief Computes if there is any bit in XOR operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  distance
+*/
+template<class BV>
+bm::id_t any_xor(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_XOR);
+    
+    distance_operation_any(bv1, bv2, &dmd, &dmd+1);
+    return dmd.result;
+}
+
 
 
 /*!
@@ -523,6 +952,23 @@ bm::id_t count_sub(const BV& bv1, const BV& bv2)
 }
 
 
+/*!
+   \brief Computes if there is any bit in SUB operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  distance
+*/
+template<class BV>
+bm::id_t any_sub(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_SUB_AB);
+    
+    distance_operation_any(bv1, bv2, &dmd, &dmd+1);
+    return dmd.result;
+}
+
+
 /*!    
    \brief Computes bitcount of OR operation of two bitsets
    \param bv1 - Argument bit-vector.
@@ -536,6 +982,22 @@ bm::id_t count_or(const BV& bv1, const BV& bv2)
     distance_metric_descriptor dmd(bm::COUNT_OR);
     
     distance_operation(bv1, bv2, &dmd, &dmd+1);
+    return dmd.result;
+}
+
+/*!
+   \brief Computes if there is any bit in OR operation of two bitsets
+   \param bv1 - Argument bit-vector.
+   \param bv2 - Argument bit-vector.
+   \return non zero value if there is any bit
+   \ingroup  distance
+*/
+template<class BV>
+bm::id_t any_or(const BV& bv1, const BV& bv2)
+{
+    distance_metric_descriptor dmd(bm::COUNT_OR);
+    
+    distance_operation_any(bv1, bv2, &dmd, &dmd+1);
     return dmd.result;
 }
 

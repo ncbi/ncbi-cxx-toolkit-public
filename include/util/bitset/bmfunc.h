@@ -2656,6 +2656,37 @@ unsigned bit_block_and_count(const bm::word_t* src1,
 
 
 /*!
+   \brief Function ANDs two bitblocks and tests for any bit. 
+   Function does not analyse availability of source blocks.
+
+   \param src1     - first bit block
+   \param src1_end - first bit block end
+   \param src2     - second bit block
+
+   @ingroup bitfunc
+*/
+inline 
+unsigned bit_block_and_any(const bm::word_t* src1, 
+                           const bm::word_t* src1_end,
+                           const bm::word_t* src2)
+{
+    unsigned count = 0;
+    do
+    {
+        count = (src1[0] & src2[0]) |
+                (src1[1] & src2[1]) |
+                (src1[2] & src2[2]) |
+                (src1[3] & src2[3]);
+
+        src1+=4; src2+=4;
+    } while ((src1 < src1_end) && (count == 0));
+    return count;
+}
+
+
+
+
+/*!
    \brief Function XORs two bitblocks and computes the bitcount. 
    Function does not analyse availability of source blocks.
 
@@ -2688,6 +2719,37 @@ unsigned bit_block_xor_count(const bm::word_t* BMRESTRICT src1,
 #endif
     return count;
 }
+
+
+/*!
+   \brief Function XORs two bitblocks and and tests for any bit.
+   Function does not analyse availability of source blocks.
+
+   \param src1     - first bit block.
+   \param src1_end - first bit block end
+   \param src2     - second bit block.
+
+   @ingroup bitfunc
+*/
+inline 
+unsigned bit_block_xor_any(const bm::word_t* BMRESTRICT src1,
+                             const bm::word_t* BMRESTRICT src1_end, 
+                             const bm::word_t* BMRESTRICT src2)
+{
+    unsigned count = 0;
+    do
+    {
+        count = (src1[0] ^ src2[0]) |
+                (src1[1] ^ src2[1]) |
+                (src1[2] ^ src2[2]) |
+                (src1[3] ^ src2[3]);
+
+        src1+=4; src2+=4;
+    } while ((src1 < src1_end) && (count == 0));
+    return count;
+}
+
+
 
 
 /*!
@@ -2724,6 +2786,35 @@ unsigned bit_block_sub_count(const bm::word_t* BMRESTRICT src1,
     return count;
 }
 
+/*!
+   \brief Function SUBs two bitblocks and and tests for any bit.
+   Function does not analyse availability of source blocks.
+
+   \param src1     - first bit block.
+   \param src1_end - first bit block end
+   \param src2     - second bit block.
+
+   @ingroup bitfunc
+*/
+inline 
+unsigned bit_block_sub_any(const bm::word_t* BMRESTRICT src1,
+                             const bm::word_t* BMRESTRICT src1_end, 
+                             const bm::word_t* BMRESTRICT src2)
+{
+    unsigned count = 0;
+    do
+    {
+        count = (src1[0] & ~src2[0]) |
+                (src1[1] & ~src2[1]) |
+                (src1[2] & ~src2[2]) |
+                (src1[3] & ~src2[3]);
+
+        src1+=4; src2+=4;
+    } while ((src1 < src1_end) && (count == 0));
+    return count;
+}
+
+
 
 /*!
    \brief Function ORs two bitblocks and computes the bitcount. 
@@ -2758,6 +2849,36 @@ unsigned bit_block_or_count(const bm::word_t* src1,
 #endif
     return count;
 }
+
+/*!
+   \brief Function ORs two bitblocks and and tests for any bit.
+   Function does not analyse availability of source blocks.
+
+   \param src1     - first bit block.
+   \param src1_end - first bit block end
+   \param src2     - second bit block.
+
+   @ingroup bitfunc
+*/
+inline 
+unsigned bit_block_or_any(const bm::word_t* BMRESTRICT src1,
+                          const bm::word_t* BMRESTRICT src1_end, 
+                          const bm::word_t* BMRESTRICT src2)
+{
+    unsigned count = 0;
+    do
+    {
+        count = (src1[0] | src2[0]) |
+                (src1[1] | src2[1]) |
+                (src1[2] | src2[2]) |
+                (src1[3] | src2[3]);
+
+        src1+=4; src2+=4;
+    } while ((src1 < src1_end) && (count == 0));
+    return count;
+}
+
+
 
 
 /*!
@@ -2848,6 +2969,30 @@ bm::id_t bit_operation_and_count(const bm::word_t* BMRESTRICT src1,
     return bit_block_and_count(src1, src1_end, src2);
 }
 
+/*!
+   \brief Performs bitblock AND operation test. 
+
+   \param src1     - first bit block.
+   \param src1_end - first bit block end
+   \param src2     - second bit block.
+
+   \returns non zero if there is any value 
+
+   @ingroup bitfunc
+*/
+inline 
+bm::id_t bit_operation_and_any(const bm::word_t* BMRESTRICT src1,
+                               const bm::word_t* BMRESTRICT src1_end,
+                               const bm::word_t* BMRESTRICT src2)
+{
+    if (IS_EMPTY_BLOCK(src1) || IS_EMPTY_BLOCK(src2))
+    {
+        return 0;
+    }
+    return bit_block_and_any(src1, src1_end, src2);
+}
+
+
 
 /*!
    \brief Performs bitblock SUB operation and calculates bitcount of the result. 
@@ -2876,6 +3021,35 @@ bm::id_t bit_operation_sub_count(const bm::word_t* BMRESTRICT src1,
     }
     return bit_block_sub_count(src1, src1_end, src2);
 }
+
+/*!
+   \brief Performs bitblock test of SUB operation. 
+
+   \param src1      - first bit block.
+   \param src1_end  - first bit block end
+   \param src2      - second bit block
+
+   \returns non zero value if there are any bits
+
+   @ingroup bitfunc
+*/
+inline 
+bm::id_t bit_operation_sub_any(const bm::word_t* BMRESTRICT src1, 
+                               const bm::word_t* BMRESTRICT src1_end,
+                               const bm::word_t* BMRESTRICT src2)
+{
+    if (IS_EMPTY_BLOCK(src1))
+    {
+        return 0;
+    }
+    
+    if (IS_EMPTY_BLOCK(src2)) // nothing to diff
+    {
+        return !bit_is_all_zero(src1, src1_end);
+    }
+    return bit_block_sub_any(src1, src1_end, src2);
+}
+
 
 
 /*!
@@ -2909,6 +3083,39 @@ bm::id_t bit_operation_or_count(const bm::word_t* BMRESTRICT src1,
 
     return bit_block_or_count(src1, src1_end, src2);
 }
+
+/*!
+   \brief Performs bitblock OR operation test. 
+
+   \param src1     - first bit block.
+   \param src1_end - first bit block end
+   \param src2     - second bit block.
+
+   \returns non zero value if there are any bits
+
+   @ingroup bitfunc
+*/
+inline 
+bm::id_t bit_operation_or_any(const bm::word_t* BMRESTRICT src1,
+                              const bm::word_t* BMRESTRICT src1_end, 
+                              const bm::word_t* BMRESTRICT src2)
+{
+    if (IS_EMPTY_BLOCK(src1))
+    {
+        if (!IS_EMPTY_BLOCK(src2))
+            return !bit_is_all_zero(src2, src2 + (src1_end - src1));
+        else
+            return 0; // both blocks are empty        
+    }
+    else
+    {
+        if (IS_EMPTY_BLOCK(src2))
+            return !bit_is_all_zero(src1, src1_end);
+    }
+
+    return bit_block_or_any(src1, src1_end, src2);
+}
+
 
 
 /*!
@@ -3203,6 +3410,32 @@ bm::id_t bit_operation_xor_count(const bm::word_t* BMRESTRICT src1,
     }
     return bit_block_xor_count(src1, src1_end, src2);
 }
+
+/*!
+   \brief Performs bitblock XOR operation test. 
+
+   \param src1 - first bit block.
+   \param src2 - second bit block.
+
+   \returns non zero value if there are bits
+
+   @ingroup bitfunc
+*/
+inline 
+bm::id_t bit_operation_xor_any(const bm::word_t* BMRESTRICT src1,
+                               const bm::word_t* BMRESTRICT src1_end,
+                               const bm::word_t* BMRESTRICT src2)
+{
+    if (IS_EMPTY_BLOCK(src1) || IS_EMPTY_BLOCK(src2))
+    {
+        if (IS_EMPTY_BLOCK(src1) && IS_EMPTY_BLOCK(src2))
+            return 0;
+        const bm::word_t* block = IS_EMPTY_BLOCK(src1) ? src2 : src1;
+        return !bit_is_all_zero(block, block + (src1_end - src1));
+    }
+    return bit_block_xor_any(src1, src1_end, src2);
+}
+
 
 /**
     \brief Inspects bit block for zero words at the head and at the end 
