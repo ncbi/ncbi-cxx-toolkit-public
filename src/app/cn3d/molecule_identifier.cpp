@@ -81,6 +81,20 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
         }
     }
 
+    // check/assign #residues
+    if (identifier->nResidues == 0)
+        identifier->nResidues = molecule->residues.size();
+    else if (identifier->nResidues != molecule->residues.size())
+        ERRORMSG("# residue mismatch in molecule identifier for " << identifier->ToString());
+
+    // check/assign pdb id
+    int name = ((molecule->name.size() == 1) ? molecule->name[0] : MoleculeIdentifier::VALUE_NOT_SET);
+    if (identifier->pdbID.size() == 0 && identifier->pdbChain == MoleculeIdentifier::VALUE_NOT_SET) {
+        identifier->pdbID = object->pdbID;
+        identifier->pdbChain = name;
+    } else if (identifier->pdbID != object->pdbID || identifier->pdbChain != name)
+        ERRORMSG("PDB ID mismatch in molecule identifier for " << identifier->ToString());
+
     return identifier;
 }
 
