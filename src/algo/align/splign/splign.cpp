@@ -437,10 +437,12 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         bool imprf = imperfect[i/4].first;
         if(imprf) {                
 
-            const size_t len1 = pattern0[i+1] - pattern0[i] + 1;
-            const size_t len2 = pattern0[i+3] - pattern0[i+2] + 1;
-            const size_t maxlen = max(len1, len2);
-            const size_t band = size_t((1 - imperfect[i/4].second) * maxlen) + 2;
+            const size_t len1 (pattern0[i+1] - pattern0[i] + 1);
+            const size_t len2 (pattern0[i+3] - pattern0[i+2] + 1);
+            const size_t maxlen (max(len1, len2));
+            const size_t lendif (len1 < len2? len2 - len1: len1 - len2);
+            size_t band (size_t((1 - imperfect[i/4].second) * maxlen) + 2);
+            if(band < lendif) band += lendif;
             nwa.SetBand(band);
             nwa.SetSequences(Seq1 + pattern0[i],   len1,
                              Seq2 + pattern0[i+2], len2,
