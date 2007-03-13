@@ -208,13 +208,8 @@ EOF
                         \( $driver != "ftds" -a $driver != "msdblib" -a $driver != "ftds64" \) -o \
                         \( $driver = "ftds64" -a $server = $server_mssql \) ;  then
 
-                    # Do not run dbapi_testspeed with MOZART and BARTOK
                     cmd="dbapi_bcp -lb random -d $driver -S $server"
-                    if test $driver != "ftds64" ; then 
-                        RunSimpleTest "dbapi_bcp"
-                    else
-                        sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
-                    fi
+                    RunSimpleTest "dbapi_bcp"
 
                     # Do not run dbapi_testspeed with MOZART and BARTOK
                     cmd="dbapi_testspeed -lb random -d $driver -S $server"
