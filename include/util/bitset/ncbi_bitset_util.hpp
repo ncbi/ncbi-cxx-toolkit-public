@@ -46,10 +46,16 @@ BEGIN_NCBI_SCOPE
 template<class TBV, class TBuffer>
 void BV_Serialize(const TBV&     bv, 
                   TBuffer&       buf,
-                  bm::word_t*    tmp_block = 0)
+                  bm::word_t*    tmp_block = 0,
+                  bool           optimize_bv = false)
 {
     typename TBV::statistics st;
-    bv.calc_stat(&st);
+
+    if (optimize_bv) {
+        bv.optimize(0, TBV::opt_compress, &st);
+    } else {
+        bv.calc_stat(&st);
+    }
 
     if (st.max_serialize_mem > buf.size()) {
         buf.resize(st.max_serialize_mem);
