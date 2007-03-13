@@ -107,7 +107,7 @@ void CTestConnectionHandler::OnMessage(BUF buf)
     CSocket &socket = GetSocket();
 
     size_t msg_size = BUF_Read(buf, data, sizeof(data));
-    if (msg_size >= 0) {
+    if (msg_size > 0) {
         data[msg_size] = '\0';
         if (strncmp(data, "Hello!", strlen("Hello!")) == 0)
             m_Server->AddHello();
