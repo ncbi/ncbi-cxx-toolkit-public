@@ -69,6 +69,11 @@ for line in lines:
     mod_pp.write(line + '\n')
 mod_pp.close()
 
+import ncbi_modify
+s = open(swig_input_fname + '.mpp').read()
+s_mod = ncbi_modify.Modify(s)
+open(swig_input_fname + '.mpp', 'w').write(s_mod)
+
 # Run swig on modified preprocessor output
 ofname = os.path.splitext(ifname)[0] + '_wrap.cpp'
 cline = '''
