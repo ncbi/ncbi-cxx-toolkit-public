@@ -108,9 +108,8 @@ CMergeBitsetBlob<BV>::GetMergeBuffer()
     m_BlobStack.resize(0);
 
     // serialize
-    m_TmpBv.optimize();
     typename TBitVector::statistics st1;
-    m_TmpBv.calc_stat(&st1);
+    m_TmpBv.optimize(0, TBitVector::opt_compress, &st1);
 
     CMergeVolumes::TRawBuffer* sbuf = m_BufResourcePool->Get();
     CMergeVolumes::TBufPoolGuard guard(*m_BufResourcePool, sbuf);
@@ -120,7 +119,7 @@ CMergeBitsetBlob<BV>::GetMergeBuffer()
     }
     size_t size = bm::serialize(m_TmpBv, &(*sbuf)[0], 
                                 m_TmpBvBlock, 
-                                bm::BM_NO_BYTE_ORDER);
+                                bm::BM_NO_BYTE_ORDER | bm::BM_NO_GAP_LENGTH);
     sbuf->resize(size);
     return guard.Release();
 
