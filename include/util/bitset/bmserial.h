@@ -1914,12 +1914,35 @@ void iterator_deserializer<BV, SerialIterator>::load_id_list(
                                             unsigned              id_count,
                                             bool                  set_clear)
 {
-    for (unsigned i = 0; i < id_count; ++i)
+    const unsigned win_size = 64;
+    bm::id_t id_buffer[win_size+1];
+
+    if (set_clear)  // set bits
     {
-        bm::id_t id = sit.get_id();
-        bv.set(id, set_clear);
-        sit.next();
-    } // for
+        for (unsigned i = 0; i < id_count;)
+        {
+            unsigned j;
+            for (j = 0; j < win_size && i < id_count; ++j, ++i) 
+            {
+                id_buffer[j] = sit.get_id();
+                sit.next();
+            } // for j
+            bm::combine_or(bv, id_buffer, id_buffer + j);
+        } // for i
+    } 
+    else // clear bits
+    {
+        for (unsigned i = 0; i < id_count;)
+        {
+            unsigned j;
+            for (j = 0; j < win_size && i < id_count; ++j, ++i) 
+            {
+                id_buffer[j] = sit.get_id();
+                sit.next();
+            } // for j
+            bm::combine_sub(bv, id_buffer, id_buffer + j);
+        } // for i
+    }
 }
 
 
