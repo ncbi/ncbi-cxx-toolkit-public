@@ -302,7 +302,7 @@ inline void CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>
     if (compact == eCompact) {
         m_TmpVec.clear(true); // clear vector by memory deallocation
         m_TmpVec = bv;
-        m_TmpVec.optimize(0, BV::opt_compress, &st);
+        m_TmpVec.optimize(0, BV::opt_compress, &st1);
         bv_to_store = &m_TmpVec;
     } else {
         bv_to_store->calc_stat(&st1);
