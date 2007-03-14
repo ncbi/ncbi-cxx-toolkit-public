@@ -5,6 +5,6 @@ SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
       format_guess ascii85 md5 file_obsolete unicode dictionary \
       dictionary_util thread_nonstop sgml_entity request_control \
       transmissionrw miscmath mutex_pool ncbi_cache line_reader \
-      util_exception chunk_stream
+      util_exception chunk_stream multi_writer
 
 LIB = xutil
