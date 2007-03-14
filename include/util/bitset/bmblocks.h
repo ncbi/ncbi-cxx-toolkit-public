@@ -325,7 +325,7 @@ public:
             bm::word_t** blk_blk = blk_root[i];
             if (blk_blk) 
             {
-                this->bm_.alloc_.free_ptr(blk_blk);
+                this->bm_.get_allocator().free_ptr(blk_blk);
                 blk_root[i] = 0;
             }
             if (stat_)
@@ -661,11 +661,13 @@ public:
         volatile const char* vp = _copyright<true>::_p;
         char c = *vp;
         c = 0;
+        effective_top_block_size_ = 1;
     }
 
     blocks_manager(const blocks_manager& blockman)
         : blocks_(0),
             top_block_size_(blockman.top_block_size_),
+            effective_top_block_size_(blockman.effective_top_block_size_),
         #ifdef BM_DISBALE_BIT_IN_PTR
             gap_flags_(blockman.gap_flags_),
         #endif
@@ -963,6 +965,8 @@ public:
         // auto-resize the top block array
         if (nblk_blk >= top_block_size_)
             reserve_top_blocks(nblk_blk + 1);
+        if (nblk_blk >= effective_top_block_size_)
+            effective_top_block_size_ = nblk_blk + 1;
 
         // If first level array not yet allocated, allocate it and
         // assign block to it
@@ -1020,6 +1024,8 @@ public:
         // auto-resize the top block array
         if (nblk_blk >= top_block_size_)
             reserve_top_blocks(nblk_blk + 1);
+        if (nblk_blk >= effective_top_block_size_)
+            effective_top_block_size_ = nblk_blk + 1;
 
         // If first level array not yet allocated, allocate it and
         // assign block to it
@@ -1048,6 +1054,7 @@ public:
     */
     void set_block_ptr(unsigned nb, bm::word_t* block)
     {
+        BM_ASSERT((nb >> bm::set_array_shift) < effective_top_block_size_);
         blocks_[nb >> bm::set_array_shift][nb & bm::set_array_mask] = block;
     }
         
@@ -1356,6 +1363,7 @@ public:
         #endif
 
 		xor_swap(this->top_block_size_, bm.top_block_size_);
+        xor_swap(this->effective_top_block_size_, bm.effective_top_block_size_);
 
         BM_ASSERT(sizeof(glevel_len_) / sizeof(glevel_len_[0]) 
                                     == bm::gap_levels); // paranoiya check
@@ -1377,13 +1385,21 @@ public:
     */
     unsigned effective_top_block_size() const
     {
+        return effective_top_block_size_;
+/*
         unsigned i = top_block_size();
         if (!i) return 0;
         for (--i; i > 0; --i) 
         {
-            if (blocks_[i] != 0) return i+1;
+            if (blocks_[i] != 0) 
+            {
+                BM_ASSERT(this->effective_top_block_size_ >= i+1);
+                return i+1;
+            }
         }
+        BM_ASSERT(this->effective_top_block_size_ >= 1);
         return 1;
+*/
     }
 
     /**
@@ -1451,14 +1467,12 @@ private:
     }
 
 private:
-    // Explicitly let an inner class see our private alloc_ member
-    // for compatibility with certain compilers (WorkShop, GCC 2.95)
-    friend class block_opt_func;
-
     /// Tree of blocks.
     bm::word_t***                          blocks_;
     /// Size of the top level block array in blocks_ tree
     unsigned                               top_block_size_;
+    /// Effective size of the top level block array in blocks_ tree
+    unsigned                               effective_top_block_size_;
     #ifdef BM_DISBALE_BIT_IN_PTR
     /// mini bitvector used to indicate gap blocks
     MS                                     gap_flags_;

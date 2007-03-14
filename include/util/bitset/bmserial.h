@@ -217,7 +217,6 @@ unsigned serialize(const BV& bv,
 
 
     // save blocks.
-
     for (i = 0; i < bm::set_total_blocks; ++i)
     {
         bm::word_t* blk = bman.get_block(i);

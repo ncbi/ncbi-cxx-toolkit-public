@@ -1875,8 +1875,8 @@ int bvector<Alloc, MS>::compare(const bvector<Alloc, MS>& bvect) const
     int res;
     unsigned bn = 0;
 
-    unsigned top_blocks = blockman_.top_block_size();
-    unsigned bvect_top_blocks = bvect.blockman_.top_block_size();
+    unsigned top_blocks = blockman_.effective_top_block_size();
+    unsigned bvect_top_blocks = bvect.blockman_.effective_top_block_size();
 
     if (bvect_top_blocks > top_blocks) top_blocks = bvect_top_blocks;
 
@@ -2505,7 +2505,7 @@ void bvector<Alloc, MS>::combine_operation(
 
     if (size_ == bvect.size_) 
     {
-        BM_ASSERT( top_blocks >= bvect_top_blocks);
+        BM_ASSERT(top_blocks >= bvect_top_blocks);
     }
     else
     if (size_ < bvect.size_) // this vect shorter than the arg.
@@ -2528,37 +2528,14 @@ void bvector<Alloc, MS>::combine_operation(
             }
         }
     }
-/*
-    block_bit_op      bit_func;
-    switch (opcode)
-    {
-    case BM_AND:
-        bit_func = bit_block_and;
-        break;
-    case BM_OR:
-        bit_func = bit_block_or;
-        break;
-    case BM_SUB:
-        bit_func = bit_block_sub;
-        break;
-    case BM_XOR:
-        bit_func = bit_block_xor;
-        break;
-    }           
-*/    
     
     bm::word_t*** blk_root = blockman_.blocks_root();
     unsigned block_idx = 0;
     unsigned i, j;
 
-    unsigned effective_top_block_size = blockman_.effective_top_block_size();
-    unsigned ebs2 = bvect.blockman_.effective_top_block_size();
-    if (ebs2 > effective_top_block_size)
-        effective_top_block_size = ebs2;
-
     BM_SET_MMX_GUARD
 
-    for (i = 0; i < effective_top_block_size; ++i)
+    for (i = 0; i < top_blocks; ++i)
     {
         bm::word_t** blk_blk = blk_root[i];
 
@@ -2601,41 +2578,6 @@ void bvector<Alloc, MS>::combine_operation(
                 bool arg_gap = BM_IS_GAP(bvect.blockman_, arg_blk, block_idx);
                 bool gap = BM_IS_GAP((*this).blockman_, blk, block_idx);
                 
-                // Optimization branch. Statistically two bit blocks
-                // are bumping into each other quite frequently and
-                // this peace of code tend to be executed often and 
-                // program does not go into nested calls.
-                // But logically this branch can be eliminated without
-                // loosing any functionality.
-/*                   
-                if (!gap && !arg_gap)
-                {
-                    if (IS_VALID_ADDR(blk) && arg_blk)
-                    {
-                    
-                        if (bit_func2 && (j < bm::set_array_size-1))
-                        {
-                            bm::word_t* blk2 = blk_blk[j+1];
-                            const bm::word_t* arg_blk2 = bvect.get_block(i, j+1);
-                            
-                            bool arg_gap2 = BM_IS_GAP(bvect, arg_blk2, block_idx + 1);
-                            bool gap2 = BM_IS_GAP((*this), blk2, block_idx + 1);
-                            
-                            if (!gap2 && !arg_gap2 && blk2 && arg_blk2)
-                            {
-                                bit_func2(blk, arg_blk, blk2, arg_blk2);
-                                ++j;
-                                ++block_idx;
-                                continue;
-                            }
-                            
-                        }
-                        
-                        bit_func(blk, arg_blk);
-                        continue;
-                    }
-                } // end of optimization branch...
-*/                   
                 combine_operation_with_block(block_idx, gap, blk, 
                                             arg_blk, arg_gap,
                                             opcode);
