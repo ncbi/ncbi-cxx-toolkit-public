@@ -2072,7 +2072,8 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                 unsigned i, j;
                 bman.get_block_coord(bv_block_idx, &i, &j);
                 bm::word_t*** blk_root = bman.get_rootblock();
-                unsigned effective_top_size = bman.top_block_size();
+                unsigned effective_top_size = 
+                    bman.effective_top_block_size();
                 for (;i < effective_top_size; ++i) 
                 {
                     bm::word_t** blk_blk = blk_root[i];
@@ -2099,7 +2100,8 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                 unsigned i, j;
                 bman.get_block_coord(bv_block_idx, &i, &j);
                 bm::word_t*** blk_root = bman.get_rootblock();
-                unsigned effective_top_size = bman.top_block_size();
+                unsigned effective_top_size = 
+                    bman.effective_top_block_size();
                 for (;i < effective_top_size; ++i) 
                 {
                     bm::word_t** blk_blk = blk_root[i];

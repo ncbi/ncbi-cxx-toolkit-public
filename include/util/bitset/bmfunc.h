@@ -866,6 +866,78 @@ void gap_buff_op(T*         BMRESTRICT dest,
 
 }
 
+/*!
+   \brief Abstract distance test operation for GAP buffers. 
+          Receives functor F as a template argument
+   \param vect1 - operand 1 GAP encoded buffer.
+   \param vect1_mask - XOR mask for starting bitflag for vector1 
+                       can be 0 or 1 (1 inverts the vector)
+   \param vect2 - operand 2 GAP encoded buffer.
+   \param vect2_mask - same as vect1_mask
+   \param f - operation functor.
+   \note Internal function.
+   \return non zero value if operation result returns any 1 bit 
+
+   @ingroup gapfunc
+*/
+template<typename T, class F> 
+unsigned gap_buff_any_op(const T*   BMRESTRICT vect1,
+                         unsigned              vect1_mask, 
+                         const T*   BMRESTRICT vect2,
+                         unsigned              vect2_mask, 
+                         F                     f)
+{
+    register const T*  cur1 = vect1;
+    register const T*  cur2 = vect2;
+
+    unsigned bitval1 = (*cur1++ & 1) ^ vect1_mask;
+    unsigned bitval2 = (*cur2++ & 1) ^ vect2_mask;
+    
+    unsigned bitval = f(bitval1, bitval2);
+    if (bitval)
+        return bitval;
+    unsigned bitval_prev = bitval;
+
+    while (1)
+    {
+        bitval = f(bitval1, bitval2);
+        if (bitval)
+            return bitval;
+
+        if (bitval != bitval_prev)
+            bitval_prev = bitval;
+
+        if (*cur1 < *cur2)
+        {
+            ++cur1;
+            bitval1 ^= 1;
+        }
+        else // >=
+        {
+            if (*cur2 < *cur1)
+            {
+                bitval2 ^= 1;                
+            }
+            else  // equal
+            {
+                if (*cur2 == (bm::gap_max_bits - 1))
+                {
+                    break;
+                }
+
+                ++cur1;
+                bitval1 ^= 1;
+                bitval2 ^= 1;
+            }
+            ++cur2;
+        }
+
+    } // while
+
+    return 0;
+}
+
+
 
 /*!
    \brief Abstract distance(similarity) operation for GAP buffers. 
@@ -1418,6 +1490,45 @@ bm::id_t gap_bitset_and_count(const unsigned* block, const T*  buf)
 
 
 /*!
+   \brief Bitcount test of bit block AND masked by GAP block.
+   \param dest - bitblock buffer pointer.
+   \param buf  - GAP buffer pointer.
+
+   @ingroup gapfunc bitfunc
+*/
+template<typename T> 
+bm::id_t gap_bitset_and_any(const unsigned* block, const T*  buf)
+{
+    BM_ASSERT(block);
+
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
+
+    bm::id_t count = 0;
+    if (*buf & 1)  // Starts with 1
+    {
+        count += bit_block_any_range(block, 0, *pcurr);
+        if (count)
+            return count;
+        ++pcurr;
+    }
+    ++pcurr; // now we are in GAP "1" again
+
+    while (pcurr <= pend)
+    {
+        bm::id_t c = bit_block_any_range(block, *(pcurr-1)+1, *pcurr);
+        count += c;
+        if (count)
+            break;
+        pcurr += 2;
+    }
+    return count;
+}
+
+
+
+/*!
    \brief Compute bitcount of bit block SUB masked by GAP block.
    \param dest - bitblock buffer pointer.
    \param buf  - GAP buffer pointer.
@@ -1445,6 +1556,43 @@ bm::id_t gap_bitset_sub_count(const unsigned* block, const T*  buf)
     for (;pcurr <= pend; pcurr+=2)
     {
         count += bit_block_calc_count_range(block, *(pcurr-1)+1, *pcurr);
+    }
+    return count;
+}
+
+
+/*!
+   \brief Compute bitcount test of bit block SUB masked by GAP block.
+   \param dest - bitblock buffer pointer.
+   \param buf  - GAP buffer pointer.
+
+   @ingroup gapfunc bitfunc
+*/
+template<typename T> 
+bm::id_t gap_bitset_sub_any(const unsigned* block, const T*  buf)
+{
+    BM_ASSERT(block);
+
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
+
+    bm::id_t count = 0;
+
+    if (!(*buf & 1))  // Starts with 0
+    {
+        count += bit_block_any_range(block, 0, *pcurr);
+        if (count)
+            return count;
+        ++pcurr;
+    }
+    ++pcurr; // now we are in GAP "0" again
+
+    for (;pcurr <= pend; pcurr+=2)
+    {
+        count += bit_block_any_range(block, *(pcurr-1)+1, *pcurr);
+        if (count)
+            return count;
     }
     return count;
 }
@@ -1489,6 +1637,48 @@ bm::id_t gap_bitset_xor_count(const unsigned* block, const T*  buf)
     }
     return count;
 }
+
+/*!
+   \brief Compute bitcount test of bit block XOR masked by GAP block.
+   \param dest - bitblock buffer pointer.
+   \param buf  - GAP buffer pointer.
+
+   @ingroup gapfunc bitfunc
+*/
+template<typename T> 
+bm::id_t gap_bitset_xor_any(const unsigned* block, const T*  buf)
+{
+    BM_ASSERT(block);
+
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
+
+    unsigned bitval = *buf & 1;
+    
+    register bm::id_t count = bit_block_any_range(block, 0, *pcurr);
+    if (bitval)
+    {
+        count = *pcurr + 1 - count;
+    }
+    
+    for (bitval^=1, ++pcurr; pcurr <= pend; bitval^=1, ++pcurr)
+    {
+        T prev = *(pcurr-1)+1;
+        bm::id_t c = bit_block_any_range(block, prev, *pcurr);
+        
+        if (bitval) // 1 gap; means Result = Total_Bits - BitCount;
+        {
+            c = (*pcurr - prev + 1) - c;
+        }
+        
+        count += c;
+        if (count)
+            return count;
+    }
+    return count;
+}
+
 
 
 /*!
@@ -1537,6 +1727,56 @@ bm::id_t gap_bitset_or_count(const unsigned* block, const T*  buf)
     }
     return count;
 }
+
+/*!
+   \brief Compute bitcount test of bit block OR masked by GAP block.
+   \param dest - bitblock buffer pointer.
+   \param buf  - GAP buffer pointer.
+
+   @ingroup gapfunc bitfunc
+*/
+template<typename T> 
+bm::id_t gap_bitset_or_any(const unsigned* block, const T*  buf)
+{
+    BM_ASSERT(block);
+
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
+
+    unsigned bitval = *buf & 1;
+    
+    register bm::id_t count;
+    if (bitval)
+    {
+        count = *pcurr + 1;
+    } 
+    else
+    {
+        count = bit_block_any_range(block, 0, *pcurr);
+    }
+    
+    for (bitval^=1, ++pcurr; pcurr <= pend; bitval^=1, ++pcurr)
+    {
+        T prev = *(pcurr-1)+1;
+        bm::id_t c;
+        
+        if (bitval)
+        {
+            c = (*pcurr - prev + 1);
+        }
+        else
+        {
+            c = bit_block_any_range(block, prev, *pcurr);
+        }        
+        count += c;
+        if (count)
+            return count;
+    }
+    return count;
+}
+
+
 
 /*!
    \brief Bitblock memset operation. 
@@ -2371,6 +2611,76 @@ bm::id_t bit_block_calc_count_range(const bm::word_t* block,
 }
 
 
+/*!
+	Function calculates if there is any number of 1 bits 
+    in the given array of words in the range between left anf right bits 
+    (borders included). Make sure the addresses are aligned.
+
+    @ingroup bitfunc
+*/
+inline 
+bm::id_t bit_block_any_range(const bm::word_t* block,
+                             bm::word_t left,
+                             bm::word_t right)
+{
+    BM_ASSERT(left <= right);
+    
+	bm::id_t count = 0;
+
+    unsigned nbit  = left; // unsigned(left & bm::set_block_mask);
+    unsigned nword = unsigned(nbit >> bm::set_word_shift);
+    nbit &= bm::set_word_mask;
+
+    const bm::word_t* word = block + nword;
+
+    if (left == right)  // special case (only 1 bit to check)
+    {
+        return (*word >> nbit) & 1;
+    }
+    unsigned acc;
+    unsigned bitcount = right - left + 1;
+
+    if (nbit) // starting position is not aligned
+    {
+        unsigned right_margin = nbit + (right - left);
+        if (right_margin < 32)
+        {
+            unsigned mask =
+                block_set_table<true>::_right[nbit] &
+                block_set_table<true>::_left[right_margin];
+            acc = *word & mask;
+            return acc;
+        }
+        else
+        {
+            acc = *word & block_set_table<true>::_right[nbit];
+            if (acc) 
+                return acc;
+            bitcount -= 32 - nbit;
+        }
+        ++word;
+    }
+
+    // now when we are word aligned, we can check bits the usual way
+    for ( ;bitcount >= 32; bitcount -= 32)
+    {
+        acc = *word++;
+        if (acc) 
+            return acc;
+    }
+
+    if (bitcount)  // we have a tail to count
+    {
+        acc = (*word) & block_set_table<true>::_left[bitcount-1];
+        if (acc) 
+            return acc;
+    }
+
+    return 0;
+}
+
+
+
 // ----------------------------------------------------------------------
 
 /*! Function inverts block of bits 
@@ -2475,6 +2785,27 @@ inline gap_word_t* gap_operation_and(const gap_word_t* BMRESTRICT vect1,
     return tmp_buf;
 }
 
+/*!
+   \brief GAP AND operation test.
+   
+   Function performs AND logical oparation on gap vectors.
+   If possible function put the result into vect1 and returns this
+   pointer.  Otherwise result is put into tmp_buf, which should be 
+   twice of the vector size.
+
+   \param vect1   - operand 1
+   \param vect2   - operand 2
+   \return non zero value if operation returns any 1 bit
+
+   @ingroup gapfunc
+*/
+inline unsigned gap_operation_any_and(const gap_word_t* BMRESTRICT vect1,
+                                      const gap_word_t* BMRESTRICT vect2)
+{
+    return gap_buff_any_op(vect1, 0, vect2, 0, and_op);
+}
+
+
 
 /*!
    \brief GAP XOR operation.
@@ -2496,8 +2827,28 @@ inline gap_word_t* gap_operation_xor(const gap_word_t*  BMRESTRICT vect1,
                                      gap_word_t*        BMRESTRICT tmp_buf)
 {
     gap_buff_op(tmp_buf, vect1, 0, vect2, 0, xor_op);
-
     return tmp_buf;
+}
+
+
+/*!
+   \brief GAP XOR operation test.
+   
+   Function performs AND logical oparation on gap vectors.
+   If possible function put the result into vect1 and returns this
+   pointer.  Otherwise result is put into tmp_buf, which should be 
+   twice of the vector size.
+
+   \param vect1   - operand 1
+   \param vect2   - operand 2
+   \return non zero value if operation returns any 1 bit
+
+   @ingroup gapfunc
+*/
+inline unsigned gap_operation_any_xor(const gap_word_t* BMRESTRICT vect1,
+                                      const gap_word_t* BMRESTRICT vect2)
+{
+    return gap_buff_any_op(vect1, 0, vect2, 0, xor_op);
 }
 
 
@@ -2521,17 +2872,12 @@ inline gap_word_t* gap_operation_or(const gap_word_t*  BMRESTRICT vect1,
                                     const gap_word_t*  BMRESTRICT vect2,
                                     gap_word_t*        BMRESTRICT tmp_buf)
 {
-//    gap_invert(vect1);
-//    gap_temp_invert(vect2);
     gap_buff_op(tmp_buf, vect1, 1, vect2, 1, and_op);
-//    gap_word_t* res = gap_operation_and(vect1, vect2, tmp_buf);
-//    gap_temp_invert(vect2);
-
     gap_invert(tmp_buf);
-//    gap_invert(vect1);
-    
     return tmp_buf;
 }
+
+
 
 
 /*!
@@ -2553,13 +2899,29 @@ inline gap_word_t* gap_operation_sub(const gap_word_t*  BMRESTRICT vect1,
                                      const gap_word_t*  BMRESTRICT vect2,
                                      gap_word_t*        BMRESTRICT tmp_buf)
 {
-//    gap_temp_invert(vect2);
-    
     gap_buff_op(tmp_buf, vect1, 0, vect2, 1, and_op);    
-//    gap_word_t* res = gap_operation_and(vect1, vect2, tmp_buf);
-//    gap_temp_invert(vect2);
-
     return tmp_buf;
+}
+
+
+/*!
+   \brief GAP SUB operation test.
+   
+   Function performs AND logical oparation on gap vectors.
+   If possible function put the result into vect1 and returns this
+   pointer.  Otherwise result is put into tmp_buf, which should be 
+   twice of the vector size.
+
+   \param vect1   - operand 1
+   \param vect2   - operand 2
+   \return non zero value if operation returns any 1 bit
+
+   @ingroup gapfunc
+*/
+inline unsigned gap_operation_any_sub(const gap_word_t* BMRESTRICT vect1,
+                                      const gap_word_t* BMRESTRICT vect2)
+{
+    return gap_buff_any_op(vect1, 0, vect2, 1, and_op);    
 }
 
 
@@ -3021,6 +3383,29 @@ bm::id_t bit_operation_sub_count(const bm::word_t* BMRESTRICT src1,
     }
     return bit_block_sub_count(src1, src1_end, src2);
 }
+
+
+/*!
+   \brief Performs inverted bitblock SUB operation and calculates 
+          bitcount of the result. 
+
+   \param src1      - first bit block.
+   \param src1_end  - first bit block end
+   \param src2      - second bit block
+
+   \returns bitcount value 
+
+   @ingroup bitfunc
+*/
+inline 
+bm::id_t bit_operation_sub_count_inv(const bm::word_t* BMRESTRICT src1, 
+                                     const bm::word_t* BMRESTRICT src1_end,
+                                     const bm::word_t* BMRESTRICT src2)
+{
+    unsigned arr_size = src1_end - src1;
+    return bit_operation_sub_count(src2, src2+arr_size, src1);
+}
+
 
 /*!
    \brief Performs bitblock test of SUB operation. 
@@ -3905,6 +4290,88 @@ template<typename W> struct bit_COUNT_B
     }
 };
 
+typedef 
+void (*gap_operation_to_bitset_func_type)(unsigned*, 
+                                          const gap_word_t*);
+
+typedef 
+gap_word_t* (*gap_operation_func_type)(const gap_word_t*,
+                                       const gap_word_t*,
+                                       gap_word_t*);
+
+typedef
+bm::id_t (*bit_operation_count_func_type)(const bm::word_t* ,
+                                          const bm::word_t*, 
+                                          const bm::word_t*);
+
+
+template<bool T> 
+struct operation_functions
+{
+    static 
+        gap_operation_to_bitset_func_type gap2bit_table_[bm::set_END];
+    static 
+        gap_operation_func_type gapop_table_[bm::set_END];
+    static
+        bit_operation_count_func_type bit_op_count_table_[bm::set_END];
+
+    static
+    gap_operation_to_bitset_func_type gap_op_to_bit(unsigned i)
+    {
+        return gap2bit_table_[i];
+    }
+
+    static
+    gap_operation_func_type gap_operation(unsigned i)
+    {
+        return gapop_table_[i];
+    }
+
+    static
+    bit_operation_count_func_type bit_operation_count(unsigned i)
+    {
+        return bit_op_count_table_[i];
+    }
+};
+
+template<bool T>
+gap_operation_to_bitset_func_type 
+operation_functions<T>::gap2bit_table_[bm::set_END] = {
+    &gap_and_to_bitset<bm::gap_word_t>,    // set_AND
+    &gap_add_to_bitset<bm::gap_word_t>,    // set_OR
+    &gap_sub_to_bitset<bm::gap_word_t>,    // set_SUB
+    &gap_xor_to_bitset<bm::gap_word_t>,    // set_XOR
+    0
+};
+
+template<bool T>
+gap_operation_func_type 
+operation_functions<T>::gapop_table_[bm::set_END] = {
+    &gap_operation_and,    // set_AND
+    &gap_operation_or,     // set_OR
+    &gap_operation_sub,    // set_SUB
+    &gap_operation_xor,    // set_XOR
+    0
+};
+
+
+template<bool T>
+bit_operation_count_func_type 
+operation_functions<T>::bit_op_count_table_[bm::set_END] = {
+    0,                            // set_AND
+    0,                            // set_OR
+    0,                            // set_SUB
+    0,                            // set_XOR
+    0,                            // set_ASSIGN
+    0,                            // set_COUNT
+    &bit_operation_and_count,     // set_COUNT_AND
+    &bit_operation_xor_count,     // set_COUNT_XOR
+    &bit_operation_or_count,      // set_COUNT_OR
+    &bit_operation_sub_count,     // set_COUNT_SUB_AB
+    &bit_operation_sub_count_inv, // set_COUNT_SUB_BA
+    0,                            // set_COUNT_A
+    0,                            // set_COUNT_B
+};
 
 } // namespace bm
 

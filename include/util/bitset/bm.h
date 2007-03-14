@@ -1075,7 +1075,7 @@ public:
     {
         bm::word_t*** blk_root = blockman_.get_rootblock();
         typename blocks_manager_type::block_count_arr_func func(blockman_, &(arr[0]));
-        for_each_nzblock(blk_root, blockman_.top_block_size(), 
+        for_each_nzblock(blk_root, blockman_.effective_top_block_size(), 
                                    bm::set_array_size, func);
         return func.last_block();
     }
@@ -1148,8 +1148,10 @@ public:
         word_t*** blk_root = blockman_.get_rootblock();
         if (!blk_root) return false;
         typename blocks_manager_type::block_any_func func(blockman_);
-        return for_each_nzblock_if(blk_root, blockman_.top_block_size(),
-                                             bm::set_array_size, func);
+        return for_each_nzblock_if(blk_root, 
+                                   blockman_.effective_top_block_size(),
+                                   bm::set_array_size, 
+                                   func);
     }
 
     /*!
@@ -1609,7 +1611,7 @@ bm::id_t bvector<Alloc, MS>::count() const
 #endif
     word_t*** blk_root = blockman_.get_rootblock();
     typename blocks_manager_type::block_count_func func(blockman_);
-    for_each_nzblock(blk_root, blockman_.top_block_size(), 
+    for_each_nzblock(blk_root, blockman_.effective_top_block_size(), 
                                 bm::set_array_size, func);
 
     BMCOUNT_SET(func.count());
@@ -2526,7 +2528,7 @@ void bvector<Alloc, MS>::combine_operation(
             }
         }
     }
-
+/*
     block_bit_op      bit_func;
     switch (opcode)
     {
@@ -2543,15 +2545,20 @@ void bvector<Alloc, MS>::combine_operation(
         bit_func = bit_block_xor;
         break;
     }           
-    
+*/    
     
     bm::word_t*** blk_root = blockman_.blocks_root();
     unsigned block_idx = 0;
     unsigned i, j;
 
+    unsigned effective_top_block_size = blockman_.effective_top_block_size();
+    unsigned ebs2 = bvect.blockman_.effective_top_block_size();
+    if (ebs2 > effective_top_block_size)
+        effective_top_block_size = ebs2;
+
     BM_SET_MMX_GUARD
 
-    for (i = 0; i < blockman_.top_block_size(); ++i)
+    for (i = 0; i < effective_top_block_size; ++i)
     {
         bm::word_t** blk_blk = blk_root[i];
 
@@ -2665,9 +2672,16 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
         {
             if (arg_gap)  // both blocks GAP-type
             {
-                gap_word_t tmp_buf[bm::gap_max_buff_len * 3]; // temporary result
-            
+                gap_word_t tmp_buf[bm::gap_max_buff_len * 3]; // temporary result            
                 gap_word_t* res;
+
+                gap_operation_func_type gfunc = 
+                    operation_functions<true>::gap_operation(opcode);
+                BM_ASSERT(gfunc);
+                res = (*gfunc)(BMGAP_PTR(blk), 
+                               BMGAP_PTR(arg_blk), 
+                               tmp_buf);
+/*
                 switch (opcode)
                 {
                 case BM_AND:
@@ -2694,11 +2708,11 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
                     assert(0);
                     res = 0;
                 }
-
-                assert(res == tmp_buf);
+*/
+                BM_ASSERT(res == tmp_buf);
                 unsigned res_len = bm::gap_length(res);
 
-                assert(!(res == tmp_buf && res_len == 0));
+                BM_ASSERT(!(res == tmp_buf && res_len == 0));
 
                 // if as a result of the operation gap block turned to zero
                 // we can now replace it with NULL
@@ -2782,6 +2796,12 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
                 {
                     // special case, maybe we can do the job without 
                     // converting the GAP argument to bitblock
+                    gap_operation_to_bitset_func_type gfunc = 
+                        operation_functions<true>::gap_op_to_bit(opcode);
+                    BM_ASSERT(gfunc);
+                    (*gfunc)(blk, BMGAP_PTR(arg_blk));
+                    return;
+/*
                     switch (opcode)
                     {
                     case BM_OR:
@@ -2795,9 +2815,9 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
                             return;
                     case BM_AND:
                             gap_and_to_bitset(blk, BMGAP_PTR(arg_blk));
-                            return;
-                            
+                            return;                            
                     } // switch
+*/
                 }
                 
                 // the worst case we need to convert argument block to 

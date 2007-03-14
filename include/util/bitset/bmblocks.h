@@ -1364,14 +1364,19 @@ public:
     {
         return top_block_size_;
     }
+
     /*! \brief Returns effective size of the top block array in the tree 
     Effective size excludes NULL pointers at the top descriptor end
     */
     unsigned effective_top_block_size() const
     {
-        unsigned i = top_block_size_-1;
-        for (;(i != 0) && (blocks_[i] == 0); --i) {}
-        return i+1;
+        unsigned i = top_block_size();
+        if (!i) return 0;
+        for (--i; i > 0; --i) 
+        {
+            if (blocks_[i] != 0) return i+1;
+        }
+        return 1;
     }
 
     /**
