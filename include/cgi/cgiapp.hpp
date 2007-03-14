@@ -244,6 +244,8 @@ protected:
     void SetHTTPStatus(unsigned int status) { m_HTTPStatus = status; }
 
 protected:
+    /// Set CONN_HTTP_REFERER, print self-URL and referer to log.
+    void ProcessHttpReferer(void);
 
     /// Bit flags for CCgiRequest
     int                       m_RequestFlags;

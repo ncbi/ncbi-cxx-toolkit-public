@@ -486,6 +486,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             x_OnEvent(eStartRequest, 0);
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             VerifyCgiContext(*m_Context);
+            ProcessHttpReferer();
             int x_result = 0;
             try {
                 x_result = ProcessRequest(*m_Context);

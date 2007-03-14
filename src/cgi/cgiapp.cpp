@@ -197,27 +197,8 @@ int CCgiApplication::Run(void)
             x_OnEvent(eStartRequest, 0);
 
             VerifyCgiContext(*m_Context);
-            // Set HTTP_REFERER
-            string ref = m_Context->GetSelfURL();
-            if ( !ref.empty() ) {
-                string args =
-                    m_Context->GetRequest().GetProperty(eCgi_QueryString);
-                if ( !args.empty() ) {
-                    ref += "?" + args;
-                }
-                GetConfig().Set("CONN", "HTTP_REFERER", ref);
-                // Print script URL
-                if ( s_PrintSelfUrlParam.Get() ) {
-                    GetDiagContext().PrintExtra("SELF_URL=" + ref);
-                }
-            }
-            // Print HTTP_REFERER
-            if ( s_PrintRefererParam.Get() ) {
-                ref = m_Context->GetRequest().GetProperty(eCgi_HttpReferer);
-                if ( !ref.empty() ) {
-                    GetDiagContext().PrintExtra("HTTP_REFERER=" + ref);
-                }
-            }
+            ProcessHttpReferer();
+
             result = ProcessRequest(*m_Context);
             if (result != 0) {
                 SetHTTPStatus(500);
@@ -289,6 +270,34 @@ int CCgiApplication::Run(void)
 
     return result;
 }
+
+
+void CCgiApplication::ProcessHttpReferer(void)
+{
+    // Set HTTP_REFERER
+    CCgiContext& ctx = GetContext();
+    string ref = ctx.GetSelfURL();
+    if ( !ref.empty() ) {
+        string args =
+            ctx.GetRequest().GetProperty(eCgi_QueryString);
+        if ( !args.empty() ) {
+            ref += "?" + args;
+        }
+        GetConfig().Set("CONN", "HTTP_REFERER", ref);
+        // Print script URL
+        if ( s_PrintSelfUrlParam.Get() ) {
+            GetDiagContext().PrintExtra("SELF_URL=" + ref);
+        }
+    }
+    // Print HTTP_REFERER
+    if ( s_PrintRefererParam.Get() ) {
+        ref = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
+        if ( !ref.empty() ) {
+            GetDiagContext().PrintExtra("HTTP_REFERER=" + ref);
+        }
+    }
+}
+
 
 void CCgiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
