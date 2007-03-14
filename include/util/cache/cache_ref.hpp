@@ -142,7 +142,7 @@ public:
     /// Read hash content by mediator key
     bool GetMediatorKeyContent(const string& hash_str, 
                                const string& key,
-                               const string* hashed_content);
+                               string* hashed_content);
 
     /// Remove hash content
     ///
@@ -249,7 +249,7 @@ void CCacheHashedContent::StoreMediatorKeyContent(const string& hash_str,
 inline
 bool CCacheHashedContent::GetMediatorKeyContent(const string& hash_str, 
                                                 const string& key,
-                                                const string* hashed_content)
+                                                string* hashed_content)
 {
     // key mediator is used as ICache subkey
     const size_t buf_size = 4 * 1024;
