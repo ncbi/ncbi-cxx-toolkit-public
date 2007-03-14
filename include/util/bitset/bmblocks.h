@@ -1451,6 +1451,10 @@ private:
     }
 
 private:
+    // Explicitly let an inner class see our private alloc_ member
+    // for compatibility with certain compilers (WorkShop, GCC 2.95)
+    friend class block_opt_func;
+
     /// Tree of blocks.
     bm::word_t***                          blocks_;
     /// Size of the top level block array in blocks_ tree
