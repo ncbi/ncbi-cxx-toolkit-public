@@ -119,6 +119,8 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_Trans(0),
   m_TransAssociation(CBDB_Transaction::eFullAssociation),
   m_RecLen(0),
+  m_H_ffactor(0),
+  m_H_nelem(0),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_RevSplitOff(false),
@@ -430,11 +432,27 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
         ret = m_DB->set_flags(m_DB, DB_REVSPLITOFF);
         BDB_CHECK(ret, 0);
     }
-    if (m_DB_Type == eQueue) {
+
+    switch (m_DB_Type)
+    {
+    case eQueue:
         _ASSERT(rec_len);
         m_RecLen = rec_len;
         ret = m_DB->set_re_len(m_DB, rec_len);
         BDB_CHECK(ret, 0);
+        break;
+    case eHash:
+        if (m_H_ffactor) {
+            int ret = m_DB->set_h_ffactor(m_DB, m_H_ffactor);
+            BDB_CHECK(ret, FileName().c_str());
+        }
+        if (m_H_nelem) {
+            int ret = m_DB->set_h_nelem(m_DB, m_H_nelem);
+            BDB_CHECK(ret, FileName().c_str());
+        }
+        break;
+    default:
+        break;
     }
 
     guard.release();
@@ -714,15 +732,13 @@ void CBDB_RawFile::x_SetByteSwapped(bool bswp)
 void CBDB_RawFile::SetHashFillFactor(unsigned h_ffactor)
 {
     _ASSERT(m_DB_Type == eHash);
-    int ret = m_DB->set_h_ffactor(m_DB, h_ffactor);
-    BDB_CHECK(ret, FileName().c_str());
+    m_H_ffactor = h_ffactor;
 }
 
 void CBDB_RawFile::SetHashNelem(unsigned h_nelem)
 {
     _ASSERT(m_DB_Type == eHash);
-    int ret = m_DB->set_h_nelem(m_DB, h_nelem);
-    BDB_CHECK(ret, FileName().c_str());
+    m_H_nelem = h_nelem;
 }
 
 void CBDB_RawFile::SetHash(DB* db)

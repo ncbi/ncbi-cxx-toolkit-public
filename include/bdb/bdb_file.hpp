@@ -290,6 +290,8 @@ protected:
     CBDB_Transaction* m_Trans;
     int               m_TransAssociation;
     unsigned          m_RecLen;
+    unsigned          m_H_ffactor;
+    unsigned          m_H_nelem;
 
 private:
     bool             m_DB_Attached;    //!< TRUE if m_DB doesn't belong here
