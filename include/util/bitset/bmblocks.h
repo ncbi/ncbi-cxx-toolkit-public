@@ -319,8 +319,15 @@ public:
             BM_ASSERT(temp_block);
         }
 
-        void on_empty_top(unsigned)
+        void on_empty_top(unsigned i)
         {
+            bm::word_t*** blk_root = this->bm_.get_rootblock();
+            bm::word_t** blk_blk = blk_root[i];
+            if (blk_blk) 
+            {
+                this->bm_.alloc_.free_ptr(blk_blk);
+                blk_root[i] = 0;
+            }
             if (stat_)
             {
                 stat_->max_serialize_mem += sizeof(unsigned) + 1;
@@ -1429,12 +1436,12 @@ private:
     void deinit_tree()
     {
         if (blocks_ == 0) return;
-
+        unsigned top_size = this->effective_top_block_size();
         block_free_func  free_func(*this);
-        for_each_nzblock(blocks_, top_block_size_, 
-                                    bm::set_array_size, free_func);
-                                    
-        for(unsigned i = 0; i <  top_block_size_; ++i)
+        for_each_nzblock(blocks_, top_size, 
+                                  bm::set_array_size, free_func);
+
+        for(unsigned i = 0; i < top_size; ++i)
         {
             bm::word_t** blk_blk = blocks_[i];
             if (blk_blk) 
