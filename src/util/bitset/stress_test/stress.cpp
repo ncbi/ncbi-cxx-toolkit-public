@@ -1521,6 +1521,13 @@ void AndOperationsTest()
 
     bm::id_t predicted_count = bm::count_and(bvect_full1, bvect_full2);
 
+    bm::id_t predicted_any = bm::any_and(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
+
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
                                 bvect_full1,
@@ -1574,6 +1581,12 @@ void AndOperationsTest()
     bvect_min1.combine_and(bvect_min2);
 
     bm::id_t predicted_count = bm::count_and(bvect_full1,bvect_full2);
+    bm::id_t predicted_any = bm::any_and(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -1616,6 +1629,12 @@ void AndOperationsTest()
     FillSets(&bvect_min2, &bvect_full2, 1, BITVECT_SIZE/7, 0);
 
     bm::id_t predicted_count = bm::count_and(bvect_full1,bvect_full2);
+    bm::id_t predicted_any = bm::any_and(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -1663,6 +1682,12 @@ void AndOperationsTest()
     bvect_min1.combine_and(bvect_min2);
 
     bm::id_t predicted_count = bm::count_and(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_and(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
     
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -1762,6 +1787,12 @@ void OrOperationsTest()
     bvect_full2.set_bit(13);
     
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
+    bm::id_t predicted_any = bm::any_or(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -1809,6 +1840,12 @@ void OrOperationsTest()
     bvect_min1.combine_or(bvect_min2);
 
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
+    bm::id_t predicted_any = bm::any_or(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -1854,6 +1891,12 @@ void OrOperationsTest()
     bvect_min1.combine_or(bvect_min2);
     
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
+    bm::id_t predicted_any = bm::any_or(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -1990,6 +2033,12 @@ void SubOperationsTest()
     bvect_full2.set_bit(13);
 
     bm::id_t predicted_count = bm::count_sub(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_sub(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -2034,6 +2083,12 @@ void SubOperationsTest()
     bvect_min1.combine_sub(bvect_min2);
 
     bm::id_t predicted_count = bm::count_sub(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_sub(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -2082,6 +2137,12 @@ bvect_full1.stat();
     bvect_min1.combine_sub(bvect_min2);
     
     bm::id_t predicted_count = bm::count_sub(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_sub(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -2150,6 +2211,12 @@ void XorOperationsTest()
     bvect_full2.set_bit(13);
 
     bm::id_t predicted_count = bm::count_xor(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_xor(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -2192,6 +2259,12 @@ void XorOperationsTest()
         bvect2.optimize();
 
         bm::id_t predicted_count = bm::count_xor(bvect1, bvect2);
+        bm::id_t predicted_any = bm::any_xor(bvect1, bvect2);
+        if (predicted_any == 0 && predicted_count != 0)
+        {
+            cout << "Predicted any error!" << endl;
+            exit(1);
+        }
 
         bvect    bv_target_s;
         SerializationOperation2Test(&bv_target_s,
@@ -2234,6 +2307,12 @@ void XorOperationsTest()
         bvect1.optimize();
         
         bm::id_t predicted_count = bm::count_xor(bvect1, bvect2);
+        bm::id_t predicted_any = bm::any_xor(bvect1, bvect2);
+        if (predicted_any == 0 && predicted_count != 0)
+        {
+            cout << "Predicted any error!" << endl;
+            exit(1);
+        }
 
         bvect    bv_target_s;
         SerializationOperation2Test(&bv_target_s,
@@ -2277,6 +2356,12 @@ void XorOperationsTest()
         bvect1.optimize();
         
         bm::id_t predicted_count = bm::count_xor(bvect1, bvect2);
+        bm::id_t predicted_any = bm::any_xor(bvect1, bvect2);
+        if (predicted_any == 0 && predicted_count != 0)
+        {
+            cout << "Predicted any error!" << endl;
+            exit(1);
+        }
 
         bvect    bv_target_s;
         SerializationOperation2Test(&bv_target_s,
@@ -2321,6 +2406,12 @@ void XorOperationsTest()
     bvect_min1.combine_xor(bvect_min2);
     
     bm::id_t predicted_count = bm::count_xor(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_xor(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -2366,6 +2457,12 @@ void XorOperationsTest()
     FillSets(&bvect_min2, &bvect_full2, 1, BITVECT_SIZE/5, 2);
 
     bm::id_t predicted_count = bm::count_xor(bvect_full1, bvect_full2);
+    bm::id_t predicted_any = bm::any_xor(bvect_full1, bvect_full2);
+    if (predicted_any == 0 && predicted_count != 0)
+    {
+        cout << "Predicted any error!" << endl;
+        exit(1);
+    }
 
     bvect    bv_target_s;
     SerializationOperation2Test(&bv_target_s,
@@ -3015,6 +3112,12 @@ void StressTest(int repetitions)
             cout << "Operation OR" << endl;
 
             bm::id_t predicted_count = bm::count_or(*bvect_full1, *bvect_full2);
+            bm::id_t predicted_any = bm::any_or(*bvect_full1, *bvect_full2);
+            if (predicted_any == 0 && predicted_count != 0)
+            {
+                cout << "Predicted any error!" << endl;
+                exit(1);
+            }
             
             bvect    bv_target_s;
             SerializationOperation2Test(&bv_target_s,
@@ -3049,6 +3152,12 @@ void StressTest(int repetitions)
             cout << "Operation SUB" << endl;
             
             bm::id_t predicted_count = bm::count_sub(*bvect_full1, *bvect_full2);
+            bm::id_t predicted_any = bm::any_sub(*bvect_full1, *bvect_full2);
+            if (predicted_any == 0 && predicted_count != 0)
+            {
+                cout << "Predicted any error!" << endl;
+                exit(1);
+            }
             
             bvect    bv_target_s;
             SerializationOperation2Test(&bv_target_s,
@@ -3084,6 +3193,12 @@ void StressTest(int repetitions)
             cout << "Operation XOR" << endl;
            
             bm::id_t predicted_count = bm::count_xor(*bvect_full1, *bvect_full2);
+            bm::id_t predicted_any = bm::any_xor(*bvect_full1, *bvect_full2);
+            if (predicted_any == 0 && predicted_count != 0)
+            {
+                cout << "Predicted any error!" << endl;
+                exit(1);
+            }
 
             bvect    bv_target_s;
             SerializationOperation2Test(&bv_target_s,
@@ -3119,6 +3234,12 @@ void StressTest(int repetitions)
             cout << "Operation AND" << endl;
 
             bm::id_t predicted_count = bm::count_and(*bvect_full1, *bvect_full2);
+            bm::id_t predicted_any = bm::any_and(*bvect_full1, *bvect_full2);
+            if (predicted_any == 0 && predicted_count != 0)
+            {
+                cout << "Predicted any error!" << endl;
+                exit(1);
+            }
 
             bvect    bv_target_s;
             SerializationOperation2Test(&bv_target_s,
