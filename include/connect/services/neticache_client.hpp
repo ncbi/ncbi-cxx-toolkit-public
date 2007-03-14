@@ -37,9 +37,11 @@
 /// NetCache ICache client specs. 
 ///
 
+#include <corelib/plugin_manager_store.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <util/request_control.hpp>
 #include <util/cache/icache.hpp>
+
 
 
 BEGIN_NCBI_SCOPE
@@ -186,9 +188,10 @@ void NCBI_EntryPoint_xcache_netcache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
+NCBI_NET_CACHE_EXPORT
+void Cache_RegisterDriver_NetCache(void);
 
 } // extern C
-
 
 /* @} */
 

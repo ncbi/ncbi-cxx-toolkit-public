@@ -945,4 +945,9 @@ void NCBI_EntryPoint_xcache_netcache(
 }
 
 
+void Cache_RegisterDriver_NetCache(void)
+{
+    RegisterEntryPoint<ICache>( NCBI_EntryPoint_xcache_netcache );
+}
+
 END_NCBI_SCOPE
