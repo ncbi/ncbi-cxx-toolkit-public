@@ -232,6 +232,29 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream, TFProgres
         return eRefinerResultTrialInitializationError;
     }
 
+
+    //  Check if we can do the refinement based on CD content and refiner parameters.
+    bool hasStructure = false;
+    unsigned int nStructs = 0, nRows = (m_originalAlignment) ? m_originalAlignment->GetNRows() : 0;
+    for (unsigned int i = 1; i < nRows; ++i) {      //  not checking the master, which can't be refined anyway
+        if (m_originalAlignment->IsRowPDB(i)) {
+            ++nStructs;
+            hasStructure = true;
+        }
+    }
+
+    //  If only have structures, nothing to do if 'fixStructures' is set to be true and block editing is not done.
+    //  (Master is not refined, hence nRows - 1)
+    if (nStructs == nRows - 1) {
+        const LeaveOneOutParams* looParams = m_trial->GetLOOParams();
+        const BlockEditingParams* beParams = m_trial->GetBEParams();
+        if (looParams && looParams->doLOO && !(beParams && beParams->editBlocks)) {
+            if (looParams->fixStructures) 
+                return eRefinerResultNoRowsToRefine; 
+        }
+    }
+
+
     //  In GetScore, might reset diagnostic level
     EDiagSev origDiagSev = SetDiagPostLevel((m_verbose) ? eDiag_Info : eDiag_Error);
 

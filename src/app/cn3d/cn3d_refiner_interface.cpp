@@ -138,6 +138,11 @@ private:
     wxCheckBox *doLooCheck, *fixStructCheck, *fullSeqCheck, *extendFirstCheck, *allUnstSeqCheck;
     wxComboBox *phaseOrderCombo, *looSelectionOrderCombo, *esCombo;
 
+    //  This is used as a proxy for the number of PDB rows in the CD to be refined 
+    //  (by convention, a PDB row title was left blank).  Since the master is not refined,
+    //  'countMasterRowTitle' allows the row title corresponding to the master to not be counted.
+    unsigned int GetNumEmptyRowTitles(bool countMasterRowTitle) const;
+
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnCombo(wxCommandEvent& event);
@@ -282,8 +287,14 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 //    }
 
     // no alignment or block aligner failed (caller should revert to using original alignment)
-    if (errorsEncountered || result != align_refine::eRefinerResultOK)
-        ERRORMSG("Alignment refiner encountered problem(s) (code " << result << ") - current alignment unchanged.\nSee message log for details");
+    if (errorsEncountered || result != align_refine::eRefinerResultOK) {
+        if (result == align_refine::eRefinerResultNoRowsToRefine) {
+            ERRORMSG("Alignment refiner did not execute:  no rows eligible for refinement.\nTry again with different parameter settings.\nSee message log for details");
+            errorsEncountered = false; //  this avoids another 'Severe Error' in calling function
+        } else {
+            ERRORMSG("Alignment refiner encountered problem(s) (code " << result << ") - current alignment unchanged.\nSee message log for details");
+        }
+    }
 
     return !errorsEncountered;
 }
@@ -493,7 +504,17 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
 //    wxStaticText *item7 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
 //    item5->Add( item7, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
     fixStructCheck = new wxCheckBox( panel, ID_FIX_STRUCT_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    fixStructCheck->SetValue(!current_loo.fixStructures);
+
+    unsigned int nStructs = GetNumEmptyRowTitles(false);
+    bool hasNoStructures = (nStructs == 0);
+    bool hasOnlyStructures = (nStructs == rowTitles.size() - 1);
+    if (hasNoStructures) 
+        fixStructCheck->SetValue(false);
+    else if (hasOnlyStructures) 
+        fixStructCheck->SetValue(true);
+    else
+        fixStructCheck->SetValue(!current_loo.fixStructures);
+
     item5->Add( fixStructCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     // align all non-structured rows?
@@ -502,7 +523,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
 //    wxStaticText *item100 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
 //    item5->Add( item100, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
     allUnstSeqCheck = new wxCheckBox( panel, ID_ALL_UNST_SEQ_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    allUnstSeqCheck->SetValue(true);
+    allUnstSeqCheck->SetValue(!hasOnlyStructures);
     item5->Add( allUnstSeqCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     //  Order of row selection in LOO/LNO
@@ -858,6 +879,23 @@ bool BMARefinerOptionsDialog::GetParameters( GeneralRefinerParams* genl_params, 
     if (!be_params->editBlocks && !loo_params->doLOO)
         result = false;
 
+    //  Don't allow refinement if have all structures and not refining structures.
+    if (GetNumEmptyRowTitles(false) == rowTitles.size() - 1 && loo_params->fixStructures) {
+        ERRORMSG("Alignment has only structured rows but 'Refine rows with structure' is unchecked.");
+        result = false;
+    }
+
+    return result;
+}
+
+
+unsigned int BMARefinerOptionsDialog::GetNumEmptyRowTitles(bool countMasterRowTitle) const
+{
+    unsigned int start = (countMasterRowTitle) ? 0 : 1;
+    unsigned int result = 0, n = rowTitles.size();
+    for (unsigned int i = start; i < n; ++i) {
+        if (rowTitles[i].length() == 0) ++result;
+    }
     return result;
 }
 
@@ -931,10 +969,14 @@ void BMARefinerOptionsDialog::OnCheck(wxCommandEvent& event)
         //  toggle loo controls activity
         bool doLoo = doLooCheck->IsChecked();
 
+        unsigned int nStructs = GetNumEmptyRowTitles(false);
+        bool enableFixStructCheck = (nStructs > 0 && nStructs < rowTitles.size() - 1);  //  enable if there's a  non-master structure, but not if all are structures
+        bool enableAllUnstSeqCheck = (nStructs < rowTitles.size() - 1);  //  enable if there's at least one non-structure
+
         looSelectionOrderCombo->Enable(doLoo);
-        fixStructCheck->Enable(doLoo);
         fullSeqCheck->Enable(doLoo);
-        allUnstSeqCheck->Enable(doLoo);
+        fixStructCheck->Enable(doLoo && enableFixStructCheck);
+        allUnstSeqCheck->Enable(doLoo && enableAllUnstSeqCheck);
 
         nExtSpin->GetTextCtrl()->Enable(doLoo);
         nExtSpin->GetSpinButton()->Enable(doLoo);

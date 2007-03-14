@@ -75,6 +75,7 @@ enum RefinerResultCode {
     eRefinerResultTrialExecutionError = 21,
     eRefinerResultLeaveOneOutExecutionError = 22,
     eRefinerResultLeaveNOutExecutionError = 23,
+    eRefinerResultNoRowsToRefine = 24,
     eRefinerResultPhaseSkipped = 100
 };
 
