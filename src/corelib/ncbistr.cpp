@@ -2223,7 +2223,7 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
 SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0, cur_size=0;
-    for (; *src && cur_size < buf_size; ++src, ++count, ++cur_size) {
+    for (; cur_size < buf_size && src && *src; ++src, ++count, ++cur_size) {
         SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good && ++cur_size < buf_size) {
@@ -2239,8 +2239,10 @@ SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 
 SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
 {
-    SIZE_TYPE count = 0, cur_size=0;
-    for (; *src && cur_size < buf_size; ++src, ++count, ++cur_size) {
+    SIZE_TYPE count = 0;
+    SIZE_TYPE cur_size = 0;
+
+    for (; cur_size < buf_size && src && *src; ++src, ++count, ++cur_size) {
         SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good && cur_size < buf_size) {
