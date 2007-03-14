@@ -90,7 +90,7 @@ public:
     void   SetFilename(const string& name);
 
     /// Set the "Location:" HTTP header
-    void   SetLocation(const CUrl& url);
+    void   SetLocation(const CUrl& url, const IUrlEncoder* encoder = 0);
 
     // Various styles of multipart responses, none of which is
     // universally supported. :-/
@@ -232,9 +232,11 @@ inline void CCgiResponse::SetFilename(const string& name)
                    sm_FilenamePrefix + NStr::PrintableString(name) + '"');
 }
 
-inline void CCgiResponse::SetLocation(const CUrl& url)
+inline void CCgiResponse::SetLocation(const CUrl&        url,
+                                      const IUrlEncoder* encoder)
 {
-    SetHeaderValue(sm_LocationName, url.ComposeUrl(CCgiArgs::eAmp_Char));
+    SetHeaderValue(sm_LocationName,
+                   url.ComposeUrl(CCgiArgs::eAmp_Char, encoder));
 }
 
 inline void CCgiResponse::SetMultipartMode(EMultipartMode mode)
