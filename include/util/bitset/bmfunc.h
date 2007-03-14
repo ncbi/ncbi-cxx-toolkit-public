@@ -2625,8 +2625,6 @@ bm::id_t bit_block_any_range(const bm::word_t* block,
 {
     BM_ASSERT(left <= right);
     
-	bm::id_t count = 0;
-
     unsigned nbit  = left; // unsigned(left & bm::set_block_mask);
     unsigned nword = unsigned(nbit >> bm::set_word_shift);
     nbit &= bm::set_word_mask;

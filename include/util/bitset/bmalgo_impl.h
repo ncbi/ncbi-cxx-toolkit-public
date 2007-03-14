@@ -342,6 +342,8 @@ void combine_count_operation_with_block(const bm::word_t* blk,
                         bit_block_calc_count(arg_blk, 
                                              arg_blk + bm::set_block_size);
                 break;
+            default:
+                BM_ASSERT(0);
             } // switch
         }
 
