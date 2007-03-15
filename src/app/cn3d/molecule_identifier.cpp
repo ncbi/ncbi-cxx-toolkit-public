@@ -213,11 +213,12 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
 
         // pdb
         if ((*n)->IsPdb()) {
+            string newID = (*n)->GetPdb().GetMol();
             if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET) {
-                pdbID = (*n)->GetPdb().GetMol();
+                pdbID = newID;
                 pdbChain = (*n)->GetPdb().GetChain();
-            } else {
-                ERRORMSG("AddFields: identifier already has pdb ID " << pdbID << "_" << ((char) pdbChain));
+            } else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetChain()) {
+                ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << ((char) pdbChain) << "'");
             }
         }
 
@@ -225,8 +226,8 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
         else if ((*n)->IsGi()) {
             if (gi == VALUE_NOT_SET)
                 gi = (*n)->GetGi();
-            else
-                ERRORMSG("AddFields(): identifier already has gi " << gi);
+            else if (gi != (*n)->GetGi())
+                ERRORMSG("AddFields(): identifier conflict: already has gi " << gi);
         }
 
         // special case where local accession is actually a PDB identifier + chain + extra stuff,
