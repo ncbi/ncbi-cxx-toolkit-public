@@ -201,6 +201,8 @@ s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
 /*#define _DEBUG_VERBOSE 0*/
 /** Merge two HSPStreams. The HSPs from the first stream are
  *  moved to the second stream.
+ * @param squery_blk Structure controlling the merge process [in]
+ * @param chunk_num Unique integer assigned to hsp_stream [in]
  * @param hsp_stream The stream to merge [in][out]
  * @param combined_hsp_stream The stream that will contain the
  *         HSPLists of the first stream [in][out]

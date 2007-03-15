@@ -1547,6 +1547,11 @@ Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list,
    return 0;
 }
 
+/** callback used to sort HSP lists in order of increasing OID
+ * @param x First HSP list [in]
+ * @param y Second HSP list [in]
+ * @return compare result
+ */
 static int s_SortHSPListByOid(const void *x, const void *y)
 {
     BlastHSPList **xx = (BlastHSPList **)x;
