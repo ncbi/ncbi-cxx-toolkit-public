@@ -258,6 +258,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 
     // Databases
     SQueueDB                     db;               ///< Main queue database
+    SJobInfoDB                   m_JobInfoDB;      ///< Aux info on jobs, tags etc.
     SQueueAffinityIdx            aff_idx;          ///< Q affinity index
     auto_ptr<CBDB_FileCursor>    m_Cursor;         ///< DB cursor
     CFastMutex                   lock;             ///< db, cursor lock

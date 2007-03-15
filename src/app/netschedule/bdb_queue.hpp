@@ -259,9 +259,15 @@ public:
     string ExecQuery(const string& query, const string& action,
                      const string& fields);
     typedef vector<vector<string> > TRecordSet;
-    TRecordSet x_ExecSelect(SLockedQueue& q,
-                            const TNSBitVector* ids,
-                            const string& str_fields);
+    void x_ExecSelect(TRecordSet&         record_set,
+                      SLockedQueue&       q,
+                      const TNSBitVector* ids,
+                      const string&       str_fields);
+    void x_ExecSelectChunk(TRecordSet&           record_set,
+                           SLockedQueue&         q,
+                           const TNSBitVector*   ids,
+                           const vector<int>&    field_nums,
+                           const vector<string>* pos_to_tag);
     /// Queue dump
     void PrintJobDbStat(unsigned job_id, 
                         CNcbiOstream & out,
@@ -356,6 +362,8 @@ private:
                            unsigned      port,
                            unsigned      wait_timeout,
                            const char*   progress_msg);
+
+    void x_AssignJobInfoRec(SJobInfoDB& db, const SNS_SubmitRecord* rec);
 
     /// Info on how to notify job submitter
     struct SSubmitNotifInfo

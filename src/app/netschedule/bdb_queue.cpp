@@ -1591,9 +1591,10 @@ string CQueue::ExecQuery(const string& query, const string& action,
     } else if (action == "FRES") {
     } else if (action == "SLCT") {
         // Form result
-        TRecordSet record_set = 
-            x_ExecSelect(q.GetObject(), bv.get(), fields);
+        TRecordSet record_set;
+        x_ExecSelect(record_set, q.GetObject(), bv.get(), fields);
         list<string> prepared_set;
+        prepared_set.push_back(NStr::IntToString(bv->count()));
         ITERATE(TRecordSet, it, record_set) {
             prepared_set.push_back(NStr::Join(*it, "\t"));
         }
@@ -1605,88 +1606,123 @@ string CQueue::ExecQuery(const string& query, const string& action,
 }
 
 
-CQueue::TRecordSet CQueue::x_ExecSelect(SLockedQueue& q,
-                            const TNSBitVector* ids,
-                            const string& str_fields)
+void CQueue::x_ExecSelect(TRecordSet&         record_set,
+                          SLockedQueue&       q,
+                          const TNSBitVector* ids,
+                          const string&       str_fields)
 {
     // Split fields
     list<string> fields;
     NStr::Split(str_fields, "\t", fields, NStr::eNoMergeDelims);
 
     // Verify the fields, and convert them into field numbers
-    vector<int> fnums;
-    typedef map<string, int> TTagPos;
-    TTagPos tag_pos_map;
+    vector<int> field_nums;
+    vector<string> pos_to_tag;
+    bool has_tags = false;
     ITERATE(list<string>, it, fields) {
         int i = q.GetFieldIndex(*it);
+        string tag_name;
         if (i < 0) {
             if (NStr::StartsWith(*it, "tag.")) {
-                tag_pos_map[(*it).substr(4)] = fnums.size();
+                tag_name = (*it).substr(4);
+                has_tags = true;
             } else {
                 NCBI_THROW(CNetScheduleException, eQuerySyntaxError,
                     string("Unknown field: ") + (*it));
             }
         }
-        fnums.push_back(i);
+        field_nums.push_back(i);
+        pos_to_tag.push_back(tag_name);
     }
 
-    int record_size = fnums.size();
+    vector<string>* p_pos_to_tag = has_tags ? &pos_to_tag : NULL;
+    unsigned chunk_size = 100000;
 
-    TRecordSet record_set;
+    unsigned job_id = 0;
+    unsigned n;
+    TNSBitVector chunk;
+    unsigned n_chunk = 0;
+    do {
+        chunk.clear();
+        for (n = 0; n < chunk_size &&
+                                (job_id = ids->get_next(job_id));
+             ++n)
+        {
+            chunk.set(job_id);
+        }
+        if (n > 0) {
+            x_ExecSelectChunk(record_set, q, &chunk, field_nums, p_pos_to_tag);
+            if (q.monitor.IsMonitorActive()) {
+                CTime tmp_t(CTime::eCurrent);
+                string msg = tmp_t.AsString();
+                msg += " CQueue::ExecSelect() chunk " +
+                       NStr::IntToString(n_chunk) + " processed\n";
+                q.monitor.SendString(msg);
+            }
+        }
+        n_chunk++;
+    } while (n == chunk_size);
+}
 
-    // Retrieve regular fields, building index for
-    // tags merging
-    map<unsigned, unsigned> id_to_record;
+
+void CQueue::x_ExecSelectChunk(TRecordSet&           record_set,
+                               SLockedQueue&         q,
+                               const TNSBitVector*   ids,
+                               const vector<int>&    field_nums,
+                               const vector<string>* pos_to_tag)
+{
+    int record_size = field_nums.size();
+
+    // Retrieve fields
     unsigned first_id, last_id;
+    first_id = 0;
     TNSBitVector::enumerator en(ids->first());
     {{
         CFastMutexGuard guard(q.lock);
         q.db.SetTransaction(NULL);
-        for (unsigned rec_num = 0; en.valid(); ++en) {
+        q.m_JobInfoDB.SetTransaction(NULL);
+        for ( ; en.valid(); ++en) {
+            map<string, string> tags;
             unsigned id = *en;
             q.db.id = id;
             if (q.db.Fetch() != eBDB_Ok)
                 continue;
-            if (!rec_num) first_id = id;
+            if (pos_to_tag) {
+                q.m_JobInfoDB.id = id;
+                if (q.m_JobInfoDB.Fetch() != eBDB_Ok)
+                    continue;
+                // Parse tags record
+                const char* strtags = q.m_JobInfoDB.tags;
+                list<string> tokens;
+                NStr::Split(strtags, "\t", tokens, NStr::eNoMergeDelims);
+                for (list<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+                    string key(*it); ++it;
+                    if (it != tokens.end()){
+                        tags[key] = *it;
+                    } else {
+                        tags[key] = kEmptyStr;
+                        break;
+                    }
+                }
+            }
+            if (!first_id) first_id = id;
             last_id = id;
             vector<string> record(record_size);
             for (int i = 0; i < record_size; ++i) {
-                int fnum = fnums[i];
-                if (fnum < 0) continue;
-                record[i] = q.GetField(fnum);
+                int fnum = field_nums[i];
+                if (fnum < 0) {
+                    map<string, string>::iterator it =
+                        tags.find((*pos_to_tag)[i]);
+                    if (it == tags.end())
+                        continue;
+                    record[i] = string(it->second);
+                } else {
+                    record[i] = q.GetField(fnum);
+                }
             }
-            id_to_record[id] = rec_num++;
             record_set.push_back(record);
         }
     }}
-
-    // Merge tags into record set
-    {{
-        CFastMutexGuard guard(q.GetTagLock());
-        q.SetTagDbTransaction(NULL);
-
-        ITERATE(TTagPos, it_tag, tag_pos_map) {
-            CNSTagDetails tag_details(q);
-            q.ReadTagDetailsFor(ids, it_tag->first, tag_details);
-            int tag_pos = it_tag->second;
-            ITERATE(TNSTagDetails, it, *tag_details) {
-                const string& value = it->first;
-                const TNSBitVector* bv = it->second;
-                TNSBitVector::enumerator en(bv->first());
-                for ( ; en.valid(); ++en) {
-                    unsigned id = *en;
-                    map<unsigned, unsigned>::iterator it_rec =
-                        id_to_record.find(id);
-                    if (it_rec == id_to_record.end())
-                        continue;
-                    unsigned rec_num = it_rec->second;
-                    record_set[rec_num][tag_pos] = value;
-                }
-            }
-        }
-    }}
-
-    return record_set;
 }
 
 
@@ -1750,6 +1786,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
                                    CNetScheduleAPI::ePending);
     rec->job_id = job_id;
     SQueueDB& db = q->db;
+    SJobInfoDB& job_db = q->m_JobInfoDB;
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
@@ -1763,11 +1800,15 @@ CQueue::Submit(SNS_SubmitRecord* rec,
     {{
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
+        job_db.SetTransaction(&trans);
 
         x_AssignSubmitRec(db,
             rec, time(0), host_addr, port, wait_timeout, progress_msg);
-
         db.Insert();
+
+        x_AssignJobInfoRec(job_db, rec);
+        job_db.Insert();
+
 
         // update affinity index
         if (rec->affinity_id) {
@@ -1811,6 +1852,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     unsigned job_id = q->GetNextIdBatch(batch.size());
 
     SQueueDB& db = q->db;
+    SJobInfoDB& job_db = q->m_JobInfoDB;
 
     unsigned batch_aff_id = 0; // if batch comes with the same affinity
     bool     batch_has_aff = false;
@@ -1849,8 +1891,8 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     {{
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
+        job_db.SetTransaction(&trans);
 
-        q->SetTagDbTransaction(&trans);
         unsigned job_id_cnt = job_id;
         time_t now = time(0);
         NON_CONST_ITERATE(vector<SNS_SubmitRecord>, it, batch) {
@@ -1872,7 +1914,11 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
             //    }
             //    break;
             //}
+
             // update tags
+            x_AssignJobInfoRec(job_db, &(*it));
+            job_db.Insert();
+
             q->AppendTags(tag_map, it->tags, it->job_id);
         }
 
@@ -1942,6 +1988,17 @@ CQueue::x_AssignSubmitRec(SQueueDB&     db,
     if (progress_msg) {
         db.progress_msg = progress_msg;
     }
+}
+
+
+void CQueue::x_AssignJobInfoRec(SJobInfoDB& db, const SNS_SubmitRecord* rec)
+{
+    db.id = rec->job_id;
+    list<string> tag_list;
+    ITERATE(TNSTagList, it, rec->tags) {
+        tag_list.push_back(it->first + "\t" + it->second);
+    }
+    db.tags = NStr::Join(tag_list, "\t");
 }
 
 

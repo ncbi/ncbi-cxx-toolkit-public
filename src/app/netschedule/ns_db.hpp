@@ -95,8 +95,6 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldString       err_msg;         ///< Error message (exception::what())
     CBDB_FieldString       progress_msg;    ///< Progress report message
 
-    CBDB_FieldString       tags;            ///< Tags for the job
-
     SQueueDB()
     {
         DisableNull(); 
@@ -131,8 +129,25 @@ struct SQueueDB : public CBDB_File
 
         BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
+    }
+};
 
-        // BindData("tags",  &tags); not used yet
+
+/// BDB table to store infrequently needed job info
+///
+/// @internal
+///
+struct SJobInfoDB : public CBDB_File
+{
+    CBDB_FieldUint4        id;              ///< Job id
+    CBDB_FieldString       tags;            ///< Tags for the job
+
+    SJobInfoDB()
+    {
+        DisableNull(); 
+
+        BindKey("id", &id);
+        BindData("tags",  &tags, kNetScheduleMaxDBDataSize);
     }
 };
 

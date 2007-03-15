@@ -221,6 +221,11 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
     x_ReadFieldInfo();
     files.push_back(path + fname);
 
+    fname = prefix + "_jobinfo.db";
+    m_JobInfoDB.SetEnv(env);
+    m_JobInfoDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    files.push_back(path + fname);
+
     fname = prefix + "_affid.idx";
     aff_idx.SetEnv(env);
     aff_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
@@ -431,22 +436,26 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
                         CBDB_FileCursor::eReadModifyUpdate);
     // iterate over tags database, deleting ids from every entry
     cur.SetCondition(CBDB_FileCursor::eFirst);
-    CBDB_RawFile::TBuffer  buf;
+    CBDB_RawFile::TBuffer buf;
     TNSBitVector bv;
     while (cur.Fetch(&buf) == eBDB_Ok) {
         bm::deserialize(bv, &buf[0]);
         unsigned before_remove = bv.count();
         bv -= ids;
-        if (bv.count() != before_remove) {
-            bv.optimize();
-            TNSBitVector::statistics st;
-            bv.calc_stat(&st);
-            if (st.max_serialize_mem > buf.size()) {
-                buf.resize(st.max_serialize_mem);
-            }
+        unsigned new_count;
+        if ((new_count = bv.count()) != before_remove) {
+            if (new_count) {
+                TNSBitVector::statistics st;
+                bv.optimize(0, TNSBitVector::opt_compress, &st);
+                if (st.max_serialize_mem > buf.size()) {
+                    buf.resize(st.max_serialize_mem);
+                }
 
-            size_t size = bm::serialize(bv, &buf[0]);
-            cur.UpdateBlob(&buf[0], size);
+                size_t size = bm::serialize(bv, &buf[0]);
+                cur.UpdateBlob(&buf[0], size);
+            } else {
+                cur.Delete(CBDB_File::eIgnoreError);
+            }
         }
         bv.clear(true);
     }
@@ -476,8 +485,9 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
     {{
         CFastMutexGuard guard(lock);
         db.SetTransaction(&trans);
+        m_JobInfoDB.SetTransaction(&trans);
 
-        CBDB_FileCursor& cur = *GetCursor(trans);
+        CBDB_FileCursor& cur = *this->GetCursor(trans);
         CBDB_CursorGuard cg(cur);    
         for (TNSBitVector::enumerator en = batch.first(); en.valid(); ++en) {
             unsigned job_id = *en;
@@ -487,6 +497,9 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
                 cur.Delete(CBDB_File::eIgnoreError);
                 ++del_rec;
             }
+
+            m_JobInfoDB.id = job_id;
+            m_JobInfoDB.Delete(CBDB_File::eIgnoreError);
         }
         x_RemoveTags(trans, batch);
     }}
