@@ -506,6 +506,10 @@ void CBDB_RawFile::x_Open(const char* filename,
         DBTYPE db_type = DB_BTREE;
         switch (m_DB_Type) {
         case eBtree:
+            db_type = DB_BTREE;
+            break;
+        case eHash:
+            db_type = DB_HASH;
             break;
         case eQueue:
             db_type = DB_QUEUE;
