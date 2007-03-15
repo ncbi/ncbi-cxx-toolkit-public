@@ -51,12 +51,8 @@ if status:
 
 
 # Modify preprocessor output
-fid = open(swig_input_fname + '.pp')
-s = fid.read()
-fid.close()
-lines = s.split('\n')
 mod_pp = open(swig_input_fname + '.mpp', 'w')
-for line in lines:
+for line in open(swig_input_fname + '.pp'):
     if line.startswith('%importfile'):
         m = re.search('%importfile "(.*)"', line)
         fname = m.groups()[0]
@@ -66,13 +62,15 @@ for line in lines:
             if fname.endswith(header):
                 line = line.replace('%importfile', '%includefile', 1)
                 break
-    mod_pp.write(line + '\n')
+    mod_pp.write(line)
 mod_pp.close()
 
 import ncbi_modify
 s = open(swig_input_fname + '.mpp').read()
 s_mod = ncbi_modify.Modify(s)
 open(swig_input_fname + '.mpp', 'w').write(s_mod)
+del s, s_mod
+
 
 # Run swig on modified preprocessor output
 ofname = os.path.splitext(ifname)[0] + '_wrap.cpp'
