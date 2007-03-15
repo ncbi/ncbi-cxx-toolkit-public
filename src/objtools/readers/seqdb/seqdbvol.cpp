@@ -1846,15 +1846,22 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
                 }
             }
             
+            // Here we must pass both the user-gi and volume-gi test,
+            // for each defline, but not necessarily for each Seq-id.
+            
             if (have_memb && x_HaveGiList() && defline.CanGetSeqid()) {
+                have_memb = false;
+                
+                bool have_user = false, have_volume = false;
+                
                 ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
-                    if ((**seqid).IsGi()) {
-                        if (! x_FilterHasGi((**seqid).GetGi())) {
-                            have_memb = false;
-                            break;
-                        }
-                    }
+                    x_FilterHasId(**seqid, have_user, have_volume);
+                    
+                    if (have_user && have_volume)
+                        break;
                 }
+                
+                have_memb = have_user && have_volume;
             }
             
             if (! have_memb) {
@@ -2044,11 +2051,35 @@ void CSeqDBVol::GisToOids(int              vol_start,
                           CSeqDBGiList   & gis,
                           CSeqDBLockHold & locked) const
 {
-    if (m_IsamGi.Empty()) {
-        return;
+    if (! m_IsamGi.Empty()) {
+        // Numeric translation is done in batch mode.
+        m_IsamGi->GisToOids(vol_start, vol_end, gis, locked);
     }
     
-    m_IsamGi->GisToOids(vol_start, vol_end, gis, locked);
+    // Seq-id translations are done individually.
+    
+    vector<int> oids;
+    size_t N = gis.GetNumSeqIds();
+    
+    for(size_t i = 0; i < N; i++) {
+        const CSeqDBGiList::SSeqIdOid & item = gis.GetSeqIdOid(i);
+        
+        if (item.oid == -1 && item.seqid.NotEmpty()) {
+            SeqidToOids(const_cast<CSeq_id&>(*item.seqid), oids, locked);
+            
+            for(size_t j = 0; j < oids.size(); j++) {
+                // This should always be true except in the presence of
+                // file corruption.
+                
+                if (oids[j] < (vol_end - vol_start)) {
+                    gis.SetSeqIdTranslation(i, vol_start + oids[j]);
+                    break;
+                }
+            }
+            
+            oids.resize(0);
+        }
+    }
 }
 
 bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const
@@ -2540,6 +2571,37 @@ void CSeqDBRangeList::SetRanges(const TRangeList & offset_ranges,
     // Note that actual caching is not currently done.
     m_CacheData = cache_data;
 }
+
+void CSeqDBVol::OptimizeGiLists() const
+{
+    if (m_UserGiList.Empty() ||
+        m_VolumeGiLists.empty() ||
+        m_UserGiList->GetNumSeqIds()) {
+        
+        return;
+    }
+    
+    // Note: The use of Seq-ids in volume lists is not supported
+    // or implemented yet, and the following loop will not have an
+    // affect until/unless that changes.
+    
+    NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
+        if ((**gilist).GetNumSeqIds() != 0)
+            return;
+    }
+    
+    // If we have volume GI lists, and a user gi list, and neither of
+    // these uses Seq-ids, then we can detach the user gi list (from
+    // the volume) because it is redundant with the volume GI lists.
+    // The opposite is not true -- we could not simply remove the
+    // volume GI lists and rely on the user gi list.  This is because
+    // each volume GI list is translated in terms of the user GI list,
+    // which means that only the intersection of the two lists is left
+    // in the volume GI list.
+    
+    m_UserGiList.Reset();
+}
+
 
 END_NCBI_SCOPE
 

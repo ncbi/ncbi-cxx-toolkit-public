@@ -40,8 +40,13 @@
 
 #include <ncbiconf.h>
 #include <corelib/ncbiobj.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
+
+/// Include definitions from the objects namespace.
+USING_SCOPE(objects);
+
 
 /// CSeqDBException
 /// 
@@ -113,7 +118,7 @@ enum ESeqDBAllocType {
 
 class NCBI_XOBJREAD_EXPORT CSeqDBGiList : public CObject {
 public:
-    /// Structure that holds GI-OID pairs.
+    /// Structure that holds GI,OID pairs.
     struct SGiOid {
         /// Constuct an SGiOid element from the given gi and oid.
         /// @param gi_in A GI, or 0 if none is available.
@@ -125,6 +130,23 @@ public:
         
         /// The GI or 0 if unknown.
         int gi;
+        
+        /// The OID or -1 if unknown.
+        int oid;
+    };
+    
+    /// Structure that holds Seq-id,OID pairs.
+    struct SSeqIdOid {
+        /// Constuct a SSeqIdOid element from the given Seq-id and oid.
+        /// @param seqid_in A Seq-id, or NULL if none is available.
+        /// @param oid_in An OID, or -1 if none is available.
+        SSeqIdOid(CSeq_id * seqid_in = NULL, int oid_in = -1)
+            : seqid(seqid_in), oid(oid_in)
+        {
+        }
+        
+        /// The Seq-id or NULL if unknown.
+        CRef<objects::CSeq_id> seqid;
         
         /// The OID or -1 if unknown.
         int oid;
@@ -166,6 +188,38 @@ public:
     /// @return True if the GI was found.
     bool GiToOid(int gi, int & oid, int & index);
     
+    /// Test for existence of a GI.
+    bool FindSeqId(const CSeq_id & seqid);
+    
+    /// Try to find a Seq-id and return the associated OID.
+    /// @param seqid The Seq-id for which to search. [in]
+    /// @param oid The resulting oid if found. [out]
+    /// @return True if the Seq-id was found.
+    bool SeqIdToOid(const CSeq_id & seqid, int & oid);
+    
+    /// Find a Seq-id, returning the index and the associated OID.
+    /// @param seqid The Seq-id for which to search. [in]
+    /// @param oid The resulting oid if found. [out]
+    /// @param index The index of this Seq-id (if found). [out]
+    /// @return True if the Seq-id was found.
+    bool SeqIdToOid(const CSeq_id & seqid, int & oid, int & index);
+    
+    /// Access an element of the array.
+    /// @param index The index of the element to access. [in]
+    /// @return A reference to the GI/OID pair.
+    const SGiOid & GetGiOid(int index) const
+    {
+        return m_GisOids[index];
+    }
+    
+    /// Access an element of the array.
+    /// @param index The index of the element to access. [in]
+    /// @return A reference to the Seq-id/OID pair.
+    const SSeqIdOid & GetSeqIdOid(int index) const
+    {
+        return m_SeqIdsOids[index];
+    }
+    
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
     /// @return A reference to the GI/OID pair.
@@ -174,10 +228,35 @@ public:
         return m_GisOids[index];
     }
     
-    /// Get the number of elements in the array.
-    int Size() const
+    /// Get the number of GIs in the array.
+    int GetNumGis() const
     {
         return (int) m_GisOids.size();
+    }
+    
+    /// Get the number of Seq-ids in the array.
+    int GetNumSeqIds() const
+    {
+        return (int) m_SeqIdsOids.size();
+    }
+    
+    /// Get the number of GIs in the array.
+    int Size() const
+    {
+        // this may become a deprecated method
+        return (int) m_GisOids.size();
+    }
+    
+    /// Return false if there are elements present.
+    bool Empty() const
+    {
+        return ! (GetNumGis() || GetNumSeqIds());
+    }
+    
+    /// Return true if there are elements present.
+    bool NotEmpty() const
+    {
+        return ! Empty();
     }
     
     /// Specify the correct OID for a GI.
@@ -194,6 +273,20 @@ public:
         m_GisOids[index].oid = oid;
     }
 
+    /// Specify the correct OID for a Seq-id.
+    ///
+    /// When SeqDB translates a Seq-id into an OID, this method is
+    /// called to store the oid in the array.
+    ///
+    /// @param index
+    ///   The location in the array of Seq-id, OID pairs.
+    /// @param oid
+    ///   The oid to store in that element.
+    void SetSeqIdTranslation(int index, int oid)
+    {
+        m_SeqIdsOids[index].oid = oid;
+    }
+
     /// Get the gi list
     void GetGiList(vector<int>& gis) const;
     
@@ -204,13 +297,16 @@ protected:
     /// Pairs of GIs and OIDs.
     vector<SGiOid> m_GisOids;
     
+    /// Pairs of Seq-ids and OIDs.
+    vector<SSeqIdOid> m_SeqIdsOids;
+    
 private:
     // The following disabled methods are reasonable things to do in
     // some cases.  But I suspect they are more likely to happen
     // accidentally than deliberately; due to the high performance
     // cost, I have prevented them.  If this kind of deep copy is
     // desireable, it can easily be enabled for a subclass by
-    // assigning both of the data fields in the protected section.
+    // assigning each of the data fields in the protected section.
     
     /// Prevent copy constructor.
     CSeqDBGiList(const CSeqDBGiList & other);

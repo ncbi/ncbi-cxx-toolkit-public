@@ -831,6 +831,18 @@ public:
         return m_VolList[index].GetFilterSet();
     }
     
+    /// Optimize the GI list configuration.
+    /// 
+    /// This tells the volumes to examine and optimize their GI list
+    /// configuration.  It should not be called until all GI lists
+    /// have been added to the volumes (by alias file processing).
+    void OptimizeGiLists()
+    {
+        for(int i = 0; i< (int) m_VolList.size(); i++) {
+            m_VolList[i].Vol()->OptimizeGiLists();
+        }
+    }
+    
 private:
     /// Private constructor to prevent copy operation.
     CSeqDBVolSet(const CSeqDBVolSet &);

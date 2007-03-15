@@ -101,7 +101,19 @@ static void s_UnitTestVerbosity(string s)
     }
 }
 
-#define START s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
+#define UNIT_TEST_FILTER(s) \
+{ \
+    string nm(s); \
+    string filter(getenv("FILTER_UT") ? getenv("FILTER_UT") : ""); \
+    \
+    if (nm.size() && filter.size() && nm.find(filter) == string::npos) { \
+        cout << "Skipping test: " << s << endl; \
+        return; \
+    } \
+}
+
+#define START UNIT_TEST_FILTER(BOOST_CURRENT_FUNCTION); \
+              s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
 
 
 // Helper functions
@@ -1828,7 +1840,7 @@ BOOST_AUTO_UNIT_TEST(CSeqDBFileGiList_GetGis)
     CSeqDBFileGiList seqdbgifile(kFileName);
     vector<int> gis;
     seqdbgifile.GetGiList(gis);
-    CHECK_EQUAL((size_t)seqdbgifile.Size(), gis.size());
+    CHECK_EQUAL((size_t)seqdbgifile.GetNumGis(), gis.size());
     sort(gis.begin(), gis.end());
     
     // Read text gi list manually
@@ -2388,6 +2400,219 @@ BOOST_AUTO_UNIT_TEST(SharedMemoryMaps)
         seqdb1.RetSequence(& s1);
     if (s2)
         seqdb2.RetSequence(& s2);
+}
+
+class CSeqIdList : public CSeqDBGiList {
+public:
+    // Takes a NULL-terminated list of null-terminated strings.  If these
+    // start with '#' they are treated as GIs for the GI list; otherwise they
+    // go in the Seq-id list.
+    CSeqIdList(const char ** str)
+    {
+        for(const char ** p = str; *p; p++) {
+            if ((*p)[0] == '#') {
+                m_GisOids.push_back(atoi((*p) + 1));
+            } else {
+                m_SeqIdsOids.push_back(new CSeq_id(*p));
+            }
+        }
+    }
+    
+    CSeqIdList()
+    {
+    }
+    
+    void Append(const char * p)
+    {
+        m_SeqIdsOids.push_back(new CSeq_id(p));
+    }
+};
+
+BOOST_AUTO_UNIT_TEST(SeqIdList)
+{
+    START;
+    
+    const char * str[] =
+        { "EAL14780.1",
+          "BAB38329.1",
+          "P66272",
+          "NP_854766.1",
+          "NP_688815.1",
+          "ZP_00714951.1",
+          "BAB37428.1",
+          "AAG07133.1",
+          "YP_651583.1",
+          "XP_645408.1",
+          NULL };
+    
+    CRef<CSeqIdList> ids(new CSeqIdList(str));
+    
+    CHECK_EQUAL((int)ids->GetNumSeqIds(), 10);
+    
+    // Check that all IDs are initially unresolved:
+    
+    for(int i = 0; i < ids->GetNumSeqIds(); i++) {
+        CHECK(ids->GetSeqIdOid(i).oid == -1);
+    }
+    
+    // Check that SeqDB construction has resolved all IDs:
+    
+    CSeqDB db("nr", CSeqDB::eProtein, &*ids);
+    
+    for(int i = 0; i < ids->GetNumSeqIds(); i++) {
+        CHECK(ids->GetSeqIdOid(i).oid != -1);
+    }
+    
+    // Check that the set of returned ids is constrained to the same
+    // size as the SeqIdList set.
+    
+    int k = 0;
+    
+    for(int i = 0; db.CheckOrFindOID(i); i++) {
+        k += db.GetHdr(i)->Get().size();
+    }
+    
+    CHECK_EQUAL(k, ids->GetNumSeqIds());
+}
+
+
+BOOST_AUTO_UNIT_TEST(SeqIdListAndGiList)
+{
+    START;
+    
+    const char * str[] = {
+        // Non-existant (fake):
+        "ref|XP_12345.1|", // s0-2
+        "gi|11223344|",
+        "gb|EAH98765.9|",
+        "#123456",         // g0,1
+        "#3142007",
+        
+        // GIs found in volume but not volume list:
+        "gi|38083732",  // s3-5
+        "gi|671595|",
+        "gi|43544756|",
+        "#45917153",    // gi2,3
+        "#15705575",
+        
+        // Non-GIs found in volume but not volume list:
+        "ref|NP_912855.1|", // s6-10
+        "gb|EAF49211.1|",
+        "sp|Q63931|CCKR_CAVPO",
+        "emb|CAE61105.1|",
+        "gb|AAL05711.1|",  // Note: same as "#15705575"
+        
+        // GIs Found in volume and volume list:
+        "gi|28378617",  // s11-13
+        "gi|23474175",
+        "gi|27364740",
+        "#23113886",    // gi4,5
+        "#28563952",
+        
+        // Non-GIs Found in volume and volume list:
+        "gb|AAP03339.1|",    // s14-18
+        "ref|NP_760268.1|",
+        "ref|NP_817911.1|",
+        "emb|CAD70761.1|",
+        "gb|AAM45611.1|",
+        NULL
+    };
+    
+    CRef<CSeqIdList> ids(new CSeqIdList(str));
+    
+    // (Need to +1 for the terminating NULL.)
+    CHECK_EQUAL((int)ids->GetNumSeqIds(), 19);
+    CHECK_EQUAL((int)ids->GetNumGis(), 6);
+    
+    // Check that all IDs are initially unresolved:
+    int i;
+    
+    for(i = 0; i < ids->GetNumSeqIds(); i++) {
+        CHECK(ids->GetSeqIdOid(i).oid == -1);
+    }
+    for(i = 0; i < ids->GetNumGis(); i++) {
+        CHECK(ids->GetGiOid(i).oid == -1);
+    }
+    
+    CSeqDB db("data/ranges/twenty", CSeqDB::eProtein, &*ids);
+    
+    // Check that SeqDB construction resolves needed GIs/Seq-ids, but does not
+    // resolve fake ids; other ids can be resolved or not discretionally.
+    
+    for(i = 0; str[i]; i++) {
+        bool found = false;
+        int oid = -1;
+        
+        if (str[i][0] == '#') {
+            int gi = atoi(str[i] + 1);
+            found = ids->GiToOid(gi, oid);
+        } else {
+            CSeq_id seqid(str[i]);
+            found = ids->SeqIdToOid(seqid, oid);
+        }
+        
+        CHECK_EQUAL(found, true);
+        
+        if (i >= 0 && i < 4) {
+            CHECK_EQUAL(oid, -1);
+        } else if (i >= 15 && i < 25) {
+            if (oid == -1) {
+                cout << "oid = -1, id=" << str[i] << endl;
+            }
+            
+            CHECK(oid != -1);
+        }
+    }
+    
+    // Set of Seq-ids that we want: the Seq-ids found in the deflines that are
+    // the intersection of the deflines associated with the Seq-ids in each of
+    // the user and volume GI lists.
+    
+    const char * inter[] = {
+        // This is the set of all Seq-ids that should be found on iteration;
+        // it includes all Seq-ids from the selected deflines.  A defline is
+        // selected if it has one or more GIs matching a database volume GI
+        // list and one or more GIs or Seq-ids from the User GI List.
+        
+        "gi|28378617", "ref|NP_785509.1|",
+        "gi|23474175", "ref|ZP_00129469.1|",
+        "gi|27364740", "ref|NP_760268.1|",
+        "gi|23113886", "ref|ZP_00099225.1|",
+        "gi|28563952", "ref|NP_788261.1|",
+        "gi|29788717", "gb|AAP03339.1|",
+        "gi|29566344", "ref|NP_817911.1|",
+        "gi|28950006", "emb|CAD70761.1|",
+        "gi|21305377", "gb|AAM45611.1|",
+        NULL
+    };
+    
+    set<string> need;
+    
+    for(const char ** p = inter; *p; p++)
+        need.insert(*p);
+    
+    // For each id found in iteration, verify that it is found in the "need"
+    // list and then remove it from that list.
+    
+    for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+        typedef list< CRef<CSeq_id> > TIds;
+        
+        TIds ids = db.GetSeqIDs(oid);
+        
+        ITERATE(TIds, iter, ids) {
+            CRef<CSeq_id> seqid(*iter);
+            string afs = seqid->AsFastaString();
+            
+            set<string>::iterator i = need.find(afs);
+            
+            CHECK(i != need.end());
+            need.erase(i);
+        }
+    }
+    
+    // We should have emptied the 'need' set at this point.
+    
+    CHECK(need.empty());
 }
 
 

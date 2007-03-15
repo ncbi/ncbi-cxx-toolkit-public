@@ -541,20 +541,22 @@ public:
     /// Filter this volume using the specified GI list.
     ///
     /// A volume can be filtered by a GI list.  This method attaches a
-    /// GI list to the volume, replacing the currently attached GI
-    /// list if there is one.  In the current design, the constructor
-    /// takes a user specified GI list, but this method is used to
-    /// override that with a GI list specified in an alias file.  The
-    /// GI list, if any, will primarily be used to filter the ASN.1
-    /// defline objects.
+    /// GI list to the volume, in addition to any GI lists that are
+    /// already attached.
     ///
     /// @param gilist
     ///   A list of GIs to use as a filter.
     void AttachVolumeGiList(CRef<CSeqDBGiList> gilist) const
     {
-        m_UserGiList.Reset();
         m_VolumeGiLists.push_back(gilist);
     }
+    
+    /// Simplify the GI list configuration.
+    ///
+    /// When all user and volume GI lists have been attached, the user
+    /// GI list may be removed; this is only possible if neither the
+    /// user nor volume GI lists contain Seq-id data.
+    void OptimizeGiLists() const;
     
     /// Fetch data as a CSeq_data object.
     ///
@@ -693,19 +695,44 @@ private:
     }
     
     /// Returns true if this volume's GI list, if any, has this GI.
-    bool x_FilterHasGi(int gi) const
+    void x_FilterHasId(const CSeq_id & id,
+                       bool          & have_user,
+                       bool          & have_vol) const
     {
-        if (m_UserGiList.NotEmpty()) {
-            return m_UserGiList->FindGi(gi);
+        if (! have_user) {
+            if (m_UserGiList.Empty()) {
+                have_user = true;
+            } else {
+                have_user |= x_ListHasId(*m_UserGiList, id);
+            }
         }
         
-        NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
-            if ((*gilist)->FindGi(gi)) {
+        if (! have_vol) {
+            if (m_VolumeGiLists.empty()) {
+                have_vol = true;
+            } else {
+                NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
+                    if (x_ListHasId(**gilist, id)) {
+                        have_vol = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Returns true if this volume's GI list, if any, has this GI.
+    bool x_ListHasId(CSeqDBGiList & L, const CSeq_id & id) const
+    {
+        int oid = -1;
+        
+        if (id.IsGi()) {
+            if (L.GiToOid(id.GetGi(), oid) && (oid != -1)) {
                 return true;
             }
         }
         
-        return false;
+        return L.SeqIdToOid(id, oid) && (oid != -1);
     }
     
     /// Get sequence header object

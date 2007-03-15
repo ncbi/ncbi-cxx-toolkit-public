@@ -283,7 +283,7 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
     //
     //......................................................................
     
-    int gilist_size = gis.Size();
+    int gilist_size = gis.GetNumGis();
     int num_samples = m_NumSamples;
     
     int gilist_index = 0;
@@ -504,7 +504,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     // 4. Loop till out of target gis or out of data elements:
     
-    int gis_size = gis.Size();
+    int gis_size = gis.GetNumGis();
     int elem_index(0);
     
     int data_gi(0);
@@ -1772,6 +1772,9 @@ void CSeqDBIsam::GisToOids(int              vol_start,
                            CSeqDBGiList   & gis,
                            CSeqDBLockHold & locked)
 {
+    // The vol_start parameter is needed because translations in the
+    // GI list should refer to global OIDs, not per-volume OIDs.
+    
     _ASSERT(m_IdentType == eGi);
     
     m_Atlas.Lock(locked);

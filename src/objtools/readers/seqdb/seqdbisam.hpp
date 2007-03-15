@@ -1105,7 +1105,7 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     // Skip any that are less than key.
     
     bool advanced = false;
-    int gis_size = gis.Size();
+    int gis_size = gis.GetNumGis();
     
     while((index < gis_size) && (gis[index].gi < key)) {
         advanced = true;

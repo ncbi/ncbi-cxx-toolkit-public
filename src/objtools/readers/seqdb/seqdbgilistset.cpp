@@ -130,13 +130,7 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas        & atlas,
     : m_Atlas    (atlas),
       m_UserList (user_gi_list)
 {
-    if (m_UserList.NotEmpty()) {
-        int gis_size = m_UserList->Size();
-        
-        if (0 == gis_size) {
-            return;
-        }
-        
+    if (m_UserList.NotEmpty() && m_UserList->NotEmpty()) {
         typedef SSeqDB_IndexCountPair TIndexCount;
         vector<TIndexCount> OidsPerVolume;
         
@@ -194,12 +188,32 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
         gilist.Reset(new CSeqDBNodeFileGiList(m_Atlas, filename, locked));
         
         if (m_UserList.NotEmpty()) {
+            // Note: only translates the GIs, ignores the Seq-ids.
             x_TranslateFromUserList(*gilist);
         }
         m_NodeListMap[filename] = gilist;
     }
     
-    if (m_UserList.Empty()) {
+    // Note: in pure-GI mode, it might be more efficient (in some
+    // cases) to translate all sub-lists, then translate the main list
+    // in terms of those, rather than the other way round.  It might
+    // be a good idea to investigate this -- it should only be done if
+    // the sub-lists are (collectively) smaller than the user list.
+    
+    // If there are Seq-ids, we need to translate all GI lists from
+    // the volume data, because some of the Seq-ids may refer to the
+    // same sequences as GIs in those lists.  More sophisticated
+    // methods are possible; for example, we could try to convert all
+    // Seq-ids to GIs.  If this worked (it would for those databases
+    // where GIs are available for all sequences), then we would be
+    // able to continue processing as if the User GI list were
+    // strictly GI based.
+    
+    // The ideal solution would be to build a conceptual map of all
+    // data sources and estimate the time needed for different
+    // techniques.  This is not done yet.
+    
+    if (m_UserList.Empty() || m_UserList->GetNumSeqIds()) {
         volp->GisToOids(vol_start, vol_end, *gilist, locked);
     }
     
@@ -221,8 +235,8 @@ void CSeqDBGiListSet::x_TranslateFromUserList(CSeqDBGiList & gilist)
     source.InsureOrder(CSeqDBGiList::eGi);
     target.InsureOrder(CSeqDBGiList::eGi);
     
-    int source_num = source.Size();
-    int target_num = target.Size();
+    int source_num = source.GetNumGis();
+    int target_num = target.GetNumGis();
     
     int source_index = 1;
     int target_index = 1;

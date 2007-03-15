@@ -503,6 +503,21 @@ public:
 };
 
 
+/// Compare SSeqIdOid structs by SeqId.
+class CSeqDB_SortSeqIdLessThan {
+public:
+    /// Test whether lhs is less than (occurs before) rhs.
+    /// @param lhs Left hand side of less-than operator. [in]
+    /// @param rhs Right hand side of less-than operator. [in]
+    /// @return True if lhs sorts before rhs by Seq-id.
+    int operator()(const CSeqDBGiList::SSeqIdOid & lhs,
+                   const CSeqDBGiList::SSeqIdOid & rhs)
+    {
+        return (*lhs.seqid) < (*rhs.seqid);
+    }
+};
+
+
 void CSeqDBGiList::InsureOrder(ESortOrder order)
 {
     // Code depends on OID order after translation, because various
@@ -526,16 +541,31 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
             {
                 bool already = true;
                 
+                CSeqDB_SortGiLessThan gi_less;
+                CSeqDB_SortSeqIdLessThan seqid_less;
+                
                 for(int i = 1; i < (int) m_GisOids.size(); i++) {
-                    if (m_GisOids[i].gi < m_GisOids[i-1].gi) {
+                    if (gi_less(m_GisOids[i], m_GisOids[i-1])) {
                         already = false;
                         break;
                     }
                 }
                 
                 if (! already) {
-                    CSeqDB_SortGiLessThan sorter;
-                    sort(m_GisOids.begin(), m_GisOids.end(), sorter);
+                    sort(m_GisOids.begin(), m_GisOids.end(), gi_less);
+                }
+                
+                already = true;
+                
+                for(int i = 1; i < (int) m_SeqIdsOids.size(); i++) {
+                    if (seqid_less(m_SeqIdsOids[i], m_SeqIdsOids[i-1])) {
+                        already = false;
+                        break;
+                    }
+                }
+                
+                if (! already) {
+                    sort(m_SeqIdsOids.begin(), m_SeqIdsOids.end(), seqid_less);
                 }
             }
             break;
@@ -591,11 +621,51 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 }
 
 
+bool CSeqDBGiList::FindSeqId(const CSeq_id & seqid)
+{
+    int oid(0), index(0);
+    return SeqIdToOid(seqid, oid, index);
+}
+
+
+bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid)
+{
+    int index(0);
+    return SeqIdToOid(seqid, oid, index);
+}
+
+
+bool CSeqDBGiList::SeqIdToOid(const CSeq_id & seqid, int & oid, int & index)
+{
+    InsureOrder(eGi);
+    
+    int b(0), e((int)m_SeqIdsOids.size());
+    
+    while(b < e) {
+        int m = (b + e)/2;
+        CSeq_id & m_seqid = *m_SeqIdsOids[m].seqid;
+        
+        if (m_seqid < seqid) {
+            b = m + 1;
+        } else if (seqid < m_seqid) {
+            e = m;
+        } else {
+            oid = m_SeqIdsOids[m].oid;
+            index = m;
+            return true;
+        }
+    }
+    
+    oid = index = -1;
+    return false;
+}
+
+
 void
 CSeqDBGiList::GetGiList(vector<int>& gis) const
 {
     gis.clear();
-    gis.reserve(Size());
+    gis.reserve(GetNumGis());
 
     ITERATE(vector<SGiOid>, itr, m_GisOids) {
         gis.push_back(itr->gi);
@@ -890,7 +960,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     sort(gis.begin(), gis.end());
     
     int list_i = 0;
-    int list_n = gilist.Size();
+    int list_n = gilist.GetNumGis();
     int gis_i = 0;
     int gis_n = (int) gis.size();
     

@@ -67,6 +67,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     INIT_CLASS_MARK();
     
     m_Aliases.SetMasks(m_VolSet);
+    m_VolSet.OptimizeGiLists();
+    
     m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
     
     m_VolumeLength = x_GetVolumeLength();
@@ -855,6 +857,11 @@ bool CSeqDBImpl::GiToOid(int gi, int & oid) const
     // because it represents the restrictions of both the volume GI
     // list and the User GI list.  It's also smaller, and therefore
     // should be easier to binary search.
+    
+    // (The hypothetical optimization described above changes if there
+    // are Seq-ids in the user provided list, because you can no
+    // longer assume that the GI list is all-inclusive -- you would
+    // also need to fall back on regular lookups.)
     
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
         if (m_VolSet.GetVol(i)->GiToOid(gi, oid, locked)) {

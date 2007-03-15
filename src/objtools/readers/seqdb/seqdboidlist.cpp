@@ -213,20 +213,34 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
 {
     m_Atlas.Lock(locked);
     
-    int gis_size = gis.Size();
+    int gis_size = gis.GetNumGis();
+    int seqids_size = gis.GetNumSeqIds();
     
-    if (0 == gis_size) {
+    if (! (gis_size || seqids_size)) {
         x_ClearBitRange(0, m_NumOIDs);
         m_NumOIDs = 0;
         return;
     }
     
-    // This is the trivial way to 'sort' OIDs
+    // This is the trivial way to 'sort' OIDs; build a bit vector
+    // spanning the OID range, turn on the bit indexed by each
+    // included OID, and then scan the vector sequentially.  This
+    // technique also uniqifies the set, which is desireable here.
     
     vector<bool> gilist_oids(m_NumOIDs);
     
-    for(int j = 0; j < gis_size; j++) {
-        int oid = gis[j].oid;
+    int j;
+    
+    for(j = 0; j < gis_size; j++) {
+        int oid = gis.GetGiOid(j).oid;
+        
+        if ((oid != -1) && (oid < m_NumOIDs)) {
+            gilist_oids[oid] = true;
+        }
+    }
+    
+    for(j = 0; j < seqids_size; j++) {
+        int oid = gis.GetSeqIdOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
             gilist_oids[oid] = true;
@@ -430,17 +444,6 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
     m_Atlas.RetRegion(lease);
 }
 
-
-// NOTE: Converting the set of GIs to OIDS is unacceptably slow.  This
-// is partially due to the various performance inadequacies of the
-// isam code, and partially due to the inefficiency of using it in
-// this way.  It should be set up to accept a list of GIs, in sorted
-// order.  It would search down to find the block containing the first
-// object, and scan that block to find the object, but it would
-// continue to scan that block for any other gis in the range.  It
-// would report that it had translated N gis and produced M oids.  It
-// might continue the loop internally.
-
 void CSeqDBOIDList::x_OrGiFileBits(CSeqDBGiList    & gilist,
                                    int               oid_start,
                                    int               oid_end,
@@ -448,7 +451,7 @@ void CSeqDBOIDList::x_OrGiFileBits(CSeqDBGiList    & gilist,
 {
     m_Atlas.Lock(locked);
     
-    int num_gis = gilist.Size();
+    int num_gis = gilist.GetNumGis();
     int prev_oid = -1;
     
     for(int i = 0; i < num_gis; i++) {
