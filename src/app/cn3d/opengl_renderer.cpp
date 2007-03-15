@@ -678,9 +678,12 @@ void OpenGLRenderer::CenterView(const Vector& viewCenter, double radius)
     SaveToASNViewSettings(NULL);
 }
 
-void OpenGLRenderer::CenterViewOnAlignedResidues(void)
+void OpenGLRenderer::ComputeBestView(void)
 {
-    structureSet->CenterViewOnAlignedResidues();
+    if (structureSet->IsMultiStructure())
+        structureSet->CenterViewOnAlignedResidues();
+    else
+        structureSet->CenterViewOnStructure();
 }
 
 void OpenGLRenderer::PushMatrix(const Matrix* m)

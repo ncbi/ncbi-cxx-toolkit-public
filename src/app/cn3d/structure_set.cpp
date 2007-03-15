@@ -843,6 +843,54 @@ void StructureSet::SetCenter(const Vector *given)
     rotationCenter = center;
 }
 
+void StructureSet::CenterViewOnStructure(void)
+{
+    if (objects.size() != 1)
+        return;
+    
+    TRACEMSG("Computing structure view...");
+    Vector alphaCenter;
+    double alphaRadius = 0.0;
+    int nAlphas = 0;
+
+    // loop through twice - once to get average center, then once to
+    // find max distance from this center
+    for (int i=0; i<2; ++i) {
+    
+        // find all biopolymer alpha residues
+        ChemicalGraph::MoleculeMap::const_iterator m, me = objects.front()->graph->molecules.end();
+        for (m=objects.front()->graph->molecules.begin(); m!=me; ++m) {
+            if (!m->second->IsBiopolymer())
+                continue;
+            Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+            for (r=m->second->residues.begin(); r!=re; ++r) {
+                if (r->second->alphaID == Residue::NO_ALPHA_ID) continue;
+                AtomPntr ap(m->second->id, r->first, r->second->alphaID);
+                const AtomCoord* atom = objects.front()->coordSets.front()->atomSet->GetAtom(ap, true, true);
+                if (atom) {
+                    if (i == 0) {
+                        alphaCenter += atom->site;
+                        ++nAlphas;
+                    } else {
+                        double dist = (atom->site - alphaCenter).length();
+                        if (dist > alphaRadius)
+                            alphaRadius = dist;
+                    }
+                }
+            }
+        }
+    
+        if (i == 0) {
+            if (nAlphas == 0)
+                break;
+            alphaCenter /= nAlphas;
+        }
+    }
+
+    renderer->CenterView(alphaCenter, alphaRadius);
+    TRACEMSG("Centered view at " << alphaCenter << " radius " << alphaRadius);
+}
+
 void StructureSet::CenterViewOnAlignedResidues(void)
 {
     const BlockMultipleAlignment *alignment = alignmentManager->GetCurrentMultipleAlignment();

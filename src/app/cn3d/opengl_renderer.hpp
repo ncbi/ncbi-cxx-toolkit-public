@@ -114,7 +114,7 @@ public:
 
     // tells the renderer what structure(s) it's to draw
     void AttachStructureSet(StructureSet *targetStructureSet);
-    void CenterViewOnAlignedResidues(void);
+    void ComputeBestView(void);
 
     // constructs the structure display lists (but doesn't draw them)
     void Construct(void);

@@ -114,6 +114,7 @@ public:
     // public methods
     bool IsProtein(void) const { return (type == eProtein); }
     bool IsNucleotide(void) const { return (type == eDNA || type == eRNA); }
+    bool IsBiopolymer(void) const { return (type == eProtein || type == eDNA || type == eRNA || type == eBiopolymer); }
     bool IsSolvent(void) const { return (type == eSolvent); }
     bool IsHeterogen(void) const { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
 

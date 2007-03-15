@@ -131,6 +131,9 @@ public:
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
 
+    // try to find an "optimal" view of a single structure
+    void CenterViewOnStructure(void);
+    
     // center rotation and view on aligned residues only
     void CenterViewOnAlignedResidues(void);
 

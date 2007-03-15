@@ -1571,7 +1571,7 @@ bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *fil
 
     renderer->AttachStructureSet(*sset);
     if (IsWindowedMode() && !renderer->HasASNViewSettings())
-        (*sset)->CenterViewOnAlignedResidues();
+        renderer->ComputeBestView();
 
     return true;
 }

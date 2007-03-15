@@ -702,7 +702,8 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         if (IsWindowedMode()) {
             renderer->NewView();
         } else {
-            renderer->CenterViewOnAlignedResidues();
+            if (!renderer->HasASNViewSettings())
+                renderer->ComputeBestView();
             renderer->RestoreSavedView();
         }
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
