@@ -781,28 +781,26 @@ public:
 
     bool is_no_more_blocks(unsigned nb) const
     {
-        unsigned block = nb;
-        unsigned block_idx = nb >> bm::set_array_shift;
-        for (unsigned i = block_idx; i < top_block_size_; ++i) { 
+        unsigned i,j;
+        get_block_coord(nb, &i, &j);
+        for (;i < effective_top_block_size_; ++i) 
+        { 
             bm::word_t** blk_blk = blocks_[i];
-            if (blk_blk)                 
+            if (!blk_blk)
             { 
-                for (unsigned j = block & bm::set_array_mask; 
-                        j < bm::set_array_size; ++j)
-                {
-                    bm::word_t* blk = blk_blk[j];
-                    if (blk && !is_block_zero(i, blk)) 
-                    {
-                        return false;
-                    }
-                    ++block;
-                }
-            } 
-            else 
-            {
-                block += bm::set_array_size;
+                nb += bm::set_array_size;
             }
-        }
+            else
+               for (;j < bm::set_array_size; ++j, ++nb)
+               {
+                   bm::word_t* blk = blk_blk[j];
+                   if (blk && !is_block_zero(nb, blk)) 
+                   {
+                       return false;
+                   }
+               } // for j
+            j = 0;
+        } // for i
         return true;
     }
 
@@ -1393,13 +1391,18 @@ public:
         {
             if (blocks_[i] != 0) 
             {
-                BM_ASSERT(this->effective_top_block_size_ >= i+1);
+                if (this->effective_top_block_size_ < i+1)
+                {
+printf("Effective size error!\n");
+                exit(1);
+                }
                 return i+1;
             }
         }
         BM_ASSERT(this->effective_top_block_size_ >= 1);
         return 1;
-*/
+*/        
+
     }
 
     /**

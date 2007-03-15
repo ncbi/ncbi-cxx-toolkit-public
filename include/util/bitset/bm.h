@@ -2300,7 +2300,9 @@ void bvector<Alloc, MS>::stat(unsigned blocks) const
                int mem_eff = raw_size - cmr_len;
                total_gap_eff += mem_eff;
                
-               printf("[ GAP %i=%i:%i-%i(%i) ]", nb, bc, level, len, mem_eff);
+               unsigned i,j;
+               blockman_.get_block_coord(nb, &i, &j);
+               printf("[ GAP %i(%i,%i)=%i:%i-%i(%i) ]", nb, i, j, bc, level, len, mem_eff);
                 ++printed;
             }
             else // bitset
