@@ -176,17 +176,11 @@ CBlastPrelimSearch::Run()
                 try {
                     CRef<IQueryFactory> chunk_qf = 
                         m_QuerySplitter->GetQueryFactoryForChunk(i);
-//cerr << "Chunk " << i << "/" << m_QuerySplitter->GetNumberOfChunks() << endl;
+                    _TRACE("Query chunk " << i << "/" << 
+                           m_QuerySplitter->GetNumberOfChunks());
                     CRef<SInternalData> chunk_data =
                         SplitQuery_CreateChunkData(chunk_qf, m_Options,
                                                    m_InternalData);
-#if 0
-                SplitQuery_AdjustInternalDataToFullLength(chunk_data,
-                                                          m_Options,
-                                                          m_QueryFactory,
-                                                          m_InternalData);
-#endif
-//s_PrintEffSearchSpaces(m_InternalData);
                     retval = 
                         CPrelimSearchRunner(*chunk_data, opts_memento.get())();
 
