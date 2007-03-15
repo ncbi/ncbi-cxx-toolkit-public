@@ -91,18 +91,19 @@
  * is okay.
  *
  * Explicit heap traversing should not overcome the heap limit,
- * as any information above the limit is not maintained by the heap manager.
+ * as any information outside is not maintained by the heap manager.
  * Every heap operation guarantees that there are no adjacent free blocks,
  * only used blocks can follow each other sequentially.
  *
  * To discontinue to use the heap, 'HEAP_Destroy' or 'HEAP_Detach' can be
  * called.  The former deallocates the heap (by means of a call to 'resize'),
  * the latter just removes the heap handle, retaining the heap data intact.
- * Later, such a heap could be used again if attached with 'HEAP_Attach'.
+ * Later, such a heap can be used again if attached with 'HEAP_Attach'.
  *
- * Note that attached heap is in read-only mode, that is nothing can be
- * allocated and/or freed in that heap, as well as an attempt to call
- * 'HEAP_Destroy' will not destroy the heap data.
+ * Note that an attached heap is always in read-only mode, that is nothing
+ * can be allocated and/or freed in that heap, as well as an attempt to call
+ * 'HEAP_Destroy' will not actually touch any heap data (but to destroy
+ * the handle only).
  *
  * Note also, that 'HEAP_Create' always does heap reset, that is the
  * memory area pointed to by 'base' (if not 0) gets reformatted and lose
@@ -438,7 +439,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         } while (b != f);
     }
 
-    /* Heap exhausted, no large enough, free block found */
+    /* Heap exhausted: no large enough, free block found */
     if (free >= size)
         b = s_HEAP_Collect(heap, &free/*dummy*/);
     else if (!heap->resize)
