@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_stat.h>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 
 const int kUngappedHSPNumMax = 400;  /**< Suggested max. number of HSPs for an ungapped search. */
 
@@ -536,11 +537,12 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 
     (*options)->ePrelimGapExt = eDynProgScoreOnly;
     (*options)->eTbackExt = eDynProgTbck;
+    (*options)->compositionBasedStats = eNoCompositionBasedStats;
 
     /** @todo how to determine this for PSI-BLAST bootstrap run (i.e. when
      * program is blastp? */
     if (Blast_QueryIsPssm(program) && ! Blast_SubjectIsTranslated(program)) {
-        (*options)->compositionBasedStats = TRUE;
+        (*options)->compositionBasedStats = eCompositionBasedStats;
     }
 
     (*options)->program_number = program;
@@ -571,7 +573,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    }
 
    if (Blast_QueryIsPssm(program) && ! Blast_SubjectIsTranslated(program)) {
-       options->compositionBasedStats = TRUE;
+       options->compositionBasedStats = eCompositionBasedStats;
    }
 
    if (x_dropoff)
