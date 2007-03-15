@@ -137,6 +137,9 @@ CTlsBase::CTlsBase(void)
     xncbi_Verify((m_Key = TlsAlloc()) != DWORD(-1));
 #elif defined(NCBI_POSIX_THREADS)
     xncbi_Verify(pthread_key_create(&m_Key, 0) == 0);
+    // pthread_key_create does not reset the value to 0 if the key has been
+    // used and deleted.
+    xncbi_Verify(pthread_setspecific(key, 0) == 0);
 #else
     m_Key = 0;
 #endif
