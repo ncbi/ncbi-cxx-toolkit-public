@@ -1921,7 +1921,7 @@ void iterator_deserializer<BV, SerialIterator>::load_id_list(
         for (unsigned i = 0; i < id_count;)
         {
             unsigned j;
-            for (j = 0; j < win_size && i < id_count; ++j, ++i) 
+            for (j = 0; j < win_size && i <= id_count; ++j, ++i) 
             {
                 id_buffer[j] = sit.get_id();
                 sit.next();
@@ -1934,7 +1934,7 @@ void iterator_deserializer<BV, SerialIterator>::load_id_list(
         for (unsigned i = 0; i < id_count;)
         {
             unsigned j;
-            for (j = 0; j < win_size && i < id_count; ++j, ++i) 
+            for (j = 0; j < win_size && i <= id_count; ++j, ++i) 
             {
                 id_buffer[j] = sit.get_id();
                 sit.next();
