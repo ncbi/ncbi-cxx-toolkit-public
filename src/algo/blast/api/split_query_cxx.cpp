@@ -230,15 +230,18 @@ s_AddShift(unsigned int context, int shift)
 {
     _ASSERT(context == 3 || context == 4 || context == 5);
     _ASSERT(shift == 0 || shift == 1 || shift == -1);
+
+    unsigned int retval;
     if (shift == 0) {
-        return context;
+        retval = context;
     } else if (shift == 1) {
-        return context == 3 ? 5 : context - shift;
+        retval = context == 3 ? 5 : context - shift;
     } else if (shift == -1) {
-        return context == 5 ? 3 : context - shift;
+        retval = context == 5 ? 3 : context - shift;
     } else {
         abort();
     }
+    return retval;
 }
 
 static inline int
