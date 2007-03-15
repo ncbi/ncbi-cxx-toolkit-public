@@ -1365,7 +1365,8 @@ static EIO_Status s_CreateListening(const char*    path,
         }
     if (bind(x_lsock, &addr.sa, addrlen) != 0) {
         int x_errno = SOCK_ERRNO;
-        CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
+        CORE_LOGF_ERRNO_EX(x_errno == SOCK_EADDRINUSE ? eLOG_Trace : eLOG_Error,
+                           x_errno, SOCK_STRERROR(x_errno),
                            ("LSOCK#%u[%u]: [LSOCK::Create] "
                             " Failed bind(%s)", x_id,
                             (unsigned int) x_lsock, c));
