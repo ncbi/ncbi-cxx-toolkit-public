@@ -358,7 +358,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     void x_ReadFieldInfo(void);
 
     int GetFieldIndex(const string& name);
-    string SLockedQueue::GetField(int index);
+    string GetField(int index);
 
     /// get next job id (counter increment)
     unsigned int GetNextId();
