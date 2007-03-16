@@ -501,7 +501,7 @@ void CFastaReader::ParseDataLine(const TStr& s)
             CloseGap();
             if (s_ASCII_IsLower(c)) {
                 m_SeqData[m_CurrentPos] = s_ASCII_ToUpper(c);
-                CloseMask();
+                OpenMask();
             } else {
                 m_SeqData[m_CurrentPos] = c;
                 CloseMask();
