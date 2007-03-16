@@ -39,6 +39,7 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <serial/iterator.hpp>
 #include <objtools/readers/fasta.hpp>
@@ -156,16 +157,18 @@ x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
     // query sequences have the same ID. Later code will distinguish
     // between queries by using different elements of retval[]
 
-    while (!instream.eof()) {
+    CStreamLineReader line_reader(instream);
+    CFastaReader fasta_reader(line_reader, 
+                              CFastaReader::fAssumeProt |
+                              CFastaReader::fForceType |
+                              CFastaReader::fNoParseID);
+
+    while (!line_reader.AtEOF()) {
         CRef<CScope> scope(new CScope(objmgr));
 
         scope->AddDefaults();
-        CRef<CSeq_entry> entry = ReadFasta(instream, 
-                                    fReadFasta_AssumeProt |
-                                    fReadFasta_ForceType |
-                                    fReadFasta_OneSeq,
-                                    0,
-                                    0);
+        CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
+
         if (entry == 0) {
             NCBI_THROW(CObjReaderException, eInvalid, 
                         "Could not retrieve seq entry");
@@ -276,8 +279,11 @@ int CMultiApplication::Run(void)
 
     const vector<CSequence>& results(aligner.GetResults());
     for (int i = 0; i < (int)results.size(); i++) {
-        printf(">%s\n", 
-               queries[i].seqloc->GetWhole().GetSeqIdString().c_str());
+        CBioseq_Handle bhandle = queries[i].scope->GetBioseqHandle(
+                                              queries[i].seqloc->GetWhole(),
+                                              CScope::eGetBioseq_All);
+
+        printf(">%s\n", sequence::GetTitle(bhandle).c_str());
         for (int j = 0; j < results[i].GetLength(); j++) {
             printf("%c", results[i].GetPrintableLetter(j));
         }
