@@ -3285,10 +3285,11 @@ void s_GetFileSystemInfo(const string&               path,
 {
     if ( !info ) {
         NCBI_THROW(CCoreException, eInvalidArg,
-                   "CFileUtil::GetFileSystemInfo(path, NULL) is not allowed");
+                   "s_GetFileSystemInfo(path, NULL) is not allowed");
     }
     memset(info, 0, sizeof(*info));
-    const char* msg = "CFileUtil::GetFileSystemInfo() failed";
+    string msg = string("cannot get system information for path '") +
+                 path + "'";
     char* fs_name_ptr = 0;
 
 #if defined(NCBI_OS_MSWIN)
