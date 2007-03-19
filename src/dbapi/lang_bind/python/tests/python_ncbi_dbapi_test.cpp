@@ -593,9 +593,11 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
     if ( ( args.GetDriverName() == "ctlib" && !Solaris) ||
-         ( (args.GetDriverName() == "ftds" ||
-            args.GetDriverName() == "ftds63" ||
-            args.GetDriverName() == "ftds64") &&
+         ( (args.GetDriverName() == "ftds"
+            || args.GetDriverName() == "ftds63"
+            || args.GetDriverName() == "ftds64"
+            || args.GetDriverName() == "ftds64_odbc"
+            ) &&
            args.GetServerType() == CTestArguments::eMsSql )
          ) {
         // This test doen't work with the dblib driver currently ...
@@ -636,7 +638,11 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     string server_name = args.GetDriverName();
     NStr::ToUpper( server_name );
     // Do not run this test case for the ODBC driver.
-    if ( server_name.compare("ODBC") != 0 ) {
+    if ( server_name.compare("ODBC") != 0
+         && server_name.compare("ODBCW") != 0
+         && server_name.compare("FTDS64_ODBC") != 0
+         ) {
+        cout << "CPythonDBAPITest::TestExecuteStoredProc" << endl;
         tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteStoredProc, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -672,7 +678,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "gateway", "ftds64", "ftds64_odbc"
+                      "odbcw", "gateway", "ftds64", "ftds64_odbc"
 #else
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
@@ -719,12 +725,18 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 CTestArguments::EServerType
 CTestArguments::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS" ||
-         GetServerName() == "MOZART" ||
-         GetServerName() == "OBERON" ||
-         GetServerName().compare(0, 6, "BARTOK") == 0) {
+    if ( NStr::CompareNocase(GetServerName(), "STRAUSS") == 0
+         || NStr::CompareNocase(GetServerName(), "MOZART") == 0
+         || NStr::CompareNocase(GetServerName(), "OBERON") == 0
+         || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
+         || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
+         ) {
         return eSybase;
-    } else if ( NStr::EqualNocase( GetServerName(), 0, sizeof("MS_DEV") - 1, "MS_DEV") ) {
+    } else if ( NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
+                ) {
         return eMsSql;
     }
 
@@ -734,17 +746,28 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "ctlib" &&
-         GetServerName().compare(0, 6, "BARTOK") != 0 ) {
-      m_DatabaseParameters["version"] = "125";
-    } else if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
+    if ( GetDriverName() == "ctlib" ) {
+        // m_DatabaseParameters["version"] = "125";
+    } else if ( GetDriverName() == "dblib"  &&
+                GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "125";
-    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&
+        m_DatabaseParameters["version"] = "100";
+    } else if ( (GetDriverName() == "ftds") &&
                 GetServerType() == eSybase ) {
-        // ftds forks with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
+    } else if ( (GetDriverName() == "ftds63" ||
+                 GetDriverName() == "ftds64_dblib") &&
+                GetServerType() == eSybase ) {
+        // ftds work with Sybase databases using protocol v42 only ...
+        m_DatabaseParameters["version"] = "100";
+    } else if (GetDriverName() == "ftds64_odbc") {
+        if (GetServerType() == eSybase) {
+            m_DatabaseParameters["version"] = "50";
+        }
+    } else if (GetDriverName() == "ftds64"  &&
+               GetServerType() == eSybase) {
+        m_DatabaseParameters["version"] = "125";
     }
 }
 

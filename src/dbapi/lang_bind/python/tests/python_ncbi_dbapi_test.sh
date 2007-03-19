@@ -2,8 +2,9 @@
 # $Id$
 
 # Declare drivers and servers
-# Tere are problems with ftds63 currently
-driver_list="ctlib dblib ftds odbc msdblib" # mysql
+# Tere are problems with ftds63 ...
+# Tere are problems with ftds64 ...
+driver_list="ctlib dblib ftds odbc odbcw msdblib ftds64_odbc" # mysql
 server_list="MS_DEV1 OBERON"
 server_mssql="MS_DEV1"
 
@@ -116,7 +117,7 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
-            if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "odbc" -o $driver = "msdblib" -o $driver = "ftds64_odbc" -o $driver = "ftds64" \) -a  $server != $server_mssql ; then
                 continue
             fi
 
