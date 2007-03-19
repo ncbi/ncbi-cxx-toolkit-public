@@ -385,8 +385,14 @@ public:
     /// Store 4 bytes of value in the buffer.
     static void StoreUI4(void* buf, unsigned long value);
 
-    /// Read 4 bytes from buffer as unsigned long value.
-    static void GetUI4(void* buf, unsigned long& value);
+    /// Read 4 bytes from buffer.
+    static Uint4 GetUI4(void* buf);
+
+    /// Store 2 bytes of value in the buffer.
+    static void StoreUI2(void* buf, unsigned long value);
+
+    /// Read 2 bytes from buffer.
+    static Uint2 GetUI2(void* buf);
 };
 
 
