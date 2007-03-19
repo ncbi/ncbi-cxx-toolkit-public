@@ -168,6 +168,10 @@ AC_ARG_WITH(bz2,
    [ --with-bz2=DIR          use bzlib installation in DIR])
 AC_ARG_WITH(bz2b,
    [ --without-bz2           use internal copy of bzlib])
+AC_ARG_WITH(lzo,
+   [ --with-lzo=DIR          use LZO installation in DIR])
+AC_ARG_WITH(lzo2,
+   [ --without-lzo           use internal copy of LZO])
 AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
@@ -362,7 +366,7 @@ check static-exe bin-release strip version lfs pch caution ccache distcc \
 flat-makefile \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 pcre gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
@@ -401,7 +405,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
-      | --with-z=* | --with-bz2=* | --with-pcre=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
@@ -2887,7 +2891,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(z,
       [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])]])
 if test -z "$Z_LIBS"; then
    zlocal=util/compress/zlib
-   AC_MSG_NOTICE([using local copy in $zlocal])
+   AC_MSG_NOTICE([using local zlib copy in $zlocal])
    Z_PATH="<$zlocal>"
    Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
    # Z_LIBS="-lz"
@@ -2903,7 +2907,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(bz2,
         int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))]])]])
 if test -z "$BZ2_LIBS"; then
    bzlocal=util/compress/bzip2
-   AC_MSG_NOTICE([using local copy in $bzlocal])
+   AC_MSG_NOTICE([using local bzlib copy in $bzlocal])
    BZ2_PATH="<$bzlocal>"
    BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
    # BZ2_LIBS="-lbz2"
@@ -2911,6 +2915,21 @@ if test -z "$BZ2_LIBS"; then
    AC_DEFINE(USE_LOCAL_BZLIB, 1, [Define to 1 if using a local copy of bzlib.])
    NCBI_PACKAGE(BZ2)
    NCBI_PACKAGE(LocalBZ2)
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB(lzo,
+ [[AC_LANG_PROGRAM([#include <lzo1x.h>],
+      [[lzo_uint32 c = lzo_crc32(0, "foo", 3);]])]])
+if test -z "$LZO_LIBS"; then
+   lzolocal=util/compress/lzo
+   AC_MSG_NOTICE([using local LZO copy in $lzolocal])
+   LZO_PATH="<$lzolocal>"
+   LZO_INCLUDE="-I\$(includedir)/$lzolocal -I\$(includedir0)/$lzolocal"
+   # LZO_LIBS="-llzo"
+   LZO_LIB="lzo"
+   AC_DEFINE(USE_LOCAL_LZO, 1, [Define to 1 if using a local copy of LZO.])
+   NCBI_PACKAGE(LZO)
+   NCBI_PACKAGE(LocalLZO)
 fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
@@ -2922,7 +2941,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(pcre,
    [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])]])
 if test -z "$PCRE_LIBS"; then
    pcrelocal=util/regexp
-   AC_MSG_NOTICE([using local copy in $pcrelocal])
+   AC_MSG_NOTICE([using local PCRE copy in $pcrelocal])
    PCRE_PATH="<$pcrelocal>"
    PCRE_INCLUDE="-I\$(includedir)/$pcrelocal -I\$(includedir0)/$pcrelocal"
    # PCRE_LIBS="-lregexp"
@@ -5481,6 +5500,7 @@ AC_SUBST(DEMANGLE_LIBS)
 AC_SUBST(ICONV_LIBS)
 AC_SUBST(Z_LIB)
 AC_SUBST(BZ2_LIB)
+AC_SUBST(LZO_LIB)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
 AC_SUBST(TLS_INCLUDE)

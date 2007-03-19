@@ -229,6 +229,9 @@
    the standard libraries. */
 #undef HAVE_LIBKSTAT
 
+/* Define to 1 if liblzo is available. */
+#undef HAVE_LIBLZO
+
 /* Define to 1 if liboechem is available. */
 #undef HAVE_LIBOECHEM
 
@@ -752,6 +755,9 @@
 
 /* Define to 1 if using a local copy of bzlib. */
 #undef USE_LOCAL_BZLIB
+
+/* Define to 1 if using a local copy of LZO. */
+#undef USE_LOCAL_LZO
 
 /* Define to 1 if using a local copy of PCRE. */
 #undef USE_LOCAL_PCRE
