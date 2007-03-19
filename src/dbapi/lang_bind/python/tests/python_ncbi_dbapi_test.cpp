@@ -578,6 +578,12 @@ CPythonDBAPITest::TestScenario_1(void)
 CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
+    bool Solaris = false;
+
+#if defined(NCBI_OS_SOLARIS)
+    Solaris = true;
+#endif
+
     // add member function test cases to a test suite
     boost::shared_ptr<CPythonDBAPITest> DBAPIInstance( new CPythonDBAPITest( args ) );
     boost::unit_test::test_case* tc = NULL;
@@ -586,8 +592,10 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    if ( ( args.GetDriverName() == "ctlib") ||
-         ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63") &&
+    if ( ( args.GetDriverName() == "ctlib" && !Solaris) ||
+         ( (args.GetDriverName() == "ftds" ||
+            args.GetDriverName() == "ftds63" ||
+            args.GetDriverName() == "ftds64") &&
            args.GetServerType() == CTestArguments::eMsSql )
          ) {
         // This test doen't work with the dblib driver currently ...
