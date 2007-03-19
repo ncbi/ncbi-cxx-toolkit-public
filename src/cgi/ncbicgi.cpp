@@ -1423,7 +1423,7 @@ bool CCgiRequest::CalcChecksum(string& checksum, string& content) const
     string query_string = GetProperty(eCgi_QueryString);
     CCgiRequest::ParseEntries(query_string, entries);
 
-    content.clear();
+    content.erase();
     ITERATE(TCgiEntries, entry, entries) {
         content += entry->first + '=' + entry->second;
     }
