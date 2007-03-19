@@ -719,6 +719,8 @@ public:
     /// variable or [CGI] LOG_EXCLUDE_ARGS value in ini file.
     string GetCGIEntriesStr(void) const;
 
+    bool CalcChecksum(string& checksum, string& content) const;
+
 private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;

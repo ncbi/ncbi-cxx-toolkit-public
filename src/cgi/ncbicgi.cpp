@@ -37,10 +37,12 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiapp.hpp>
+
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_serial.hpp>
 #include <cgi/cgi_session.hpp>
+#include <util/checksum.hpp>
 
 #include <algorithm>
 
@@ -1409,6 +1411,39 @@ string CCgiRequest::GetCGIEntriesStr(void) const
                                  eUrlEncode_ProcessMarkChars);
     }
     return args;
+}
+
+
+bool CCgiRequest::CalcChecksum(string& checksum, string& content) const
+{
+    if( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) )
+        return false;
+    
+    TCgiEntries entries;
+    string query_string = GetProperty(eCgi_QueryString);
+    CCgiRequest::ParseEntries(query_string, entries);
+
+    content.clear();
+    ITERATE(TCgiEntries, entry, entries) {
+        content += entry->first + '=' + entry->second;
+    }
+    string url = GetProperty(eCgi_ServerName);
+    url += ':';
+    url += GetProperty(eCgi_ServerPort);
+    url += GetProperty(eCgi_ScriptName);
+    if ( url == ":" ) {
+         CNcbiApplication* app =  CNcbiApplication::Instance();
+        if (app)
+            url = app->GetProgramDisplayName();
+    }
+    content += url;
+
+    CChecksum cs(CChecksum::eMD5);
+    cs.AddLine(content);
+    CNcbiOstrstream oss;
+    cs.WriteChecksumData(oss);
+    checksum = CNcbiOstrstreamToString(oss);   
+    return true;
 }
 
 
