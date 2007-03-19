@@ -2,7 +2,7 @@
 
 APP = cgitest
 SRC = cgitest
-LIB = xcgi xncbi
+LIB = xcgi xutil xncbi
 
 CHECK_CMD = cgitest.sh
 CHECK_COPY = cgitest.sh
