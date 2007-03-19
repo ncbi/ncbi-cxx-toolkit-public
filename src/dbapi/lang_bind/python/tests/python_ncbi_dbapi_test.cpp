@@ -574,15 +574,36 @@ CPythonDBAPITest::TestScenario_1(void)
     }
 }
 
+static
+string GetSybaseClientVersion(void)
+{
+    CNcbiEnvironment env;
+    string sybase_version = env.Get("SYBASE");
+
+    sybase_version = sybase_version.substr(
+        sybase_version.find_last_of('/') + 1
+        );
+
+    return sybase_version;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////
 CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
     bool Solaris = false;
+    bool sybase_client_v125 = false;
 
 #if defined(NCBI_OS_SOLARIS)
     Solaris = true;
 #endif
+
+    const string sybase_version = GetSybaseClientVersion();
+    if (NStr::CompareNocase(sybase_version, 0, 4, "12.5") == 0
+        || NStr::CompareNocase(sybase_version, "current") == 0) {
+        sybase_client_v125 = true;
+    }
 
     // add member function test cases to a test suite
     boost::shared_ptr<CPythonDBAPITest> DBAPIInstance( new CPythonDBAPITest( args ) );
@@ -592,7 +613,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    if ( ( args.GetDriverName() == "ctlib" && !Solaris) ||
+    if ( ( args.GetDriverName() == "ctlib" && sybase_client_v125) ||
          ( (args.GetDriverName() == "ftds"
             || args.GetDriverName() == "ftds63"
             || args.GetDriverName() == "ftds64"
@@ -642,7 +663,6 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
          && server_name.compare("ODBCW") != 0
          && server_name.compare("FTDS64_ODBC") != 0
          ) {
-        cout << "CPythonDBAPITest::TestExecuteStoredProc" << endl;
         tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteStoredProc, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
