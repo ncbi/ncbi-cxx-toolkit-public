@@ -55,7 +55,8 @@ THIRD_PARTY_LIBS = \
 				install_sybase     \
 				install_mysql      \
 				install_mssql      \
-				install_openssl
+				install_openssl    \
+				install_lzo
 
 
 
@@ -78,8 +79,4 @@ clean :
 dirs :
     @echo Creating installation target directory...
     @if not exist $(INSTALL_BINPATH) mkdir $(INSTALL_BINPATH)
-
-
-
-
 
