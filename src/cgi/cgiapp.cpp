@@ -40,6 +40,13 @@
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <corelib/ncbi_system.hpp> // for SuppressSystemMessageBox
+#include <corelib/rwstream.hpp>
+#include <util/multi_writer.hpp>
+
+#include <util/cache/icache.hpp>
+#include <util/cache/cache_ref.hpp>
+
+#include <cgi/cgi_serial.hpp>
 
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
@@ -186,6 +193,11 @@ int CCgiApplication::Run(void)
                   0, start_time, &GetEnvironment(), fBegin);
     }
 
+    CNcbiOstream* orig_stream = NULL;
+    //int orig_fd = -1;
+    CNcbiStrstream result_copy;
+    auto_ptr<CNcbiOstream> new_stream;
+    
     try {
         _TRACE("(CGI) CCgiApplication::Run: calling ProcessRequest");
 
@@ -199,9 +211,46 @@ int CCgiApplication::Run(void)
             VerifyCgiContext(*m_Context);
             ProcessHttpReferer();
 
-            result = ProcessRequest(*m_Context);
-            if (result != 0) {
-                SetHTTPStatus(500);
+            try {
+                m_Cache.reset( GetCacheStorage() );
+            } catch( exception& ex ) {
+                ERR_POST( "Couldn't create cache : " << ex.what());
+            }
+            bool skip_process_request = false;
+            bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
+            if (m_Cache.get() && caching_needed) {
+                skip_process_request = GetResultFromCache(m_Context->GetRequest(),
+                                                           m_Context->GetResponse().out());
+            }
+            if (!skip_process_request) {
+                if( m_Cache.get() ) {
+                    list<CNcbiOstream*> slist;
+                    orig_stream = m_Context->GetResponse().GetOutput();
+                    slist.push_back(orig_stream);
+                    slist.push_back(&result_copy);
+                    new_stream.reset(new CWStream(new CMultiWriter(slist), 0,0,
+                                                  CRWStreambuf::fOwnWriter));
+                    m_Context->GetResponse().SetOutput(new_stream.get());
+                }
+                result = ProcessRequest(*m_Context);
+                if (result != 0) {
+                    SetHTTPStatus(500);
+                } else {
+                    if (m_Cache.get()) {
+                        m_Context->GetResponse().Flush();
+                        if (m_IsResultReady) {
+                            if(caching_needed)
+                                SaveResultToCache(m_Context->GetRequest(), result_copy);
+                            else {
+                                auto_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
+                                if (request.get()) 
+                                    SaveResultToCache(*request, result_copy);
+                            }
+                        } else if (caching_needed) {
+                            SaveRequest(m_RID, m_Context->GetRequest());
+                        }
+                    }
+                }
             }
         }
         catch (CCgiException& e) {
@@ -268,6 +317,8 @@ int CCgiApplication::Run(void)
     x_OnEvent(eEndRequest, 120);
     x_OnEvent(eExit, result);
 
+    if (orig_stream) 
+        m_Context->GetResponse().SetOutput(NULL);
     return result;
 }
 
@@ -450,7 +501,8 @@ CCgiApplication::CCgiApplication(void)
    m_Iteration(0),
    m_ArgContextSync(false),
    m_HTTPStatus(200),
-   m_RequestTimer(CStopWatch::eStop)
+   m_RequestTimer(CStopWatch::eStop),
+   m_IsResultReady(true)
 {
     // Disable system popup messages
     SuppressSystemMessageBox();
@@ -855,6 +907,89 @@ ICgiSessionStorage*
 CCgiApplication::GetSessionStorage(CCgiSessionParameters&) const 
 {
     return 0;
+}
+bool CCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
+{
+    return true;
+}
+
+ICache* CCgiApplication::GetCacheStorage() const
+{ 
+    return NULL;
+}
+
+void CCgiApplication::SetRequestId(const string& rid, bool is_done)
+{
+    m_RID = rid;
+    m_IsResultReady = is_done;
+}
+bool CCgiApplication::GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os)
+{
+    string checksum, content;
+    if (!request.CalcChecksum(checksum, content))
+        return false;
+
+    try {
+        CCacheHashedContent helper(*m_Cache);
+        auto_ptr<IReader> reader( helper.GetHashedContent(checksum, content));
+        if (reader.get()) {
+            //cout << "(Read) " << checksum << " --- " << content << endl;
+            CRStream cache_reader(reader.get());
+            return NcbiStreamCopy(os, cache_reader);
+        }
+    } catch (exception& ex) {
+        ERR_POST("Couldn't read cached request : " << ex.what());
+    }
+    return false;
+}
+void CCgiApplication::SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is)
+{
+    string checksum, content;
+    if ( !request.CalcChecksum(checksum, content) )
+        return;
+    try {
+        CCacheHashedContent helper(*m_Cache);
+        auto_ptr<IWriter> writer( helper.StoreHashedContent(checksum, content) );
+        if (writer.get()) {
+            //        cout << "(Write) : " << checksum << " --- " << content << endl;
+            CWStream cache_writer(writer.get());
+            NcbiStreamCopy(cache_writer, is);
+        }
+    } catch (exception& ex) {
+        ERR_POST("Couldn't cache request : " << ex.what());
+    } 
+}
+
+void CCgiApplication::SaveRequest(const string& rid, const CCgiRequest& request)
+{    
+    if (rid.empty())
+        return;
+    try {
+        auto_ptr<IWriter> writer( m_Cache->GetWriteStream(rid, 0, "NS_JID") );
+        if (writer.get()) {
+            CWStream cache_stream(writer.get());            
+            request.Serialize(cache_stream);
+        }
+    } catch (exception& ex) {
+        ERR_POST("Couldn't save request : " << ex.what());
+    } 
+}
+CCgiRequest* CCgiApplication::GetSavedRequest(const string& rid)
+{
+    if (rid.empty())
+        return NULL;
+    try {
+        auto_ptr<IReader> reader(m_Cache->GetReadStream(rid, 0, "NS_JID"));
+        if (reader.get()) {
+            CRStream cache_stream(reader.get());
+            auto_ptr<CCgiRequest> request(new CCgiRequest);
+            request->Deserialize(cache_stream, 0);
+            return request.release();
+        }
+    } catch (exception& ex) {
+        ERR_POST("Couldn't read saved request : " << ex.what());
+    } 
+    return NULL;
 }
 
 void CCgiApplication::x_AddLBCookie()

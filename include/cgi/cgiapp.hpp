@@ -56,6 +56,7 @@ class CCgiStatistics;
 class CCgiWatchFile;
 class ICgiSessionStorage;
 class CCgiSessionParameters;
+class ICache;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -147,7 +148,19 @@ public:
     ///  Optional parameters
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters& params) const;
 
+
+
+private:
+    virtual ICache* GetCacheStorage() const;
+    virtual bool IsCachingNeeded(const CCgiRequest& request) const;
+    bool GetResultFromCache(const CCgiRequest& request, CNcbiOstream& os);
+    void SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is);
+    void SaveRequest(const string& rid, const CCgiRequest& request);
+    CCgiRequest* GetSavedRequest(const string& rid);
+
 protected:
+    void SetRequestId(const string& rid, bool is_done);
+
     /// This method is called if an exception is thrown during the processing
     /// of HTTP request. OnEvent() will be called after this method.
     ///
@@ -281,10 +294,11 @@ private:
     void x_AddLBCookie();
 
     CCgiContext&   x_GetContext (void) const;
-    CNcbiResource& x_GetResource(void) const;
+    CNcbiResource& x_GetResource(void) const;    
 
     auto_ptr<CNcbiResource>   m_Resource;
     auto_ptr<CCgiContext>     m_Context;
+    auto_ptr<ICache>          m_Cache;
 
     typedef map<string, CDiagFactory*> TDiagFactoryMap;
     TDiagFactoryMap           m_DiagFactories;
@@ -313,6 +327,9 @@ private:
     /// Wrappers for cin and cout
     auto_ptr<CNcbiIstream>    m_InputStream;
     auto_ptr<CNcbiOstream>    m_OutputStream;
+
+    string m_RID;
+    bool m_IsResultReady;
 
     // forbidden
     CCgiApplication(const CCgiApplication&);
@@ -378,7 +395,6 @@ NCBI_PARAM_DECL(string, CGI, TrackingCookieDomain);
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookieDomain) TCGI_TrackingCookieDomain;
 NCBI_PARAM_DECL(string, CGI, TrackingCookiePath); 
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookiePath) TCGI_TrackingCookiePath;
-
 
 END_NCBI_SCOPE
 
