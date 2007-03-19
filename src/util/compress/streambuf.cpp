@@ -346,8 +346,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
             m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
                                 m_Reader->m_Begin, in_len, egptr(), out_size,
                                 &in_avail, &out_avail);
-            if ( m_Reader->m_LastStatus != CP::eStatus_Success  &&
-                 m_Reader->m_LastStatus != CP::eStatus_EndOfData ) {
+            if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
                 return false;
             }
             m_Reader->m_LastOutAvail = out_avail;
@@ -358,6 +357,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
             }
             // Get unprocessed data size
             in_len = m_Reader->m_End - m_Reader->m_Begin;
+            in_avail = in_len;
         }
         
         // Try to flush the compressor if it has not produced a data
