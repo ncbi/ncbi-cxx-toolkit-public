@@ -3,4 +3,4 @@
 
 APP = demo_html
 SRC = demo_html
-LIB = xhtml xcgi xncbi
+LIB = xhtml xcgi xutil xncbi
