@@ -61,6 +61,7 @@ CVersionInfo CCompression::GetVersion(void) const
     return CVersionInfo(kEmptyStr);
 }
 
+
 CCompression::ELevel CCompression::GetLevel(void) const
 {
     if ( m_Level == eLevel_Default) {
@@ -186,18 +187,45 @@ void CCompressionUtil::StoreUI4(void* buffer, unsigned long value)
     }
 }
 
-/// Read 4 bytes from buffer as unsigned long value
-void CCompressionUtil::GetUI4(void* buffer, unsigned long& value)
+Uint4 CCompressionUtil::GetUI4(void* buffer)
 {
     if ( !buffer ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
     }
     unsigned char* buf = (unsigned char*)buffer;
-    value = 0;
+    Uint4 value = 0;
     for (int i = 3; i >= 0; i--) {
         value <<= 8;
         value += buf[i];
     }
+    return value;
+}
+
+void CCompressionUtil::StoreUI2(void* buffer, unsigned long value)
+{
+    if ( !buffer ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
+    }
+    if ( value > kMax_UI2 ) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Stored value exceeded maximum size for Uint2 type");
+    }
+    unsigned char* buf = (unsigned char*)buffer;
+    buf[0] = (unsigned char)(value & 0xff);
+    value >>= 8;
+    buf[1] = (unsigned char)(value & 0xff);
+}
+
+Uint2 CCompressionUtil::GetUI2(void* buffer)
+{
+    if ( !buffer ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
+    }
+    unsigned char* buf = (unsigned char*)buffer;
+    Uint2 value = buf[1];
+    value <<= 8;
+    value += buf[0];
+    return value;
 }
 
 
