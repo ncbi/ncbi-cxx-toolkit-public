@@ -171,7 +171,7 @@ AC_ARG_WITH(bz2b,
 AC_ARG_WITH(lzo,
    [ --with-lzo=DIR          use LZO installation in DIR])
 AC_ARG_WITH(lzo2,
-   [ --without-lzo           use internal copy of LZO])
+   [ --without-lzo           do not use LZO])
 AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
@@ -2920,17 +2920,6 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(lzo,
  [[AC_LANG_PROGRAM([#include <lzo1x.h>],
       [[lzo_uint32 c = lzo_crc32(0, "foo", 3);]])]])
-if test -z "$LZO_LIBS"; then
-   lzolocal=util/compress/lzo
-   AC_MSG_NOTICE([using local LZO copy in $lzolocal])
-   LZO_PATH="<$lzolocal>"
-   LZO_INCLUDE="-I\$(includedir)/$lzolocal -I\$(includedir0)/$lzolocal"
-   # LZO_LIBS="-llzo"
-   LZO_LIB="lzo"
-   AC_DEFINE(USE_LOCAL_LZO, 1, [Define to 1 if using a local copy of LZO.])
-   NCBI_PACKAGE(LZO)
-   NCBI_PACKAGE(LocalLZO)
-fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
@@ -5500,7 +5489,6 @@ AC_SUBST(DEMANGLE_LIBS)
 AC_SUBST(ICONV_LIBS)
 AC_SUBST(Z_LIB)
 AC_SUBST(BZ2_LIB)
-AC_SUBST(LZO_LIB)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
 AC_SUBST(TLS_INCLUDE)
