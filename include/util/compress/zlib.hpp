@@ -247,7 +247,7 @@ public:
         size_t        buf_size = kCompressionDefaultBufSize
     );
 
-    /// Structure to keep compressed file information
+    /// Structure to keep compressed file information.
     struct SFileInfo {
         string  name;
         string  comment;
@@ -318,7 +318,7 @@ public:
 
     /// Opens a compressed file for reading or writing.
     ///
-    /// Do the same as revious version, but can also get/set file info.
+    /// Do the same as standard Open(), but can also get/set file info.
     /// @param file_name
     ///   File name of the file to open.
     /// @param mode
@@ -516,7 +516,7 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CZipStreamCompressor -- zlib based decompression stream processor
+/// CZipStreamDecompressor -- zlib based decompression stream processor
 ///
 /// See util/compress/stream.hpp for details.
 /// @sa CCompressionStreamProcessor

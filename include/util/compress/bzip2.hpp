@@ -174,13 +174,14 @@ protected:
 //
 // CBZip2CompressionFile class
 //
+// Throw exceptions on critical errors.
 
 class NCBI_XUTIL_EXPORT CBZip2CompressionFile : public CBZip2Compression,
                                                 public CCompressionFile
 {
 public:
-    // 'ctors (for a special parameters description see CBZip2Compression)
-    // Throw exception CCompressionException::eCompressionFile on error.
+    /// Constructor.
+    /// For a special parameters description see CBZip2Compression.
     CBZip2CompressionFile(
         const string& file_name,
         EMode         mode,
@@ -189,6 +190,8 @@ public:
         int           work_factor      = 0,
         int           small_decompress = 0 
     );
+    /// Conventional constructor.
+    /// For a special parameters description see CBZip2Compression.
     CBZip2CompressionFile(
         ELevel        level            = eLevel_Default,
         int           verbosity        = 0,
