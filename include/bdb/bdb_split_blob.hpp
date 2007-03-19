@@ -567,7 +567,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id,
     {{
         TLockGuard lg(*(dbp.lock));
         if (trans) {
-            dbp.db.SetTransaction(trans);
+            dbp.db->SetTransaction(trans);
         }
         dbp.db->id = id;
         return dbp.db->Delete(on_error);
@@ -576,7 +576,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id,
     // clear coordinate mapping
     {{
         CWriteLockGuard lg(m_IdDeMuxLock);
-        found = m_IdDeMux->SetCoordinatesFast(id, coord, false);
+        m_IdDeMux->SetCoordinatesFast(id, coord, false);
     }}
 
 }
