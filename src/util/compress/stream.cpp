@@ -74,7 +74,7 @@ void CCompressionStreamProcessor::Init(void)
         if ( m_State == eDone ) {
             m_Processor->Init();
         } else if (m_InBuf != 0) { // reinitializing
-            m_Processor->End(); // avoid leaking memory
+            m_Processor->End();    // avoid leaking memory
             m_Processor->Init();
         }
     }
