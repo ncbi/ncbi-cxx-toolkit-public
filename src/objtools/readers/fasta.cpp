@@ -145,6 +145,9 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
             m_MaskVec->push_back(SaveMask());
         }
         m_CurrentMask.Reset(m_NextMask);
+        if (m_CurrentMask) {
+            m_CurrentMask->SetNull();
+        }
         m_NextMask.Reset();
         m_SegmentBase = 0;
         m_Offset = 0;
