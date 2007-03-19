@@ -196,6 +196,12 @@ public:
                               const void* data,
                               size_t size);
 
+    /// Delete the underlying blob
+    EBDB_ErrCode Delete(unsigned id, 
+	                    CBDB_RawFile::EIgnoreError on_error = 
+						                        CBDB_RawFile::eThrowOnError,
+                        CBDB_Transaction* trans = 0);
+
     Dictionary& GetDictionary() { return *m_Dict; }
     BvStore&    GetBvStore()    { return *m_Store; }
 
@@ -347,6 +353,15 @@ CBDB_BlobDictStore<Key, Dictionary, BvStore>::UpdateInsert(Uint4 uid,
     return m_Store->UpdateInsert(uid, data, size);
 }
 
+
+template <typename Key, typename Dictionary, typename BvStore>
+inline EBDB_ErrCode
+CBDB_BlobDictStore<Key, Dictionary, BvStore>::Delete(unsigned id, 
+                                                     CBDB_RawFile::EIgnoreError on_error,
+                                                     CBDB_Transaction* trans)
+{
+    return m_Store->Delete(id, on_error, trans);
+}
 
 END_NCBI_SCOPE
 
