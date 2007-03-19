@@ -1090,6 +1090,12 @@ CDBAPIUnitTest::Test_DateTime(void)
                 BOOST_CHECK( !dt_value2.IsEmpty() );
                 CTime dt_value3 = value.GetCTime();
                 BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+
+                // Tracing ...
+                if (dt_value2.AsString() != dt_value3.AsString()) {
+                    cout << "dt_value2 = " << dt_value2
+                        << "dt_value3 = " << dt_value3 << endl;
+                }
             }
 
             // Insert NULL data using parameters ...
@@ -1202,6 +1208,12 @@ CDBAPIUnitTest::Test_DateTime(void)
                 BOOST_CHECK( !dt_value2.IsEmpty() );
                 CTime dt_value3 = value.GetCTime();
                 BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+
+                // Tracing ...
+                if (dt_value2.AsString() != dt_value3.AsString()) {
+                    cout << "dt_value2 = " << dt_value2
+                        << "dt_value3 = " << dt_value3 << endl;
+                }
 
                 // Failed for some reason ...
                 // BOOST_CHECK(dt_value2 == dt_value);
@@ -1319,6 +1331,12 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             BOOST_CHECK( !dt_value2.IsEmpty() );
             CTime dt_value3 = value.GetCTime();
             BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+
+            // Tracing ...
+            if (dt_value2.AsString() != dt_value3.AsString()) {
+                cout << "dt_value2 = " << dt_value2
+                    << "dt_value3 = " << dt_value3 << endl;
+            }
 
             // Failed for some reason ...
             // BOOST_CHECK(dt_value2 == dt_value);
