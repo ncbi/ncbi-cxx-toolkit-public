@@ -10,7 +10,7 @@
 
 APP = fasthello
 SRC = helloapp hellores hellocmd
-LIB = xhtml xfcgi xncbi
+LIB = xhtml xfcgi xutil xncbi
 
 LIBS = $(FASTCGI_LIBS) $(ORIG_LIBS)
 
