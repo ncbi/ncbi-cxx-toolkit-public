@@ -67,6 +67,8 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
     m_PSIBlastOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
     m_Program = eBlastNotSet;
+    m_UseMBIndex = false;
+    m_MBIndexLoaded = false;
 }
 
 CBlastOptionsLocal::~CBlastOptionsLocal()

@@ -139,7 +139,7 @@ CRef<SBlastSetupData>
 BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               CRef<CBlastOptions> options,
                               CConstRef<CPssmWithParameters> pssm,
-                              const string& rps_dbname,
+                              BlastSeqSrc* seqsrc,
                               bool is_multi_threaded);
 
 /// Build a CSearchResultSet from internal BLAST data structures

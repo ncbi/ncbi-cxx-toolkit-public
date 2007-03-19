@@ -313,6 +313,13 @@ public:
     int GetPseudoCount() const;
     void SetPseudoCount(int u);
     
+    /******************** Megablast Database Index *******************/
+    bool GetUseIndex() const;
+    bool GetMBIndexLoaded() const;
+    const string GetIndexName() const;
+    void SetMBIndexLoaded( bool index_loaded = true );
+    void SetUseIndex( bool use_index = true, const string & index_name = "" );
+
     /// Allows to dump a snapshot of the object
     /// @todo this doesn't do anything for locality eRemote
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;

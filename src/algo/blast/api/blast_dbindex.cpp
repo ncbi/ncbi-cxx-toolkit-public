@@ -64,6 +64,13 @@ extern "C" {
 */
 static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args );
 
+/** Construct a copy of BlastSeqSrc structure.
+
+    @param retval Preallocated instance of BlastSeqSrc structure.
+    @return \e retval with filled in fields.
+*/
+static BlastSeqSrc * s_CloneSrcNew( BlastSeqSrc * retval, void * args );
+
 /** Get the seed search results for a give subject id and chunk number.
 
     @param idb          [I]   Database and index data.
@@ -552,6 +559,35 @@ BlastSeqSrc * DbIndexSeqSrcInit( const string & indexname, BlastSeqSrc * db )
 }
 
 //------------------------------------------------------------------------------
+BlastSeqSrc * CloneSeqSrcInit( BlastSeqSrc * src )
+{
+    BlastSeqSrcNewInfo bssn_info;
+    bssn_info.constructor = &s_CloneSrcNew;
+    bssn_info.ctor_argument = (void *)src;
+    return BlastSeqSrcNew( &bssn_info );
+}
+
+//------------------------------------------------------------------------------
+void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src )
+{
+    _BlastSeqSrcImpl_SetNewFnPtr           ( dst, _BlastSeqSrcImpl_GetNewFnPtr( src ) );
+    _BlastSeqSrcImpl_SetDeleteFnPtr        ( dst, _BlastSeqSrcImpl_GetDeleteFnPtr( src ) );
+    _BlastSeqSrcImpl_SetCopyFnPtr          ( dst, _BlastSeqSrcImpl_GetCopyFnPtr( src ) );
+    _BlastSeqSrcImpl_SetDataStructure      ( dst, _BlastSeqSrcImpl_GetDataStructure( src ) );
+    _BlastSeqSrcImpl_SetGetNumSeqs         ( dst, _BlastSeqSrcImpl_GetGetNumSeqs( src ) );
+    _BlastSeqSrcImpl_SetGetMaxSeqLen       ( dst, _BlastSeqSrcImpl_GetGetMaxSeqLen( src ) );
+    _BlastSeqSrcImpl_SetGetAvgSeqLen       ( dst, _BlastSeqSrcImpl_GetGetAvgSeqLen( src ) );
+    _BlastSeqSrcImpl_SetGetTotLen          ( dst, _BlastSeqSrcImpl_GetGetTotLen( src ) );
+    _BlastSeqSrcImpl_SetGetName            ( dst, _BlastSeqSrcImpl_GetGetName( src ) );
+    _BlastSeqSrcImpl_SetGetIsProt          ( dst, _BlastSeqSrcImpl_GetGetIsProt( src ) );
+    _BlastSeqSrcImpl_SetGetSequence        ( dst, _BlastSeqSrcImpl_GetGetSequence( src ) );
+    _BlastSeqSrcImpl_SetGetSeqLen          ( dst, _BlastSeqSrcImpl_GetGetSeqLen( src ) );
+    _BlastSeqSrcImpl_SetIterNext           ( dst, _BlastSeqSrcImpl_GetIterNext( src ) );
+    _BlastSeqSrcImpl_SetReleaseSequence    ( dst, _BlastSeqSrcImpl_GetReleaseSequence( src ) );
+    _BlastSeqSrcImpl_SetResetChunkIterator ( dst, _BlastSeqSrcImpl_GetResetChunkIterator( src ) );
+}
+
+//------------------------------------------------------------------------------
 DbIndexPreSearchFnType GetDbIndexPreSearchFn() { return PreSearchFn; }
 
 END_SCOPE( blast )
@@ -787,6 +823,14 @@ static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
     _BlastSeqSrcImpl_SetIterNext      (retval, & s_IDbIteratorNext);
     _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_IDbReleaseSequence);
     _BlastSeqSrcImpl_SetResetChunkIterator (retval, & s_IDbResetChunkIterator);
+}
+
+//------------------------------------------------------------------------------
+static BlastSeqSrc * s_CloneSrcNew( BlastSeqSrc * retval, void * args )
+{
+    BlastSeqSrc * src = (BlastSeqSrc *)args;
+    CloneSeqSrc( retval, src );
+    return retval;
 }
 
 //------------------------------------------------------------------------------

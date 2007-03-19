@@ -147,40 +147,24 @@ BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
 {
     return BlastSetupPreliminarySearchEx(query_factory, options,
                                          CRef<CPssmWithParameters>(),
-                                         string(), is_multi_threaded);
-}
-
-CRef<SBlastSetupData>
-PsiBlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
-                            CRef<CBlastOptions> options,
-                            CConstRef<objects::CPssmWithParameters> pssm,
-                            bool is_multi_threaded /* = false */)
-{
-    return BlastSetupPreliminarySearchEx(query_factory, options, pssm,
-                                         string(), is_multi_threaded);
-}
-
-CRef<SBlastSetupData>
-RpsBlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
-                            CRef<CBlastOptions> options,
-                            const string& rps_dbname,
-                            bool is_multi_threaded /* = false */)
-{
-    return BlastSetupPreliminarySearchEx(query_factory, options,
-                                         CRef<CPssmWithParameters>(),
-                                         rps_dbname, is_multi_threaded);
+                                         NULL, is_multi_threaded);
 }
 
 CRef<SBlastSetupData>
 BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               CRef<CBlastOptions> options,
                               CConstRef<CPssmWithParameters> pssm,
-                              const string& rps_dbname,
+                              BlastSeqSrc* seqsrc,
                               bool is_multi_threaded)
 {
     CRef<SBlastSetupData> retval(new SBlastSetupData(qf, options));
     TSearchMessages m;
     options->Validate();
+
+    // 0. Initialize the megablast database index.
+    if (options->GetUseIndex()) {
+        CSetupFactory::InitializeMegablastDbIndex(seqsrc, options);
+    }
 
     // 1. Initialize the query data (borrow it from the factory)
     CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&*options));
@@ -193,6 +177,8 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
 
     // 2. Take care of any rps information
     if (Blast_ProgramIsRpsBlast(options->GetProgramType())) {
+        const char* name = BlastSeqSrcGetName(seqsrc);
+        const string rps_dbname(name ? name : "");
         retval->m_InternalData->m_RpsData =
             CSetupFactory::CreateRpsStructures(rps_dbname, options);
     }

@@ -289,7 +289,7 @@ CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
     }
 
     if( args["index"].AsString().size() > 0 ) {
-        opt.SetLookupTableType(eIndexedMBLookupTable);
+        opt.SetUseIndex( true, args["index"].AsString() );
     }
 
     if (args["matrix"]) {
@@ -508,25 +508,6 @@ int CBlastApplication::Run(void)
         ERR_POST_EX(CBlastException::eInvalidOptions, 2, 
         "\"-lookup 1\" option must be used if \"-templen\" option is not 0");
         exit(CBlastException::eInvalidOptions);
-    }
-
-    if( args["index"].AsString().size() > 0 && program != eMegablast ) {
-        ERR_POST_EX( CBlastException::eInvalidOptions, 2,
-                "\"-index true\" option can be used only "
-                "with continuous megablast program" );
-    }
-
-    if( args["index"].AsString().size() > 0 ) {
-        // Reset seqsrc.
-        BlastSeqSrc * old_seq_src = seq_src;
-        seq_src = DbIndexSeqSrcInit( args["index"].AsString(), old_seq_src );
-        char * error_str = BlastSeqSrcGetInitError( seq_src );
-
-        if( error_str ) {
-            string msg( error_str );
-            sfree( error_str );
-            NCBI_THROW( CBlastException, eSeqSrcInit, msg );
-        }
     }
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));

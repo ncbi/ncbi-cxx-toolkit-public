@@ -259,6 +259,13 @@ public:
     int GetPseudoCount() const;
     void SetPseudoCount(int ps);
     
+    /******************** Megablast Database Index *******************/
+    bool GetUseIndex() const;
+    const string GetIndexName() const;
+    void SetUseIndex( bool use_index = true, const string & index_name = "" );
+    bool GetMBIndexLoaded() const;
+    void SetMBIndexLoaded( bool index_loaded = true );
+
     bool operator==(const CBlastOptionsLocal& rhs) const;
     bool operator!=(const CBlastOptionsLocal& rhs) const;
 
@@ -293,6 +300,15 @@ private:
 
     /// Blast program
     EProgram                             m_Program;
+
+    /// Use megablast database index.
+    bool m_UseMBIndex;
+
+    /// Database index has been loaded.
+    bool m_MBIndexLoaded;
+
+    /// Megablast database index name.
+    string m_MBIndexName;
 
     /// Prohibit copy c-tor 
     CBlastOptionsLocal(const CBlastOptionsLocal& bo);
@@ -1209,6 +1225,44 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
        m_LutOpts->lut_type = ePhiLookupTable;
 
     m_LutOpts->phi_pattern = strdup(pattern);
+}
+
+/******************** Megablast Database Index *******************/
+inline bool CBlastOptionsLocal::GetUseIndex() const
+{
+    return m_UseMBIndex;
+}
+
+inline bool CBlastOptionsLocal::GetMBIndexLoaded() const
+{
+    return m_MBIndexLoaded;
+}
+
+inline const string CBlastOptionsLocal::GetIndexName() const
+{
+    return m_MBIndexName;
+}
+
+inline void CBlastOptionsLocal::SetMBIndexLoaded( bool index_loaded )
+{
+    m_MBIndexLoaded = index_loaded;
+}
+
+inline void CBlastOptionsLocal::SetUseIndex( bool use_index, const string & index_name )
+{
+    m_UseMBIndex = use_index;
+
+    if( use_index ) {
+        if( GetLookupTableType() == eMBLookupTable ) {
+            SetLookupTableType( eIndexedMBLookupTable );
+            m_MBIndexName = index_name;
+        }
+    }
+    else {
+        if( GetLookupTableType() == eIndexedMBLookupTable ) {
+            SetLookupTableType( eMBLookupTable );
+        }
+    }
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

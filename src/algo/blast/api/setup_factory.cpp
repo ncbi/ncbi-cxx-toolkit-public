@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>      // for SeqDbBlastSeqSrcInit
 #include <algo/blast/api/blast_mtlock.hpp>      // for Blast_DiagnosticsInitMT
+#include <algo/blast/api/blast_dbindex.hpp>
 
 #include "blast_aux_priv.hpp"
 #include "blast_memento_priv.hpp"
@@ -170,7 +171,8 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
                                  const CBlastOptionsMemento* opts_memento,
                                  BlastScoreBlk* score_blk,
                                  BlastSeqLoc* lookup_segments,
-                                 const CBlastRPSInfo* rps_info)
+                                 const CBlastRPSInfo* rps_info,
+                                 BlastSeqSrc* seqsrc)
 {
     BLAST_SequenceBlk* queries = query_data->GetSequenceBlk();
     CBlast_Message blast_msg;
@@ -223,6 +225,17 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
              }
              NCBI_THROW(CBlastException, eCoreBlastError, msg);
         }
+    }
+
+    if (seqsrc) {
+        GetDbIndexPreSearchFn()(
+                seqsrc,
+                retval,
+                queries,
+                lookup_segments,
+                opts_memento->m_LutOpts,
+                opts_memento->m_InitWordOpts
+        );
     }
 
     return retval;
@@ -309,6 +322,40 @@ CSetupFactory::CreateBlastSeqSrc(CSeqDB * db)
         NCBI_THROW(CBlastException, eSeqSrcInit, msg);
     }
     return retval;
+}
+
+void
+CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
+                                          CRef<CBlastOptions> options)
+{
+    _ASSERT(options->GetUseIndex());
+
+    if (options->GetMBIndexLoaded()) {
+        return;
+    }
+
+    _ASSERT(seqsrc);
+
+    BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
+
+    if( new_seqsrc == 0 ) {
+        NCBI_THROW( 
+                CBlastException, eSeqSrcInit, 
+                "Allocation of new BlastSeqSrc structure failed." );
+    }
+
+    BlastSeqSrc * ind_seqsrc = DbIndexSeqSrcInit(
+            options->GetIndexName(), new_seqsrc );
+
+    if( ind_seqsrc == 0 ) {
+        NCBI_THROW( 
+                CBlastException, eSeqSrcInit, 
+                "Allocation of BlastSeqSrc structure for index failed." );
+    }
+
+    CloneSeqSrc( seqsrc, ind_seqsrc );
+    free( ind_seqsrc );
+    options->SetMBIndexLoaded();
 }
 
 SInternalData::SInternalData()

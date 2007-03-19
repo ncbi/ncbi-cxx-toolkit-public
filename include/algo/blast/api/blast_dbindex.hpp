@@ -50,6 +50,23 @@ BEGIN_SCOPE(blast)
 NCBI_XBLAST_EXPORT
 BlastSeqSrc * DbIndexSeqSrcInit( const string & indexname, BlastSeqSrc * db );
 
+/** Creates a clone of a BlastSeqSrc structure.
+    
+    @param src Original sequence source.
+
+    @return New BlastSeqSrc object initialized with elements of the given one.
+*/
+NCBI_XBLAST_EXPORT
+BlastSeqSrc * CloneSeqSrcInit( BlastSeqSrc * src );
+
+/** Copies the contents of src to dst.
+    
+    @param dst destination BlastSeqSrc object
+    @param src source BlastSeqSrc object
+*/
+NCBI_XBLAST_EXPORT
+void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src );
+
 /** Type of a callback that is called to invoke index based search.
 
     @param seq_src      Indexed database source object.

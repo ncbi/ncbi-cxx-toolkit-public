@@ -1869,6 +1869,51 @@ CBlastOptions::GetBlast4AlgoOpts()
     return result;
 }
 
+bool CBlastOptions::GetUseIndex() const 
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetUseIndex() not available.");
+    }
+
+    return m_Local->GetUseIndex();
+}
+
+bool CBlastOptions::GetMBIndexLoaded() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMBIndexLoaded() not available.");
+    }
+
+    return m_Local->GetMBIndexLoaded();
+}
+
+const string CBlastOptions::GetIndexName() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetIndexName() not available.");
+    }
+
+    return m_Local->GetIndexName();
+}
+
+void CBlastOptions::SetUseIndex( bool use_index, const string & index_name )
+{
+    if (! m_Local) {
+        x_Throwx("Error: SetUseIndex() not available.");
+    }
+
+    m_Local->SetUseIndex( use_index, index_name );
+}
+
+void CBlastOptions::SetMBIndexLoaded( bool index_loaded )
+{
+    if (! m_Local) {
+        x_Throwx("Error: SetMBIndexLoaded() not available.");
+    }
+
+    m_Local->SetMBIndexLoaded( index_loaded );
+}
+
 QuerySetUpOptions * 
 CBlastOptions::GetQueryOpts() const
 {

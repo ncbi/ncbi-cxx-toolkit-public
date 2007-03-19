@@ -218,12 +218,15 @@ public:
     /// @todo need to convert the lookup_segments to some kind of c++ object
     /// @param rps_info RPS-BLAST data structures as obtained from
     /// CreateRpsStructures [in]
+    /// @param seqsrc BlastSeqSrc structure, only needed when performing
+    /// megablast indexed-database searches [in]
     static LookupTableWrap*
     CreateLookupTable(CRef<ILocalQueryData> query_data,
                       const CBlastOptionsMemento* opts_memento,
                       BlastScoreBlk* score_blk,
                       BlastSeqLoc* lookup_segments,
-                      const CBlastRPSInfo* rps_info = NULL);
+                      const CBlastRPSInfo* rps_info = NULL,
+                      BlastSeqSrc* seqsrc = NULL);
 
     /// Create and initialize the BlastDiagnostics structure for 
     /// single-threaded applications
@@ -258,6 +261,14 @@ public:
     /// @param db Existing CSeqDB object for the searched BLAST database [in]
     static BlastSeqSrc*
     CreateBlastSeqSrc(CSeqDB * db);
+
+    /// Initialize a megablast BLAST database index
+    /// @param seqsrc The source of subject sequence data [in]
+    /// @param options BLAST options (will be modified to record the fact that
+    /// the database index has been initialized [in|out]
+    static void
+    InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
+                               CRef<CBlastOptions> options);
     
 private:
     /// Auxiliary function to create the BlastHSPStream structure

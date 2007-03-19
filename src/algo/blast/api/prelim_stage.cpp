@@ -98,11 +98,8 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CConstRef<objects::CPssmWithParameters> pssm,
                            BlastSeqSrc* seqsrc )
 {
-    const char* name = BlastSeqSrcGetName(seqsrc);
-    const string dbname(name ? name : "");
-
     CRef<SBlastSetupData> setup_data =
-        BlastSetupPreliminarySearchEx(query_factory, options, pssm, dbname,
+        BlastSetupPreliminarySearchEx(query_factory, options, pssm, seqsrc,
                                       IsMultiThreaded());
     m_InternalData = setup_data->m_InternalData;
     m_QuerySplitter = setup_data->m_QuerySplitter;
