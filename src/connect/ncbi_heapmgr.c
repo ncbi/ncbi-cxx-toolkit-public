@@ -827,6 +827,8 @@ HEAP HEAP_Trim(HEAP heap)
             } else if (size)
                 f->head.size = size;
         }
+        assert(hsize == heap->size << _HEAP_ALIGNSHIFT);
+        assert(hsize % heap->chunk == 0);
     } else if (hsize != heap->size << _HEAP_ALIGNSHIFT) {
         CORE_LOGF(eLOG_Error,
                   ("Heap Trim%s: Heap not trimmable", s_HEAP_Id(_id, heap)));
