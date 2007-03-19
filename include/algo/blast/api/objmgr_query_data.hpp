@@ -52,12 +52,6 @@ class NCBI_XBLAST_EXPORT CObjMgr_QueryFactory : public IQueryFactory
 public:
     CObjMgr_QueryFactory(TSeqLocVector& queries);
     CObjMgr_QueryFactory(CBlastQueryVector & queries);
-    CObjMgr_QueryFactory(CRef<objects::CSeq_loc> seqloc);
-    
-    /// FIXME: perhaps this can be changed to CSeq_intervals
-    typedef list< CRef<objects::CSeq_loc> > TSeqLocs;
-    CObjMgr_QueryFactory(const TSeqLocs& seqlocs);
-    ~CObjMgr_QueryFactory();
 
     /// Retrieve the CScope objects associated with the query sequences
     /// associated with this object. In the case when CSeq_loc or TSeqLocs are
@@ -76,9 +70,6 @@ protected:
 private:
     TSeqLocVector* m_SSeqLocVector;
     CRef<CBlastQueryVector> m_QueryVector;
-    
-    const TSeqLocs* m_SeqLocs;
-    const bool m_OwnSeqLocs;
 };
 
 END_SCOPE(blast)

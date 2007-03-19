@@ -35,7 +35,6 @@
 #define ALGO_BLAST_API__SPLIT_QUERY__HPP
 
 #include <algo/blast/api/query_data.hpp>
-#include <algo/blast/api/sseqloc.hpp>
 
 // Forward declarations
 class CSplitQueriesTest;      // unit test class
@@ -46,7 +45,16 @@ class CSplitQueriesTest;      // unit test class
  */
 
 BEGIN_NCBI_SCOPE
+
+// More forward declarations..
+BEGIN_SCOPE(objects)
+    class CScope;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
+
+// More forward declarations..
+class CBlastQueryVector;
 
 /// Class responsible for splitting query sequences and providing data to the
 /// BLAST search class to search a split query chunk

@@ -37,6 +37,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/split_query.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_options.hpp>
 
 #include <objtools/simple/simple_om.hpp>
@@ -76,12 +77,13 @@ CQuerySplitter::x_ExtractCScopesAndMasks()
         // extract the scopes and masks ...
         m_Scopes = objmgr_qf->ExtractScopes();
         m_UserSpecifiedMasks = objmgr_qf->ExtractUserSpecifiedMasks();
+        _ASSERT(m_Scopes.size() == num_queries);
     } else {
-        // ... or assign newly created scopes and empty masks
-        m_Scopes.assign(num_queries, CSimpleOM::NewScope());
+        ERR_POST(Warning << "Query splitting is not supported unless the "
+                 "object manager interfaces are used");
+        m_NumChunks = 1;
         m_UserSpecifiedMasks.assign(num_queries, TMaskedQueryRegions());
     }
-    _ASSERT(m_Scopes.size() == num_queries);
     _ASSERT(m_UserSpecifiedMasks.size() == num_queries);
 }
 
@@ -216,6 +218,7 @@ CQuerySplitter::x_ComputeQueryIndicesForChunks()
 
             // retrieve the scope to retrieve this query
             CRef<CScope> scope(m_Scopes[qindex]);
+            _ASSERT(scope.NotEmpty());
 
             // our split query chunk :)
             CRef<CBlastSearchQuery> split_query
