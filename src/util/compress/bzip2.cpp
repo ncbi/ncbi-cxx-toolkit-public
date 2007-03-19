@@ -108,7 +108,11 @@ bool CBZip2Compression::CompressBuffer(
             FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
-    LIMIT_SIZE_PARAM_U(src_len);
+    if (src_len > kMax_UInt) {
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        ERR_COMPRESS(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        return false;
+    }
     LIMIT_SIZE_PARAM_U(dst_size);
 
     // Destination buffer size
@@ -144,7 +148,11 @@ bool CBZip2Compression::DecompressBuffer(
         SetError(BZ_PARAM_ERROR, "bad argument");
         return false;
     }
-    LIMIT_SIZE_PARAM_U(src_len);
+    if (src_len > kMax_UInt) {
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        ERR_COMPRESS(FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
+        return false;
+    }
     LIMIT_SIZE_PARAM_U(dst_size);
 
     // Destination buffer size
@@ -473,7 +481,11 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
-    LIMIT_SIZE_PARAM_U(in_len);
+    if (in_len > kMax_UInt) {
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Process"));
+        return eStatus_Error;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     STREAM->next_in   = const_cast<char*>(in_buf);
@@ -622,7 +634,11 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    LIMIT_SIZE_PARAM_U(in_len);
+    if (in_len > kMax_UInt) {
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Process"));
+        return eStatus_Error;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     // By default we consider that data is compressed
@@ -686,8 +702,11 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
                       char*, size_t, size_t*)
 {
-    if ( m_DecompressMode == eMode_Unknown ) {
-        return eStatus_Error;
+    switch (m_DecompressMode) {
+        case eMode_Unknown:
+            return eStatus_Error;
+        default:
+            ;
     }
     return eStatus_Success;
 }
@@ -696,8 +715,13 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
 CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
                       char*, size_t, size_t*)
 {
-    if ( m_DecompressMode == eMode_Unknown ) {
-        return eStatus_Error;
+    switch (m_DecompressMode) {
+        case eMode_Unknown:
+            return eStatus_Error;
+        case eMode_TransparentRead:
+            return eStatus_EndOfData;
+        default:
+            ;
     }
     return eStatus_Success;
 }

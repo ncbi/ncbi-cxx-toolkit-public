@@ -143,7 +143,7 @@ size_t s_CheckGZipHeader(const void* src_buf, size_t src_len,
     size_t header_len = 10; 
 
     if ( info ) {
-        CCompressionUtil::GetUI4(buf+4, (unsigned long&)info->mtime);
+        info->mtime = CCompressionUtil::GetUI4(buf+4);
     }
 
     // Skip the extra fields
@@ -625,7 +625,7 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
         return false;
     }
     // Get file information
-    if ( mode == eMode_Read  &&  F_ISSET(fCheckFileHeader)  &&  info) {
+    if (mode == eMode_Read  &&  F_ISSET(fCheckFileHeader)  &&  info) {
         char buf[kMaxHeaderSize];
         m_File->read(buf, kMaxHeaderSize);
         m_File->seekg(0);
@@ -1133,9 +1133,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Flush(
                       size_t  out_size,
                       size_t* out_avail)
 {
-    if ( m_DecompressMode == eMode_Unknown ) {
-        return eStatus_Error;
-    }
+    // Do not check here on eMode_Unknown. It will be processed below.
     size_t in_avail;
     return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
 }
@@ -1146,9 +1144,10 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
                       size_t  out_size,
                       size_t* out_avail)
 {
-    if ( m_DecompressMode == eMode_Unknown ) {
-        return eStatus_Error;
+    if (m_DecompressMode == eMode_TransparentRead) {
+        return eStatus_EndOfData;
     }
+    // Do not check here on eMode_Unknown. It will be processed below.
     size_t in_avail;
     return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
 }
