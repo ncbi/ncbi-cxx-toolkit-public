@@ -1093,8 +1093,9 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                 // Tracing ...
                 if (dt_value2.AsString() != dt_value3.AsString()) {
-                    cout << "dt_value2 = " << dt_value2
-                        << "dt_value3 = " << dt_value3 << endl;
+                    cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
+                        << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
+                        << endl;
                 }
             }
 
@@ -1211,8 +1212,9 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                 // Tracing ...
                 if (dt_value2.AsString() != dt_value3.AsString()) {
-                    cout << "dt_value2 = " << dt_value2
-                        << "dt_value3 = " << dt_value3 << endl;
+                    cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
+                        << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
+                        << endl;
                 }
 
                 // Failed for some reason ...
@@ -1334,8 +1336,9 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
 
             // Tracing ...
             if (dt_value2.AsString() != dt_value3.AsString()) {
-                cout << "dt_value2 = " << dt_value2
-                    << "dt_value3 = " << dt_value3 << endl;
+                cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
+                    << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
+                    << endl;
             }
 
             // Failed for some reason ...
