@@ -57,14 +57,23 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
     : m_Atlas   (atlas),
       m_IsAA    (prot_nucl == 'p'),
       m_VolName (name),
-      m_Idx     (atlas, name, prot_nucl, locked),
-      m_Seq     (atlas, name, prot_nucl, locked),
-      m_Hdr     (atlas, name, prot_nucl, locked),
       m_TaxCache(256)
 {
     if (user_gilist) {
         m_UserGiList.Reset(user_gilist);
     }
+    
+    m_Idx.Reset(new CSeqDBIdxFile(atlas, name, prot_nucl, locked));
+    
+    // To allow for empty volumes, we must tolerate the absence of all
+    // files other than the index file.
+    
+    if (m_Idx->GetNumOIDs() == 0) {
+        return;
+    }
+    
+    m_Seq.Reset(new CSeqDBSeqFile(atlas, name, prot_nucl, locked));
+    m_Hdr.Reset(new CSeqDBHdrFile(atlas, name, prot_nucl, locked));
     
     // ISAM files are optional
     
@@ -109,7 +118,7 @@ char CSeqDBVol::GetSeqType() const
 
 char CSeqDBVol::x_GetSeqType() const
 {
-    return m_Idx.GetSeqType();
+    return m_Idx->GetSeqType();
 }
 
 int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
@@ -118,9 +127,9 @@ int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
     TIndx end_offset   = 0;
     
     m_Atlas.Lock(locked);
-    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
+    m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
     
-    _ASSERT('p' == m_Idx.GetSeqType());
+    _ASSERT('p' == m_Idx->GetSeqType());
     
     // Subtract one, for the inter-sequence null.
     return int(end_offset - start_offset - 1);
@@ -134,9 +143,9 @@ int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
     TIndx end_offset   = 0;
     
     m_Atlas.Lock(locked);
-    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
+    m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
     
-    _ASSERT(m_Idx.GetSeqType() == 'n');
+    _ASSERT(m_Idx->GetSeqType() == 'n');
     
     int whole_bytes = int(end_offset - start_offset - 1);
     
@@ -146,7 +155,7 @@ int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
     
     char amb_char = 0;
     
-    m_Seq.ReadBytes(& amb_char, end_offset - 1, end_offset);
+    m_Seq->ReadBytes(& amb_char, end_offset - 1, end_offset);
     
     int remainder = amb_char & 3;
     return (whole_bytes * 4) + remainder;
@@ -158,9 +167,9 @@ int CSeqDBVol::GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const
     TIndx end_offset   = 0;
     
     m_Atlas.Lock(locked);
-    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
+    m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
     
-    _ASSERT(m_Idx.GetSeqType() == 'n');
+    _ASSERT(m_Idx->GetSeqType() == 'n');
     
     int whole_bytes = int(end_offset - start_offset - 1);
     
@@ -1520,7 +1529,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
     
     int base_length = -1;
     
-    if ('p' == m_Idx.GetSeqType()) {
+    if ('p' == m_Idx->GetSeqType()) {
         if (alloc_type == eAtlas) {
             base_length = x_GetSequence(oid,
                                         (const char**) buffer,
@@ -1699,9 +1708,9 @@ int CSeqDBVol::x_GetSequence(int              oid,
     
     m_Atlas.Lock(locked);
     
-    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
+    m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
     
-    char seqtype = m_Idx.GetSeqType();
+    char seqtype = m_Idx->GetSeqType();
     
     if ('p' == seqtype) {
         // Subtract one, for the inter-sequence null.
@@ -1715,11 +1724,11 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // The normal consumer of this data relies on them, and can
         // walk off memory if a sequence ends on a slice boundary.
         
-        *buffer = m_Seq.GetRegion(start_offset-1,
-                                  end_offset+1,
-                                  keep,
-                                  false,
-                                  locked) + 1;
+        *buffer = m_Seq->GetRegion(start_offset-1,
+                                   end_offset+1,
+                                   keep,
+                                   false,
+                                   locked) + 1;
     } else if ('n' == seqtype) {
         // The last byte is partially full; the last two bits of the
         // last byte store the number of nucleotides in the last byte
@@ -1733,11 +1742,11 @@ int CSeqDBVol::x_GetSequence(int              oid,
         
         bool hold = ! (keep || can_release);
         
-        *buffer = m_Seq.GetRegion(start_offset,
-                                  end_offset,
-                                  keep,
-                                  hold,
-                                  locked);
+        *buffer = m_Seq->GetRegion(start_offset,
+                                   end_offset,
+                                   keep,
+                                   hold,
+                                   locked);
         
         // If we are returning a hold on the sequence (keep), and the
         // caller does not need the lock after this (can_release) we
@@ -1788,7 +1797,7 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                  oid,
 
 Uint8 CSeqDBVol::GetVolumeLength() const
 {
-    return m_Idx.GetVolumeLength();
+    return m_Idx->GetVolumeLength();
 }
 
 CRef<CBlast_def_line_set>
@@ -1886,9 +1895,9 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
     
     m_Atlas.Lock(locked);
     
-    m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end);
+    m_Idx->GetHdrStartEnd(oid, hdr_start, hdr_end);
     
-    const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end, locked);
+    const char * asn_region = m_Hdr->GetRegion(hdr_start, hdr_end, locked);
     
     // Now; create an ASN.1 object from the memory chunk provided
     // here.
@@ -1937,7 +1946,7 @@ void CSeqDBVol::x_GetAmbChar(int oid,
     
     m_Atlas.Lock(locked);
     
-    bool ok = m_Idx.GetAmbStartEnd(oid, start_offset, end_offset);
+    bool ok = m_Idx->GetAmbStartEnd(oid, start_offset, end_offset);
     
     if (! ok) {
         NCBI_THROW(CSeqDBException, eFileErr,
@@ -1953,11 +1962,11 @@ void CSeqDBVol::x_GetAmbChar(int oid,
         // for the duration of this function.
         
         Int4 * buffer =
-            (Int4*) m_Seq.GetRegion(start_offset,
-                                    start_offset + (total * 4),
-                                    false,
-                                    false,
-                                    locked);
+            (Int4*) m_Seq->GetRegion(start_offset,
+                                     start_offset + (total * 4),
+                                     false,
+                                     false,
+                                     locked);
         
         // This is probably unnecessary
         total &= 0x7FFFFFFF;
@@ -1974,22 +1983,22 @@ void CSeqDBVol::x_GetAmbChar(int oid,
 
 int CSeqDBVol::GetNumOIDs() const
 {
-    return m_Idx.GetNumOIDs();
+    return m_Idx->GetNumOIDs();
 }
 
 string CSeqDBVol::GetTitle() const
 {
-    return m_Idx.GetTitle();
+    return m_Idx->GetTitle();
 }
 
 string CSeqDBVol::GetDate() const
 {
-    return m_Idx.GetDate();
+    return m_Idx->GetDate();
 }
 
 int CSeqDBVol::GetMaxLength() const
 {
-    return m_Idx.GetMaxLength();
+    return m_Idx->GetMaxLength();
 }
 
 bool CSeqDBVol::PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const
@@ -2214,10 +2223,14 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
 
 void CSeqDBVol::UnLease()
 {
-    m_Idx.UnLease();
-    m_Seq.UnLease();
-    m_Hdr.UnLease();
+    m_Idx->UnLease();
     
+    if (m_Seq.NotEmpty()) {
+        m_Seq->UnLease();
+    }
+    if (m_Hdr.NotEmpty()) {
+        m_Hdr->UnLease();
+    }
     if (m_IsamPig.NotEmpty()) {
         m_IsamPig->UnLease();
     }
@@ -2256,7 +2269,7 @@ int CSeqDBVol::GetOidAtOffset(int              first_seq,
                    "Residue offset not in valid range.");
     }
     
-    if ('n' == m_Idx.GetSeqType()) {
+    if ('n' == m_Idx->GetSeqType()) {
         // Input range is from 0 .. total_length
         // Require range from  0 .. byte_length
         
@@ -2288,7 +2301,7 @@ int CSeqDBVol::GetOidAtOffset(int              first_seq,
     while(oid_beg < oid_end) {
         Uint8 offset = x_GetSeqResidueOffset(oid_mid, locked);
         
-        if ('p' == m_Idx.GetSeqType()) {
+        if ('p' == m_Idx->GetSeqType()) {
             offset -= oid_mid;
         }
         
@@ -2309,7 +2322,7 @@ Uint8 CSeqDBVol::x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const
     m_Atlas.Lock(locked);
     
     TIndx start_offset = 0;
-    m_Idx.GetSeqStart(oid, start_offset);
+    m_Idx->GetSeqStart(oid, start_offset);
     return start_offset;
 }
 
@@ -2408,7 +2421,7 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     
     m_Atlas.Lock(locked);
     
-    m_Idx.GetSeqStartEnd(oid, start_S, end_S);
+    m_Idx->GetSeqStartEnd(oid, start_S, end_S);
     bool amb_ok = true;
     
     if (m_IsAA) {
@@ -2422,7 +2435,7 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
         map_begin = start_S - 1;
         map_end   = end_A + 1;
     } else {
-        amb_ok = m_Idx.GetAmbStartEnd(oid, start_A, end_A);
+        amb_ok = m_Idx->GetAmbStartEnd(oid, start_A, end_A);
         
         map_begin = start_S;
         map_end   = end_A;
@@ -2445,7 +2458,7 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     }
     
     if (buffer) {
-        *buffer = m_Seq.GetRegion(map_begin, map_end, true, false, locked);
+        *buffer = m_Seq->GetRegion(map_begin, map_end, true, false, locked);
         *buffer += (start_S - map_begin);
     }
     

@@ -92,6 +92,8 @@ using boost::unit_test::test_suite;
 #define CHECK_THROW(s, x) \
     BOOST_CHECK_THROW(s, x)
 
+#define CHECK_THROW_SEQDB(A) CHECK_THROW(A, CSeqDBException)
+
 static void s_UnitTestVerbosity(string s)
 {
     static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
@@ -2613,6 +2615,157 @@ BOOST_AUTO_UNIT_TEST(SeqIdListAndGiList)
     // We should have emptied the 'need' set at this point.
     
     CHECK(need.empty());
+}
+
+
+BOOST_AUTO_UNIT_TEST(EmptyVolume)
+{
+    START;
+    
+    CSeqDB db("data/empty", CSeqDB::eProtein);
+    
+    CHECK_EQUAL(db.GetNumSeqs(), 0);
+    CHECK_EQUAL(db.GetNumOIDs(), 0);
+    CHECK_EQUAL(db.GetTitle(), "empty test database");
+    
+    CHECK_THROW_SEQDB(db.GetSeqLength(0));
+    CHECK_THROW_SEQDB(db.GetSeqLengthApprox(0));
+    CHECK_THROW_SEQDB(db.GetHdr(0));
+    
+    map<int, int> gi_to_taxid;
+    vector<int>   taxids;
+    vector<int>   gis;
+    
+    CHECK_THROW_SEQDB(db.GetTaxIDs(0, gi_to_taxid));
+    CHECK_THROW_SEQDB(db.GetTaxIDs(0, taxids));
+    CHECK_THROW_SEQDB(db.GetBioseq(0));
+    CHECK_THROW_SEQDB(db.GetBioseqNoData(0, 129295));
+    CHECK_THROW_SEQDB(db.GetBioseq(0, 129295));
+    
+    const char * buffer = 0;
+    char * ncbuffer = 0;
+    
+    CHECK_THROW_SEQDB(db.GetSequence(0, & buffer));
+    CHECK_THROW_SEQDB(db.GetAmbigSeq(0, & buffer, kSeqDBNuclBlastNA8));
+    CHECK_THROW_SEQDB(db.GetAmbigSeq(0, & buffer, kSeqDBNuclBlastNA8, 10, 20));
+    CHECK_THROW_SEQDB(db.GetAmbigSeqAlloc(0,
+                                          & ncbuffer,
+                                          kSeqDBNuclBlastNA8,
+                                          eAtlas));
+    
+    // Don't check CSeqDB::RetSequence, because it uses an assert(),
+    // which is more helpful from a debugging POV.
+    
+    CHECK_THROW_SEQDB(db.GetSeqIDs(0));
+    CHECK_THROW_SEQDB(db.GetGis(0, gis));
+    CHECK_EQUAL(db.GetSequenceType(), CSeqDB::eProtein);
+    CHECK_EQUAL(db.GetTitle(), string("empty test database"));
+    CHECK_EQUAL(db.GetDate(), string("Mar 19, 2007 11:38 AM"));
+    CHECK_EQUAL(db.GetNumSeqs(), 0);
+    CHECK_EQUAL(db.GetNumOIDs(), 0);
+    CHECK_EQUAL(db.GetTotalLength(), Uint8(0));
+    CHECK_EQUAL(db.GetVolumeLength(), Uint8(0));
+    
+    int oid_count = 0;
+    Uint8 seq_total = 0;
+    
+    CHECK_NO_THROW(db.GetTotals(CSeqDB::eUnfilteredAll,
+                                & oid_count,
+                                & seq_total,
+                                false));
+    
+    CHECK_EQUAL(oid_count, 0);
+    CHECK_EQUAL(seq_total, Uint8(0));
+    
+    CHECK_EQUAL(db.GetMaxLength(), 0);
+    CHECK_NO_THROW(db.Begin());
+    
+    int oid = 0;
+    
+    CHECK_EQUAL(false, db.CheckOrFindOID(oid));
+    
+    int begin(0), end(0);
+    vector<int> oids;
+    oids.resize(100);
+    
+    CSeqDB::EOidListType ol_type;
+    CHECK_NO_THROW(ol_type = db.GetNextOIDChunk(begin, end, oids, NULL));
+    
+    if (ol_type == CSeqDB::eOidList) {
+        CHECK_EQUAL(size_t(0), oids.size());
+    } else {
+        CHECK_EQUAL(begin, end);
+    }
+    
+    CHECK_NO_THROW(db.ResetInternalChunkBookmark());
+    CHECK_EQUAL(db.GetDBNameList(), string("data/empty"));
+    CHECK_EQUAL(db.GetGiList(), (CSeqDBGiList*)NULL);
+    CHECK_NO_THROW(db.SetMemoryBound(1024*1024*512));
+    
+    int pig(123), gi(129295);
+    string acc("P01013");
+    CSeq_id seqid("sp|P01013|OVALX_CHICK");
+    
+    // This looks assymetric, but its logically consistent.  Looking
+    // up a non-existant GI, PIG, or Seq-id always returns a failure,
+    // but never throws an exception.  Since OIDs must be in range,
+    // the OidToXyz functions will all throw exceptions (there are no
+    // valid OIDs for an empty db).
+    
+    CHECK_THROW_SEQDB(db.OidToPig(oid, pig));
+    CHECK_THROW_SEQDB(db.OidToGi(oid, gi));
+    
+    CHECK_EQUAL(false, db.PigToOid(pig, oid));
+    CHECK_EQUAL(false, db.GiToOid(gi, oid));
+    CHECK_EQUAL(false, db.GiToPig(gi, pig));
+    CHECK_EQUAL(false, db.PigToGi(pig, gi));
+    CHECK_NO_THROW(db.AccessionToOids(acc, oids));
+    CHECK(oids.size() == 0);
+    CHECK_NO_THROW(db.SeqidToOids(seqid, oids));
+    CHECK(oids.size() == 0);
+    CHECK_EQUAL(false, db.SeqidToOid(seqid, oid));
+    
+    Uint8 residue(12345);
+    
+    // GetOidAtOffset() must throw.  The specified starting OID must
+    // be valid (and of course can't be, for an empty DB.)
+    
+    CHECK_THROW_SEQDB(db.GetOidAtOffset(0, residue));
+    CHECK(db.GiToBioseq(gi).Empty());
+    CHECK(db.PigToBioseq(pig).Empty());
+    CHECK(db.SeqidToBioseq(seqid).Empty());
+    
+    vector<string> paths1;
+    vector<string> paths2;
+    
+    CHECK_NO_THROW(CSeqDB::FindVolumePaths("data/empty",
+                                           CSeqDB::eProtein,
+                                           paths1));
+    
+    CHECK_NO_THROW(db.FindVolumePaths(paths2));
+    
+    CHECK_EQUAL(paths1.size(), size_t(1));
+    CHECK_EQUAL(paths2.size(), size_t(1));
+    CHECK_EQUAL(paths1[0], paths2[0]);
+    
+    // The end OID is higher than GetNumOIDs(), but as stated in the
+    // documentation, this function silently adjusts the end value to
+    // the number of OIDs if it is out of range.
+    
+    CHECK_NO_THROW(db.SetIterationRange(0, 100));
+    
+    CSeqDB::TAliasFileValues afv;
+    CHECK_NO_THROW(db.GetAliasFileValues(afv));
+    
+    int taxid(57176);
+    
+    // An empty database should still be able to look up the
+    // vociferans taxid.
+    
+    SSeqDBTaxInfo info;
+    CHECK_NO_THROW(db.GetTaxInfo(taxid, info));
+    
+    CHECK_THROW_SEQDB(db.GetSeqData(0, 10, 20));
 }
 
 

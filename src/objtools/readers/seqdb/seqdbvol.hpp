@@ -1040,13 +1040,13 @@ private:
     string m_VolName;
     
     /// Indexes the sequence, header, and ambiguity data
-    CSeqDBIdxFile m_Idx;
+    CRef<CSeqDBIdxFile> m_Idx;
     
     /// Contains sequence data for this volume
-    CSeqDBSeqFile m_Seq;
+    CRef<CSeqDBSeqFile> m_Seq;
     
     /// Contains header (defline) information for this volume
-    CSeqDBHdrFile m_Hdr;
+    CRef<CSeqDBHdrFile> m_Hdr;
     
     // These are mutable because they defer initialization.
     
