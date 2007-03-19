@@ -36,7 +36,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/blob_storage.hpp>
 
-#include <cgi/cgiapp.hpp>
+#include <cgi/cgiapp_cached.hpp>
 #include <cgi/cgictx.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
@@ -44,6 +44,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_api.hpp>
+
 
 #include <map>
 
@@ -130,7 +131,7 @@ private:
     string                        m_JobInput;
     string                        m_JobOutput;
     bool                          m_NeedRenderPage;
-    
+
     /// A copy constructor and an assignemt operator
     /// are prohibited
     ///
@@ -148,7 +149,7 @@ private:
 ///  error processing, etc.  All request procesing is done on the back end.
 ///  CGI application is responsible for UI rendering.
 ///
-class NCBI_XGRIDCGI_EXPORT CGridCgiApplication : public CCgiApplication
+class NCBI_XGRIDCGI_EXPORT CGridCgiApplication : public CCgiApplicationCached
 {
 public:
 
@@ -274,6 +275,9 @@ private:
     auto_ptr<IBlobStorage> m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
+
+    virtual bool IsCachingNeeded(const CCgiRequest& request) const;
+
 };
 
 /////////////////////////////////////////////////////////////////////////////

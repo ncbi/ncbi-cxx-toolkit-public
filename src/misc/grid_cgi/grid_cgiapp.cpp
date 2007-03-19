@@ -164,9 +164,16 @@ void CGridCgiContext::SetCompleteResponse(CNcbiIstream& is)
 void CGridCgiApplication::Init()
 {
     // Standard CGI framework initialization
-    CCgiApplication::Init();
-    InitGridClient();
+    CCgiApplicationCached::Init();
+    InitGridClient();  
+}
 
+bool CGridCgiApplication::IsCachingNeeded(const CCgiRequest& request) const
+{
+    string query_string = request.GetProperty(eCgi_QueryString);
+    TCgiEntries entries;
+    CCgiRequest::ParseEntries(query_string, entries);
+    return entries.find("job_key") == entries.end();
 }
 
 void CGridCgiApplication::InitGridClient()
@@ -174,6 +181,7 @@ void CGridCgiApplication::InitGridClient()
     // hack!!! It needs to be removed when we know how to deal with unresolved
     // symbols in plugins.
     BlobStorage_RegisterDriver_NetCache(); 
+
     m_RefreshDelay = 
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay = 
@@ -385,12 +393,14 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
     grid_ctx.SetJobOutput(job_status.GetJobOutput());
             
     bool finished = false;
+    bool save_result = false;
     grid_ctx.GetCGIContext().GetResponse().
         SetHeaderValue("NCBI-RCGI-JobStatus", CNetScheduleAPI::StatusToString(status));
     switch (status) {
     case CNetScheduleAPI::eDone:
         // a job is done
         OnJobDone(job_status, grid_ctx);
+        save_result = true;
         finished = true;
         break;
     case CNetScheduleAPI::eFailed:
@@ -407,6 +417,7 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
             
     case CNetScheduleAPI::eJobNotFound:
         // A lost job
+        //cerr << "|" << job_key << "|" << endl;
         OnJobFailed("Job is not found.", grid_ctx);
         finished = true;
         break;
@@ -426,6 +437,7 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
     default:
         _ASSERT(0);
     }
+    SetRequestId(job_key,save_result);
     return finished;
 }
 
