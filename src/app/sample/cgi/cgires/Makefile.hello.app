@@ -7,6 +7,6 @@
 
 APP = hello
 SRC = helloapp hellores hellocmd
-LIB = xhtml xcgi xncbi
+LIB = xhtml xcgi xutil xncbi
 
 CHECK_CMD =
