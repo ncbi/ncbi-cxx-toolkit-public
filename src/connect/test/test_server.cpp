@@ -34,11 +34,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <connect/server.hpp>
+#include <util/random_gen.hpp>
+#include <util/thread_pool.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -93,17 +96,13 @@ private:
 
 void CTestConnectionHandler::OnOpen(void)
 {
-    string hello("Hello!\n");
-    CSocket &socket = GetSocket();
-
-    socket.Write(hello.c_str(), hello.size());
+    GetSocket().Write("Hello!\n", sizeof("Hello!\n") - 1);
 }
 
 
 void CTestConnectionHandler::OnMessage(BUF buf)
 {
     char data[1024];
-    string goodbye("Goodbye!\n");
     CSocket &socket = GetSocket();
 
     size_t msg_size = BUF_Read(buf, data, sizeof(data));
@@ -111,15 +110,17 @@ void CTestConnectionHandler::OnMessage(BUF buf)
         data[msg_size] = '\0';
         if (strncmp(data, "Hello!", strlen("Hello!")) == 0)
             m_Server->AddHello();
-        printf("got \"%s\"\n", data);
+        ERR_POST(Info << "got \"" << data << "\"");
     } else {
-        printf("got empty buffer\n");
+        ERR_POST(Info << "got empty buffer");
     }
-    socket.Write(goodbye.c_str(), goodbye.size());
+
+    socket.Write("Goodbye!\n", sizeof("Goodbye!\n") - 1);
     socket.Close();
-    if (strncmp(data, "Goodbye!", strlen("Goodbye!")) == 0) {
-        printf("got shutdown request\n");
-        printf("%d Hello's counted\n", m_Server->CountHellos());
+
+    if (memcmp(data, "Goodbye!", sizeof("Goodbye!") - 1) == 0) {
+        ERR_POST(Info << "got shutdown request");
+        ERR_POST(Info << "Hello counter = " << m_Server->CountHellos());
         m_Server->RequestShutdown();
     }
 }
@@ -141,8 +142,56 @@ private:
 };
 
 
-// App
-class CThreadedServerApp : public CNcbiApplication
+// The client part
+
+static unsigned int s_Requests;
+static volatile unsigned int s_Processed = 0;
+
+DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+
+class CConnectionRequest : public CStdRequest
+{
+public:
+    CConnectionRequest(unsigned short port, unsigned int delay) :
+        m_Port(port), m_Delay(delay)
+    {
+    }
+
+protected:
+    virtual void Process(void);
+
+private:
+    unsigned short m_Port;
+    unsigned int m_Delay;
+};
+
+void CConnectionRequest::Process(void)
+{
+    CConn_SocketStream stream("localhost", m_Port);
+
+    SleepMilliSec(m_Delay);
+
+    unsigned int request_number;
+
+    {
+        CFastMutexGuard guard(s_Mutex);
+        request_number = ++s_Processed;
+    }
+
+    string junk;
+
+    stream >> junk;
+
+    stream << (request_number < s_Requests ? "Hello!" : "Goodbye!") << endl;
+
+    stream >> junk;
+
+    ERR_POST(Info << "Processed " << request_number << "/" << s_Requests);
+}
+
+
+// Application
+class CServerTestApp : public CNcbiApplication
 {
 public:
     virtual void Init(void);
@@ -150,62 +199,116 @@ public:
 };
 
 
-void CThreadedServerApp::Init(void)
+void CServerTestApp::Init(void)
 {
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetLOCK(MT_LOCK_cxx2c());
 
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                             "sample server using thread pools");
+        "CServer test application");
 
-    arg_desc->AddKey("port", "N", "TCP port number on which to listen",
-                     CArgDescriptions::eInteger);
-    arg_desc->SetConstraint("port", new CArgAllow_Integers(0, 0xFFFF));
+    arg_desc->AddDefaultKey("srvthreads", "N",
+        "Initial number of server threads",
+        CArgDescriptions::eInteger, "5");
 
-    arg_desc->AddDefaultKey("threads", "N", "Number of initial threads",
-                            CArgDescriptions::eInteger, "5");
-    
-    arg_desc->AddDefaultKey("maxThreads", "N",
-                            "Maximum number of simultaneous threads",
-                            CArgDescriptions::eInteger, "10");
-    
-    arg_desc->AddDefaultKey("queue", "N", "Maximum size of request queue",
-                            CArgDescriptions::eInteger, "20");
+    arg_desc->AddDefaultKey("maxsrvthreads", "N",
+        "Maximum number of server threads",
+        CArgDescriptions::eInteger, "10");
 
-    {{
-        CArgAllow* constraint = new CArgAllow_Integers(1, 999);
-        arg_desc->SetConstraint("threads",    constraint);
-        arg_desc->SetConstraint("maxThreads", constraint);
-        arg_desc->SetConstraint("queue",      constraint);        
-    }}
+    arg_desc->AddDefaultKey("queuesize", "N",
+        "Maximum size of request queue",
+        CArgDescriptions::eInteger, "20");
+
+    arg_desc->AddDefaultKey("clthreads", "N",
+        "Initial number of client threads",
+        CArgDescriptions::eInteger, "5");
+
+    arg_desc->AddDefaultKey("maxclthreads", "N",
+        "Maximum number of client threads",
+        CArgDescriptions::eInteger, "10");
+
+    arg_desc->AddDefaultKey("requests", "N",
+        "Number of requests to make",
+        CArgDescriptions::eInteger, "100");
+
+    CArgAllow* constraint = new CArgAllow_Integers(1, 999);
+
+    arg_desc->SetConstraint("srvthreads", constraint);
+    arg_desc->SetConstraint("maxsrvthreads", constraint);
+    arg_desc->SetConstraint("queuesize", constraint);
+
+    arg_desc->SetConstraint("clthreads", constraint);
+    arg_desc->SetConstraint("maxclthreads", constraint);
+    arg_desc->SetConstraint("requests", constraint);
+
+    arg_desc->AddDefaultKey("delay", "N",
+        "Maximum delay in milliseconds",
+        CArgDescriptions::eInteger, "1000");
 
     SetupArgDescriptions(arg_desc.release());
 }
 
-
 // Check for shutdown request every second
 static STimeout kAcceptTimeout = { 1, 0 };
 
-int CThreadedServerApp::Run(void)
+int CServerTestApp::Run(void)
 {
+    SetDiagPostLevel(eDiag_Info);
+
     const CArgs& args = GetArgs();
 
+    unsigned short port = 4096;
+
+    {
+        CListeningSocket listener;
+
+        while ((++port & 0xFFFF) != 0 && listener.Listen(port, 5,
+            fLSCE_BindAny | fLSCE_LogOff) != eIO_Success)
+            ;
+
+        if (port == 0) {
+            ERR_POST("CServer test: unable to find a free port to listen to");
+            return 2;
+        }
+    }
+
     SServer_Parameters params;
-    params.init_threads = args["threads"].AsInteger();
-    params.max_threads  = args["maxThreads"].AsInteger();
-    params.queue_size   = args["queue"].AsInteger();
+    params.init_threads = args["srvthreads"].AsInteger();
+    params.max_threads = args["maxsrvthreads"].AsInteger();
+    params.queue_size = args["queuesize"].AsInteger();
     params.accept_timeout = &kAcceptTimeout;
 
     CTestServer server;
     server.SetParameters(params);
 
-    unsigned short port = args["port"].AsInteger();
-    server.AddListener(
-        new CTestConnectionFactory(&server),
-        port);
+    server.AddListener(new CTestConnectionFactory(&server), port);
 
+    s_Requests = args["requests"].AsInteger();
+
+    CStdPoolOfThreads pool(args["maxclthreads"].AsInteger(), s_Requests);
+    CRandom rng;
+
+    pool.Spawn(args["clthreads"].AsInteger());
+
+    int delay = args["delay"].AsInteger();
+
+    for (unsigned int i = 0;  i < s_Requests;  ++i) {
+        pool.AcceptRequest(CRef<ncbi::CStdRequest>(new CConnectionRequest(port,
+            rng.GetRand(0, delay))));
+
+        //SleepMilliSec(rng.GetRand(0, delay));
+    }
+
+    // s_Send(host, port, 500, eGoodbye);
+    /*pool.AcceptRequest(CRef<ncbi::CStdRequest>
+        (new CConnectionRequest(port, 500, eGoodbye)));*/
+
+    //SleepMilliSec(1000);
     server.Run();
+
+    pool.KillAllThreads(true);
 
     return 0;
 }
@@ -219,5 +322,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CThreadedServerApp().AppMain(argc, argv);
+    return CServerTestApp().AppMain(argc, argv);
 }
