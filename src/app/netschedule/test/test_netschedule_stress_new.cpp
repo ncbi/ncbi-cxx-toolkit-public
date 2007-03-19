@@ -199,6 +199,22 @@ void TestNetwork(const string host, unsigned port, const string& queue_name)
 
 }
 */
+
+struct SPeriodicTag
+{
+    int   period;
+    int   run;
+    char *name;
+};
+
+
+SPeriodicTag tags[] = {
+    { 35, 3, "scaffold" },
+    { 51, 4, "transcript" },
+    { -1 }
+};
+
+
 void TestBatchSubmit(const string& service,
                      const string& queue_name, unsigned jcount)
 {
@@ -211,7 +227,12 @@ void TestBatchSubmit(const string& service,
 
     for (unsigned i = 0; i < jcount; ++i) {
         CNetScheduleJob job("HELLO BSUBMIT", "affinity", CNetScheduleAPI::eExclusiveJob);
-        job.tags.push_back(CNetScheduleAPI::TJobTag("job_grp", NStr::UIntToString(i/10)));
+        for (int j = 0; tags[j].period > 0; j++) {
+            int period = tags[j].period;
+            int run    = tags[j].run;
+            job.tags.push_back(CNetScheduleAPI::TJobTag(tags[j].name,
+                            NStr::UIntToString((i / run) % period)));
+        }
         jobs.push_back(job);
     }
     

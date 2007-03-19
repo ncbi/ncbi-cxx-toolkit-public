@@ -1519,6 +1519,34 @@ void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
 }
 
 
+bool Less(const vector<string>& elem1, const vector<string>& elem2)
+{
+    int size = min(elem1.size(), elem2.size());
+    for (int i = 0; i < size; ++i) {
+        // try to convert both elements to integer
+        const string& p1 = elem1[i];
+        const string& p2 = elem2[i];
+        try {
+            int i1 = NStr::StringToInt(p1);
+            int i2 = NStr::StringToInt(p2);
+            if (i1 < i2) return true;
+            if (i1 > i2) return false;
+        } catch (CStringException& ex) {
+            if (p1 < p2) return true;
+            if (p1 > p2) return false;
+        }
+    }
+    if (elem1.size() < elem2.size()) return true;
+    return false;
+}
+
+
+bool Equal(const vector<string>& elem1, const vector<string>& elem2)
+{
+    return false;
+}
+
+
 string CQueue::ExecQuery(const string& query, const string& action,
                          const string& fields)
 {
@@ -1593,12 +1621,18 @@ string CQueue::ExecQuery(const string& query, const string& action,
         // Form result
         TRecordSet record_set;
         x_ExecSelect(record_set, q.GetObject(), bv.get(), fields);
-        list<string> prepared_set;
-        prepared_set.push_back(NStr::IntToString(bv->count()));
+
+        sort(record_set.begin(), record_set.end(), Less);
+
+        list<string> string_set;
         ITERATE(TRecordSet, it, record_set) {
-            prepared_set.push_back(NStr::Join(*it, "\t"));
+            string_set.push_back(NStr::Join(*it, "\t"));
         }
-        result_str = NStr::Join(prepared_set, "\n");
+        list<string> out_set;
+        unique_copy(string_set.begin(), string_set.end(),
+            back_insert_iterator<list<string> > (out_set));
+        out_set.push_front(NStr::IntToString(out_set.size()));
+        result_str = NStr::Join(out_set, "\n");
     } else if (action == "CNCL") {
     }
 
@@ -1707,20 +1741,25 @@ void CQueue::x_ExecSelectChunk(TRecordSet&           record_set,
             }
             if (!first_id) first_id = id;
             last_id = id;
+            // Fill out the record
             vector<string> record(record_size);
+            bool complete = true;
             for (int i = 0; i < record_size; ++i) {
                 int fnum = field_nums[i];
                 if (fnum < 0) {
                     map<string, string>::iterator it =
                         tags.find((*pos_to_tag)[i]);
-                    if (it == tags.end())
-                        continue;
+                    if (it == tags.end()) {
+                        complete = false;
+                        break;
+                    }
                     record[i] = string(it->second);
                 } else {
                     record[i] = q.GetField(fnum);
                 }
             }
-            record_set.push_back(record);
+            if (complete)
+                record_set.push_back(record);
         }
     }}
 }
