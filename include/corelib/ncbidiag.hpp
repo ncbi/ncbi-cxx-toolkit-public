@@ -1434,6 +1434,10 @@ public:
 private:
     int    m_Handle;      ///< File handle
     CTime* m_LastReopen;  ///< Last reopen time
+
+    /// Save messages if the handle is unavailable
+    typedef list<SDiagMessage> TMessages;
+    auto_ptr<TMessages> m_Messages;
 };
 
 

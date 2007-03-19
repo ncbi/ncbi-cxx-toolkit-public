@@ -1199,11 +1199,19 @@ void* InitDiagHandler(void)
 }
 
 
+// MT-safe initialization of the default handler
+CDiagHandler* CreateDefaultDiagHandler(void)
+{
+    CMutexGuard guard(s_DiagMutex);
+    return new CStreamDiagHandler(&NcbiCerr,
+                                  true,
+                                  kLogName_Stderr);
+}
+
+
 // Use s_DefaultHandler only for purposes of comparison, as installing
 // another handler will normally delete it.
-CDiagHandler*      s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr,
-                                                             true,
-                                                             kLogName_Stderr);
+CDiagHandler*      s_DefaultHandler = CreateDefaultDiagHandler();
 CDiagHandler*      CDiagBuffer::sm_Handler = s_DefaultHandler;
 bool               CDiagBuffer::sm_CanDeleteHandler = true;
 CDiagErrCodeInfo*  CDiagBuffer::sm_ErrCodeInfo = 0;
@@ -2687,6 +2695,7 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
         0);
     m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(),
                     mode, perm);
+    m_LastReopen->SetCurrent();
     if (m_Handle == -1) {
         string msg;
         switch ( errno ) {
@@ -2706,10 +2715,22 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
             msg = "invalid file or directoty name";
             break;
         }
-        ERR_POST(Info << "Failed to open " << GetLogName() << " - " << msg);
+        if ( !m_Messages.get() ) {
+            m_Messages.reset(new TMessages);
+        }
+        // ERR_POST(Info << "Failed to reopen log: " << msg);
         return;
     }
-    m_LastReopen->SetCurrent();
+    // Flush the collected messages, if any, once the handle if available
+    if ( m_Messages.get() ) {
+        ITERATE(TMessages, it, *m_Messages) {
+            CNcbiOstrstream str_os;
+            str_os << *it;
+            write(m_Handle, str_os.str(), str_os.pcount());
+            str_os.rdbuf()->freeze(false);
+        }
+        m_Messages.reset();
+    }
 }
 
 
@@ -2717,9 +2738,21 @@ const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 
 void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
 {
-    if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay) {
+    // Period is longer than for CFileDiagHandler to prevent double-reopening
+    if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay + 5) {
         Reopen();
     }
+
+    // If the handle is not available, collect the messages until they
+    // can be written.
+    if ( m_Messages.get() ) {
+        // Limit number of stored messages to 1000
+        if ( m_Messages->size() < 1000 ) {
+            m_Messages->push_back(mess);
+        }
+        return;
+    }
+
     CNcbiOstrstream str_os;
     str_os << mess;
     write(m_Handle, str_os.str(), str_os.pcount());
