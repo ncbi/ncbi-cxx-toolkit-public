@@ -26,7 +26,7 @@ TEST_IF__STAMP      = @if exist     $(THIRDPARTY_CFG_PATH)
 
 FLTK_SRC            = $(FLTK_BINPATH)\$(INTDIR)
 install_fltk:
-	$(TEST_NOT_STAMP)\fltk.installed       echo Coping FLTK DLLs
+	$(TEST_NOT_STAMP)\fltk.installed       echo Copying FLTK DLLs...
 	$(TEST_IF__STAMP)\fltk.installed       echo FLTK DLLs are already installed
 	$(TEST_NOT_STAMP)\fltk.installed       if exist "$(FLTK_SRC)\*.dll" copy /Y $(FLTK_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\fltk.installed       if exist "$(FLTK_SRC)\*.pdb" copy /Y $(FLTK_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -34,7 +34,7 @@ install_fltk:
 
 BERKELEYDB_SRC      = $(BERKELEYDB_BINPATH)\$(INTDIR)
 install_berkeleydb:
-	$(TEST_NOT_STAMP)\berkeleydb.installed echo Coping BerkeleyDB DLLs
+	$(TEST_NOT_STAMP)\berkeleydb.installed echo Copying BerkeleyDB DLLs...
 	$(TEST_IF__STAMP)\berkeleydb.installed echo BerkeleyDB DLLs are already installed
 	$(TEST_NOT_STAMP)\berkeleydb.installed if exist "$(BERKELEYDB_SRC)\*.dll" copy /Y $(BERKELEYDB_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\berkeleydb.installed if exist "$(BERKELEYDB_SRC)\*.pdb" copy /Y $(BERKELEYDB_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -42,7 +42,7 @@ install_berkeleydb:
 
 SQLITE_SRC          = $(SQLITE_BINPATH)\$(INTDIR)
 install_sqlite:
-	$(TEST_NOT_STAMP)\sqlite.installed     echo Coping SQLITE DLLs
+	$(TEST_NOT_STAMP)\sqlite.installed     echo Copying SQLITE DLLs...
 	$(TEST_IF__STAMP)\sqlite.installed     echo SQLITE DLLs are already installed
 	$(TEST_NOT_STAMP)\sqlite.installed     if exist "$(SQLITE_SRC)\*.dll" copy /Y $(SQLITE_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\sqlite.installed     if exist "$(SQLITE_SRC)\*.pdb" copy /Y $(SQLITE_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -50,11 +50,11 @@ install_sqlite:
 
 SQLITE3_SRC         = $(SQLITE3_BINPATH)\$(INTDIR)
 install_sqlite3:
-	$(TEST_NOT_STAMP)\sqlite3.installed     echo Coping SQLite3 DLLs
-	$(TEST_IF__STAMP)\sqlite3.installed     echo SQLite3 DLLs are already installed
-	$(TEST_NOT_STAMP)\sqlite3.installed     if exist "$(SQLITE3_SRC)\*.dll" copy /Y $(SQLITE3_SRC)\*.dll $(INSTALL_BINPATH)
-	$(TEST_NOT_STAMP)\sqlite3.installed     if exist "$(SQLITE3_SRC)\*.pdb" copy /Y $(SQLITE3_SRC)\*.pdb $(INSTALL_BINPATH)
-	$(TEST_NOT_STAMP)\sqlite3.installed     echo "" > $(THIRDPARTY_CFG_PATH)\sqlite3.installed
+	$(TEST_NOT_STAMP)\sqlite3.installed    echo Copying SQLite3 DLLs...
+	$(TEST_IF__STAMP)\sqlite3.installed    echo SQLite3 DLLs are already installed
+	$(TEST_NOT_STAMP)\sqlite3.installed    if exist "$(SQLITE3_SRC)\*.dll" copy /Y $(SQLITE3_SRC)\*.dll $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\sqlite3.installed    if exist "$(SQLITE3_SRC)\*.pdb" copy /Y $(SQLITE3_SRC)\*.pdb $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\sqlite3.installed    echo "" > $(THIRDPARTY_CFG_PATH)\sqlite3.installed
 
 #
 # All other third-parties
@@ -62,7 +62,7 @@ install_sqlite3:
 
 WXWINDOWS_SRC       = $(WXWINDOWS_BINPATH)\$(INTDIR)
 install_wxwindows:
-	$(TEST_NOT_STAMP)\wxwindows.installed  echo Coping wxWindows DLLs
+	$(TEST_NOT_STAMP)\wxwindows.installed  echo Copying wxWindows DLLs...
 	$(TEST_IF__STAMP)\wxwindows.installed  echo wxWindows DLLs are already installed
 	$(TEST_NOT_STAMP)\wxwindows.installed  if exist "$(WXWINDOWS_SRC)\*.dll" copy /Y $(WXWINDOWS_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\wxwindows.installed  if exist "$(WXWINDOWS_SRC)\*.pdb" copy /Y $(WXWINDOWS_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -70,7 +70,7 @@ install_wxwindows:
 
 SYBASE_SRC       = $(SYBASE_BINPATH)\$(INTDIR)
 install_sybase:
-	$(TEST_NOT_STAMP)\sybase.installed     echo Coping Sybase DLLs
+	$(TEST_NOT_STAMP)\sybase.installed     echo Copying Sybase DLLs...
 	$(TEST_IF__STAMP)\sybase.installed     echo Sybase DLLs are already installed
 	$(TEST_NOT_STAMP)\sybase.installed     if exist "$(SYBASE_SRC)\*.dll" copy /Y $(SYBASE_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\sybase.installed     if exist "$(SYBASE_SRC)\*.pdb" copy /Y $(SYBASE_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -79,7 +79,7 @@ install_sybase:
 
 MYSQL_SRC        = $(MYSQL_BINPATH)\$(INTDIR)
 install_mysql:
-	$(TEST_NOT_STAMP)\mysql.installed      echo Coping MySQL DLLs
+	$(TEST_NOT_STAMP)\mysql.installed      echo Copying MySQL DLLs...
 	$(TEST_IF__STAMP)\mysql.installed      echo MySQL DLLs are already installed
 	$(TEST_NOT_STAMP)\mysql.installed      if exist "$(MYSQL_SRC)\*.dll" copy /Y $(MYSQL_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\mysql.installed      if exist "$(MYSQL_SRC)\*.pdb" copy /Y $(MYSQL_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -87,7 +87,7 @@ install_mysql:
 
 MSSQL_SRC        = $(MSSQL_BINPATH)\$(INTDIR)
 install_mssql:
-	$(TEST_NOT_STAMP)\mssql.installed      echo Coping MSSQL DLLs
+	$(TEST_NOT_STAMP)\mssql.installed      echo Copying MSSQL DLLs...
 	$(TEST_IF__STAMP)\mssql.installed      echo MSSQL DLLs are already installed
 	$(TEST_NOT_STAMP)\mssql.installed      if exist "$(MSSQL_SRC)\*.dll" copy /Y $(MSSQL_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\mssql.installed      if exist "$(MSSQL_SRC)\*.pdb" copy /Y $(MSSQL_SRC)\*.pdb $(INSTALL_BINPATH)
@@ -95,17 +95,25 @@ install_mssql:
 
 OPENSSL_SRC      = $(OPENSSL_BINPATH)\$(INTDIR)
 install_openssl:
-	$(TEST_NOT_STAMP)\openssl.installed      echo Coping OpenSSL DLLs
-	$(TEST_IF__STAMP)\openssl.installed      echo OpenSSL DLLs are already installed
-	$(TEST_NOT_STAMP)\openssl.installed      if exist "$(OPENSSL_SRC)\*.dll" copy /Y $(OPENSSL_SRC)\*.dll $(INSTALL_BINPATH)
-	$(TEST_NOT_STAMP)\openssl.installed      echo "" > $(THIRDPARTY_CFG_PATH)\openssl.installed
+	$(TEST_NOT_STAMP)\openssl.installed    echo Copying OpenSSL DLLs...
+	$(TEST_IF__STAMP)\openssl.installed    echo OpenSSL DLLs are already installed
+	$(TEST_NOT_STAMP)\openssl.installed    if exist "$(OPENSSL_SRC)\*.dll" copy /Y $(OPENSSL_SRC)\*.dll $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\openssl.installed    echo "" > $(THIRDPARTY_CFG_PATH)\openssl.installed
+
+LZO_SRC          = $(LZO_BINPATH)\$(INTDIR)
+install_lzo:
+	$(TEST_NOT_STAMP)\lzo.installed        echo Copying LZO DLLs...
+	$(TEST_IF__STAMP)\lzo.installed        echo LZO DLLs are already installed
+	$(TEST_NOT_STAMP)\lzo.installed        if exist "$(LZO_SRC)\*.dll" copy /Y $(LZO_SRC)\*.dll $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\lzo.installed        echo "" > $(THIRDPARTY_CFG_PATH)\lzo.installed
+
 
 #
 # MSVC7.10 run-time DLLs'
 #
 MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc71\7.1\bin
 install_msvc:
-	$(TEST_NOT_STAMP)\msvc.installed       echo Coping MSVC DLLs
+	$(TEST_NOT_STAMP)\msvc.installed       echo Copying MSVC DLLs...
 	$(TEST_IF__STAMP)\msvc.installed       echo MSVC DLLs are already installed
 	$(TEST_NOT_STAMP)\msvc.installed       if exist "$(MSVCRT_SRC)\*.dll" copy /Y $(MSVCRT_SRC)\*.dll $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\msvc.installed       if exist "$(MSVCRT_SRC)\*.pdb" copy /Y $(MSVCRT_SRC)\*.pdb $(INSTALL_BINPATH)
