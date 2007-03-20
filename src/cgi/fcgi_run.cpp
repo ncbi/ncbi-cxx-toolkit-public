@@ -61,6 +61,11 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 # include <corelib/ncbitime.hpp>
 # include <cgi/cgictx.hpp>
 
+#include <corelib/rwstream.hpp>
+#include <util/multi_writer.hpp>
+
+#include <util/cache/icache.hpp>
+
 # include <fcgiapp.h>
 # include <unistd.h>
 # include <fcntl.h>
@@ -443,6 +448,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
             m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
 
+            CNcbiOstream* orig_stream = NULL;
+            //int orig_fd = -1;
+            CNcbiStrstream result_copy;
+            auto_ptr<CNcbiOstream> new_stream;
+
             // Safely clear contex data and reset "m_Context" to zero
             CAutoCgiContext auto_context(m_Context);
 
@@ -489,17 +499,55 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             ProcessHttpReferer();
             int x_result = 0;
             try {
-                x_result = ProcessRequest(*m_Context);
-            }
-            catch (CCgiException& e) {
+                try {
+                    m_Cache.reset( GetCacheStorage() );
+                } catch( exception& ex ) {
+                    ERR_POST( "Couldn't create cache : " << ex.what());
+                }
+
+                bool skip_process_request = false;
+                bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
+                if (m_Cache.get() && caching_needed) {
+                    skip_process_request = GetResultFromCache(m_Context->GetRequest(),
+                                                           m_Context->GetResponse().out());
+                }
+                if (!skip_process_request) {
+                    if( m_Cache.get() ) {
+                        list<CNcbiOstream*> slist;
+                        orig_stream = m_Context->GetResponse().GetOutput();
+                        slist.push_back(orig_stream);
+                        slist.push_back(&result_copy);
+                        new_stream.reset(new CWStream(new CMultiWriter(slist), 0,0,
+                                                      CRWStreambuf::fOwnWriter));
+                        m_Context->GetResponse().SetOutput(new_stream.get());
+                    }
+                    x_result = ProcessRequest(*m_Context);
+                    if (x_result == 0) {
+                        if (m_Cache.get()) {
+                            m_Context->GetResponse().Flush();
+                            if (m_IsResultReady) {
+                                if(caching_needed)
+                                    SaveResultToCache(m_Context->GetRequest(), result_copy);
+                                else {
+                                    auto_ptr<CCgiRequest> request(GetSavedRequest(m_RID));
+                                    if (request.get()) 
+                                        SaveResultToCache(*request, result_copy);
+                                }
+                            } else if (caching_needed) {
+                                SaveRequest(m_RID, m_Context->GetRequest());
+                            }
+                        }
+                    }
+                }
+            } catch (CCgiException& e) {
                 if ( e.GetStatusCode() < CCgiException::e200_Ok  ||
-                    e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
+                     e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                     throw;
                 }
                 // If for some reason exception with status 2xx was thrown,
                 // set the result to 0, update HTTP status and continue.
                 m_Context->GetResponse().SetStatus(e.GetStatusCode(),
-                    e.GetStatusMessage());
+                                                   e.GetStatusMessage());
                 SetHTTPStatus(e.GetStatusCode());
                 x_result = 0;
             }
@@ -514,6 +562,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             GetDiagContext().SetProperty(CDiagContext::kProperty_BytesWr,
                                          NStr::IntToString(obuf.GetCount()));
             x_OnEvent(x_result == 0 ? eSuccess : eError, x_result);
+
         }
         catch (exception& e) {
             // Increment error counter
