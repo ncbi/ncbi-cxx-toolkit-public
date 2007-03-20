@@ -830,9 +830,11 @@ CDataType* DTDParser::x_Type(
     if (m_SrcType != eDTD) {
         keep_global = keep_global || ref;
     }
+/*
     ref = ref || 
         m_GeneratedTypes.find(node.GetName() + node.GetNamespaceName()) !=
         m_GeneratedTypes.end();
+*/
 
 
     if (keep_global) {
