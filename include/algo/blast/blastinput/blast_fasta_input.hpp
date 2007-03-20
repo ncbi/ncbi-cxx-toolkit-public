@@ -35,6 +35,7 @@
 #define ALGO_BLAST_BLASTINPUT___BLAST_FASTA_INPUT__HPP
 
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <objtools/readers/fasta.hpp>
 #include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -86,23 +87,22 @@ public:
     CBlastInputConfig m_Config;
 
 private:
-    CNcbiIstream& m_InputFile;  ///< reference to input file
-    int m_Counter;              ///< counter for local sequence IDs
+    CStreamLineReader m_LineReader; ///< interface to read lines
+    objects::CSeqIdGenerator m_IdGenerator;  ///< creates local sequence IDs
 
-    /// Read a single sequence from file and convert to
-    /// a Seq_loc
-    /// @param lcase_mask If not null, the first element of the 
-    ///           vector is filled with a Seq_loc that describes the
+    /// Read a single sequence from file and convert to a Seq_loc
+    /// @param lcase_mask A Seq_loc that describes the
     ///           lowercase-masked regions in the query that was read in.
     ///           If there are no such locations, the Seq_loc is of type
-    ///           'null', otherwise it is of type 'packed_seqint'
-    /// @param query_is_protein if NOT NULL, the value of this variable will
-    /// be filled with a boolean value which is set to true if a protein query
-    /// was read or false if a nucleotide query was read [out]
+    ///           'null', otherwise it is of type 'packed_seqint' [out]
+    /// @param query_is_protein if not NULL, the value of this variable will
+    ///           be filled with a boolean value which is set to true if 
+    ///           a protein query was read or false if a nucleotide 
+    ///           query was read [out]
     /// @return The sequence in Seq_loc format
     ///
     CRef<objects::CSeq_loc> x_FastaToSeqLoc(
-                          vector< CConstRef<objects::CSeq_loc> > *lcase_mask,
+                          CRef<objects::CSeq_loc>& lcase_mask,
                           bool* query_is_protein = NULL);
 };
 
