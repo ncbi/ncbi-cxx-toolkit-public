@@ -66,6 +66,9 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
             services.push_back(pair<string,unsigned short>(host, sinfo->port));
         } // while
         SERV_Close(srv_it);
+    } else {
+        NCBI_THROW(CNetSrvConnException, eLBNameNotFound, 
+                   "Load balancer cannot find service name " + service_name);
     }
 }
 
@@ -328,7 +331,20 @@ void CNetSrvConnectorPoll::x_Rebalance()
         return;
     if( !m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance()) {
         m_Services.clear();
-        DiscoverLBServices(m_ServiceName, m_Services, m_DiscoverLowPriorityServers);               
+        int try_count = 0;
+        while(true) {
+            try {
+                DiscoverLBServices(m_ServiceName, m_Services, m_DiscoverLowPriorityServers);
+                break;
+            } catch (CNetSrvConnException& ex) {
+                if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound)
+                    throw;
+                ERR_POST("Communication Error : " << ex.what());
+                if (++try_count >= 2)
+                    throw;
+                SleepMilliSec(1000 + try_count*2000);
+            }
+        }
     }
 }
 

@@ -214,9 +214,11 @@ public:
 
         friend class CNetSrvConnectorPoll;
         explicit iterator(const CNetSrvConnectorPoll& poll, bool last = false, bool random = false)
-            : m_Poll(&poll), m_Pivot(random? (rand() %  m_Poll->m_Services.size())+1 : 1),
-              m_CurIndex(last || m_Poll->m_Services.empty()? 0 : m_Pivot)
-        {}
+            : m_Poll(&poll)
+        { 
+            m_Pivot = random && !m_Poll->m_Services.empty()? (rand() %  m_Poll->m_Services.size())+1 : 1;
+            m_CurIndex = last || m_Poll->m_Services.empty()? 0 : m_Pivot;
+        }
 
 
     };
@@ -308,7 +310,8 @@ class CNetSrvConnException : public CException
 public:
     enum EErrCode {
         eReadTimeout,
-        eResponseTimeout
+        eResponseTimeout,
+        eLBNameNotFound
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -317,6 +320,7 @@ public:
         {
         case eReadTimeout:        return "eReadTimeout";
         case eResponseTimeout:    return "eResponseTimeout";
+        case eLBNameNotFound:     return "eLBNameNotFound";
         default:                  return CException::GetErrCodeString();
         }
     }
