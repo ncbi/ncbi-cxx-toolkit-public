@@ -57,7 +57,7 @@ class NCBI_XUTIL_EXPORT ILineReader : public CObject
 public:
     /// Return a new ILineReader object corresponding to the given
     /// filename, taking "-" (but not "./-") to mean standard input.
-    static ILineReader* New(const string& filename);
+    static CRef<ILineReader> New(const string& filename);
 
     /// Indicates (negatively) whether there is any more input.
     virtual bool AtEOF(void) const = 0;
