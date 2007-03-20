@@ -342,9 +342,9 @@ bool DTDElement::IsReferenced(void) const
 }
 
 
-void DTDElement::SetEmbedded(void)
+void DTDElement::SetEmbedded(bool set)
 {
-    m_Embd = true;
+    m_Embd = set;
 }
 bool DTDElement::IsEmbedded(void) const
 {
@@ -358,6 +358,9 @@ string DTDElement::CreateEmbeddedName(int depth) const
         tmp = i->substr(0,depth);
         tmp[0] = toupper((unsigned char) tmp[0]);
         name += tmp;
+    }
+    if (m_Type == eAny) {
+        name = "AnyContent";
     }
     return name;
 }

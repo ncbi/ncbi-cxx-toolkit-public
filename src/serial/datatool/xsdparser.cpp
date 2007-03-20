@@ -83,6 +83,9 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
         case T_EOF:
             ProcessNamedTypes();
             return;
+        case K_IMPORT:
+            ParseImport();
+            break;
         default:
             ParseError("Invalid keyword", "keyword");
             return;
@@ -186,7 +189,9 @@ bool XSDParser::IsValue(const char* value) const
 
 bool XSDParser::DefineElementType(DTDElement& node)
 {
-    if (IsValue("string") || IsValue("token") || IsValue("normalizedString")) {
+    if (IsValue("string") || IsValue("token") ||
+        IsValue("normalizedString") ||
+        IsValue("anyURI") || IsValue("QName")) {
         node.SetType(DTDElement::eString);
     } else if (IsValue("double") || IsValue("float") || IsValue("decimal")) {
         node.SetType(DTDElement::eDouble);
@@ -211,7 +216,7 @@ bool XSDParser::DefineElementType(DTDElement& node)
 
 bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
 {
-    if (IsValue("string")) {
+    if (IsValue("string") || IsValue("QName")) {
         attrib.SetType(DTDAttribute::eString);
     } else if (IsValue("ID")) {
         attrib.SetType(DTDAttribute::eId);
@@ -244,13 +249,14 @@ void XSDParser::ParseHeader()
 {
 // xml header
     TToken tok = GetNextToken();
-    if (tok != K_XML) {
-        ParseError("Unexpected token", "xml");
+    if (tok == K_XML) {
+        for ( ; tok != K_ENDOFTAG; tok=GetNextToken())
+            ;
+        tok = GetNextToken();
+    } else {
+        ERR_POST("LINE " << Location() << " XML declaration is missing");
     }
-    for ( ; tok != K_ENDOFTAG; tok=GetNextToken())
-        ;
 // schema    
-    tok = GetNextToken();
     if (tok != K_SCHEMA) {
         ParseError("Unexpected token", "schema");
     }
@@ -285,7 +291,23 @@ void XSDParser::ParseInclude(void)
     node.SetData(name);
     node.SetExternal();
     PushEntityLexer(name);
+    Reset();
     ParseHeader();
+}
+
+void XSDParser::ParseImport(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("namespace")) {
+        if (IsValue("http://www.w3.org/XML/1998/namespace")) {
+            string name = "xml:lang";
+            m_MapAttribute[name].SetName(name);
+            m_MapAttribute[name].SetType(DTDAttribute::eString);
+        }
+    }
+    if (tok == K_CLOSING) {
+        SkipContent();
+    }
 }
 
 TToken XSDParser::GetRawAttributeSet(void)
@@ -310,6 +332,20 @@ bool XSDParser::GetAttribute(const string& att)
     return false;
 }
 
+void XSDParser::SkipContent()
+{
+    TToken tok;
+    for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
+        if (tok == K_DOCUMENTATION) {
+            m_Comments = 0;
+            ParseDocumentation();
+        } else {
+            if (GetRawAttributeSet() == K_CLOSING) {
+                SkipContent();
+            }
+        }
+    }
+}
 
 string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
 {
@@ -477,7 +513,6 @@ void XSDParser::ParseContent(DTDElement& node)
         case K_DOCUMENTATION:
             m_Comments = &(node.Comments());
             ParseDocumentation();
-            m_ExpectLastComment = true;
             break;
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
@@ -503,6 +538,7 @@ void XSDParser::ParseDocumentation(void)
     if (tok != K_ENDOFTAG) {
         ParseError("Unexpected tag", "endoftag");
     }
+    m_ExpectLastComment = true;
 }
 
 void XSDParser::ParseContainer(DTDElement& node)
@@ -718,7 +754,6 @@ void XSDParser::ParseContent(DTDAttribute& att)
         case K_DOCUMENTATION:
             m_Comments = &(att.Comments());
             ParseDocumentation();
-            m_ExpectLastComment = true;
             break;
         default:
             tok = GetRawAttributeSet();
@@ -777,18 +812,33 @@ void XSDParser::CreateTypeDefinition(void)
 void XSDParser::ParseTypeDefinition(DTDEntity& ent)
 {
     string data = ent.GetData();
+    string closing;
     TToken tok;
+    CComments Comments;
     for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
         data += "<" + m_Raw;
-        for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
-            data += " " + m_Raw;
+        if (tok == K_DOCUMENTATION) {
+            data += ">";
+            m_Comments = &Comments;
+            ParseDocumentation();
+            closing = m_Raw;
+        } else {
+            for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
+                data += " " + m_Raw;
+            }
+            data += m_Raw;
         }
-        data += m_Raw;
         if (tok == K_CLOSING) {
             ent.SetData(data);
             ParseTypeDefinition(ent);
             data = ent.GetData();
         }
+    }
+    if (!Comments.Empty()) {
+        CNcbiOstrstream buffer;
+        Comments.Print(buffer, "", "\n", "");
+        data += CNcbiOstrstreamToString(buffer);
+        data += closing;
     }
     data += m_Raw;
     ent.SetData(data);
@@ -808,6 +858,12 @@ void XSDParser::ProcessNamedTypes(void)
                 found = true;
                 PushEntityLexer(node.GetTypeName());
                 ParseContent(node);
+                node.SetTypeIfUnknown(DTDElement::eEmpty);
+// this is not always correct, but it seems that local elements
+// defined by means of global types should be made global as well
+                if (node.IsNamed() && node.IsEmbedded()) {
+                    node.SetEmbedded(false);
+                }
             }
         }
     } while (found);
@@ -862,7 +918,6 @@ void XSDParser::PushEntityLexer(const string& name)
     m_StackNamespaceToPrefix.push(m_NamespaceToPrefix);
     m_StackTargetNamespace.push(m_TargetNamespace);
     m_StackElementFormDefault.push(m_ElementFormDefault);
-    Reset();
 }
 
 bool XSDParser::PopEntityLexer(void)

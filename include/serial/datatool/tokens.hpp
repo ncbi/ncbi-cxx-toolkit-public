@@ -102,6 +102,7 @@ static const TToken K_FIXED    = 219;
 
 static const TToken K_INCLUDE  = 220;
 static const TToken K_IGNORE   = 221;
+static const TToken K_IMPORT   = 222;
 
 static const TToken K_CLOSING        = 300;
 static const TToken K_ENDOFTAG       = 301;

@@ -50,6 +50,7 @@ XSDLexer::~XSDLexer(void)
 bool XSDLexer::ProcessDocumentation(void)
 {
     CComment& comment = AddComment();
+    bool allblank = true;
     for (;;) {
         char c = Char();
         switch ( c ) {
@@ -59,14 +60,21 @@ bool XSDLexer::ProcessDocumentation(void)
         case '\n':
             SkipChar();
             NextLine();
+            if (allblank) {
+                RemoveLastComment();
+            }
             return true; // comment not ended - there is more
         case 0:
             if ( Eof() )
                 return false;
             break;
         case '<':
+            if (allblank) {
+                RemoveLastComment();
+            }
             return false;
         default:
+            allblank = allblank && isspace((unsigned char)c);
             comment.AddChar(c);
             SkipChar();
             break;
@@ -150,6 +158,7 @@ TToken XSDLexer::LookupKeyword(void)
     case 6:
         CHECK("choice", K_CHOICE, 6);
         CHECK("schema", K_SCHEMA, 6);
+        CHECK("import", K_IMPORT, 6);
         break;
     case 7:
         CHECK("include", K_INCLUDE, 7);

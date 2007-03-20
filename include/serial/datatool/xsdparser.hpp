@@ -62,8 +62,12 @@ protected:
 
     void ParseHeader(void);
     void ParseInclude(void);
+    void ParseImport(void);
+
     TToken GetRawAttributeSet(void);
     bool GetAttribute(const string& att);
+
+    void SkipContent();
 
     string ParseElementContent(DTDElement* owner, int& emb);
     void ParseContent(DTDElement& node);

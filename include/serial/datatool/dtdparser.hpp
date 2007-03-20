@@ -41,6 +41,7 @@
 #include <serial/datatool/moduleset.hpp>
 #include <map>
 #include <stack>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -137,6 +138,7 @@ protected:
     stack<string>          m_StackPath;
     list<string>           m_StackLexerName;
     string                 m_IdentifierText;
+    set<string>            m_GeneratedTypes;
     ESrcType  m_SrcType;
     CComments* m_Comments;
     bool m_ExpectLastComment;

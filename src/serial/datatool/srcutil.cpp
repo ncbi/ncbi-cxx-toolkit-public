@@ -46,6 +46,9 @@ string Identifier(const string& typeName, bool capitalize)
         s += capitalize? toupper((unsigned char)(*i)): *i;
         while ( ++i != typeName.end() ) {
             char c = *i;
+            if ( c == ':' ) {
+                continue;
+            }
             if ( c == '-' || c == '.' )
                 c = '_';
             s += c;

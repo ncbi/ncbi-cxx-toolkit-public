@@ -221,7 +221,7 @@ public:
     bool IsReferenced(void) const;
 
     // element does not have any specific name
-    void SetEmbedded(void);
+    void SetEmbedded(bool set=true);
     bool IsEmbedded(void) const;
     string CreateEmbeddedName(int depth) const;
 

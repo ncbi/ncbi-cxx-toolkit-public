@@ -95,7 +95,11 @@ void DTDParser::EndCommentBlock()
             m_Comments = 0;
             m_ExpectLastComment = false;
         }
+    } else if (m_ExpectLastComment) {
+        Lexer().FlushComments();
+        m_ExpectLastComment = false;
     }
+    
 }
 
 AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
@@ -738,6 +742,7 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
 
 void DTDParser::GenerateDataTree(CDataTypeModule& module)
 {
+    m_GeneratedTypes.clear();
     map<string,DTDElement>::iterator i;
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
@@ -756,7 +761,10 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
         }
         if (generate && !i->second.IsEmbedded())
         {
-            ModuleType(module, i->second);
+            string qname = i->second.GetName() + i->second.GetNamespaceName();
+            if (m_GeneratedTypes.find(qname) == m_GeneratedTypes.end()) {
+                ModuleType(module, i->second);
+            }
         }
     }
 }
@@ -785,7 +793,7 @@ CDataType* DTDParser::x_Type(
     bool fromInside, bool ignoreAttrib)
 {
     CDataType* type;
-
+    
 // if the node contains single embedded element - prune it
     if ((!fromInside || node.IsEmbedded()) && !node.HasAttributes()) {
         const list<string>& refs = node.GetContent();
@@ -822,6 +830,10 @@ CDataType* DTDParser::x_Type(
     if (m_SrcType != eDTD) {
         keep_global = keep_global || ref;
     }
+    ref = ref || 
+        m_GeneratedTypes.find(node.GetName() + node.GetNamespaceName()) !=
+        m_GeneratedTypes.end();
+
 
     if (keep_global) {
         if (ref) {
@@ -894,6 +906,9 @@ CDataType* DTDParser::TypesBlock(
     CDataMemberContainerType* containerType,const DTDElement& node,
     bool ignoreAttrib)
 {
+    if (!node.IsEmbedded()) {
+        m_GeneratedTypes.insert(node.GetName() + node.GetNamespaceName());
+    }
     AutoPtr<CDataMemberContainerType> container(containerType);
 
     if (!ignoreAttrib) {
@@ -978,6 +993,9 @@ CDataType* DTDParser::TypesBlock(
 CDataType* DTDParser::CompositeNode(
     const DTDElement& node, DTDElement::EOccurrence occ)
 {
+    if (!node.IsEmbedded()) {
+        m_GeneratedTypes.insert(node.GetName() + node.GetNamespaceName());
+    }
     AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
 
     AddAttributes(container, node);
