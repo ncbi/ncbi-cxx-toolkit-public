@@ -87,6 +87,7 @@ struct TQueryMessagesLessComparator :
                             CRef<CSearchMessage>, 
                             bool>
 { 
+    /// Operator to determine if *a is less than *b
     result_type operator() (const first_argument_type& a,
                             const second_argument_type& b) const {
         return *a < *b;
@@ -98,6 +99,7 @@ struct TQueryMessagesEqualComparator :
                             CRef<CSearchMessage>, 
                             bool>
 { 
+    /// Operator to determine if *a is equal to *b
     result_type operator() (const first_argument_type& a,
                             const second_argument_type& b) const {
         return *a == *b;
