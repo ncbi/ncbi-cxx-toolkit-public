@@ -360,7 +360,11 @@ const string CDataType::GetAndVerifyVar(const string& var) const
 
 const string& CDataType::GetSourceFileName(void) const
 {
-    return GetModule()->GetSourceFileName();
+    if (m_Module) {
+        return GetModule()->GetSourceFileName();
+    } else {
+        return kEmptyStr;
+    }
 }
 
 string CDataType::LocationString(void) const

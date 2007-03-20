@@ -64,7 +64,11 @@ const CNcbiRegistry& CModuleContainer::GetConfig(void) const
 
 const string& CModuleContainer::GetSourceFileName(void) const
 {
-    return GetModuleContainer().GetSourceFileName();
+    if (m_Parent != 0) {
+        return GetModuleContainer().GetSourceFileName();
+    } else {
+        return kEmptyStr;
+    }
 }
 
 string CModuleContainer::GetFileNamePrefix(void) const
