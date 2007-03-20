@@ -73,7 +73,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.16  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.17  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -211,26 +211,6 @@ struct SJS_Request
 
 
 const unsigned kMaxMessageSize = kNetScheduleMaxDBErrSize * 4;
-
-/// Log stream without creating backup names
-///
-/// @internal
-class CNetScheduleLogStream : public CRotatingLogStream
-{
-public:
-    typedef CRotatingLogStream TParent;
-public:
-    CNetScheduleLogStream(const string&    filename, 
-                          CNcbiStreamoff   limit)
-    : TParent(filename, limit)
-    {}
-protected:
-    virtual string x_BackupName(string& name)
-    {
-        return kEmptyStr;
-    }
-};
-
 
 //////////////////////////////////////////////////////////////////////////
 /// ConnectionHandler for NetScheduler
@@ -475,20 +455,10 @@ public:
 
     //////////////////////////////////////////////////////////////////
     /// For Handlers
-    CNetScheduleLogStream& GetLog(void) { return m_AccessLog; }
     /// TRUE if logging is ON
     bool IsLog() const { return m_LogFlag.Get() != 0; }
     void SetLogging(bool flag) {
-        if (flag) {
-            bool is_log = IsLog();
-            m_LogFlag.Set(1);
-            if (!is_log) {
-                m_LogFlag.Set(1);
-                m_AccessLog.Rotate();
-            }
-        } else {
-            m_LogFlag.Set(0);
-        }
+        m_LogFlag.Set(flag);
     }
     CQueueDataBase* GetQueueDB(void) { return m_QueueDB; }
     unsigned GetInactivityTimeout(void) { return m_InactivityTimeout; }
@@ -516,7 +486,6 @@ private:
     CTime              m_StartTime;
 
     CAtomicCounter         m_LogFlag;
-    CNetScheduleLogStream  m_AccessLog;
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
 
@@ -722,8 +691,9 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     if (is_log || (m_Monitor && m_Monitor->IsMonitorActive())) {
         string lmsg;
         x_MakeLogMessage(buffer, lmsg);
-        if (is_log)
-            m_Server->GetLog() << lmsg;
+        if (is_log) {
+            LOG_POST(lmsg);
+        }
         if (m_Monitor && m_Monitor->IsMonitorActive())
             m_Monitor->SendString(lmsg);
     }
@@ -2114,8 +2084,7 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
     m_Shutdown(false),
     m_SigNum(0),
     m_InactivityTimeout(network_timeout),
-    m_StartTime(CTime::eCurrent),
-    m_AccessLog("ns_access.log", 100 * 1024 * 1024)
+    m_StartTime(CTime::eCurrent)
 {
     m_QueueDB = qdb;
 
@@ -2234,12 +2203,6 @@ int CNetScheduleDApp::Run(void)
         signal( SIGTERM, Threaded_Server_SignalHandler);    
 #endif
                    
-        m_ErrLog.reset(new CNetScheduleLogStream("ns_err.log", 25 * 1024 * 1024));     
-        // All errors redirected to rotated log
-        // from this moment on the server is silent...
-        SetDiagStream(m_ErrLog.get());
-        
-
         CConfig conf(reg);
 
         const CConfig::TParamTree* param_tree = conf.GetTree();
@@ -2415,6 +2378,7 @@ int CNetScheduleDApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+     GetDiagContext().SetOldPostFormat(false);
      return 
         CNetScheduleDApp().AppMain(argc, argv, 0, 
                                    eDS_Default, "netscheduled.ini");

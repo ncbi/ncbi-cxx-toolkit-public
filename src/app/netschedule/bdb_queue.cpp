@@ -3870,7 +3870,7 @@ void CQueue::Truncate(void)
         q->status_tracker.ClearAll(&q->m_JobsToDelete);
         q->run_time_line->ReInit(0);
     }}
-    // To update 'became_empty' timestamp
+    // Update 'became_empty' timestamp
     IsExpired(); // locks q->lock
 }
 
