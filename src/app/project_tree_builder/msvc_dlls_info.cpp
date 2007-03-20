@@ -500,6 +500,13 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                     const CProjItem& lib = k->second;
                     s_AddProjItemToDll(lib, &dll);
                     is_empty = false;
+                } else if (GetApp().GetSite().GetChoiceForLib(lib_id) 
+                                                   == CMsvcSite::e3PartyLib ) {
+                    CMsvcSite::SLibChoice choice = 
+                        GetApp().GetSite().GetLibChoiceForLib(lib_id);
+                    dll.m_Requires.push_back(choice.m_3PartyLib);
+                    dll.m_Requires.sort();
+                    dll.m_Requires.unique();
                 } else {
                     str_log += " " + lib_id;
                 }
