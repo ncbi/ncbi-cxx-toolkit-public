@@ -58,8 +58,12 @@ void SSystemFastMutex::InitializeHandle(void)
 {
     // Create platform-dependent mutex handle
 #if defined(NCBI_WIN32_THREADS)
+#  if defined(NCBI_USE_CRITICAL_SECTION)
+    InitializeCriticalSection(&m_Handle);
+#  else
     xncbi_Validate((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
                    "Mutex creation failed");
+#  endif
 #elif defined(NCBI_POSIX_THREADS)
 #  if defined(NCBI_OS_CYGWIN)
     if (pthread_mutex_init(&m_Handle, 0) != 0) {
@@ -81,7 +85,11 @@ void SSystemFastMutex::DestroyHandle(void)
 {
     // Destroy system mutex handle
 #if defined(NCBI_WIN32_THREADS)
+#  if defined(NCBI_USE_CRITICAL_SECTION)
+    DeleteCriticalSection(&m_Handle);
+#  else
     xncbi_Verify(CloseHandle(m_Handle) != 0);
+#  endif
 #elif defined(NCBI_POSIX_THREADS)
     xncbi_Verify(pthread_mutex_destroy(&m_Handle) == 0);
 #endif
@@ -254,14 +262,14 @@ static inline void s_ReleaseInitMutexHandle(TSystemMutex _DEBUG_ARG(mutex))
 
 #else
 
-static inline TSystemMutex s_GetInitMutexHandle(void)
+static inline HANDLE s_GetInitMutexHandle(void)
 {
-    TSystemMutex init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
+    HANDLE init_mutex = CreateMutex(NULL, FALSE, kInitMutexName);
     xncbi_Verify(init_mutex);
     return init_mutex;
 }
 
-static inline void s_ReleaseInitMutexHandle(TSystemMutex mutex)
+static inline void s_ReleaseInitMutexHandle(HANDLE mutex)
 {
     CloseHandle(mutex);
 }
@@ -273,7 +281,7 @@ void CAutoInitializeStaticFastMutex::Initialize(void)
     if ( m_Mutex.IsInitialized() ) {
         return;
     }
-    TSystemMutex init_mutex = s_GetInitMutexHandle();
+    HANDLE init_mutex = s_GetInitMutexHandle();
     xncbi_Verify(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
     if ( !m_Mutex.IsInitialized() ) {
         m_Mutex.InitializeStatic();
@@ -288,7 +296,7 @@ void CAutoInitializeStaticMutex::Initialize(void)
     if ( m_Mutex.IsInitialized() ) {
         return;
     }
-    TSystemMutex init_mutex = s_GetInitMutexHandle();
+    HANDLE init_mutex = s_GetInitMutexHandle();
     xncbi_Verify(WaitForSingleObject(init_mutex, INFINITE) == WAIT_OBJECT_0);
     if ( !m_Mutex.IsInitialized() ) {
         m_Mutex.InitializeStatic();
@@ -347,6 +355,7 @@ public:
         Set(h);        
     }
 
+    HANDLE GetHandle(void) const  { return m_Handle; }
     operator HANDLE(void) const { return m_Handle; }
 
 protected:
@@ -414,7 +423,11 @@ public:
 #if defined(NCBI_WIN32_THREADS)
     CWindowsSemaphore   m_Rsema;
     CWindowsSemaphore   m_Wsema;
+#  if defined(NCBI_USE_CRITICAL_SECTION)
+    CWindowsHandle      m_Mutex;
+#  else
     CFastMutex          m_Mutex;
+#  endif
 #elif defined(NCBI_POSIX_THREADS)
     CPthreadCond        m_Rcond;
     CPthreadCond        m_Wcond;
@@ -428,6 +441,9 @@ CInternalRWLock::CInternalRWLock(void)
     : m_Rsema(1, 1), m_Wsema(1, 1)
 #endif
 {
+#if defined(NCBI_USE_CRITICAL_SECTION)
+    m_Mutex.Set(CreateMutex(NULL, FALSE, NULL));
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -449,6 +465,36 @@ CRWLock::~CRWLock(void)
 }
 
 
+#if defined(NCBI_USE_CRITICAL_SECTION)
+
+// Need special guard for system handle since mutex uses critical section
+class CWin32MutexHandleGuard
+{
+public:
+    CWin32MutexHandleGuard(HANDLE mutex);
+    ~CWin32MutexHandleGuard(void);
+private:
+    HANDLE m_Handle;
+};
+
+
+inline
+CWin32MutexHandleGuard::CWin32MutexHandleGuard(HANDLE mutex)
+    : m_Handle(mutex)
+{
+    WaitForSingleObject(m_Handle, INFINITE);
+}
+
+
+inline
+CWin32MutexHandleGuard::~CWin32MutexHandleGuard(void)
+{
+    ReleaseMutex(m_Handle);
+}
+
+
+#endif
+
 void CRWLock::ReadLock(void)
 {
 #if defined(NCBI_NO_THREADS)
@@ -456,7 +502,11 @@ void CRWLock::ReadLock(void)
 #else
     // Lock mutex now, unlock before exit.
     // (in fact, it will be unlocked by the waiting function for a while)
+#if defined(NCBI_USE_CRITICAL_SECTION)
+    CWin32MutexHandleGuard guard(m_RW->m_Mutex);
+#else
     CFastMutexGuard guard(m_RW->m_Mutex);
+#endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
     if ( m_Count < 0 ) {
         if ( m_Owner.Is(self_id) ) {
@@ -470,7 +520,6 @@ void CRWLock::ReadLock(void)
             DWORD  wait_res;
             obj[0] = m_RW->m_Mutex.GetHandle();
             obj[1] = m_RW->m_Rsema;
-
             xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
                            "CRWLock::ReadLock() - release mutex error");
             wait_res = WaitForMultipleObjects(2, obj, TRUE, INFINITE);
@@ -534,7 +583,11 @@ bool CRWLock::TryReadLock(void)
     return true;
 #else
 
+#if defined(NCBI_USE_CRITICAL_SECTION)
+    CWin32MutexHandleGuard guard(m_RW->m_Mutex);
+#else
     CFastMutexGuard guard(m_RW->m_Mutex);
+#endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if (m_Count < 0) {
@@ -573,7 +626,12 @@ void CRWLock::WriteLock(void)
 #if defined(NCBI_NO_THREADS)
     return;
 #else
+
+#if defined(NCBI_USE_CRITICAL_SECTION)
+    CWin32MutexHandleGuard guard(m_RW->m_Mutex);
+#else
     CFastMutexGuard guard(m_RW->m_Mutex);
+#endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if ( m_Count < 0 && m_Owner.Is(self_id) ) {
@@ -639,7 +697,11 @@ bool CRWLock::TryWriteLock(void)
     return true;
 #else
 
+#if defined(NCBI_USE_CRITICAL_SECTION)
+    CWin32MutexHandleGuard guard(m_RW->m_Mutex);
+#else
     CFastMutexGuard guard(m_RW->m_Mutex);
+#endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if ( m_Count < 0 ) {
@@ -687,7 +749,11 @@ void CRWLock::Unlock(void)
     return;
 #else
 
+#if defined(NCBI_USE_CRITICAL_SECTION)
+    CWin32MutexHandleGuard guard(m_RW->m_Mutex);
+#else
     CFastMutexGuard guard(m_RW->m_Mutex);
+#endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
     if (m_Count < 0) {

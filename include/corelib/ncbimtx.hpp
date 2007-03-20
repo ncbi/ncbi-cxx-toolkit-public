@@ -103,8 +103,15 @@ typedef pthread_mutex_t TSystemMutex;
 
 #elif defined(NCBI_WIN32_THREADS)
 
+#  define NCBI_USE_CRITICAL_SECTION
+
 /// Define a platform independent system mutex.
+#  if defined(NCBI_USE_CRITICAL_SECTION)
+typedef CRITICAL_SECTION TSystemMutex;
+#  else
 typedef HANDLE TSystemMutex;
+#  endif
+
 # undef SYSTEM_MUTEX_INITIALIZER
 
 #else
@@ -629,10 +636,12 @@ public:
 
 private:
 #if defined(NCBI_WIN32_THREADS)
+#  if !defined(NCBI_USE_CRITICAL_SECTION)
     /// Get handle - Windows version.
     /// 
     /// Also used by CRWLock.
     HANDLE GetHandle(void) { return m_Mutex.m_Handle; }
+#  endif
 #else
     /// Get handle - Unix version.
     /// 
