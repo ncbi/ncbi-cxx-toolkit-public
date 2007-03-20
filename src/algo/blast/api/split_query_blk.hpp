@@ -52,7 +52,14 @@ typedef COpenRange<TSeqPos> TChunkRange;
 /// Wrapper class around SSplitQueryBlk structure
 class CSplitQueryBlk : public CObject {
 public:
+    /** 
+    * @brief Constructor for wrapper class for SSplitQueryBlk
+    * 
+    * @param num_chunks number of chunks
+    */
     CSplitQueryBlk(Uint4 num_chunks);
+
+    /// Destructor
     ~CSplitQueryBlk();
 
     /// Retrieve the number of chunks

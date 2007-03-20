@@ -228,6 +228,11 @@ CQuerySplitter::x_ComputeQueryIndicesForChunks()
     }
 }
 
+/** Adds the necessary shift to the context to record the query contexts for
+ * the query chunks
+ * @param context query context [in]
+ * @param shift shift to add [in]
+ */
 static inline unsigned int
 s_AddShift(unsigned int context, int shift)
 {
@@ -247,6 +252,13 @@ s_AddShift(unsigned int context, int shift)
     return retval;
 }
 
+/** 
+ * @brief Retrieve the shift for the negative strand
+ * 
+ * @param query_length length of the query [in]
+ * 
+ * @return shift (either 1, -1, or 0)
+ */
 static inline int
 s_GetShiftForTranslatedNegStrand(size_t query_length)
 {
@@ -360,6 +372,18 @@ s_IsPlusStrand(const BlastQueryInfo* qinfo, Int4 context_number)
     return qinfo->contexts[context_number].frame >= 0;
 }
 
+/** 
+ * @brief Get the length of a context in absolute terms (i.e.: in the context
+ * of the full, non-split sequence)
+ * 
+ * @param chunk_qinfo vector of BlastQueryInfo structures corresponding to the
+ * various query chunks [in]
+ * @param chunk_num Chunk number, index into the vector above [in]
+ * @param ctx_translator auxiliary context translator object [in]
+ * @param absolute_context context in the full, non-split query
+ * 
+ * @return length of the requested context
+ */
 static size_t
 s_GetAbsoluteContextLength(const vector<const BlastQueryInfo*>& chunk_qinfo, 
                            int chunk_num,
