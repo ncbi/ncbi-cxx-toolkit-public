@@ -127,7 +127,9 @@ int CNmer_repeatsApplication::Run(void)
     CNcbiIstream& is = args["fasta_file"].AsInputFile();
 
     // load sequences
-    CRef<CSeq_entry> entry = ReadFasta(is, fReadFasta_AssumeNuc);
+    CStreamLineReader line_rdr(is);
+    CFastaReader rdr(line_rdr, CFastaReader::fAssumeNuc);
+    CRef<CSeq_entry> entry = rdr.ReadSet();
 
     // print the header line
     cout << "id\trepeat_unit\tnumber_of_repeats\tfrom\tto" << endl;
