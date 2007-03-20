@@ -9,17 +9,28 @@
     assert(dst_buf);
     assert(cmp_buf);
 
-    // Get name and version of compressed library
-    CVersionInfo info = TCompression().GetVersion();
-    assert(!info.GetName().empty());
-    assert(info.GetMajor() > 0);
+    // The fAllowTransparentRead should be the same for all compressors.
+    
+    _VERIFY((unsigned int)CZipCompression::fAllowTransparentRead == 
+            (unsigned int)CBZip2Compression::fAllowTransparentRead);
+#if defined(HAVE_LIBLZO)
+    _VERIFY((unsigned int)CZipCompression::fAllowTransparentRead == 
+            (unsigned int)CLZOCompression::fAllowTransparentRead);
+#endif
+
+    //------------------------------------------------------------------------
+    // Version info
+    //------------------------------------------------------------------------
+
+    CVersionInfo version = TCompression().GetVersion();
+    LOG_POST("Compression library name and version: " << version.Print());
 
     // zlib v1.1.4 and earlier have a bug with decoding. In some cases
     // decompressor can produce output data on invalid input compressed data.
     // So, we do not run such tests if zlib version < 1.2.x.
     bool allow_transparent_read_test = 
-            info.GetName() != "zlib"  || 
-            info.IsUpCompatible(CVersionInfo(1,2,0));
+            version.GetName() != "zlib"  || 
+            version.IsUpCompatible(CVersionInfo(1,2,0));
 
     LOG_POST("Transparent read tests are " << 
             (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
@@ -28,7 +39,7 @@
     // Compress/decomress buffer
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Testing default level compression...");
+        LOG_POST("Compress/decompress buffer test (default level)...");
         INIT_BUFFERS;
 
         // Compress data
@@ -53,20 +64,56 @@
     }}
 
     //------------------------------------------------------------------------
+    // Compress/decomress buffer with CRC32 checksum (LZO only)
+    //------------------------------------------------------------------------
+
+#if defined(HAVE_LIBLZO)
+    if (version.GetName() == "lzo")
+    {{
+        LOG_POST("Compress/decompress buffer test (LZO, CRC32, default level)...");
+        INIT_BUFFERS;
+
+        // Compress data
+        TCompression c(CCompression::eLevel_Best);
+        c.SetFlags(c.GetFlags() | CLZOCompression::fChecksum);
+
+        result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
+                                  &out_len);
+        PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
+        assert(result);
+
+        // Decompress data
+        dst_len = out_len;
+        result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
+                                    &out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), dst_len, kBufLen,out_len);
+        assert(result);
+        assert(out_len == kDataLen);
+
+        // Compare original and decompressed data
+        assert(memcmp(src_buf, cmp_buf, out_len) == 0);
+        OK;
+    }}
+#endif
+
+    //------------------------------------------------------------------------
     // Overflow test
     //------------------------------------------------------------------------
     {{
         LOG_POST("Output buffer overflow test...");
 
         TCompression c;
-        dst_len = 100;
+        dst_len = 5;
         result = c.CompressBuffer(src_buf, kDataLen,
                                   dst_buf, dst_len, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, dst_len, out_len);
         assert(!result);
-        assert(out_len == dst_len);
+        // The lzo decoder produce nothing in the buffer overflow case,
+        // bzip2 and zlib can produce some data.
+        assert(out_len == 0  ||  out_len == dst_len);
         OK;
     }}
+
 
     //------------------------------------------------------------------------
     // Decompress buffer: transparent read
@@ -75,9 +122,6 @@
     {{
         LOG_POST("Decompress buffer (transparent read)...");
         INIT_BUFFERS;
-
-        _VERIFY((unsigned int)CZipCompression::fAllowTransparentRead == 
-                (unsigned int)CBZip2Compression::fAllowTransparentRead);
 
         TCompression c(CCompression::eLevel_Medium);
         c.SetFlags(CZipCompression::fAllowTransparentRead);
@@ -92,7 +136,7 @@
         assert(memcmp(src_buf, dst_buf, dst_len) == 0);
 
         // Overflow test
-        dst_len = 100;
+        dst_len = 5;
         result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, dst_len,
                                     &out_len);
         PrintResult(eDecompress, c.GetErrorCode(), kDataLen, dst_len,out_len);
@@ -117,10 +161,14 @@
 
             // Compressing data and write it to the file
             assert(zf.Open(kFileName, TCompressionFile::eMode_Write)); 
-            for (size_t i=0; i < kDataLen/1024; i++) {
+            size_t i;
+            for (i = 0; i < kDataLen/1024; i++) {
                 n = zf.Write(src_buf + i*1024, 1024);
                 assert(n == 1024);
             }
+            n = zf.Write(src_buf + i*1024, kDataLen % 1024);
+            assert(n == kDataLen % 1024);
+
             assert(zf.Close()); 
             assert(CFile(kFileName).GetLength() > 0);
             
@@ -142,7 +190,7 @@
                 TCompressionFile zf(kFileName, TCompressionFile::eMode_Write,
                                     CCompression::eLevel_Best);
                 n = zf.Write(src_buf, kDataLen);
-                assert(n == (int)kDataLen);
+                assert(n == kDataLen);
             }}
             {{
                 // Read data from compressed file
@@ -152,7 +200,7 @@
                     n = zf.Read(cmp_buf + nread, 100);
                     nread += n;
                 } while ( n != 0 );
-                assert(nread == (int)kDataLen);
+                assert(nread == kDataLen);
             }}
 
             // Compare original and decompressed data
@@ -167,12 +215,13 @@
     //------------------------------------------------------------------------
     if (allow_transparent_read_test)
     {{
-        LOG_POST("Decompress file - transparent read...");
+        LOG_POST("Decompress file (transparent read)...");
         INIT_BUFFERS;
 
         TCompressionFile zf;
-        // Set flag to allow transparent read on decompression
-        zf.SetFlags(CZipCompression::fAllowTransparentRead);
+        // Set flag to allow transparent read on decompression.
+        // The fAllowTransparentRead should be the same for all compressors.
+        zf.SetFlags(zf.GetFlags() | CZipCompression::fAllowTransparentRead);
 
         //
         // Test for usual compression/decompression
@@ -181,7 +230,7 @@
         // Compress data to file
         assert(zf.Open(kFileName, TCompressionFile::eMode_Write)); 
         size_t n = zf.Write(src_buf, kDataLen);
-        assert(n == (int)kDataLen);
+        assert(n == kDataLen);
         assert(zf.Close()); 
         assert(CFile(kFileName).GetLength() > 0);
         
@@ -220,7 +269,7 @@
     // Compression input stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Testing compression input stream...");
+        LOG_POST("Compression input stream test...");
         INIT_BUFFERS;
 
         // Compression input stream test 
@@ -229,7 +278,7 @@
                                     CCompressionStream::fOwnProcessor);
         
         // Read compressed data from stream
-        ics_zip.read(dst_buf, kDataLen);
+        ics_zip.read(dst_buf, kReadMax);
         dst_len = ics_zip.gcount();
         // We should have all packed data here, because compressor
         // finalization for input streams accompishes automaticaly.
@@ -239,6 +288,13 @@
 
         // Decompress data
         TCompression c;
+#if defined(HAVE_LIBLZO)
+        if (version.GetName() == "lzo") {
+            // For LZO we should use fStreamFormat flag for DecompressBuffer()
+            // method to decompress data compressed inside compression stream.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        }
+#endif
         result = c.DecompressBuffer(dst_buf, dst_len,
                                     cmp_buf, kBufLen, &out_len);
         PrintResult(eDecompress, c.GetErrorCode(), dst_len, kBufLen, out_len);
@@ -248,17 +304,25 @@
         assert(out_len == kDataLen);
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
         OK;
-   }}
+    }}
 
     //------------------------------------------------------------------------
     // Decompression input stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Testing decompression input stream...");
+        LOG_POST("Decompression input stream test...");
         INIT_BUFFERS;
 
         // Compress data and create test stream
         TCompression c;
+#if defined(HAVE_LIBLZO)
+        if (version.GetName() == "lzo") {
+            // For LZO we should use fStreamFormat flag for CompressBuffer()
+            // method for following decompress of data using compression
+            // stream.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        }
+#endif
         result = c.CompressBuffer(src_buf, kDataLen,
                                   dst_buf, kBufLen, &dst_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, dst_len);
@@ -268,7 +332,7 @@
         // Read decompressed data from stream
         CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),
                                     CCompressionStream::fOwnReader);
-        ids_zip.read(cmp_buf, kDataLen);
+        ids_zip.read(cmp_buf, kReadMax);
         out_len = ids_zip.gcount();
         // We should have all packed data here, because compressor
         // finalization for input streams accompishes automaticaly.
@@ -286,7 +350,7 @@
     // Compression output stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Testing compression output stream...");
+        LOG_POST("Compression output stream test...");
         INIT_BUFFERS;
 
         // Write data to compressing stream
@@ -307,6 +371,13 @@
 
         // Try to decompress data
         TCompression c;
+#if defined(HAVE_LIBLZO)
+        if (version.GetName() == "lzo") {
+            // For LZO we should use fStreamFormat flag for DecompressBuffer()
+            // method to decompress data compressed inside compression stream.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        }
+#endif
         result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen,
                                     &out_len);
         PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen,
@@ -324,11 +395,19 @@
     // Decompression output stream test
     //------------------------------------------------------------------------
     {{
-        LOG_POST("Testing decompression output stream...");
+        LOG_POST("Decompression output stream test...");
         INIT_BUFFERS;
 
         // Compress the data
         TCompression c;
+#if defined(HAVE_LIBLZO)
+        if (version.GetName() == "lzo") {
+            // For LZO we should use fStreamFormat flag for CompressBuffer()
+            // method for following decompress of data using compression
+            // stream.
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+        }
+#endif
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
@@ -363,7 +442,7 @@
     //------------------------------------------------------------------------
     if (allow_transparent_read_test)
     {{
-        LOG_POST("Testing decompression input stream (transparent read)...");
+        LOG_POST("Decompression input stream test (transparent read)...");
         INIT_BUFFERS;
 
         // Create test input stream with uncompressed data
@@ -376,7 +455,7 @@
         // Read uncompressed data from stream
         CCompressionIStream ids_zip(is_str, &decompressor);
 
-        ids_zip.read(dst_buf, kDataLen);
+        ids_zip.read(dst_buf, kReadMax);
         out_len = ids_zip.gcount();
         PrintResult(eDecompress, kUnknownErr, kDataLen, kBufLen, out_len);
         assert(ids_zip.GetProcessedSize() == out_len);
@@ -389,14 +468,16 @@
     }}
 
     //------------------------------------------------------------------------
-    // IO stream tests
+    // I/O stream tests
     //------------------------------------------------------------------------
+
     {{
-        LOG_POST("Testing IO stream...");
+        LOG_POST("I/O stream tests...");
         {{
             INIT_BUFFERS;
 
-            CNcbiStrstream stm(dst_buf, (int)kBufLen);
+            CNcbiStrstream stm(dst_buf, (int)kBufLen,
+                               IOS_BASE::in|IOS_BASE::out|IOS_BASE::binary);
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
                                           CCompressionStream::fOwnProcessor);
@@ -412,7 +493,7 @@
             assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
             assert(zip.GetOutputSize(CCompressionStream::eRead) == 0);
 
-            // Read as much as possible
+            // Read data
             zip.read(cmp_buf, kDataLen);
             out_len = zip.gcount();
             assert(!stm.eof()  &&  stm.good());
@@ -433,30 +514,36 @@
             // Compare buffers
             assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
         }}
+        
+        // Second test
         {{
-            INIT_BUFFERS;
+            const int kCount[2] = {1, 1000};
+            for (int k = 0; k < 2; k++) {
+                int n = kCount[k];
 
-            CNcbiStrstream stm(dst_buf, (int)kBufLen);
-            CCompressionIOStream zip(stm, new TStreamDecompressor(),
-                                          new TStreamCompressor(),
-                                          CCompressionStream::fOwnProcessor);
+                INIT_BUFFERS;
+                CNcbiStrstream stm(dst_buf, (int)kBufLen);
+                CCompressionIOStream zip(stm,
+                                         new TStreamDecompressor(),
+                                         new TStreamCompressor(),
+                                         CCompressionStream::fOwnProcessor);
+                int v;
+                for (int i = 0; i < n; i++) {
+                    v = i * 2;
+                    zip << v << endl;
+                }
+                zip.Finalize(CCompressionStream::eWrite);
+                zip.clear();
 
-            int v;
-            for (int i = 0; i < 1000; i++) {
-                 v = i * 2;
-                 zip << v << endl;
+                for (int i = 0; i < n; i++) {
+                    zip >> v;
+                    assert(!zip.eof());
+                    assert(v == i * 2);
+                }
+                zip.Finalize();
+                zip >> v;
+                assert(zip.eof());
             }
-            zip.Finalize(CCompressionStream::eWrite);
-            zip.clear();
-
-            for (int i = 0; i < 1000; i++) {
-                 zip >> v;
-                 assert(!zip.eof());
-                 assert(v == i * 2);
-            }
-            zip.Finalize();
-            zip >> v;
-            assert(zip.eof());
         }}
         OK;
     }}
@@ -477,9 +564,10 @@
         for (int count = 0; count<5; count++) {
             // Compress data to output stream
             CNcbiOstrstream os_str;
+            int n = 1000;
             {{
                 CCompressionOStream ocs_zip(os_str, &compressor);
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < n; i++) {
                     v = i * 2;
                     ocs_zip << v << endl;
                 }
@@ -491,7 +579,7 @@
             // Decompress data from input stream
             CNcbiIstrstream is_str(str, os_str_len);
             CCompressionIStream ids_zip(is_str, &decompressor);
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < n; i++) {
                 ids_zip >> v;
                 assert(!ids_zip.eof());
                 assert( i*2 == v);

@@ -37,18 +37,24 @@
 
 #include <util/compress/bzip2.hpp>
 #include <util/compress/zlib.hpp>
+#include <util/compress/lzo.hpp>
 
 #include <test/test_assert.h>  // This header must go last
 
 
 USING_NCBI_SCOPE;
 
+/// Number of tests.
+const size_t  kTestCount = 3;
+/// Length of data buffers for tests.
+const size_t  kDataLength[kTestCount] = {20, 16*1024, 100*1024};
+/// Output buffer length. ~20% more than maximum value from kDataLength[].
+const size_t  kBufLen = 120*1024;  
+/// Maximum number of bytes to read.
+const size_t  kReadMax = kBufLen;
 
-const size_t        kDataLen    = 100*1024;
-const size_t        kBufLen     = 102*1024;
-
-const int           kUnknownErr = kMax_Int;
-const unsigned int  kUnknown    = kMax_UInt;
+const int           kUnknownErr   = kMax_Int;
+const unsigned int  kUnknown      = kMax_UInt;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -60,11 +66,12 @@ template<class TCompression,
          class TCompressionFile,
          class TStreamCompressor,
          class TStreamDecompressor>
+
 class CTestCompressor
 {
 public:
     // Run test for the template compressor usind data from "src_buf"
-    static void Run(const char* src_buf);
+    static void Run(const char* src_buf, size_t data_len);
 
     // Print out compress/decompress status
     enum EPrintType { 
@@ -76,25 +83,30 @@ public:
 };
 
 
-// Print OK message
+/// Print OK message.
 #define OK LOG_POST("OK\n")
 
-// Init destination buffers
+/// Initialize destination buffers.
 #define INIT_BUFFERS  memset(dst_buf, 0, kBufLen); memset(cmp_buf, 0, kBufLen)
 
 
 template<class TCompression,
-    class TCompressionFile,
-    class TStreamCompressor,
-    class TStreamDecompressor>
+         class TCompressionFile,
+         class TStreamCompressor,
+         class TStreamDecompressor>
 void CTestCompressor<TCompression, TCompressionFile,
-    TStreamCompressor, TStreamDecompressor>
-    ::Run(const char* src_buf)
+                     TStreamCompressor, TStreamDecompressor>
+
+    ::Run(const char* src_buf, size_t kDataLen)
 {
     const char* kFileName = "compressed.file";
+
+    // Initialize LZO compression
+#if defined(HAVE_LIBLZO)
+    assert(CLZOCompression::Initialize());
+#endif
 #   include "test_compress_run.inl"
 }
-
 
 template<class TCompression,
          class TCompressionFile,
@@ -148,25 +160,38 @@ int CTest::Run(void)
     unsigned int seed = (unsigned int)time(0);
     LOG_POST("Random seed = " << seed);
     srand(seed);
-    for (size_t i=0; i<kDataLen; i++) {
-        // Use a set from 25 chars [A-Z]
+
+    for (size_t i=0; i<kBufLen; i++) {
+        // Use a set of 25 chars [A-Z]
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
+
     }
 
-    // Test compressors
+    // Test compressors with different size of data
+    for (size_t i = 0; i < kTestCount; i++) {
 
-    LOG_POST("-------------- BZip2 ---------------\n");
-    CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
-                    CBZip2StreamCompressor, CBZip2StreamDecompressor>
-        ::Run(src_buf);
+        LOG_POST("====================================\n" << 
+                 "Data size = " << kDataLength[i] << "\n\n");
 
-    LOG_POST("--------------- Zlib ---------------\n");
-    CTestCompressor<CZipCompression, CZipCompressionFile,
-                    CZipStreamCompressor, CZipStreamDecompressor>
-        ::Run(src_buf);
+#if defined(HAVE_LIBLZO)
+        LOG_POST("-------------- LZO -----------------\n");
 
-    LOG_POST("\nTEST execution completed successfully!\n");
- 
+        CTestCompressor<CLZOCompression, CLZOCompressionFile,
+                        CLZOStreamCompressor, CLZOStreamDecompressor>
+            ::Run(src_buf, kDataLength[i]);
+#endif
+        LOG_POST("-------------- BZip2 ---------------\n");
+        CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
+                        CBZip2StreamCompressor, CBZip2StreamDecompressor>
+            ::Run(src_buf, kDataLength[i]);
+
+        LOG_POST("-------------- Zlib ----------------\n");
+        CTestCompressor<CZipCompression, CZipCompressionFile,
+                        CZipStreamCompressor, CZipStreamDecompressor>
+            ::Run(src_buf, kDataLength[i]);
+
+        LOG_POST("\nTEST execution completed successfully!\n");
+    }
     return 0;
 }
 
