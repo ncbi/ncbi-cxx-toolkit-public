@@ -34,7 +34,6 @@
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
@@ -46,7 +45,6 @@ BEGIN_SCOPE(blast)
 const string kArgQuery("query");
 const string kArgOutput("out");
 
-// FIXME: Do some kind of auto-detection here?
 const string kArgDb("db");
 const string kArgSubject("subject");
 
@@ -135,6 +133,8 @@ const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
+
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
