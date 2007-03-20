@@ -1249,7 +1249,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 
 void CSeq_id::LoadAccessionGuide(const string& filename)
 {
-    auto_ptr<ILineReader> lr(ILineReader::New(filename));
+    CRef<ILineReader> lr(ILineReader::New(filename));
     LoadAccessionGuide(*lr);
 }
 
