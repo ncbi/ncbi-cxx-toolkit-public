@@ -73,17 +73,6 @@ using boost::unit_test::test_suite;
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 #define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
 
-static void s_UnitTestVerbosity(string s)
-{
-    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
-    
-    if (enabled) {
-        cout << "Running test: " << s << endl;
-    }
-}
-
-#define START s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
-
 static void
 s_FetchRawData(CSeqDBExpert & seqdb,
                int            oid,
@@ -283,8 +272,6 @@ CRef<CScope> s_GetScope()
 
 BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
 {
-    START;
-    
     int ids[] = {
         78883515, 78883517, 71143095, 24431485, 19110479, 15054463,
         15054465, 15054467, 15054469, 15054471, 19570808, 18916476,
@@ -314,8 +301,6 @@ BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
 
 BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
 {
-    START;
-    
     int ids[] = {
         1477444,  1669609,  1669611,  1669615, 1669617, 7544146,
         22652804, 1310870,  3114354,  3891778, 3891779, 81294290,
@@ -345,8 +330,6 @@ BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
 
 BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
 {
-    START;
-    
     CWriteDB fails("failing-db",
                    CWriteDB::eProtein,
                    "title",
@@ -360,8 +343,6 @@ BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
 
 BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
 {
-    START;
-    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -385,8 +366,6 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
 
 BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
 {
-    START;
-    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -418,8 +397,6 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
 
 BOOST_AUTO_UNIT_TEST(s_SetPig)
 {
-    START;
-    
     string nm = "pigs";
     vector<string> files;
     
@@ -476,8 +453,6 @@ BOOST_AUTO_UNIT_TEST(s_SetPig)
 
 BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 {
-    START;
-    
     CSeqDB nr("nr", CSeqDB::eProtein);
     
     CWriteDB db("multivol",
@@ -532,8 +507,6 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 
 BOOST_AUTO_UNIT_TEST(s_UsPatId)
 {
-    START;
-    
     CRef<CSeq_id> seqid(new CSeq_id("pat|us|123|456"));
     vector<string> files;
     
