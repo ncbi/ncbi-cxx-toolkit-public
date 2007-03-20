@@ -482,8 +482,8 @@ public:
         if(!c1_sameSubtype && c2_sameSubtype) return true;
         
         //smaller difference in TypeSortingOrder is better 
-        unsigned c1_typeSortingOrderDiff = std::abs(c1->m_feat1->GetTypeSortingOrder() - c1->m_feat2->GetTypeSortingOrder());
-        unsigned c2_typeSortingOrderDiff = std::abs(c2->m_feat1->GetTypeSortingOrder() - c2->m_feat2->GetTypeSortingOrder());
+        unsigned c1_typeSortingOrderDiff = abs(c1->m_feat1->GetTypeSortingOrder() - c1->m_feat2->GetTypeSortingOrder());
+        unsigned c2_typeSortingOrderDiff = abs(c2->m_feat1->GetTypeSortingOrder() - c2->m_feat2->GetTypeSortingOrder());
         if(c1_typeSortingOrderDiff < c2_typeSortingOrderDiff) return false;
         if(c1_typeSortingOrderDiff > c2_typeSortingOrderDiff) return true;
         
