@@ -1966,7 +1966,9 @@ void CCleanup_imp::x_FixSegSetSource
             } 
         } else {        
             CRef<CSeqdesc> new_src(new CSeqdesc());
-            new_src->SetSource((*src_list.begin())->SetSource());
+            CRef<CBioSource> new_biosrc(new CBioSource());
+            new_biosrc->Assign ((*src_list.begin())->SetSource());
+            new_src->SetSource(*new_biosrc);
             ITERATE (CSeq_descr::Tdata, desc_it, src_list) {
                 x_Common(new_src->SetSource(), (*desc_it)->GetSource(), false);
             }
