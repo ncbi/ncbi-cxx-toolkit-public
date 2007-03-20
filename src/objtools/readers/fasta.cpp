@@ -127,6 +127,20 @@ CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
     m_Flags.push(flags);
 }
 
+CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
+    : m_LineReader(new CStreamLineReader(in)), m_MaskVec(0),
+      m_IDGenerator(new CSeqIdGenerator)
+{
+    m_Flags.push(flags);
+}
+
+CFastaReader::CFastaReader(const string& path, TFlags flags)
+    : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
+      m_IDGenerator(new CSeqIdGenerator)
+{
+    m_Flags.push(flags);
+}
+
 CFastaReader::~CFastaReader(void)
 {
     _ASSERT(m_Flags.size() == 1);

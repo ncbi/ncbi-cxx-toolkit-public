@@ -84,6 +84,8 @@ public:
     typedef int TFlags; ///< binary OR of EFlags
 
     CFastaReader(ILineReader& reader, TFlags flags = 0);
+    CFastaReader(CNcbiIstream& in,    TFlags flags = 0);
+    CFastaReader(const string& path,  TFlags flags = 0);
     virtual ~CFastaReader(void);
 
     /// Read a single effective sequence, which may turn out to be a
