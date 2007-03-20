@@ -481,10 +481,14 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
+    *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
         ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Process"));
         return eStatus_Error;
+    }
+    if ( !out_size ) {
+        return eStatus_Overflow;
     }
     LIMIT_SIZE_PARAM_U(out_size);
 
@@ -631,13 +635,13 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
                       /* out */            size_t* out_avail)
 {
     *out_avail = 0;
-    if ( !out_size ) {
-        return eStatus_Overflow;
-    }
     if (in_len > kMax_UInt) {
         SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
         ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Process"));
         return eStatus_Error;
+    }
+    if ( !out_size ) {
+        return eStatus_Overflow;
     }
     LIMIT_SIZE_PARAM_U(out_size);
 

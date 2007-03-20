@@ -798,10 +798,14 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
+    *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
         ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Process"));
         return eStatus_Error;
+    }
+    if ( !out_size ) {
+        return eStatus_Overflow;
     }
     LIMIT_SIZE_PARAM_U(out_size);
 
@@ -847,6 +851,7 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
                       char* out_buf, size_t  out_size,
                       /* out */      size_t* out_avail)
 {
+    *out_avail = 0;
     if ( !out_size ) {
         return eStatus_Overflow;
     }
@@ -877,6 +882,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
                       char* out_buf, size_t  out_size,
                       /* out */      size_t* out_avail)
 {
+    *out_avail = 0;
     if ( !out_size ) {
         return eStatus_Overflow;
     }
@@ -983,13 +989,14 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
-    if ( !out_size ) {
-        return eStatus_Overflow;
-    }
+    *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
         ERR_COMPRESS(FormatErrorMessage("CZipDecompressor::Process"));
         return eStatus_Error;
+    }
+    if ( !out_size ) {
+        return eStatus_Overflow;
     }
     LIMIT_SIZE_PARAM_U(out_size);
 

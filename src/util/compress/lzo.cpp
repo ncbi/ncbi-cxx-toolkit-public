@@ -870,6 +870,9 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
         ERR_COMPRESS(FormatErrorMessage("CLZOCompressor::Process"));
         return eStatus_Error;
     }
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     CCompressionProcessor::EStatus status = eStatus_Success;
@@ -908,6 +911,9 @@ CCompressionProcessor::EStatus CLZOCompressor::Flush(
                       /* out */      size_t* out_avail)
 {
     *out_avail = 0;
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     // If we have some data in the output cache buffer -- return it
@@ -936,6 +942,10 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
                       char* out_buf, size_t  out_size,
                       /* out */      size_t* out_avail)
 {
+    *out_avail = 0;
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
     // If we have some already processed data in the output cache buffer
     if ( m_OutEndPtr != m_OutBegPtr ) {
@@ -1047,16 +1057,15 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
-    *in_avail  = in_len;
     *out_avail = 0;
-
-    if ( !out_size ) {
-        return eStatus_Overflow;
-    }
     if (in_len > kMax_UInt) {
         SetError(LZO_E_ERROR, "size of the source buffer is very big");
         ERR_COMPRESS(FormatErrorMessage("CLZODecompressor::Process"));
         return eStatus_Error;
+    }
+    *in_avail = in_len;
+    if ( !out_size ) {
+        return eStatus_Overflow;
     }
     LIMIT_SIZE_PARAM_U(out_size);
 
@@ -1195,6 +1204,9 @@ CCompressionProcessor::EStatus CLZODecompressor::Flush(
                       /* out */      size_t* out_avail)
 {
     *out_avail = 0;
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     // If we have some data in the output cache buffer -- return it
@@ -1223,6 +1235,10 @@ CCompressionProcessor::EStatus CLZODecompressor::Finish(
                       char* out_buf, size_t  out_size,
                       /* out */      size_t* out_avail)
 {
+    *out_avail = 0;
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
     if ( m_DecompressMode == eMode_Unknown ) {
         if (m_InLen < kMinHeaderSize) {
             return eStatus_Error;
