@@ -87,21 +87,8 @@ using boost::unit_test::test_suite;
     CNcbiIfstream infile(file);                                 \
     CBlastFastaInputSource source(*om, infile);
 
-static void s_UnitTestVerbosity(string s)
-{
-    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
-            
-    if (enabled) {
-        cout << "Running test: " << s << endl;
-    }
-}
-
-#define START s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
-
-
 BOOST_AUTO_UNIT_TEST(s_ReadFastaProtein)
 {
-    START;
     DECLARE_SOURCE("data/aa.129295");
 
     CHECK(source.End() == false);
@@ -127,7 +114,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaProtein)
 
 BOOST_AUTO_UNIT_TEST(s_RangeBoth)
 {
-    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetRange().SetFrom(50);
@@ -142,7 +128,6 @@ BOOST_AUTO_UNIT_TEST(s_RangeBoth)
 
 BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
 {
-    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetRange().SetFrom(50);
@@ -156,7 +141,6 @@ BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
 
 BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
 {
-    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetRange().SetFrom(100);
@@ -166,7 +150,6 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
 
 BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 {
-    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetBelieveDeflines(true);
@@ -179,7 +162,6 @@ BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 
 BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
 {
-    START;
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetStrand(eNa_strand_both);
@@ -188,7 +170,6 @@ BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
 
 BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
 {
-    START;
     DECLARE_SOURCE("data/nt.cat");
 
     // note that the side effect of this is that the length of the sequence
@@ -215,7 +196,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
 
 BOOST_AUTO_UNIT_TEST(s_NuclStrand)
 {
-    START;
     DECLARE_SOURCE("data/nt.cat");
 
     source.m_Config.SetStrand(eNa_strand_plus);
@@ -231,7 +211,6 @@ BOOST_AUTO_UNIT_TEST(s_NuclStrand)
 
 BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
 {
-    START;
     DECLARE_SOURCE("data/nt.cat");
 
     source.m_Config.SetLowercaseMask(true);
@@ -253,7 +232,6 @@ BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
 
 BOOST_AUTO_UNIT_TEST(s_MultiSeq)
 {
-    START;
     DECLARE_SOURCE("data/aa.cat");
     CBlastInput in(&source);
 
@@ -264,7 +242,6 @@ BOOST_AUTO_UNIT_TEST(s_MultiSeq)
 
 BOOST_AUTO_UNIT_TEST(s_MultiRange)
 {
-    START;
     DECLARE_SOURCE("data/aa.cat");
     source.m_Config.SetRange().SetFrom(50);
     source.m_Config.SetRange().SetTo(100);
@@ -281,7 +258,6 @@ BOOST_AUTO_UNIT_TEST(s_MultiRange)
 
 BOOST_AUTO_UNIT_TEST(s_MultiBatch)
 {
-    START;
     DECLARE_SOURCE("data/aa.cat");
     source.m_Config.SetBelieveDeflines(true);
     CBlastInput in(&source, 5000);
@@ -387,7 +363,6 @@ private:
 
 BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
 {
-    START;
     CPsiBlastAppArgs psiblast_args;
     CString2Args s2a("-matrix BLOSUM80 -db ecoli -dbtype prot ");
     auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
@@ -399,7 +374,6 @@ BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
 
 BOOST_AUTO_UNIT_TEST(PsiBlastAppMissingMandatoryArguments)
 {
-    START;
     CPsiBlastAppArgs psiblast_args;
     CString2Args s2a("");
     auto_ptr<CArgs> args;
