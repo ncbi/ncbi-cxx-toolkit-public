@@ -2,7 +2,6 @@
 #################################
 
 LIB_PROJ = xcd_utils
-#SUB_PROJ = fa2cd nrDemoApp
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
