@@ -2815,11 +2815,10 @@ case "$host_os:$compiler" in
      solaris*:GCC ) ac_cv_search_dlopen="-ldl" ;;
 esac
 NCBI_CHECK_LIBS(DL, dl, dlopen)
-# Normally redundant, but needed --with-static-exe.
-# (Too bad there's no libdl.a.)
+# libc's stubs aren't always sufficient...
 case "$host_os:$libnsl" in
-     solaris2.9:*   ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
-     solaris*:-lnsl ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
+     solaris2.[[89]]:* ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
+     solaris*:-lnsl    ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
