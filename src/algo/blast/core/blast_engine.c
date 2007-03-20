@@ -76,6 +76,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/mb_indexed_lookup.h>
+#include <algo/blast/core/gencode_singleton.h>
 #include "blast_gapalign_priv.h"
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
