@@ -169,19 +169,6 @@ void CAgpconvertApplication::Init(void)
 }
 
 
-// This is a ridiculous way of parsing
-// strings with multiple Seq-id's, such as
-// gnl|WGS:AABU|211000022280667|gb|AABU01002637
-// (make a fasta stream and read it)
-static void s_ParseFastaIds(const string& s, list<CRef<CSeq_id> >& ids)
-{
-    string fasta_input(">" + s + "\na\n");
-    CNcbiIstrstream istr(fasta_input.c_str());
-    CRef<CSeq_entry> ent = ReadFasta(istr);
-    ids = ent->GetSeq().GetId();
-}
-
-
 static int s_GetTaxid(const COrg_ref& org_ref) {
     int taxid = 0;
     int count = 0;
@@ -571,7 +558,7 @@ int CAgpconvertApplication::Run(void)
             if (NStr::Find(id_str, "|") != NPOS) {
                 if (args["fasta_id"]) {
                     // parse the id as a fasta id
-                    s_ParseFastaIds(id_str, ids);
+                    CSeq_id::ParseFastaIds(ids, id_str);
                     id_str = ids.front()->GetSeqIdString(true);
                 } else {
                     cerr << "** ID " << id_str <<
