@@ -429,11 +429,6 @@ typedef struct PSIBlastOptions {
 typedef struct BlastDatabaseOptions {
    Int4 genetic_code;  /**< Genetic code to use for translation, 
                              tblast[nx] only */
-   Uint1* gen_code_string;  /**< Genetic code string in ncbistdaa encoding,
-                                 tblast[nx] only
-                                 @todo why hasn't this been consolidated as the
-                                 query genetic code has?
-                             */
 } BlastDatabaseOptions;
 
 /********************************************************************************

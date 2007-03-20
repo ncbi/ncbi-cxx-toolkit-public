@@ -40,6 +40,7 @@
 #include <objects/blast/Blast4_queue_search_reques.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
 #include <algo/blast/core/blast_options.h>
@@ -401,6 +402,9 @@ private:
     /// Returns BlastEffectiveLengthsOptions for eLocal objects, NULL for 
     /// eRemote
     BlastEffectiveLengthsOptions * GetEffLenOpts() const;
+
+    /// This field is add
+    CAutomaticGenCodeSingleton m_GenCodeSingletonVar;
 
     friend class CBl2Seq;
     friend class CDbBlast;

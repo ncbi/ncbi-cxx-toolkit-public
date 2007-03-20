@@ -239,10 +239,7 @@ public:
 
     int GetDbGeneticCode() const;
 
-   //const unsigned char* GetDbGeneticCodeStr() const;
-   //void SetDbGeneticCodeStr(const unsigned char* gc_str);
-
-    // Set both integer and string genetic code in one call
+    // Set genetic code id
     void SetDbGeneticCode(int gc);
 
     /// @todo PSI-Blast options could go on their own subclass?

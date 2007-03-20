@@ -61,6 +61,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_kappa.h>
 #include <algo/blast/core/blast_sw.h>
 #include <algo/blast/core/phi_gapalign.h>
+#include <algo/blast/core/gencode_singleton.h>
 #include "blast_gapalign_priv.h"
 #include "blast_psi_priv.h"
 #include "blast_hits_priv.h"
@@ -1111,7 +1112,6 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    BlastHSPResults* results = NULL;
    BlastHSPList* hsp_list = NULL;
    BlastScoreBlk* sbp;
-   Uint1* gen_code_string = NULL;
  
    if (!query_info || !seq_src || !hsp_stream || !results_out) {
       return -1;
@@ -1123,9 +1123,6 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
 
    sbp = gap_align->sbp;
   
-   if (db_options)
-      gen_code_string = db_options->gen_code_string;
- 
    /* signal the traceback stage has started */
    if (progress_info)
        progress_info->stage = eTracebackSearch;
@@ -1142,9 +1139,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
               ext_params->options->eTbackExt == eSmithWatermanTbck) {
       status =
           Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
-                                  hsp_stream, seq_src, gen_code_string,
-                                  score_params, ext_params, hit_params,
-                                  psi_options, results);
+                                  hsp_stream, seq_src, score_params, 
+                                  ext_params, hit_params, psi_options, results);
    } else {
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
@@ -1171,6 +1167,16 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
             BlastSequenceBlkClean(seq_arg.seq);
             if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
                continue;
+
+            /* If the subject is translated and the BlastSeqSrc implementation
+             * doesn't provide a genetic code string, use the default genetic
+             * code for all subjects (as in the C toolkit) */
+            if (Blast_SubjectIsTranslated(program_number) && 
+                seq_arg.seq->gen_code_string == NULL) {
+                seq_arg.seq->gen_code_string = 
+                    GenCodeSingletonFind(BLAST_GENETIC_CODE);
+                ASSERT(seq_arg.seq->gen_code_string);
+            }
             
             if (BlastSeqSrcGetTotLen(seq_src) == 0) {
                /* This is not a database search, so effective search spaces
@@ -1211,7 +1217,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                            seq_arg.seq, query_info, gap_align,
                                            sbp, score_params,
                                            ext_params->options, hit_params, 
-                                           gen_code_string,
+                                           seq_arg.seq->gen_code_string,
                                            fence_hit_ptr);
                 
                 if (fence_hit) {
@@ -1230,7 +1236,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                                seq_arg.seq, query_info, gap_align,
                                                sbp, score_params, 
                                                ext_params->options, hit_params, 
-                                               gen_code_string,
+                                               seq_arg.seq->gen_code_string,
                                                NULL);
                 }
             }

@@ -121,6 +121,10 @@ public:
     /// @param index index of the sequence in the sequence container [in]
     virtual const objects::CSeq_id* GetSeqId(int index) const;
     
+    /// Retrieve the genetic code associated with a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual Uint4 GetGeneticCodeId(int index) const;
+    
     /// Return the sequence data for a sequence
     /// @param i index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]
@@ -215,8 +219,6 @@ SetupQueryInfo(const CBlastQueryVector & queries,
 /// @param strand_opt Unless the strand option is set to single strand, the 
 /// actual CSeq_locs in the TSeqLocVector dictate which strand to use
 /// during the search [in]
-/// @param genetic_code genetic code string as returned by
-/// blast::FindGeneticCode()
 
 void
 SetupQueries(const TSeqLocVector& queries,
@@ -224,7 +226,6 @@ SetupQueries(const TSeqLocVector& queries,
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog, 
              objects::ENa_strand strand_opt,
-             const Uint1* genetic_code,
              TSearchMessages& messages);
 
 /// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST

@@ -43,24 +43,16 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
-/** Initializes and uninitializes the genetic code singleton as if it was an
- * automatic variable */
-class CAutomaticGenCodeSingleton {
-public:
-    CAutomaticGenCodeSingleton()  { GenCodeSingletonInit(); }
-    ~CAutomaticGenCodeSingleton() { GenCodeSingletonFini(); }
-};
-
 BOOST_AUTO_UNIT_TEST(GenCodeSingleton_Find)
 {
     CAutomaticGenCodeSingleton instance;
 
     Uint4 gc_id = 1;
     TAutoUint1ArrayPtr gc = FindGeneticCode(gc_id);
-    Int2 rv = GenCodeSingletonAdd((Uint4)gc_id, (Char*)gc.get());
+    Int2 rv = GenCodeSingletonAdd((Uint4)gc_id, gc.get());
     BOOST_CHECK_EQUAL(rv, 0);
 
-    Char* gc_str =  GenCodeSingletonFind(gc_id);
+    Uint1* gc_str =  GenCodeSingletonFind(gc_id);
     BOOST_CHECK(gc_str != NULL);
 
     gc_id = 5;
@@ -68,7 +60,7 @@ BOOST_AUTO_UNIT_TEST(GenCodeSingleton_Find)
     BOOST_CHECK(gc_str == NULL);
 
     gc = FindGeneticCode(gc_id);
-    rv = GenCodeSingletonAdd((Uint4)gc_id, (Char*)gc.get());
+    rv = GenCodeSingletonAdd((Uint4)gc_id, gc.get());
     BOOST_CHECK_EQUAL(rv, 0);
     gc_str =  GenCodeSingletonFind(gc_id);
     BOOST_CHECK(gc_str != NULL);
@@ -81,6 +73,6 @@ BOOST_AUTO_UNIT_TEST(GenCodeSingleton_NonExistentGeneticCode)
     Uint4 gc_id = 500;
     TAutoUint1ArrayPtr gc = FindGeneticCode(gc_id);
     BOOST_CHECK(gc.get() == NULL);
-    Int2 rv = GenCodeSingletonAdd((Uint4)gc_id, (Char*)gc.get());
+    Int2 rv = GenCodeSingletonAdd((Uint4)gc_id, gc.get());
     BOOST_CHECK_EQUAL(rv, BLASTERR_INVALIDPARAM);
 }

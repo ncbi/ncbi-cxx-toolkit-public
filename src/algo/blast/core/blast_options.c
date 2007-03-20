@@ -1366,7 +1366,6 @@ BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options)
    if (db_options == NULL)
       return NULL;
 
-   sfree(db_options->gen_code_string);
    sfree(db_options);
    return NULL;
 }

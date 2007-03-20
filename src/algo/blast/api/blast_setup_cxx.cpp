@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/gencode_singleton.h>
 
 #include "blast_setup.hpp"
 
@@ -504,7 +505,6 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                  BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog,
                  ENa_strand strand_opt,
-                 const Uint1* genetic_code,
                  TSearchMessages& messages)
 {
     _ASSERT(seqblk);
@@ -541,7 +541,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             if ((is_na || translate) && strand == eNa_strand_unknown) {
                 strand = eNa_strand_both;
             }
-            
+
             CRef<CBlastQueryFilteredFrames> frame_to_bsl = 
                 s_GetRestrictedBlastSeqLocs(queries, index, qinfo, prog);
             
@@ -558,6 +558,16 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                        strand == eNa_strand_minus);
                 _ASSERT(Blast_QueryIsTranslated(prog));
 
+                const Uint4 genetic_code_id = queries.GetGeneticCodeId(index);
+                Uint1* gc = GenCodeSingletonFind(genetic_code_id);
+                if (gc == NULL) {
+                    TAutoUint1ArrayPtr gc_str = 
+                        FindGeneticCode(genetic_code_id);
+                    GenCodeSingletonAdd(genetic_code_id, gc_str.get());
+                    gc = GenCodeSingletonFind(genetic_code_id);
+                    _ASSERT(gc);
+                }
+            
                 // Get both strands of the original nucleotide sequence with
                 // sentinels
                 sequence = queries.GetBlastSequence(index, encoding, strand, 
@@ -581,8 +591,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                                          seqbuf_rev,
                                          na_length,
                                          qinfo->contexts[ctx_index + i].frame,
-                                         & buf.get()[offset],
-                                         genetic_code);
+                                         & buf.get()[offset], gc);
                 }
 
             } else if (is_na) {
@@ -687,6 +696,18 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
         if (BlastSeqBlkNew(&subj) < 0) {
             NCBI_THROW(CBlastSystemException, eOutOfMemory, 
                        "Subject sequence block");
+        }
+
+        if (Blast_SubjectIsTranslated(prog)) {
+            const Uint4 genetic_code_id = subjects.GetGeneticCodeId(i);
+            Uint1* gc = GenCodeSingletonFind(genetic_code_id);
+            if (gc != NULL) {
+                TAutoUint1ArrayPtr gc_str = FindGeneticCode(genetic_code_id);
+                GenCodeSingletonAdd(genetic_code_id, gc_str.get());
+                gc = GenCodeSingletonFind(genetic_code_id);
+                _ASSERT(gc);
+                subj->gen_code_string = gc; /* N.B.: not copied! */
+            }
         }
 
         /* Set the lower case mask, if it exists */
@@ -1335,10 +1356,8 @@ SafeSetupQueries(IBlastQuerySource& queries,
     _ASSERT( !queries.Empty() );
 
     CBLAST_SequenceBlk retval;
-    TAutoUint1ArrayPtr gc = FindGeneticCode(options->GetQueryGeneticCode());
-
     SetupQueries_OMF(queries, query_info, &retval, options->GetProgramType(), 
-                     options->GetStrandOption(), gc.get(), messages);
+                     options->GetStrandOption(), messages);
 
     return retval.Release();
 }

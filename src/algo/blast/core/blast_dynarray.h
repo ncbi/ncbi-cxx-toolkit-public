@@ -143,7 +143,7 @@ DynamicInt4Array_Append(SDynamicInt4Array* arr, Int4 element);
 /** Elements of the SDynamicSGenCodeNodeArray dynamic array */
 typedef struct SGenCodeNode {
     Uint4   gc_id;      /**< Genetic code id */
-    Char*   gc_str;     /**< Genetic code string */
+    Uint1*  gc_str;     /**< Genetic code string */
 } SGenCodeNode;
 
 /** Initial number of elements allocated, based on the fact that there are only
@@ -189,7 +189,7 @@ DynamicSGenCodeNodeArray_Append(SDynamicSGenCodeNodeArray* arr,
  * @param gen_code_id genetic code id to search [in]
  * @return genetic code string (owned by this structure) or NULL if not found
  */
-Char*
+Uint1*
 DynamicSGenCodeNodeArray_Find(const SDynamicSGenCodeNodeArray* arr,
                               Uint4 gen_code_id);
 

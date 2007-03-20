@@ -128,6 +128,10 @@ public:
     /// Return the sequence identifier associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual const objects::CSeq_id* GetSeqId(int index) const = 0;
+
+    /// Retrieve the genetic code associated with a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual Uint4 GetGeneticCodeId(int index) const = 0;
     
     /// Return the sequence data for a sequence
     /// @param index index of the sequence in the sequence container [in]
@@ -245,8 +249,6 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 /// @param strand_opt Unless the strand option is set to single strand, the 
 /// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
 /// during the search [in]
-/// @param genetic_code genetic code string as returned by
-/// blast::FindGeneticCode()
 
 void
 SetupQueries_OMF(IBlastQuerySource& queries,
@@ -254,7 +256,6 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                  BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog, 
                  objects::ENa_strand strand_opt,
-                 const Uint1* genetic_code,
                  TSearchMessages& messages);
 
 /** Object manager free version of SetupSubjects

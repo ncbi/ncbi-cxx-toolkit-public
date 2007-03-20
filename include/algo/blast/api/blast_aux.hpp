@@ -54,6 +54,7 @@
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_psi.h>
 #include <algo/blast/core/blast_hspstream.h>
+#include <algo/blast/core/gencode_singleton.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -131,7 +132,8 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp);
 
 /** Retrieves the requested genetic code in Ncbistdaa format. 
  * @param genetic_code numeric identifier for genetic code requested [in]
- * @return NULL if memory allocation failure, otherwise genetic code string.
+ * @return NULL if genetic_code is invalid or in case of memory allocation 
+ * failure, otherwise genetic code string.
  * @note the returned string has length GENCODE_STRLEN
  */
 NCBI_XBLAST_EXPORT
@@ -266,6 +268,19 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
                           const objects::CPacked_seqint& queries,
                           const BlastMaskLoc* mask, 
                           TSeqLocInfoVector& mask_v);
+
+/** Initializes and uninitializes the genetic code singleton as if it was an
+ * automatic variable */
+class CAutomaticGenCodeSingleton {
+public:
+    CAutomaticGenCodeSingleton()  { 
+        GenCodeSingletonInit(); 
+        // N.B.: this is added as this is the default value
+        TAutoUint1ArrayPtr gc = FindGeneticCode(BLAST_GENETIC_CODE);
+        GenCodeSingletonAdd(BLAST_GENETIC_CODE, gc.get());
+    }
+    ~CAutomaticGenCodeSingleton() { GenCodeSingletonFini(); }
+};
 
 
 /** Declares class to handle deallocating of the structure using the appropriate

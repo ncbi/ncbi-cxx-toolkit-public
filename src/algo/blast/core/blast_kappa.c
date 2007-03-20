@@ -777,7 +777,6 @@ BlastKappa_SequenceInfo {
                                         search being performed. The type
                                         of search determines how sequence
                                         data should be obtained. */
-    const Uint1*   genetic_code;   /**< genetic code for translated searches */
     const BlastSeqSrc* seq_src;    /**< BLAST sequence data source */
     BlastSeqSrcGetSeqArg seq_arg;  /**< argument to GetSequence method
                                      of the BlastSeqSrc (@todo this
@@ -818,7 +817,6 @@ static int
 s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
                              EBlastProgramType program_number,
                              const BlastSeqSrc* seqSrc,
-                             const Uint1* gen_code_string,
                              Int4 subject_index)
 {
     BlastKappa_SequenceInfo * seq_info;  /* BLAST-specific sequence
@@ -832,7 +830,6 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
 
         seq_info->seq_src      = seqSrc;
         seq_info->prog_number  = program_number;
-        seq_info->genetic_code = gen_code_string;
 
         memset((void*) &seq_info->seq_arg, 0, sizeof(seq_info->seq_arg));
         seq_info->seq_arg.oid = self->index = subject_index;
@@ -949,7 +946,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
     status = Blast_GetPartialTranslation(na_sequence + translation_start,
                                          num_nucleotides,
                                          (Int2) translation_frame,
-                                         local_data->genetic_code,
+                                         local_data->seq_arg.seq->gen_code_string,
                                          &translation_buffer,
                                          &translated_length,
                                          NULL);
@@ -1829,7 +1826,6 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                         BlastScoreBlk* sbp,
                         BlastHSPStream* hsp_stream,
                         const BlastSeqSrc* seqSrc,
-                        const Uint1* gen_code_string,
                         BlastScoringParameters* scoringParams,
                         const BlastExtensionParameters* extendParams,
                         const BlastHitSavingParameters* hitParams,
@@ -2023,8 +2019,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         /* Get the sequence for this match */
         status_code =
             s_MatchingSequenceInitialize(&matchingSeq, program_number,
-                                         seqSrc, gen_code_string,
-                                         thisMatch->oid);
+                                         seqSrc, thisMatch->oid);
         if (status_code != 0) {
             goto match_loop_cleanup;
         }

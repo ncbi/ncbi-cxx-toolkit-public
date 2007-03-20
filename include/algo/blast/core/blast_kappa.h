@@ -60,7 +60,6 @@ extern "C" {
  * @param query_info query information [in]
  * @param sbp (Karlin-Altschul) information for search [in]
  * @param seqSrc used to fetch database/match sequences [in]
- * @param gen_code_string the genetic code for translated queries [in]
  * @param hsp_stream used to fetch hits for further processing [in]
  * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
  * @param extendParams parameters used for extension [in]
@@ -77,7 +76,6 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                   BlastScoreBlk* sbp,
                   BlastHSPStream* hsp_stream,
                   const BlastSeqSrc* seqSrc,
-                  const Uint1* gen_code_string,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
                   const BlastHitSavingParameters* hitParams,

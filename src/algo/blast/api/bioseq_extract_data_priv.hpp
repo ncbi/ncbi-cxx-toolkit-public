@@ -145,6 +145,10 @@ public:
     /// @param index index of the sequence in the sequence container [in]
     virtual const objects::CSeq_id* GetSeqId(int index) const;
     
+    /// Retrieve the genetic code associated with a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual Uint4 GetGeneticCodeId(int index) const;
+    
     /// Return the sequence data for a sequence
     /// @param index index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]

@@ -42,11 +42,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Structure combining a Seq-loc, scope and masking locations for one sequence
+/// Structure to represent a single sequence to be fed to BLAST
 struct SSeqLoc {
     /// Seq-loc describing the sequence to use as query/subject to BLAST
-    /// The types of Seq-loc currently supported are: whole, seq-interval...
-    /// @todo FIXME Complete the list of supported seq-locs
+    /// The types of Seq-loc currently supported are: whole and seq-interval
     CConstRef<objects::CSeq_loc>     seqloc;
     
     /// Scope where the sequence referenced can be found by the toolkit's
@@ -67,22 +66,32 @@ struct SSeqLoc {
     /// @note the default value of this field is true
     /// @sa mask
     bool                             ignore_strand_in_mask;
+
+    /// Genetic code id if this sequence should be translated.
+    /// @note BLAST_GENETIC_CODE is the default, even though the sequence might
+    /// not need to be translated (i.e.: program type determines whether this
+    /// is used or not). The sentinel value to indicate that this field is not
+    /// applicable is numeric_limits<Uint4>::max().
+    Uint4                            genetic_code_id;
     
     /// Default constructor
     SSeqLoc()
-        : seqloc(), scope(), mask(), ignore_strand_in_mask(true) {}
+        : seqloc(), scope(), mask(), ignore_strand_in_mask(true), 
+          genetic_code_id(BLAST_GENETIC_CODE) {}
 
     /// Parameterized constructor
     /// @param sl Sequence location [in]
     /// @param s Scope to retrieve sl [in]
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
-        : seqloc(sl), scope(s), mask(0), ignore_strand_in_mask(true) {}
+        : seqloc(sl), scope(s), mask(0), ignore_strand_in_mask(true),
+          genetic_code_id(BLAST_GENETIC_CODE) {}
 
     /// Parameterized constructor
     /// @param sl Sequence location [in]
     /// @param s Scope to retrieve sl [in]
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
-        : seqloc(&sl), scope(&s), mask(0), ignore_strand_in_mask(true) {}
+        : seqloc(&sl), scope(&s), mask(0), ignore_strand_in_mask(true),
+          genetic_code_id(BLAST_GENETIC_CODE) {}
 
     /// Parameterized constructor
     /// @param sl Sequence location [in]
@@ -92,7 +101,8 @@ struct SSeqLoc {
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s,
             objects::CSeq_loc* m, bool ignore_mask_strand = true)
         : seqloc(sl), scope(s), mask(m), 
-          ignore_strand_in_mask(ignore_mask_strand) {
+          ignore_strand_in_mask(ignore_mask_strand),
+          genetic_code_id(BLAST_GENETIC_CODE) {
         if (m != NULL && ignore_strand_in_mask) {
               mask->ResetStrand();
         }
@@ -106,7 +116,8 @@ struct SSeqLoc {
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s,
             objects::CSeq_loc& m, bool ignore_mask_strand = true)
         : seqloc(&sl), scope(&s), mask(&m),
-          ignore_strand_in_mask(ignore_mask_strand) {
+          ignore_strand_in_mask(ignore_mask_strand),
+          genetic_code_id(BLAST_GENETIC_CODE) {
         if (ignore_strand_in_mask) {
               mask->ResetStrand();
         }
@@ -137,29 +148,34 @@ public:
     CBlastSearchQuery(const objects::CSeq_loc & sl,
                       objects::CScope         & sc,
                       TMaskedQueryRegions       m)
-        : seqloc(& sl), scope(& sc), mask(m)
-    {
-    }
+        : seqloc(& sl), scope(& sc), mask(m), 
+          genetic_code_id(BLAST_GENETIC_CODE) {}
     
     /// Default constructor
     ///
     /// This is necessary in order to add this type to a std::vector.
-    CBlastSearchQuery()
-    {
-    }
+    CBlastSearchQuery() {}
     
     /// Get the query Seq-loc.
     /// @return The Seq-loc representing the query
-    CConstRef<objects::CSeq_loc> GetQuerySeqLoc() const
-    {
+    CConstRef<objects::CSeq_loc> GetQuerySeqLoc() const {
         return seqloc;
     }
     
     /// Get the query CScope.
     /// @return The CScope containing the query
-    CRef<objects::CScope> GetScope() const
-    {
+    CRef<objects::CScope> GetScope() const {
         return scope;
+    }
+
+    /// Get the genetic code id
+    void SetGeneticCodeId(Uint4 gc_id) {
+        genetic_code_id = gc_id;
+    }
+    
+    /// Get the genetic code id
+    Uint4 GetGeneticCodeId() const {
+        return genetic_code_id;
     }
     
     /// Get the masked query regions.
@@ -168,8 +184,7 @@ public:
     /// query, are returned.
     ///
     /// @return The masked regions of the query.
-    TMaskedQueryRegions GetMaskedRegions() const
-    {
+    TMaskedQueryRegions GetMaskedRegions() const {
         return mask;
     }
     
@@ -179,8 +194,7 @@ public:
     /// replacing any existing masked regions.
     ///
     /// @param mqr The set of regions to mask.
-    void SetMaskedRegions(TMaskedQueryRegions mqr)
-    {
+    void SetMaskedRegions(TMaskedQueryRegions mqr) {
         mask = mqr;
     }
     
@@ -204,6 +218,11 @@ private:
     
     /// These regions of the query are masked.
     TMaskedQueryRegions mask;
+
+    /// Genetic code id if this sequence should be translated.
+    /// If its value is numeric_limits<Uint4>::max(), it means that it's not
+    /// applicable
+    Uint4                            genetic_code_id;
 };
 
 

@@ -350,15 +350,12 @@ DynamicSGenCodeNodeArray_Append(SDynamicSGenCodeNodeArray* arr,
     if ( (retval = s_DynamicSGenCodeNodeArray_ReallocIfNecessary(arr)) != 0) {
         return retval;
     }
-    arr->data[arr->num_used].gc_str = (Char*) calloc(GENCODE_STRLEN, 
-                                                     sizeof(Char));
+    arr->data[arr->num_used].gc_str = (Uint1*)
+        BlastMemDup(element.gc_str, GENCODE_STRLEN);
     if ( arr->data[arr->num_used].gc_str == NULL) {
         return BLASTERR_MEMORY;    
     }
     arr->data[arr->num_used].gc_id = element.gc_id;
-    memcpy((void*) arr->data[arr->num_used].gc_str, 
-           (void*) element.gc_str, 
-           GENCODE_STRLEN);
     arr->num_used++;
     s_DynamicSGenCodeNodeArray_Sort(arr);
     return retval;
@@ -389,7 +386,7 @@ s_DynamicSGenCodeNodeArray_BinSearch(const SDynamicSGenCodeNodeArray* arr,
     return b;
 }
 
-Char*
+Uint1*
 DynamicSGenCodeNodeArray_Find(const SDynamicSGenCodeNodeArray* arr,
                               Uint4 gen_code_id)
 {

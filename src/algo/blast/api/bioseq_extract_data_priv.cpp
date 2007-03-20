@@ -52,6 +52,9 @@ static char const rcsid[] =
 
 // Object includes
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 // Private BLAST API headers
@@ -286,6 +289,23 @@ const CSeq_id*
 CBlastQuerySourceBioseqSet::GetSeqId(int index) const
 {
     return m_Bioseqs[index]->GetFirstId();
+}
+
+Uint4 
+CBlastQuerySourceBioseqSet::GetGeneticCodeId(int index) const
+{
+    Uint4 retval = numeric_limits<Uint4>::max();    // i.e.: not applicable
+    if (m_IsProt) {
+        return retval;
+    }
+
+    ITERATE(CSeq_descr::Tdata, itr, m_Bioseqs[index]->GetDescr().Get()) {
+        if ((*itr)->IsSource()) {
+            retval = (*itr)->GetSource().GetGenCode();
+            break;
+        }
+    }
+    return retval;
 }
 
 SBlastSequence

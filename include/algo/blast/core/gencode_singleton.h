@@ -56,13 +56,17 @@ GenCodeSingletonFini();
  * @return 0 if SUCESS or already there, otherwise BLASTERR_MEMORY
  */
 NCBI_XBLAST_EXPORT Int2 
-GenCodeSingletonAdd(Uint4 gen_code_id, Char* gen_code_str);
+GenCodeSingletonAdd(Uint4 gen_code_id, const Uint1* gen_code_str);
 
 /** Returns the genetic code string for the requested genetic code id
  * @param gen_code_id genetic code id [in]
  * @return the genetic code string or NULL if this genetic code was not added
- * to the singleton */
-NCBI_XBLAST_EXPORT Char* 
+ * to the singleton 
+ * @note it's the API layer's responsibility to add least add
+ * BLAST_GENETIC_CODE to the singleton (for backwards compatibility and to meet
+ * the engine's expectations)
+ */
+NCBI_XBLAST_EXPORT Uint1* 
 GenCodeSingletonFind(Uint4 gen_code_id);
 
 #ifdef __cplusplus

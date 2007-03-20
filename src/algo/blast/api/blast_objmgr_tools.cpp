@@ -222,6 +222,16 @@ CBlastQuerySourceOM::GetSeqId(int i) const
     }
 }
 
+Uint4
+CBlastQuerySourceOM::GetGeneticCodeId(int i) const
+{
+    if (m_QueryVector.NotEmpty()) {
+        return m_QueryVector->GetBlastSearchQuery(i)->GetGeneticCodeId();
+    } else {
+        return (*m_TSeqLocVector)[i].genetic_code_id;
+    }
+}
+
 SBlastSequence
 CBlastQuerySourceOM::GetBlastSequence(int i,
                                       EBlastEncoding encoding,
@@ -286,12 +296,11 @@ SetupQueries(const TSeqLocVector& queries,
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog,
              ENa_strand strand_opt,
-             const Uint1* genetic_code,
              TSearchMessages& messages)
 {
     CBlastQuerySourceOM query_src(queries, prog);
     SetupQueries_OMF(query_src, qinfo, seqblk, prog, 
-                     strand_opt, genetic_code, messages);
+                     strand_opt, messages);
 }
 
 void

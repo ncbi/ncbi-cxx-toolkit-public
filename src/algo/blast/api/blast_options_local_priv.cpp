@@ -78,14 +78,7 @@ CBlastOptionsLocal::~CBlastOptionsLocal()
 void 
 CBlastOptionsLocal::SetDbGeneticCode(int gc)
 {
-
     m_DbOpts->genetic_code = gc;
-
-    if (m_DbOpts->gen_code_string) 
-        sfree(m_DbOpts->gen_code_string);
-
-    m_DbOpts->gen_code_string = (Uint1*)
-        BlastMemDup(FindGeneticCode(gc).get(), GENCODE_STRLEN);
 }
 
 EBlastProgramType 
@@ -199,9 +192,6 @@ x_BlastDatabaseOptions_cmp(const BlastDatabaseOptions* a,
                            const BlastDatabaseOptions* b)
 {
     if (a->genetic_code != b->genetic_code) return false;
-    if (x_safe_memcmp((void*)a->gen_code_string, 
-                      (void*)b->gen_code_string, GENCODE_STRLEN) != 0)
-        return false;
     return true;
 }
 

@@ -208,6 +208,13 @@ typedef struct BLAST_SequenceBlk {
                                     lcase_mask */
    Int4 chunk;  /**< Used for indexing only: the chunk number within the 
                      subject sequence. */
+   Uint1 *gen_code_string;  /**< for nucleotide subject sequences (tblast[nx]),
+                              the genetic code used to create a translated
+                              protein sequence (NULL if not applicable). This
+                              field is NOT owned by this data structure, it's
+                              owned by the genetic code singleton. 
+                              @sa gencode_singleton.h
+                              */
 } BLAST_SequenceBlk;
 
 /** Information about a single pattern occurence in the query. */

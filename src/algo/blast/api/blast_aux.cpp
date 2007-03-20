@@ -534,6 +534,13 @@ TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code)
 {
     Uint1* retval = NULL;
+
+    // handle the sentinel value which indicates that the genetic code is not
+    // applicable
+    if (static_cast<Uint4>(genetic_code) == numeric_limits<Uint4>::max()) {
+        return retval;
+    }
+
     CSeq_data gc_ncbieaa(CGen_code_table::GetNcbieaa(genetic_code),
             CSeq_data::e_Ncbieaa);
     CSeq_data gc_ncbistdaa;

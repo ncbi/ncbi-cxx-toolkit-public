@@ -72,7 +72,6 @@ private:
 
     /// Options to use
     CRef<CBlastOptions> m_Opts;
-    //CConstRef<CBlastOptionsHandle> m_OptsHandle;
 
     /// Internal core data structures which are used in the preliminary and
     /// traceback stages of the search

@@ -219,7 +219,6 @@ CBl2Seq::SetupSearch()
         const CBlastOptions& kOptions = m_OptsHandle->GetOptions();
         EBlastProgramType prog = kOptions.GetProgramType();
         ENa_strand strand_opt = kOptions.GetStrandOption();
-        TAutoUint1ArrayPtr gc = FindGeneticCode(kOptions.GetQueryGeneticCode());
 
         if (CBlastNucleotideOptionsHandle *nucl_handle =
             dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle)) {
@@ -230,7 +229,7 @@ CBl2Seq::SetupSearch()
         SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
         m_Messages.resize(mi_clsQueryInfo->num_queries);
         SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
-                     prog, strand_opt, gc.get(), m_Messages);
+                     prog, strand_opt, m_Messages);
 
         Blast_Message* blmsg = NULL;
         double scale_factor = 1.0;

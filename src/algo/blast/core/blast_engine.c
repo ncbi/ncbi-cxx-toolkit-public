@@ -466,7 +466,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       last_context = 5;
       if (score_options->is_ooframe) {
          BLAST_GetAllTranslations(orig_sequence, eBlastEncodingNcbi2na,
-            orig_length, db_options->gen_code_string, &translation_buffer,
+            orig_length, subject->gen_code_string, &translation_buffer,
             &frame_offsets, &subject->oof_sequence);
          subject->oof_sequence_allocated = TRUE;
          frame_offsets_a = frame_offsets;
@@ -478,7 +478,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
               ContextOffsetsToOffsetArray(query_info_in);
       } else {
          BLAST_GetAllTranslations(orig_sequence, eBlastEncodingNcbi2na,
-            orig_length, db_options->gen_code_string, &translation_buffer,
+            orig_length, subject->gen_code_string, &translation_buffer,
             &frame_offsets, NULL);
          frame_offsets_a = frame_offsets;
       }
@@ -930,6 +930,16 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             seq_arg.seq->length); 
       }
 
+
+      /* If the subject is translated and the BlastSeqSrc implementation
+       * doesn't provide a genetic code string, use the default genetic
+       * code for all subjects (as in the C toolkit) */
+      if (Blast_SubjectIsTranslated(program_number) && 
+          seq_arg.seq->gen_code_string == NULL) {
+          seq_arg.seq->gen_code_string = 
+              GenCodeSingletonFind(BLAST_GENETIC_CODE);
+          ASSERT(seq_arg.seq->gen_code_string);
+      }
       status = 
          s_BlastSearchEngineCore(program_number, query, query_info,
             seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
@@ -949,7 +959,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                             program_number, hsp_list, query, 
                             seq_arg.seq, word_params, hit_params, 
                             query_info, sbp, score_params, seq_src, 
-                            (db_options ? db_options->gen_code_string : NULL));
+                            seq_arg.seq->gen_code_string);
                if (status) {
                   BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
                   return status;
