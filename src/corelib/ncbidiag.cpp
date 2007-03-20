@@ -3028,17 +3028,13 @@ extern bool SetLogFile(const string& file_name,
                 return false;
             }
             // output to file
-            CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
-                s_GetLogOpenMode());
-            if ( !str->is_open() ) {
-                ERR_POST(Info << "Failed to initialize log: "
-                    << file_name);
+            CFileHandleDiagHandler* fhandler =
+                new CFileHandleDiagHandler(file_name);
+            if ( !fhandler->Valid() ) {
+                ERR_POST(Info << "Failed to initialize log: " << file_name);
                 return false;
             }
-            else {
-                SetDiagStream(str, quick_flush, LogFileCleanup, str,
-                    file_name);
-            }
+            SetDiagHandler(fhandler);
         }
     }
     else {
