@@ -48,12 +48,10 @@ BEGIN_EVENT_TABLE(MultiTextDialog, wxDialog)
     EVT_TEXT        (-1,    MultiTextDialog::OnTextChange)
 END_EVENT_TABLE()
 
-MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
-        const TextLines& initialText,
-        wxWindow* parent, wxWindowID id, const wxString& title) :
-    wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize,
-        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
-    myOwner(owner)
+MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& it, wxWindow* parent, wxWindowID id, const wxString& title) :
+    wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+    myOwner(owner),
+    initialText(it)
 {
     // set size/position from registry
     int posX, posY, sizeW, sizeH;
@@ -70,13 +68,21 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
 
     textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
     bDone = new wxButton(this, -1, "Done");
+    bRevert = new wxButton(this, -1, "Revert");
 
     wxLayoutConstraints *c = new wxLayoutConstraints;
     c->bottom.SameAs    (this, wxBottom, 10);
-    c->centreX.SameAs   (this, wxCentreX, 10);
+    c->left.SameAs      (this, wxCentreX, 10);
     c->width.AsIs       ();
     c->height.AsIs      ();
     bDone->SetConstraints(c);
+
+    c = new wxLayoutConstraints;
+    c->bottom.SameAs    (this, wxBottom, 10);
+    c->right.SameAs     (this, wxCentreX, 10);
+    c->width.AsIs       ();
+    c->height.AsIs      ();
+    bRevert->SetConstraints(c);
 
     c = new wxLayoutConstraints;
     c->top.SameAs       (this, wxTop);
@@ -85,20 +91,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
     c->bottom.SameAs    (bDone, wxTop, 10);
     textCtrl->SetConstraints(c);
 
-    // set initial text - if single line, break up into smaller lines, otherwise leave as-is
-    if (initialText.size() == 1) {
-        unsigned int i, j;
-        for (i=j=0; i<initialText[0].size(); ++i, ++j) {
-            if (j > 60 && initialText[0][i] == ' ') {
-                *textCtrl << '\n';
-                j = 0;
-            } else
-                *textCtrl << initialText[0][i];
-        }
-    } else {
-        for (unsigned int i=0; i<initialText.size(); ++i)
-            *textCtrl << initialText[i].c_str() << '\n';
-    }
+    SetToInitialText();
 
     SetSizeHints(200, 150); // min size
     SetAutoLayout(true);
@@ -118,6 +111,26 @@ MultiTextDialog::~MultiTextDialog(void)
         !RegistrySetInteger(REG_CONFIG_SECTION, REG_MT_DIALOG_SIZE_H, sizeH))
     {
         ERRORMSG("Failed to set dialog position+size in registry");
+    }
+}
+
+void MultiTextDialog::SetToInitialText(void)
+{
+    textCtrl->Clear();
+
+    // set initial text - if single line, break up into smaller lines, otherwise leave as-is
+    if (initialText.size() == 1) {
+        unsigned int i, j;
+        for (i=j=0; i<initialText[0].size(); ++i, ++j) {
+            if (j > 60 && initialText[0][i] == ' ') {
+                *textCtrl << '\n';
+                j = 0;
+            } else
+                *textCtrl << initialText[0][i];
+        }
+    } else {
+        for (unsigned int i=0; i<initialText.size(); ++i)
+            *textCtrl << initialText[i].c_str() << '\n';
     }
 }
 
@@ -145,7 +158,10 @@ bool MultiTextDialog::ShowDialog(bool show)
 
 void MultiTextDialog::OnButton(wxCommandEvent& event)
 {
-    if (event.GetEventObject() == bDone) Destroy();
+    if (event.GetEventObject() == bDone)
+        Destroy();
+    else if (event.GetEventObject() == bRevert)
+        SetToInitialText();
 }
 
 void MultiTextDialog::OnTextChange(wxCommandEvent& event)

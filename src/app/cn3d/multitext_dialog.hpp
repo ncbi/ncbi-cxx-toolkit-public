@@ -85,7 +85,11 @@ private:
 
     // GUI elements
     wxTextCtrl *textCtrl;
-    wxButton *bDone;
+    wxButton *bDone, *bRevert;
+
+    // remember initial text (for revert)
+    const TextLines initialText;
+    void SetToInitialText(void);
 
     // event callbacks
     void OnButton(wxCommandEvent& event);

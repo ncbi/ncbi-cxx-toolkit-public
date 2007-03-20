@@ -691,7 +691,7 @@ const string& ASNDataManager::GetCDDDescription(void) const
 bool ASNDataManager::SetCDDDescription(const string& descr)
 {
     CCdd *cdd = GetInternalCDDData();
-    if (!cdd || descr.size() == 0) return false;
+    if (!cdd) return false;
 
     if (cdd->IsSetDescription() && cdd->GetDescription().Get().size() > 0) {
         // find first 'comment' in Cdd-descr-set, assume this is the "long description"
