@@ -18,6 +18,8 @@ program.
 
 Last modified:  $Date$
 
+**  03/21/2007:
+    Add blurb about using cddalignview to dump refined CDs as FASTA.
 **  12/12/2006:  
     v1.0.0 -> v1.1.0  Added -selection_order and -lno options in 'bma_refiner' to allow speedup of runs, particularly for larger models.
     Changes to 'fa2cd' command-line options.
@@ -90,6 +92,10 @@ Such CD files can be saved from Cn3D directly or acquired via the CDD service.  
 
 To support user-created alignments a utility, 'fa2cd' [formerly named 'fasta2cd'], to convert FASTA-formatted multiple alignments to a CD file is available.  See section (4) below for more details, or the web site http://www.ncbi.nlm.nih.gov/Structure/cdtree/fa2cd.shtml.  
 
+The .cn3 file created by the bma_refiner program can be loaded into Cn3D and
+saved as FASTA, if desired.  Also, a command-line utility program called 'cddalignview'
+exists in the NCBI C++ Toolkit (under src/app/cddalignview, relative to the
+toolkit's root directory) which will read a .cn3 file and generate FASTA output.
 
 NOTE:  A 'data' subdirectory contains some basic information used in
 constructing the family profiles.  This directory should be placed in the same
