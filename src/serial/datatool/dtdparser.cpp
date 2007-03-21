@@ -995,9 +995,6 @@ CDataType* DTDParser::TypesBlock(
 CDataType* DTDParser::CompositeNode(
     const DTDElement& node, DTDElement::EOccurrence occ)
 {
-    if (!node.IsEmbedded()) {
-        m_GeneratedTypes.insert(node.GetName() + node.GetNamespaceName());
-    }
     AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
 
     AddAttributes(container, node);
