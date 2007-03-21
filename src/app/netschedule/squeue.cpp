@@ -117,8 +117,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
 
 
-CNSTagMap::CNSTagMap(SLockedQueue& queue) :
-    m_BVPool(&queue.m_BVPool)
+CNSTagMap::CNSTagMap(SLockedQueue& queue)
 {
 }
 
@@ -127,7 +126,7 @@ CNSTagMap::~CNSTagMap()
 {
     NON_CONST_ITERATE(TNSTagMap, it, m_TagMap) {
         if (it->second) {
-            m_BVPool->Return(it->second);
+            delete it->second;
             it->second = 0;
         }
     }
@@ -135,8 +134,7 @@ CNSTagMap::~CNSTagMap()
 
 
 
-CNSTagDetails::CNSTagDetails(SLockedQueue& queue) :
-    m_BVPool(&queue.m_BVPool)
+CNSTagDetails::CNSTagDetails(SLockedQueue& queue)
 {
 }
 
@@ -144,10 +142,8 @@ CNSTagDetails::CNSTagDetails(SLockedQueue& queue) :
 CNSTagDetails::~CNSTagDetails()
 {
     NON_CONST_ITERATE(TNSTagDetails, it, m_TagDetails) {
-        if (it->second) {
-            m_BVPool->Return(it->second);
-            it->second = 0;
-        }
+        delete it->second;
+        it->second = 0;
     }
 }
 
@@ -332,11 +328,12 @@ void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 void SLockedQueue::AppendTags(CNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
 {
     ITERATE(TNSTagList, it, tags) {
-        TNSBitVector *bv = m_BVPool.Get();
+        auto_ptr<TNSBitVector> bv(new TNSBitVector(bm::BM_GAP));
         pair<TNSTagMap::iterator, bool> tag_map_it =
-            (*tag_map).insert(TNSTagMap::value_type((*it), bv));
-        if (!tag_map_it.second)
-            m_BVPool.Return(bv);
+            (*tag_map).insert(TNSTagMap::value_type((*it), bv.get()));
+        if (tag_map_it.second) {
+            bv.release();
+        }
         (tag_map_it.first)->second->set(job_id);
     }
 }
@@ -357,7 +354,7 @@ void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
         m_TagDb.val = it->first.second;
         it->second->optimize();
         m_TagDb.WriteVector(*(it->second), STagDB::eNoCompact);
-        m_BVPool.Return(it->second);
+        delete it->second;
         it->second = 0;
     }
     (*tag_map).clear();
@@ -399,32 +396,6 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
         // TODO: signal disaster somehow, e.g. throw CBDB_Exception
     }
 }
-
-void SLockedQueue::ReadTagDetailsFor(const TNSBitVector* ids,
-                                     const string&       key,
-                                     CNSTagDetails&      tag_details)
-{
-    // Guarded by m_TagLock through GetTagLock()
-    CBDB_FileCursor cur(m_TagDb);
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << key;
-    TBuffer buf;
-    EBDB_ErrCode err;
-    while ((err = cur.Fetch(&buf)) == eBDB_Ok) {
-        TNSBitVector *bv = m_BVPool.Get();
-        //bv->clear();
-        bm::operation_deserializer<TNSBitVector>::deserialize(
-            *bv, &(buf[0]), 0, bm::set_ASSIGN);
-        *bv &= *ids;
-        if (bv->any()) {
-            TNSTagValue tag_value(string(m_TagDb.val), bv);
-            (*tag_details).push_back(tag_value);
-        } else {
-            m_BVPool.Return(bv);
-        }
-    }
-}
-
 
 
 void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,

@@ -214,7 +214,6 @@ public:
     TNSTagMap& operator*() { return m_TagMap; }
 private:
     TNSTagMap m_TagMap;
-    TNSBVPool* m_BVPool;
 };
 
 
@@ -230,7 +229,6 @@ public:
     TNSTagDetails& operator*() { return m_TagDetails; }
 private:
     TNSTagDetails m_TagDetails;
-    TNSBVPool* m_BVPool;
 };
 
 
@@ -347,8 +345,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     /// its lock
     CFastMutex                   m_JobsToDeleteLock;
 
-    TNSBVPool                    m_BVPool;
-
 //public:
     // Constructor/destructor
     SLockedQueue(const string& queue_name,
@@ -377,8 +373,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     bool ReadTag(const string& key, const string& val,
                  TBuffer* buf);
     void ReadTags(const string& key, TNSBitVector* bv);
-    void ReadTagDetailsFor(const TNSBitVector* ids, const string& key,
-        CNSTagDetails& tag_details);
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
     CFastMutex& GetTagLock() { return m_TagLock; }
 

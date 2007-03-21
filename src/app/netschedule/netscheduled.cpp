@@ -73,7 +73,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.17  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.18  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -2215,7 +2215,6 @@ int CNetScheduleDApp::Run(void)
         }
 
         // Storage initialization
-
         
         CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
         const string& db_path = 
@@ -2273,15 +2272,6 @@ int CNetScheduleDApp::Run(void)
         if (udp_port > 0) {
             qdb->SetUdpPort((unsigned short) udp_port);
         }
-
-
-        // mount default queue - it is needed for authentication of admin operations
-        // No longer needed for code which does not access m_Queue and m_Monitor
-        // string qname = "noname";
-        // LOG_POST(Info << "Mounting queue: " << qname);
-        // SQueueParameters qparams;
-        // qdb->MountQueue(qname, qparams);
-
 
         // Scan and mount queues
         unsigned min_run_timeout = 3600;

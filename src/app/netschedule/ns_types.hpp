@@ -41,12 +41,14 @@
 /// @internal
 
 #include <util/bitset/ncbi_bitset.hpp>
-#include <util/bitset/bitset_pool.hpp>
+#include <util/bitset/ncbi_bitset_alloc.hpp>
 
 BEGIN_NCBI_SCOPE
 
-typedef bm::bvector<> TNSBitVector;
-typedef CBVResourcePool<TNSBitVector, CFastMutex> TNSBVPool;
+typedef CBV_PoolBlockAlloc<bm::block_allocator, CFastMutex> TBlockAlloc;
+typedef bm::mem_alloc<TBlockAlloc, bm::ptr_allocator>       TMemAlloc;
+typedef bm::bvector<TMemAlloc>                              TNSBitVector;
+
 
 END_NCBI_SCOPE
 
