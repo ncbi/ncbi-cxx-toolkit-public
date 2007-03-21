@@ -114,8 +114,8 @@ typedef   int   ssize_t;
 
 #endif
 
-/* Windows NT4/2000 and above */
-#define _WIN32_WINNT 0x0400
+/* Windows 2000 and above */
+#define _WIN32_WINNT 0x0500
 
 /*
  *  Site localization
