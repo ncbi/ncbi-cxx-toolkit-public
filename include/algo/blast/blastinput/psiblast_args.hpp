@@ -49,24 +49,23 @@ public:
     /// Constructor
     CPsiBlastAppArgs();
 
-    //CRef<blast::CPSIBlastOptionsHandle> SetOptions(const CArgs& args);
-
+    /// Get the number of iterations to perform
     size_t GetNumberOfIterations() const;
+    /// Get the PSSM
     CRef<objects::CPssmWithParameters> GetPssm() const;
-
+    /// Get the query batch size
     virtual int GetQueryBatchSize() const;
 
 protected:
+    /// Create the options handle based on the command line arguments
+    /// @param locality whether the search will be executed locally or remotely
+    /// [in]
+    /// @param args command line arguments [in]
     virtual CRef<CBlastOptionsHandle>
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args);
-    //TBlastCmdLineArgs m_Args;
-    //CRef<CQueryOptionsArgs> m_QueryOptsArgs;
-    //CRef<CBlastDatabaseArgs> m_BlastDbArgs;
-    //CRef<CFormattingArgs> m_FormattingArgs;
-    //CRef<CMTArgs> m_MTArgs;
-    //CRef<CRemoteArgs> m_RemoteArgs;
-    //CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
+
+    /// PSI-BLAST specific argument class
     CRef<CPsiBlastArgs> m_PsiBlastArgs;
 };
 
