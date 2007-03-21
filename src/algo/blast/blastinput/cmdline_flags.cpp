@@ -31,11 +31,12 @@
  *  Constant definitions for command line arguments for BLAST programs
  */
 
+#include <ncbi_pch.hpp>
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
 
-#include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/core/blast_options.h>
 
@@ -134,7 +135,7 @@ const string kArgPSIOutputChkPntFile("out_pssm");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
 
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
+
+#endif /* SKIP_DOXYGEN_PROCESSING */
