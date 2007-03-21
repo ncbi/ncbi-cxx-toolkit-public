@@ -2369,7 +2369,5 @@ int CNetScheduleDApp::Run(void)
 int main(int argc, const char* argv[])
 {
      GetDiagContext().SetOldPostFormat(false);
-     return 
-        CNetScheduleDApp().AppMain(argc, argv, 0, 
-                                   eDS_Default, "netscheduled.ini");
+     return CNetScheduleDApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }
