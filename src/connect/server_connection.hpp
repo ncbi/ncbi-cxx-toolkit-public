@@ -50,13 +50,14 @@ class IServer_ConnectionBase
 {
 public:
     virtual ~IServer_ConnectionBase() { }
-    virtual EIO_Event GetEventsToPollFor(void) const
+    virtual EIO_Event GetEventsToPollFor(CTime** /*alarm_time*/) const
         { return eIO_Read; }
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout) = 0;
     virtual bool IsOpen(void) { return true; }
     virtual void OnTimeout(void) { }
+    virtual void OnTimer(void) { }
     virtual void OnOverflow(void) { }
     virtual void Activate(void) { }
     virtual void Passivate(void) { }
@@ -69,8 +70,8 @@ public:
     CServer_Connection(IServer_ConnectionHandler* handler)
         : m_Handler(handler), m_Open(true)
         { m_Handler->SetSocket(this); }
-    virtual EIO_Event GetEventsToPollFor() const
-        { return m_Handler->GetEventsToPollFor(); }
+    virtual EIO_Event GetEventsToPollFor(CTime** alarm_time) const
+        { return m_Handler->GetEventsToPollFor(alarm_time); }
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout);

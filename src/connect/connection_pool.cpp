@@ -180,7 +180,10 @@ void CServer_ConnectionPool::Clean(void)
 }
 
 
-void CServer_ConnectionPool::GetPollVec(vector<CSocketAPI::SPoll>& polls) const
+bool CServer_ConnectionPool::GetPollAndTimerVec(
+    vector<CSocketAPI::SPoll>& polls,
+    vector<IServer_ConnectionBase*>& timer_requests,
+    STimeout* timer_timeout) const
 {
     polls.clear();
     CMutexGuard guard(m_Mutex);
@@ -189,21 +192,47 @@ void CServer_ConnectionPool::GetPollVec(vector<CSocketAPI::SPoll>& polls) const
     polls.reserve(data.size()+1);
     polls.push_back(CSocketAPI::SPoll(
         dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
+    CTime* alarm_time = NULL;
+    CTime* min_alarm_time = NULL;
     ITERATE (TData, it, data) {
-        CPollable* pollable = dynamic_cast<CPollable*>(it->first);
-        _ASSERT(pollable);
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
         // poll vector until it is done with previous packet. See comments in
-        // server.cpp CServer_Connection::CreateRequest and CIORequest::Process
-        if (it->second.type != eActiveSocket) {
-            if (!it->first->IsOpen() ) {
-                continue;
+        // server.cpp: CServer_Connection::CreateRequest() and
+        // CServerConnectionRequest::Process()
+        if (it->second.type != eActiveSocket && it->first->IsOpen()) {
+            CPollable* pollable = dynamic_cast<CPollable*>(it->first);
+            _ASSERT(pollable);
+            polls.push_back(CSocketAPI::SPoll(pollable,
+                it->first->GetEventsToPollFor(&alarm_time)));
+            if (alarm_time != NULL) {
+                if (min_alarm_time == NULL) {
+                    min_alarm_time = alarm_time;
+                    timer_requests.clear();
+                    timer_requests.push_back(it->first);
+                } else if (*min_alarm_time >= *alarm_time) {
+                    if (*min_alarm_time > *alarm_time) {
+                        min_alarm_time = alarm_time;
+                        timer_requests.clear();
+                    }
+                    timer_requests.push_back(it->first);
+                }
+                alarm_time = NULL;
             }
-            polls.push_back
-                (CSocketAPI::SPoll(pollable, it->first->GetEventsToPollFor()));
         }
     }
+    if (min_alarm_time != NULL) {
+        CTimeSpan span(*min_alarm_time - CTime(CTime::eCurrent, CTime::eGmt));
+        if (span.GetCompleteSeconds() < 0 ||
+            span.GetNanoSecondsAfterSecond() < 0) {
+            timer_timeout->usec = timer_timeout->sec = 0;
+        } else {
+            timer_timeout->sec = (unsigned) span.GetCompleteSeconds();
+            timer_timeout->usec = span.GetNanoSecondsAfterSecond() / 1000;
+        }
+        return true;
+    }
+    return false;
 }
 
 

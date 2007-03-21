@@ -92,7 +92,9 @@ public:
     /// Erase all connections
     void Erase(void);
 
-    void GetPollVec(vector<CSocketAPI::SPoll>& polls) const;
+    bool GetPollAndTimerVec(vector<CSocketAPI::SPoll>& polls,
+        vector<IServer_ConnectionBase*>& timer_requests,
+        STimeout* timer_timeout) const;
 
     void StopListening(void);
     void ResumeListening(void);

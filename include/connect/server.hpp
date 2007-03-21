@@ -50,8 +50,10 @@ BEGIN_NCBI_SCOPE
 
 
 class  IServer_ConnectionFactory;
+class  IServer_ConnectionBase;
 struct SServer_Parameters;
 class  CServer_ConnectionPool;
+class  CStdPoolOfThreads;
 
 
 
@@ -99,6 +101,10 @@ protected:
     virtual bool ShutdownRequested(void) { return false; }
 
 private:
+    void CreateRequest(CStdPoolOfThreads& threadPool,
+        IServer_ConnectionBase* conn_base,
+        EIO_Event event, const STimeout* timeout);
+
     SServer_Parameters*      m_Parameters;
     CServer_ConnectionPool*  m_ConnectionPool;
 };
@@ -121,8 +127,12 @@ public:
     /// at the same time as On*, so if you implement them
     /// you should not guard the variables which they can use with
     /// mutexes.
-    /// Returns the set of events for which Poll should check.
-    virtual EIO_Event GetEventsToPollFor(void) const
+    /// @param alarm_time
+    ///   Set this parameter to a pointer to a CTime object to recieve
+    ///   an OnTimer event at the moment in time specified by this object.
+    /// @return
+    ///   Returns the set of events for which Poll should check.
+    virtual EIO_Event GetEventsToPollFor(CTime** /*alarm_time*/) const
         { return eIO_Read; }
     /// Returns the timeout for this connection
     virtual const STimeout* GetTimeout(void)
@@ -149,6 +159,10 @@ public:
     /// Runs when a client has been idle for too long, prior to
     /// closing the connection [synchronous].
     virtual void OnTimeout(void) { }
+
+    /// This method is called at the moment in time specified earlier by the
+    /// alarm_time parameter of the GetEventsToPollFor method [synchronous].
+    virtual void OnTimer(void) { }
 
     /// Runs when there are insufficient resources to queue a
     /// connection, prior to closing it.
