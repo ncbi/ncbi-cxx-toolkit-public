@@ -570,7 +570,7 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
     TSeqPos startOffset = from - GetStarts()[startSeg * GetDim() + row];
     TSeqPos stopOffset  = GetStarts()[stopSeg * GetDim() + row] +
         GetLens()[stopSeg] - 1 - to;
-    if (GetStrands()[row] == eNa_strand_minus) {
+    if (IsSetStrands() && GetStrands()[row] == eNa_strand_minus) {
         swap(startOffset, stopOffset);
         swap(startSeg, stopSeg); // make sure startSeg is first
     }
@@ -580,11 +580,11 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
         for (CDense_seg::TDim dim = 0;  dim < GetDim();  ++dim) {
             TSignedSeqPos start = GetStarts()[seg * GetDim() + dim];
             if (start != -1) {
-                if (seg == startSeg  &&
-                    GetStrands()[seg * GetDim() + dim] == eNa_strand_plus) {
+                if (seg == startSeg  && (!IsSetStrands() ||
+                    GetStrands()[seg * GetDim() + dim] == eNa_strand_plus)) {
                     start += startOffset;
                 }
-                if (seg == stopSeg  &&
+                if (seg == stopSeg  && IsSetStrands() &&
                     GetStrands()[seg * GetDim() + dim] == eNa_strand_minus) {
                     start += stopOffset;
                 }
