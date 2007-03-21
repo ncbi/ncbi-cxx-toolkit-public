@@ -142,7 +142,7 @@ static void StringFrom4na(const vector< char >& vec, string *str, bool isDNA)
         str->resize(vec.size() * 2 - 1);
 
     // first, extract 4-bit values
-    int i;
+    unsigned int i;
     for (i=0; i<vec.size(); ++i) {
         str->at(2*i) = FIRSTOF2(vec[i]);
         if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
@@ -171,7 +171,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
     str->resize(vec.size() * 4);
 
     // first, extract 4-bit values
-    int i;
+    unsigned int i;
     for (i=0; i<vec.size(); ++i) {
         str->at(4*i) = FIRSTOF4(vec[i]);
         str->at(4*i + 1) = SECONDOF4(vec[i]);
@@ -195,36 +195,13 @@ static void StringFromStdaa(const vector < char >& vec, std::string *str)
     static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
     str->resize(vec.size());
-    for (int i=0; i<vec.size(); ++i)
+    for (unsigned int i=0; i<vec.size(); ++i)
         str->at(i) = stdaaMap[vec[i]];
 }
 
 Sequence::Sequence(const CBioseq& bioseq) :
-    gi(NOT_SET), pdbChain(' '), mmdbLink(NOT_SET), status(CAV_ERROR_SEQUENCES),
-    bioseqASN(&bioseq)
+    status(CAV_ERROR_SEQUENCES), bioseqASN(&bioseq), seqIDs(bioseq.GetId()), mmdbLink(NOT_SET)
 {
-    // get Seq-id info
-    CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
-    for (s=bioseq.GetId().begin(); s!=se; ++s) {
-        if (s->GetObject().IsGi()) {
-            gi = s->GetObject().GetGi();
-        } else if (s->GetObject().IsPdb()) {
-            pdbID = s->GetObject().GetPdb().GetMol().Get();
-            if (s->GetObject().GetPdb().IsSetChain())
-                pdbChain = s->GetObject().GetPdb().GetChain();
-        } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
-            pdbID = s->GetObject().GetLocal().GetStr();
-        } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
-            accession = s->GetObject().GetGenbank().GetAccession();
-        } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
-            accession = s->GetObject().GetSwissprot().GetAccession();
-        }
-    }
-    if (gi == NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
-        ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
-        return;
-    }
-
     // try to get description from title or compound
     if (bioseq.IsSetDescr()) {
         CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
@@ -258,8 +235,7 @@ Sequence::Sequence(const CBioseq& bioseq) :
         }
     }
     if (mmdbLink != NOT_SET)
-        ERR_POST(Info << "sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
-            "', is from MMDB id " << mmdbLink);
+        ERR_POST(Info << "sequence " << GetTitle() << " is from MMDB id " << mmdbLink);
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
@@ -290,7 +266,7 @@ Sequence::Sequence(const CBioseq& bioseq) :
         }
 
         else {
-            ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
+            ERR_POST(Critical << "Sequence::Sequence() - sequence " << GetTitle()
                 << ": confused by sequence string format");
             return;
         }
@@ -299,7 +275,7 @@ Sequence::Sequence(const CBioseq& bioseq) :
             return;
         }
     } else {
-        ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
+        ERR_POST(Critical << "Sequence::Sequence() - sequence " << GetTitle()
                 << ": confused by sequence representation");
         return;
     }
@@ -307,35 +283,71 @@ Sequence::Sequence(const CBioseq& bioseq) :
     status = CAV_SUCCESS;
 }
 
-CSeq_id * Sequence::CreateSeqId(void) const
-{
-    CSeq_id *sid = new CSeq_id();
-    if (pdbID.size() > 0) {
-        sid->SetPdb().SetMol().Set(pdbID);
-        if (pdbChain != ' ') sid->SetPdb().SetChain(pdbChain);
-    } else { // use gi
-        sid->SetGi(gi);
-    }
-    return sid;
-}
-
 string Sequence::GetTitle(void) const
 {
-    CNcbiOstrstream oss;
-    if (pdbID.size() > 0) {
-        oss << pdbID;
-        if (pdbChain != ' ') {
-            oss <<  '_' << (char) pdbChain;
+    if (seqIDs.size() == 0)
+        return kEmptyStr;
+
+    SeqIdList::const_iterator s, se = seqIDs.end();
+    for (s=seqIDs.begin(); s!=se; ++s) {
+        if ((*s)->IsPdb()) {
+            string title = (*s)->GetPdb().GetMol();
+            if ((char) (*s)->GetPdb().GetChain() != ' ')
+                title += string("_") + (char) (*s)->GetPdb().GetChain();
+            return title;
         }
-    } else if (gi != NOT_SET)
-        oss << "gi " << gi;
-    else if (accession.size() > 0)
-        oss << "acc " << accession;
-    else
-        oss << '?';
-    oss << '\0';
-	auto_ptr<char> chars(oss.str()); // deletes memory upon function return
-    return string(oss.str());
+    }
+
+    for (s=seqIDs.begin(); s!=se; ++s)
+        if ((*s)->IsGi())
+            return (string("gi ") + NStr::IntToString((*s)->GetGi()));
+
+    return seqIDs.front()->GetSeqIdString();
+}
+
+string Sequence::GetLabel(void) const
+{
+    if (seqIDs.size() == 0)
+        return kEmptyStr;
+
+    string label;
+    SeqIdList::const_iterator s, se = seqIDs.end();
+    for (s=seqIDs.begin(); s!=se; ++s) {
+        if ((*s)->IsPdb()) {
+            label = (*s)->GetPdb().GetMol();
+            if ((char) (*s)->GetPdb().GetChain() != ' ')
+                label += (char) (*s)->GetPdb().GetChain();
+            return label;
+        }
+    }
+
+    for (s=seqIDs.begin(); s!=se; ++s) {
+        if ((*s)->IsGi()) {
+            (*s)->GetLabel(&label, objects::CSeq_id::eContent, 0);
+            return label;
+        }
+    }
+
+    seqIDs.front()->GetLabel(&label, objects::CSeq_id::eContent, 0);
+    return label;
+}
+
+bool Sequence::Matches(const CSeq_id& seqID) const
+{
+    SeqIdList::const_iterator s, se = seqIDs.end();
+    for (s=seqIDs.begin(); s!=se; ++s)
+        if ((*s)->Match(seqID))
+            return true;
+    return false;
+}
+
+bool Sequence::Matches(const SeqIdList& others) const
+{
+    SeqIdList::const_iterator o, oe = others.end();
+    for (o=others.begin(); o!=oe; ++o)
+        if (Matches(**o))
+            return true;
+    return false;
 }
 
 END_NCBI_SCOPE

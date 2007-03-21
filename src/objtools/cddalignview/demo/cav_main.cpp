@@ -102,7 +102,7 @@ int CAVApp::Run(void)
     while (!(asnIfstream->eof() || asnIfstream->fail() || asnIfstream->bad())) {
         asnIfstream->read(buf, bufSize);
         n = asnIfstream->gcount();
-        if (nBytes+n > asnString.size())    // ... then allocate new memory in 256k chunks
+        if (nBytes+n > (int)asnString.size())    // ... then allocate new memory in 256k chunks
             asnString.resize(asnString.size() + bufSize*4);
         for (i=0; i<n; i++) asnString[nBytes + i] = buf[i];
         nBytes += n;

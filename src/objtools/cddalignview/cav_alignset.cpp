@@ -55,52 +55,6 @@ USING_SCOPE(objects);
 typedef list < const CSeq_align * > SeqAlignList;
 typedef vector < CRef < CSeq_id > > SeqIdList;
 
-static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
-{
-    if (sid.IsGi()) {
-        if (sid.GetGi() == seq->gi)
-            return true;
-        return false;
-    }
-    if (sid.IsPdb()) {
-        if (sid.GetPdb().GetMol().Get() == seq->pdbID) {
-            if (sid.GetPdb().IsSetChain()) {
-                if (sid.GetPdb().GetChain() != seq->pdbChain) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-    if (sid.IsLocal() && sid.GetLocal().IsStr()) {
-        if (sid.GetLocal().GetStr() == seq->pdbID)
-            return true;
-        return false;
-    }
-    if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession()) {
-        if (sid.GetGenbank().GetAccession() == seq->accession)
-            return true;
-        return false;
-    }
-    if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession()) {
-        return (sid.GetSwissprot().GetAccession() == seq->accession);
-    }
-    if (sid.IsOther() && sid.GetOther().IsSetAccession())
-        return (sid.GetOther().GetAccession() == seq->accession);
-    if (sid.IsEmbl() && sid.GetEmbl().IsSetAccession())
-        return (sid.GetEmbl().GetAccession() == seq->accession);
-    if (sid.IsDdbj() && sid.GetDdbj().IsSetAccession())
-        return (sid.GetDdbj().GetAccession() == seq->accession);
-    if (sid.IsPir() && sid.GetPir().IsSetAccession())
-        return (sid.GetPir().GetAccession() == seq->accession);
-    if (sid.IsPir() && sid.GetPir().IsSetName())
-        return (sid.GetPir().GetName() == seq->accession);
-
-    ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
-    return false;
-}
-
 AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnnots) :
     master(NULL), status(CAV_ERROR_ALIGNMENTS)
 {
@@ -149,13 +103,13 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
                 SequenceSet::SequenceList::const_iterator
                     s, se = sequenceSet->sequences.end();
                 for (s=sequenceSet->sequences.begin(); s!=se; ++s) {
-                    if (IsAMatch(*s, sids.front().GetObject())) {
+                    if ((*s)->Matches(sids.front().GetObject())) {
                         master = *s;
                         break;
                     }
                 }
             }
-            if (!IsAMatch(master, sids.front().GetObject())) {
+            if (!master->Matches(sids.front().GetObject())) {
                 ERR_POST(Error << "AlignmentSet::AlignmentSet() - master must be first sequence of every alignment");
                 return;
             }
@@ -191,21 +145,11 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
 
 AlignmentSet::~AlignmentSet(void)
 {
-    for (int i=0; i<alignments.size(); ++i) delete alignments[i];
+    for (unsigned int i=0; i<alignments.size(); ++i) delete alignments[i];
 }
 
 
 ///// MasterSlaveAlignment methods /////
-
-static bool SameSequence(const Sequence *s, const CBioseq& bioseq)
-{
-    CBioseq::TId::const_iterator i, ie = bioseq.GetId().end();
-    for (i=bioseq.GetId().begin(); i!=ie; ++i) {
-        if (IsAMatch(s, **i))
-            return true;
-    }
-    return false;
-}
 
 MasterSlaveAlignment::MasterSlaveAlignment(
     const SequenceSet *sequenceSet,
@@ -228,18 +172,18 @@ MasterSlaveAlignment::MasterSlaveAlignment(
     bool masterFirst = true;
     for (; s!=se; ++s) {
 
-        if (SameSequence(*s, master->bioseqASN.GetObject())) continue;
+        if ((*s)->Matches(master->bioseqASN->GetId())) continue;
 
-        if (IsAMatch(*s, sids.back().GetObject())) {
+        if ((*s)->Matches(sids.back().GetObject())) {
             break;
-        } else if (IsAMatch(*s, sids.front().GetObject())) {
+        } else if ((*s)->Matches(sids.front().GetObject())) {
             masterFirst = false;
             break;
         }
     }
     if (s == se) {
         // special case of master seq. aligned to itself
-        if (IsAMatch(master, sids.back().GetObject()) && IsAMatch(master, sids.front().GetObject())) {
+        if (master->Matches(sids.back().GetObject()) && master->Matches(sids.front().GetObject())) {
             slave = master;
         } else {
             ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
@@ -250,7 +194,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(
         slave = *s;
     }
 
-    int i, masterRes, slaveRes;
+    unsigned int i;
+    int masterRes, slaveRes;
 
     // unpack dendiag alignment
     if (seqAlign.GetSegs().IsDendiag()) {
@@ -269,11 +214,11 @@ MasterSlaveAlignment::MasterSlaveAlignment(
 
             // make sure identities of master and slave sequences match in each block
             if ((masterFirst &&
-                    (!IsAMatch(master, block.GetIds().front().GetObject()) ||
-                     !IsAMatch(slave, block.GetIds().back().GetObject()))) ||
+                    (!master->Matches(block.GetIds().front().GetObject()) ||
+                     !slave->Matches(block.GetIds().back().GetObject()))) ||
                 (!masterFirst &&
-                    (!IsAMatch(master, block.GetIds().back().GetObject()) ||
-                     !IsAMatch(slave, block.GetIds().front().GetObject())))) {
+                    (!master->Matches(block.GetIds().back().GetObject()) ||
+                     !slave->Matches(block.GetIds().front().GetObject())))) {
                 ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                     "mismatched Seq-id in dendiag block");
                 return;
@@ -288,7 +233,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
                     masterRes = block.GetStarts().back() + i;
                     slaveRes = block.GetStarts().front() + i;
                 }
-                if (masterRes >= master->Length() || slaveRes >= slave->Length()) {
+                if (masterRes >= (int) master->Length() || slaveRes >= (int) slave->Length()) {
                     ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                         "seqloc in dendiag block > length of sequence!");
                     return;
@@ -314,11 +259,11 @@ MasterSlaveAlignment::MasterSlaveAlignment(
 
         // make sure identities of master and slave sequences match in each block
         if ((masterFirst &&
-                (!IsAMatch(master, block.GetIds().front().GetObject()) ||
-                 !IsAMatch(slave, block.GetIds().back().GetObject()))) ||
+                (!master->Matches(block.GetIds().front().GetObject()) ||
+                 !slave->Matches(block.GetIds().back().GetObject()))) ||
             (!masterFirst &&
-                (!IsAMatch(master, block.GetIds().back().GetObject()) ||
-                 !IsAMatch(slave, block.GetIds().front().GetObject())))) {
+                (!master->Matches(block.GetIds().back().GetObject()) ||
+                 !slave->Matches(block.GetIds().front().GetObject())))) {
             ERR_POST(Error << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                 "mismatched Seq-id in denseg block");
             return;

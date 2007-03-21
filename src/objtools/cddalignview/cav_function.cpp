@@ -158,11 +158,11 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
     char masterChar, slaveChar;
     const MasterSlaveAlignment *alignment;
 
-    for (int i=0; i<alignmentSet->alignments.size(); ++i) {
+    for (unsigned int i=0; i<alignmentSet->alignments.size(); ++i) {
         masterLoc = slaveLoc = -1;
         alignment = alignmentSet->alignments[i];
 
-        for (alnLoc=0; alnLoc<display->GetWidth(); ++alnLoc) {
+        for (alnLoc=0; alnLoc<(int)display->GetWidth(); ++alnLoc) {
 
             // get and check characters
             masterChar = display->GetCharAt(alnLoc, 0);
@@ -180,7 +180,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
             if (!IsGap(masterChar)) {
                 ++masterLoc;
                 if (i == 0) {   // only need to check master once
-                    if (masterLoc >= alignment->master->sequenceString.size()) {
+                    if (masterLoc >= (int) alignment->master->sequenceString.size()) {
                         ERR_POST(Error << "master sequence too long at alnLoc " << (alnLoc+1)
                             << " row " << (i+2) << " masterLoc " << (masterLoc+1));
                         return false;
@@ -194,7 +194,7 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
             }
             if (!IsGap(slaveChar)) {
                 ++slaveLoc;
-                if (slaveLoc >= alignment->slave->sequenceString.size()) {
+                if (slaveLoc >= (int) alignment->slave->sequenceString.size()) {
                     ERR_POST(Error << "slave sequence too long at alnLoc " << (alnLoc+1)
                         << " row " << (i+2) << " slaveLoc " << (slaveLoc+1));
                     return false;

@@ -60,7 +60,7 @@ public:
     TextRow(const string& str) : chars(str) { }         // initialize to string
     TextRow(int size) : chars(string(size, '-')) { }   // initialize to blank (all '-')
 
-    int Length(void) const { return chars.size(); }
+    unsigned int Length(void) const { return chars.size(); }
     void InsertGaps(int nGaps, int beforePos);
     void DeleteGaps(int nGaps, int startPos);
     char GetCharAt(int alnLoc) const { return chars[alnLoc]; }
@@ -79,7 +79,7 @@ public:
 
     const Sequence *sequence;
 
-    int Length(void) const { return seqLocs.size(); }
+    unsigned int Length(void) const { return seqLocs.size(); }
     void InsertGaps(int nGaps, int beforePos);
     int GetSeqLocAt(int alnLoc) const { return seqLocs[alnLoc]; }
     void SetSeqLocAt(int alnLoc, int seqLoc) { seqLocs[alnLoc] = seqLoc; }
@@ -112,8 +112,8 @@ public:
     ~AlignmentDisplay();
 
     // query functions
-    int GetWidth(void) const { return textRows[0]->Length(); }
-    int GetNRows(void) const { return textRows.size(); }
+    unsigned int GetWidth(void) const { return textRows[0]->Length(); }
+    unsigned int GetNRows(void) const { return textRows.size(); }
     char GetCharAt(int alnLoc, int row) const;
     int GetFirstAlignedLoc(void) const { return firstAlnLoc; }
     int GetLastAlignedLoc(void) const { return lastAlnLoc; }

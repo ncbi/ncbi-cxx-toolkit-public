@@ -87,15 +87,19 @@ private:
 public:
     Sequence(const objects::CBioseq& bioseq);
 
-    static const int NOT_SET;
-    int gi, pdbChain, mmdbLink;
-    string pdbID, sequenceString, accession, description;
     CConstRef < objects::CBioseq > bioseqASN;
+    typedef list < CRef < objects::CSeq_id > > SeqIdList;
+    const SeqIdList seqIDs;
+    string sequenceString, description;
 
-    int Length(void) const { return sequenceString.size(); }
+    static const int NOT_SET;
+    int mmdbLink;
 
-	objects::CSeq_id * CreateSeqId(void) const;
-    string GetTitle(void) const;
+    unsigned int Length(void) const { return sequenceString.size(); }
+    bool Matches(const objects::CSeq_id& seqID) const;
+    bool Matches(const SeqIdList& others) const;
+    string GetTitle(void) const;    // includes some indicator if id type
+    string GetLabel(void) const;    // just the content
 
     int Status(void) const { return status; }
 };
