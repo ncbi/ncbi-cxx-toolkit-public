@@ -136,7 +136,7 @@ protected:
   TCompId2Spans m_CompId2Spans;
 
   string prev_object;
-  bool prev_line_is_gap;
+  int prev_line_gap_type;
 
   // Used for the first component in a scaffold;
   // we do not know whether the scaffold is a singleton,

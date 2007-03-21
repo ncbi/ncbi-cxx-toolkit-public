@@ -49,7 +49,7 @@ CAgpContextValidator::CAgpContextValidator()
   componentsInLastScaffold = 0;
   componentsInLastObject = 0;
   prev_orientation_unknown=false;
-  prev_line_is_gap=false;
+  prev_line_gap_type=-1;
 
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
@@ -71,10 +71,15 @@ void CAgpContextValidator::EndOfObject(bool afterLastLine)
   if(componentsInLastScaffold==1) m_SingleCompScaffolds++;
   if(componentsInLastObject  ==1) m_SingleCompObjects++;
 
-  if( prev_line_is_gap ) {
+  if( prev_line_gap_type>=0 ) {
     // The previous line was a gap at the end of a scaffold & object
-    agpErr.Msg( CAgpErr::W_GapObjEnd, string(" ")+prev_object,
-      AT_PrevLine);
+    CGapVal gap;
+    gap.type=prev_line_gap_type;
+
+    if(! gap.validAtObjectEnd() ) {
+      agpErr.Msg( CAgpErr::W_GapObjEnd, string(" ")+prev_object,
+        AT_PrevLine);
+    }
     if(componentsInLastScaffold==0) m_ScaffoldCount--;
   }
 
@@ -142,14 +147,15 @@ void CAgpContextValidator::ValidateLine(
   //// Gap- or component-specific code.
   if( cl.is_gap ) {
     x_OnGapLine(dl, cl.gap);
+    prev_line_gap_type = cl.gap.type;
   }
   else {
     x_OnCompLine(dl, cl.compSpan);
+    prev_line_gap_type = -1;
   }
 
   prev_end = cl.obj_end;
   prev_part_num = cl.part_num;
-  prev_line_is_gap = cl.is_gap;
 }
 
 void CAgpContextValidator::x_OnGapLine(
@@ -165,12 +171,12 @@ void CAgpContextValidator::x_OnGapLine(
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
-    if(! gap.validAtObjBegin() ) {
+    if(! gap.validAtObjectEnd() ) {
       agpErr.Msg(CAgpErr::W_GapObjBegin,
         NcbiEmptyString, AT_ThisLine|AT_SkipAfterBad);
     }
   }
-  else if( prev_line_is_gap ) {
+  else if( prev_line_gap_type>=0 ) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
       AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
   }

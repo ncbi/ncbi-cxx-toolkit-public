@@ -92,7 +92,7 @@ bool CGapVal::endsScaffold() const
   return linkage==LINKAGE_no;
 }
 
-bool CGapVal::validAtObjBegin() const
+bool CGapVal::validAtObjectEnd() const
 {
   return type==GAP_centromere || type==GAP_telomere || type==GAP_short_arm;
 }

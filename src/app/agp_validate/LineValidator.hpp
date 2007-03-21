@@ -138,7 +138,7 @@ public:
   bool init(const SDataLine& dl, bool log_errors = true);
   int getLen() const { return len; }
   bool endsScaffold() const;
-  bool validAtObjBegin() const;
+  bool validAtObjectEnd() const;
 };
 
 int x_CheckIntField(const string& field,
