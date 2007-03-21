@@ -49,6 +49,7 @@ CAgpContextValidator::CAgpContextValidator()
   componentsInLastScaffold = 0;
   componentsInLastObject = 0;
   prev_orientation_unknown=false;
+  prev_line_is_gap=false;
 
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
@@ -63,7 +64,7 @@ CAgpContextValidator::CAgpContextValidator()
 
 void CAgpContextValidator::EndOfObject(bool afterLastLine)
 {
-  if(componentsInLastObject==0) agpErr.Msg(
+  if(m_ObjCount && componentsInLastObject==0) agpErr.Msg(
     CAgpErr::W_ObjNoComp, string(" ") + prev_object,
     afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
   );
@@ -164,8 +165,10 @@ void CAgpContextValidator::x_OnGapLine(
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
-    agpErr.Msg(CAgpErr::W_GapObjBegin,
-      NcbiEmptyString, AT_ThisLine|AT_SkipAfterBad);
+    if(! gap.validAtObjBegin() ) {
+      agpErr.Msg(CAgpErr::W_GapObjBegin,
+        NcbiEmptyString, AT_ThisLine|AT_SkipAfterBad);
+    }
   }
   else if( prev_line_is_gap ) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
@@ -273,18 +276,21 @@ void CAgpContextValidator::PrintTotals()
   //// Counts of errors and warnings
   int e_count=agpErr.CountTotals(CAgpErr::E_Last);
   int w_count=agpErr.CountTotals(CAgpErr::W_Last);
-  cout << "\n";
-  agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_msg_skipped);
-  if(agpErr.m_MaxRepeatTopped) {
-    cout << " (to print all: -limit 0)";
-  }
-  cout << ".";
-  if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
+  if(e_count || w_count || m_ObjCount) {
     cout << "\n";
-    agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);
+    agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_msg_skipped);
+    if(agpErr.m_MaxRepeatTopped) {
+      cout << " (to print all: -limit 0)";
+    }
+    cout << ".";
+    if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
+      cout << "\n";
+      agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);
+    }
+    cout << "\n";
   }
   if(m_ObjCount==0) {
-    cout << "\nNo valid AGP lines.\n";
+    cout << "No valid AGP lines.\n";
     return;
   }
 

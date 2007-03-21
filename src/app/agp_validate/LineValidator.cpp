@@ -27,7 +27,7 @@
  *      Victor Sapojnikov
  *
  * File Description:
- *      Validation tests that can be preformed on one line in the AGP file.
+ *      Validation tests that can be performed on one line in the AGP file.
  *      If any of these fails, the rest of the tests (which may use multiple lines
  *      or GenBank info) are skipped.
  *
@@ -90,6 +90,11 @@ bool CGapVal::endsScaffold() const
 {
   if(type==GAP_fragment) return false;
   return linkage==LINKAGE_no;
+}
+
+bool CGapVal::validAtObjBegin() const
+{
+  return type==GAP_centromere || type==GAP_telomere || type==GAP_short_arm;
 }
 
 //// class CCompVal
@@ -256,22 +261,6 @@ int x_CheckIntField( const string& field,
   return field_value;
 }
 
-/*
-bool x_CheckValues(const TValuesSet& values,
-  const string& value, const string& field_name, bool log_error)
-{
-  if(values.count(value) == 0) {
-    if(log_error) {
-      agpErr.Msg(CAgpErr::E_InvalidValue,
-        NcbiEmptyString, AT_ThisLine, // defaults
-        field_name );
-    }
-    return false;
-  }
-  return true;
-}
-*/
-
 int x_CheckValues(const TValuesMap& values,
   const string& value, const string& field_name, bool log_error)
 {
@@ -286,7 +275,6 @@ int x_CheckValues(const TValuesMap& values,
   }
   return it->second;
 }
-
 
 bool CAgpLine::IsGapType(const string& type)
 {

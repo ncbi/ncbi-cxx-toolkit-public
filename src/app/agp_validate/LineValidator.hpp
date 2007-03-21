@@ -138,15 +138,12 @@ public:
   bool init(const SDataLine& dl, bool log_errors = true);
   int getLen() const { return len; }
   bool endsScaffold() const;
+  bool validAtObjBegin() const;
 };
 
 int x_CheckIntField(const string& field,
   const string& field_name, bool log_error = true);
-/*
-bool x_CheckValues(const TValuesSet& values,
-  const string& value, const string& field_name,
-  bool log_error = true);
-*/
+
 // Returns an integer constant mapped to the allowed text value,
 // -1 if the value is unknowm
 int x_CheckValues(const TValuesMap& values,
