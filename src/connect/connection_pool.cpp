@@ -192,8 +192,8 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     polls.reserve(data.size()+1);
     polls.push_back(CSocketAPI::SPoll(
         dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
-    CTime* alarm_time = NULL;
-    CTime* min_alarm_time = NULL;
+    const CTime* alarm_time = NULL;
+    const CTime* min_alarm_time = NULL;
     ITERATE (TData, it, data) {
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
@@ -222,7 +222,8 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         }
     }
     if (min_alarm_time != NULL) {
-        CTimeSpan span(*min_alarm_time - CTime(CTime::eCurrent, CTime::eGmt));
+        CTimeSpan span(min_alarm_time->DiffTimeSpan(
+            CTime(CTime::eCurrent, CTime::eGmt)));
         if (span.GetCompleteSeconds() < 0 ||
             span.GetNanoSecondsAfterSecond() < 0) {
             timer_timeout->usec = timer_timeout->sec = 0;

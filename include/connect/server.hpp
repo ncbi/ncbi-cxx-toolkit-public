@@ -132,7 +132,7 @@ public:
     ///   an OnTimer event at the moment in time specified by this object.
     /// @return
     ///   Returns the set of events for which Poll should check.
-    virtual EIO_Event GetEventsToPollFor(CTime** /*alarm_time*/) const
+    virtual EIO_Event GetEventsToPollFor(const CTime** /*alarm_time*/) const
         { return eIO_Read; }
     /// Returns the timeout for this connection
     virtual const STimeout* GetTimeout(void)

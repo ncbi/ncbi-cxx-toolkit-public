@@ -50,7 +50,7 @@ class IServer_ConnectionBase
 {
 public:
     virtual ~IServer_ConnectionBase() { }
-    virtual EIO_Event GetEventsToPollFor(CTime** /*alarm_time*/) const
+    virtual EIO_Event GetEventsToPollFor(const CTime** /*alarm_time*/) const
         { return eIO_Read; }
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
@@ -70,7 +70,7 @@ public:
     CServer_Connection(IServer_ConnectionHandler* handler)
         : m_Handler(handler), m_Open(true)
         { m_Handler->SetSocket(this); }
-    virtual EIO_Event GetEventsToPollFor(CTime** alarm_time) const
+    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const
         { return m_Handler->GetEventsToPollFor(alarm_time); }
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
