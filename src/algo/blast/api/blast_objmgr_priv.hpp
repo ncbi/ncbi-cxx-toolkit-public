@@ -69,7 +69,7 @@ public:
     /// 
     /// @param v vector of SSeqLoc structures containing the queries [in]
     /// @param prog program type of this search [in]
-    CBlastQuerySourceOM(const TSeqLocVector & v, EBlastProgramType prog);
+    CBlastQuerySourceOM(TSeqLocVector & v, EBlastProgramType prog);
     
     /// Constructor which takes a TSeqLocVector
     /// 
@@ -170,6 +170,11 @@ private:
     /// Performs filtering on the query sequences to calculate the masked
     /// locations
     void x_CalculateMasks();
+
+    /// Tries to extract the genetic code using the CScope, if it succeeds,
+    /// it supercedes what's specified in the
+    /// {SSeqLoc,CBlastSearchQuery}::genetic_code_id field
+    void x_AutoDetectGeneticCodes(void);
 };
 
 /** Allocates the query information structure and fills the context 
@@ -185,7 +190,7 @@ private:
  * @param qinfo Allocated query info structure [out]
  */
 void
-SetupQueryInfo(const TSeqLocVector& queries, 
+SetupQueryInfo(TSeqLocVector& queries, 
                EBlastProgramType prog,
                objects::ENa_strand strand_opt,
                BlastQueryInfo** qinfo);
@@ -221,33 +226,11 @@ SetupQueryInfo(const CBlastQueryVector & queries,
 /// during the search [in]
 
 void
-SetupQueries(const TSeqLocVector& queries,
+SetupQueries(TSeqLocVector& queries,
              BlastQueryInfo* qinfo, 
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog, 
              objects::ENa_strand strand_opt,
-             TSearchMessages& messages);
-
-/// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
-///
-/// @param queries CBlastQueryVector set of queries [in]
-/// @param qinfo BlastQueryInfo structure to obtain context information [in]
-/// @param seqblk Structure to save sequence data, allocated in this 
-/// function [out]
-/// @param messages object to save warnings/errors for all queries [out]
-/// @param prog program type from the CORE's point of view [in]
-/// @param strand_opt Unless the strand option is set to single strand, the 
-/// actual CSeq_locs in the CBlastQueryVector dictate which strand to use
-/// during the search [in]
-/// @param genetic_code genetic code string as returned by
-/// blast::FindGeneticCode()
-
-void
-SetupQueries(const CBlastQueryVector& queries,
-             const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
-             EBlastProgramType prog, 
-             objects::ENa_strand strand_opt,
-             const Uint1* genetic_code,
              TSearchMessages& messages);
 
 /** Sets up internal subject data structure for the BLAST search.
@@ -263,11 +246,12 @@ SetupQueries(const CBlastQueryVector& queries,
  * @param max_subjlen Maximal length of the subject sequences [out]
  */
 void
-SetupSubjects(const TSeqLocVector& subjects, 
+SetupSubjects(TSeqLocVector& subjects, 
               EBlastProgramType program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
+#if 0
 /** Sets up internal subject data structure for the BLAST search.
  *
  * This uses the CBlastQueryVector to create subject data structures.
@@ -285,6 +269,7 @@ SetupSubjects(const CBlastQueryVector & subjects,
               EBlastProgramType program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
+#endif
 
 /** Retrieves a sequence using the object manager.
  * @param sl seqloc of the sequence to obtain [in]

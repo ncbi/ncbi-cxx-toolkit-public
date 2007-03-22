@@ -48,6 +48,8 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 
 #include <serial/iterator.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include "blast_seqalign.hpp"
 
 #include "dust_filter.hpp"
@@ -71,14 +73,16 @@ BEGIN_SCOPE(blast)
 
 // N.B.: the const is removed, but the v object is never really changed,
 // therefore we keep it as a const argument
-CBlastQuerySourceOM::CBlastQuerySourceOM(const TSeqLocVector& v,
+CBlastQuerySourceOM::CBlastQuerySourceOM(TSeqLocVector& v,
                                          EBlastProgramType     program)
-    : m_TSeqLocVector(const_cast<TSeqLocVector*>(&v)),
+    : m_TSeqLocVector(&v),
       m_OwnTSeqLocVector(false), 
       m_Options(0), 
       m_CalculatedMasks(true),
       m_Program(program)
-{}
+{
+    x_AutoDetectGeneticCodes();
+}
 
 CBlastQuerySourceOM::CBlastQuerySourceOM(TSeqLocVector& v,
                                          const CBlastOptions* opts)
@@ -88,6 +92,7 @@ CBlastQuerySourceOM::CBlastQuerySourceOM(TSeqLocVector& v,
       m_CalculatedMasks(false),
       m_Program(opts->GetProgramType())
 {
+    x_AutoDetectGeneticCodes();
 }
 
 CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector   & v,
@@ -98,6 +103,7 @@ CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector   & v,
       m_CalculatedMasks(false),
       m_Program(program)
 {
+    x_AutoDetectGeneticCodes();
 }
 
 CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector   & v,
@@ -108,6 +114,55 @@ CBlastQuerySourceOM::CBlastQuerySourceOM(CBlastQueryVector   & v,
       m_CalculatedMasks(false),
       m_Program(opts->GetProgramType())
 {
+    x_AutoDetectGeneticCodes();
+}
+
+void
+CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
+{
+    if ( ! (Blast_QueryIsTranslated(m_Program) || 
+            Blast_SubjectIsTranslated(m_Program)) ) {
+        return;
+    }
+
+    if (m_QueryVector.NotEmpty()) {
+        for (CBlastQueryVector::size_type i = 0; 
+             i < m_QueryVector->Size(); i++) {
+            CRef<CBlastSearchQuery> query = 
+                m_QueryVector->GetBlastSearchQuery(i);
+
+            if (query->GetGeneticCodeId() != BLAST_GENETIC_CODE) {
+                // presumably this has already been set, so skip fetching it
+                // again
+                continue;
+            }
+
+            const CSeq_id* id = query->GetQuerySeqLoc()->GetId();
+            CSeqdesc_CI desc_it(query->GetScope()->GetBioseqHandle(*id), 
+                                CSeqdesc::e_Source);
+            if (desc_it) {
+                query->SetGeneticCodeId(desc_it->GetSource().GetGenCode());
+            }
+        }
+    } else {
+        _ASSERT(m_TSeqLocVector);
+        int i = 0;
+        NON_CONST_ITERATE(TSeqLocVector, sseqloc, *m_TSeqLocVector) {
+
+            if (sseqloc->genetic_code_id != BLAST_GENETIC_CODE) {
+                // presumably this has already been set, so skip fetching it
+                // again
+                continue;
+            }
+
+            const CSeq_id* id = sseqloc->seqloc->GetId();
+            CSeqdesc_CI desc_it(sseqloc->scope->GetBioseqHandle(*id),
+                                CSeqdesc::e_Source);
+            if (desc_it) {
+                sseqloc->genetic_code_id = desc_it->GetSource().GetGenCode();
+            }
+        }
+    }
 }
 
 void
@@ -282,7 +337,7 @@ CBlastQuerySourceOM::Size() const
 }
 
 void
-SetupQueryInfo(const TSeqLocVector& queries, 
+SetupQueryInfo(TSeqLocVector& queries, 
                EBlastProgramType prog,
                ENa_strand strand_opt,
                BlastQueryInfo** qinfo)
@@ -291,7 +346,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
 }
 
 void
-SetupQueries(const TSeqLocVector& queries, 
+SetupQueries(TSeqLocVector& queries, 
              BlastQueryInfo* qinfo, 
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog,
@@ -304,7 +359,7 @@ SetupQueries(const TSeqLocVector& queries,
 }
 
 void
-SetupSubjects(const TSeqLocVector& subjects, 
+SetupSubjects(TSeqLocVector& subjects, 
               EBlastProgramType prog,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)

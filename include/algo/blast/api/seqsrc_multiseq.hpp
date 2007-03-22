@@ -52,7 +52,7 @@ BEGIN_SCOPE(blast)
  * @param program Type of BLAST to be performed [in]
  */
 NCBI_XBLAST_EXPORT BlastSeqSrc* 
-MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, 
+MultiSeqBlastSeqSrcInit(TSeqLocVector& seq_vector, 
                         EBlastProgramType program);
 
 END_SCOPE(blast)

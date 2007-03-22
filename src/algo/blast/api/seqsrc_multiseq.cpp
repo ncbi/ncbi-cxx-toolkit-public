@@ -54,7 +54,7 @@ class CMultiSeqInfo : public CObject
 public: 
     /// Constructor from a vector of sequence location/scope pairs and a 
     /// BLAST program type.
-    CMultiSeqInfo(const TSeqLocVector& seq_vector, EBlastProgramType program);
+    CMultiSeqInfo(TSeqLocVector& seq_vector, EBlastProgramType program);
     ~CMultiSeqInfo();
     /// Setter and getter functions for the private fields
     Uint4 GetMaxLength();
@@ -117,7 +117,7 @@ inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 }
 
 /// Constructor
-CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, 
+CMultiSeqInfo::CMultiSeqInfo(TSeqLocVector& seq_vector, 
                              EBlastProgramType program)
 {
     m_ibIsProt = (program == eBlastTypeBlastp || program == eBlastTypeBlastx || 
@@ -426,7 +426,7 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 } // extern "C"
 
 BlastSeqSrc*
-MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, 
+MultiSeqBlastSeqSrcInit(TSeqLocVector& seq_vector, 
                         EBlastProgramType program)
 {
     BlastSeqSrc* seq_src = NULL;
