@@ -51,15 +51,18 @@ BEGIN_NCBI_SCOPE
 class CTestServer : public CServer
 {
 public:
-    CTestServer() : m_ShutdownRequested(false), m_HelloCount(0) { }
+    CTestServer(unsigned int max_delay) :
+        m_ShutdownRequested(false), m_HelloCount(0), m_MaxDelay(max_delay) { }
     virtual bool ShutdownRequested(void) { return m_ShutdownRequested; }
     void RequestShutdown(void) { m_ShutdownRequested = true; }
     void AddHello();
     int  CountHellos();
+    unsigned int GetMaxDelay() const {return m_MaxDelay;}
 private:
     volatile bool m_ShutdownRequested;
     CFastMutex m_HelloMutex;
     int m_HelloCount;
+    unsigned int m_MaxDelay;
 };
 
 
@@ -82,23 +85,54 @@ class CTestConnectionHandler : public IServer_LineMessageHandler
 {
 public:
     CTestConnectionHandler(CTestServer* server) :
-        m_Server(server)
+        m_Server(server), m_AlarmTime(CTime::eEmpty, CTime::eGmt)
     {
     }
+    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void OnOpen(void);
+    virtual void OnTimer(void);
     virtual void OnMessage(BUF buf);
-    virtual void OnWrite(void) { }
+    virtual void OnWrite(void);
     virtual void OnClose(void) { }
 private:
     CTestServer* m_Server;
+    CTime m_AlarmTime;
+    enum {
+        Delay,
+        SayHello,
+        Read
+    } m_State;
 };
 
+EIO_Event CTestConnectionHandler::GetEventsToPollFor(
+    const CTime** alarm_time) const
+{
+    switch (m_State) {
+    case SayHello:
+        return eIO_Write;
+
+    case Delay:
+        *alarm_time = &m_AlarmTime;
+
+    default:
+        return eIO_Read;
+    }
+}
 
 void CTestConnectionHandler::OnOpen(void)
 {
-    GetSocket().Write("Hello!\n", sizeof("Hello!\n") - 1);
+    CRandom rng;
+    unsigned int delay = rng.GetRand(0, m_Server->GetMaxDelay());
+    m_AlarmTime.SetCurrent();
+    m_AlarmTime.AddTimeSpan(CTimeSpan(delay / 1000,
+        (delay % 1000) * 1000 * 1000));
+    m_State = Delay;
 }
 
+void CTestConnectionHandler::OnTimer(void)
+{
+    m_State = SayHello;
+}
 
 void CTestConnectionHandler::OnMessage(BUF buf)
 {
@@ -108,11 +142,16 @@ void CTestConnectionHandler::OnMessage(BUF buf)
     size_t msg_size = BUF_Read(buf, data, sizeof(data));
     if (msg_size > 0) {
         data[msg_size] = '\0';
-        if (strncmp(data, "Hello!", strlen("Hello!")) == 0)
+        if (memcmp(data, "Hello!", strlen("Hello!")) == 0)
             m_Server->AddHello();
         ERR_POST(Info << "got \"" << data << "\"");
     } else {
-        ERR_POST(Info << "got empty buffer");
+        ERR_POST(Info << "got empty line");
+    }
+
+    if (m_State != Read) {
+        ERR_POST(Info << "... ignored");
+        return;
     }
 
     socket.Write("Goodbye!\n", sizeof("Goodbye!\n") - 1);
@@ -125,6 +164,11 @@ void CTestConnectionHandler::OnMessage(BUF buf)
     }
 }
 
+void CTestConnectionHandler::OnWrite(void)
+{
+    GetSocket().Write("Hello!\n", sizeof("Hello!\n") - 1);
+    m_State = Read;
+}
 
 // ConnectionFactory
 class CTestConnectionFactory : public IServer_ConnectionFactory
@@ -152,8 +196,7 @@ DEFINE_STATIC_FAST_MUTEX(s_Mutex);
 class CConnectionRequest : public CStdRequest
 {
 public:
-    CConnectionRequest(unsigned short port, unsigned int delay) :
-        m_Port(port), m_Delay(delay)
+    CConnectionRequest(unsigned short port) : m_Port(port)
     {
     }
 
@@ -162,14 +205,11 @@ protected:
 
 private:
     unsigned short m_Port;
-    unsigned int m_Delay;
 };
 
 void CConnectionRequest::Process(void)
 {
     CConn_SocketStream stream("localhost", m_Port);
-
-    SleepMilliSec(m_Delay);
 
     unsigned int request_number;
 
@@ -243,7 +283,7 @@ void CServerTestApp::Init(void)
     arg_desc->SetConstraint("maxclthreads", constraint);
     arg_desc->SetConstraint("requests", constraint);
 
-    arg_desc->AddDefaultKey("delay", "N",
+    arg_desc->AddDefaultKey("maxdelay", "N",
         "Maximum delay in milliseconds",
         CArgDescriptions::eInteger, "1000");
 
@@ -280,7 +320,7 @@ int CServerTestApp::Run(void)
     params.queue_size = args["queuesize"].AsInteger();
     params.accept_timeout = &kAcceptTimeout;
 
-    CTestServer server;
+    CTestServer server(args["maxdelay"].AsInteger());
     server.SetParameters(params);
 
     server.AddListener(new CTestConnectionFactory(&server), port);
@@ -288,24 +328,14 @@ int CServerTestApp::Run(void)
     s_Requests = args["requests"].AsInteger();
 
     CStdPoolOfThreads pool(args["maxclthreads"].AsInteger(), s_Requests);
-    CRandom rng;
 
     pool.Spawn(args["clthreads"].AsInteger());
 
-    int delay = args["delay"].AsInteger();
-
     for (unsigned int i = 0;  i < s_Requests;  ++i) {
-        pool.AcceptRequest(CRef<ncbi::CStdRequest>(new CConnectionRequest(port,
-            rng.GetRand(0, delay))));
-
-        //SleepMilliSec(rng.GetRand(0, delay));
+        pool.AcceptRequest(CRef<ncbi::CStdRequest>(
+            new CConnectionRequest(port)));
     }
 
-    // s_Send(host, port, 500, eGoodbye);
-    /*pool.AcceptRequest(CRef<ncbi::CStdRequest>
-        (new CConnectionRequest(port, 500, eGoodbye)));*/
-
-    //SleepMilliSec(1000);
     server.Run();
 
     pool.KillAllThreads(true);
