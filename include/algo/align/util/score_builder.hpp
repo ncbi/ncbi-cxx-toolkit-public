@@ -33,18 +33,29 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/api/blast_types.hpp>
 
+struct BlastScoreBlk; // C structure
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(blast)
+    class CBlastOptionsHandle;
+END_SCOPE(blast)
+
 BEGIN_SCOPE(objects)
 
 class CScope;
 class CSeq_align;
 
-
 class NCBI_XALGOALIGN_EXPORT CScoreBuilder
 {
 public:
+
+    CScoreBuilder();
+    CScoreBuilder(enum blast::EProgram program_type);
+    CScoreBuilder(blast::CBlastOptionsHandle& options);
+    ~CScoreBuilder();
 
     enum EScoreType {
         //< typical blast 'score'
@@ -79,11 +90,33 @@ public:
 
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);
     int GetMismatchCount  (CScope& scope, const CSeq_align& align);
+    int GetBlastScore     (CScope& scope, const CSeq_align& align);
+    double GetBlastBitScore(CScope& scope, const CSeq_align& align);
+    double GetBlastEValue (CScope& scope, const CSeq_align& align);
     int GetGapCount       (const CSeq_align& align);
     TSeqPos GetAlignLength(const CSeq_align& align);
 
     /// @}
 
+    /// @name Functions for configuring blast scores
+    /// @{
+
+    void SetEffectiveSearchSpace(Int8 searchsp) // required for blast e-values
+    {
+        m_EffectiveSearchSpace = searchsp;
+    }
+
+    /// @}
+
+private:
+
+    struct BlastScoreBlk *m_ScoreBlk;
+    enum blast::EProgram m_BlastType;
+    int m_GapOpen;
+    int m_GapExtend;
+    Int8 m_EffectiveSearchSpace;
+
+    void x_Initialize(blast::CBlastOptionsHandle& options);
 };
 
 
