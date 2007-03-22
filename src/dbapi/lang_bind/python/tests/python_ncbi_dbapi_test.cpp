@@ -592,12 +592,12 @@ string GetSybaseClientVersion(void)
 CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
-    bool Solaris = false;
+//     bool Solaris = false;
     bool sybase_client_v125 = false;
 
-#if defined(NCBI_OS_SOLARIS)
-    Solaris = true;
-#endif
+// #if defined(NCBI_OS_SOLARIS)
+//     Solaris = true;
+// #endif
 
     const string sybase_version = GetSybaseClientVersion();
     if (NStr::CompareNocase(sybase_version, 0, 4, "12.5") == 0
