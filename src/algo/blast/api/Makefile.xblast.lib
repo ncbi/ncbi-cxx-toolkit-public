@@ -70,7 +70,7 @@ SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
 LIB = xblast
 
-DLL_LIB = xalgodustmask xobjsimple xobjutil $(OBJMGR_LIBS)
+DLL_LIB = xalgodustmask xobjutil $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 # Strict gcc flags
