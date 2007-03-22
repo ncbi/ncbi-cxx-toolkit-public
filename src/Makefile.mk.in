@@ -536,9 +536,9 @@ OBJMGR_LIBS = $(GENBANK_LIBS)
 BLAST_FORMATTER_LIBS = xblastformat xalnmgr blastinput ncbi_xloader_blastdb \
                        blastxml xcgi xhtml
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
-             seqdb xobjsimple xobjutil xobjread creaders \
+             seqdb xobjutil xobjread creaders \
              xnetblastcli xnetblast blastdb scoremat tables
-# BLAST additionally needs $(OBJMGR_LIBS) or the equivalent
+# BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)
 
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
