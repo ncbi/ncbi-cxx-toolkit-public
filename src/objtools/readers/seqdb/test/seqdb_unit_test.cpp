@@ -2688,7 +2688,7 @@ BOOST_AUTO_UNIT_TEST(EmptyVolume)
     vector<int> oids;
     oids.resize(100);
     
-    CSeqDB::EOidListType ol_type;
+    CSeqDB::EOidListType ol_type = CSeqDB::eOidList;
     CHECK_NO_THROW(ol_type = db.GetNextOIDChunk(begin, end, oids, NULL));
     
     if (ol_type == CSeqDB::eOidList) {
