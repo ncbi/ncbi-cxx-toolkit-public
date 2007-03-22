@@ -51,7 +51,7 @@
 #include <bdb/bdb_util.hpp>
 #include <bdb/bdb_split_blob.hpp>
 
-#include <bdb/bdb_query_parser.hpp>
+#include <util/line_reader.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -65,6 +65,12 @@ USING_NCBI_SCOPE;
 //
 
 
+/// @internal
+struct TestRec
+{
+    unsigned count;
+    unsigned blob_size;
+};
 
 
 ////////////////////////////////
@@ -75,9 +81,128 @@ USING_NCBI_SCOPE;
 class CBDB_SplitTest : public CNcbiApplication
 {
 public:
+    typedef CBDB_BlobSplitStore<bm::bvector<> > TBlobSplitStore;
+
+public:
     void Init(void);
     int Run(void);
+
+    void LoadTestSet(const string& file_name);
+
+    void ReadTestSet(vector<TestRec> & test_set, const string& file_name);
+    void LoadSplitStore(vector<TestRec>& test_set, 
+                        TBlobSplitStore& split_store);
+
 };
+
+
+void
+CBDB_SplitTest::LoadSplitStore(vector<TestRec>& test_set, 
+                               TBlobSplitStore& split_store)
+{
+    unsigned blob_id = 1;
+    unsigned round = 0;
+    CBDB_RawFile::TBuffer buffer;
+
+    for (size_t i = 0; i < test_set.size(); ++i) {
+        TestRec& r = test_set[i];
+        buffer.resize(r.blob_size);
+        cout << "\nsize=" << r.blob_size << " count=" << r.count << endl;
+        CStopWatch sw(CStopWatch::eStart);
+        for (;r.count;r.count--) {
+            split_store.UpdateInsert(blob_id, 
+                                     buffer.data(),
+                                     buffer.size());
+            ++blob_id;
+            if ((r.count % 10000) == 0) {
+                cerr << ".";
+            }
+        } 
+        cerr << "Elapsed = " << sw.Elapsed() << endl;
+    } // for
+}
+
+void CBDB_SplitTest::LoadTestSet(const string& file_name)
+{
+    CBDB_Env env;
+    env.SetLogInMemory(true);
+    env.SetLogBSize(50 * 1024 * 1024);
+    env.SetCacheSize(400 * 1024 * 1024);
+    env.OpenWithTrans("e:\\db_split", CBDB_Env::eThreaded);
+
+    vector<TestRec> test_set;
+    ReadTestSet(test_set, file_name);
+    vector<TestRec> test_set2(test_set);
+    
+    if (test_set.size() == 0) {
+        cout << "Empty test load." << endl;
+        return;
+    }
+    cout << "Loaded " << test_set.size() << " records." << endl;
+
+    {{
+    TBlobSplitStore split_store_hash(new CBDB_BlobDeMux);
+    split_store_hash.Open("split_hash", 
+                          CBDB_RawFile::eCreate, 
+                          CBDB_RawFile::eHash);
+    split_store_hash.SetEnv(env);
+    //split_store_hash.SetVolumeCacheSize(100* 1024 * 1024);
+
+    CStopWatch sw(CStopWatch::eStart);
+    cout << "Loading hash store." << endl;
+    LoadSplitStore(test_set, split_store_hash);
+    cout << "Ok. elapsed=" << sw.Elapsed() << endl << endl;
+    }}
+
+    {{
+    TBlobSplitStore split_store_btree(new CBDB_BlobDeMux);
+    split_store_btree.Open("split_btree", 
+                            CBDB_RawFile::eCreate, 
+                            CBDB_RawFile::eBtree);
+    split_store_btree.SetVolumeCacheSize(100 * 1024 * 1024);
+
+    CStopWatch sw(CStopWatch::eStart);
+    cout << "Loading btree store." << endl;
+    LoadSplitStore(test_set2, split_store_btree);
+    cout << "Ok. elapsed=" << sw.Elapsed() << endl << endl;
+    }}
+
+}
+
+void CBDB_SplitTest::ReadTestSet(vector<TestRec>&  test_set, 
+                                 const string&     file_name)
+{
+    cout << "Loading " << file_name << " ... " << endl;
+    test_set.resize(0);
+    CNcbiIfstream is(file_name.c_str());
+    if (!is.good()) {
+        return;
+    }
+    CStreamLineReader lr(is);
+    for(++lr; !lr.AtEOF(); ++lr) {
+        CTempString st = *lr;
+        string count_str, size_str;
+        string s = NStr::TruncateSpaces(st);
+        NStr::SplitInTwo(s, " \t", count_str, size_str); 
+        TestRec rec;
+        rec.count = NStr::StringToUInt(count_str, 
+           NStr::fAllowLeadingSpaces | 
+           NStr::fAllowTrailingSpaces | 
+           NStr::fConvErr_NoThrow);
+        rec.blob_size = NStr::StringToUInt(size_str,
+                NStr::fAllowLeadingSpaces | 
+                NStr::fAllowTrailingSpaces | 
+                NStr::fConvErr_NoThrow);
+        if (rec.count && rec.blob_size)     {
+            test_set.push_back(rec);
+        } else {
+            cout << "Blank record: " << st << endl;
+        }
+    } // for
+    cout << "ok " << endl;
+
+}
+
 
 
 void CBDB_SplitTest::Init(void)
@@ -97,8 +222,12 @@ void CBDB_SplitTest::Init(void)
 }
 
 
+
 int CBDB_SplitTest::Run(void)
 {
+    //LoadTestSet("e:\\db_split\\db_split.txt");
+    //return 0;
+
     cout << "Run BDB split storage test" << endl << endl;
 
     char* buf_small = new char[256];
@@ -111,8 +240,6 @@ int CBDB_SplitTest::Run(void)
 
     try
     {
-        typedef CBDB_BlobSplitStore<bm::bvector<> > TBlobSplitStore;
-
         {{
         TBlobSplitStore split_store(new CBDB_BlobDeMux(1024*1024));
 

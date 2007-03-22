@@ -191,6 +191,11 @@ BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 unsigned int 
 NCBI_BDB_EXPORT BDB_Hash(DB *, const void *bytes, unsigned length);
 
+/// Hash method for databases with a single (unique) UInt4 key
+unsigned int 
+NCBI_BDB_EXPORT BDB_Uint4Hash(DB *, const void *bytes, unsigned length);
+
+
 }
 
 

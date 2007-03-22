@@ -294,7 +294,8 @@ public:
 
     /// Open storage (reads storage dictionary into memory)
     void Open(const string&             storage_name, 
-              CBDB_RawFile::EOpenMode   open_mode);
+              CBDB_RawFile::EOpenMode   open_mode,
+              CBDB_RawFile::EDBType     db_type=CBDB_RawFile::eBtree);
 
     /// Save storage dictionary (demux disposition).
     /// If you modified storage (like added new BLOBs to the storage)
@@ -430,7 +431,7 @@ protected:
 
     string                  m_StorageName;
     CBDB_RawFile::EOpenMode m_OpenMode;
-
+    CBDB_RawFile::EDBType   m_DB_Type;
 };
 
 /* @} */
@@ -447,7 +448,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
    m_VolumeCacheSize(0),
    m_Env(0),
    m_IdDeMux(new TIdDeMux(2)),
-   m_ObjDeMux(de_mux)
+   m_ObjDeMux(de_mux),
+   m_DB_Type(CBDB_RawFile::eBtree)
 {
     m_PageSizes[0] = 0;
     m_PageSizes[1] = 0;
@@ -709,12 +711,14 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id,
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Open(const string&  storage_name, 
-                                          CBDB_RawFile::EOpenMode   open_mode)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Open(const string&     storage_name,
+                                          CBDB_RawFile::EOpenMode  open_mode,
+                                          CBDB_RawFile::EDBType      db_type)
 {
     CloseVolumes();
     m_StorageName = storage_name;
-    m_OpenMode = open_mode;
+    m_OpenMode    = open_mode;
+    m_DB_Type     = db_type;
 
     OpenDict();
     LoadIdDeMux(*m_IdDeMux, *m_DictFile);
@@ -813,8 +817,20 @@ string
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::MakeDbFileName(unsigned vol, 
                                                       unsigned slice)
 {
+    string ext;
+    switch (m_DB_Type) 
+    {
+    case CBDB_RawFile::eBtree:
+        ext = ".db";
+        break;
+    case CBDB_RawFile::eHash:
+        ext = ".hdb";
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
     return m_StorageName + "_" + 
-           NStr::UIntToString(vol) + "_" + NStr::UIntToString(slice) + ".db";
+           NStr::UIntToString(vol) + "_" + NStr::UIntToString(slice) + ext;
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -868,7 +884,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
     TLockGuard lg(*(lp->lock));
     if (lp->db.get() == 0) {
         string fname = this->MakeDbFileName(vol, slice);
-        lp->db.reset(new CBDB_IdBlobFile);
+        lp->db.reset(new CBDB_IdBlobFile(CBDB_File::eDuplicatesDisable,
+                                         m_DB_Type));
         if (m_Env) {
             lp->db->SetEnv(*m_Env);
         } else {

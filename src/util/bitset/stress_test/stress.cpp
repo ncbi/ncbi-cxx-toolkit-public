@@ -31,7 +31,7 @@
 //#define BM64OPT
 //#define BM_SET_MMX_GUARD
 //#define BMSSE2OPT
-#define BMCOUNTOPT
+//#define BMCOUNTOPT
 
 #include <ncbi_pch.hpp>
 #include <stdio.h>
@@ -5450,6 +5450,26 @@ void SetTest()
         cout << "Set &= test failed (2)!" << endl;
         exit(1);
     }
+
+    bvect bv2;
+    bv2[1] = true;
+    bv2[1] = false;
+    bvect::statistics stat1;
+    bv2.calc_stat(&stat1);
+    
+    bv2.optimize();
+
+    bvect::statistics stat2;
+    bv2.calc_stat(&stat2);
+
+    if (stat2.bit_blocks != 0 || 
+        stat2.gap_blocks != 0 ||
+        stat1.memory_used <= stat2.memory_used)
+    {
+        cout << "Optimization memory free test failed (2)!" << endl;
+        exit(1);
+    }
+
 }
 
 
@@ -6191,6 +6211,41 @@ int main(void)
 //   cout << sizeof(__int64) << endl;
 
 //   ::srand((unsigned)::time(NULL));
+
+/*
+    bvect bv;
+
+    bv.set(786694);
+    bv.set(895785); 
+    bv.set(977200); 
+    bv.set(1038827); 
+    bv.set(1110924); 
+    bv.set(1119532); 
+    bv.set(1123158); 
+    bv.set(1203562); 
+    bv.set(1209502); 
+    bv.set(1247904); 
+    bv.set(1276296); 
+    bv.set(1384903);
+
+    cout << bv.count() << endl;
+
+    bvect::statistics st;
+    bv.calc_stat(&st);
+    unsigned char buf[2048];
+    unsigned slen = bm::serialize(bv, buf);
+    cout << "slen=" << slen << endl;
+
+    bvect bv2;
+    operation_deserializer<bvect>::deserialize(bv2,
+                                                buf,
+                                                0,
+                                                set_ASSIGN);
+
+    cout << "count2=" << bv2.count() << endl;
+    PrintSet(cout, bv2);
+    return 0;
+*/
 
      ExportTest();
      ResizeTest();

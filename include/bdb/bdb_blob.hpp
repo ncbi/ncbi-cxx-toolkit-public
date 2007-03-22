@@ -153,6 +153,9 @@ public:
 public:
     CBDB_IdBlobFile(EDuplicateKeys dup_keys = eDuplicatesDisable,
                     EDBType        db_type  = eBtree);
+
+    /// Hash for this type returns id (key);
+    virtual void SetHash(DB*);
 };
 
 /// Stream style BDB BLOB reader

@@ -218,6 +218,13 @@ CBDB_IdBlobFile::CBDB_IdBlobFile(EDuplicateKeys dup_keys,
     BindKey("id", &id);
 }
 
+void CBDB_IdBlobFile::SetHash(DB*)
+{
+    _ASSERT(m_DB_Type == eHash);
+    int ret = m_DB->set_h_hash(m_DB, BDB_Uint4Hash);
+    BDB_CHECK(ret, 0);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_BlobReaderWriter::
 //

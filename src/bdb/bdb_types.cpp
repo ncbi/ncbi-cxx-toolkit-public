@@ -274,10 +274,20 @@ BDB_Hash(DB *, const void *bytes, unsigned length)
     const unsigned char* buf = (const unsigned char*)bytes;
     const unsigned char* buf_end = buf + length;
     unsigned ha = StringHash17(buf, buf_end);
-//cerr << buf << "len=" << length << " HA=" << ha << endl;
     return ha;
 }
 
+unsigned int 
+BDB_Uint4Hash(DB *db, const void *bytes, unsigned length)
+{
+    if (length == 4) {
+        unsigned ha;
+        ::memcpy(&ha, bytes, 4);
+        return ha;
+    } else {
+        return BDB_Hash(db, bytes, length);
+    }
+}
 
 
 
