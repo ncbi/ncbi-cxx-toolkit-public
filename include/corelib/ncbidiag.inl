@@ -114,6 +114,7 @@ private:
     const CNcbiDiag*   m_Diag;    // present user
     CNcbiOstream*      m_Stream;  // storage for the diagnostic message
     IOS_BASE::fmtflags m_InitialStreamFlags;
+    bool               m_InUse;   // Protection against nested posts
 
     // user-specified string to add to each posted message
     // (can be constructed from "m_PrefixList" after push/pop operations)

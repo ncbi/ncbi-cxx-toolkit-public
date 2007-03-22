@@ -1234,6 +1234,7 @@ inline Uint8 s_GetThreadId(void)
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
+      m_InUse(false),
       m_TID(s_GetThreadId()),
       m_ThreadPostCount(0)
 {
@@ -1266,7 +1267,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 
 bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 {
-    if ( !m_Stream ) {
+    if ( m_InUse  ||  !m_Stream ) {
         return false;
     }
 
@@ -1291,8 +1292,24 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     return true;
 }
 
+
+class CRecursionGuard
+{
+public:
+    CRecursionGuard(bool& flag) : m_Flag(flag) { m_Flag = true; }
+    ~CRecursionGuard(void) { m_Flag = false; }
+private:
+    bool& m_Flag;
+};
+
+
 void CDiagBuffer::Flush(void)
 {
+    if ( m_InUse ) {
+        return;
+    }
+    CRecursionGuard guard(m_InUse);
+
     EDiagSev sev = m_Diag->GetSeverity();
 
     // Do nothing if diag severity is lower than allowed
@@ -2773,13 +2790,6 @@ extern void SetSplitLogFile(bool value)
 extern bool GetSplitLogFile(void)
 {
     return s_SplitLogFile;
-}
-
-
-static void LogFileCleanup(void* data)
-{
-    CNcbiOfstream* str = static_cast<CNcbiOfstream*>(data);
-    delete str;
 }
 
 
