@@ -260,10 +260,11 @@ void CDense_seg::Validate(bool full_test) const
 
 void CDense_seg::TrimEndGaps()
 {
-    _ASSERT(GetNumseg() == GetLens().size());
-    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
-    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
-    _ASSERT(GetDim() == GetIds().size());
+    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
+    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
+    _ASSERT(!IsSetStrands()
+            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
+    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
 
     list<TSignedSeqRange> delete_ranges;
     int i;
@@ -323,17 +324,20 @@ void CDense_seg::TrimEndGaps()
 
         /// we can trim the first i segments
         if (IsSetStrands()) {
-            _ASSERT(GetStrands().size() > r.GetTo() * GetDim());
+            _ASSERT(static_cast<int>(GetStrands().size())
+                    > r.GetTo() * GetDim());
             SetStrands().erase(SetStrands().begin() + r.GetFrom() * GetDim(),
                                SetStrands().begin() + r.GetTo()   * GetDim());
         }
         if (IsSetStarts()) {
-            _ASSERT(GetStarts().size() > r.GetTo() * GetDim());
+            _ASSERT(static_cast<int>(GetStarts().size())
+                    > r.GetTo() * GetDim());
             SetStarts().erase(SetStarts().begin() + r.GetFrom() * GetDim(),
                               SetStarts().begin() + r.GetTo()   * GetDim());
         }
         if (IsSetLens()) {
-            _ASSERT(GetLens().size() > r.GetTo());
+            _ASSERT(static_cast<int>(GetLens().size())
+                    > r.GetTo());
             SetLens().erase(SetLens().begin() + r.GetFrom(),
                             SetLens().begin() + r.GetTo());
         }
@@ -342,34 +346,36 @@ void CDense_seg::TrimEndGaps()
     /// fix our number of segments
     SetNumseg(SetLens().size());
 
-    _ASSERT(GetNumseg() == GetLens().size());
-    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
-    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
-    _ASSERT(GetDim() == GetIds().size());
+    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
+    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
+    _ASSERT(!IsSetStrands()
+            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
+    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
 }
 
 
 void CDense_seg::Compact()
 {
-    _ASSERT(GetNumseg() == GetLens().size());
-    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
-    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
-    _ASSERT(GetDim() == GetIds().size());
+    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
+    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
+    _ASSERT(!IsSetStrands()
+            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
+    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
+
     int i;
     int j;
-    for (i = 0;  i < GetNumseg() - 1;  ) {
-        bool can_merge = true;
-        int gap_count = 0;
+    vector<bool> can_merge(GetNumseg() - 1, true);  // start off with all true
+    unsigned int merge_count = 0;
+    for (i = 0;  i < GetNumseg() - 1;  ++i) {
+
         for (j = 0;  j < GetDim();  ++j) {
             TSignedSeqPos this_start = GetStarts()[i * GetDim() + j];
             TSignedSeqPos next_start = GetStarts()[(i + 1) * GetDim() + j];
-            if (this_start == -1) {
-                ++gap_count;
-            }
 
             /// check to make sure there is not a gap mismatch
-            if ( (this_start == -1  &&  next_start != -1)  ||  (this_start != -1  &&  next_start == -1) ) {
-                can_merge = false;
+            if ( (this_start == -1  &&  next_start != -1)
+                 ||  (this_start != -1  &&  next_start == -1) ) {
+                can_merge[i] = false;
                 break;
             }
 
@@ -384,42 +390,77 @@ void CDense_seg::Compact()
                 }
 
                 if (this_start + seg_len != next_start) {
-                    can_merge = false;
+                    can_merge[i] = false;
+                    break;
+                }
+            }
+
+            /// check that the strands all agree between this segment
+            /// and the next (although it is rare, it is legal for them
+            /// to be different)
+            if (IsSetStrands()) {
+                if (GetStrands()[i * GetDim() + j]
+                    != GetStrands()[i * GetDim() + j]) {
+                    can_merge[i] = false;
                     break;
                 }
             }
         }
+        if (can_merge[i]) {
+            ++merge_count;
+        }
+    }
 
-        if (can_merge) {
+    if (merge_count == 0) {
+        // nothing needs to be done
+        return;
+    }
+
+    CDense_seg::TStarts new_starts;
+    CDense_seg::TLens  new_lens;
+    CDense_seg::TStrands new_strands;
+    new_starts.reserve((GetNumseg() - merge_count) * GetDim());
+    new_lens.reserve(GetNumseg() - merge_count);
+    if (IsSetStrands()) {
+        new_strands.reserve((GetNumseg() - merge_count) * GetDim());
+    }
+    for (i = 0;  i < GetNumseg();  ++i) {
+        if (i > 0 && can_merge[i - 1]) {
+            // merge this segment into the last one
+            new_lens.back() += GetLens()[i];
             if (IsSetStrands()) {
                 for (j = 0;  j < GetDim();  ++j) {
                     if (GetStrands()[i * GetDim() + j] == eNa_strand_minus) {
-                        SetStarts()[i * GetDim() + j] =
-                            SetStarts()[(i + 1) * GetDim() + j];
-                        SetStrands()[i * GetDim() + j] =
-                            SetStrands()[(i + 1) * GetDim() + j];
+                        new_starts[new_starts.size() - GetDim() + j] =
+                            GetStarts()[i * GetDim() + j];
                     }
                 }
-                SetStrands().erase(SetStrands().begin() + (i + 1) * GetDim(),
-                                   SetStrands().begin() + (i + 2) * GetDim());
             }
-            SetStarts().erase(SetStarts().begin() + (i + 1) * GetDim(),
-                              SetStarts().begin() + (i + 2) * GetDim());
-            if (gap_count != GetDim()) {
-                SetLens()[i] += GetLens()[i + 1];
-            }
-            SetLens().erase(SetLens().begin() + i + 1);
         } else {
-            ++i;
+            // just copy the original segment i onto the end of the new stuff
+            new_lens.push_back(GetLens()[i]);
+            for (j = 0;  j < GetDim();  ++j) {
+                new_starts.push_back(GetStarts()[i * GetDim() + j]);
+                if (IsSetStrands()) {
+                    new_strands.push_back(GetStrands()[i * GetDim() + j]);
+                }
+            }
         }
+    }
+
+    SetStarts().swap(new_starts);
+    SetLens().swap(new_lens);
+    if (IsSetStrands()) {
+        SetStrands().swap(new_strands);
     }
 
     SetNumseg(SetLens().size());
 
-    _ASSERT(GetNumseg() == GetLens().size());
-    _ASSERT(GetNumseg() * GetDim() == GetStarts().size());
-    _ASSERT(!IsSetStrands()  ||  GetNumseg() * GetDim() == GetStrands().size());
-    _ASSERT(GetDim() == GetIds().size());
+    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
+    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
+    _ASSERT(!IsSetStrands()
+            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
+    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
 }
 
 
