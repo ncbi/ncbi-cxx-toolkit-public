@@ -40,6 +40,7 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 
+#include <algo/blast/core/gencode_singleton.h>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -564,6 +565,28 @@ FindGeneticCode(int genetic_code)
         retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
 
     return retval;
+}
+
+Uint4 CAutomaticGenCodeSingleton::m_RefCounter = 0;
+
+CAutomaticGenCodeSingleton::CAutomaticGenCodeSingleton()
+{
+    {{
+        CFastMutex mutex;
+        m_RefCounter++;
+        GenCodeSingletonInit(); 
+    }}
+    // N.B.: this is added as this is the default value
+    TAutoUint1ArrayPtr gc = FindGeneticCode(BLAST_GENETIC_CODE);
+    GenCodeSingletonAdd(BLAST_GENETIC_CODE, gc.get());
+}
+
+CAutomaticGenCodeSingleton::~CAutomaticGenCodeSingleton()
+{ 
+    CFastMutex mutex;
+    if (--m_RefCounter == 0) {
+        GenCodeSingletonFini(); 
+    }
 }
 
 EBlastProgramType

@@ -54,7 +54,6 @@
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_psi.h>
 #include <algo/blast/core/blast_hspstream.h>
-#include <algo/blast/core/gencode_singleton.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -270,16 +269,17 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
                           TSeqLocInfoVector& mask_v);
 
 /** Initializes and uninitializes the genetic code singleton as if it was an
- * automatic variable */
+ * automatic variable. It also provides MT-safety.*/
 class CAutomaticGenCodeSingleton {
 public:
-    CAutomaticGenCodeSingleton()  { 
-        GenCodeSingletonInit(); 
-        // N.B.: this is added as this is the default value
-        TAutoUint1ArrayPtr gc = FindGeneticCode(BLAST_GENETIC_CODE);
-        GenCodeSingletonAdd(BLAST_GENETIC_CODE, gc.get());
-    }
-    ~CAutomaticGenCodeSingleton() { GenCodeSingletonFini(); }
+    /// Default constructor
+    CAutomaticGenCodeSingleton();
+    /// destructor
+    ~CAutomaticGenCodeSingleton();
+private:
+    /// Reference counter for this object so that the genetic code singleton is
+    //not deleted prematurely
+    static Uint4 m_RefCounter;
 };
 
 
