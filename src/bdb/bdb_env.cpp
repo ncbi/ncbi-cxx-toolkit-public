@@ -294,7 +294,9 @@ void CBDB_Env::JoinEnv(const string& db_home, TEnvOpenFlags opt)
 
 bool CBDB_Env::Remove()
 {
-    _ASSERT(!m_HomePath.empty());
+    if (m_HomePath.empty()) {
+        return true;
+    }
     Close();
 
     int ret = db_env_create(&m_Env, 0);
