@@ -73,7 +73,24 @@ private:
     typename SBDB_TypeTraits<PropKey>::TFieldType   m_PropKey;
     typename SBDB_TypeTraits<PropValue>::TFieldType m_PropVal;
     typename SBDB_TypeTraits<TKeyId>::TFieldType    m_Uid;
-    TKeyId m_MaxUid;
+
+    struct SReverseDictionary : public CBDB_File
+    {
+        typename SBDB_TypeTraits<TKeyId>::TFieldType    uid;
+        typename SBDB_TypeTraits<PropKey>::TFieldType   prop_key;
+        typename SBDB_TypeTraits<PropValue>::TFieldType prop_val;
+
+        SReverseDictionary()
+            : CBDB_File(eDuplicatesDisable, eQueue)
+            {
+                DisableNull();
+                BindKey ("uid", &uid);
+                BindData("key", &prop_key);
+                BindData("val", &prop_val);
+            }
+    };
+
+    auto_ptr<SReverseDictionary> m_RevDict;
 };
 
 
@@ -107,21 +124,10 @@ public:
 template <class PropKey, class PropValue>
 inline
 CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary()
-: m_MaxUid(0)
 {
     BindKey ("key", &m_PropKey);
     BindKey ("val", &m_PropVal);
     BindData("uid", &m_Uid);
-}
-
-
-template <class PropKey, class PropValue>
-inline
-Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::GetKey(const TKey& key)
-{
-    TKeyId uid = 0;
-    Read(key.first, key.second, &uid);
-    return uid;
 }
 
 
@@ -146,24 +152,42 @@ CBDB_PropertyDictionary<PropKey, PropValue>::GetCurrentUid() const
 
 template <class PropKey, class PropValue>
 inline
+Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::GetKey(const TKey& key)
+{
+    TKeyId uid = 0;
+    Read(key.first, key.second, &uid);
+    return uid;
+}
+
+
+template <class PropKey, class PropValue>
+inline
 Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::PutKey(const TKey& key)
 {
-    if (m_MaxUid == 0) {
-        /// scan the database looking for the maximal UID
-        CBDB_FileCursor cursor(*this);
-        cursor.SetCondition(CBDB_FileCursor::eFirst);
-        while (cursor.Fetch() == eBDB_Ok) {
-            m_MaxUid = max(m_MaxUid, (TKeyId)m_Uid);
-        }
+    Uint4 uid = GetKey(key);
+    if (uid) {
+        return uid;
     }
 
-    TKeyId uid = m_MaxUid + 1;
-    if (Write(key.first, key.second, uid) == eBDB_Ok) {
-        m_MaxUid = uid;
-        return uid;
-    } else {
-        return 0;
+    if ( !m_RevDict.get() ) {
+        m_RevDict.reset(new SReverseDictionary);
+        if (GetEnv()) {
+            m_RevDict->SetEnv(*GetEnv());
+        } else {
+            m_RevDict->SetCacheSize(128 * 1024 * 1024);
+        }
+        m_RevDict->Open(GetFileName() + ".inv", GetOpenMode());
     }
+
+    m_RevDict->prop_key = key.first;
+    m_RevDict->prop_val = key.second;
+    uid = m_RevDict->Append();
+    if (uid) {
+        if (Write(key, uid) != eBDB_Ok) {
+            uid = 0;
+        }
+    }
+    return uid;
 }
 
 

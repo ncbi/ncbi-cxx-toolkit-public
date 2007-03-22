@@ -128,7 +128,7 @@ public:
 
     /// retrieve the current key
     string GetCurrentKey() const;
-    Uint4 GetCurrentUid() const;
+    Uint4  GetCurrentUid() const;
 
     /// read a particular key's value
     EBDB_ErrCode Read (const string& key, Uint4* val);
@@ -140,10 +140,28 @@ public:
     EBDB_ErrCode Write(const string& key, Uint4 val);
 
 private:
+    /// key
     CBDB_FieldString m_Key;
+    /// data
     CBDB_FieldUint4  m_Uid;
 
-    Uint4 m_MaxUid;
+    struct SReverseDictionary : public CBDB_File
+    {
+        /// key
+        CBDB_FieldUint4  uid;
+        /// data
+        CBDB_FieldString key;
+
+        SReverseDictionary()
+            : CBDB_File(eDuplicatesDisable, eQueue)
+            {
+                DisableNull();
+                BindKey ("uid", &uid);
+                BindData("key", &key);
+            }
+    };
+
+    auto_ptr<SReverseDictionary> m_RevDict;
 };
 
 
@@ -313,13 +331,10 @@ CBDB_BlobDictStore<Key, Dictionary, BvStore>::Write(const Key& key,
                                                     const void* data,
                                                     size_t size)
 {
-    TKeyId key_id = m_Dict->GetKey(key);
+    TKeyId key_id = m_Dict->PutKey(key);
     if ( !key_id ) {
-        key_id = m_Dict->PutKey(key);
-        if ( !key_id ) {
-            NCBI_THROW(CException, eUnknown,
-                       "Failed to insert key value");
-        }
+        NCBI_THROW(CException, eUnknown,
+                   "Failed to insert key value");
     }
     return UpdateInsert(key_id, data, size);
 }

@@ -39,7 +39,6 @@ BEGIN_NCBI_SCOPE
 
 
 CBDB_BlobDictionary<string>::CBDB_BlobDictionary()
-    : m_MaxUid(0)
 {
     BindKey ("key", &m_Key);
     BindData("uid", &m_Uid);
@@ -85,33 +84,36 @@ Uint4 CBDB_BlobDictionary<string>::GetCurrentUid() const
 Uint4 CBDB_BlobDictionary<string>::GetKey(const string& key)
 {
     Uint4 uid = 0;
-    Read(key, &uid);
+    Read(key, &uid) ;
     return uid;
 }
 
 
 Uint4 CBDB_BlobDictionary<string>::PutKey(const string& key)
 {
-    if (m_MaxUid == 0) {
-        /// scan the database looking for the maximal UID
-        CBDB_FileCursor cursor(*this);
-        cursor.SetCondition(CBDB_FileCursor::eFirst);
-        Uint4 this_uid = 0;
-        void* p = &this_uid;
-        while (cursor.Fetch(CBDB_FileCursor::eDefault,
-                            &p, sizeof(this_uid),
-                            CBDB_RawFile::eReallocForbidden) == eBDB_Ok) {
-            m_MaxUid = max(m_MaxUid, this_uid);
-        }
+    Uint4 uid = GetKey(key);
+    if (uid != 0) {
+        return uid;
     }
 
-    Uint4 next_uid = m_MaxUid + 1;
-    if (Write(key, next_uid) == eBDB_Ok) {
-        m_MaxUid = next_uid;
-        return next_uid;
-    } else {
-        return 0;
+    if ( !m_RevDict.get() ) {
+        m_RevDict.reset(new SReverseDictionary);
+        if (GetEnv()) {
+            m_RevDict->SetEnv(*GetEnv());
+        } else {
+            m_RevDict->SetCacheSize(128 * 1024 * 1024);
+        }
+        m_RevDict->Open(GetFileName() + ".inv", GetOpenMode());
     }
+
+    m_RevDict->key = key;
+    uid = m_RevDict->Append();
+    if (uid) {
+        if (Write(key, uid) != eBDB_Ok) {
+            uid = 0;
+        }
+    }
+    return uid;
 }
 
 
