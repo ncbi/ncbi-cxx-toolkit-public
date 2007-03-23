@@ -457,8 +457,8 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
 static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
 {
     try {
-        // check allowed characters
-        static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
+        // check allowed characters ('#' isn't ProSite, but is a special case used to match an 'X' residue character)
+        static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.#";
         unsigned int i;
         for (i=0; i<prosite.size(); ++i)
             if (allowed.find(toupper((unsigned char) prosite[i])) == string::npos) break;
@@ -492,9 +492,9 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
             if (characterHandled) continue;
             if (!inGroup && (
                     (isalpha((unsigned char) prosite[i]) && toupper((unsigned char) prosite[i]) != 'X') ||
-                    prosite[i] == '[' || prosite[i] == '{')) {
+                    prosite[i] == '[' || prosite[i] == '{' || prosite[i] == '#')) {
                 *regex += '(';
-                (*nGroups)++;
+                ++(*nGroups);
                 inGroup = true;
             }
 
@@ -514,6 +514,9 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
                     break;
                 case 'X': case 'x':
                     *regex += '.';
+                    break;
+                case '#':
+                    *regex += 'X';
                     break;
                 default:
                     *regex += toupper((unsigned char) prosite[i]);
