@@ -79,12 +79,16 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
     // m_ControlSocketForPoll
     unsigned short port;
     CListeningSocket listener;
+    static const STimeout kTimeout = { 0, 500000 }; // 500 ms
     for (port = 2049; port < 65535; ++port) {
         if (eIO_Success == listener.Listen(port, 5, fLSCE_BindLocal))
             break;
     }
     m_ControlSocket.Connect("127.0.0.1", port);
     m_ControlSocket.DisableOSSendDelay();
+    // Set a (modest) timeout to prevent SetConnType from blocking forever
+    // with m_Mutex held, which could deadlock the whole server.
+    m_ControlSocket.SetTimeout(eIO_Write, &kTimeout);
     listener.Accept(dynamic_cast<CSocket&>(m_ControlSocketForPoll));
 }
 
@@ -140,7 +144,12 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
     if (type == eInactiveSocket) {
         // DEBUG if (it != data.end() && !it->first->IsOpen())
         //     printf("Socket just closed\n");
-        m_ControlSocket.Write("", 1, NULL);
+        EIO_Status status = m_ControlSocket.Write("", 1, NULL, eIO_WritePlain);
+        if (status != eIO_Success) {
+            ERR_POST(Warning
+                     << "SetConnType: failed to write to control socket: "
+                     << IO_StatusStr(status));
+        }
     }
 }
 
