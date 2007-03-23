@@ -51,32 +51,37 @@ BEGIN_NCBI_SCOPE
 class CTestServer : public CServer
 {
 public:
-    CTestServer(unsigned int max_delay) :
-        m_ShutdownRequested(false), m_HelloCount(0), m_MaxDelay(max_delay) { }
+    CTestServer(int max_number_of_clients, unsigned int max_delay) :
+        m_MaxNumberOfClients(max_number_of_clients),
+        m_ClientCount(0),
+        m_MaxDelay(max_delay),
+        m_ShutdownRequested(false)
+    {
+    }
     virtual bool ShutdownRequested(void) { return m_ShutdownRequested; }
     void RequestShutdown(void) { m_ShutdownRequested = true; }
-    void AddHello();
-    int  CountHellos();
+    int  RegisterClient();
+    int  GetMaxNumberOfClients() const;
     unsigned int GetMaxDelay() const {return m_MaxDelay;}
 private:
-    volatile bool m_ShutdownRequested;
-    CFastMutex m_HelloMutex;
-    int m_HelloCount;
+    int m_MaxNumberOfClients;
+    int m_ClientCount;
+    CFastMutex m_ClientCountMutex;
     unsigned int m_MaxDelay;
+    volatile bool m_ShutdownRequested;
 };
 
 
-void CTestServer::AddHello()
+int CTestServer::RegisterClient()
 {
-    CFastMutexGuard guard(m_HelloMutex);
-    ++m_HelloCount;
+    CFastMutexGuard guard(m_ClientCountMutex);
+    return ++m_ClientCount;
 }
 
 
-int CTestServer::CountHellos()
+int CTestServer::GetMaxNumberOfClients() const
 {
-    CFastMutexGuard guard(m_HelloMutex);
-    return m_HelloCount;
+    return m_MaxNumberOfClients;
 }
 
 
@@ -142,8 +147,6 @@ void CTestConnectionHandler::OnMessage(BUF buf)
     size_t msg_size = BUF_Read(buf, data, sizeof(data));
     if (msg_size > 0) {
         data[msg_size] = '\0';
-        if (memcmp(data, "Hello!", strlen("Hello!")) == 0)
-            m_Server->AddHello();
         ERR_POST(Info << "got \"" << data << "\"");
     } else {
         ERR_POST(Info << "got empty line");
@@ -157,9 +160,14 @@ void CTestConnectionHandler::OnMessage(BUF buf)
     socket.Write("Goodbye!\n", sizeof("Goodbye!\n") - 1);
     socket.Close();
 
-    if (memcmp(data, "Goodbye!", sizeof("Goodbye!") - 1) == 0) {
-        ERR_POST(Info << "got shutdown request");
-        ERR_POST(Info << "Hello counter = " << m_Server->CountHellos());
+    int this_client_number = m_Server->RegisterClient();
+    int max_number_of_clients = m_Server->GetMaxNumberOfClients();
+
+    ERR_POST(Info << "Processed " << this_client_number <<
+        "/" << max_number_of_clients);
+
+    if (this_client_number == max_number_of_clients) {
+        ERR_POST(Info << "All clients processed");
         m_Server->RequestShutdown();
     }
 }
@@ -188,11 +196,6 @@ private:
 
 // The client part
 
-static unsigned int s_Requests;
-static volatile unsigned int s_Processed = 0;
-
-DEFINE_STATIC_FAST_MUTEX(s_Mutex);
-
 class CConnectionRequest : public CStdRequest
 {
 public:
@@ -211,22 +214,13 @@ void CConnectionRequest::Process(void)
 {
     CConn_SocketStream stream("localhost", m_Port);
 
-    unsigned int request_number;
-
-    {
-        CFastMutexGuard guard(s_Mutex);
-        request_number = ++s_Processed;
-    }
-
     string junk;
 
     stream >> junk;
 
-    stream << (request_number < s_Requests ? "Hello!" : "Goodbye!") << endl;
+    stream << "Hello!" << endl;
 
     stream >> junk;
-
-    ERR_POST(Info << "Processed " << request_number << "/" << s_Requests);
 }
 
 
@@ -320,18 +314,21 @@ int CServerTestApp::Run(void)
     params.queue_size = args["queuesize"].AsInteger();
     params.accept_timeout = &kAcceptTimeout;
 
-    CTestServer server(args["maxdelay"].AsInteger());
+    int max_number_of_clients = args["requests"].AsInteger();
+
+    CTestServer server(max_number_of_clients, args["maxdelay"].AsInteger());
     server.SetParameters(params);
 
     server.AddListener(new CTestConnectionFactory(&server), port);
 
-    s_Requests = args["requests"].AsInteger();
-
-    CStdPoolOfThreads pool(args["maxclthreads"].AsInteger(), s_Requests);
+    CStdPoolOfThreads pool(args["maxclthreads"].AsInteger(),
+        max_number_of_clients);
 
     pool.Spawn(args["clthreads"].AsInteger());
 
-    for (unsigned int i = 0;  i < s_Requests;  ++i) {
+    int i = max_number_of_clients;
+
+    while (--i >= 0) {
         pool.AcceptRequest(CRef<ncbi::CStdRequest>(
             new CConnectionRequest(port)));
     }
