@@ -1,11 +1,14 @@
-* Remote searches: obtaining BLAST database information for formatter
-* BlastOptions: setting of extra parameters
-* Aligment results: Dense-seg vs. disc
-* config file/saved search strategy support
-* Test/performance suite
+* legacy_blast.pl
+* Test/performance suite (plug in QA-blastall.pl?)
+
 * translated BLAST binaries (blastx, tblastn, tblastx)
 * rpsblast
 * phiblast (add to PSI-BLAST)
-* subject sequence handling
-* legacy_blast.pl
+* subject sequence handling (locally and remotely)
+
+* Alignment results: Dense-seg vs. disc (fails for remote blast)
+* Remote searches: obtaining BLAST database information for formatter
+* BlastOptions: setting of extra parameters
+
+* config file/saved search strategy support
 

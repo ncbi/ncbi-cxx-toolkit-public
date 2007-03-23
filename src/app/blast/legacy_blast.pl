@@ -191,8 +191,11 @@ sub handle_blastall($)
     $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
     $retval .= "-frame_shift_penalty $opt_w " if (defined $opt_w);
     if (defined $opt_C) {
-        # handle composition based statistics!
         $retval .= "-comp_based_stats $opt_C ";
+    } elsif ($opt_p eq "blastp" or $opt_p eq "tblastn") {
+        # this is needed b/c blastall -p blastp has CBS turned off by default 
+        # while the CBlastAdvancedProteinOptionsHandle has it on by default
+        $retval .= "-comp_based_stats F ";
     }
 
     $retval .= "-out $opt_o "               if (defined $opt_o);
@@ -208,7 +211,7 @@ sub handle_blastall($)
         }
     }
 
-    $retval .= &convert_sequence_locations($opt_L, "query");
+    $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
     if (defined $opt_U and $opt_U =~ /t/i) {
         $retval .= "-lcase_masking ";
     }
@@ -445,8 +448,8 @@ sub handle_bl2seq
     if (defined $opt_g and $opt_g =~ /f/i) {
         $retval .= "-ungapped ";
     }
-    $retval .= &convert_sequence_locations($opt_I, "query");
-    $retval .= &convert_sequence_locations($opt_J, "subject");
+    $retval .= &convert_sequence_locations($opt_I, "query") if ($opt_I);
+    $retval .= &convert_sequence_locations($opt_J, "subject") if ($opt_J);
 
     if (defined $opt_F) {
         print STDERR "Filtering is not handled yet in $0!\n";
