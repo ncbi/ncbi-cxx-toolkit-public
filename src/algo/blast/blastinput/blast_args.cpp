@@ -156,8 +156,10 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // word size
     // Default values: blastn=11, megablast=28, others=3
-    arg_desc.AddOptionalKey(kArgWordSize, "int_value", 
-                            "Word size for wordfinder algorithm",
+    const string description = m_QueryIsProtein 
+        ? "Word size for wordfinder algorithm"
+        : "Word size for wordfinder algorithm (length of best perfect match)";
+    arg_desc.AddOptionalKey(kArgWordSize, "int_value", description,
                             CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgWordSize, 
                            new CArgAllowValuesGreaterThanOrEqual(3));
@@ -219,11 +221,15 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         "Filter query sequence with SEG "
                         "(Format: 'window locut hicut', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgSegFiltering);
+        //arg_desc.AddNegatedFlagAlias("no" + kArgSegFiltering,
+        //                             kArgSegFiltering);
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
                         "(Format: 'level window linker', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgDustFiltering);
+        //arg_desc.AddNegatedFlagAlias("no" + kArgDustFiltering,
+        //                             kArgDustFiltering);
     }
 
     arg_desc.AddFlag(kArgLookupTableMaskingOnly,
@@ -793,6 +799,8 @@ CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */)
 void
 CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
+    arg_desc.SetCurrentGroup("BLAST database options");
+
     // database filename
     arg_desc.AddOptionalKey(kArgDb, "database_name", "BLAST database name", 
                             CArgDescriptions::eString);
@@ -815,9 +823,18 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Restrict search of database to list of GI's",
                             CArgDescriptions::eString);
 
+    arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
+    // subject sequence input (for bl2seq)
     arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
                             "Subject sequence(s) to search",
                             CArgDescriptions::eInputFile);
+    // subject location
+    arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
+                            "Location on the subject sequence "
+                            "(Format: start-stop)",
+                            CArgDescriptions::eString);
+
+    arg_desc.SetCurrentGroup("");
 }
 
 void
@@ -842,6 +859,11 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
             }
         }
     } else if (args[kArgSubject]) {
+        if (args[kArgRemote]) {
+            NCBI_THROW(CBlastException, eInvalidArgument,
+               "Submission of remote BLAST-2-Sequences is not supported\n"
+               "Please visit the NCBI web site to submit your search");
+        }
         throw runtime_error("Setting of subject sequences unimplemented");
     } else {
         NCBI_THROW(CBlastException, eInvalidArgument,
@@ -1056,6 +1078,34 @@ CStdCmdLineArgs::GetOutputStream() const
     // before this method is invoked
     _ASSERT(m_OutputStream);
     return *m_OutputStream;
+}
+
+void
+CSearchStrategyArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Search strategy options");
+
+    arg_desc.AddOptionalKey(kArgInputSearchStrategy,
+                            "filename",
+                            "Search strategy to use", 
+                            CArgDescriptions::eInputFile);
+    arg_desc.AddOptionalKey(kArgOutputSearchStrategy,
+                            "filename",
+                            "File name to record the search strategy used", 
+                            CArgDescriptions::eOutputFile);
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+CSearchStrategyArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
+                                             CBlastOptions& /* options */)
+{
+}
+
+CBlastAppArgs::CBlastAppArgs()
+{
+    m_Args.push_back(CRef<IBlastCmdLineArgs>(new CSearchStrategyArgs));
 }
 
 CArgDescriptions*

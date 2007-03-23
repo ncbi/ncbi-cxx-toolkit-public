@@ -62,7 +62,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs);
+    arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
     arg.Reset(new CNuclArgs);

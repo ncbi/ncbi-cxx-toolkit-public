@@ -100,6 +100,7 @@ const string kArgUseLCaseMasking("lcase_masking");
 const string kArgStrand("strand");
 const string kDfltArgStrand("both");
 const string kArgQueryLocation("query_loc");
+const string kArgSubjectLocation("subject_loc");
 const string kArgParseQueryDefline("parse_query_defline");
 
 const string kArgMaxIntronLength("max_intron_length");
@@ -136,6 +137,9 @@ const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
+
+const string kArgInputSearchStrategy("import_search_strategy");
+const string kArgOutputSearchStrategy("export_search_strategy");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

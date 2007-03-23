@@ -82,7 +82,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs);
+    arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
     arg.Reset(new CFilteringArgs(kQueryIsProtein));
@@ -119,7 +119,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CGapTriggerArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
-    m_PsiBlastArgs.Reset(new CPsiBlastArgs);
+    m_PsiBlastArgs.Reset(new CPsiBlastArgs(CPsiBlastArgs::eProteinDb));
     arg.Reset(m_PsiBlastArgs);
     m_Args.push_back(arg);
 }

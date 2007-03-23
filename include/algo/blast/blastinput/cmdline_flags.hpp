@@ -144,6 +144,8 @@ extern const string kArgStrand;
 extern const string kDfltArgStrand;
 /// Argument to specify a location to restrict the query sequence(s)
 extern const string kArgQueryLocation;
+/// Argument to specify a location to restrict the subject sequence(s)
+extern const string kArgSubjectLocation;
 /// Argument to specify if the query sequence(s) defline should be parsed
 extern const string kArgParseQueryDefline;
 
@@ -204,42 +206,19 @@ extern const string kArgPSIPseudocount;
 /// aligned sequences for PSSM constructions
 extern const string kArgPSIInclusionEThreshold;
 
+/// Argument to specify the search strategy file to read and use for a BLAST
+/// search
+extern const string kArgInputSearchStrategy;
+/// Argument to specify the file name to save the search strategy used for a 
+/// BLAST search
+extern const string kArgOutputSearchStrategy;
+
 /* OLD C TOOLKIT ARGUMENTS */
 
-//#define ARG_WINDOW "A"
-
 /* PSI-BLAST arguments */
-//#define ARG_PSEUDOCOUNT "c"
-#define ARG_INCLUSION_THRESHOLD "h"
-//#define ARG_NUM_ITERATIONS "j"
-
-//#define ARG_CHECKPOINT "C"
 #define ARG_ASCII_MATRIX "Q"
 #define ARG_MSA_RESTART "B"
-//#define ARG_GAP_TRIGGER "N"
 
-/* OLD blastall arguments */
-
-//#define ARG_PROGRAM "p"
-//#define ARG_DB "d"
-//#define ARG_MISMATCH "q"
-//#define ARG_MATCH "r"
-//#define ARG_THRESHOLD "f"
-//#define ARG_QGENETIC_CODE "query_gencode"
-//#define ARG_DBGENETIC_CODE "db_gencode"
-//#define ARG_QGENETIC_CODE "Q"
-//#define ARG_DBGENETIC_CODE "D"
-//#define ARG_MATRIX "M"
-//#define ARG_DBSIZE "z"
-//#define ARG_STRAND "S"
-//#define ARG_PSI_CHKPNT "R"
-//#define ARG_MEGABLAST "n"
-//#define ARG_FRAMESHIFT "w"
-//#define ARG_INTRON "t"
-//#define ARG_COMP_BASED_STATS "comp_based_stats"
-//#define ARG_COMP_BASED_STATS "C"
-//#define ARG_SMITH_WATERMAN "s"
-//#define ARG_GAPPED "g"
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

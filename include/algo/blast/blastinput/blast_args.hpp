@@ -348,6 +348,17 @@ public:
                                          CBlastOptions& options);
 };
 
+/// Argument class to import/export the search strategy
+class NCBI_XBLAST_EXPORT CSearchStrategyArgs : public IBlastCmdLineArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+};
+
 /// Argument class to collect options specific to PSI-BLAST
 class NCBI_XBLAST_EXPORT CPsiBlastArgs : public IBlastCmdLineArgs
 {
@@ -623,6 +634,8 @@ typedef vector< CRef<IBlastCmdLineArgs> > TBlastCmdLineArgs;
 class NCBI_XBLAST_EXPORT CBlastAppArgs : public CObject
 {
 public:
+    /// Default constructor
+    CBlastAppArgs();
     /// Our virtual destructor
     virtual ~CBlastAppArgs() {}
 

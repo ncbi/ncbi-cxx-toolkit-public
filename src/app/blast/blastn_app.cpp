@@ -110,13 +110,12 @@ int CBlastnApp::Run(void)
 
         /*** Initialize the database ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CSeqDB> seqdb;
-        CRef<CLocalDbAdapter> db_adapter;
-        CRef<CSearchDatabase> search_db;
+        CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
+        CRef<CSearchDatabase> search_db;    /* needed for remote searches */
         if (m_CmdLineArgs->ExecuteRemotely()) {
             search_db = db_args->GetSearchDatabase();
         } else {
-            seqdb = GetSeqDB(db_args);
+            CRef<CSeqDB> seqdb = GetSeqDB(db_args);
             db_adapter.Reset(new CLocalDbAdapter(seqdb));
 
             const string loader_name = RegisterOMDataLoader(m_ObjMgr, seqdb);

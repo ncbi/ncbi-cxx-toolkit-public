@@ -68,6 +68,22 @@ if ($print_only) {
     system($cmd);
 }
 
+sub convert_sequence_locations($$)
+{
+    my $arg = shift;
+    my $target = shift;
+    my $retval;
+    if (defined $arg) {
+        if ($target eq "query") {
+            $retval .= "-query_loc ";
+        } else {
+            $retval .= "-subject_loc ";
+        }
+        my @fields = split(/[ ;,]/, $arg);
+        $retval .= "$fields[0]-$fields[1] ";
+    }
+    return $retval;
+}
 sub convert_strand($)
 {
     my $old_strand_arg = shift;
@@ -192,11 +208,7 @@ sub handle_blastall($)
         }
     }
 
-    if (defined $opt_L) {
-        $retval .= "-query_loc ";
-        my @fields = split(/[ ;,]/, $opt_L);
-        $retval .= "$fields[0]-$fields[1] ";
-    }
+    $retval .= &convert_sequence_locations($opt_L, "query");
     if (defined $opt_U and $opt_U =~ /t/i) {
         $retval .= "-lcase_masking ";
     }
@@ -211,6 +223,9 @@ sub handle_blastall($)
         $retval .= "-use_sw_tback ";
     }
 
+    if (defined $opt_F) {
+        print STDERR "Filtering is not handled yet in $0!\n";
+    }
 
     return $retval;
 }
@@ -274,6 +289,7 @@ sub handle_megablast($)
 
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
 
+    $retval = "Conversion to $application NOT IMPLEMENTED yet\n";
     return $retval;
 }
 
@@ -356,6 +372,7 @@ sub handle_blastpgp($)
     return $retval;
 }
 
+
 sub handle_bl2seq
 {
     my $print_only = shift;
@@ -381,7 +398,7 @@ sub handle_bl2seq
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
-               "a=i"            => \$opt_a,
+               "a=s"            => \$opt_a,
                "d=f"            => \$opt_d,
                "e=f"            => \$opt_e,
                "g=s"            => \$opt_g,
@@ -396,7 +413,53 @@ sub handle_bl2seq
                );
     my $retval;
 
-    $retval .= &convert_strand($opt_S) if (defined $opt_S);
+    $retval .= "./$opt_p "                  if (defined $opt_p);
+    $retval .= "-query $opt_i "             if (defined $opt_i);
+    $retval .= "-subject $opt_j "           if (defined $opt_j);
+    $retval .= "-out $opt_o "               if (defined $opt_o);
+    if (defined $opt_a) {
+        unless ($retval =~ s/-out \S+ /-out $opt_a /) {
+            $retval .= "-out $opt_a ";
+        }
+        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
+            $retval .= "-outfmt 10 ";
+        } else {
+            print STDERR "Warning: overriding output format\n";
+        }
+    }
+    $retval .= "-evalue $opt_e "            if (defined $opt_e);
+    $retval .= "-gapopen $opt_G "           if (defined $opt_G);
+    $retval .= "-gapextend $opt_E "         if (defined $opt_E);
+    $retval .= "-word_size $opt_W "         if (defined $opt_W);
+    $retval .= "-matrix $opt_M "            if (defined $opt_M);
+    $retval .= "-mismatch_penalty $opt_q "  if (defined $opt_q);
+    $retval .= "-match_reward $opt_r "      if (defined $opt_r);
+    $retval .= &convert_strand($opt_S)      if (defined $opt_S);
+    $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
+    $retval .= "-dbsize $opt_d "            if (defined $opt_d);
+    $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
+    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    if (defined $opt_U and $opt_U =~ /t/i) {
+        $retval .= "-lcase_masking ";
+    }
+    if (defined $opt_g and $opt_g =~ /f/i) {
+        $retval .= "-ungapped ";
+    }
+    $retval .= &convert_sequence_locations($opt_I, "query");
+    $retval .= &convert_sequence_locations($opt_J, "subject");
+
+    if (defined $opt_F) {
+        print STDERR "Filtering is not handled yet in $0!\n";
+    }
+    if (defined $opt_A) {
+        print STDERR "-A is not handled yet in $0 for bl2seq!\n";
+    }
+    if (defined $opt_m) {
+        print STDERR "-m is not handled yet in $0 for bl2seq!\n";
+    }
+    if (defined $opt_D) {
+        print STDERR "Filtering is not handled yet in new C++ binaries!\n";
+    }
 
     return $retval;
 }
@@ -439,6 +502,7 @@ sub handle_rpsblast
                );
     my $retval;
 
+    $retval = "Conversion to $application NOT IMPLEMENTED yet\n";
     return $retval;
 }
 

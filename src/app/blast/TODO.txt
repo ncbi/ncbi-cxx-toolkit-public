@@ -6,6 +6,6 @@
 * translated BLAST binaries (blastx, tblastn, tblastx)
 * rpsblast
 * phiblast (add to PSI-BLAST)
-* subject sequence argument to binaries
+* subject sequence handling
 * legacy_blast.pl
 
