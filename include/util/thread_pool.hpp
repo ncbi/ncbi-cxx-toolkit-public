@@ -380,13 +380,8 @@ public:
     /// @param max_urgent_threads
     ///   The maximum number of urgent threads running simultaneously
     CPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
-                   int spawn_threshold = 1, 
-                   unsigned int max_urgent_threads = kMax_UInt)
-        : m_MaxThreads(max_threads), m_MaxUrgentThreads(max_urgent_threads),
-          m_Threshold(spawn_threshold), 
-          m_Queue(queue_size > 0 ? queue_size : max_threads),
-          m_QueuingForbidden(queue_size == 0)
-        { m_ThreadCount.Set(0); m_UrgentThreadCount.Set(0); m_Delta.Set(0);}
+                   unsigned int spawn_threshold = 1, 
+                   unsigned int max_urgent_threads = kMax_UInt);
 
     /// Destructor
     virtual ~CPoolOfThreads(void);
@@ -472,16 +467,21 @@ protected:
 
     typedef CAtomicCounter::TValue TACValue;
 
+    enum {
+        kDeltaOffset = 1 << 24 // Base delta value to avoid going negative.
+    };
+
     /// The maximum number of threads the pool can hold
     volatile TACValue        m_MaxThreads;
     /// The maximum number of urgent threads running simultaneously
     volatile TACValue        m_MaxUrgentThreads;
     TACValue                 m_Threshold; ///< for delta
-    /// The current number of threads the pool
+    /// The current number of threads in the pool
     CAtomicCounter           m_ThreadCount;
     /// The current number of urgent threads running now
     CAtomicCounter           m_UrgentThreadCount;
-    /// number unfinished requests - number threads in the pool
+    /// The difference between the number of unfinished requests and
+    /// the total number of threads in the pool, plus an offset.
     CAtomicCounter           m_Delta;     
     /// The guard for m_MaxThreads and m_MaxUrgentThreads
     CMutex                   m_Mutex;
@@ -591,10 +591,10 @@ public:
     /// @param max_urgent_threads
     ///   The maximum number of urgent threads running simultaneously
     CStdPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
-                      int spawn_threshold = 1,
+                      unsigned int spawn_threshold = 1,
                       unsigned int max_urgent_threads = kMax_UInt)
-        : TParent(max_threads, queue_size, 
-                  spawn_threshold,max_urgent_threads) {}
+        : TParent(max_threads, queue_size, spawn_threshold, max_urgent_threads)
+        {}
 
     virtual ~CStdPoolOfThreads();
 
@@ -933,6 +933,23 @@ void CThreadInPool<TRequest>::ProcessRequest(TItemHandle handle)
 //
 
 template <typename TRequest>
+CPoolOfThreads<TRequest>::CPoolOfThreads(unsigned int max_threads,
+                                         unsigned int queue_size,
+                                         unsigned int spawn_threshold, 
+                                         unsigned int max_urgent_threads)
+    : m_MaxThreads(max_threads), m_MaxUrgentThreads(max_urgent_threads),
+      m_Threshold(spawn_threshold + kDeltaOffset), 
+      m_Queue(queue_size > 0 ? queue_size : max_threads),
+      m_QueuingForbidden(queue_size == 0)
+{
+    _ASSERT(max_threads + max_urgent_threads < kDeltaOffset);
+    m_ThreadCount.Set(0);
+    m_UrgentThreadCount.Set(0);
+    m_Delta.Set(kDeltaOffset);
+}
+
+
+template <typename TRequest>
 CPoolOfThreads<TRequest>::~CPoolOfThreads(void)
 {
     CAtomicCounter::TValue n = m_ThreadCount.Get() + m_UrgentThreadCount.Get();
@@ -980,7 +997,7 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
 {
     if (m_Queue.IsFull()) {
         return false; // temporary blockage
-    } else if (m_Delta.Get() < 0) {
+    } else if (m_Delta.Get() < kDeltaOffset) {
         return true;
     } else if (m_ThreadCount.Get() < m_MaxThreads) {
         return true;
@@ -991,7 +1008,8 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
             // This should be redundant with the delta < 0 case, but
             // I've gotten reports that suggest otherwise. :-/
             m_Queue.WaitForHunger(0);
-            ERR_POST("Possible thread pool bug.  delta: " << m_Delta.Get()
+            ERR_POST("Possible thread pool bug.  delta: "
+                     << (long)m_Delta.Get() - kDeltaOffset
                      << "; hunger: " << m_Queue.GetHunger());
             return true;
         } catch (...) {
