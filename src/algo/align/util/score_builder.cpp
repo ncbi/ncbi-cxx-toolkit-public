@@ -39,6 +39,7 @@
 #include <algo/blast/core/blast_encoding.h>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -54,6 +55,8 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
 
     m_GapOpen = opts.GetGapOpeningCost();
     m_GapExtend = opts.GetGapExtensionCost();
+
+    // alignments are either protein-protein or nucl-nucl
 
     m_BlastType = opts.GetProgram();
     if (m_BlastType == eBlastn || m_BlastType == eMegablast ||
@@ -73,15 +76,16 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
                 "Failed to initialize blast score block");
     }
 
+    // fill in the score matrix
+
     EBlastProgramType core_type = EProgramToEBlastProgramType(m_BlastType);
     BlastScoringOptions *score_options;
     BlastScoringOptionsNew(core_type, &score_options);
     BLAST_FillScoringOptions(score_options, core_type, TRUE,
-                            opts.GetMatchReward(),
                             opts.GetMismatchPenalty(),
+                            opts.GetMatchReward(),
                             opts.GetMatrixName(),
-                            opts.GetGapOpeningCost(),
-                            opts.GetGapExtensionCost());
+                            m_GapOpen, m_GapExtend);
     status = Blast_ScoreBlkMatrixInit(core_type, score_options,
                                       m_ScoreBlk, NULL);
     score_options = BlastScoringOptionsFree(score_options);
@@ -90,13 +94,21 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
                 "Failed to initialize score matrix");
     }
 
+    // fill in Karlin blocks
+
     m_ScoreBlk->kbp_gap_std[0] = Blast_KarlinBlkNew();
     if (m_BlastType == eBlastn) {
+        // the following computes the same Karlin blocks as blast
+        // if the gap penalties are not large. When the penalties are
+        // large the ungapped Karlin blocks are used, but these require
+        // sequence data to be computed exactly. Instead we build an
+        // ideal ungapped Karlin block to approximate the exact answer
+        Blast_ScoreBlkKbpIdealCalc(m_ScoreBlk);
         status = Blast_KarlinBlkNuclGappedCalc(m_ScoreBlk->kbp_gap_std[0],
                                                m_GapOpen, m_GapExtend,
                                                m_ScoreBlk->reward,
                                                m_ScoreBlk->penalty,
-                                               m_ScoreBlk->kbp_gap_std[0],
+                                               m_ScoreBlk->kbp_ideal,
                                                &(m_ScoreBlk->round_down),
                                                NULL);
     }
@@ -356,6 +368,8 @@ TSeqPos CScoreBuilder::GetAlignLength(const CSeq_align& align)
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const unsigned char reverse_4na[16] = {0, 8, 4, 0, 2, 0, 0, 0, 1};
+
 int CScoreBuilder::GetBlastScore(CScope& scope, 
                                  const CSeq_align& align)
 {
@@ -389,15 +403,20 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
         for (CAlnVec::TNumseg seg_idx = 0;  
                         seg_idx < vec.GetNumSegs();  ++seg_idx) {
 
-            if (vec.GetStart(0, seg_idx) == -1 ||
-                vec.GetStart(1, seg_idx) == -1) {
-                computed_score -= gap_open + gap_extend * vec.GetLen(seg_idx);
+            TSignedSeqPos start1 = vec.GetStart(0, seg_idx);
+            TSignedSeqPos start2 = vec.GetStart(1, seg_idx);
+            TSeqPos seg_len = vec.GetLen(seg_idx);
+
+            if (start1 == -1 || start2 == -1) {
+                computed_score -= gap_open + gap_extend * seg_len;
                 continue;
             }
 
-            for (TSeqPos pos = 0;  pos < vec.GetLen(seg_idx);  ++pos) {
-                unsigned char c1 = vec1[vec.GetStart(0, seg_idx) + pos];
-                unsigned char c2 = vec2[vec.GetStart(1, seg_idx) + pos];
+            // @todo FIXME the following assumes ncbistdaa format
+
+            for (TSeqPos pos = 0;  pos < seg_len;  ++pos) {
+                unsigned char c1 = vec1[start1 + pos];
+                unsigned char c2 = vec2[start2 + pos];
                 computed_score += matrix[c1][c2];
             }
         }
@@ -405,7 +424,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
     else if (mol1 == CSeq_inst::eMol_na && mol2 == CSeq_inst::eMol_na) {
 
         int match = m_ScoreBlk->reward;
-        int mismatch = -(m_ScoreBlk->penalty);
+        int mismatch = m_ScoreBlk->penalty; // assumed negative
 
         if (m_BlastType != eBlastn) {
             NCBI_THROW(CException, eUnknown,
@@ -416,26 +435,50 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
         if (gap_open == 0 && gap_extend == 0) { // possible with megablast
             match *= 2;
             mismatch *= 2;
-            gap_extend = match / 2 + mismatch;
+            gap_extend = match / 2 - mismatch;
             scaled_up = true;
         }
+
+        int strand1 = vec.StrandSign(0);
+        int strand2 = vec.StrandSign(1);
 
         for (CAlnVec::TNumseg seg_idx = 0;  
                         seg_idx < vec.GetNumSegs();  ++seg_idx) {
 
-            if (vec.GetStart(0, seg_idx) == -1 ||
-                vec.GetStart(1, seg_idx) == -1) {
-                computed_score -= gap_open + gap_extend * vec.GetLen(seg_idx);
+            TSignedSeqPos start1 = vec.GetStart(0, seg_idx);
+            TSignedSeqPos start2 = vec.GetStart(1, seg_idx);
+            TSeqPos seg_len = vec.GetLen(seg_idx);
+
+            if (start1 == -1 || start2 == -1) {
+                computed_score -= gap_open + gap_extend * seg_len;
                 continue;
             }
 
-            for (TSeqPos pos = 0;  pos < vec.GetLen(seg_idx);  ++pos) {
-                unsigned char c1 = vec1[vec.GetStart(0, seg_idx) + pos];
-                unsigned char c2 = vec2[vec.GetStart(1, seg_idx) + pos];
-                if (c1 == c2)
-                    computed_score += match;
-                else
-                    computed_score -= mismatch;
+            // @todo FIXME encoding assumed to be ncbi4na, without
+            // ambiguity charaters
+
+            if (strand1 > strand2) {
+                for (TSeqPos pos = 0;  pos < seg_len;  ++pos) {
+                    unsigned char c1 = vec1[start1 + pos];
+                    unsigned char c2 = vec2[start2 + seg_len - 1 - pos];
+                    computed_score +=  (c1 == reverse_4na[c2]) ?
+                                        match : mismatch;
+                }
+            }
+            else if (strand1 < strand2) {
+                for (TSeqPos pos = 0;  pos < seg_len;  ++pos) {
+                    unsigned char c1 = vec1[start1 + seg_len - 1 - pos];
+                    unsigned char c2 = vec2[start2 + pos];
+                    computed_score += (reverse_4na[c1] == c2) ?
+                                        match : mismatch;
+                }
+            }
+            else {
+                for (TSeqPos pos = 0;  pos < seg_len;  ++pos) {
+                    unsigned char c1 = vec1[start1 + pos];
+                    unsigned char c2 = vec2[start2 + pos];
+                    computed_score += (c1 == c2) ? match : mismatch;
+                }
             }
         }
 
@@ -455,8 +498,11 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
 double CScoreBuilder::GetBlastBitScore(CScope& scope,
                                        const CSeq_align& align)
 {
-    Blast_KarlinBlk *kbp = m_ScoreBlk->kbp_gap_std[0];
     int raw_score = GetBlastScore(scope, align);
+    Blast_KarlinBlk *kbp = m_ScoreBlk->kbp_gap_std[0];
+
+    if (m_BlastType == eBlastn && m_ScoreBlk->round_down)
+        raw_score &= ~1;
 
     return (raw_score * kbp->Lambda - kbp->logK) / NCBIMATH_LN2;
 }
@@ -470,8 +516,11 @@ double CScoreBuilder::GetBlastEValue(CScope& scope,
                "E-value calculation requires search space to be specified");
     }
 
-    Blast_KarlinBlk *kbp = m_ScoreBlk->kbp_gap_std[0];
     int raw_score = GetBlastScore(scope, align);
+    Blast_KarlinBlk *kbp = m_ScoreBlk->kbp_gap_std[0];
+
+    if (m_BlastType == eBlastn && m_ScoreBlk->round_down)
+        raw_score &= ~1;
 
     return BLAST_KarlinStoE_simple(raw_score, kbp, m_EffectiveSearchSpace);
 }
