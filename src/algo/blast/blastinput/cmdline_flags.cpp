@@ -31,12 +31,14 @@
  *  Constant definitions for command line arguments for BLAST programs
  */
 
-#include <ncbi_pch.hpp>
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
+#include <ncbi_pch.hpp>
+
+#ifndef SKIP_DOXYGEN_PROCESSING
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <algo/blast/core/blast_options.h>
 
