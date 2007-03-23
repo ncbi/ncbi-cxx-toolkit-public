@@ -87,18 +87,31 @@ public:
     CRef<IQueryFactory> GetQueryFactoryForChunk(Uint4 chunk_num);
 
 private:
+    /// Definition of a vector of CBlastQueryVectors, each element corresponds
+    /// to a query chunk
     typedef vector< CRef<CBlastQueryVector> > TSplitQueryVector;
 
+    /// The original, unsplit query factory
     CRef<IQueryFactory> m_QueryFactory;
+    /// BLAST options
     const CBlastOptions* m_Options;
+    /// Number of chunks, if this is 1, no splitting occurs
     Uint4 m_NumChunks;
+    /// Split query block structure
     CRef<class CSplitQueryBlk> m_SplitBlk;
+    /// Vector of query factories, each element corresponds to a chunk
     vector< CRef<IQueryFactory> > m_QueryChunkFactories;
+    /// Source of local query data
     CRef<ILocalQueryData> m_LocalQueryData;
+    /// Length of the concatenated query
     size_t m_TotalQueryLength;
+    /// Size of the query chunks
     size_t m_ChunkSize;
+    /// Vector of CScope objects
     TScopeVector m_Scopes;
+    /// Vector of masking locations
     TSeqLocInfoVector m_UserSpecifiedMasks;
+    /// Vector of split queries
     TSplitQueryVector m_SplitQueriesInChunk;
 
     /// Auxiliary method to extract the CScope objects from the query factory
@@ -114,7 +127,11 @@ private:
     /// Compute the context offsets which are used to adjust the results
     void x_ComputeContextOffsetsForChunks();
 
+    /// Compute the context offsets which are used to adjust the results for
+    /// translated queries
     void x_ComputeContextOffsets_TranslatedQueries();
+    /// Compute the context offsets which are used to adjust the results for
+    /// non-translated queries
     void x_ComputeContextOffsets_NonTranslatedQueries();
 
     /// Prohibit copy constructor

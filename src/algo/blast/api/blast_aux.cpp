@@ -761,7 +761,7 @@ static void s_ConvertBlastnMasks(const CPacked_seqint::Tdata& query_intervals,
 
 void 
 Blast_GetSeqLocInfoVector(EBlastProgramType program, 
-                          const CPacked_seqint& queries,
+                          const objects::CPacked_seqint& queries,
                           const BlastMaskLoc* mask, 
                           TSeqLocInfoVector& mask_v)
 {
@@ -917,7 +917,7 @@ TSearchMessages::RemoveDuplicates()
 //
 
 TMaskedQueryRegions
-TMaskedQueryRegions::RestrictToSeqInt(const CSeq_interval& location) const
+TMaskedQueryRegions::RestrictToSeqInt(const objects::CSeq_interval& location) const
 {
     TMaskedQueryRegions retval;
 

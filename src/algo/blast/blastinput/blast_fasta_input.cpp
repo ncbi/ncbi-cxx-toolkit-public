@@ -52,7 +52,7 @@ BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 
-CBlastFastaInputSource::CBlastFastaInputSource(CObjectManager& objmgr,
+CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
                                                CNcbiIstream& infile,
                                                objects::ENa_strand strand,
                                                bool lowercase,

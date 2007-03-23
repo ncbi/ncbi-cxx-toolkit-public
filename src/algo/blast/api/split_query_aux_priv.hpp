@@ -104,6 +104,8 @@ SplitQuery_SetEffectiveSearchSpace(CRef<CBlastOptions> options,
  */
 class CContextTranslator {
 public:
+    /// Constructor
+    /// @param sqb Split query block structure [in]
     CContextTranslator(const CSplitQueryBlk& sqb);
 
     /** 
@@ -143,7 +145,10 @@ public:
      * is not valid in the query chunk (i.e.: strand not searched)
      */
     int GetStartingChunk(size_t curr_chunk, Int4 context_in_chunk) const;
+
 private:
+    /// Each element in this vector represents a chunk, and it contains the
+    /// contexts numbers that correspond in the full concatenated query
     vector< vector<int> > m_ContextsPerChunk;
 };
 
@@ -151,20 +156,74 @@ private:
 /// into chunks.
 class CQueryDataPerChunk {
 public:
+    /** 
+     * @brief Constructor
+     * 
+     * @param sqb Split query block structure [in]
+     * @param program BLAST program type [in]
+     * @param local_query_data source of query data [in]
+     */
     CQueryDataPerChunk(const CSplitQueryBlk& sqb,
                        EBlastProgramType program,
                        CRef<ILocalQueryData> local_query_data);
 
+    /** 
+     * @brief Get the length of the query
+     * 
+     * @param chunk_num chunk number where query is found [in]
+     * @param context_in_chunk which context within this chunk contains query
+     * [in]
+     * 
+     * @return length of query
+     */
     size_t GetQueryLength(size_t chunk_num, int context_in_chunk) const;
+    /** 
+     * @brief Get the length of the query
+     * 
+     * @param global_query_index index of the query in the context of the
+     * full,non-split query [in]
+     * 
+     * @return length of query
+     */
     size_t GetQueryLength(int global_query_index) const;
 
+    /** 
+     * @brief get the last chunk where query identified with global_query_index
+     * is found
+     * 
+     * @param global_query_index index of the query in the context of the
+     * full,non-split query [in]
+     * 
+     * @return chunk number where query is last found
+     */
     int GetLastChunk(int global_query_index);
+    /** 
+     * @brief get the last chunk where query identified with global_query_index
+     * is found
+     * 
+     * @param chunk_num chunk number where query is found [in]
+     * @param context_in_chunk which context within this chunk contains query
+     * [in]
+     * 
+     * @return chunk number where query is last found
+     */
     int GetLastChunk(size_t chunk_num, int context_in_chunk);
 
 private:
+    /** 
+     * @brief Convert a context in a chunk to a query index (within the chunk)
+     * 
+     * @param context_in_chunk context number [in]
+     * 
+     * @return query index
+     */
     size_t x_ContextInChunkToQueryIndex(int context_in_chunk) const;
 
+    /// BLAST program type
     EBlastProgramType        m_Program;
+
+    /// Each element in this vector represents a chunk, and it contains the
+    /// query indices that correspond in the full concatenated query
     vector< vector<size_t> > m_QueryIndicesPerChunk;
 
     /// Lengths of the queries

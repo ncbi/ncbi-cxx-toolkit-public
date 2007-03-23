@@ -339,7 +339,7 @@ CBlastQuerySourceOM::Size() const
 void
 SetupQueryInfo(TSeqLocVector& queries, 
                EBlastProgramType prog,
-               ENa_strand strand_opt,
+               objects::ENa_strand strand_opt,
                BlastQueryInfo** qinfo)
 {
     SetupQueryInfo_OMF(CBlastQuerySourceOM(queries, prog), prog, strand_opt, qinfo);
@@ -350,7 +350,7 @@ SetupQueries(TSeqLocVector& queries,
              BlastQueryInfo* qinfo, 
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog,
-             ENa_strand strand_opt,
+             objects::ENa_strand strand_opt,
              TSearchMessages& messages)
 {
     CBlastQuerySourceOM query_src(queries, prog);
