@@ -36,13 +36,9 @@
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_encoding.h>
 
-#include <objmgr/scope.hpp>
-#include <objmgr/util/seq_loc_util.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
