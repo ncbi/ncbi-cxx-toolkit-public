@@ -52,7 +52,8 @@ CRef<CSeqDB> GetSeqDB(CRef<CBlastDatabaseArgs> db_args)
 
     // Process the optional gi list file
     CRef<CSeqDBGiList> gi_list;
-    string gi_list_restriction = db_args->GetGiListFileName();
+    string gi_list_restriction = 
+        SeqDB_ResolveDbPath(db_args->GetGiListFileName());
     if ( !gi_list_restriction.empty() ) {
         gi_list.Reset(new CSeqDBFileGiList(gi_list_restriction));
 

@@ -155,6 +155,9 @@ sub handle_blastall($)
                "z=f"            => \$opt_z,
                );
 
+    unless (defined $opt_p) {
+        die "-p must be provided\n";
+    }
 
     if (defined $opt_n and $opt_n =~ /t/i) {
         return &handle_megablast($print_only);
@@ -162,7 +165,7 @@ sub handle_blastall($)
 
     my $retval;
     $retval .= "./$opt_p "                  if (defined $opt_p);
-    $retval .= "-db $opt_d "                if (defined $opt_d);
+    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
