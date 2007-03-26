@@ -205,7 +205,8 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
         LookupTableWrap* lut =
             CSetupFactory::CreateLookupTable(query_data, opts_memento.get(),
                                              sbp, lookup_segments,
-                                             retval->m_InternalData->m_RpsData);
+                                             retval->m_InternalData->m_RpsData,
+                                             seqsrc);
         retval->m_InternalData->m_LookupTable.Reset
             (new TLookupTableWrap(lut, LookupTableWrapFree));
     }

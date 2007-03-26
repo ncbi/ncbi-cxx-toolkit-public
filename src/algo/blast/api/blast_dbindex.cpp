@@ -467,7 +467,7 @@ class CPreSearchThread : public CThread
 void * CPreSearchThread::Main( void )
 {
     results_ = index_->Search( queries_, locs_, sopt_ );
-    index_->Remap();
+    // index_->Remap();
     return 0;
 }
 
@@ -526,7 +526,7 @@ void CIndexedDb::PreSearch(
             CRef< CDbIndex > & index = indices_[0];
             CConstRef< CDbIndex::CSearchResults > & results = results_[v];
             results = index->Search( queries, locs, sopt );
-            index->Remap();
+            // index->Remap();
         }
     }
 }
