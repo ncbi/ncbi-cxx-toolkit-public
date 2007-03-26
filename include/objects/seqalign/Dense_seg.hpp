@@ -102,6 +102,12 @@ public:
     /// Extract a slice of the alignment that includes the specified range
     CRef<CDense_seg> ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const;
 
+    /// Extract specified rows of the alignment.
+    /// The rows in the new alignment are in the order given by the
+    /// rows parameter.  Thus, this can also be used for
+    /// permuting the order of rows.
+    CRef<CDense_seg> ExtractRows(const vector<TDim>& rows) const;
+    
     /// Join adjacent mergeable segments to create a more compact
     /// alignment
     void Compact();
@@ -117,7 +123,9 @@ public:
     NCBI_DEPRECATED void RemapToLoc(TDim row, const CSeq_loc& loc,
                                     bool ignore_strand = false);
 
-    // initialize from pairwise alignment transcript
+    /// Initialize from pairwise alignment transcript
+    /// (a string representation produced by CNWAligner)
+    /// @sa CNWAligner
     void FromTranscript(TSeqPos query_start, ENa_strand query_strand,
                         TSeqPos subj_start, ENa_strand subj_strand,
                         const string& transcript );

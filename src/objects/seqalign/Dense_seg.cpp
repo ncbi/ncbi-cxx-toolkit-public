@@ -575,7 +575,8 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
     if (row < 0  ||  row >= GetDim()) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
                    "CDense_seg::ExtractSlice():"
-                   " Invalid row number");
+                   " Invalid row number ("
+                   + NStr::IntToString(row) + ")");
     }
 
     if (from > to) {
@@ -658,6 +659,58 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
     return ds;
 }
 
+
+CRef<CDense_seg> CDense_seg::ExtractRows(const vector<TDim>& rows) const
+{
+    // consistency checks
+    TDim dim = CheckNumRows();
+    TNumseg numseg = CheckNumSegs();
+
+    CRef<CDense_seg> new_ds(new CDense_seg);
+    new_ds->SetDim(rows.size());
+    new_ds->SetNumseg(GetNumseg());
+
+    // reserve for efficiency
+    new_ds->SetIds().reserve(rows.size());
+    new_ds->SetStarts().reserve(rows.size() * GetNumseg());
+    new_ds->SetLens().reserve(GetNumseg());
+    if (IsSetStrands()) {
+        new_ds->SetStrands().reserve(rows.size() * GetNumseg());
+    }
+
+    ITERATE (vector<TDim>, row, rows) {
+        // sole check that rows are not out of range
+        if (*row < 0  ||  *row >= dim) {
+            NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                       "CDense_seg::ExtractRows():"
+                       " Invalid row number ("
+                       + NStr::IntToString(*row) + ")");
+        }
+        // *copy* the ID (don't just make a reference to it)
+        CRef<CSeq_id> id_copy(new CSeq_id);
+        id_copy->Assign(*GetIds()[*row]);
+        new_ds->SetIds().push_back(id_copy);
+    }
+    for (TNumseg segnum = 0; segnum < numseg; ++segnum) {
+        new_ds->SetLens().push_back(GetLens()[segnum]);
+        ITERATE (vector<TDim>, row, rows) {
+            int idx = segnum * dim + *row;
+            new_ds->SetStarts().push_back(GetStarts()[idx]);
+            if (IsSetStrands()) {
+                new_ds->SetStrands().push_back(GetStrands()[idx]);
+            }
+        }
+    }
+
+    new_ds->Compact();  // even if original was compact, new one may not be
+
+#ifdef _DEBUG
+    new_ds->Validate(true);
+#endif
+
+    // Scores are not propagated
+    return new_ds;
+}
 
 
 void CDense_seg::OffsetRow(TDim row,
