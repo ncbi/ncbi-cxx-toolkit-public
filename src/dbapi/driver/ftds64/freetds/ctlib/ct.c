@@ -631,9 +631,11 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
     case CS_VERSION_100:
         connection->major_version = 4;
         connection->minor_version = 6;
+        break;
     case CS_VERSION_110:
         connection->major_version = 5;
         connection->minor_version = 0;
+        break;
     };
 
     /* Timeouts ... */
