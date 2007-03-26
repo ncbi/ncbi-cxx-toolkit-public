@@ -53,6 +53,7 @@ static char const rcsid[] =
 #include <util/math/matrix.hpp>
 
 // Object includes
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmFinalData.hpp>

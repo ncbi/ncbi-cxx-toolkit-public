@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_results.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 /** @addtogroup AlgoBlast
  *

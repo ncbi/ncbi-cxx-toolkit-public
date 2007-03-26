@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include <algorithm>
 

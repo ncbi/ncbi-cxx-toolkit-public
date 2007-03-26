@@ -220,6 +220,11 @@ private:
 
     /// unit test class
     friend class ::CPssmEngineTest;
+
+private:
+    /// forbidden copy ctor and assignment operator
+    CPsiBlastInputData(const CPsiBlastInputData&);
+    CPsiBlastInputData& operator=(const CPsiBlastInputData&);
 };
 
 END_SCOPE(blast)

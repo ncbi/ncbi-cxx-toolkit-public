@@ -43,6 +43,7 @@ static char const rcsid[] =
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 // Object manager dependencies
 #include <algo/blast/api/seqsrc_seqdb.hpp>

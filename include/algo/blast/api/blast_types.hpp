@@ -35,8 +35,6 @@
 #define ALGO_BLAST_API___BLAST_TYPE__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_message.h>
