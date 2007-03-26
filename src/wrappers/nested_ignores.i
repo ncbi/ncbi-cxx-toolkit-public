@@ -29,6 +29,10 @@
  *
  */
 
+%ignore *::CBlastDbDataLoader_CCachedSeqData;
+%ignore *::CBlastDbDataLoader_SBlastDbParam;
+%ignore *::CGB_Writer_PluginManager_DllResolver::GetDllNameMask;
+
 %ignore *::CBioTree_CBioNode;
 
 %ignore *::CSeqConvert_IPackTarget::NewSegment;

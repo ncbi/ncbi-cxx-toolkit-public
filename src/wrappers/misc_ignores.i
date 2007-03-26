@@ -37,10 +37,16 @@
 
 // Default assignment operator can't be used
 %ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
+%ignore ncbi::SNcbiParamDesc_GENBANK_SNP_PACK_STRINGS::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieName::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_DisableTrackingCookie::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieDomain::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_TrackingCookiePath::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_SNP_PACK_STRINGS::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_SNP_SPLIT::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_SNP_TABLE::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_USE_MEMORY_POOL::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_READER_STATS::sm_ParamDescription;
 
 // CScopeTransaction cannot be allocated dynamically
 %ignore *::CScopeTransaction;
