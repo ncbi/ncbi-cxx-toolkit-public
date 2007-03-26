@@ -1080,8 +1080,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
           "gi|32894024",   "gb|AAP90628.1", "gi|32894010",
           "gb|AAP90615.1", 0 };
     const char * s1[] =
-        { "gi|68737", "pir||DXCH", "gi|129295",
-          "sp|P01013|OVAX_CHICK", 0 };
+        { "gi|129295", "sp|P01013|OVAX_CHICK", 0 };
     const char * s2[] =
         { "gi|30749669", "pdb|1NPQ|A", "1NPQ",
           "gi|30749670",  "pdb|1NPQ|B", "1npq", 0 };
@@ -1110,7 +1109,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
           32894066, 32894052, 32894038, 32894024, 32894010,
           0 };
     Uint4 g1[] =
-        { 129295, 68737, 0 };
+        { 129295, 0 };
     Uint4 g2[] =
         { 30749669, 30749670, 0 };
     Uint4 g3[] =
@@ -1912,7 +1911,6 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDs)
     START;
     
     int gi1a = 129295;
-    int gi1b = 68737;
     int tax1 = 9031;
     
     int gi2a  = 5832633;
@@ -1935,9 +1933,8 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDs)
     map<int, int> gi2taxid;
     
     db.GetTaxIDs(oid1, gi2taxid);
-    CHECK_EQUAL((int)gi2taxid.size(), 2);
+    CHECK_EQUAL((int)gi2taxid.size(), 1);
     CHECK_EQUAL(gi2taxid[gi1a],       tax1);
-    CHECK_EQUAL(gi2taxid[gi1b],       tax1);
     
     db.GetTaxIDs(oid2, gi2taxid, false);
     CHECK_EQUAL((int)gi2taxid.size(), 2);
@@ -1945,9 +1942,8 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDs)
     CHECK_EQUAL(gi2taxid[gi2b],       tax2b);
     
     db.GetTaxIDs(oid1, gi2taxid, true);
-    CHECK_EQUAL((int)gi2taxid.size(), 4);
+    CHECK_EQUAL((int)gi2taxid.size(), 3);
     CHECK_EQUAL(gi2taxid[gi1a],       tax1);
-    CHECK_EQUAL(gi2taxid[gi1b],       tax1);
     CHECK_EQUAL(gi2taxid[gi2a],       tax2a);
     CHECK_EQUAL(gi2taxid[gi2b],       tax2b);
 }
@@ -1979,9 +1975,8 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDsVector)
     
     db.GetTaxIDs(oid1, taxids);
     sort(taxids.begin(), taxids.end());
-    CHECK_EQUAL((int)taxids.size(), 2);
+    CHECK_EQUAL((int)taxids.size(), 1);
     CHECK_EQUAL(taxids[0],       tax1);
-    CHECK_EQUAL(taxids[1],       tax1);
     
     db.GetTaxIDs(oid2, taxids, false);
     sort(taxids.begin(), taxids.end());
@@ -1991,11 +1986,10 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDsVector)
     
     db.GetTaxIDs(oid1, taxids, true);
     sort(taxids.begin(), taxids.end());
-    CHECK_EQUAL((int)taxids.size(), 4);
+    CHECK_EQUAL((int)taxids.size(), 3);
     CHECK_EQUAL(taxids[0],       tax1);
-    CHECK_EQUAL(taxids[1],       tax1);
-    CHECK_EQUAL(taxids[2],       tax2a);
-    CHECK_EQUAL(taxids[3],       tax2b);
+    CHECK_EQUAL(taxids[1],       tax2a);
+    CHECK_EQUAL(taxids[2],       tax2b);
 }
 
 BOOST_AUTO_UNIT_TEST(PartialSequences)
