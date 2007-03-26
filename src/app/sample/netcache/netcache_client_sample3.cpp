@@ -142,7 +142,6 @@ int CSampleNetCacheClient::Run(void)
 
 
 
-
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
     // storage takes respnsibility of deleting NetCache client
@@ -192,5 +191,5 @@ int CSampleNetCacheClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSampleNetCacheClient().AppMain(argc, argv);
 }
