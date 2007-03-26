@@ -113,7 +113,7 @@ CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 void
 CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.SetCurrentGroup("general search options");
+    arg_desc.SetCurrentGroup("General search options");
 
     // evalue cutoff
     arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
@@ -221,15 +221,11 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         "Filter query sequence with SEG "
                         "(Format: 'window locut hicut', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgSegFiltering);
-        //arg_desc.AddNegatedFlagAlias("no" + kArgSegFiltering,
-        //                             kArgSegFiltering);
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
                         "(Format: 'level window linker', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgDustFiltering);
-        //arg_desc.AddNegatedFlagAlias("no" + kArgDustFiltering,
-        //                             kArgDustFiltering);
     }
 
     arg_desc.AddFlag(kArgLookupTableMaskingOnly,
@@ -364,7 +360,7 @@ CMatrixNameArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 void
 CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.SetCurrentGroup("nucleotide scoring options");
+    arg_desc.SetCurrentGroup("Nucleotide scoring options");
 
     // blastn mismatch penalty
     arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
@@ -733,7 +729,6 @@ CQueryOptionsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eString);
 
     // believe query ID
-    // FIXME: should this be here or among the formatting options
     arg_desc.AddFlag(kArgParseQueryDefline,
                      "Should the query defline(s) be parsed?", true);
 
@@ -757,11 +752,7 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
     {
         m_Strand = eNa_strand_unknown;
 
-        if (Blast_QueryIsProtein(opt.GetProgramType())) {
-            return;
-        } 
-
-        if (args[kArgStrand]) {
+        if (!Blast_QueryIsProtein(opt.GetProgramType()) && args[kArgStrand]) {
             const string& kStrand = args[kArgStrand].AsString();
             if (kStrand == "both") {
                 m_Strand = eNa_strand_both;
@@ -828,11 +819,18 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
                             "Subject sequence(s) to search",
                             CArgDescriptions::eInputFile);
+    arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, kArgDb);
+    arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
+                           kArgGiList);
     // subject location
     arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
                             "Location on the subject sequence "
                             "(Format: start-stop)",
                             CArgDescriptions::eString);
+    arg_desc.SetDependency(kArgSubjectLocation, 
+                           CArgDescriptions::eExcludes, kArgDb);
+    arg_desc.SetDependency(kArgSubjectLocation, CArgDescriptions::eExcludes, 
+                           kArgGiList);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -993,6 +991,8 @@ void
 CRemoteArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.AddFlag(kArgRemote, "Execute search remotely?", true);
+    arg_desc.SetDependency(kArgRemote, CArgDescriptions::eExcludes,
+                           kArgNumThreads);
 }
 
 void
@@ -1093,6 +1093,9 @@ CSearchStrategyArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "filename",
                             "File name to record the search strategy used", 
                             CArgDescriptions::eOutputFile);
+    arg_desc.SetDependency(kArgInputSearchStrategy,
+                           CArgDescriptions::eExcludes,
+                           kArgOutputSearchStrategy);
 
     arg_desc.SetCurrentGroup("");
 }
