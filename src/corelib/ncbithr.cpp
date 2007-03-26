@@ -62,7 +62,7 @@ BEGIN_NCBI_SCOPE
 //
 
 
-DEFINE_STATIC_FAST_MUTEX(s_TlsCleanupMutex);
+DEFINE_STATIC_MUTEX(s_TlsCleanupMutex);
 
 
 CUsedTlsBases::CUsedTlsBases(void)
@@ -78,7 +78,7 @@ CUsedTlsBases::~CUsedTlsBases(void)
 
 void CUsedTlsBases::ClearAll(void)
 {
-    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
     NON_CONST_ITERATE(TTlsSet, it, m_UsedTls) {
         CRef<CTlsBase> tls = *it;
         tls->x_DeleteTlsData();
@@ -89,14 +89,14 @@ void CUsedTlsBases::ClearAll(void)
 
 void CUsedTlsBases::Register(CTlsBase* tls)
 {
-    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
     m_UsedTls.insert(Ref(tls));
 }
 
 
 void CUsedTlsBases::Deregister(CTlsBase* tls)
 {
-    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+    CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
     CRef<CTlsBase> ref(tls);
     m_UsedTls.erase(ref);
     ref.Release();
