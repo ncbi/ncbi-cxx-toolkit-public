@@ -991,8 +991,6 @@ void
 CRemoteArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.AddFlag(kArgRemote, "Execute search remotely?", true);
-    arg_desc.SetDependency(kArgRemote, CArgDescriptions::eExcludes,
-                           kArgNumThreads);
 }
 
 void
