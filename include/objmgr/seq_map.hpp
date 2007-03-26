@@ -179,6 +179,9 @@ public:
 
     void SetSegmentGap(const CSeqMap_CI& seg,
                        TSeqPos length);
+    void SetSegmentGap(const CSeqMap_CI& seg,
+                       TSeqPos length,
+                       CSeq_data& gap_data);
     void SetSegmentData(const CSeqMap_CI& seg,
                         TSeqPos length,
                         CSeq_data& data);
@@ -272,6 +275,7 @@ protected:
                       TSeqPos refPos, TSeqPos len,
                       ENa_strand strand = eNa_strand_plus);
     void x_AddGap(TSeqPos len, bool unknown_len);
+    void x_AddGap(TSeqPos len, bool unknown_len, const CSeq_data& gap_data);
     void x_Add(CSeqMap* submap);
     void x_Add(const CSeq_data& data, TSeqPos len);
     void x_Add(const CPacked_seqint& seq);
@@ -335,7 +339,8 @@ protected:
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
 
     virtual void x_SetSegmentGap(size_t index,
-                                 TSeqPos length);
+                                 TSeqPos length,
+                                 CSeq_data* gap_data = 0);
     virtual void x_SetSegmentData(size_t index,
                                   TSeqPos length,
                                   CSeq_data& data);

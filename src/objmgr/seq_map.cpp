@@ -191,7 +191,7 @@ CSeqMap::CSeqMap(const CSeq_inst& inst)
         }
         else {
             // split Seq-data
-            x_AddGap(inst.GetLength(), false);
+            x_AddGap(inst.GetLength(), false, inst.GetSeq_data());
         }
     }
     else if ( inst.IsSetExt() ) {
@@ -460,6 +460,9 @@ const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
     if ( seg.m_SegType == eSeqData ) {
         return *static_cast<const CSeq_data*>(x_GetObject(seg));
     }
+    else if ( seg.m_SegType == eSeqGap && seg.m_ObjType == eSeqData ) {
+        return *static_cast<const CSeq_data*>(seg.m_RefObject.GetPointer());
+    }
     NCBI_THROW(CSeqMapException, eSegmentTypeError,
                "Invalid segment type");
 }
@@ -507,7 +510,8 @@ void CSeqMap::x_StartEditing(void)
 
 
 void CSeqMap::x_SetSegmentGap(size_t index,
-                              TSeqPos length)
+                              TSeqPos length,
+                              CSeq_data* gap_data)
 {
     CFastMutexGuard guard(m_SeqMap_Mtx);
     x_StartEditing();
@@ -516,8 +520,16 @@ void CSeqMap::x_SetSegmentGap(size_t index,
         NCBI_THROW(CSeqMapException, eSegmentTypeError,
                    "Invalid segment type");
     }
+    if ( gap_data && !gap_data->IsGap() ) {
+        NCBI_THROW(CSeqMapException, eSegmentTypeError,
+                   "SetSegmentGap: Seq-data is not gap");
+    }
     
     seg.m_SegType = seg.m_ObjType = eSeqGap;
+    if ( gap_data ) {
+        seg.m_ObjType = eSeqData;
+        seg.m_RefObject = gap_data;
+    }
 
     seg.m_Length = length;
     x_SetChanged(index);
@@ -588,6 +600,16 @@ void CSeqMap::SetSegmentGap(const CSeqMap_CI& seg,
     _ASSERT(&seg.x_GetSegmentInfo().x_GetSeqMap() == this);
     size_t index = seg.x_GetSegmentInfo().x_GetIndex();
     x_SetSegmentGap(index, length);
+}
+
+
+void CSeqMap::SetSegmentGap(const CSeqMap_CI& seg,
+                            TSeqPos length,
+                            CSeq_data& gap_data)
+{
+    _ASSERT(&seg.x_GetSegmentInfo().x_GetSeqMap() == this);
+    size_t index = seg.x_GetSegmentInfo().x_GetIndex();
+    x_SetSegmentGap(index, length, &gap_data);
 }
 
 
@@ -953,6 +975,16 @@ void CSeqMap::x_AddGap(TSeqPos len, bool unknown_len)
 }
 
 
+void CSeqMap::x_AddGap(TSeqPos len, bool unknown_len,
+                       const CSeq_data& gap_data)
+{
+    x_AddSegment(eSeqGap, len, unknown_len);
+    CSegment& ret = m_Segments.back();
+    ret.m_ObjType = eSeqData;
+    ret.m_RefObject = &gap_data;
+}
+
+
 void CSeqMap::x_AddUnloadedSeq_data(TSeqPos len)
 {
     x_AddSegment(eSeqData, len);
@@ -1033,12 +1065,16 @@ void CSeqMap::x_Add(const CSeq_loc_equiv& seq)
 
 void CSeqMap::x_Add(const CSeq_literal& seq)
 {
-    if ( seq.IsSetSeq_data() && !seq.GetSeq_data().IsGap() ) {
-        x_Add(seq.GetSeq_data(), seq.GetLength());
-    }
-    else {
+    if ( !seq.IsSetSeq_data() ) {
         // No data exist - treat it like a gap
         x_AddGap(seq.GetLength(), seq.CanGetFuzz()); //???
+    }
+    else if ( seq.GetSeq_data().IsGap() ) {
+        // Seq-data.gap
+        x_AddGap(seq.GetLength(), seq.CanGetFuzz(), seq.GetSeq_data());
+    }
+    else {
+        x_Add(seq.GetSeq_data(), seq.GetLength());
     }
 }
 
