@@ -151,6 +151,36 @@ static void s_TestMisc(void)
         }}
     }}
 
+    // Comparison
+    {{
+        CTime empty;
+        CTime cl(CTime::eCurrent, CTime::eLocal);
+        CTime cg(cl);
+        cg.ToGmtTime();
+
+        assert( !(empty > empty) );
+        assert( !(empty < empty) );
+        assert(  (empty == empty) );
+        assert( !(empty > cl) );
+        assert(  (empty < cl) );
+        assert( !(empty == cl) );
+        assert( !(empty > cg) );
+        assert(  (empty < cg) );
+        assert( !(empty == cg) );
+        assert(  (cl > empty) );
+        assert( !(cl < empty) );
+        assert( !(cl == empty) );
+        assert(  (cg > empty) );
+        assert( !(cg < empty) );
+        assert( !(cg == empty) );
+        assert( !(cg > cl) );
+        assert( !(cg < cl) );
+        assert(  (cg == cl) );
+        assert( !(cl > cg) );
+        assert( !(cl < cg) );
+        assert(  (cl == cg) );
+    }}
+
     // Addition
     {{
         CTime::SetFormat("M/D/Y h:m:s.S");
