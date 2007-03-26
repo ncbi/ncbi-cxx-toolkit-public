@@ -45,8 +45,7 @@ USING_SCOPE(objects);
 bool CTestSeqId::CanTest(const CSerialObject& obj,
                               const CSeqTestContext* ctx) const
 {
-    const CSeq_id* id = dynamic_cast<const CSeq_id*>(&obj);
-    return bool(id);
+    return obj.GetThisTypeInfo() == CSeq_id::GetTypeInfo();
 }
 
 
