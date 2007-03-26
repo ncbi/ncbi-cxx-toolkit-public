@@ -31,6 +31,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_param.hpp>
+
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netcache_client.hpp>
@@ -73,27 +75,44 @@ bool s_ConnectClient(CNetCacheClient* nc_client,
     return true;
 }
 
+
+NCBI_PARAM_DECL(string, netcache_client, fallback_servers); 
+typedef NCBI_PARAM_TYPE(netcache_client, fallback_servers) TCGI_NetCacheFallbackServers;
+NCBI_PARAM_DEF(string, netcache_client, fallback_servers, kEmptyStr);
+
 /// @internal
 static
 bool s_ConnectClient_Reserve(CNetCacheClient* nc_client, 
-                             const string&    host,
-                             unsigned short   port,
                              const string&    service_name,
                              STimeout&        to,
                              string*          err_msg)
 {
-    if (s_ConnectClient(nc_client, host, port, to)) {
-        LOG_POST(Warning << "Service " << service_name
+    string sservers = TCGI_NetCacheFallbackServers::GetDefault();
+    if (sservers.empty()) {
+        *err_msg += ". Reserve NetCache instance is not set";
+        return false;
+    }
+    list<string> servers;
+    NStr::Split(sservers, " ;\t|", servers);
+    while ( !servers.empty() ) {
+        string server = *servers.begin();
+        string host, sport;
+        NStr::SplitInTwo(server, ":", host,sport);
+        try {
+            unsigned int port = NStr::StringToUInt(sport);
+            if (s_ConnectClient(nc_client, host, port, to)) {
+                LOG_POST(Warning << "Service " << service_name
                          << " cannot be found using load balancer; "
                          << " reserve service used "
                          << host << ":" << port);
-        return true;
+                return true;
+            }            
+        } catch (exception& ex) {
+        }
+        servers.pop_front();
     }
-    *err_msg += ". Reserve netcache instance at ";
-    *err_msg += host;
-    *err_msg += ":";
-    *err_msg += NStr::UIntToString(port);
-    *err_msg += " not responding.";
+
+    *err_msg += ". None of specified reserve netcache instances is responding.";
     return false;
 }
 
@@ -164,18 +183,8 @@ NetCache_ConfigureWithLB(
     // lets try to call "emergency numbers"
 
     if (backup_mode_mask & failure_diag) {
-        const unsigned short rport = 9009;
+        
         if (s_ConnectClient_Reserve(nc_client, 
-                                    "netcache", 
-                                    rport, 
-                                    service_name,
-                                    to, 
-                                    &err_msg)) {
-            return;
-        }
-        if (s_ConnectClient_Reserve(nc_client, 
-                                    "service1", 
-                                    rport, 
                                     service_name,
                                     to, 
                                     &err_msg)) {
