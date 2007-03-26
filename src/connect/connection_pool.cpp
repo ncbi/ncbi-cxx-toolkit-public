@@ -101,9 +101,7 @@ void CServer_ConnectionPool::Erase(void)
 {
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
-    for (TData::iterator next = data.begin(), it = next++;
-         next != data.end();
-         it = next, ++next) {
+    ERASE_ITERATE(TData, it, data) {
          it->first->OnTimeout();
          delete it->first;
          data.erase(it);
