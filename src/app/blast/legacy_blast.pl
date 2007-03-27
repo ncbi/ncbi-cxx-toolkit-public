@@ -103,13 +103,13 @@ sub convert_filter_string($$)
     }
 
     my $retval = "";
-    if ($filter_string =~ /S (\d+) (\d+) (\d+)/) {
+    if ($filter_string =~ /S (\d+) (\S+) (\S+)/) {
         $retval .= "-seg '$1 $2 $3' ";
     }
     if ($filter_string =~ /D (\d+) (\d+) (\d+)/) {
         $retval .= "-dust '$1 $2 $3' ";
     }
-    if ($filter_string =~ /R -d (\w+)/) {
+    if ($filter_string =~ /R -d (\S+)/) {
         $retval .= "-filtering_db $1 ";
     } elsif ($filter_string =~ /R\s*;/) {
         $retval .= "-filtering_db repeat/repeat_9606 ";

@@ -4,7 +4,7 @@
 * translated BLAST binaries (blastx, tblastn, tblastx)
 * rpsblast
 * phiblast (add to PSI-BLAST)
-* subject sequence handling (locally and remotely)
+* bl2seq handling (locally and remotely)
 
 * Alignment results: Dense-seg vs. disc (fails for remote blast)
 * Remote searches: obtaining BLAST database information for formatter
