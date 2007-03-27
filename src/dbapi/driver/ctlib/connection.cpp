@@ -631,6 +631,16 @@ bool CTL_Connection::Abort()
 bool CTL_Connection::Close(void)
 {
     if (m_Handle.IsOpen()) {
+        // Clean connection user data ...
+        CTL_Connection* link = NULL;
+        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_USERDATA,
+                                &link,
+                                (CS_INT) sizeof(link),
+                                NULL)
+                                );
+
         return (!Refresh() || (m_Handle.Close() && m_Handle.Drop()));
     }
 
@@ -839,11 +849,10 @@ void
 CTL_SendDataCmd::Close(void)
 {
     if (x_GetSybaseCmd()) {
-        if ( m_Bytes2go )
-            Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
-
         // ????
         DetachInterface();
+
+        Cancel();
 
         Check(ct_cmd_drop(x_GetSybaseCmd()));
 
