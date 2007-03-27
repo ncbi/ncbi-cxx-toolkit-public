@@ -178,7 +178,8 @@ CTLibContextRegistry::StaticClearAll(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
-BEGIN_SCOPE(ctlib)
+namespace ctlib
+{
 
 Connection::Connection(CTLibContext& context,
                        CTL_Connection* ctl_conn) :
@@ -268,8 +269,7 @@ bool Connection::Close(void)
     return !IsOpen();
 }
 
-
-END_SCOPE(ctlib)
+} // namespace ctlib
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -662,8 +662,10 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
 }
 
 
-CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
-                                       CS_CLIENTMSG* msg)
+CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
+                                             CS_CONNECTION* con,
+                                             CS_CLIENTMSG* msg
+                                             )
 {
     CS_INT          outlen;
     CPointerPot*    p_pot = 0;
@@ -814,8 +816,9 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION*
 
 
 CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
-                                        CS_CONNECTION* con,
-                                        CS_SERVERMSG* msg)
+                                              CS_CONNECTION* con,
+                                              CS_SERVERMSG* msg
+                                              )
 {
     if (
         /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/
