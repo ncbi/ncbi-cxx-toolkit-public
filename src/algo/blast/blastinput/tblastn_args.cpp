@@ -27,30 +27,30 @@
  *
  */
 
-/** @file blastp_args.cpp
- * Implementation of the BLASTP command line arguments
+/** @file tblastn_args.cpp
+ * Implementation of the TBLASTN command line arguments
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
+static char const rcsid[] 
+    = "$Id$";
 #endif
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/blastinput/blastp_args.hpp>
-#include <algo/blast/api/blast_advprot_options.hpp>
-#include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/blastinput/tblastn_args.hpp>
+#include <algo/blast/api/tblastn_options.hpp>
 #include "blast_input_aux.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-CBlastpAppArgs::CBlastpAppArgs()
+CTblastnAppArgs::CTblastnAppArgs()
 {
-    const bool kQueryIsProtein = true;
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("blastp", 
-                                          "Protein-Protein BLAST"));
+    arg.Reset(new CProgramDescriptionArgs("tblastn", 
+                                  "Protein Query-Translated Subject BLAST"));
+    const bool kQueryIsProtein = true;
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
@@ -64,6 +64,19 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
+    arg.Reset(new CGeneticCodeArgs(CGeneticCodeArgs::eDatabase));
+    m_Args.push_back(arg);
+
+    arg.Reset(new CFrameShiftArgs);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CGappedArgs);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CLargestIntronSizeArgs);
+    m_Args.push_back(arg);
+
+    // N.B.: this is because the filtering is applied on the translated query
     arg.Reset(new CFilteringArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
@@ -88,9 +101,6 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGappedArgs);
-    m_Args.push_back(arg);
-
     m_RemoteArgs.Reset(new CRemoteArgs);
     arg.Reset(m_RemoteArgs);
     m_Args.push_back(arg);
@@ -100,18 +110,16 @@ CBlastpAppArgs::CBlastpAppArgs()
 }
 
 CRef<CBlastOptionsHandle> 
-CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, 
+CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
-    CRef<CBlastOptionsHandle> retval
-        (new CBlastAdvancedProteinOptionsHandle(locality));
-    return retval;
+    return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
 }
 
 int
-CBlastpAppArgs::GetQueryBatchSize() const
+CTblastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize("blastp");
+    return blast::GetQueryBatchSize("tblastn");
 }
 
 END_SCOPE(blast)

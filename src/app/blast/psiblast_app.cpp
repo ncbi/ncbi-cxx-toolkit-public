@@ -88,6 +88,7 @@ void CPsiBlastApp::Init()
     // read the command line
 
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
+    HideStdArgs(fHideLogfile | fHideConffile);
 }
 
 /// Auxiliary function to create the PSSM for the next iteration

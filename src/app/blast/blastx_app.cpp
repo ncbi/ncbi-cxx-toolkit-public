@@ -27,8 +27,8 @@
  *
  */
 
-/** @file blastp_app.cpp
- * BLASTP command line application
+/** @file blastx_app.cpp
+ * BLASTX command line application
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -41,7 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
-#include <algo/blast/blastinput/blastp_args.hpp>
+#include <algo/blast/blastinput/blastx_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include "blast_app_util.hpp"
 #include "blast_format.hpp"
@@ -52,10 +52,10 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
-class CBlastpApp : public CNcbiApplication
+class CBlastxApp : public CNcbiApplication
 {
 public:
-    CBlastpApp() {
+    CBlastxApp() {
         SetVersion(blast::Version);
     }
 private:
@@ -63,10 +63,10 @@ private:
     virtual int Run();
 
     CRef<CObjectManager> m_ObjMgr;
-    CRef<CBlastpAppArgs> m_CmdLineArgs;
+    CRef<CBlastxAppArgs> m_CmdLineArgs;
 };
 
-void CBlastpApp::Init()
+void CBlastxApp::Init()
 {
     // get the object manager instance
     m_ObjMgr = CObjectManager::GetInstance();
@@ -76,7 +76,7 @@ void CBlastpApp::Init()
 
     // formulate command line arguments
 
-    m_CmdLineArgs.Reset(new CBlastpAppArgs());
+    m_CmdLineArgs.Reset(new CBlastxAppArgs());
 
     // read the command line
 
@@ -84,7 +84,7 @@ void CBlastpApp::Init()
     HideStdArgs(fHideLogfile | fHideConffile);
 }
 
-int CBlastpApp::Run(void)
+int CBlastxApp::Run(void)
 {
     int status = 0;
 
@@ -184,6 +184,6 @@ int CBlastpApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CBlastpApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBlastxApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

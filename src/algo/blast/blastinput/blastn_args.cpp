@@ -71,7 +71,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(new CFilteringArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
-    arg.Reset(new CMatrixNameArg);
+    arg.Reset(new CGappedArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWordThresholdArg);

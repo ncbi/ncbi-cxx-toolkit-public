@@ -567,11 +567,11 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
 {
     const EProgram program = opt.GetProgram();
 
-    if (args[kArgQueryGeneticCode]) {
+    if (m_Target == eQuery && args[kArgQueryGeneticCode]) {
         opt.SetQueryGeneticCode(args[kArgQueryGeneticCode].AsInteger());
     }
   
-    if (args[kArgDbGeneticCode] &&
+    if (m_Target == eDatabase && args[kArgDbGeneticCode] &&
         (program == eTblastn || program == eTblastx) ) {
         opt.SetDbGeneticCode(args[kArgDbGeneticCode].AsInteger());
     }

@@ -84,6 +84,52 @@ sub convert_sequence_locations($$)
     }
     return $retval;
 }
+
+sub convert_filter_string($$)
+{
+    use constant DUST_ARGS => "'20 64 1'";
+    use constant SEG_ARGS => "'12 2.2 2.5'";
+    my $filter_string = shift;
+    my $program = shift;
+
+    #print STDERR "Parsing '$filter_string'\n";
+
+    if ($filter_string =~ /F/) {
+        if ($program eq "blastp" or $program eq "tblastn") {
+            return "-seg no";
+        } else {
+            return "-dust no";
+        }
+    }
+
+    my $retval = "";
+    if ($filter_string =~ /S (\d+) (\d+) (\d+)/) {
+        $retval .= "-seg '$1 $2 $3' ";
+    }
+    if ($filter_string =~ /D (\d+) (\d+) (\d+)/) {
+        $retval .= "-dust '$1 $2 $3' ";
+    }
+    if ($filter_string =~ /R -d (\w+)/) {
+        $retval .= "-filtering_db $1 ";
+    } elsif ($filter_string =~ /R\s*;/) {
+        $retval .= "-filtering_db repeat/repeat_9606 ";
+    }
+
+    if ($filter_string =~ /L|T/) {
+        if ($program eq "blastp" or $program eq "tblastn") {
+            $retval .= "-seg " . SEG_ARGS . " ";
+        } else {
+            $retval .= "-dust " . DUST_ARGS . " ";
+        }
+    }
+
+    if ($filter_string =~ /m/) {
+        $retval .= "-soft_masking ";
+    }
+    #print STDERR "returning '$retval'\n";
+    return $retval;
+}
+
 sub convert_strand($)
 {
     my $old_strand_arg = shift;
@@ -110,7 +156,7 @@ sub handle_blastall($)
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
                "A=i"            => \$opt_A,
-               "B=i"            => \$opt_B,
+               "B=i"            => \$opt_B, # not handled, not applicable
                "C=s"            => \$opt_C,
                "D=i"            => \$opt_D,
                "E=i"            => \$opt_E,
@@ -124,11 +170,11 @@ sub handle_blastall($)
                "O=s"            => \$opt_O,
                "P=i"            => \$opt_P,
                "Q=i"            => \$opt_Q,
-               "R=s"            => \$opt_R,
+               "R=s"            => \$opt_R, # not implemented (FIXME)
                "S=i"            => \$opt_S,
-               "T=s"            => \$opt_T,
+               "T=s"            => \$opt_T, # deprecated
                "U=s"            => \$opt_U,
-               "V=s"            => \$opt_V,
+               "V=s"            => \$opt_V, # not handled, not applicable
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
@@ -177,7 +223,15 @@ sub handle_blastall($)
     $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
     $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
     $retval .= "-num_threads $opt_a "       if (defined $opt_a);
-    $retval .= "-window_size $opt_A "       if (defined $opt_A);
+    if (defined $opt_A) {
+        if (defined $opt_P and $opt_P ne "0") {
+            print STDERR "Warning: ignoring -P because window size is set\n";
+        }
+        $retval .= "-window_size $opt_A "       
+    }
+    if (defined $opt_P and $opt_P eq "1" and (not defined $opt_A)) {
+        $retval .= "-window_size 0 ";
+    }
     $retval .= "-word_size $opt_W "         if (defined $opt_W);
     $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
     $retval .= "-min_word_score $opt_f "    if (defined $opt_f);
@@ -230,7 +284,14 @@ sub handle_blastall($)
     }
 
     if (defined $opt_F) {
-        print STDERR "Filtering is not handled yet in $0!\n";
+        $retval .= &convert_filter_string($opt_F, $opt_p);
+    }
+
+    if (defined $opt_T) {
+        print STDERR "Warning: HTML output is deprecated\n";
+    }
+    if (defined $opt_R) {
+        print STDERR "Warning: -R is being ignored\n";
     }
 
     return $retval;
