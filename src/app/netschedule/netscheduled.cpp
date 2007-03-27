@@ -73,7 +73,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.18  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.20  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -393,6 +393,7 @@ private:
     // rights, which can NOT be performed by this connection
     unsigned                    m_Uncaps;
     bool                        m_VersionControl;
+    unsigned                    m_CommandNumber;
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
 
     // Batch submit data
@@ -460,6 +461,7 @@ public:
     void SetLogging(bool flag) {
         m_LogFlag.Set(flag);
     }
+    unsigned GetCommandNumber() { return m_AtomicCommandNumber.Add(1); }
     CQueueDataBase* GetQueueDB(void) { return m_QueueDB; }
     unsigned GetInactivityTimeout(void) { return m_InactivityTimeout; }
     string& GetHost() { return m_Host; }
@@ -473,24 +475,23 @@ private:
 
 private:
     /// Host name where server runs
-    string             m_Host;
-    unsigned           m_Port;
-    unsigned           m_HostNetAddr;
-    bool               m_Shutdown;
-    int                m_SigNum;  ///< Shutdown signal number
+    string                  m_Host;
+    unsigned                m_Port;
+    unsigned                m_HostNetAddr;
+    bool                    m_Shutdown;
+    int                     m_SigNum;  ///< Shutdown signal number
     /// Time to wait for the client (seconds)
-    unsigned           m_InactivityTimeout;
-
-    CQueueDataBase*    m_QueueDB;
-
-    CTime              m_StartTime;
-
-    CAtomicCounter         m_LogFlag;
+    unsigned                m_InactivityTimeout;
+    CQueueDataBase*         m_QueueDB;
+    CTime                   m_StartTime;
+    CAtomicCounter          m_LogFlag;
     /// Quick local timer
-    CFastLocalTime              m_LocalTimer;
+    CFastLocalTime          m_LocalTimer;
 
     /// List of admin stations
-    CNetSchedule_AccessList    m_AdminHosts;
+    CNetSchedule_AccessList m_AdminHosts;
+
+    CAtomicCounter          m_AtomicCommandNumber;
 };
 
 
@@ -687,15 +688,21 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     size_t msg_size = BUF_Read(buffer, m_Request, x_GetRequestBufSize());
     if (msg_size < x_GetRequestBufSize()) m_Request[msg_size] = '\0';
 
+    m_CommandNumber = m_Server->GetCommandNumber();
+
     // Logging
     if (is_log || (m_Monitor && m_Monitor->IsMonitorActive())) {
         string lmsg;
         x_MakeLogMessage(buffer, lmsg);
         if (is_log) {
-            LOG_POST(lmsg);
+            NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
+                << lmsg
+                << NCBI_NS_NCBI::Endm;
         }
-        if (m_Monitor && m_Monitor->IsMonitorActive())
+        if (m_Monitor && m_Monitor->IsMonitorActive()) {
+            lmsg += "\n";
             m_Monitor->SendString(lmsg);
+        }
     }
 
     m_JobReq.Init();
@@ -2024,6 +2031,27 @@ void CNetScheduleHandler::WriteMsg(const char*    prefix,
         buf_ptr = buffer.c_str();
     }
 
+    if (m_Server->IsLog()) {
+        string lmsg;
+        lmsg = string("ANS:") + NStr::IntToString(m_CommandNumber);
+        lmsg += ';';
+        lmsg += m_AuthString;
+        lmsg += ';';
+        lmsg += m_QueueName;
+        lmsg += ';';
+        size_t log_length = min(msg_length, (size_t) 1024);
+        bool shortened = log_length < msg_length;
+        while (log_length > 0 && (buf_ptr[log_length-1] == '\n' ||
+                                  buf_ptr[log_length-1] == '\r')) {
+                log_length--;
+        }
+        lmsg += string(buf_ptr, log_length);
+        if (shortened) lmsg += "...";
+        NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
+            << lmsg
+            << NCBI_NS_NCBI::Endm;
+    }
+
     size_t n_written;
     EIO_Status io_st = 
         socket.Write(buf_ptr, msg_length, &n_written);
@@ -2044,16 +2072,12 @@ void CNetScheduleHandler::x_MakeLogMessage(BUF buffer, string& lmsg)
         peer.erase(offs, peer.length());
     }
 
-    lmsg = peer;
-    lmsg += ';';
-    lmsg += m_LocalTimer.GetLocalTime().AsString();
-    lmsg += ';';
+    lmsg = string("REQ:") + NStr::IntToString(m_CommandNumber) + ';' + peer + ';';
     lmsg += m_AuthString;
     lmsg += ';';
     lmsg += m_QueueName;
     lmsg += ';';
     lmsg += m_Request;
-    lmsg += "\n";
 }
 
 
@@ -2086,6 +2110,8 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
     m_InactivityTimeout(network_timeout),
     m_StartTime(CTime::eCurrent)
 {
+    m_AtomicCommandNumber.Set(1);
+
     m_QueueDB = qdb;
 
     m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);

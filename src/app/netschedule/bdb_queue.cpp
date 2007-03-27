@@ -1820,9 +1820,6 @@ CQueue::Submit(SNS_SubmitRecord* rec,
 
     unsigned int job_id = q->GetNextId();
 
-    CNetSchedule_JS_Guard js_guard(q->status_tracker, 
-                                   job_id,
-                                   CNetScheduleAPI::ePending);
     rec->job_id = job_id;
     SQueueDB& db = q->db;
     SJobInfoDB& job_db = q->m_JobInfoDB;
@@ -1862,7 +1859,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
     }}
 
     trans.Commit();
-    js_guard.Commit();
+    q->status_tracker.SetStatus(job_id, CNetScheduleAPI::ePending);
 
     if (was_empty) NotifyListeners(true);
 
@@ -1975,7 +1972,6 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
         q->FlushTags(tag_map, trans);
     }}
     trans.Commit();
-
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
 
     if (was_empty) NotifyListeners(true);
@@ -2362,8 +2358,6 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
                         unsigned int   worker_node,
                         unsigned int*  job_id,
                         char*          input,
-//                        char*          jout,
-//                        char*          jerr,
                         const string&  client_name,
                         unsigned*      job_mask)
 {
@@ -3372,7 +3366,7 @@ get_job_id:
 
         upd_status =
             x_UpdateDB_GetJobNoLock(db, curr, cur, trans,
-                                    worker_node, *job_id, input, /*jout, jerr,*/
+                                    worker_node, *job_id, input,
                                     &job_aff_id, job_mask);
         }}
         trans.Commit();
