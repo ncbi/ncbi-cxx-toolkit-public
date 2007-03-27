@@ -380,10 +380,6 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
                                  double* pct_identity)
 {
     size_t count_aligned = s_GetAlignmentLength(align, true /* ungapped */);
-    if ( !count_aligned ) {
-        CNcbiOfstream ostr("e:/users/dev/bad-aligns.asn", ios::app);
-        ostr << MSerial_AsnText << align;
-    }
     s_GetCountIdentityMismatch(scope, align, identities, mismatches);
     if (count_aligned) {
         *pct_identity = 100.0f * double(*identities) / count_aligned;
