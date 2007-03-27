@@ -331,11 +331,15 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
         const string& section_name = *sit;
 
         TParamTree* node_ptr;
-        {{
+        if (section_name.find('/') == string::npos) {
             auto_ptr<TParamTree> node(new TParamTree);
             node->GetKey() = section_name;
             tree_root->AddNode(node_ptr = node.release());
-        }}
+        } else {
+            list<string> sub_node_list;
+            NStr::Split(section_name, "/", sub_node_list);
+            node_ptr = tree_root->FindOrCreateNode( sub_node_list);
+        }
 
         // Get section components
 

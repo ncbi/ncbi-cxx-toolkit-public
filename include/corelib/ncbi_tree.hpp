@@ -271,6 +271,14 @@ public:
     ///    list of discovered found nodes
     void FindNodes(const TKeyList& node_path, TNodeList* res);
 
+    /// Find or create tree node corresponding to the path from the top
+    ///
+    /// @param node_path
+    ///    hierachy of node keys to search for
+    /// @return
+    ///    tree node
+    TTreeType* FindOrCreateNode(const TKeyList& node_path);
+
     /// Find tree nodes corresponding to the path from the top
     ///
     /// @param node_path
@@ -782,6 +790,39 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
     res.push_back(tr);
 }
 
+template<class TValue, class TKeyGetter>
+typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::FindOrCreateNode(const TKeyList& node_path)
+{
+    TTreeType* tr = this;
+
+    ITERATE(typename TKeyList, sit, node_path) {
+        const TKeyType& key = *sit;
+        bool sub_level_found = false;
+
+        TNodeList_I it = tr->SubNodeBegin();
+        TNodeList_I it_end = tr->SubNodeEnd();
+
+        for (; it != it_end; ++it) {
+            TTreeType* node = *it;
+            if (node->GetKey() == key) {
+                tr = node;
+                sub_level_found = true;
+                break;
+            }
+        } // for it
+
+        if (!sub_level_found) {
+            auto_ptr<TTreeType> node( new CTreeNode<TValue, TKeyGetter> );
+            node->GetKey() = key;
+            tr->AddNode( node.get() );
+            tr = node.release();
+        }
+
+    } // ITERATE
+
+    return tr;
+}
 
 
 template<class TValue, class TKeyGetter>

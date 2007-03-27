@@ -241,13 +241,10 @@ private:
 };
 
 
-
 static
-void s_TestRegConvert()
+void s_CreateTestRegistry1(CNcbiRegistry& reg)
 {
-    CNcbiRegistry reg;
-
-    // create test registry
+    reg.Clear();
 
     reg.Set("PARENT", ".SubNode",  "Section2, Section1");
     reg.Set("PARENT", "p1",  "1");
@@ -265,13 +262,52 @@ void s_TestRegConvert()
     reg.Set("XXX", "s1A",  "duh");
     reg.Set("XXX", "s1B",  "777");
 
-    TPluginManagerParamTree* tr = CConfig::ConvertRegToTree(reg);
-    TPluginManagerParamTree* ptr = tr;
+#if 1
+    reg.Set("p", "p1",  "1");
+    reg.Set("p", "a",  "a1");
+    reg.Set("p/a", "pa1",  "1");
+    reg.Set("p", "p2",  "2");
+    reg.Set("p/a/b", "pab1",  "1");
+    reg.Set("p/a/b", ".SubNode",  "Section2");
+#endif
+}
 
+static
+void s_CreateTestRegistry2(CNcbiRegistry& reg)
+{
+    reg.Clear();
+#if 0
+    reg.Set("PARENT", "p1",  "1");
+    reg.Set("PARENT", "p2",  "blah");
 
-    CParamTreePrintFunc func;
-    TreeDepthFirstTraverse(*ptr, func);
+    reg.Set("PARENT/AAA", "s2A",  "eee");
+    reg.Set("PARENT/AAA", "s2B",  "boo");
 
+    reg.Set("PARENT/Section1", "s1A",  "ugh");
+    reg.Set("PARENT/Section1", "s1B",  "33");
+
+    reg.Set("PARENT/Section1/AAA", "s2A",  "eee");
+    reg.Set("PARENT/Section1/AAA", "s2B",  "boo");
+
+    reg.Set("XXX", "s1A",  "duh");
+    reg.Set("XXX", "s1B",  "777");
+#else
+    reg.Set("XXX", "s1A",  "duh");
+    reg.Set("PARENT", "p1",  "1");
+    reg.Set("PARENT/Section1/AAA", "s2B",  "boo");
+    reg.Set("PARENT/Section1", "s1B",  "33");
+    reg.Set("PARENT/AAA", "s2A",  "eee");
+    reg.Set("PARENT/Section1", "s1A",  "ugh");
+    reg.Set("PARENT/Section1/AAA", "s2A",  "eee");
+    reg.Set("XXX", "s1B",  "777");
+    reg.Set("PARENT", "p2",  "blah");
+    reg.Set("PARENT/AAA", "s2B",  "boo");
+#endif
+}
+
+static
+void s_TestParamTree(TPluginManagerParamTree* tr)
+{
     const TPluginManagerParamTree* nd = tr->FindNode("PARENT");
     _ASSERT(nd);    
     _ASSERT(nd->GetKey() == "PARENT");
@@ -287,7 +323,31 @@ void s_TestRegConvert()
     nd = nd->FindNode("PARENT");
     _ASSERT(nd);    
     _ASSERT(nd->GetKey() == "PARENT");
+}
 
+static
+void s_TestRegConvert()
+{
+    CNcbiRegistry reg;
+    CParamTreePrintFunc func;
+    TPluginManagerParamTree *tr, *ptr;
+    
+
+    s_CreateTestRegistry1( reg );
+
+    tr = CConfig::ConvertRegToTree(reg);
+    ptr = tr;
+    TreeDepthFirstTraverse(*ptr, func);
+    s_TestParamTree( tr );
+    delete tr;
+
+
+    s_CreateTestRegistry2( reg );
+
+    tr = CConfig::ConvertRegToTree(reg);
+    ptr = tr;
+    TreeDepthFirstTraverse(*ptr, func);
+    s_TestParamTree( tr );
     delete tr;
 }
 
