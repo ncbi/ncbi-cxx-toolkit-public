@@ -69,7 +69,7 @@ namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 
 %immutable st;
 %inline %{
-    string st;  // stack trace from CException
+    std::string st;  // stack trace from CException
 %}
 
 %include exception.i
@@ -85,7 +85,7 @@ void HandleException(void) {
 #ifdef SWIGPYTHON
         const ncbi::CStackTrace* cst = e.GetStackTrace();
         if (cst) {
-            ostringstream ostr;
+            std::ostringstream ostr;
             cst->Write(ostr);
             st = ostr.str();
         } else {
