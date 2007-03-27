@@ -507,7 +507,8 @@ void IRWRegistry::Clear(TFlags flags)
 void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::Read", flags,
-                 fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces);
+                 fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
+                 | fWithNcbirc);
     x_Read(is, flags);
 }
 
@@ -1271,6 +1272,9 @@ void CNcbiRegistry::x_Init(void)
 
     m_FileRegistry.Reset(new CTwoLayerRegistry);
     m_AllRegistries->Add(*m_FileRegistry, ePriority_File);
+
+    m_SysRegistry.Reset(new CTwoLayerRegistry);
+    m_AllRegistries->Add(*m_SysRegistry, ePriority_Default - 1);
 }
 
 
@@ -1311,12 +1315,14 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
         return false;
     }
 
-    m_SysRegistry.Reset(new CTwoLayerRegistry);
     try {
         CMetaRegistry::SEntry entry
             = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni,
                                   0, flags, m_SysRegistry.GetPointer());
-        m_SysRegistry.Reset(entry.registry);
+        if (entry.registry  &&  entry.registry != m_SysRegistry) {
+            ERR_POST(Warning << "Resetting m_SysRegistry");
+            m_SysRegistry.Reset(entry.registry);
+        }
     } catch (CRegistryException& e) {
         ERR_POST(Critical << "CNcbiRegistry: "
                  "Syntax error in system-wide configuration file: "
@@ -1324,8 +1330,7 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
         return false;
     }
 
-    if (m_SysRegistry  &&  !m_SysRegistry.Empty()) {
-        m_AllRegistries->Add(*m_SysRegistry, ePriority_Default - 1);
+    if ( !m_SysRegistry->Empty() ) {
         return true;
     }
 
@@ -1477,7 +1482,7 @@ void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
 
 void CNcbiRegistry::x_ChildLockAction(FLockAction action)
 {
-    m_AllRegistries->x_ChildLockAction(action);
+    ((*m_AllRegistries).*action)();
 }
 
 
@@ -1529,6 +1534,7 @@ void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     // file portion so that environment settings can take priority.
     if (m_MainRegistry->Empty()  &&  m_FileRegistry->Empty()) {
         m_FileRegistry->Read(is, flags);
+        IncludeNcbircIfAllowed(flags);
     } else {
         // This will only affect the main registry, but still needs to
         // go through CNcbiRegistry::x_Set.
