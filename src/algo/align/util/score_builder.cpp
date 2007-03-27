@@ -149,6 +149,145 @@ CScoreBuilder::~CScoreBuilder()
     m_ScoreBlk = BlastScoreBlkFree(m_ScoreBlk);
 }
 
+
+///
+/// calculate the number of gaps in our alignment
+///
+static int s_GetGapCount(const CSeq_align& align)
+{
+    int gap_count = 0;
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                bool is_gapped = false;
+                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                        is_gapped = true;
+                        break;
+                    }
+                }
+                if (is_gapped) {
+                    ++gap_count;
+                }
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Disc:
+        {{
+            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
+                gap_count += s_GetGapCount(**iter);
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Std:
+        break;
+
+    default:
+        break;
+    }
+
+    return gap_count;
+}
+
+///
+/// calculate the length of all gap segments
+///
+static size_t s_GetGapLength(const CSeq_align& align)
+{
+    size_t gap_length = 0;
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                bool is_gapped = false;
+                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                        is_gapped = true;
+                        break;
+                    }
+                }
+                if (is_gapped) {
+                    gap_length += ds.GetLens()[i];
+                }
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Disc:
+        {{
+            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
+                gap_length += s_GetGapLength(**iter);
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Std:
+        break;
+
+    default:
+        break;
+    }
+
+    return gap_length;
+}
+
+
+///
+/// calculate the length of our alignment
+///
+static size_t s_GetAlignmentLength(const CSeq_align& align,
+                                   bool ungapped)
+{
+    size_t len = 0;
+    switch (align.GetSegs().Which()) {
+    case CSeq_align::TSegs::e_Denseg:
+        {{
+            const CDense_seg& ds = align.GetSegs().GetDenseg();
+            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+                //int this_len = ds.GetLens()[i];
+                CDense_seg::TDim count_gapped = 0;
+                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
+                    //int start = ds.GetStarts()[i * ds.GetDim() + j];
+                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
+                        ++count_gapped;
+                    }
+                }
+                if (ungapped) {
+                    if (count_gapped == 0) {
+                        len += ds.GetLens()[i];
+                    }
+                } else if (ds.GetDim() - count_gapped > 1) {
+                    /// we have at least one row of sequence
+                    len += ds.GetLens()[i];
+                }
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Disc:
+        {{
+            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
+                len += s_GetAlignmentLength(**iter, ungapped);
+            }
+        }}
+        break;
+
+    case CSeq_align::TSegs::e_Std:
+        break;
+
+    default:
+        break;
+    }
+
+    return len;
+}
+
+
 ///
 /// calculate mismatches and identities in a seq-align
 ///
@@ -159,6 +298,17 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         {{
+            ///
+            /// shortcut: if 'num_ident' is present, we trust it
+            ///
+            int num_ident = 0;
+            if (align.GetNamedScore("num_ident", num_ident)) {
+                size_t len     = s_GetAlignmentLength(align, true);
+                *identities = num_ident;
+                *mismatches = (len - num_ident);
+                break;
+            }
+
             const CDense_seg& ds = align.GetSegs().GetDenseg();
             CAlnVec vec(ds, scope);
             for (int seg = 0;  seg < vec.GetNumSegs();  ++seg) {
@@ -219,100 +369,6 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
 }
 
 
-///
-/// calculate the number of gaps in our alignment
-///
-static int s_GetGapCount(const CSeq_align& align)
-{
-    int gap_count = 0;
-    switch (align.GetSegs().Which()) {
-    case CSeq_align::TSegs::e_Denseg:
-        {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
-            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                bool is_gapped = false;
-                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                        is_gapped = true;
-                        break;
-                    }
-                }
-                if (is_gapped) {
-                    ++gap_count;
-                }
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Disc:
-        {{
-            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
-                gap_count += s_GetGapCount(**iter);
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Std:
-        break;
-
-    default:
-        break;
-    }
-
-    return gap_count;
-}
-
-
-///
-/// calculate the length of our alignment
-///
-static size_t s_GetAlignmentLength(const CSeq_align& align,
-                                   bool ungapped)
-{
-    size_t len = 0;
-    switch (align.GetSegs().Which()) {
-    case CSeq_align::TSegs::e_Denseg:
-        {{
-            const CDense_seg& ds = align.GetSegs().GetDenseg();
-            for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
-                //int this_len = ds.GetLens()[i];
-                CDense_seg::TDim count_gapped = 0;
-                for (CDense_seg::TDim j = 0;  j < ds.GetDim();  ++j) {
-                    //int start = ds.GetStarts()[i * ds.GetDim() + j];
-                    if (ds.GetStarts()[i * ds.GetDim() + j] == -1) {
-                        ++count_gapped;
-                    }
-                }
-                if (ungapped) {
-                    if (count_gapped == 0) {
-                        len += ds.GetLens()[i];
-                    }
-                } else if (ds.GetDim() - count_gapped > 1) {
-                    /// we have at least one row of sequence
-                    len += ds.GetLens()[i];
-                }
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Disc:
-        {{
-            ITERATE (CSeq_align::TSegs::TDisc::Tdata, iter, align.GetSegs().GetDisc().Get()) {
-                len += s_GetAlignmentLength(**iter, ungapped);
-            }
-        }}
-        break;
-
-    case CSeq_align::TSegs::e_Std:
-        break;
-
-    default:
-        break;
-    }
-
-    return len;
-}
-
 
 ///
 /// calculate the percent identity
@@ -323,9 +379,17 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
                                  int* mismatches,
                                  double* pct_identity)
 {
-    double count_aligned = s_GetAlignmentLength(align, true /* ungapped */);
+    size_t count_aligned = s_GetAlignmentLength(align, true /* ungapped */);
+    if ( !count_aligned ) {
+        CNcbiOfstream ostr("e:/users/dev/bad-aligns.asn", ios::app);
+        ostr << MSerial_AsnText << align;
+    }
     s_GetCountIdentityMismatch(scope, align, identities, mismatches);
-    *pct_identity = 100.0f * double(*identities) / count_aligned;
+    if (count_aligned) {
+        *pct_identity = 100.0f * double(*identities) / count_aligned;
+    } else {
+        *pct_identity = 0;
+    }
 }
 
 
