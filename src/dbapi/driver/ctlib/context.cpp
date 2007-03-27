@@ -686,8 +686,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                      (void*) &link,
                      (CS_INT) sizeof(link),
                      &outlen ) == CS_SUCCEED  &&  link != 0) {
-        server_name = link->ServerName();
-        user_name = link->UserName();
+        if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
+            server_name = link->ServerName();
+            user_name = link->UserName();
+        } else {
+            ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
+        }
     }
     else if (cs_config(context,
                        CS_GET,
@@ -841,8 +845,12 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                    (void*) &link, (CS_INT) sizeof(link),
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
-        server_name = link->ServerName();
-        user_name = link->UserName();
+        if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
+            server_name = link->ServerName();
+            user_name = link->UserName();
+        } else {
+            ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
+        }
     }
     else if (cs_config(context, CS_GET,
                        CS_USERDATA,
