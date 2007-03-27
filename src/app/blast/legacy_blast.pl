@@ -144,6 +144,7 @@ sub convert_strand($)
     return $retval;
 }
 
+# missing handling of -R
 sub handle_blastall($)
 {
     my $print_only = shift;
@@ -162,8 +163,8 @@ sub handle_blastall($)
                "E=i"            => \$opt_E,
                "F=s"            => \$opt_F,
                "G=i"            => \$opt_G,
-               "I=s"            => \$opt_I,
-               "J=s"            => \$opt_J,
+               "I:s"            => \$opt_I,
+               "J:s"            => \$opt_J,
                "K=i"            => \$opt_K,
                "L=s"            => \$opt_L,
                "M=s"            => \$opt_M,
@@ -172,9 +173,9 @@ sub handle_blastall($)
                "Q=i"            => \$opt_Q,
                "R=s"            => \$opt_R, # not implemented (FIXME)
                "S=i"            => \$opt_S,
-               "T=s"            => \$opt_T, # deprecated
-               "U=s"            => \$opt_U,
-               "V=s"            => \$opt_V, # not handled, not applicable
+               "T:s"            => \$opt_T, # deprecated
+               "U:s"            => \$opt_U,
+               "V:s"            => \$opt_V, # not handled, not applicable
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
@@ -184,16 +185,16 @@ sub handle_blastall($)
                "d=s"            => \$opt_d,
                "e=f"            => \$opt_e,
                "f=i"            => \$opt_f,
-               "g=s"            => \$opt_g,
+               "g:s"            => \$opt_g,
                "i=s"            => \$opt_i,
                "l=s"            => \$opt_l,
                "m=i"            => \$opt_m,
-               "n=s"            => \$opt_n,
+               "n:s"            => \$opt_n,
                "o=s"            => \$opt_o,
                "p=s"            => \$opt_p,
                "q=i"            => \$opt_q,
                "r=i"            => \$opt_r,
-               "s=s"            => \$opt_s,
+               "s:s"            => \$opt_s,
                "t=i"            => \$opt_t,
                "v=i"            => \$opt_v,
                "w=i"            => \$opt_w,
@@ -315,19 +316,19 @@ sub handle_megablast($)
                "F=s"            => \$opt_F,
                "G=i"            => \$opt_G,
                "H=i"            => \$opt_H,
-               "I=s"            => \$opt_I,
-               "J=s"            => \$opt_J,
+               "I:s"            => \$opt_I,
+               "J:s"            => \$opt_J,
                "L=s"            => \$opt_L,
                "M=i"            => \$opt_M,
                "N=i"            => \$opt_N,
                "O=s"            => \$opt_O,
                "P=i"            => \$opt_P,
                "Q=s"            => \$opt_Q,
-               "R=s"            => \$opt_R,
+               "R:s"            => \$opt_R,
                "S=i"            => \$opt_S,
-               "T=s"            => \$opt_T,
-               "U=s"            => \$opt_U,
-               "V=s"            => \$opt_V,
+               "T:s"            => \$opt_T,
+               "U:s"            => \$opt_U,
+               "V:s"            => \$opt_V,
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
@@ -336,12 +337,12 @@ sub handle_megablast($)
                "b=i"            => \$opt_b,
                "d=s"            => \$opt_d,
                "e=f"            => \$opt_e,
-               "f=s"            => \$opt_f,
-               "g=s"            => \$opt_g,
+               "f:s"            => \$opt_f,
+               "g:s"            => \$opt_g,
                "i=s"            => \$opt_i,
                "l=s"            => \$opt_l,
                "m=i"            => \$opt_m,
-               "n=s"            => \$opt_n,
+               "n:s"            => \$opt_n,
                "o=s"            => \$opt_o,
                "p=f"            => \$opt_p,
                "q=i"            => \$opt_q,
@@ -379,8 +380,8 @@ sub handle_blastpgp($)
                "F=s"            => \$opt_F,
                "G=i"            => \$opt_G,
                "H=i"            => \$opt_H,
-               "I=s"            => \$opt_I,
-               "J=s"            => \$opt_J,
+               "I:s"            => \$opt_I,
+               "J:s"            => \$opt_J,
                "K=i"            => \$opt_K,
                "L=i"            => \$opt_L,
                "M=s"            => \$opt_M,
@@ -390,8 +391,8 @@ sub handle_blastpgp($)
                "Q=s"            => \$opt_Q,
                "R=s"            => \$opt_R,
                "S=i"            => \$opt_S,
-               "T=s"            => \$opt_T,
-               "U=s"            => \$opt_U,
+               "T:s"            => \$opt_T,
+               "U:s"            => \$opt_U,
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
@@ -411,7 +412,7 @@ sub handle_blastpgp($)
                "o=s"            => \$opt_o,
                "p=s"            => \$opt_p,
                "q=i"            => \$opt_q,
-               "s=s"            => \$opt_s,
+               "s:s"            => \$opt_s,
                "t=s"            => \$opt_t,
                "u=i"            => \$opt_u,
                "v=i"            => \$opt_v,
@@ -439,9 +440,11 @@ sub handle_blastpgp($)
     return $retval;
 }
 
-
+# Tested: all conversions should work
 sub handle_bl2seq
 {
+    use File::Temp qw(:POSIX);  # for tmpnam
+
     my $print_only = shift;
     my ($opt_A, $opt_D, $opt_E, $opt_F, $opt_G, $opt_I, $opt_J, $opt_M, 
         $opt_S, $opt_T, $opt_U, $opt_V, $opt_W, $opt_X, $opt_Y, $opt_a, 
@@ -450,7 +453,7 @@ sub handle_bl2seq
 
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
-               "A=s"            => \$opt_A,
+               "A:s"            => \$opt_A,
                "D=i"            => \$opt_D,
                "E=i"            => \$opt_E,
                "F=s"            => \$opt_F,
@@ -459,19 +462,19 @@ sub handle_bl2seq
                "J=s"            => \$opt_J,
                "M=s"            => \$opt_M,
                "S=i"            => \$opt_S,
-               "T=s"            => \$opt_T,
-               "U=s"            => \$opt_U,
-               "V=i"            => \$opt_V,
+               "T:s"            => \$opt_T, # deprecated
+               "U:s"            => \$opt_U,
+               "V:s"            => \$opt_V, # not handled, not applicable
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
                "a=s"            => \$opt_a,
                "d=f"            => \$opt_d,
                "e=f"            => \$opt_e,
-               "g=s"            => \$opt_g,
+               "g:s"            => \$opt_g,
                "i=s"            => \$opt_i,
                "j=s"            => \$opt_j,
-               "m=i"            => \$opt_m,
+               "m:s"            => \$opt_m,
                "o=s"            => \$opt_o,
                "p=s"            => \$opt_p,
                "q=i"            => \$opt_q,
@@ -479,10 +482,26 @@ sub handle_bl2seq
                "t=i"            => \$opt_t
                );
     my $retval;
+    my $cmd_prefix = "";
+    my $cmd_suffix = "";
+
+    unless (defined $opt_i and defined $opt_j) {
+        die "-i and -j are required in bl2seq\n";
+    }
 
     $retval .= "./$opt_p "                  if (defined $opt_p);
-    $retval .= "-query $opt_i "             if (defined $opt_i);
-    $retval .= "-subject $opt_j "           if (defined $opt_j);
+    unless (defined $opt_A) {
+        $retval .= "-query $opt_i "             if (defined $opt_i);
+        $retval .= "-subject $opt_j "           if (defined $opt_j);
+    } else {
+        # The -A option is not supported, so we create temporary files to
+        # simulate it
+        my $query_fname = tmpnam();
+        my $subj_fname = tmpnam();
+        $cmd_prefix = "echo $opt_i > $query_fname; echo $opt_j > $subj_fname; ";
+        $cmd_suffix = " ; rm $query_fname $subj_fname;";
+        $retval .= "-query $query_fname -subject $subj_fname ";
+    }
     $retval .= "-out $opt_o "               if (defined $opt_o);
     if (defined $opt_a) {
         unless ($retval =~ s/-out \S+ /-out $opt_a /) {
@@ -516,19 +535,19 @@ sub handle_bl2seq
     $retval .= &convert_sequence_locations($opt_J, "subject") if ($opt_J);
 
     if (defined $opt_F) {
-        print STDERR "Filtering is not handled yet in $0!\n";
-    }
-    if (defined $opt_A) {
-        print STDERR "-A is not handled yet in $0 for bl2seq!\n";
+        $retval .= &convert_filter_string($opt_F, $opt_p);
     }
     if (defined $opt_m) {
         print STDERR "-m is not handled yet in $0 for bl2seq!\n";
     }
     if (defined $opt_D) {
-        print STDERR "Filtering is not handled yet in new C++ binaries!\n";
+        die "Tabular is not handled yet in new C++ binaries!\n";
+    }
+    if (defined $opt_T) {
+        print STDERR "Warning: HTML output is deprecated\n";
     }
 
-    return $retval;
+    return $cmd_prefix . $retval . $cmd_suffix;
 }
 
 sub handle_rpsblast
@@ -542,14 +561,14 @@ sub handle_rpsblast
     GetOptions("<>"             => sub { $application = shift; },
                "print_only!"    => $print_only,
                "F=s"            => \$opt_F,
-               "I=s"            => \$opt_I,
-               "J=s"            => \$opt_J,
+               "I:s"            => \$opt_I,
+               "J:s"            => \$opt_J,
                "L=s"            => \$opt_L,
                "N=f"            => \$opt_N,
                "O=s"            => \$opt_O,
                "P=i"            => \$opt_P,
-               "T=s"            => \$opt_T,
-               "U=s"            => \$opt_U,
+               "T:s"            => \$opt_T,
+               "U:s"            => \$opt_U,
                "V=s"            => \$opt_V,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
@@ -562,7 +581,7 @@ sub handle_rpsblast
                "l=s"            => \$opt_l,
                "m=i"            => \$opt_m,
                "o=s"            => \$opt_o,
-               "p=s"            => \$opt_p,
+               "p:s"            => \$opt_p,
                "v=i"            => \$opt_v,
                "y=f"            => \$opt_y,
                "z=f"            => \$opt_z
