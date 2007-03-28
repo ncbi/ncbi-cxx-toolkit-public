@@ -207,16 +207,18 @@ sub handle_blastall($)
         die "-p must be provided\n";
     }
 
-    if (defined $opt_n and $opt_n =~ /t/i) {
-        return &handle_megablast($print_only);
-    }
+    #if (defined $opt_n and $opt_n =~ /t/i) {
+    #    return &handle_megablast($print_only);
+    #}
 
     my $retval;
     if (defined $opt_p) {
-        if (defined $opt_R)) {
+        if (defined $opt_R) {
             $retval .= "./tblastn -in_pssm $opt_R ";
+        } elsif (defined $opt_n and $opt_n =~ /t/i) {
+            $retval .= "./blastn ";
         } else {
-            $retval .= "./$opt_p "                  
+            $retval .= "./$opt_p ";                 
         }
     }
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
@@ -332,7 +334,7 @@ sub handle_megablast($)
                "S=i"            => \$opt_S,
                "T:s"            => \$opt_T,
                "U:s"            => \$opt_U,
-               "V:s"            => \$opt_V,
+               "V:s"            => \$opt_V, # not handled, not applicable
                "W=i"            => \$opt_W,
                "X=i"            => \$opt_X,
                "Y=f"            => \$opt_Y,
@@ -360,11 +362,78 @@ sub handle_megablast($)
     my $retval;
 
     $retval = "./blastn ";
+    $retval .= "-query $opt_i "             if (defined $opt_i);
+    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= "-evalue $opt_e "            if (defined $opt_e);
+    $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
+    $retval .= "-gilist $opt_l "            if (defined $opt_l);
+    $retval .= "-mismatch_penalty $opt_q "  if (defined $opt_q);
+    $retval .= "-match_reward $opt_r "      if (defined $opt_r);
+    $retval .= "-gapopen $opt_G "           if (defined $opt_G);
+    $retval .= "-gapextend $opt_E "         if (defined $opt_E);
+    $retval .= "-out $opt_o "               if (defined $opt_o);
+    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
+    if (defined $opt_O) {
+        unless ($retval =~ s/-out \S+ /-out $opt_O /) {
+            $retval .= "-out $opt_O ";
+        }
+        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
+            $retval .= "-outfmt 10 ";
+        } else {
+            print STDERR "Warning: overriding output format\n";
+        }
+    }
+    $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
+    $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
+    $retval .= "-num_threads $opt_a "       if (defined $opt_a);
+    $retval .= "-word_size $opt_W "         if (defined $opt_W);
+    $retval .= "-dbsize $opt_z "            if (defined $opt_z);
+    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    $retval .= "-xdrop_ungap $opt_y "       if (defined $opt_y);
+    $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
+    $retval .= "-template_length $opt_t "   if (defined $opt_t);
+    $retval .= "-window_size $opt_A "       if (defined $opt_A);
+    if (defined $opt_N) {
+        $retval .= "-template_type coding " if ($opt_N == 0);
+        $retval .= "-template_type optimal " if ($opt_N == 1);
+        $retval .= "-template_type coding_and_optimal " if ($opt_N == 2);
+    }
+    if (defined $opt_F) {
+        $retval .= &convert_filter_string($opt_F, "blastn");
+    }
+    if (defined $opt_I and $opt_I =~ /t/i) {
+        $retval .= "-show_gis ";
+    }
+    if (defined $opt_J and $opt_J =~ /t/i) {
+        $retval .= "-parse_query_defline ";
+    }
+
 
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
+    $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
+    if (defined $opt_U and $opt_U =~ /t/i) {
+        $retval .= "-lcase_masking ";
+    }
 
+    if (defined $opt_M) {
+        print STDERR "Warning: -M option is ignored\n";
+    }
+
+    # Deprecated options
     if (defined $opt_T) {
         print STDERR "Warning: HTML output is deprecated\n";
+    }
+    if (defined $opt_f) {
+        print STDERR "Warning: -f option is deprecated\n";
+    }
+    if (defined $opt_R) {
+        print STDERR "Warning: -R option is deprecated\n";
+    }
+    if (defined $opt_D) {
+        print STDERR "Warning: -D option is deprecated\n";
+    }
+    if (defined $opt_Q) {
+        print STDERR "Warning: -Q option is deprecated\n";
     }
 
     return $retval;
@@ -449,6 +518,7 @@ sub handle_blastpgp($)
     $retval .= "-gapopen $opt_G "           if (defined $opt_G);
     $retval .= "-gapextend $opt_E "         if (defined $opt_E);
     $retval .= "-num_threads $opt_a "       if (defined $opt_a);
+    $retval .= "-dbsize $opt_z "            if (defined $opt_z);
     $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
     $retval .= "-pseudocount $opt_c "       if (defined $opt_c);
     $retval .= "-inclusion_ethresh $opt_h " if (defined $opt_h);
@@ -544,9 +614,6 @@ sub handle_blastpgp($)
     }
     if (defined $opt_B) {
         print STDERR "Warning: -B is being ignored\n";
-    }
-    if (defined $opt_z) {
-        print STDERR "Warning: -z is ignored.\n";
     }
 
     return $retval;
