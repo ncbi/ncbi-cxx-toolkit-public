@@ -1063,18 +1063,36 @@ Int2 BLAST_GetSuggestedWindowSize(EBlastProgramType program_number, const char* 
  */
 static Boolean 
 s_DiscWordOptionsValidate(Int4 word_size, Uint1 template_length,
-                        Uint1 template_type)
+                          Uint1 template_type,
+                          Blast_Message** blast_msg)
 {
    if (template_length == 0)
       return TRUE;
 
-   if (word_size != 11 && word_size != 12)
+
+   if (word_size != 11 && word_size != 12) {
+      Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
+                         "Invalid discontiguous template parameters: word "
+                         "size must be either 11 or 12");
       return FALSE;
+   }
+
    if (template_length != 16 && template_length != 18 && 
-       template_length != 21)
+       template_length != 21) {
+      Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
+                         "Invalid discontiguous template parameters: "
+                         "template length must be 16, 18, or 21");
       return FALSE;
-   if (template_type > 2)
+   }
+
+   if (template_type > 2) {
+     /* should never fail coming from the C++ APIs as we represent these as
+      * strings */
+      Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
+                         "Invalid discontiguous template parameters: "
+                         "template type must be 0, 1, or 2");
       return FALSE;
+   }
 
    return TRUE;
 }
@@ -1169,9 +1187,9 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 
    if (program_number == eBlastTypeBlastn && options->mb_template_length > 0) {
       if (!s_DiscWordOptionsValidate(options->word_size,
-              options->mb_template_length, options->mb_template_type)) {
-         Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
-                            "Invalid discontiguous template parameters");
+              options->mb_template_length, 
+              options->mb_template_type,
+              blast_msg)) {
          return BLASTERR_OPTION_VALUE_INVALID;
       } else if (options->lut_type != eMBLookupTable) {
          Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,

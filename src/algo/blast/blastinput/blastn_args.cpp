@@ -38,7 +38,7 @@ static char const rcsid[]
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
-#include <algo/blast/api/blast_nucl_options.hpp>
+#include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include "blast_input_aux.hpp"
 
@@ -66,6 +66,9 @@ CBlastnAppArgs::CBlastnAppArgs()
     m_Args.push_back(arg);
 
     arg.Reset(new CNuclArgs);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CDiscontinuousMegablastArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CFilteringArgs(kQueryIsProtein));
@@ -101,8 +104,14 @@ CRef<CBlastOptionsHandle>
 CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
-    CRef<CBlastOptionsHandle> retval
-        (new CBlastNucleotideOptionsHandle(locality));
+    CRef<CBlastOptionsHandle> retval;
+    if (args[kArgDMBTemplateType] || args[kArgDMBTemplateLength]) {
+        // the setting of both arguments in the above test is enforced by 
+        // CDiscontinuousMegablastArgs
+        retval.Reset(new CDiscNucleotideOptionsHandle(locality));
+    } else {
+        retval.Reset(new CBlastNucleotideOptionsHandle(locality));
+    }
     return retval;
 }
 

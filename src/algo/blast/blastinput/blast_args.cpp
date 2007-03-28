@@ -44,11 +44,13 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/core/blast_nalookup.h>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "blast_input_aux.hpp"
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -94,6 +96,42 @@ protected:
     
 private:
     double m_MaxValue;  /**< Maximum value for this object */
+};
+
+/// Class to constrain the values of an argument to in the set provided in the
+/// constructor
+class CArgAllowIntegerSet : public CArgAllow
+{
+public:
+    CArgAllowIntegerSet(const set<int>& values) : m_AllowedValues(values) {
+        if (values.empty()) {
+            throw runtime_error("Allowed values set must not be empty");
+        }
+    }
+
+protected:
+    virtual bool Verify(const string& value) const {
+        int value2check = NStr::StringToInt(value);
+        ITERATE(set<int>, itr, m_AllowedValues) {
+            if (*itr == value2check) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    virtual string GetUsage(void) const {
+        ostringstream os;
+        os << "Permissible values: ";
+        ITERATE(set<int>, itr, m_AllowedValues) {
+            os << *itr << " ";
+        }
+
+        return os.str();
+    }
+    
+private:
+    set<int> m_AllowedValues;
 };
 
 CProgramDescriptionArgs::CProgramDescriptionArgs(const string& program_name, 
@@ -391,6 +429,72 @@ CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
         options.SetMatchReward(cmd_line_args[kArgMatch].AsInteger());
 }
 
+const string CDiscontinuousMegablastArgs::kTemplType_Coding("coding");
+const string CDiscontinuousMegablastArgs::kTemplType_Optimal("optimal");
+const string 
+CDiscontinuousMegablastArgs::kTemplType_CodingAndOptimal("coding_and_optimal");
+
+void
+CDiscontinuousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Discontinuous Megablast options");
+
+    arg_desc.AddOptionalKey(kArgDMBTemplateType, "type", 
+                 "Discontinuous megablast template type",
+                 CArgDescriptions::eString);
+    arg_desc.SetConstraint(kArgDMBTemplateType, &(*new CArgAllow_Strings, 
+                                                  kTemplType_Coding,
+                                                  kTemplType_Optimal,
+                                                  kTemplType_CodingAndOptimal));
+    arg_desc.SetDependency(kArgDMBTemplateType,
+                           CArgDescriptions::eRequires,
+                           kArgDMBTemplateLength);
+
+    arg_desc.AddOptionalKey(kArgDMBTemplateLength, "int_value", 
+                 "Discontinuous megablast template length",
+                 CArgDescriptions::eInteger);
+    set<int> allowed_values;
+    allowed_values.insert(16);
+    allowed_values.insert(18);
+    allowed_values.insert(21);
+    arg_desc.SetConstraint(kArgDMBTemplateLength, 
+                           new CArgAllowIntegerSet(allowed_values));
+    arg_desc.SetDependency(kArgDMBTemplateLength,
+                           CArgDescriptions::eRequires,
+                           kArgDMBTemplateType);
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+CDiscontinuousMegablastArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                                     CBlastOptions& options)
+{
+    if (args[kArgDMBTemplateType]) {
+        const string& type = args[kArgDMBTemplateType].AsString();
+        EDiscWordType temp_type = eMBWordCoding;
+
+        if (type == kTemplType_Coding) {
+            temp_type = eMBWordCoding;
+        } else if (type == kTemplType_Optimal) {
+            temp_type = eMBWordOptimal;
+        } else if (type == kTemplType_CodingAndOptimal) {
+            temp_type = eMBWordTwoTemplates;
+        } else {
+            abort();
+        }
+        options.SetMBTemplateType(static_cast<unsigned char>(temp_type));
+    }
+
+    if (args[kArgDMBTemplateLength]) {
+        unsigned char tlen = 
+            static_cast<unsigned char>(args[kArgDMBTemplateLength].AsInteger());
+        options.SetMBTemplateLength(tlen);
+    }
+
+    // FIXME: should the window size be adjusted if this is set?
+}
+
 void
 CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
@@ -576,6 +680,25 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetDbGeneticCode(args[kArgDbGeneticCode].AsInteger());
     }
 }
+
+void
+CDecline2AlignArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddDefaultKey(kArgDecline2Align, "int_value", 
+                           "Cost to decline alignment",
+                           CArgDescriptions::eInteger,
+                           NStr::IntToString(m_DefaultValue));
+}
+
+void
+CDecline2AlignArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                            CBlastOptions& opt)
+{
+    if (args[kArgDecline2Align]) {
+        opt.SetDecline2AlignPenalty(args[kArgDecline2Align].AsInteger());
+    }
+}
+
 
 void
 CGapTriggerArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)

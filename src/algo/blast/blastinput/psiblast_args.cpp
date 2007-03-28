@@ -44,8 +44,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-#define ARG_REQUIRED_START_IN_QUERY "S"
-#define ARG_REQUIRED_END_IN_QUERY "H"
 #define ARG_CHECKPOINT "C"
 #define ARG_ASCII_MATRIX "Q"
 #define ARG_MSA_RESTART "B"
@@ -53,18 +51,12 @@ USING_SCOPE(objects);
 // this is how this is represented in PSI-BLAST
 #define ARG_COMP_BASED_STATS_PSI "t"    
 
-// Deprecated args (i.e.: no-ops), present only for backwards compatibility
-#define ARG_CHECKPOINT_INPUT_TYPE "q"
-#define ARG_CHECKPOINT_OUTPUT_TYPE "u"
-
 // Program option for PHI-BLAST (default blastpgp)
 #define ARG_PHI_PROGRAM "p"         // not supported
 // Number of best hits from a region to keep (default 0)
 #define ARG_NUM_BEST_HITS "K"   // not supported
 // Hit file for PHI-BLAST (default "hit_file")
 #define ARG_PHI_HIT_FILE "k"    // not supported yet
-// Cost to decline alignment (disabled when 0) (default 0)
-#define ARG_DECLINE2ALIGN "L"   // not supported yet
 
 CPsiBlastAppArgs::CPsiBlastAppArgs()
 {
@@ -95,6 +87,9 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CDecline2AlignArgs);
     m_Args.push_back(arg);
 
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));

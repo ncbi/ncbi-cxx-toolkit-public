@@ -105,6 +105,8 @@ NCBI_XBLAST_EXPORT extern const size_t kDfltArgNumAlignments;
 extern const string kArgGapOpen;
 /// Argument to select the gap extending penalty
 extern const string kArgGapExtend;
+/// Argument to select cost to decline alignment
+extern const string kArgDecline2Align;
 
 /// Argument to select the nucleotide mismatch penalty
 extern const string kArgMismatch;
@@ -206,6 +208,13 @@ extern const string kArgPSIPseudocount;
 /// aligned sequences for PSSM constructions
 extern const string kArgPSIInclusionEThreshold;
 
+/// Argument to specify the discontinuous megablast template type
+extern const string kArgDMBTemplateType;
+/// Argument to specify the discontinuous megablast template length
+extern const string kArgDMBTemplateLength;
+
+/// Argument to specify the target percent identity
+extern const string kArgTargetPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST
 /// search
 extern const string kArgInputSearchStrategy;

@@ -42,6 +42,11 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
+#include <algo/blast/blastinput/blastp_args.hpp>
+#include <algo/blast/blastinput/blastn_args.hpp>
+#include <algo/blast/blastinput/blastx_args.hpp>
+#include <algo/blast/blastinput/tblastn_args.hpp>
+#include <algo/blast/blastinput/tblastx_args.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
@@ -302,7 +307,7 @@ public:
         x_Init(cmd_line_args);
     }
 
-    CArgs* CreateCArgs(CPsiBlastAppArgs& args) const {
+    CArgs* CreateCArgs(CBlastAppArgs& args) const {
         auto_ptr<CArgDescriptions> arg_desc(args.SetCommandLine());
         CNcbiArguments ncbi_args(m_Argc, m_Argv);
         return arg_desc->CreateArgs(ncbi_args);
@@ -364,7 +369,7 @@ private:
 BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
 {
     CPsiBlastAppArgs psiblast_args;
-    CString2Args s2a("-matrix BLOSUM80 -db ecoli -dbtype prot ");
+    CString2Args s2a("-matrix BLOSUM80 -db ecoli ");
     auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
 
     CRef<CBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
@@ -372,17 +377,48 @@ BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
     CHECK_EQUAL(opts->GetOptions().GetMatrixName(), string("BLOSUM80"));
 }
 
-BOOST_AUTO_UNIT_TEST(PsiBlastAppMissingMandatoryArguments)
+BOOST_AUTO_UNIT_TEST(CheckMutuallyExclusiveOptions)
 {
-    CPsiBlastAppArgs psiblast_args;
-    CString2Args s2a("");
+    CString2Args s2a("-remote -num_threads 2");
+
+    typedef vector< CRef<CBlastAppArgs> > TArgClasses;
+    vector< CRef<CBlastAppArgs> > arg_classes;
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastpAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastxAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
+
+    NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
+        auto_ptr<CArgs> args;
+        BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(**itr)), 
+                          CArgException);
+    }
+}
+
+BOOST_AUTO_UNIT_TEST(CheckDiscoMegablast) {
     auto_ptr<CArgs> args;
-    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(psiblast_args)), 
+    CBlastnAppArgs blastn_args;
+
+    // missing required template_length argument
+    CString2Args s2a("-db ecoli -template_type coding ");
+    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(blastn_args)), 
+                      CArgException);
+    // missing required template_type argument
+    s2a.Reset("-db ecoli -template_length 21 ");
+    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(blastn_args)), 
                       CArgException);
 
-    s2a.Reset("-matrix BLOSUM80");
-    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(psiblast_args)), 
-                      CArgException);
+    // valid combination
+    s2a.Reset("-db ecoli -template_type coding -template_length 16");
+    BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
+
+    // test the setting of an invalid word size for disco. megablast
+    s2a.Reset("-db ecoli -word_size 32 -template_type optimal -template_length 16");
+    BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
+    CRef<CBlastOptionsHandle> opts = blastn_args.SetOptions(*args);
+    BOOST_CHECK_THROW(opts->Validate(), CBlastException);
 }
 
 #ifdef NCBI_OS_DARWIN

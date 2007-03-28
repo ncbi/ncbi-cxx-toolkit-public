@@ -78,6 +78,7 @@ const size_t kDfltArgNumAlignments = 250;
 
 const string kArgGapOpen("gapopen");
 const string kArgGapExtend("gapextend");
+const string kArgDecline2Align("decline2align");
 
 const string kArgMismatch("mismatch_penalty");
 const string kArgMatch("match_reward");
@@ -137,6 +138,10 @@ const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
+
+const string kArgTargetPercentIdentity("target_perc_identity");
+const string kArgDMBTemplateType("template_type");
+const string kArgDMBTemplateLength("template_length");
 
 const string kArgInputSearchStrategy("import_search_strategy");
 const string kArgOutputSearchStrategy("export_search_strategy");

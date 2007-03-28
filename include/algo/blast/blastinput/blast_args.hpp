@@ -246,6 +246,24 @@ public:
                                          CBlastOptions& options);
 };
 
+/// Argument class to retrieve discontinuous megablast arguments
+class NCBI_XBLAST_EXPORT CDiscontinuousMegablastArgs : public IBlastCmdLineArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+
+    /// Value to specify coding template type
+    static const string kTemplType_Coding;
+    /// Value to specify optimal template type
+    static const string kTemplType_Optimal;
+    /// Value to specify coding+optimal template type
+    static const string kTemplType_CodingAndOptimal;
+};
+
 /** Argument class for collecting composition based statistics options */
 class NCBI_XBLAST_EXPORT CCompositionBasedStatsArgs : public IBlastCmdLineArgs
 {
@@ -316,6 +334,25 @@ public:
 
 private:
     ETarget m_Target; ///< Genetic code target
+};
+
+class NCBI_XBLAST_EXPORT CDecline2AlignArgs : public IBlastCmdLineArgs
+{
+public:
+    /** 
+     * @brief Constructor
+     * 
+     * @param default_value for this option
+     */
+    CDecline2AlignArgs(int default_value = 0)
+        : m_DefaultValue(default_value) {}
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+private:
+    int m_DefaultValue;
 };
 
 /// Argument class to retrieve the gap trigger option

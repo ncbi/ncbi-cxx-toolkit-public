@@ -465,6 +465,7 @@ sub handle_blastpgp($)
     $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
     $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
     $retval .= "-comp_based_stats $opt_t "  if (defined $opt_t);
+    $retval .= "-decline2align $opt_L "     if (defined $opt_L);
     $retval .= "-out $opt_o "               if (defined $opt_o);
     $retval .= "-outfmt $opt_m "            if (defined $opt_m);
     if (defined $opt_O) {
@@ -512,9 +513,26 @@ sub handle_blastpgp($)
     if (defined $opt_T) {
         print STDERR "Warning: HTML output is deprecated\n";
     }
-    # Will these work ?
-    $retval .= "-in_pssm $opt_R "           if (defined $opt_R);
-    $retval .= "-out_pssm $opt_C "          if (defined $opt_C);
+
+    # Checkpoint file recovery
+    if (defined $opt_R) {
+        if (defined $opt_q and $opt_q ne "0") {
+            $retval .= "-in_pssm $opt_R " 
+        } else {
+            die "ERROR: recovery from C toolkit checkpoint " .
+                "file format not supported\n";
+        }
+    }
+
+    # Checkpoint file saving
+    if (defined $opt_C) {
+        if (defined $opt_C and $opt_u ne "0") {
+            $retval .= "-out_pssm $opt_C "          
+        } else {
+            die "ERROR: saving PSSM to C toolkit checkpoint " .
+                "file format not supported\n";
+        }
+    }
 
     if (defined $opt_Q) {
         print STDERR "Warning: -Q is being ignored\n";
@@ -522,20 +540,11 @@ sub handle_blastpgp($)
     if (defined $opt_B) {
         print STDERR "Warning: -B is being ignored\n";
     }
-    if (defined $opt_L) {
-        print STDERR "Warning: -L is being ignored\n";
-    }
     if (defined $opt_z) {
         print STDERR "-z not handled!\n";
     }
     if (defined $opt_k) {
         print STDERR "-k not handled!\n";
-    }
-    if (defined $opt_q) {
-        print STDERR "-q not handled!\n";
-    }
-    if (defined $opt_u) {
-        print STDERR "-u not handled!\n";
     }
 
     return $retval;

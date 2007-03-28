@@ -3,8 +3,10 @@
 
 * translated BLAST binaries (blastx, tblastn, tblastx)
 * rpsblast
-* phiblast (add to PSI-BLAST)
 * bl2seq handling (locally and remotely)
+* phiblast (add to PSI-BLAST)
+* Should C toolkit checkpoint files be accepted? Provide conversion tool?
+* Should we port patseed[pn]?
 
 * Alignment results: Dense-seg vs. disc (fails for remote blast)
 * Remote searches: obtaining BLAST database information for formatter
