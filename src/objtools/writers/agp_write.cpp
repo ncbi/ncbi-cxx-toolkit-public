@@ -38,6 +38,8 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -48,15 +50,69 @@ USING_SCOPE(objects);
 
 static char s_DetermineComponentType(const CSeq_id& id, CScope& scope);
 
+// This could be made considerably faster (conversion of enum to string)
+inline string GetGapType(const CSeqMap_CI& iter,
+                         const string* default_gap_type)
+{
+    try {
+        const CSeq_data& data = iter.GetData();
+        CSeq_gap::TType type = data.GetGap().GetType();
+        switch (type) {
+        case CSeq_gap::eType_fragment:
+            return "fragment";
+        case CSeq_gap::eType_clone:
+            return "clone";
+        case CSeq_gap::eType_short_arm:
+            return "short_arm";
+        case CSeq_gap::eType_heterochromatin:
+            return "heterochromatin";
+        case CSeq_gap::eType_centromere:
+            return "centromere";
+        case CSeq_gap::eType_telomere:
+            return "telomere";
+        case CSeq_gap::eType_repeat:
+            return "repeat";
+        case CSeq_gap::eType_contig:
+            return "contig";
+        default:
+            // unknown or other
+            // do nothing (will use default_gap_type if non-null)
+            ;
+        }
+    } catch (CSeqMapException&) {
+        // no Seq-data for this gap
+    }
+    if (default_gap_type) {
+        return *default_gap_type;
+    }
+    throw runtime_error("couldn't get gap type");
+}
+
+
+inline bool GetLinkage(const CSeqMap_CI& iter,
+                       const bool* default_linkage)
+{
+    try {
+        return iter.GetData().GetGap().GetLinkage();
+    } catch (CSeqMapException&) {
+        // no Seq-data for this gap
+    }
+    if (default_linkage) {
+        return *default_linkage;
+    }
+    throw runtime_error("couldn't get linkage");
+}
+
+
 /// Write to stream in agp format.
-/// Based on www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html
+/// Based on www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html
 static void s_AgpWrite(CNcbiOstream& os,
                        const CSeqMap& seq_map,
                        TSeqPos start_pos,
                        TSeqPos stop_pos,
                        const string& object_id,
-                       const string& gap_type,
-                       bool linkage,
+                       const string* default_gap_type,
+                       const bool* default_linkage,
                        CScope& scope)
 {
     int part_num = 1;
@@ -103,11 +159,11 @@ static void s_AgpWrite(CNcbiOstream& os,
             // col 6b
             os << '\t' << iter.GetLength();
             // col 7b
-            os << "\t" << gap_type;
+            os << "\t" << GetGapType(iter, default_gap_type);
             // col 8b
-            os << "\t" << (linkage ? "yes" : "no");
-            // col 9; write an empty column (Or should there be no column,
-            //        i.e., no tab?  Our reader doesn't care.)
+            os << "\t" << (GetLinkage(iter, default_linkage) ? "yes" : "no");
+            // col 9; Write an empty column.  The spec says there should
+            //        be an empty column, rather than no column (i.e., no tab).
             os << '\t';
             break;
 
@@ -151,22 +207,53 @@ static void s_AgpWrite(CNcbiOstream& os,
 void AgpWrite(CNcbiOstream& os,
               const CSeqMap& seq_map,
               const string& object_id,
-              const string& gap_type,
-              bool linkage,
               CScope& scope)
 {
     s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
-               object_id, gap_type, linkage, scope);
+               object_id, NULL, NULL, scope);
+}
+
+void AgpWrite(CNcbiOstream& os,
+              const CBioseq_Handle& handle,
+              const string& object_id)
+{
+    s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
+               object_id, NULL, NULL,
+               handle.GetScope());
+}
+
+
+void AgpWrite(CNcbiOstream& os,
+              const CBioseq_Handle& handle,
+              TSeqPos from, TSeqPos to,
+              const string& object_id)
+{
+    s_AgpWrite(os, handle.GetSeqMap(), from, to,
+               object_id, NULL, NULL,
+               handle.GetScope());
+}
+
+
+void AgpWrite(CNcbiOstream& os,
+              const CSeqMap& seq_map,
+              const string& object_id,
+              const string& default_gap_type,
+              bool default_linkage,
+              CScope& scope)
+{
+    s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
+               object_id, &default_gap_type, &default_linkage, scope);
 }
 
 void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
               const string& object_id,
-              const string& gap_type,
-              bool linkage)
+              const string& default_gap_type,
+              bool default_linkage)
 {
     s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
-               object_id, gap_type, linkage, handle.GetScope());
+               object_id, &default_gap_type, &default_linkage,
+               handle.GetScope());
 }
 
 
@@ -174,11 +261,12 @@ void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
               TSeqPos from, TSeqPos to,
               const string& object_id,
-              const string& gap_type,
-              bool linkage)
+              const string& default_gap_type,
+              bool default_linkage)
 {
     s_AgpWrite(os, handle.GetSeqMap(), from, to,
-               object_id, gap_type, linkage, handle.GetScope());
+               object_id, &default_gap_type, &default_linkage,
+               handle.GetScope());
 }
 
 
