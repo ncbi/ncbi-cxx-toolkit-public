@@ -119,6 +119,10 @@ public:
     /// Get process identifier for a parent of the current process.
     static TPid GetParentPid(void);
 
+    /// Fork (throw exception if the platform does not support fork),
+    /// update PID and GUID used for logging.
+    static TPid Fork(void);
+
     /// Check process existence.
     ///
     /// @return

@@ -34,6 +34,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbidiag.hpp>
 
 
 #if defined(NCBI_OS_UNIX)
@@ -166,6 +167,19 @@ TPid CProcess::GetParentPid(void)
     return ppid;
 #else
 #  error "Not implemented on this platform"
+#endif
+}
+
+
+TPid CProcess::Fork(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    NCBI_THROW(CCoreException, eCore,
+               "Fork() not implemented on this platform");
+#else
+    TPid pid = fork();
+    CDiagContext::UpdatePID();
+    return pid;
 #endif
 }
 
