@@ -167,7 +167,6 @@ static Int4 s_BlastCompressedAaScanSubject(
     Int4 skip = 0;         /* skip counter - how many letters left to skip*/
     Uint1 next_char;           /* prefetch variable */
     Int4 compressed_char;     /* translated letter */
-    Int4 *query_offsets;
     Int4 compressed_alphabet_size;
                
     ASSERT(lookup_wrap->lut_type == eCompressedAaLookupTable);
@@ -221,76 +220,88 @@ static Int4 s_BlastCompressedAaScanSubject(
        /* if there are hits */
        if (PV_TEST(pv, index, PV_ARRAY_BTS)) {
           Int4 s_off = s - subject->sequence;
-          CompressedLookupBackboneCell *cell = lookup->backbone + index;
 
-          numhits = cell->num_used;
+          CompressedLookupBackboneCell* backbone_cell = 
+                                        lookup->backbone + index;
+         
+          numhits = backbone_cell->num_used;
           ASSERT(numhits != 0);
          
           /* and there is enough space in the destination array */
           if (numhits <= (array_size - totalhits)) {
-
+           
              /* copy the hits to the destination */
-             
+           
              Int4 i;
+             Int4 *query_offsets;
              BlastOffsetPair *dest = offset_pairs + totalhits;
-
+           
              if (numhits <= COMPRESSED_HITS_PER_BACKBONE_CELL) {
                 /* hits all live in the backbone */
-
-                query_offsets = cell->payload.query_offsets;
+             
+                query_offsets = backbone_cell->query_offsets;
                 for (i = 0; i < numhits; i++) {
                    dest[i].qs_offsets.q_off = query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
                 }
              } 
-             else if (numhits <= COMPRESSED_SPILLOVER) {
-                /* hits live in the backbone cell plus an overflow cell */
+             else { 
+                /* hits are in the backbone cell and in 
+                   the overflow list */
+                CompressedOverflowCell* curr_cell = 
+                                            backbone_cell->overflow_list.head;
+                CompressedOverflowCell* next_cell = curr_cell->next;
 
-                CompressedOverflowCell *overflow = lookup->overflow +
-                                        cell->payload.query_offsets[0];
-                Int4 bias = COMPRESSED_HITS_PER_BACKBONE_CELL;
- 
-                query_offsets = cell->payload.query_offsets;
-                for(i = 1; i < COMPRESSED_HITS_PER_BACKBONE_CELL; i++) {
-                   dest[i-1].qs_offsets.q_off = query_offsets[i];
-                   dest[i-1].qs_offsets.s_off = s_off;
-                }
-                query_offsets = overflow->query_offsets;
-                for(; i <= numhits; i++) {
-                   dest[i-1].qs_offsets.q_off = query_offsets[i - bias];
-                   dest[i-1].qs_offsets.s_off = s_off;
-                }
-             } 
-             else {
-                /* hits live in the overflow cell plus a free array */
-                CompressedOverflowCell *overflow = lookup->overflow +
-                              cell->payload.overflow_array.overflow_cell_idx;
-                Int4 bias = COMPRESSED_HITS_PER_OVERFLOW_CELL;
- 
-                query_offsets = overflow->query_offsets;
-                for(i = 0; i < COMPRESSED_HITS_PER_OVERFLOW_CELL; i++) {
+                /* the number of hits in the linked list of cells has
+                   1 added to it; the extra hit was spilled from the
+                   backbone when the list was first created */
+                Int4 first_cell_entries = (numhits -
+                                     COMPRESSED_HITS_PER_BACKBONE_CELL) %
+                                     COMPRESSED_HITS_PER_OVERFLOW_CELL + 1;
+
+                /* copy hits from backbone */
+                query_offsets = backbone_cell->overflow_list.query_offsets;
+                for(i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
                    dest[i].qs_offsets.q_off = query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
                 }
-                query_offsets = cell->payload.overflow_array.array + 2;
-                for(; i < numhits; i++) {
-                   dest[i].qs_offsets.q_off = query_offsets[i - bias];
+              
+                /* handle the overflow list */
+              
+                /* first cell can be partially filled */
+                query_offsets = curr_cell->query_offsets;
+                dest += i;
+                for (i = 0; i < first_cell_entries; i++) {
+                   dest[i].qs_offsets.q_off = query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
+                }
+
+                /* handle the rest of the list */
+
+                curr_cell = next_cell;
+                while (curr_cell != NULL) {
+                   query_offsets = curr_cell->query_offsets;
+                   curr_cell = curr_cell->next;    /* prefetch */
+                   dest += i;
+                   for (i = 0; i < COMPRESSED_HITS_PER_OVERFLOW_CELL; i++) {
+                      dest[i].qs_offsets.q_off = query_offsets[i];
+                      dest[i].qs_offsets.s_off = s_off;
+                   }
                 }
              }
 
              totalhits += numhits;
           } 
           else {
-             /* not enough space in the destination array */
-             break;
+              /* not enough space in the destination array */
+              break;
           }
        }
     }
 
     /* if we get here, we fell off the end of the sequence */
-    *offset = s - subject->sequence;
 
+    *offset = s - subject->sequence;
     return totalhits;
 }
 

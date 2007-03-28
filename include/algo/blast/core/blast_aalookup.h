@@ -155,39 +155,44 @@ void BlastAaLookupIndexQuery(BlastAaLookupTable* lookup,
 #define COMPRESSED_HITS_PER_BACKBONE_CELL 3
 
 /** number of query offsets to store in an overflow cell */
-#define COMPRESSED_HITS_PER_OVERFLOW_CELL 16
+#define COMPRESSED_HITS_PER_OVERFLOW_CELL 4
 
-/** number of query offsets needed before a dynamically
-    allocated array is needed to hold them */
-#define COMPRESSED_SPILLOVER (COMPRESSED_HITS_PER_BACKBONE_CELL + \
-                              COMPRESSED_HITS_PER_OVERFLOW_CELL - 1)
+/** number of cells in one bank of cells */
+#define COMPRESSED_OVERFLOW_CELLS_IN_BANK 209710 
 
-/** dynamically allocated array for holding query offsets */
-typedef struct FreeOverflowArray{
-    Int4 overflow_cell_idx;  /**< needed to find the CompressedOverflowCell
-                                  that contains additional query offsets */
-    Int4* array;        /**< list of query offsets */
-} FreeOverflowArray;
+/** The maximum number of banks (usually less than 10 are
+    needed; memory will run out before this is insufficient) */
+#define COMPRESSED_OVERFLOW_MAX_BANKS 1024
 
-/** fixed-size allocated array for holding query offsets */
-typedef struct CompressedOverflowCell{
-    /** the list of query offsets */
+/** cell in list for holding query offsets */
+typedef struct CompressedOverflowCell {
+    struct CompressedOverflowCell* next;     /**< pointer to next cell */
+
+    /** the query offsets stored in the cell */
     Int4 query_offsets[COMPRESSED_HITS_PER_OVERFLOW_CELL];
 } CompressedOverflowCell;
+
+/** "alternative" structure of CompressedLookupBackboneCell storage */
+typedef struct CompressedMixedOffsets{
+    /** the query offsets stored locally */
+    Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL-1];
+  
+    /** head of linked list of cells of query offsets
+        stored off the backbone */
+    CompressedOverflowCell* head;
+} CompressedMixedOffsets;
 
 /** structure for hashtable of indexed query offsets */
 typedef struct CompressedLookupBackboneCell {
     Int4 num_used;       /**< number of hits stored for this cell */
 
-    /** either a fixed number of hits, or an offset to
-        an overflow cell plus (number of hits - 1) */
+    /** structure for holding the list of query offsets */
     union {
-        /** fixed number of query offsets stored locally */
+        /** storage for query offsets local to the backbone cell */
         Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL];
-
-        /** dynamically allocated array for (many) query offsets */
-        FreeOverflowArray overflow_array;
-    } payload;
+        /** storage for remote query offsets */
+        CompressedMixedOffsets overflow_list;
+    };
 } CompressedLookupBackboneCell;
 
 /** The lookup table structure for protein searches
@@ -204,16 +209,16 @@ typedef struct BlastCompressedAaLookupTable {
     Int4 backbone_size;    /**< number of cells in the backbone */
     CompressedLookupBackboneCell * backbone; /**< hashtable for storing
                                                   indexed query offsets */
-    CompressedOverflowCell * overflow;    /**< array of batches of query
+    CompressedOverflowCell ** overflow_banks;   /**< array of batches of query
                                            offsets that are too numerous to
                                            fit in backbone cells */
-    Int4 overflow_used;       /**< number of overflow cells in use */
-    Int4 overflow_alloc;   /**< number of overflow cells allocated */
+    Int4 curr_overflow_cell; /**< occupied cells in the current bank */
+    Int4 curr_overflow_bank; /**< current bank to fill-up */
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
     Uint1* compress_table;  /**< translation table (protein->compressed) */
-    Int4* scaled_compress_table;  /**< scaled_version of compress_table */
+    Int4* scaled_compress_table;  /**< scaled version of compress_table */
     void *scansub_callback;/**< function for scanning subject sequences */
 
 
@@ -251,8 +256,6 @@ BlastCompressedAaLookupTable* BlastCompressedAaLookupTableDestruct(
 /** Compute "high" index for a word
   * @param wordsize Number of consecutive letters in a word [in]
   * @param word Sequence in "regular" AA alphabet [in]
-  * @param compressed_alphabet_size Number of letters in the compressed
-  *                   alphabet [in]
   * @param skip If a letter is encountered that cannot be
   *            compressed, the offset from word[] where 
   *            index computation can begin again [out]

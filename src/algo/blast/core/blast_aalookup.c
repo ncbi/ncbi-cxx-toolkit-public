@@ -731,6 +731,30 @@ static void s_AddPSSMWordHitsCore(NeighborInfo * info, Int4 score,
     }
 }
 
+/** Fetch next vacant cell from a bank.
+ * @param[in] lookup compressed protein lookup table
+ * @return pointer to reserved cell
+ */
+static CompressedOverflowCell* 
+s_CompressedListGetNewCell(BlastCompressedAaLookupTable * lookup)
+{
+    if (lookup->curr_overflow_cell == 
+                        COMPRESSED_OVERFLOW_CELLS_IN_BANK) {
+        /* need a new bank */
+        Int4 bank_idx = lookup->curr_overflow_bank + 1;
+        lookup->overflow_banks[bank_idx] = (CompressedOverflowCell*) malloc(
+                                           COMPRESSED_OVERFLOW_CELLS_IN_BANK *
+                                           sizeof(CompressedOverflowCell));
+        ASSERT(bank_idx < COMPRESSED_OVERFLOW_MAX_BANKS);
+        ASSERT(lookup->overflow_banks[bank_idx]);
+        lookup->curr_overflow_bank++;
+        lookup->curr_overflow_cell = 0;
+    }
+
+    return lookup->overflow_banks[lookup->curr_overflow_bank] +
+                               lookup->curr_overflow_cell++;
+}
+
 /** Add a single query offset to the compressed
  * alphabet protein lookup table
  * @param lookup The lookup table [in]
@@ -742,91 +766,73 @@ static void s_CompressedLookupAddWordHit(
                                   Int4 index,
                                   Int4 query_offset)
 {
-    CompressedLookupBackboneCell *cell = lookup->backbone + index;
-    Int4 num_entries = cell->num_used;
-    Int4 i;
+    CompressedLookupBackboneCell *backbone_cell = lookup->backbone + index;
+    CompressedOverflowCell * new_cell;
+    Int4 num_entries = backbone_cell->num_used;
 
     if (num_entries < COMPRESSED_HITS_PER_BACKBONE_CELL) {
-        cell->payload.query_offsets[num_entries] = query_offset;
+        backbone_cell->query_offsets[num_entries] = query_offset;
     } 
     else if (num_entries == COMPRESSED_HITS_PER_BACKBONE_CELL) {
-        /* start using an overflow cell. The index of the cell
-           to use is stored as the first element in the backbone
-           cell, and the first hit in the backbone spills into
-           the overflow cell (along with an entry for query_offset) */
 
-        CompressedOverflowCell *overflow_cell;
+        /* need to create new overflow list */
+  
+        Int4 i;
+        Int4 tmp_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL-1];
+  
+        /* fetch next vacant cell */
+        new_cell = s_CompressedListGetNewCell(lookup);
 
-        if (lookup->overflow_used == lookup->overflow_alloc) {
-
-            /* this should not normally happen */
-
-            Int4 new_size = lookup->overflow_alloc * 1.4;
-
-#ifdef LOOKUP_VERBOSE
-            printf("WARNING: OverFlow reallocation (entries: %d).\n",
-                                       lookup->overflow_alloc);
-#endif
-            lookup->overflow = (CompressedOverflowCell *)realloc(
-                                     lookup->overflow, new_size * 
-                                     sizeof(CompressedOverflowCell));
-            ASSERT(lookup->overflow);
-            lookup->overflow_alloc = new_size;
-        }
-
-        overflow_cell = lookup->overflow + lookup->overflow_used;
-        overflow_cell->query_offsets[0] = cell->payload.query_offsets[0];
-        overflow_cell->query_offsets[1] = query_offset;
-        cell->payload.query_offsets[0] = lookup->overflow_used++;
-    } 
-    else if (num_entries < COMPRESSED_SPILLOVER) {
-        /* just add to the overflow cell */
-        CompressedOverflowCell *overflow_cell = lookup->overflow +
-                                        cell->payload.query_offsets[0];
-        overflow_cell->query_offsets[num_entries - 
-                        (COMPRESSED_HITS_PER_BACKBONE_CELL - 1)] = query_offset;
-    } 
-    else if (num_entries == COMPRESSED_SPILLOVER) {
-        
-        /* empty the backbone cell, and turn it into a dynamic array.
-           Put the hits of the backbone cell, and query_offset, into
-           the dynamic array */
-
-        const Int4 chain_size = COMPRESSED_HITS_PER_BACKBONE_CELL + 5;
-        Int4 overflow_idx = cell->payload.query_offsets[0];
-        Int4 *chain = (Int4 *)malloc(chain_size * sizeof(Int4));
- 
-        for (i = 1; i < COMPRESSED_HITS_PER_BACKBONE_CELL; i++)
-            chain[i+1] = cell->payload.query_offsets[i];
-       
-        chain[0] = chain_size;
-        chain[1] = COMPRESSED_HITS_PER_BACKBONE_CELL;
-        chain[i+1] = query_offset;
- 
-        /* update the dynamic array structure */
-        cell->payload.overflow_array.overflow_cell_idx = overflow_idx;
-        cell->payload.overflow_array.array = chain;
-    } 
-    else {
-        /* add directly to the dynamic array */
-
-        Int4 *chain = cell->payload.overflow_array.array; 
-        Int4 chain_size = chain[0];
-        
-        if (chain_size == chain[1] + 2) { /* allocate more */
-            chain_size = chain_size * 2;
-            chain = (Int4 *) realloc(chain, chain_size * sizeof(Int4));
-            ASSERT(chain != NULL);
-            cell->payload.overflow_array.array = chain;
-            chain[0] = chain_size;
+        /* this cell is always the end of the list */
+        new_cell->next = NULL; 
+  
+        /* store the last element of the original backbone cell */
+        new_cell->query_offsets[0] = backbone_cell->query_offsets[
+                                        COMPRESSED_HITS_PER_BACKBONE_CELL-1]; 
+  
+        /* store this new offset too */
+        new_cell->query_offsets[1] = query_offset; 
+  
+        /* save offsets from being overwritten (the list of query
+           offsets must be copied to a struct that aliases the current
+           list in memory) */
+        for (i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
+            tmp_offsets[i] = backbone_cell->query_offsets[i];
         }
         
-        /* add the hit */
-        chain[chain[1] + 2] = query_offset;
-        chain[1] += 1;      
+        /* repopulate */
+        for (i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
+            backbone_cell->overflow_list.query_offsets[i] = tmp_offsets[i];
+        }
+        
+        /* make backbone point to this new, one-cell long list */
+        backbone_cell->overflow_list.head = new_cell;
+    } 
+    else { /* continue with existing overflow list */
+      
+        /* find the index into the current overflow cell; we
+           do not store the current index in every cell, to
+           save space */
+        Int4 cell_index = (num_entries - 
+                           COMPRESSED_HITS_PER_BACKBONE_CELL + 1) %
+                           COMPRESSED_HITS_PER_OVERFLOW_CELL;
+
+        if (cell_index == 0 ) { /* can't be empty => it's full  */
+
+            /* fetch next vacant cell */
+            new_cell = s_CompressedListGetNewCell(lookup);
+
+            /* shuffle the pointers */
+            new_cell->next = backbone_cell->overflow_list.head;
+            backbone_cell->overflow_list.head = new_cell;
+        }
+        
+        /* head always points to a cell with free space */
+        backbone_cell->overflow_list.head->query_offsets[
+                                        cell_index] = query_offset;
     }
 
-    cell->num_used++;
+    backbone_cell->num_used++;
 }
 
 /** Add a single query offset to the compressed lookup table.
@@ -864,12 +870,12 @@ static void s_CompressedLookupAddUnencoded(
                                Uint1* w,
                                Int4 query_offset)
 {
-  Int4 skip = 0;
-  Int4 index = s_ComputeCompressedIndex(lookup->word_length, w, 
-                                        lookup->compressed_alphabet_size,
-                                        &skip, lookup);
-  ASSERT(skip == 0);
-  s_CompressedLookupAddWordHit(lookup, index, query_offset);
+    Int4 skip = 0;
+    Int4 index = s_ComputeCompressedIndex(lookup->word_length, w, 
+                                          lookup->compressed_alphabet_size,
+                                          &skip, lookup);
+    if (skip == 0)
+        s_CompressedLookupAddWordHit(lookup, index, query_offset);
 }
 
 /** Structure containing information needed for adding neighboring words 
@@ -1086,7 +1092,6 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
     Int4 histogram[HISTSIZE] = {0};
     Int4 backbone_occupancy = 0;
     Int4 num_overflows = 0;
-    Int4 num_spills = 0;
 #endif
     
     pv = lookup->pv = (PV_ARRAY_TYPE *)calloc(
@@ -1107,8 +1112,6 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
 #ifdef LOOKUP_VERBOSE
             if (count > COMPRESSED_HITS_PER_BACKBONE_CELL) {
                 num_overflows++;
-                if (count > COMPRESSED_SPILLOVER)
-                    num_spills++;
             }
             if (count >= HISTSIZE)
                 count = HISTSIZE-1;
@@ -1129,10 +1132,10 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
     printf("backbone occupancy: %d (%f%%)\n", backbone_occupancy,
                  100.0 * backbone_occupancy / lookup->backbone_size); 
     printf("num_overflows: %d\n", num_overflows);
-    printf("num_spills: %d\n", num_spills);
     printf("longest chain: %d\n", longest_chain);
     printf("exact matches: %d\n", lookup->exact_matches);
     printf("neighbor matches: %d\n", lookup->neighbor_matches);
+    printf("banks allocated: %d\n", lookup->curr_overflow_bank + 1);
     printf("Lookup table histogram:\n");
     for (i = 0; i < HISTSIZE; i++) {
         printf("%d\t%d\n", i, histogram[i]);
@@ -1151,7 +1154,6 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
     Int4 i;
     SCompressedAlphabet* new_alphabet;
     const double kMatrixScale = 100.0;
-    const Int4 kInitialOverflowSize = 350000;
     Int4 word_size = opt->word_size;
     Int4 table_scale;
     BlastCompressedAaLookupTable *lookup = *lut =
@@ -1194,13 +1196,16 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
     lookup->backbone = (CompressedLookupBackboneCell* )calloc(
                                     lookup->backbone_size, 
                                     sizeof(CompressedLookupBackboneCell));
-    lookup->overflow = (CompressedOverflowCell *) malloc(
-                                         kInitialOverflowSize *
-                                         sizeof(CompressedOverflowCell));
-    lookup->overflow_used = 0;
-    lookup->overflow_alloc = kInitialOverflowSize;
+    lookup->overflow_banks = (CompressedOverflowCell **) calloc(
+                                         COMPRESSED_OVERFLOW_MAX_BANKS,
+                                         sizeof(CompressedOverflowCell *));
     ASSERT(lookup->backbone != NULL);
-    ASSERT(lookup->overflow != NULL);
+    ASSERT(lookup->overflow_banks != NULL);
+    /* there is no 'current overflow cell' that was previously 
+       allocated, so configure the allocator to start allocations
+       immediately */
+    lookup->curr_overflow_cell = COMPRESSED_OVERFLOW_CELLS_IN_BANK;
+    lookup->curr_overflow_bank = -1;
 
     /* copy the mapping from protein to compressed 
        representation; also save a scaled version of the
@@ -1234,15 +1239,14 @@ BlastCompressedAaLookupTable *BlastCompressedAaLookupTableDestruct(
 {
     Int4 i;
 
-    for (i = 0; i < lookup->backbone_size; i++) {
-        if (lookup->backbone[i].num_used > COMPRESSED_SPILLOVER)
-            sfree(lookup->backbone[i].payload.overflow_array.array);
+    for (i = 0; i <= lookup->curr_overflow_bank; i++) {
+        free(lookup->overflow_banks[i]);
     }
 
     sfree(lookup->compress_table);
     sfree(lookup->scaled_compress_table);
     sfree(lookup->backbone);
-    sfree(lookup->overflow);
+    sfree(lookup->overflow_banks);
     sfree(lookup->pv);
     sfree(lookup);
     return NULL;
