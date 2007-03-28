@@ -771,7 +771,7 @@ static void s_CompressedLookupAddWordHit(
     Int4 num_entries = backbone_cell->num_used;
 
     if (num_entries < COMPRESSED_HITS_PER_BACKBONE_CELL) {
-        backbone_cell->query_offsets[num_entries] = query_offset;
+        backbone_cell->payload.query_offsets[num_entries] = query_offset;
     } 
     else if (num_entries == COMPRESSED_HITS_PER_BACKBONE_CELL) {
 
@@ -787,7 +787,7 @@ static void s_CompressedLookupAddWordHit(
         new_cell->next = NULL; 
   
         /* store the last element of the original backbone cell */
-        new_cell->query_offsets[0] = backbone_cell->query_offsets[
+        new_cell->query_offsets[0] = backbone_cell->payload.query_offsets[
                                         COMPRESSED_HITS_PER_BACKBONE_CELL-1]; 
   
         /* store this new offset too */
@@ -797,16 +797,17 @@ static void s_CompressedLookupAddWordHit(
            offsets must be copied to a struct that aliases the current
            list in memory) */
         for (i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
-            tmp_offsets[i] = backbone_cell->query_offsets[i];
+            tmp_offsets[i] = backbone_cell->payload.query_offsets[i];
         }
         
         /* repopulate */
         for (i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
-            backbone_cell->overflow_list.query_offsets[i] = tmp_offsets[i];
+            backbone_cell->payload.overflow_list.query_offsets[i] = 
+                                                        tmp_offsets[i];
         }
         
         /* make backbone point to this new, one-cell long list */
-        backbone_cell->overflow_list.head = new_cell;
+        backbone_cell->payload.overflow_list.head = new_cell;
     } 
     else { /* continue with existing overflow list */
       
@@ -823,13 +824,13 @@ static void s_CompressedLookupAddWordHit(
             new_cell = s_CompressedListGetNewCell(lookup);
 
             /* shuffle the pointers */
-            new_cell->next = backbone_cell->overflow_list.head;
-            backbone_cell->overflow_list.head = new_cell;
+            new_cell->next = backbone_cell->payload.overflow_list.head;
+            backbone_cell->payload.overflow_list.head = new_cell;
         }
         
         /* head always points to a cell with free space */
-        backbone_cell->overflow_list.head->query_offsets[
-                                        cell_index] = query_offset;
+        backbone_cell->payload.overflow_list.head->query_offsets[
+                                              cell_index] = query_offset;
     }
 
     backbone_cell->num_used++;

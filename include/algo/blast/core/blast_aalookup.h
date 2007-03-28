@@ -192,7 +192,7 @@ typedef struct CompressedLookupBackboneCell {
         Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL];
         /** storage for remote query offsets */
         CompressedMixedOffsets overflow_list;
-    };
+    } payload;
 } CompressedLookupBackboneCell;
 
 /** The lookup table structure for protein searches

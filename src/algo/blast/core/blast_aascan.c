@@ -239,7 +239,7 @@ static Int4 s_BlastCompressedAaScanSubject(
              if (numhits <= COMPRESSED_HITS_PER_BACKBONE_CELL) {
                 /* hits all live in the backbone */
              
-                query_offsets = backbone_cell->query_offsets;
+                query_offsets = backbone_cell->payload.query_offsets;
                 for (i = 0; i < numhits; i++) {
                    dest[i].qs_offsets.q_off = query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
@@ -249,7 +249,7 @@ static Int4 s_BlastCompressedAaScanSubject(
                 /* hits are in the backbone cell and in 
                    the overflow list */
                 CompressedOverflowCell* curr_cell = 
-                                            backbone_cell->overflow_list.head;
+                                    backbone_cell->payload.overflow_list.head;
                 CompressedOverflowCell* next_cell = curr_cell->next;
 
                 /* the number of hits in the linked list of cells has
@@ -260,7 +260,8 @@ static Int4 s_BlastCompressedAaScanSubject(
                                      COMPRESSED_HITS_PER_OVERFLOW_CELL + 1;
 
                 /* copy hits from backbone */
-                query_offsets = backbone_cell->overflow_list.query_offsets;
+                query_offsets = 
+                         backbone_cell->payload.overflow_list.query_offsets;
                 for(i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
                    dest[i].qs_offsets.q_off = query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
