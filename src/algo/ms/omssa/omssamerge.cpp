@@ -137,7 +137,7 @@ int COMSSAMerge::Run()
 
     CRef <COMSSASearch> MySearch(new COMSSASearch);
 
-    ESerialDataFormat InFileType, OutFileType;
+    ESerialDataFormat InFileType(eSerial_Xml), OutFileType(eSerial_Xml);
 
     if(args["ox"]) OutFileType = eSerial_Xml;
     else if(args["ob"]) OutFileType = eSerial_AsnBinary;

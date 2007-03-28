@@ -125,11 +125,11 @@ CMSMatchedPeakSet::~CMSMatchedPeakSet()
     DeleteMatchedPeakSet();
 }
 
-void CMSMatchedPeakSet::CreateMatchedPeakSet(int Size)
+void CMSMatchedPeakSet::CreateMatchedPeakSet(int SizeIn)
 {
     DeleteMatchedPeakSet();
     int i;
-    for (i = 0; i < Size; ++i)
+    for (i = 0; i < SizeIn; ++i)
         SetMatchedPeakSet().push_back(new CMSMatchedPeak);
 }
 
@@ -270,13 +270,13 @@ void CMSSpectrumMatch::CreateHitInfo(void)
 
 CMSBasicMatchedPeak * CMSSpectrumMatch::Find(
                                             TMSNumber Number, 
-                                            TMSCharge Charge, 
+                                            TMSCharge ChargeIn, 
                                             TMSIonSeries Series)
 {
     int i;
     for (i = 0; i < GetHits(); ++i) {
         if (GetHitInfo(i).GetNumber() == Number &&
-            GetHitInfo(i).GetCharge() == Charge &&
+            GetHitInfo(i).GetCharge() == ChargeIn &&
             GetHitInfo(i).GetIonSeries() == Series)
             return &SetHitInfo(i);
     }
@@ -285,7 +285,7 @@ CMSBasicMatchedPeak * CMSSpectrumMatch::Find(
 
 
 void CMSSpectrumMatch::FillMatchedPeaks(
-                                       TMSCharge Charge, 
+                                       TMSCharge ChargeIn, 
                                        TMSIonSeries Series, 
                                        unsigned Size, 
                                        TMSIntensity MinIntensity, 
@@ -295,13 +295,13 @@ void CMSSpectrumMatch::FillMatchedPeaks(
 {
     // create a new match set
     CMSMatchedPeakSet *MatchPeakSet =
-    SetIonSeriesMatchMap().CreateSeries(Charge, Series, Size, Maxproductions);
+    SetIonSeriesMatchMap().CreateSeries(ChargeIn, Series, Size, Maxproductions);
 
     unsigned i;
 
     // iterate over series and look for matching hits
     for (i = 0; i < MatchPeakSet->GetMatchedPeakSet().size(); ++i) {
-        CMSBasicMatchedPeak * FoundPeak = Find(i, Charge, Series);
+        CMSBasicMatchedPeak * FoundPeak = Find(i, ChargeIn, Series);
         if (FoundPeak && FoundPeak->GetIntensity() > MinIntensity) {
             // copy hit to match
             MatchPeakSet->SetMatchedPeakSet()[i]->Assign(FoundPeak);
@@ -326,7 +326,7 @@ void CMSSpectrumMatch::FillMatchedPeaks(
             }
         }
         else {
-            MatchPeakSet->SetMatchedPeakSet()[i]->SetCharge() = Charge;
+            MatchPeakSet->SetMatchedPeakSet()[i]->SetCharge() = ChargeIn;
             MatchPeakSet->SetMatchedPeakSet()[i]->SetIonSeries() = Series;
             MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeUnknown;
             MatchPeakSet->SetMatchedPeakSet()[i]->SetMZ() = 0;
@@ -379,12 +379,12 @@ void CMSSpectrumMatch::FillMatchedPeaks(
         TMSMZ MassIncrement;
         // if completely empty, force the array to be completely filled out
         if (MatchPeakSet->GetMatchedPeakSet()[0]->GetMZ() == 0) {
-            MassIncrement = (GetExpMass()/Charge)/(Size+1);
+            MassIncrement = (GetExpMass()/ChargeIn)/(Size+1);
             StartIndex = 0;
-            StartMass = (GetExpMass()/Charge)/(Size+1);
+            StartMass = (GetExpMass()/ChargeIn)/(Size+1);
         }
         else {
-            MassIncrement = ((GetExpMass()/Charge) - MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ()) /
+            MassIncrement = ((GetExpMass()/ChargeIn) - MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ()) /
                             (Size - LastIndex);
             StartIndex = LastIndex + 1;
             StartMass = MatchPeakSet->GetMatchedPeakSet()[LastIndex]->GetMZ() +
@@ -502,14 +502,14 @@ const double CMSSpectrumMatch::CalcNormalTopHit(double Mean, double TopHitProb) 
     return retval;
 }
 
-const double CMSSpectrumMatch::CalcPvalue(double Mean, int Hits) const
+const double CMSSpectrumMatch::CalcPvalue(double Mean, int HitsIn) const
 {
-    if (Hits <= 0) return 1.0L;
+    if (HitsIn <= 0) return 1.0L;
 
     int i;
     double retval(0.0L), increment, beforeincrement(0.0L);
 
-    for (i = 0; i < Hits; i++) {
+    for (i = 0; i < HitsIn; i++) {
         increment = CalcPoisson(Mean, i);
 #ifdef HAVE_LIMITS
         // detect limit of increment if numeric_limits available
@@ -530,14 +530,14 @@ const double CMSSpectrumMatch::CalcPvalue(double Mean, int Hits) const
     return retval;
 }
 
-const double CMSSpectrumMatch::CalcPvalueTopHit(double Mean, int Hits, double Normal, double TopHitProb) const
+const double CMSSpectrumMatch::CalcPvalueTopHit(double Mean, int HitsIn, double Normal, double TopHitProb) const
 {
-    if (Hits <= 0) return 1.0L;
+    if (HitsIn <= 0) return 1.0L;
 
     int i;
     double retval(0.0L), increment, beforeretval(-1.0), beforeincrement(0.0L);
 
-    for (i = 1; i < Hits; i++) {
+    for (i = 1; i < HitsIn; i++) {
         increment = CalcPoissonTopHit(Mean, i, TopHitProb);
 #ifdef HAVE_LIMITS
         // detect limit of increment if numeric_limits available

@@ -569,7 +569,7 @@ public:
     /**
      * checks all mods for a particular type
      */
-    void CheckMods(EMSModType NonSpecific, EMSModType Specific,
+    void CheckMods(EMSModType NonSpecificIn, EMSModType Specific,
                    CMSMod &VariableMods, CMSMod &FixedMods,
 				   int& NumMod, char SeqChar, int MaxNumMod,
 				   CMod ModList[],
@@ -788,7 +788,7 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 }
 
 inline
-void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
+void CCleave::CheckMods(EMSModType NonSpecificIn, EMSModType Specific,
                         CMSMod &VariableMods, CMSMod &FixedMods,
                         int& NumMod, char SeqChar, int MaxNumMod,
                         CMod ModList[],
@@ -796,9 +796,9 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
                         CRef <CMSModSpecSet> &Modset)
 {
     // check non-specific mods
-    CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, ModList,
+    CheckNonSpecificMods(NonSpecificIn, VariableMods, NumMod, MaxNumMod, ModList,
                          iPepStart, false, Modset);
-    CheckNonSpecificMods(NonSpecific, FixedMods, NumMod, MaxNumMod, ModList,
+    CheckNonSpecificMods(NonSpecificIn, FixedMods, NumMod, MaxNumMod, ModList,
                          iPepStart, true, Modset);
     // check specific mods
     CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod, ModList, 
@@ -1035,16 +1035,6 @@ class NCBI_XOMSSA_EXPORT CCleaveFactory
 public:
   static CRef <CCleave> CleaveFactory(const EMSEnzymes enzyme);
 
-};
-
-
-char const * const kIonLabels[eMSIonType_max] = { 
-    "a",
-    "b", 
-    "c",
-    "x", 
-    "y", 
-    "z"
 };
 
 

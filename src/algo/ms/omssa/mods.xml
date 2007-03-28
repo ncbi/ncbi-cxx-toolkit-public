@@ -2041,4 +2041,202 @@
           <MSModSpec_residues_E>W</MSModSpec_residues_E>
         </MSModSpec_residues>
       </MSModSpec>
+  <MSModSpec>
+        <MSModSpec_mod>
+          <MSMod value="sumoylation">166</MSMod>
+        </MSModSpec_mod>
+        <MSModSpec_type>
+          <MSModType value="modaa">0</MSModType>
+        </MSModSpec_type>
+        <MSModSpec_name>sumoylation of K</MSModSpec_name>
+        <MSModSpec_monomass>484.2282</MSModSpec_monomass>
+        <MSModSpec_averagemass>0</MSModSpec_averagemass>
+        <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>K</MSModSpec_residues_E>
+        </MSModSpec_residues>
+      </MSModSpec>      
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ114nterm">167</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ114 on nterm</MSModSpec_name>
+    <MSModSpec_monomass>144.1059</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ114K">168</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ114 on K</MSModSpec_name>
+    <MSModSpec_monomass>144.1059</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>K</MSModSpec_residues_E>
+        </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ114Y">169</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ114 on Y</MSModSpec_name>
+    <MSModSpec_monomass>144.1059</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>    
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ115nterm">170</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ115 on nterm</MSModSpec_name>
+    <MSModSpec_monomass>144.0996</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ115K">171</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ115 on K</MSModSpec_name>
+    <MSModSpec_monomass>144.0996</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>K</MSModSpec_residues_E>
+        </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ115Y">172</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ115 on Y</MSModSpec_name>
+    <MSModSpec_monomass>144.0996</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>    
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ116nterm">173</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ116 on nterm</MSModSpec_name>
+    <MSModSpec_monomass>144.1021</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ116K">174</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ116 on K</MSModSpec_name>
+    <MSModSpec_monomass>144.1021</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>K</MSModSpec_residues_E>
+        </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ116Y">175</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ116 on Y</MSModSpec_name>
+    <MSModSpec_monomass>144.1021</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec> 
+   <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ117nterm">176</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modnp">5</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ117 on nterm</MSModSpec_name>
+    <MSModSpec_monomass>144.1021</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ117K">177</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ117 on K</MSModSpec_name>
+    <MSModSpec_monomass>144.1021</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>K</MSModSpec_residues_E>
+        </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="iTRAQ117Y">178</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>iTRAQ117 on Y</MSModSpec_name>
+    <MSModSpec_monomass>144.1021</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>Y</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="MMTS">179</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>MMTS on C</MSModSpec_name>
+    <MSModSpec_monomass>45.987</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>C</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
 </MSModSpecSet>

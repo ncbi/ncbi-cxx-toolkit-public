@@ -357,7 +357,7 @@ bool CSpectrumSet::GetDTABody(CNcbiIstream& DTA, TInputPeaks& InputPeaks)
 
     if(!(DTA >> dummy) || dummy < 0)
         return false;
-    if (dummy > kMax_Int) dummy = MSSCALE2DBL(kMax_Int);
+    if (dummy > kMax_Int) dummy = static_cast <float> (MSSCALE2DBL(kMax_Int));
     InputPeak.mz = MSSCALE2INT(dummy);
 
     if(!(DTA >> dummy) || dummy < 0)

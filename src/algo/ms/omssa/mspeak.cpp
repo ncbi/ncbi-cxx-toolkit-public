@@ -972,10 +972,10 @@ void CMSPeak::CullAll(const CMSSearchSettings& Settings)
 const bool CMSPeak::IsAtMZ(const int BigMZ,
                            const int TestMZ, 
                            const int Diff, 
-                           const int tol) const
+                           const int tolin) const
 {
-    if(TestMZ < BigMZ - MSSCALE2INT(Diff) + tol && 
-       TestMZ > BigMZ - MSSCALE2INT(Diff) - tol)
+    if(TestMZ < BigMZ - MSSCALE2INT(Diff) + tolin && 
+       TestMZ > BigMZ - MSSCALE2INT(Diff) - tolin)
 	return true;
     return false;
 }
@@ -983,12 +983,12 @@ const bool CMSPeak::IsAtMZ(const int BigMZ,
 
 const bool CMSPeak::IsMajorPeak(const int BigMZ,
                                 const int TestMZ, 
-                                const int tol) const
+                                const int tolin) const
 {
-    if (IsAtMZ(BigMZ, TestMZ, 1, tol) || 
-	IsAtMZ(BigMZ, TestMZ, 16, tol) ||
-	IsAtMZ(BigMZ, TestMZ, 17, tol) ||
-	IsAtMZ(BigMZ, TestMZ, 18, tol)) return true;
+    if (IsAtMZ(BigMZ, TestMZ, 1, tolin) || 
+	IsAtMZ(BigMZ, TestMZ, 16, tolin) ||
+	IsAtMZ(BigMZ, TestMZ, 17, tolin) ||
+	IsAtMZ(BigMZ, TestMZ, 18, tolin)) return true;
     return false;
 }
 

@@ -122,7 +122,7 @@ public:
      * 
      * @param blastdb name of blast database
      */
-    int InitBlast(const char *blastdb);
+    int InitBlast(const char *blastdb, bool use_mmap = false);
 
 
     /**
@@ -802,6 +802,18 @@ CSearch::GetLadderContainer(void) const
  */
 class NCBI_XOMSSA_EXPORT CSearchHelper {
 public:
+    /**
+     * 
+     * @param MySearch
+     * @param iOutFile
+     * @param Filename
+     * @param FileFormat
+     * @param txt_out
+     */
+    static void SaveOneFile(CMSSearch &MySearch, 
+                            const string Filename, 
+                            ESerialDataFormat FileFormat, 
+                            bool IncludeRequest);
 
     /**
      * read in modification files.  probably should be in some helper class
@@ -851,12 +863,13 @@ public:
       * 
       * @param InFile type and name of file to be read in
       * @param MySearch the search i/o object
-      * @param Search the search algorithm object
+      * @param SearchEngineIterative set to true if this should be
+      *                              an iterative search
       * @return 1, -1 = error, 0 = ok
       */
     static int LoadAnyFile(CMSSearch& MySearch, 
                            CConstRef <CMSInFile> InFile,
-                           CSearch& SearchEngine);
+                           bool* SearchEngineIterative = 0);
 
     /** 
       * Read in an MSRequest
@@ -906,6 +919,7 @@ public:
      */
     static void CreateSearchSettings(string FileName,
                               CRef<CMSSearchSettings> &Settings);
+
 };  
 
 

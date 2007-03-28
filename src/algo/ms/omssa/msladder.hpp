@@ -129,7 +129,7 @@ public:
      * @param ModMask modification mask
      * @param i index into sequence
      * @param ion the ladder
-     * @param Charge charge state
+     * @param ChargeIn charge state
      * @param SearchType what type of mass search (exact, ...)
      * @param ExactMass exact mass threshold
      */
@@ -144,7 +144,7 @@ public:
                    unsigned ModMask,
                    int i,
                    int& ion,
-                   const int Charge, 
+                   const int ChargeIn, 
                    EMSSearchType SearchType,
                    double ExactMass);
 
@@ -250,7 +250,7 @@ bool CLadder::CalcDelta(const int *IntMassArray,
                         unsigned ModMask, 
                         int i,
                         int& ion,
-                        const int Charge, 
+                        const int ChargeIn, 
                         EMSSearchType SearchType,
                         double ExactMass)
 {
@@ -270,12 +270,12 @@ bool CLadder::CalcDelta(const int *IntMassArray,
 
     // first check to see if exact mass increment needed
     if(SearchType == eMSSearchType_exact) {
-        if ((ion * Charge)/MSSCALE2INT(ExactMass) != 
-            (ion * Charge + delta) / MSSCALE2INT(ExactMass))
-            ion += MSSCALE2INT(kNeutron)/Charge;
+        if ((ion * ChargeIn)/MSSCALE2INT(ExactMass) != 
+            (ion * ChargeIn + delta) / MSSCALE2INT(ExactMass))
+            ion += MSSCALE2INT(kNeutron)/ChargeIn;
     }
 
-    ion += delta/Charge;
+    ion += delta/ChargeIn;
     return true;
 }
 

@@ -147,8 +147,8 @@ CSearchHelper::ReadFile(const string& Filename,
 {
     CRef <CMSRequest> Request (new CMSRequest);
     MySearch.SetRequest().push_back(Request);
-    CRef <CMSResponse> Response (new CMSResponse);
-    MySearch.SetResponse().push_back(Response);
+//    CRef <CMSResponse> Response (new CMSResponse);
+//    MySearch.SetResponse().push_back(Response);
 
     CNcbiIfstream PeakFile(Filename.c_str());
     if(!PeakFile) {
@@ -169,8 +169,8 @@ CSearchHelper::ReadSearchRequest(const string& Filename,
 {   
     CRef <CMSRequest> Request (new CMSRequest);
     MySearch.SetRequest().push_back(Request);
-    CRef <CMSResponse> Response (new CMSResponse);
-    MySearch.SetResponse().push_back(Response);
+//    CRef <CMSResponse> Response (new CMSResponse);
+//    MySearch.SetResponse().push_back(Response);
 
     auto_ptr<CObjectIStream> 
         in(CObjectIStream::Open(Filename.c_str(), DataFormat));
@@ -208,7 +208,7 @@ CSearchHelper::ReadCompleteSearch(const string& Filename,
 int 
 CSearchHelper::LoadAnyFile(CMSSearch& MySearch, 
                            CConstRef <CMSInFile> InFile,
-                           CSearch& SearchEngine)
+                           bool* SearchEngineIterative)
 {
     string Filename(InFile->GetInfile());
     EMSSpectrumFileType DataFormat =
@@ -223,11 +223,11 @@ CSearchHelper::LoadAnyFile(CMSSearch& MySearch,
     return CSearchHelper::ReadFile(Filename, DataFormat, MySearch);
     break;
     case eMSSpectrumFileType_oms:
-    SearchEngine.SetIterative() = true;
+    if(SearchEngineIterative) *SearchEngineIterative = true;
     return CSearchHelper::ReadCompleteSearch(Filename, eSerial_AsnBinary, MySearch);
     break;
     case eMSSpectrumFileType_omx:
-    SearchEngine.SetIterative() = true;
+    if(SearchEngineIterative) *SearchEngineIterative = true;
     return CSearchHelper::ReadCompleteSearch(Filename, eSerial_Xml, MySearch);
     break;
     case eMSSpectrumFileType_xml:
@@ -242,6 +242,26 @@ CSearchHelper::LoadAnyFile(CMSSearch& MySearch,
     }
     return 1;  // not supported
 }
+
+
+void CSearchHelper::SaveOneFile(CMSSearch &MySearch,
+                                const string Filename, 
+                                ESerialDataFormat FileFormat,
+                                bool IncludeRequest) 
+{
+    {
+        auto_ptr <CObjectOStream> txt_out(CObjectOStream::Open(Filename,
+                                                               FileFormat));
+        if(FileFormat == eSerial_Xml) {
+            CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
+            CSearchHelper::ConditionXMLStream(xml_out);
+        }
+        if(IncludeRequest)
+            txt_out->Write(ObjectInfo(MySearch));
+        else
+            txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
+    }
+}   
 
 
 int 
@@ -269,18 +289,9 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
         case eMSSerialDataFormat_asntext:
         case eMSSerialDataFormat_asnbinary:
         case eMSSerialDataFormat_xml:
-        {
-            auto_ptr <CObjectOStream> txt_out(CObjectOStream::Open(Filename,
-                                                                   FileFormat));
-            if(FileFormat == eSerial_Xml) {
-                CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
-                CSearchHelper::ConditionXMLStream(xml_out);
-            }
-            if((*iOutFile)->GetIncluderequest())
-                txt_out->Write(ObjectInfo(MySearch));
-            else
-                txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
-        }
+        CSearchHelper::SaveOneFile(MySearch,
+                                   Filename, 
+                                   FileFormat, (*iOutFile)->GetIncluderequest());
         break;
         case eMSSerialDataFormat_csv:    
         {
@@ -340,6 +351,7 @@ CSearchHelper::CreateSearchSettings(string FileName,
 
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSearch::
@@ -355,10 +367,11 @@ RestrictedSearch(false)
 {
 }
 
-int CSearch::InitBlast(const char *blastdb)
+int CSearch::InitBlast(const char *blastdb, bool use_mmap)
 {
     if (!blastdb) return 0;
-    rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein));
+    rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein, 
+    0, 0, use_mmap));
     numseq = rdfp->GetNumOIDs();
     return 0;   
 }
@@ -1558,6 +1571,8 @@ CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
     int lowmz(0), highmz;
 
     unsigned Size = Hit.GetStop() - Hit.GetStart();
+    if (Maxproductions == 0) Maxproductions = kMSLadderMax;
+
 
     // decide if there is any terminal bias
     EMSTerminalBias TerminalBias(eMSNoTerminalBias);

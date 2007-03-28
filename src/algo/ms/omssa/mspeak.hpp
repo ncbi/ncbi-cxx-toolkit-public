@@ -72,7 +72,27 @@ enum EMSPeakListTypes {
     eMSPeakListCharge7,  // 
     eMSPeakListCharge8,  // 
     eMSPeakListCharge9,  // 
-    eMSPeakListCharge10,  // 
+    eMSPeakListCharge10, // 
+    eMSPeakListCharge11,  // 
+    eMSPeakListCharge12,  // 
+    eMSPeakListCharge13,  //
+    eMSPeakListCharge14,  // 
+    eMSPeakListCharge15,  // 
+    eMSPeakListCharge16,  // 
+    eMSPeakListCharge17,  // 
+    eMSPeakListCharge18,  // 
+    eMSPeakListCharge19,  // 
+    eMSPeakListCharge20,  // 
+    eMSPeakListCharge21,  //
+    eMSPeakListCharge22,  // 
+    eMSPeakListCharge23,  //
+    eMSPeakListCharge24,  // 
+    eMSPeakListCharge25,  // 
+    eMSPeakListCharge26,  // 
+    eMSPeakListCharge27,  // 
+    eMSPeakListCharge28,  // 
+    eMSPeakListCharge29,  // 
+    eMSPeakListCharge30,  // 
     eMSPeakListChargeMax
     };
 
@@ -1088,23 +1108,23 @@ public:
      * @param BigMZ the major ion
      * @param TestMZ the minor ion
      * @param Diff distance between minor and major ions
-     * @param tol mass tolerance
+     * @param tolin mass tolerance
      */
     const bool IsAtMZ(const int BigMZ, 
                       const int TestMZ, 
                       const int Diff, 
-                      const int tol) const;
+                      const int tolin) const;
 
     /**
      * see if TestMZ can be associated with BigMZ, e.g. water loss, etc.
      * 
      * @param BigMZ the major ion
      * @param TestMZ the minor ion
-     * @param tol mass tolerance
+     * @param tolin mass tolerance
      */
     const bool IsMajorPeak(const int BigMZ, 
                            const int TestMZ, 
-                           const int tol) const;
+                           const int tolin) const;
 
     /**
      * list of peaks, e.g. one for each charge

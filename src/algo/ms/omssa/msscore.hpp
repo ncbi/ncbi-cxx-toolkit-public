@@ -387,9 +387,9 @@ public:
      *  initialize the MatchInfo array
      *  delete any existing array
      * 
-     * @param size number of peaks
+     * @param SizeIn number of peaks
      */
-    virtual void CreateMatchedPeakSet(int Size);
+    virtual void CreateMatchedPeakSet(int SizeIn);
 
     /**
      * delete the MatchInfo array
@@ -639,11 +639,11 @@ public:
      * find a peak within HitInfo
      * 
      * @param Number number of the peak, starting with 0
-     * @param Charge charge of peak
+     * @param ChargeIn charge of peak
      * @param Series the series to search
      * @return found peak (0 if not found)
      */
-    CMSBasicMatchedPeak * Find(TMSNumber Number, TMSCharge Charge, TMSIonSeries Series);
+    CMSBasicMatchedPeak * Find(TMSNumber Number, TMSCharge ChargeIn, TMSIonSeries Series);
 
     /**
      * get map from ion series to CMSMatchedPeakSet *
@@ -660,7 +660,7 @@ public:
      * fills in missing peaks
      * does not fill in exp peak values.  This has to be done by the calling algorithm.
      * 
-     * @param Charge charge of the ion series to fill
+     * @param ChargeIn charge of the ion series to fill
      * @param Series ion series
      * @param size length of the ion series
      * @param MinIntensity the minimum intensity of the peak to consider it as a match
@@ -669,7 +669,7 @@ public:
      * @param Maxproductions the number of ions in the ions series actually calculated
      */
     void FillMatchedPeaks(
-        TMSCharge Charge, 
+        TMSCharge ChargeIn, 
         TMSIonSeries Series, 
         unsigned Size, 
         TMSIntensity MinIntensity, 
@@ -719,10 +719,10 @@ public:
      * calculate the p-value using poisson distribution
      * 
      * @param Mean mean value of poisson
-     * @param Hits number of hits
+     * @param HitsIn number of hits
      * @return p-value
      */
-    const double CalcPvalue(double Mean, int Hits) const;
+    const double CalcPvalue(double Mean, int HitsIn) const;
 
     /**
      * integrate CalcPoissonTopHit over all i
@@ -737,12 +737,12 @@ public:
      * calculate the p-value using poisson distribution and the top hit prob
      * 
      * @param Mean mean value of poisson
-     * @param Hits number of hits
+     * @param HitsIn number of hits
      * @param Normal the integral of the distribution, used to normalize
      * @param TopHitProb the probability of a top n hit.
      * @return p-value
      */
-    const double CalcPvalueTopHit(double Mean, int Hits, double Normal, double TopHitProb) const;
+    const double CalcPvalueTopHit(double Mean, int HitsIn, double Normal, double TopHitProb) const;
 
     /**
      * calculate the rank score

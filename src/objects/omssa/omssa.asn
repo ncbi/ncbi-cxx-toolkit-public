@@ -240,7 +240,21 @@ MSMod ::= INTEGER {
     arg2orn (163),
     dehydro (164),
     carboxykynurenin (165),
-    max (166), -- maximum number of mods
+    sumoylation (166),
+    iTRAQ114nterm (167),
+    iTRAQ114K (168),
+    iTRAQ114Y (169),
+    iTRAQ115nterm (170),
+    iTRAQ115K (171),
+    iTRAQ115Y (172),
+    iTRAQ116nterm (173),
+    iTRAQ116K (174),
+    iTRAQ116Y (175),
+    iTRAQ117nterm (176),
+    iTRAQ117K (177),
+    iTRAQ117Y (178),
+    MMTS (179),
+    max (180), -- maximum number of mods
     none(10000)
     }
 
