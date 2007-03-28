@@ -1115,52 +1115,20 @@ void CBDB_Cache::Open(const string& cache_path,
         }
     }}
 
+    CDir dir(m_Path);
+    CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
+
 
     m_BytesWritten = 0;
-
     m_Env = new CBDB_Env();
 
     string err_file = m_Path + "err" + string(cache_name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
-    if (log_mem_size == 0) {
-        if (m_LogSizeMax >= (20 * 1024 * 1024)) {
-            m_Env->SetLogFileMax(m_LogSizeMax);
-        } else {
-            m_Env->SetLogFileMax(200 * 1024 * 1024);
-        }
-        m_Env->SetLogBSize(1 * 1024 * 1024);
-    } else {
-        m_Env->SetLogInMemory(true);
-        m_Env->SetLogBSize(log_mem_size);        
-    }
+    bool joined_env = false;
+    bool needs_recovery = false;
 
-    // Check if bdb env. files are in place and try to join
-    CDir dir(m_Path);
-    CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
-    if (fl.empty()) {
-        if (cache_ram_size) {
-            m_Env->SetCacheSize(cache_ram_size);
-        }
-        x_PidLock(lm);
-
-        switch (use_trans)
-        {
-        case eUseTrans:
-            m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
-            break;
-        case eNoTrans:
-            m_Env->OpenWithLocks(cache_path);
-            break;
-        default:
-            _ASSERT(0);
-        } // switch
-
-    } else {
-        if (cache_ram_size) {
-            m_Env->SetCacheSize(cache_ram_size);
-        }
-
+    if (!fl.empty()) {
         try {
             m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
             if (m_Env->IsTransactional()) {
@@ -1172,6 +1140,7 @@ void CBDB_Cache::Open(const string& cache_path,
                          "LC: '" << cache_name <<
                          "' Warning: Joined non-transactional environment ");
             }
+            joined_env = true;
         }
         catch (CBDB_ErrnoException& err_ex)
         {
@@ -1181,50 +1150,60 @@ void CBDB_Cache::Open(const string& cache_path,
                          "'Warning: DB_ENV returned DB_RUNRECOVERY code."
                          " Running the recovery procedure.");
             }
-            x_PidLock(lm);
-
-            switch (use_trans)
-            {
-            case eUseTrans:
-                m_Env->OpenWithTrans(cache_path,
-                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
-                break;
-            case eNoTrans:
-                LOG_POST(Info << "BDB_Cache: Creating locking environment");
-                m_Env->OpenWithLocks(cache_path);
-                break;
-            default:
-                _ASSERT(0);
-            } // switch
-
+            needs_recovery = true;
         }
         catch (CBDB_Exception&)
         {
-            x_PidLock(lm);
-            switch (use_trans)
-            {
-            case eUseTrans:
-                m_Env->OpenWithTrans(cache_path,
-                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
-                break;
-            case eNoTrans:
-                m_Env->OpenWithLocks(cache_path);
-                break;
-            default:
-                _ASSERT(0);
-            } // switch
+            needs_recovery = true;
         }
     }
 
-    m_Env->SetDirectDB(true);
-    m_Env->SetDirectLog(true);
-    m_Env->SetLogAutoRemove(true);
+    if (!joined_env) {
+        if (log_mem_size == 0) {
+            if (m_LogSizeMax >= (20 * 1024 * 1024)) {
+                m_Env->SetLogFileMax(m_LogSizeMax);
+            } else {
+                m_Env->SetLogFileMax(200 * 1024 * 1024);
+            }
+            m_Env->SetLogBSize(1 * 1024 * 1024);
+        } else {
+            m_Env->SetLogInMemory(true);
+            m_Env->SetLogBSize(log_mem_size);        
+        }
+        if (cache_ram_size) {
+            m_Env->SetCacheSize(cache_ram_size);
+        }
+        x_PidLock(lm);
+        switch (use_trans)
+        {
+        case eUseTrans:
+            {
+            CBDB_Env::TEnvOpenFlags env_flags = CBDB_Env::eThreaded;
+            if (needs_recovery) {
+                env_flags |= CBDB_Env::eRunRecovery;
+            }
+            m_Env->OpenWithTrans(cache_path, env_flags);
+            }
+            break;
+        case eNoTrans:
+            LOG_POST(Info << "BDB_Cache: Creating locking environment");
+            m_Env->OpenWithLocks(cache_path);
+            break;
+        default:
+            _ASSERT(0);
+        } // switch
 
-    m_Env->SetLockTimeout(30 * 1000000); // 30 sec
+        m_Env->SetDirectDB(true);
+        m_Env->SetDirectLog(true);
+        m_Env->SetLogAutoRemove(true);
 
-    if (m_Env->IsTransactional()) {
-        m_Env->SetTransactionTimeout(30 * 1000000); // 30 sec
+        m_Env->SetLockTimeout(30 * 1000000); // 30 sec
+        if (m_Env->IsTransactional()) {
+            m_Env->SetTransactionTimeout(30 * 1000000); // 30 sec
+        }
+
     }
+
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -1249,8 +1228,8 @@ void CBDB_Cache::Open(const string& cache_path,
     string attr_db_name =
        string("lcs_") + string(cache_name) + string("_attr3") + string(".db");
 
-    m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadWriteCreate);
-    m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadWriteCreate);
+    m_CacheDB->Open(cache_db_name,    CBDB_RawFile::eReadWriteCreate);
+    m_CacheAttrDB->Open(attr_db_name, CBDB_RawFile::eReadWriteCreate);
 
     }}
 
@@ -3258,7 +3237,7 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
-        drv->Open(path.c_str(), name.c_str(),
+        drv->Open(path, name,
                   lock, mem_size,
                   use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans,
                   log_mem_size);
