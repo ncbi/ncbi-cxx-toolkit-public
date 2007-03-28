@@ -922,12 +922,16 @@ void CQueueDataBase::Purge(void)
             queues_to_delete.push_back(it.GetName());
             continue;
         }
+        unsigned deleted_by_status[kStatusesSize];
+        for (int n = 0; n < kStatusesSize; ++n)
+            deleted_by_status[n] = 0;
         for (bool stop_flag = false; !stop_flag; ) {
             // stop if all statuses have less than batch_size jobs to delete
             stop_flag = true;
             for (int n = 0; n < kStatusesSize; ++n) {
                 CNetScheduleAPI::EJobStatus s = statuses_to_delete_from[n];
                 unsigned del_rec = (*it).CheckDeleteBatch(batch_size, s);
+                deleted_by_status[n] += del_rec;
                 stop_flag = stop_flag && (del_rec < batch_size);
                 queue_del_rec += del_rec;
             }
@@ -938,6 +942,14 @@ void CQueueDataBase::Purge(void)
                 break;
 
             if (x_CheckStopPurge()) return;
+        }
+        for (int n = 0; n < kStatusesSize; ++n) {
+            CNetScheduleAPI::EJobStatus s = statuses_to_delete_from[n];
+            if (deleted_by_status[n] > 0 && s != CNetScheduleAPI::eDone) {
+                LOG_POST(Warning << deleted_by_status[n] <<
+                    " jobs deleted from non-final state " <<
+                    CNetScheduleAPI::StatusToString(s));
+            }
         }
         global_del_rec += queue_del_rec;
     }
