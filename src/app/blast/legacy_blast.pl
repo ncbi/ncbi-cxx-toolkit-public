@@ -144,7 +144,8 @@ sub convert_strand($)
     return $retval;
 }
 
-# missing handling of -R
+# Handle the conversion from blastall arguments to the corresponding C++
+# binaries
 sub handle_blastall($)
 {
     my $print_only = shift;
@@ -171,7 +172,7 @@ sub handle_blastall($)
                "O=s"            => \$opt_O,
                "P=i"            => \$opt_P,
                "Q=i"            => \$opt_Q,
-               "R=s"            => \$opt_R, # not implemented (FIXME)
+               "R=s"            => \$opt_R,
                "S=i"            => \$opt_S,
                "T:s"            => \$opt_T, # deprecated
                "U:s"            => \$opt_U,
@@ -211,7 +212,13 @@ sub handle_blastall($)
     }
 
     my $retval;
-    $retval .= "./$opt_p "                  if (defined $opt_p);
+    if (defined $opt_p) {
+        if (defined $opt_R)) {
+            $retval .= "./tblastn -in_pssm $opt_R ";
+        } else {
+            $retval .= "./$opt_p "                  
+        }
+    }
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
     $retval .= "-query $opt_i "             if (defined $opt_i);
     $retval .= "-gilist $opt_l "            if (defined $opt_l);
@@ -291,9 +298,6 @@ sub handle_blastall($)
     if (defined $opt_T) {
         print STDERR "Warning: HTML output is deprecated\n";
     }
-    if (defined $opt_R) {
-        print STDERR "Warning: -R is being ignored\n";
-    }
 
     return $retval;
 }
@@ -355,9 +359,14 @@ sub handle_megablast($)
                );
     my $retval;
 
+    $retval = "./blastn ";
+
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
 
-    $retval = "Conversion to $application NOT IMPLEMENTED yet\n";
+    if (defined $opt_T) {
+        print STDERR "Warning: HTML output is deprecated\n";
+    }
+
     return $retval;
 }
 
@@ -424,14 +433,9 @@ sub handle_blastpgp($)
 
     my $query_is_protein = "1";
 
-    if (defined $opt_p) {
-        if ($opt_p eq "phiblast") {
-            $retval .= "-mode phi";
-        } elsif ($opt_p eq "patseedp") {
-            die "patseedp: Not implemented\n";
-        } elsif ($opt_p eq "patseedn") {
-            die "patseedn: Not implemented\n";
-        }
+    if (defined $opt_p and ($opt_p ne "blastpgp" or
+                            $opt_p ne "patseedp")) {
+        die "Program '$opt_p' not implemented\n";
     }
 
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
@@ -466,6 +470,7 @@ sub handle_blastpgp($)
     $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
     $retval .= "-comp_based_stats $opt_t "  if (defined $opt_t);
     $retval .= "-decline2align $opt_L "     if (defined $opt_L);
+    $retval .= "-phi_pattern $opt_k "       if (defined $opt_k);
     $retval .= "-out $opt_o "               if (defined $opt_o);
     $retval .= "-outfmt $opt_m "            if (defined $opt_m);
     if (defined $opt_O) {
@@ -541,10 +546,7 @@ sub handle_blastpgp($)
         print STDERR "Warning: -B is being ignored\n";
     }
     if (defined $opt_z) {
-        print STDERR "-z not handled!\n";
-    }
-    if (defined $opt_k) {
-        print STDERR "-k not handled!\n";
+        print STDERR "Warning: -z is ignored.\n";
     }
 
     return $retval;
