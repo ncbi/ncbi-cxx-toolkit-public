@@ -843,21 +843,22 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         ? CSearchDatabase::eBlastDbIsNucleotide
         : CSearchDatabase::eBlastDbIsProtein;
     
-    if (args[kArgDb]) {
+    if (args.Exist(kArgDb) && args[kArgDb]) {
 
         m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), 
                                              mol_type));
-        if (args[kArgGiList]) {
+        if (args.Exist(kArgGiList) && args[kArgGiList]) {
             m_GiListFileName.assign(args[kArgGiList].AsString());
             /// This is only needed if the gi list is to be submitted remotely
-            if (args[kArgRemote] && CFile(m_GiListFileName).Exists()) {
+            if (args.Exist(kArgRemote) && args[kArgRemote] && 
+                CFile(m_GiListFileName).Exists()) {
                 vector<int> gis;
                 SeqDB_ReadGiList(m_GiListFileName, gis);
                 m_SearchDb->SetGiListLimitation(gis);
             }
         }
-    } else if (args[kArgSubject]) {
-        if (args[kArgRemote]) {
+    } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
+        if (args.Exist(kArgRemote) && args[kArgRemote]) {
             NCBI_THROW(CBlastException, eInvalidArgument,
                "Submission of remote BLAST-2-Sequences is not supported\n"
                "Please visit the NCBI web site to submit your search");
@@ -871,6 +872,10 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (opts.GetEffectiveSearchSpace() != 0) {
         // no need to set any other options, as this trumps them
         return;
+    }
+
+    if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
+        throw runtime_error("Setting of subject sequence location unimplemented");
     }
 
     if (args[kArgDbSize]) {
@@ -970,7 +975,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 void
 CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    const int kMinValue = 1;
+    const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
 
     // number of threads
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
@@ -984,19 +989,35 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
-    m_NumThreads = args[kArgNumThreads].AsInteger();
+    if (args.Exist(kArgNumThreads)) {
+        m_NumThreads = args[kArgNumThreads].AsInteger();
+    }
 }
 
 void
 CRemoteArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.AddFlag(kArgRemote, "Execute search remotely?", true);
+    arg_desc.SetDependency(kArgRemote,
+                           CArgDescriptions::eExcludes,
+                           kArgNumThreads);
+
+#if _DEBUG
+    arg_desc.AddFlag("remote_verbose", 
+                     "Produce verbose output for remote searches?", true);
+#endif /* DEBUG */
 }
 
 void
 CRemoteArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
-    m_IsRemote = static_cast<bool>(args[kArgRemote]);
+    if (args.Exist(kArgRemote)) {
+        m_IsRemote = static_cast<bool>(args[kArgRemote]);
+    }
+
+#if _DEBUG
+    m_DebugOutput = static_cast<bool>(args["remote_verbose"]);
+#endif /* DEBUG */
 }
 
 void
@@ -1119,7 +1140,9 @@ CRef<CBlastOptionsHandle>
 CBlastAppArgs::SetOptions(const CArgs& args)
 {
     const CBlastOptions::EAPILocality locality = 
-        args[kArgRemote] ? CBlastOptions::eRemote : CBlastOptions::eLocal;
+        (args.Exist(kArgRemote) && args[kArgRemote]) 
+        ? CBlastOptions::eRemote 
+        : CBlastOptions::eLocal;
     CRef<CBlastOptionsHandle> handle(x_CreateOptionsHandle(locality, args));
     CBlastOptions& opts = handle->SetOptions();
     NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {

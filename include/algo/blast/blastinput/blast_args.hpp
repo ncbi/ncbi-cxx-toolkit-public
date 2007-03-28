@@ -40,6 +40,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
@@ -585,6 +586,7 @@ private:
 class NCBI_XBLAST_EXPORT CMTArgs : public IBlastCmdLineArgs
 {
 public:
+    CMTArgs() : m_NumThreads(CThreadable::kMinNumThreads) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -601,6 +603,7 @@ private:
 class NCBI_XBLAST_EXPORT CRemoteArgs : public IBlastCmdLineArgs
 {
 public:
+    CRemoteArgs() : m_IsRemote(false), m_DebugOutput(false) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -609,10 +612,15 @@ public:
 
     /// Return whether the search should be executed remotely or not
     bool ExecuteRemotely() const { return m_IsRemote; }
+    /// Return whether debug (verbose) output should be produced on remote
+    /// searches (only available when compiled with _DEBUG)
+    bool ProduceDebugRemoteOutput() const { return m_DebugOutput; }
 private:
 
     /// Should the search be executed remotely?
     bool m_IsRemote;
+    /// Should debugging (verbose) output be printed
+    bool m_DebugOutput;
 };
 
 /// Argument class to retrieve calling options
@@ -678,6 +686,12 @@ public:
     /// Determine whether the search should be executed remotely or not
     bool ExecuteRemotely() const {
         return m_RemoteArgs->ExecuteRemotely();
+    }
+
+    /// Return whether debug (verbose) output should be produced on remote
+    /// searches (only available when compiled with _DEBUG)
+    bool ProduceDebugRemoteOutput() const { 
+        return m_RemoteArgs->ProduceDebugRemoteOutput();
     }
 
     /// Get the query batch size

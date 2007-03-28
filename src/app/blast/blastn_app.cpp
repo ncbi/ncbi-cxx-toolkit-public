@@ -80,8 +80,8 @@ void CBlastnApp::Init()
 
     // read the command line
 
-    SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
     HideStdArgs(fHideLogfile | fHideConffile);
+    SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
 int CBlastnApp::Run(void)
@@ -150,7 +150,9 @@ int CBlastnApp::Run(void)
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CRemoteBlast rmt_blast(queries, opts_hndl, *search_db);
-                rmt_blast.SetVerbose();
+                if (m_CmdLineArgs->ProduceDebugRemoteOutput()) {
+                    rmt_blast.SetVerbose();
+                }
                 results = rmt_blast.GetResultSet();
             } else {
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);

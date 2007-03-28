@@ -419,23 +419,124 @@ sub handle_blastpgp($)
                "y=f"            => \$opt_y,
                "z=f"            => \$opt_z
                );
-    my $retval;
+    #FIXME: should this binary be renamed to something like: iterated_blast
+    my $retval = "./psiblast ";
+
+    my $query_is_protein = "1";
 
     if (defined $opt_p) {
-        if ($opt_p eq "blastpgp") {
-            $retval = "./psiblast ";
-            # FIXME...
-        } elsif ($opt_p eq "phiblast") {
+        if ($opt_p eq "phiblast") {
+            $retval .= "-mode phi";
+        } elsif ($opt_p eq "patseedp") {
+            die "patseedp: Not implemented\n";
+        } elsif ($opt_p eq "patseedn") {
+            die "patseedn: Not implemented\n";
         }
     }
 
+    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= "-query $opt_i "             if (defined $opt_i);
+    $retval .= "-gilist $opt_l "            if (defined $opt_l);
     $retval .= "-gap_trigger $opt_N "       if (defined $opt_N);
+    $retval .= "-matrix $opt_M "            if (defined $opt_M);
     $retval .= "-num_iterations $opt_j "    if (defined $opt_j);
+    $retval .= "-min_word_score $opt_f "    if (defined $opt_f);
+    $retval .= "-evalue $opt_e "            if (defined $opt_e);
+    $retval .= "-gapopen $opt_G "           if (defined $opt_G);
+    $retval .= "-gapextend $opt_E "         if (defined $opt_E);
+    $retval .= "-num_threads $opt_a "       if (defined $opt_a);
+    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
     $retval .= "-pseudocount $opt_c "       if (defined $opt_c);
     $retval .= "-inclusion_ethresh $opt_h " if (defined $opt_h);
+    if (defined $opt_A) {
+        if (defined $opt_P and $opt_P ne "0") {
+            print STDERR "Warning: ignoring -P because window size is set\n";
+        }
+        $retval .= "-window_size $opt_A "       
+    }
+    if (defined $opt_P and $opt_P eq "1" and (not defined $opt_A)) {
+        $retval .= "-window_size 0 ";
+    }
+    $retval .= "-word_size $opt_W "         if (defined $opt_W);
+    $retval .= "-xdrop_ungap $opt_y "       if (defined $opt_y);
+    $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
+    $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
+    $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
+    $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
+    $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
+    $retval .= "-comp_based_stats $opt_t "  if (defined $opt_t);
+    $retval .= "-out $opt_o "               if (defined $opt_o);
+    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
+    if (defined $opt_O) {
+        unless ($retval =~ s/-out \S+ /-out $opt_O /) {
+            $retval .= "-out $opt_O ";
+        }
+        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
+            $retval .= "-outfmt 10 ";
+        } else {
+            print STDERR "Warning: overriding output format\n";
+        }
+    }
+    if (defined $opt_I and $opt_I =~ /t/i) {
+        $retval .= "-show_gis ";
+    }
+    if (defined $opt_J and $opt_J =~ /t/i) {
+        $retval .= "-parse_query_defline ";
+    }
+    if (defined $opt_s and $opt_s =~ /t/i) {
+        $retval .= "-use_sw_tback ";
+    }
+    if (defined $opt_U and $opt_U =~ /t/i) {
+        $retval .= "-lcase_masking ";
+    }
+    if (defined $opt_F) {
+        $retval .= &convert_filter_string($opt_F, 
+                                          ($query_is_protein eq "1")
+                                          ? "blastp" : "blastn");
+    }
+
+    my $location = "";
+    $location .= $opt_S if (defined $opt_S);
+    if (defined $opt_H) {
+        if ($location eq "") {
+            $location = "0,$opt_H";
+        } else {
+            $location .= ",$opt_H";
+        }
+    }
+    if ($location ne "") {
+        $location .= ",-1" unless (defined $opt_H);
+        $retval .= &convert_sequence_locations($location, "query");
+    }
+
+    if (defined $opt_T) {
+        print STDERR "Warning: HTML output is deprecated\n";
+    }
     # Will these work ?
     $retval .= "-in_pssm $opt_R "           if (defined $opt_R);
     $retval .= "-out_pssm $opt_C "          if (defined $opt_C);
+
+    if (defined $opt_Q) {
+        print STDERR "Warning: -Q is being ignored\n";
+    }
+    if (defined $opt_B) {
+        print STDERR "Warning: -B is being ignored\n";
+    }
+    if (defined $opt_L) {
+        print STDERR "Warning: -L is being ignored\n";
+    }
+    if (defined $opt_z) {
+        print STDERR "-z not handled!\n";
+    }
+    if (defined $opt_k) {
+        print STDERR "-k not handled!\n";
+    }
+    if (defined $opt_q) {
+        print STDERR "-q not handled!\n";
+    }
+    if (defined $opt_u) {
+        print STDERR "-u not handled!\n";
+    }
 
     return $retval;
 }

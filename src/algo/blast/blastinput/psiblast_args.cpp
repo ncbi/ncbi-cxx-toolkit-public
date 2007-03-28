@@ -78,7 +78,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(kQueryIsProtein));
+    m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 

@@ -147,6 +147,9 @@ WrapStruct(TData * obj, TData* (*del)(TData*))
 class NCBI_XBLAST_EXPORT CThreadable
 {
 public:
+    /// Never have less than 1 thread
+    enum { kMinNumThreads = 1 };
+
     /// Default ctor
     CThreadable(void) : m_NumThreads(kMinNumThreads) {}
     /// Our virtual destructor
@@ -161,9 +164,6 @@ public:
 
 protected:
     size_t m_NumThreads;    ///< Keep track of how many threads should be used
-
-    /// Never have less than 1 thread
-    enum { kMinNumThreads = 1 };
 };
 
 
