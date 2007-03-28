@@ -325,7 +325,18 @@ CDiagContext::TPID CDiagContext::GetPID(void)
 
 void CDiagContext::UpdatePID(void)
 {
-    sm_PID = 0;
+    TPID new_pid = CProcess::GetCurrentPid();
+    if (sm_PID == new_pid) {
+        // Parent process does not need to update pid/guid
+        return;
+    }
+    sm_PID = new_pid;
+    CDiagContext& ctx = GetDiagContext();
+    TUID old_uid = ctx.GetUID();
+    // Update GUID to match the new PID
+    ctx.x_CreateUID();
+    ctx.PrintExtra("New process created by fork(), "
+        "parent GUID=" + ctx.GetStringUID(old_uid));
 }
 
 
@@ -394,7 +405,7 @@ static string s_GetHost(void)
 
 void CDiagContext::x_CreateUID(void) const
 {
-    Int8 pid = CProcess::GetCurrentPid();
+    Int8 pid = GetPID();
     time_t t = time(0);
     string host = s_GetHost();
     TUID h = 201;
@@ -2679,7 +2690,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
 
 CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
     : m_Handle(-1),
-      m_LastReopen(new CTime)
+      m_LastReopen(new CTime(CTime::eCurrent))
 {
     SetLogName(fname);
     Reopen(CDiagContext::GetLogTruncate());
@@ -2805,7 +2816,7 @@ CFileDiagHandler::CFileDiagHandler(void)
     : m_Err(0),
       m_Log(0),
       m_Trace(0),
-      m_LastReopen(new CTime)
+      m_LastReopen(new CTime(CTime::eCurrent))
 {
     SetLogFile("-", eDiagFile_All, true);
 }
