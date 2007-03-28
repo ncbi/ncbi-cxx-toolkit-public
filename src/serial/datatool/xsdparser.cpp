@@ -86,6 +86,12 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
         case K_IMPORT:
             ParseImport();
             break;
+// unsupported
+        case K_ATTRIBUTEGROUP:
+            if (GetRawAttributeSet() == K_CLOSING) {
+                SkipContent();
+            }
+            break;
         default:
             ParseError("Invalid keyword", "keyword");
             return;
@@ -135,7 +141,9 @@ TToken XSDParser::GetNextToken(void)
         }
 // value
         string::size_type first = 0, last = data2.length()-1;
-        if (data2.length() < 2 || data2[first] != '\"' || data2[last] != '\"') {
+        if (data2.length() < 2 ||
+            (data2[first] != '\"' && data2[first] != '\'') ||
+            (data2[last]  != '\"' && data2[last]  != '\'') ) {
             ParseError("Unexpected data", "attribute (name=\"value\")");
         }
         data = data2.substr(first+1, last - first - 1);

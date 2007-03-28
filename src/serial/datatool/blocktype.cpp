@@ -181,7 +181,10 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 } else {
                     const CUniSequenceDataType* typeSeq =
                         dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType());
-                    isSimpleSeq = (typeSeq != 0);
+                    bool any = (typeSeq != 0) &&
+                        dynamic_cast<const CAnyContentDataType*>(
+                            typeSeq->GetElementType()) != 0;
+                    isSimpleSeq = !any && typeSeq != 0;
                     if (isSimpleSeq) {
                         isSeq = true;
                         const CDataMember *mem = typeSeq->GetDataMember();

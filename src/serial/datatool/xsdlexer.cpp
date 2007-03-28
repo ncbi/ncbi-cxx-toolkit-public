@@ -111,7 +111,7 @@ TToken XSDLexer::LookupLexeme(void)
     }
     StartToken();
     for (char c = Char(); c != 0; c = Char()) {
-        if (att && c == '\"') {
+        if (att && (c == '\"' || c == '\'')) {
             AddChar();
             if (strncmp(CurrentTokenStart(),"xmlns",5)==0) {
                 return K_XMLNS;
@@ -125,7 +125,7 @@ TToken XSDLexer::LookupLexeme(void)
             att = true;
             AddChar();
             c =  Char();
-            if (c != '\"') {
+            if (c != '\"' && c != '\'') {
                 LexerError("No opening quote in attribute");
             }
         }
@@ -186,6 +186,7 @@ TToken XSDLexer::LookupKeyword(void)
         break;
     case 14:
         CHECK("complexContent", K_COMPLEXCONTENT, 14);
+        CHECK("attributeGroup", K_ATTRIBUTEGROUP, 14);
         break;
 
     }
