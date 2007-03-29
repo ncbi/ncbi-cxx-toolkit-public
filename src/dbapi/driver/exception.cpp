@@ -483,21 +483,21 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
 
     if (ex->GetSeverity() == eDiag_Info) {
         if ( m_Prefix.empty() ) {
-            LOG_POST(Severity(ex->GetSeverity()) << ex->GetMsg());
+            ERR_POST(Severity(ex->GetSeverity()) << ex->GetMsg());
         } else {
-            LOG_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
+            ERR_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
                      ex->GetMsg());
         }
     } else {
         if ( m_Prefix.empty() ) {
-            LOG_POST(Severity(ex->GetSeverity()) << ex->what() <<
+            ERR_POST(Severity(ex->GetSeverity()) << ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
                      "' USER: '" << ex->GetUserName() << "'" <<
                      (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
                       GetExtraMsg()) << "'"
                      );
         } else {
-            LOG_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
+            ERR_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
                      ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
                      "' USER: '" << ex->GetUserName() << "'" <<
