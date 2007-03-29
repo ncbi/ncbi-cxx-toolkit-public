@@ -605,6 +605,14 @@ else
           compiler="WorkShop55"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.5" ;;
+        *Sun*C*5\.8* )
+          compiler="WorkShop58"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.8" ;;
+        *Sun*C*5\.9* )
+          compiler="WorkShop59"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.9" ;;
       esac ;;
 
     irix* )
@@ -2617,7 +2625,7 @@ AC_LANG_POP(C)
 
 # Avoid using unsupported (and noisily ignored) attributes.
 case "$compiler:$compiler_version" in
-   GCC:2* | GCC:3[[01]]* )
+   GCC:2* | GCC:3[[01]]* | WorkShop* )
       ncbi_cv_c_deprecation_syntax=none
       ncbi_cv_c_forceinline=inline
       ;;
