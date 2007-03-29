@@ -102,15 +102,24 @@ public:
     /// Extract a slice of the alignment that includes the specified range
     CRef<CDense_seg> ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const;
 
-    /// Extract specified rows of the alignment.
+    /// Extract specified rows of the alignment, in specified order.
+    /// The result is compacted with Compact, but may contain
+    /// segments in which all rows have gaps, which can be removed
+    /// with RemovePureGapSegs.
     /// The rows in the new alignment are in the order given by the
     /// rows parameter.  Thus, this can also be used for
     /// permuting the order of rows.
+    /// @sa RemovePureGapSegs
     CRef<CDense_seg> ExtractRows(const vector<TDim>& rows) const;
     
     /// Join adjacent mergeable segments to create a more compact
     /// alignment
     void Compact();
+
+    /// Remove any segments in which every row has a gap
+    /// (these can arise when ExtractRows is used)
+    /// @sa ExtractRows
+    void RemovePureGapSegs();
 
     /// Trim leading/training gaps if possible
     void TrimEndGaps();
@@ -152,7 +161,7 @@ private:
 inline
 CDense_seg::CDense_seg(void)
 {
-    memset(m_set_State1,0,sizeof(m_set_State1));
+    memset(m_set_State1, 0, sizeof(m_set_State1));
 }
 
 

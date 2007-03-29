@@ -464,6 +464,71 @@ void CDense_seg::Compact()
 }
 
 
+void CDense_seg::RemovePureGapSegs()
+{
+    // consistency checks
+    TDim dim = CheckNumRows();
+    TNumseg numseg = CheckNumSegs();
+
+    int i;
+    int j;
+    vector<bool> remove(numseg, true);  // start out with all true
+    unsigned int remove_count = 0;
+    for (i = 0;  i < numseg - 1;  ++i) {
+
+        for (j = 0;  j < dim;  ++j) {
+            if (GetStarts()[i * dim + j] != -1) {
+                // not a gap
+                remove[i] = false;
+                break;
+            }
+        }
+        if (remove[i]) {
+            ++remove_count;
+        }
+    }
+
+    if (remove_count == 0) {
+        // nothing to remove; leave unchanged
+        return;
+    }
+
+    CDense_seg::TStarts new_starts;
+    CDense_seg::TLens  new_lens;
+    CDense_seg::TStrands new_strands;
+    new_starts.reserve((numseg - remove_count) * dim);
+    new_lens.reserve(numseg - remove_count);
+    if (IsSetStrands()) {
+        new_strands.reserve((numseg - remove_count) * dim);
+    }
+    for (i = 0;  i < numseg;  ++i) {
+        if (!remove[i]) {
+            // copy the original segment i onto the end of the new stuff
+            new_lens.push_back(GetLens()[i]);
+            for (j = 0;  j < dim;  ++j) {
+                new_starts.push_back(GetStarts()[i * dim + j]);
+                if (IsSetStrands()) {
+                    new_strands.push_back(GetStrands()[i * dim + j]);
+                }
+            }
+        }
+    }
+
+    SetStarts().swap(new_starts);
+    SetLens().swap(new_lens);
+    if (IsSetStrands()) {
+        SetStrands().swap(new_strands);
+    }
+
+    SetNumseg(SetLens().size());
+
+#ifdef _DEBUG
+    Validate(true);
+#endif
+
+}
+
+
 //-----------------------------------------------------------------------------
 // PRE : none
 // POST: same alignment, opposite orientation
