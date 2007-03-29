@@ -8,5 +8,5 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(top_srcdir)/src/algo/blast/api
 #CPPFLAGS = $(ORIG_CPPFLAGS) -I../algo/blast/api
-LIBS = $(CMPRS_LIBS)
+LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 REQUIRES = objects
