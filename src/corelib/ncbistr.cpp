@@ -44,8 +44,8 @@
 BEGIN_NCBI_SCOPE
 
 
-// Hex symbols
-static const char s_Hex[] = "0123456789ABCDEF";
+// Hex symbols (upt ot base 36)
+static const char s_Hex[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 
 inline SIZE_TYPE s_DiffPtr(const char* end, const char* start)
