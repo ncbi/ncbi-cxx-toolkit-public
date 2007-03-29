@@ -50,20 +50,23 @@ NCBI_XOBJREAD_EXPORT
 void AgpRead(CNcbiIstream& is,
              vector<CRef<objects::CBioseq> >& bioseqs,
              EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
-             bool set_gap_data = false);
+             bool set_gap_data = false,
+             vector<vector<char> >* component_types = 0);
 
 /// Same thing, but wrap bioseqs in Seq-entry's.
 NCBI_XOBJREAD_EXPORT
 void AgpRead(CNcbiIstream& is,
              vector<CRef<objects::CSeq_entry> >& entries,
              EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
-             bool set_gap_data = false);
+             bool set_gap_data = false,
+             vector<vector<char> >* component_types = 0);
 
 /// Return a Bioseq-set containing everything.
 NCBI_XOBJREAD_EXPORT
 CRef<objects::CBioseq_set>
 AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
-        bool set_gap_data = false);
+        bool set_gap_data = false,
+        vector<vector<char> >* component_types = 0);
 
 END_NCBI_SCOPE
 

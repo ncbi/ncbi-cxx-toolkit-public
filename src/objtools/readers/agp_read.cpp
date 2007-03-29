@@ -51,10 +51,11 @@ USING_SCOPE(objects);
 
 CRef<CBioseq_set> AgpRead(CNcbiIstream& is,
                           EAgpRead_IdRule component_id_rule,
-                          bool set_gap_data)
+                          bool set_gap_data,
+                          vector<vector<char> >* component_types)
 {
     vector<CRef<CSeq_entry> > entries;
-    AgpRead(is, entries, component_id_rule, set_gap_data);
+    AgpRead(is, entries, component_id_rule, set_gap_data, component_types);
     CRef<CBioseq_set> bioseq_set(new CBioseq_set);
     ITERATE (vector<CRef<CSeq_entry> >, iter, entries) {
         bioseq_set->SetSeq_set().push_back(*iter);
@@ -66,10 +67,11 @@ CRef<CBioseq_set> AgpRead(CNcbiIstream& is,
 void AgpRead(CNcbiIstream& is,
              vector<CRef<CSeq_entry> >& entries,
              EAgpRead_IdRule component_id_rule,
-             bool set_gap_data)
+             bool set_gap_data,
+             vector<vector<char> >* component_types)
 {
     vector<CRef<CBioseq> > bioseqs;
-    AgpRead(is, bioseqs, component_id_rule, set_gap_data);
+    AgpRead(is, bioseqs, component_id_rule, set_gap_data, component_types);
     NON_CONST_ITERATE (vector<CRef<CBioseq> >, bioseq, bioseqs) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSeq(**bioseq);
@@ -81,8 +83,12 @@ void AgpRead(CNcbiIstream& is,
 void AgpRead(CNcbiIstream& is,
              vector<CRef<CBioseq> >& bioseqs,
              EAgpRead_IdRule component_id_rule,
-             bool set_gap_data)
+             bool set_gap_data,
+             vector<vector<char> >* component_types)
 {
+    if (component_types) {
+        component_types->clear();
+    }
     string line;
     vector<string> fields;
     string current_object;
@@ -122,6 +128,7 @@ void AgpRead(CNcbiIstream& is,
 
         // Number of fields can be 9 or 8, but 8 is valid
         // only if field[4] == "N" or "U".
+        // Note: According to spec, 8 is actually invalid, even for N and U
         if (fields.size() != 9) {
             if (fields.size() >= 5 && fields[4] != "N" && fields[4] != "U") {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -162,6 +169,10 @@ void AgpRead(CNcbiIstream& is,
             last_to = 0;
             last_part_num = 0;
             length = 0;
+
+            if (component_types) {
+                component_types->push_back(vector<char>());
+            }
         }
 
         // validity checks
@@ -242,7 +253,7 @@ void AgpRead(CNcbiIstream& is,
         } else if (fields[4].size() == 1 && 
                    fields[4].find_first_of("ADFGPOW") == 0) {
             CSeq_loc& loc = delta_seq->SetLoc();
-
+            
             // Component ID
             CRef<CSeq_id> comp_id;
             if (component_id_rule != eAgpRead_ForceLocalId) {
@@ -286,6 +297,9 @@ void AgpRead(CNcbiIstream& is,
                         is.tellg() - CT_POS_TYPE(0));
         }
         seq_inst->SetExt().SetDelta().Set().push_back(delta_seq);
+        if (component_types) {
+            component_types->back().push_back(fields[4][0]);
+        }
     }
 
     // deal with the last one
