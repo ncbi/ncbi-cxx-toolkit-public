@@ -159,6 +159,10 @@ static void s_AgpWrite(CNcbiOstream& os,
             if (component_types.empty()) {
                 os << 'N';
             } else {
+                if (count > component_types.size() - 1) {
+                    throw std::out_of_range("component_types shorter than "
+                                            "number of segments");
+                }
                 os << component_types[count];
             }
             // col 6b
@@ -180,6 +184,10 @@ static void s_AgpWrite(CNcbiOstream& os,
                     s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
                                              scope);
             } else {
+                if (count > component_types.size() - 1) {
+                    throw std::out_of_range("component_types shorter than "
+                                            "number of segments");
+                }
                 os << component_types[count];
             }
             // col 6a
