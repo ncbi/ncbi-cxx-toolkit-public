@@ -148,7 +148,8 @@ Ss ::= SEQUENCE {
         genomic (1),
         cDNA (2),
         mito (3),
-        chloro (4)
+        chloro (4),
+        unknown (5)
     } OPTIONAL, -- moltype from Batch table
     buildId INTEGER OPTIONAL, -- dbSNP build number when ss# was added to a refSNP (rs#) cluster
     methodClass ENUMERATED {
