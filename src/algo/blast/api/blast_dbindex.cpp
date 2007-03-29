@@ -77,8 +77,10 @@ static BlastSeqSrc * s_CloneSrcNew( BlastSeqSrc * retval, void * args );
     @param oid          [I]   Subject id.
     @param chunk        [I]   Chunk number.
     @param init_hitlist [I/O] Results are returned here.
+
+    @return Word size used for search.
 */
-static void s_MB_IdbGetResults(
+static unsigned long s_MB_IdbGetResults(
         void * idb_v,
         Int4 oid_i, Int4 chunk_i,
         BlastInitHitList * init_hitlist );
@@ -238,8 +240,10 @@ class CIndexedDb : public CObject
             @param oid          [I]   The subject sequence id.
             @param chunk        [I]   The chunk number.
             @param init_hitlist [I/O] The results are returned here.
+
+            @return Word size used for search.
         */
-        void GetResults( 
+        unsigned long GetResults( 
                 CDbIndex::TSeqNum oid,
                 CDbIndex::TSeqNum chunk,
                 BlastInitHitList * init_hitlist ) const;
@@ -532,7 +536,7 @@ void CIndexedDb::PreSearch(
 }
 
 //------------------------------------------------------------------------------
-void CIndexedDb::GetResults( 
+unsigned long CIndexedDb::GetResults( 
         CDbIndex::TSeqNum oid, CDbIndex::TSeqNum chunk, 
         BlastInitHitList * init_hitlist ) const
 {
@@ -543,8 +547,10 @@ void CIndexedDb::GetResults(
 
     if( (res = results->GetResults( oid, chunk )) != 0 ) {
         BlastInitHitListMove( init_hitlist, res );
+        return results->GetWordSize();
     }else {
         BlastInitHitListReset( init_hitlist );
+        return 0;
     }
 }
 
@@ -869,7 +875,7 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
 }
 
 //------------------------------------------------------------------------------
-static void s_MB_IdbGetResults(
+static unsigned long s_MB_IdbGetResults(
         void * idb_v,
         Int4 oid_i, Int4 chunk_i,
         BlastInitHitList * init_hitlist )
@@ -883,7 +889,7 @@ static void s_MB_IdbGetResults(
     CDbIndex::TSeqNum oid = (CDbIndex::TSeqNum)oid_i;
     CDbIndex::TSeqNum chunk = (CDbIndex::TSeqNum)chunk_i;
 
-    idb->GetResults( oid, chunk, init_hitlist );
+    return idb->GetResults( oid, chunk, init_hitlist );
 }
 
 } /* extern "C" */

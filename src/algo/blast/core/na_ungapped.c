@@ -39,6 +39,8 @@ static char const rcsid[] =
 #include <algo/blast/core/mb_indexed_lookup.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 
+#include "index_ungapped.h"
+
 /** Perform ungapped extension of a word hit, using a score
  *  matrix and extending one base at a time
  * @param query The query sequence [in]
@@ -1375,13 +1377,70 @@ Int2 MB_IndexedWordFinder(
         BlastInitHitList * init_hitlist,
         BlastUngappedStats * ungapped_stats)
 { 
+    BlastInitHSP * hsp, * new_hsp, * hsp_end;
+    BlastUngappedData dummy_ungapped_data;
+    BlastUngappedData * ungapped_data = 0;
+    ir_diag_hash * hash = 0;
+    ir_hash_entry * e = 0;
+    Uint4 word_size;
+    Uint4 q_off, s_off;
+    Uint4 diag, key;
     Int4 oid = subject->oid;
     Int4 chunk = subject->chunk;
+    Int4 context;
+    BlastUngappedCutoffs *cutoffs;
     T_MB_IdbGetResults get_results = 
                         (T_MB_IdbGetResults)lookup_wrap->read_indexed_db;
-
     ASSERT(get_results);
-    get_results(lookup_wrap->lut, oid, chunk, init_hitlist);
+    word_size = get_results(lookup_wrap->lut, oid, chunk, init_hitlist);
+
+    if( word_size > 0 && word_params->options->ungapped_extension ) {
+        hash = ir_hash_create();
+        new_hsp = hsp = init_hitlist->init_hsp_array;
+        hsp_end = hsp + init_hitlist->total;
+
+        for( ; hsp < hsp_end; ++hsp ) {
+            q_off = hsp->offsets.qs_offsets.q_off;
+            s_off = hsp->offsets.qs_offsets.s_off;
+            diag = IR_DIAG( q_off, s_off );
+            key  = IR_KEY( diag );
+            e = IR_LOCATE( hash, diag, key );
+            if( e != 0 ) {
+                if( q_off + word_size - 1 > e->diag_data.qend ) {
+                    context = BSearchContextInfo(q_off, query_info);
+                    cutoffs = word_params->cutoffs + context;
+                    s_NuclUngappedExtend( 
+                            query, subject, matrix, 
+                            q_off, s_off + word_size - 1, s_off,
+                            -(cutoffs->x_dropoff), &dummy_ungapped_data,
+                            word_params->nucl_score_table,
+                            cutoffs->reduced_nucl_cutoff_score);
+
+                    if( dummy_ungapped_data.score >= cutoffs->cutoff_score ) {
+                        ungapped_data = 
+                            (BlastUngappedData *)malloc(sizeof(BlastUngappedData));
+                        *ungapped_data = dummy_ungapped_data;
+                        if( new_hsp != hsp ) *new_hsp = *hsp;
+                        new_hsp->ungapped_data = ungapped_data;
+                        ++new_hsp;
+                    }
+
+                    if( e->diag_data.diag != diag ) e->diag_data.diag = diag;
+                    e->diag_data.qend = dummy_ungapped_data.q_start + dummy_ungapped_data.length - 1;
+                }
+            }
+            else {
+                if( new_hsp != hsp ) *new_hsp = *hsp;
+                ++new_hsp;
+            }
+        }
+
+        init_hitlist->total = new_hsp - init_hitlist->init_hsp_array;
+        hash = ir_hash_destroy( hash );
+    }
+
+    if (word_params->options->ungapped_extension)
+        Blast_InitHitListSortByScore(init_hitlist);
 
     return 0;
 }

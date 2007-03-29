@@ -190,6 +190,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
             public:
 
                 /** Object constructor.
+                    @param word_size    [I]     word size used for the search
                     @param start        [I]     logical subject corresponding to the
                                                 first element of the result set
                     @param size         [I]     number of logical subjects covered by
@@ -200,9 +201,10 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 */
                 template< typename word_t >
                 CSearchResults( 
+                        unsigned long word_size,
                         TSeqNum start, TSeqNum size,
                         const word_t * map, size_t map_size )
-                    : start_( start ), results_( size, 0 )
+                    : word_size_( word_size ), start_( start ), results_( size, 0 )
                 {
                     for( size_t i = 0; i < map_size; ++i ) {
                         map_.push_back( map[i] );
@@ -219,6 +221,12 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                     else if( seq - start_ - 1 >= results_.size() ) return 0;
                     else return results_[seq - start_ - 1];
                 }
+
+                /** Get the search word size.
+                    
+                    @return Word size value used for the search.
+                */
+                unsigned long GetWordSize() const { return word_size_; }
 
             private:
 
@@ -298,6 +306,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
             private:
 
+                unsigned long word_size_;       /**< Word size used for the search. */
                 TSeqNum start_;                 /**< Starting logical subject number. */
                 TResults results_;              /**< The combined result set. */
                 vector< Uint8 > map_;           /**< (subject,chunk)->(logical id) map. */

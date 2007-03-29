@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 /** Function pointer type to retrieve hits from an indexed database */
-typedef void (*T_MB_IdbGetResults)(void * idb, Int4 oid, Int4 chunk,
+typedef unsigned long (*T_MB_IdbGetResults)(void * idb, Int4 oid, Int4 chunk,
                                    BlastInitHitList * init_hitlist);
 
 /** Finds all runs of a specified number of exact matches between 

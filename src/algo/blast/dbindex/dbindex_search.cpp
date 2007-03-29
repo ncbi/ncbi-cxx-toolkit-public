@@ -2739,6 +2739,7 @@ CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::operator()
     const TSubjectMap & subject_map = index_impl_.GetSubjectMap();
     CRef< CDbIndex::CSearchResults > result( 
             new CDbIndex::CSearchResults( 
+                options_.word_size,
                 0, index_impl_.NumChunks(), subject_map.GetSubjectMap(), 
                 index_impl_.StopSeq() - index_impl_.StartSeq() ) );
 
