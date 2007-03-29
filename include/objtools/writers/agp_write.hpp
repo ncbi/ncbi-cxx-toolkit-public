@@ -39,59 +39,69 @@ BEGIN_NCBI_SCOPE
 ///
 /// Write a SeqMap in AGP format, using provided scope.
 /// Gap-type and linkage evidence data must be present in sequence.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CSeqMap& seq_map,
-                                    const string& object_id,
-                                    objects::CScope& scope);
+void NCBI_XOBJWRITE_EXPORT
+AgpWrite(CNcbiOstream& os,
+         const objects::CSeqMap& seq_map,
+         const string& object_id,
+         objects::CScope& scope,
+         const vector<char>& component_types = vector<char>());
 
 ///
 /// Write a bioseq in AGP format.
 /// Gap-type and linkage evidence data must be present in sequence.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CBioseq_Handle& handle,
-                                    const string& object_id);
+void NCBI_XOBJWRITE_EXPORT
+AgpWrite(CNcbiOstream& os,
+         const objects::CBioseq_Handle& handle,
+         const string& object_id,
+         const vector<char>& component_types = vector<char>());
 
 ///
 /// Write a location in AGP format
 /// Gap-type and linkage evidence data must be present in sequence.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CBioseq_Handle& handle,
-                                    TSeqPos from, TSeqPos to,
-                                    const string& object_id);
+void NCBI_XOBJWRITE_EXPORT
+AgpWrite(CNcbiOstream& os,
+         const objects::CBioseq_Handle& handle,
+         TSeqPos from, TSeqPos to,
+         const string& object_id,
+         const vector<char>& component_types = vector<char>());
 
 ///
 /// Write a SeqMap in AGP format, using provided scope.
 /// Default gap type and linkage are used if this information
 /// is missing from the sequence.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CSeqMap& seq_map,
-                                    const string& object_id,
-                                    const string& default_gap_type,
-                                    bool default_linkage,
-                                    objects::CScope& scope);
+void NCBI_XOBJWRITE_EXPORT
+AgpWrite(CNcbiOstream& os,
+         const objects::CSeqMap& seq_map,
+         const string& object_id,
+         const string& default_gap_type,
+         bool default_linkage,
+         objects::CScope& scope,
+         const vector<char>& component_types = vector<char>());
 
 ///
 /// Write a bioseq in AGP format
 /// Default gap type and linkage are used if this information
 /// is missing from the sequence.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CBioseq_Handle& handle,
-                                    const string& object_id,
-                                    const string& default_gap_type,
-                                    bool default_linkage);
+void NCBI_XOBJWRITE_EXPORT
+AgpWrite(CNcbiOstream& os,
+         const objects::CBioseq_Handle& handle,
+         const string& object_id,
+         const string& default_gap_type,
+         bool default_linkage,
+         const vector<char>& component_types = vector<char>());
 
 ///
 /// Write a location in AGP format
 /// Default gap type and linkage are used if this information
 /// is missing from the sequence.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CBioseq_Handle& handle,
-                                    TSeqPos from, TSeqPos to,
-                                    const string& object_id,
-                                    const string& default_gap_type,
-                                    bool default_linkage);
-
-
+void NCBI_XOBJWRITE_EXPORT
+AgpWrite(CNcbiOstream& os,
+         const objects::CBioseq_Handle& handle,
+         TSeqPos from, TSeqPos to,
+         const string& object_id,
+         const string& default_gap_type,
+         bool default_linkage,
+         const vector<char>& component_types = vector<char>());
 
 
 END_NCBI_SCOPE

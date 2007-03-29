@@ -113,11 +113,12 @@ static void s_AgpWrite(CNcbiOstream& os,
                        const string& object_id,
                        const string* default_gap_type,
                        const bool* default_linkage,
-                       CScope& scope)
+                       CScope& scope,
+                       const vector<char>& component_types)
 {
-    int part_num = 1;
+    unsigned int count = 0;
 
-    for (CSeqMap_CI iter(seq_map.Begin(&scope));  iter;  ++iter) {
+    for (CSeqMap_CI iter(seq_map.Begin(&scope));  iter;  ++iter, ++count) {
         TSeqPos seg_pos = iter.GetPosition();
         TSeqPos seg_end = iter.GetPosition() + iter.GetLength();
         if (start_pos > seg_end) {
@@ -149,19 +150,23 @@ static void s_AgpWrite(CNcbiOstream& os,
         os << '\t' << seg_end - end_offs;
 
         // col 4: part number
-        os << '\t' << part_num;
-        part_num += 1;
+        os << '\t' << count + 1;  // 1-based
 
         switch (iter.GetType()) {
         case CSeqMap::eSeqGap:
             // col 5
-            os << "\tN";
+            os << '\t';
+            if (component_types.empty()) {
+                os << 'N';
+            } else {
+                os << component_types.at(count);
+            }
             // col 6b
             os << '\t' << iter.GetLength();
             // col 7b
-            os << "\t" << GetGapType(iter, default_gap_type);
+            os << '\t' << GetGapType(iter, default_gap_type);
             // col 8b
-            os << "\t" << (GetLinkage(iter, default_linkage) ? "yes" : "no");
+            os << '\t' << (GetLinkage(iter, default_linkage) ? "yes" : "no");
             // col 9; Write an empty column.  The spec says there should
             //        be an empty column, rather than no column (i.e., no tab).
             os << '\t';
@@ -169,9 +174,14 @@ static void s_AgpWrite(CNcbiOstream& os,
 
         case CSeqMap::eSeqRef:
             // col 5; Should be A, D, F, G, P, O, or W
-            os << "\t" <<
-                s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
-                                         scope);
+            os << '\t';
+            if (component_types.empty()) {
+                os <<
+                    s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
+                                             scope);
+            } else {
+                os << component_types.at(count);
+            }
             // col 6a
             os << '\t';
             {{
@@ -207,30 +217,33 @@ static void s_AgpWrite(CNcbiOstream& os,
 void AgpWrite(CNcbiOstream& os,
               const CSeqMap& seq_map,
               const string& object_id,
-              CScope& scope)
+              CScope& scope,
+              const vector<char>& component_types)
 {
     s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
-               object_id, NULL, NULL, scope);
+               object_id, NULL, NULL, scope, component_types);
 }
 
 void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
-              const string& object_id)
+              const string& object_id,
+              const vector<char>& component_types)
 {
     s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
                object_id, NULL, NULL,
-               handle.GetScope());
+               handle.GetScope(), component_types);
 }
 
 
 void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
               TSeqPos from, TSeqPos to,
-              const string& object_id)
+              const string& object_id,
+              const vector<char>& component_types)
 {
     s_AgpWrite(os, handle.GetSeqMap(), from, to,
                object_id, NULL, NULL,
-               handle.GetScope());
+               handle.GetScope(), component_types);
 }
 
 
@@ -239,21 +252,24 @@ void AgpWrite(CNcbiOstream& os,
               const string& object_id,
               const string& default_gap_type,
               bool default_linkage,
-              CScope& scope)
+              CScope& scope,
+              const vector<char>& component_types)
 {
     s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
-               object_id, &default_gap_type, &default_linkage, scope);
+               object_id, &default_gap_type, &default_linkage,
+               scope, component_types);
 }
 
 void AgpWrite(CNcbiOstream& os,
               const CBioseq_Handle& handle,
               const string& object_id,
               const string& default_gap_type,
-              bool default_linkage)
+              bool default_linkage,
+              const vector<char>& component_types)
 {
     s_AgpWrite(os, handle.GetSeqMap(), 0, handle.GetBioseqLength(),
                object_id, &default_gap_type, &default_linkage,
-               handle.GetScope());
+               handle.GetScope(), component_types);
 }
 
 
@@ -262,11 +278,12 @@ void AgpWrite(CNcbiOstream& os,
               TSeqPos from, TSeqPos to,
               const string& object_id,
               const string& default_gap_type,
-              bool default_linkage)
+              bool default_linkage,
+              const vector<char>& component_types)
 {
     s_AgpWrite(os, handle.GetSeqMap(), from, to,
                object_id, &default_gap_type, &default_linkage,
-               handle.GetScope());
+               handle.GetScope(), component_types);
 }
 
 
