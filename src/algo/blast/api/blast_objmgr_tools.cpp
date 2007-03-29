@@ -146,7 +146,6 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
         }
     } else {
         _ASSERT(m_TSeqLocVector);
-        int i = 0;
         NON_CONST_ITERATE(TSeqLocVector, sseqloc, *m_TSeqLocVector) {
 
             if (sseqloc->genetic_code_id != BLAST_GENETIC_CODE) {
