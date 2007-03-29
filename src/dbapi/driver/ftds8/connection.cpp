@@ -224,9 +224,15 @@ bool CTDS_Connection::Close(void)
 {
     if (GetDBLibConnection()) {
         Refresh();
+
+        // Clean user data ...
+        dbsetuserdata(GetDBLibConnection(), (BYTE*) NULL);
+
         dbclose(GetDBLibConnection());
         CheckFunctCall();
+
         m_Link = NULL;
+
         return true;
     }
 

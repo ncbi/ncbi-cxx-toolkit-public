@@ -229,6 +229,9 @@ bool CDBL_Connection::Close(void)
     if (GetDBLibConnection()) {
         Refresh();
 
+        // Clean user data ...
+        dbsetuserdata(GetDBLibConnection(), (BYTE*) NULL);
+
         dbclose(GetDBLibConnection());
         CheckFunctCall();
 
