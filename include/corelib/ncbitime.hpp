@@ -95,13 +95,13 @@ typedef Int8 TSeconds;
 /// Database format for time where day and time is unsigned 16 bit.
 typedef struct {
     Uint2 days;   ///< Days from 1/1/1900
-    Uint2 time;   ///< Minutes from begin of current day
+    Uint2 time;   ///< Minutes from the beginning of current day
 } TDBTimeU, *TDBTimeUPtr;
 
 /// Database format for time where day and time is signed 32 bit.
 typedef struct {
     Int4  days;   ///< days from 1/1/1900
-    Int4  time;   ///< x/300 seconds from begin of current day
+    Int4  time;   ///< x/300 seconds from the beginning of current day
 } TDBTimeI, *TDBTimeIPtr;
 
 
@@ -590,7 +590,7 @@ public:
     /// Year day number = 1..366
     int YearDayNumber(void) const;
 
-    /// Get week number in the year.
+    /// Get this date's week number within the year.
     ///
     /// Calculate the week number in a year of a given date.
     /// The week can start on any day accordingly given parameter.
@@ -603,10 +603,10 @@ public:
     ///   Week number = 1..54.
     int YearWeekNumber(EDayOfWeek first_day_of_week = eSunday) const;
 
-    /// Get week number in current month.
+    /// Get this date's week number in the month.
     ///
     /// @return
-    ///   Week number in current month = 1..6.
+    ///   Week number in the month = 1..6.
     /// @sa
     ///   YearWeekNumber
     int MonthWeekNumber(EDayOfWeek first_day_of_week = eSunday) const;
@@ -617,7 +617,7 @@ public:
     /// AsString() format symbols "W", "w".
     int DayOfWeek(void) const;
 
-    /// Get number of days in the current month.
+    /// Get number of days in the month.
     ///
     /// Number of days = 1..31
     int DaysInMonth(void) const;
@@ -832,19 +832,19 @@ public:
     /// Get difference between local timezone and GMT in seconds.
     TSeconds TimeZoneDiff(void) const;
 
-    /// Get current time as local time.
+    /// Get the time as local time.
     CTime GetLocalTime(void) const;
 
-    /// Get current time as GMT time.
+    /// Get the time as GMT time.
     CTime GetGmtTime(void) const;
 
-    /// Convert current time into specified time zone time.
+    /// Convert the time into specified time zone time.
     CTime& ToTime(ETimeZone val);
 
-    /// Convert current time into local time.
+    /// Convert the time into local time.
     CTime& ToLocalTime(void);
 
-    /// Convert current time into GMT time.
+    /// Convert the time into GMT time.
     CTime& ToGmtTime(void);
 
 private:
