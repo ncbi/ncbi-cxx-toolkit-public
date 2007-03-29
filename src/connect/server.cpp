@@ -324,6 +324,10 @@ void CServer::GetParameters(SServer_Parameters* params)
     *params = *m_Parameters;
 }
 
+static inline bool operator <(const STimeout& to1, const STimeout& to2)
+{
+    return to1.sec != to2.sec ? to1.sec < to2.sec : to1.usec < to2.usec;
+}
 
 void CServer::Run(void)
 {
@@ -347,9 +351,7 @@ void CServer::Run(void)
             timer_requests, &timer_timeout) &&
             (timeout == kDefaultTimeout ||
             timeout == kInfiniteTimeout ||
-            (timeout->sec != timer_timeout.sec ?
-            timeout->sec > timer_timeout.sec :
-            timeout->usec > timer_timeout.usec)))
+            timer_timeout < *timeout))
             timeout = &timer_timeout;
 
         CSocketAPI::Poll(polls, timeout, &count);
