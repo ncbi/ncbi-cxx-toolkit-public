@@ -413,7 +413,7 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
 static const STimeout k_DefaultIdleTimeout = { 600, 0 };
 
 SServer_Parameters::SServer_Parameters() :
-    max_connections(100),
+    max_connections(10000),
     temporarily_stop_listening(false),
     accept_timeout(kInfiniteTimeout),
     idle_timeout(&k_DefaultIdleTimeout),
