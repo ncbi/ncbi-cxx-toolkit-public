@@ -6,6 +6,7 @@
 %template(vector_size_t) std::vector<size_t>;
 %template(vector_double) std::vector<double>;
 %template(vector_char) std::vector<char>;
+%template(vector_vector_char) std::vector<std::vector<char> >;
 %template(vector_unsigned_char) std::vector<unsigned char>;
 %template(vector_bool) std::vector<bool>;
 %template(vector_string) std::vector<std::string>;
