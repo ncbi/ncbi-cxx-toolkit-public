@@ -107,6 +107,10 @@ CTblastnAppArgs::CTblastnAppArgs()
 
     arg.Reset(new CCompositionBasedStatsArgs);
     m_Args.push_back(arg);
+
+    m_PsiBlastArgs.Reset(new CPsiBlastArgs(CPsiBlastArgs::eNucleotideDb));
+    arg.Reset(m_PsiBlastArgs);
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 
@@ -114,6 +118,12 @@ CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
     return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
+}
+
+CRef<CPssmWithParameters>
+CTblastnAppArgs::GetPssm() const
+{
+    return m_PsiBlastArgs->GetPssm();
 }
 
 int

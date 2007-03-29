@@ -140,6 +140,11 @@ int CTblastnApp::Run(void)
                                opt.GetSumStatisticsMode());
         formatter.PrintProlog();
 
+        CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetPssm();
+        if (pssm.NotEmpty()) {
+            throw runtime_error("PSI-TBLASTN is not implemented");
+        }
+
         /*** Process the input ***/
         while ( !fasta.End() ) {
 

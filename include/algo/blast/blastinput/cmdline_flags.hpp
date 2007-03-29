@@ -201,12 +201,15 @@ extern const string kArgPSINumIterations;
 extern const string kArgPSIInputChkPntFile;
 /// Argument to specify a 'checkpoint' file to write the PSSM
 extern const string kArgPSIOutputChkPntFile;
+/// Argument to specify a PHI-BLAST pattern file
+extern const string kArgPHIPatternFile;
 
 /// Argument to specify the pseudo-count value used when constructing PSSM
 extern const string kArgPSIPseudocount;
 /// Argument to specify the evalue inclusion threshold for considering
 /// aligned sequences for PSSM constructions
 extern const string kArgPSIInclusionEThreshold;
+
 
 /// Argument to specify the discontinuous megablast template type
 extern const string kArgDMBTemplateType;

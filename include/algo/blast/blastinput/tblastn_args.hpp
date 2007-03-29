@@ -46,12 +46,22 @@ public:
     /// Constructor
     CTblastnAppArgs();
 
+    /// Get the PSSM
+    /// @return non-NULL PSSM if it's psi-tblastn
+    CRef<objects::CPssmWithParameters> GetPssm() const;
+
+    /// Get the query batch size
     virtual int GetQueryBatchSize() const;
 
 protected:
     virtual CRef<CBlastOptionsHandle>
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args);
+
+    /// PSI-BLAST specific argument class (for psi-tblastn)
+    /// @note this program is added to tblastn because all options for tblastn
+    /// apply to psitblastn (i.e.: db genetic code, cannot be iterated)
+    CRef<CPsiBlastArgs> m_PsiBlastArgs;
 };
 
 

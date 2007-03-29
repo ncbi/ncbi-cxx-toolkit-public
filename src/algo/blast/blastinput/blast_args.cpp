@@ -756,14 +756,17 @@ CPssmEngineArgs::ExtractAlgorithmOptions(const CArgs& args,
 void
 CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.SetCurrentGroup("PSI-BLAST options");
 
     if (m_DbTarget == eNucleotideDb) {
+        arg_desc.SetCurrentGroup("PSI-TBLASTN options");
+
         // PSI-tblastn checkpoint
         arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
                                 "PSI-TBLASTN checkpoint file",
                                 CArgDescriptions::eInputFile);
     } else {
+        arg_desc.SetCurrentGroup("PSI-BLAST options");
+
         // Number of iterations
         arg_desc.AddDefaultKey(kArgPSINumIterations, "int_value",
                                "Number of iterations to perform",
@@ -814,7 +817,7 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
     }
 
-    if (args[kArgPSIInputChkPntFile]) {
+    if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {
         CNcbiIstream& in = args[kArgPSIInputChkPntFile].AsInputFile();
         m_Pssm.Reset(new CPssmWithParameters);
         switch (CFormatGuess().Format(in)) {
@@ -833,6 +836,35 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             break;
         }
         _ASSERT(m_Pssm.NotEmpty());
+    }
+}
+
+void
+CPhiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("PHI-BLAST options");
+
+    arg_desc.AddOptionalKey(kArgPHIPatternFile, "file",
+                            "File name containing pattern to search",
+                            CArgDescriptions::eInputFile);
+    arg_desc.SetDependency(kArgPHIPatternFile,
+                           CArgDescriptions::eExcludes,
+                           kArgPSIInputChkPntFile);
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                       CBlastOptions& opt)
+{
+    if (args.Exist(kArgPHIPatternFile) && args[kArgPHIPatternFile]) {
+        //CNcbiIstream& in = args[kArgPHIPatternFile].AsInputFile();
+        string pattern("FIXME - NOT VALID");
+        // FIXME: need to port code from pssed3.c get_pat function
+        opt.SetPHIPattern(pattern.c_str(), 
+                          Blast_QueryIsNucleotide(opt.GetProgramType()));
+        throw runtime_error("Reading of pattern file not implemented");
     }
 }
 

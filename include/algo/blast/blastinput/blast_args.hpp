@@ -484,6 +484,17 @@ private:
     CRef<objects::CPssmWithParameters> m_Pssm;
 };
 
+/// Argument class to collect options specific to PHI-BLAST
+class NCBI_XBLAST_EXPORT CPhiBlastArgs : public IBlastCmdLineArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+};
+
 /*****************************************************************************/
 // Input options
 

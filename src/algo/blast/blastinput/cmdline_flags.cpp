@@ -138,6 +138,7 @@ const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
+const string kArgPHIPatternFile("phi_pattern");
 
 const string kArgTargetPercentIdentity("target_perc_identity");
 const string kArgDMBTemplateType("template_type");

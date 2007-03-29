@@ -55,8 +55,6 @@ USING_SCOPE(objects);
 #define ARG_PHI_PROGRAM "p"         // not supported
 // Number of best hits from a region to keep (default 0)
 #define ARG_NUM_BEST_HITS "K"   // not supported
-// Hit file for PHI-BLAST (default "hit_file")
-#define ARG_PHI_HIT_FILE "k"    // not supported yet
 
 CPsiBlastAppArgs::CPsiBlastAppArgs()
 {
@@ -116,6 +114,9 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 
     m_PsiBlastArgs.Reset(new CPsiBlastArgs(CPsiBlastArgs::eProteinDb));
     arg.Reset(m_PsiBlastArgs);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CPhiBlastArgs);
     m_Args.push_back(arg);
 }
 
