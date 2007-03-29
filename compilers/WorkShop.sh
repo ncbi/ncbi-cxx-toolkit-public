@@ -50,6 +50,12 @@ case "$CC_version" in
  "CC: Sun C++ 5.5"* )
     NCBI_COMPILER="WorkShop55"
     ;;
+ "CC: Sun C++ 5.8"* )
+    NCBI_COMPILER="WorkShop58"
+    ;;
+ "CC: Sun C++ 5.9"* )
+    NCBI_COMPILER="WorkShop59"
+    ;;
  * )
     echo "ERROR:  unknown version of WorkShop C++ compiler:"
     echo "  $CXX -V -->  $CC_version"
