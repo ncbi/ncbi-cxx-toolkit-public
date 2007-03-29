@@ -69,12 +69,12 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
     // blast formatter cannot handle these output types
     if (format_type == 5 || format_type == 6) {
         NCBI_THROW(blast::CBlastException, 
-                   CBlastException::eInvalidArgument,
+                   eInvalidArgument,
                    "blunt-end query anchored format not supported");
     }
     if (format_type == 7) {
         NCBI_THROW(blast::CBlastException, 
-                   CBlastException::eInvalidArgument,
+                   eInvalidArgument,
                    "XML output format not supported");
     }
 
@@ -120,7 +120,7 @@ CBlastFormat::x_FillScoreMatrix(const char *matrix_name)
         packed_matrix = &NCBISM_Pam250;
     else if (m_Program != "blastn" && m_Program != "megablast") {
         NCBI_THROW(blast::CBlastException, 
-                   CBlastException::eInvalidArgument,
+                   eInvalidArgument,
                    "unsupported score matrix");
     }
 
