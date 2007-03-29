@@ -34,6 +34,7 @@
 %ignore ncbi::CTreeNode::FindNode;
 %ignore ncbi::CTreeNode::FindNodes;
 %ignore ncbi::CTreeNode::FindSubNode;
+%ignore ncbi::CTreeNode::FindOrCreateNode;
 
 // Default assignment operator can't be used
 %ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
