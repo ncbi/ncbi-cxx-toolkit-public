@@ -199,8 +199,10 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     polls.reserve(data.size()+1);
     polls.push_back(CSocketAPI::SPoll(
         dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
+    CTime current_time(CTime::eEmpty, CTime::eGmt);
     const CTime* alarm_time = NULL;
-    const CTime* min_alarm_time = NULL;
+    const CTime* min_alarm_time;
+    bool alarm_time_defined = false;
     ITERATE (TData, it, data) {
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
@@ -213,13 +215,20 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
             polls.push_back(CSocketAPI::SPoll(pollable,
                 it->first->GetEventsToPollFor(&alarm_time)));
             if (alarm_time != NULL) {
-                if (min_alarm_time == NULL) {
-                    min_alarm_time = alarm_time;
+                if (!alarm_time_defined) {
+                    alarm_time_defined = true;
+                    current_time.SetCurrent();
+                    min_alarm_time = *alarm_time > current_time ?
+                        alarm_time : NULL;
                     timer_requests.clear();
                     timer_requests.push_back(it->first);
-                } else if (*min_alarm_time >= *alarm_time) {
-                    if (*min_alarm_time > *alarm_time) {
-                        min_alarm_time = alarm_time;
+                } else if (min_alarm_time == NULL) {
+                    if (*alarm_time <= current_time)
+                        timer_requests.push_back(it->first);
+                } else if (*alarm_time <= *min_alarm_time) {
+                    if (*alarm_time < *min_alarm_time) {
+                        min_alarm_time = *alarm_time > current_time ?
+                            alarm_time : NULL;
                         timer_requests.clear();
                     }
                     timer_requests.push_back(it->first);
@@ -228,15 +237,18 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
             }
         }
     }
-    if (min_alarm_time != NULL) {
-        CTimeSpan span(min_alarm_time->DiffTimeSpan(
-            CTime(CTime::eCurrent, CTime::eGmt)));
-        if (span.GetCompleteSeconds() < 0 ||
-            span.GetNanoSecondsAfterSecond() < 0) {
+    if (alarm_time_defined) {
+        if (min_alarm_time == NULL)
             timer_timeout->usec = timer_timeout->sec = 0;
-        } else {
-            timer_timeout->sec = (unsigned) span.GetCompleteSeconds();
-            timer_timeout->usec = span.GetNanoSecondsAfterSecond() / 1000;
+        else {
+            CTimeSpan span(min_alarm_time->DiffTimeSpan(current_time));
+            if (span.GetCompleteSeconds() < 0 ||
+                span.GetNanoSecondsAfterSecond() < 0)
+                timer_timeout->usec = timer_timeout->sec = 0;
+            else {
+                timer_timeout->sec = (unsigned) span.GetCompleteSeconds();
+                timer_timeout->usec = span.GetNanoSecondsAfterSecond() / 1000;
+            }
         }
         return true;
     }
