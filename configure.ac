@@ -967,8 +967,8 @@ if test "$with_64" = "yes" ; then
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
       ;;
 changequote(, )dnl
-    sparc-sun-solaris*:WorkShop5* )
-      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+    *-sun-solaris*:WorkShop5* )
+      ARCH_CFLAGS="-xtarget=generic64"
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
       LIBS="-lCstd -lCrun $LIBS -lc"
@@ -999,8 +999,8 @@ else
    ARCH_CFLAGS=
    if test "$with_64" = "no" ; then
       case "$host:$compiler" in
-       sparc-sun-solaris*:WorkShop* | sparc-sun-solaris*:KCC )
-         ARCH_CFLAGS="-xtarget=native"
+       *-sun-solaris*:WorkShop* | *-sun-solaris*:KCC )
+         ARCH_CFLAGS="-xtarget=generic"
          ;;
        mips*:GCC )
          ARCH_CFLAGS="-mipsn32"
