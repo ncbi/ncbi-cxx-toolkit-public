@@ -1,8 +1,6 @@
-* legacy_blast.pl
 * Test/performance suite (plug in QA-blastall.pl?)
 
-* translated BLAST binaries (blastx, tblastn, tblastx)
-* rpsblast
+* rpsblast (and its translation in legacy_blast.pl)
 * bl2seq handling (locally and remotely)
 * phiblast (add to PSI-BLAST): reading of pattern file
 * psi-tblastn implementation (see tblastn_app.cpp)
@@ -13,7 +11,7 @@
 
 * config file/saved search strategy support
 
-* rm c++/src/app/blast_client?
+* rm c++/src/app/blast_client and c++/src/algo/blast/api/demo?
 
 Deferred items
 * Should C toolkit checkpoint files be accepted? Provide conversion tool?
