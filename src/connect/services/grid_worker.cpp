@@ -473,7 +473,11 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
                 RequestShutdown(CNetScheduleAdmin::eNormalShutdown);
         }         
     } else {
-        if(m_NSReadClient.get() && !CGridGlobals::GetInstance().IsExclusiveMode()) {
+        if(m_NSReadClient.get()) {
+            if( CGridGlobals::GetInstance().IsExclusiveMode()) {
+                SleepSec(m_NSTimeout);
+                return false;
+            }
             int try_count = 0;
             try {
                 if (IsOnHold()) {
