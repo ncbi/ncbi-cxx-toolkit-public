@@ -119,9 +119,10 @@ protected:
     virtual void x_DisconnectAtSlot(TConn conn);
     virtual void x_ConnectAtSlot(TConn conn);
 
+    string x_ConnDescription(CConn_IOStream& stream) const;
     CConn_IOStream* x_GetConnection(TConn conn);
     CConn_IOStream* x_NewConnection(TConn conn);
-    void x_InitConnection(CNcbiIostream& stream, TConn conn);
+    void x_InitConnection(CConn_IOStream& stream, TConn conn);
 
     void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
                       const CSeq_id& seq_id);

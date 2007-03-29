@@ -332,6 +332,18 @@ CConn_IOStream* CId2Reader::x_GetConnection(TConn conn)
 }
 
 
+string CId2Reader::x_ConnDescription(CConn_IOStream& stream) const
+{
+    const char* descr = CONN_Description(stream.GetCONN());
+    if ( descr ) {
+        return m_ServiceName + " -> " + descr;
+    }
+    else {
+        return m_ServiceName;
+    }
+}
+
+
 CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
@@ -353,33 +365,31 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
         stream.reset
             (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
     }
+    // need to call CONN_Wait to force connection to open
+    CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
     SetRandomFail(*stream, conn);
     if ( stream->bad() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
-                   "initialization of connection failed");
+                   "cannot open connection: "+x_ConnDescription(*stream));
     }
 
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s(conn);
-        s << "New connection to " << m_ServiceName << " opened.";
-        // need to call CONN_Wait to force connection to open
-        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
-        const char* descr = CONN_Description(stream->GetCONN());
-        if ( descr ) {
-            s << "  description: " << descr;
-        }
+        s << "New connection: " << x_ConnDescription(*stream);
     }
     try {
         x_InitConnection(*stream, conn);
     }
     catch ( CException& exc ) {
         NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                     "initialization of connection failed");
+                     "connection initialization failed: "+
+                     x_ConnDescription(*stream));
     }
     SetRandomFail(*stream, conn);
     if ( stream->bad() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
-                   "initialization of connection failed");
+                   "connection initialization failed: "+
+                   x_ConnDescription(*stream));
     }
 
     RequestSucceeds(conn);
@@ -390,7 +400,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 #define MConnFormat MSerial_AsnBinary
 
 
-void CId2Reader::x_InitConnection(CNcbiIostream& stream, TConn conn)
+void CId2Reader::x_InitConnection(CConn_IOStream& stream, TConn conn)
 {
     // prepare init request
     CID2_Request req;
@@ -413,14 +423,22 @@ void CId2Reader::x_InitConnection(CNcbiIostream& stream, TConn conn)
             }
             s << "...";
         }
-        stream << MConnFormat << packet << flush;
+        try {
+            stream << MConnFormat << packet << flush;
+        }
+        catch ( CException& exc ) {
+            NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                         "failed to send init request: "+
+                         x_ConnDescription(stream));
+        }
         if ( GetDebugLevel() >= eTraceConn ) {
             CDebugPrinter s(conn);
             s << "Sent ID2-Request-Packet.";
         }
         if ( !stream ) {
             NCBI_THROW(CLoaderException, eConnectionFailed,
-                       "stream is bad after sending");
+                       "failed to send init request: "+
+                       x_ConnDescription(stream));
         }
     }}
     
@@ -444,26 +462,31 @@ void CId2Reader::x_InitConnection(CNcbiIostream& stream, TConn conn)
         }
         if ( !stream ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "stream is bad after receiving");
+                       "failed to receive init reply: "+
+                       x_ConnDescription(stream));
         }
     }}
 
     // check init reply
     if ( reply.IsSetDiscard() ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "bad init reply: 'discard' is set");
+                   "bad init reply: 'discard' is set: "+
+                   x_ConnDescription(stream));
     }
     if ( reply.IsSetError() ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "bad init reply: 'error' is set");
+                   "bad init reply: 'error' is set: "+
+                   x_ConnDescription(stream));
     }
     if ( !reply.IsSetEnd_of_reply() ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "bad init reply: 'end-of-reply' is not set");
+                   "bad init reply: 'end-of-reply' is not set: "+
+                   x_ConnDescription(stream));
     }
     if ( reply.GetReply().Which() != CID2_Reply::TReply::e_Init ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "bad init reply: 'reply' is not 'init'");
+                   "bad init reply: 'reply' is not 'init': "+
+                   x_ConnDescription(stream));
     }
     // that's it for now
     // TODO: process params
@@ -994,7 +1017,7 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
     vector<SId2LoadedSet> loaded_sets(request_count);
 
     CConn conn(this);
-    CNcbiIostream& stream = *x_GetConnection(conn);
+    CConn_IOStream& stream = *x_GetConnection(conn);
     // send request
     {{
         SetRandomFail(stream, conn);
@@ -1009,14 +1032,22 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
             }
             s << "...";
         }
-        stream << MConnFormat << packet << flush;
+        try {
+            stream << MConnFormat << packet << flush;
+        }
+        catch ( CException& exc ) {
+            NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                         "failed to send request: "+
+                         x_ConnDescription(stream));
+        }
         if ( GetDebugLevel() >= eTraceConn ) {
             CDebugPrinter s(conn);
             s << "Sent ID2-Request-Packet.";
         }
         if ( !stream ) {
             NCBI_THROW(CLoaderException, eConnectionFailed,
-                       "stream is bad after sending");
+                       "failed to send request: "+
+                       x_ConnDescription(stream));
         }
     }}
 
@@ -1035,11 +1066,13 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
         catch ( CException& exc ) {
             stream.setstate(ios::badbit);
             NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                         "reply deserialization failed");
+                         "reply deserialization failed: "+
+                         x_ConnDescription(stream));
         }
         if ( !stream ) {
             NCBI_THROW(CLoaderException, eConnectionFailed,
-                       "stream is bad after receiving");
+                       "failed to receive reply: "+
+                       x_ConnDescription(stream));
         }
         if ( GetDebugLevel() >= eTraceConn   ) {
             CDebugPrinter s(conn);
@@ -1090,9 +1123,17 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
         if ( num >= request_count || done[num] ) {
             // unknown serial num - bad reply
             NCBI_THROW(CLoaderException, eOtherError,
-                       "CId2Reader: bad reply serial number");
+                       "CId2Reader: bad reply serial number: "+
+                       x_ConnDescription(stream));
         }
-        x_ProcessReply(result, loaded_sets[num], reply);
+        try {
+            x_ProcessReply(result, loaded_sets[num], reply);
+        }
+        catch ( CException& exc ) {
+            NCBI_RETHROW(exc, CLoaderException, eOtherError,
+                         "CId2Reader: failed to process reply: "+
+                         x_ConnDescription(stream));
+        }
         if ( reply.IsSetEnd_of_reply() ) {
             done[num] = true;
             x_UpdateLoadedSet(result, loaded_sets[num]);

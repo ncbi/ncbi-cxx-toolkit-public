@@ -34,7 +34,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CConn_ServiceStream;
+class CConn_IOStream;
 class CByteSourceReader;
 class CObjectIStream;
 class CStopWatch;
@@ -93,8 +93,9 @@ protected:
     virtual void x_DisconnectAtSlot(TConn conn);
     virtual void x_ConnectAtSlot(TConn conn);
 
-    CConn_ServiceStream* x_GetConnection(TConn conn);
-    CConn_ServiceStream* x_NewConnection(TConn conn);
+    string x_ConnDescription(CConn_IOStream& stream) const;
+    CConn_IOStream* x_GetConnection(TConn conn);
+    CConn_IOStream* x_NewConnection(TConn conn);
 
     void x_ResolveId(CID1server_back& id1_reply,
                      const CID1server_request& id1_request);
@@ -112,9 +113,9 @@ private:
     string m_ServiceName;
     int    m_Timeout;
 
-    CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
+    CRef<CTSE_Info> x_ReceiveMainBlob(CConn_IOStream* stream);
 
-    typedef map< TConn, AutoPtr<CConn_ServiceStream> > TConnections;
+    typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
     TConnections m_Connections;
 };
 

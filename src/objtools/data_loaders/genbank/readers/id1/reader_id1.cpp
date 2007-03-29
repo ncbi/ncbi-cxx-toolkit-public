@@ -100,7 +100,7 @@ namespace {
 
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
-static void SetRandomFail(CConn_ServiceStream& stream)
+static void SetRandomFail(CConn_IOStream& stream)
 {
     static int fail_recover = 0;
     if ( fail_recover > 0 ) {
@@ -222,7 +222,7 @@ void CId1Reader::x_RemoveConnectionSlot(TConn conn)
 void CId1Reader::x_DisconnectAtSlot(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    AutoPtr<CConn_ServiceStream>& stream = m_Connections[conn];
+    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
     if ( stream.get() ) {
         LOG_POST(Warning << "CId1Reader: ID1"
                  " GenBank connection failed: reconnecting...");
@@ -237,10 +237,10 @@ void CId1Reader::x_ConnectAtSlot(TConn conn)
 }
 
 
-CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
+CConn_IOStream* CId1Reader::x_GetConnection(TConn conn)
 {
     _VERIFY(m_Connections.count(conn));
-    AutoPtr<CConn_ServiceStream>& stream = m_Connections[conn];
+    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
     if ( !stream.get() ) {
         stream.reset(x_NewConnection(conn));
     }
@@ -248,34 +248,42 @@ CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
 }
 
 
-CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
+string CId1Reader::x_ConnDescription(CConn_IOStream& stream) const
+{
+    const char* descr = CONN_Description(stream.GetCONN());
+    if ( descr ) {
+        return m_ServiceName + " -> " + descr;
+    }
+    else {
+        return m_ServiceName;
+    }
+}
+
+
+CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
     STimeout tmout;
     tmout.sec = m_Timeout;
     tmout.usec = 0;
     
-    AutoPtr<CConn_ServiceStream> stream
+    AutoPtr<CConn_IOStream> stream
         (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
+    // need to call CONN_Wait to force connection to open
+    CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
 #endif
 
     if ( stream->bad() ) {
-        NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
+        NCBI_THROW(CLoaderException, eConnectionFailed,
+                   "cannot open connection: "+x_ConnDescription(*stream));
     }
     
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s(conn);
-        s << "New connection " << conn 
-          << " to " << m_ServiceName << " opened.";
-        // need to call CONN_Wait to force connection to open
-        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
-        const char* descr = CONN_Description(stream->GetCONN());
-        if ( descr ) {
-            s << "  description: " << descr;
-        }
+        s << "New connection: " << x_ConnDescription(*stream); 
     }
 
     RequestSucceeds(conn);
@@ -683,8 +691,16 @@ void CId1Reader::GetBlob(CReaderRequestResult& result,
     else {
         processor_type = CProcessor::eType_ID1;
     }
-    m_Dispatcher->GetProcessor(processor_type)
-        .ProcessStream(result, blob_id, chunk_id, *x_GetConnection(conn));
+    CConn_IOStream* stream = x_GetConnection(conn);
+    try {
+        m_Dispatcher->GetProcessor(processor_type)
+            .ProcessStream(result, blob_id, chunk_id, *stream);
+    }
+    catch ( CException& exc ) {
+        NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                     "failed to receive reply: "+
+                     x_ConnDescription(*stream));
+    }
     conn.Release();
 }
 
@@ -725,7 +741,7 @@ void CId1Reader::x_SendRequest(const CBlob_id& blob_id, TConn conn)
 void CId1Reader::x_SendRequest(TConn conn,
                                const CID1server_request& request)
 {
-    CConn_ServiceStream* stream = x_GetConnection(conn);
+    CConn_IOStream* stream = x_GetConnection(conn);
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
@@ -741,9 +757,16 @@ void CId1Reader::x_SendRequest(TConn conn,
         }
         s << "...";
     }
-    CObjectOStreamAsnBinary out(*stream);
-    out << request;
-    out.Flush();
+    try {
+        CObjectOStreamAsnBinary out(*stream);
+        out << request;
+        out.Flush();
+    }
+    catch ( CException& exc ) {
+        NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                     "failed to send request: "+
+                     x_ConnDescription(*stream));
+    }
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s(conn);
         s << "Sent ID1server-request.";
@@ -754,7 +777,7 @@ void CId1Reader::x_SendRequest(TConn conn,
 void CId1Reader::x_ReceiveReply(TConn conn,
                                 CID1server_back& reply)
 {
-    CConn_ServiceStream* stream = x_GetConnection(conn);
+    CConn_IOStream* stream = x_GetConnection(conn);
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
@@ -763,10 +786,15 @@ void CId1Reader::x_ReceiveReply(TConn conn,
         CDebugPrinter s(conn);
         s << "Receiving ID1server-back...";
     }
-    {{
+    try {
         CObjectIStreamAsnBinary in(*stream);
         in >> reply;
-    }}
+    }
+    catch ( CException& exc ) {
+        NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                     "failed to receive reply: "+
+                     x_ConnDescription(*stream));
+    }
     if ( GetDebugLevel() >= eTraceConn   ) {
         CDebugPrinter s(conn);
         s << "Received";
