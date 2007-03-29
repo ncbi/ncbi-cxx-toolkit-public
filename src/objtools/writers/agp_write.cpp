@@ -159,7 +159,7 @@ static void s_AgpWrite(CNcbiOstream& os,
             if (component_types.empty()) {
                 os << 'N';
             } else {
-                os << component_types.at(count);
+                os << component_types[count];
             }
             // col 6b
             os << '\t' << iter.GetLength();
@@ -180,7 +180,7 @@ static void s_AgpWrite(CNcbiOstream& os,
                     s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
                                              scope);
             } else {
-                os << component_types.at(count);
+                os << component_types[count];
             }
             // col 6a
             os << '\t';
