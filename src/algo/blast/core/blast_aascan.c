@@ -246,10 +246,12 @@ static Int4 s_BlastCompressedAaScanSubject(
                 }
              } 
              else { 
-                /* hits are in the backbone cell and in 
-                   the overflow list */
+                /* hits are in the backbone cell and in the overflow list */
                 CompressedOverflowCell* curr_cell = 
                                     backbone_cell->payload.overflow_list.head;
+                /* we know the overflow list has at least one cell,
+                   so it's safe to speculatively fetch the pointer
+                   to further cells */
                 CompressedOverflowCell* next_cell = curr_cell->next;
 
                 /* the number of hits in the linked list of cells has
@@ -279,14 +281,16 @@ static Int4 s_BlastCompressedAaScanSubject(
 
                 /* handle the rest of the list */
 
-                curr_cell = next_cell;
-                while (curr_cell != NULL) {
-                   query_offsets = curr_cell->query_offsets;
-                   curr_cell = curr_cell->next;    /* prefetch */
-                   dest += i;
-                   for (i = 0; i < COMPRESSED_HITS_PER_OVERFLOW_CELL; i++) {
-                      dest[i].qs_offsets.q_off = query_offsets[i];
-                      dest[i].qs_offsets.s_off = s_off;
+                if (next_cell != NULL) {
+                   curr_cell = next_cell;
+                   while (curr_cell != NULL) {
+                      query_offsets = curr_cell->query_offsets;
+                      curr_cell = curr_cell->next;    /* prefetch */
+                      dest += i;
+                      for (i = 0; i < COMPRESSED_HITS_PER_OVERFLOW_CELL; i++) {
+                         dest[i].qs_offsets.q_off = query_offsets[i];
+                         dest[i].qs_offsets.s_off = s_off;
+                      }
                    }
                 }
              }
