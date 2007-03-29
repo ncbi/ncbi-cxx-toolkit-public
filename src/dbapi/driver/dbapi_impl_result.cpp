@@ -33,7 +33,8 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 CResult::CResult(void)
 {
@@ -59,7 +60,7 @@ void CResult::DetachInterface(void)
     m_Interface.DetachInterface();
 }
 
-END_SCOPE(impl)
+} // namespace impl
 
 END_NCBI_SCOPE
 

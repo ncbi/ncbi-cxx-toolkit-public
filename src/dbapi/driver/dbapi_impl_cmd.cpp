@@ -33,7 +33,8 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 ///////////////////////////////////////////////////////////////////////////
 CCommand::~CCommand(void)
@@ -209,8 +210,7 @@ void CSendDataCmd::AttachTo(CDB_SendDataCmd* interface)
     m_Interface = interface;
 }
 
-END_SCOPE(impl)
-
+} // namespace impl
 
 END_NCBI_SCOPE
 

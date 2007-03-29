@@ -42,7 +42,8 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 ///////////////////////////////////////////////////////////////////////////
 //  CDriverContext::
@@ -482,7 +483,7 @@ CWinSock::~CWinSock(void)
 #endif
 }
 
-END_SCOPE(impl)
+} // namespace impl
 
 END_NCBI_SCOPE
 

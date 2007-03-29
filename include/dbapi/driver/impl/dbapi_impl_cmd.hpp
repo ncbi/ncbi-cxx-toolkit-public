@@ -44,7 +44,8 @@ class CDB_BCPInCmd;
 class CDB_CursorCmd;
 class CDB_SendDataCmd;
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 class NCBI_DBAPIDRIVER_EXPORT CCommand
 {
@@ -275,8 +276,7 @@ private:
     CInterfaceHook<CDB_SendDataCmd> m_Interface;
 };
 
-
-END_SCOPE(impl)
+} // namespace impl
 
 END_NCBI_SCOPE
 

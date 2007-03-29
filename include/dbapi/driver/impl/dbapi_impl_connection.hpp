@@ -40,7 +40,8 @@ BEGIN_NCBI_SCOPE
 
 class CDB_Connection;
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 ////////////////////////////////////////////////////////////////////////////
 class CDriverContext;
@@ -286,7 +287,7 @@ private:
     bool    m_SecureLogin;
 };
 
-END_SCOPE(impl)
+} // namespace impl
 
 END_NCBI_SCOPE
 

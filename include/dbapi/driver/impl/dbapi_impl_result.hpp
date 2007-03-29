@@ -39,7 +39,8 @@ BEGIN_NCBI_SCOPE
 
 class CDB_Result;
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -120,7 +121,7 @@ private:
 };
 
 
-END_SCOPE(impl)
+} // namespace impl
 
 END_NCBI_SCOPE
 

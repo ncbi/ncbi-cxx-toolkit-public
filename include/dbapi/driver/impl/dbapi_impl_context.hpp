@@ -45,7 +45,8 @@ class IConnValidator;
 class CDB_UserHandler;
 class CDB_Connection;
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 /////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -212,9 +213,9 @@ protected:
 
 
 private:
-    /// Used connections
-    TConnPool       m_NotInUse;
     /// Unused(reserve) connections
+    TConnPool       m_NotInUse;
+    /// Used connections
     TConnPool       m_InUse;
 
     /// Stack of `per-context' err.message handlers
@@ -239,7 +240,7 @@ protected:
     ~CWinSock(void);
 };
 
-END_SCOPE(impl)
+} //namespace impl
 
 END_NCBI_SCOPE
 

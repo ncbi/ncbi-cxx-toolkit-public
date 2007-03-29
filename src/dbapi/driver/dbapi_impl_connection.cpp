@@ -38,7 +38,8 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
 
 ///////////////////////////////////////////////////////////////////////////
 //  CConnection::
@@ -258,7 +259,7 @@ CConnection::SetExtraMsg(const string& msg)
 }
 
 
-END_SCOPE(impl)
+} // namespace impl
 
 END_NCBI_SCOPE
 
