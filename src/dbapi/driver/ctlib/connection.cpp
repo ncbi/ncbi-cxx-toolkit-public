@@ -53,15 +53,16 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext& cntx,
-                               const I_DriverContext::SConnAttr& conn_attr) :
-    impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name),
-    m_Cntx(&cntx),
-    m_Handle(cntx, this)
+                               const I_DriverContext::SConnAttr& conn_attr)
+: impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name)
+, m_Cntx(&cntx)
+, m_Handle(cntx, this)
 {
     string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
     SetExtraMsg(extra_msg);
@@ -566,8 +567,8 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
 }
 
 
-I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
-(const CDB_ITDescriptor& descr_in)
+I_ITDescriptor*
+CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
 {
     string q= "set rowcount 1\nupdate ";
     q+= descr_in.TableName();
@@ -630,8 +631,8 @@ bool CTL_Connection::Abort()
 
 bool CTL_Connection::Close(void)
 {
-    if (m_Handle.IsOpen()) {
-        // Clean connection user data ...
+    // Clean connection user data ...
+    {
         CTL_Connection* link = NULL;
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
@@ -640,8 +641,20 @@ bool CTL_Connection::Close(void)
                                 (CS_INT) sizeof(link),
                                 NULL)
                                 );
+    }
 
+    if (m_Handle.IsOpen()) {
         return (!Refresh() || (m_Handle.Close() && m_Handle.Drop()));
+
+//         bool result = false;
+//         try {
+//             result = !Refresh() || m_Handle.Close();
+//         } catch (...) {
+//             m_Handle.Drop();
+//             throw;
+//         }
+//         m_Handle.Drop();
+//         return result;
     }
 
     return false;
@@ -861,7 +874,7 @@ CTL_SendDataCmd::Close(void)
 }
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 END_NCBI_SCOPE

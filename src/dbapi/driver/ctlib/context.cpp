@@ -56,7 +56,8 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 static const CDiagCompileInfo kBlankCompileInfo;
@@ -182,12 +183,13 @@ namespace ctlib
 {
 
 Connection::Connection(CTLibContext& context,
-                       CTL_Connection* ctl_conn) :
-    m_CTL_Context(&context),
-    m_CTL_Conn(ctl_conn),
-    m_Handle(NULL),
-    m_IsAllocated(false),
-    m_IsOpen(false)
+                       CTL_Connection* ctl_conn)
+: m_CTL_Context(&context)
+, m_CTL_Conn(ctl_conn)
+, m_Handle(NULL)
+, m_IsAllocated(false)
+, m_IsOpen(false)
+, m_IsDead(false)
 {
     if (GetCTLContext().Check(ct_con_alloc(GetCTLContext().CTLIB_GetContext(),
                                    &m_Handle)) != CS_SUCCEED) {
@@ -209,7 +211,9 @@ Connection::~Connection(void) throw()
 bool Connection::Drop(void)
 {
     if (m_IsAllocated) {
-        GetCTLConn().Check(ct_con_drop(m_Handle));
+        if (!IsDead()) {
+            GetCTLConn().Check(ct_con_drop(m_Handle));
+        }
         m_IsAllocated = false;
     }
 
@@ -566,15 +570,29 @@ CTLibContext::x_Close(bool delete_conn)
             &&  p_pot != 0) {
             p_pot->Remove(this);
             if (p_pot->NofItems() == 0) {
-                // this is a last driver for this context
-                delete p_pot;
-
                 if (x_SafeToFinalize()) {
                     if (Check(ct_exit(CTLIB_GetContext(),
                                         CS_UNUSED)) != CS_SUCCEED) {
                         Check(ct_exit(CTLIB_GetContext(),
                                         CS_FORCE_EXIT));
                     }
+
+                    // This is a last driver for this context
+                    // Clean context user data ...
+                    {
+                        CPointerPot* p_pot_tmp = NULL;
+                        Check(cs_config(CTLIB_GetContext(),
+                                        CS_SET,
+                                        CS_USERDATA,
+                                        (CS_VOID*) &p_pot_tmp,
+                                        (CS_INT) sizeof(p_pot_tmp),
+                                        NULL
+                                        )
+                              );
+
+                        delete p_pot;
+                    }
+
                     Check(cs_ctx_drop(CTLIB_GetContext()));
                 }
             }
@@ -1241,7 +1259,7 @@ public:
 
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 

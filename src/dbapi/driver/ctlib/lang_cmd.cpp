@@ -38,7 +38,8 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -161,7 +162,9 @@ CTL_Cmd::CTL_Cmd(CTL_Connection* conn)
 CTL_Cmd::~CTL_Cmd(void)
 {
     try {
-        Check(ct_cmd_drop(x_GetSybaseCmd()));
+        if (!IsDead()) {
+            Check(ct_cmd_drop(x_GetSybaseCmd()));
+        }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -169,6 +172,7 @@ CTL_Cmd::~CTL_Cmd(void)
 
 void CTL_Cmd::DropSybaseCmd(void)
 {
+    if (!IsDead()) {
 #if 0
     if (Check(ct_cmd_drop(x_GetSybaseCmd())) != CS_SUCCEED) {
         throw CDB_ClientEx(eDiag_Fatal, 122060, "::~CTL_CursorCmd",
@@ -177,6 +181,7 @@ void CTL_Cmd::DropSybaseCmd(void)
 #else
     Check(ct_cmd_drop(x_GetSybaseCmd()));
 #endif
+    }
 
     m_Cmd = NULL;
 }
@@ -228,7 +233,7 @@ CTL_Cmd::ProcessResultInternal(CDB_Result& res)
 bool
 CTL_Cmd::Cancel(void)
 {
-    if ( m_WasSent ) {
+    if (m_WasSent) {
         if ( HaveResult() ) {
             // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
             m_Res->m_EOR = true;
@@ -654,7 +659,9 @@ CTL_BCPCmd::CTL_BCPCmd(CTL_Connection* conn)
 CTL_BCPCmd::~CTL_BCPCmd(void)
 {
     try {
-        Check(blk_drop(x_GetSybaseCmd()));
+        if (!IsDead()) {
+            Check(blk_drop(x_GetSybaseCmd()));
+        }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -728,7 +735,6 @@ bool CTL_LangCmd::WasSent() const
 
 bool CTL_LangCmd::Cancel()
 {
-    // m_Query.erase();
     return CTL_Cmd::Cancel();
 }
 
@@ -801,10 +807,12 @@ CTL_LangCmd::Close(void)
     // ????
     DetachInterface();
 
-    Cancel();
-
-//     Check(ct_cmd_drop(x_GetSybaseCmd()));
-//     SetSybaseCmd(NULL);
+    try {
+        SetDead(!Cancel());
+    } catch (...) {
+        SetDead();
+        throw;
+    }
 }
 
 
@@ -836,7 +844,7 @@ bool CTL_LangCmd::x_AssignParams()
 
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 END_NCBI_SCOPE

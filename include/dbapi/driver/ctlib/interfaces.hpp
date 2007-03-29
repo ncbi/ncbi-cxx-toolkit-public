@@ -76,7 +76,8 @@ BEGIN_NCBI_SCOPE
 class CDB_ITDescriptor;
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 class CTLibContext;
@@ -99,7 +100,8 @@ class CTLibContextRegistry;
 CS_INT NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(int version = 0);
 
 /////////////////////////////////////////////////////////////////////////////
-BEGIN_SCOPE(ctlib)
+namespace ctlib
+{
 
 class Connection
 {
@@ -122,6 +124,16 @@ public:
     bool Open(const string& srv_name);
     bool Close(void);
 
+    bool IsDead(void) const
+    {
+        return m_IsDead;
+    }
+    void SetDead(bool flag = true)
+    {
+        m_IsDead = flag;
+        m_IsOpen = !IsDead();
+    }
+
 protected:
     const CTL_Connection& GetCTLConn(void) const;
     CTL_Connection& GetCTLConn(void);
@@ -143,9 +155,10 @@ private:
     CS_CONNECTION*  m_Handle;
     bool            m_IsAllocated;
     bool            m_IsOpen;
+    bool            m_IsDead;
 };
 
-END_SCOPE(ctlib)
+} // namespace ctlib
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -285,14 +298,18 @@ public:
         return *m_Cntx;
     }
 
+    ctlib::Connection& GetNativeConnection(void)
+    {
+        return m_Handle;
+    }
     const ctlib::Connection& GetNativeConnection(void) const
     {
         return m_Handle;
     }
 
-protected:
     virtual bool IsAlive(void);
 
+protected:
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
                                           unsigned int    nof_params = 0);
     virtual CDB_RPCCmd*      RPC         (const string&   rpc_name,
@@ -328,6 +345,15 @@ protected:
     virtual bool Close(void);
 
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+
+    bool IsDead(void) const
+    {
+        return GetNativeConnection().IsDead();
+    }
+    void SetDead(bool flag = true)
+    {
+        GetNativeConnection().SetDead(flag);
+    }
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
@@ -385,6 +411,15 @@ protected:
     const string& GetExecCntxInfo(void) const
     {
         return m_ExecCntxInfo;
+    }
+
+    bool IsDead(void) const
+    {
+        return GetConnection().IsDead();
+    }
+    void SetDead(bool flag = true)
+    {
+        GetConnection().SetDead(flag);
     }
 
 protected:
@@ -974,7 +1009,7 @@ protected:
 
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 END_NCBI_SCOPE

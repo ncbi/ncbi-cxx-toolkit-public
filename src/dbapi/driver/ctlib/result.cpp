@@ -38,7 +38,8 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1109,7 +1110,7 @@ CTL_ITDescriptor::~CTL_ITDescriptor()
 
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 END_NCBI_SCOPE

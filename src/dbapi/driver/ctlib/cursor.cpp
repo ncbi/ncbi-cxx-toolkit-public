@@ -36,7 +36,8 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 
@@ -377,7 +378,7 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
 }
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 END_NCBI_SCOPE

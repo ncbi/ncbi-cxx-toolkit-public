@@ -39,7 +39,8 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-BEGIN_SCOPE(ftds64_ctlib)
+namespace ftds64_ctlib
+{
 #endif
 
 
@@ -490,14 +491,14 @@ bool CTL_BCPInCmd::WasSent(void) const
 
 bool CTL_BCPInCmd::Cancel()
 {
-    if(!m_WasSent) {
-        return false;
+    if(m_WasSent) {
+        CS_INT outrow = 0;
+
+        return (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
+                             "blk_done failed", 123020) == CS_SUCCEED);
     }
 
-    CS_INT outrow = 0;
-
-    return (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
-                         "blk_done failed", 123020) == CS_SUCCEED);
+    return true;
 }
 
 bool CTL_BCPInCmd::WasCanceled(void) const
@@ -577,17 +578,18 @@ CTL_BCPInCmd::Close(void)
         // ????
         DetachInterface();
 
-        Cancel();
-
-//         Check(blk_drop(x_GetSybaseCmd()));
-//
-//         m_Cmd = NULL;
+        try {
+            SetDead(!Cancel());
+        } catch (...) {
+            SetDead();
+            throw;
+        }
     }
 }
 
 
 #ifdef FTDS_IN_USE
-END_SCOPE(ftds64_ctlib)
+} // namespace ftds64_ctlib
 #endif
 
 END_NCBI_SCOPE
