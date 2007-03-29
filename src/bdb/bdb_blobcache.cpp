@@ -56,11 +56,12 @@ BEGIN_NCBI_SCOPE
 		
 static void s_MakeOverflowFileName(string& buf,
                                    const string& path,
+                                   const string& cache,
                                    const string& key,
                                    int           version,
                                    const string& subkey)
 {
-    buf = path + key + '_'
+    buf = path + cache + '_' + key + '_'
                + NStr::IntToString(version) + '_' + subkey + ".ov_";
 }
 
@@ -465,7 +466,7 @@ private:
     void OpenOverflowFile()
     {
         s_MakeOverflowFileName(
-            m_OverflowFilePath, m_Path, m_BlobKey, m_Version, m_SubKey);
+            m_OverflowFilePath, m_Path, m_Cache.GetName(), m_BlobKey, m_Version, m_SubKey);
 
         _TRACE("LC: Making overflow file " << m_OverflowFilePath);
         m_OverflowFile =
@@ -1551,7 +1552,7 @@ void CBDB_Cache::Store(const string&  key,
 
     } else { // overflow BLOB
         string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
         _TRACE("LC: Making overflow file " << path);
         CNcbiOfstream oveflow_file(path.c_str(),
                                    IOS_BASE::out |
@@ -1763,7 +1764,7 @@ bool CBDB_Cache::Read(const string& key,
 
     if (overflow) {
         string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        s_MakeOverflowFileName(path, m_Path, GetName(),key, version, subkey);
 
         auto_ptr<CNcbiIfstream>
             overflow_file(new CNcbiIfstream(path.c_str(),
@@ -1808,7 +1809,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
 {
     if (overflow) {
         string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
         auto_ptr<CNcbiIfstream>
             overflow_file(new CNcbiIfstream(path.c_str(),
                                             IOS_BASE::in | IOS_BASE::binary));
@@ -2843,7 +2844,7 @@ void CBDB_Cache::x_DropOverflow(const char*    key,
 {
     string path;
     try {
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
         x_DropOverflow(path);
     } catch (exception& ex) {  
         ERR_POST("Blob Store: Cannot remove file: " << path 
@@ -2945,7 +2946,7 @@ size_t CBDB_Cache::x_GetBlobSize(const char* key,
     int overflow = m_CacheAttrDB->overflow;
     if (overflow) {
         string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
         CFile entry(path);
 
         if (entry.Exists()) {

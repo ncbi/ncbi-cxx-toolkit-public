@@ -540,6 +540,7 @@ public:
     {
         return m_Path + "<" + m_Name + ">";
     }
+    const string& GetName() const { return m_Name; }
 protected:
 
     /// Remove BLOB (using transaction) without updating statistics
