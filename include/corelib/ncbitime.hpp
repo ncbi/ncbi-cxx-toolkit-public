@@ -1004,15 +1004,15 @@ public:
     ///   String of letters describing the time span format.
     ///   The letters having the following meanings:
     ///   - - = add minus for negative time spans
-    ///   - d = days
-    ///   - h = hours (-23 - 23)
-    ///   - H = total number of hour
-    ///   - m = minutes (-59 - 59)
-    ///   - M = total number of minutes
-    ///   - s = seconds (-59 - 59)
-    ///   - S = total number of seconds
-    ///   - n = nanosecond (-999999999 - 999999999)
-    ///   - N = total number of nanoseconds
+    ///   - d = number of whole days
+    ///   - H = total whole number of hours stored in the time span
+    ///   - h = hours, "H" modulo 24 (-23 - 23)
+    ///   - M = total whole number of minutes stored in the time span
+    ///   - m = minutes, "M" modulo 60 (-59 - 59)
+    ///   - S = total whole number of seconds stored in the time span
+    ///   - s = seconds, "S" modulo 60 (-59 - 59)
+    ///   - N = total whole number of nanoseconds stored in the time span
+    ///   - n = nanoseconds (-999999999 - 999999999)
     /// @sa
     ///   GetFormat
     static void SetFormat(const string& fmt);
