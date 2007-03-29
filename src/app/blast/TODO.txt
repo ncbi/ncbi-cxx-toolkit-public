@@ -13,6 +13,8 @@
 
 * config file/saved search strategy support
 
+* rm c++/src/app/blast_client?
+
 Deferred items
 * Should C toolkit checkpoint files be accepted? Provide conversion tool?
 * Should we port patseed[pn]?

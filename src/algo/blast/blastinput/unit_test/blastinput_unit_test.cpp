@@ -421,6 +421,60 @@ BOOST_AUTO_UNIT_TEST(CheckDiscoMegablast) {
     BOOST_CHECK_THROW(opts->Validate(), CBlastException);
 }
 
+BOOST_AUTO_UNIT_TEST(CheckPercentIdentity) {
+    auto_ptr<CArgs> args;
+    CBlastxAppArgs blast_args;
+
+    // invalid value
+    CString2Args s2a("-db ecoli -target_perc_identity 4.3");
+    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(blast_args)), 
+                      CArgException);
+
+    // valid combination
+    s2a.Reset("-db ecoli -target_perc_identity .75 ");
+    BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
+}
+
+BOOST_AUTO_UNIT_TEST(CheckNoGreedyExtension) {
+    auto_ptr<CArgs> args;
+    CBlastnAppArgs blast_args;
+
+    CString2Args s2a("-db ecoli -no_greedy");
+    BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
+    CRef<CBlastOptionsHandle> opts = blast_args.SetOptions(*args);
+
+    BOOST_CHECK(opts->GetOptions().GetGapExtnAlgorithm() != eGreedyScoreOnly);
+    BOOST_CHECK(opts->GetOptions().GetGapTracebackAlgorithm() != 
+                eGreedyTbck);
+    // this throws because non-affine gapping costs must be provided for
+    // non-greedy extension
+    BOOST_CHECK_THROW(opts->Validate(), CBlastException);
+}
+
+BOOST_AUTO_UNIT_TEST(CheckMaxNumHSPs) {
+    typedef vector< CRef<CBlastAppArgs> > TArgClasses;
+    vector< CRef<CBlastAppArgs> > arg_classes;
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastpAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastxAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
+
+    NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
+        auto_ptr<CArgs> args;
+        // invalid value
+        CString2Args s2a("-db ecoli -max_hsps_per_subject -4");
+        BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(**itr)), 
+                          CArgException);
+
+        // valid combination
+        s2a.Reset("-db ecoli -max_hsps_per_subject 0");
+        BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(**itr)));
+    }
+
+}
+
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
 class CDummyDLF : public CDataLoaderFactory {

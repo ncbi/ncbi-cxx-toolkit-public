@@ -78,6 +78,13 @@ extern const string kArgMatrixName;
 
 /// Argument for expectation value cutoff
 extern const string kArgEvalue;
+/// Argument for minimum raw gapped score for preliminary gapped and traceback
+/// stages
+extern const string kArgMinRawGappedScore;
+
+/// Argument for minimum raw score to keep an alignment in the preliminary
+/// gapped and traceback stages
+extern const string kMinRawGappedScore;
 
 /* Formatting options */
 
@@ -210,12 +217,17 @@ extern const string kArgPSIPseudocount;
 /// aligned sequences for PSSM constructions
 extern const string kArgPSIInclusionEThreshold;
 
-
+/// Argument to specify non-greedy dynamic programming extension
+extern const string kArgNoGreedyExtension;
 /// Argument to specify the discontinuous megablast template type
 extern const string kArgDMBTemplateType;
 /// Argument to specify the discontinuous megablast template length
 extern const string kArgDMBTemplateLength;
 
+/// Argument to specify the maximum number of HPSs to save per subject
+extern const string kArgMaxHSPsPerSubject;
+/// Default value for specifying the maximum number of HPSs to save per subject
+extern const int kDfltArgMaxHSPsPerSubject;
 /// Argument to specify the target percent identity
 extern const string kArgTargetPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST

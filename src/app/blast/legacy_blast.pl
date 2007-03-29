@@ -328,7 +328,7 @@ sub handle_megablast($)
                "M=i"            => \$opt_M,
                "N=i"            => \$opt_N,
                "O=s"            => \$opt_O,
-               "P=i"            => \$opt_P,
+               "P=i"            => \$opt_P, # no equivalent in new engine
                "Q=s"            => \$opt_Q,
                "R:s"            => \$opt_R,
                "S=i"            => \$opt_S,
@@ -409,14 +409,27 @@ sub handle_megablast($)
     }
 
 
+    $retval .= "-target_perc_identity $opt_p " if (defined $opt_p);
+    $retval .= "-max_hsps_per_subject $opt_H " if (defined $opt_H);
+    $retval .= "-min_raw_gapped_score $opt_s " if (defined $opt_s);
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
     if (defined $opt_U and $opt_U =~ /t/i) {
         $retval .= "-lcase_masking ";
     }
+    if (defined $opt_n and $opt_n =~ /t/i) {
+        $retval .= "-no_greedy ";
+    }
 
+    # Unsupported options
     if (defined $opt_M) {
         print STDERR "Warning: -M option is ignored\n";
+    }
+    if (defined $opt_D) {
+        print STDERR "Warning: -D option is not supported!\n";
+    }
+    if (defined $opt_g and $opt_g =~ /f/i) {
+        print STDERR "Warning: -g option is not supported!\n";
     }
 
     # Deprecated options
@@ -429,11 +442,11 @@ sub handle_megablast($)
     if (defined $opt_R) {
         print STDERR "Warning: -R option is deprecated\n";
     }
-    if (defined $opt_D) {
-        print STDERR "Warning: -D option is deprecated\n";
-    }
     if (defined $opt_Q) {
         print STDERR "Warning: -Q option is deprecated\n";
+    }
+    if (defined $opt_P) {
+        print STDERR "Warning: -P option is deprecated\n";
     }
 
     return $retval;

@@ -66,6 +66,7 @@ const string kArgNumThreads("num_threads");
 const string kArgMatrixName("matrix");
 
 const string kArgEvalue("evalue");
+const string kArgMinRawGappedScore("min_raw_gapped_score");
 
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
@@ -140,7 +141,10 @@ const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
 const string kArgPHIPatternFile("phi_pattern");
 
+const string kArgMaxHSPsPerSubject("max_hsps_per_subject");
+const int kDfltArgMaxHSPsPerSubject = 0;
 const string kArgTargetPercentIdentity("target_perc_identity");
+const string kArgNoGreedyExtension("no_greedy");
 const string kArgDMBTemplateType("template_type");
 const string kArgDMBTemplateLength("template_length");
 

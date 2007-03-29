@@ -183,7 +183,7 @@ public:
 
 /** Argument class for general search BLAST algorithm options: evalue, gap
  * penalties, query filter string, ungapped x-drop, initial and final gapped 
- * x-drop, word size, and effective search space
+ * x-drop, word size, percent identity, and effective search space
  */
 class NCBI_XBLAST_EXPORT CGenericSearchArgs : public IBlastCmdLineArgs
 {
@@ -235,7 +235,8 @@ private:
                                  vector<string>& output) const;
 };
 
-/// Defines values for match and mismatch in nucleotide comparisons
+/// Defines values for match and mismatch in nucleotide comparisons as well as
+/// non-greedy extension
 class NCBI_XBLAST_EXPORT CNuclArgs : public IBlastCmdLineArgs
 {
 public:

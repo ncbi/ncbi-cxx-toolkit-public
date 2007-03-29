@@ -202,6 +202,12 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgWordSize, 
                            new CArgAllowValuesGreaterThanOrEqual(3));
 
+    arg_desc.AddOptionalKey(kArgTargetPercentIdentity, "float_value",
+                            "Target percent identity",
+                            CArgDescriptions::eDouble);
+    arg_desc.SetConstraint(kArgTargetPercentIdentity,
+                           new CArgAllow_Doubles(0.0, 1.0));
+
     // effective search space
     // Default value is the real size
     arg_desc.AddOptionalKey(kArgEffSearchSpace, "float_value", 
@@ -209,6 +215,16 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eInt8);
     arg_desc.SetConstraint(kArgEffSearchSpace, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
+
+    arg_desc.AddDefaultKey(kArgMaxHSPsPerSubject, "int_value",
+                           "Maximum number of HPSs per subject to save "
+                           "( " + NStr::IntToString(kDfltArgMaxHSPsPerSubject)
+                           + " means infinite)",
+                           CArgDescriptions::eInteger,
+                           NStr::IntToString(kDfltArgMaxHSPsPerSubject));
+    arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
+                           new CArgAllowValuesGreaterThanOrEqual(0));
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -246,6 +262,17 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     if (args[kArgEffSearchSpace]) {
         opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
+    }
+
+    if (args[kArgTargetPercentIdentity]) {
+        opt.SetPercentIdentity(args[kArgTargetPercentIdentity].AsDouble());
+    }
+
+    if (args[kArgMaxHSPsPerSubject]) {
+        const int value = args[kArgMaxHSPsPerSubject].AsInteger();
+        if (value != kDfltArgMaxHSPsPerSubject) {
+            opt.SetMaxNumHspPerSequence(value);
+        }
     }
 }
 
@@ -416,6 +443,10 @@ CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgMatch, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
+    arg_desc.AddFlag(kArgNoGreedyExtension,
+                     "Use non-greedy dynamic programming extension",
+                     true);
+
     arg_desc.SetCurrentGroup("");
 }
 
@@ -427,6 +458,11 @@ CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
         options.SetMismatchPenalty(cmd_line_args[kArgMismatch].AsInteger());
     if (cmd_line_args[kArgMatch])
         options.SetMatchReward(cmd_line_args[kArgMatch].AsInteger());
+
+    if (cmd_line_args[kArgNoGreedyExtension]) {
+        options.SetGapExtnAlgorithm(eDynProgScoreOnly);
+        options.SetGapTracebackAlgorithm(eDynProgTbck);
+    }
 }
 
 const string CDiscontinuousMegablastArgs::kTemplType_Coding("coding");
@@ -437,6 +473,13 @@ CDiscontinuousMegablastArgs::kTemplType_CodingAndOptimal("coding_and_optimal");
 void
 CDiscontinuousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
+    // FIXME: this can be applied to any program, but since it was only offered
+    // in megablast, we're putting it here 
+    arg_desc.AddOptionalKey(kArgMinRawGappedScore, "int_value",
+                            "Minimum raw gapped score to keep an alignment "
+                            "in the preliminary gapped and traceback stages",
+                            CArgDescriptions::eInteger);
+
     arg_desc.SetCurrentGroup("Discontinuous Megablast options");
 
     arg_desc.AddOptionalKey(kArgDMBTemplateType, "type", 
@@ -470,6 +513,10 @@ void
 CDiscontinuousMegablastArgs::ExtractAlgorithmOptions(const CArgs& args,
                                                      CBlastOptions& options)
 {
+    if (args[kArgMinRawGappedScore]) {
+        options.SetCutoffScore(args[kArgMinRawGappedScore].AsInteger());
+    }
+
     if (args[kArgDMBTemplateType]) {
         const string& type = args[kArgDMBTemplateType].AsString();
         EDiscWordType temp_type = eMBWordCoding;
