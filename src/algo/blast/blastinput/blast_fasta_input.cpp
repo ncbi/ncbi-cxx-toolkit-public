@@ -83,7 +83,8 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
 
     const CFastaReader::TFlags flags = m_Config.GetBelieveDeflines() ? 
                                     CFastaReader::fAllSeqIds :
-                                    CFastaReader::fNoParseID;
+                                    (CFastaReader::fNoParseID |
+                                     CFastaReader::fDLOptional);
 
     CRef<CSeq_entry> seq_entry;
     CFastaReader fasta_reader(m_LineReader, flags);

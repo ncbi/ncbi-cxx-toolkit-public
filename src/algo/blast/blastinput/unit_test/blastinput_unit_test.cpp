@@ -290,6 +290,25 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
     CHECK(source.End());
 }
 
+BOOST_AUTO_UNIT_TEST(s_NoDeflineExpected)
+{
+    DECLARE_SOURCE("data/tiny.fa");
+    CBlastInput in(&source);
+
+    blast::TSeqLocVector v = in.GetAllSeqLocs();
+    CHECK(source.End());
+    CHECK_EQUAL((size_t)1, v.size());
+}
+
+BOOST_AUTO_UNIT_TEST(s_NoDeflineUnexpected)
+{
+    DECLARE_SOURCE("data/tiny.fa");
+    CBlastInput in(&source);
+
+    source.m_Config.SetBelieveDeflines(true);
+    BOOST_CHECK_THROW(in.GetAllSeqLocs(), CException);
+}
+
 /// Auxiliary class to convert a string into an argument count and vector
 class CString2Args
 {
