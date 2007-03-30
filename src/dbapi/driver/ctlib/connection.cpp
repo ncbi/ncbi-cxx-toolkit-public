@@ -631,19 +631,19 @@ bool CTL_Connection::Abort()
 
 bool CTL_Connection::Close(void)
 {
-    // Clean connection user data ...
-    {
-        CTL_Connection* link = NULL;
-        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
-                                CS_SET,
-                                CS_USERDATA,
-                                &link,
-                                (CS_INT) sizeof(link),
-                                NULL)
-                                );
-    }
-
     if (m_Handle.IsOpen()) {
+        // Clean connection user data ...
+        {
+            CTL_Connection* link = NULL;
+            GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+                                    CS_SET,
+                                    CS_USERDATA,
+                                    &link,
+                                    (CS_INT) sizeof(link),
+                                    NULL)
+                                    );
+        }
+
         return (!Refresh() || (m_Handle.Close() && m_Handle.Drop()));
 
 //         bool result = false;
