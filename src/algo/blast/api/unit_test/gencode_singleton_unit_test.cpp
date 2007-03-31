@@ -36,6 +36,11 @@
 #include <algo/blast/core/gencode_singleton.h>
 #include <algo/blast/api/blast_aux.hpp>
 
+// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
+#  undef numeric_limits
+#endif
+
 #define BOOST_AUTO_TEST_MAIN    // this should only be defined here!
 #include <boost/test/auto_unit_test.hpp>
 
