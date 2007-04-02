@@ -354,8 +354,8 @@ void CTestNetCacheClient::Init(void)
 
 //    CONNECT_Init(&GetConfig());
 
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagTrace(eDT_Enable);
+//    SetDiagPostLevel(eDiag_Info);
+//    SetDiagTrace(eDT_Enable);
 }
 
 static
