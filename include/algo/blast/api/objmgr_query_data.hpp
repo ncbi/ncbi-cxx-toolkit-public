@@ -50,7 +50,11 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CObjMgr_QueryFactory : public IQueryFactory
 {
 public:
+    /// ctor that takes a vector of SSeqLoc
+    /// @param queries vector of SSeqLoc [in]
     CObjMgr_QueryFactory(TSeqLocVector& queries);
+    /// ctor that takes a CBlastQueryVector (preferred)
+    /// @param queries for search [in]
     CObjMgr_QueryFactory(CBlastQueryVector & queries);
 
     /// Retrieve the CScope objects associated with the query sequences
