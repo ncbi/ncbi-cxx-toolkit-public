@@ -2226,7 +2226,7 @@
   </MSModSpec>
   <MSModSpec>
     <MSModSpec_mod>
-      <MSMod value="MMTS">179</MSMod>
+      <MSMod value="mmts">179</MSMod>
     </MSModSpec_mod>
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
