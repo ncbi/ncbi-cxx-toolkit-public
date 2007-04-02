@@ -90,7 +90,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     net_info->debug_printout = eDebugPrintout_Data;
     ConnNetInfo_ParseURL(net_info, m_ServerUrl.c_str());
-    if (!soap_action.empty()) {
+    {
         string s("SOAPAction: \"");
         s += soap_action;
         s += "\"\r\n";

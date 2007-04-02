@@ -34,7 +34,8 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/objistr.hpp>
-#include "soap_envelope.hpp"
+#include <serial/objectio.hpp>
+#include <serial/soap/soap_envelope.hpp>
 #include "soap_readhook.hpp"
 
 
@@ -49,24 +50,25 @@ CSoapReadHook::CSoapReadHook(
 
 
 void CSoapReadHook::ReadObject(CObjectIStream& in,
-                               const CObjectInfo& /*object*/)
+                               const CObjectInfo& object)
 {
-    string name = in.PeekNextTypeName();
+    for ( CIStreamContainerIterator i(in, object); i; i.NextElement() ) {
+        string name = in.PeekNextTypeName();
 
-    const CTypeInfo* typeInfo = x_FindType(name);
-    if (!typeInfo) {
-        typeInfo = CAnyContentObject::GetTypeInfo();
-    }
+        const CTypeInfo* typeInfo = x_FindType(name);
+        if (!typeInfo) {
+            typeInfo = CAnyContentObject::GetTypeInfo();
+        }
 
-    CObjectInfo info(typeInfo->Create(), typeInfo);
-    in.Read(info, CObjectIStream::eNoFileHeader);
-    if (typeInfo->IsCObject()) {
-        CSerialObject* obj =
-            reinterpret_cast<CSerialObject*>(info.GetObjectPtr());
-        CConstRef<CSerialObject> ref(obj);
-        m_Content.push_back(ref);
+        CObjectInfo info(typeInfo->Create(), typeInfo);
+        in.Read(info, CObjectIStream::eNoFileHeader);
+        if (typeInfo->IsCObject()) {
+            CSerialObject* obj =
+                reinterpret_cast<CSerialObject*>(info.GetObjectPtr());
+            CConstRef<CSerialObject> ref(obj);
+            m_Content.push_back(ref);
+        }
     }
-    in.SetDiscardCurrObject();
 }
 
 const CTypeInfo* CSoapReadHook::x_FindType(const string& name)

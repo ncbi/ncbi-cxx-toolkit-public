@@ -35,10 +35,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/soap/soap_message.hpp>
-#include <serial/soap/soap_fault.hpp>
-#include "soap_envelope.hpp"
-#include "soap_body.hpp"
-#include "soap_header.hpp"
+#include <serial/soap/soap_11__.hpp>
 #include "soap_writehook.hpp"
 #include "soap_readhook.hpp"
 #include <algorithm>
@@ -51,6 +48,12 @@ const string& CSoapMessage::ms_SoapNamespace =
 
 CSoapMessage::CSoapMessage(void)
     : m_Prefix("env")
+{
+    RegisterObjectType(CSoapFault::GetTypeInfo);
+}
+
+CSoapMessage::CSoapMessage(const string& namespace_name)
+    : m_Prefix("env"), m_DefNamespaceName(namespace_name)
 {
     RegisterObjectType(CSoapFault::GetTypeInfo);
 }
@@ -137,16 +140,14 @@ void CSoapMessage::Write(CObjectOStream& out) const
     if (!m_Header.empty()) {
 // This is to make the stream think the Header was not empty.
 // Since Header is optional, we do not have to make it *always*
-        CRef<CSoapHeader::C_E> h(new CSoapHeader::C_E);
-        h->SetAnyContent(*(new CAnyContentObject));
-        env.SetHeader().Set().push_back(h);
+        CRef<CAnyContentObject> h(new CAnyContentObject);
+        env.SetHeader().SetAnyContent().push_back(h);
     }
 
 // This is to make the stream think the Body was not empty.
 // Body is mandatory
-    CRef<CSoapBody::C_E> h(new CSoapBody::C_E);
-    h->SetAnyContent(*(new CAnyContentObject));
-    env.SetBody().Set().push_back(h);
+    CRef<CAnyContentObject> h(new CAnyContentObject);
+    env.SetBody().SetAnyContent().push_back(h);
 
     CSoapFault* flt = 0;
     if (!m_FaultDetail.empty()) {
@@ -157,24 +158,23 @@ void CSoapMessage::Write(CObjectOStream& out) const
         if (!flt) {
 // throw exception here (?)
         }
-        CRef<CSoapDetail::C_E> h2(new CSoapDetail::C_E);
-        h2->SetAnyContent(*(new CAnyContentObject));
-        flt->SetSoapDetail().Set().push_back(h2);
+        CRef<CAnyContentObject> h2(new CAnyContentObject);
+        flt->SetDetail().SetAnyContent().push_back(h2);
     }
 
-    CObjectTypeInfo typeH = CType<CSoapHeader::C_E>();
+    CObjectTypeInfo typeH = CType<CSoapHeader>();
     typeH.SetLocalWriteHook(out, new CSoapWriteHook(m_Header));
 
-    CObjectTypeInfo typeB = CType<CSoapBody::C_E>();
+    CObjectTypeInfo typeB = CType<CSoapBody>();
     typeB.SetLocalWriteHook(out, new CSoapWriteHook(m_Body));
 
-    CObjectTypeInfo typeF = CType<CSoapDetail::C_E>();
+    CObjectTypeInfo typeF = CType<CSoapDetail>();
     typeF.SetLocalWriteHook(out, new CSoapWriteHook(m_FaultDetail));
 
     out << env;
 
     if (flt) {
-        flt->SetSoapDetail().Set().clear();
+        flt->SetDetail().SetAnyContent().clear();
     }
     if (os) {
         os->SetReferenceSchema(schema);
@@ -189,13 +189,13 @@ void CSoapMessage::Read(CObjectIStream& in)
     Reset();
     CSoapEnvelope env;
 
-    CObjectTypeInfo typeH = CType<CSoapHeader::C_E>();
+    CObjectTypeInfo typeH = CType<CSoapHeader>();
     typeH.SetLocalReadHook(in, new CSoapReadHook(m_Header,m_Types));
 
-    CObjectTypeInfo typeB = CType<CSoapBody::C_E>();
+    CObjectTypeInfo typeB = CType<CSoapBody>();
     typeB.SetLocalReadHook(in, new CSoapReadHook(m_Body,m_Types));
 
-    CObjectTypeInfo typeF = CType<CSoapDetail::C_E>();
+    CObjectTypeInfo typeF = CType<CSoapDetail>();
     typeF.SetLocalReadHook(in, new CSoapReadHook(m_FaultDetail,m_Types));
 
     in >> env;

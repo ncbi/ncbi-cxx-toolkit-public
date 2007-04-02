@@ -41,6 +41,7 @@ class CSoapMessage : public CObject
 {
 public:
     CSoapMessage(void);
+    CSoapMessage(const string& namespace_name);
     ~CSoapMessage(void);
 
     typedef vector< CConstRef<CSerialObject> > TSoapContent;

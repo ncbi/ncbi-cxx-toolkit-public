@@ -32,7 +32,8 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/objostr.hpp>
-#include "soap_envelope.hpp"
+#include <serial/objectio.hpp>
+#include <serial/soap/soap_envelope.hpp>
 #include "soap_writehook.hpp"
 
 
@@ -46,8 +47,9 @@ CSoapWriteHook::CSoapWriteHook(
 
 
 void CSoapWriteHook::WriteObject(CObjectOStream& out,
-                                 const CConstObjectInfo& /*object*/)
+                                 const CConstObjectInfo& object)
 {
+    COStreamContainer c(out, object);
     vector< CConstRef<CSerialObject> >::const_iterator i;
     for ( i = m_Content.begin(); i != m_Content.end(); ++i) {
         TTypeInfo type = (*i)->GetThisTypeInfo();
