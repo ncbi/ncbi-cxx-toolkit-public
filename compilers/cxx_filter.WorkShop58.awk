@@ -37,6 +37,7 @@ BEGIN { status=0 }
 /^Undefined/                                 { status=1 }
 /^Could not open file /                      { status=1 }
 /: fatal:/                                   { status=1 }
+/: error:/                                   { status=1 }
 /^ >> Signal [0-9]+:/                        { status=1 }
 END { exit status } # This must be the last END block.
 
