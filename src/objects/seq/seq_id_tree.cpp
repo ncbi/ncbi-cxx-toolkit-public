@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "seq_id_tree.hpp"
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -121,17 +122,19 @@ CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 
 void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 {
-    if ( info->GetLockCounter() > 0 ) {
+    TWriteLockGuard guard(m_TreeLock);
+    if ( info->GetLockCounter() != 0 ) {
+        _ASSERT(info->m_Seq_id);
         return;
     }
-
-    {{
-        TWriteLockGuard guard(m_TreeLock);
-        if ( info->GetLockCounter() > 0 ) {
-            return;
-        }
-        x_Unindex(info);
-    }}
+    if ( !info->m_Seq_id ) {
+        _ASSERT(info->GetLockCounter() == 0);
+        return;
+    }
+    x_Unindex(info);
+    _ASSERT(info->GetLockCounter()==0);
+    _ASSERT(info->m_Seq_id);
+    const_cast<CSeq_id_Info*>(info)->m_Seq_id.Reset();
 }
 
 
@@ -1106,6 +1109,7 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
     const CObject_id& oid = id.GetLocal();
     TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Info* info = x_FindInfo(oid);
+
     if ( !info ) {
         info = CreateInfo(id);
         if ( oid.IsStr() ) {

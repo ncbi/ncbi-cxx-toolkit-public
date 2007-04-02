@@ -104,6 +104,8 @@ public:
     NCBI_SEQ_EXPORT CSeq_id_Which_Tree& GetTree(void) const;
 
 private:
+    friend class CSeq_id_Which_Tree;
+
     NCBI_SEQ_EXPORT void x_RemoveLastLock(void) const;
 
     mutable CAtomicCounter       m_LockCounter;

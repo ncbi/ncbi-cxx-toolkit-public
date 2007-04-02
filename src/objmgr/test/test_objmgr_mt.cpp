@@ -39,6 +39,9 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/test_mt.hpp>
+#include <util/random_gen.hpp>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -75,6 +78,48 @@ protected:
 bool CTestObjectManager::Thread_Run(int idx)
 {
     ++idx;
+
+    if ( 1 ) {
+        const int test_count = 1000;
+        const int num_seq_ids = 10;
+
+        CRandom r(idx);
+        vector<CRef<CSeq_id> > seq_ids(num_seq_ids);
+        for ( int j = 0; j < num_seq_ids; ++j ) {
+            seq_ids[j].Reset(new CSeq_id);
+            seq_ids[j]->SetLocal().SetId(j);
+        }
+        
+        for ( int t = 0; t < test_count; ++t ) {
+            int j = r.GetRand(0, num_seq_ids-1);
+            CSeq_id_Handle h = CSeq_id_Handle::GetHandle(*seq_ids[j]);
+            h.Reset();
+        }
+    }
+    if ( 1 ) {
+        const int test_count = 1000;
+        const int num_seq_ids = 10;
+        const int num_ids = 2;
+
+        CRandom r(idx);
+        vector<CRef<CSeq_id> > seq_ids(num_seq_ids);
+        for ( int j = 0; j < num_seq_ids; ++j ) {
+            seq_ids[j].Reset(new CSeq_id);
+            seq_ids[j]->SetLocal().SetId(j);
+        }
+
+        vector<CSeq_id_Handle> ids(num_ids);
+        for ( int i = 0; i < num_ids; ++i ) {
+            ids[i] = CSeq_id_Handle::GetHandle(*seq_ids[i]);
+        }
+
+        for ( int t = 0; t < test_count; ++t ) {
+            int i = r.GetRand(0, num_ids-1);
+            int j = r.GetRand(0, num_seq_ids-1);
+            ids[i] = CSeq_id_Handle::GetHandle(*seq_ids[j]);
+        }
+    }
+
     if ( m_Scope ) {
         // Test global scope
         // read data from a scope, which is shared by all threads
