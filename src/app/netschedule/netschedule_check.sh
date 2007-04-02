@@ -6,7 +6,7 @@
 services="NS_test"
 hosts="service0:9051"
 
-res_file="/tmp/$0.$$"
+res_file="/tmp/`basename $0`.$$"
 trap 'rm -f $res_file' 1 2 15
 
 n_ok=0

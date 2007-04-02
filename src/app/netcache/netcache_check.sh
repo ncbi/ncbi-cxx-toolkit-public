@@ -52,7 +52,7 @@ send_nsca_cfg="/home/ivanov/nagios/root/opt/machine/nagios/bin/send_nsca.cfg"
 nagios_host="nagios"
 service_host="NC_netcache"
 
-res_file="/tmp/$0.$$"
+res_file="/tmp/`basename $0`.$$"
 trap 'rm -f $res_file' 1 2 15
 
 # Send result to Nagios server
