@@ -13,7 +13,7 @@ server_list="MS_DEV1 OBERON"
 # server_mssql="MS_DEV2 MSSQL9"
 server_mssql="MS_DEV1"
 
-res_file="/tmp/$0.$$"
+res_file="/tmp/test_lang_query.sh.$$"
 trap 'rm -f $res_file' 1 2 15
 
 n_ok=0

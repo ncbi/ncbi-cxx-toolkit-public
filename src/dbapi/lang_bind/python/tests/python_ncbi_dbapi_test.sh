@@ -27,7 +27,7 @@ export PYTHONPATH
 PATH="$CFG_BIN:$PATH"
 export PATH
 
-res_file="/tmp/$0.$$"
+res_file="/tmp/python_ncbi_dbapi_test.sh.$$"
 trap 'rm -f $res_file' 1 2 15
 
 n_ok=0

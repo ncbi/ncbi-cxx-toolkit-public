@@ -9,7 +9,7 @@ driver_list="ctlib dblib ftds ftds63 odbc msdblib ftds64_odbc ftds64" # mysql
 server_list="MS_DEV1 SCHUMANN"
 server_mssql="MS_DEV1"
 
-res_file="/tmp/$0.$$"
+res_file="/tmp/dbapi_unit_test.sh.$$"
 trap 'rm -f $res_file' 1 2 15
 
 n_ok=0
