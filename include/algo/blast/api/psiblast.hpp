@@ -37,6 +37,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
+#include <objmgr/scope.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -133,6 +134,28 @@ private:
     /// Prohibit assignment operator
     CPsiBlast& operator=(const CPsiBlast& rhs);
 };
+
+/////////////////////////////////////////////////////////////////////////////
+// Functions to help in PSSM generation
+/////////////////////////////////////////////////////////////////////////////
+
+/** Computes a PSSM from the result of a PSI-BLAST iteration
+ * @param query Query sequence [in]
+ * @param alignment BLAST pairwise alignment obtained from the PSI-BLAST
+ * iteration [in]
+ * @param database_scope Scope from which the database sequences will be
+ * retrieved [in]
+ * @param opts_handle PSI-BLAST options [in]
+ * @param diagnostics_req Optional requests for diagnostics data from the PSSM
+ * engine [in]
+ * @todo add overloaded function which takes a blast::SSeqLoc
+ */
+CRef<objects::CPssmWithParameters> 
+PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
+                                 CConstRef<objects::CSeq_align_set> alignment,
+                                 CRef<objects::CScope> database_scope,
+                                 const CPSIBlastOptionsHandle& opts_handle,
+                                 PSIDiagnosticsRequest* diagnostics_req = 0);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

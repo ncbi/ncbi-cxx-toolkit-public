@@ -32,7 +32,7 @@ static char const rcsid[] =
  */
 
 /// @file psiblast_aux_priv.cpp
-/// 
+/// Definitions of auxiliary functions/classes for PSI-BLAST
 
 #include <ncbi_pch.hpp>
 #include "psiblast_aux_priv.hpp"
@@ -263,21 +263,11 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
     return retval.release();
 }
 
-/** Even though the query sequence and the matrix gap costs are not a
- * product of the PSSM engine, set them as they are required for the
- * PSI-BLAST (query sequence) and RPS-BLAST/formatrpsdb (gap costs)
- * @param pssm PSSM to modify [in|out]
- * @param query Query sequence which corresponds to the PSSM [in]
- * @param gap_open Gap opening cost associated with the matrix used to build
- * the PSSM [in]
- * @param gap_extend Gap extension cost associated with the matrix used to 
- * build the PSSM [in]
- */
 void
-PsiBlastAddAncillaryPssmData(CPssmWithParameters& pssm, 
-                              const CBioseq& query, 
-                              int gap_open, 
-                              int gap_extend)
+PsiBlastAddAncillaryPssmData(objects::CPssmWithParameters& pssm, 
+                             const objects::CBioseq& query, 
+                             int gap_open, 
+                             int gap_extend)
 {
     pssm.SetPssm().SetQuery().SetSeq(const_cast<CBioseq&>(query));
     _ASSERT(pssm.GetParams().GetRpsdbparams().IsSetMatrixName());

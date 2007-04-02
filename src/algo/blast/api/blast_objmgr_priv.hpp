@@ -251,26 +251,6 @@ SetupSubjects(TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
-#if 0
-/** Sets up internal subject data structure for the BLAST search.
- *
- * This uses the CBlastQueryVector to create subject data structures.
- * Note that the query vector may contain masking information, but the
- * current versions of the blast code do not use this information for
- * subject sequences.
- *
- * @param subjects CBlastQueryVector of subject locations [in]
- * @param program BLAST program [in]
- * @param seqblk_vec Vector of subject sequence data structures [out]
- * @param max_subjlen Maximal length of the subject sequences [out]
- */
-void
-SetupSubjects(const CBlastQueryVector & subjects, 
-              EBlastProgramType program,
-              vector<BLAST_SequenceBlk*>* seqblk_vec, 
-              unsigned int* max_subjlen);
-#endif
-
 /** Retrieves a sequence using the object manager.
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved.
@@ -385,28 +365,6 @@ PHIBlast_Results2CSeqAlign(const BlastHSPResults   * results,
                            const CBlastQueryVector & query,
                            const IBlastSeqInfoSrc  * seqinfo_src,
                            const SPHIQueryInfo     * pattern_info);
-
-/////////////////////////////////////////////////////////////////////////////
-// Functions to help in PSSM generation
-/////////////////////////////////////////////////////////////////////////////
-
-/** Computes a PSSM from the result of a PSI-BLAST iteration
- * @param query Query sequence [in]
- * @param alignment BLAST pairwise alignment obtained from the PSI-BLAST
- * iteration [in]
- * @param database_scope Scope from which the database sequences will be
- * retrieved [in]
- * @param opts_handle PSI-BLAST options [in]
- * @param diagnostics_req Optional requests for diagnostics data from the PSSM
- * engine [in]
- * @todo add overloaded function which takes a blast::SSeqLoc
- */
-CRef<objects::CPssmWithParameters> 
-PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
-                                 CConstRef<objects::CSeq_align_set> alignment,
-                                 CRef<objects::CScope> database_scope,
-                                 const CPSIBlastOptionsHandle& opts_handle,
-                                 PSIDiagnosticsRequest* diagnostics_req = 0);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

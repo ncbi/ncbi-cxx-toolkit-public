@@ -55,13 +55,6 @@ static char const rcsid[] =
 #include "dust_filter.hpp"
 #include "repeats_filter.hpp"
 
-// PSI-BLAST includes
-#include <algo/blast/api/psiblast_options.hpp>
-#include <algo/blast/api/psi_pssm_input.hpp>
-#include <algo/blast/api/pssm_engine.hpp>
-#include "bioseq_extract_data_priv.hpp"
-#include <objects/scoremat/PssmWithParameters.hpp>
-
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -621,50 +614,6 @@ TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences)
         }
         retval->AddInterval(id, range.GetFrom(), range.GetTo());
     }
-    return retval;
-}
-
-// Defined in psiblast_aux_priv.cpp
-extern void
-PsiBlastAddAncillaryPssmData(CPssmWithParameters& pssm, 
-                              const CBioseq& query, 
-                              int gap_open, 
-                              int gap_extend);
-
-CRef<objects::CPssmWithParameters> 
-PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
-                                 CConstRef<objects::CSeq_align_set> alignment,
-                                 CRef<objects::CScope> database_scope,
-                                 const CPSIBlastOptionsHandle& opts_handle,
-                                 PSIDiagnosticsRequest* diagnostics_request)
-{
-    // Extract PSSM engine options from options handle
-    CPSIBlastOptions opts;
-    PSIBlastOptionsNew(&opts);
-    opts->pseudo_count = opts_handle.GetPseudoCount();
-    opts->inclusion_ethresh = opts_handle.GetInclusionThreshold();
-
-    CBlastQuerySourceBioseqSet query_source(query, true);
-    string warnings;
-    const SBlastSequence query_seq = 
-        query_source.GetBlastSequence(0, eBlastEncodingProtein,
-                                      eNa_strand_unknown,
-                                      eSentinels, &warnings);
-    _ASSERT(warnings.empty());
-
-    CPsiBlastInputData input(query_seq.data.get()+1,    // skip sentinel
-                             query_seq.length-2,        // don't count sentinels
-                             alignment, database_scope, 
-                             *opts.Get(), 
-                             opts_handle.GetMatrixName(),
-                             diagnostics_request);
-
-    CPssmEngine engine(&input);
-    CRef<CPssmWithParameters> retval(engine.Run());
-
-    PsiBlastAddAncillaryPssmData(*retval, query, 
-                                  opts_handle.GetGapOpeningCost(), 
-                                  opts_handle.GetGapExtensionCost());
     return retval;
 }
 

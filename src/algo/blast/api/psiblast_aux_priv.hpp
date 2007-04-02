@@ -28,7 +28,7 @@
  */
 
 /** @file psiblast_aux_priv.hpp
- * Auxiliary functions for PSI-BLAST
+ * Declarations of auxiliary functions/classes for PSI-BLAST
  */
 
 #ifndef ALGO_BLAST_API___PSIBLAST_AUX_PRIV__HPP
@@ -54,6 +54,7 @@ template <class T> class CNcbiMatrix;
 
 BEGIN_SCOPE(objects)
     class CSeq_id;
+    class CBioseq;
     class CSeq_align_set;
     class CPssmWithParameters;
 END_SCOPE(objects)
@@ -154,6 +155,22 @@ public:
     static CNcbiMatrix<double>* 
     GetFreqRatios(CConstRef<objects::CPssmWithParameters> pssm);
 };
+
+/** Even though the query sequence and the matrix gap costs are not a
+ * product of the PSSM engine, set them as they are required for the
+ * PSI-BLAST (query sequence) and RPS-BLAST/formatrpsdb (gap costs)
+ * @param pssm PSSM to modify [in|out]
+ * @param query Query sequence which corresponds to the PSSM [in]
+ * @param gap_open Gap opening cost associated with the matrix used to build
+ * the PSSM [in]
+ * @param gap_extend Gap extension cost associated with the matrix used to 
+ * build the PSSM [in]
+ */
+void
+PsiBlastAddAncillaryPssmData(objects::CPssmWithParameters& pssm, 
+                             const objects::CBioseq& query, 
+                             int gap_open, 
+                             int gap_extend);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
