@@ -39,3 +39,19 @@
 	movl  4(%esp), %edx
 	xchg     %eax, (%edx)
 .end
+
+!! for x86-64
+! in:  address (%rdi), delta (%esi)
+! out: old value (%eax)
+.inline NCBICORE_asm_lock_xaddl_64, 12
+	movl  %esi, %eax
+	lock
+	xaddl %eax, (%rdi)
+.end
+
+! in:  new value (%rdi), location (%rsi)
+! out: old value (%rax)
+.inline NCBICORE_asm_xchgq, 16
+	movq   %rdi, %rax
+	xchgq  %rax, (%rsi)
+.end

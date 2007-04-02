@@ -85,6 +85,10 @@ void* NCBICORE_asm_casx(void* new_value, void** location, void* old_value);
 #    elif defined(__i386)
 extern "C"
 void* NCBICORE_asm_xchg(void* new_value, void** location);
+#    elif defined(__x86_64)
+extern "C"
+void* NCBICORE_asm_xchgq(void* new_value, void** location);
+#define NCBICORE_asm_xchg NCBICORE_asm_xchgq
 #    endif
 #  else
 inline

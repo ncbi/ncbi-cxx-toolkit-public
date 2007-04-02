@@ -141,7 +141,7 @@ extern "C" {
 #else
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
-#  if defined (NCBI_COUNTER_ASM_OK) && (defined(__i386) || defined(__sparc))
+#  if defined (NCBI_COUNTER_ASM_OK) && (defined(__i386) || defined(__sparc) || defined(__x86_64))
 #    define NCBI_COUNTER_USE_ASM 1
 #  else
 #    define NCBI_COUNTER_NEED_MUTEX 1
@@ -273,6 +273,11 @@ CAtomicCounter::TValue NCBICORE_asm_cas(CAtomicCounter::TValue new_value,
 extern "C"
 CAtomicCounter::TValue NCBICORE_asm_swap(CAtomicCounter::TValue new_value,
                                          CAtomicCounter::TValue* address);
+#    elif defined(__x86_64)
+extern "C"
+CAtomicCounter::TValue NCBICORE_asm_lock_xaddl_64
+(CAtomicCounter::TValue* address, int delta);
+#define NCBICORE_asm_lock_xaddl NCBICORE_asm_lock_xaddl_64
 #    elif defined(__i386)
 extern "C"
 CAtomicCounter::TValue NCBICORE_asm_lock_xaddl(CAtomicCounter::TValue* address,
@@ -323,7 +328,7 @@ THROWS_NONE
     }
     result += delta;
     *value_p = result;
-#  elif defined(__i386)
+#  elif defined(__i386) || defined(__x86_64)
     // Yay CISC. ;-)
 #    ifdef NCBI_COMPILER_WORKSHOP
     result = NCBICORE_asm_lock_xaddl(nv_value_p, delta) + delta;
