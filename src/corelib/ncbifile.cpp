@@ -216,7 +216,7 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 
 
 // Default backup suffix
-string CDirEntry::m_BackupSuffix = ".bak";
+char* CDirEntry::m_BackupSuffix = ".bak";
 
 
 CDirEntry& CDirEntry::operator= (const CDirEntry& other)

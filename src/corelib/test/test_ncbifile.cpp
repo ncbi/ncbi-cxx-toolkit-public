@@ -444,8 +444,8 @@ static void s_TEST_File(void)
         assert( f2.Rename(f3.GetPath(), CFile::fRF_Backup) );
         assert( f2.Exists() );
         assert( f3.Exists() );
-        assert( CFile("file3" + f3.GetBackupSuffix()).Exists() );
-        assert( CFile("file3" + f3.GetBackupSuffix()).Remove() );
+        assert( CFile("file3" + string(f3.GetBackupSuffix())).Exists() );
+        assert( CFile("file3" + string(f3.GetBackupSuffix())).Remove() );
 
         f = f3;
         assert( f.Exists() );

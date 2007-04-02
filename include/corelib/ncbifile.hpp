@@ -452,13 +452,13 @@ public:
     ///
     /// @sa
     ///   SetBackupSuffix, Backup, Rename, Copy
-    static const string& GetBackupSuffix(void);
+    static const char* GetBackupSuffix(void);
 
     /// Set backup suffix.
     ///
     /// @sa
     ///   GetBackupSuffix, Backup, Rename, Copy
-    static void SetBackupSuffix(const string& suffix);
+    static void SetBackupSuffix(const char* suffix);
 
     /// Backup modes
     enum EBackupMode {
@@ -994,7 +994,7 @@ private:
     static TMode  m_DefaultModeGlobal[eUnknown][3/*EWho*/];
 
     /// Backup suffix
-    static string m_BackupSuffix;
+    static char* m_BackupSuffix;
 };
 
 
@@ -2268,15 +2268,15 @@ bool CDirEntry::CopyToDir(const string& dir, TCopyFlags flags,
 }
 
 inline
-const string& CDirEntry::GetBackupSuffix(void)
+const char* CDirEntry::GetBackupSuffix(void)
 {
     return m_BackupSuffix;
 }
 
 inline
-void CDirEntry::SetBackupSuffix(const string& suffix)
+void CDirEntry::SetBackupSuffix(const char* suffix)
 {
-    m_BackupSuffix = suffix;
+    m_BackupSuffix = const_cast<char*>(suffix);
 }
 
 
