@@ -84,11 +84,11 @@ CConstRef<CDescriptionText> CSampleSoapClient::GetDescription(void)
 // Request with no parameters
 // Response is a single string
 {
-    CSoapMessage request, response;
+    CSoapMessage request( GetDefaultNamespaceName() ), response;
 
     CRef<CAnyContentObject> any(new CAnyContentObject);
     any->SetName("Description");
-    any->SetNamespaceName(GetDefaultNamespaceName());
+//    any->SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( *any, CSoapMessage::eMsgBody);
 
     Invoke(response,request);
@@ -100,11 +100,11 @@ CConstRef<CVersionResponse> CSampleSoapClient::GetVersion(const string& client_i
 // Response is a sequence of 3 strings: Major, Minor, ClientID
 //      here ClientID is same as the one sent in request
 {
-    CSoapMessage request, response;
+    CSoapMessage request( GetDefaultNamespaceName() ), response;
 
     CRef<CVersion> req(new CVersion);
     req->SetClientID(client_id);
-    req->SetNamespaceName(GetDefaultNamespaceName());
+//    req->SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( *req, CSoapMessage::eMsgBody);
 
     Invoke(response,request);
