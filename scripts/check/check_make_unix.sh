@@ -393,8 +393,22 @@ RunTest() {
 
                # Run check
                start_time="\`date\`"
-               \$check_exec time -p \`eval echo \$xx_run\` >\$x_log 2>&1
-               result=\$?
+               if [ \$CHECK_TIMEOUT -gt 200 ] ; then
+                   # For heavy apps we would like to know execution time also
+                   # for the case of exceeding of the maximum execution time.
+                   launch_sh="/var/tmp/launch.\$\$.sh"
+cat > \$launch_sh <<EOF_launch
+#! /bin/sh
+time -p \$check_exec \`eval echo \$xx_run\`
+EOF_launch
+                   chmod a+x \$launch_sh
+                   \$launch_sh >\$x_log 2>&1
+                   result=\$?
+                   rm \$launch_sh
+               else
+                   \$check_exec time -p \`eval echo \$xx_run\` >\$x_log 2>&1
+                   result=\$?
+               fi
                stop_time="\`date\`"
 
                sed -e '/ ["][$][@]["].*\$/ {
@@ -409,9 +423,9 @@ RunTest() {
                               -e 's/?$//'      \\
                               -e 's/?/, /g'    \\
                               -e 's/[ ] */ /g' \\
+                              -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
                               -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
-                              -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/' \\
-                              -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/'\`
+                              -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
                rm -f \$x_log
 
                # Analize check tool output
