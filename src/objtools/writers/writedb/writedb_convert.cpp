@@ -59,8 +59,8 @@ public:
     }
     
     /// Construct a new ambiguous region.
-    /// @param value Ambiguity letter to use.
-    /// @parma offset Starting offset of the ambiguity.
+    /// @param value Ambiguity letter to use. [in]
+    /// @parma offset Starting offset of the ambiguity. [in]
     CAmbiguousRegion(int value, int offset)
         : m_Start (offset),
           m_End   (offset+1),
@@ -69,9 +69,9 @@ public:
     }
     
     /// Construct a new ambiguous region.
-    /// @param value Ambiguity letter to use.
-    /// @param offset Starting offset of the ambiguity.
-    /// @param length Length of the ambiguity.
+    /// @param value Ambiguity letter to use. [in]
+    /// @param offset Starting offset of the ambiguity. [in]
+    /// @param length Length of the ambiguity. [in]
     CAmbiguousRegion(int value, int offset, int length)
         : m_Start (offset),
           m_End   (offset+length),
@@ -86,8 +86,8 @@ public:
     /// contain only one ambiguity letter, and be contiguous.  If it
     /// would not, false is returned and this region is unchanged.
     ///
-    /// @param value Ambiguity letter to use.
-    /// @param offset Starting offset of the ambiguity.
+    /// @param value Ambiguity letter to use. [in]
+    /// @param offset Starting offset of the ambiguity. [in]
     /// @return True if the letter was appended, false otherwise.
     bool Append(int value, int offset)
     {
@@ -154,10 +154,19 @@ private:
 class CAmbigDataBuilder {
 public:
     /// Constructor.
-    /// @param sz Size of the sequence in letters.
+    /// @param sz Size of the sequence in letters. [in]
     CAmbigDataBuilder(int sz)
         : m_Size(sz)
     {
+        for(int i = 0; i < 16; i++) {
+            m_Log2[i] = -1;
+        }
+        
+        // Only these values should be specified
+        m_Log2[1] = 0;
+        m_Log2[2] = 1;
+        m_Log2[4] = 2;
+        m_Log2[8] = 3;
     }
 
     /// Check (and maybe store) a possibly ambiguous letter.
@@ -171,8 +180,8 @@ public:
     /// always selected from the set of these values corresponding to
     /// the input ambiguity value.
     ///
-    /// @param data Letter value in BlastNA8.
-    /// @param offset Offset of letter.
+    /// @param data Letter value in BlastNA8. [in]
+    /// @param offset Offset of letter. [in]
     /// @return Value to encode as BlastNA2.
     int Check(int data, int offset)
     {
@@ -189,21 +198,10 @@ public:
         
         _ASSERT(data != 0);
         
-        switch(data) {
-        case 1:
-            return 0;
-            
-        case 2:
-            return 1;
-            
-        case 4:
-            return 2;
-            
-        case 8:
-            return 3;
-            
-        default:
-            break;
+        int rv = m_Log2[data & 0xF];
+        
+        if (rv != -1) {
+            return rv;
         }
         
         // Bona-fide ambiguity; we need to make up some random junk,
@@ -286,8 +284,8 @@ public:
     }
     
     /// Append the 'new' encoding of one ambiguous region to a string.
-    /// @param amb String encoding of all ambiguous regions.
-    /// @param r Ambiguous region.
+    /// @param amb String encoding of all ambiguous regions. [in|out]
+    /// @param r Ambiguous region. [in]
     void x_PackNewAmbig(string                 & amb,
                         const CAmbiguousRegion & r)
     {
@@ -314,8 +312,8 @@ public:
     }
     
     /// Append the 'old' encoding of one ambiguous region to a string.
-    /// @param amb String encoding of all ambiguous regions.
-    /// @param r Ambiguous region.
+    /// @param amb String encoding of all ambiguous regions. [in|out]
+    /// @param r Ambiguous region. [in]
     void x_PackOldAmbig(string & amb, CAmbiguousRegion & r)
     {
         int length_m1 = r.Length() - 1;
@@ -346,8 +344,8 @@ private:
     /// most recent region, if possible, or creates a new region for
     /// it.
     /// 
-    /// @param value Ambiguous letter to add.
-    /// @param offset Offset at which letter occurs.
+    /// @param value Ambiguous letter to add. [in]
+    /// @param offset Offset at which letter occurs. [in]
     void x_AddAmbig(int value, int offset)
     {
         if (m_Regions.size()) {
@@ -366,7 +364,7 @@ private:
     /// letter randomly chosen from the set of letters the ambiguity
     /// represents.
     ///
-    /// @param value An ambiguous letter.
+    /// @param value An ambiguous letter. [in]
     /// @return A non-ambiguous letter.
     int x_Random(int value)
     {
@@ -412,6 +410,9 @@ private:
     }
     
     // Data
+    
+    /// Table mapping 1248 to 0123.
+    int m_Log2[16];
     
     /// Size of the input sequence.
     int m_Size;
