@@ -253,7 +253,7 @@ MSMod ::= INTEGER {
     iTRAQ117nterm (176),
     iTRAQ117K (177),
     iTRAQ117Y (178),
-    MMTS (179),
+    mmts (179),
     max (180), -- maximum number of mods
     none(10000)
     }
