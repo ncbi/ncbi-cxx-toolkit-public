@@ -346,6 +346,56 @@ private:
 
 };
 
+
+//////////////////////////////////////////////////////////////////////////////
+///
+
+class CTmpStreamGuard
+{
+public:
+    CTmpStreamGuard(const string& tmp_dir, const string& name, CNcbiOstream& orig_stream)
+        : m_OrigStream(orig_stream), m_Stream(NULL)
+    {
+        if ( !tmp_dir.empty() ) {
+            m_Name = tmp_dir + CDirEntry::GetPathSeparator() + name;
+        }
+        if ( !m_Name.empty() ) {
+            m_StreamGuard.reset(new CNcbiOfstream(m_Name.c_str()));
+            m_Stream = m_StreamGuard.get();
+        } else {
+            m_Stream = &m_OrigStream;
+        }
+    }
+    ~CTmpStreamGuard()
+    {
+        try {
+            Close();
+        } catch(exception& ex) {
+        } catch(...) {
+        }
+    }
+
+    CNcbiOstream& GetOStream() { return *m_Stream; }
+
+    void Close()
+    {
+        if( !m_Name.empty() && m_StreamGuard.get()) {
+            m_StreamGuard.reset();
+            CNcbiIfstream ifs( m_Name.c_str() );
+            if (!ifs.good() 
+                || !NcbiStreamCopy(m_OrigStream, ifs)) 
+                ERR_POST( "Cannot copy \"" << m_Name << "\" file.");
+        }
+    }
+
+private:
+    CNcbiOstream& m_OrigStream;
+    auto_ptr<CNcbiOfstream> m_StreamGuard;
+    CNcbiOstream* m_Stream;
+    string m_Name;
+};
+
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 bool ExecRemoteApp(const string& cmd, 
@@ -363,6 +413,9 @@ bool ExecRemoteApp(const string& cmd,
                    int monitor_period)
 {
     STmpDirGuard guard(tmp_path);
+    {
+    CTmpStreamGuard std_out_guard(tmp_path, "std.out", out);
+    CTmpStreamGuard std_err_guard(tmp_path, "std.err", err);
 
     CPipeProcessWatcher callback(context,
                                  max_app_running_time,
@@ -375,8 +428,12 @@ bool ExecRemoteApp(const string& cmd,
         callback.SetMonitor(*ra_monitor, monitor_period);
     }
 
-    return CPipe::ExecWait(cmd, args, in, out, err, exit_value, 
+    return CPipe::ExecWait(cmd, args, in, 
+                           std_out_guard.GetOStream(),
+                           std_err_guard.GetOStream(),
+                           exit_value, 
                            tmp_path, env, &callback) == CPipe::eDone;
+    }
 }
 
 

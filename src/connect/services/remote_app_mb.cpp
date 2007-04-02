@@ -83,6 +83,7 @@ public:
                     NCBI_THROW(CFileException, eRelativePath, 
                                "Cannot open " + fname + " for output");
                 }
+                m_OStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             }
         }
         return *m_OStream; 
@@ -123,6 +124,7 @@ public:
                 auto_ptr<CNcbiIstream> fstr(new CNcbiIfstream(name.c_str()));
                 if (fstr->good()) {
                     m_IStream.reset(fstr.release());
+                    m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
                 } else {
                     msg = "Can not open " + name + " of input";                   
                     m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
