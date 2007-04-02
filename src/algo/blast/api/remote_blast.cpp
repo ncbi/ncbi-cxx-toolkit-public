@@ -1667,7 +1667,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         if (B4Param_DbGeneticCode.Match(p)) {
             bo.SetDbGeneticCode(v.GetInteger());
         } else if (B4Param_DbLength.Match(p)) {
-            opts.SetDbLength(v.GetInteger());
+            opts.SetDbLength(v.GetBig_integer());
         } else {
             found = false;
         }
