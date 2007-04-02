@@ -58,6 +58,9 @@ BEGIN_SCOPE(blast)
 
 /////////////////////////////////////////////////////////////////////////////
 
+/// Produces a BioseqSet from a CBlastQueryVector
+/// @param queries queries as a CBlastQueryVector
+/// @retval Cref to BioseqSet
 static CRef<CBioseq_set>
 s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
 {
@@ -83,6 +86,9 @@ s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
     return rv;
 }
 
+/// Produces a BioseqSet from a TSeqLocVector
+/// @param queries queries as a TSeqLocVector
+/// @retval Cref to BioseqSet
 static CRef<CBioseq_set>
 s_TSeqLocVectorToBioseqSet(const TSeqLocVector* queries)
 {
@@ -104,6 +110,9 @@ s_TSeqLocVectorToBioseqSet(const TSeqLocVector* queries)
     return rv;
 }
 
+/// Produces a vector of SeqLocs from a TSeqLocVector
+/// @param queries queries as a TSeqLocVector
+/// @retval vector of SeqLocs.
 static IRemoteQueryData::TSeqLocs
 s_TSeqLocVectorToTSeqLocs(const TSeqLocVector* queries)
 {
@@ -117,6 +126,9 @@ s_TSeqLocVectorToTSeqLocs(const TSeqLocVector* queries)
     return retval;
 }
 
+/// Produces a vector of SeqLocs from a CBlastQueryVector
+/// @param queries queries as a CBlastQueryVector
+/// @retval vector of SeqLocs.
 static IRemoteQueryData::TSeqLocs
 s_QueryVectorToTSeqLocs(const CBlastQueryVector & queries)
 {
@@ -138,11 +150,19 @@ s_QueryVectorToTSeqLocs(const CBlastQueryVector & queries)
 //
 /////////////////////////////////////////////////////////////////////////////
 
+/// Provides access (not ownership) to the C structures used to configure local 
+/// BLAST search class implementations. 
 class CObjMgr_LocalQueryData : public ILocalQueryData
 {
 public:
+    /// Ctor that takes a vector of SSeqLocs
+    /// @param queries queries as a vector of SSeqLoc [in]
+    /// @param options Blast options [in]
     CObjMgr_LocalQueryData(TSeqLocVector* queries,
                            const CBlastOptions* options);
+    /// Ctor that takes a CBlastQueryVector (preferred over TSeqLocVector).
+    /// @param queries queries as a CBlastQueryVector [in]
+    /// @param options Blast options [in]
     CObjMgr_LocalQueryData(CBlastQueryVector & queries,
                            const CBlastOptions* options);
     
