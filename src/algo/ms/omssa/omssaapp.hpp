@@ -64,7 +64,7 @@ BEGIN_SCOPE(omssa)
 //
 
 
-class COMSSABase : public CNcbiApplication {
+class NCBI_XOMSSA_EXPORT COMSSABase : public CNcbiApplication {
 public:
     COMSSABase();
 
