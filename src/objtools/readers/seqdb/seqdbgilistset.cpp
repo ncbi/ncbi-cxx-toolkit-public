@@ -54,7 +54,7 @@ public:
     /// Less than operator, where elements with larger allows sorting.
     /// Elements are sorted by number of OIDs in descending order.
     /// @param rhs
-    ///   The right hand side of the less than.
+    ///   The right hand side of the less than. [in]
     bool operator < (const SSeqDB_IndexCountPair & rhs) const
     {
         return m_Count > rhs.m_Count;
@@ -77,11 +77,11 @@ public:
     /// class reads the GIs from the file.
     ///
     /// @param atlas
-    ///   The memory management layer object.
+    ///   The memory management layer object. [in]
     /// @param fname
-    ///   The filename of this GI list.
+    ///   The filename of this GI list. [in]
     /// @param locked
-    ///   Lock holder object for this thread.
+    ///   Lock holder object for this thread. [in]
     CSeqDBNodeFileGiList(CSeqDBAtlas    & atlas,
                          const string   & fname,
                          CSeqDBLockHold & locked)
@@ -161,10 +161,7 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas        & atlas,
             
             // Note: The implied ISAM lookups will sort by GI.
             
-            vol->Vol()->GisToOids(vol->OIDStart(),
-                                  vol->OIDEnd(),
-                                  *m_UserList,
-                                  locked);
+            vol->Vol()->GisToOids(*m_UserList, locked);
         }
     }
 }
@@ -214,7 +211,7 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
     // techniques.  This is not done yet.
     
     if (m_UserList.Empty() || m_UserList->GetNumSeqIds()) {
-        volp->GisToOids(vol_start, vol_end, *gilist, locked);
+        volp->GisToOids(*gilist, locked);
     }
     
     // If there is a volume GI list, it will also be attached to the

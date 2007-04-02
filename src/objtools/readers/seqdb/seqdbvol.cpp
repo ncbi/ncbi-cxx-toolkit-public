@@ -53,17 +53,22 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
                      const string   & name,
                      char             prot_nucl,
                      CSeqDBGiList   * user_gilist,
+                     int              vol_start,
                      CSeqDBLockHold & locked)
-    : m_Atlas   (atlas),
-      m_IsAA    (prot_nucl == 'p'),
-      m_VolName (name),
-      m_TaxCache(256)
+    : m_Atlas    (atlas),
+      m_IsAA     (prot_nucl == 'p'),
+      m_VolName  (name),
+      m_TaxCache (256),
+      m_VolStart (vol_start),
+      m_VolEnd   (0)
 {
     if (user_gilist) {
         m_UserGiList.Reset(user_gilist);
     }
     
     m_Idx.Reset(new CSeqDBIdxFile(atlas, name, prot_nucl, locked));
+    
+    m_VolEnd = m_VolStart + m_Idx->GetNumOIDs();
     
     // To allow for empty volumes, we must tolerate the absence of all
     // files other than the index file.
@@ -225,11 +230,11 @@ s_SeqDBMapNA2ToNA4Setup()
 /// format.
 ///
 /// @param buf2bit
-///    The NA2 input data.
+///    The NA2 input data. [in]
 /// @param buf4bit
-///    The NcbiNA4 output data.
+///    The NcbiNA4 output data. [out]
 /// @param base_length
-///    The length (in bases) of the input data.
+///    The length (in bases) of the input data. [in]
 static void
 s_SeqDBMapNA2ToNA4(const char   * buf2bit,
                    vector<char> & buf4bit,
@@ -313,15 +318,15 @@ s_SeqDBMapNA2ToNA8Setup()
 /// start and end of the data (needed by some applications).
 ///
 /// @param buf2bit
-///    The NA2 input data
+///    The NA2 input data. [in]
 /// @param buf8bit
-///    The start of the Ncbi-NA8 output data
+///    The start of the Ncbi-NA8 output data. [out]
 /// @param buf8bit_end
-///    The end of the Ncbi-NA8 output data
+///    The end of the Ncbi-NA8 output data. [out]
 /// @param sentinel_bytes
-///    Specify true if sentinel bytes should be included
+///    Specify true if sentinel bytes should be included. [in]
 /// @param range
-///    The subregion of the sequence to work on.
+///    The subregion of the sequence to work on. [in]
 static void
 s_SeqDBMapNA2ToNA8(const char        * buf2bit,
                    char              * buf8bit,
@@ -461,11 +466,11 @@ unsigned SeqDB_ncbina8_to_blastna8[] = {
 /// Blast-NA8 format.  The data is converted in-place.
 ///
 /// @param buf
-///    The array of nucleotides to convert
+///    The array of nucleotides to convert. [in|out]
 /// @param length
-///    The size of the buf array.
+///    The size of the buf array. [in]
 /// @param preserve_fence
-///    If true, the fence character will be preserved.
+///    If true, the fence character will be preserved. [in]
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8(char * buf, int length, bool preserve_fence)
 {
@@ -493,13 +498,13 @@ typedef set< pair<int, int> > TRangeVector;
 /// Blast-NA8 format.  The data is converted in-place.
 ///
 /// @param buf
-///    The array of nucleotides to convert
+///    The array of nucleotides to convert. [in|out]
 /// @param length
-///    The size of the buf array.
+///    The size of the buf array. [in]
 /// @param ranges
-///    The parts of the buf array that are used.
+///    The parts of the buf array that are used. [in]
 /// @param sentinel
-///    True if the sequence has sentinel bytes.
+///    True if the sequence has sentinel bytes. [in]
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
                                    int                  length,
@@ -564,11 +569,11 @@ s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
 /// length of the ambiguous region.
 ///
 /// @param ambchars
-///     The packed ambiguity data
+///     The packed ambiguity data. [in]
 /// @param i
-///     The index into the ambiguity data
+///     The index into the ambiguity data. [in]
 /// @return
-///     The region length
+///     The region length.
 inline Uint4 s_ResLenNew(const vector<Int4> & ambchars, Uint4 i)
 {
     return (ambchars[i] >> 16) & 0xFFF;
@@ -580,11 +585,11 @@ inline Uint4 s_ResLenNew(const vector<Int4> & ambchars, Uint4 i)
 /// position of the ambiguous region.
 ///
 /// @param ambchars
-///     The packed ambiguity data
+///     The packed ambiguity data. [in]
 /// @param i
-///     The index into the ambiguity data
+///     The index into the ambiguity data. [in]
 /// @return
-///     The region length
+///     The region length.
 inline Uint4 s_ResPosNew(const vector<Int4> & ambchars, Uint4 i)
 {
     return ambchars[i+1];
@@ -600,11 +605,11 @@ inline Uint4 s_ResPosNew(const vector<Int4> & ambchars, Uint4 i)
 /// residue value to use for all bases in the ambiguous region.
 ///
 /// @param ambchars
-///     The packed ambiguity data
+///     The packed ambiguity data. [in]
 /// @param i
-///     The index into the ambiguity data
+///     The index into the ambiguity data. [in]
 /// @return
-///     The residue value
+///     The residue value.
 inline Uint4 s_ResVal(const vector<Int4> & ambchars, Uint4 i)
 {
     return (ambchars[i] >> 28) & 0xF;
@@ -616,11 +621,11 @@ inline Uint4 s_ResVal(const vector<Int4> & ambchars, Uint4 i)
 /// length of the ambiguous region.
 ///
 /// @param ambchars
-///     The packed ambiguity data
+///     The packed ambiguity data. [in]
 /// @param i
-///     The index into the ambiguity data
+///     The index into the ambiguity data. [in]
 /// @return
-///     The residue value
+///     The residue value.
 inline Uint4 s_ResLenOld(const vector<Int4> & ambchars, Uint4 i)
 {
     return (ambchars[i] >> 24) & 0xF;
@@ -632,11 +637,11 @@ inline Uint4 s_ResLenOld(const vector<Int4> & ambchars, Uint4 i)
 /// position of the ambiguous region.
 ///
 /// @param ambchars
-///     The packed ambiguity data
+///     The packed ambiguity data. [in]
 /// @param i
-///     The index into the ambiguity data
+///     The index into the ambiguity data. [in]
 /// @return
-///     The residue value
+///     The residue value.
 inline Uint4 s_ResPosOld(const vector<Int4> & ambchars, Uint4 i)
 {
     return ambchars[i] & 0xFFFFFF; // RES_OFFSET
@@ -652,9 +657,9 @@ inline Uint4 s_ResPosOld(const vector<Int4> & ambchars, Uint4 i)
 /// encodings.  This version works with 4 bit representations.
 ///
 /// @param buf4bit
-///     Sequence data for a sequence
+///     Sequence data for a sequence. [in|out]
 /// @param amb_chars
-///     Corresponding ambiguous data
+///     Corresponding ambiguous data. [in]
 static void
 s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
                       const vector<Int4> & amb_chars)
@@ -725,13 +730,15 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
 /// encodings.  This version works with 8 bit representations.
 ///
 /// @param buf8bit
-///   Sequence data for a sequence
+///   Sequence data for a sequence. [in|out]
+/// @param buf8bit_len
+///   Length of the sequence data in bases. [in]
 /// @param amb_chars
-///   Corresponding ambiguous data
+///   Corresponding ambiguous data. [in]
 /// @param sentinel
-///   True if sentinel bytes are used
+///   True if sentinel bytes are used. [in]
 /// @param region
-///   If non-null, the part of the sequence to get
+///   If non-null, the part of the sequence to get. [in]
 static void
 s_SeqDBRebuildDNA_NA8(char               * buf8bit,
                       int                  buf8bit_len,
@@ -806,11 +813,11 @@ s_SeqDBRebuildDNA_NA8(char               * buf8bit,
 /// information in that object.
 ///
 /// @param seqinst
-///     The Seq-inst to return the data in
+///     The Seq-inst to return the data in. [out]
 /// @param seq_buffer
-///     The input sequence data
+///     The input sequence data. [in]
 /// @param length
-///     The length (in bases) of the input data
+///     The length (in bases) of the input data. [in]
 static void
 s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
                         const char * seq_buffer,
@@ -843,11 +850,11 @@ s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
 /// The input array is assumed to be in 2 bit representation.
 ///
 /// @param seqinst
-///     The Seq-inst to return the data in
+///     The Seq-inst to return the data in. [out]
 /// @param seq_buffer
-///     The input sequence data
+///     The input sequence data. [in]
 /// @param length
-///     The length (in bases) of the input data
+///     The length (in bases) of the input data. [in]
 static void
 s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
                         const char   * seq_buffer,
@@ -879,13 +886,13 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
 /// The input array is assumed to be in Ncbi-NA4 representation.
 ///
 /// @param seqinst
-///     The Seq-inst to return the data in
+///     The Seq-inst to return the data in. [out]
 /// @param seq_buffer
-///     The input sequence data in Ncbi-NA4 format
+///     The input sequence data in Ncbi-NA4 format. [in]
 /// @param length
-///     The length (in bases) of the input data
+///     The length (in bases) of the input data. [in]
 /// @param amb_chars
-///     The ambiguity data for this sequence
+///     The ambiguity data for this sequence. [in]
 static void
 s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
                         const char   * seq_buffer,
@@ -906,9 +913,9 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
 /// constructing the CBioseq object.
 ///
 /// @param deflines
-///   The set of deflines for this sequence.
+///   The set of deflines for this sequence. [in]
 /// @param title
-///   The returned title string
+///   The returned title string. [out]
 static void
 s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
 {
@@ -979,11 +986,11 @@ s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
 /// specific Seq-id is equivalent to one found in the list.
 ///
 /// @param seqids
-///     A list of Seq-ids to search
+///     A list of Seq-ids to search. [in]
 /// @param target
-///     The Seq-id to search for
+///     The Seq-id to search for. [in]
 /// @return
-///     True if the Seq-id was found
+///     True if the Seq-id was found.
 static bool
 s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 {
@@ -1021,7 +1028,10 @@ CSeqDBVol::x_GetTaxDefline(int                  oid,
     // 1. read a defline set w/ gethdr, filtering by membership bit
     
     CRef<CBlast_def_line_set> BDLS =
-        x_GetFilteredHeader(oid, have_oidlist, membership_bit, locked);
+        x_GetFilteredHeader(oid,
+                            have_oidlist,
+                            membership_bit,
+                            locked);
     
     // 2. if there is a preferred gi, bump it to the top.
     
@@ -1412,13 +1422,13 @@ int CSeqDBVol::GetAmbigSeq(int                oid,
 /// data at those offsets is expanded and copied to the output buffer.
 /// Ambiguity data is also applied to the buffer.
 ///
-/// @param seq_buffer Source buffer containing nucleotide (na2) data.
-/// @param seq_length Total length (in bases) of the sequence.
-/// @param buffer_na8 Vector where data should be returned.
-/// @param buffer_na8_len Length of the buffer in bytes.
-/// @param ambchars Packed ambiguity data.
-/// @param sentinel Specify true to include sentinel bytes.
-/// @param ranges List of ranges of sequence data needed.
+/// @param seq_buffer Source buffer of nucleotide (na2) data. [in]
+/// @param seq_length Total length (in bases) of the sequence. [in]
+/// @param buffer_na8 Vector where data should be returned. [out]
+/// @param buffer_na8_len Length of the buffer in bytes. [in]
+/// @param ambchars Packed ambiguity data. [in]
+/// @param sentinel Specify true to include sentinel bytes. [in]
+/// @param ranges List of ranges of sequence data needed. [in]
 static void s_MapRangeData(const char         * seq_buffer,
                            int                  seq_length,
                            char               * buffer_na8,
@@ -1778,7 +1788,10 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                  oid,
     list< CRef< CSeq_id > > seqids;
     
     CRef<CBlast_def_line_set> defline_set =
-        x_GetFilteredHeader(oid, have_oidlist, membership_bit, locked);
+        x_GetFilteredHeader(oid,
+                            have_oidlist,
+                            membership_bit,
+                            locked);
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
@@ -1823,7 +1836,7 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     
     m_Atlas.Lock(locked);
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, true, locked);
     
     // Filter based on "rdfp->membership_bit" or similar.
     
@@ -1886,7 +1899,7 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetHdrAsn1(int oid, bool adjust_oids, CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> nullret;
     
@@ -1908,11 +1921,32 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
     
     CObjectIStreamAsnBinary inpstr(asn_region, hdr_end - hdr_start);
     
-    CRef<objects::CBlast_def_line_set> phil(new objects::CBlast_def_line_set);
+    CRef<objects::CBlast_def_line_set> bdls(new objects::CBlast_def_line_set);
     
-    inpstr >> *phil;
+    inpstr >> *bdls;
     
-    return phil;
+    if (adjust_oids && bdls.NotEmpty()) {
+        NON_CONST_ITERATE(list< CRef<CBlast_def_line> >, dl, bdls->Set()) {
+            if (! (**dl).CanGetSeqid()) {
+                continue;
+            }
+            
+            NON_CONST_ITERATE(list< CRef<CSeq_id> >, id, (*dl)->SetSeqid()) {
+                CSeq_id & seqid = **id;
+                
+                if (seqid.Which() == CSeq_id::e_General) {
+                    CDbtag & dbt = seqid.SetGeneral();
+                    
+                    if (dbt.GetDb() == "BL_ORD_ID") {
+                        int vol_oid = dbt.GetTag().GetId();
+                        dbt.SetTag().SetId(m_VolStart + vol_oid);
+                    }
+                }
+            }
+        }
+    }
+    
+    return bdls;
 }
 
 void
@@ -1937,8 +1971,8 @@ CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
     hdr_data.assign(ptr, ptr+size);
 }
 
-void CSeqDBVol::x_GetAmbChar(int oid,
-                             vector<Int4> & ambchars,
+void CSeqDBVol::x_GetAmbChar(int              oid,
+                             vector<Int4>   & ambchars,
                              CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
@@ -2018,7 +2052,7 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, locked);
     
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
@@ -2055,14 +2089,12 @@ bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
     return m_IsamGi->GiToOid(gi, oid, locked);
 }
 
-void CSeqDBVol::GisToOids(int              vol_start,
-                          int              vol_end,
-                          CSeqDBGiList   & gis,
+void CSeqDBVol::GisToOids(CSeqDBGiList   & gis,
                           CSeqDBLockHold & locked) const
 {
     if (! m_IsamGi.Empty()) {
         // Numeric translation is done in batch mode.
-        m_IsamGi->GisToOids(vol_start, vol_end, gis, locked);
+        m_IsamGi->GisToOids(m_VolStart, m_VolEnd, gis, locked);
     }
     
     // Seq-id translations are done individually.
@@ -2080,8 +2112,8 @@ void CSeqDBVol::GisToOids(int              vol_start,
                 // This should always be true except in the presence of
                 // file corruption.
                 
-                if (oids[j] < (vol_end - vol_start)) {
-                    gis.SetSeqIdTranslation(i, vol_start + oids[j]);
+                if (oids[j] < (m_VolEnd - m_VolStart)) {
+                    gis.SetSeqIdTranslation(i, m_VolStart + oids[j]);
                     break;
                 }
             }
@@ -2099,7 +2131,7 @@ bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, locked);
     
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;

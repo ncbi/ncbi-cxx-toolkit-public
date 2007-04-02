@@ -2762,6 +2762,41 @@ BOOST_AUTO_UNIT_TEST(EmptyVolume)
     CHECK_THROW_SEQDB(db.GetSeqData(0, 10, 20));
 }
 
+BOOST_AUTO_UNIT_TEST(OidRewriting)
+{
+    START;
+    
+    CSeqDB db56("data/f555 data/f556", CSeqDB::eNucleotide);
+    CSeqDB db65("data/f556 data/f555", CSeqDB::eNucleotide);
+    
+    for(int di = 0; di < 2; di++) {
+        CSeqDB & db = di ? db65 : db56;
+        
+        for(int oi = 0; oi < 2; oi++) {
+            list< CRef<CSeq_id> > ids = db.GetSeqIDs(oi);
+            
+            int count = 0;
+            int oid = -1;
+            
+            while(! ids.empty()) {
+                const CSeq_id & id = *ids.front();
+                
+                if (id.Which() == CSeq_id::e_General &&
+                    id.GetGeneral().GetDb() == "BL_ORD_ID") {
+                    
+                    oid = id.GetGeneral().GetTag().GetId();
+                    count ++;
+                }
+                
+                ids.pop_front();
+            }
+            
+            CHECK(count == 1);
+            CHECK(oid == oi);
+        }
+    }
+}
+
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)

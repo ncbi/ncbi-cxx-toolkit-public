@@ -100,10 +100,13 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas    & atlas,
                                CSeqDBGiList   * user_gilist,
                                CSeqDBLockHold & locked)
 {
-    CSeqDBVol * new_volp = new CSeqDBVol(atlas, nm, pn, user_gilist, locked);
+    int num_oids = x_GetNumOIDs();
+    
+    CSeqDBVol * new_volp =
+        new CSeqDBVol(atlas, nm, pn, user_gilist, num_oids, locked);
     
     CSeqDBVolEntry new_vol( new_volp );
-    new_vol.SetStartEnd( x_GetNumOIDs() );
+    new_vol.SetStartEnd( num_oids );
     m_VolList.push_back( new_vol );
 }
 
