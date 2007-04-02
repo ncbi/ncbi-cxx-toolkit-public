@@ -38,6 +38,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbicntr.hpp>
 
 #include <util/cache/icache.hpp>
 
@@ -58,6 +59,7 @@ BEGIN_NCBI_SCOPE
 /// Register NCBI_BDB_ICacheEntryPoint
 void BDB_Register_Cache(void);
 
+/*
 struct NCBI_BDB_CACHE_EXPORT SCacheDB : public CBDB_BLobFile
 {
     CBDB_FieldString       key;
@@ -71,6 +73,22 @@ struct NCBI_BDB_CACHE_EXPORT SCacheDB : public CBDB_BLobFile
         BindKey("subkey",  &subkey, 256);
     }
 };
+*/
+
+/// BLOB storage table id->BLOB, id is supposed to be incremental,
+/// Berkeley DB is reduculously faster when it writes records in sorted order.
+/// 
+struct NCBI_BDB_CACHE_EXPORT SCacheBLOB_DB : public CBDB_BLobFile
+{
+    CBDB_FieldUint4  blob_id;
+
+    SCacheBLOB_DB()
+    {
+        BindKey("blob_id",  &blob_id);
+    }
+};
+
+
 
 /// BLOB attributes DB
 struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
@@ -84,6 +102,8 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
     CBDB_FieldUint4        max_time;    ///< max ttl limit for BLOB
     CBDB_FieldUint4        upd_count;   ///< update counter
     CBDB_FieldUint4        read_count;  ///< read counter
+    CBDB_FieldUint4        blob_id;     ///< BLOB counter
+
     CBDB_FieldString       owner_name;  ///< owner's name
 
     SCache_AttrDB()
@@ -101,6 +121,7 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
 
         BindData("upd_count",  &upd_count);
         BindData("read_count", &read_count);
+        BindData("blob_id",    &blob_id);
 
         BindData("owner_name", &owner_name, 512);
     }
@@ -462,7 +483,7 @@ public:
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int     max_timeout = 0);
-    virtual bool IsOpen() const { return m_CacheDB != 0; }
+    virtual bool IsOpen() const { return m_CacheBLOB_DB != 0; }
 
     virtual TTimeStampFlags GetTimeStampPolicy() const;
     virtual int GetTimeout() const;
@@ -530,10 +551,13 @@ public:
     ///    When TRUE blob statistics record will not be deleted
     ///    (since it's going to be recreated immediately)
     ///
+    /// Returns non-zero blob_id if blob exists
+    ///
     void DropBlob(const string&  key,
                   int            version,
                   const string&  subkey,
-                  bool           for_update);
+                  bool           for_update,
+                  unsigned*      blob_id);
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const
@@ -549,11 +573,13 @@ protected:
     void KillBlobNoLock(const char*    key,
                         int            version,
                         const char*    subkey,
-                        int            overflow);
+                        int            overflow,
+                        unsigned       blob_id);
     void KillBlob(const char*    key,
                   int            version,
                   const char*    subkey,
-                  int            overflow);
+                  int            overflow,
+                  unsigned       blob_id);
 
     /// Write to the overflow file with error checking
     /// If write failes, method deletes the file to avoid file system
@@ -611,7 +637,8 @@ private:
                                   int            version,
                                   const string&  subkey,
 	 							  int*           overflow,
-                                  unsigned int*  ttl);
+                                  unsigned int*  ttl,
+                                  unsigned int*  blob_id);
 
 	bool x_FetchBlobAttributes(const string&  key,
                                int            version,
@@ -620,7 +647,9 @@ private:
     void x_DropBlob(const char*    key,
                     int            version,
                     const char*    subkey,
-                    int            overflow);
+                    int            overflow,
+                    unsigned       blob_id);
+
     void x_DropOverflow(const char*    key,
                         int            version,
                         const char*    subkey);
@@ -665,8 +694,9 @@ private:
               cache.GetWriteSync() == eWriteSync ?
                  CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
         {
-            cache.m_CacheDB->SetTransaction(this);
+//            cache.m_CacheDB->SetTransaction(this);
             cache.m_CacheAttrDB->SetTransaction(this);
+            cache.m_CacheBLOB_DB->SetTransaction(this);
         }
     };
 
@@ -697,7 +727,8 @@ private:
     bool                    m_ReadOnly;     ///< read-only flag
 
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
-    SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
+//    SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
+    SCacheBLOB_DB*          m_CacheBLOB_DB; ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     mutable CFastMutex      m_DB_Lock;      ///< Database lock
 
@@ -745,6 +776,8 @@ private:
     string                     m_TmpOwnerName;
     /// Fast local timer
     CFastLocalTime             m_LocalTimer;
+    /// Atomic counter for BLOB ids
+    CAtomicCounter             m_BlobIdCounter;
 };
 
 
