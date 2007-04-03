@@ -44,6 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 #define ARG_CHECKPOINT "C"
 #define ARG_ASCII_MATRIX "Q"
 #define ARG_MSA_RESTART "B"
@@ -55,6 +56,7 @@ USING_SCOPE(objects);
 #define ARG_PHI_PROGRAM "p"         // not supported
 // Number of best hits from a region to keep (default 0)
 #define ARG_NUM_BEST_HITS "K"   // not supported
+#endif
 
 CPsiBlastAppArgs::CPsiBlastAppArgs()
 {

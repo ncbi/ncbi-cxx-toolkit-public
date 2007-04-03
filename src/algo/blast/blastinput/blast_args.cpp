@@ -61,14 +61,18 @@ USING_SCOPE(objects);
 class CArgAllowValuesGreaterThanOrEqual : public CArgAllow
 {
 public:
+    /// Constructor taking an integer
     CArgAllowValuesGreaterThanOrEqual(int min) : m_MinValue(min) {}
+    /// Constructor taking a double
     CArgAllowValuesGreaterThanOrEqual(double min) : m_MinValue(min) {}
 
 protected:
+    /// Overloaded method from CArgAllow
     virtual bool Verify(const string& value) const {
         return NStr::StringToDouble(value) >= m_MinValue;
     }
 
+    /// Overloaded method from CArgAllow
     virtual string GetUsage(void) const {
         return ">=" + NStr::DoubleToString(m_MinValue);
     }
@@ -82,14 +86,18 @@ private:
 class CArgAllowValuesLessThanOrEqual : public CArgAllow
 {
 public:
+    /// Constructor taking an integer
     CArgAllowValuesLessThanOrEqual(int max) : m_MaxValue(max) {}
+    /// Constructor taking a double
     CArgAllowValuesLessThanOrEqual(double max) : m_MaxValue(max) {}
 
 protected:
+    /// Overloaded method from CArgAllow
     virtual bool Verify(const string& value) const {
         return NStr::StringToDouble(value) <= m_MaxValue;
     }
 
+    /// Overloaded method from CArgAllow
     virtual string GetUsage(void) const {
         return "<=" + NStr::DoubleToString(m_MaxValue);
     }
@@ -103,6 +111,7 @@ private:
 class CArgAllowIntegerSet : public CArgAllow
 {
 public:
+    /// Constructor
     CArgAllowIntegerSet(const set<int>& values) : m_AllowedValues(values) {
         if (values.empty()) {
             throw runtime_error("Allowed values set must not be empty");
@@ -110,6 +119,7 @@ public:
     }
 
 protected:
+    /// Overloaded method from CArgAllow
     virtual bool Verify(const string& value) const {
         int value2check = NStr::StringToInt(value);
         ITERATE(set<int>, itr, m_AllowedValues) {
@@ -120,6 +130,7 @@ protected:
         return false;
     }
 
+    /// Overloaded method from CArgAllow
     virtual string GetUsage(void) const {
         ostringstream os;
         os << "Permissible values: ";
@@ -131,6 +142,7 @@ protected:
     }
     
 private:
+    /// Set containing the permissible values
     set<int> m_AllowedValues;
 };
 
