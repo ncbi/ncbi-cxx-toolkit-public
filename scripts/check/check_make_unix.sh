@@ -399,7 +399,7 @@ RunTest() {
                    launch_sh="/var/tmp/launch.\$\$.sh"
 cat > \$launch_sh <<EOF_launch
 #! /bin/sh
-time -p \$check_exec \`eval echo \$xx_run\`
+exec time -p \$check_exec \`eval echo \$xx_run\`
 EOF_launch
                    chmod a+x \$launch_sh
                    \$launch_sh >\$x_log 2>&1
