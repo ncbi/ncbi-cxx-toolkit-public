@@ -1,0 +1,81 @@
+<?xml version="1.0" ?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://ncbi.nlm.nih.gov/"
+  targetNamespace="http://ncbi.nlm.nih.gov/"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+
+
+<xs:element name="Description">
+  <xs:complexType/>
+</xs:element>
+
+<xs:element name="DescriptionText">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="Text" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="Math">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="Operand" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="MathResponse">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="MathResult" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="Operand">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="x" type="xs:string"/>
+      <xs:element name="y" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="operation" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="add"/>
+          <xs:enumeration value="subtract"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="Version">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="ClientID" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="VersionResponse">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="VersionStruct"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="VersionStruct">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="Major" type="xs:string"/>
+      <xs:element name="Minor" type="xs:string"/>
+      <xs:element name="ClientID" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>

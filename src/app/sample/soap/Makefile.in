@@ -1,7 +1,7 @@
 # $Id$
 #################################
 
-DTD_PROJ = soap_dataobj
+XSD_PROJ = soap_dataobj
 SUB_PROJ = server client
 
 srcdir = @srcdir@

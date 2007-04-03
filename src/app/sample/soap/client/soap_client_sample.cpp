@@ -86,9 +86,15 @@ CConstRef<CDescriptionText> CSampleSoapClient::GetDescription(void)
 {
     CSoapMessage request( GetDefaultNamespaceName() ), response;
 
+// Both variants are okay
+#if 0
     CRef<CAnyContentObject> any(new CAnyContentObject);
     any->SetName("Description");
 //    any->SetNamespaceName(GetDefaultNamespaceName());
+#else
+    CRef<CDescription> any(new CDescription);
+    any->Set();
+#endif
     request.AddObject( *any, CSoapMessage::eMsgBody);
 
     Invoke(response,request);
@@ -117,7 +123,9 @@ CConstRef<CMathResponse>  CSampleSoapClient::DoMath(CMath& ops)
 // Response is a list of result strings
 {
     CSoapMessage request, response;
-    ops.SetNamespaceName(GetDefaultNamespaceName());
+// The following call is not needed, because the ops object already has
+// a (correct) namespace name defined
+//    ops.SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( ops, CSoapMessage::eMsgBody);
 
     Invoke(response,request);
