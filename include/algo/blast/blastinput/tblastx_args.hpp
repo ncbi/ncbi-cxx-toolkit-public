@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blastx_args.hpp
+/** @file tblastx_args.hpp
  * Main argument class for TBLASTX application
  */
 
