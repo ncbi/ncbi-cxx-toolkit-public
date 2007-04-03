@@ -63,8 +63,9 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
     case SQL_BIGINT:       return eDB_BigInt;
     case SQL_SMALLINT:     return eDB_SmallInt;
     case SQL_INTEGER:      return eDB_Int;
-    case SQL_REAL:         return eDB_Float;
     case SQL_FLOAT:        return eDB_Double;
+    case SQL_REAL:         return eDB_Float;
+    case SQL_DOUBLE:       return eDB_Double;
     case SQL_BINARY:       return (prec < 256)? eDB_Binary : eDB_LongBinary;
     case SQL_BIT:          return eDB_Bit;
     case SQL_TINYINT:      return eDB_TinyInt;
