@@ -270,7 +270,7 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
 
 /** Initializes and uninitializes the genetic code singleton as if it was an
  * automatic variable. It also provides MT-safety.*/
-class CAutomaticGenCodeSingleton {
+class NCBI_XBLAST_EXPORT CAutomaticGenCodeSingleton {
 public:
     /// Default constructor
     CAutomaticGenCodeSingleton();
