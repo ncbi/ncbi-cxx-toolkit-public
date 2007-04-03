@@ -150,6 +150,7 @@ private:
  * engine [in]
  * @todo add overloaded function which takes a blast::SSeqLoc
  */
+NCBI_XBLAST_EXPORT
 CRef<objects::CPssmWithParameters> 
 PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                                  CConstRef<objects::CSeq_align_set> alignment,
