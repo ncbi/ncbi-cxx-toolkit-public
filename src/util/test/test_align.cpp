@@ -43,7 +43,7 @@
 #include <boost/test/unit_test_log.hpp>
 #include <boost/test/unit_test_suite.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE

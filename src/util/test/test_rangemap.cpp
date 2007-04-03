@@ -39,7 +39,7 @@
 #include <util/itree.hpp>
 #include <stdlib.h>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 

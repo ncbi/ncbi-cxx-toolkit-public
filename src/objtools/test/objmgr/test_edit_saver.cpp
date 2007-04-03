@@ -57,7 +57,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/patcher/loaderpatcher.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE

@@ -37,7 +37,7 @@
 #include <dbapi/cache/dbapi_blob_cache.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

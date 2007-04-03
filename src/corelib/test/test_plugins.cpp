@@ -37,7 +37,7 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 

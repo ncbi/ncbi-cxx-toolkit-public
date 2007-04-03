@@ -34,7 +34,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include "dbapi_sample_base.hpp"
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

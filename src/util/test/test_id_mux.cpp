@@ -37,7 +37,7 @@
 #include <util/bitset/ncbi_bitset.hpp>
 #include <stdio.h>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

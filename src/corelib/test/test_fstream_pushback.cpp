@@ -35,7 +35,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <stdio.h>                 // remove()
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 int main(int argc, char* argv[])

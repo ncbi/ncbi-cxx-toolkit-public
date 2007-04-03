@@ -34,7 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <util/resize_iter.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

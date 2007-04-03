@@ -36,7 +36,7 @@
 #include <util/checksum.hpp>
 
 // must be last
-#include <test/test_assert.h>
+#include <common/test_assert.h>
 
 USING_NCBI_SCOPE;
 

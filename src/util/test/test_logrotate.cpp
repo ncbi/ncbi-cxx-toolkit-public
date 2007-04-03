@@ -45,7 +45,7 @@
 #  include <unistd.h>
 #endif
 
-#include <test/test_assert.h> // must be last
+#include <common/test_assert.h> // must be last
 
 USING_NCBI_SCOPE;
 

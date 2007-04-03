@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE

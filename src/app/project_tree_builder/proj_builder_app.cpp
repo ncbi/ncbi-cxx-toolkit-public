@@ -42,7 +42,7 @@
 #include <app/project_tree_builder/proj_projects.hpp>
 #include <corelib/ncbitime.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE

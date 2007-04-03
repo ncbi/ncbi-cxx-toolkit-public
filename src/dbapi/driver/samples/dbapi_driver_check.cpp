@@ -36,7 +36,7 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

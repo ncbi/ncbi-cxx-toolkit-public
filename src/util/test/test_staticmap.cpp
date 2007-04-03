@@ -40,7 +40,7 @@
 #include <set>
 #include <map>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 #ifndef _DEBUG
 # define _DEBUG 1

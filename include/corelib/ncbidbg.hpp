@@ -36,7 +36,7 @@
  ///
  /// NOTE:These macros are NOT for use in test applications!!!
  ///      Test applications must use normal assert() and must
- ///      include <test/test_assert.h> as a last header file.
+ ///      include <common/test_assert.h> as a last header file.
  ///      [test apps in 'connect' branch include "test/test_assert.h" instead]
 
 

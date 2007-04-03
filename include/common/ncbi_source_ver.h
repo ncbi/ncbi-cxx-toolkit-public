@@ -1,4 +1,4 @@
-/* $Id$
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -22,53 +22,7 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- *
- * Author:  Victor Sapojnikov
- *
- * This simple program illustrates how to read text field data.
- *
  */
 
-#include <ncbi_pch.hpp>
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/gateway/interfaces.hpp>
-#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
-#include <common/test_assert.h>  /* This header must go last */
-
-
-USING_NCBI_SCOPE;
-
-
-int main()
-{
-    try {
-        CLogger log(&cerr);
-        CSSSConnection sssConnection(&log);
-        string sHost = "stmartin";
-        int iPort = 8765;
-
-        if( sssConnection.connect(sHost.c_str(), iPort) != CSSSConnection::eOk ) {
-            cerr<< "FATAL(" << sssConnection.getRetCodeDesc()
-                << "):Failed to connect to SSS server on host:\""
-                << sHost << "\" port:" << iPort << endl
-                << "\tReason:" << sssConnection.getErrMsg() << endl;
-            return 1;
-        }
-
-        CGWContext my_context(sssConnection);
-
-        SampleDBAPI_Blob(my_context, "MSSQL3");
-    } catch (CDB_Exception& e) {
-        CDB_UserHandler_Stream myExHandler(&cerr);
-
-        myExHandler.HandleIt(&e);
-        puts("\nException\n");
-		getchar();
-        return 1;
-    }
-    puts("\nOK\n");
-	getchar();
-    return 0;
-}
-
-
+/* #undef NCBI_PRODUCTION_VER */
+#define NCBI_DEVELOPMENT_VER 20070402

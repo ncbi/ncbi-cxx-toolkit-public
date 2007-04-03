@@ -34,7 +34,7 @@
 #include <corelib/test_mt.hpp>
 #include <util/ncbi_cache.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

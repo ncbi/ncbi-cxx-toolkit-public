@@ -32,7 +32,7 @@
 #   USAGE:
 #    1) Process this file with "autoconf" to produce a "configure" script.
 #    2) Run the resultant "configure" script to produce:
-#      a) "<builddir>/inc/ncbiconf.h"
+#      a) "<builddir>/inc/ncbiconf_unix.h"
 #      b) "<builddir>/build/Makefile.mk"
 #      c) other Makefile's and scripts in "<builddir>/build" and below
 #
@@ -1867,7 +1867,11 @@ fi
 
 
 #### Source, include, and build directories
-ncbiconf="$build_root/inc/ncbiconf.h"
+ncbiconf="$build_root/inc/ncbiconf_unix.h"
+ncbiconf_old="$build_root/inc/ncbiconf.h"
+if test -f "$ncbiconf_old" -a ! -f "$ncbiconf"; then
+   mv "$ncbiconf_old" "$ncbiconf"
+fi
 if test "$build_root" = "$srcdir" ; then
    builddir="$srcdir/src"
 else

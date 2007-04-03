@@ -35,7 +35,7 @@
 // #include <boost/test/unit_test_result.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 

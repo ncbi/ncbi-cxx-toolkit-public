@@ -35,7 +35,7 @@
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 

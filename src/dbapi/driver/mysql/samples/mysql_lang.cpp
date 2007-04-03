@@ -35,7 +35,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;

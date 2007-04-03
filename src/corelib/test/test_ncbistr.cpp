@@ -38,7 +38,7 @@
 #include <corelib/ncbi_xstr.hpp>
 #include <algorithm>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix

@@ -28,7 +28,7 @@
 #include <map>
 #include "dbapi_cursor.hpp"
 #include "../dbapi_sample_base.hpp"
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 map<string, string> dblib_version;
 

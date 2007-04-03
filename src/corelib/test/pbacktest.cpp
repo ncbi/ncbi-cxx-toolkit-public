@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 #define _STR(a) #a
 #define  STR(a) _STR(a)

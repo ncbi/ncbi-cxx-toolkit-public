@@ -42,7 +42,7 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <test/test_assert.h>
+#include <common/test_assert.h>
 
 #include <serial/objistr.hpp>
 #include <serial/iterator.hpp>

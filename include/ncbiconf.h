@@ -31,33 +31,17 @@
  */
 
 /** @file ncbiconf.h
- ** Front end for a platform-specific configuration summary when using
- ** project files.
+ ** Front end for a platform-specific configuration summary.
  **/
 
 #ifdef _MSC_VER
-#  include <corelib/config/ncbiconf_msvc.h>
+#  include <common/config/ncbiconf_msvc.h>
 #elif defined(__MWERKS__)
-#  include <corelib/config/ncbiconf_mwerks.h>
+#  include <common/config/ncbiconf_mwerks.h>
 #elif defined(NCBI_XCODE_BUILD)
-#  include <corelib/config/ncbiconf_xcode.h>
+#  include <common/config/ncbiconf_xcode.h>
 #else
-/*
- * Otherwise, we expect to be using the Unix build system, in which case
- * configure should have generated an appropriate ncbiconf.h in a
- * build-specific .../inc directory that should have appeared in an earlier
- * -I directive.  If you're using our recommended makefile framework per
- * http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.chapter.ch_build
- * this should happen automatically; otherwise, make sure your flags are as
- * ... -I.../c++/Release/inc -I.../c++/include ...
- * rather than vice versa.  (Substitute the actual configuration you're
- * using for Release, of course.)
- *
- * If you encounter this error in-house and are listing the directories in
- * the right order, it's possible that the build name is a symlink that has
- * gone missing; if so, please notify cpp-core so we can restore it.
- */
-#  error Configuration-specific <ncbiconf.h> not found; check your search path.
+#  include <ncbiconf_unix.h>
 #endif
 
 #endif  /* FORWARDING_NCBICONF_H */

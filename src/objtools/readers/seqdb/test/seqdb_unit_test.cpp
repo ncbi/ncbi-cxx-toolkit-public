@@ -62,7 +62,7 @@
 #include <objmgr/data_loader_factory.hpp>
 #endif
 
-#include <test/test_assert.h> // Must be last include directive.
+#include <common/test_assert.h> // Must be last include directive.
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

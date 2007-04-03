@@ -1,4 +1,8 @@
-/* $Id$
+#if !defined(NCBI_USE_PCH)  ||  !defined(NCBI_PCH__HPP)
+#  error "Must not use this header alone, but from a proper wrapper."
+#endif
+
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -22,53 +26,24 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- *
- * Author:  Victor Sapojnikov
- *
- * This simple program illustrates how to read text field data.
- *
+ * 
  */
 
-#include <ncbi_pch.hpp>
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/gateway/interfaces.hpp>
-#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
-#include <common/test_assert.h>  /* This header must go last */
+/** @file common/ncbi_pch_impl.hpp
+ ** Header file to be pre-compiled and speed up build of NCBI C++ Toolkit
+ **/
 
+// All of the below headers appear in >40% of C++ Toolkit compilation
+// units.  (So do about a dozen other corelib headers, but these
+// indirectly include all the rest.)
 
-USING_NCBI_SCOPE;
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbitime.hpp>
+#include <corelib/ncbiutil.hpp>
+#include <corelib/ncbi_limits.hpp>
 
-
-int main()
-{
-    try {
-        CLogger log(&cerr);
-        CSSSConnection sssConnection(&log);
-        string sHost = "stmartin";
-        int iPort = 8765;
-
-        if( sssConnection.connect(sHost.c_str(), iPort) != CSSSConnection::eOk ) {
-            cerr<< "FATAL(" << sssConnection.getRetCodeDesc()
-                << "):Failed to connect to SSS server on host:\""
-                << sHost << "\" port:" << iPort << endl
-                << "\tReason:" << sssConnection.getErrMsg() << endl;
-            return 1;
-        }
-
-        CGWContext my_context(sssConnection);
-
-        SampleDBAPI_Blob(my_context, "MSSQL3");
-    } catch (CDB_Exception& e) {
-        CDB_UserHandler_Stream myExHandler(&cerr);
-
-        myExHandler.HandleIt(&e);
-        puts("\nException\n");
-		getchar();
-        return 1;
-    }
-    puts("\nOK\n");
-	getchar();
-    return 0;
-}
-
-
+// Third Party Libraries specific includes
+#ifdef NCBI_WXWIN_USE_PCH
+#  include <wx/wxprec.h>
+#endif

@@ -53,7 +53,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <test/test_assert.h>
+#include <common/test_assert.h>
 
 using namespace ncbi;
 using namespace objects;

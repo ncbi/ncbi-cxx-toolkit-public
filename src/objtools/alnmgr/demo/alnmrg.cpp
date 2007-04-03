@@ -60,7 +60,7 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/aln_asn_reader.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);

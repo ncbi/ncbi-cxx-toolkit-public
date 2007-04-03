@@ -310,7 +310,7 @@ if ($BuildDir)
         close IN
     }
 
-    push @Paths, qw(./compilers ./scripts ./include/test);
+    push @Paths, qw(./compilers ./scripts ./include/common);
 
     $RepositoryURL = $DefaultRepos;
     $NewCheckout = 1

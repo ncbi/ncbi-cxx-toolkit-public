@@ -1,7 +1,4 @@
-#if defined(NCBI_USE_PCH)
-
-#  ifndef NCBI_PCH__HPP
-#  define NCBI_PCH__HPP
+#if defined(NCBI_USE_PCH)  &&  !defined(NCBI_PCH__HPP)
 /*  $Id$
  * ===========================================================================
  *
@@ -31,23 +28,8 @@
 
 /** @file ncbi_pch.hpp
  ** Header file to be pre-compiled and speed up build of NCBI C++ Toolkit
+ ** (wrapper for the "real" version under common/)
  **/
-
-// All of the below headers appear in >40% of C++ Toolkit compilation
-// units.  (So do about a dozen other corelib headers, but these
-// indirectly include all the rest.)
-
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbiutil.hpp>
-#include <corelib/ncbi_limits.hpp>
-
-// Third Party Libraries specific includes
-#ifdef NCBI_WXWIN_USE_PCH
-#  include <wx/wxprec.h>
+#  define NCBI_PCH__HPP
+#  include <common/ncbi_pch_impl.hpp>
 #endif
-
-#  endif /* NCBI_PCH__HPP */
-
-#endif /* NCBI_USE_PCH */

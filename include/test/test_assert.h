@@ -1,5 +1,5 @@
-#ifndef TEST_ASSERT__H
-#define TEST_ASSERT__H
+#ifndef FORWARDING_TEST_ASSERT__H
+#define FORWARDING_TEST_ASSERT__H
 
 /*  $Id$
  * ===========================================================================
@@ -35,7 +35,6 @@
  *
  */
 
-#include <ncbiconf.h>
-#include <test/test_assert_impl.h>
+#include <common/test_assert.h>
 
-#endif  /* TEST_ASSERT__H */
+#endif  /* FORWARDING_TEST_ASSERT__H */

@@ -58,7 +58,7 @@
 #include <algorithm>
 #include <map>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE

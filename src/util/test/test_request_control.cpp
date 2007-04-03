@@ -35,7 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <util/request_control.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

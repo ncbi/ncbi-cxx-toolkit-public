@@ -36,7 +36,7 @@
 #include <util/utf8.hpp>
 #include <util/sgml_entity.hpp>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 

@@ -38,7 +38,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
-#include <test/test_assert.h>
+#include <common/test_assert.h>
 
 #include <serial/objistr.hpp>
 #include <serial/iterator.hpp>

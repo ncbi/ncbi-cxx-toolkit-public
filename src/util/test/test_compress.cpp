@@ -39,7 +39,7 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/lzo.hpp>
 
-#include <test/test_assert.h>  // This header must go last
+#include <common/test_assert.h>  // This header must go last
 
 
 USING_NCBI_SCOPE;

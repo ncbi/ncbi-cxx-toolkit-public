@@ -34,7 +34,7 @@
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 
-#include <test/test_assert.h>
+#include <common/test_assert.h>
 
 USING_NCBI_SCOPE;
 

@@ -36,7 +36,7 @@
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
 
-#include <test/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  /* This header must go last */
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix

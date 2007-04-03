@@ -46,7 +46,7 @@
 
 #include <objsset.h>
 
-#include <test/test_assert.h>
+#include <common/test_assert.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

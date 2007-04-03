@@ -24,5 +24,4 @@
  * ===========================================================================
  */
 
-/* #undef NCBI_PRODUCTION_VER */
-#define NCBI_DEVELOPMENT_VER 20070402
+#include <common/ncbi_source_ver.h>

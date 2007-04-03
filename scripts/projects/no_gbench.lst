@@ -18,4 +18,4 @@ check
 gui
 -gui/plugins
 -gui/gbench
-test update-only
+common update-only

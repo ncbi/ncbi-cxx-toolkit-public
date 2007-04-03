@@ -1,4 +1,7 @@
-/* $Id$
+#ifndef TEST_ASSERT__H
+#define TEST_ASSERT__H
+
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -23,52 +26,16 @@
  *
  * ===========================================================================
  *
- * Author:  Victor Sapojnikov
+ * Author:  Denis Vakatov
  *
- * This simple program illustrates how to read text field data.
+ * File Description:
+ *   Setup #NDEBUG and #_DEBUG preprocessor macro in a way that ASSERTs
+ *   will be active even in the "Release" mode (it's useful for test apps).
+ *   Special wrapper for use in C++ toolkit test suite.
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/gateway/interfaces.hpp>
-#include <dbapi/driver/samples/dbapi_driver_samples.hpp>
-#include <common/test_assert.h>  /* This header must go last */
+#include <ncbiconf.h>
+#include <common/test_assert_impl.h>
 
-
-USING_NCBI_SCOPE;
-
-
-int main()
-{
-    try {
-        CLogger log(&cerr);
-        CSSSConnection sssConnection(&log);
-        string sHost = "stmartin";
-        int iPort = 8765;
-
-        if( sssConnection.connect(sHost.c_str(), iPort) != CSSSConnection::eOk ) {
-            cerr<< "FATAL(" << sssConnection.getRetCodeDesc()
-                << "):Failed to connect to SSS server on host:\""
-                << sHost << "\" port:" << iPort << endl
-                << "\tReason:" << sssConnection.getErrMsg() << endl;
-            return 1;
-        }
-
-        CGWContext my_context(sssConnection);
-
-        SampleDBAPI_Blob(my_context, "MSSQL3");
-    } catch (CDB_Exception& e) {
-        CDB_UserHandler_Stream myExHandler(&cerr);
-
-        myExHandler.HandleIt(&e);
-        puts("\nException\n");
-		getchar();
-        return 1;
-    }
-    puts("\nOK\n");
-	getchar();
-    return 0;
-}
-
-
+#endif  /* TEST_ASSERT__H */
