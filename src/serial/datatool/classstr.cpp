@@ -372,7 +372,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
     if ( wrapperClass ) {
         const SMemberInfo& info = m_Members.front();
-        if ( info.type->CanBeCopied() ) {
+        if ( info.type->CanBeCopied() && !x_IsNullType(m_Members.begin()) ) {
             string cType = info.type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
                 "    /// Data copy constructor.\n"
@@ -920,7 +920,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
 
             // generate conversion operators
-            if ( i->cName.empty() ) {
+            if ( i->cName.empty() && !isNull ) {
                 if ( i->optional ) {
                     string loc(code.GetClassNameDT());
                     if (i->dataType) {
@@ -1318,7 +1318,8 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     }
     bool wrapperClass = (m_Members.size() == 1) &&
         m_Members.front().cName.empty();
-    bool generateCopy = wrapperClass && m_Members.front().type->CanBeCopied();
+    bool generateCopy = wrapperClass && m_Members.front().type->CanBeCopied()
+         && !x_IsNullType(m_Members.begin());
 
     out <<
         "/////////////////////////////////////////////////////////////////////////////\n";
