@@ -295,7 +295,7 @@ case $# in
   *)  Usage "Invalid number of arguments" ;;
 esac
 
-if test ! -d "$builddir"  ||  test ! -f "$builddir/../inc/ncbiconf.h" ; then
+if test ! -d "$builddir"  ||  test ! -f "$builddir/../inc/ncbiconf_unix.h" -a ! -f "$builddir/../inc/ncbiconf.h" ; then
   Usage "Pre-built NCBI C++ toolkit is not found in:  \"$builddir\""
 fi
 case "$builddir" in

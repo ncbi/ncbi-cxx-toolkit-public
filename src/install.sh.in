@@ -142,7 +142,7 @@ EOF
 # Sanity checks
 test -z "$new_srcdir"  &&  \
    Usage "Source dir is not specified (neither can it be auto-detected)"
-test -r "$install_dir"  -a  ! -f "$install_dir/inc/ncbiconf.h"  &&  \
+test -r "$install_dir"  -a  ! -f "$install_dir/inc/ncbiconf_unix.h"  &&  \
    Usage "Afraid to install to a dir of unknown structure:  $install_dir"
 test "$install_dir" = "$build_dir"  &&  \
    Usage "Cannot install to itself"

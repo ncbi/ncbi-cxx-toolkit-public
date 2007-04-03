@@ -14,7 +14,7 @@ fi
 buildroot=$1
 shift
 
-ncbiconf="$buildroot/inc/ncbiconf.h"
+ncbiconf="$buildroot/inc/ncbiconf_unix.h"
 newconf="$ncbiconf.tweaked.new"
 savedconf="$ncbiconf.tweaked.prev"
 
