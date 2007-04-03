@@ -602,8 +602,6 @@ void CQueueDataBase::MountQueue(const string& qname,
     queue.failed_retries = params.failed_retries;
     queue.empty_lifetime = params.empty_lifetime;
     queue.wnode_hosts.SetHosts(params.wnode_hosts);
-    queue.rec_dump_flag = params.dump_db;
-
 
     LOG_POST(Info << "Queue records = " << recs);
 }
@@ -714,10 +712,6 @@ void CQueueDataBase::UpdateQueueParameters(const string& qname,
     queue->subm_hosts.SetHosts(params.subm_hosts);
     queue->failed_retries = params.failed_retries;
     queue->wnode_hosts.SetHosts(params.wnode_hosts);
-    {{
-        CFastMutexGuard guard(queue->rec_dump_lock);
-        queue->rec_dump_flag = params.dump_db;
-    }}
 }
 
 void CQueueDataBase::UpdateQueueLBParameters(const string& qname,
@@ -1190,6 +1184,10 @@ bool CQueue::IsExpired(void)
             if (q->became_empty != -1 &&
                 q->became_empty + q->empty_lifetime < time(0))
             {
+                LOG_POST(Info << "Queue " << q->qname << " expired."
+                    << " Became empty: "
+                    << CTime(q->became_empty).ToLocalTime().AsString()
+                    << " Empty lifetime: " << q->empty_lifetime << " sec." );
                 return true;
             }
             if (q->became_empty == -1)
@@ -1531,7 +1529,7 @@ void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
 }
 
 
-bool Less(const vector<string>& elem1, const vector<string>& elem2)
+static bool Less(const vector<string>& elem1, const vector<string>& elem2)
 {
     int size = min(elem1.size(), elem2.size());
     for (int i = 0; i < size; ++i) {
@@ -1543,18 +1541,12 @@ bool Less(const vector<string>& elem1, const vector<string>& elem2)
             int i2 = NStr::StringToInt(p2);
             if (i1 < i2) return true;
             if (i1 > i2) return false;
-        } catch (CStringException& ex) {
+        } catch (CStringException&) {
             if (p1 < p2) return true;
             if (p1 > p2) return false;
         }
     }
     if (elem1.size() < elem2.size()) return true;
-    return false;
-}
-
-
-bool Equal(const vector<string>& elem1, const vector<string>& elem2)
-{
     return false;
 }
 
@@ -2861,6 +2853,7 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         msg += " new_expiration_time=";
         msg += tmp_t.AsString();
         msg += " job_timeout(sec)=";
+        if (run_timeout == 0) run_timeout = q->run_timeout;
         msg += NStr::IntToString(run_timeout);
         msg += " job_timeout(minutes)=";
         msg += NStr::IntToString(run_timeout/60);
@@ -3730,18 +3723,6 @@ bool CQueue::CheckDelete(unsigned int job_id)
 void CQueue::x_DeleteDBRec(SQueueDB&  db, CBDB_FileCursor& cur)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-
-    // dump the record
-    {{
-        CFastMutexGuard dump_guard(q->rec_dump_lock);
-        if (q->rec_dump_flag) {
-            x_PrintJobDbStat(db,
-                             q->rec_dump,
-                             ";",               // field separator
-                             false);            // no field names
-        }
-    }}
-
     cur.Delete(CBDB_File::eIgnoreError);
 }
 
@@ -4187,7 +4168,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
         tm.ToLocalTime();
         msg += " exp_time=";
         msg += tm.AsString();
-
+        if (run_timeout == 0) run_timeout = q->run_timeout;
         msg += " run_timeout(sec)=";
         msg += NStr::IntToString(run_timeout);
         msg += " run_timeout(minutes)=";

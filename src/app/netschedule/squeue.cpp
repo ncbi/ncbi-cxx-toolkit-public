@@ -66,7 +66,6 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
-    dump_db = reg.GetBool(sname, "dump_db", false, 0, IRegistry::eReturn);
 
     // Read load balancing parameters
     lb_flag = reg.GetBool(sname, "lb", false, 0, IRegistry::eReturn);
@@ -165,8 +164,6 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     last_notif(0), 
     q_notif("NCBI_JSQ_"),
     run_time_line(0),
-    rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
-    rec_dump_flag(false),
     lb_flag(false),
     lb_coordinator(0),
     lb_stall_delay_type(eNSLB_Constant),

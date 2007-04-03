@@ -1395,10 +1395,11 @@ void CNetScheduleHandler::ProcessMonitor()
     WriteMsg("OK:", NETSCHEDULED_VERSION);
     string started = "Started: " + m_Server->GetStartTime().AsString();
     WriteMsg("OK:", started);
-    socket.SetOwnership(eNoOwnership);
     m_Queue->SetMonitorSocket(socket.GetSOCK());
-    // TODO: somehow release socket from regular scheduling here - it is
-    // write only since this moment
+    // Release socket from regular scheduling here - it is
+    // write only for monitor since this moment.
+    socket.SetOwnership(eNoOwnership);
+    socket.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
 }
 
 

@@ -72,7 +72,6 @@ struct SQueueParameters
     time_t empty_lifetime;
     string subm_hosts;
     string wnode_hosts;
-    bool dump_db;
 
     /// Parameters for Load Balancing
     bool   lb_flag;
@@ -96,7 +95,6 @@ struct SQueueParameters
         failed_retries(0),
         subm_hosts(""),
         wnode_hosts(""),
-        dump_db(false),
 
         lb_flag(false),
         lb_service(""),
@@ -315,12 +313,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 
     /// Queue monitor
     CNetScheduleMonitor          monitor;
-
-    /// Database records when they are deleted can be dumped to an archive
-    /// file for further processing
-    CRotatingLogStream           rec_dump;
-    CFastMutex                   rec_dump_lock;
-    bool                         rec_dump_flag;
 
     mutable bool                 lb_flag;  ///< Load balancing flag
     CNSLB_Coordinator*           lb_coordinator;
