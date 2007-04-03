@@ -1595,6 +1595,10 @@ void CBDB_Cache::Store(const string&  key,
             EBDB_ErrCode ret;
             do {
                 blob_id = m_BlobIdCounter.Add(1);
+                if (blob_id >= kMax_UInt) {
+                    m_BlobIdCounter.Set(0);
+                    continue;
+                }
                 m_CacheBLOB_DB->blob_id = blob_id;
                 ret = m_CacheBLOB_DB->Insert(data, size);
             } while (ret == eBDB_KeyDup);
