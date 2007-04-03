@@ -94,18 +94,22 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
 
 CServer_ConnectionPool::~CServer_ConnectionPool()
 {
-    Erase();
+    try {
+        Erase();
+    } catch(...) {
+        ERR_POST("Exception thrown from ~CServer_ConnectionPool");
+    }
 }
 
 void CServer_ConnectionPool::Erase(void)
 {
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
-    ERASE_ITERATE(TData, it, data) {
+    NON_CONST_ITERATE(TData, it, data) {
          it->first->OnTimeout();
          delete it->first;
-         data.erase(it);
     }
+    data.clear();
 }
 
 bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
@@ -159,11 +163,9 @@ void CServer_ConnectionPool::Clean(void)
     TData& data = const_cast<TData&>(m_Data);
     if (data.empty())
         return;
-    int n_cleaned = 0;
     int n_connections = 0;
-    for (TData::iterator next = data.begin(), it = next++;
-         next != data.end();
-         it = next, ++next) {
+    list<TConnBase*> to_delete;
+    NON_CONST_ITERATE(TData, it, data) {
         SPerConnInfo& info = it->second;
         if (info.type != eListener) ++n_connections;
         if (info.type != eInactiveSocket) {
@@ -173,14 +175,17 @@ void CServer_ConnectionPool::Clean(void)
         if (!it->first->IsOpen() || info.expiration <= now) {
             if (info.expiration <= now) {
                 it->first->OnTimeout();
-                // DEBUG printf("Closed on timeout\n");
             } else {
                 conn->OnSocketEvent(eIO_Close);
             }
-            delete it->first;
-            data.erase(it);
-            ++n_cleaned;
+            to_delete.push_back(it->first);
         }
+    }
+    int n_cleaned = 0;
+    ITERATE(list<TConnBase*>, it, to_delete) {
+        data.erase(*it);
+        delete *it;
+        ++n_cleaned;
     }
     // DEBUG if (n_cleaned)
     //  printf("Cleaned %d connections out of %d\n", n_cleaned, n_connections);
