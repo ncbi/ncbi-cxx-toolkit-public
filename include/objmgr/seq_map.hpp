@@ -107,6 +107,8 @@ public:
     
     ~CSeqMap(void);
 
+    size_t GetSegmentsCount(void) const;
+
     TSeqPos GetLength(CScope* scope) const;
     TMol GetMol(void) const;
 
@@ -299,7 +301,6 @@ private:
     
 protected:    
     // interface for iterators
-    size_t x_GetRealSegmentsCount(void) const;
     size_t x_GetLastEndSegmentIndex(void) const;
     size_t x_GetFirstEndSegmentIndex(void) const;
 
@@ -388,7 +389,7 @@ protected:
 //  CSeqMap: inline methods
 
 inline
-size_t CSeqMap::x_GetRealSegmentsCount(void) const
+size_t CSeqMap::GetSegmentsCount(void) const
 {
     return m_Segments.size() - 2;
 }

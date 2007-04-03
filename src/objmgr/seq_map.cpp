@@ -1187,7 +1187,7 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
 bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
 {
     inst.SetLength(GetLength(0));
-    bool single_segment = x_GetRealSegmentsCount() == 1;
+    bool single_segment = GetSegmentsCount() == 1;
     if ( HasSegmentOfType(eSeqData) ) {
         if ( single_segment && !inst.IsSetExt() ) {
             // seq-data
