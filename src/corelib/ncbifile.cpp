@@ -1731,7 +1731,7 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
                        TCopyFlags copyflags, size_t copybufsize)
 {
     string backup_name = DeleteTrailingPathSeparator(GetPath()) +
-                         (suffix.empty() ? GetBackupSuffix() : suffix);
+                         (suffix.empty() ? string(GetBackupSuffix()) : suffix);
     switch (mode) {
         case eBackup_Copy:
             {
