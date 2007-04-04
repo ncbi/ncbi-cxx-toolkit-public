@@ -989,7 +989,7 @@ void CTLibContext::SetClientCharset(const string& charset)
                   m_Locale,
                   CS_SYB_CHARSET,
                   (CS_CHAR*) GetClientCharset().c_str(),
-                  CS_UNUSED,
+                  CS_NULLTERM,
                   NULL);
     }
 }
