@@ -174,6 +174,7 @@ public:
 
     void Test_SelectStmt(void);
     void Test_SelectStmtXML(void);
+    void Test_Recordset(void);
     void Test_Cursor(void);
     void Test_Cursor2(void);
     void Test_Procedure(void);

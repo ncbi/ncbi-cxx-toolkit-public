@@ -2969,6 +2969,249 @@ CDBAPIUnitTest::Test_SelectStmtXML(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_Recordset(void)
+{
+    auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+    auto_ptr<IResultSet> rs;
+
+    // bit
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(bit, 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // tinyint
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(tinyint, 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // smallint
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(smallint, 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // int
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(int, 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // numeric
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // decimal
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // float
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(float(4), 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // double
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(double precision, 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // real
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(real, 1)"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // smallmoney
+    // Unsupported type ...
+//     {
+//         rs.reset(auto_stmt->ExecuteQuery("select convert(smallmoney, 1)"));
+//         BOOST_CHECK(rs.get() != NULL);
+//
+//         BOOST_CHECK(rs->Next());
+//         BOOST_CHECK(!rs->Next());
+//
+//         DumpResults(auto_stmt.get());
+//     }
+
+    // money
+    // Unsupported type ...
+//     {
+//         rs.reset(auto_stmt->ExecuteQuery("select convert(money, 1)"));
+//         BOOST_CHECK(rs.get() != NULL);
+//
+//         BOOST_CHECK(rs->Next());
+//         BOOST_CHECK(!rs->Next());
+//
+//         DumpResults(auto_stmt.get());
+//     }
+
+    // smalldatetime
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // datetime
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // char
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(char(32), '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // varchar
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // nchar
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // nvarchar
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // binary
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(binary(32), '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // varbinary
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // text
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(text, '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+
+    // image
+    {
+        rs.reset(auto_stmt->ExecuteQuery("select convert(image, '12345')"));
+        BOOST_CHECK(rs.get() != NULL);
+
+        BOOST_CHECK(rs->Next());
+        BOOST_CHECK(!rs->Next());
+
+        DumpResults(auto_stmt.get());
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
@@ -3232,8 +3475,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
         // Execute it first time ...
-        // auto_stmt->SendSql( "exec sp_databases" );
-        auto_stmt->SendSql( "SELECT name FROM sysobjects" );
+        auto_stmt->SendSql( "exec sp_databases" );
         while( auto_stmt->HasMoreResults() ) {
             if( auto_stmt->HasRows() ) {
                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
@@ -3263,8 +3505,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         }
 
         // Execute it second time ...
-        // auto_stmt->SendSql( "exec sp_databases" );
-        auto_stmt->SendSql( "SELECT name FROM sysobjects" );
+        auto_stmt->SendSql( "exec sp_databases" );
         while( auto_stmt->HasMoreResults() ) {
             if( auto_stmt->HasRows() ) {
                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
@@ -3463,15 +3704,83 @@ CDBAPIUnitTest::Test_Procedure(void)
         }
     }
 
+    // Test ICallableStatement
+    // With parameters.
+    {
+        {
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("sp_server_info", 1)
+                );
+
+            // Set parameter to NULL ...
+            auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
+            auto_stmt->Execute();
+
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
+            } else {
+                BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+            }
+
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+
+            // Set parameter to 1 ...
+            auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
+            auto_stmt->Execute();
+
+            BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+        }
+
+        // Doesn't work for some reason ...
+        if (false) {
+            // Execute it first time ...
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("sp_statistics")
+                );
+
+            auto_stmt->SetParam(CVariant(GetTableName()), "@table_name");
+            auto_stmt->Execute();
+
+            {
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                BOOST_CHECK(rs->Next());
+                DumpResults(auto_stmt.get());
+            }
+
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+
+            // Execute it second time ...
+            auto_stmt->SetParam(CVariant("#bulk_insert_table"), "@table_name");
+            auto_stmt->Execute();
+
+            {
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                BOOST_CHECK(rs->Next());
+                DumpResults(auto_stmt.get());
+            }
+        }
+    }
+
     // Test output parameters ...
     if (false) {
-        CVariant param(eDB_Int);
-
         auto_ptr<ICallableStatement> auto_stmt(
-            m_Conn->GetCallableStatement("DBAPI_Sample..TestProc4", 1)
+            m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc", 3)
             );
-//         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-        auto_stmt->SetParam( param, "@test_out" );
+        auto_stmt->SetParam(CVariant(1), "@id");
+        auto_stmt->SetParam(CVariant(2.0), "@f");
+        auto_stmt->SetOutputParam(CVariant(eDB_Int), "@o");
 
         auto_stmt->Execute();
 //         auto_stmt->SendSql( "exec DBAPI_Sample..TestProc4 @test_out output" );
@@ -3487,9 +3796,10 @@ CDBAPIUnitTest::Test_Procedure(void)
                      }
                      break;
                  case eDB_ParamResult:
-                     while(rs->Next()) {
-                         // Retrieve parameter row
-                     }
+                     BOOST_CHECK(rs->Next());
+                     NcbiCout << "Output param: "
+                              << rs->GetVariant(1).GetInt4()
+                              << endl;
                      break;
                  default:
                      break;
@@ -3512,6 +3822,55 @@ CDBAPIUnitTest::Test_Procedure(void)
 //         BOOST_CHECK(num > 0);
 
         DumpResults(auto_stmt.get());
+    }
+
+    // Temporary test ...
+    if (false) {
+        auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        BOOST_CHECK( conn.get() != NULL );
+
+        conn->Connect(
+            "anyone",
+            "allowed",
+            "mssql58.nac.ncbi.nlm.nih.gov",
+            "GenomeHits"
+            );
+
+        auto_ptr<ICallableStatement> auto_stmt(
+            conn->GetCallableStatement("NewSub")
+            );
+        auto_stmt->SetParam(CVariant("tsub2"), "@name");
+        auto_stmt->SetParam(CVariant("tst"), "@center");
+        auto_stmt->SetParam(CVariant("9606"), "@taxid");
+        auto_stmt->SetParam(CVariant("Homo sapiens"), "@organism");
+        auto_stmt->SetParam(CVariant(""), "@notes");
+        auto_stmt->Execute();
+
+        while(auto_stmt->HasMoreResults()) {
+            if( auto_stmt->HasRows() ) {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                switch( rs->GetResultType() ) {
+                case eDB_RowResult:
+                    while(rs->Next()) {
+                        // retrieve row results
+                    }
+                    break;
+                case eDB_ParamResult:
+                    _ASSERT(false);
+                    while(rs->Next()) {
+                        // Retrieve parameter row
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
+        // Get status
+        int status = auto_stmt->GetReturnStatus();
+        status = status; // Get rid of warnings.
     }
 }
 
@@ -6236,6 +6595,19 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 }
 
 
+static
+string GetSybaseClientVersion(void)
+{
+    CNcbiEnvironment env;
+    string sybase_version = env.Get("SYBASE");
+
+    sybase_version = sybase_version.substr(
+        sybase_version.find_last_of('/') + 1
+        );
+
+    return sybase_version;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
@@ -6244,6 +6616,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     bool CompilerWorkShop = false;
     bool CompilerGCC = false;
     bool Irix = false;
+    bool sybase_client_v125 = false;
 
 #if defined(NCBI_OS_SOLARIS)
     Solaris = true;
@@ -6260,6 +6633,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 #if defined(NCBI_OS_IRIX)
     Irix = true;
 #endif
+
+    const string sybase_version = GetSybaseClientVersion();
+    if (NStr::CompareNocase(sybase_version, 0, 4, "12.5") == 0
+        || NStr::CompareNocase(sybase_version, "current") == 0) {
+        sybase_client_v125 = true;
+    }
 
     // add member function test cases to a test suite
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
@@ -6463,6 +6842,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                   DBAPIInstance);
         select_stmt_tc->depends_on(tc_init);
         add(select_stmt_tc);
+
+        // There is a problem with the ftds8 driver and Sybase ...
+        if (!(args.GetDriverName() == "ftds"
+              && args.GetServerType() == CTestArguments::eSybase)
+            ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Recordset,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(select_stmt_tc);
+            add(tc);
+        }
 
         if ( args.GetServerType() == CTestArguments::eMsSql &&
              (args.GetDriverName() != "msdblib" &&
