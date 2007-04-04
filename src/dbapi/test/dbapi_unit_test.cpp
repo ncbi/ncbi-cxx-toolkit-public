@@ -6891,12 +6891,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // FTDS driver doesn't work with GCC_401-DebugMT, GCC_340-ReleaseMT on
     // linux for some reason.
-    if (args.GetDriverName() != "ftds") {
+//     if (args.GetDriverName() != "ftds") {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
-    }
+//     }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
     tc->depends_on(tc_init);
