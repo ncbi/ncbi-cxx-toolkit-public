@@ -79,7 +79,18 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
                                 &m_ColFmt[nof_items]))
             != CS_SUCCEED);
         CHECK_DRIVER_ERROR( rc, "ct_describe failed", 130002 );
-        bind_len+= m_ColFmt[nof_items].maxlength;
+
+#ifdef FTDS_IN_USE
+        // Seems like FreeTDS reports the wrong maxlength in
+        // ct_describe() - fix this when binding to a buffer.
+        if (m_ColFmt[nof_items].datatype == CS_NUMERIC_TYPE
+            || m_ColFmt[nof_items].datatype == CS_DECIMAL_TYPE
+            ) {
+            m_ColFmt[nof_items].maxlength = sizeof(CS_NUMERIC);
+        }
+#endif
+
+        bind_len += m_ColFmt[nof_items].maxlength;
         if(bind_len <= 2048) m_BindedCols++;
     }
     if(m_BindedCols) {
@@ -262,6 +273,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     EDB_Type b_type = item_buf ? item_buf->GetType() : eDB_UnsupportedType;
 
     switch ( fmt.datatype ) {
+    case CS_VARBINARY_TYPE:
     case CS_BINARY_TYPE: {
         if (item_buf  &&
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
@@ -416,6 +428,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
     }
 
+    case CS_VARCHAR_TYPE:
     case CS_CHAR_TYPE: {
         if (item_buf  &&
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
@@ -882,6 +895,16 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     }
 
     default: {
+        // Not handled data types ...
+//         CS_MONEY_TYPE
+//         CS_MONEY4_TYPE
+//         CS_LONG_TYPE
+//         CS_SENSITIVITY_TYPE
+//         CS_BOUNDARY_TYPE
+//         CS_VOID_TYPE
+//         CS_USHORT_TYPE
+//         CS_UNICHAR_TYPE
+//         CS_UNIQUE_TYPE
         DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
     }
     }
