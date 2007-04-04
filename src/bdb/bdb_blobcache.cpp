@@ -1250,6 +1250,24 @@ void CBDB_Cache::Open(const string& cache_path,
 
     }}
 
+    // read cache attributes so we can adjust atomic counter
+    //
+
+    {{
+    LOG_POST(Info << "Scanning cache content.");
+    CBDB_FileCursor cur(*m_CacheAttrDB);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    cur.InitMultiFetch(10 * 1024 * 1024);
+    unsigned max_blob_id = 0;
+    while (cur.Fetch() == eBDB_Ok) {
+        unsigned blob_id = m_CacheAttrDB->blob_id;
+        max_blob_id = max(max_blob_id, blob_id);
+    }
+    m_BlobIdCounter.Set(max_blob_id);
+    }}
+
+
+
     if (m_RunPurgeThread) {
 # ifdef NCBI_THREADS
        LOG_POST(Info << "Starting cache cleaning thread.");
@@ -1286,21 +1304,6 @@ void CBDB_Cache::Open(const string& cache_path,
 
     m_ReadOnly = false;
 
-
-    // read cache attributes so we can adjust atomic counter
-    //
-
-    {{
-    CBDB_FileCursor cur(*m_CacheAttrDB);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-    cur.InitMultiFetch(10 * 1024 * 1024);
-    unsigned max_blob_id = 0;
-    while (cur.Fetch() == eBDB_Ok) {
-        unsigned blob_id = m_CacheAttrDB->blob_id;
-        max_blob_id = max(max_blob_id, blob_id);
-    }
-    m_BlobIdCounter.Set(max_blob_id);
-    }}
 
     LOG_POST(Info <<
              "LC: '" << cache_name <<
