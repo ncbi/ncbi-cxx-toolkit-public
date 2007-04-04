@@ -313,19 +313,22 @@ serial/serialimpl.hpp
 serial/serializable.hpp
 serial/serialutil.hpp
 serial/typeinfo.hpp
-// looks dead; no .cpp, destructor not defined
-//serial/typemapper.hpp
 
 // No export specifiers
+%ifndef WINDOWS serial/soap/soap_11_module.hpp
+%ifndef WINDOWS serial/soap/soap_body.hpp
+%ifndef WINDOWS serial/soap/soap_body_.hpp
 %ifndef WINDOWS serial/soap/soap_client.hpp
-%ifndef WINDOWS serial/soap/soap_code.hpp
 %ifndef WINDOWS serial/soap/soap_detail.hpp
+%ifndef WINDOWS serial/soap/soap_detail_.hpp
+%ifndef WINDOWS serial/soap/soap_envelope.hpp
+%ifndef WINDOWS serial/soap/soap_envelope_.hpp
 %ifndef WINDOWS serial/soap/soap_fault.hpp
+%ifndef WINDOWS serial/soap/soap_fault_.hpp
+%ifndef WINDOWS serial/soap/soap_header.hpp
+%ifndef WINDOWS serial/soap/soap_header_.hpp
 %ifndef WINDOWS serial/soap/soap_message.hpp
-%ifndef WINDOWS serial/soap/soap_reason.hpp
 %ifndef WINDOWS serial/soap/soap_server.hpp
-%ifndef WINDOWS serial/soap/soap_subcode.hpp
-%ifndef WINDOWS serial/soap/soap_text.hpp
 
 %%
 
