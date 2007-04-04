@@ -271,6 +271,103 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 
 
 ///////////////////////////////////////////////////////
+//  CDiagContextThreadData::
+
+
+CDiagContextThreadData::CDiagContextThreadData(void)
+    : m_Properties(0),
+      m_RequestId(0),
+      m_StopWatch(0),
+      m_DiagBuffer(new CDiagBuffer)
+{
+}
+
+
+CDiagContextThreadData::~CDiagContextThreadData(void)
+{
+    delete m_Properties;
+    delete m_StopWatch;
+    delete m_DiagBuffer;
+}
+
+
+void ThreadDataTlsCleanup(CDiagContextThreadData* value, void* cleanup_data)
+{
+    if ( cleanup_data ) {
+        // Copy properties from the main thread's TLS to the global properties.
+        CMutexGuard LOCK(s_DiagMutex);
+        CDiagContextThreadData::TProperties* props =
+            value->GetProperties(CDiagContextThreadData::eProp_Get);
+        if ( props ) {
+            GetDiagContext().m_Properties.insert(props->begin(),
+                                                 props->end());
+        }
+        // Print stop message.
+        if (!CDiagContext::IsSetOldPostFormat()) {
+            GetDiagContext().PrintStop();
+        }
+    }
+    delete value;
+}
+
+
+CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
+{
+    static CSafeStaticRef< CTls<CDiagContextThreadData> >
+        s_ThreadData(0,
+        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
+    CDiagContextThreadData* data = s_ThreadData->GetValue();
+    if ( !data ) {
+        // Cleanup data set to null for any thread except the main one.
+        // This value is used as a flag to copy threads' properties to global
+        // upon TLS cleanup.
+        data = new CDiagContextThreadData;
+        s_ThreadData->SetValue(data, ThreadDataTlsCleanup,
+            CThread::GetSelf() ? 0 : (void*)(1));
+    }
+    return *data;
+}
+
+
+CDiagContextThreadData::TProperties*
+CDiagContextThreadData::GetProperties(EGetProperties flag)
+{
+    if ( !m_Properties  &&  flag == eProp_Create ) {
+        m_Properties = new TProperties;
+    }
+    return m_Properties;
+}
+
+
+CStopWatch* CDiagContextThreadData::GetOrCreateStopWatch(void)
+{
+    if ( !m_StopWatch ) {
+        m_StopWatch = new CStopWatch(CStopWatch::eStart);
+    }
+    return m_StopWatch;
+}
+
+
+void CDiagContextThreadData::ResetStopWatch(void)
+{
+    delete m_StopWatch;
+    m_StopWatch = 0;
+}
+
+
+extern int GetDiagRequestId(void)
+{
+    return CDiagContextThreadData::GetThreadData().GetRequestId();
+}
+
+
+extern void SetDiagRequestId(int id)
+{
+    return CDiagContextThreadData::GetThreadData().SetRequestId(id);
+}
+
+
+///////////////////////////////////////////////////////
 //  CDiagContext::
 
 
@@ -422,35 +519,6 @@ void CDiagContext::SetAutoWrite(bool value)
 }
 
 
-void PropTlsCleanup(CDiagContext::TProperties* value, void* cleanup_data)
-{
-    // Copy properties from the main thread's TLS to the global properties
-    if ( cleanup_data ) {
-        CMutexGuard LOCK(s_DiagMutex);
-        GetDiagContext().m_Properties.insert(value->begin(), value->end());
-    }
-    delete value;
-}
-
-
-CDiagContext::TProperties*
-CDiagContext::x_GetThreadProps(bool force_create) const
-{
-    static CSafeStaticRef< CTls<TProperties> > s_ThreadProperties(0,
-        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
-    TProperties* props = s_ThreadProperties->GetValue();
-    if ( !props  &&  force_create ) {
-        props = new TProperties;
-        // Cleanup data set to null for any thread except the main one.
-        // This value is used as a flag to copy threads' properties to global
-        // upon TLS cleanup.
-        s_ThreadProperties->SetValue(props, PropTlsCleanup,
-            CThread::GetSelf() ? 0 : (void*)(1));
-    }
-    return props;
-}
-
-
 inline bool IsThreadProperty(const string& name)
 {
     return
@@ -488,7 +556,9 @@ void CDiagContext::SetProperty(const string& name,
         m_Properties[name] = value;
     }
     else {
-        TProperties* props = x_GetThreadProps(true);
+        TProperties* props =
+            CDiagContextThreadData::GetThreadData().GetProperties(
+            CDiagContextThreadData::eProp_Create);
         _ASSERT(props);
         (*props)[name] = value;
     }
@@ -504,7 +574,9 @@ string CDiagContext::GetProperty(const string& name,
 {
     if (mode == eProp_Thread  ||
         (mode == eProp_Default  &&  !IsGlobalProperty(name))) {
-        TProperties* props = x_GetThreadProps(false);
+        TProperties* props =
+            CDiagContextThreadData::GetThreadData().GetProperties(
+            CDiagContextThreadData::eProp_Get);
         if ( props ) {
             TProperties::const_iterator tprop = props->find(name);
             if ( tprop != props->end() ) {
@@ -527,7 +599,9 @@ void CDiagContext::DeleteProperty(const string& name,
 {
     if (mode == eProp_Thread  ||
         (mode ==  eProp_Default  &&  !IsGlobalProperty(name))) {
-        TProperties* props = x_GetThreadProps(false);
+        TProperties* props =
+            CDiagContextThreadData::GetThreadData().GetProperties(
+            CDiagContextThreadData::eProp_Get);
         if ( props ) {
             TProperties::iterator tprop = props->find(name);
             if ( tprop != props->end() ) {
@@ -557,7 +631,9 @@ void CDiagContext::PrintProperties(void)
                 gprop->first + "=" + gprop->second);
         }
     }}
-    TProperties* props = x_GetThreadProps(false);
+    TProperties* props =
+            CDiagContextThreadData::GetThreadData().GetProperties(
+            CDiagContextThreadData::eProp_Get);
     if ( !props ) {
         return;
     }
@@ -629,7 +705,8 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     SDiagMessage::TTID tid = msg ? msg->m_TID : buf.m_TID;
     string uid = GetStringUID(msg ? msg->GetUID() : 0);
     int rid = msg ? msg->m_RequestId : GetDiagRequestId();
-    int psn = msg ? msg->m_ProcPost : CDiagBuffer::GetProcessPostNumber(true);
+    int psn = msg ? msg->m_ProcPost :
+        CDiagBuffer::GetProcessPostNumber(CDiagBuffer::ePostNumber_Increment);
     int tsn = msg ? msg->m_ThrPost : ++buf.m_ThreadPostCount;
     CTime timestamp = msg ? msg->GetTime() : CTime(CTime::eCurrent);
     string host = s_GetHost();
@@ -683,13 +760,6 @@ void RequestStopWatchTlsCleanup(CStopWatch* value, void* /*cleanup_data*/)
 }
 
 
-CTls<CStopWatch>& s_GetRequestStopWatchTls(void)
-{
-    static CSafeStaticRef< CTls<CStopWatch> > s_RequestStopWatch(0);
-    return s_RequestStopWatch.Get();
-}
-
-
 void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                                   const string&            message)
 {
@@ -713,15 +783,10 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             DeleteProperty(kProperty_BytesRd);
             DeleteProperty(kProperty_BytesWr);
             // Start stopwatch
-            CStopWatch* sw = s_GetRequestStopWatchTls().GetValue();
-            if ( !sw ) {
-                sw = new CStopWatch(CStopWatch::eStart);
-                s_GetRequestStopWatchTls().
-                    SetValue(sw, RequestStopWatchTlsCleanup);
-            }
-            else {
-                sw->Restart();
-            }
+            CStopWatch* sw =
+                CDiagContextThreadData::GetThreadData().GetOrCreateStopWatch();
+            _ASSERT(sw);
+            sw->Restart();
             break;
         }
     case SDiagMessage::eEvent_Stop:
@@ -753,10 +818,12 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             prop = GetProperty(kProperty_ReqTime);
             if ( prop.empty() ) {
                 // Try to get time from the stopwatch
-                CStopWatch* sw = s_GetRequestStopWatchTls().GetValue();
+                CStopWatch* sw =
+                    CDiagContextThreadData::GetThreadData().
+                    GetOrCreateStopWatch();
                 if ( sw ) {
                     prop = sw->AsString();
-                    s_GetRequestStopWatchTls().Reset();
+                    CDiagContextThreadData::GetThreadData().ResetStopWatch();
                 }
             }
             if ( !prop.empty() ) {
@@ -803,7 +870,8 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                       NULL,
                       0, 0, 0, // module/class/function
                       GetPID(), buf.m_TID,
-                      CDiagBuffer::GetProcessPostNumber(true),
+                      CDiagBuffer::GetProcessPostNumber(
+                      CDiagBuffer::ePostNumber_Increment),
                       ++buf.m_ThreadPostCount,
                       GetDiagRequestId());
     mess.m_Event = event;
@@ -1367,7 +1435,8 @@ void CDiagBuffer::Flush(void)
                           m_Diag->GetClass(),
                           m_Diag->GetFunction(),
                           CDiagContext::GetPID(), m_TID,
-                          GetProcessPostNumber(true),
+                          GetProcessPostNumber(
+                          CDiagBuffer::ePostNumber_Increment),
                           ++m_ThreadPostCount,
                           GetDiagRequestId());
         DiagHandler(mess);
@@ -1440,7 +1509,7 @@ void CDiagBuffer::UpdatePrefix(void)
 }
 
 
-int CDiagBuffer::GetProcessPostNumber(bool inc)
+int CDiagBuffer::GetProcessPostNumber(EPostNumberIncrement inc)
 {
     static CAtomicCounter s_ProcessPostCount;
     return inc ? s_ProcessPostCount.Add(1) : s_ProcessPostCount.Get();
@@ -2394,57 +2463,6 @@ extern void PopDiagPostPrefix(void)
 }
 
 
-// TLS for FastCGI iteration or request ID
-
-static void s_RequestIdTlsDataCleanup(int* old_value, void*)
-{
-    delete old_value;
-}
-
-
-static bool s_RequestIdTlsDestroyed;
-
-static void s_RequestIdTlsObjectCleanup(void*)
-{
-    s_RequestIdTlsDestroyed = true;
-}
-
-
-static int& s_GetDiagRequestId(void)
-{
-    static CSafeStaticRef< CTls<int> >
-        s_RequestIdTls(s_RequestIdTlsObjectCleanup);
-
-    // Create and use dummy value if TLS is already destroyed
-    if ( s_RequestIdTlsDestroyed ) {
-        static int s_MainRequestId = 0;
-        return s_MainRequestId;
-    }
-
-    // Create thread-specific request ID (if not created yet),
-    // and store it to TLS
-    int* request_id = s_RequestIdTls->GetValue();
-    if ( !request_id ) {
-        request_id = new int(0);
-        s_RequestIdTls->SetValue(request_id, s_RequestIdTlsDataCleanup);
-    }
-
-    return *request_id;
-}
-
-
-extern int GetDiagRequestId(void)
-{
-    return s_GetDiagRequestId();
-}
-
-
-extern void SetDiagRequestId(int id)
-{
-    s_GetDiagRequestId() = id;
-}
-
-
 extern EDiagSev SetDiagPostLevel(EDiagSev post_sev)
 {
     if (post_sev < eDiagSevMin  ||  post_sev > eDiagSevMax) {
@@ -2550,7 +2568,8 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
     CMutexGuard LOCK(s_DiagMutex);
     CDiagContext& ctx = GetDiagContext();
     bool report_switch = ctx.IsSetOldPostFormat()  &&
-        CDiagBuffer::GetProcessPostNumber(false) > 0;
+        CDiagBuffer::GetProcessPostNumber(
+        CDiagBuffer::ePostNumber_NoIncrement) > 0;
     string old_name, new_name;
 
     if ( CDiagBuffer::sm_Handler ) {
@@ -2588,43 +2607,9 @@ extern CDiagHandler* GetDiagHandler(bool take_ownership)
 }
 
 
-static void s_TlsDataCleanup(CDiagBuffer* old_value, void* /* cleanup_data */)
-{
-    delete old_value;
-}
-
-static bool s_TlsDestroyed; /* = false */
-
-static void s_TlsObjectCleanup(void* /* ptr */)
-{
-    if (!CDiagContext::IsSetOldPostFormat()  &&  CThread::GetSelf() == 0) {
-        GetDiagContext().PrintStop();
-    }
-    s_TlsDestroyed = true;
-}
-
-
 extern CDiagBuffer& GetDiagBuffer(void)
 {
-    static CSafeStaticRef< CTls<CDiagBuffer> >
-        s_DiagBufferTls(s_TlsObjectCleanup);
-
-    // Create and use dummy buffer if all real buffers are gone already
-    // (on the application exit)
-    if ( s_TlsDestroyed ) {
-        static CDiagBuffer s_DiagBuffer;
-        return s_DiagBuffer;
-    }
-
-    // Create thread-specific diag.buffer (if not created yet),
-    // and store it to TLS
-    CDiagBuffer* msg_buf = s_DiagBufferTls->GetValue();
-    if ( !msg_buf ) {
-        msg_buf = new CDiagBuffer;
-        s_DiagBufferTls->SetValue(msg_buf, s_TlsDataCleanup);
-    }
-
-    return *msg_buf;
+    return CDiagContextThreadData::GetThreadData().GetDiagBuffer();
 }
 
 
@@ -3325,7 +3310,13 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
                              err_type.c_str(),
                              pex->GetModule().c_str(),
                              pex->GetClass().c_str(),
-                             pex->GetFunction().c_str());
+                             pex->GetFunction().c_str(),
+                             CDiagContext::GetPID(),
+                             m_Buffer.m_TID,
+                             CDiagBuffer::GetProcessPostNumber(
+                             CDiagBuffer::ePostNumber_Increment),
+                             ++m_Buffer.m_ThreadPostCount,
+                             GetDiagRequestId());
         string report;
         diagmsg.Write(report);
         *this << "    "; // indentation

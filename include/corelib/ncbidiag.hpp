@@ -1093,6 +1093,47 @@ enum EDiagCollectMessages {
 };
 
 
+/// Thread local context data stored in TLS
+class NCBI_XNCBI_EXPORT CDiagContextThreadData
+{
+public:
+    CDiagContextThreadData(void);
+    ~CDiagContextThreadData(void);
+
+    /// CDiagContext properties
+    typedef map<string, string> TProperties;
+    enum EGetProperties {
+        eProp_Get,    ///< Do not create properties if not exist yet
+        eProp_Create  ///< Auto-create properties if not exist
+    };
+    TProperties* GetProperties(EGetProperties flag);
+
+    /// Request id
+    int GetRequestId(void) { return m_RequestId; }
+    void SetRequestId(int id) { m_RequestId = id; }
+    void IncRequestId(void) { m_RequestId++; }
+
+    /// Get request timer, create if not exist yet
+    CStopWatch* GetOrCreateStopWatch(void);
+    /// Get request timer or null
+    CStopWatch* GetStopWatch(void) { return m_StopWatch; }
+    /// Delete request timer
+    void ResetStopWatch(void);
+
+    /// Diag buffer
+    CDiagBuffer& GetDiagBuffer(void) { return *m_DiagBuffer; }
+
+    /// Get diag context data for the current thread
+    static CDiagContextThreadData& GetThreadData(void);
+
+private:
+    TProperties* m_Properties;
+    int          m_RequestId;
+    CStopWatch*  m_StopWatch;
+    CDiagBuffer* m_DiagBuffer;
+};
+
+
 class NCBI_XNCBI_EXPORT CDiagContext
 {
 public:
@@ -1241,10 +1282,8 @@ private:
                         const string&            message);
 
     typedef map<string, string> TProperties;
-    friend void PropTlsCleanup(CDiagContext::TProperties*, void*);
-
-    // Get thread-local properties, create if the flag is set.
-    TProperties* x_GetThreadProps(bool force_create = false) const;
+    friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
+                                     void* cleanup_data);
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;

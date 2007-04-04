@@ -53,7 +53,7 @@ class CDiagBuffer
     CDiagBuffer(const CDiagBuffer&);
     CDiagBuffer& operator= (const CDiagBuffer&);
 
-    friend CDiagBuffer& GetDiagBuffer(void);
+    friend class CDiagContextThreadData;
 
     // Flags
     friend bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags);
@@ -199,8 +199,12 @@ private:
     static CDiagErrCodeInfo* sm_ErrCodeInfo;
     static bool              sm_CanDeleteErrCodeInfo;
 
+    enum EPostNumberIncrement {
+        ePostNumber_NoIncrement,
+        ePostNumber_Increment
+    };
     // Increment process post number, return the new value
-    static int GetProcessPostNumber(bool inc);
+    static int GetProcessPostNumber(EPostNumberIncrement inc);
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
