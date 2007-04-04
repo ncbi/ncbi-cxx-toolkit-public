@@ -60,35 +60,9 @@ ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
 }
 
 
-ERW_Result CSocketReaderWriter::Read(void*   buf,
-                                     size_t  count,
-                                     size_t* n_read)
+ERW_Result CSocketReaderWriter::x_Result(EIO_Status status)
 {
-    if (!m_Sock) {
-        return eRW_Error;
-    }
-    switch (m_Sock->Read(buf, count, n_read, eIO_ReadPlain)) {
-    case eIO_Success:
-        return eRW_Success;
-    case eIO_Timeout:
-        return eRW_Timeout;
-    case eIO_Closed:
-        return eRW_Eof;
-    default:
-        break;
-    }
-    return eRW_Error;
-}
-
-
-ERW_Result CSocketReaderWriter::Write(const void* buf,
-                                      size_t      count,
-                                      size_t*     n_written)
-{
-    if (!m_Sock) {
-        return eRW_Error;
-    }
-    switch (m_Sock->Write(buf, count, n_written)) {
+    switch (status) {
     case eIO_Success:
         return eRW_Success;
     case eIO_Timeout:

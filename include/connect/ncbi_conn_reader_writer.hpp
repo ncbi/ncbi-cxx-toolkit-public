@@ -65,11 +65,22 @@ public:
                              size_t*     bytes_written = 0);
 
     virtual ERW_Result Flush(void) { return eRW_NotImplemented; };
-    
+
+    const STimeout*    GetTimeout(EIO_Event event) const;
+
+    ERW_Result         SetTimeout(EIO_Event event, const STimeout* timeout);
+
 protected:
+    ERW_Result x_Result(EIO_Status status);
+
     CSocket*   m_Sock;
     EOwnership m_IsOwned;
+
+private:
+    CSocketReaderWriter(const CSocketReaderWriter&);
+    CSocketReaderWriter operator=(const CSocketReaderWriter&);
 }; 
+
 
 
 inline CSocketReaderWriter::CSocketReaderWriter(CSocket*   sock,
@@ -84,6 +95,41 @@ inline CSocketReaderWriter::~CSocketReaderWriter()
     if (m_IsOwned) {
         delete m_Sock;
     }
+}
+
+
+inline ERW_Result CSocketReaderWriter::Read(void*   buf,
+                                            size_t  count,
+                                            size_t* n_read)
+{
+    return m_Sock
+        ? x_Result(m_Sock->Read(buf, count, n_read, eIO_ReadPlain))
+        : eRW_Error;
+}
+
+
+inline ERW_Result CSocketReaderWriter::Write(const void* buf,
+                                             size_t      count,
+                                             size_t*     n_written)
+{
+    return m_Sock
+        ? x_Result(m_Sock->Write(buf, count, n_written))
+        : eRW_Error;
+}
+
+
+inline const STimeout* CSocketReaderWriter::GetTimeout(EIO_Event event) const
+{
+    return m_Sock ? m_Sock->GetTimeout(event) : 0;
+}
+
+
+inline ERW_Result CSocketReaderWriter::SetTimeout(EIO_Event       event,
+                                                  const STimeout* timeout)
+{
+    return m_Sock
+        ? x_Result(m_Sock->SetTimeout(event, timeout))
+        : eRW_Error;
 }
 
 
