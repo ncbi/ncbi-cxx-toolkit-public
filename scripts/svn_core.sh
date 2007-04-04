@@ -174,6 +174,7 @@ Checkout include/connect -N
 Checkout include/connect/ext
 Checkout include/connect/services
 Checkout include/corelib
+Checkout include/common
 Checkout include/util
 Checkout include/cgi
 Checkout include/html
