@@ -70,20 +70,11 @@ SRC =	aaa_dummy_pch \
 	wx_tools
 
 LIB =	xcd_utils xbma_refiner xstruct_util xstruct_dp xstruct_thread \
-	xblast xalgoblastdbindex composition_adjustment seqdb xobjread tables \
+	xblast xalgodustmask xalgoblastdbindex composition_adjustment seqdb xobjread tables xobjutil \
 	id1cli id1 cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
-	xregexp xser xutil xconnect xncbi $(Z_LIB) $(PCRE_LIB)
-
-WXWIDGETS_INSTALL = /home/thiessen/wxWidgets-install
-ifeq ($(DEBUG_SFX),Debug)
-	WXWIDGETS_CONFIG_DEBUG = --debug=yes
-else
-	WXWIDGETS_CONFIG_DEBUG = --debug=no
-endif
-WXWIDGETS_CONFIG_FLAGS = $(WXWIDGETS_CONFIG_DEBUG) --static=yes --unicode=no
-WXWIDGETS_INCLUDE := $(shell $(WXWIDGETS_INSTALL)/bin/wx-config $(WXWIDGETS_CONFIG_FLAGS) --cxxflags)
-WXWIDGETS_LIBS := $(shell $(WXWIDGETS_INSTALL)/bin/wx-config $(WXWIDGETS_CONFIG_FLAGS) --libs std,gl)
+	xregexp xser xutil xconnect xncbi \
+	$(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB)
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
@@ -95,7 +86,7 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 LIBS = \
-	$(WXWIDGETS_LIBS) -lOSMesa \
+	$(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) -lOSMesa \
 	$(Z_LIBS) $(PNG_LIBS) $(PCRE_LIBS) \
 	$(ORIG_LIBS)
 
