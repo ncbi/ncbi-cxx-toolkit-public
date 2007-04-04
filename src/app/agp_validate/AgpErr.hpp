@@ -76,12 +76,11 @@ enum TAppliesTo{
   //AT_Unknown=0, -- just print the message without the content line
   AT_ThisLine=1,     // Accumulate messages
   AT_SkipAfterBad=2, // Suppress this error if the previous line was invalid
+                     // (e.g. had wrong # of columns)
   AT_PrevLine    =4  // Print the previous line if it was not printed;
                      // print the message now
   // AT_ThisLine|AT_PrevLine -- both lines are involved:
-  // 1) print the previous line now (if it was not printed already)
-  // 2) suppress the error message if the previous line was so bad
-  //    that it did not even reach the syntax validator (wrong # of columns)
+  // print the previous line now (if it was not printed already)
 };
 
 class CAgpErr
@@ -182,7 +181,7 @@ public:
   // print the previous line and record the message
   // if it applies to the 2 last lines (AT_PrevLine|AT_ThisLine).
   //
-  // The resulting output format shines when:
+  // The resulting output format works well when:
   // 1)there are multiple errors in one line:
   //   file:linenum:agp content
   //        MSG1
@@ -191,18 +190,18 @@ public:
   //   file1:linenum1:agp content1
   //   file2:linenum2:agp content2
   //        MSG
-  // It should still be acceptable if both 1 and 2 are true.
+  // The format is still acceptable if both 1 and 2 are true.
   //
   // When the message applies to 2 non-consequitive lines
-  // (e.g. intersecting component spans):
+  // (e.g. intersecting component spans), we do not print the first line involved.
+  // This is still possible to do as follows:
   //   // Print the first line involved
   //   if( !agpErr.MustSkip(code) ) CAgpErr::PrintLine(...);
   //   // Print the current line, then the message
   //   agpErr.Msg(..AT_ThisLine..);
   //
-  // The worst mixup could happen when there are 2 errors involving
-  // different pairs of lines, typically: (N-1, N) (N-M, N)
-  // To do: check if this is possible in the current ContextValidator
+  // The worst could happen when there are 2 errors involving
+  // different pairs of lines: (N-1, N) (N-M, N)
 
   void Msg(TCode code, const string& details=NcbiEmptyString,
     int appliesTo=AT_ThisLine, const string& substX=NcbiEmptyString);
@@ -217,26 +216,26 @@ public:
   // invoke with the next filename prior to reading it.
   void StartFile(const string& s);
 
-  // 'fgrep' errors out, or keep just the given errors (skip_other=true)
-  // Can also include/exclude by code -- see GetPrintableCode().
+  // 'fgrep' errors out, or keep only the given errors (skip_other=true)
+  // Can include/exclude by code (see GetPrintableCode()), or by substring.
   // Return values:
   //   ""                          no matches found for str
   //   string beginning with "  "  one or more messages that matched
-  //   else                        printable message
+  //   else                        printable [error] message
   // Note: call SkipMsg("all") nefore SkipMsg(smth, true)
   string SkipMsg(const string& str, bool skip_other=false);
 
   bool MustSkip(TCode code);
 
-  // To do: some function to print individual error counts
-  //        (important if we skipped some errors)
-
-  // One argument:
-  //   E_Last: count errors  W_Last: count warnings
+  // 1 argument:
+  //   E_Last: count errors
+  //   W_Last: count warnings
   //   G_Last: count GenBank errors
   //   other: errors/warnings of one given type
-  // Two arguments: range of TCode-s
+  // 2 arguments: range of TCode-s
   int CountTotals(TCode from, TCode to=E_First);
+
+  // Print individual error counts (important if we skipped some errors)
   void PrintMessageCounts(CNcbiOstream& ostr, TCode from, TCode to=E_First);
 
 private:
@@ -260,11 +259,11 @@ private:
   bool m_invalid_prev;       // true: suppress errors concerning the previous line
 
   // a stream to Accumulate messages for the current line.
-  // (We print right away messages that apply only to the previous line.)
+  // (We immediately print messages that apply only to the previous line.)
   string m_filename;
   int m_line_num;
 
-  // For reporting the lines we passed a long time ago
+  // For reporting filenames of the lines we passed a long time ago
   // (intersecting component spans, duplicate objects, etc)
   vector<string> m_InputFiles;
 

@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 //// class CGapVal
 TValuesMap CGapVal::typeStrToInt;
 TValuesMap CGapVal::validLinkage;
-const CGapVal::TStr CGapVal::typeIntToStr[CGapVal::GAP_count+CGapVal::GAP_yes_count] = {
+// +CGapVal::GAP_yes_count
+const CGapVal::TStr CGapVal::typeIntToStr[CGapVal::GAP_count] = {
   "clone",
   "fragment",
   "repeat",
@@ -79,6 +80,7 @@ bool CGapVal::init(const SDataLine& dl, bool log_errors)
 
   if(linkage==LINKAGE_yes) {
     if( type!=GAP_clone && type!=GAP_repeat && type!=GAP_fragment ) {
+      //if(log_errors)
       agpErr.Msg(CAgpErr::E_InvalidYes, dl.gap_type);
       return false;
     }
@@ -280,15 +282,6 @@ bool CAgpLine::IsGapType(const string& type)
 {
   return type=="N" || type=="U";
 }
-
-/*
-bool CAgpLine::IsComponentType(const string& type)
-{
-  int i = x_CheckValues( componentTypeValues,
-    type, NcbiEmptyString, NO_LOG);
-  return i>=0 && i!='N' && i!='U';
-}
-*/
 
 END_NCBI_SCOPE
 

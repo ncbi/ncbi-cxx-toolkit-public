@@ -27,7 +27,7 @@
  *      Victor Sapojnikov
  *
  * File Description:
- *      AGP context-sensetive validation (i.e. information from several lines).
+ *      AGP context-sensitive validation (uses information from several lines).
  *
  *
  */
@@ -240,7 +240,7 @@ void CAgpContextValidator::x_OnCompLine(
     }
   }
 
-  //// Check: component spans do not overlap and are in correct order
+  //// Check that component spans do not overlap and are in correct order
 
   // Try to insert to the span as a new entry
   TCompIdSpansPair value_pair( dl.component_id, CCompSpans(comp) );
@@ -251,7 +251,9 @@ void CAgpContextValidator::x_OnCompLine(
     // Not inserted - the key already exists.
     CCompSpans& spans = (id_insert_result.first)->second;
 
-    // Issue at most 1 warning
+    // Chose one most important warning amongst:
+    //   W_SpansOverlap W_SpansOrder W_DuplicateComp
+    // The last 2 are omitted for draft seqs.
     CCompSpans::TCheckSpan check_sp = spans.CheckSpan(
       comp.beg, comp.end, comp.ori!=CCompVal::ORI_minus
     );
@@ -380,25 +382,6 @@ void CAgpContextValidator::PrintTotals()
       m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_fragment]+
       m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_repeat  ];
     int linkageNoCnt = m_GapCount - linkageYesCnt;
-    /*
-    cout << "\n- linkage yes -------- : "<<ALIGN_W(linkageYesCnt);
-    if(linkageYesCnt) {
-      for(int i=0; i<CGapVal::GAP_yes_count; i++) {
-        cout<< "\n\t"
-            << setw(15) << setiosflags(IOS_BASE::left) << CGapVal::typeIntToStr[i]
-            << ": " << ALIGN_W( m_GapTypeCnt[CGapVal::GAP_count+i] );
-      }
-    }
-
-    cout << "\n- linkage no  -------- : "<<ALIGN_W(linkageNoCnt);
-    if(linkageNoCnt) {
-      for(int i=0; i<CGapVal::GAP_count; i++) {
-        cout<< "\n\t"
-            << setw(15) << setiosflags(IOS_BASE::left) << CGapVal::typeIntToStr[i]
-            << ": " << ALIGN_W( m_GapTypeCnt[i] );
-      }
-    }
-    */
 
     int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CGapVal::GAP_fragment];
     int breakCnt     = linkageNoCnt  - m_GapTypeCnt[CGapVal::GAP_fragment];
@@ -458,17 +441,7 @@ void CAgpContextValidator::x_PrintPatterns(
   // Get a vector with sorted pointers to map values
   CAccPatternCounter::pv_vector pat_cnt;
   namePatterns.GetSortedValues(pat_cnt);
-
-  /*
-  if(pat_cnt.size()==1) {
-    // Continue on the same line, do not print counts
-    cout<< " " << CAccPatternCounter::GetExpandedPattern( pat_cnt[0] )
-        << "\n";
-    return;
-  }
-  */
   cout << "\n";
-
 
   // Calculate width of columns 1 (pattern) and 2 (count)
   int w = NStr::IntToString(
@@ -557,6 +530,7 @@ int CValuesCount::x_byCount( value_type* a, value_type* b )
 //// class CCompSpans - stores data for all preceding components
 CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool isPlus)
 {
+  // The lowest priority warning (to be ignored for draft seqs)
   TCheckSpan res( begin(), CAgpErr::W_DuplicateComp );
 
   for(iterator it = begin();  it != end(); ++it) {
@@ -564,7 +538,7 @@ CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool is
     if( it->beg <= span_beg && span_beg <= it->end )
       return TCheckSpan(it, CAgpErr::W_SpansOverlap);
 
-    // A lower priority error (would even be ignored for draft seqs)
+    // A lower priority warning (to be ignored for draft seqs)
     if( ( isPlus && span_beg < it->beg) ||
         (!isPlus && span_end > it->end)
     ) {
@@ -579,8 +553,6 @@ CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool is
 void CCompSpans::AddSpan(const CCompVal& span)
 {
   push_back(span);
-  //if(span.beg < beg) beg = span.beg;
-  //if(end < span.end) end = span.end;
 }
 
 

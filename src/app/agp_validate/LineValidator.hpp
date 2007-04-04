@@ -120,7 +120,7 @@ public:
   };
 
   typedef const char* TStr;
-  static const TStr typeIntToStr[GAP_count+GAP_yes_count];
+  static const TStr typeIntToStr[GAP_count]; // +GAP_yes_count
 
   // Initialized on the first invokation of the constructor from typeIntToStr[]
   static TValuesMap typeStrToInt;
@@ -156,7 +156,6 @@ public:
   CAgpLine();
   bool init(const SDataLine& dl);
   static bool IsGapType(const string& type);
-  //static bool IsComponentType(const string& type);
 
   int obj_begin;
   int obj_end;

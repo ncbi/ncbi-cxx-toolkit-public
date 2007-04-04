@@ -68,20 +68,15 @@ public:
   CCompSpans(const CCompVal& src)
   {
     push_back(src);
-    //beg = src.beg;
-    //end = src.end;
   }
 
   // Returns the first overlapping span and CAgpErr::W_SpansOverlap,
   // or the first span out of order and CAgpErr::W_SpansOrder,
-  // or back() and CAgpErr::W_DuplicateComp.
+  // or begin() and CAgpErr::W_DuplicateComp.
   // The caller can ignore the last 2 warnings for draft seqs.
   typedef pair<iterator, CAgpErr::TCode> TCheckSpan;
   TCheckSpan CheckSpan(int span_beg, int span_end, bool isPlus);
   void AddSpan(const CCompVal& span); // CCompSpans::iterator it,
-
-  // int GetTo  () { return end; }
-  // int GetFrom() { return beg; }
 
 };
 
@@ -117,11 +112,8 @@ protected:
   int m_CompOri[CCompVal::ORI_count];
 
   int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
-  CValuesCount m_TypeCompCnt; // column 5: A, D, F, ..., N, U
-
   // Count component types and N/U gap types.
-  int  m_LineTypes;
-  int* m_LineTypeCnt;
+  CValuesCount m_TypeCompCnt; // column 5: A, D, F, ..., N, U
 
   // keep track of the object ids to detect duplicates.
   typedef set<string> TObjSet;
@@ -138,9 +130,9 @@ protected:
   string prev_object;
   int prev_line_gap_type;
 
-  // Used for the first component in a scaffold;
-  // we do not know whether the scaffold is a singleton,
-  // and whether unlnown orientation is an error.
+  // Used for the first component in a scaffold.
+  // We do not know right away whether the scaffold is a singleton,
+  // and unknown orientation is not an error for singletons.
   bool prev_orientation_unknown;
 
    // End of previous element in object coords (column 3).
