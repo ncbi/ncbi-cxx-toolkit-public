@@ -98,8 +98,8 @@ bool CSampleSoapServerApplication::GetVersion(
     CRef<CVersionResponse> resp(new CVersionResponse);
     // Just bounce ClientID
     resp->SetVersionStruct().SetClientID(req ? req->GetClientID() : "unknown clientid");
-    resp->SetVersionStruct().SetMajor("1");
-    resp->SetVersionStruct().SetMinor("0");
+    resp->SetVersionStruct().SetMajor(1);
+    resp->SetVersionStruct().SetMinor(0);
     response.AddObject(*resp,CSoapMessage::eMsgBody);
     return true;
 }
@@ -112,8 +112,8 @@ bool CSampleSoapServerApplication::DoMath(
     const CMath::TOperand& ops = req->GetOperand();
     CMath::TOperand::const_iterator it;
     for (it = ops.begin(); it != ops.end(); ++it) {
-        int x = NStr::StringToInt((*it)->GetX());
-        int y = NStr::StringToInt((*it)->GetY());
+        int x = (*it)->GetX();
+        int y = (*it)->GetY();
         int res;
         COperand::C_Attlist::TOperation op_type = (*it)->GetAttlist().GetOperation();
         if (op_type == COperand::C_Attlist::eAttlist_operation_add) {
@@ -121,7 +121,7 @@ bool CSampleSoapServerApplication::DoMath(
         } else {
             res = x-y;
         }
-        resp->SetMathResult().push_back(NStr::IntToString(res));
+        resp->SetMathResult().push_back(res);
     }
     response.AddObject(*resp,CSoapMessage::eMsgBody);
     return true;

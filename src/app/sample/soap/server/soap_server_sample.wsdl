@@ -9,17 +9,19 @@
     >
   <wsdl:types>
     <xs:schema elementFormDefault="qualified" targetNamespace="http://ncbi.nlm.nih.gov/">
-      <xs:element name="Description">
-        <xs:complexType />
-      </xs:element>
+
+<xs:element name="Description">
+  <xs:complexType/>
+</xs:element>
+
 <xs:element name="DescriptionText">
   <xs:complexType>
     <xs:sequence>
-      <xs:element ref="Text"/>
+      <xs:element name="Text" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
-<xs:element name="Text" type="xs:string"/>
+
 <xs:element name="Math">
   <xs:complexType>
     <xs:sequence>
@@ -27,40 +29,40 @@
     </xs:sequence>
   </xs:complexType>
 </xs:element>
-<xs:element name="Operand">
-  <xs:complexType>
-    <xs:sequence>
-      <xs:element ref="x"/>
-      <xs:element ref="y"/>
-    </xs:sequence>
-        <xs:attribute name="operation" use="required">
-          <xs:simpleType>
-            <xs:restriction base="xs:string">
-              <xs:enumeration value="add"/>
-              <xs:enumeration value="subtract"/>
-            </xs:restriction>
-          </xs:simpleType>
-        </xs:attribute>
-  </xs:complexType>
-</xs:element>
-<xs:element name="x" type="xs:int"/>
-<xs:element name="y" type="xs:int"/>
+
 <xs:element name="MathResponse">
   <xs:complexType>
     <xs:sequence>
-      <xs:element ref="MathResult" maxOccurs="unbounded"/>
+      <xs:element name="MathResult" type="xs:int" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
-<xs:element name="MathResult" type="xs:int"/>
+
+<xs:element name="Operand">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="x" type="xs:int"/>
+      <xs:element name="y" type="xs:int"/>
+    </xs:sequence>
+    <xs:attribute name="operation" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="add"/>
+          <xs:enumeration value="subtract"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
 <xs:element name="Version">
   <xs:complexType>
     <xs:sequence>
-      <xs:element ref="ClientID"/>
+      <xs:element name="ClientID" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
-<xs:element name="ClientID" type="xs:string"/>
+
 <xs:element name="VersionResponse">
   <xs:complexType>
     <xs:sequence>
@@ -68,17 +70,17 @@
     </xs:sequence>
   </xs:complexType>
 </xs:element>
+
 <xs:element name="VersionStruct">
   <xs:complexType>
     <xs:sequence>
-      <xs:element ref="Major"/>
-      <xs:element ref="Minor"/>
-      <xs:element ref="ClientID"/>
+      <xs:element name="Major" type="xs:int"/>
+      <xs:element name="Minor" type="xs:int"/>
+      <xs:element name="ClientID" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
-<xs:element name="Major" type="xs:string"/>
-<xs:element name="Minor" type="xs:string"/>
+
     </xs:schema>
   </wsdl:types>
   <wsdl:message name="GetDescriptionSoapIn">

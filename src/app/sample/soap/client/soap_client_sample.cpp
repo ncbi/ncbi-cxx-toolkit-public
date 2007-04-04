@@ -182,13 +182,13 @@ int CSampleSoapClientApplication::Run(void)
 
         CMath ops;
         CRef<COperand> op1(new COperand);
-        op1->SetX("1");
-        op1->SetY("2");
+        op1->SetX(1);
+        op1->SetY(2);
         op1->SetAttlist().SetOperation( COperand::C_Attlist::eAttlist_operation_add);
         ops.SetOperand().push_back(op1);
         CRef<COperand> op2(new COperand);
-        op2->SetX("22");
-        op2->SetY("11");
+        op2->SetX(22);
+        op2->SetY(11);
         op2->SetAttlist().SetOperation( COperand::C_Attlist::eAttlist_operation_subtract);
         ops.SetOperand().push_back(op2);
 
