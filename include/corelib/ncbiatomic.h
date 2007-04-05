@@ -63,7 +63,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
          ;
 #else
 {
-    void** nv_loc = const_cast<void**>(location);
+    void** nv_loc = (void**) location;
 #  ifdef NCBI_NO_THREADS
     void* old_value = *nv_loc;
     *nv_loc = new_value;
