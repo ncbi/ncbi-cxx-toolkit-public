@@ -67,7 +67,7 @@
 #include <objmgr/impl/scope_transaction_impl.hpp>
 
 #include <objmgr/seq_annot_ci.hpp>
-#include <cmath>
+#include <math.h>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
