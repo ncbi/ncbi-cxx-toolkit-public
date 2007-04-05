@@ -363,7 +363,7 @@ extern int GetDiagRequestId(void)
 
 extern void SetDiagRequestId(int id)
 {
-    return CDiagContextThreadData::GetThreadData().SetRequestId(id);
+    CDiagContextThreadData::GetThreadData().SetRequestId(id);
 }
 
 
