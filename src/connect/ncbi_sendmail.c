@@ -293,9 +293,12 @@ static size_t s_FromSize(const SSendMailInfo* info)
 
     if (!*info->from  ||  !(info->mx_options & fSendMail_StripNonFQDNHost))
         return len;
-    if (!(at = memchr(info->from, '@', len))  ||  at == info->from + len - 1)
+    if (!(at = (const char*) memchr(info->from, '@', len))
+        || at == info->from + len - 1) {
         return len - 1;
-    if (!(dot = memchr(at + 1, '.', len - (size_t)(at - info->from) - 1))
+    }
+    if (!(dot = (const char*) memchr(at + 1, '.',
+                                     len - (size_t)(at - info->from) - 1))
         ||  dot == at + 1  ||  dot == info->from + len - 1) {
         return (size_t)(at - info->from);
     }

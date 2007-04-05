@@ -69,9 +69,10 @@ static int/*bool*/ s_AddService(const SSERV_Info* info,
 {
     if (data->a_cand <= data->n_cand) {
         size_t n = data->a_cand + 10;
-        SLB_Candidate* temp = (data->cand
-                               ? realloc(data->cand, n * sizeof(*data->cand))
-                               : malloc (            n * sizeof(*data->cand)));
+        SLB_Candidate* temp =
+            (SLB_Candidate*)(data->cand
+                             ? realloc(data->cand, n * sizeof(*data->cand))
+                             : malloc (            n * sizeof(*data->cand)));
         if (!temp)
             return 0/*false*/;
         data->a_cand = n;
@@ -92,8 +93,10 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
     char* buf;
     int n;
 
-    if (!(buf = malloc(strlen(name) + sizeof(REG_CONN_LOCAL_SERVER) + 80)))
+    if (!(buf =
+          (char*) malloc(strlen(name) + sizeof(REG_CONN_LOCAL_SERVER) + 80))) {
         return 0/*failed*/;
+    }
 
     info = 0;
     for (n = 0;  n <= 100;  n++) {

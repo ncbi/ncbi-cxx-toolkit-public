@@ -577,8 +577,8 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
             sprintf(port, ":%hu", net_info->port);
         else
             *port = '\0';
-        if (!(referer = malloc(9 + strlen(host) + strlen(port)
-                               + strlen(path) + strlen(args)))) {
+        if (!(referer = (char*) malloc(9 + strlen(host) + strlen(port)
+                                       + strlen(path) + strlen(args)))) {
             return;
         }
         strcat(strcat(strcpy(strcpy(referer, "http://")+7, host), port), path);
@@ -594,8 +594,8 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
             SOCK_gethostname(net_info->client_host,
                              sizeof(net_info->client_host));
         }
-        if (!(referer = malloc(3 + 1 + 9 + 1 + 2*strlen(strlwr(str)) +
-                               strlen(host) + strlen(name)))) {
+        if (!(referer = (char*) malloc(3 + 1 + 9 + 1 + 2*strlen(strlwr(str)) +
+                                       strlen(host) + strlen(name)))) {
             return;
         }
         strcat(strcat(strcat(strcpy(referer, str), "://"), host), "/");

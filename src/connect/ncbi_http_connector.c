@@ -1027,7 +1027,7 @@ static void s_AddReferer(SConnNetInfo* net_info)
                 break;
         }
     }
-    if (!(referer = malloc(strlen(net_info->http_referer) + 12)))
+    if (!(referer = (char*) malloc(strlen(net_info->http_referer) + 12)))
         return;
     sprintf(referer, "Referer: %s\r\n", net_info->http_referer);
     ConnNetInfo_ExtendUserHeader(net_info, referer);

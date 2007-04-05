@@ -1271,7 +1271,7 @@ static int s_HexChar(char ch)
     if (rc <= 9)
         return rc;
     rc = (ch | ' ') - 'a';
-    return rc <= 5 ? rc + 10 : -1;
+    return rc <= 5 ? (int) rc + 10 : -1;
 }
 
 
