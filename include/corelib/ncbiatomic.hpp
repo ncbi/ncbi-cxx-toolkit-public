@@ -39,6 +39,7 @@
 ///
 
 #include <corelib/ncbiatomic.h>
+#include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 

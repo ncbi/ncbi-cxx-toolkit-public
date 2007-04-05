@@ -97,7 +97,6 @@ extern "C" {
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
-#  define NCBI_SWAP_POINTERS_EXTERN 1
 #elif defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_ATOMIC_H) /* Solaris 10+. */
 #  include <atomic.h>
 #  ifndef NCBI_COUNTER_ADD
