@@ -26,13 +26,13 @@
  * Author:  Aaron Ucko
  *
  * File Description:
- *      SwapPointers     -- atomic pointer swap operation
+ *      NCBI_SwapPointers     -- atomic pointer swap operation
  *
  */
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiatomic.hpp>
+#include <corelib/ncbiatomic.h>
 
 #ifdef NCBI_SLOW_ATOMIC_SWAP
 
@@ -40,9 +40,12 @@
 
 BEGIN_NCBI_SCOPE
 
+// weak protection, as it doesn't guard against *other* simultaneous
+// accesses. :-/
 DEFINE_STATIC_FAST_MUTEX(sx_AtomicPointerMutex);
 
-void* x_SwapPointers(void * volatile * nv_loc, void* new_value)
+extern "C"
+void* NCBI_SwapPointers(void * volatile * nv_loc, void* new_value)
 {
     CFastMutexGuard LOCK(sx_AtomicPointerMutex);
     void* old_value = *nv_loc;

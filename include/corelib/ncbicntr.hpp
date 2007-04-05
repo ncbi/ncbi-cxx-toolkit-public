@@ -39,115 +39,7 @@
 
 #include <corelib/ncbistd.hpp>
 
-#if defined(HAVE_SCHED_YIELD) && !defined(NCBI_NO_THREADS)
-extern "C" {
-#  include <sched.h>
-}
-#  define NCBI_SCHED_INIT() int spin_counter = 0
-#  define NCBI_SCHED_YIELD() if ( !(++spin_counter & 3) ) sched_yield()
-#else
-#  define NCBI_SCHED_INIT()
-#  define NCBI_SCHED_YIELD()
-#endif
-
-#ifdef NCBI_COMPILER_GCC
-#  if NCBI_COMPILER_VERSION >= 300
-#    define NCBI_COMPILER_GCC3 1
-#  endif
-#elif defined(NCBI_COMPILER_ICC)
-#  if NCBI_COMPILER_VERSION >= 600
-#    define NCBI_COMPILER_ICC6
-#  endif
-#endif
-
-#undef NCBI_COUNTER_UNSIGNED
-#undef NCBI_COUNTER_RESERVED_VALUE
-#undef NCBI_COUNTER_ASM_OK
-#undef NCBI_COUNTER_USE_ASM
-#undef NCBI_COUNTER_ADD
-#undef NCBI_COUNTER_NEED_MUTEX
-
-// Messy system-specific details; they're mostly grouped together here
-// to ensure consistency.
-
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX)) || defined(NCBI_COMPILER_ICC6)
-#  define NCBI_COUNTER_ASM_OK
-#endif
-
-/// Define platform specific counter-related macros/values.
-///
-/// TNCBIAtomicValue "type" is defined based on facilities available for a
-/// compiler/platform. TNCBIAtomicValue is used in the CAtomicCounter class
-/// for defining the internal represntation of the counter.
-///
-/// Where possible NCBI_COUNTER_ADD is defined in terms of compiler/platform
-/// specific features.
-#ifdef NCBI_NO_THREADS
-   typedef unsigned int TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
-#elif defined(NCBI_COUNTER_ASM_OK) && defined(__sparc) && !defined(__sparcv9)
-// Always use our own code on pre-V9 SPARC; GCC 3's implementation
-// uses a global lock.
-   typedef unsigned int TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
-#  define NCBI_COUNTER_USE_ASM 1
-#elif defined(NCBI_COMPILER_GCC3)
-#  include <bits/atomicity.h>
-   typedef _Atomic_word TNCBIAtomicValue;
-#  if NCBI_COMPILER_VERSION >= 340
-#    define NCBI_COUNTER_ADD(p, d) (__gnu_cxx::__exchange_and_add(p, d) + d)
-#  else
-#    define NCBI_COUNTER_ADD(p, d) (__exchange_and_add(p, d) + d)
-#  endif
-#elif defined(NCBI_COMPILER_COMPAQ)
-#  include <machine/builtins.h>
-   typedef int TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) (__ATOMIC_ADD_LONG(p, d) + d)
-#elif defined(NCBI_OS_SOLARIS) && 0 // Kernel-only. :-/
-#  include <sys/atomic.h>
-   typedef uint32_t TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  define NCBI_COUNTER_ADD(p, d) atomic_add_32_nv(p, d)
-#elif defined(NCBI_OS_IRIX)
-#  include <mutex.h>
-   typedef __uint32_t TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  define NCBI_COUNTER_ADD(p, d) add_then_test32(p, d)
-#elif defined(NCBI_OS_AIX)
-#  include <sys/atomic_op.h>
-   typedef int TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
-#elif defined(NCBI_OS_DARWIN)
-#  ifdef __MWERKS__
-#    define __NOEXTENSIONS__
-#  endif
-#  include <CoreServices/CoreServices.h>
-// Darwin's <AssertMacros.h> defines check as a variant of assert....
-#  ifdef check
-#    undef check
-#  endif
-   typedef SInt32 TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
-#elif defined(NCBI_OS_MAC)
-#  include <OpenTransport.h> // Is this right?
-   typedef SInt32 TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) OTAtomicAdd32(d, p)
-#elif defined(NCBI_OS_MSWIN)
-#  include <corelib/ncbi_os_mswin.hpp>
-   typedef LONG TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
-#else
-   typedef unsigned int TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  if defined (NCBI_COUNTER_ASM_OK) && (defined(__i386) || defined(__sparc) || defined(__x86_64))
-#    define NCBI_COUNTER_USE_ASM 1
-#  else
-#    define NCBI_COUNTER_NEED_MUTEX 1
-#  endif
-#endif
-
+#include <corelib/impl/ncbi_atomic_defs.h>
 
 /** @addtogroup Counters
  *
@@ -263,27 +155,7 @@ void CAtomicCounter::Set(CAtomicCounter::TValue new_value) THROWS_NONE
 // In order to keep the toolkit's external interface sane, we therefore
 // force this method out-of-line and into ncbicntr_workshop.o.
 #if defined(NCBI_COUNTER_USE_ASM) && (!defined(NCBI_COMPILER_WORKSHOP) || defined(NCBI_COUNTER_IMPLEMENTATION))
-#  ifdef NCBI_COMPILER_WORKSHOP
-#    ifdef __sparcv9
-extern "C"
-CAtomicCounter::TValue NCBICORE_asm_cas(CAtomicCounter::TValue new_value,
-                                        CAtomicCounter::TValue* address,
-                                        CAtomicCounter::TValue old_value);
-#    elif defined(__sparc)
-extern "C"
-CAtomicCounter::TValue NCBICORE_asm_swap(CAtomicCounter::TValue new_value,
-                                         CAtomicCounter::TValue* address);
-#    elif defined(__x86_64)
-extern "C"
-CAtomicCounter::TValue NCBICORE_asm_lock_xaddl_64
-(CAtomicCounter::TValue* address, int delta);
-#define NCBICORE_asm_lock_xaddl NCBICORE_asm_lock_xaddl_64
-#    elif defined(__i386)
-extern "C"
-CAtomicCounter::TValue NCBICORE_asm_lock_xaddl(CAtomicCounter::TValue* address,
-                                               int delta);
-#    endif
-#  else
+#  ifndef NCBI_COMPILER_WORKSHOP
 inline
 #  endif
 CAtomicCounter::TValue
@@ -329,14 +201,10 @@ THROWS_NONE
     result += delta;
     *value_p = result;
 #  elif defined(__i386) || defined(__x86_64)
-    // Yay CISC. ;-)
-#    ifdef NCBI_COMPILER_WORKSHOP
-    result = NCBICORE_asm_lock_xaddl(nv_value_p, delta) + delta;
-#    else
+    // Yay CISC. ;-)  (WorkShop already handled.)
     asm volatile("lock; xaddl %1, %0" : "=m" (*nv_value_p), "=r" (result)
                  : "1" (delta), "m" (*nv_value_p));
     result += delta;
-#    endif
 #  else
 #    error "Unsupported processor type for assembly implementation!"
 #  endif
