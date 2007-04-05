@@ -78,6 +78,10 @@ enum EProgram {
 
 class CSearchMessage : public CObject {
 public:
+    /// Construct a search message object.
+    /// @param severity The severity of this message. [in]
+    /// @param error_id A number unique to this error. [in]
+    /// @param message A description of the error for the user. [in]
     CSearchMessage(EBlastSeverity   severity,
                    int              error_id,
                    const string   & message)
@@ -85,23 +89,33 @@ public:
     {
     }
     
+    /// Construct an empty search message object.
     CSearchMessage()
         : m_Severity(EBlastSeverity(0)), m_ErrorId(0)
     {
     }
     
+    /// Get the severity of this message.
+    /// @return The severity of this message.
     EBlastSeverity GetSeverity() const
     {
         return m_Severity;
     }
 
+    /// Adjust the severity of this message.
+    /// @param The severity to assign. [in]
     void SetSeverity(EBlastSeverity sev) { m_Severity = sev; }
     
+    /// Get the severity of this message as a string.
+    /// @return A symbolic name for the severity level (such as "Warning").
     string GetSeverityString() const
     {
         return GetSeverityString(m_Severity);
     }
     
+    /// Get the symbolic name for a level of severity as a string.
+    /// @param severity The severity as an enumeration.
+    /// @return A symbolic name for the severity level (such as "Warning").
     static string GetSeverityString(EBlastSeverity severity)
     {
         switch(severity) {
@@ -113,37 +127,65 @@ public:
         return "Message";
     }
     
+    /// Get the error identifier.
+    /// @return An identifier unique to this specific message.
     int GetErrorId() const
     {
         return m_ErrorId;
     }
 
+    /// Set the error message.
+    /// @return A reference allowing the user to set the error string.
     string& SetMessage(void) { return m_Message; }
     
+    /// Get the error message.
+    /// @return A message describing this error or warning.
     string GetMessage() const
     {
         return GetSeverityString() + ": " + m_Message;
     }
 
+    /// Compare two error messages for equality.
+    /// @return True if the messages are the same.
     bool operator==(const CSearchMessage& rhs) const;
-    bool operator!=(const CSearchMessage& rhs) const;
-    bool operator<(const CSearchMessage& rhs) const;
 
+    /// Compare two error messages for inequality.
+    /// @return True if the messages are not the same.
+    bool operator!=(const CSearchMessage& rhs) const;
+
+    /// Compare two error messages for order.
+    /// @return True if the first message is less than the second.
+    bool operator<(const CSearchMessage& rhs) const;
+    
 private:
+    /// The severity of this error or warning message.
     EBlastSeverity m_Severity;
+    
+    /// A unique identifier specifying what kind of error this is.
     int            m_ErrorId;
+    
+    /// A message describing the error to the application user.
     string         m_Message;
 };
 
-/// typedef for the messages for an individual query sequence
+/// Class for the messages for an individual query sequence.
 class NCBI_XBLAST_EXPORT TQueryMessages : public vector< CRef<CSearchMessage> >
 {
 public:
+    /// Set the query id as a string.
+    /// @param The query id.
     void SetQueryId(const string& id);
+
+    /// Get the query id as a string.
+    /// @return The query id.
     string GetQueryId() const;
+
+    /// Combine other messages with these.
+    /// @param other The second list of messages.
     void Combine(const TQueryMessages& other);
 
 private:
+    /// The query identifier.
     string m_IdString;
 };
 
@@ -152,9 +194,24 @@ private:
 class NCBI_XBLAST_EXPORT TSearchMessages : public vector<TQueryMessages>
 {
 public:
+    /// Check whether there are messages for this search.
+    /// @return true if messages exist.
     bool HasMessages() const;
+
+    /// Converts messages to a string, which is returned.
+    /// @return A string containing all such messages.
     string ToString() const;
+
+    /// Combine another set of search messages with this one.
+    ///
+    /// Another set of messages is combined with these; each element
+    /// of the other set is combined with the element of this set
+    /// having the same index.  The size of both sets must match.
+    ///
+    /// @param other_msgs Other messages to add to these.
     void Combine(const TSearchMessages& other_msgs);
+    
+    /// Find and remove redundant messages.
     void RemoveDuplicates();
 };
 
