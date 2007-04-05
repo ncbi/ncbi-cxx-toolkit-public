@@ -2932,9 +2932,13 @@ if test -z "$BZ2_LIBS"; then
    NCBI_PACKAGE(LocalBZ2)
 fi
 
+: ${LZO_PATH=$NCBI/lzo1}
+if test -d "$LZO_PATH"; then
+   NCBI_FIX_DIR(LZO_PATH)
+fi
 NCBI_CHECK_THIRD_PARTY_LIB(lzo,
  [[AC_LANG_PROGRAM([#include <lzo1x.h>],
-      [[lzo_uint32 c = lzo_crc32(0, "foo", 3);]])]])
+      [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
