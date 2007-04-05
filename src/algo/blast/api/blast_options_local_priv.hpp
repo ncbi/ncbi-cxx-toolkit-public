@@ -466,6 +466,7 @@ CBlastOptionsLocal::SetMBTemplateType(unsigned char type)
 }
 
 /******************* Query setup options ************************/
+
 inline const char*
 CBlastOptionsLocal::GetFilterString() const
 {
@@ -480,15 +481,6 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    sfree(m_QueryOpts->filter_string);
    m_QueryOpts->filter_string = strdup(f);
 
-   if (strcmp("F", f) == 0)
-   {  // Simply turns off the options.
-       m_QueryOpts->filtering_options = 
-            SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
-       // Need an empty object as filtering_options is accessed.
-       SBlastFilterOptionsNew( &(m_QueryOpts->filtering_options), eEmpty);
-       return;
-   }
-
    SBlastFilterOptions* new_opts = NULL;
    BlastFilteringOptionsFromString(GetProgramType(), f, &(new_opts), NULL);
 
@@ -502,6 +494,9 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    } 
    else
    {
+       if (m_QueryOpts->filtering_options)
+          m_QueryOpts->filtering_options = 
+              SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
        m_QueryOpts->filtering_options = new_opts;
        new_opts = NULL;
    }

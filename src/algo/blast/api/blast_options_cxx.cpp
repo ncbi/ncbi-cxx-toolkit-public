@@ -841,6 +841,16 @@ CBlastOptions::SetMBTemplateType(unsigned char type)
 }
 
 /******************* Query setup options ************************/
+
+void
+CBlastOptions::ClearFilterOptions()
+{
+    SetDustFiltering(false);
+    SetSegFiltering(false);
+    SetRepeatFiltering(false);
+    return;
+}
+
 const char* 
 CBlastOptions::GetFilterString() const
 {
@@ -850,12 +860,16 @@ CBlastOptions::GetFilterString() const
     return m_Local->GetFilterString();
 }
 void 
-CBlastOptions::SetFilterString(const char* f)
+CBlastOptions::SetFilterString(const char* f, bool clear)
 {
+    // Clear if clear is true or filtering set to FALSE.
+    if (clear == true || strcmp("F", f) == 0 || strcmp("f", f) == 0)
+      ClearFilterOptions();
+
     if (m_Local) {
         m_Local->SetFilterString(f);
     }
-    if (m_Remote) {
+    if (m_Remote) {  
         m_Remote->SetValue(eBlastOpt_FilterString, f);
     }
 }
@@ -868,6 +882,7 @@ CBlastOptions::GetMaskAtHash() const
     }
     return m_Local->GetMaskAtHash();
 }
+
 void 
 CBlastOptions::SetMaskAtHash(bool val)
 {

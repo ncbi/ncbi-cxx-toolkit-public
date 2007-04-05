@@ -57,8 +57,7 @@ CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
 void
 CPSIBlastOptionsHandle::SetQueryOptionDefaults()
 {
-    SetSegFiltering(false);
-    SetFilterString("F");   // this should be deprecated in the future...
+    m_Opts->ClearFilterOptions();   // turn off all filtering.
 }
 
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
