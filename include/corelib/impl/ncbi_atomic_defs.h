@@ -122,9 +122,9 @@ extern "C" {
      typedef unsigned int TNCBIAtomicValue;
      TNCBIAtomicValue NCBICORE_asm_swap(TNCBIAtomicValue new_value,
                                         TNCBIAtomicValue* address);
-#    define NCBI_SWAP_POINTERS(loc, nv) reinterpret_cast<void*> \
-        (NCBICORE_asm_swap(reinterpret_cast<TNCBIAtomicValue>(nv), \
-                           reinterpret_cast<TNCBIAtomicValue*>(loc)))
+#    define NCBI_SWAP_POINTERS(loc, nv) \
+      ((void*))(NCBICORE_asm_swap((TNCBIAtomicValue)(nv), \
+                                  (TNCBIAtomicValue*)(loc)))
 #    define NCBI_SWAP_POINTERS_EXTERN 1
 #  elif defined(__x86_64)
      typedef unsigned int TNCBIAtomicValue;
@@ -169,8 +169,8 @@ extern "C" {
 #  include <machine/builtins.h>
    typedef int TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (__ATOMIC_ADD_LONG(p, d) + d)
-#  define NCBI_SWAP_POINTERS(loc, nv) reinterpret_cast<void*> \
-    (__ATOMIC_EXCH_QUAD((loc), reinterpret_cast<long>(nv)))
+#  define NCBI_SWAP_POINTERS(loc, nv) \
+    ((void*)(__ATOMIC_EXCH_QUAD((loc), (long)(nv))))
 #endif
 
 #ifdef NCBI_NO_THREADS
@@ -182,9 +182,8 @@ extern "C" {
 #    define NCBI_COUNTER_UNSIGNED 1
 #    define NCBI_COUNTER_ADD(p, d) add_then_test32(p, d)
 #  endif
-#  define NCBI_SWAP_POINTERS(loc, nv) reinterpret_cast<void*> \
-    (test_and_set(reinterpret_cast<unsigned long*>(loc),        \
-                  reinterpret_cast<unsigned long>(nv)))
+#  define NCBI_SWAP_POINTERS(loc, nv) \
+    ((void*) (test_and_set((unsigned long*)(loc), (unsigned long)(nv))))
 #elif defined(NCBI_OS_AIX)
 #  include <sys/atomic_op.h>
 #  ifndef NCBI_COUNTER_ADD
@@ -192,9 +191,7 @@ extern "C" {
 #    define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #  endif
 #  define NCBI_SWAP_POINTERS_CONDITIONALLY(loc, ov, nv) \
-    (compare_and_swap(reinterpret_cast<atomic_p>(loc), \
-                      reinterpret_cast<int*>(&(ov)), \
-                      reinterpret_cast<int>(nv)) != FALSE)
+    (compare_and_swap((atomic_p)(loc), (int*)(&(ov)), (int)(nv)) != FALSE)
 #elif defined(NCBI_OS_DARWIN)
 #  include <CarbonCore/DriverSynchronization.h>
 #  ifndef NCBI_COUNTER_ADD
@@ -203,9 +200,7 @@ extern "C" {
 #  endif
 #  if SIZEOF_VOIDP == 4
 #    define NCBI_SWAP_POINTERS_CONDITIONALLY(loc, ov, nv) \
-      CompareAndSwap(reinterpret_cast<UInt32>(ov), \
-                     reinterpret_cast<UInt32>(nv), \
-                     reinterpret_cast<UInt32*>(loc))
+      CompareAndSwap((UInt32)(ov), (UInt32)(nv), (UInt32*)(loc))
 #  endif
 #elif defined(NCBI_OS_MAC)
 #  include <OpenTransport.h> /* Is this right? */
@@ -224,9 +219,8 @@ extern "C" {
 #  ifdef _WIN64
 #    define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv)
 #  else
-#    define NCBI_SWAP_POINTERS(loc, nv) reinterpret_cast<void*> \
-      (InterlockedExchange(reinterpret_cast<LPLONG>(loc), \
-                           reinterpret_cast<LONG>(nv)))
+#    define NCBI_SWAP_POINTERS(loc, nv) \
+      ((void*) (InterlockedExchange((LPLONG)(loc), (LONG)(nv))))
 #  endif
 #elif !defined(NCBI_COUNTER_ADD)
    typedef unsigned int TNCBIAtomicValue;
