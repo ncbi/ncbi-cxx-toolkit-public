@@ -77,7 +77,7 @@ public:
     typedef CTSE_Chunk_Info::TSequence              TSequence;
     typedef CTSE_Chunk_Info::TAssembly              TAssembly;
     typedef CTSE_Chunk_Info::TLocationSet           TLocationSet;
-    typedef vector<CSeq_id_Handle>                  TBioseqsIds;
+    typedef vector<CSeq_id_Handle>                  TSeqIds;
     typedef CTSE_Chunk_Info::TAssemblyInfo          TAssemblyInfo;
 
     CTSE_Split_Info(void);
@@ -122,7 +122,7 @@ public:
     void x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
     
     // append ids with all Bioseqs Seq-ids from this Split-Info
-    void GetBioseqsIds(TBioseqsIds& ids) const;
+    void GetBioseqsIds(TSeqIds& ids) const;
 
     // bioseq lookup
     bool ContainsBioseq(const CSeq_id_Handle& id) const;

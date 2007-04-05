@@ -609,7 +609,17 @@ void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
     TParent::x_DoUpdate(flags);
 }
 
-void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
+
+namespace {
+    static inline void x_SortUnique(CTSE_Info::TSeqIds& ids)
+    {
+        sort(ids.begin(), ids.end());
+        ids.erase(unique(ids.begin(), ids.end()), ids.end());
+    }
+}
+
+
+void CTSE_Info::GetBioseqsIds(TSeqIds& ids) const
 {
     
     {{
@@ -621,9 +631,29 @@ void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
     if ( m_Split ) {
         // after adding split bioseq Seq-ids the result may contain
         // duplicates and need to be sorted
-        sort(ids.begin(), ids.end());
-        ids.erase(unique(ids.begin(), ids.end()), ids.end());
+        x_SortUnique(ids);
     }
+}
+
+
+void CTSE_Info::GetAnnotIds(TSeqIds& annot_ids) const
+{
+    {{
+        TAnnotLockReadGuard guard(GetAnnotLock());
+        ITERATE ( TNamedAnnotObjs, it, m_NamedAnnotObjs ) {
+            ITERATE ( TAnnotObjs, it2, it->second ) {
+                annot_ids.push_back(it2->first);
+            }
+        }
+    }}
+    x_SortUnique(annot_ids);
+}
+
+
+void CTSE_Info::GetSeqAndAnnotIds(TSeqIds& seq_ids, TSeqIds& annot_ids) const
+{
+    GetBioseqsIds(seq_ids);
+    GetAnnotIds(annot_ids);
 }
 
 

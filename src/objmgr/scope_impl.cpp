@@ -51,6 +51,7 @@
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/priority.hpp>
 #include <objmgr/impl/synonyms.hpp>
@@ -66,6 +67,8 @@
 #include <objmgr/impl/scope_transaction_impl.hpp>
 
 #include <objmgr/seq_annot_ci.hpp>
+#include <cmath>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -129,7 +132,7 @@ void CScope_Impl::AddDefaults(TPriority priority)
                             (priority == CScope::kPriority_NotSet) ?
                             (*it)->GetDefaultPriority() : priority);
     }
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewDS();
 }
 
 
@@ -141,7 +144,7 @@ void CScope_Impl::AddDataLoader(const string& loader_name, TPriority priority)
     m_setDataSrc.Insert(*x_GetDSInfo(*ds),
                         (priority == CScope::kPriority_NotSet) ?
                         ds->GetDefaultPriority() : priority);
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewDS();
 }
 
 
@@ -154,7 +157,7 @@ void CScope_Impl::AddScope(CScope_Impl& scope, TPriority priority)
     TWriteLockGuard guard(m_ConfLock);
     m_setDataSrc.Insert(tree,
                         (priority == CScope::kPriority_NotSet) ? 9 : priority);
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewDS();
 }
 
 
@@ -176,7 +179,7 @@ CSeq_entry_Handle CScope_Impl::AddSeq_entry(CSeq_entry& entry,
     
     CRef<CDataSource_ScopeInfo> ds_info = GetNonSharedDS(priority);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(entry);
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(*tse_lock);
 
     return CSeq_entry_Handle(*tse_lock, *ds_info->GetTSE_Lock(tse_lock));
 }
@@ -201,6 +204,7 @@ CSeq_entry_Handle CScope_Impl::AddSharedSeq_entry(const CSeq_entry& entry,
     CRef<CDataSource> ds = m_ObjMgr->AcquireSharedSeq_entry(entry);
     CRef<CDataSource_ScopeInfo> ds_info = AddDS(ds, priority);
     CTSE_Lock tse_lock = ds->GetSharedTSE();
+    x_ClearCacheOnNewData(*tse_lock);
     _ASSERT(tse_lock->GetTSECore() == &entry);
 
     return CSeq_entry_Handle(*tse_lock, *ds_info->GetTSE_Lock(tse_lock));
@@ -227,7 +231,7 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(bioseq);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(*tse_lock);
 
     return x_GetBioseqHandle(tse_lock->GetSeq(),
                              *ds_info->GetTSE_Lock(tse_lock));
@@ -271,7 +275,7 @@ CSeq_annot_Handle CScope_Impl::AddSeq_annot(CSeq_annot& annot,
     entry->SetSet().SetSeq_set(); // it's not optional
     entry->SetSet().SetAnnot().push_back(Ref(&annot));
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewAnnot(*tse_lock);
 
     return CSeq_annot_Handle(*tse_lock->GetSet().GetAnnot()[0],
                              *ds_info->GetTSE_Lock(tse_lock));
@@ -367,6 +371,7 @@ void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
                 "CScope_Impl::RemoveTopLevelSeqEntry: "
                 "can not remove a loaded TSE");
     }
+    x_ClearCacheOnRemoveData(&*tse_lock);
     tse_lock.Reset();
     tse_info->RemoveFromHistory(eRemoveIfLocked);
     _ASSERT(!tse_info->IsAttached());
@@ -401,7 +406,7 @@ CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
 
     seqset.x_GetInfo().AddEntry(entry, index, true);    
 
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(entry->GetTSE_Info());
 
     return CSeq_entry_EditHandle(*entry, seqset.GetTSE_Handle());
 }
@@ -419,9 +424,9 @@ void CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
 
     seqset.GetTSE_Handle().x_GetScopeInfo()
         .AddEntry(seqset.x_GetScopeInfo(), entry.x_GetScopeInfo(), index);
-
-    x_ClearCacheOnNewData();
-
+    
+    x_ClearCacheOnNewData(seqset.x_GetInfo().GetTSE_Info());
+    
     _ASSERT(entry);
 }
 
@@ -441,7 +446,7 @@ CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
     // duplicate bioseq info
     entry.x_GetInfo().SelectSeq(*bioseq);
 
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(bioseq->GetTSE_Info());
 
     ret.m_Info = entry.x_GetScopeInfo().x_GetTSE_ScopeInfo()
         .GetBioseqLock(null, bioseq);
@@ -463,7 +468,7 @@ CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
     // duplicate bioseq info
     entry.x_GetInfo().SelectSet(*seqset);
 
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(seqset->GetTSE_Info());
 
     return CBioseq_set_EditHandle(*seqset, entry.GetTSE_Handle());
 }
@@ -482,7 +487,7 @@ void CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
     entry.GetTSE_Handle().x_GetScopeInfo()
         .SelectSeq(entry.x_GetScopeInfo(), bioseq.x_GetScopeInfo());
 
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(entry.x_GetInfo().GetTSE_Info());
 
     _ASSERT(bioseq);
 }
@@ -501,7 +506,7 @@ void CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
     entry.GetTSE_Handle().x_GetScopeInfo()
         .SelectSet(entry.x_GetScopeInfo(), seqset.x_GetScopeInfo());
 
-    x_ClearCacheOnNewData();
+    x_ClearCacheOnNewData(entry.x_GetInfo().GetTSE_Info());
 
     _ASSERT(seqset);
 }
@@ -518,7 +523,7 @@ CScope_Impl::x_AttachAnnot(const CSeq_entry_EditHandle& entry,
 
     entry.x_GetInfo().AddAnnot(annot);
 
-    x_ClearAnnotCache();
+    x_ClearCacheOnNewAnnot(annot->GetTSE_Info());
 
     return CSeq_annot_EditHandle(*annot, entry.GetTSE_Handle());
 }
@@ -536,7 +541,7 @@ void CScope_Impl::x_AttachAnnot(const CSeq_entry_EditHandle& entry,
     entry.GetTSE_Handle().x_GetScopeInfo()
         .AddAnnot(entry.x_GetScopeInfo(), annot.x_GetScopeInfo());
 
-    x_ClearAnnotCache();
+    x_ClearCacheOnNewAnnot(annot.x_GetInfo().GetTSE_Info());
 
     _ASSERT(annot);
 }
@@ -800,22 +805,118 @@ CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
 }
 
 
-void CScope_Impl::x_ClearCacheOnNewData(const CTSE_ScopeInfo* replaced_tse)
+void CScope_Impl::x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id)
+{
+    if ( conflict_id ) {
+        LOG_POST(Info <<
+                 "CScope_Impl: -- "
+                 "adding new data to a scope with non-empty history "
+                 "make data inconsistent on "<<conflict_id->AsString());
+    }
+    else {
+        LOG_POST(Info <<
+                 "CScope_Impl: -- "
+                 "adding new data to a scope with non-empty history "
+                 "may cause the data to become inconsistent");
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnNewData(const CTSE_Info& new_tse)
 {
     // Clear unresolved bioseq handles
     // Clear annot cache
-    if ( !replaced_tse && !m_Seq_idMap.empty() ) {
-        LOG_POST(Info <<
-            "CScope_Impl: -- "
-            "adding new data to a scope with non-empty history "
-            "may cause the data to become inconsistent");
+    TIds seq_ids, annot_ids;
+    new_tse.GetSeqAndAnnotIds(seq_ids, annot_ids);
+    x_ClearCacheOnNewData(seq_ids, annot_ids);
+}
+
+
+void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
+                                        const TIds& annot_ids)
+{
+    const CSeq_id_Handle* conflict_id = 0;
+    if ( !m_Seq_idMap.empty() && !seq_ids.empty() ) {
+        size_t add_count = seq_ids.size();
+        size_t old_count = m_Seq_idMap.size();
+        size_t scan_time = add_count + old_count;
+        double lookup_time = min(add_count, old_count)*
+            (2. * log(max(add_count, old_count)+2.));
+        if ( scan_time < lookup_time ) {
+            // scan both
+            TIds::const_iterator it1 = seq_ids.begin();
+            TSeq_idMap::const_iterator it2 = m_Seq_idMap.begin();
+            while ( it1 != seq_ids.end() && it2 != m_Seq_idMap.end() ) {
+                if ( *it1 < it2->first ) {
+                    ++it1;
+                }
+                else if ( it2->first < *it1 ) {
+                    ++it2;
+                }
+                else if ( it2->second.m_Bioseq_Info ) {
+                    conflict_id = &*it1;
+                    break;
+                }
+                else {
+                    // not resolved yet
+                    ++it1;
+                    ++it2;
+                }
+            }
+        }
+        else if ( add_count < old_count ) {
+            // lookup in old
+            ITERATE ( TIds, it1, seq_ids ) {
+                TSeq_idMap::const_iterator it2 = m_Seq_idMap.find(*it1);
+                if ( it2 != m_Seq_idMap.end() &&
+                     it2->second.m_Bioseq_Info ) {
+                    conflict_id = &*it1;
+                    break;
+                }
+            }
+        }
+        else {
+            // lookup in add
+            ITERATE ( TSeq_idMap, it2, m_Seq_idMap ) {
+                if ( it2->second.m_Bioseq_Info &&
+                     binary_search(seq_ids.begin(), seq_ids.end(), it2->first) ) {
+                    conflict_id = &it2->first;
+                    break;
+                }
+            }
+        }
+    }
+    if ( conflict_id ) {
+        x_ReportNewDataConflict(conflict_id);
     }
     for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
           it != m_Seq_idMap.end(); ) {
         if ( it->second.m_Bioseq_Info ) {
             CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
             if ( binfo.HasBioseq() ) {
-                if ( &binfo.x_GetTSE_ScopeInfo() == replaced_tse ) {
+                binfo.m_BioseqAnnotRef_Info.Reset();
+            }
+            else {
+                binfo.m_SynCache.Reset(); // break circular link
+                it->second.m_Bioseq_Info.Reset(); // try to resolve again
+            }
+        }
+        it->second.m_AllAnnotRef_Info.Reset();
+        ++it;
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnEdit(const CTSE_ScopeInfo& replaced_tse)
+{
+    // Clear unresolved bioseq handles
+    // Clear annot cache
+    for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
+          it != m_Seq_idMap.end(); ) {
+        if ( it->second.m_Bioseq_Info ) {
+            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
+            if ( binfo.HasBioseq() ) {
+                if ( &binfo.x_GetTSE_ScopeInfo() == &replaced_tse ) {
                     binfo.m_SynCache.Reset(); // break circular link
                     m_Seq_idMap.erase(it++);
                     continue;
@@ -833,7 +934,51 @@ void CScope_Impl::x_ClearCacheOnNewData(const CTSE_ScopeInfo* replaced_tse)
 }
 
 
-void CScope_Impl::x_ClearCacheOnRemoveData(void)
+void CScope_Impl::x_ClearAnnotCache(void)
+{
+    // Clear annot cache
+    NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
+        if ( it->second.m_Bioseq_Info ) {
+            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
+            binfo.m_BioseqAnnotRef_Info.Reset();
+        }
+        it->second.m_AllAnnotRef_Info.Reset();
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnNewAnnot(const CTSE_Info& new_tse)
+{
+    x_ClearAnnotCache();
+}
+
+
+void CScope_Impl::x_ClearCacheOnNewDS(void)
+{
+    // Clear unresolved bioseq handles
+    // Clear annot cache
+    if ( !m_Seq_idMap.empty() ) {
+        x_ReportNewDataConflict();
+    }
+    for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
+          it != m_Seq_idMap.end(); ) {
+        if ( it->second.m_Bioseq_Info ) {
+            CBioseq_ScopeInfo& binfo = *it->second.m_Bioseq_Info;
+            if ( binfo.HasBioseq() ) {
+                binfo.m_BioseqAnnotRef_Info.Reset();
+            }
+            else {
+                binfo.m_SynCache.Reset(); // break circular link
+                it->second.m_Bioseq_Info.Reset(); // try to resolve again
+            }
+        }
+        it->second.m_AllAnnotRef_Info.Reset();
+        ++it;
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnRemoveData(const CTSE_Info* old_tse)
 {
     // Clear removed bioseq handles
     for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
@@ -853,7 +998,7 @@ void CScope_Impl::x_ClearCacheOnRemoveData(void)
 }
 
 
-void CScope_Impl::x_ClearAnnotCache(void)
+void CScope_Impl::x_ClearCacheOnRemoveAnnot(const CTSE_Info& old_tse)
 {
     // Clear annot cache
     NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
@@ -932,7 +1077,13 @@ CRef<CDataSource_ScopeInfo> CScope_Impl::AddDS(CRef<CDataSource> ds,
     m_setDataSrc.Insert(*ds_info,
                         (priority == CScope::kPriority_NotSet) ?
                         ds->GetDefaultPriority() : priority);
-    x_ClearCacheOnNewData();
+    CTSE_Lock tse_lock = ds->GetSharedTSE();
+    if ( tse_lock ) {
+        x_ClearCacheOnNewData(*tse_lock);
+    }
+    else {
+        x_ClearCacheOnNewDS();
+    }
     return ds_info;
 }
 
@@ -969,7 +1120,7 @@ CScope_Impl::AddDSBefore(CRef<CDataSource> ds,
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( &*it == ds2 ) {
             it.InsertBefore(*ds_info);
-            x_ClearCacheOnNewData(replaced_tse);
+            x_ClearCacheOnEdit(*replaced_tse);
             return ds_info;
         }
     }
@@ -1101,6 +1252,8 @@ void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
     }
     TWriteLockGuard guard(m_ConfLock);
 
+    x_ClearCacheOnRemoveData(&entry.x_GetInfo().GetTSE_Info());
+
     entry.GetTSE_Handle().x_GetScopeInfo().RemoveEntry(entry.x_GetScopeInfo());
 
     x_ClearCacheOnRemoveData();
@@ -1110,6 +1263,8 @@ void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
 void CScope_Impl::RemoveAnnot(const CSeq_annot_EditHandle& annot)
 {
     TWriteLockGuard guard(m_ConfLock);
+
+    x_ClearCacheOnRemoveAnnot(annot.x_GetInfo().GetTSE_Info());
 
     annot.GetTSE_Handle().x_GetScopeInfo().RemoveAnnot(annot.x_GetScopeInfo());
 
@@ -1123,6 +1278,9 @@ void CScope_Impl::SelectNone(const CSeq_entry_EditHandle& entry)
     entry.GetCompleteSeq_entry();
 
     TWriteLockGuard guard(m_ConfLock);
+
+    x_ClearCacheOnRemoveData(&entry.x_GetInfo().GetTSE_Info());
+
     entry.GetTSE_Handle().x_GetScopeInfo().ResetEntry(entry.x_GetScopeInfo());
 
     x_ClearCacheOnRemoveData();
@@ -1412,7 +1570,7 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
 #endif
     CTSE_Lock edit_tse_lock = edit_ds->GetDataSource().AddStaticTSE(new_tse);
     src_scope_info.m_EditLock = edit_ds->GetTSE_Lock(edit_tse_lock);
-    x_ClearCacheOnNewData(&src_scope_info);
+    x_ClearCacheOnEdit(src_scope_info);
     return *src_scope_info.m_EditLock;
 
 #else

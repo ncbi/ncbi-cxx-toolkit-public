@@ -237,7 +237,7 @@ void CDataSource_ScopeInfo::AttachTSE(CTSE_ScopeInfo& info,
 void CDataSource_ScopeInfo::x_IndexTSE(CTSE_ScopeInfo& tse)
 {
     CTSE_ScopeInfo::TBlobOrder order = tse.GetBlobOrder();
-    ITERATE ( CTSE_ScopeInfo::TBioseqsIds, it, tse.GetBioseqsIds() ) {
+    ITERATE ( CTSE_ScopeInfo::TSeqIds, it, tse.GetBioseqsIds() ) {
         m_TSE_BySeqId.insert(TTSE_BySeqId::value_type(*it, Ref(&tse)));
     }
 }
@@ -246,7 +246,7 @@ void CDataSource_ScopeInfo::x_IndexTSE(CTSE_ScopeInfo& tse)
 void CDataSource_ScopeInfo::x_UnindexTSE(const CTSE_ScopeInfo& tse)
 {
     CTSE_ScopeInfo::TBlobOrder order = tse.GetBlobOrder();
-    ITERATE ( CTSE_ScopeInfo::TBioseqsIds, it, tse.GetBioseqsIds() ) {
+    ITERATE ( CTSE_ScopeInfo::TSeqIds, it, tse.GetBioseqsIds() ) {
         TTSE_BySeqId::iterator tse_it = m_TSE_BySeqId.lower_bound(*it);
         while ( tse_it != m_TSE_BySeqId.end() && tse_it->first == *it ) {
             if ( tse_it->second == &tse ) {
@@ -746,7 +746,7 @@ CTSE_ScopeInfo::TBlobId CTSE_ScopeInfo::GetBlobId(void) const
 }
 
 
-const CTSE_ScopeInfo::TBioseqsIds& CTSE_ScopeInfo::GetBioseqsIds(void) const
+const CTSE_ScopeInfo::TSeqIds& CTSE_ScopeInfo::GetBioseqsIds(void) const
 {
     _ASSERT(CanBeUnloaded());
     return m_UnloadedInfo->m_BioseqsIds;
@@ -1293,7 +1293,7 @@ CTSE_ScopeInfo::GetBioseqInfo(const SSeqMatch_Scope& match)
 
 
 CRef<CBioseq_ScopeInfo>
-CTSE_ScopeInfo::x_FindBioseqInfo(const TBioseqsIds& ids) const
+CTSE_ScopeInfo::x_FindBioseqInfo(const TSeqIds& ids) const
 {
     if ( !ids.empty() ) {
         const CSeq_id_Handle& id = *ids.begin();
@@ -1308,8 +1308,7 @@ CTSE_ScopeInfo::x_FindBioseqInfo(const TBioseqsIds& ids) const
 }
 
 
-CRef<CBioseq_ScopeInfo>
-CTSE_ScopeInfo::x_CreateBioseqInfo(const TBioseqsIds& ids)
+CRef<CBioseq_ScopeInfo> CTSE_ScopeInfo::x_CreateBioseqInfo(const TSeqIds& ids)
 {
     return Ref(new CBioseq_ScopeInfo(*this, ids));
 }
@@ -1657,19 +1656,19 @@ void CBioseq_ScopeInfo::ResetId(void)
         x_GetTSE_ScopeInfo().x_UnindexBioseq(*it, this);
     }
     m_Ids.clear();
-    x_GetScopeImpl().x_ClearCacheOnRemoveData();
 }
 
 
 bool CBioseq_ScopeInfo::AddId(const CSeq_id_Handle& id)
 {
     _ASSERT(HasObject());
-    if ( !const_cast<CBioseq_Info&>(GetObjectInfo()).AddId(id) ) {
+    CBioseq_Info& info = const_cast<CBioseq_Info&>(GetObjectInfo());
+    if ( !info.AddId(id) ) {
         return false;
     }
     m_Ids.push_back(id);
     x_GetTSE_ScopeInfo().x_IndexBioseq(id, this);
-    x_GetScopeImpl().x_ClearCacheOnNewData();
+    x_GetScopeImpl().x_ClearCacheOnNewData(info.GetTSE_Info());
     return true;
 }
 
@@ -1684,7 +1683,6 @@ bool CBioseq_ScopeInfo::RemoveId(const CSeq_id_Handle& id)
     _ASSERT(it != m_Ids.end());
     m_Ids.erase(it);
     x_GetTSE_ScopeInfo().x_UnindexBioseq(id, this);
-    x_GetScopeImpl().x_ClearCacheOnRemoveData();
     return true;
 }
 

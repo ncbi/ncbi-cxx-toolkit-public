@@ -96,6 +96,8 @@ class CSeq_annot_EditHandle;
 class CHandleRangeMap;
 class CDataSource_ScopeInfo;
 class CTSE_ScopeInfo;
+class CTSE_Info;
+class CTSE_Info_Object;
 struct SAnnotTypeSelector;
 struct SAnnotSelector;
 class CPriorityTree;
@@ -347,9 +349,18 @@ private:
                              EActionIfLocked action);
 
     // clean some cache entries when new data source is added
-    void x_ClearCacheOnNewData(const CTSE_ScopeInfo* replaced_tse = 0);
-    void x_ClearCacheOnRemoveData(void);
+    void x_ReportNewDataConflict(const CSeq_id_Handle* conflict_id = 0);
+    void x_ClearCacheOnNewDS(void);
+    void x_ClearCacheOnEdit(const CTSE_ScopeInfo& replaced_tse);
+
+    // both seq_ids and annot_ids must be sorted
+    void x_ClearCacheOnNewData(const TIds& seq_ids, const TIds& annot_ids);
+    void x_ClearCacheOnNewData(const CTSE_Info& new_tse);
+    void x_ClearCacheOnRemoveData(const CTSE_Info* old_tse = 0);
+
     void x_ClearAnnotCache(void);
+    void x_ClearCacheOnNewAnnot(const CTSE_Info& new_tse);
+    void x_ClearCacheOnRemoveAnnot(const CTSE_Info& old_tse);
 
     CRef<CDataSource_ScopeInfo>
     GetEditDataSource(CDataSource_ScopeInfo& ds,

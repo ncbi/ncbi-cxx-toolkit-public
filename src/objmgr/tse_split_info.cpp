@@ -309,7 +309,7 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 }
 
 
-void CTSE_Split_Info::GetBioseqsIds(TBioseqsIds& ids) const
+void CTSE_Split_Info::GetBioseqsIds(TSeqIds& ids) const
 {
     ITERATE ( TChunks, it, m_Chunks ) {
         it->second->GetBioseqsIds(ids);

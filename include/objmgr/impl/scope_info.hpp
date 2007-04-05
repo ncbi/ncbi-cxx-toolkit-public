@@ -277,7 +277,7 @@ class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CObject
 public:
     typedef CBlobIdKey                                    TBlobId;
     typedef multimap<CSeq_id_Handle, CRef<CBioseq_ScopeInfo> >  TBioseqById;
-    typedef vector<CSeq_id_Handle>                        TBioseqsIds;
+    typedef vector<CSeq_id_Handle>                        TSeqIds;
     typedef pair<int, int>                                TBlobOrder;
     typedef set<CTSE_ScopeInternalLock>                   TUsedTSE_LockSet;
 
@@ -311,7 +311,7 @@ public:
     int GetLoadIndex(void) const;
     TBlobId GetBlobId(void) const;
     TBlobOrder GetBlobOrder(void) const;
-    const TBioseqsIds& GetBioseqsIds(void) const;
+    const TSeqIds& GetBioseqsIds(void) const;
 
     bool AddUsedTSE(const CTSE_ScopeUserLock& lock) const;
     
@@ -374,8 +374,8 @@ protected:
     // Number of internal locks, not related to handles
     int x_GetDSLocksCount(void) const;
 
-    CRef<CBioseq_ScopeInfo> x_FindBioseqInfo(const TBioseqsIds& ids) const;
-    CRef<CBioseq_ScopeInfo> x_CreateBioseqInfo(const TBioseqsIds& ids);
+    CRef<CBioseq_ScopeInfo> x_FindBioseqInfo(const TSeqIds& ids) const;
+    CRef<CBioseq_ScopeInfo> x_CreateBioseqInfo(const TSeqIds& ids);
     void x_IndexBioseq(const CSeq_id_Handle& id,
                        CBioseq_ScopeInfo* info);
     void x_UnindexBioseq(const CSeq_id_Handle& id,
@@ -400,7 +400,7 @@ private: // members
         CRef<CDataLoader>       m_Loader;
         TBlobId                 m_BlobId;
         TBlobOrder              m_BlobOrder;
-        TBioseqsIds             m_BioseqsIds;
+        TSeqIds                 m_BioseqsIds;
     };
 
     AutoPtr<SUnloadedInfo>      m_UnloadedInfo;

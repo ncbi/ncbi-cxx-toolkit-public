@@ -302,7 +302,8 @@ public:
     };
     typedef map<CSeqFeatData::ESubtype, SFeatIdIndex>        TFeatIdIndex;
 
-    typedef vector<CSeq_id_Handle>                           TBioseqsIds;
+    typedef vector<CSeq_id_Handle> TSeqIds;
+    typedef TSeqIds TBioseqsIds;
 
     // find bioseq with exactly the same id
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
@@ -315,8 +316,14 @@ public:
 
     // fill ids with all Bioseqs Seq-ids from this TSE
     // the result will be sorted and contain no duplicates
-    void GetBioseqsIds(TBioseqsIds& ids) const;
-
+    void GetBioseqsIds(TSeqIds& ids) const;
+    // fill ids with all Annot Seq-ids from this TSE
+    // the result will be sorted and contain no duplicates
+    void GetAnnotIds(TSeqIds& ids) const;
+    // fill seq_ids with all Bioseqs Seq-ids and annot_ids with annotations ids
+    // the result will be sorted and contain no duplicates
+    void GetSeqAndAnnotIds(TSeqIds& seq_ids, TSeqIds& annot_ids) const;
+    
     void UpdateAnnotIndex(const CSeq_id_Handle& id) const;
     void UpdateAnnotIndex(void) const;
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
