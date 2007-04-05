@@ -251,10 +251,6 @@ void CServerTestApp::Init(void)
         "Maximum number of server threads",
         CArgDescriptions::eInteger, "10");
 
-    arg_desc->AddDefaultKey("queuesize", "N",
-        "Maximum size of request queue",
-        CArgDescriptions::eInteger, "20");
-
     arg_desc->AddDefaultKey("clthreads", "N",
         "Initial number of client threads",
         CArgDescriptions::eInteger, "5");
@@ -271,7 +267,6 @@ void CServerTestApp::Init(void)
 
     arg_desc->SetConstraint("srvthreads", constraint);
     arg_desc->SetConstraint("maxsrvthreads", constraint);
-    arg_desc->SetConstraint("queuesize", constraint);
 
     arg_desc->SetConstraint("clthreads", constraint);
     arg_desc->SetConstraint("maxclthreads", constraint);
@@ -311,7 +306,6 @@ int CServerTestApp::Run(void)
     SServer_Parameters params;
     params.init_threads = args["srvthreads"].AsInteger();
     params.max_threads = args["maxsrvthreads"].AsInteger();
-    params.queue_size = args["queuesize"].AsInteger();
     params.accept_timeout = &kAcceptTimeout;
 
     int max_number_of_clients = args["requests"].AsInteger();

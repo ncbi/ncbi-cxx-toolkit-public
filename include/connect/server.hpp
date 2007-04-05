@@ -307,7 +307,6 @@ struct NCBI_XCONNECT_EXPORT SServer_Parameters
     // (settings for the thread pool)
     unsigned int    init_threads;    ///< Number of initial threads
     unsigned int    max_threads;     ///< Maximum simultaneous threads
-    unsigned int    queue_size;      ///< Maximum size of request queue
     unsigned int    spawn_threshold; ///< Controls when to spawn more threads
 
     /// Create structure with the default set of parameters

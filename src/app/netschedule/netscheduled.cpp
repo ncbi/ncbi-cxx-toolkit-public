@@ -2341,7 +2341,6 @@ int CNetScheduleDApp::Run(void)
 
         params.max_threads     = max_threads;
         params.max_connections = max_connections;
-        params.queue_size      = max_connections;
         m_ServerAcceptTimeout.sec = 1;
         m_ServerAcceptTimeout.usec = 0;
         params.accept_timeout  = &m_ServerAcceptTimeout;

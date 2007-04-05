@@ -312,9 +312,6 @@ void CServer::SetParameters(const SServer_Parameters& new_params)
                    "CServer::SetParameters: Bad parameters");
     }
     *m_Parameters = new_params;
-    // Ensure parameter consistency
-    m_Parameters->queue_size = max(m_Parameters->queue_size,
-                                   m_Parameters->max_connections*2);
     m_ConnectionPool->SetMaxConnections(m_Parameters->max_connections);
 }
 
@@ -332,7 +329,7 @@ static inline bool operator <(const STimeout& to1, const STimeout& to2)
 void CServer::Run(void)
 {
     CStdPoolOfThreads threadPool(m_Parameters->max_threads,
-                                 m_Parameters->queue_size,
+                                 kMax_UInt,
                                  m_Parameters->spawn_threshold);
     threadPool.Spawn(m_Parameters->init_threads);
 
@@ -394,6 +391,8 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
         try {
             threadPool.AcceptRequest(request);
         } catch (CBlockingQueueException&) {
+            // This is impossible event, but we handle it gently
+            LOG_POST(Critical << "Thread pool queue full");
             CServer_Request* req =
                 dynamic_cast<CServer_Request*>(request.GetPointer());
             _ASSERT(req);
@@ -418,7 +417,6 @@ SServer_Parameters::SServer_Parameters() :
     idle_timeout(&k_DefaultIdleTimeout),
     init_threads(5),
     max_threads(10),
-    queue_size(20000),
     spawn_threshold(1)
 {
 }
