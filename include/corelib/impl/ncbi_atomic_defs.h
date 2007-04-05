@@ -104,6 +104,10 @@ extern "C" {
 #    define NCBI_COUNTER_UNSIGNED 1
 #    define NCBI_COUNTER_ADD(p, d) atomic_add_32_nv(p, d)
 #  endif
+   /* Some systems have old, incomplete(!) versions of (sys/)atomic.h. :-/ */
+#  ifndef _SYS_ATOMIC_H
+     extern void *atomic_swap_ptr(volatile void *, void *);
+#  endif
 #  define NCBI_SWAP_POINTERS(loc, nv) atomic_swap_ptr(loc, nv)
 #elif defined(NCBI_COMPILER_WORKSHOP)
 #  ifdef __cplusplus
