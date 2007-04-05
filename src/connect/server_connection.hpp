@@ -97,8 +97,6 @@ public:
                                        const STimeout* timeout);
     virtual void Activate(void) { Listen(m_Port); }
     virtual void Passivate(void) { Close(); }
-    // listener-specific methods
-    virtual void OnOverflow(void);
 private:
     friend class CAcceptRequest;
     auto_ptr<IServer_ConnectionFactory> m_Factory;

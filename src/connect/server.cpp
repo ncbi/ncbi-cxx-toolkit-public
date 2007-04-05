@@ -136,7 +136,7 @@ public:
                    const STimeout* timeout,
                    TListener* listener);
     virtual void Process(void);
-    virtual void Cancel(void) { }
+    virtual void Cancel(void);
 private:
     TConnection* m_Connection;
 } ;
@@ -177,6 +177,12 @@ void CAcceptRequest::Process(void)
     } STD_CATCH_ALL("CAcceptRequest::Process");
 }
 
+void CAcceptRequest::Cancel(void)
+{
+    m_Connection->OnOverflow();
+    delete m_Connection;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CServerConnectionRequest
 class CServerConnectionRequest : public CServer_Request
@@ -209,6 +215,7 @@ void CServerConnectionRequest::Process(void)
 
 void CServerConnectionRequest::Cancel(void)
 {
+    m_Connection->OnOverflow();
     // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection,
                            CServer_ConnectionPool::eInactiveSocket);
@@ -222,16 +229,6 @@ CStdRequest* TListener::CreateRequest(EIO_Event event,
                                       const STimeout* timeout)
 {
     return new CAcceptRequest(event, conn_pool, timeout, this);
-}
-
-
-void TListener::OnOverflow(void) {
-    static const STimeout kZeroTimeout = { 0, 0 };
-    auto_ptr<CServer_Connection> conn(
-        new CServer_Connection(m_Factory->Create()));
-    if (Accept(*conn, &kZeroTimeout) != eIO_Success)
-        return;
-    conn->OnOverflow();
 }
 
 
@@ -315,6 +312,9 @@ void CServer::SetParameters(const SServer_Parameters& new_params)
                    "CServer::SetParameters: Bad parameters");
     }
     *m_Parameters = new_params;
+    // Ensure parameter consistency
+    m_Parameters->queue_size = max(m_Parameters->queue_size,
+                                   m_Parameters->max_connections*2);
     m_ConnectionPool->SetMaxConnections(m_Parameters->max_connections);
 }
 
@@ -396,13 +396,12 @@ void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
         } catch (CBlockingQueueException&) {
             CServer_Request* req =
                 dynamic_cast<CServer_Request*>(request.GetPointer());
-            _TRACE("case 2"); // DEBUG
             _ASSERT(req);
-            // Queue is full, drop incoming connection.
+            // Queue is full, drop request, indirectly droppin incoming
+            // connection (see also CAcceptRequest::Cancel)
             // ??? What should we do if conn_base is CServerConnection?
-            // Should we close it?
+            // Should we close it? (see also CServerConnectionRequest::Cancel)
             req->Cancel();
-            conn_base->OnOverflow();
         }
     }
 }
@@ -419,7 +418,7 @@ SServer_Parameters::SServer_Parameters() :
     idle_timeout(&k_DefaultIdleTimeout),
     init_threads(5),
     max_threads(10),
-    queue_size(20),
+    queue_size(20000),
     spawn_threshold(1)
 {
 }
