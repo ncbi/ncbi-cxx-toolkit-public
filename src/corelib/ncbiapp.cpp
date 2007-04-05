@@ -48,10 +48,8 @@
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #endif
-#if defined(NCBI_OS_DARWIN)
-#  ifdef NCBI_COMPILER_METROWERKS
-#    define __NOEXTENSIONS__
-#  endif
+#if defined(NCBI_OS_DARWIN)  &&  defined(NCBI_COMPILER_METROWERKS)
+#  define __NOEXTENSIONS__
 #  include <Carbon/Carbon.h>
 #endif
 
