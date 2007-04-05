@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.3.2  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.3.3  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -294,7 +294,7 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
     m_MaxThreads = max_threads ? max_threads : 25;
     m_InitThreads = init_threads ? 
         (init_threads < m_MaxThreads ? init_threads : 2)  : 10;
-    m_QueueSize = m_MaxThreads + 2;
+    m_QueueSize = m_MaxThreads * 2;
 
     x_CreateLog();
 
@@ -1895,6 +1895,20 @@ int CNetCacheDApp::Run(void)
         signal( SIGINT, Threaded_Server_SignalHandler);
         signal( SIGTERM, Threaded_Server_SignalHandler);
 #endif
+        int port = 
+            reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
+        bool is_port_free = true;
+
+        // try server port to check if it is busy
+        {{
+        CListeningSocket lsock(port);
+        if (lsock.GetStatus() != eIO_Success) {
+            is_port_free = false;
+            ERR_POST(("Startup problem: listening port is busy. Port=" + 
+                                    NStr::IntToString(port)));
+        }
+        }}
+
         string log_path = 
                 reg.GetString("server", "log_path", kEmptyStr, 
                               CNcbiRegistry::eReturn);
@@ -1904,6 +1918,13 @@ int CNetCacheDApp::Run(void)
         // All errors redirected to rotated log
         // from this moment on the server is silent...
         SetDiagStream(m_ErrLog.get());
+
+        if (!is_port_free) {
+            LOG_POST(("Startup problem: listening port is busy. Port=" + 
+                NStr::IntToString(port)));
+            return 1;
+        }
+
 
 
         // Mount BDB Cache
@@ -1992,8 +2013,6 @@ int CNetCacheDApp::Run(void)
         // start threaded server
 
 
-        int port = 
-            reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
         unsigned max_threads =
             reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
         unsigned init_threads =
