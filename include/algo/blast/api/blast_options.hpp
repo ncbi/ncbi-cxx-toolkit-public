@@ -145,8 +145,10 @@ public:
     void SetMBTemplateType(unsigned char type);
 
     /******************* Query setup options ************************/
+    void ClearFilterOptions();
+
     const char* GetFilterString() const;
-    void SetFilterString(const char* f);
+    void SetFilterString(const char* f, bool clear = true);
 
     bool GetMaskAtHash() const;
     void SetMaskAtHash(bool val = true);

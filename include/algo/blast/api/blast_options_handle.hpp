@@ -151,11 +151,13 @@ public:
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
     
     /******************* Query setup options ************************/
+    /// Clears the fitlering options
+    void ClearFilterOptions();
     /// Returns FilterString
     const char* GetFilterString() const { return m_Opts->GetFilterString(); }
     /// Sets FilterString
     /// @param f FilterString [in]
-    void SetFilterString(const char* f) { m_Opts->SetFilterString(f); }
+    void SetFilterString(const char* f, bool clear = true) { m_Opts->SetFilterString(f, clear); }
 
     /// Returns whether masking should only be done for lookup table creation.
     bool GetMaskAtHash() const { return m_Opts->GetMaskAtHash(); }
