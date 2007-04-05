@@ -373,7 +373,7 @@ extern void SetDiagRequestId(int id)
 
 struct SDiagMessageData
 {
-    SDiagMessageData(void) : m_UID(0) {}
+    SDiagMessageData(void) : m_UID(0), m_Time(CTime::eCurrent) {}
     ~SDiagMessageData(void) {}
 
     string m_Message;
