@@ -193,10 +193,12 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
         return 0;
     while (*str && isspace((unsigned char)(*str)))
         str++;
-    if (!(str = SOCK_StringToHostPort(str, &host, &port)))
-        return 0;
-    while (*str && isspace((unsigned char)(*str)))
-        str++;
+    if (!ispunct((unsigned char)(*str)) || *str == ':') {
+        if (!(str = SOCK_StringToHostPort(str, &host, &port)))
+            return 0;
+        while (*str && isspace((unsigned char)(*str)))
+            str++;
+    }
     /* read server-specific info according to the detected type */
     info = s_GetAttrByType(type)->vtable.Read(&str, name ? strlen(name)+1 : 0);
     if (!info)
