@@ -1117,8 +1117,12 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
               DEF_FAST_FLAGS="$DEF_FAST_FLAGS -xtarget=ultra"
               ;;
            *:i?86)
-              # Work around a WorkShop standard library bug.
-              DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
+              case "$compiler_version" in
+                5[[0-4]]*)
+                  # Work around a WorkShop standard library bug.
+                  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
+                  ;;
+              esac
               ;;
         esac
         # (Re)include ARCH_CFLAGS here because -fast implies -xtarget=native.
@@ -2079,7 +2083,7 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
-AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/mount.h sys/sockio.h \
+AC_CHECK_HEADERS(atomic.h dlfcn.h ieeefp.h poll.h sys/mount.h sys/sockio.h \
                  sys/statvfs.h sys/sysinfo.h sys/vfs.h)
 # for FreeTDS 0.6x
 AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h \

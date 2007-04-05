@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
 
+/* Define to 1 if you have the <atomic.h> header file. */
+#undef HAVE_ATOMIC_H
+
 /* Define to 1 if your C compiler supports __attribute__((destructor)) */
 #undef HAVE_ATTRIBUTE_DESTRUCTOR
 
