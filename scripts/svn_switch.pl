@@ -17,12 +17,11 @@ use NCBI::SVN::MultiSwitch;
 
 use IPC::Open2;
 
-if (@ARGV == 0 || (@ARGV == 1 && $ARGV[0] eq '--help') ||
-    (@ARGV == 2 && shift(@ARGV) ne '--switch-map') || @ARGV > 2)
+if (@ARGV != 1 || $ARGV[0] eq '--help')
 {
     die <<EOF;
 Usage:
-    $ScriptName [--switch-map] <switch_map_file>
+    $ScriptName <switch_map_file>
 
 Where:
     switch_map_file     The name of file containing directory mappings.
