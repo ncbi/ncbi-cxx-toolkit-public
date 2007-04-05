@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/writers/agp_write.hpp>
 
+#include <objtools/writers/writer_exception.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -118,6 +119,15 @@ static void s_AgpWrite(CNcbiOstream& os,
 {
     unsigned int count = 0;
 
+    if (!component_types.empty()
+        && component_types.size() != seq_map.GetSegmentsCount()) {
+        string error_str = "length of component_types ("
+            + NStr::UIntToString(component_types.size())
+            + ") is inconsistent with number of segments ("
+            + NStr::UIntToString(seq_map.GetSegmentsCount()) + ")";
+        NCBI_THROW(CObjWriterException, eArgErr, error_str);
+    }
+
     for (CSeqMap_CI iter(seq_map.Begin(&scope));  iter;  ++iter, ++count) {
         TSeqPos seg_pos = iter.GetPosition();
         TSeqPos seg_end = iter.GetPosition() + iter.GetLength();
@@ -159,10 +169,6 @@ static void s_AgpWrite(CNcbiOstream& os,
             if (component_types.empty()) {
                 os << 'N';
             } else {
-                if (count > component_types.size() - 1) {
-                    throw std::out_of_range("component_types shorter than "
-                                            "number of segments");
-                }
                 os << component_types[count];
             }
             // col 6b
@@ -184,10 +190,6 @@ static void s_AgpWrite(CNcbiOstream& os,
                     s_DetermineComponentType(*iter.GetRefSeqid().GetSeqId(),
                                              scope);
             } else {
-                if (count > component_types.size() - 1) {
-                    throw std::out_of_range("component_types shorter than "
-                                            "number of segments");
-                }
                 os << component_types[count];
             }
             // col 6a
