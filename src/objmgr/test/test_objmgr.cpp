@@ -88,6 +88,7 @@ typedef CRef<CSeq_entry> TEntry;
 int CTestApp::Run(void)
 {
     SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
     NcbiCout << "Testing ObjectManager..." << NcbiEndl;
     CSeq_id id;
     int idx;
