@@ -59,21 +59,6 @@ BEGIN_NCBI_SCOPE
 /// Register NCBI_BDB_ICacheEntryPoint
 void BDB_Register_Cache(void);
 
-/*
-struct NCBI_BDB_CACHE_EXPORT SCacheDB : public CBDB_BLobFile
-{
-    CBDB_FieldString       key;
-    CBDB_FieldInt4         version;
-    CBDB_FieldString       subkey;
-
-    SCacheDB()
-    {
-        BindKey("key",     &key, 256);
-        BindKey("version", &version);
-        BindKey("subkey",  &subkey, 256);
-    }
-};
-*/
 
 /// BLOB storage table id->BLOB, id is supposed to be incremental,
 /// Berkeley DB is reduculously faster when it writes records in sorted order.
@@ -727,7 +712,6 @@ private:
     bool                    m_ReadOnly;     ///< read-only flag
 
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
-//    SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
     SCacheBLOB_DB*          m_CacheBLOB_DB; ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     mutable CFastMutex      m_DB_Lock;      ///< Database lock
