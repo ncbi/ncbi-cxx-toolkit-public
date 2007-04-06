@@ -31,6 +31,8 @@
  */
 
 
+%ignore ncbi::blast::CBlastOptionsHandle::ClearFilterOptions;
+
 %ignore ncbi::DataLoaders_Register_BlastDB;
 
 %ignore ncbi::objects::CSeq_feat_Handle::GetSNPQualityCodeStr;
