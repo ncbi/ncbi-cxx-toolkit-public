@@ -46,6 +46,9 @@
 
 #include <objects/general/Date.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
 using namespace objects;
 

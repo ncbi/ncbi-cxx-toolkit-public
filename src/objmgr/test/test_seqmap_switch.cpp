@@ -41,6 +41,9 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_map_switch.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
 using namespace objects;
 
