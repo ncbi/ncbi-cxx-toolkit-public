@@ -48,7 +48,9 @@ This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
 
 Usage:
-    $ScriptName [-branches BranchConfFile] Project [BuildDir]
+    1. $ScriptName [-branches BranchConfFile] Project BuildDir
+
+    2. $ScriptName Project
 
 Where:
     Project - The name of the project you want to build or a pathname
