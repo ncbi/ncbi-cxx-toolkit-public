@@ -63,15 +63,16 @@ Where:
 
 EOF
 
-    print STDERR "\t\t$_\n" for @ProjectDirs;
+    my $Indent = ' ' x 8;
 
-    print STDERR "\n\t\tAvailable project names are:\n\n";
+    print STDERR "$Indent$_\n" for @ProjectDirs;
+
+    print STDERR "\n${Indent}Available project names are:\n\n";
 
     my @ProjectNames;
     find(sub {s/\.lst$// && push @ProjectNames, $_}, @ProjectDirs);
 
-    my $Indent = "\t\t";
-    my $MaxWidth = 80 - 2 * 8 - 6;
+    my $MaxWidth = 80 - length($Indent) - 6;
 
     my $Column = 0;
 
