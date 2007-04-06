@@ -114,7 +114,7 @@ sub SwitchUsingMap
         {
             print "Switching '$FromDir' to '$ToDir'...\n";
 
-            system $Self->{SvnPath}, 'switch', $URL, $FromDir
+            $Self->RunSubversion('switch', $URL, $FromDir)
         }
 
         delete $AlreadySwitched{$FromDir}
@@ -124,7 +124,7 @@ sub SwitchUsingMap
     {
         print "Unswitching '$Dir'...\n";
 
-        system $Self->{SvnPath}, 'switch', "$WorkingDirURL/$Dir", $Dir
+        $Self->RunSubversion('switch', "$WorkingDirURL/$Dir", $Dir)
     }
 }
 

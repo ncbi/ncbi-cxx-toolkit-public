@@ -26,6 +26,10 @@ my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit';
 
 my $Update = NCBI::SVN::Update->new(MyName => $ScriptName);
 
+# Find (and cache) the path to Subversion before unsetting
+# the PATH environment variable.
+$Update->GetSvnPath();
+
 my @UnsafeVars = qw(PATH IFS CDPATH ENV BASH_ENV TERM);
 my %OldEnv;
 @OldEnv{@UnsafeVars} = delete @ENV{@UnsafeVars};
@@ -297,6 +301,7 @@ if ($BuildDir)
     my $ProjectListFile = "$BuildDir/projects";
     if (eval {symlink('', ''); 1})
     {
+        unlink $ProjectListFile;
         symlink(File::Spec->file_name_is_absolute($MainProject) ?
             $MainProject : File::Spec->rel2abs($MainProject), $ProjectListFile)
             or die $!;
@@ -332,18 +337,16 @@ while (@ProjectQueue)
     ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
-my $SVN = $Update->GetSvnPath();
-
 if ($RepositoryURL)
 {
-    system($SVN, ($NewCheckout ? 'co' : 'switch'), '-N',
+    $Update->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-N',
         "$RepositoryURL/trunk/c++", $BuildDir)
 }
 
 my $MultiSwitch;
 
 $MultiSwitch = NCBI::SVN::MultiSwitch->new(MyName => $ScriptName,
-    SvnPath => $SVN, MapFileName => $SwitchMapFile) if $SwitchMapFile;
+    MapFileName => $SwitchMapFile) if $SwitchMapFile;
 
 chdir $BuildDir;
 

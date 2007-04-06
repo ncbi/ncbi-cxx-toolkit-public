@@ -170,14 +170,14 @@ sub PerformUpdates
     {
         print "Performing non-recursive updates:\n";
 
-        system $Self->{SvnPath}, 'update', '-N', @{$Self->{NonRecursiveUpdates}}
+        $Self->RunSubversion('update', '-N', @{$Self->{NonRecursiveUpdates}})
     }
 
     if ($Self->{RecursiveUpdates})
     {
         print "Performing recursive updates:\n";
 
-        system $Self->{SvnPath}, 'update', @{$Self->{RecursiveUpdates}}
+        $Self->RunSubversion('update', @{$Self->{RecursiveUpdates}})
     }
 }
 

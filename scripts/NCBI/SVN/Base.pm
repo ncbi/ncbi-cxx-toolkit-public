@@ -8,6 +8,8 @@ use Carp qw(confess);
 
 use File::Spec;
 
+our $SvnPathCache;
+
 sub FindSubversion
 {
     for my $Path (File::Spec->path())
@@ -30,7 +32,6 @@ sub new
     my %Param = @Params;
 
     $Param{MyName} ||= $Class;
-    $Param{SvnPath} ||= FindSubversion();
 
     return bless \%Param, $Class
 }
@@ -39,7 +40,14 @@ sub GetSvnPath
 {
     my ($Self) = @_;
 
-    return $Self->{SvnPath}
+    return $Self->{SvnPath} ||= ($SvnPathCache ||= FindSubversion())
+}
+
+sub RunSubversion
+{
+    my ($Self, @Params) = @_;
+
+    return system $Self->GetSvnPath(), @Params
 }
 
 sub CallSubversion
@@ -48,7 +56,8 @@ sub CallSubversion
 
     local $" = '" "';
 
-    my @Output = `"$Self->{SvnPath}" "@Params"`;
+    my $SvnPath = $Self->GetSvnPath();
+    my @Output = `"$SvnPath" "@Params"`;
     chomp @Output;
 
     return @Output
