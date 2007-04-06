@@ -278,7 +278,7 @@ if test "$with_objects" = "yes" ; then
     | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
     | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.asn\).*%  \1%g'
     cd ../../src/app/sample/soap   ||  Usage "Failed:  cd ../../src/app/sample/soap (from src/objects)" ;
-    { $NCBI/c++.metastable/Release/build/new_module.sh --dtd soap_dataobj  ||  Usage "Failed to generate serialization classes" ; } \
+    { $NCBI/c++.metastable/Release/build/new_module.sh --xsd soap_dataobj  ||  Usage "Failed to generate serialization classes" ; } \
         | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd ' \
         | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd\).*%  \1%g'
     cd ../../../..  ||  Usage "Failed:  cd ../../../..  (from src/app/sample/soap)"
