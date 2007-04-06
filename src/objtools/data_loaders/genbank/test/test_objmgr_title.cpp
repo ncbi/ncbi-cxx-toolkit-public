@@ -43,6 +43,9 @@
 
 #include <objmgr/util/sequence.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);

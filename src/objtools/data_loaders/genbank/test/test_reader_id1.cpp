@@ -34,6 +34,9 @@
 
 #include <connect/ncbi_core_cxx.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
