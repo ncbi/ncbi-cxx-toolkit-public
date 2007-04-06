@@ -48,7 +48,7 @@ This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
 
 Usage:
-    $ScriptName [-switch-map SwitchMap] Project [BuildDir]
+    $ScriptName [-branches BranchConfFile] Project [BuildDir]
 
 Where:
     Project - The name of the project you want to build or a pathname
@@ -126,7 +126,7 @@ EOF
 
     print STDERR <<EOF;
 
-    SwitchMap - Pathname of the file containing working copy directory
+    BranchConfFile - Pathname of the file containing working copy directory
         switch plan. This parameter can only be used during the initial
         checkout - see the Description section below.
 
@@ -142,7 +142,7 @@ Description:
         the C++ Toolkit tree out into it, along with any additional
         infrastructure needed for the build system to work.
         If the directory already exists, it must be empty.
-        If the SwitchMap file is specified, the script will switch
+        If the BranchConfFile file is specified, the script will switch
         working copy directories in accordance with this file.
         The script will then optionally configure and build
         the new tree.
@@ -152,7 +152,7 @@ Description:
         argument, it will update the sources and headers for the
         specified projects. The script will then optionally
         reconfigure and rebuild the tree.
-        The -switch-map paramter cannot be used in this mode.
+        The -branches paramter cannot be used in this mode.
 
 Examples:
     1. Perform initial checkout of project "connect" and its
@@ -257,15 +257,15 @@ sub FindProjectListing
 
 Usage() if @ARGV < 1 || $ARGV[0] eq '--help';
 
-my ($SwitchMapFile, $MainProject, $BuildDir);
+my ($BranchConfFile, $MainProject, $BuildDir);
 
 while (@ARGV)
 {
     my $Arg = shift @ARGV;
 
-    if ($Arg eq '-switch-map')
+    if ($Arg eq '-switch-map' || $Arg eq '-branches')
     {
-        $SwitchMapFile = shift @ARGV or Usage("Pathname missing after $Arg")
+        $BranchConfFile = shift @ARGV or Usage("Pathname missing after $Arg")
     }
     elsif (!$MainProject)
     {
@@ -283,8 +283,8 @@ while (@ARGV)
 
 Usage('Missing mandatory argument Project') unless $MainProject;
 
-Usage('-switch-map can only be used in the checkout mode')
-    if $SwitchMapFile && !$BuildDir;
+Usage('-branches can only be used in the checkout mode')
+    if $BranchConfFile && !$BuildDir;
 
 $MainProject = FindProjectListing($MainProject, $ScriptName);
 
@@ -346,7 +346,7 @@ if ($RepositoryURL)
 my $MultiSwitch;
 
 $MultiSwitch = NCBI::SVN::MultiSwitch->new(MyName => $ScriptName,
-    MapFileName => $SwitchMapFile) if $SwitchMapFile;
+    MapFileName => $BranchConfFile) if $BranchConfFile;
 
 chdir $BuildDir;
 
