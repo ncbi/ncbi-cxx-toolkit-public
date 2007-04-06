@@ -119,6 +119,7 @@ extern "C" {
 #  endif
 #  ifdef __sparcv9
      typedef unsigned int TNCBIAtomicValue;
+#    define NCBI_COUNTER_UNSIGNED 1
      TNCBIAtomicValue NCBICORE_asm_cas(TNCBIAtomicValue new_value,
                                        TNCBIAtomicValue* address,
                                        TNCBIAtomicValue old_value);
@@ -128,6 +129,7 @@ extern "C" {
 #    define NCBI_SWAP_POINTERS_EXTERN 1
 #  elif defined(__sparc)
      typedef unsigned int TNCBIAtomicValue;
+#    define NCBI_COUNTER_UNSIGNED 1
      TNCBIAtomicValue NCBICORE_asm_swap(TNCBIAtomicValue new_value,
                                         TNCBIAtomicValue* address);
 #    define NCBI_SWAP_POINTERS(loc, nv) \
@@ -136,18 +138,22 @@ extern "C" {
 #    define NCBI_SWAP_POINTERS_EXTERN 1
 #  elif defined(__x86_64)
      typedef unsigned int TNCBIAtomicValue;
+#    define NCBI_COUNTER_UNSIGNED 1
      TNCBIAtomicValue NCBICORE_asm_lock_xaddl_64(TNCBIAtomicValue* address,
                                                  int delta);
      void* NCBICORE_asm_xchgq(void* new_value, void** location);
 #    define NCBI_COUNTER_ADD(p, d) (NCBICORE_asm_lock_xaddl_64(p, d) + d)
+#    define NCBI_COUNTER_USE_EXTERN_ASM 1
 #    define NCBI_SWAP_POINTERS(loc, nv) NCBICORE_asm_xchgq(nv, loc)
 #    define NCBI_SWAP_POINTERS_EXTERN 1
 #  elif defined(__i386)
      typedef unsigned int TNCBIAtomicValue;
+#    define NCBI_COUNTER_UNSIGNED 1
      TNCBIAtomicValue NCBICORE_asm_lock_xaddl(TNCBIAtomicValue* address,
                                               int delta);
      void* NCBICORE_asm_xchg(void* new_value, void** location);
 #    define NCBI_COUNTER_ADD(p, d) (NCBICORE_asm_lock_xaddl(p, d) + d)
+#    define NCBI_COUNTER_USE_EXTERN_ASM 1
 #    define NCBI_SWAP_POINTERS(loc, nv) NCBICORE_asm_xchg(nv, loc)
 #    define NCBI_SWAP_POINTERS_EXTERN 1
 #  else

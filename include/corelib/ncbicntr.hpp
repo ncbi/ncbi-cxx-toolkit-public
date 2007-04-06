@@ -212,8 +212,10 @@ THROWS_NONE
 }
 #endif
 
-#if !defined(NCBI_COUNTER_NEED_MUTEX)
+#if !defined(NCBI_COUNTER_NEED_MUTEX)  &&  (!defined(NCBI_COUNTER_USE_EXTERN_ASM)  ||  defined(NCBI_COUNTER_IMPLEMENTATION))
+#  ifndef NCBI_COUNTER_USE_EXTERN_ASM
 inline
+#  endif
 CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 {
     TValue* nv_value_p = const_cast<TValue*>(&m_Value);
