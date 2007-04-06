@@ -50,7 +50,7 @@ and optionally (re-)configures and builds it.
 Usage:
     1. $ScriptName [-branches BranchConfFile] Project BuildDir
 
-    2. $ScriptName Project
+    2. $ScriptName [-branches BranchConfFile] Project
 
 Where:
     Project - The name of the project you want to build or a pathname
@@ -130,8 +130,7 @@ EOF
     print STDERR <<EOF;
 
     BranchConfFile - Pathname of the file containing working copy directory
-        switch plan. This parameter can only be used during the initial
-        checkout - see the Description section below.
+        switch plan.
 
     BuildDir - Path to the target directory. The presence (or absence)
         of this argument designates the mode of operation - see
@@ -153,9 +152,10 @@ Description:
     2. If you run this script from the top level of an existing working
         copy of the C++ source tree without sepcifying the BuildDir
         argument, it will update the sources and headers for the
-        specified projects. The script will then optionally
-        reconfigure and rebuild the tree.
-        The -branches paramter cannot be used in this mode.
+        specified projects.
+        If the BranchConfFile file is specified, the script will switch
+        working copy directories in accordance with this file.
+        The script will then optionally reconfigure and rebuild the tree.
 
 Examples:
     1. Perform initial checkout of project "connect" and its
@@ -285,9 +285,6 @@ while (@ARGV)
 }
 
 Usage('Missing mandatory argument Project') unless $MainProject;
-
-Usage('-branches can only be used in the checkout mode')
-    if $BranchConfFile && !$BuildDir;
 
 $MainProject = FindProjectListing($MainProject, $ScriptName);
 
