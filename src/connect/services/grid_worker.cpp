@@ -183,6 +183,8 @@ public:
     virtual void Process(void);
 
 private:
+    void x_HandleProcessError(exception* ex = NULL);
+
     auto_ptr<CWorkerNodeJobContext> m_Context;
     CGridThreadContext&             x_GetThreadContext();
 
@@ -217,6 +219,20 @@ static CGridThreadContext& s_GetSingleTHreadContext(CGridWorkerNode& node)
     if (!s_SingleTHreadContext.get())
         s_SingleTHreadContext.reset(new CGridThreadContext(node, node.GetCheckStatusPeriod()));
     return *s_SingleTHreadContext;
+}
+
+inline void s_HandleRunJobError(CGridThreadContext& thr_context, exception* ex = NULL)
+{
+    string msg = " Error in Job execution";
+    if (ex) msg += string(": ") + ex->what();
+    ERR_POST(CTime(CTime::eCurrent).AsString() << msg);
+    try {
+        thr_context.PutFailure(ex ? ex->what() : "Unknown error");
+    } catch(exception& ex1) {
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception: " << ex1.what());
+    } catch(...) {
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception");
+    }
 }
 
 static void s_RunJob(CGridThreadContext& thr_context)
@@ -265,47 +281,39 @@ static void s_RunJob(CGridThreadContext& thr_context)
             }
         }
     }
-    catch (exception& ex) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Error in Job execution : "  << ex.what());
-        try {
-            thr_context.PutFailure(ex.what());
-        } catch(exception& ex1) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception: " << ex1.what());
-        }
-    }
-    catch(...) {
-        string msg = "Unknown Error in Job execution";
-        ERR_POST( CTime(CTime::eCurrent).AsString()<< " " << msg );
-        try {
-            thr_context.PutFailure(msg);
-        } catch(exception& ex) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() 
-                     << " Failed to report an unknown exception : " << ex.what());
-        }
-    }
+    catch (exception& ex) { s_HandleRunJobError(thr_context, &ex); }
+    catch(...) { s_HandleRunJobError(thr_context); }
+
     thr_context.CloseStreams();
     CWorkerNodeJobContext& job_context = thr_context.GetJobContext();
     thr_context.Reset();
     if (more_jobs)
         thr_context.SetJobContext(job_context, new_job);
     } while (more_jobs);
+}
 
+void CWorkerNodeRequest::x_HandleProcessError(exception* ex)
+{
+    string msg = " Error during job run";
+    if (ex) msg += string(": ") + ex->what();
+    ERR_POST(CTime(CTime::eCurrent).AsString() << msg);
+    try {
+        m_Context->GetWorkerNode().x_ReturnJob(m_Context->GetJobKey());
+    } catch (exception& ex1) {
+        ERR_POST(CTime(CTime::eCurrent).AsString() 
+                 << " Could not return job back to queue: " << ex1.what());
+    } catch (...) {
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not return job back to queue.");
+    }
+    CGridGlobals::GetInstance().
+        RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
 
 }
 void CWorkerNodeRequest::Process(void)
 {
-    try {
-        s_RunJob(x_GetThreadContext());
-    } catch (...) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Error during job run");
-        try {
-            m_Context->GetWorkerNode().x_ReturnJob(m_Context->GetJobKey());
-        } catch (...) {
-            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not return job back to queue.");
-        }
-        CGridGlobals::GetInstance().
-            RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
-    }
+    try { s_RunJob(x_GetThreadContext()); } 
+    catch (exception& ex) { x_HandleProcessError(&ex);  } 
+    catch (...) { x_HandleProcessError(); }
 }
 
 /////////////////////////////////////////////////////////////////////////////
