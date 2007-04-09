@@ -587,5 +587,57 @@ void CBDB_Env::PrintMutexStat(CNcbiOstream & out)
 #endif
 }
 
+void CBDB_Env::PrintLockStat(CNcbiOstream & out)
+{
+#ifdef BDB_NEW_MUTEX_API
+    DB_LOCK_STAT *stp = 0;
+
+    int ret = m_Env->lock_stat(m_Env, &stp, 0);
+    BDB_CHECK(ret, "DB_ENV::lock_stat");
+
+    try {
+        out << "st_id           : " << stp->st_id           << NcbiEndl
+            << "st_cur_maxid    : " << stp->st_cur_maxid    << NcbiEndl
+            << "st_nmodes       : " << stp->st_nmodes       << NcbiEndl
+            << "st_maxlocks     : " << stp->st_maxlocks     << NcbiEndl
+            << "st_maxlockers   : " << stp->st_maxlockers   << NcbiEndl
+            << "st_maxobjects   : " << stp->st_maxobjects   << NcbiEndl
+            << "st_nlocks       : " << stp->st_nlocks       << NcbiEndl
+            << "st_maxnlocks    : " << stp->st_maxnlocks    << NcbiEndl
+            << "st_nlockers     : " << stp->st_nlockers     << NcbiEndl
+            << "st_maxnlockers  : " << stp->st_maxnlockers  << NcbiEndl
+            << "st_nobjects     : " << stp->st_nobjects     << NcbiEndl
+            << "st_maxnobjects  : " << stp->st_maxnobjects  << NcbiEndl
+            << "st_nrequests    : " << stp->st_nrequests    << NcbiEndl
+            << "st_nreleases    : " << stp->st_nreleases    << NcbiEndl
+            << "st_nupgrade     : " << stp->st_nupgrade     << NcbiEndl
+            << "st_ndowngrade   : " << stp->st_ndowngrade   << NcbiEndl
+            << "st_lock_wait    : " << stp->st_lock_wait    << NcbiEndl
+            << "st_lock_nowait  : " << stp->st_lock_nowait  << NcbiEndl
+            << "st_ndeadlocks   : " << stp->st_ndeadlocks   << NcbiEndl
+            << "st_locktimeout  : " << stp->st_locktimeout  << NcbiEndl
+            << "st_nlocktimeouts: " << stp->st_nlocktimeouts << NcbiEndl
+            << "st_txntimeout   : " << stp->st_txntimeout    << NcbiEndl
+            << "st_ntxntimeouts : " << stp->st_ntxntimeouts  << NcbiEndl
+            << "st_regsize      : " << stp->st_regsize       << NcbiEndl
+            << "st_region_wait  : " << stp->st_region_wait   << NcbiEndl
+            << "st_region_nowait: " << stp->st_region_nowait << NcbiEndl
+        ;
+    } 
+    catch (...)
+    {
+        if (stp) {
+            ::free(stp);
+        }
+        throw;
+    }
+
+    if (stp) {
+        ::free(stp);
+    }
+
+#endif
+}
+
 
 END_NCBI_SCOPE

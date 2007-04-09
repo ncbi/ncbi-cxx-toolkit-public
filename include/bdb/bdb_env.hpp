@@ -233,7 +233,11 @@ public:
 
     /// Print mutex statistics
     void PrintMutexStat(CNcbiOstream & out);
-    
+
+    /// Print lock statistics
+    void PrintLockStat(CNcbiOstream & out);
+
+
 private:
     /// Opens BDB environment returns error code
     /// Throws no exceptions.
