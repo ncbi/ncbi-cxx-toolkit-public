@@ -225,7 +225,8 @@ long NJ_TreeAlgorithm::GetNumLoopsForTreeCalc() {
 void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
 
     int i, j, k;
-    int imin, jmin, idmin, jdmin, tmp;
+    int idmin, jdmin, tmp;
+    int imin = 0, jmin = 0;
     double ilen, jlen; 
     double sum_d, tmp_d;
 

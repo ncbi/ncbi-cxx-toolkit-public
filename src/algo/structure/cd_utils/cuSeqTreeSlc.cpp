@@ -239,7 +239,8 @@ long SLC_TreeAlgorithm::GetNumLoopsForTreeCalc() {
 void SLC_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
 
     int i, j, k;
-    int imin, jmin, idmin, jdmin;
+    int idmin, jdmin;
+    int imin = 0, jmin = 0;
     double ilen, jlen; 
 
     DistanceMatrix::TMatType minval;

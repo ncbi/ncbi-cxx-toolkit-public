@@ -80,8 +80,6 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
 
     if (!result) {
         m_error = "Read Error:  invalid stream.\n";
-//    } else if (m_useOldReader) {
-//        result = Old_ReadFile(iStream);
     } else {
 
         CNcbiOstrstream oss;
@@ -95,14 +93,10 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
         EDiagSev originalDiagSev = SetDiagPostLevel(eDiag_Error);  
 
 	    try{
-            if (m_useOldReader) {
-                m_seqEntry = ReadFasta(iStream, m_readFastaFlags);
-            } else {
-                CStreamLineReader lineReader(iStream);
-                CFastaReader fastaReader(lineReader, m_readFastaFlags);
-                //CCounterManager counterMgr(reader.SetIDGenerator(), NULL);
-                m_seqEntry = fastaReader.ReadSet();
-            }
+            CStreamLineReader lineReader(iStream);
+            CFastaReader fastaReader(lineReader, m_readFastaFlags);
+            //CCounterManager counterMgr(reader.SetIDGenerator(), NULL);
+            m_seqEntry = fastaReader.ReadSet();
 
             //  If there is only one sequence in the fasta, the Seq-entry returned is a Bioseq and not a Bioseq-set.
             //  In that case, change the Bioseq to a Bioseq-set so caller doesn't have to manage multiple Seq-entry choices.

@@ -533,7 +533,7 @@ int AlignmentCollection::GetRowsWithSameSeqID(int rowToMatch, vector<int>& rows,
         if (!inclusive && vrow != vend) {
             rows.erase(vit);
         }
-        result = (index != -1) ? rows.size() : -1;
+        result = (index != -1) ? (int) rows.size() : -1;
     }
     return result;
 }

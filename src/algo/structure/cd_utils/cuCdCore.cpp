@@ -1890,7 +1890,7 @@ bool CCdCore::AlignAnnotsValid(string* err) const{
 //-------------------------------------------------------------------------
     bool result = true;
     int intNumber;
-  int  From, To, NewFrom, NewTo;
+    int  From, To, NewFrom, NewTo;
 
 //  const TDendiag*  pDenDiagSet;
   list< CRef< CAlign_annot > >::const_iterator  m;
@@ -1922,6 +1922,7 @@ bool CCdCore::AlignAnnotsValid(string* err) const{
             NewTo   = MapPositionToOtherRow(masterSeqAlign, To,   MASTER_TO_CHILD);
         } else {
             NewFrom = INVALID_POSITION;
+            NewTo   = INVALID_POSITION;
         }
         if ((NewFrom == INVALID_POSITION) || (NewTo == INVALID_POSITION)) {
             result = false;

@@ -221,6 +221,8 @@ void MakeMaskedSeqAlign(const CRef< CSeq_align >& originalAlign, const CRef< CSe
             originalSlaveStart  = (*originalBlock)->GetStarts().back();
             originalLength      = (*originalBlock)->GetLen();
             newLength           = 0;
+            newMasterStart      = 0;
+            newSlaveStart       = 0;
             
             //  At each position on the original alignment, check if position is aligned.
             //  If so, start a new block on the masked alignment if not already in one.

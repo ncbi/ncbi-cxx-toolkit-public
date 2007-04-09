@@ -58,6 +58,7 @@ class NCBI_BMAREFINE_EXPORT RowScorer {
 public:
 
     RowScorer();
+    virtual ~RowScorer();
 
     //  Provides default implementation:  sum of scores of seq vs PSSM for given row.
     //  If the row is unspecified, return the sum of scores summed over all rows.

@@ -42,7 +42,7 @@ BEGIN_SCOPE(cd_utils)
 const bool   DistanceMatrix::USE_ALIGNED_DEFAULT = true;
 const int    DistanceMatrix::OUTPUT_PRECISION    = 3;
 const int    DistanceMatrix::NO_EXTENSION        = 0;
-const int    DistanceMatrix::INITIAL_SCORE_BOUND = (int)1e10;
+const int    DistanceMatrix::INITIAL_SCORE_BOUND = kMax_Int;
 const double DistanceMatrix::TINY_DISTANCE       = 0.0003;
 const double DistanceMatrix::HUGE_DISTANCE       = kMax_Double;
 

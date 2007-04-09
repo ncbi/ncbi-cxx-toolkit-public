@@ -58,7 +58,7 @@ void MidpointRootSeqTree(const SeqTree& oldTree, SeqTree& newTree) {
 	double midpointDist = 0.0;
 	double dToEnd1 = 0.0;
 	double dmax = 0.0;
-	double dToNewParent, dToNewChild;
+	double dToNewParent = 0, dToNewChild = 0;
     int nTopLevelNodes;
 
     SeqItem item;
@@ -161,7 +161,7 @@ void MidpointRootSeqTree(const SeqTree& oldTree, SeqTree& newTree) {
             }
             dToNewChild = 0.0;
             cursor1->distance += dToNewParent;
-        } else         if (nTopLevelNodes > 2) {  // an intermediate node will be inserted as a child of cursor2 below
+        } else if (nTopLevelNodes > 2) {  // an intermediate node will be inserted as a child of cursor2 below
             item = *cursor2;
             dToNewChild = cursor2->distance;
         }

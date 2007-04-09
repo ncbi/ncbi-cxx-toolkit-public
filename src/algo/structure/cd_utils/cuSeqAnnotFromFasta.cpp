@@ -182,7 +182,7 @@ bool CSeqAnnotFromFasta::MakeSeqAnnotFromFasta(CNcbiIstream& is, CFastaIOWrapper
         }
     }
     testMasterIndex = DetermineMasterIndex(dummyCD, masterMethod);
-    cout << "Using sequence " << testMasterIndex+1 << " from input mFASTA as the alignment master.\n";
+//    cout << "Using sequence " << testMasterIndex+1 << " from input mFASTA as the alignment master.\n";
 
     //  Fill in all of the seq-aligns.
     if (m_doIBM) {
