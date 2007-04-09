@@ -628,7 +628,7 @@ unsigned CBDB_RawFile::CountRecs()
 
 void CBDB_RawFile::PrintStat(CNcbiOstream & out)
 {
-    DB_BTREE_STAT* stp;
+    DB_BTREE_STAT* stp = 0;
 #ifdef BDB_USE_NEW_STAT
     CBDB_Transaction* trans = GetTransaction();
     DB_TXN* txn = trans ? trans->GetTxn() : 0;
@@ -659,7 +659,8 @@ void CBDB_RawFile::PrintStat(CNcbiOstream & out)
         << "bt_over_pgfree: " << stp->bt_over_pgfree<< NcbiEndl
     ;
 
-    ::free(stp);
+    if (stp)
+        ::free(stp);
 }
 
 
