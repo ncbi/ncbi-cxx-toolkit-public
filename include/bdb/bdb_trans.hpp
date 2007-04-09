@@ -34,11 +34,14 @@
 /// @file bdb_trans.hpp
 /// Wrapper around Berkeley DB transaction structure
 
-#include <bdb/bdb_env.hpp>
+//#include <bdb/bdb_env.hpp>
+#include <bdb/bdb_types.hpp>
 
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+
+class CBDB_Env;
 
 /** @addtogroup BDB
  *
@@ -61,6 +64,7 @@ public:
     /// Enum controls if transaction is synchronous or not.
     /// see DB_TXN->commit for more details
     enum ETransSync {
+        eEnvDefault, ///< Use default from CBDB_Env
         eTransSync,  ///< Syncronous transaction
         eTransASync  ///< Non-durable asyncronous transaction
     };
@@ -79,9 +83,15 @@ public:
         eNoAssociation     ///< No association tracking
     };
 
+    /// Construct transaction
     CBDB_Transaction(CBDB_Env&             env, 
                      ETransSync            tsync = eTransSync,
                      EKeepFileAssociation  assoc = eFullAssociation);
+
+    /// Construct transaction using environment syncronicity settings
+    CBDB_Transaction(CBDB_Env&             env, 
+                     EKeepFileAssociation  assoc = eFullAssociation);
+
 
     /// Non-commited transaction is aborted upon the destruction
     ///

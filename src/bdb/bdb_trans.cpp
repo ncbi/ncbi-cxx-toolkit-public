@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/bdb_env.hpp>
 #include <bdb/bdb_file.hpp>
 #include <db.h>
 
@@ -43,7 +44,24 @@ CBDB_Transaction::CBDB_Transaction(CBDB_Env&            env,
    m_TSync(tsync),
    m_Assoc(assoc),
    m_Txn(0)
-{}
+{
+    if (m_TSync == eEnvDefault) {
+        m_TSync = m_Env.GetTransactionSync();
+    }
+    // Env default should not come from the env (env must be specific)
+    _ASSERT(m_TSync != eEnvDefault);
+}
+
+CBDB_Transaction::CBDB_Transaction(CBDB_Env&            env, 
+                                   EKeepFileAssociation assoc)
+ : m_Env(env),
+   m_Assoc(assoc),
+   m_Txn(0)
+{
+    m_TSync = m_Env.GetTransactionSync();
+    _ASSERT(m_TSync != eEnvDefault);
+}
+
 
 CBDB_Transaction::~CBDB_Transaction()
 {

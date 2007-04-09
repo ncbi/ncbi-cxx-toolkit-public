@@ -36,6 +36,7 @@
 /// Wrapper around Berkeley DB environment structure
 
 #include <bdb/bdb_types.hpp>
+#include <bdb/bdb_trans.hpp>
 
 #include <stdio.h>
 
@@ -46,6 +47,7 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class CBDB_Transaction;
 
 /// BDB environment object a collection including support for some or 
 /// all of caching, locking, logging and transaction subsystems.
@@ -208,6 +210,16 @@ public:
 
     /// Reset log sequence number
     void LsnReset(const char* file_name);
+
+    /// Get default syncronicity setting
+    CBDB_Transaction::ETransSync GetTransactionSync() const
+    {
+        return m_TransSync;
+    }
+
+    /// Set default syncronicity level
+    void SetTransactionSync(CBDB_Transaction::ETransSync sync);
+
     
 private:
     /// Opens BDB environment returns error code
@@ -223,6 +235,8 @@ private:
     FILE*    m_ErrFile;
     string   m_HomePath;
     bool     m_LogInMemory;
+    CBDB_Transaction::ETransSync m_TransSync;
+
 };
 
 /* @} */

@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/bdb_trans.hpp>
 #include <db.h>
 
 
@@ -50,7 +51,8 @@ CBDB_Env::CBDB_Env()
 : m_Env(0),
   m_Transactional(false),
   m_ErrFile(0),
-  m_LogInMemory(false)
+  m_LogInMemory(false),
+  m_TransSync(CBDB_Transaction::eTransSync)
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
@@ -60,7 +62,8 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
 : m_Env(env),
   m_Transactional(false),
   m_ErrFile(0),
-  m_LogInMemory(false)
+  m_LogInMemory(false),
+  m_TransSync(CBDB_Transaction::eTransSync)
 {
 }
 
@@ -84,6 +87,15 @@ void CBDB_Env::Close()
         BDB_CHECK(ret, "DB_ENV::close");
     }
 }
+
+void CBDB_Env::SetTransactionSync(CBDB_Transaction::ETransSync sync)
+{
+    if (sync == CBDB_Transaction::eEnvDefault)
+        m_TransSync = CBDB_Transaction::eTransSync;
+    else
+        m_TransSync = sync;
+}
+
 
 void CBDB_Env::SetCacheSize(unsigned int cache_size)
 {
