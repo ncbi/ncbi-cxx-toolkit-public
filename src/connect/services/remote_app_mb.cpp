@@ -113,8 +113,11 @@ public:
                 if (m_IStream->good())
                     ReadStrWithLen(*m_IStream, name);
             } catch (...) {
-                msg = "The Blob data does not match a remote app data";                   
-                m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
+                if (!m_IStream->eof()) {
+                    msg = "The Blob data does not match a remote app data";
+                    ERR_POST(msg);
+                    m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
+                }
                 return *m_IStream;
             }
             
@@ -127,6 +130,7 @@ public:
                     m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
                 } else {
                     msg = "Can not open " + name + " of input";                   
+                    ERR_POST(msg);
                     m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
                 }
             }
