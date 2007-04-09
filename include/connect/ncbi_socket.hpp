@@ -68,13 +68,43 @@ public:
 
 protected:
     CPollable(void) { };
-    virtual ~CPollable(void) { };
+    virtual ~CPollable() { };
 
 private:
     /// disable copy constructor and assignment
     CPollable(const CPollable&);
     CPollable& operator= (const CPollable&);
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CTrigger::
+///
+/// @li <b>NOTE:</b>  For documentation see TRIGGER_***() functions in
+/// "ncbi_socket.h".
+///
+
+class NCBI_XCONNECT_EXPORT CTrigger : public CPollable
+{
+public:
+    CTrigger(ESwitch log);
+    virtual ~CTrigger();
+
+    EIO_Status Set(void);
+    EIO_Status IsSet(void);
+    EIO_Status Reset(void);
+
+protected:
+    TRIGGER    m_Trigger;
+
+private:
+    /// disable copy constructor and assignment
+    CTrigger(const CTrigger&);
+    CTrigger& operator= (const CTrigger&);
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -658,6 +688,28 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 ///  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// CTrigger::
+///
+
+inline EIO_Status CTrigger::Set(void)
+{
+    return m_Trigger ? TRIGGER_Set(m_Trigger) : eIO_Unknown;
+}
+
+
+inline EIO_Status CTrigger::IsSet(void)
+{
+    return m_Trigger ? TRIGGER_IsSet(m_Trigger) : eIO_Unknown;
+}
+
+
+inline EIO_Status CTrigger::Reset(void)
+{
+    return m_Trigger ? TRIGGER_Reset(m_Trigger) : eIO_Unknown;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

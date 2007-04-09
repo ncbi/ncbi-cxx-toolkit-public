@@ -43,6 +43,26 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CTrigger::
+//
+
+CTrigger::CTrigger(ESwitch log)
+    : m_Trigger(0)
+{
+    if (TRIGGER_Create(&m_Trigger, log) != eIO_Success)
+        m_Trigger = 0;
+}
+
+
+CTrigger::~CTrigger()
+{
+    if (m_Trigger)
+        TRIGGER_Close(m_Trigger);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CSocket::
 //
 
@@ -112,7 +132,7 @@ CUNIXSocket::CUNIXSocket(const string&   filename,
 }
 
 
-CSocket::~CSocket(void)
+CSocket::~CSocket()
 {
     if (m_Socket  &&  m_IsOwned != eNoOwnership)
         SOCK_Close(m_Socket);
@@ -495,7 +515,7 @@ CUNIXListeningSocket::CUNIXListeningSocket(const string&  filename,
 }
 
 
-CListeningSocket::~CListeningSocket(void)
+CListeningSocket::~CListeningSocket()
 {
     Close();
 }

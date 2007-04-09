@@ -45,6 +45,14 @@
  *  SOCK_InitializeAPI
  *  SOCK_ShutdownAPI
  *
+ * Event trigger (handle TRIGGER):
+ *
+ *  TRIGGER_Create
+ *  TRIGGER_Set
+ *  TRIGGER_IsSet
+ *  TRIGGER_Reset
+ *  TRIGGER_Close
+ *
  * Listening socket (handle LSOCK):
  *
  *  LSOCK_Create
@@ -152,7 +160,7 @@ typedef enum {
 } ENH_ByteOrder;
 
 
-/** Forward declarations of the hidden socket internal structure, and
+/** Forward declarations of the hidden socket internal structures, and
  * their upper-level handles to use by the LSOCK_*() and SOCK_*() API
  */
 struct LSOCK_tag;                /* listening socket:  internal storage */
@@ -161,6 +169,8 @@ typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle           */
 struct SOCK_tag;                 /* socket:  internal storage           */
 typedef struct SOCK_tag*  SOCK;  /* socket:  handle                     */
 
+struct TRIGGER_tag;
+typedef struct TRIGGER_tag* TRIGGER;
 
 
 /******************************************************************************
@@ -355,15 +365,90 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 
 /******************************************************************************
+ *  EVENT TRIGGER
+ */
+
+/** Create an event trigger.
+ * @param trigger
+ *  [in|out]  a pointer to a location where to store a handle of the trigger
+ * @return
+ *  eIO_Success on success; other status on error
+ * @sa
+ *  TRIGGER_Close, TRIGGER_Set
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Create
+(TRIGGER* trigger,
+ ESwitch  log
+ );
+
+
+/** Close an event trigger.
+ * @param trigger
+ *  [in]  a handle returned by TRIGGER_Create
+ * @return
+ *   eIO_Success on success; other status on error
+ * @sa
+ *  TRIGGER_Create
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Close
+(TRIGGER  trigger
+ );
+
+
+/** Set an event trigger.  Can be used from many threads concurrently.
+ * @param trigger
+ *  [in]  a handle returned by TRIGGER_Create
+ * @return
+ *   eIO_Success on success; other status on error.
+ * @sa
+ *  TRIGGER_Create, TRIGGER_IsSet
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Set
+(TRIGGER  trigger
+ );
+
+
+/** Check whether the trigger has been set.  Should not be used from
+ * multiple threads concurrently at a time.
+ * @param trigger
+ *  [in]  a handle returned by TRIGGER_Create
+ * @return
+ *  eIO_Success if the trigger has been set;
+ *  eIO_Closed  if the trigger has not yet been set;
+ *  other status on error.
+ * @sa
+ *  TRIGGER_Create, TRIGGER_Set, TRIGGER_Reset
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_IsSet
+(TRIGGER  trigger
+ );
+
+
+/** Reset trigger.  Should not be used from multiple threads concurently.
+ * @param trigger
+ *  [in]  a handle returned by TRIGGER_Create
+ * @return
+ *  eIO_Success if the trigger has been set; other status on error.
+ * @sa
+ *  TRIGGER_Create, TRIGGER_Set
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status TRIGGER_Reset
+(TRIGGER  trigger
+ );
+
+
+
+/******************************************************************************
  *  LISTENING SOCKET [SERVER-side]
  */
 
 typedef enum {
-    fLSCE_LogOff     = eOff,     /** logging is inherited in Accept()ed SOCKs*/
-    fLSCE_LogOn      = eOn,      /**                    -"-                  */
-    fLSCE_LogDefault = eDefault, /**                    -"-                  */
-    fLSCE_BindAny    = 0,        /** bind to 0.0.0.0 (i.e. any), default     */
-    fLSCE_BindLocal  = 0x10      /** bind to 127.0.0.1 only                  */
+    fLSCE_LogOff      = eOff,    /** logging is inherited in Accept()ed SOCKs*/
+    fLSCE_LogOn       = eOn,     /**                    -"-                  */
+    fLSCE_LogDefault  = eDefault,/**                    -"-                  */
+    fLSCE_BindAny     = 0,       /** bind to 0.0.0.0 (i.e. any), default     */
+    fLSCE_BindLocal   = 0x10,    /** bind to 127.0.0.1 only                  */
+    fLSCE_CloseOnExec = 0x20
 } FLSCE_Flags;
 typedef unsigned int TLSCE_Flags;
 
@@ -669,11 +754,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  * Both eIO_Write and eIO_ReadWrite events always immediately succeed for
  * the datagram socket.
  * @param sock
- *  [in]  socket handle 
+ *  [in] socket handle 
  * @param event
  *  [in] one of:  eIO_Read, eIO_Write, eIO_ReadWrite 
  * @param timeout
- *  [in] Maximum time to wait for an event
+ *  [in] maximum time to wait for an event
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
@@ -764,10 +849,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
  * @return
  *  Return 0 if conversion cannot be made; otherwise converted handle 
  */
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK (SOCK);
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK(LSOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromTRIGGER(TRIGGER);
 extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
 extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
+extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
 
 
 /** Specify timeout for the connection i/o (see SOCK_[Read|Write|Close] funcs).
