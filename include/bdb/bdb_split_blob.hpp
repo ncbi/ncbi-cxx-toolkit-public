@@ -451,13 +451,13 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
    m_ObjDeMux(de_mux),
    m_DB_Type(CBDB_RawFile::eBtree)
 {
-    m_PageSizes[0] = 0;
-    m_PageSizes[1] = 0;
-    m_PageSizes[2] = 8 * 1024;
-    m_PageSizes[3] = 16* 1024;
-    m_PageSizes[4] = 16* 1024;
-    m_PageSizes[5] = 32* 1024;
-    m_PageSizes[6] = 64* 1024;
+    m_PageSizes[0] = 0;         // max blob size =   256
+    m_PageSizes[1] = 0;         // max blob size =   512
+    m_PageSizes[2] = 8 * 1024;  // max blob size =  2048
+    m_PageSizes[3] = 16* 1024;  // max blob size =  4096
+    m_PageSizes[4] = 32* 1024;  // max blob size =  8192
+    m_PageSizes[5] = 64* 1024;  // max blob size = 16384
+    m_PageSizes[6] = 64* 1024;  // max blob size = 32768
 }
 
 template<class TBV, class TObjDeMux, class TL>
