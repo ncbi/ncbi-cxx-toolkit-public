@@ -64,7 +64,11 @@
 #if defined(HAVE_LIBLZO)
 
 #include <stdio.h>
-#include <lzo1x.h>
+#ifdef HAVE_LIBLZO2 // rigged to imply HAVE_LIBLZO.
+#  include <lzo/lzo1x.h>
+#else
+#  include <lzo1x.h>
+#endif
 
 /** @addtogroup Compression
  *

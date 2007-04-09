@@ -169,9 +169,13 @@ AC_ARG_WITH(bz2,
 AC_ARG_WITH(bz2b,
    [ --without-bz2           use internal copy of bzlib])
 AC_ARG_WITH(lzo,
-   [ --with-lzo=DIR          use LZO installation in DIR])
+   [ --with-lzo=DIR          use LZO 1.x installation in DIR])
+AC_ARG_WITH(lzo_,
+   [ --without-lzo           do not use LZO 1.x])
 AC_ARG_WITH(lzo2,
-   [ --without-lzo           do not use LZO])
+   [ --with-lzo2=DIR         use LZO 2.x installation in DIR])
+AC_ARG_WITH(lzo2_,
+   [ --without-lzo2          do not use LZO 2.x])
 AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
@@ -366,7 +370,7 @@ check static-exe bin-release strip version lfs pch caution ccache distcc \
 flat-makefile \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk \
 opengl mesa glut bdb python sqlite sqlite3 icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
@@ -405,7 +409,8 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
-      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-pcre=* \
+      | --with-z=* | --with-bz2=* | --with-lzo=* | --with-lzo2=* \
+      | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
@@ -2932,13 +2937,27 @@ if test -z "$BZ2_LIBS"; then
    NCBI_PACKAGE(LocalBZ2)
 fi
 
-: ${LZO_PATH=$NCBI/lzo1}
-if test -d "$LZO_PATH"; then
-   NCBI_FIX_DIR(LZO_PATH)
+: ${LZO2_PATH=$NCBI/lzo2}
+if test -d "$LZO2_PATH"; then
+   NCBI_FIX_DIR(LZO2_PATH)
 fi
-NCBI_CHECK_THIRD_PARTY_LIB(lzo,
- [[AC_LANG_PROGRAM([#include <lzo1x.h>],
+NCBI_CHECK_THIRD_PARTY_LIB(lzo2,
+ [[AC_LANG_PROGRAM([#include <lzo/lzo1x.h>],
       [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
+if test "$with_lzo2" = "no"; then
+   : ${LZO_PATH=$NCBI/lzo1}
+   if test -d "$LZO_PATH"; then
+      NCBI_FIX_DIR(LZO_PATH)
+   fi
+   NCBI_CHECK_THIRD_PARTY_LIB(lzo,
+    [[AC_LANG_PROGRAM([#include <lzo1x.h>],
+         [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
+else
+   NCBI_PACKAGE(LZO)
+   AC_DEFINE(HAVE_LIBLZO, 1)
+   LZO_INCLUDE=$LZO2_INCLUDE
+   LZO_LIBS=$LZO2_LIBS
+fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
