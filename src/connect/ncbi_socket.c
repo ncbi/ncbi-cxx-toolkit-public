@@ -3146,6 +3146,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     }
     x_sock->sock     = xx_sock;
     x_sock->id       = x_id;
+    x_sock->type     = eSocket;
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_UNIX) {
         x_sock->host = peer.in.sin_addr.s_addr;
