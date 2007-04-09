@@ -565,6 +565,12 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id,
     if (!found) {
         return eBDB_NotFound;
     }
+    // clear coordinate mapping
+    {{
+        CWriteLockGuard lg(m_IdDeMuxLock);
+        m_IdDeMux->SetCoordinatesFast(id, coord, false);
+    }}
+
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
@@ -574,13 +580,6 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id,
         dbp.db->id = id;
         return dbp.db->Delete(on_error);
     }}
-
-    // clear coordinate mapping
-    {{
-        CWriteLockGuard lg(m_IdDeMuxLock);
-        m_IdDeMux->SetCoordinatesFast(id, coord, false);
-    }}
-
 }
 
 template<class TBV, class TObjDeMux, class TL>
