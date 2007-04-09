@@ -528,5 +528,50 @@ unsigned CBDB_Env::MutexGetMax()
     return maxp;
 }
 
+void CBDB_Env::MutexSetIncrement(unsigned inc)
+{
+    int ret = m_Env->mutex_set_increment(m_Env, inc);
+    BDB_CHECK(ret, "DB_ENV::mutex_set_increment");
+}
+
+unsigned CBDB_Env::MutexGetIncrement()
+{
+    u_int32_t inc;
+    int ret = m_Env->mutex_get_increment(m_Env, &inc);
+    BDB_CHECK(ret, "DB_ENV::mutex_get_increment");
+    return inc;
+}
+
+
+void CBDB_Env::PrintMutexStat(CNcbiOstream & out)
+{
+    DB_MUTEX_STAT* stp = 0;
+    int ret = m_Env->mutex_stat(m_Env, &stp, 0);
+    BDB_CHECK(ret, "DB_ENV::mutex_stat");
+
+    try {
+        out << "st_mutex_align     : " << stp->st_mutex_align     << NcbiEndl
+            << "st_mutex_tas_spins : " << stp->st_mutex_tas_spins << NcbiEndl
+            << "st_mutex_free      : " << stp->st_mutex_free      << NcbiEndl
+            << "st_mutex_inuse     : " << stp->st_mutex_inuse     << NcbiEndl
+            << "st_mutex_inuse_max : " << stp->st_mutex_inuse_max << NcbiEndl
+            << "st_regsize         : " << stp->st_regsize         << NcbiEndl
+            << "st_region_wait     : " << stp->st_region_wait     << NcbiEndl
+            << "st_region_nowait   : " << stp->st_region_nowait   << NcbiEndl
+        ;
+    } 
+    catch (...)
+    {
+        if (stp) {
+            ::free(stp);
+        }
+        throw;
+    }
+
+    if (stp) {
+        ::free(stp);
+    }
+}
+
 
 END_NCBI_SCOPE

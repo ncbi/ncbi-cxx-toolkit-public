@@ -197,6 +197,11 @@ public:
     /// Get number of mutexes
     unsigned MutexGetMax();
 
+    /// Configure the number of additional mutexes to allocate.
+    void MutexSetIncrement(unsigned inc);
+
+    unsigned MutexGetIncrement();
+
     /// Non-force removal of BDB environment. (data files remains intact).
     /// @return
     ///   FALSE if environment is busy and cannot be deleted
@@ -226,6 +231,8 @@ public:
     /// Set default syncronicity level
     void SetTransactionSync(CBDB_Transaction::ETransSync sync);
 
+    /// Print mutex statistics
+    void PrintMutexStat(CNcbiOstream & out);
     
 private:
     /// Opens BDB environment returns error code
