@@ -79,7 +79,7 @@ CNetICacheClient::~CNetICacheClient()
 }
 
 
-void CNetICacheClient::ReturnSocket(CSocket* sock)
+void CNetICacheClient::ReturnSocket(CSocket* sock, const string& blob_comments)
 {
     // check if socket has unattended input
     {{
@@ -88,7 +88,7 @@ void CNetICacheClient::ReturnSocket(CSocket* sock)
         string line;
         if (io_st == eIO_Success) {
             sock->ReadLine(line);
-            ERR_POST("ReturnSocket detected unread input.: " << line);
+            ERR_POST("ReturnSocket detected unread input " << blob_comments << " :" << line);
             delete sock;
             return;
         }
@@ -101,7 +101,7 @@ void CNetICacheClient::ReturnSocket(CSocket* sock)
         return;
     }
 	}}
-	CNetServiceClient::ReturnSocket(sock);
+	CNetServiceClient::ReturnSocket(sock, blob_comments);
 }
 
 
@@ -635,6 +635,20 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     writer->SetSocketParent(this);
     CNetCache_WriterErrCheck* err_writer =
         new CNetCache_WriterErrCheck(writer, eTakeOwnership, 0, CTransmissionWriter::eSendEofPacket);
+
+    // Add BLOB stream comments (diagnostics):
+    //      key-version-subkey[writer]
+    //
+    m_Tmp.erase();
+    m_Tmp.append(key);
+    m_Tmp.push_back('-');
+    m_Tmp.append(NStr::IntToString(version));
+    m_Tmp.push_back('-');
+    m_Tmp.append(subkey);
+    m_Tmp.append("[writer]");
+
+    writer->SetBlobComment(m_Tmp);
+
     return err_writer;
 }
 
@@ -767,21 +781,18 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
-//    string cmd;
     MakeCommandPacket(&cmd, "READ ", reconnected);
     AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     string& answer = m_Tmp;
-//    string answer;
     if (!ReadStr(*m_Sock, &answer)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
 
     bool blob_found = CNetCacheClient::CheckErrTrim(answer);
-
     if (!blob_found) {
         sg.Release();
         return NULL;
@@ -800,6 +811,21 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     rw->OwnSocket();
     DetachSocket();
     rw->SetSocketParent(this);
+
+    // Add BLOB stream comments (diagnostics):
+    //      key-version-subkey(BLOB size)
+    //
+    m_Tmp.erase();
+    m_Tmp.append(key);
+    m_Tmp.push_back('-');
+    m_Tmp.append(NStr::IntToString(version));
+    m_Tmp.push_back('-');
+    m_Tmp.append(subkey);
+    m_Tmp.push_back('(');
+    m_Tmp.append(NStr::UIntToString(m_BlobSize));
+    m_Tmp.push_back(')');
+
+    rw->SetBlobComment(m_Tmp);
 
     return rw.release();
 }

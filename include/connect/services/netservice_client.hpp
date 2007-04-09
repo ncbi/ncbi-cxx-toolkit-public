@@ -144,7 +144,7 @@ public:
     /// Return socket to the socket pool
     /// @note thread sync. method
 	virtual
-    void ReturnSocket(CSocket* sock);
+    void ReturnSocket(CSocket* sock, const string& blob_comments);
 
     /// Get socket out of the socket pool (if there are sockets available)
     /// @note thread sync. method

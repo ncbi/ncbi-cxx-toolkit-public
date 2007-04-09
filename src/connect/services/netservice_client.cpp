@@ -356,7 +356,8 @@ void CNetServiceClient::ProcessServerError(string* response, ETrimErr trim_err)
 }
 
 
-void CNetServiceClient::ReturnSocket(CSocket* sock)
+void CNetServiceClient::ReturnSocket(CSocket* sock, 
+                                     const string& /* blob_comment */)
 {
     _ASSERT(sock);
     CFastMutexGuard guard(m_SockPool_Lock);

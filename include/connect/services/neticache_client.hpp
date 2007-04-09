@@ -75,7 +75,7 @@ public:
                              const string&  client_name);
 
 	virtual
-    void ReturnSocket(CSocket* sock);
+    void ReturnSocket(CSocket* sock, const string& blob_comments);
 
     void RegisterSession(unsigned pid); 
     void UnRegisterSession(unsigned pid);

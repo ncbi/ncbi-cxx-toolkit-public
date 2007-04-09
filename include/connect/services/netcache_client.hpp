@@ -572,8 +572,13 @@ public:
 
     virtual ERW_Result PendingCount(size_t* count);
 
-
     void FinishTransmission();
+
+    /// Set BLOB diagnostic comments
+    void SetBlobComment(const string& comment) 
+    {
+        m_BlobComment = comment;
+    }
 private:
     CNetCacheSock_RW(const CNetCacheSock_RW&);
     CNetCacheSock_RW& operator=(const CNetCacheSock_RW&);
@@ -585,6 +590,8 @@ protected:
     bool                m_BlobSizeControl;
     /// Remaining BLOB size to be read
     size_t              m_BlobBytesToRead;
+    /// diagnostic comments (logging)
+    string              m_BlobComment;
 };
 
 

@@ -914,7 +914,7 @@ void CNetCacheSock_RW::FinishTransmission()
 { 
     if (m_Sock) { 
         if (m_Parent) {
-            m_Parent->ReturnSocket(m_Sock);
+            m_Parent->ReturnSocket(m_Sock, m_BlobComment);
             m_Sock = 0;
         } else {
             if (m_Sock->GetStatus(eIO_Open) == eIO_Success)
