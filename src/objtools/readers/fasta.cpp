@@ -634,17 +634,21 @@ void CFastaReader::AssembleSeq(void)
 
 void CFastaReader::AssignMolType(void)
 {
-    CSeq_inst& inst = m_CurrentSeq->SetInst();
+    CSeq_inst&      inst = m_CurrentSeq->SetInst();
+    CSeq_inst::EMol default_mol;
+
     // Did the user specify a (default) type?
-    if (TestFlag(fForceType)  ||  !inst.IsSetMol() ) {
-        switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
-        case fAssumeNuc:   inst.SetMol(CSeq_inst::eMol_na);  return;
-        case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  return;
-        default:           _ASSERT(!TestFlag(fForceType));
-        }
+    switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
+    case fAssumeNuc:   default_mol = CSeq_inst::eMol_na;      break;
+    case fAssumeProt:  default_mol = CSeq_inst::eMol_aa;      break;
+    default:           default_mol = CSeq_inst::eMol_not_set; break;
     }
 
-    if (inst.IsSetMol()) {
+    if (TestFlag(fForceType)) {
+        _ASSERT(default_mol != CSeq_inst::eMol_not_set);
+        inst.SetMol(default_mol);
+        return;
+    } else if (inst.IsSetMol()) {
         return; // previously found an informative ID
     } else if (m_SeqData.empty()) {
         // Nothing else to go on, but that's OK (no sequence to worry
@@ -659,9 +663,13 @@ void CFastaReader::AssignMolType(void)
     case CFormatGuess::eNucleotide:  inst.SetMol(CSeq_inst::eMol_na);  return;
     case CFormatGuess::eProtein:     inst.SetMol(CSeq_inst::eMol_aa);  return;
     default:
-        NCBI_THROW2(CObjReaderParseException, eAmbiguous,
-                    "CFastaReader: unable to determine sequence type",
-                    StreamPosition());
+        if (default_mol == CSeq_inst::eMol_not_set) {
+            NCBI_THROW2(CObjReaderParseException, eAmbiguous,
+                        "CFastaReader: unable to determine sequence type",
+                        StreamPosition());
+        } else {
+            inst.SetMol(default_mol);
+        }
     }
 }
 
