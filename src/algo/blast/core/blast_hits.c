@@ -48,6 +48,7 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
                              const BlastScoringOptions* scoring_options,
                              SBlastHitsParameters* *retval)
 {
+       Int4 prelim_hitlist_size;
        ASSERT(retval);
        *retval = NULL;
 
@@ -60,13 +61,14 @@ Int2 SBlastHitsParametersNew(const BlastHitSavingOptions* hit_options,
        if (*retval == NULL)
            return 2;
 
+       prelim_hitlist_size = hit_options->hitlist_size;
        if (ext_options->compositionBasedStats)
-            (*retval)->prelim_hitlist_size = 2*hit_options->hitlist_size;
+            prelim_hitlist_size *= 2;
        else if (scoring_options->gapped_calculation)
-            (*retval)->prelim_hitlist_size = 
-                MIN(2*hit_options->hitlist_size, hit_options->hitlist_size+50);
-       else
-            (*retval)->prelim_hitlist_size = hit_options->hitlist_size;
+            prelim_hitlist_size = MIN(2 * prelim_hitlist_size, 
+                                      prelim_hitlist_size + 50);
+
+       (*retval)->prelim_hitlist_size = MAX(prelim_hitlist_size, 10);
 
        (*retval)->hsp_num_max = BlastHspNumMax(scoring_options->gapped_calculation, hit_options);
 
