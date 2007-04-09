@@ -52,6 +52,10 @@ CRemoteAppParams::CRemoteAppParams()
 {
 }
 
+CRemoteAppParams::~CRemoteAppParams()
+{
+}
+
 void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
 {
     m_MaxAppRunningTime = 
@@ -125,6 +129,20 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
 
     m_MonitorPeriod = 
         reg.GetInt(sec_name,"monitor_period",5,0,IRegistry::eReturn);
+    
+    m_ExcludeEnv.clear();
+    m_IncludeEnv.clear();
+    m_AddedEnv.clear();
+    NStr::Split(reg.GetString("env_inherit", "exclude", "")," ;,", m_ExcludeEnv);
+    NStr::Split(reg.GetString("env_inherit", "include", "")," ;,", m_IncludeEnv);
+    
+    list<string> added_env;
+    reg.EnumerateEntries("env_set", &added_env);
+    
+    ITERATE(list<string>, it, added_env) {
+        const string& s = *it;
+         m_AddedEnv[s] = reg.GetString("env_set", s, "");
+    }
 
 }
 

@@ -117,7 +117,7 @@ public:
                                         request->GetAppRunTimeout(),
                                         m_Params.GetKeepAlivePeriod(),
                                         tmp_path,
-                                        NULL,
+                                        x_GetEnv(),
                                         m_Params.GetMonitorAppPath(),
                                         m_Params.GetMaxMonitorRunningTime(),
                                         m_Params.GetMonitorPeriod());
@@ -164,13 +164,42 @@ private:
 
     static void x_PrepareArgs(const string& cmdline, vector<string>& args);
 
+    const char* const* x_GetEnv();
+
     CBlobStorageFactory m_Factory;
     CRemoteAppRequestMB_Executer m_RequestMB;
     CRemoteAppResultMB_Executer  m_ResultMB;
     CRemoteAppRequestSB_Executer m_RequestSB;
     CRemoteAppResultSB_Executer  m_ResultSB;
     CRemoteAppParams m_Params;
+
+    list<string> m_EnvValues;
+    vector<const char*> m_Env;
 };
+
+const char* const* CRemoteAppJob:: x_GetEnv()
+{
+    if( !m_Env.empty() )
+        return &m_Env[0];
+
+    typedef map<string,string> TMapStr;
+    const TMapStr& added_env = m_Params.GetAddedEnv();
+    ITERATE(TMapStr, it, added_env) {
+        m_EnvValues.push_back(it->first + "=" +it->second);
+    }
+    list<string> names;
+    const CNcbiEnvironment& env = m_Params.GetLocalEnv();
+    env.Enumerate(names);
+    ITERATE(list<string>, it, names) {
+        if (added_env.find(*it) == added_env.end())
+            m_EnvValues.push_back(*it + "=" + env.Get(*it));
+    }
+    ITERATE(list<string>, it, m_EnvValues) {
+        m_Env.push_back(it->c_str());
+    }
+    m_Env.push_back(NULL);
+    return &m_Env[0];
+}
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
     : m_Factory(context.GetConfig()), 

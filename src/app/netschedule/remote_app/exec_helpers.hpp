@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbienv.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -68,6 +69,7 @@ public:
     };
 
     CRemoteAppParams();
+    ~CRemoteAppParams();
 
     void Load(const string& sec_name, const IRegistry&);
 
@@ -82,6 +84,11 @@ public:
     int GetMaxMonitorRunningTime() const { return m_MaxMonitorRunningTime; }
     int GetMonitorPeriod() const { return m_MonitorPeriod; }
 
+    const CNcbiEnvironment& GetLocalEnv() const { return m_LocalEnv; }
+    const map<string,string>& GetAddedEnv() const { return m_AddedEnv; }
+    const list<string>& GetExcludedEnv() const { return m_ExcludeEnv; }
+    const list<string>& GetIncludedEnv() const { return m_IncludeEnv; }
+
 private:
     string m_AppPath;
     int m_MaxAppRunningTime;
@@ -94,6 +101,11 @@ private:
     int m_MaxMonitorRunningTime;
     int m_MonitorPeriod;
 
+    CNcbiEnvironment m_LocalEnv;
+    map<string,string> m_AddedEnv;
+    list<string> m_ExcludeEnv;
+    list<string> m_IncludeEnv;
+    
 };
 
 
