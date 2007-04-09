@@ -1810,6 +1810,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
         }
     (*sock)->sock     = x_sock;
     (*sock)->id       = x_id;
+    (*sock)->type     = eSocket;
     (*sock)->log      = lsock->log;
     (*sock)->stype    = eSOCK_ServerSide;
     (*sock)->r_on_w   = eDefault;
