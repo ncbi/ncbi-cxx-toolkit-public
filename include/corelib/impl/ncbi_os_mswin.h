@@ -1,5 +1,5 @@
-#ifndef CORELIB___NCBI_OS_MSWIN__HPP
-#define CORELIB___NCBI_OS_MSWIN__HPP
+#ifndef CORELIB___IMPL___NCBI_OS_MSWIN__H
+#define CORELIB___IMPL___NCBI_OS_MSWIN__H
 
 /*  $Id$
  * ===========================================================================
@@ -30,64 +30,34 @@
  *
  */
 
-/// @file ncbi_os_mswin.hpp
+/// @file ncbi_os_mswin.h
 ///
-/// Defines MS Windows specifics for our "C++" code.
-/// Use this header in the place of <windows.h> to avoid various
-/// MS-Windows "popular" preprocessor macros which screw other people's code. 
-/// This header redefines such macros with inline functions.
+/// Defines some MS Windows specifics for our "C" code.
+/// Use this header in the place of <windows.h> when compiling "C" code.
 ///
-/// For "C" code, use <corelib/impl/ncbi_os_win.h>.
+/// For "C++" code, use <corelib/ncbi_os_win.hpp>.
 
 
+#include <ncbiconf.h>
 
-#include <corelib/impl/ncbi_os_mswin.h>
+#if !defined(NCBI_OS_MSWIN)
+#  error "ncbi_os_mswin.hpp must be used on MS Windows platforms only"
+#endif
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Redefined macros
-//
-
-// GetObject
-#ifdef   GetObject
-#  undef GetObject
-inline int GetObject(HGDIOBJ hGdiObj, int cbBuffer, LPVOID lpvObject)
-{
-#  ifdef _UNICODE
-    return GetObjectW(hGdiObj, cbBuffer, lpvObject);
-#  else
-    return GetObjectA(hGdiObj, cbBuffer, lpvObject);
-#  endif
-}
+// Exclude some old stuff from <windows.h>. 
+#if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
+#  define WIN32_LEAN_AND_MEAN
 #endif
 
 
-// DrawText
-#ifdef   DrawText
-#  undef DrawText
-inline int DrawText(HDC     hDC, 
-                    LPCTSTR lpString, 
-                    int     nCount, 
-                    LPRECT  lpRect,
-                    UINT    uFormat)
-{
-#  ifdef _UNICODE
-    return DrawTextW(hDC, lpString, nCount, lpRect, uFormat);
-#  else
-    return DrawTextA(hDC, lpString, nCount, lpRect, uFormat);
-#  endif
-}
+#include <windows.h>
+
+
+// Beep
+#if !defined(Beep)
+/// Avoid a silly name clash between MS-Win and NCBI C Toolkit headers.
+#  define Beep Beep
 #endif
 
 
-// Yield
-#ifdef   Yield
-#  undef Yield
-inline void Yield(void)
-{
-}
-#endif
-
-
-#endif  /* CORELIB___NCBI_OS_MSWIN__HPP */
+#endif  /* CORELIB___IMPL___NCBI_OS_MSWIN__H */

@@ -225,7 +225,7 @@ extern "C" {
 #  define NCBI_SWAP_POINTERS_CONDITIONALLY(loc, ov, nv) \
     (OTCompareAndSwapPtr(ov, nv, loc) != FALSE)
 #elif defined(NCBI_OS_MSWIN)
-#  include <corelib/ncbi_os_mswin.hpp>
+#  include <corelib/impl/ncbi_os_mswin.h>
 #  ifndef NCBI_COUNTER_ADD
      typedef LONG TNCBIAtomicValue;
 #    define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
