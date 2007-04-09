@@ -59,7 +59,7 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 
 (* Build settings for the project *)
 
-property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"|none|", |GCC_MODEL_TUNING|:"|none|", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
+property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"|none|", |GCC_MODEL_TUNING|:"|none|", |FRAMEWORK_SEARCH_PATHS|:"/System/Library/Frameworks/CoreServices.framework/Frameworks", |LIBRARY_SEARCH_PATHS|:"", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |OTHER_CPLUSPLUSFLAGS|:"", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
 property buildSettingsDebug : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _DEBUG _MT"}
 property buildSettingsRelease : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD _MT NDEBUG", |SEPARATE_STRIP|:"YES"}
 
@@ -454,7 +454,8 @@ script ProjBuilder
 		-- OpenGL
 		copy "FW_OpenGL" to the end of children of fworks
 		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"OpenGL.framework", |path|:"/System/Library/Frameworks/OpenGL.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_OpenGL")
-		
+		copy "FW_CORESERVICES" to the end of children of fworks
+		addPair({isa:"PBXFileReference", |lastKnownFileType|:"wrapper.framework", |name|:"CoreServices.framework", |path|:"/System/Library/Frameworks/CoreServices.framework", |refType|:"0", |sourceTree|:"<absolute>"}, "FW_CORESERVICES")
 		
 		(* Add ROOT objects and groups *)
 		addPair(rootObject, "ROOT_OBJECT")

@@ -100,7 +100,7 @@ property xalgowinmask : {name:"xalgowinmask", path:"algo:winmask"}
 property xalgodustmask : {name:"xalgodustmask", path:"algo:dustmask"}
 property xalgophytree : {name:"xalgophytree", path:"algo:phy_tree"}
 property fastme : {name:"fastme", path:"algo:phy_tree:fastme"}
-
+property xomssa : {name:"xomssa", path:"algo:ms:omssa", inc:{"SpectrumSet.cpp", "msladder.cpp", "msms.cpp", "mspeak.cpp", "omssa.cpp", "Mod.cpp", "omssascore.cpp", "msmerge.cpp", "omssaapp.cpp"}}
 -- Objects
 property access : {name:"access", path:"objects:access", inc:{"access__.cpp", "access___.cpp"}, asn1:true}
 property biblio : {name:"biblio", path:"objects:biblio", inc:{"biblio__.cpp", "biblio___.cpp", "label_util.cpp"}, asn1:true}
@@ -274,7 +274,7 @@ property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view
 (*****************************************************************************************)
 -- Organize everything into convinient packs --
 (*****************************************************************************************)
-property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, req:true}
+property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, fworks:"CoreServices", req:true}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core" & BDB_LIBS, req:true}
 property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb", req:true}
@@ -284,7 +284,7 @@ property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core" & IMG_L
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core", req:true}
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver", req:true}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", req:true}
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xomssa, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
@@ -367,6 +367,8 @@ property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property gi2taxid : {name:"gi2taxid", path:"app:gi2taxid", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property ini2reg : {name:"ini2reg", path:"gui:objutils:test", inc:{"ini2reg.cpp"}, dep:"ncbi_core ncbi_general gui_utils ncbi_seq ncbi_seqext", req:true}
+property omssacl : {name:"omssacl", path:"algo:ms:omssa", inc:{"omssacl.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_pub ncbi_seqext ncbi_algo", req:false}
+property omssamerge : {name:"omssamerge", path:"algo:ms:omssa", inc:{"omssamerge.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_pub ncbi_seqext ncbi_algo", req:false}
 
 property id1_fetch : {name:"id1_fetch", path:"app:id1_fetch", inc:{"id1_fetch.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:{"id1_fetch_simple.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext", req:false}
@@ -418,7 +420,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_xcache_
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, convert_seq, ini2reg}
+property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, gbench_cache_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, test_basic_cleanup, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, convert_seq, ini2reg, omssacl, omssamerge}
 --property allCTools : {tests}
 
 
