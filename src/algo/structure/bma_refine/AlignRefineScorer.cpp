@@ -57,6 +57,9 @@ RowScorer::RowScorer() {
     m_score = SCORE_INVALID_OR_NOT_COMPUTED;
 }
 
+RowScorer::~RowScorer() {
+}
+
 //  provide default implementation:  sum of scores of seqs vs PSSM
 double RowScorer::ComputeScore(struct_util::AlignmentUtility& au, unsigned int row) {
     int nRows = 0;
