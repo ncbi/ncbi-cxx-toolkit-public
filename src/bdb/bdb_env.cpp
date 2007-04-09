@@ -36,10 +36,10 @@
 #include <db.h>
 
 
-// Berkeley DB 4.4.x renamed "set_tas_spins" to "mutex_set_tas_spins"
+// Berkeley DB 4.4.x reworked and extended the mutex API.
 #if DB_VERSION_MAJOR >= 4 
-    #if DB_VERSION_MINOR >= 4
-        #define BDB_USE_MUTEX_TAS
+    #if DB_VERSION_MINOR >= 4 || DB_VERSION_MAJOR > 4
+        #define BDB_NEW_MUTEX_API
     #endif
 #endif
 
@@ -417,7 +417,7 @@ void CBDB_Env::SetLogInMemory(bool on_off)
 
 void CBDB_Env::SetTasSpins(unsigned tas_spins)
 {
-#ifdef BDB_USE_MUTEX_TAS
+#ifdef BDB_NEW_MUTEX_API
     int ret = m_Env->mutex_set_tas_spins(m_Env, tas_spins);
     BDB_CHECK(ret, "DB_ENV::mutex_set_tas_spins");
 #else
@@ -516,35 +516,48 @@ void CBDB_Env::SetTransactionTimeout(unsigned timeout)
 
 void CBDB_Env::MutexSetMax(unsigned max)
 {
+#ifdef BDB_NEW_MUTEX_API
     int ret = m_Env->mutex_set_max(m_Env, max);
     BDB_CHECK(ret, "DB_ENV::mutex_set_max");
+#endif
 }
 
 unsigned CBDB_Env::MutexGetMax()
 {
+#ifdef BDB_NEW_MUTEX_API
     u_int32_t maxp;
     int ret = m_Env->mutex_get_max(m_Env, &maxp);
     BDB_CHECK(ret, "DB_ENV::mutex_get_max");
     return maxp;
+#else
+    return 0;
+#endif
 }
 
 void CBDB_Env::MutexSetIncrement(unsigned inc)
 {
+#ifdef BDB_NEW_MUTEX_API
     int ret = m_Env->mutex_set_increment(m_Env, inc);
     BDB_CHECK(ret, "DB_ENV::mutex_set_increment");
+#endif
 }
 
 unsigned CBDB_Env::MutexGetIncrement()
 {
+#ifdef BDB_NEW_MUTEX_API
     u_int32_t inc;
     int ret = m_Env->mutex_get_increment(m_Env, &inc);
     BDB_CHECK(ret, "DB_ENV::mutex_get_increment");
     return inc;
+#else
+    return 0;
+#endif
 }
 
 
 void CBDB_Env::PrintMutexStat(CNcbiOstream & out)
 {
+#ifdef BDB_NEW_MUTEX_API
     DB_MUTEX_STAT* stp = 0;
     int ret = m_Env->mutex_stat(m_Env, &stp, 0);
     BDB_CHECK(ret, "DB_ENV::mutex_stat");
@@ -571,6 +584,7 @@ void CBDB_Env::PrintMutexStat(CNcbiOstream & out)
     if (stp) {
         ::free(stp);
     }
+#endif
 }
 
 
