@@ -3,7 +3,7 @@
 APP = ftds_sp_who
 SRC = ftds_sp_who
 
-LIB  = ncbi_xdbapi_ftds$(STATIC) $(FTDS8_LIB) dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
+LIB  = ncbi_xdbapi_$(ftds8)$(STATIC) $(FTDS8_LIB) dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
 LIBS = $(FTDS8_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(FTDS8_INCLUDE) $(ORIG_CPPFLAGS)

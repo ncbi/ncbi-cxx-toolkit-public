@@ -3233,26 +3233,19 @@ if test "$with_ftds" != "no" ; then
          try_local=no
          ;;
    esac
-   : ${FTDS_LIBS:="-lsybdb -ltds"}
-   FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
+   : ${FTDS_DBLIBS:="-lsybdb -ltds"}
+   : ${FTDS_CTLIBS:="-lct -ltds"}
+   : ${FTDS_ODBCLIBS:="-ltdsodbc -ltds"}
+   FTDS_DBLIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_DBLIBS"
+   FTDS_CTLIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_CTLIBS"
+   FTDS_ODBCLIBS="-L$FTDS_PATH/lib/odbc ${CONF_f_runpath}$FTDS_PATH/lib/odbc $FTDS_ODBCLIBS"
    FTDS_INCLUDE="-I$FTDS_PATH/include"
-   m4_foreach(V, [8,63,64],
-      [d="dbapi/driver/[ftds]V/freetds"
-      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
-         test "$with_ftds" = V  &&  FTDS_PATH="<$d>"
-         [FTDS]V[_LIB]="sybdb_${[ftds]V}${STATIC} tds_${[ftds]V}${STATIC}"
-         [FTDS]V[_LIBS]=
-         [FTDS]V[_INCLUDE]="-I\$(includedir)/$d -I\$(includedir0)/$d"
-         freetds=freetds
-      elif test -d "$FTDS_PATH" ; then
-         [FTDS]V[_LIB]=
-         [FTDS]V[_LIBS]=$FTDS_LIBS
-         [FTDS]V[_INCLUDE]=$FTDS_INCLUDE
-      fi
-   ])
+   NCBI_LOCAL_FTDS_OLD(8)
+   NCBI_LOCAL_FTDS_OLD(63)
+   NCBI_LOCAL_FTDS(64)
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
-      FTDS_LIBS=
+      FTDS_LIBS="\$(FTDS${with_ftds}_LIBS)"
       FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then
           AC_DEFINE(NCBI_FTDS_RENAME_SYBDB, 1,
@@ -3260,6 +3253,7 @@ if test "$with_ftds" != "no" ; then
       fi
       AC_MSG_NOTICE([Using bundled FreeTDS (version $with_ftds) from $FTDS_PATH])
    else
+      FTDS_LIBS="$FTDS_DBLIBS" # Switch to CTLIBS?
       AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
          [CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
           LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
@@ -3295,6 +3289,12 @@ if test "$with_ftds" = "no" ; then
    FTDS64_INCLUDE=
    FTDS64_LIBS=
    FTDS64_LIB=
+   FTDS64_CTLIB_INCLUDE=
+   FTDS64_CTLIB_LIBS=
+   FTDS64_CTLIB_LIB=
+   FTDS64_ODBC_INCLUDE=
+   FTDS64_ODBC_LIBS=
+   FTDS64_ODBC_LIB=
    freetds=
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
@@ -3310,6 +3310,12 @@ AC_SUBST(FTDS63_LIB)
 AC_SUBST(FTDS64_INCLUDE)
 AC_SUBST(FTDS64_LIBS)
 AC_SUBST(FTDS64_LIB)
+AC_SUBST(FTDS64_CTLIB_INCLUDE)
+AC_SUBST(FTDS64_CTLIB_LIBS)
+AC_SUBST(FTDS64_CTLIB_LIB)
+AC_SUBST(FTDS64_ODBC_INCLUDE)
+AC_SUBST(FTDS64_ODBC_LIBS)
+AC_SUBST(FTDS64_ODBC_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
