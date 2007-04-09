@@ -191,6 +191,12 @@ public:
     /// without blocking
     void SetTasSpins(unsigned tas_spins);
 
+    /// Configure the total number of mutexes
+    void MutexSetMax(unsigned max);
+
+    /// Get number of mutexes
+    unsigned MutexGetMax();
+
     /// Non-force removal of BDB environment. (data files remains intact).
     /// @return
     ///   FALSE if environment is busy and cannot be deleted

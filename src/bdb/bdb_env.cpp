@@ -514,5 +514,19 @@ void CBDB_Env::SetTransactionTimeout(unsigned timeout)
     BDB_CHECK(ret, "DB_ENV::set_timeout");
 }
 
+void CBDB_Env::MutexSetMax(unsigned max)
+{
+    int ret = m_Env->mutex_set_max(m_Env, max);
+    BDB_CHECK(ret, "DB_ENV::mutex_set_max");
+}
+
+unsigned CBDB_Env::MutexGetMax()
+{
+    u_int32_t maxp;
+    int ret = m_Env->mutex_get_max(m_Env, &maxp);
+    BDB_CHECK(ret, "DB_ENV::mutex_get_max");
+    return maxp;
+}
+
 
 END_NCBI_SCOPE
