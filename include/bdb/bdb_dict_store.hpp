@@ -175,7 +175,9 @@ class CBDB_PersistentSplitStore
 public:
     typedef CBDB_BlobSplitStore<BV, CBDB_BlobDeMuxPersistent> TParent;
     CBDB_PersistentSplitStore(const string& demux_path)
-        : TParent(new CBDB_BlobDeMuxPersistent(demux_path))
+        : TParent(new CBDB_BlobDeMuxPersistent(demux_path,
+                                               3.0 * 1024.0 * 1024.0 * 1024.0,
+                                               6 * 1000000))
     {
     }
 };
