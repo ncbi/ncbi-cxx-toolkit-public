@@ -769,7 +769,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(
     TLockGuard     lg1(m_DictFileLock);
     CReadLockGuard lg2(m_IdDeMuxLock);
 
-    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, trans, compact);
+    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, trans, compact_vectors);
 }
 
 
@@ -924,7 +924,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
     }}
 
     if (needs_save) { // new split volume: checkpoint the changes
-        this->Save(trans, TDeMuxStore::eNoCompact); // quick dump no compression
+        this->Save(0, TDeMuxStore::eNoCompact); // quick dump no compression
     }
 
     return *lp;
