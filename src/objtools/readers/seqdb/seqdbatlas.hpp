@@ -232,6 +232,8 @@ public:
     /// until it succeeds.
     void Lock()
     {
+        NCBI_SCHED_INIT();
+        
         bool done = false;
         
         while(! done) {
@@ -243,6 +245,8 @@ public:
             
             if (OldL == (void*) 0) {
                 done = true;
+            } else {
+                NCBI_SCHED_YIELD();
             }
         }
     }
