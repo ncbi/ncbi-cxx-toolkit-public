@@ -829,13 +829,13 @@ CBDB_FieldLString::operator=(const CBDB_FieldLString& str)
     return *this;
 }
 
-
-void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
+void CBDB_FieldLString::Set(const char* str, size_t size, 
+                            EOverflowAction if_overflow)
 {
-    if ( !str )
+    if ( !size )
         str = kEmptyCStr;
 
-    unsigned int new_len = ::strlen(str) + 1;
+    unsigned int new_len = (unsigned)size;
 
     // check overflow
     if ( new_len > (GetBufferSize() - 4) ) {
@@ -861,6 +861,17 @@ void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
     ::memcpy(str_buf, str, new_len);
 
     SetNotNull();
+}
+
+
+void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
+{
+    if ( !str )
+        str = kEmptyCStr;
+
+    size_t new_len = ::strlen(str) + 1;
+
+    this->Set(str, new_len, if_overflow);
 }
 
 void CBDB_FieldLString::SetString(const char* str)

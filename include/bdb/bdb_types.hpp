@@ -1576,6 +1576,8 @@ public:
     const CBDB_FieldLString& operator= (const string&           str);
 
     void Set(const char* str, EOverflowAction if_overflow = eThrowOnOverflow);
+    void Set(const char* str, size_t size, 
+             EOverflowAction if_overflow = eThrowOnOverflow);
     string Get() const;
 
     virtual string GetString() const
