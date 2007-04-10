@@ -297,21 +297,26 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
         
         // process defines like NCBI_C_INCLUDE
         if(CSymResolver::IsDefine(flag)) {
-            string dir = GetApp().GetSite().ResolveDefine
+            string dir_all = GetApp().GetSite().ResolveDefine
                                              (CSymResolver::StripDefine(flag));
-            if ( !dir.empty() ) {
-                if ( CDirEntry(dir).IsDir() ) {
-                    include_dirs->push_back(dir);    
-                } else {
-                    string d = 
-                        CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, dir);
-                    d = CDirEntry::NormalizePath(d);
-                    d = CDirEntry::AddTrailingPathSeparator(d);
-                    if ( CDirEntry(d).IsDir() ) {
-                        include_dirs->push_back(d);    
+            if ( !dir_all.empty() ) {
+                list<string> dir_list;
+                NStr::Split(dir_all, LIST_SEPARATOR, dir_list);
+                ITERATE(list<string>, dir_item, dir_list) {
+                    const string& dir = *dir_item;
+                    if ( CDirEntry(dir).IsDir() ) {
+                        include_dirs->push_back(dir);    
                     } else {
-                        LOG_POST(Error << flag << " = " << dir << ": "
-                                       << dir << " not found");
+                        string d = 
+                            CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, dir);
+                        d = CDirEntry::NormalizePath(d);
+                        d = CDirEntry::AddTrailingPathSeparator(d);
+                        if ( CDirEntry(d).IsDir() ) {
+                            include_dirs->push_back(d);    
+                        } else {
+                            LOG_POST(Error << flag << " = " << dir << ": "
+                                        << dir << " not found");
+                        }
                     }
                 }
             }
@@ -469,13 +474,14 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
 
     depends_ids->clear();
     ITERATE(list<string>, p, depends_libs) {
-        const string& id = *p;
+        string id = *p;
         if(CSymResolver::IsDefine(id)) {
             string def = GetApp().GetSite().ResolveDefine(
                 CSymResolver::StripDefine(id));
             list<string> resolved_def;
             NStr::Split(def, LIST_SEPARATOR, resolved_def);
             ITERATE(list<string>, r, resolved_def) {
+                id = *r;
                 if ( GetApp().GetBuildType().GetType() == CBuildType::eDll &&
                     GetApp().GetDllsInfo().IsDllHosted(id) ) {
                     depends_ids->push_back(CProjKey(CProjKey::eDll,
