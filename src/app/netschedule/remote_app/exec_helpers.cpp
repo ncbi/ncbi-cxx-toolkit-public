@@ -171,8 +171,20 @@ struct STmpDirGuard
                 dir.CreatePath(); 
         }
     }
-    ~STmpDirGuard() { if (!m_Path.empty()) CDir(m_Path).Remove(); }
-    const string& m_Path;
+    ~STmpDirGuard() 
+    { 
+        if (!m_Path.empty()) {
+            try {
+                if (!CDir(m_Path).Remove()) 
+                    ERR_POST("Could not delete temp directory \"" << m_Path <<"\"");
+            } catch (exception& ex) {
+                ERR_POST("Error during tmp directory deletion\"" << m_Path <<"\": " << ex.what());
+            }  catch (...) {
+                ERR_POST("Error during tmp directory deletion\"" << m_Path <<"\": Unknown error");
+            }
+        }
+    }
+    string m_Path;
 };
 //////////////////////////////////////////////////////////////////////////////
 ///
@@ -432,25 +444,25 @@ bool ExecRemoteApp(const string& cmd,
 {
     STmpDirGuard guard(tmp_path);
     {
-    CTmpStreamGuard std_out_guard(tmp_path, "std.out", out);
-    CTmpStreamGuard std_err_guard(tmp_path, "std.err", err);
+        CTmpStreamGuard std_out_guard(tmp_path, "std.out", out);
+        CTmpStreamGuard std_err_guard(tmp_path, "std.err", err);
+        
+        CPipeProcessWatcher callback(context,
+                                     max_app_running_time,
+                                     app_running_time,
+                                     keep_alive_period);
 
-    CPipeProcessWatcher callback(context,
-                                 max_app_running_time,
-                                 app_running_time,
-                                 keep_alive_period);
-
-    auto_ptr<CRAMonitor> ra_monitor;
-    if (!monitor_app.empty() && monitor_period > 0) {
-        ra_monitor.reset(new CRAMonitor(monitor_app, max_monitor_running_time));
-        callback.SetMonitor(*ra_monitor, monitor_period);
-    }
-
-    return CPipe::ExecWait(cmd, args, in, 
-                           std_out_guard.GetOStream(),
-                           std_err_guard.GetOStream(),
-                           exit_value, 
-                           tmp_path, env, &callback) == CPipe::eDone;
+        auto_ptr<CRAMonitor> ra_monitor;
+        if (!monitor_app.empty() && monitor_period > 0) {
+            ra_monitor.reset(new CRAMonitor(monitor_app, max_monitor_running_time));
+            callback.SetMonitor(*ra_monitor, monitor_period);
+        }
+        
+        return CPipe::ExecWait(cmd, args, in, 
+                               std_out_guard.GetOStream(),
+                               std_err_guard.GetOStream(),
+                               exit_value, 
+                               tmp_path, env, &callback) == CPipe::eDone;
     }
 }
 
