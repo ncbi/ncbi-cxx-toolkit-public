@@ -2,7 +2,7 @@
 
 APP = http_connector_hit
 SRC = http_connector_hit
-LIB = connect
+LIB = connect xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)

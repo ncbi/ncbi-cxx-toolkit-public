@@ -2,7 +2,7 @@
 
 APP = test_ncbi_dsock
 SRC = test_ncbi_dsock
-LIB = connect
+LIB = connect xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
