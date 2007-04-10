@@ -245,6 +245,9 @@ public:
     /// (Berkeley DB will use it's own default hashing method)
     void DisableHashOverride() { m_CmpOverride = false; }
 
+    /// Set the minimum number of keys per page (BTREE access methods only)
+    void SetBtreeMinKeysPerPage(unsigned int keys_per_page);
+
 private:
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
@@ -292,6 +295,7 @@ protected:
     unsigned          m_RecLen;
     unsigned          m_H_ffactor;
     unsigned          m_H_nelem;
+    unsigned          m_BT_minkey;
 
 private:
     bool             m_DB_Attached;    //!< TRUE if m_DB doesn't belong here

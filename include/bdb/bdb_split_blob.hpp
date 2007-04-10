@@ -896,6 +896,26 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
         if (page_size) {
             lp->db->SetPageSize(page_size);
         }
+
+        /// also twiddle min keys per page
+        switch (slice) {
+        case 0:
+            /// page size = default
+            /// blobs <= 256 bytes
+            lp->db->SetBtreeMinKeysPerPage(6);
+            break;
+
+        case 1:
+            /// page size = default
+            /// blobs > 256, <= 512 bytes
+            lp->db->SetBtreeMinKeysPerPage(3);
+            break;
+
+        default:
+            /// use default = 2
+            break;
+        }
+
         lp->db->Open(fname.c_str(), m_OpenMode);
     }
     }}

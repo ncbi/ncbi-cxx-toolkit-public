@@ -121,6 +121,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_RecLen(0),
   m_H_ffactor(0),
   m_H_nelem(0),
+  m_BT_minkey(0),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_RevSplitOff(false),
@@ -441,6 +442,7 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
         ret = m_DB->set_re_len(m_DB, rec_len);
         BDB_CHECK(ret, 0);
         break;
+
     case eHash:
         if (m_H_ffactor) {
             int ret = m_DB->set_h_ffactor(m_DB, m_H_ffactor);
@@ -451,6 +453,14 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
             BDB_CHECK(ret, FileName().c_str());
         }
         break;
+
+    case eBtree:
+        if (m_BT_minkey) {
+            int ret = m_DB->set_bt_minkey(m_DB, m_BT_minkey);
+            BDB_CHECK(ret, FileName().c_str());
+        }
+        break;
+
     default:
         break;
     }
@@ -753,6 +763,10 @@ void CBDB_RawFile::SetHash(DB* db)
     BDB_CHECK(ret, 0);
 }
 
+void CBDB_RawFile::SetBtreeMinKeysPerPage(unsigned int keys_per_page)
+{
+    m_BT_minkey = max((unsigned int)2, keys_per_page);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
