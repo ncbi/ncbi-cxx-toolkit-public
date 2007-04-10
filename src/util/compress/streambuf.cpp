@@ -276,6 +276,9 @@ CT_INT_TYPE CCompressionStreambuf::overflow(CT_INT_TYPE c)
     if ( !IsStreamProcessorOkay(CCompressionStream::eWrite) ) {
         return CT_EOF;
     }
+    if ( m_Writer->m_State == CCompressionStreamProcessor::eFinalize ) {
+        return CT_EOF;
+    }
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // Put this character in the last position
         // (this function is called when pptr() == eptr() but we
@@ -399,7 +402,6 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
         return false;
     }
-
     // Flush remaining data from compression stream if it is finalized
     if ( m_Writer->m_State == CCompressionStreamProcessor::eFinalize ) {
         return Flush(CCompressionStream::eWrite) == 0;
@@ -462,6 +464,9 @@ streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
 {
     // Check processor status
     if ( !IsStreamProcessorOkay(CCompressionStream::eWrite) ) {
+        return CT_EOF;
+    }
+    if ( m_Writer->m_State == CCompressionStreamProcessor::eFinalize ) {
         return CT_EOF;
     }
     // Check parameters
