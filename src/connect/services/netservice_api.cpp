@@ -51,7 +51,8 @@ private:
 
 INetServiceAPI::INetServiceAPI(const string& service_name, const string& client_name)
     : m_ServiceName(service_name), m_ClientName(client_name), 
-      m_ConnMode(eCloseConnection), m_LPServices(false), m_RebalanceStrategy(NULL)
+      m_ConnMode(eCloseConnection), m_LPServices(false), m_RebalanceStrategy(NULL),
+      m_WaitForServerTimeout(20)
 
 {
 }
@@ -142,7 +143,7 @@ void INetServiceAPI::TrimErr(string& err_msg)
 
 void INetServiceAPI::PrintServerOut(CNetSrvConnector& conn, CNcbiOstream& out) const
 {
-    conn.WaitForServer();
+    conn.WaitForServer(m_WaitForServerTimeout);
     string response;
     while (1) {
         if (!conn.ReadStr(response))
@@ -177,7 +178,7 @@ string INetServiceAPI::SendCmdWaitResponse(CNetSrvConnector& conn, const string&
     string tmp = cmd;
     tmp += "\r\n";
     conn.WriteStr(tmp);
-    conn.WaitForServer();
+    conn.WaitForServer(m_WaitForServerTimeout);
     if (!conn.ReadStr(tmp)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");

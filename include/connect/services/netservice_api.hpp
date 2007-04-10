@@ -77,6 +77,9 @@ public:
     CNetSrvConnectorPoll& GetPoll();
     CNetSrvConnectorPoll& GetPoll() const;
 
+    void SetWaitServerTimeout(unsigned int sec);
+    unsigned int GetWaitServerTimeout() const;;
+
 protected:
 
     static void TrimErr(string& err_msg);
@@ -110,11 +113,24 @@ private:
     bool m_LPServices;
     IRebalanceStrategy* m_RebalanceStrategy;
     auto_ptr<IRebalanceStrategy> m_RebalanceStrategyGuard;
+    unsigned int m_WaitForServerTimeout;
 
     INetServiceAPI(const INetServiceAPI&);
     INetServiceAPI& operator=(const INetServiceAPI&);
 
 };
+
+
+inline 
+void INetServiceAPI::SetWaitServerTimeout(unsigned int sec)
+{
+    m_WaitForServerTimeout = sec;
+}
+inline
+unsigned int INetServiceAPI::GetWaitServerTimeout() const
+{
+    return m_WaitForServerTimeout;
+}
 
 
 /// Net Service exception
