@@ -32,5 +32,4 @@
 * =========================================================================== */
 
 #define NCBI_COUNTER_IMPLEMENTATION
-#include <ncbi_pch.hpp>
-#include <corelib/ncbicntr.hpp>
+#include <corelib/ncbiatomic.h>

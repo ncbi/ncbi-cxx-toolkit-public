@@ -13,6 +13,8 @@ LIB = xncbi
 
 LIBS = $(DL_LIBS)
 
-# Special build rule for WorkShop
+# Special build rules for WorkShop
 ncbicntr_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-O%=) $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp -o $@ $(CXX_FILTER)
+ncbiatomic_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbiatomic_workshop.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL:-O%=) $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbiatomic_workshop.c -o $@ $(CC_FILTER)

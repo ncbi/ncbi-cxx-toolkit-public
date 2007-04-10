@@ -807,7 +807,7 @@ case "$host_os:$compiler" in
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
    serial_ws50_rtti_kludge="rtti"
-   ncbicntr="ncbicntr_workshop"
+   ncbicntr="ncbicntr_workshop ncbiatomic_workshop"
    ;;
 
  irix*:MIPSpro73 )
