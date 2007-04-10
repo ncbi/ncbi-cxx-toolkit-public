@@ -1668,6 +1668,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetDbGeneticCode(v.GetInteger());
         } else if (B4Param_DbLength.Match(p)) {
             opts.SetDbLength(v.GetBig_integer());
+        } else if (B4Param_DustFiltering.Match(p)) {
+            bo.SetDustFiltering(v.GetBoolean());
         } else {
             found = false;
         }
@@ -1712,6 +1714,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetGapOpeningCost(v.GetInteger());
         } else if (B4Param_GiList.Match(p)) {
             m_GiList = v.GetInteger_list();
+        } else if (B4Param_GapTracebackAlgorithm.Match(p)) {
+            bo.SetGapTracebackAlgorithm((EBlastTbackExt) v.GetInteger());
         } else {
             found = false;
         }
@@ -1787,13 +1791,21 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         }
         break;
         
-        // No 'R': required start/end have been removed.
+    case 'R':
+        if (B4Param_RepeatFiltering.Match(p)) {
+            bo.SetRepeatFiltering(v.GetBoolean());
+        } else {
+            found = false;
+        }
+        break;
         
     case 'S':
         if (B4Param_StrandOption.Match(p)) {
             // These encodings use the same values.
             ENa_strand strand = (ENa_strand) v.GetStrand_type();
             bo.SetStrandOption(strand);
+        } else if (B4Param_SegFiltering.Match(p)) {
+            bo.SetSegFiltering(v.GetBoolean());
         } else {
             found = false;
         }
