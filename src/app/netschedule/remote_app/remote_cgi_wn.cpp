@@ -48,7 +48,13 @@
 
 USING_NCBI_SCOPE;
 
-static const char* const s_StandardCgiEnv[] = {
+struct IsStandard : unary_function <string,bool>
+{
+    bool operator() (const string& val) const;
+    static const char* const sm_StandardCgiEnv[];
+};
+
+const char* const IsStandard::sm_StandardCgiEnv[] = {
     "DOCUMENT_ROOT",
     "GATEWAY_INTERFACE",
     "PROXIED_IP",
@@ -79,17 +85,14 @@ static const char* const s_StandardCgiEnv[] = {
     NULL
 };
 
-struct IsStandard : unary_function <string,bool>
+inline bool IsStandard::operator() (const string& val) const
 {
-    inline bool operator() (const string& val) const
-    {
-        if (NStr::StartsWith(val, "HTTP_")) return true;
-        for( int i = 0; s_StandardCgiEnv[i] != NULL; ++i) {
-            if (NStr::Compare(val, s_StandardCgiEnv[i]) == 0) return true;
-        }
-        return false;
+    if (NStr::StartsWith(val, "HTTP_")) return true;
+    for( int i = 0; sm_StandardCgiEnv[i] != NULL; ++i) {
+        if (NStr::Compare(val, sm_StandardCgiEnv[i]) == 0) return true;
     }
-};
+    return false;
+}
 
 template <typename Cont>
 struct HasValue : unary_function <string,bool>
