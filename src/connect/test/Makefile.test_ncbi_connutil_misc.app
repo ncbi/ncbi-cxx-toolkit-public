@@ -2,7 +2,7 @@
 
 APP = test_ncbi_connutil_misc
 SRC = test_ncbi_connutil_misc
-LIB = connect xncbi
+LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 LINK = $(C_LINK)
