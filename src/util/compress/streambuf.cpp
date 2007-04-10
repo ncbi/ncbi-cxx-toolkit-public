@@ -197,9 +197,13 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
     if ( !IsStreamProcessorOkay(dir) ) {
         return -1;
     }
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    if ( sp->m_State == CCompressionStreamProcessor::eFinalize ) {
+        // Already finalized
+        return 0;
+    }
     // Process remaining data in the preprocessing buffer
     Process(dir);
-    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
     if ( sp->m_LastStatus == CP::eStatus_Error ) {
         return -1;
     }
