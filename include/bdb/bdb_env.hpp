@@ -174,6 +174,9 @@ public:
     /// see DB_ENV->set_lk_max_objects for more details
     void SetMaxLockObjects(unsigned lock_obj_max);
 
+    /// Set the maximum number of locking entities supported by the Berkeley DB environment.
+    void SetMaxLockers(unsigned max_lockers);
+
     /// Remove all non-active log files
     void CleanLog();
 
@@ -253,6 +256,7 @@ private:
     string   m_HomePath;
     bool     m_LogInMemory;
     CBDB_Transaction::ETransSync m_TransSync;
+    unsigned m_MaxLockers;
 
 };
 

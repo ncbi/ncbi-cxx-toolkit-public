@@ -297,6 +297,8 @@ public:
     void Returned2Pending(void)
         { x_GetLQueue()->status_tracker.Returned2Pending(); }
 
+    CBDB_Env& GetBDBEnv();
+
 private:
     // Transitional - for support of CQueue iterators
     friend class CQueueIterator;
@@ -560,7 +562,9 @@ public:
               unsigned      cache_ram_size,
               unsigned      max_locks,
               unsigned      log_mem_size,
-              unsigned      max_trans);
+              unsigned      max_trans,
+              unsigned      max_mutexes,
+              bool          sync_transactions);
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);
 

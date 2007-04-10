@@ -73,7 +73,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.23  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.24  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -1566,6 +1566,40 @@ void CNetScheduleHandler::ProcessStatistics()
 
     }
 
+    WriteMsg("OK:", "[Berkeley DB Mutexes]:");
+    {{
+        CNcbiOstrstream ostr;
+        m_Queue->GetBDBEnv().PrintMutexStat(ostr);
+        ostr << ends;
+
+        char* stat_str = ostr.str();
+        try {
+            WriteMsg("OK:", stat_str, true, false);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+
+    }}
+
+    WriteMsg("OK:", "[Berkeley DB Locks]:");
+    {{
+        CNcbiOstrstream ostr;
+        m_Queue->GetBDBEnv().PrintLockStat(ostr);
+        ostr << ends;
+
+        char* stat_str = ostr.str();
+        try {
+            WriteMsg("OK:", stat_str, true, false);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+
+    }}
+
     WriteMsg("OK:", "[Worker node statistics]:");
 
     {{
@@ -2266,6 +2300,15 @@ int CNetScheduleDApp::Run(void)
         unsigned log_mem_size = (unsigned)
             bdb_conf.GetDataSize("netschedule", "log_mem_size", 
                                  CConfig::eErr_NoThrow, 0);
+
+        unsigned max_mutexes = (unsigned)
+            bdb_conf.GetInt("netschedule", "max_mutexes", 
+                            CConfig::eErr_NoThrow, 0);
+
+        bool sync_transactions =
+            bdb_conf.GetBool("netschedule", "sync_transactions",
+                             CConfig::eErr_NoThrow, false);
+
         LOG_POST(Info << "Mounting database at: " << db_path);
 
         unsigned max_threads =
@@ -2276,7 +2319,13 @@ int CNetScheduleDApp::Run(void)
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
 
-        qdb->Open(db_path, mem_size, max_locks, log_mem_size, max_trans);
+        qdb->Open(db_path,
+            mem_size,
+            max_locks,
+            log_mem_size,
+            max_trans,
+            max_mutexes,
+            sync_transactions);
 
 
         int port = 

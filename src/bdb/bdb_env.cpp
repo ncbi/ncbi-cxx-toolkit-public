@@ -52,7 +52,8 @@ CBDB_Env::CBDB_Env()
   m_Transactional(false),
   m_ErrFile(0),
   m_LogInMemory(false),
-  m_TransSync(CBDB_Transaction::eTransSync)
+  m_TransSync(CBDB_Transaction::eTransSync),
+  m_MaxLockers(0)
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
@@ -63,7 +64,8 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
   m_Transactional(false),
   m_ErrFile(0),
   m_LogInMemory(false),
-  m_TransSync(CBDB_Transaction::eTransSync)
+  m_TransSync(CBDB_Transaction::eTransSync),
+  m_MaxLockers(0)
 {
 }
 
@@ -175,6 +177,12 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
 {
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
     BDB_CHECK(ret, "DB_ENV");
+
+    if (m_MaxLockers) {
+        ret = m_Env->set_lk_max_objects(m_Env, m_MaxLockers);
+        BDB_CHECK(ret, "DB_ENV::set_lk_max_objects");
+    }
+
     
     int flag =  DB_INIT_TXN |
                 DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL;
@@ -404,9 +412,16 @@ unsigned CBDB_Env::GetMaxLocks()
 void CBDB_Env::SetMaxLockObjects(unsigned lock_obj_max)
 {
     _ASSERT(lock_obj_max);
-    int ret = m_Env->set_lk_max_objects(m_Env, lock_obj_max);
-    BDB_CHECK(ret, "DB_ENV::set_lk_max_objects");
+    m_MaxLockers = lock_obj_max;
 }
+
+void CBDB_Env::SetMaxLockers(unsigned max_lockers)
+{
+    _ASSERT(max_lockers);
+    int ret = m_Env->set_lk_max_lockers(m_Env, max_lockers);
+    BDB_CHECK(ret, "DB_ENV::set_lk_max_lockers");
+}
+
 
 void CBDB_Env::SetLogInMemory(bool on_off)
 {

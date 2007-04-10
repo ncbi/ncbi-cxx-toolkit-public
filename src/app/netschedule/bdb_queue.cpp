@@ -265,7 +265,9 @@ void CQueueDataBase::Open(const string& path,
                           unsigned      cache_ram_size,
                           unsigned      max_locks,
                           unsigned      log_mem_size,
-                          unsigned      max_trans)
+                          unsigned      max_trans,
+                          unsigned      max_mutexes,
+                          bool          sync_transactions)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
 
@@ -329,17 +331,30 @@ void CQueueDataBase::Open(const string& path,
         //unsigned max_locks = m_Env->GetMaxLocks();
         if (max_locks) {
             m_Env->SetMaxLocks(max_locks);
+            m_Env->SetMaxLockers(max_locks);
             m_Env->SetMaxLockObjects(max_locks);
         }
         if (max_trans) {
             m_Env->SetTransactionMax(max_trans);
         }
+        if (max_mutexes) {
+            m_Env->MutexSetMax(max_mutexes);
+        }
+        m_Env->SetTransactionSync(sync_transactions ?
+                                      CBDB_Transaction::eTransSync :
+                                      CBDB_Transaction::eTransASync);
 
-        m_Env->OpenWithTrans(path.c_str(), CBDB_Env::eThreaded);
+        m_Env->OpenWithTrans(path.c_str(), CBDB_Env::eThreaded | CBDB_Env::ePrivate);
+        LOG_POST(Info << "Opened BDB environment with "
+            << m_Env->GetMaxLocks() << " max locks, "
+            << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
+                                          "" : "a") << "syncronous transactions, "
+            << m_Env->MutexGetMax() <<  " max mutexes");
     } else {
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
+        /*
         try {
             m_Env->JoinEnv(path.c_str(), CBDB_Env::eThreaded);
             if (!m_Env->IsTransactional()) {
@@ -363,8 +378,11 @@ void CQueueDataBase::Open(const string& path,
         catch (CBDB_Exception&)
         {
             m_Env->OpenWithTrans(path.c_str(), 
-                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+                CBDB_Env::eThreaded | CBDB_Env::eRunRecovery | CBDB_Env::ePrivate);
         }
+        */
+        m_Env->OpenWithTrans(path.c_str(), 
+            CBDB_Env::eThreaded | CBDB_Env::eRunRecovery | CBDB_Env::ePrivate);
 
     } // if else
     m_Env->SetDirectDB(true);
@@ -561,6 +579,7 @@ void CQueueDataBase::MountQueue(const string& qname,
     // scan the queue, load the state machine from DB
 
     CBDB_FileCursor cur(queue.db);
+    cur.InitMultiFetch(1024*1024);
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
@@ -1382,6 +1401,12 @@ double CQueue::GetAverage(TStatEvent n_event)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     return q->GetAverage(n_event);
+}
+
+
+CBDB_Env& CQueue::GetBDBEnv()
+{
+    return *(m_Db.m_Env);
 }
 
 
