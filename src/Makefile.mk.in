@@ -239,6 +239,11 @@ RT_LIBS      = @RT_LIBS@
 DEMANGLE_LIBS= @DEMANGLE_LIBS@
 ICONV_LIBS   = @ICONV_LIBS@
 
+# libconnect now uses NCBI_SwapPointers, which conditionally requires
+# LIB to include xncbi (depending on certain configuration details);
+# this macro always expands to the right value.
+NCBIATOMIC_LIB = @NCBIATOMIC_LIB@
+
 # This is a temporary workaround for Solaris/Intel platforms where
 # we had to do a kludgy patch to work around a faulty Sybase "tli" lib.
 # One can use this instead of $(NETWORK_LIBS) (which has the patch built in)

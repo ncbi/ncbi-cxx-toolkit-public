@@ -740,12 +740,29 @@ if test "$with_mt" = "yes" ; then
      *               ) : ${THREAD_LIBS:="-lpthread"} ;;
    esac
    LIBS="$LIBS $THREAD_LIBS"
+   case "$host_os:$compiler" in
+     solaris2.?:WorkShop | solaris2.?:KCC )
+        NCBIATOMIC_LIB=xncbi
+        ncbicntr="ncbicntr_workshop ncbiatomic_workshop"
+        ;;
+     solaris2.??:* | solaris*:GCC | *:Compaq | irix* | aix* | darwin* | cygwin*)
+        NCBIATOMIC_LIB=
+        ;;
+     *:GCC | *:ICC | linux*:KCC )
+        case "$host_cpu" in
+           i?86 | powerpc* | ppc* | x86_64 | sparc* ) NCBIATOMIC_LIB= ;;
+           * ) NCBIATOMIC_LIB=xncbi ;;
+        esac
+        ;;
+     * ) NCBIATOMIC_LIB=xncbi ;;
+   esac
    mt_sfx="MT"
    NCBI_FEATURE(MT)
 else
    CPPFLAGS="$CPPFLAGS -DNCBI_WITHOUT_MT"
    MT_FLAG=
    THREAD_LIBS=
+   NCBIATOMIC_LIB=
    mt_sfx=""
 fi
 MT_SFX="${mt_sfx}"
@@ -807,7 +824,6 @@ case "$host_os:$compiler" in
    LINK_FILTER="$CXX_FILTER"
    AR_FILTER="$CXX_FILTER"
    serial_ws50_rtti_kludge="rtti"
-   ncbicntr="ncbicntr_workshop ncbiatomic_workshop"
    ;;
 
  irix*:MIPSpro73 )
@@ -5520,6 +5536,7 @@ AC_SUBST(BDB_LIB)
 AC_SUBST(BDB_CACHE_LIB)
 
 AC_SUBST(THREAD_LIBS)
+AC_SUBST(NCBIATOMIC_LIB)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)
 AC_SUBST(RESOLVER_LIBS)
