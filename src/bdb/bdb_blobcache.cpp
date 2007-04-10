@@ -1565,7 +1565,7 @@ void CBDB_Cache::Store(const string&  key,
     if (size < GetOverflowLimit()) {  // inline BLOB
 
         if (blob_id == 0) {
-            EBDB_ErrCode ret;
+            EBDB_ErrCode ret = eBDB_KeyDup;
             do {
                 blob_id = m_BlobIdCounter.Add(1);
                 if (blob_id >= kMax_UInt) {
