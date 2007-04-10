@@ -246,7 +246,7 @@ extern "C" {
 #  endif
 #endif
 
-#if !defined(NCBI_SWAP_POINTERS)  &&  !defined(NCBI_SWAP_POINTERS_CONDITIONALLY)  &&  !defined(NCBI_NO_THREADS)  &&  !defined(NCBI_COUNTER_USE_ASM)  &&  !defined(__ppc__)  &&  !defined(__ppc64__)
+#if !defined(NCBI_SWAP_POINTERS)  &&  !defined(NCBI_SWAP_POINTERS_CONDITIONALLY)  &&  !defined(NCBI_NO_THREADS)  &&  (!defined(NCBI_COUNTER_ASM_OK)  ||  (!defined(__i386) && !defined(__ppc__) && !defined(__ppc64__) && !defined(__sparc) && !defined(__x86_64)))
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #  define NCBI_SLOW_ATOMIC_SWAP 1
 #endif
