@@ -39,6 +39,7 @@
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -267,7 +268,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
         while (i < data->n_cand) {
             const SSERV_Info* info = data->cand[i].info;
 
-            total += info->rate;
+            total += fabs(info->rate);
             if (info->time < now) {
                 if (i < --data->n_cand) {
                     memmove(data->cand + i, data->cand + i + 1,
@@ -275,7 +276,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
                 }
                 free((void*) info);
             } else {
-                status += info->rate;
+                status += fabs(info->rate);
                 i++;
             }
         }
