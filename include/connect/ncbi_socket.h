@@ -38,8 +38,6 @@
  *********************************
  * Generic:
  *
- *  SOCK, LSOCK
- *
  *  SOCK_AllowSigPipeAPI
  *
  *  SOCK_InitializeAPI
