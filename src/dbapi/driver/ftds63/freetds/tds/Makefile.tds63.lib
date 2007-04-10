@@ -1,6 +1,6 @@
 # $Id$
 
-LIB = tds_$(ftds63)
+LIB = tds_ftds63
 SRC = challenge config convert data des getmac iconv locale login \
       md4 md5 mem net numeric query read replacements \
       tdsstring threadsafe token util vstrbuild write

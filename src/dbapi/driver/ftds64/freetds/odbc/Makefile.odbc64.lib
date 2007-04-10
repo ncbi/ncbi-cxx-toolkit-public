@@ -1,9 +1,9 @@
 # $Id$
 
-LIB = odbc_$(ftds64)
+LIB = odbc_ftds64
 SRC = connectparams convert_tds2sql descriptor error native odbc odbc_util \
 	  prepare_query sql2tds odbc_checks
 
-DLL_LIB = tds_$(ftds64)
+DLL_LIB = tds_ftds64
 
 CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS64_INCLUDE) $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)

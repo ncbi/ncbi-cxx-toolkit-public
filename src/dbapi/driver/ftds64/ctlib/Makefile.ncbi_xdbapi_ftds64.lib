@@ -10,6 +10,6 @@ CPPFLAGS = -DFTDS_IN_USE $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = ct_$(ftds64)$(STATIC) tds_$(ftds64)$(STATIC) dbapi_driver
+DLL_LIB = $(FTDS64_CTLIB_LIB)  dbapi_driver
 DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)

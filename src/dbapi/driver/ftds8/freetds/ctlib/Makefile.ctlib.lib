@@ -1,8 +1,8 @@
 # $Id$
 
-LIB = ct_$(ftds8)
+LIB = ct_ftds8
 SRC = blk cs ct ctutil
 
-DLL_LIB = tds_$(ftds8)
+DLL_LIB = tds_ftds8
 
 CPPFLAGS = $(FTDS8_INCLUDE) $(ORIG_CPPFLAGS)

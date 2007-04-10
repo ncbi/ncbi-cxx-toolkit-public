@@ -1,8 +1,8 @@
 # $Id$
 
-LIB = sybdb_$(ftds8)
+LIB = sybdb_ftds8
 SRC = bcp dblib dbutil rpc xact dbopen
 
-DLL_LIB = tds_$(ftds8)
+DLL_LIB = tds_ftds8
 
 CPPFLAGS = $(FTDS8_INCLUDE) $(ORIG_CPPFLAGS)

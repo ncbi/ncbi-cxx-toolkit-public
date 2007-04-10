@@ -1,6 +1,6 @@
 # $Id$
 
-LIB = tds_$(ftds8)
+LIB = tds_ftds8
 SRC = asprintf challenge config convert login mem numeric query \
       read token util write iconv locale threadsafe
 
