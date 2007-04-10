@@ -158,16 +158,21 @@ int CCompressionStreambuf::sync()
     if ( !IsOkay() ) {
         return -1;
     }
+	int status = 0;
     // Sync write processor buffers
     CCompressionStreamProcessor* 
         sp = GetStreamProcessor(CCompressionStream::eWrite);
-    if ( sp  &&  sp->m_State != CCompressionStreamProcessor::eDone ) {
+    if ( sp  &&  sp->m_State != CCompressionStreamProcessor::eDone  &&
+               !(sp->m_State == CCompressionStreamProcessor::eFinalize  &&  
+                 sp->m_LastStatus == CCompressionProcessor::eStatus_EndOfData)
+        ) {
         if ( Sync(CCompressionStream::eWrite) != 0 ) {
-            return -1;
+            status = -1;
         }
     }
     // Sync the underlying stream
-    return m_Stream->rdbuf()->PUBSYNC();
+	status += m_Stream->rdbuf()->PUBSYNC();
+	return (status < 0 ? -1 : 0);
 }
 
 
@@ -195,8 +200,7 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
     // Process remaining data in the preprocessing buffer
     Process(dir);
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    if ( sp->m_LastStatus == CP::eStatus_Error  ||
-         sp->m_LastStatus == CP::eStatus_EndOfData ) {
+    if ( sp->m_LastStatus == CP::eStatus_Error ) {
         return -1;
     }
     // Finish. Change state to 'finalized'.
