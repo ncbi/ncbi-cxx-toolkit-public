@@ -302,7 +302,7 @@ public:
     /// you MUST call save; otherwise some disposition information is lost.
     ///
     void Save(CBDB_Transaction* trans=0, 
-              typename TDeMuxStore::ECompact compact_vectors /*= TDeMuxStore::eCompact*/);
+              typename TDeMuxStore::ECompact compact_vectors = TDeMuxStore::eCompact);
 
 
     void SetVolumeCacheSize(unsigned int cache_size) 
