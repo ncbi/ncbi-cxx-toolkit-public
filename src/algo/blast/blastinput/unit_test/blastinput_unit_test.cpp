@@ -67,6 +67,9 @@
 #include <objtools/data_loaders/genbank/processors.hpp>
 #endif
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);

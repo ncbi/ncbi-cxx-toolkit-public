@@ -40,6 +40,8 @@
 #include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 

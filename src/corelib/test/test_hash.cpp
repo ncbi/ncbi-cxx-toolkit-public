@@ -39,6 +39,8 @@
 #include <corelib/hash_map.hpp>
 #include <corelib/hash_set.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 

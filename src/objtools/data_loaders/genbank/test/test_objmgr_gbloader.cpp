@@ -52,6 +52,9 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/seqref.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
 using namespace objects;
 

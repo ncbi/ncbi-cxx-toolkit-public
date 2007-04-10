@@ -67,6 +67,8 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 using namespace ncbi;
 using namespace objects;
