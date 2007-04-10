@@ -72,7 +72,7 @@ RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query);
 CSeq_align_set*
 CreateEmptySeq_align_set(CSeq_align_set* sas);
 
-CRef<CSeq_align>
+void
 BLASTHspListToSeqAlign(EBlastProgramType program, 
                        BlastHSPList* hsp_list, 
                        const CSeq_id *query_id, 
@@ -80,16 +80,18 @@ BLASTHspListToSeqAlign(EBlastProgramType program,
                        Int4 query_length, 
                        Int4 subject_length,
                        bool is_ooframe,
-                       const vector<int> & gi_list);
+                       const vector<int> & gi_list,
+                       vector<CRef<CSeq_align > > & sa_vector);
 
-CRef<CSeq_align>
+void
 BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
                                BlastHSPList* hsp_list, 
                                const CSeq_id *query_id, 
                                const CSeq_id *subject_id, 
                                Int4 query_length, 
                                Int4 subject_length,
-                               const vector<int> & gi_list);
+                               const vector<int> & gi_list,
+                               vector<CRef<CSeq_align > > & sa_vector);
 
 /// Convert traceback output into Seq-align format.
 /// 

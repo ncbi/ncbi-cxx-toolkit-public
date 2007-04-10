@@ -115,7 +115,7 @@ private:
 
 	void SetSeq(CRef<CBioseq>& seq, bool isSeq1, unsigned int from, unsigned int to);
 
-	void processBlastHits(CRef<ncbi::blast::CSearchResults>);
+	void processBlastHits(ncbi::blast::CSearchResults&);
 	//input seqAlign may actually contain CSeq_align_set
 	CRef< CSeq_align > extractOneSeqAlign(CRef< CSeq_align > seqAlign);
 };

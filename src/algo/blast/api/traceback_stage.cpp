@@ -298,7 +298,9 @@ CBlastTracebackSearch::Run()
                                      m_InternalData->m_QueryInfo,
                                      m_OptsMemento->m_ProgramType, 
                                      aligns, 
-                                     m_Messages);
+                                     m_Messages,
+                                     NULL,
+                                     m_ResultType);
 }
 
 END_SCOPE(blast)

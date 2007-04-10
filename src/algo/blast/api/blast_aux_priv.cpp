@@ -243,18 +243,31 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           EBlastProgramType program,
                           const TSeqAlignVector& alignments,
                           TSearchMessages& messages,
-                          const TSeqLocInfoVector* query_masks)
+                          const TSeqLocInfoVector* query_masks,
+                          const EResultType result_type)
 {
     const bool is_phi = Blast_ProgramIsPhiBlast(program);
 
     // Collect query Seq-locs
     
     vector< CConstRef<CSeq_id> > qlocs;
+
     
     if (is_phi) {
         qlocs.assign(alignments.size(), query_ids.front());
     } else {
-        copy(query_ids.begin(), query_ids.end(), back_inserter(qlocs));
+        if (result_type == ncbi::blast::eSequenceComparison)
+        {
+            int factor = alignments.size()/query_ids.size();
+            int index = 0;
+            while (index< (int) alignments.size())
+            {
+               qlocs.push_back(query_ids[index/factor]);
+               index++;
+            }
+        }
+        else
+            copy(query_ids.begin(), query_ids.end(), back_inserter(qlocs));
     }
     
     // Collect ancillary data

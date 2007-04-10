@@ -317,20 +317,24 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         }
 
         // actually do the alignment(s)
-        CRef < blast::CSearchResults > results = blastEngine->Run();
+        blast::CSearchResultSet results = blastEngine->Run();
 //        string err;
-//        WriteASNToFile("Seq-align-set.txt", results->GetSeqAlign().GetObject(), false, &err);
+//        WriteASNToFile("Seq-align-set.txt", results[0].GetSeqAlign().GetObject(), false, &err);
 
         // parse the alignments
-        if (results->GetSeqAlign()->Get().size() != toRealign.size())
+        int total = results.GetNumResults();
+        if (total != toRealign.size())  
         {
             ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - did not get one result alignment per input sequence");
             return;
         }
 
-        CSeq_align_set::Tdata::const_iterator r, re = results->GetSeqAlign()->Get().end();
+        CSeq_align_set::Tdata::const_iterator r, re = results[0].GetSeqAlign()->Get().end();
         localID = 0;
-        for (r=results->GetSeqAlign()->Get().begin(); r!=re; ++r, ++localID) {
+
+        for (int index=0; index<total; ++index, ++localID) {
+
+            r = results[index].GetSeqAlign().Get().begin();
 
             // create new alignment structure
             BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
@@ -343,15 +347,13 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             newAlignment->SetRowDouble(1, kMax_Double);
 
             // check for valid or empty alignment
-            if ((*r)->GetType() != CSeq_align::eType_disc || !(*r)->GetSegs().IsDisc()) {
-                ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment not in expected format (disc)");
-            } else if (!(*r)->IsSetDim() && (*r)->GetSegs().GetDisc().Get().size() == 0) {
+            if (!(*r)->IsSetDim() ) {
                 WARNINGMSG("BLAST did not find a significant alignment for "
                     << dependentTitle << " with " << (usePSSM ? string("PSSM") : master->identifier->ToString()));
             } else {
 
                 // unpack Seq-align; use first one, which assumes blast returns the highest scoring alignment first
-                const CSeq_align& sa = (*r)->GetSegs().GetDisc().Get().front().GetObject();
+                const CSeq_align& sa = *r;
                 if (!sa.IsSetDim() || sa.GetDim() != 2 || sa.GetType() != CSeq_align::eType_partial) {
                     ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment not in expected format (dim 2, partial)");
                 } else if (sa.GetSegs().IsDenseg()) {

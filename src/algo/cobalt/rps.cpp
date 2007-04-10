@@ -415,14 +415,10 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
         // iterate over hitlists
 
         ITERATE(CSeq_align_set::Tdata, itr, results[i].GetSeqAlign()->Get()) {
-            const CSeq_align& hitlist_sa = **itr;
 
             // iterate over hits
 
-            ITERATE(CSeq_align_set::Tdata, sitr, 
-                                 hitlist_sa.GetSegs().GetDisc().Get()) {
-
-                const CSeq_align& s = **sitr;
+                const CSeq_align& s = **itr;
                 const CDense_seg& denseg = s.GetSegs().GetDenseg();
                 int align_score = 0;
                 double evalue = 0;
@@ -449,7 +445,6 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
                 rps_hits.AddToHitList(new CHit(i, db_oid, 
                                                align_score, denseg));
             }
-        }
     }
 
 

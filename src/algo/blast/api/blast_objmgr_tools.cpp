@@ -459,6 +459,9 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     TSeqPos subj_length = 0;
     CConstRef<CSeq_id> subject_id;
 
+    // stores a CSeq_align for each matching sequence
+    vector<CRef<CSeq_align > > hit_align;
+
     for (int index = 0; index < hit_list->hsplist_count; index++) {
         BlastHSPList* hsp_list = hit_list->hsplist_array[index];
         if (!hsp_list)
@@ -472,14 +475,10 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
         GetSequenceLengthAndId(seqinfo_src, hsp_list->oid, 
                                subject_id, &subj_length);
 
-        // Create a CSeq_align for each matching sequence
-        CRef<CSeq_align> hit_align;
-        
         vector<int> gi_list;
         GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
         
         if (is_gapped) {
-            hit_align =
                 BLASTHspListToSeqAlign(prog,
                                        hsp_list,
                                        query_id,
@@ -487,19 +486,22 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
                                        query_length,
                                        subj_length,
                                        is_ooframe,
-                                       gi_list);
+                                       gi_list,
+                                       hit_align);
         } else {
-            hit_align =
                 BLASTUngappedHspListToSeqAlign(prog,
                                                hsp_list,
                                                query_id,
                                                subject_id,
                                                query_length,
                                                subj_length,
-                                               gi_list);
+                                               gi_list,
+                                               hit_align);
         }
-        RemapToQueryLoc(hit_align, *query.seqloc);
-        seq_aligns->Set().push_back(hit_align);
+        ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
+           RemapToQueryLoc(*iter, *query.seqloc);
+           seq_aligns->Set().push_back(*iter);
+        }
     }
     return seq_aligns;
 }

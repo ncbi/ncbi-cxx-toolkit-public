@@ -192,13 +192,13 @@ int CPsiBlastApp::Run(void)
 
         while (itr) {
 
-            CRef<CSearchResults> results = psiblast->Run();
-            CConstRef<CSeq_align_set> alignment = results->GetSeqAlign();
+            CSearchResultSet results = psiblast->Run();  // TLM, only one query??
+            CConstRef<CSeq_align_set> alignment = results[0].GetSeqAlign();
 
             out << "Results from round "
                 << NStr::IntToString(itr.GetIterationNumber()) << NcbiEndl;
             
-            format.PrintOneAlignSet(*results, *scope);
+            format.PrintOneAlignSet(results[0], *scope);
 
             CPsiBlastIterationState::TSeqIds ids;
             CPsiBlastIterationState::GetSeqIds(alignment, opts, ids);

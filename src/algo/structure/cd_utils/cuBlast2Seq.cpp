@@ -217,12 +217,17 @@ bool CdBlaster::blast(NotifierFunction notifier)
 		}
 		CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 		CPsiBl2Seq blaster(query,subject,blastOptions);
-		CRef<CSearchResults> hits = blaster.Run();
+		CSearchResultSet hits = blaster.Run();
 		m_batchSizes[qr] = batchSize;
 		numBlastsDone += batchSize;
 		if (notifier)
 			notifier(numBlastsDone, totalBlasts);
-		processBlastHits(qr, hits);
+                int total = hits.GetNumResults();
+                for (int index=0; index<total; index++)
+                {
+		   processBlastHits(qr, hits[index]);
+                }
+
 	}
 	return true;
 }
@@ -270,14 +275,14 @@ int  CdBlaster::psiBlast()
 	CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 
 	CPsiBl2Seq blaster(m_psiTargetPssm, subject, options);
-	CRef<CSearchResults> hits = blaster.Run();
+	CSearchResultSet hits = blaster.Run();
 
-	const list< CRef< CSeq_align > >& seqAlignList = hits->GetSeqAlign()->Get();
-	assert (seqAlignList.size() == nrows);
-	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
-	{
-		m_alignments.push_back(extractOneSeqAlign(*cit));
-	}
+        int total = hits.GetNumResults();
+        for (int index=0; index<total; index++)
+        {
+           m_alignments.push_back(*(hits[index].GetSeqAlign()->Get().begin()));
+        }
+
 	return m_alignments.size();
 }
 
@@ -385,30 +390,27 @@ CRef< CBioseq > CdBlaster::truncateBioseq(int row)
 	return tbioseq;
 }
 
-void CdBlaster::processBlastHits(int queryRow, CRef<CSearchResults> hits)
+void CdBlaster::processBlastHits(int queryRow, CSearchResults& hits)
 {
-	const list< CRef< CSeq_align > >& seqAlignList = hits->GetSeqAlign()->Get();
+	const list< CRef< CSeq_align > >& seqAlignList = hits.GetSeqAlign()->Get();
 	int seqLen = m_truncatedBioseqs[queryRow]->GetInst().GetLength();
-	assert (seqAlignList.size() == m_batchSizes[queryRow]);
-	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
+	// assert (seqAlignList.size() == m_batchSizes[queryRow]); // TLM
+	CRef< CSeq_align > sa = *(seqAlignList.begin());  
+	CSeq_align::C_Segs::TDenseg& denseg = sa->SetSegs().SetDenseg();
+	double score = 0.0;
+	if (!sa.Empty()) 
 	{
-		CRef< CSeq_align > sa = extractOneSeqAlign(*cit);
-		CSeq_align::C_Segs::TDenseg& denseg = sa->SetSegs().SetDenseg();
-		double score = 0.0;
-		if (!sa.Empty()) 
+		if (m_scoreType == CSeq_align::eScore_PercentIdentity)
 		{
-			if (m_scoreType == CSeq_align::eScore_PercentIdentity)
-			{
-				double idScore = 0.0;
-				sa->GetNamedScore(CSeq_align::eScore_IdentityCount, idScore);
-				score = 100*idScore/seqLen;
-			}
-			else
-				sa->GetNamedScore(m_scoreType, score);
-
+			double idScore = 0.0;
+			sa->GetNamedScore(CSeq_align::eScore_IdentityCount, idScore);
+			score = 100*idScore/seqLen;
 		}
-		m_scores.push_back(score);
+		else
+			sa->GetNamedScore(m_scoreType, score);
+
 	}
+	m_scores.push_back(score);
 }
 
 //input seqAlign may actually contain CSeq_align_set

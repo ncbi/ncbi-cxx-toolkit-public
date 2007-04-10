@@ -234,13 +234,9 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
     if (m_FormatType == 8 || m_FormatType == 9) {
         CBlastTabularInfo tabinfo(m_Outfile);
         ITERATE(CSeq_align_set::Tdata, itr, aln_set.Get()) {
-            const CSeq_align& hitlist_sa = **itr;
-            ITERATE(CSeq_align_set::Tdata, hit_itr, 
-                                        hitlist_sa.GetSegs().GetDisc().Get()) {
-                const CSeq_align& s = **hit_itr;
+                const CSeq_align& s = **itr;
                 tabinfo.SetFields(s, scope);
                 tabinfo.Print();
-            }
         }
         return;
     }
@@ -258,8 +254,8 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
                                             m_IsHTML, false);
 
     // quit early if there are no hits
-    if (aln_set.Get().empty() ||
-        aln_set.Get().front()->GetSegs().GetDisc().Get().empty()) {
+    if (aln_set.Get().empty())
+    {
         m_Outfile << "\n\n ***** No hits found *****\n\n" << endl;
         x_PrintOneQueryFooter(*results.GetAncillaryData());
         return;

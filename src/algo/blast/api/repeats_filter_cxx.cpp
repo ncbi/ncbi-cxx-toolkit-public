@@ -149,9 +149,9 @@ static void
 s_SeqAlignToBlastSeqLoc(const CSeq_align_set& alignment, 
                         BlastSeqLoc ** locs)
 {
-    ITERATE(CSeq_align_set::Tdata, dense_seg, alignment.Get()) {
-        _ASSERT((*dense_seg)->GetSegs().IsDenseg());
-        const CDense_seg& seg = (*dense_seg)->GetSegs().GetDenseg();
+    ITERATE(CSeq_align_set::Tdata, itr, alignment.Get()) {
+        _ASSERT((*itr)->GetSegs().IsDenseg());
+        const CDense_seg& seg = (*itr)->GetSegs().GetDenseg();
         const int kNumSegments = seg.GetNumseg();
 #if _DEBUG      /* to eliminate compiler warning in release mode */
         const int kNumDim = seg.GetDim();
@@ -203,11 +203,15 @@ s_FillMaskLocFromBlastResults(TSeqLocVector& query,
         BlastSeqLoc* loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
         
         // Find all HSP intervals in query
+/* DELME
         ITERATE(CSeq_align_set::Tdata, alignment, result.GetSeqAlign()->Get()) {
             _ASSERT((*alignment)->GetSegs().IsDisc());
             s_SeqAlignToBlastSeqLoc((*alignment)->GetSegs().GetDisc(), 
                                     &loc_list);
         }
+*/
+        s_SeqAlignToBlastSeqLoc(*(result.GetSeqAlign()), &loc_list);
+        
         
         // Make the intervals unique
         BlastSeqLoc* ordered_loc_list =
@@ -278,11 +282,14 @@ s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
         }
         
         // Find all HSP intervals in query
+/* DELME
         ITERATE(CSeq_align_set::Tdata, alignment, result.GetSeqAlign()->Get()) {
             _ASSERT((*alignment)->GetSegs().IsDisc());
             s_SeqAlignToBlastSeqLoc((*alignment)->GetSegs().GetDisc(), 
                                     &loc_list);
         }
+*/
+        s_SeqAlignToBlastSeqLoc(*(result.GetSeqAlign()), &loc_list);
         
         // Make the intervals unique
         BlastSeqLoc* ordered_loc_list =

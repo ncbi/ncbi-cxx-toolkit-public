@@ -1098,9 +1098,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     return retval;
 }
 
-/// Creates a Seq-align from an HSP list for an ungapped search. Returned
-/// Seq-align has discontinuous segments type, same as for the gapped 
-/// searches.
+/// Creates a Seq-align from an HSP list for an ungapped search. 
 /// @param program BLAST program [in]
 /// @param hsp_list HSP list structure [in]
 /// @param query_id Query sequence identifier [in]
@@ -1108,20 +1106,23 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
 /// @param query_length Length of the query [in]
 /// @param subject_length Length of the subject [in]
 /// @param gi_list List of GIs for the subject sequence.
-CRef<CSeq_align>
+void
 BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
                                BlastHSPList* hsp_list,
                                const CSeq_id *query_id, 
                                const CSeq_id *subject_id,
                                Int4 query_length,
                                Int4 subject_length,
-                               const vector<int> & gi_list)
+                               const vector<int> & gi_list,
+                               vector<CRef<CSeq_align > > & sa_vector)
 {
     CRef<CSeq_align> seqalign(new CSeq_align()); 
     BlastHSP** hsp_array;
     int index;
 
     seqalign->SetType(CSeq_align::eType_diags);
+
+    sa_vector.clear();
 
     hsp_array = hsp_list->hsp_array;
 
@@ -1153,20 +1154,11 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                       gi_list));
         }
     }
-    // Wrap this Seq-align into a discontinuous Seq-align, so the 
-    // resulting Seq-align has the same form as for other cases, with 
-    // clear separation of results corresponding to different subject 
-    // sequences.
-    CRef<CSeq_align> retval(new CSeq_align());
-    retval->SetType(CSeq_align::eType_disc);
-    retval->SetDim(2);
-    retval->SetSegs().SetDisc().Set().push_back(seqalign);
-    return retval;
+    sa_vector.push_back(seqalign);
+    return;
 }
 
 /// This is called for each query and each subject in a BLAST search.
-/// We always return CSeq_aligns of type disc to allow multiple HSPs
-/// corresponding to the same query-subject pair to be grouped in one CSeq_align.
 /// @param program BLAST program [in]
 /// @param hsp_list HSP list structure [in]
 /// @param query_id Query sequence identifier [in]
@@ -1176,20 +1168,19 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
 /// @param is_ooframe Was this a search with out-of-frame gapping? [in]
 /// @param gi_list List of GIs for the subject sequence.
 /// @return Resulting Seq-align object. 
-CRef<CSeq_align>
+void
 BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
                        const CSeq_id *query_id, const CSeq_id *subject_id, 
                        Int4 query_length, Int4 subject_length, bool is_ooframe,
-                       const vector<int> & gi_list)
+                       const vector<int> & gi_list,
+                       vector<CRef<CSeq_align > > & sa_vector)
 {
-    CRef<CSeq_align> retval(new CSeq_align()); 
-    retval->SetType(CSeq_align::eType_disc);
-    retval->SetDim(2);         // BLAST only creates pairwise alignments
-
     // Process the list of HSPs corresponding to one subject sequence and
     // create one seq-align for each list of HSPs (use disc seqalign when
     // multiple HSPs are found).
     BlastHSP** hsp_array = hsp_list->hsp_array;
+
+    sa_vector.clear();
 
     for (int index = 0; index < hsp_list->hspcnt; index++) { 
         BlastHSP* hsp = hsp_array[index];
@@ -1206,10 +1197,10 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
         }
         
         s_AddScoresToSeqAlign(seqalign, hsp, gi_list);
-        retval->SetSegs().SetDisc().Set().push_back(seqalign);
+        sa_vector.push_back(seqalign);
     }
     
-    return retval;
+    return;
 }
 
 CSeq_align_set*
@@ -1223,11 +1214,6 @@ CreateEmptySeq_align_set(CSeq_align_set* sas)
         retval = sas;
     }
 
-    CRef<CSeq_align> empty_seqalign(new CSeq_align);
-    empty_seqalign->SetType(CSeq_align::eType_disc);
-    empty_seqalign->SetSegs().SetDisc(*new CSeq_align_set);
-
-    retval->Set().push_back(empty_seqalign);
     return retval;
 }
 
@@ -1253,17 +1239,20 @@ void RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query)
 /// query-subject alignment [in|out]
 /// @param subj_loc Location of the subject sequence searched. [in]
 static void 
-s_RemapToSubjectLoc(CRef<CSeq_align> subj_aligns, const CSeq_loc& subj_loc)
+s_RemapToSubjectLoc(CRef<CSeq_align> & subj_aligns, const CSeq_loc& subj_loc)
 {
     const int kSubjDimension = 1;
-    _ASSERT(subj_aligns->GetSegs().IsDisc());
     _ASSERT(subj_loc.IsInt() || subj_loc.IsWhole());
+    subj_aligns.Reset(RemapAlignToLoc(*subj_aligns, kSubjDimension, subj_loc));
+    
 
     /// Iterate over this subject's HSPs...
+/*
     NON_CONST_ITERATE(CSeq_align_set::Tdata, hsp, 
                       subj_aligns->SetSegs().SetDisc().Set()) {
         hsp->Reset(RemapAlignToLoc(**hsp, kSubjDimension, subj_loc));
     }
+*/
 }
 
 CSeq_align_set*
@@ -1290,6 +1279,9 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
     
     vector<int> gi_list;
     
+    // stores a CSeq_align for each matching sequence
+    vector<CRef<CSeq_align > > hit_align;
+
     for (int index = 0; index < hit_list->hsplist_count; index++) {
         BlastHSPList* hsp_list = hit_list->hsplist_array[index];
         if (!hsp_list)
@@ -1303,14 +1295,12 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         GetSequenceLengthAndId(seqinfo_src, hsp_list->oid,
                                subject_id, &subj_length);
         
-        // Create a CSeq_align for each matching sequence
-        CRef<CSeq_align> hit_align;
         
         // Get GIs for entrez query restriction.
         GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
         
+        hit_align.clear();
         if (is_gapped) {
-            hit_align =
                 BLASTHspListToSeqAlign(prog,
                                        hsp_list,
                                        query_id,
@@ -1318,19 +1308,23 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                                        query_length,
                                        subj_length,
                                        is_ooframe,
-                                       gi_list);
+                                       gi_list,
+                                       hit_align);
         } else {
-            hit_align =
                 BLASTUngappedHspListToSeqAlign(prog,
                                                hsp_list,
                                                query_id,
                                                subject_id,
                                                query_length,
                                                subj_length,
-                                               gi_list);
+                                               gi_list,
+                                               hit_align);
         }
-        RemapToQueryLoc(hit_align, query_loc);
-        seq_aligns->Set().push_back(hit_align);
+        
+        ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
+           RemapToQueryLoc(*iter, query_loc);
+           seq_aligns->Set().push_back(*iter);
+        }
     }
     return seq_aligns;
 }
@@ -1426,6 +1420,8 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     // Subject is the same for all queries, so retrieve its id right away
     GetSequenceLengthAndId(&seqinfo_src, subj_index, subject_id, &subj_length);
 
+    vector<CRef<CSeq_align > > hit_align;
+
     // Process each query's hit list
     for (int qindex = 0; qindex < results->num_queries; qindex++) {
         CRef<CSeq_align_set> seq_aligns;
@@ -1451,7 +1447,6 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             // in Seq-aligns.
             Blast_HSPListSortByEvalue(hsp_list);
 
-            CRef<CSeq_align> hit_align;
             CConstRef<CSeq_loc> seqloc = query_data.GetSeq_loc(qindex);
             CConstRef<CSeq_id> query_id(seqloc->GetId());
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
@@ -1459,8 +1454,8 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             vector<int> gi_list;
             GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
             
+            hit_align.clear();
             if (is_gapped) {
-                hit_align =
                     BLASTHspListToSeqAlign(prog,
                                            hsp_list,
                                            query_id,
@@ -1468,24 +1463,26 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                            query_length, 
                                            subj_length,
                                            is_ooframe,
-                                           gi_list);
+                                           gi_list,
+                                           hit_align);
             } else {
-                hit_align =
                     BLASTUngappedHspListToSeqAlign(prog,
                                                    hsp_list,
                                                    query_id,
                                                    subject_id,
                                                    query_length,
                                                    subj_length,
-                                                   gi_list);
+                                                   gi_list,
+                                                   hit_align);
             }
-            _ASSERT(hit_align->GetSegs().IsDisc());
-            RemapToQueryLoc(hit_align, *seqloc);
-            if ( !is_ooframe )
-                s_RemapToSubjectLoc(hit_align, 
-                                    *seqinfo_src.GetSeqLoc(subj_index));
             seq_aligns.Reset(new CSeq_align_set());
-            seq_aligns->Set().push_back(hit_align);
+            NON_CONST_ITERATE(vector<CRef<CSeq_align > >, iter, hit_align) {
+                RemapToQueryLoc(*iter, *seqloc);
+                if ( !is_ooframe )
+                    s_RemapToSubjectLoc(*iter, 
+                                    *seqinfo_src.GetSeqLoc(subj_index));
+                seq_aligns->Set().push_back(*iter);
+            }
         } else {
             seq_aligns.Reset(CreateEmptySeq_align_set(NULL));
         }
@@ -1525,9 +1522,8 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
             retval.swap(seqalign);
         } else {
 
-            for (TSeqAlignVector::size_type i = 0; i < retval.size(); ++i) {
-                retval[i]->Set().splice(retval[i]->Set().end(),
-                                       seqalign[i]->Set());
+            for (TSeqAlignVector::size_type i = 0; i < seqalign.size(); ++i) {
+                retval.push_back(seqalign[i]);
             }
 
         }

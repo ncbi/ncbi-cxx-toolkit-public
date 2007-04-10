@@ -152,7 +152,8 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           EBlastProgramType program,
                           const TSeqAlignVector& alignments,
                           TSearchMessages& messages,
-                          const TSeqLocInfoVector* query_masks = NULL);
+                          const TSeqLocInfoVector* query_masks = NULL,
+                          const EResultType result_type = ncbi::blast::eDatabaseSearch);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

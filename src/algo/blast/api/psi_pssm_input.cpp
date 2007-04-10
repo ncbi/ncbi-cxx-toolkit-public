@@ -257,36 +257,30 @@ CPsiBlastInputData::x_ExtractAlignmentData()
     // already processed
     unsigned int msa_index = kQueryIndex + 1;  
     
+    CSeq_id* last_sid=NULL;
+    bool qualifying_seqid = false;
+        
     // For each hit...
     ITERATE(CSeq_align_set::Tdata, itr, m_SeqAlignSet->Get()) {
-        _ASSERT((*itr)->GetSegs().IsDisc());
-        bool qualifying_seqid = false;
 
-        // for each HSP...
-        ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp_itr,
-                (*itr)->GetSegs().GetDisc().Get()) {
+        double evalue = GetLowestEvalue((*itr)->GetScore());
+        CSeq_id* current_sid = const_cast<CSeq_id*> (&(*itr)->GetSeq_id(1));
 
-            // Note: Std-seg (for tblastn results) can be converted to 
-            // Dense-seg, but this will need conversion from Dense-diag to 
-            // Dense-seg too
-            if ( !(*hsp_itr)->GetSegs().IsDenseg() ) {
-                string msg("Segment type ");
-                msg += NStr::IntToString((*hsp_itr)->GetSegs().Which());
-                msg += string(" not supported");
-                NCBI_THROW(CBlastException, eNotSupported, msg);
-            }
-
-            double evalue = GetLowestEvalue((*hsp_itr)->GetScore());
-            // ... below the e-value inclusion threshold
-            if (evalue < m_Opts.inclusion_ethresh) {
-                _ASSERT(msa_index < GetNumAlignedSequences() + 1);
-                x_ProcessDenseg((*hsp_itr)->GetSegs().GetDenseg(), msa_index);
-                qualifying_seqid = true;
-            }
-        }
-        if (qualifying_seqid) {
+        // Increment msa_index (if appropriate) after all CDense_seg for a given target 
+        // sequence have been processed.  Reset qualifying_seqid to false.
+        if (qualifying_seqid && (last_sid && !current_sid->Match(*last_sid))) {
             msa_index++;
+            qualifying_seqid = false;
         }
+
+        // ... below the e-value inclusion threshold
+        if (evalue < m_Opts.inclusion_ethresh) {
+            // DELME ?? _ASSERT(msa_index < GetNumAlignedSequences() + 1);
+            const CDense_seg& seg = (*itr)->GetSegs().GetDenseg();
+            x_ProcessDenseg(seg, msa_index);
+            qualifying_seqid = true;
+        }
+        last_sid = current_sid;
     }
 }
 

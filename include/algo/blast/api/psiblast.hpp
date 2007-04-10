@@ -65,7 +65,7 @@ class IQueryFactory;
 /// CRef<CPSIBlastOptionsHandle> options(new CPSIBlastOptionsHandle);
 ///
 /// CRef<CPsiBlast> psiblast(new CPsiBlast(query_factory, db, options));
-/// CRef<CSearchResults> alignment = psiblast->Run();
+/// CSearchResultSet alignment = psiblast->Run();
 /// ...
 ///
 /// /* Run PSI-BLAST starting with a PSSM */
@@ -118,7 +118,7 @@ public:
     CConstRef<objects::CPssmWithParameters> GetPssm() const;
 
     /// Run the PSI-BLAST engine for one iteration
-    CRef<CSearchResults> Run();
+    CSearchResultSet Run();
 
 private:
 
@@ -150,7 +150,6 @@ private:
  * engine [in]
  * @todo add overloaded function which takes a blast::SSeqLoc
  */
-NCBI_XBLAST_EXPORT
 CRef<objects::CPssmWithParameters> 
 PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
                                  CConstRef<objects::CSeq_align_set> alignment,

@@ -100,11 +100,9 @@ CSearchResults::HasAlignments() const
     if (m_Alignment.Empty()) {
         return false;
     }
-    // this are the results for a single query...
-    _ASSERT(m_Alignment->Get().size() == 1);    
-    // ... which are stored in a discontinuous Seq-align
-    _ASSERT(m_Alignment->Get().front()->GetSegs().IsDisc());
-    return m_Alignment->Get().front()->GetSegs().GetDisc().Get().size() != 0;
+
+    return m_Alignment->Get().size() != 0  &&
+         m_Alignment->Get().front()->IsSetSegs();
 }
 
 CConstRef<CSeq_id>
@@ -151,20 +149,23 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
     
     if (! (align_set.Empty() || align_set->Get().empty())) {
         // index 0 = query, index 1 = subject
-        const int query_index = 0;
+        const int kQueryIndex = 0;
         
-        if (align_set->Get().empty())
-            return retval;
+        CRef<CSeq_align> align = align_set->Get().front();
+
+        if (align->GetSegs().IsDisc() == true)
+        {
         
-        CRef<CSeq_align> first_disc_align = align_set->Get().front();
+            if (align->GetSegs().GetDisc().Get().empty())
+                return retval;
         
-        if (first_disc_align->GetSegs().GetDisc().Get().empty())
-            return retval;
-        
-        CRef<CSeq_align> first_align = 
-            first_disc_align->GetSegs().GetDisc().Get().front();
-        
-        retval.Reset(& first_align->GetSeq_id(query_index));
+            CRef<CSeq_align> first_align = align->GetSegs().GetDisc().Get().front();
+            retval.Reset(& align->GetSeq_id(kQueryIndex));
+        }
+        else
+        {
+            retval.Reset(& align->GetSeq_id(kQueryIndex));
+        }
     }
     
     return retval;
@@ -203,7 +204,6 @@ void CSearchResultSet::x_Init(vector< CConstRef<objects::CSeq_id> > queries,
 {
     _ASSERT(aligns.size() == ancillary_data.size());
     _ASSERT(aligns.size() == msg_vec.size());
-    _ASSERT(aligns.size() == queries.size());
     
     m_Results.resize(aligns.size());
     

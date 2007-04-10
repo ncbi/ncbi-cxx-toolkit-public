@@ -380,14 +380,7 @@ CPsiBlastAlignmentProcessor::operator()
 {
     output.clear();
 
-    // For each discontinuous Seq-align corresponding to each query-subj pair
-    // (i.e.: for each hit)
-    ITERATE(CSeq_align_set::Tdata, hit, alignments.Get()) {
-        _ASSERT((*hit)->GetSegs().IsDisc());
-
-        // For each HSP of this query-subj pair
-        ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp,
-                (*hit)->GetSegs().GetDisc().Get()) {
+    ITERATE(CSeq_align_set::Tdata, hsp, alignments.Get()) {
             
             // Look for HSP with score less than inclusion_ethresh
             double e = GetLowestEvalue((*hsp)->GetScore());
@@ -396,9 +389,7 @@ CPsiBlastAlignmentProcessor::operator()
                 if (output.empty() || !id->Match(*output.back()) ) {
                     output.push_back(id);
                 }
-                break;  // assumes lower valued scores are listed first
             }
-        }
     }
 }
 

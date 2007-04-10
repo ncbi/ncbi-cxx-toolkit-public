@@ -160,7 +160,6 @@ CLocalPssmSearch::SetQuery(CRef<objects::CPssmWithParameters> pssm)
 CSearchResultSet 
 CLocalPssmSearch::Run()
 {
-    CSearchResultSet retval;
 
     CConstRef<CPSIBlastOptionsHandle> psi_opts;
     psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*m_SearchOpts));
@@ -174,10 +173,8 @@ CLocalPssmSearch::Run()
 
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_Subject));
     CPsiBlast psiblast(query_factory, dbadapter, psi_opts);
-    CRef<CSearchResults> psi_results = psiblast.Run();
+    CSearchResultSet retval = psiblast.Run();
 
-    retval.AddResult(psi_results);
-    _ASSERT(retval.GetNumResults() == 1);
     return retval;
 }
 

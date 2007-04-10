@@ -190,8 +190,6 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
 
         ITERATE(CSeq_align_set::Tdata, itr, v[i]->Get()) {
 
-            const CSeq_align& hitlist_sa = **itr;
-
             // skip hits that map to the same query sequence
 
             if (list1_oid == list2_oid) {
@@ -201,10 +199,7 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
 
             // iterate over hits
 
-            ITERATE(CSeq_align_set::Tdata, sitr, 
-                                 hitlist_sa.GetSegs().GetDisc().Get()) {
-
-                const CSeq_align& s = **sitr;
+                const CSeq_align& s = **itr;
 
                 if (s.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg) {
                     // Dense-seg (1 hit)
@@ -256,7 +251,6 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
                                                        align_score, dendiag));
                     }
                 }
-            }
 
             list2_oid++;
         }

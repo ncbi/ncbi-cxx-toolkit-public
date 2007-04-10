@@ -535,10 +535,7 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
         if(ref_sas0->IsSet()) {
 
             const CSeq_align_set::Tdata &sas0 = ref_sas0->Get();
-            ITERATE(CSeq_align_set::Tdata, sa_iter0, sas0) {
-                const CSeq_align_set::Tdata &sas = 
-                    (*sa_iter0)->GetSegs().GetDisc().Get();
-                ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
+             ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
 
                     THitRef hitref (new CBlastTabular(**sa_iter, false));
                     phitrefs->push_back(hitref);
@@ -548,7 +545,6 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
                     seqdb.SeqidToOid(*id, oid);
                     id = seqdb.GetSeqIDs(oid).back();
                     hitref->SetSubjId(id);
-                }
             }
         }
     }
@@ -998,16 +994,12 @@ void CSplignApp::x_GetBl2SeqHits(
     ITERATE(TSeqAlignVector, ii, blast_output) {
         if((*ii)->IsSet()) {
             const CSeq_align_set::Tdata &sas0 = (*ii)->Get();
-            ITERATE(CSeq_align_set::Tdata, sa_iter0, sas0) {
-                const CSeq_align_set::Tdata &sas = 
-                    (*sa_iter0)->GetSegs().GetDisc().Get();
-                ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
+            ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
                     CRef<CBlastTabular> hitref (new CBlastTabular(**sa_iter));
                     if(hitref->GetQueryStrand() == false) {
                         hitref->FlipStrands();
                     }
                     phitrefs->push_back(hitref);
-                }
             }
         }
     }

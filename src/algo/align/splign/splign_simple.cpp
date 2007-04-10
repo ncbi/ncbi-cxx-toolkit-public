@@ -111,16 +111,12 @@ const CSplign::TResults& CSplignSimple::Run(void)
     ITERATE(TSeqAlignVector, ii, sav) {
         if((*ii)->IsSet()) {
             const CSeq_align_set::Tdata &sas0 = (*ii)->Get();
-            ITERATE(CSeq_align_set::Tdata, sa_iter0, sas0) {
-                const CSeq_align_set::Tdata &sas = 
-                    (*sa_iter0)->GetSegs().GetDisc().Get();
-                ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
+            ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
                     CSplign::THitRef hitref (new CSplign::THit(**sa_iter));
                     if(hitref->GetQueryStrand() == false) {
                         hitref->FlipStrands();
                     }
                     hitrefs.push_back(hitref);
-                }
             }
         }
     }
