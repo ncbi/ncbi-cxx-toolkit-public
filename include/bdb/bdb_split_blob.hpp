@@ -301,7 +301,8 @@ public:
     /// If you modified storage (like added new BLOBs to the storage)
     /// you MUST call save; otherwise some disposition information is lost.
     ///
-    void Save(CBDB_Transaction* trans=0);
+    void Save(CBDB_Transaction* trans=0, 
+              typename TDeMuxStore::ECompact compact_vectors /*= TDeMuxStore::eCompact*/);
 
 
     void SetVolumeCacheSize(unsigned int cache_size) 
@@ -394,9 +395,10 @@ protected:
     void LoadIdDeMux(TIdDeMux& de_mux, TDeMuxStore& dict_file);
 
     /// Store id demux (projection vectors) into the database file
-    void SaveIdDeMux(const TIdDeMux&    de_mux, 
-                     TDeMuxStore&       dict_file,
-                     CBDB_Transaction*  trans);
+    void SaveIdDeMux(const TIdDeMux&                    de_mux, 
+                     TDeMuxStore&                       dict_file,
+                     CBDB_Transaction*                  trans,
+                      typename TDeMuxStore::ECompact    compact_vectors);
 
     /// Select preferred page size for the specified slice
     unsigned GetPageSize(unsigned splice) const;
@@ -418,7 +420,8 @@ protected:
     vector<unsigned>        m_PageSizes;
     unsigned                m_VolumeCacheSize;
     CBDB_Env*               m_Env;
-    auto_ptr<TDeMuxStore>   m_DictFile;  ///< Split dictionary(id demux file)
+    auto_ptr<TDeMuxStore>   m_DictFile;     ///< Split dictionary(id demux file)
+    mutable TLock           m_DictFileLock; ///< id demux file locker
 
     auto_ptr<TIdDeMux>      m_IdDeMux;   ///< Id to coordinates mapper
     mutable CRWLock         m_IdDeMuxLock;
@@ -515,9 +518,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int     id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        if (trans) {
-            dbp.db->SetTransaction(trans);
-        }
+        dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         return dbp.db->Insert(data, size);
     }}
@@ -542,9 +543,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int     id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        if (trans) {
-            dbp.db->SetTransaction(trans);
-        }
+        dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         return dbp.db->UpdateInsert(data, size);
     }}
@@ -574,9 +573,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        if (trans) {
-            dbp.db->SetTransaction(trans);
-        }
+        dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         return dbp.db->Delete(on_error);
     }}
@@ -599,9 +596,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CreateReader(unsigned          id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        if (trans) {
-            dbp.db->SetTransaction(trans);
-        }
+        dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         if (dbp.db->Fetch() != eBDB_Ok) {
             return 0;
@@ -638,9 +633,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        if (trans) {
-            dbp.db->SetTransaction(trans);
-        }
+        dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         return dbp.db->Fetch(buf, buf_size, allow_realloc);
     }}
@@ -666,9 +659,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
     {{
         TLockGuard lg(*(dbp.lock));
 
-        if (trans) {
-            dbp.db->SetTransaction(trans);
-        }
+        dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         EBDB_ErrCode e = dbp.db->ReadRealloc(buffer);
         return e;
@@ -694,9 +685,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        if (trans) {
-            dbp.db.SetTransaction(trans);
-        }
+        dbp.db.SetTransaction(trans);
         dbp.db->id = id;
         EBDB_ErrCode e = dbp.db->Fetch();
         if (e != eBDB_Ok) {
@@ -719,8 +708,13 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Open(const string&     storage_name,
     m_OpenMode    = open_mode;
     m_DB_Type     = db_type;
 
+    {{
+    TLockGuard     lg1(m_DictFileLock);
+    CReadLockGuard lg2(m_IdDeMuxLock);
+
     OpenDict();
     LoadIdDeMux(*m_IdDeMux, *m_DictFile);
+    }}
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -768,21 +762,27 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux,
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(CBDB_Transaction* trans)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(
+                                        CBDB_Transaction*  trans,
+                           typename TDeMuxStore::ECompact  compact_vectors)
 {
-    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, trans);
+    TLockGuard     lg1(m_DictFileLock);
+    CReadLockGuard lg2(m_IdDeMuxLock);
+
+    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, trans, compact);
 }
 
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux, 
-                                                 TDeMuxStore&      dict_file,
-                                                 CBDB_Transaction* trans)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(
+                                    const TIdDeMux&      de_mux, 
+                                    TDeMuxStore&         dict_file,
+                                    CBDB_Transaction*    trans,
+                      typename TDeMuxStore::ECompact     compact_vectors)
 {
-    if (trans) {
-        dict_file.SetTransaction(trans);
-    }
+    dict_file.SetTransaction(trans);
+
     size_t N = de_mux.GetN();
     for (size_t i = 0; i < N; ++i) {
         const typename TIdDeMux::TDimVector& dv = de_mux.GetDimVector(i);
@@ -795,7 +795,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux,
             if (!bv) {
                 dict_file.Delete(CBDB_RawFile::eIgnoreError);
             } else {
-                dict_file.WriteVector(*bv, TDeMuxStore::eCompact);
+                dict_file.WriteVector(*bv, compact_vectors);
             }
 
         } // for j
@@ -878,6 +878,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
         }
     }
 
+    bool needs_save = false;
+
     {{
     InitDbMutex(lp);
     TLockGuard lg(*(lp->lock));
@@ -917,8 +919,13 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
         }
 
         lp->db->Open(fname.c_str(), m_OpenMode);
+        needs_save = true;
     }
     }}
+
+    if (needs_save) { // new split volume: checkpoint the changes
+        this->Save(trans, TDeMuxStore::eNoCompact); // quick dump no compression
+    }
 
     return *lp;
 }
