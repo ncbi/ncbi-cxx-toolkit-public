@@ -13,6 +13,7 @@ BEGIN
 
 use lib $ScriptDir;
 
+use NCBI::SVN::SwitchMap;
 use NCBI::SVN::MultiSwitch;
 
 use IPC::Open2;
@@ -35,7 +36,7 @@ EOF
 
 die "$ScriptName\: must be in a working copy directory.\n" unless -d '.svn';
 
-NCBI::SVN::MultiSwitch->
-    new(MyName => $ScriptName, MapFileName => $ARGV[0])->SwitchUsingMap();
+NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->SwitchUsingMap(
+    NCBI::SVN::SwitchMap->new(MyName => $ScriptName, MapFileName => $ARGV[0]));
 
 exit 0

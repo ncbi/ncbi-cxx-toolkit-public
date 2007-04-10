@@ -14,6 +14,7 @@ BEGIN
 use lib $ScriptDir;
 
 use NCBI::SVN::Update;
+use NCBI::SVN::SwitchMap;
 use NCBI::SVN::MultiSwitch;
 
 use File::Spec;
@@ -343,16 +344,17 @@ if ($RepositoryURL)
         "$RepositoryURL/trunk/c++", $BuildDir)
 }
 
-my $MultiSwitch;
+my $SwitchMap;
 
-$MultiSwitch = NCBI::SVN::MultiSwitch->new(MyName => $ScriptName,
+$SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $ScriptName,
     MapFileName => $BranchConfFile) if $BranchConfFile;
 
 chdir $BuildDir;
 
 $Update->UpdateDirList(@Paths);
 
-$MultiSwitch->SwitchUsingMap() if $MultiSwitch;
+NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->
+    SwitchUsingMap($SwitchMap) if $SwitchMap;
 
 exit 0 if $^O eq 'MSWin32';
 

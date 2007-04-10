@@ -10,59 +10,28 @@ use IPC::Open2;
 
 use base qw(NCBI::SVN::Base);
 
-sub new
-{
-    my $Self = NCBI::SVN::Base::new(@_);
-
-    my ($MapFileName, $WorkingDir) = @$Self{qw(MapFileName WorkingDir)};
-
-    confess 'MapFileName parameter is missing' unless $MapFileName;
-
-    my @SwitchPlan;
-
-    open FILE, '<', $MapFileName or die "$Self->{MyName}: $MapFileName\: $!\n";
-
-    while (<FILE>)
-    {
-        s/[\r\n]+$//os;
-
-        my ($FromDir, $ToDir) = split;
-
-        map {s/[;<>|&\\]+|\/{2,}/\//gos} $FromDir, $ToDir;
-        m/(?:^|\/)\.\.(?:\/|$)/o &&
-            die "$Self->{MyName}: $MapFileName\:$.: path '$_' contains '..'\n"
-            for $FromDir, $ToDir;
-
-        $FromDir = "$WorkingDir/$FromDir" if $WorkingDir;
-
-        push @SwitchPlan, [$FromDir, $ToDir]
-    }
-
-    close FILE;
-
-    $Self->{WorkingDir} ||= '.';
-    $Self->{SwitchPlan} = \@SwitchPlan;
-
-    return $Self
-}
-
 sub SwitchUsingMap
 {
-    my ($Self) = @_;
+    my ($Self, $SwitchMap, $WorkingDir) = @_;
+
+    confess 'SwitchMap parameter is missing' unless $SwitchMap;
+
+    $WorkingDir ||= '.';
+    $WorkingDir =~ s/^(?:\.\/)+//o;
 
     my $Repos;
-    my %AlreadySwitched;
+    my @AlreadySwitched;
 
     my ($ReadHandle, $WriteHandle);
 
     my $PID = open2($ReadHandle, $WriteHandle,
-        'svn', 'stat', '--non-interactive', $Self->{WorkingDir});
+        'svn', 'stat', '--non-interactive', $WorkingDir);
 
     close($WriteHandle);
 
     while (<$ReadHandle>)
     {
-        $AlreadySwitched{$1} = undef if m/^....S..(.*?)[\r\n]*$/os
+        push @AlreadySwitched, $1 if m/^....S..(.*?)[\r\n]*$/os
     }
 
     close($ReadHandle);
@@ -70,10 +39,12 @@ sub SwitchUsingMap
     waitpid $PID, 0;
 
     $PID = open2($ReadHandle, $WriteHandle, 'svn', 'info',
-        '--non-interactive', $Self->{WorkingDir}, keys %AlreadySwitched);
+        '--non-interactive', $WorkingDir, @AlreadySwitched);
 
     close($WriteHandle);
 
+    my $WorkingDirURL;
+    my %AlreadySwitchedURL;
     my $Path;
 
     while (<$ReadHandle>)
@@ -84,7 +55,17 @@ sub SwitchUsingMap
         }
         elsif (m/^URL: (.*?)[\r\n]*$/os)
         {
-            $AlreadySwitched{$Path} = $1
+            if ($Path eq $WorkingDir)
+            {
+                $WorkingDirURL = $1
+            }
+            else
+            {
+                substr($Path, 0, length($WorkingDir) + 1, '')
+                    eq "$WorkingDir/" or die if $WorkingDir ne '.';
+
+                $AlreadySwitchedURL{$Path} = $1
+            }
         }
         elsif (!$Repos && m/^Repository Root: (.*?)[\r\n]*$/os)
         {
@@ -98,15 +79,14 @@ sub SwitchUsingMap
 
     die "$Self->{MyName}\: unable to detect repository URL.\n" unless $Repos;
 
-    my $WorkingDirURL = delete $AlreadySwitched{$Self->{WorkingDir}} or die;
-
-    for (@{$Self->{SwitchPlan}})
+    for (@{$SwitchMap->GetSwitchPlan()})
     {
         my ($FromDir, $ToDir) = @$_;
 
+        my $AlreadySwitchedURL = delete $AlreadySwitchedURL{$FromDir};
         my $URL = "$Repos/$ToDir";
 
-        if ($AlreadySwitched{$FromDir} && $AlreadySwitched{$FromDir} eq $URL)
+        if ($AlreadySwitchedURL && $AlreadySwitchedURL eq $URL)
         {
             print "Skipping '$FromDir': already switched.\n"
         }
@@ -114,17 +94,16 @@ sub SwitchUsingMap
         {
             print "Switching '$FromDir' to '$ToDir'...\n";
 
-            $Self->RunSubversion('switch', $URL, $FromDir)
+            $Self->RunSubversion('switch', $URL, "$WorkingDir/$FromDir")
         }
-
-        delete $AlreadySwitched{$FromDir}
     }
 
-    for my $Dir (keys %AlreadySwitched)
+    for my $Dir (keys %AlreadySwitchedURL)
     {
         print "Unswitching '$Dir'...\n";
 
-        $Self->RunSubversion('switch', "$WorkingDirURL/$Dir", $Dir)
+        $Self->RunSubversion('switch',
+            "$WorkingDirURL/$Dir", "$WorkingDir/$Dir")
     }
 }
 
