@@ -1357,7 +1357,6 @@ extern const STimeout* SOCK_SetSelectInternalRestartTimeout(const STimeout* t)
 extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 {
     unsigned int x_id = ++s_ID_Counter;
-    int fd[2];
 
     *trigger = 0;
     /* initialize internals */
@@ -1366,44 +1365,49 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 #ifdef NCBI_CXX_TOOLKIT
 
 #  ifdef NCBI_OS_UNIX
+    {{
+        int fd[2];
 
-    if (pipe(fd) < 0) {
-        int x_errno = errno;
-        CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("TRIGGER#%u[?]: [TRIGGER::Create] "
-                            " Cannot create pipe", x_id));
-        return eIO_Closed;
-    }
+        if (pipe(fd) < 0) {
+            int x_errno = errno;
+            CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
+                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
+                                " Cannot create pipe", x_id));
+            return eIO_Closed;
+        }
 
-    if (!s_SetNonblock(fd[0], 1/*true*/) || !s_SetNonblock(fd[0], 1/*true*/)) {
-        int x_errno = errno;
-        CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                           ("TRIGGER#%u[?]: [TRIGGER::Create] "
-                            " Failed to set non-blocking mode", x_id));
-    }
+        if (!s_SetNonblock(fd[0], 1/*true*/)  ||
+            !s_SetNonblock(fd[0], 1/*true*/)) {
+            int x_errno = errno;
+            CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
+                                " Failed to set non-blocking mode", x_id));
+        }
 
-    if (!s_SetCloexec(fd[0], 1/*true*/) || !s_SetCloexec(fd[1], 1/*true*/)) {
-        int x_errno = errno;
-        CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                           ("TRIGGER#%u[?]: [TRIGGER::Create] "
-                            " Failed to set close-on-exec", x_id));
-    }
+        if (!s_SetCloexec(fd[0], 1/*true*/)  ||
+            !s_SetCloexec(fd[1], 1/*true*/)) {
+            int x_errno = errno;
+            CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
+                                " Failed to set close-on-exec", x_id));
+        }
 
-    if (!(*trigger = (TRIGGER) calloc(1, sizeof(*trigger)))) {
-        close(fd[0]);
-        close(fd[1]);
-        return eIO_Unknown;
-    }
-    (*trigger)->fd   = fd[0];
-    (*trigger)->id   = x_id;
-    (*trigger)->type = eTrigger;
-    (*trigger)->log  = log;
-    (*trigger)->out  = fd[1];
+        if (!(*trigger = (TRIGGER) calloc(1, sizeof(*trigger)))) {
+            close(fd[0]);
+            close(fd[1]);
+            return eIO_Unknown;
+        }
+        (*trigger)->fd   = fd[0];
+        (*trigger)->id   = x_id;
+        (*trigger)->type = eTrigger;
+        (*trigger)->log  = log;
+        (*trigger)->out  = fd[1];
 
-    /* statistics & logging */
-    if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
-        CORE_TRACEF(("TRIGGER#%u[%u, %u]: Ready", x_id, fd[0], fd[1]));
-    }
+        /* statistics & logging */
+        if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
+            CORE_TRACEF(("TRIGGER#%u[%u, %u]: Ready", x_id, fd[0], fd[1]));
+        }
+    }}
 
     return eIO_Success;
 
@@ -3472,7 +3476,7 @@ extern POLLABLE POLLABLE_FromSOCK(SOCK sock)
 
 extern TRIGGER POLLABLE_ToTRIGGER(POLLABLE poll)
 {
-    TRIGGER trigger = (TRIGGER) trigger;
+    TRIGGER trigger = (TRIGGER) poll;
     return !trigger  ||  trigger->type == eTrigger ? trigger : 0;
 }
 
