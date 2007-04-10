@@ -52,16 +52,6 @@ CBDB_Transaction::CBDB_Transaction(CBDB_Env&            env,
     _ASSERT(m_TSync != eEnvDefault);
 }
 
-CBDB_Transaction::CBDB_Transaction(CBDB_Env&            env, 
-                                   EKeepFileAssociation assoc)
- : m_Env(env),
-   m_Assoc(assoc),
-   m_Txn(0)
-{
-    m_TSync = m_Env.GetTransactionSync();
-    _ASSERT(m_TSync != eEnvDefault);
-}
-
 
 CBDB_Transaction::~CBDB_Transaction()
 {

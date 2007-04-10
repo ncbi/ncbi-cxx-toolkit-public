@@ -88,9 +88,6 @@ public:
                      ETransSync            tsync = eTransSync,
                      EKeepFileAssociation  assoc = eFullAssociation);
 
-    /// Construct transaction using environment syncronicity settings
-    CBDB_Transaction(CBDB_Env&             env, 
-                     EKeepFileAssociation  assoc = eFullAssociation);
 
 
     /// Non-commited transaction is aborted upon the destruction
