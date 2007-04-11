@@ -741,10 +741,6 @@ if test "$with_mt" = "yes" ; then
    esac
    LIBS="$LIBS $THREAD_LIBS"
    case "$host_os:$compiler" in
-     solaris2.?:WorkShop | solaris2.?:KCC )
-        NCBIATOMIC_LIB=xncbi
-        ncbicntr="ncbicntr_workshop ncbiatomic_workshop"
-        ;;
      solaris2.??:* | solaris*:GCC | *:Compaq | irix* | aix* | darwin* | cygwin*)
         NCBIATOMIC_LIB=
         ;;
@@ -753,6 +749,10 @@ if test "$with_mt" = "yes" ; then
            i?86 | powerpc* | ppc* | x86_64 | sparc* ) NCBIATOMIC_LIB= ;;
            * ) NCBIATOMIC_LIB=xncbi ;;
         esac
+        ;;
+     *:WorkShop* | solaris*:KCC )
+        NCBIATOMIC_LIB=xncbi
+        ncbicntr="ncbicntr_workshop ncbiatomic_workshop"
         ;;
      * ) NCBIATOMIC_LIB=xncbi ;;
    esac

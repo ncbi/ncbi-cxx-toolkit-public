@@ -49,7 +49,11 @@
 #  ifdef __cplusplus
      extern "C"
 #  endif
-#elif defined(__cplusplus)  ||  __STDC_VERSION__ >= 199901
+#elif defined(__cplusplus)
+     inline
+#elif defined(NCBI_COMPILER_WORKSHOP)
+     static
+#elif __STDC_VERSION__ >= 199901
      inline
 #elif defined(__GNUC__)
      __inline__
