@@ -3,8 +3,8 @@
 APP = ctl_sp_databases_ftds64
 SRC = ctl_sp_databases_ftds64 dbapi_driver_sample_base_driver
 
-LIB  = dbapi$(STATIC) ncbi_xdbapi_$(ftds64)$(STATIC) ct_$(ftds64)$(STATIC) tds_$(ftds64)$(STATIC) dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
-LIBS = $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
+LIB  = dbapi$(STATIC) ncbi_xdbapi_$(ftds64)$(STATIC) $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
+LIBS = $(FTDS64_CTLIB_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 
 CPPFLAGS = -DFTDS_IN_USE $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
