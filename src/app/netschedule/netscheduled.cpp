@@ -875,6 +875,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
     m_BatchSubmitVector.clear();
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
     m_Server->GetQueueDB()->TransactionCheckPoint();
+    WriteMsg("OK:");
 }
 
 CNetScheduleHandler::SArgument CNetScheduleHandler::sm_BatchArgs[] = {
