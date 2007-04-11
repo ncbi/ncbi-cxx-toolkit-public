@@ -257,30 +257,41 @@ unsigned int CGuideAlignment_Base::GetSlaveCDRow() const
 
 const CCdCore* CGuideAlignment_Base::GetCommonCD() const
 {
-    unsigned int n = m_chain1.size();
-    return (n > 0) ? m_chain1[n-1].cd : NULL;
+    unsigned int n = m_chain1.size(), m = m_chain2.size();
+    const CCdCore* commonCd = (n > 0 && m>0 && m_chain1[n-1].cd == m_chain2[m-1].cd) ? m_chain1[n-1].cd : NULL;
+    return commonCd;
 }
 string CGuideAlignment_Base::GetCommonCDAcc() const
 {
-    unsigned int n = m_chain1.size();
-    const CCdCore* cd = (n > 0) ? m_chain1[n-1].cd : NULL;
-    return (cd) ? cd->GetAccession() : "";
+    unsigned int n = m_chain1.size(), m = m_chain2.size();
+    const CCdCore* commonCd = (n > 0 && m>0 && m_chain1[n-1].cd == m_chain2[m-1].cd) ? m_chain1[n-1].cd : NULL;
+    return (commonCd) ? commonCd->GetAccession() : kEmptyStr;
 }
-string CGuideAlignment_Base::GetCommonRowIdStr() const
+
+string CGuideAlignment_Base::GetCommonCDRowIdStr(bool onMaster) const
 {
     CRef< CSeq_id > seqId;
-    unsigned int n = m_chain1.size();
     string idStr = kEmptyStr;
-    if (n > 0 && m_chain1[n-1].cd->GetSeqIDFromAlignment(m_chain1[n-1].row, seqId)) {
-        idStr = GetSeqIDStr(seqId);
+    unsigned int n = (onMaster) ? m_chain1.size() : m_chain2.size();
+    const CCdCore* commonCd = GetCommonCD();
+    if (commonCd && n > 0) {
+        if (onMaster && m_chain1[n-1].cd->GetSeqIDFromAlignment(m_chain1[n-1].row, seqId)) {
+            idStr = GetSeqIDStr(seqId);
+        } else if (!onMaster && m_chain2[n-1].cd->GetSeqIDFromAlignment(m_chain2[n-1].row, seqId)) {
+            idStr = GetSeqIDStr(seqId);
+        }
     }
     return idStr;
 }
 
-unsigned int CGuideAlignment_Base::GetCommonCDRow() const
+unsigned int CGuideAlignment_Base::GetCommonCDRow(bool onMaster) const
 {
-    unsigned int n = m_chain1.size();
-    return (n > 0) ? m_chain1[n-1].row : kMax_UInt;
+    unsigned int result = kMax_UInt, n = (onMaster) ? m_chain1.size() : m_chain2.size();
+    const CCdCore* commonCd = GetCommonCD();
+    if (commonCd && n > 0) {
+        result = (onMaster) ? m_chain1[n-1].row : m_chain2[n-1].row;
+    }
+    return result;
 }
 
 string CGuideAlignment_Base::ToString() const
@@ -288,16 +299,25 @@ string CGuideAlignment_Base::ToString() const
     string s;
     string masterInfo = "Master CD " + GetMasterCDAcc() + "; row " + NStr::UIntToString(GetMasterCDRow()) + " (" + GetMasterRowIdStr() + ")";
     string slaveInfo  = "Slave  CD " + GetSlaveCDAcc() + "; row " + NStr::UIntToString(GetSlaveCDRow()) + " (" + GetSlaveRowIdStr() + ")";
-    string commonInfo = "Common CD " + GetCommonCDAcc() + "; row " + NStr::UIntToString(GetCommonCDRow()) + " (" + GetCommonRowIdStr() + ")";
+    string commonInfo;
+    
+    if (GetCommonCD()) {
+        commonInfo = "Common CD " + GetCommonCDAcc() + "; master row " + NStr::UIntToString(GetCommonCDRow(true)) + " (" + GetCommonCDRowIdStr(true) + ")\n";
+        commonInfo += "Common CD " + GetCommonCDAcc() + "; slave row " + NStr::UIntToString(GetCommonCDRow(false)) + " (" + GetCommonCDRowIdStr(false) + ")";
+    } else {
+        commonInfo = "No common CD\n";
+    }
 
     s = masterInfo + "\n" + slaveInfo + "\n" + commonInfo + "\n";
-    if (m_isOK) {
-        const BlockModelPair& bmp = GetGuide();
-        s += "master blocks:\n" + bmp.getMaster().toString();
-        s += "slave  blocks:\n" + bmp.getSlave().toString();
-    } else {
-        s += "    --> guide alignment not OK!\n";
+
+    if (!m_isOK) {
+        s += "    --> warning:  guide alignment is not marked 'OK'.\n";
     }
+
+    const BlockModelPair& bmp = GetGuide();
+    s += "master blocks:\n" + bmp.getMaster().toString();
+    s += "slave  blocks:\n" + bmp.getSlave().toString();
+
     return s;
 }
 
