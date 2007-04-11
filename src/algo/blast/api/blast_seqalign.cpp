@@ -1166,8 +1166,8 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
 /// @param query_length Length of query sequence [in]
 /// @param subject_length Length of subject sequence [in]
 /// @param is_ooframe Was this a search with out-of-frame gapping? [in]
-/// @param gi_list List of GIs for the subject sequence.
-/// @return Resulting Seq-align object. 
+/// @param gi_list List of GIs for the subject sequence [in]
+/// @param sa_vector Resulting Seq-align object [in|out] 
 void
 BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
                        const CSeq_id *query_id, const CSeq_id *subject_id, 
