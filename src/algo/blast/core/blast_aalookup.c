@@ -1078,8 +1078,7 @@ static void s_CompressedAddNeighboringWords(
     }
 }
 
-/** Complete the construction of a compressed protein
- * lookup table
+/** Complete the construction of a compressed protein lookup table
  * @param lookup The lookup table [in][out]
  * @return Always 0
  */
@@ -1087,7 +1086,10 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
 {
     Int4 i;
     Int4 longest_chain = 0;
+    Int4 count;
     PV_ARRAY_TYPE *pv;
+    Int4 pv_array_bts;
+    const Int4 kTargetPVBytes = 262144;
 #ifdef LOOKUP_VERBOSE
 #define HISTSIZE 30
     Int4 histogram[HISTSIZE] = {0};
@@ -1095,19 +1097,37 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
     Int4 num_overflows = 0;
 #endif
     
+    /* count the number of nonempty cells in the backbone */
+
+    for (i = count = 0; i < lookup->backbone_size; i++) {
+        if (lookup->backbone[i].num_used)
+            count++;
+    }
+
+    /* Compress the PV array if it would be large. Compress it
+       more if the backbone is sparsely populated. Do not compress
+       if the PV array is small enough already or the backbone is
+       mostly full */
+
+    pv_array_bts = PV_ARRAY_BTS;
+    if (count <= 0.05 * lookup->backbone_size) {
+        pv_array_bts += ilog2(lookup->backbone_size / (8 * kTargetPVBytes));
+    }
+
     pv = lookup->pv = (PV_ARRAY_TYPE *)calloc(
-                              (lookup->backbone_size >> PV_ARRAY_BTS) + 1,
+                              (lookup->backbone_size >> pv_array_bts) + 1,
                               sizeof(PV_ARRAY_TYPE));
+    lookup->pv_array_bts = pv_array_bts;
     ASSERT(pv != NULL);
     
     /* compute the longest chain size and initialize the PV array */
 
     for (i = 0; i < lookup->backbone_size; i++) {
-        Int4 count = lookup->backbone[i].num_used;
+        count = lookup->backbone[i].num_used;
 
         if (count > 0) {
             /* set the corresponding bit in the pv_array */
-            PV_SET(pv, i, PV_ARRAY_BTS);
+            PV_SET(pv, i, pv_array_bts);
             longest_chain = MAX(count, longest_chain);
             
 #ifdef LOOKUP_VERBOSE
@@ -1137,6 +1157,8 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
     printf("exact matches: %d\n", lookup->exact_matches);
     printf("neighbor matches: %d\n", lookup->neighbor_matches);
     printf("banks allocated: %d\n", lookup->curr_overflow_bank + 1);
+    printf("PV array: %d entries per bit\n", 1 << (lookup->pv_array_bts -
+                                                   PV_ARRAY_BTS));
     printf("Lookup table histogram:\n");
     for (i = 0; i < HISTSIZE; i++) {
         printf("%d\t%d\n", i, histogram[i]);

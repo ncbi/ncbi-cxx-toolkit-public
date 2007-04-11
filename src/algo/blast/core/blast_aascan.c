@@ -159,6 +159,7 @@ static Int4 s_BlastCompressedAaScanSubject(
     Int4 numhits = 0;     /* number of hits found for one subject offset */
     Int4 totalhits = 0;         /* cumulative number of hits found */
     PV_ARRAY_TYPE *pv;
+    Int4 pv_array_bts;
     BlastCompressedAaLookupTable *lookup;
 
     Int4 word_length;
@@ -178,6 +179,7 @@ static Int4 s_BlastCompressedAaScanSubject(
     s_first = subject->sequence + *offset;
     s_last = subject->sequence + subject->length - word_length;
     pv = lookup->pv;
+    pv_array_bts = lookup->pv_array_bts;
 
     /* prime the index */
     index = s_ComputeCompressedIndex(word_length - 1, s_first,
@@ -218,14 +220,13 @@ static Int4 s_BlastCompressedAaScanSubject(
       
 
        /* if there are hits */
-       if (PV_TEST(pv, index, PV_ARRAY_BTS)) {
+       if (PV_TEST(pv, index, pv_array_bts)) {
           Int4 s_off = s - subject->sequence;
 
           CompressedLookupBackboneCell* backbone_cell = 
                                         lookup->backbone + index;
          
           numhits = backbone_cell->num_used;
-          ASSERT(numhits != 0);
          
           /* and there is enough space in the destination array */
           if (numhits <= (array_size - totalhits)) {

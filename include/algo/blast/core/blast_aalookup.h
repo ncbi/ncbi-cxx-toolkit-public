@@ -217,6 +217,7 @@ typedef struct BlastCompressedAaLookupTable {
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
+    Int4 pv_array_bts;     /* bit-to-shift value for PV array indicies */
     Uint1* compress_table;  /**< translation table (protein->compressed) */
     Int4* scaled_compress_table;  /**< scaled version of compress_table */
     void *scansub_callback;/**< function for scanning subject sequences */
