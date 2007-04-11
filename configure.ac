@@ -2776,6 +2776,23 @@ if test "$ncbi_cv_decl_inaddr_none" != yes; then
              [Define to 0xffffffff if your operating system doesn't.])
 fi
 
+AC_CACHE_CHECK([whether unaligned reads are permissible],
+               ncbi_cv_sys_unaligned_reads,
+   [AC_RUN_IFELSE([AC_LANG_PROGRAM([[ #include <stdio.h> ]],
+       [[ unsigned int a[2] = { 0x01234567, 0x89abcdef };
+          fprintf(stderr, "%x\n", *(unsigned int*)((char*)a + 1)); ]])],
+       [ncbi_cv_sys_unaligned_reads=yes],
+       [ncbi_cv_sys_unaligned_reads=no],
+       [case "$host_cpu" in
+          i?86|x86_64|powerpc*|ppc*) ncbi_cv_sys_unaligned_reads=yes ;;
+          *)                         ncbi_cv_sys_unaligned_reads=no  ;;
+        esac])])
+if test "$ncbi_cv_sys_unaligned_reads" = yes; then
+   AC_DEFINE(HAVE_UNALIGNED_READS, 1,
+             [Define to 1 if your system permits reading integers from
+              unaligned addresses.])
+fi
+
 ### Check for the availability of other packages
 ### --------------------------------------------
 
