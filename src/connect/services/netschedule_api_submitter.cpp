@@ -247,7 +247,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 
     //m_Sock->DisableOSSendDelay(true);
 
-    conn.WriteBuf("ENDS", 5); //???? do we need to wait for the last reponse?
+    m_API->SendCmdWaitResponse(conn, "ENDS");
+    //conn.WriteBuf("ENDS", 5); //???? do we need to wait for the last reponse?
 }
 
 struct SWaitJobPred {
