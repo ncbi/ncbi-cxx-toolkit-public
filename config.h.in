@@ -532,6 +532,10 @@
 /* Define to 1 if the system has the type `uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
+/* Define to 1 if your system permits reading integers from unaligned
+   addresses. */
+#undef HAVE_UNALIGNED_READS
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
