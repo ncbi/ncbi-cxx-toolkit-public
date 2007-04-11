@@ -79,8 +79,6 @@ CQuerySplitter::x_ExtractCScopesAndMasks()
         m_UserSpecifiedMasks = objmgr_qf->ExtractUserSpecifiedMasks();
         _ASSERT(m_Scopes.size() == num_queries);
     } else {
-        ERR_POST(Warning << "Query splitting is not supported unless the "
-                 "object manager interfaces are used");
         m_NumChunks = 1;
         m_UserSpecifiedMasks.assign(num_queries, TMaskedQueryRegions());
     }
