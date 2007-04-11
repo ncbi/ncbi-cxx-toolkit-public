@@ -32,6 +32,7 @@
 #define STACK_GROWS_DOWN           1
 #define HAVE_IOS_REGISTER_CALLBACK 1
 #define HAVE_IOS_XALLOC            1
+#define HAVE_UNALIGNED_READS       1
 
 #define SIZEOF___INT64      8
 #define SIZEOF_CHAR         1
