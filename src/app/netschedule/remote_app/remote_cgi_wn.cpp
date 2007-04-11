@@ -175,14 +175,17 @@ public:
 
     int Do(CWorkerNodeJobContext& context) 
     {
+        CFastLocalTime lt;
         if (context.IsLogRequested()) {
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
+            LOG_POST( lt.GetLocalTime().AsString() 
                       << ": " << context.GetJobKey() + " " + context.GetJobInput());
         }
 
         string tmp_path = m_Params.GetTempDir();
         if (!tmp_path.empty())
-            tmp_path += CDirEntry::GetPathSeparator() + context.GetJobKey();
+            tmp_path += CDirEntry::GetPathSeparator() + 
+                context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
+                NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
 
         CCgiRequest request;
         request.Deserialize(context.GetIStream(), CCgiRequest::fIgnoreQueryString |
@@ -237,8 +240,8 @@ public:
         }
         if (context.IsLogRequested()) {
             if (err.pcount() > 0 )
-                LOG_POST( CTime(CTime::eCurrent).AsString() << ": " << err.rdbuf());
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
+                LOG_POST( lt.GetLocalTime().AsString() << ": " << err.rdbuf());
+            LOG_POST( lt.GetLocalTime().AsString() 
                       << ": Job " << context.GetJobKey() + " " + context.GetJobOutput()
                       << stat << " Retcode: " << ret);
         }

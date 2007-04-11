@@ -72,14 +72,17 @@ public:
 
     int Do(CWorkerNodeJobContext& context) 
     {
+        CFastLocalTime lt;
         if (context.IsLogRequested()) {
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
+            LOG_POST( lt.GetLocalTime().AsString() 
                       << ": " << context.GetJobKey() << " is received.");
         }
 
         string tmp_path = m_Params.GetTempDir();
         if (!tmp_path.empty())
-            tmp_path += CDirEntry::GetPathSeparator() + context.GetJobKey();
+            tmp_path += CDirEntry::GetPathSeparator() + 
+                context.GetQueueName() + "_"  + context.GetJobKey() + "_" +
+                NStr::UIntToString((unsigned int)lt.GetLocalTime().GetTimeT());
 
         IRemoteAppRequest_Executer* request = &m_RequestMB;
         IRemoteAppResult_Executer* result = &m_ResultMB;
@@ -152,7 +155,7 @@ public:
             }
         }
         if (context.IsLogRequested()) {
-            LOG_POST( CTime(CTime::eCurrent).AsString() 
+            LOG_POST( lt.GetLocalTime().AsString() 
                       << ": Job " << context.GetJobKey() << stat << " ExitCode: " << ret);
             result->Log(context.GetJobKey());
         }
