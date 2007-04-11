@@ -317,24 +317,17 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         }
 
         // actually do the alignment(s)
-        blast::CSearchResultSet results = blastEngine->Run();
-//        string err;
-//        WriteASNToFile("Seq-align-set.txt", results[0].GetSeqAlign().GetObject(), false, &err);
+        blast::CSearchResultSet results(blastEngine->Run());
 
         // parse the alignments
-        int total = results.GetNumResults();
-        if (total != toRealign.size())  
+        if (results.size() != toRealign.size())
         {
             ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - did not get one result alignment per input sequence");
             return;
         }
 
-        CSeq_align_set::Tdata::const_iterator r, re = results[0].GetSeqAlign()->Get().end();
         localID = 0;
-
-        for (int index=0; index<total; ++index, ++localID) {
-
-            r = results[index].GetSeqAlign().Get().begin();
+        for (unsigned int i=0; i<results.size(); ++i, ++localID) {
 
             // create new alignment structure
             BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
@@ -347,13 +340,17 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             newAlignment->SetRowDouble(1, kMax_Double);
 
             // check for valid or empty alignment
-            if (!(*r)->IsSetDim() ) {
+            if (!results[i].HasAlignments()) {
                 WARNINGMSG("BLAST did not find a significant alignment for "
                     << dependentTitle << " with " << (usePSSM ? string("PSSM") : master->identifier->ToString()));
             } else {
 
-                // unpack Seq-align; use first one, which assumes blast returns the highest scoring alignment first
-                const CSeq_align& sa = *r;
+                string err;
+                WriteASNToFile("Seq-align-set.txt", results[0].GetSeqAlign().GetObject(), false, &err);
+
+                // get Seq-align; use first one for this result, which assumes blast returns the highest scoring alignment first
+                const CSeq_align& sa = results[i].GetSeqAlign()->Get().front().GetObject();
+
                 if (!sa.IsSetDim() || sa.GetDim() != 2 || sa.GetType() != CSeq_align::eType_partial) {
                     ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment not in expected format (dim 2, partial)");
                 } else if (sa.GetSegs().IsDenseg()) {
