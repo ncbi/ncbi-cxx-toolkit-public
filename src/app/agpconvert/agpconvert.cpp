@@ -558,6 +558,7 @@ int CAgpconvertApplication::Run(void)
             if (NStr::Find(id_str, "|") != NPOS) {
                 if (args["fasta_id"]) {
                     // parse the id as a fasta id
+                    ids.clear();
                     CSeq_id::ParseFastaIds(ids, id_str);
                     id_str = ids.front()->GetSeqIdString(true);
                 } else {
