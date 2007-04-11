@@ -54,7 +54,10 @@ public:
 	int findIntersectingBlocks(int overlappinPercentage=-1);
 	int getQualifiedRows(vector<int>& rows);
 	int getDisqualifiedRows(vector<int>& rows);
-	void formatBlocksForQualifiedRows(list< CRef< CSeq_align > > & seqAlignVec);
+    //  If forcedBreaks is non-NULL, forces blocks to break after specified residues on the reference seq-align.  
+    //  Used to prevent block merging in BlockIntersector (which can cause problems if other sequences 
+    //  in the alignment had gaps at the break points).
+	void formatBlocksForQualifiedRows(list< CRef< CSeq_align > > & seqAlignVec, const set<int>* forcedBreaks = NULL);
 
 private:
 	vector< CRef< CSeq_align > >& m_seqAlignVec;

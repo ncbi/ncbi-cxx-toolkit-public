@@ -54,19 +54,18 @@ struct SGuideAlignmentLink
 {
     const CCdCore* cd;
     unsigned int row;       // cd row used to make guide to parent; kMax_UInt if there was a problem
-    unsigned int parentRow; // row in parent used to make guide to cd; kMax_UInt if there was a problem
     int blockModelIndex;    // Optional; ignored if <0
     int familyIndex;        // Optional; ignored if <0
 
-    SGuideAlignmentLink(const CCdCore* cdIn, unsigned int rowIn = 0, unsigned int prowIn = 0, int bmiIn = -1, int fiIn = -1) : cd(cdIn), row(rowIn), parentRow(prowIn), blockModelIndex(bmiIn), familyIndex(fiIn) {}
+    SGuideAlignmentLink(const CCdCore* cdIn, unsigned int rowIn = 0, int bmiIn = -1, int fiIn = -1) : cd(cdIn), row(rowIn), blockModelIndex(bmiIn), familyIndex(fiIn) {}
 };
 
 
 //  Represent the chain of relationships linking a CD to its ancestor.
 //  By default, the first entry in the chain is the CD in the guide, and
-//  the last CD is the common ancestor for the two CDs in the guide.  
-//  Note that a chain may span more than one hierarchy if non-classical relationships 
-//  are modeled, in which case the familyIndex would change between links.
+//  when traversing a family, the last CD is the common ancestor for the two CDs 
+//  in the guide.  Note that a chain may span more than one hierarchy if non-classical 
+//  relationships are modeled, in which case the familyIndex would change between links.
 typedef vector<SGuideAlignmentLink> TGuideChain;
 
 
@@ -143,11 +142,17 @@ public:
     string GetSlaveRowIdStr() const;
     unsigned int GetSlaveCDRow() const;
 
-    //  These access the last entry in m_chain1
+    const TGuideChain& GetMasterChain() const { return m_chain1;}
+    const TGuideChain& GetSlaveChain() const { return m_chain2;}
+
+    //  These access the last entry in m_chain1 and m_chain2.  If they are not the same,
+    //  null pointer/empty string returned.
     const CCdCore* GetCommonCD() const;
     string GetCommonCDAcc() const;
-    string GetCommonRowIdStr() const;
-    unsigned int GetCommonCDRow() const;
+    //  These access the last entry of m_chain1 (onMaster = true) or m_chain2 (onMaster = false).  
+    //  If there is not a common CD, an empty string/kMax_UInt is returned.
+    string GetCommonCDRowIdStr(bool onMaster) const;
+    unsigned int GetCommonCDRow(bool onMaster) const;
 
     virtual string ToString() const;
 
