@@ -211,8 +211,9 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         : "Word size for wordfinder algorithm (length of best perfect match)";
     arg_desc.AddOptionalKey(kArgWordSize, "int_value", description,
                             CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgWordSize, 
-                           new CArgAllowValuesGreaterThanOrEqual(3));
+    arg_desc.SetConstraint(kArgWordSize, m_QueryIsProtein 
+                           ? new CArgAllowValuesGreaterThanOrEqual(2)
+                           : new CArgAllowValuesGreaterThanOrEqual(4));
 
     arg_desc.AddOptionalKey(kArgTargetPercentIdentity, "float_value",
                             "Target percent identity",
