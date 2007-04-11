@@ -339,18 +339,21 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
     BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
 
     if( new_seqsrc == 0 ) {
-        NCBI_THROW( 
-                CBlastException, eSeqSrcInit, 
-                "Allocation of new BlastSeqSrc structure failed." );
+        ERR_POST( Error << "Allocation of new BlastSeqSrc structure failed."
+                          << " Database index will not be used." );
+        options->SetUseIndex( false );
+        return;
     }
 
     BlastSeqSrc * ind_seqsrc = DbIndexSeqSrcInit(
             options->GetIndexName(), new_seqsrc );
 
     if( ind_seqsrc == 0 ) {
-        NCBI_THROW( 
-                CBlastException, eSeqSrcInit, 
-                "Allocation of BlastSeqSrc structure for index failed." );
+        ERR_POST( Error << "Allocation of BlastSeqSrc structure for index failed."
+                          << " Database index will not be used." );
+        free( new_seqsrc );
+        options->SetUseIndex( false );
+        return;
     }
 
     CloneSeqSrc( seqsrc, ind_seqsrc );

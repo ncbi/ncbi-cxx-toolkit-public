@@ -235,13 +235,16 @@ void CBlastApplication::Init(void)
                             " of the search",
                             CArgDescriptions::eInteger, "1");
 
-    arg_desc->AddDefaultKey( "index", "database_index",
+    arg_desc->AddDefaultKey( "index", "use_index_flag",
+                             "Set to true to use megablast database index.",
+                             CArgDescriptions::eBoolean, "F" );
+    arg_desc->AddOptionalKey( "index_name", "database_index_name",
                              "\'prefix,threads,start,stop\', where\n\t"
                              " \'prefix\' \tis the index file prefix, \n\t"
                              " \'threads\' \tis the number of threads to use when searhing for exact seeds,\n\t"
                              " \'start\' \tis the first index volume to search, and\n\t"
                              " \'stop\' \tis the last index volume to search",
-                             CArgDescriptions::eString, "" );
+                             CArgDescriptions::eString );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -288,8 +291,17 @@ CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
         break;
     }
 
-    if( args["index"].AsString().size() > 0 ) {
-        opt.SetUseIndex( true, args["index"].AsString() );
+    if( args["index"].AsBoolean() ) {
+        string index_name;
+
+        if( args["index_name"] ) {
+            index_name = args["index_name"].AsString();
+        }
+        else {
+            index_name = args["db"].AsString();
+        }
+
+        opt.SetUseIndex( true, index_name );
     }
 
     if (args["matrix"]) {
