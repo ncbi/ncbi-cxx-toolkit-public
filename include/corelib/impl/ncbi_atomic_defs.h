@@ -231,7 +231,7 @@ extern "C" {
 #    define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
 #  endif
 #  ifdef _WIN64
-#    define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv)
+#    define NCBI_SWAP_POINTERS(loc, nv) (InterlockedExchangePointer(loc, nv))
 #  else
 #    define NCBI_SWAP_POINTERS(loc, nv) \
       ((void*) (InterlockedExchange((LPLONG)(loc), (LONG)(nv))))
