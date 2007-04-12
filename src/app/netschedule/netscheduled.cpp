@@ -2297,14 +2297,16 @@ int CNetScheduleDApp::Run(void)
         int max_locks = 
             bdb_conf.GetInt("netschedule", "max_locks", 
                                  CConfig::eErr_NoThrow, 0);
+        int max_lockers = 
+            bdb_conf.GetInt("netschedule", "max_lockers", 
+                                 CConfig::eErr_NoThrow, 0);
+        int max_lockobjects = 
+            bdb_conf.GetInt("netschedule", "max_lockobjects", 
+                                 CConfig::eErr_NoThrow, 0);
 
         unsigned log_mem_size = (unsigned)
             bdb_conf.GetDataSize("netschedule", "log_mem_size", 
                                  CConfig::eErr_NoThrow, 0);
-
-        unsigned max_mutexes = (unsigned)
-            bdb_conf.GetInt("netschedule", "max_mutexes", 
-                            CConfig::eErr_NoThrow, 0);
 
         bool sync_transactions =
             bdb_conf.GetBool("netschedule", "sync_transactions",
@@ -2323,9 +2325,10 @@ int CNetScheduleDApp::Run(void)
         qdb->Open(db_path,
             mem_size,
             max_locks,
+            max_lockers,
+            max_lockobjects,
             log_mem_size,
             max_trans,
-            max_mutexes,
             sync_transactions);
 
 

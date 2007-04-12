@@ -459,15 +459,25 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
         CBDB_CursorGuard cg(cur);    
         for (TNSBitVector::enumerator en = batch.first(); en.valid(); ++en) {
             unsigned job_id = *en;
+//            db.id = job_id;
+//            db.Delete();
             cur.SetCondition(CBDB_FileCursor::eEQ);
             cur.From << job_id;
             if (cur.FetchFirst() == eBDB_Ok) {
-                cur.Delete(CBDB_File::eIgnoreError);
-                ++del_rec;
+                try {
+                    cur.Delete();
+                    ++del_rec;
+                } catch (CBDB_ErrnoException& ex) {
+                    LOG_POST(Error << "BDB error " << ex.what());
+                }
             }
 
             m_JobInfoDB.id = job_id;
-            m_JobInfoDB.Delete(CBDB_File::eIgnoreError);
+            try {
+                m_JobInfoDB.Delete();
+            } catch (CBDB_ErrnoException& ex) {
+                LOG_POST(Error << "BDB error " << ex.what());
+            }
         }
         x_RemoveTags(trans, batch);
     }}

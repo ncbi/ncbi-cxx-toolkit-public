@@ -264,9 +264,10 @@ CQueueDataBase::~CQueueDataBase()
 void CQueueDataBase::Open(const string& path, 
                           unsigned      cache_ram_size,
                           unsigned      max_locks,
+                          unsigned      max_lockers,
+                          unsigned      max_lockobjects,
                           unsigned      log_mem_size,
                           unsigned      max_trans,
-                          unsigned      max_mutexes,
                           bool          sync_transactions)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
@@ -325,21 +326,16 @@ void CQueueDataBase::Open(const string& path,
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
 
     if (fl.empty()) {
-        if (cache_ram_size) {
+        if (cache_ram_size)
             m_Env->SetCacheSize(cache_ram_size);
-        }
-        //unsigned max_locks = m_Env->GetMaxLocks();
-        if (max_locks) {
+        if (max_locks)
             m_Env->SetMaxLocks(max_locks);
-            m_Env->SetMaxLockers(max_locks);
-            m_Env->SetMaxLockObjects(max_locks);
-        }
-        if (max_trans) {
+        if (max_lockers)
+            m_Env->SetMaxLockers(max_lockers);
+        if (max_lockobjects)
+            m_Env->SetMaxLockObjects(max_lockobjects);
+        if (max_trans)
             m_Env->SetTransactionMax(max_trans);
-        }
-        if (max_mutexes) {
-            m_Env->MutexSetMax(max_mutexes);
-        }
         m_Env->SetTransactionSync(sync_transactions ?
                                       CBDB_Transaction::eTransSync :
                                       CBDB_Transaction::eTransASync);
@@ -971,7 +967,7 @@ void CQueueDataBase::Purge(void)
     // This is done to spread massive job deletion in time
     // and thus smooth out peak loads
     // TODO: determine batch size based on load
-    unsigned n_jobs_to_delete = 10000; 
+    unsigned n_jobs_to_delete = 5000; 
     unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
     global_del_rec += unc_del_rec;
 

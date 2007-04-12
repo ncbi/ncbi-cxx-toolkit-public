@@ -561,9 +561,10 @@ public:
     void Open(const string& path, 
               unsigned      cache_ram_size,
               unsigned      max_locks,
+              unsigned      max_lockers,
+              unsigned      max_lockobjects,
               unsigned      log_mem_size,
               unsigned      max_trans,
-              unsigned      max_mutexes,
               bool          sync_transactions);
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);
