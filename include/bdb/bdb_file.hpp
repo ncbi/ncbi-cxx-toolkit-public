@@ -635,7 +635,7 @@ void CBDB_RawFile::Open(
         bool support_dirty_read,
         unsigned rec_len)
 {
-    Open(filename, 0, open_mode, support_dirty_read, rec_len);
+    Open(filename, kEmptyStr, open_mode, support_dirty_read, rec_len);
 }
 
 inline
