@@ -268,11 +268,12 @@ public:
     typedef CBDB_BlobStoreDict<TBV>      TDeMuxStore;
     typedef TL                           TLock;
     typedef typename TL::TWriteLockGuard TLockGuard;
+    typedef CBDB_IdBlobFile              TBlobFile;
     
     /// BDB Database together with the locker
     struct SLockedDb 
     {
-        AutoPtr<CBDB_IdBlobFile> db;    ///< database file
+        AutoPtr<TBlobFile> db;    ///< database file
         AutoPtr<TLock>           lock;  ///< db lock
     };
 
@@ -311,6 +312,8 @@ public:
     void SetEnv(CBDB_Env& env) { m_Env = &env; }
 
     CBDB_Env* GetEnv(void) const { return m_Env; }
+
+    const string& GetFileName() const { return m_StorageName; }
 
 
     // ---------------------------------------------------------------
@@ -540,13 +543,18 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int     id,
     if (!found) {
         return Insert(id, data, size, trans);
     }
-    SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
-    {{
+
+    unsigned slice = m_ObjDeMux->SelectSplit(size);
+    if (slice != coord[1]) {
+        Delete(id, CBDB_RawFile::eThrowOnError, trans);
+        return Insert(id, data, size, trans);
+    } else {
+        SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
         TLockGuard lg(*(dbp.lock));
         dbp.db->SetTransaction(trans);
         dbp.db->id = id;
         return dbp.db->UpdateInsert(data, size);
-    }}
+    }
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -881,49 +889,51 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
     bool needs_save = false;
 
     {{
-    InitDbMutex(lp);
-    TLockGuard lg(*(lp->lock));
-    if (lp->db.get() == 0) {
-        string fname = this->MakeDbFileName(vol, slice);
-        lp->db.reset(new CBDB_IdBlobFile(CBDB_File::eDuplicatesDisable,
-                                         m_DB_Type));
-        if (m_Env) {
-            lp->db->SetEnv(*m_Env);
-        } else {
-            if (m_VolumeCacheSize) {
-                lp->db->SetCacheSize(m_VolumeCacheSize);
-            }
-        }
-        unsigned page_size = GetPageSize(slice);
-        if (page_size) {
-            lp->db->SetPageSize(page_size);
-        }
+         InitDbMutex(lp);
+         TLockGuard lg(*(lp->lock));
+         if (lp->db.get() == 0) {
+             string fname = this->MakeDbFileName(vol, slice);
+             lp->db.reset(new TBlobFile(CBDB_File::eDuplicatesDisable,
+                                        m_DB_Type));
+             if (m_Env) {
+                 lp->db->SetEnv(*m_Env);
+             } else {
+                 if (m_VolumeCacheSize) {
+                     lp->db->SetCacheSize(m_VolumeCacheSize);
+                 }
+             }
+             unsigned page_size = GetPageSize(slice);
+             if (page_size) {
+                 lp->db->SetPageSize(page_size);
+             }
 
-        /// also twiddle min keys per page
-        switch (slice) {
-        case 0:
-            /// page size = default
-            /// blobs <= 256 bytes
-            lp->db->SetBtreeMinKeysPerPage(6);
-            break;
+             /// also twiddle min keys per page
+             switch (slice) {
+             case 0:
+                 /// page size = default
+                 /// blobs <= 256 bytes
+                 lp->db->SetBtreeMinKeysPerPage(6);
+                 break;
 
-        case 1:
-            /// page size = default
-            /// blobs > 256, <= 512 bytes
-            lp->db->SetBtreeMinKeysPerPage(3);
-            break;
+             case 1:
+                 /// page size = default
+                 /// blobs > 256, <= 512 bytes
+                 lp->db->SetBtreeMinKeysPerPage(3);
+                 break;
 
-        default:
-            /// use default = 2
-            break;
-        }
+             default:
+                 /// use default = 2
+                 break;
+             }
 
-        lp->db->Open(fname.c_str(), m_OpenMode);
-        needs_save = true;
-    }
-    }}
+             lp->db->Open(fname.c_str(), m_OpenMode);
+             needs_save = true;
+         }
+     }}
 
-    if (needs_save) { // new split volume: checkpoint the changes
+    if (needs_save  &&
+        m_OpenMode == CBDB_RawFile::eReadWriteCreate) {
+        // new split volume: checkpoint the changes
         this->Save(0, TDeMuxStore::eNoCompact); // quick dump no compression
     }
 
