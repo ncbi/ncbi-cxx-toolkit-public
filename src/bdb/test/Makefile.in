@@ -7,7 +7,6 @@
 #################################
 
 APP_PROJ = bdbtest bdbtestthr bdbtest_bvstore
-APP_PROJ = bdbtestthr bdbtest_bvstore
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
