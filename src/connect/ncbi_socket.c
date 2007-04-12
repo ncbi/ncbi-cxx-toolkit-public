@@ -1419,6 +1419,8 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 
 #  endif /*NCBI_OS_UNIX*/
 
+#else
+
     return eIO_NotSupported;
 
 #endif /*NCBI_CXX_TOOLKIT*/
