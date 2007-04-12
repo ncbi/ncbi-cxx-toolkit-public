@@ -2054,7 +2054,7 @@ static void s_TEST_BDB_Hash()
     ret = db_h.Fetch();
     assert (ret == eBDB_Ok);
 
-    string d = db_h.value;
+    string d = db_h.value.GetString();
     assert (d == "data_0");
 
 
@@ -2071,7 +2071,7 @@ static void s_TEST_BDB_Hash()
     db_h.key = "update1";
     ret = db_h.Fetch();
     assert (ret == eBDB_Ok);
-    string udata = db_h.value;
+    string udata = db_h.value.GetString();
     assert(udata == "udata2");
 
     db_h.key = "update1";
@@ -2089,7 +2089,7 @@ static void s_TEST_BDB_Hash()
 
         ret = db_h.Fetch();
         assert (ret == eBDB_Ok);
-        string v = db_h.value;
+        string v = db_h.value.GetString();
         assert (d == v);
     }
 
