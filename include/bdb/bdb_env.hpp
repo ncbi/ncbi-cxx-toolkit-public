@@ -240,6 +240,9 @@ public:
     /// Print lock statistics
     void PrintLockStat(CNcbiOstream & out);
 
+    /// return the path to the environment
+    const string& GetPath() const { return m_HomePath; }
+
 
 private:
     /// Opens BDB environment returns error code
