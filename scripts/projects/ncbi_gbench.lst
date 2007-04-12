@@ -28,6 +28,10 @@ dbapi/driver$
 dbapi/driver/ctlib$
 dbapi/driver/dblib$
 dbapi/driver/ftds8$
+dbapi/driver/ftds64$
+dbapi/driver/ftds64/ctlib$
+dbapi/driver/ftds64/dblib$
+dbapi/driver/ftds64/odbc$
 dbapi/driver/msdblib$
 dbapi/driver/mysql$
 dbapi/driver/odbc$
