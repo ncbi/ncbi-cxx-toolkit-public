@@ -155,7 +155,10 @@ CDiagCompileInfo::CDiagCompileInfo(void)
       m_Module(""),
       m_Line(0),
       m_CurrFunctName(0),
-      m_Parsed(false)
+      m_Parsed(false),
+      m_StrFile(0),
+      m_StrModule(0),
+      m_StrCurrFunctName(0)
 {
 }
 
@@ -167,7 +170,10 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
       m_Module(""),
       m_Line(line),
       m_CurrFunctName(curr_funct),
-      m_Parsed(false)
+      m_Parsed(false),
+      m_StrFile(0),
+      m_StrModule(0),
+      m_StrCurrFunctName(0)
 {
     if (!file) {
         m_File = "";
@@ -176,29 +182,68 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
     if (!module)
         return;
 
-    // Check for a file extension without creating of temporary string objects
-    const char* cur_extension = strrchr(file, '.');
-    if (cur_extension == NULL)
-        return; 
-
-    if (*(cur_extension + 1) != '\0') {
-        ++cur_extension;
-    } else {
-        return;
-    }
-
-    if (strcmp(cur_extension, "cpp") == 0 || 
-        strcmp(cur_extension, "C") == 0 || 
-        strcmp(cur_extension, "c") == 0 || 
-        strcmp(cur_extension, "cxx") == 0 ) {
+    if ( x_NeedModule() ) {
         m_Module = module;
     }
 }
 
 
+CDiagCompileInfo::CDiagCompileInfo(const string& file,
+                                   int           line,
+                                   const string& curr_funct,
+                                   const string& module)
+    : m_File(""),
+      m_Module(""),
+      m_Line(line),
+      m_CurrFunctName(""),
+      m_Parsed(false),
+      m_StrFile(0),
+      m_StrModule(0),
+      m_StrCurrFunctName(0)
+{
+    if ( !file.empty() ) {
+        m_StrFile = new char[file.size() + 1];
+        strcpy(m_StrFile, file.c_str());
+        m_File = m_StrFile;
+    }
+    if ( m_File  &&  !module.empty()  &&  x_NeedModule() ) {
+        m_StrModule = new char[module.size() + 1];
+        strcpy(m_StrModule, module.c_str());
+        m_Module = m_StrModule;
+    }
+    if ( !curr_funct.empty() ) {
+        m_StrCurrFunctName = new char[curr_funct.size() + 1];
+        strcpy(m_StrCurrFunctName, curr_funct.c_str());
+        m_CurrFunctName = m_StrCurrFunctName;
+    }
+}
+
+
+bool CDiagCompileInfo::x_NeedModule(void) const
+{
+    // Check for a file extension without creating of temporary string objects
+    const char* cur_extension = strrchr(m_File, '.');
+    if (cur_extension == NULL)
+        return false; 
+
+    if (*(cur_extension + 1) != '\0') {
+        ++cur_extension;
+    } else {
+        return false;
+    }
+
+    return strcmp(cur_extension, "cpp") == 0 ||
+        strcmp(cur_extension, "C") == 0 ||
+        strcmp(cur_extension, "c") == 0 ||
+        strcmp(cur_extension, "cxx") == 0;
+}
+
+
 CDiagCompileInfo::~CDiagCompileInfo(void)
 {
-    return;
+    delete[] m_StrFile;
+    delete[] m_StrModule;
+    delete[] m_StrCurrFunctName;
 }
 
 
@@ -274,20 +319,29 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 //  CDiagContextThreadData::
 
 
+inline Uint8 s_GetThreadId(void)
+{
+    if (TPrintSystemTID::GetDefault()) {
+        return (Uint8)(CThreadSystemID::GetCurrent().m_ID);
+    } else {
+        return CThread::GetSelf();
+    }
+}
+
+
 CDiagContextThreadData::CDiagContextThreadData(void)
-    : m_Properties(0),
+    : m_Properties(NULL),
       m_RequestId(0),
-      m_StopWatch(0),
-      m_DiagBuffer(new CDiagBuffer)
+      m_StopWatch(NULL),
+      m_DiagBuffer(new CDiagBuffer),
+      m_TID(s_GetThreadId()),
+      m_ThreadPostNumber(0)
 {
 }
 
 
 CDiagContextThreadData::~CDiagContextThreadData(void)
 {
-    delete m_Properties;
-    delete m_StopWatch;
-    delete m_DiagBuffer;
 }
 
 
@@ -332,26 +386,32 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 CDiagContextThreadData::TProperties*
 CDiagContextThreadData::GetProperties(EGetProperties flag)
 {
-    if ( !m_Properties  &&  flag == eProp_Create ) {
-        m_Properties = new TProperties;
+    if ( !m_Properties.get()  &&  flag == eProp_Create ) {
+        m_Properties.reset(new TProperties);
     }
-    return m_Properties;
+    return m_Properties.get();
 }
 
 
 CStopWatch* CDiagContextThreadData::GetOrCreateStopWatch(void)
 {
-    if ( !m_StopWatch ) {
-        m_StopWatch = new CStopWatch(CStopWatch::eStart);
+    if ( !m_StopWatch.get() ) {
+        m_StopWatch.reset(new CStopWatch(CStopWatch::eStart));
     }
-    return m_StopWatch;
+    return m_StopWatch.get();
 }
 
 
 void CDiagContextThreadData::ResetStopWatch(void)
 {
-    delete m_StopWatch;
-    m_StopWatch = 0;
+    m_StopWatch.reset();
+}
+
+
+int CDiagContextThreadData::GetThreadPostNumber(EPostNumberIncrement inc)
+{
+    return inc == ePostNumber_Increment ?
+        ++m_ThreadPostNumber : m_ThreadPostNumber;
 }
 
 
@@ -400,12 +460,12 @@ CDiagContext::CDiagContext(void)
       m_StopWatch(new CStopWatch(CStopWatch::eStart)),
       m_MaxMessages(100) // limit number of collected messages to 100
 {
+    SetAppState(eState_AppBegin, eProp_Global);
 }
 
 
 CDiagContext::~CDiagContext(void)
 {
-    delete m_StopWatch;
 }
 
 
@@ -516,18 +576,6 @@ void CDiagContext::x_CreateUID(void) const
 void CDiagContext::SetAutoWrite(bool value)
 {
     TAutoWrite_Context::SetDefault(value);
-}
-
-
-inline bool IsThreadProperty(const string& name)
-{
-    return
-        name == CDiagContext::kProperty_ClientIP   ||
-        name == CDiagContext::kProperty_SessionID  ||
-        name == CDiagContext::kProperty_ReqStatus  ||
-        name == CDiagContext::kProperty_ReqTime    ||
-        name == CDiagContext::kProperty_BytesRd    ||
-        name == CDiagContext::kProperty_BytesWr;
 }
 
 
@@ -674,12 +722,44 @@ void CDiagContext::PrintRequestStop(void)
 }
 
 
+void CDiagContext::SetAppState(EAppState state, EPropertyMode mode)
+{
+    switch ( state ) {
+    case eState_AppBegin:
+        SetProperty(kProperty_AppState, "AB",
+            mode == eProp_Default ? eProp_Global : mode);
+        break;
+    case eState_AppRun:
+        SetProperty(kProperty_AppState, "A",
+            mode == eProp_Default ? eProp_Global : mode);
+        break;
+    case eState_AppEnd:
+        SetProperty(kProperty_AppState, "AE",
+            mode == eProp_Default ? eProp_Global : mode);
+        break;
+    case eState_RequestBegin:
+        SetProperty(kProperty_AppState, "RB",
+            mode == eProp_Default ? eProp_Thread : mode);
+        break;
+    case eState_Request:
+        SetProperty(kProperty_AppState, "R",
+            mode == eProp_Default ? eProp_Thread : mode);
+        break;
+    case eState_RequestEnd:
+        SetProperty(kProperty_AppState, "RE",
+            mode == eProp_Default ? eProp_Thread : mode);
+        break;
+    }
+}
+
+
 const char* CDiagContext::kProperty_UserName    = "user";
 const char* CDiagContext::kProperty_HostName    = "host";
 const char* CDiagContext::kProperty_HostIP      = "host_ip_addr";
 const char* CDiagContext::kProperty_ClientIP    = "client_ip";
 const char* CDiagContext::kProperty_SessionID   = "session_id";
 const char* CDiagContext::kProperty_AppName     = "app_name";
+const char* CDiagContext::kProperty_AppState    = "app_state";
 const char* CDiagContext::kProperty_ExitSig     = "exit_signal";
 const char* CDiagContext::kProperty_ExitCode    = "exit_code";
 const char* CDiagContext::kProperty_ReqStatus   = "request_status";
@@ -696,23 +776,33 @@ static const int   kDiagW_SN       = 4;
 static const int   kDiagW_UID      = 16;
 static const int   kDiagW_Client   = 15;
 
+
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
                                   const SDiagMessage* msg) const
 {
-    CDiagBuffer& buf = GetDiagBuffer();
+    //CDiagBuffer& buf = GetDiagBuffer();
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
 
     SDiagMessage::TPID pid = msg ? msg->m_PID : GetPID();
-    SDiagMessage::TTID tid = msg ? msg->m_TID : buf.m_TID;
+    SDiagMessage::TTID tid = msg ? msg->m_TID : thr_data.GetTID();
     string uid = GetStringUID(msg ? msg->GetUID() : 0);
-    int rid = msg ? msg->m_RequestId : GetDiagRequestId();
+    int rid = msg ? msg->m_RequestId : thr_data.GetRequestId();
     int psn = msg ? msg->m_ProcPost :
-        CDiagBuffer::GetProcessPostNumber(CDiagBuffer::ePostNumber_Increment);
-    int tsn = msg ? msg->m_ThrPost : ++buf.m_ThreadPostCount;
+        GetProcessPostNumber(ePostNumber_Increment);
+    int tsn = msg ?
+        msg->m_ThrPost : thr_data.GetThreadPostNumber(ePostNumber_Increment);
     CTime timestamp = msg ? msg->GetTime() : CTime(CTime::eCurrent);
     string host = s_GetHost();
     string client = GetProperty(kProperty_ClientIP);
     string session = GetProperty(kProperty_SessionID);
     string app = GetProperty(kProperty_AppName);
+    /*
+    string app_state = GetProperty(kProperty_AppState);
+    if ( !app_state.empty() ) {
+        app_state = "/" + app_state;
+    }
+    */
 
     if ( msg ) {
         // When flushing collected messages, m_Messages should be NULL.
@@ -741,8 +831,9 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     // Print common fields
     ostr << setfill('0') << setw(kDiagW_PID) << pid << '/'
          << setw(kDiagW_TID) << tid << '/'
-         << setw(kDiagW_RID) << rid << ' '
-         << setw(0) << setfill(' ') << uid << ' '
+         << setw(kDiagW_RID) << rid
+         // << app_state
+         << ' ' << setw(0) << setfill(' ') << uid << ' '
          << setfill('0') << setw(kDiagW_SN) << psn << '/'
          << setw(kDiagW_SN) << tsn << ' '
          << setw(0) << timestamp.AsString(kDiagTimeFormat) << ' '
@@ -861,6 +952,8 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         }
         ostr << message;
     }
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
     SDiagMessage mess(eDiag_Info,
                       ostr.str(), ostr.pcount(),
                       0, 0, // file, line
@@ -869,11 +962,10 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                       0, 0, // err code/subcode
                       NULL,
                       0, 0, 0, // module/class/function
-                      GetPID(), buf.m_TID,
-                      CDiagBuffer::GetProcessPostNumber(
-                      CDiagBuffer::ePostNumber_Increment),
-                      ++buf.m_ThreadPostCount,
-                      GetDiagRequestId());
+                      GetPID(), thr_data.GetTID(),
+                      GetProcessPostNumber(ePostNumber_Increment),
+                      thr_data.GetThreadPostNumber(ePostNumber_Increment),
+                      thr_data.GetRequestId());
     mess.m_Event = event;
     buf.DiagHandler(mess);
     ostr.rdbuf()->freeze(false);
@@ -1205,6 +1297,14 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 }
 
 
+int CDiagContext::GetProcessPostNumber(EPostNumberIncrement inc)
+{
+    static CAtomicCounter s_ProcessPostCount;
+    return inc == ePostNumber_Increment ?
+        s_ProcessPostCount.Add(1) : s_ProcessPostCount.Get();
+}
+
+
 CDiagContext& GetDiagContext(void)
 {
     // Make the context live longer than other diag safe-statics
@@ -1300,22 +1400,10 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 void* s_DiagHandlerInitializer = InitDiagHandler();
 
 
-inline Uint8 s_GetThreadId(void)
-{
-    if (TPrintSystemTID::GetDefault()) {
-        return (Uint8)(CThreadSystemID::GetCurrent().m_ID);
-    } else {
-        return CThread::GetSelf();
-    }
-}
-
-
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
-      m_InUse(false),
-      m_TID(s_GetThreadId()),
-      m_ThreadPostCount(0)
+      m_InUse(false)
 {
     m_Diag = 0;
 }
@@ -1423,6 +1511,8 @@ void CDiagBuffer::Flush(void)
             message = dest.c_str();
             size = dest.length();
         }
+        CDiagContextThreadData& thr_data =
+            CDiagContextThreadData::GetThreadData();
         SDiagMessage mess(sev, message, size,
                           m_Diag->GetFile(),
                           m_Diag->GetLine(),
@@ -1434,11 +1524,11 @@ void CDiagBuffer::Flush(void)
                           m_Diag->GetModule(),
                           m_Diag->GetClass(),
                           m_Diag->GetFunction(),
-                          CDiagContext::GetPID(), m_TID,
-                          GetProcessPostNumber(
-                          CDiagBuffer::ePostNumber_Increment),
-                          ++m_ThreadPostCount,
-                          GetDiagRequestId());
+                          CDiagContext::GetPID(), thr_data.GetTID(),
+                          CDiagContext::GetProcessPostNumber(
+                          ePostNumber_Increment),
+                          thr_data.GetThreadPostNumber(ePostNumber_Increment),
+                          thr_data.GetRequestId());
         DiagHandler(mess);
     }
 
@@ -1506,13 +1596,6 @@ void CDiagBuffer::UpdatePrefix(void)
         }
         m_PostPrefix += *prefix;
     }
-}
-
-
-int CDiagBuffer::GetProcessPostNumber(EPostNumberIncrement inc)
-{
-    static CAtomicCounter s_ProcessPostCount;
-    return inc ? s_ProcessPostCount.Add(1) : s_ProcessPostCount.Get();
 }
 
 
@@ -1612,6 +1695,7 @@ SDiagMessage::SDiagMessage(const string& message)
         m_PID = s_ParseInt(message, pos, kDiagW_PID, '/');
         m_TID = s_ParseInt(message, pos, kDiagW_TID, '/');
         m_RequestId = s_ParseInt(message, pos, kDiagW_RID, ' ');
+        // s_ParseStr(message, pos, ' ', true);
 
         if (message[pos + kDiagW_UID] != ' ') {
             return;
@@ -2568,8 +2652,7 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
     CMutexGuard LOCK(s_DiagMutex);
     CDiagContext& ctx = GetDiagContext();
     bool report_switch = ctx.IsSetOldPostFormat()  &&
-        CDiagBuffer::GetProcessPostNumber(
-        CDiagBuffer::ePostNumber_NoIncrement) > 0;
+        CDiagContext::GetProcessPostNumber(ePostNumber_NoIncrement) > 0;
     string old_name, new_name;
 
     if ( CDiagBuffer::sm_Handler ) {
@@ -3298,6 +3381,8 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         string err_type(pex->GetType());
         err_type += "::";
         err_type += pex->GetErrCodeString();
+        CDiagContextThreadData& thr_data =
+            CDiagContextThreadData::GetThreadData();
         SDiagMessage diagmsg(pex->GetSeverity(),
                              text.c_str(), 
                              text.size(),
@@ -3312,11 +3397,12 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
                              pex->GetClass().c_str(),
                              pex->GetFunction().c_str(),
                              CDiagContext::GetPID(),
-                             m_Buffer.m_TID,
-                             CDiagBuffer::GetProcessPostNumber(
-                             CDiagBuffer::ePostNumber_Increment),
-                             ++m_Buffer.m_ThreadPostCount,
-                             GetDiagRequestId());
+                             thr_data.GetTID(),
+                             CDiagContext::GetProcessPostNumber(
+                             ePostNumber_Increment),
+                             thr_data.GetThreadPostNumber(
+                             ePostNumber_Increment),
+                             thr_data.GetRequestId());
         string report;
         diagmsg.Write(report);
         *this << "    "; // indentation

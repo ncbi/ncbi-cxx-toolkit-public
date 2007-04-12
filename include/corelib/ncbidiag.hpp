@@ -79,10 +79,15 @@ public:
     NCBI_XNCBI_EXPORT
     CDiagCompileInfo(void);
     NCBI_XNCBI_EXPORT
-    CDiagCompileInfo(const char* file, 
-                     int line, 
-                     const char* curr_funct = NULL, 
-                     const char* module = 0);
+    CDiagCompileInfo(const char* file,
+                     int line,
+                     const char* curr_funct = NULL,
+                     const char* module = NULL);
+    NCBI_XNCBI_EXPORT
+    CDiagCompileInfo(const string& file,
+                     int           line,
+                     const string& curr_funct,
+                     const string& module);
     NCBI_XNCBI_EXPORT
     ~CDiagCompileInfo(void);
 
@@ -96,6 +101,9 @@ private:
     NCBI_XNCBI_EXPORT
     void ParseCurrFunctName(void) const;
 
+    // Check if module needs to be set
+    bool x_NeedModule(void) const;
+
 private:
     const char*    m_File;
     const char*    m_Module;
@@ -105,6 +113,11 @@ private:
     mutable bool   m_Parsed;
     mutable string m_ClassName;
     mutable string m_FunctName;
+
+    // Storage for data passed as strings rather than char*.
+    char*          m_StrFile;
+    char*          m_StrModule;
+    char*          m_StrCurrFunctName;
 };
 
 NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
@@ -1093,6 +1106,14 @@ enum EDiagCollectMessages {
 };
 
 
+/// Post nubmer increment flag for GetProcessPostNumber() and
+/// GetThreadPostNumber().
+enum EPostNumberIncrement {
+    ePostNumber_NoIncrement,  ///< Get post number without incrementing it
+    ePostNumber_Increment     ///< Increment and return the new post number
+};
+
+
 /// Thread local context data stored in TLS
 class NCBI_XNCBI_EXPORT CDiagContextThreadData
 {
@@ -1116,7 +1137,7 @@ public:
     /// Get request timer, create if not exist yet
     CStopWatch* GetOrCreateStopWatch(void);
     /// Get request timer or null
-    CStopWatch* GetStopWatch(void) { return m_StopWatch; }
+    CStopWatch* GetStopWatch(void) { return m_StopWatch.get(); }
     /// Delete request timer
     void ResetStopWatch(void);
 
@@ -1126,11 +1147,25 @@ public:
     /// Get diag context data for the current thread
     static CDiagContextThreadData& GetThreadData(void);
 
+    /// Thread ID
+    typedef Uint8 TTID;
+
+    /// Get cached thread ID
+    TTID GetTID(void) const { return m_TID; }
+
+    /// Get thread post number
+    int GetThreadPostNumber(EPostNumberIncrement inc);
+
 private:
-    TProperties* m_Properties;
-    int          m_RequestId;
-    CStopWatch*  m_StopWatch;
-    CDiagBuffer* m_DiagBuffer;
+    CDiagContextThreadData(const CDiagContextThreadData&);
+    CDiagContextThreadData& operator=(const CDiagContextThreadData&);
+
+    auto_ptr<TProperties> m_Properties;       // Per-thread properties
+    int                   m_RequestId;        // Per-thread request ID
+    auto_ptr<CStopWatch>  m_StopWatch;        // Request timer
+    auto_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
+    TTID                  m_TID;              // Cached thread ID
+    int                   m_ThreadPostNumber; // Number of posted messages
 };
 
 
@@ -1195,6 +1230,7 @@ public:
     static const char* kProperty_ExitSig;
     static const char* kProperty_ExitCode;
     /// Per-thread properties
+    static const char* kProperty_AppState;
     static const char* kProperty_ClientIP;
     static const char* kProperty_SessionID;
     static const char* kProperty_ReqStatus;
@@ -1226,6 +1262,21 @@ public:
     void PrintRequestStart(const string& message);
     /// Print request stop message (for request-driven applications)
     void PrintRequestStop(void);
+
+    /// Application execution states shown in the std prefix
+    enum EAppState {
+        eState_AppBegin,      ///< AB
+        eState_AppRun,        ///< A
+        eState_AppEnd,        ///< AE
+        eState_RequestBegin,  ///< RB
+        eState_Request,       ///< R
+        eState_RequestEnd     ///< RE
+    };
+
+    /// Set application state property corresponding to the flag.
+    /// By default the property is set as global if the flag indicates an
+    /// application state and as thread local for request states.
+    void SetAppState(EAppState state, EPropertyMode mode = eProp_Default);
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
@@ -1274,7 +1325,13 @@ public:
                           CNcbiRegistry*       config = NULL,
                           EDiagCollectMessages collect = eDCM_NoChange);
 
+    /// Return process post number (incrementing depends on the flag).
+    static int GetProcessPostNumber(EPostNumberIncrement inc);
+
 private:
+    CDiagContext(const CDiagContext&);
+    CDiagContext& operator=(const CDiagContext&);
+
     // Initialize UID
     void x_CreateUID(void) const;
     // Write message to the log using current handler
@@ -1293,7 +1350,7 @@ private:
 
     mutable TUID           m_UID;
     TProperties            m_Properties;
-    CStopWatch*            m_StopWatch;
+    auto_ptr<CStopWatch>   m_StopWatch;
     auto_ptr<TMessages>    m_Messages;
     size_t                 m_MaxMessages;
 };

@@ -124,12 +124,6 @@ private:
     typedef list<string> TPrefixList;
     TPrefixList m_PrefixList;
 
-    typedef Uint8 TTID;
-    // Cached thread ID
-    TTID m_TID;
-    // Count of posted messages for the thread
-    int  m_ThreadPostCount;
-
     CDiagBuffer(void);
 
     //### This is a temporary workaround to allow call the destructor of
@@ -198,13 +192,6 @@ private:
     // Error codes info
     static CDiagErrCodeInfo* sm_ErrCodeInfo;
     static bool              sm_CanDeleteErrCodeInfo;
-
-    enum EPostNumberIncrement {
-        ePostNumber_NoIncrement,
-        ePostNumber_Increment
-    };
-    // Increment process post number, return the new value
-    static int GetProcessPostNumber(EPostNumberIncrement inc);
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
