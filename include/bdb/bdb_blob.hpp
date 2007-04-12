@@ -150,6 +150,7 @@ class NCBI_BDB_EXPORT CBDB_IdBlobFile : public CBDB_BLobFile
 {
 public:
     CBDB_FieldUint4        id;  ///< ID key
+    Uint4 GetUid() const;
 public:
     CBDB_IdBlobFile(EDuplicateKeys dup_keys = eDuplicatesDisable,
                     EDBType        db_type  = eBtree);

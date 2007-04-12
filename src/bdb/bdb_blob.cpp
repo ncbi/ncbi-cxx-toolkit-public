@@ -218,6 +218,12 @@ CBDB_IdBlobFile::CBDB_IdBlobFile(EDuplicateKeys dup_keys,
     BindKey("id", &id);
 }
 
+
+Uint4 CBDB_IdBlobFile::GetUid() const
+{
+    return (Uint4)id;
+}
+
 void CBDB_IdBlobFile::SetHash(DB*)
 {
     _ASSERT(m_DB_Type == eHash);
