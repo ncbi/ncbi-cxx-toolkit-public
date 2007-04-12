@@ -291,6 +291,9 @@ void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
     string err_type(GetType());
     err_type += "::";
     err_type += GetErrCodeString();
+    CDiagContext& ctx = GetDiagContext();
+    CDiagContextThreadData& thr_data =
+        CDiagContextThreadData::GetThreadData();
     SDiagMessage diagmsg(
         GetSeverity(), 
         text.c_str(), 
@@ -300,7 +303,12 @@ void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
         flags, NULL, 0, 0, err_type.c_str(),
         GetModule().c_str(),
         GetClass().c_str(),
-        GetFunction().c_str());
+        GetFunction().c_str(),
+        ctx.GetPID(),
+        thr_data.GetTID(),
+        ctx.GetProcessPostNumber(ePostNumber_Increment),
+        thr_data.GetThreadPostNumber(ePostNumber_Increment),
+        thr_data.GetRequestId());
     diagmsg.Write(out, SDiagMessage::fNoEndl);
 }
 
