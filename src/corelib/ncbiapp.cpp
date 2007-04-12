@@ -85,6 +85,7 @@ CNcbiApplication::CNcbiApplication(void)
     // Initialize UID and start timer
     GetDiagContext().GetUID();
     GetDiagContext().InitMessages(size_t(-1));
+    GetDiagContext().SetAppState(CDiagContext::eState_AppBegin);
 
     m_DisableArgDesc = false;
     m_HideArgs = 0;
@@ -493,6 +494,7 @@ int CNcbiApplication::AppMain
 
         // Run application
         if (exit_code == 1) {
+            GetDiagContext().SetAppState(CDiagContext::eState_AppRun);
             try {
                 exit_code = m_DryRun ? DryRun() : Run();
             }
@@ -510,6 +512,7 @@ int CNcbiApplication::AppMain
                 exit_code = 3;
             }
         }
+        GetDiagContext().SetAppState(CDiagContext::eState_AppEnd);
 
         // Close application
         try {

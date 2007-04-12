@@ -361,6 +361,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
         // Show PID and iteration # in all of the the diagnostics
         SetDiagRequestId(m_Iteration);
+        GetDiagContext().SetAppState(CDiagContext::eState_RequestBegin);
 
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << max_iterations);
@@ -521,7 +522,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                                       CRWStreambuf::fOwnWriter));
                         m_Context->GetResponse().SetOutput(new_stream.get());
                     }
+                    GetDiagContext().SetAppState(CDiagContext::eState_Request);
                     x_result = ProcessRequest(*m_Context);
+                    GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
                     if (x_result == 0) {
                         if (m_Cache.get()) {
                             m_Context->GetResponse().Flush();
@@ -540,6 +543,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     }
                 }
             } catch (CCgiException& e) {
+                GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
                 if ( e.GetStatusCode() < CCgiException::e200_Ok  ||
                      e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
                     throw;
@@ -551,6 +555,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 SetHTTPStatus(e.GetStatusCode());
                 x_result = 0;
             }
+            GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
             _TRACE("CCgiApplication::Run: done, status: " << x_result);
@@ -565,6 +570,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         }
         catch (exception& e) {
+            GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
             // Increment error counter
             (*result)++;
 
@@ -624,6 +630,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 }
             }}
         }
+        GetDiagContext().SetAppState(CDiagContext::eState_RequestEnd);
 
         // Close current request
         _TRACE("CCgiApplication::x_RunFastCGI: FINISHING");
@@ -659,6 +666,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
         }}
     } // Main Fast-CGI loop
+    GetDiagContext().SetAppState(CDiagContext::eState_AppEnd);
 
     //
     x_OnEvent(eExit, *result);
