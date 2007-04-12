@@ -6910,7 +6910,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if ( (args.GetDriverName() == "ftds"
           || args.GetDriverName() == "ftds63"
           || args.GetDriverName() == "ftds64_dblib"
-          // || args.GetDriverName() == "ftds64" // Need to fix this some day ...
+          || args.GetDriverName() == "ftds64"
           // || args.GetDriverName() == "ftds64_odbc"  // This is a big problem ....
           ) &&
          args.GetServerType() == CTestArguments::eMsSql ) {
