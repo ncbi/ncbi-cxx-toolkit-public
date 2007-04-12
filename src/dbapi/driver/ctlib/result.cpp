@@ -169,6 +169,10 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
     case CS_LONGCHAR_TYPE:      return eDB_LongChar;
     case CS_LONGBINARY_TYPE:    return eDB_LongBinary;
 
+#ifdef FTDS_IN_USE
+    case CS_UNIQUE_TYPE:        return eDB_VarBinary;
+#endif
+
 //     case CS_MONEY_TYPE:
 //     case CS_MONEY4_TYPE:
 //     case CS_SENSITIVITY_TYPE:
@@ -176,7 +180,6 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
 //     case CS_VOID_TYPE:
 //     case CS_USHORT_TYPE:
 //     case CS_UNICHAR_TYPE:
-//     case CS_UNIQUE_TYPE:
     }
 
     return eDB_UnsupportedType;
@@ -273,6 +276,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     EDB_Type b_type = item_buf ? item_buf->GetType() : eDB_UnsupportedType;
 
     switch ( fmt.datatype ) {
+#ifdef FTDS_IN_USE
+    case CS_UNIQUE_TYPE:
+#endif
     case CS_VARBINARY_TYPE:
     case CS_BINARY_TYPE: {
         if (item_buf  &&
@@ -904,7 +910,6 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 //         CS_VOID_TYPE
 //         CS_USHORT_TYPE
 //         CS_UNICHAR_TYPE
-//         CS_UNIQUE_TYPE
         DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
     }
     }
