@@ -343,7 +343,12 @@ RunTest() {
    # Get application execution time
    exec_time=\`tail -3 \$x_test_out.\$\$\`
    exec_time=\`echo \$exec_time | tr '\n' '?'\`
-   exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
+   echo \$exec_time | grep 'real [0-9]' > /dev/null 2>&1 
+   if [ \$? -eq 0 ] ;  then
+       exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
+   else
+       exec_time='unparsable timing stats'
+   fi
    rm -f $x_tmp/\$\$.out
    rm -f \$x_test_out.\$\$
 

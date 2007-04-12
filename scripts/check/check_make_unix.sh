@@ -418,14 +418,20 @@ EOF_launch
 
                # Get application execution time
                exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '??'\`
-               exec_time=\`echo \$exec_time |  \\
-                          sed -e 's/??/?/g'    \\
-                              -e 's/?$//'      \\
-                              -e 's/?/, /g'    \\
-                              -e 's/[ ] */ /g' \\
-                              -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
-                              -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
-                              -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
+               echo \$exec_time | grep 'real [0-9]' > /dev/null 2>&1 
+               if [ \$? -eq 0 ] ;  then
+                   exec_time=\`echo \$exec_time |  \\
+                              sed -e 's/??/?/g'    \\
+                                  -e 's/?$//'      \\
+                                  -e 's/?/, /g'    \\
+                                  -e 's/[ ] */ /g' \\
+                                  -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
+                                  -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
+                                  -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
+               else
+                   exec_time='unparsable timing stats'
+               fi
+               
                rm -f \$x_log
 
                # Analize check tool output
