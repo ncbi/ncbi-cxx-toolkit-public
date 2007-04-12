@@ -107,7 +107,7 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
                          << host << ":" << port);
                 return true;
             }            
-        } catch (exception& ex) {
+        } catch (exception& /*ex*/) {
         }
         servers.pop_front();
     }

@@ -400,7 +400,7 @@ public:
     {
         try {
             Close();
-        } catch(exception& ex) {
+        } catch(exception& /*ex*/) {
         } catch(...) {
         }
     }

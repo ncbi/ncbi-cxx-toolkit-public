@@ -78,7 +78,7 @@ public:
     CNetSrvConnectorPoll& GetPoll() const;
 
     void SetWaitServerTimeout(unsigned int sec);
-    unsigned int GetWaitServerTimeout() const;;
+    unsigned int GetWaitServerTimeout() const;
 
 protected:
 
