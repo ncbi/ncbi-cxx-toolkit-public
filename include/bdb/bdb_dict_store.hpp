@@ -203,8 +203,11 @@ public:
                        EOwnership  own = eNoOwnership);
     ~CBDB_BlobDictStore();
 
-    void SetEnv(CBDB_Env& env);
+    void      SetEnv(CBDB_Env& env);
+    CBDB_Env* GetEnv();
     void Open(const string& fname, CBDB_RawFile::EOpenMode mode);
+
+    const string& GetFileName() const;
 
     EBDB_ErrCode Read    (const Key& key, CBDB_RawFile::TBuffer& data);
     EBDB_ErrCode ReadById(TKeyId     key, CBDB_RawFile::TBuffer& data);
@@ -273,6 +276,23 @@ inline
 CBDB_BlobDictStore<Key, Dictionary, BvStore>::~CBDB_BlobDictStore()
 {
 }
+
+
+template <typename Key, typename Dictionary, typename BvStore>
+inline
+CBDB_Env* CBDB_BlobDictStore<Key, Dictionary, BvStore>::GetEnv()
+{
+    return m_Store->GetEnv();
+}
+
+
+template <typename Key, typename Dictionary, typename BvStore>
+inline
+const string& CBDB_BlobDictStore<Key, Dictionary, BvStore>::GetFileName() const
+{
+    return m_Store->GetFileName();
+}
+
 
 template <typename Key, typename Dictionary, typename BvStore>
 inline
