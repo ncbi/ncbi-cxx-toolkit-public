@@ -41,6 +41,9 @@
     #if DB_VERSION_MINOR >= 4 || DB_VERSION_MAJOR > 4
         #define BDB_NEW_MUTEX_API
     #endif
+    #if DB_VERSION_MINOR >= 5 || DB_VERSION_MAJOR > 4
+        #define BDB_NEW_MEM_STATS
+    #endif
 #endif
 
 
@@ -714,19 +717,25 @@ void CBDB_Env::PrintMemStat(CNcbiOstream & out)
             << "st_hash_examined    : " << stp->st_hash_examined   << NcbiEndl
             << "st_hash_nowait      : " << stp->st_hash_nowait     << NcbiEndl
             << "st_hash_wait        : " << stp->st_hash_wait       << NcbiEndl
+#ifdef BDB_NEW_MEM_STATS
             << "st_hash_max_nowait  : " << stp->st_hash_max_nowait << NcbiEndl
+#endif
             << "st_hash_max_wait    : " << stp->st_hash_max_wait   << NcbiEndl
             << "st_region_wait      : " << stp->st_region_wait     << NcbiEndl
             << "st_region_nowait    : " << stp->st_region_nowait   << NcbiEndl
+#ifdef BDB_NEW_MEM_STATS
             << "st_mvcc_frozen      : " << stp->st_mvcc_frozen     << NcbiEndl
             << "st_mvcc_thawed      : " << stp->st_mvcc_thawed     << NcbiEndl
             << "st_mvcc_freed       : " << stp->st_mvcc_freed      << NcbiEndl
+#endif
             << "st_alloc            : " << stp->st_alloc           << NcbiEndl
             << "st_alloc_buckets    : " << stp->st_alloc_buckets   << NcbiEndl
             << "st_alloc_max_buckets: " << stp->st_alloc_max_buckets << NcbiEndl
             << "st_alloc_pages      : " << stp->st_alloc_pages     << NcbiEndl
             << "st_alloc_max_pages  : " << stp->st_alloc_max_pages << NcbiEndl
+#ifdef BDB_NEW_MEM_STATS
             << "st_io_wait          : " << stp->st_io_wait         << NcbiEndl
+#endif
         ;
 
         int max_write, max_write_sleep;
