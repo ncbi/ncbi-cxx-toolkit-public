@@ -569,15 +569,40 @@ unsigned CBDB_Env::MutexGetIncrement()
 #endif
 }
 
+unsigned CBDB_Env::MutexGetFree()
+{
+    unsigned free_m = 0;
+#ifdef BDB_NEW_MUTEX_API
+    DB_MUTEX_STAT* stp = 0;
+    try {
+        int ret = m_Env->mutex_stat(m_Env, &stp, 0);
+        BDB_CHECK(ret, "DB_ENV::mutex_stat");
+        free_m = stp->st_mutex_free;
+    } 
+    catch (...)
+    {
+        if (stp) {
+            ::free(stp);
+        }
+        throw;
+    }
+
+    if (stp) {
+        ::free(stp);
+    }
+#endif
+    return free_m;
+}
+
 
 void CBDB_Env::PrintMutexStat(CNcbiOstream & out)
 {
 #ifdef BDB_NEW_MUTEX_API
     DB_MUTEX_STAT* stp = 0;
-    int ret = m_Env->mutex_stat(m_Env, &stp, 0);
-    BDB_CHECK(ret, "DB_ENV::mutex_stat");
-
     try {
+        int ret = m_Env->mutex_stat(m_Env, &stp, 0);
+        BDB_CHECK(ret, "DB_ENV::mutex_stat");
+
         out << "st_mutex_align     : " << stp->st_mutex_align     << NcbiEndl
             << "st_mutex_tas_spins : " << stp->st_mutex_tas_spins << NcbiEndl
             << "st_mutex_free      : " << stp->st_mutex_free      << NcbiEndl
@@ -606,11 +631,11 @@ void CBDB_Env::PrintLockStat(CNcbiOstream & out)
 {
 #ifdef BDB_NEW_MUTEX_API
     DB_LOCK_STAT *stp = 0;
-
-    int ret = m_Env->lock_stat(m_Env, &stp, 0);
-    BDB_CHECK(ret, "DB_ENV::lock_stat");
-
     try {
+
+        int ret = m_Env->lock_stat(m_Env, &stp, 0);
+        BDB_CHECK(ret, "DB_ENV::lock_stat");
+
         out << "st_id           : " << stp->st_id           << NcbiEndl
             << "st_cur_maxid    : " << stp->st_cur_maxid    << NcbiEndl
             << "st_nmodes       : " << stp->st_nmodes       << NcbiEndl
@@ -652,6 +677,93 @@ void CBDB_Env::PrintLockStat(CNcbiOstream & out)
     }
 
 #endif
+}
+
+void CBDB_Env::PrintMemStat(CNcbiOstream & out)
+{
+    DB_MPOOL_STAT *stp = 0;
+    try {
+
+        int ret = m_Env->memp_stat(m_Env, &stp, 0, 0);
+        BDB_CHECK(ret, "DB_ENV::memp_stat");
+
+
+        out << "st_gbytes           : " << stp->st_gbytes          << NcbiEndl
+            << "st_bytes            : " << stp->st_bytes           << NcbiEndl
+            << "st_ncache           : " << stp->st_ncache          << NcbiEndl
+            << "st_regsize          : " << stp->st_regsize         << NcbiEndl
+            << "st_mmapsize         : " << stp->st_mmapsize        << NcbiEndl
+            << "st_maxopenfd        : " << stp->st_maxopenfd       << NcbiEndl
+            << "st_maxwrite         : " << stp->st_maxwrite        << NcbiEndl
+            << "st_maxwrite_sleep   : " << stp->st_maxwrite_sleep  << NcbiEndl
+            << "st_map              : " << stp->st_map             << NcbiEndl
+            << "st_cache_hit        : " << stp->st_cache_hit       << NcbiEndl
+            << "st_cache_miss       : " << stp->st_cache_miss      << NcbiEndl
+            << "st_page_create      : " << stp->st_page_create     << NcbiEndl
+            << "st_page_in          : " << stp->st_page_in         << NcbiEndl
+            << "st_page_out         : " << stp->st_page_out        << NcbiEndl
+            << "st_ro_evict         : " << stp->st_ro_evict        << NcbiEndl
+            << "st_rw_evict         : " << stp->st_rw_evict        << NcbiEndl
+            << "st_page_trickle     : " << stp->st_page_trickle    << NcbiEndl
+            << "st_pages            : " << stp->st_pages           << NcbiEndl
+            << "st_page_clean       : " << stp->st_page_clean      << NcbiEndl
+            << "st_page_dirty       : " << stp->st_page_dirty      << NcbiEndl
+            << "st_hash_buckets     : " << stp->st_hash_buckets    << NcbiEndl
+            << "st_hash_searches    : " << stp->st_hash_searches   << NcbiEndl
+            << "st_hash_longest     : " << stp->st_hash_longest    << NcbiEndl
+            << "st_hash_examined    : " << stp->st_hash_examined   << NcbiEndl
+            << "st_hash_nowait      : " << stp->st_hash_nowait     << NcbiEndl
+            << "st_hash_wait        : " << stp->st_hash_wait       << NcbiEndl
+            << "st_hash_max_nowait  : " << stp->st_hash_max_nowait << NcbiEndl
+            << "st_hash_max_wait    : " << stp->st_hash_max_wait   << NcbiEndl
+            << "st_region_wait      : " << stp->st_region_wait     << NcbiEndl
+            << "st_region_nowait    : " << stp->st_region_nowait   << NcbiEndl
+            << "st_mvcc_frozen      : " << stp->st_mvcc_frozen     << NcbiEndl
+            << "st_mvcc_thawed      : " << stp->st_mvcc_thawed     << NcbiEndl
+            << "st_mvcc_freed       : " << stp->st_mvcc_freed      << NcbiEndl
+            << "st_alloc            : " << stp->st_alloc           << NcbiEndl
+            << "st_alloc_buckets    : " << stp->st_alloc_buckets   << NcbiEndl
+            << "st_alloc_max_buckets: " << stp->st_alloc_max_buckets << NcbiEndl
+            << "st_alloc_pages      : " << stp->st_alloc_pages     << NcbiEndl
+            << "st_alloc_max_pages  : " << stp->st_alloc_max_pages << NcbiEndl
+            << "st_io_wait          : " << stp->st_io_wait         << NcbiEndl
+        ;
+
+        int max_write, max_write_sleep;
+        ret =
+            m_Env->get_mp_max_write(m_Env, &max_write, &max_write_sleep);
+        BDB_CHECK(ret, "DB_ENV::get_mp_max_write");
+
+        out << "max_write (pages)          : " << max_write       << NcbiEndl
+            << "max_write_sleep (microsec) : " << max_write_sleep << NcbiEndl
+        ;
+
+    } 
+    catch (...)
+    {
+        if (stp) {
+            ::free(stp);
+        }
+        throw;
+    }
+
+    if (stp) {
+        ::free(stp);
+    }
+
+}
+
+
+void CBDB_Env::MempTrickle(int percent, int *nwrotep)
+{
+    int ret = m_Env->memp_trickle(m_Env, percent, nwrotep);
+    BDB_CHECK(ret, "DB_ENV::memp_trickle");
+}
+
+void CBDB_Env::MpMaxWrite(int maxwrite, int maxwrite_sleep)
+{
+    int ret = m_Env->set_mp_max_write(m_Env, maxwrite, maxwrite_sleep);
+    BDB_CHECK(ret, "DB_ENV::set_mp_max_write");
 }
 
 

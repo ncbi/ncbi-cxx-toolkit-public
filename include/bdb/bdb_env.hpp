@@ -205,6 +205,12 @@ public:
 
     unsigned MutexGetIncrement();
 
+    /// Get number of free mutexes
+    unsigned MutexGetFree();
+
+    /// Print mutex statistics
+    void PrintMutexStat(CNcbiOstream & out);
+
     /// Non-force removal of BDB environment. (data files remains intact).
     /// @return
     ///   FALSE if environment is busy and cannot be deleted
@@ -234,11 +240,28 @@ public:
     /// Set default syncronicity level
     void SetTransactionSync(CBDB_Transaction::ETransSync sync);
 
-    /// Print mutex statistics
-    void PrintMutexStat(CNcbiOstream & out);
-
     /// Print lock statistics
     void PrintLockStat(CNcbiOstream & out);
+
+    /// Print memory statistics
+    void PrintMemStat(CNcbiOstream & out);
+
+
+    /// Ensures that a specified percent of the pages in 
+    /// the shared memory pool are clean, by writing dirty pages to 
+    /// their backing files
+    ///
+    /// @param percent 
+    ///     percent of the pages in the cache that should be clean
+    /// @param nwrotep
+    ///     Number of pages written
+    ///
+    void MempTrickle(int percent, int *nwrotep);
+
+    /// limits the number of sequential write operations scheduled by the 
+    /// library when flushing dirty pages from the cache
+    void MpMaxWrite(int maxwrite, int maxwrite_sleep);
+
 
     /// return the path to the environment
     const string& GetPath() const { return m_HomePath; }
