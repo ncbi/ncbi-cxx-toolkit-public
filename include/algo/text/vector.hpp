@@ -228,24 +228,31 @@ protected:
 /// @{
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreCombined(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreCosine(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreDice(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreDistance(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreDot(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreJaccard(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
+inline
 float ScoreOverlap(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 /// @}
