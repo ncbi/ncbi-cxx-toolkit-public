@@ -90,9 +90,7 @@ public:
     //  Note:  for a single pref. tax node, returns 0 if both are the same model organism or if
     //         neither is a model organism:  we must lose one, but w/o further info either
     //         is equally favored to be kept.
-    virtual int Compare(const CTaxNRItem& rhs) const {
-        return CTaxNRItem::CompareItems(*this, rhs);
-    }
+    virtual int Compare(const CNRItem& rhs) const;
     static int CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs);
 
 private:
@@ -157,9 +155,7 @@ public:
     //  Simply compare values of taxId in the two items.
     virtual int CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) const;
 
-    //  If 'id' has not been seen, return an id of -1, or a CTaxNRItem
-    //  with invalid values as created from the default ctor.
-    bool GetItemForId(CBaseClusterer::TId itemId, CTaxNRItem& taxNRItem) const;
+    //  If 'id' has not been seen, return an id of -1.
     int  GetTaxIdForId(const CBaseClusterer::TId& id) const;
 
     bool ConnectToServer();

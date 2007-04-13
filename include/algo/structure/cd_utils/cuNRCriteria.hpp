@@ -157,7 +157,7 @@ public:
 
     //  Returns false if itemId not found in map or mapped item is NULL, in which case
     //  nrItem is rest to have INVALID_ITEM_ID and keep == false.
-    virtual bool GetItemForId(CBaseClusterer::TId itemId, CNRItem& nrItem) const;
+    bool GetItemForId(CBaseClusterer::TId itemId, CNRItem& nrItem) const;
     bool IsItemKept(CBaseClusterer::TId itemId) const;
 
     const TId2Item* GetId2ItemMap() const {return m_id2ItemMap;}

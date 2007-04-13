@@ -44,6 +44,16 @@ BEGIN_SCOPE(cd_utils)
 const CTaxNRItem::TTaxItemId CTaxNRItem::INVALID_TAX_ITEM_ID = (CTaxNRItem::TTaxItemId) CNRItem::INVALID_ITEM_ID;
 
 
+int CTaxNRItem::Compare(const CNRItem& rhs) const 
+{
+    try {
+        const CTaxNRItem& taxNRItem = dynamic_cast<const CTaxNRItem&> (rhs);
+        return CTaxNRItem::CompareItems(*this, taxNRItem);
+    } catch (std::bad_cast) {
+        return 1;  //  rule in favor of this object if can't perform the cast
+    }
+}
+
 int CTaxNRItem::CompareItems(const CTaxNRItem& lhs, const CTaxNRItem& rhs) {
     bool gotAnswer = false;
     int result;
@@ -139,18 +149,6 @@ CTaxNRCriteria::CTaxNRCriteria(CPriorityTaxNodes* priorityTaxNodes, const TId2Ta
 
 CTaxNRCriteria::~CTaxNRCriteria() {
     delete m_priorityTaxNodes;
-}
-
-bool CTaxNRCriteria::GetItemForId(CBaseClusterer::TId id, CTaxNRItem& taxNRItem) const {
-    if (CNRCriteria::GetItemForId(id, taxNRItem)) {
-        TId2ItemCit cit = m_id2ItemMap->find(id);
-        taxNRItem = *((CTaxNRItem*)(cit->second));
-        return true;
-    } else {
-        const CTaxNRItem invalidItem;
-        taxNRItem.Set(invalidItem);
-        return false;
-    }
 }
 
 int CTaxNRCriteria::GetTaxIdForId(const CBaseClusterer::TId& id) const {
