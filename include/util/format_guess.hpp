@@ -47,17 +47,52 @@ class NCBI_XUTIL_EXPORT CFormatGuess
 {
 public:
     enum EFormat {
+        //< unknown format
         eUnknown = 0,
+
+        //< binary ASN.1
         eBinaryASN,
+
+        //< text ASN.1
         eTextASN,
+
+        // FASTA format sequence record
         eFasta,
+
+        //< XML
         eXml,
-        eRmo,           // repeatmasker out
-        eGlimmer3,      // Glimmer3 predictions file
+
+        //< RepeatMasker Output
+        eRmo,
+
+        //< Glimmer3 predictions
+        eGlimmer3,
+
+        //< Phrap ACE assembly file
         ePhrapAce,
+
+        //< GFF/GTF style annotations
         eGtf,
+
+        //< AGP format assembly
         eAgp,
+
+        //< Newick file
         eNewick,
+
+        //< Distance matrix file
+        eDistanceMatrix,
+
+        //< Five-column feature table
+        eFiveColFeatureTable,
+
+        //< Taxplot file
+        eTaxplot,
+
+        //< Generic table
+        eTable,
+
+        //< Text alignment
         eAlignment
     };
 

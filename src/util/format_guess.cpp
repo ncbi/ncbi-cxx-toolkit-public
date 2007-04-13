@@ -108,7 +108,7 @@ bool x_SplitLines( const char* byte_buf, size_t byte_count, list< string>& lines
 }
 
 
-bool x_IsLineRepeatMasker( const string& line ) 
+bool x_IsLineRmo( const string& line ) 
 {
     const size_t MIN_VALUES_PER_RECORD = 15;
     
@@ -265,7 +265,7 @@ bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
         if ( *it == "" ) {
             continue;
         }
-        if ( ! x_IsLineRepeatMasker( *it ) ) {
+        if ( ! x_IsLineRmo( *it ) ) {
             return false;
         }
     }
@@ -687,7 +687,152 @@ bool x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
     }
     return false;
 }
-    
+
+
+bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
+{
+    // first split into a set of lines
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+
+    //
+    // criteria are odd:
+    //
+    list<string>::const_iterator iter = lines.begin();
+    list<string> toks;
+
+    /// first line: one token, one number
+    NStr::Split(*iter++, "\t ", toks);
+    if (toks.size() != 1  ||
+        toks.front().find_first_not_of("0123456789") != string::npos) {
+        return false;
+    }
+
+    // now, for remaining ones, we expect an alphanumeric item first,
+    // followed by a set of floating-point values.  Unless we are at the last
+    // line, the number of values should increase monotonically
+    for (int i = 1;  iter != lines.end();  ++i, ++iter) {
+        toks.clear();
+        NStr::Split(*iter, "\t ", toks);
+        if (toks.size() != i) {
+            /// we can ignore the last line ; it may be truncated
+            list<string>::const_iterator it = iter;
+            ++it;
+            if (it != lines.end()) {
+                return false;
+            }
+        }
+
+        list<string>::const_iterator it = toks.begin();
+        for (++it;  it != toks.end();  ++it) {
+            try {
+                NStr::StringToDouble(*it);
+            }
+            catch (CException&) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool x_IsInputTaxplot(const char* byte_buf, size_t byte_count)
+{
+    return false;
+}
+
+bool x_IsInputFiveColFeatureTable(const char* byte_buf, size_t byte_count)
+{
+    // first split into a set of lines
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+
+    // criteria:
+    list<string>::const_iterator iter = lines.begin();
+
+    // first non-empty line should look FASTA-ish and have 'Feature'
+    // as the id, followed by a single token
+    for ( ;  iter != lines.end();  ++iter) {
+        if (iter->empty()) {
+            continue;
+        }
+
+        if (iter->find(">Feature ") != 0) {
+            return false;
+        }
+        if (iter->find_first_of(" \t", 9) != string::npos) {
+            return false;
+        }
+        break;
+    }
+
+    return true;
+}
+
+
+bool x_IsInputTable(const char* byte_buf, size_t byte_count)
+{
+    // first split into a set of lines
+    list<string> lines;
+    if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( lines.empty() ) {
+        return false;
+    }
+
+    // criteria:
+    list<string>::const_iterator iter = lines.begin();
+    list<string> toks;
+
+    /// determine the number of observed columns
+    int ncols = 0;
+    for ( ;  iter != lines.end();  ++iter) {
+        if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
+            continue;
+        }
+
+        toks.clear();
+        NStr::Split(*iter, " \t,", toks);
+        ncols = toks.size();
+        break;
+    }
+
+    // verify that columns all have the same size
+    // we can add an exception for the last line
+    for ( ;  iter != lines.end();  ++iter) {
+        if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
+            continue;
+        }
+
+        toks.clear();
+        NStr::Split(*iter, " \t,", toks);
+        if (toks.size() != ncols) {
+            list<string>::const_iterator it = iter;
+            ++it;
+            if (it != lines.end()) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 
 CFormatGuess::ESequenceType 
 CFormatGuess::SequenceType(const char* str, unsigned length)
@@ -736,37 +881,55 @@ CFormatGuess::EFormat
 CFormatGuess::Format(const unsigned char* buffer, 
                      size_t               buffer_size)
 {
-    if (!buffer_size) {
+    if ( !buffer_size ) {
         return eUnknown;
     }
     EFormat format = eUnknown;
 
-    if ( x_IsInputRepeatMasker( (const char*)buffer, buffer_size ) ) {
+    const char* chbuf = (const char*)buffer;
+
+    ///
+    /// the order here is important!
+    ///
+
+    if ( x_IsInputRepeatMasker(chbuf, buffer_size) ) {
         return eRmo;
     }
-    if ( x_IsInputPhrapAce( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputPhrapAce(chbuf, buffer_size) ) {
         return ePhrapAce;
     }
-    if ( x_IsInputGtf( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputGtf(chbuf, buffer_size) ) {
         return eGtf;
     }
-    if ( x_IsInputGlimmer3( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputGlimmer3(chbuf, buffer_size) ) {
         return eGlimmer3;
     }
-    if ( x_IsInputAgp( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputAgp(chbuf, buffer_size) ) {
         return eAgp;
     }
-    if ( x_IsInputNewick( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputNewick(chbuf, buffer_size) ) {
         return eNewick;
     }
-    if ( x_IsInputXml( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputXml(chbuf, buffer_size) ) {
         return eXml;
     }
-    if ( x_IsInputAlignment( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputAlignment(chbuf, buffer_size) ) {
         return eAlignment;
     }
-    if ( x_IsInputBinaryAsn( (const char*)buffer, buffer_size ) ) {
+    if ( x_IsInputBinaryAsn(chbuf, buffer_size) ) {
         return eBinaryASN;
+    }
+    if ( x_IsInputDistanceMatrix(chbuf, buffer_size) ) {
+        return eDistanceMatrix;
+    }
+    if ( x_IsInputTaxplot(chbuf, buffer_size) ) {
+        return eTaxplot;
+    }
+    if ( x_IsInputFiveColFeatureTable(chbuf, buffer_size) ) {
+        return eFiveColFeatureTable;
+    }
+    if ( x_IsInputTable(chbuf, buffer_size) ) {
+        return eTable;
     }
 
     //
