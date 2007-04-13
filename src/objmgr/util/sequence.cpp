@@ -1946,7 +1946,9 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
             delim = ',';
         }
     }
-    m_Out << ' ' << sequence::GetTitle(handle) << NcbiEndl;
+    string safe_title;
+    NStr::Replace(sequence::GetTitle(handle), ">", "_", safe_title);
+    m_Out << ' ' << safe_title << NcbiEndl;
 }
 
 
