@@ -1059,6 +1059,7 @@ Int2 BLAST_GetSuggestedWindowSize(EBlastProgramType program_number, const char* 
  * @param word_size Word size option [in]
  * @param template_length Discontiguous template length [in]
  * @param template_type Discontiguous template type [in]
+ * @param blast_msg Used for storing error messages [in][out]
  * @return TRUE if options combination valid.
  */
 static Boolean 
