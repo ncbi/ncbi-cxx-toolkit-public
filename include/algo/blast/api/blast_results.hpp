@@ -106,6 +106,17 @@ public:
         Blast_KarlinBlkFree(m_GappedKarlinBlk);
     }
 
+    /// Copy-constructor
+    CBlastAncillaryData(const CBlastAncillaryData& rhs) {
+        do_copy(rhs);
+    }
+
+    /// Assignment operator
+    CBlastAncillaryData& operator=(const CBlastAncillaryData& rhs) {
+        do_copy(rhs);
+        return *this;
+    }
+
     /// Retrieve ungapped Karlin parameters
     const Blast_KarlinBlk * GetUngappedKarlinBlk() const
     { 
@@ -135,6 +146,24 @@ private:
 
     /// Search space used when calculating e-values for one query
     Int8 m_SearchSpace;
+
+    /// Workhorse for copy constructor and assignment operator
+    void do_copy(const CBlastAncillaryData& other) {
+        if (this != &other) {
+            m_UngappedKarlinBlk = m_GappedKarlinBlk = NULL;
+            m_SearchSpace = other.m_SearchSpace;
+
+            if (other.m_UngappedKarlinBlk) {
+                m_UngappedKarlinBlk = Blast_KarlinBlkNew();
+                Blast_KarlinBlkCopy(m_UngappedKarlinBlk, 
+                                    other.m_UngappedKarlinBlk);
+            }
+            if (other.m_GappedKarlinBlk) {
+                m_GappedKarlinBlk = Blast_KarlinBlkNew();
+                Blast_KarlinBlkCopy(m_GappedKarlinBlk, other.m_GappedKarlinBlk);
+            }
+        }
+    }
 };
 
 
@@ -212,7 +241,7 @@ private:
 /// This class encapsulates all of the search results and related data
 /// from a search.
 
-class NCBI_XBLAST_EXPORT CSearchResultSet {
+class NCBI_XBLAST_EXPORT CSearchResultSet : public CObject {
 public:
     /// List of query ids.
     typedef vector< CConstRef<objects::CSeq_id> > TQueryIdVector;
@@ -225,15 +254,14 @@ public:
 
     /// const_iterator type definition
     typedef vector< CRef<CSearchResults> >::const_iterator const_iterator;
-    
-    /// Default constructor
-    CSearchResultSet() {}
-    
+
     /// Parametrized constructor
     /// @param aligns vector of all queries' alignments [in]
     /// @param msg_vec vector of all queries' messages [in]
+    /// @param res_type result type stored in this object [in]
     CSearchResultSet(TSeqAlignVector aligns,
-                     TSearchMessages msg_vec);
+                     TSearchMessages msg_vec,
+                     EResultType res_type = eDatabaseSearch);
     
     /// Parametrized constructor
     /// @param ids vector of all queries' ids [in]
@@ -241,46 +269,67 @@ public:
     /// @param msg_vec vector of all queries' messages [in]
     /// @param ancillary_data vector of per-query search ancillary data [in]
     /// @param masks Mask locations for this query [in]
+    /// @param res_type result type stored in this object [in]
     CSearchResultSet(TQueryIdVector  ids,
                      TSeqAlignVector aligns,
                      TSearchMessages msg_vec,
                      TAncillaryVector  ancillary_data = 
                      TAncillaryVector(),
-                     const TSeqLocInfoVector* masks = NULL);
+                     const TSeqLocInfoVector* masks = NULL,
+                     EResultType res_type = eDatabaseSearch);
     
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
-    /// @param i query sequence index [in]
-    CSearchResults & operator[](size_type i)
-    {
+    /// @param i query sequence index if result type is eDatabaseSearch,
+    /// otherwise it's the query-subject index [in]
+    CSearchResults & operator[](size_type i) {
         return *m_Results[i];
     }
     
     /// Allow array-like access with integer indices to const CSearchResults 
     /// contained by this object
-    /// @param i query sequence index [in]
-    const CSearchResults & operator[](size_type i) const
-    {
+    /// @param i query sequence index if result type is eDatabaseSearch,
+    /// otherwise it's the query-subject index [in]
+    const CSearchResults & operator[](size_type i) const {
         return *m_Results[i];
     }
+
+    /// Retrieve results for a query-subject pair
+    /// contained by this object
+    /// @param qi query sequence index [in]
+    /// @param si subject sequence index [in]
+    /// @note it only works for results of type eSequenceComparison
+    CSearchResults & GetResults(size_type qi, size_type si);
+
+    /// Retrieve results for a query-subject pair
+    /// @param qi query sequence index [in]
+    /// @param si subject sequence index [in]
+    /// @note it only works for results of type eSequenceComparison
+    const CSearchResults & GetResults(size_type qi, size_type si) const;
     
     /// Allow array-like access with CSeq_id indices to CSearchResults 
     /// contained by this object
     /// @param ident query sequence identifier [in]
+    /// @note it only works for results of type eDatabaseSearch
     CRef<CSearchResults> operator[](const objects::CSeq_id & ident);
     
     /// Allow array-like access with CSeq_id indices to const CSearchResults 
     /// contained by this object
     /// @param ident query sequence identifier [in]
+    /// @note it only works for results of type eDatabaseSearch
     CConstRef<CSearchResults> operator[](const objects::CSeq_id & ident) const;
     
     /// Return the number of results contained by this object
+    /// @note this returns the number of queries for results of type 
+    /// eDatabaseSearch and (number of queries * number of subjects) for results
+    /// of type eSequenceComparison
     size_type GetNumResults() const
     {
         return m_Results.size();
     }
 
     /// Identical to GetNumResults, provided to facilitate STL-style iteration
+    /// @sa note in GetNumResults
     size_type size() const { return GetNumResults(); }
 
     /// Returns const_iterator to beginning of container, provided to
@@ -290,14 +339,9 @@ public:
     /// Returns const_iterator to end of container, provided to
     /// facilitate STL-style iteration
     const_iterator end() const { return m_Results.end(); }
+
+    EResultType GetResultType() const { return m_ResultType; }
     
-    /// Add results to this object, intended to be used by internal
-    /// BLAST APIs to populate this object
-    /// @param result results for a given query [in]
-    void AddResult(CRef<CSearchResults> result)
-    {
-        m_Results.push_back(result);
-    }
 private:    
     /// Initialize the result set.
     void x_Init(vector< CConstRef<objects::CSeq_id> > queries,
@@ -306,6 +350,12 @@ private:
                 TAncillaryVector                      ancillary_data,
                 const TSeqLocInfoVector*              query_masks);
     
+    /// Type of results stored in this object
+    EResultType m_ResultType;
+
+    /// Number of queries
+    size_type m_NumQueries;
+
     /// Vector of results.
     vector< CRef<CSearchResults> > m_Results;
 };

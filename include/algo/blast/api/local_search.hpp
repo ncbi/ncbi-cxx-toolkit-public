@@ -63,7 +63,7 @@ public:
     virtual void SetQueryFactory(CRef<IQueryFactory> query_factory);
     
     /// Run the search.
-    virtual CSearchResultSet Run();
+    virtual CRef<CSearchResultSet> Run();
     
 private:
     /// Search options
@@ -94,7 +94,7 @@ public:
     virtual void SetQuery(CRef<objects::CPssmWithParameters> pssm);
 
     /// Run a single iteration of the search
-    virtual CSearchResultSet Run();
+    virtual CRef<CSearchResultSet> Run();
 
 private:
     /// Search configuration

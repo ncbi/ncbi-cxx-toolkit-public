@@ -84,7 +84,7 @@ CPsiBl2Seq::~CPsiBl2Seq()
     }
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CPsiBl2Seq::Run()
 {
     m_Impl->SetResultType(eSequenceComparison);

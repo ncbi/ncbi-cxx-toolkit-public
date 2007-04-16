@@ -200,7 +200,7 @@ int CBlastDemoApplication::Run(void)
 
     CLocalBlast blaster(query_factory, opts, target_db);
 
-    CSearchResultSet results = blaster.Run();
+    CSearchResultSet results = *blaster.Run();
 
     // Get warning messages.
     for (unsigned int i = 0; i < results.GetNumResults(); i++) 

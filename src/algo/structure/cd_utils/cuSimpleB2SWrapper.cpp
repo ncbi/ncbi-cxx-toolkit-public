@@ -153,7 +153,7 @@ bool CSimpleB2SWrapper::DoBlast2Seqs()
 
     //  perform the blast 2 sequences and process the results...
     CPsiBl2Seq blaster(query,subject,blastOptions);
-    CSearchResultSet hits = blaster.Run();
+    CSearchResultSet hits = *blaster.Run();
     int total = hits.GetNumResults();
     for (int index=0; index<total; index++)
        processBlastHits(hits[index]);

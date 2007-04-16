@@ -82,7 +82,7 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
   m_TbackSearch     (0)
 {}
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CLocalBlast::Run()
 {
     _ASSERT(m_QueryFactory);
@@ -107,14 +107,14 @@ CLocalBlast::Run()
                                                   *m_Opts,
                                                   *seqinfo_src,
                                                   search_msgs));
-    CSearchResultSet retval = m_TbackSearch->Run();
+    CRef<CSearchResultSet> retval = m_TbackSearch->Run();
 
     // Add the filtered query regions, if any
     TSeqLocInfoVector masks = m_PrelimSearch->GetFilteredQueryRegions();
     if ( !masks.empty() ) {
-        _ASSERT(masks.size() == retval.GetNumResults());
-        for (size_t i = 0; i < retval.GetNumResults(); i++) {
-            retval[i].SetMaskedQueryRegions(masks[i]);
+        _ASSERT(masks.size() == retval->GetNumResults());
+        for (size_t i = 0; i < retval->GetNumResults(); i++) {
+            (*retval)[i].SetMaskedQueryRegions(masks[i]);
         }
     }
     return retval;

@@ -111,9 +111,27 @@ CSearchResults::GetSeqId() const
     return m_QueryId;
 }
 
+CSearchResults&
+CSearchResultSet::GetResults(size_type qi, size_type si)
+{
+    if (m_ResultType != eSequenceComparison) {
+        NCBI_THROW(CBlastException, eNotSupported, "Invalid method accessed");
+    }
+    return *m_Results[qi * m_NumQueries + si];
+}
+
+const CSearchResults&
+CSearchResultSet::GetResults(size_type qi, size_type si) const
+{
+    return const_cast<CSearchResults&>(GetResults(qi, si));
+}
+
 CConstRef<CSearchResults>
 CSearchResultSet::operator[](const objects::CSeq_id & ident) const
 {
+    if (m_ResultType != eDatabaseSearch) {
+        NCBI_THROW(CBlastException, eNotSupported, "Invalid method accessed");
+    }
     for( size_t i = 0;  i < m_Results.size();  i++ ) {
         if ( CSeq_id::e_YES == ident.Compare(*m_Results[i]->GetSeqId()) ) {
             return m_Results[i];
@@ -126,6 +144,9 @@ CSearchResultSet::operator[](const objects::CSeq_id & ident) const
 CRef<CSearchResults>
 CSearchResultSet::operator[](const objects::CSeq_id & ident)
 {
+    if (m_ResultType != eDatabaseSearch) {
+        NCBI_THROW(CBlastException, eNotSupported, "Invalid method accessed");
+    }
     for( size_t i = 0;  i < m_Results.size();  i++ ) {
         if ( CSeq_id::e_YES == ident.Compare(*m_Results[i]->GetSeqId()) ) {
             return m_Results[i];
@@ -168,6 +189,7 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
         }
     }
     
+    _ASSERT(retval.NotEmpty());
     return retval;
 }
 
@@ -175,7 +197,9 @@ CSearchResultSet::CSearchResultSet(TQueryIdVector               queries,
                                    TSeqAlignVector              aligns,
                                    TSearchMessages              msg_vec,
                                    TAncillaryVector             ancillary_data,
-                                   const TSeqLocInfoVector*     query_masks)
+                                   const TSeqLocInfoVector*     query_masks,
+                                   EResultType                  res_type)
+: m_ResultType(res_type)
 {
     if (ancillary_data.empty()) {
         ancillary_data.resize(aligns.size());
@@ -184,7 +208,9 @@ CSearchResultSet::CSearchResultSet(TQueryIdVector               queries,
 }
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
-                                   TSearchMessages msg_vec)
+                                   TSearchMessages msg_vec,
+                                   EResultType res_type)
+: m_ResultType(res_type)
 {
     vector< CConstRef<CSeq_id> > queries;
     TAncillaryVector ancillary_data(aligns.size()); // no ancillary_data
@@ -202,9 +228,11 @@ void CSearchResultSet::x_Init(vector< CConstRef<objects::CSeq_id> > queries,
                               TAncillaryVector                   ancillary_data,
                               const TSeqLocInfoVector*           query_masks)
 {
-    _ASSERT(aligns.size() == ancillary_data.size());
+    _ASSERT(queries.size() == aligns.size());
     _ASSERT(aligns.size() == msg_vec.size());
-    
+    _ASSERT(aligns.size() == ancillary_data.size());
+
+    m_NumQueries = queries.size();
     m_Results.resize(aligns.size());
     
     for(size_t i = 0; i < aligns.size(); i++) {

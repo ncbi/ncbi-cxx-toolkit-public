@@ -365,7 +365,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db)
 
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));
     CLocalBlast blaster(query_factory, repeat_opts, target_db);
-    CSearchResultSet results = blaster.Run();
+    CRef<CSearchResultSet> results = blaster.Run();
 
     // Restore the lower case masks
     for (unsigned int index = 0; index < query.size(); ++index) {
@@ -374,7 +374,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db)
 
     // Extract the repeat locations and combine them with the previously 
     // existing mask in queries.
-    s_FillMaskLocFromBlastResults(query, results);
+    s_FillMaskLocFromBlastResults(query, *results);
 }
 
 void
@@ -398,11 +398,11 @@ Blast_FindRepeatFilterLoc(CBlastQueryVector& queries, const char* filter_db)
 
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(temp_queries));
     CLocalBlast blaster(query_factory, repeat_opts, target_db);
-    CSearchResultSet results = blaster.Run();
+    CRef<CSearchResultSet> results = blaster.Run();
 
     // Extract the repeat locations and combine them with the previously 
     // existing mask in queries.
-    s_FillMaskLocFromBlastResults(queries, results, eBlastTypeBlastn);
+    s_FillMaskLocFromBlastResults(queries, *results, eBlastTypeBlastn);
 }
 
 END_SCOPE(blast)

@@ -44,6 +44,7 @@ static char const rcsid[] =
 #include "blast_memento_priv.hpp"
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
@@ -236,7 +237,7 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     return retval;
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           const BlastScoreBlk* sbp,
                           const BlastQueryInfo* qinfo,
@@ -258,12 +259,11 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
     } else {
         if (result_type == ncbi::blast::eSequenceComparison)
         {
-            int factor = alignments.size()/query_ids.size();
-            int index = 0;
-            while (index< (int) alignments.size())
-            {
-               qlocs.push_back(query_ids[index/factor]);
-               index++;
+            const size_t num_subjects = alignments.size()/query_ids.size();
+            for (size_t i = 0; i < alignments.size(); i += num_subjects) {
+                for (size_t j = 0; j < num_subjects; j++) {
+                    qlocs.push_back(query_ids[i/num_subjects]);
+                }
             }
         }
         else
@@ -282,10 +282,23 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
             ancillary_data.push_back(s);
         }
     } else {
-        for(unsigned i = 0; i < alignments.size(); i++) {
-            CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, i, sbp,
-                                                                qinfo));
-            ancillary_data.push_back(s);
+        if (result_type == ncbi::blast::eSequenceComparison) {
+            const size_t num_subjects = alignments.size()/query_ids.size();
+            for(size_t i = 0; i < alignments.size(); i += num_subjects) {
+                CRef<CBlastAncillaryData> s
+                    (new CBlastAncillaryData(program, i/num_subjects, sbp, 
+                                             qinfo));
+                for (size_t j = 0; j < num_subjects; j++) {
+                    ancillary_data.push_back(s);
+                }
+            }
+        } else {
+            for(size_t i = 0; i < alignments.size(); i++) {
+                CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, i,
+                                                                    sbp,
+                                                                    qinfo));
+                ancillary_data.push_back(s);
+            }
         }
     }
     
@@ -297,8 +310,11 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
         messages.resize(alignments.size());
     }
     
-    return CSearchResultSet(qlocs, alignments, messages, ancillary_data,
-                            query_masks);
+    return CRef<CSearchResultSet>(new CSearchResultSet(qlocs, alignments, 
+                                                       messages, 
+                                                       ancillary_data, 
+                                                       query_masks, 
+                                                       result_type));
 }
 
 TMaskedQueryRegions

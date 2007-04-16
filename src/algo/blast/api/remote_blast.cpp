@@ -2022,11 +2022,9 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
 
 /// Submit the search and return the results.
 /// @return Search results.
-CSearchResultSet CRemoteBlast::GetResultSet()
+CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
 {
     SubmitSync();
-    
-    CSearchResultSet rs;
     
     TSeqAlignVector R = GetSeqAlignSets();
     if (eDebug == m_Verbose) {
@@ -2070,7 +2068,7 @@ CSearchResultSet CRemoteBlast::GetResultSet()
         SM.push_back(QM);
     }
     
-    return CSearchResultSet(R, SM);
+    return CRef<CSearchResultSet>(new CSearchResultSet(R, SM));
 }
 
 END_SCOPE(blast)

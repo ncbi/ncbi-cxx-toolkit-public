@@ -216,7 +216,7 @@ int CBlastDemoApplication::Run(void)
 
     cerr << "RID: " << blaster.GetRID() << '\n';
 
-    CSearchResultSet results = blaster.GetResultSet();
+    CSearchResultSet results = *blaster.GetResultSet();
 
     CNcbiOstream& out = args["out"].AsOutputFile();
 

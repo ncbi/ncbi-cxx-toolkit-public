@@ -230,7 +230,7 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CBlastTracebackSearch::Run()
 {
     _ASSERT(m_OptsMemento);

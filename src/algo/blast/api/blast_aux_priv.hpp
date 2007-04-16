@@ -155,7 +155,7 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               bool is_multi_threaded);
 
 /// Build a CSearchResultSet from internal BLAST data structures
-CSearchResultSet
+CRef<CSearchResultSet>
 BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           const BlastScoreBlk* sbp,
                           const BlastQueryInfo* qinfo,

@@ -530,8 +530,8 @@ int CBlastApplication::Run(void)
        CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
        CLocalBlast blaster(query_factory, opts, seq_src);
        blaster.SetNumberOfThreads(args["threads"].AsInteger());
-       CSearchResultSet results = blaster.Run();
-       PrintResults(results);
+       CRef<CSearchResultSet> results = blaster.Run();
+       PrintResults(*results);
 
     } catch (const CBlastException& exptn) {
        cerr << exptn.what() << endl;

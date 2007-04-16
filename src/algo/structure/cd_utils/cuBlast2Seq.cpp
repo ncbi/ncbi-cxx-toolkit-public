@@ -217,7 +217,7 @@ bool CdBlaster::blast(NotifierFunction notifier)
 		}
 		CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 		CPsiBl2Seq blaster(query,subject,blastOptions);
-		CSearchResultSet hits = blaster.Run();
+		CSearchResultSet hits = *blaster.Run();
 		m_batchSizes[qr] = batchSize;
 		numBlastsDone += batchSize;
 		if (notifier)
@@ -275,7 +275,7 @@ int  CdBlaster::psiBlast()
 	CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 
 	CPsiBl2Seq blaster(m_psiTargetPssm, subject, options);
-	CSearchResultSet hits = blaster.Run();
+	CSearchResultSet hits = *blaster.Run();
 
         int total = hits.GetNumResults();
         for (int index=0; index<total; index++)

@@ -401,7 +401,7 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
     BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_RPSdb, TRUE));
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(m_tQueries));
     CLocalBlast blaster(query_factory, opts, seq_src);
-    CSearchResultSet results = blaster.Run();
+    CSearchResultSet results = *blaster.Run();
 
     // convert the results to the internal format used by
     // the rest of CMultiAligner

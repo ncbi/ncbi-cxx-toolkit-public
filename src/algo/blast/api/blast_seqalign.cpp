@@ -1388,11 +1388,11 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
     return retval;
 }
 
-/** Extracts from the BlastHSPResults structure results for only one subject 
+/** Extracts results from the BlastHSPResults structure for only one subject 
  * sequence, identified by its index, and converts them into a vector of 
  * CSeq_align_set objects. Returns one vector element per query sequence; 
- * The CSeq_align_set (list of CSeq_align's) consists of exactly one 
- * discontinuous CSeq_align for each vector element.
+ * The CSeq_align_set consists of as many CSeq_align-s as there are HSPs in the
+ * BlastHSPList for each query-subject pair
  * @param results results from running the BLAST algorithm [in]
  * @param query_data All query sequences [in]
  * @param seqinfo_src Source of subject sequences information [in]
@@ -1501,7 +1501,7 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
                                        bool is_ooframe)
 {
     TSeqAlignVector retval;
-    retval.reserve(query_data.GetNumQueries());
+    retval.reserve(query_data.GetNumQueries() * seqinfo_src->Size());
 
     _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
 
@@ -1528,6 +1528,7 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
 
         }
     }
+    _ASSERT(retval.size() == query_data.GetNumQueries() * seqinfo_src->Size());
     return retval;
 }
 

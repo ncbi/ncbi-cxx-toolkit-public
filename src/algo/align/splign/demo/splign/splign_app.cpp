@@ -524,7 +524,7 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
     CSeqDB seqdb (dbname, CSeqDB::eNucleotide);
     CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
     CLocalBlast blast (query_factory, m_BlastOptionsHandle, seq_src);
-    CSearchResultSet results = blast.Run();
+    CSearchResultSet results = *blast.Run();
     phitrefs->resize(0);
 
     const size_t num_results = results.GetNumResults();

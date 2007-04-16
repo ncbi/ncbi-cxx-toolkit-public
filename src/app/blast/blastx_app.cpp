@@ -146,7 +146,7 @@ int CBlastxApp::Run(void)
             TSeqLocVector query_batch(input.GetNextSeqLocBatch());
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
 
-            CSearchResultSet results;
+            CRef<CSearchResultSet> results;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CRemoteBlast rmt_blast(queries, opts_hndl, *search_db);
@@ -160,8 +160,9 @@ int CBlastxApp::Run(void)
                 results = lcl_blast.Run();
             }
 
-            _ASSERT(query_batch.size() == results.size());
-            ITERATE(CSearchResultSet, result, results) {
+            // this assertion is only true for database searches
+            _ASSERT(query_batch.size() == results->size());
+            ITERATE(CSearchResultSet, result, *results) {
                 formatter.PrintOneAlignSet(**result, *fasta.GetScope());
             }
 

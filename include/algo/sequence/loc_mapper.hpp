@@ -134,11 +134,11 @@ public:
         //blast_options.SetGapExtensionCost(2);
 
         blast::CBl2Seq blaster(blast_query, blast_target, blast_options);
-        blast::CSearchResultSet resultset = blaster.RunEx();
+        CRef<blast::CSearchResultSet> resultset = blaster.RunEx();
         
         //since we have 1 query vs. one target we expect the resultset to have 1 item
         //and 1 seq_align in seq_align_set.
-        const CSeq_align& seq_align = **resultset[0].GetSeqAlign()->Get().begin();
+        const CSeq_align& seq_align = **(*resultset)[0].GetSeqAlign()->Get().begin();
         
         m_aln_mix.Reset(new CAlnMix(t_scope));
         m_aln_mix->Add(seq_align);

@@ -183,7 +183,7 @@ CBl2Seq::Run()
     return x_Results2SeqAlign();
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CBl2Seq::RunEx()
 {
     TSeqAlignVector alignments = Run();

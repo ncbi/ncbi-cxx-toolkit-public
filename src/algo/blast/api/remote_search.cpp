@@ -143,10 +143,10 @@ CRemoteBlast & CRemoteSeqSearch::x_RemoteBlast()
 ///
 /// @param rb The remote blast object representing the search.
 /// @return The results of the search as a CSearchResultSet.
-static CSearchResultSet
+static CRef<CSearchResultSet>
 s_BuildResultsRemote(CRemoteBlast & rb);
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CRemoteSeqSearch::Run()
 {
     // Calling Run() directly always queues a new search.
@@ -230,7 +230,7 @@ s_SplitAlignVectorBySubjects(TSeqAlignVector seqaligns)
     return seqaligns;
 }
 
-static CSearchResultSet
+static CRef<CSearchResultSet>
 s_BuildResultsRemote(CRemoteBlast & rb)
 {
     // This cascades the warnings and errors: all queries get all
@@ -283,7 +283,7 @@ s_BuildResultsRemote(CRemoteBlast & rb)
         msg_vec.push_back(msgs);
     }
     
-    return CSearchResultSet(aligns, msg_vec);
+    return CRef<CSearchResultSet>(new CSearchResultSet(aligns, msg_vec));
 }
 
 
@@ -341,7 +341,7 @@ CRemoteBlast & CRemotePssmSearch::x_RemoteBlast()
     return *m_RemoteBlast;
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CRemotePssmSearch::Run()
 {
     // Calling Run() directly always queues a new search.

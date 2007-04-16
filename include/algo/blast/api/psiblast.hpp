@@ -118,7 +118,7 @@ public:
     CConstRef<objects::CPssmWithParameters> GetPssm() const;
 
     /// Run the PSI-BLAST engine for one iteration
-    CSearchResultSet Run();
+    CRef<CSearchResultSet> Run();
 
 private:
 

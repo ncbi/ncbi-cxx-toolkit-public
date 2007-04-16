@@ -88,7 +88,7 @@ public:
     virtual ~CBlastTracebackSearch();
     
     /// Run the traceback search.
-    CSearchResultSet Run();
+    CRef<CSearchResultSet> Run();
     
     /// Specifies how the Seq-align-set returned as part of the
     /// results is formatted.

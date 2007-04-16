@@ -121,7 +121,7 @@ CPsiBlastImpl::x_ExtractQueryFromPssm()
     m_Query.Reset(new CObjMgrFree_QueryFactory(query_bioseq));
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CPsiBlastImpl::Run()
 {
     CRef<CBlastOptions>

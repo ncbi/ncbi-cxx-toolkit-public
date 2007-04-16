@@ -95,7 +95,7 @@ CLocalSearchFactory::GetOptions(EProgram program)
 //
 
 // NOTE: Local search object is re-created every time it is run.
-CSearchResultSet 
+CRef<CSearchResultSet>
 CLocalSeqSearch::Run()
 {
     if ( m_QueryFactory.Empty() ) {
@@ -157,7 +157,7 @@ CLocalPssmSearch::SetQuery(CRef<objects::CPssmWithParameters> pssm)
     m_Pssm = pssm;
 }
 
-CSearchResultSet 
+CRef<CSearchResultSet>
 CLocalPssmSearch::Run()
 {
 
@@ -173,7 +173,7 @@ CLocalPssmSearch::Run()
 
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_Subject));
     CPsiBlast psiblast(query_factory, dbadapter, psi_opts);
-    CSearchResultSet retval = psiblast.Run();
+    CRef<CSearchResultSet> retval = psiblast.Run();
 
     return retval;
 }

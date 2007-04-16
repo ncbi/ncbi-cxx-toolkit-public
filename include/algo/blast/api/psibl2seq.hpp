@@ -90,7 +90,7 @@ public:
     ~CPsiBl2Seq();
 
     /// Run the PSI-BLAST 2 Sequences engine
-    CSearchResultSet Run();
+    CRef<CSearchResultSet> Run();
 
 private:
 

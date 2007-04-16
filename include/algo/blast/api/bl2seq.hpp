@@ -115,23 +115,20 @@ public:
     /// Perform BLAST search
     /// Assuming N queries and M subjects, the structure of the returned 
     /// vector is as follows, with types indicated in parenthesis:
-    /// TSeqAlignVector = [ {Results for query 1 (Seq-align-set)}, 
-    ///                     {Results for query 2 (Seq-align-set)}, ...
-    ///                     {Results for query N (Seq-align-set)} ]
-    /// 
-    /// The individual query-subject alignments are returned in the
-    /// CSeq_align_set for that query:
-    /// {Results for query i} = 
-    ///     [ {Results for query i and subject 1 (discontinuous Seq-align)}, 
-    ///       {Results for query i and subject 2 (discontinuous Seq-align)}, ...
-    ///       {Results for query i and subject M (discontinuous Seq-align)} ]
-    /// Discontinuous Seq-aligns are used to allow grouping of multiple HSPs
-    /// that correspond to that query-subject alignment.
+    /// TSeqAlignVector = 
+    ///     [ {Results for query 1 and subject 1 (Seq-align-set)},
+    ///       {Results for query 1 and subject 2 (Seq-align-set)}, ...
+    ///       {Results for query 1 and subject M (Seq-align-set)},
+    ///       {Results for query 2 and subject 1 (Seq-align-set)},
+    ///       {Results for query 2 and subject 2 (Seq-align-set)}, ...
+    ///       {Results for query 2 and subject M (Seq-align-set)},
+    ///       {Results for query 3 and subject 1 (Seq-align-set)}, ...
+    ///       {Results for query N and subject M (Seq-align-set)} ]
     virtual TSeqAlignVector Run();
 
     /// Performs the same functionality as Run(), but it returns a different
     /// data type
-    CSearchResultSet RunEx();
+    CRef<CSearchResultSet> RunEx();
 
     /// Runs the search but does not produce seqalign output
     /// (useful if the raw search results are needed, rather

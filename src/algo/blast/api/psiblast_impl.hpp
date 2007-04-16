@@ -82,7 +82,7 @@ public:
                   CConstRef<CBlastProteinOptionsHandle> options);
 
     /// Run the PSI-BLAST engine for one iteration
-    CSearchResultSet Run();
+    CRef<CSearchResultSet> Run();
 
     /// This method allows the same object to be reused when performing
     /// multiple iterations. Iteration state is kept in the
@@ -112,7 +112,7 @@ private:
     CConstRef<CBlastOptionsHandle> m_OptsHandle;
 
     /// Holds a reference to the results
-    CSearchResultSet m_Results;
+    CRef<CSearchResultSet> m_Results;
 
     /// Specifies how the results should be produced
     EResultType m_ResultType;

@@ -317,7 +317,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         }
 
         // actually do the alignment(s)
-        blast::CSearchResultSet results(blastEngine->Run());
+        blast::CSearchResultSet results(*blastEngine->Run());
 
         // parse the alignments
         if (results.size() != toRealign.size())

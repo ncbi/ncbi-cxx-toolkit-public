@@ -64,7 +64,7 @@ public:
                 CRef<CBlastOptionsHandle> opts_handle,
                 BlastSeqSrc* seqsrc);
     
-    CSearchResultSet Run();
+    CRef<CSearchResultSet> Run();
     
 private:
     /// Query factory from which to obtain the query sequence data

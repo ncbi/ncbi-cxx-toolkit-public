@@ -199,7 +199,7 @@ public:
     virtual void SetSubject(CConstRef<CSearchDatabase> subject) = 0;
     
     /// Run the search to completion.
-    virtual CSearchResultSet Run() = 0;
+    virtual CRef<CSearchResultSet> Run() = 0;
 };
 
 

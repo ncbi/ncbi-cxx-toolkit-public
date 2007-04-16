@@ -157,7 +157,7 @@ public:
     
     /// Submit the search (if necessary) and return the results.
     /// @return Search results.
-    CSearchResultSet GetResultSet();
+    CRef<CSearchResultSet> GetResultSet();
     
     /// This submits the search (if necessary) and polls for results.
     ///

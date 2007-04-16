@@ -93,7 +93,7 @@ CPsiBlast::GetPssm() const
     return m_Impl->GetPssm();
 }
 
-CSearchResultSet
+CRef<CSearchResultSet>
 CPsiBlast::Run()
 {
     m_Impl->SetNumberOfThreads(GetNumberOfThreads());
