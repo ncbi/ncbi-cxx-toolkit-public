@@ -242,6 +242,17 @@ int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2)
     return ::strcmp((const char*)val1->data, (const char*)val2->data);
 }
 
+int BDB_FixedByteStringCompare(DB* db, const DBT* val1, const DBT* val2)
+{
+    const CBDB_BufferManager* fbuf1 =
+          static_cast<CBDB_BufferManager*> (db->app_private);
+
+    _ASSERT(val1->size == val2->size);
+    
+    int r = ::memcmp(val1->data, val2->data, val1->size);
+    return r;
+}
+
 
 
 int BDB_LStringCompare(DB* db, const DBT* val1, const DBT* val2)
@@ -790,6 +801,42 @@ void CBDB_BufferManager::CopyPackedFrom(void* data, size_t data_size)
     SetDBT_Size(data_size);
     ArrangePtrsPacked();
 }
+
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_FieldFixedByteString::
+//
+
+CBDB_FieldFixedByteString::CBDB_FieldFixedByteString() 
+    : CBDB_Field(eFixedLength)
+{
+    SetBufferSize(256 + 4);
+}
+
+const CBDB_FieldFixedByteString& 
+CBDB_FieldFixedByteString::operator=(const CBDB_FieldFixedByteString& str)
+{
+    void* buf = GetBuffer();
+    if (this == &str)
+        return *this;
+
+    size_t len = str.GetDataLength(buf);
+    if ( len > (GetBufferSize()) ) {
+        // TODO: allow partial string assignment?
+        BDB_THROW(eOverflow, "Fixed string field overflow.");
+    }
+    Unpack();
+    ::memcpy(buf, str.GetBuffer(), len);
+
+    if ( str.IsNull() ) {
+        SetNull();
+    } else {
+        SetNotNull();
+    }
+
+    return *this;
+}
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////

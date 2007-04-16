@@ -123,6 +123,12 @@ NCBI_BDB_EXPORT int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
 NCBI_BDB_EXPORT int BDB_LStringCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
+/// non-segmented fixed length string keys
+NCBI_BDB_EXPORT int BDB_FixedByteStringCompare
+                                    (DB*, const DBT* val1, const DBT* val2);
+
+
+/// Simple and fast comparison function for tables with 
 /// non-segmented "case insensitive C string" keys
 NCBI_BDB_EXPORT int
 BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
@@ -1503,10 +1509,61 @@ public:
 
 };
 
+/// Fixed length bytestring. (Can hold 0 chars).
+///
+class NCBI_BDB_EXPORT CBDB_FieldFixedByteString : public CBDB_Field
+{
+public:
+    CBDB_FieldFixedByteString(); 
+
+    virtual CBDB_Field* Construct(size_t buf_size) const
+    {
+        CBDB_FieldFixedByteString* fld = new CBDB_FieldFixedByteString();
+        fld->SetBufferSize(buf_size ? buf_size : GetBufferSize());
+        return fld;
+    }
+    operator const char* () const;
+    const CBDB_FieldFixedByteString& operator=
+                    (const CBDB_FieldFixedByteString& str);
+
+    void Set(const char* str);
+    virtual void SetString (const char*  val) { Set(val); }
+    string Get() const;
+    virtual string GetString() const { return Get(); }
+
+    bool IsEmpty() const { return false; }
+    bool IsBlank() const { return false; }
+
+
+    // IField
+    virtual int         Compare(const void* p1, 
+                                const void* p2, 
+                                bool /* byte_swapped */) const;
+    virtual size_t      GetDataLength(const void* buf) const;
+    virtual void        SetMinVal();
+    virtual void        SetMaxVal();
+
+    virtual void SetStdString(const string& str)
+    {
+        _ASSERT(str.length() == GetBufferSize());
+        SetString(str.c_str());
+    }
+    virtual void ToString(string& str) const
+    {
+        str.assign((const char*) GetBuffer(), GetBufferSize());
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool) const
+    {
+        return BDB_FixedByteStringCompare;
+    } 
+
+};
+
+
 ///
 ///  String field type
 ///
-
 class NCBI_BDB_EXPORT CBDB_FieldStringBase : public CBDB_Field
 {
 public:
@@ -1521,6 +1578,7 @@ protected:
     CBDB_FieldStringBase() : CBDB_Field(eVariableLength) {}
 };
 
+
 ///
 ///  String field type designed to work with C-strings (ASCIIZ)
 ///
@@ -1530,8 +1588,8 @@ class NCBI_BDB_EXPORT CBDB_FieldString : public CBDB_FieldStringBase
 public:
     CBDB_FieldString();
 
-    // Class factory for string fields.
-    // Default (zero) value of 'buf_size' uses GetBufferSize().
+    /// Class factory for string fields.
+    /// Default (zero) value of 'buf_size' uses GetBufferSize().
     virtual CBDB_Field* Construct(size_t buf_size) const
     {
         CBDB_FieldString* fld = new CBDB_FieldString();
@@ -1646,7 +1704,6 @@ public:
     // Default (zero) value of 'buf_size' uses GetBufferSize().
     virtual CBDB_Field* Construct(size_t buf_size) const;
 
-//    operator const char* () const;
     operator string() const { return GetString(); }
     const CBDB_FieldLString& operator= (const CBDB_FieldLString& str);
     const CBDB_FieldLString& operator= (const char*             str);
@@ -2229,6 +2286,60 @@ inline bool CBDB_Field::IsByteSwapped() const
     return m_BufferManager->IsByteSwapped(); 
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_FieldString::
+//
+
+inline CBDB_FieldFixedByteString::operator const char* () const
+{
+    const char* str = (const char*) GetBuffer();
+    _ASSERT(str);
+    return str;
+}
+
+
+inline
+void CBDB_FieldFixedByteString::Set(const char* str)
+{
+    ::memcpy((char*)GetBuffer(), str, GetBufferSize());
+}
+
+inline
+string CBDB_FieldFixedByteString::Get() const
+{
+    _ASSERT(!IsNull());
+	
+    const char* buf = (const char*) GetBuffer();
+    return string(buf, GetBufferSize());
+}
+
+inline
+int CBDB_FieldFixedByteString::Compare(const void* p1, 
+                                       const void* p2, 
+                                       bool /*byte_swapped*/) const
+{
+    return ::memcmp(p1, p2, GetBufferSize());
+}
+
+inline
+size_t CBDB_FieldFixedByteString::GetDataLength(const void* buf) const
+{
+    return GetBufferSize();
+}
+
+inline
+void CBDB_FieldFixedByteString::SetMinVal()
+{
+    void* buf = Unpack();
+    ::memset(buf, 0, GetBufferSize());
+}
+
+inline
+void CBDB_FieldFixedByteString::SetMaxVal()
+{
+    void* buf = Unpack();
+    ::memset(buf, 0xFF, GetBufferSize());
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_FieldString::
