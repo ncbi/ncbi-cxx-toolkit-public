@@ -129,6 +129,7 @@ CCompressionStreambuf::~CCompressionStreambuf()
         sp->m_Processor->End();
         sp->m_State = CCompressionStreamProcessor::eDone;
     }
+
     // Write processor
     sp = GetStreamProcessor(CCompressionStream::eWrite);
     if ( sp ) {
@@ -144,9 +145,7 @@ CCompressionStreambuf::~CCompressionStreambuf()
         sp->m_Processor->End();
         sp->m_State = CCompressionStreamProcessor::eDone;
         // Write remaining data from buffers to underlying stream
-        if ( m_Writer->m_Begin != m_Writer->m_End ) {
-            WriteOutBufToStream(true /*force write*/);
-        }
+        WriteOutBufToStream(true /*force write*/);
     }
     // Delete buffers
     delete[] m_Buf;
@@ -216,6 +215,21 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
 int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
 {
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+
+    // Check processor status
+    if ( sp->m_LastStatus == CP::eStatus_Error ) {
+        return -1;
+    }
+    if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
+        // Flush underlying stream (on write)
+        if (dir == CCompressionStream::eWrite  &&  !WriteOutBufToStream()) {
+            return -1;
+        }
+        // End of data state, nothing to do
+        return 0;
+    }
+
+    // Flush stream compressor
     CT_CHAR_TYPE* buf = 0;
     size_t out_size = 0, out_avail = 0;
     do {
@@ -233,21 +247,16 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
             // State is eFinalize
             sp->m_LastStatus = 
                 sp->m_Processor->Finish(buf, out_size, &out_avail);
-            // Check on error
-            if ( sp->m_LastStatus == CP::eStatus_Error ) {
-                break;
-            }
         } else {
             // State is eActive
             _VERIFY(sp->m_State == CCompressionStreamProcessor::eActive);
             sp->m_LastStatus = 
                 sp->m_Processor->Flush(buf, out_size, &out_avail);
-            // Check on error
-            if ( sp->m_LastStatus == CP::eStatus_Error  ||
-                sp->m_LastStatus == CP::eStatus_EndOfData ) {
-               break;
-            }
         } 
+        // Check on error
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            return -1;
+        }
         if ( dir == CCompressionStream::eRead ) {
             // Update the get's pointers
             setg(sp->m_OutBuf, gptr(), egptr() + out_avail);
@@ -260,12 +269,8 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
                 return -1;
             }
         }
-    } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow );
+    } while (out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
 
-    // Check status
-    if ( sp->m_LastStatus == CP::eStatus_Error ) {
-        return -1;
-    }
     return 0;
 }
 
@@ -446,14 +451,16 @@ bool CCompressionStreambuf::WriteOutBufToStream(bool force_write)
          m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
 
         streamsize to_write = m_Writer->m_End - m_Writer->m_Begin;
-        streamsize n_write = m_Stream->rdbuf()->sputn(m_Writer->m_Begin, to_write);
-        if ( n_write != to_write ) {
-            m_Writer->m_Begin += n_write;
-            return false;
+        if ( to_write ) {
+            streamsize n_write = m_Stream->rdbuf()->sputn(m_Writer->m_Begin, to_write);
+            if ( n_write != to_write ) {
+                m_Writer->m_Begin += n_write;
+                return false;
+            }
+            // Update the output buffer pointers
+            m_Writer->m_Begin = m_Writer->m_OutBuf;
+            m_Writer->m_End   = m_Writer->m_OutBuf;
         }
-        // Update the output buffer pointers
-        m_Writer->m_Begin = m_Writer->m_OutBuf;
-        m_Writer->m_End   = m_Writer->m_OutBuf;
     }
     return true;
 }
