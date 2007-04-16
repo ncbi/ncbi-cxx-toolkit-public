@@ -239,10 +239,9 @@ extern const string kArgOutputSearchStrategy;
 
 /* OLD C TOOLKIT ARGUMENTS */
 
-/* PSI-BLAST arguments
+/* PSI-BLAST arguments */
 #define ARG_ASCII_MATRIX "Q"
 #define ARG_MSA_RESTART "B"
- */
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
