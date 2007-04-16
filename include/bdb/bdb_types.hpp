@@ -415,6 +415,8 @@ template<typename T>
 class CBDB_FieldSimple : public CBDB_Field
 {
 public:
+    typedef  T  TFieldType;
+public:
     CBDB_FieldSimple()
     : CBDB_Field(eFixedLength)
     {
@@ -429,7 +431,13 @@ public:
             if (IsByteSwapped() != field.IsByteSwapped()) {
                 BDB_THROW(eInvalidValue, "Byte order incompatibility");
             }
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) GetBuffer();
+            TFieldType* f = (TFieldType*) field.GetBuffer();
+            *b = *f;
+#else
             ::memcpy(GetBuffer(), field.GetBuffer(), sizeof(T));
+#endif
             SetNotNull();
         }
     }
@@ -442,8 +450,14 @@ public:
     {
         // Default implementation ignores byte swapping
         T v1, v2;
+
+#ifdef HAVE_UNALIGNED_READS
+        v1 = *((TFieldType*)p1);
+        v2 = *((TFieldType*)p2);
+#else
         ::memcpy(&v1, p1, sizeof(v1));
         ::memcpy(&v2, p2, sizeof(v2));
+#endif
         if (v1 < v2) return -1;
         if (v2 < v1) return 1;
         return 0;
@@ -487,7 +501,12 @@ public:
             }
 
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) this->GetBuffer();
+            *b = val;
+#else
             ::memcpy(this->GetBuffer(), &val, sizeof(T));
+#endif
         }
         this->SetNotNull();
     }
@@ -503,14 +522,24 @@ public:
     virtual int GetInt() const 
     {
         int value;
+#ifdef HAVE_UNALIGNED_READS
+        TFieldType* b = (TFieldType*) this->GetBuffer();
+        value = (int)*b;
+#else
         ::memcpy(&value, this->GetBuffer(), sizeof(T));
+#endif
         return value;
     }
 
     virtual unsigned GetUint() const 
     {
         unsigned value;
+#ifdef HAVE_UNALIGNED_READS
+        TFieldType* b = (TFieldType*) this->GetBuffer();
+        value = (unsigned)*b;
+#else
         ::memcpy(&value, this->GetBuffer(), sizeof(T));
+#endif
         return value;
     }
 
@@ -571,9 +600,13 @@ public:
             else {
                 _ASSERT(0);
             }
-
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) this->GetBuffer();
+            *b = val;
+#else
             ::memcpy(this->GetBuffer(), &val, sizeof(T));
+#endif
         }
         this->SetNotNull();
     }
@@ -637,7 +670,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt8((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) this->GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(Int8));
+#endif
         }
         return v;
     }
@@ -716,7 +754,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt8((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(Uint8));
+#endif
         }
         return v;
     }
@@ -795,7 +838,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt4((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*)GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(Int4));
+#endif
         }
         return v;
     }
@@ -874,7 +922,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt2((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(Int2));
+#endif
         }
         return v;
     }
@@ -953,7 +1006,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt2((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(Uint2));
+#endif
         }
         return v;
     }
@@ -1220,7 +1278,12 @@ public:
         if (IsByteSwapped()) {
             v = (Uint4)CByteSwap::GetInt4((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(Uint4));
+#endif
         }
         return v;
     }
@@ -1300,7 +1363,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetFloat((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) this->GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(float));
+#endif
         }
         return v;
     }
@@ -1379,7 +1447,12 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetDouble((unsigned char*)GetBuffer());
         } else {
+#ifdef HAVE_UNALIGNED_READS
+            TFieldType* b = (TFieldType*) GetBuffer();
+            v = *b;
+#else
             ::memcpy(&v, GetBuffer(), sizeof(double));
+#endif
         }
         return v;
     }

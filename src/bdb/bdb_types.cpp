@@ -105,8 +105,13 @@ int BDB_UintCompare(DB* db, const DBT* val1, const DBT* val2)
 int BDB_Uint4Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Uint4 v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((Uint4*) val1->data);
+    v2 = *((Uint4*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(Uint4));
     ::memcpy(&v2, val2->data, sizeof(Uint4));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -114,8 +119,13 @@ int BDB_Uint4Compare(DB*, const DBT* val1, const DBT* val2)
 int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Int8 v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((Int8*) val1->data);
+    v2 = *((Int8*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(Int8));
     ::memcpy(&v2, val2->data, sizeof(Int8));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -123,8 +133,13 @@ int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2)
 int BDB_Uint8Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Uint8 v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((Uint8*) val1->data);
+    v2 = *((Uint8*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(Uint8));
     ::memcpy(&v2, val2->data, sizeof(Uint8));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -137,8 +152,13 @@ int BDB_IntCompare(DB* db, const DBT* val1, const DBT* val2)
 int BDB_Int4Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Int4 v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((Int4*) val1->data);
+    v2 = *((Int4*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(Int4));
     ::memcpy(&v2, val2->data, sizeof(Int4));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -146,8 +166,13 @@ int BDB_Int4Compare(DB*, const DBT* val1, const DBT* val2)
 int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Int2 v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((Int2*) val1->data);
+    v2 = *((Int2*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(Int2));
     ::memcpy(&v2, val2->data, sizeof(Int2));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -155,8 +180,13 @@ int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2)
 int BDB_Uint2Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Uint2 v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((Uint2*) val1->data);
+    v2 = *((Uint2*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(Uint2));
     ::memcpy(&v2, val2->data, sizeof(Uint2));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -182,8 +212,13 @@ int BDB_UCharCompare(DB*, const DBT* val1, const DBT* val2)
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2)
 {
     float v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((float*) val1->data);
+    v2 = *((float*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(v1));
     ::memcpy(&v2, val2->data, sizeof(v2));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -191,8 +226,13 @@ int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2)
 int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2)
 {
     double v1, v2;
+#ifdef HAVE_UNALIGNED_READS
+    v1 = *((double*) val1->data);
+    v2 = *((double*) val2->data);
+#else
     ::memcpy(&v1, val1->data, sizeof(v1));
     ::memcpy(&v2, val2->data, sizeof(v2));
+#endif
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
