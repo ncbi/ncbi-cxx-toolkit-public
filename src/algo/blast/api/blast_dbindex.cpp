@@ -67,15 +67,16 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args );
 /** Construct a copy of BlastSeqSrc structure.
 
     @param retval Preallocated instance of BlastSeqSrc structure.
+    @param args Arguments for the constructor.
     @return \e retval with filled in fields.
 */
 static BlastSeqSrc * s_CloneSrcNew( BlastSeqSrc * retval, void * args );
 
 /** Get the seed search results for a give subject id and chunk number.
 
-    @param idb          [I]   Database and index data.
-    @param oid          [I]   Subject id.
-    @param chunk        [I]   Chunk number.
+    @param idb_v          [I]   Database and index data.
+    @param oid_i          [I]   Subject id.
+    @param chunk_i        [I]   Chunk number.
     @param init_hitlist [I/O] Results are returned here.
 
     @return Word size used for search.
