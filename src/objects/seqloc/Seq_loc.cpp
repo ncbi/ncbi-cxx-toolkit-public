@@ -48,6 +48,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <util/range_coll.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -1554,6 +1555,44 @@ void CSeq_loc::ChangeToPackedInt(void)
         {
             CConstRef<CSeq_interval> self(&GetInt());
             SetPacked_int().AddInterval(*self);
+            return;
+        }
+    case e_Pnt:
+        {
+            // Make an interval of length 1
+            CRef<CSeq_interval> new_int(new CSeq_interval);
+            new_int->SetId().Assign(GetPnt().GetId());
+            new_int->SetFrom(GetPnt().GetPoint());
+            new_int->SetTo(GetPnt().GetPoint());
+            if (GetPnt().IsSetStrand()) {
+                new_int->SetStrand(GetPnt().GetStrand());
+            }
+            if (GetPnt().IsSetFuzz()) {
+                new_int->SetFuzz_from().Assign(GetPnt().GetFuzz());
+                new_int->SetFuzz_to().Assign(GetPnt().GetFuzz());
+            }
+            SetPacked_int().AddInterval(*new_int);
+            return;
+        }
+    case e_Mix:
+        {
+            // Recursively convert each sub-location to packed-int, then merge.
+            // Work with copies of sub-locs so that if an exception is thrown
+            // the original location remains unchanged.
+            vector<CRef<CSeq_loc> > sub_locs;
+            sub_locs.reserve(GetMix().Get().size());
+            ITERATE (CSeq_loc_mix::Tdata, orig_sub_loc, GetMix().Get()) {
+                CRef<CSeq_loc> new_sub_loc(new CSeq_loc);
+                new_sub_loc->Assign(**orig_sub_loc);
+                new_sub_loc->ChangeToPackedInt();
+                sub_locs.push_back(new_sub_loc);
+            }
+            SetPacked_int();  // in case there are zero intervals
+            ITERATE (vector<CRef<CSeq_loc> >, sub_loc, sub_locs) {
+                copy((*sub_loc)->GetPacked_int().Get().begin(),
+                     (*sub_loc)->GetPacked_int().Get().end(),
+                     back_inserter(SetPacked_int().Set()));
+            }
             return;
         }
     default:

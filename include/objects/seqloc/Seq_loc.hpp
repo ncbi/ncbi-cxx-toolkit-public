@@ -178,7 +178,8 @@ public:
     void Add(const CSeq_loc& other);
 
     void ChangeToMix(void);
-    /// Works only if current choice is "Int".
+    /// Works only if location is currently an interval, point,
+    /// packed-int (handled trivially), or a mix built recursively from these.
     void ChangeToPackedInt(void);
 
     /// CSeq_loc operations
