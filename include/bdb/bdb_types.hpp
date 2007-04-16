@@ -502,7 +502,8 @@ public:
 
         } else {
 #ifdef HAVE_UNALIGNED_READS
-            TFieldType* b = (TFieldType*) this->GetBuffer();
+            typename CBDB_FieldSimple<T>::TFieldType* b =
+                (typename CBDB_FieldSimple<T>::TFieldType*) this->GetBuffer();
             *b = val;
 #else
             ::memcpy(this->GetBuffer(), &val, sizeof(T));
@@ -523,7 +524,8 @@ public:
     {
         int value;
 #ifdef HAVE_UNALIGNED_READS
-        TFieldType* b = (TFieldType*) this->GetBuffer();
+        typename CBDB_FieldSimple<T>::TFieldType* b =
+            (typename CBDB_FieldSimple<T>::TFieldType*) this->GetBuffer();
         value = (int)*b;
 #else
         ::memcpy(&value, this->GetBuffer(), sizeof(T));
@@ -535,7 +537,8 @@ public:
     {
         unsigned value;
 #ifdef HAVE_UNALIGNED_READS
-        TFieldType* b = (TFieldType*) this->GetBuffer();
+        typename CBDB_FieldSimple<T>::TFieldType* b =
+            (typename CBDB_FieldSimple<T>::TFieldType*) this->GetBuffer();
         value = (unsigned)*b;
 #else
         ::memcpy(&value, this->GetBuffer(), sizeof(T));
@@ -602,7 +605,8 @@ public:
             }
         } else {
 #ifdef HAVE_UNALIGNED_READS
-            TFieldType* b = (TFieldType*) this->GetBuffer();
+            typename CBDB_FieldSimple<T>::TFieldType* b =
+                (typename CBDB_FieldSimple<T>::TFieldType*) this->GetBuffer();
             *b = val;
 #else
             ::memcpy(this->GetBuffer(), &val, sizeof(T));
