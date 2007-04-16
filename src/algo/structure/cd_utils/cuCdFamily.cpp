@@ -279,11 +279,17 @@ CDFamilyIterator  CDFamily::convergeTo(CCdCore* cd1, CCdCore* cd2, vector<CCdCor
 
     //  Construct the paths from cd1/cd2 to the lastConvergedPoint
     path1.clear();
-    path1.insert(path1.end(), lastConvergedIt1, pathToRoot1.rend());
+    for (rit1 = lastConvergedIt1; rit1 != pathToRoot1.rend(); ++rit1) {
+        path1.push_back(*rit1);
+    }
+//    path1.insert(path1.end(), lastConvergedIt1, pathToRoot1.rend());  //  breaks Workshop builds
     reverse(path1.begin(), path1.end());
 
     path2.clear();
-    path2.insert(path2.end(), lastConvergedIt2, pathToRoot2.rend());
+    for (rit2 = lastConvergedIt2; rit2 != pathToRoot2.rend(); ++rit2) {
+        path2.push_back(*rit2);
+    }
+//    path2.insert(path2.end(), lastConvergedIt2, pathToRoot2.rend());  //  breaks Workshop builds
     reverse(path2.begin(), path2.end());
 
 	return findCD(lastConvergedPoint);
