@@ -254,6 +254,41 @@ int CDFamily::getPathToRoot(CCdCore* initialCD, vector<CCdCore*>& path) const {
     return path.size();
 }
 
+CDFamilyIterator  CDFamily::convergeTo(CCdCore* cd1, CCdCore* cd2, vector<CCdCore*>& path1, vector<CCdCore*>& path2) const
+{
+	vector<CCdCore*> pathToRoot1, pathToRoot2;
+	getPathToRoot(cd1, pathToRoot1);
+	getPathToRoot(cd2, pathToRoot2);
+	vector<CCdCore*>::reverse_iterator rit1 = pathToRoot1.rbegin();
+	vector<CCdCore*>::reverse_iterator rit2 = pathToRoot2.rbegin();
+	vector<CCdCore*>::reverse_iterator lastConvergedIt1, lastConvergedIt2;
+	if( (rit1 == pathToRoot1.rend()) || (rit2 == pathToRoot2.rend()))
+		return end();
+	assert((*rit1) = (*rit2)); //both should point to the root
+	CCdCore* lastConvergedPoint = *rit1;
+	for (; rit1 != pathToRoot1.rend() && rit2 != pathToRoot2.rend(); rit1++, rit2++)
+	{
+        if (*rit1 == *rit2) {
+			lastConvergedPoint = *rit1;
+            lastConvergedIt1 = rit1;
+            lastConvergedIt2 = rit2;
+        } else {
+			break;
+        }
+	}
+
+    //  Construct the paths from cd1/cd2 to the lastConvergedPoint
+    path1.clear();
+    path1.insert(path1.end(), lastConvergedIt1, pathToRoot1.rend());
+    reverse(path1.begin(), path1.end());
+
+    path2.clear();
+    path2.insert(path2.end(), lastConvergedIt2, pathToRoot2.rend());
+    reverse(path2.begin(), path2.end());
+
+	return findCD(lastConvergedPoint);
+}
+
 
 CDFamilyIterator  CDFamily::convergeTo(CCdCore* cd1, CCdCore* cd2, bool byAccession)const
 {

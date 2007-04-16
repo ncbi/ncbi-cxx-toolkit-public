@@ -112,6 +112,8 @@ public:
     //  by accession, otherwise, cds are located by pointer values (i.e., findCDByAccession vs. findCD).
 	CDFamilyIterator convergeTo(CCdCore* cd1, CCdCore* cd2, bool byAccession = false)const;
 	CDFamilyIterator convergeTo(const set<CCdCore*>& cds, bool byAccession = false)const;
+    //  This version also returns the paths from cd1, cd2 to the common CD.
+    CDFamilyIterator convergeTo(CCdCore* cd1, CCdCore* cd2, vector<CCdCore*>& path1, vector<CCdCore*>& path2) const;
 
     //  sanity check on pointer, root and number of nodes
     static bool IsFamilyValid(const CDFamily* family, string& err);

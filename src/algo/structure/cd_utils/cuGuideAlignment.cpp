@@ -48,14 +48,15 @@ BEGIN_SCOPE(cd_utils)
 
 void CGuideAlignment_Base::Initialize()
 {
-    m_isOK = false;
-    m_errors.clear();
 
     Cleanup();
 }
 
 void CGuideAlignment_Base::Cleanup()
 {
+    m_isOK = false;
+    m_errors.clear();
+
     m_chain1.clear();
     m_chain2.clear();
     m_families.clear();  //  class does not own CDFamily objects
