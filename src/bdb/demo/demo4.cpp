@@ -40,8 +40,8 @@
 USING_NCBI_SCOPE;
 
 
-const char* s_LobDBFileName  = "blobstore.db";
-const char* s_LobDBFileName2 = "blobstore2.db";
+string s_LobDBFileName  = "blobstore.db";
+string s_LobDBFileName2 = "blobstore2.db";
 
 
 const int array1[] = {1, 2, 3, 4, 5, 0};
