@@ -363,6 +363,12 @@ public:
                       const string&  cache_name,
                       unsigned int   cache_ram_size = 0);
 
+    /// Get environment
+    CBDB_Env* GetEnv() { return m_Env; }
+
+    /// Return true if environment is not created but joined
+    bool IsJoinedEnv() { return m_JoinedEnv; }
+
     void Close();
 
     /// Return TRUE if cache is read-only
@@ -711,6 +717,7 @@ private:
     CPIDGuard*              m_PidGuard;     ///< Cache lock
     bool                    m_ReadOnly;     ///< read-only flag
 
+    bool                    m_JoinedEnv;    ///< Joined environment
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     SCacheBLOB_DB*          m_CacheBLOB_DB; ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database

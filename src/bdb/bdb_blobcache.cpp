@@ -1027,6 +1027,7 @@ void SBDB_CacheStatistics::ConvertToRegistry(IRWRegistry* reg) const
 CBDB_Cache::CBDB_Cache()
 : m_PidGuard(0),
   m_ReadOnly(false),
+  m_JoinedEnv(false),
   m_Env(0),
   m_CacheBLOB_DB(0),
   m_CacheAttrDB(0),
@@ -1126,7 +1127,7 @@ void CBDB_Cache::Open(const string& cache_path,
     string err_file = m_Path + "err" + string(cache_name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
-    bool joined_env = false;
+    m_JoinedEnv = false;
     bool needs_recovery = false;
 
     if (!fl.empty()) {
@@ -1141,7 +1142,7 @@ void CBDB_Cache::Open(const string& cache_path,
                          "LC: '" << cache_name <<
                          "' Warning: Joined non-transactional environment ");
             }
-            joined_env = true;
+            m_JoinedEnv = true;
         }
         catch (CBDB_ErrnoException& err_ex)
         {
@@ -1159,7 +1160,7 @@ void CBDB_Cache::Open(const string& cache_path,
         }
     }
 
-    if (!joined_env) {
+    if (!m_JoinedEnv) {
         if (log_mem_size == 0) {
             if (m_LogSizeMax >= (20 * 1024 * 1024)) {
                 m_Env->SetLogFileMax(m_LogSizeMax);
@@ -1194,8 +1195,6 @@ void CBDB_Cache::Open(const string& cache_path,
             _ASSERT(0);
         } // switch
 
-        m_Env->SetDirectDB(true);
-        m_Env->SetDirectLog(true);
         m_Env->SetLogAutoRemove(true);
 
         m_Env->SetLockTimeout(30 * 1000000); // 30 sec
@@ -3138,6 +3137,8 @@ static const string kCFParam_log_mem_size      = "log_mem_size";
 static const string kCFParam_read_only         = "read_only";
 static const string kCFParam_write_sync        = "write_sync";
 static const string kCFParam_use_transactions  = "use_transactions";
+static const string kCFParam_direct_db         = "direct_db";
+static const string kCFParam_direct_log        = "direct_log";
 
 static const string kCFParam_purge_batch_size  = "purge_batch_size";
 static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
@@ -3283,6 +3284,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamBool(params, kCFParam_owner_stat, false, false);
     drv->SetOwnerStat(owner_stat);
 */
+
+
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
@@ -3291,6 +3294,18 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
                   use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans,
                   log_mem_size);
     }
+
+    if (!drv->IsJoinedEnv()) {
+        bool direct_db =
+            GetParamBool(params, kCFParam_direct_db, false, false);
+        bool direct_log =
+            GetParamBool(params, kCFParam_direct_log, false, true);
+
+        CBDB_Env* env = drv->GetEnv();
+        env->SetDirectDB(direct_db);
+        env->SetDirectLog(direct_log);
+    }
+
     return drv.release();
 
 }
