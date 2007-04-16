@@ -153,9 +153,9 @@ CProjItem::CProjItem(TProjType type,
     m_Libs3Party (libs_3_party),
     m_IncludeDirs(include_dirs),
     m_Defines (defines),
-    m_MakeType(maketype)
+    m_MakeType(maketype),
+    m_GUID(guid)
 {
-    m_GUID = guid.empty() ? GenerateSlnGUID() : guid;
 }
 
 

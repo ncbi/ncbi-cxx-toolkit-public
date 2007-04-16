@@ -161,26 +161,88 @@ bool PromoteIfDifferent(const string& present_path,
 class CGuidGenerator
 {
 public:
+    CGuidGenerator(void);
     ~CGuidGenerator(void);
-    friend string GenerateSlnGUID(void);
+
+    string DoGenerateSlnGUID();
+    bool Insert(const string& guid, const string& path);
+    const string& GetGuidUser(const string& guid) const;
 
 private:
-    CGuidGenerator(void);
+    string Generate12Chars(void);
 
     const string root_guid; // root GUID for MSVC solutions
     const string guid_base;
-    string Generate12Chars(void);
     unsigned int m_Seed;
-
-    string DoGenerateSlnGUID(void);
-    set<string> m_Trace;
+    map<string,string> m_Trace;
 };
 
+CGuidGenerator guid_gen;
 
 string GenerateSlnGUID(void)
 {
-    static CGuidGenerator guid_gen;
     return guid_gen.DoGenerateSlnGUID();
+}
+
+string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
+{
+    string vcproj;
+    if (proj.Type() == CProjKey::eMsvc) {
+        vcproj = source_dir;
+    } else {
+        if (proj.Type() == CProjKey::eDll) {
+            vcproj = source_dir;
+        } else {
+            vcproj = GetApp().GetProjectTreeInfo().m_Compilers;
+            vcproj = CDirEntry::ConcatPath(vcproj, 
+                GetApp().GetRegSettings().m_CompilersSubdir);
+            vcproj = CDirEntry::ConcatPath(vcproj, 
+                GetApp().GetBuildType().GetTypeStr());
+            vcproj = CDirEntry::ConcatPath(vcproj,
+                GetApp().GetRegSettings().m_ProjectsSubdir);
+            vcproj = CDirEntry::ConcatPath(vcproj, 
+                CDirEntry::CreateRelativePath(
+                    GetApp().GetProjectTreeInfo().m_Src, source_dir));
+        }
+        vcproj = CDirEntry::AddTrailingPathSeparator(vcproj);
+        vcproj += CreateProjectName(proj);
+        vcproj += MSVC_PROJECT_FILE_EXT;
+    }
+    string guid;
+    if ( CDirEntry(vcproj).Exists() ) {
+        char   buf[1024];
+        CNcbiIfstream is(vcproj.c_str(), IOS_BASE::in);
+        if (is.is_open()) {
+            while ( !is.eof() ) {
+                is.getline(buf, sizeof(buf));
+                buf[sizeof(buf)-1] = char(0);
+                string data(buf);
+                string::size_type start, end;
+                start = data.find("ProjectGUID");
+                if (start != string::npos) {
+                    start = data.find('{',start);
+                    if (start != string::npos) {
+                        end = data.find('}',++start);
+                        if (end != string::npos) {
+                            guid = data.substr(start,end-start);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    if (!guid.empty() && !guid_gen.Insert(guid,vcproj)) {
+        LOG_POST(Error << "VC Project needs GUID that is already in use: " << vcproj);
+        LOG_POST(Error << "Used by: " << guid_gen.GetGuidUser(guid));
+        if (proj.Type() != CProjKey::eMsvc) {
+            guid.clear();
+        }
+    }
+    if (!guid.empty()) {
+        return  "{" + guid + "}";
+    }
+    return guid;
 }
 
 
@@ -206,14 +268,35 @@ string CGuidGenerator::Generate12Chars(void)
     return ost.str();
 }
 
+bool CGuidGenerator::Insert(const string& guid, const string& path)
+{
+    if (!guid.empty() && guid != root_guid) {
+        if (m_Trace.find(guid) == m_Trace.end()) {
+            m_Trace[guid] = path;
+            return true;
+        }
+        if (!path.empty()) {
+            return m_Trace[guid] == path;
+        }
+    }
+    return false;
+}
+
+const string& CGuidGenerator::GetGuidUser(const string& guid) const
+{
+    map<string,string>::const_iterator i = m_Trace.find(guid);
+    if (i != m_Trace.end()) {
+       return i->second;
+    }
+    return kEmptyStr;
+}
 
 string CGuidGenerator::DoGenerateSlnGUID(void)
 {
     for ( ;; ) {
         //GUID prototype
         string proto = guid_base + Generate12Chars();
-        if (proto != root_guid  &&  m_Trace.find(proto) == m_Trace.end()) {
-            m_Trace.insert(proto);
+        if (Insert(proto,kEmptyStr)) {
             return "{" + proto + "}";
         }
     }

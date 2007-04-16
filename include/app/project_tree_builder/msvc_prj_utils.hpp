@@ -31,6 +31,7 @@
  */
 
 #include <app/project_tree_builder/ptb_registry.hpp>
+#include <app/project_tree_builder/proj_item.hpp>
 #include <corelib/ncbienv.hpp>
 #if NCBI_COMPILER_MSVC
 #   include <app/project_tree_builder/msvc71_project__.hpp>
@@ -80,6 +81,7 @@ bool PromoteIfDifferent(const string& present_path,
 
 /// Generate pseudo-GUID.
 string GenerateSlnGUID(void);
+string IdentifySlnGUID(const string& source_dir, const CProjKey& proj);
 
 /// Get extension for source file without extension.
 ///

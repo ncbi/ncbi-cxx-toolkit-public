@@ -693,7 +693,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                       libs_3_party,
                       include_dirs,
                       defines,
-                      maketype);
+                      maketype,
+        IdentifySlnGUID(source_base_dir, CProjKey(CProjKey::eApp, proj_id)));
     //
     project.m_NcbiCLibs = ncbi_clibs;
 
@@ -845,7 +846,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            libs_3_party,
                                            include_dirs,
                                            defines,
-                                           maketype);
+                                           maketype,
+        IdentifySlnGUID(source_base_dir, CProjKey(CProjKey::eLib, proj_id)));
     return proj_key;
 }
 
@@ -1107,13 +1109,16 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                       << "  at " << applib_mfilepath);
         return CProjKey();
     }
+    string vcproj_file;
     list<string> sources;
     ITERATE(list<string>, s, k->second) {
         string d = GetApp().ProcessLocationMacros( *s );
+        vcproj_file = d;
         if (CDirEntry::IsAbsolutePath(d)) {
             d = CDirEntry::CreateRelativePath( source_base_dir, d);
         }
         sources.push_back( d );
+        break;
     }
 
     // depends - 
@@ -1187,7 +1192,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            include_dirs,
                                            defines,
                                            maketype,
-                                           project_makefile.GetGUID());
+        IdentifySlnGUID(vcproj_file, CProjKey(CProjKey::eMsvc, proj_id)));
+//                                           project_makefile.GetGUID());
     return proj_key;
 }
 //-----------------------------------------------------------------------------

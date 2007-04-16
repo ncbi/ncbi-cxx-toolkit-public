@@ -107,7 +107,7 @@ public:
               const list<string>&   include_dirs,
               const list<string>&   defines,
               EMakeFileType maketype,
-              const string& guid = kEmptyStr);
+              const string& guid);
     
     ~CProjItem(void);
 

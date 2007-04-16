@@ -195,7 +195,6 @@ static void s_InitalizeDllProj(const string&                  dll_id,
     dll->m_Name     = dll_id;
     dll->m_ID       = dll_id;
     dll->m_ProjType = CProjKey::eDll;
-    dll->m_GUID     = GenerateSlnGUID();;
 
     ITERATE(list<string>, p, dll_info.m_Depends) {
 
@@ -255,6 +254,8 @@ static void s_InitalizeDllProj(const string&                  dll_id,
 
     dll->m_Sources.clear();
     dll->m_Sources.push_back("..\\..\\dll_main");
+
+    dll->m_GUID = IdentifySlnGUID(dll_project_dir, CProjKey(dll->m_ProjType,dll->m_ID) );;
 }
 
 

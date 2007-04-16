@@ -40,6 +40,9 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     if ( prj.m_ProjType == CProjKey::eMsvc) {
         return;
     }
+    if (prj.m_GUID.empty()) {
+        prj.m_GUID = GenerateSlnGUID();
+    }
 
     CMsvcPrjProjectContext project_context(prj);
     CVisualStudioProject xmlprj;

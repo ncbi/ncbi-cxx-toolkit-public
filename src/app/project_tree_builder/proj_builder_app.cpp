@@ -230,7 +230,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,6) );
+    SetVersion( CVersionInfo(1,2,7) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
