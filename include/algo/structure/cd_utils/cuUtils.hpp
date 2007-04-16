@@ -48,24 +48,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-static int CDTreeColorCycle[] ={
-    0x806000,  // dark brown
-    0xff0000,  // red
-    0x149600,  // dark green
-    0x0000ff,  // dark blue
-    0xb428ff,  // purple
-    0xff8c1a,  // orange
-    0x00ffff,  // light blue
-    0xff499b,  // pink
-    0xc89600,  // brown
-    0x00ff00,  // light green
-    0xaaaaaa,  // gray
-    0xcee000,  // olive
-    0x4a85ff,  // blue
-    0xffc800,  // light orange
-    0xc800bc,  // maroon
-    0xeeee00,  // yellow
-};
+extern const int  CDTreeColorCycle[];
+extern const int  kNumColorsInCDTreeColorCycle;
 
 NCBI_CDUTILS_EXPORT 
 string GetSeqIDStr(const CSeq_id& SeqID);
