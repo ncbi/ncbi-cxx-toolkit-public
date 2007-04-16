@@ -6726,6 +6726,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        && !(args.GetDriverName() == "ftds"
+          && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy,
                                    DBAPIInstance);
@@ -6736,6 +6738,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     //
     if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        && !(args.GetDriverName() == "ftds"
+          && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Multiple_Close,
                                    DBAPIInstance);
@@ -6745,6 +6749,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     //
     if (!(args.GetDriverName() == "ftds64"
+          && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == "ftds"
           && args.GetServerType() == CTestArguments::eSybase)
         ) {
         boost::unit_test::test_case* tc_parameters =
@@ -6856,7 +6862,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     {
         if (!(args.GetDriverName() == "ftds64"
-          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+              && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+            && !(args.GetDriverName() == "ftds"
+                 && args.GetServerType() == CTestArguments::eSybase)
           ) {
             boost::unit_test::test_case* select_stmt_tc =
                 BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt,
@@ -6913,6 +6921,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        && !(args.GetDriverName() == "ftds64"
+          && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
                                    DBAPIInstance);
@@ -6974,6 +6984,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if ( args.GetDriverName() != "ftds64_odbc"  // Strange ....
          && !(args.GetDriverName() == "ftds64"
               && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+         && !(args.GetDriverName() == "ftds"
+              && args.GetServerType() == CTestArguments::eSybase)
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime,
                                    DBAPIInstance);
