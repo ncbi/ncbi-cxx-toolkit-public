@@ -120,16 +120,6 @@ enum ENSLB_RunDelayType
 };
 
 
-/// Types of event notification subscribers
-///
-/// @internal
-enum ENetScheduleListenerType
-{
-    eNS_Worker        = (1 << 0),  ///< Regular worker node
-    eNS_BackupWorker  = (1 << 1)   ///< Backup worker node (second priority notifications)
-};
-
-
 /// @internal
 typedef unsigned TNetScheduleListenerType;
 
@@ -146,20 +136,17 @@ struct SQueueListener
     time_t                     last_connect; ///< Last registration timestamp
     int                        timeout;      ///< Notification expiration timeout
     string                     auth;         ///< Authentication string
-    TNetScheduleListenerType   client_type;  ///< Client type mask
 
     SQueueListener(unsigned int             host_addr,
                    unsigned short           udp_port_number,
                    time_t                   curr,
                    int                      expiration_timeout,
-                   const string&            client_auth,
-                   TNetScheduleListenerType ctype = eNS_Worker)
+                   const string&            client_auth)
     : host(host_addr),
       udp_port(udp_port_number),
       last_connect(curr),
       timeout(expiration_timeout),
-      auth(client_auth),
-      client_type(ctype)
+      auth(client_auth)
     {}
 };
 
@@ -215,6 +202,7 @@ private:
 };
 
 
+/* obsolete
 // another representation key -> value, bitvector
 typedef pair<string, TNSBitVector*> TNSTagValue;
 typedef vector<TNSTagValue> TNSTagDetails;
@@ -228,6 +216,7 @@ public:
 private:
     TNSTagDetails m_TagDetails;
 };
+*/
 
 
 // slight violation of naming convention for porting to util/time_line
@@ -331,13 +320,25 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 
     /// last valid id for queue
     CAtomicCounter               m_LastId;
-    // Moved here from CQueueDataBase
-    /// vector of jobs to be deleted from db unconditionally
-    TNSBitVector                 m_JobsToDelete;
-    /// its lock
-    CFastMutex                   m_JobsToDeleteLock;
 
-//public:
+    /// Lock for deleted jobs vectors
+    CFastMutex                   m_JobsToDeleteLock;
+    /// vector of jobs to be deleted from db unconditionally
+    /// keeps jobs still to be deleted from main DB
+    TNSBitVector                 m_JobsToDelete;
+    /// vector to mask queries against; keeps jobs not yet deleted
+    /// from tags DB
+    TNSBitVector                 m_DeletedJobs;
+    /// vector to keep ids to be cleaned from affinity
+    TNSBitVector                 m_AffJobsToDelete;
+    /// Current aff id to start cleaning from
+    unsigned                     m_CurrAffId;
+    /// Last aff id cleaning started from
+    unsigned                     m_LastAffId;
+    // Safeguard
+    unsigned                     m_FirstSafeJobIdToErase;
+
+public:
     // Constructor/destructor
     SLockedQueue(const string& queue_name,
         const string& qclass_name, TQueueKind queue_kind);
@@ -354,8 +355,20 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     /// Returns first id for the batch
     unsigned int GetNextIdBatch(unsigned count);
 
-    // Erase job from all structures, request delayed db deletion
+    /// Erase job from all structures, request delayed db deletion
     void Erase(unsigned job_id);
+
+    /// Erase all jobs from all structures, request delayed db deletion
+    void Clear();
+
+    /// Persist deleted vectors so restarted DB will not reincarnate jobs
+    void FlushDeletedVectors();
+
+    /// Filter out deleted jobs
+    void FilterJobs(TNSBitVector& ids);
+
+    /// Clear part of affinity index, called from periodic Purge
+    void ClearAffinityIdx();
 
     // Tags methods
     typedef CSimpleBuffer TBuffer;

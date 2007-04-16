@@ -73,7 +73,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.24  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.25  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -364,7 +364,8 @@ private:
                     const char* token, int tsize,
                     const char*&val, int& vsize);
     static
-    void x_ParseTags(string strtags, TNSTagList& tags);
+    void x_ParseTags(const string& strtags, TNSTagList& tags);
+    void x_MonitorRec(const SNS_SubmitRecord& rec);
 
     bool x_ParseArguments(const char*s, const SArgument* arg_descr);
 
@@ -780,8 +781,7 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 }
 
 
-
-void CNetScheduleHandler::x_ParseTags(string strtags, TNSTagList& tags)
+void CNetScheduleHandler::x_ParseTags(const string& strtags, TNSTagList& tags)
 {
     list<string> tokens;
     NStr::Split(NStr::ParseEscapes(strtags), "\t",
@@ -796,6 +796,24 @@ void CNetScheduleHandler::x_ParseTags(string strtags, TNSTagList& tags)
             break;
         }
     }
+}
+
+
+void CNetScheduleHandler::x_MonitorRec(const SNS_SubmitRecord& rec)
+{
+    string msg;
+    _ASSERT(m_Monitor && m_Monitor->IsMonitorActive());
+
+    msg += string("id: ") + NStr::IntToString(rec.job_id);
+    msg += string(" input: ") + rec.input;
+    msg += string(" aff: ") + rec.affinity_token;
+    msg += string(" aff_id: ") + NStr::IntToString(rec.affinity_id);
+    msg += string(" mask: ") + NStr::IntToString(rec.mask);
+    msg += string(" tags: ");
+    ITERATE(TNSTagList, it, rec.tags) {
+        msg += it->first + "=" + it->second + "; ";
+    }
+    m_Monitor->SendString(msg);
 }
 
 
@@ -832,6 +850,7 @@ void CNetScheduleHandler::ProcessSubmit()
         msg += m_AuthString;
 
         m_Monitor->SendString(msg);
+        x_MonitorRec(rec);
     }
 
 }
@@ -863,6 +882,15 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
             m_BatchStopWatch.Restart();
             m_BatchSubmitVector.resize(m_BatchSize);
             m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchItem;
+            if (m_Monitor && m_Monitor->IsMonitorActive()) {
+                CSocket& socket = GetSocket();
+                string msg = "::ProcessMsgBatchHeader ";
+                msg += m_LocalTimer.GetLocalTime().AsString();
+                msg += " ";
+                msg += socket.GetPeerAddress();
+                msg += " ";
+                msg += m_AuthString;
+            }
             return;
         } // else error???
     } else {
@@ -874,7 +902,9 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
     }
     m_BatchSubmitVector.clear();
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
-    m_Server->GetQueueDB()->TransactionCheckPoint();
+    // TODO: replace this HACK with counter and logic in SLockedQueue
+    if (m_BatchSize >= 2000) // Dirty HACK
+        m_Server->GetQueueDB()->TransactionCheckPoint();
     WriteMsg("OK:");
 }
 
@@ -997,8 +1027,11 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
     double db_elapsed = sw.Elapsed();
 
     if (m_Monitor && m_Monitor->IsMonitorActive()) {
+        ITERATE(vector<SNS_SubmitRecord>, it, m_BatchSubmitVector) {
+            x_MonitorRec(*it);
+        }
         CSocket& socket = GetSocket();
-        string msg = "::ProcessSubmitBatch ";
+        string msg = "::ProcessMsgSubmitBatch ";
         msg += m_LocalTimer.GetLocalTime().AsString();
         msg += " ==> ";
         msg += socket.GetPeerAddress();
@@ -1588,6 +1621,23 @@ void CNetScheduleHandler::ProcessStatistics()
     {{
         CNcbiOstrstream ostr;
         m_Queue->GetBDBEnv().PrintLockStat(ostr);
+        ostr << ends;
+
+        char* stat_str = ostr.str();
+        try {
+            WriteMsg("OK:", stat_str, true, false);
+        } catch (...) {
+            ostr.freeze(false);
+            throw;
+        }
+        ostr.freeze(false);
+
+    }}
+
+    WriteMsg("OK:", "[Berkeley DB Memory Usage]:");
+    {{
+        CNcbiOstrstream ostr;
+        m_Queue->GetBDBEnv().PrintMemStat(ostr);
         ostr << ends;
 
         char* stat_str = ostr.str();

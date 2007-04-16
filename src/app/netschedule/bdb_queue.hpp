@@ -190,12 +190,12 @@ public:
     ///    Number of deleted jobs
     unsigned CheckDeleteBatch(unsigned batch_size,
                               CNetScheduleAPI::EJobStatus status);
-    /// Actually delete batch jobs from jobs-to-delete vector
+    /// Actually delete batch_size jobs using jobs-to-delete vector
     /// @return
     ///    Number of deleted jobs
     unsigned DoDeleteBatch(unsigned batch_size);
 
-    /// Delete all job ids already deleted (phisically) from the queue
+    /// Delete all job ids already deleted (physically) from the queue
     void ClearAffinityIdx(void);
 
     /// Remove all jobs
@@ -220,7 +220,7 @@ public:
     /// program name (not UDP port). Presumed that we have one
     /// worker node instance per host.
     void ClearAffinity(unsigned int  host_addr,
-                        const string& auth);
+                       const string& auth);
 
     void SetMonitorSocket(SOCK sock);
 
@@ -610,7 +610,7 @@ public:
     unsigned short GetUdpPort(void) const { return m_UdpPort; }
 
     /// Force transaction checkpoint
-    void TransactionCheckPoint();
+    void TransactionCheckPoint(bool clean_log=false);
 
 protected:
     /// get next job id (counter increment)
@@ -624,7 +624,6 @@ private:
     unsigned x_PurgeUnconditional(unsigned batch_size);
     void x_Returned2Pending(void);
     void x_OptimizeStatusMatrix(void);
-    void x_OptimizeAffinity(void);
     bool x_CheckStopPurge(void);
     void x_CleanParamMap(void);
 

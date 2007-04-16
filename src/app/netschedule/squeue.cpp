@@ -132,7 +132,7 @@ CNSTagMap::~CNSTagMap()
 }
 
 
-
+/* obsolete
 CNSTagDetails::CNSTagDetails(SLockedQueue& queue)
 {
 }
@@ -145,7 +145,7 @@ CNSTagDetails::~CNSTagDetails()
         it->second = 0;
     }
 }
-
+*/
 
 
 SLockedQueue::SLockedQueue(const string& queue_name,
@@ -169,7 +169,8 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     lb_stall_delay_type(eNSLB_Constant),
     lb_stall_time(6),
     lb_stall_time_mult(1.0),
-    delete_database(false)
+    delete_database(false),
+    m_LastAffId(0)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
@@ -310,9 +311,173 @@ unsigned int SLockedQueue::GetNextIdBatch(unsigned count)
 void SLockedQueue::Erase(unsigned job_id)
 {
     status_tracker.Erase(job_id);
-    // Request delayed record delete
-    CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
-    m_JobsToDelete.set_bit(job_id);
+
+    {{
+        // Request delayed record delete
+        CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        m_JobsToDelete.set_bit(job_id);
+        m_DeletedJobs.set_bit(job_id);
+        m_AffJobsToDelete.set_bit(job_id);
+
+        // start affinity erase process
+        m_LastAffId = m_CurrAffId;
+
+        FlushDeletedVectors();
+    }}
+}
+
+
+void SLockedQueue::Clear()
+{
+    TNSBitVector bv;
+
+    {{
+        CWriteLockGuard rtl_guard(rtl_lock);
+        // TODO: interdependency btw status_tracker.lock and rtl_lock
+        status_tracker.ClearAll(&bv);
+        run_time_line->ReInit(0);
+    }}
+
+    {{
+        CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        m_JobsToDelete    |= bv;
+        m_DeletedJobs     |= bv;
+        m_AffJobsToDelete |= bv;
+
+        // start affinity erase process
+        m_LastAffId = m_CurrAffId;
+
+        FlushDeletedVectors();
+    }}
+}
+
+
+void SLockedQueue::FlushDeletedVectors()
+{
+}
+
+
+void SLockedQueue::FilterJobs(TNSBitVector& ids)
+{
+    TNSBitVector alive_jobs;
+    status_tracker.GetAliveJobs(alive_jobs);
+    ids &= alive_jobs;
+    //CFastMutexGuard guard(m_JobsToDeleteLock);
+    //ids -= m_DeletedJobs;
+}
+
+void SLockedQueue::ClearAffinityIdx()
+{
+    const unsigned kDeletedJobsThreshold = 10000;
+    const unsigned kAffBatchSize = 1000;
+    // thread-safe copies of progress pointers
+    unsigned curr_aff_id;
+    unsigned last_aff_id;
+    {{
+        // Ensure that we have some job to do
+        CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        if (m_AffJobsToDelete.count() < kDeletedJobsThreshold)
+            return;
+        curr_aff_id = m_CurrAffId;
+        last_aff_id = m_LastAffId;
+    }}
+
+    // Safeguard against runaway job id in affinity index
+    // Should not fire (see warning below)
+    m_FirstSafeJobIdToErase = 0;
+    {{
+        CFastMutexGuard guard(lock);
+        db.SetTransaction(0);
+
+        // get the first phisically available record in the queue database
+        CBDB_FileCursor cur(db);
+        cur.SetCondition(CBDB_FileCursor::eFirst);
+
+        if (cur.Fetch() == eBDB_Ok) {
+            m_FirstSafeJobIdToErase = db.id;
+            _ASSERT(m_FirstSafeJobIdToErase > 0);
+            if (m_FirstSafeJobIdToErase > 0)
+                --m_FirstSafeJobIdToErase;
+        }
+    }}
+
+    TNSBitVector bv(bm::BM_GAP);
+
+    // mark if we are wrapped and chasing the "tail"
+    bool on_left = curr_aff_id < last_aff_id; 
+
+    // get batch of affinity tokens in the index
+    {{
+        CFastMutexGuard guard(lock);
+        aff_idx.SetTransaction(0);
+        CBDB_FileCursor cur(aff_idx);
+        cur.SetCondition(CBDB_FileCursor::eGE);
+        cur.From << curr_aff_id;
+
+        // We can not find that we are EXACTLY at the end of db index,
+        // so it can come to next cycle and fail to read even a single
+        // index. This will lead to skipped cleaning cycle.
+        unsigned n = 0;
+        for (; cur.Fetch() == eBDB_Ok && n < kAffBatchSize; ++n) {
+            curr_aff_id = aff_idx.aff_id;
+            if (on_left && curr_aff_id >= last_aff_id) // runned over the tail
+                break;
+            bv.set(curr_aff_id);
+        } 
+        if (n < kAffBatchSize) {
+            // wrap-around
+            curr_aff_id = 0;
+        }
+    }}
+
+    {{
+        CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        m_CurrAffId = curr_aff_id;
+    }}
+
+    // clear all hanging references
+    TNSBitVector::enumerator en(bv.first());
+    for (; en.valid(); ++en) {
+        unsigned aff_id = *en;
+        CFastMutexGuard guard(lock);
+        CBDB_Transaction trans(*db.GetEnv(), 
+                                CBDB_Transaction::eTransASync,
+                                CBDB_Transaction::eNoAssociation);
+        aff_idx.SetTransaction(&trans);
+        SQueueAffinityIdx::TParent::TBitVector bvect(bm::BM_GAP);
+        aff_idx.aff_id = aff_id;
+        EBDB_ErrCode ret =
+            aff_idx.ReadVector(&bvect, bm::set_OR, NULL);
+        if (ret != eBDB_Ok) continue;
+        unsigned old_count = bvect.count();
+        bvect -= m_AffJobsToDelete;
+        unsigned clean_count = bvect.count();
+        if (m_FirstSafeJobIdToErase) {
+            bvect.set_range(0, m_FirstSafeJobIdToErase, false);
+            if (bvect.count() != clean_count) {
+                LOG_POST(Warning << "Affinity cleaning safeguard triggered");
+            }
+        }
+        unsigned new_count = bvect.count();
+        if (new_count == old_count) {
+            continue;
+        }
+        aff_idx.aff_id = aff_id;
+        if (bvect.any()) {
+            bvect.optimize();
+            aff_idx.WriteVector(bvect, SQueueAffinityIdx::eNoCompact);
+        } else {
+            aff_idx.Delete();
+        }
+        trans.Commit();
+        cout << aff_id << " cleaned" << endl;
+    } // for
+
+    {{
+        CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        if (on_left && m_CurrAffId >= m_LastAffId)
+            m_AffJobsToDelete.clear(true);
+    }}
 }
 
 
@@ -445,31 +610,35 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
     }}
     if (batch.none()) return 0;
 
-    CBDB_Transaction trans(*db.GetEnv(), 
-                        CBDB_Transaction::eTransASync,
-                        CBDB_Transaction::eNoAssociation);
+    unsigned actual_batch_size = batch.count();
+    unsigned chunks = (actual_batch_size + 999) / 1000;
+    unsigned chunk_size = actual_batch_size / chunks;
+    unsigned residue = actual_batch_size - chunks*chunk_size;
 
+    TNSBitVector::enumerator en = batch.first();
     unsigned del_rec = 0;
-    {{
+    while (en.valid()) {
+        unsigned txn_size = chunk_size;
+        if (residue) {
+            ++txn_size; --residue;
+        }
         CFastMutexGuard guard(lock);
+        CBDB_Transaction trans(*db.GetEnv(),
+            CBDB_Transaction::eEnvDefault,
+            CBDB_Transaction::eNoAssociation);
+
         db.SetTransaction(&trans);
         m_JobInfoDB.SetTransaction(&trans);
 
-        CBDB_FileCursor& cur = *this->GetCursor(trans);
-        CBDB_CursorGuard cg(cur);    
-        for (TNSBitVector::enumerator en = batch.first(); en.valid(); ++en) {
+        unsigned n;
+        for (n = 0; en.valid() && n < txn_size; ++en, ++n) {
             unsigned job_id = *en;
-//            db.id = job_id;
-//            db.Delete();
-            cur.SetCondition(CBDB_FileCursor::eEQ);
-            cur.From << job_id;
-            if (cur.FetchFirst() == eBDB_Ok) {
-                try {
-                    cur.Delete();
-                    ++del_rec;
-                } catch (CBDB_ErrnoException& ex) {
-                    LOG_POST(Error << "BDB error " << ex.what());
-                }
+            db.id = job_id;
+            try {
+                db.Delete();
+                ++del_rec;
+            } catch (CBDB_ErrnoException& ex) {
+                LOG_POST(Error << "BDB error " << ex.what());
             }
 
             m_JobInfoDB.id = job_id;
@@ -479,9 +648,9 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
                 LOG_POST(Error << "BDB error " << ex.what());
             }
         }
-        x_RemoveTags(trans, batch);
-    }}
-    trans.Commit();
+        trans.Commit();
+        // x_RemoveTags(trans, batch);
+    }
     return del_rec;
 }
 

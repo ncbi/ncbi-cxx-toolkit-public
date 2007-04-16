@@ -859,10 +859,10 @@ void CQueueDataBase::Close()
 }
 
 
-void CQueueDataBase::TransactionCheckPoint()
+void CQueueDataBase::TransactionCheckPoint(bool clean_log)
 {
     m_Env->TransactionCheckpoint();
-    m_Env->CleanLog();
+    if (clean_log) m_Env->CleanLog();
 }
 
 
@@ -914,7 +914,7 @@ void CQueueDataBase::Purge(void)
 
     // Delete obsolete job records, based on time stamps 
     // and expiration timeouts
-    unsigned n_queue_limit = 2000; // TODO: determine this based on load
+    unsigned n_queue_limit = 10000; // TODO: determine this based on load
 
     CNetScheduleAPI::EJobStatus statuses_to_delete_from[] = {
         CNetScheduleAPI::eFailed, CNetScheduleAPI::eCanceled,
@@ -967,15 +967,21 @@ void CQueueDataBase::Purge(void)
     // This is done to spread massive job deletion in time
     // and thus smooth out peak loads
     // TODO: determine batch size based on load
-    unsigned n_jobs_to_delete = 5000; 
+    unsigned n_jobs_to_delete = 10000; 
     unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
     global_del_rec += unc_del_rec;
 
+    // TODO: Handle tags here - see below for affinity
+
+    // Remove unused affinity elements
+    ITERATE(CQueueCollection, it, m_QueueCollection) {
+        (*it).ClearAffinityIdx();
+    }
+
     m_DeleteChkPointCnt += global_del_rec;
-    if (m_DeleteChkPointCnt > 1000) {
+    if (m_DeleteChkPointCnt > 100000) {
         m_DeleteChkPointCnt = 0;
-        x_OptimizeAffinity();
-        m_Env->TransactionCheckpoint();
+        TransactionCheckPoint(true);
     }
 
     m_FreeStatusMemCnt += global_del_rec;
@@ -989,9 +995,10 @@ void CQueueDataBase::Purge(void)
         }
     }
 
-    if (global_del_rec > n_jobs_to_delete + n_queue_limit * m_QueueCollection.GetSize()) {
-        SleepMilliSec(1000);
-    }
+//    if (global_del_rec >
+//          n_jobs_to_delete + n_queue_limit * m_QueueCollection.GetSize()) {
+//        SleepMilliSec(1000);
+//    }
 }
 
 unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
@@ -1014,15 +1021,6 @@ void CQueueDataBase::x_Returned2Pending(void)
         ITERATE(CQueueCollection, it, m_QueueCollection) {
             (*it).Returned2Pending();
         }
-    }
-}
-
-
-void CQueueDataBase::x_OptimizeAffinity(void)
-{
-    // remove unused affinity elements
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).ClearAffinityIdx();
     }
 }
 
@@ -1413,17 +1411,10 @@ void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
     SQueueDB& db = q->db;
     CFastMutexGuard guard(q->lock);
 
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
+    db.SetTransaction(0);
+    CBDB_FileCursor cur(db);
 
-    db.SetTransaction(&trans);
-
-    CBDB_FileCursor& cur = *q->GetCursor(trans);
-    CBDB_CursorGuard cg(cur);    
-
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << 0;
+    cur.SetCondition(CBDB_FileCursor::eFirst);
 
     while (cur.Fetch() == eBDB_Ok) {
         x_PrintJobDbStat(db, out);
@@ -1580,8 +1571,6 @@ string CQueue::ExecQuery(const string& query, const string& action,
     //            "\" Fields: \"" << fields << "\"" << NcbiEndl;
 
     CRef<SLockedQueue> q(x_GetLQueue());
-    TNSBitVector alive_jobs;
-    q->status_tracker.GetAliveJobs(alive_jobs);
     CQueryParseTree qtree;
     try {
         qtree.Parse(query.c_str());
@@ -1635,8 +1624,9 @@ string CQueue::ExecQuery(const string& query, const string& action,
                                                 bm::set_ASSIGN);
         }
     }
-    // Filter against status matrix
-    *(bv.get()) &= alive_jobs;
+    // Filter against deleted jobs
+    q->FilterJobs(*(bv.get()));
+
     string result_str;
     if (action == "COUNT") {
         result_str = NStr::IntToString(bv->count());
@@ -3787,97 +3777,15 @@ CQueue::DoDeleteBatch(unsigned batch_size)
 
 void CQueue::ClearAffinityIdx()
 {
-    // read the queue database, find the first physically available job_id,
-    // then scan all index records, delete all the old (obsolete) record 
-    // (job_id) references
-
     CRef<SLockedQueue> q(x_GetLQueue());
-    SQueueDB& db = q->db;
-
-    unsigned first_job_id = 0;
-    {{
-        CFastMutexGuard guard(q->lock);
-        CBDB_Transaction trans(*db.GetEnv(), 
-                            CBDB_Transaction::eTransASync,
-                            CBDB_Transaction::eNoAssociation);
-
-        db.SetTransaction(&trans);
-
-        // get the first phisically available record in the queue database
-
-        CBDB_FileCursor& cur = *q->GetCursor(trans);
-        CBDB_CursorGuard cg(cur);
-        cur.SetCondition(CBDB_FileCursor::eGE);
-        cur.From << 0;
-
-        if (cur.Fetch() == eBDB_Ok) {
-            first_job_id = db.id;
-        }
-    }}
-
-    if (first_job_id <= 1) {
-        return;
-    }
-
-
-    TNSBitVector bv(bm::BM_GAP);
-
-    // get list of all affinity tokens in the index
-    {{
-        CFastMutexGuard guard(q->lock);
-        CBDB_Transaction trans(*db.GetEnv(), 
-                            CBDB_Transaction::eTransASync,
-                            CBDB_Transaction::eNoAssociation);
-        q->aff_idx.SetTransaction(&trans);
-        CBDB_FileCursor cur(q->aff_idx);
-        cur.SetCondition(CBDB_FileCursor::eGE);
-        while (cur.Fetch() == eBDB_Ok) {
-            unsigned aff_id = q->aff_idx.aff_id;
-            bv.set(aff_id);
-        }
-    }}
-
-    // clear all hanging references
-    TNSBitVector::enumerator en(bv.first());
-    for (; en.valid(); ++en) {
-        unsigned aff_id = *en;
-        CFastMutexGuard guard(q->lock);
-        CBDB_Transaction trans(*db.GetEnv(), 
-                                CBDB_Transaction::eTransASync,
-                                CBDB_Transaction::eNoAssociation);
-        q->aff_idx.SetTransaction(&trans);
-        SQueueAffinityIdx::TParent::TBitVector bvect(bm::BM_GAP);
-        q->aff_idx.aff_id = aff_id;
-        /*EBDB_ErrCode ret = */
-            q->aff_idx.ReadVector(&bvect, bm::set_OR, NULL);
-        unsigned old_count = bvect.count();
-        bvect.set_range(0, first_job_id-1, false);
-        unsigned new_count = bvect.count();
-        if (new_count == old_count) {
-            continue;
-        }
-        bvect.optimize();
-        q->aff_idx.aff_id = aff_id;
-        if (bvect.any()) {
-            q->aff_idx.WriteVector(bvect, SQueueAffinityIdx::eNoCompact);
-        } else {
-            q->aff_idx.Delete();
-        }
-        trans.Commit();
-    } // for
+    q->ClearAffinityIdx();
 }
 
 
 void CQueue::Truncate(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    {{
-        CFastMutexGuard db_guard(q->lock);
-        CFastMutexGuard jtd_guard(q->m_JobsToDeleteLock);
-        CWriteLockGuard rtl_guard(q->rtl_lock);
-        q->status_tracker.ClearAll(&q->m_JobsToDelete);
-        q->run_time_line->ReInit(0);
-    }}
+    q->Clear();
     // Update 'became_empty' timestamp
     IsExpired(); // locks q->lock
 }
