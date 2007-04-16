@@ -85,16 +85,24 @@ public:
     virtual SBlastSequence GetCompressedPlusStrand();
 
 protected:
+    /// Return the size of the container for the data
     TSeqPos x_Size() const;
+    /// Changes the strand of the data contained in this object to plus
     void x_SetPlusStrand();
+    /// Changes the strand of the data contained in this object to minus
     void x_SetMinusStrand();
 
 private:
+    /// Container for the actual sequence data
     vector<char> m_SequenceData;
+    /// Encoding used in the data above
     CSeqUtil::ECoding m_Encoding;
 
+    /// Complements the data in m_SequenceData in place
     void x_ComplementData();
 
+    /// Auxiliary function to map the description of the encoding in
+    /// CSeq_data::EChoice to CSeqUtil::ECoding
     CSeqUtil::ECoding 
     x_Encoding_CSeq_data2CSeqUtil(objects::CSeq_data::E_Choice c);
 };
@@ -170,9 +178,14 @@ public:
     virtual TSeqPos GetLength(int index) const;
 
 private:
+    /// True if the data contained in this object is protein
     bool m_IsProt;
+
+    /// Contains pointers to the input data
     vector< CConstRef<objects::CBioseq> > m_Bioseqs;
 
+    /// Auxiliary method to do some sanity checks on the input Bioseqs
+    /// @param bs Bioseqs to inspect
     void x_BioseqSanityCheck(const objects::CBioseq& bs);
 };
 

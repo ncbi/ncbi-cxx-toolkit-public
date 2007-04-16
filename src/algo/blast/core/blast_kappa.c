@@ -810,7 +810,6 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
  *                          may be obtained
  * @param program_number    identifies the type of blast search being
  *                          performed.
- * @param gen_code_string   genetic code for translated queries
  * @param subject_index     index of the matching sequence in the database
  */
 static int

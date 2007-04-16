@@ -60,7 +60,6 @@ public:
 
     /// Creates object with default options set
     CBlastAdvancedProteinOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
-    ~CBlastAdvancedProteinOptionsHandle() {}
 
 /******************* Gapped extension options *******************/
 

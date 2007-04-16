@@ -77,6 +77,14 @@ CSetupFactory::CreateRpsStructures(const string& rps_dbname,
     return retval;
 }
 
+/** 
+ * @brief Auxiliary function to extract the Seq-ids from the ILocalQueryData
+ * and bundle them in a Packed-seqint
+ * 
+ * @param query_data input query data [in]
+ * 
+ * @return Packed-seqint with query Seq-locs
+ */
 static
 CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
 {

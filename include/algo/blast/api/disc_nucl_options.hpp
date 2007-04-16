@@ -58,7 +58,6 @@ public:
 
     /// Creates object with default options set
     CDiscNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
-    ~CDiscNucleotideOptionsHandle() {}
 
     /******************* Lookup table options ***********************/
     /// Returns TemplateLength

@@ -1,6 +1,5 @@
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
 
 /*
 * ===========================================================================
@@ -80,11 +79,9 @@ environment.
 
 #include <algo/blast/api/blast_dbindex.hpp>
 
-#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-#endif
 
 class CBlastApplication : public CNcbiApplication
 {
@@ -552,7 +549,6 @@ void CBlastApplication::Exit(void)
 }
 
 
-#ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     return CBlastApplication().AppMain(argc, argv, 0, eDS_Default, 0);

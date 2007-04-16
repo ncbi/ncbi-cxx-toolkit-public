@@ -62,7 +62,6 @@ public:
 
     /// Creates object with default options set
     CBlastNucleotideOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
-    ~CBlastNucleotideOptionsHandle() {}
 
     /// Sets Defaults
     virtual void SetDefaults();

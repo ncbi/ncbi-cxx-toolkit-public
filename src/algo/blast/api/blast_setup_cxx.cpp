@@ -87,10 +87,16 @@ s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
     }
 }
 
-ENa_strand 
-BlastSetup_GetStrand(ENa_strand seqloc_strand, 
+/// Internal function to choose between the strand specified in a Seq-loc 
+/// (which specified the query strand) and the strand obtained
+/// from the CBlastOptions
+/// @param seqloc_strand strand extracted from the query Seq-loc [in]
+/// @param program program type from the CORE's point of view [in]
+/// @param strand_opt strand as specified by the BLAST options [in]
+static objects::ENa_strand 
+s_BlastSetup_GetStrand(objects::ENa_strand seqloc_strand, 
                      EBlastProgramType program,
-                     ENa_strand strand_opt)
+                     objects::ENa_strand strand_opt)
 {
     if (Blast_QueryIsProtein(program)) {
         return eNa_strand_unknown;
@@ -107,12 +113,13 @@ BlastSetup_GetStrand(ENa_strand seqloc_strand,
     return retval;
 }
 
-ENa_strand 
-BlastSetup_GetStrand(const CSeq_loc& query_seqloc, 
+objects::ENa_strand 
+BlastSetup_GetStrand(const objects::CSeq_loc& query_seqloc, 
                      EBlastProgramType program, 
-                     ENa_strand strand_opt)
+                     objects::ENa_strand strand_opt)
 {
-    return BlastSetup_GetStrand(query_seqloc.GetStrand(), program, strand_opt);
+    return s_BlastSetup_GetStrand(query_seqloc.GetStrand(), program, 
+                                  strand_opt);
 }
 
 /// Adjust first context depending on the first query strand
@@ -131,7 +138,7 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
 
     _ASSERT(is_na || translate);
 
-    ENa_strand strand = BlastSetup_GetStrand(queries.GetStrand(0), prog,
+    ENa_strand strand = s_BlastSetup_GetStrand(queries.GetStrand(0), prog,
                                              strand_opt);
     _ASSERT(strand != eNa_strand_unknown);
 
@@ -144,7 +151,7 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
 void
 SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                    EBlastProgramType prog,
-                   ENa_strand strand_opt,
+                   objects::ENa_strand strand_opt,
                    BlastQueryInfo** qinfo)
 {
     _ASSERT(qinfo);
@@ -175,7 +182,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
             // SetupQueries
         }
 
-        ENa_strand strand = BlastSetup_GetStrand(queries.GetStrand(j), prog,
+        ENa_strand strand = s_BlastSetup_GetStrand(queries.GetStrand(j), prog,
                                                  strand_opt);
         
         if (translate) {
@@ -536,7 +543,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
         
         try {
 
-            strand = BlastSetup_GetStrand(queries.GetStrand(index), prog,
+            strand = s_BlastSetup_GetStrand(queries.GetStrand(index), prog,
                                           strand_opt);
             if ((is_na || translate) && strand == eNa_strand_unknown) {
                 strand = eNa_strand_both;
@@ -822,6 +829,14 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
     return SBlastSequence(safe_buf.release(), buflen);
 }
 
+/** 
+ * @brief Auxiliary function to retrieve plus strand in compressed (ncbi4na)
+ * format
+ * 
+ * @param sv abstraction to get sequence data [in]
+ * 
+ * @return requested data in compressed format
+ */
 static SBlastSequence
 GetSequenceCompressedNucleotide(IBlastSeqVector& sv)
 {
@@ -829,6 +844,17 @@ GetSequenceCompressedNucleotide(IBlastSeqVector& sv)
     return CompressNcbi2na(sv.GetCompressedPlusStrand());
 }
 
+/** 
+ * @brief Auxiliary function to retrieve a single strand of a nucleotide
+ * sequence.
+ * 
+ * @param sv abstraction to get sequence data [in]
+ * @param encoding desired encoding for the data above [in]
+ * @param strand desired strand [in]
+ * @param sentinel use or do not use sentinel bytes [in]
+ * 
+ * @return Requested strand in desired encoding with/without sentinels
+ */
 static SBlastSequence
 GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
                                   EBlastEncoding encoding,
@@ -880,6 +906,16 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
     return SBlastSequence(safe_buf.release(), buflen);
 }
 
+/** 
+ * @brief Auxiliary function to retrieve both strands of a nucleotide sequence.
+ * 
+ * @param sv abstraction to get sequence data [in]
+ * @param encoding desired encoding for the data above [in]
+ * @param sentinel use or do not use sentinel bytes [in]
+ * 
+ * @return concatenated strands in requested encoding with sentinels as
+ * requested
+ */
 static SBlastSequence
 GetSequenceNucleotideBothStrands(IBlastSeqVector& sv, 
                                  EBlastEncoding encoding, 

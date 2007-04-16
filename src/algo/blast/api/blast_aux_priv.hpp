@@ -132,11 +132,21 @@ struct SBlastSetupData : public CObject {
 };
 
 /// Set up internal data structures used by the BLAST CORE engine
+/// @param query_factory source of query sequence data structures [in]
+/// @param options BLAST options [in]
+/// @param is_multi_threaded whether this search is multi-threaded or not [in]
 CRef<SBlastSetupData>
 BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
                             CRef<CBlastOptions> options,
                             bool is_multi_threaded = false);
 
+/// Extended interface to set up internal data structures used by the BLAST
+/// CORE engine
+/// @param query_factory source of query sequence data structures [in]
+/// @param options BLAST options [in]
+/// @param pssm PSSM [in]
+/// @param seqsrc source of database/subject sequence data [in]
+/// @param is_multi_threaded whether this search is multi-threaded or not [in]
 CRef<SBlastSetupData>
 BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               CRef<CBlastOptions> options,

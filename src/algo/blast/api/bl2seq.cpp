@@ -157,7 +157,6 @@ CBl2Seq::x_ResetQueryDs()
     // should be changed if derived classes are created
     mi_clsQueries.Reset();
     mi_clsQueryInfo.Reset();
-    mi_clsBlastMessage.Reset();
     m_Messages.clear();
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);

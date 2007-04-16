@@ -353,6 +353,7 @@ public:
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
 private:
+    /// Default value specified in constructor
     int m_DefaultValue;
 };
 
@@ -635,6 +636,7 @@ private:
 class NCBI_XBLAST_EXPORT CMTArgs : public IBlastCmdLineArgs
 {
 public:
+    /// Default Constructor
     CMTArgs() : m_NumThreads(CThreadable::kMinNumThreads) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);

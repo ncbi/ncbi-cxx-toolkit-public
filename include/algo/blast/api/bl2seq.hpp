@@ -79,6 +79,7 @@ public:
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
             CBlastOptionsHandle& opts);
 
+    /// Destructor
     virtual ~CBl2Seq();
     
     /// Set the query.
@@ -198,8 +199,6 @@ private:
     BlastSeqLoc*                        mi_pLookupSegments;    ///< internal: regions of queries to scan during lookup table creation
 
     /// Stores any warnings emitted during query setup
-    CBlast_Message                      mi_clsBlastMessage;
-
     TSearchMessages                     m_Messages;
 
     /// Results for all queries and subjects together

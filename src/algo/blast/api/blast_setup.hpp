@@ -360,12 +360,20 @@ GetQueryEncoding(EBlastProgramType program);
 EBlastEncoding
 GetSubjectEncoding(EBlastProgramType program);
 
+/// Wrapper around SetupQueries
+/// @param queries interface to obtain query data [in]
+/// @param options BLAST algorithm options [in]
+/// @param query_info BlastQueryInfo structure [in|out]
+/// @param messages error/warning messages are returned here [in|out]
 BLAST_SequenceBlk*
 SafeSetupQueries(IBlastQuerySource& queries,
                  const CBlastOptions* options,
                  BlastQueryInfo* query_info,
                  TSearchMessages& messages);
 
+/// Wrapper around SetupQueryInfo
+/// @param queries interface to obtain query data [in]
+/// @param options BLAST algorithm options [in]
 BlastQueryInfo*
 SafeSetupQueryInfo(const IBlastQuerySource& queries, 
                    const CBlastOptions* options);

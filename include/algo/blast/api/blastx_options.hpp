@@ -58,7 +58,6 @@ public:
 
     /// Creates object with default options set
     CBlastxOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
-    ~CBlastxOptionsHandle() {}
 
     /******************* Query setup options ************************/
     /// Returns StrandOption

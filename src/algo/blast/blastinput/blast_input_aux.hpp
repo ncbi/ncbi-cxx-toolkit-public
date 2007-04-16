@@ -39,6 +39,14 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+/** 
+ * @brief Create a CArgDescriptions object and invoke SetArgumentDescriptions
+ * for each of the TBlastCmdLineArgs in its argument list
+ * 
+ * @param args arguments to configure the return value [in]
+ * 
+ * @return a CArgDescriptions object with the command line options set
+ */
 CArgDescriptions* 
 SetUpCommandLineArguments(TBlastCmdLineArgs& args);
 

@@ -155,13 +155,12 @@ CObjMgrFree_LocalQueryData::GetSeqLength(size_t index)
     return m_QuerySource->GetLength(index);
 }
 
-static CRef<CBioseq_set>
-s_ConstBioseqSetToBioseqSet(CConstRef<CBioseq_set> bioseq_set)
-{
-    CRef<CBioseq_set> retval(const_cast<CBioseq_set*>(&*bioseq_set));
-    return retval;
-}
-
+/** 
+ * @brief Convert a constant reference to a Bioseq-set to
+ * IRemoteQueryData::TSeqLocs
+ * 
+ * @param bioseq_set input data[in]
+ */
 static IRemoteQueryData::TSeqLocs
 s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> bioseq_set)
 {
@@ -209,7 +208,7 @@ CObjMgrFree_RemoteQueryData::GetBioseqSet()
 {
     if (m_Bioseqs.Empty()) {
         if (m_ClientBioseqSet.NotEmpty()) {
-            m_Bioseqs.Reset(s_ConstBioseqSetToBioseqSet(m_ClientBioseqSet));
+            m_Bioseqs.Reset(const_cast<CBioseq_set*>(&*m_ClientBioseqSet));
         } else {
             NCBI_THROW(CBlastException, eInvalidArgument,
                        "Missing source data in " +

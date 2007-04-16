@@ -38,14 +38,14 @@
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
 #include "blast_setup.hpp"
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-USING_SCOPE(blast);
-
 /** @addtogroup AlgoBlast
  *
  * @{
  */
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 extern "C" {
 

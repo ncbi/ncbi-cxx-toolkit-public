@@ -583,6 +583,16 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      true);
 }
 
+/** 
+ * @brief Auxiliary function to set the composition based statistics and smith
+ * waterman options
+ * 
+ * @param opt BLAST options object [in|out]
+ * @param comp_stat_string command line value for composition based statistics
+ * [in]
+ * @param smith_waterman_value command line value for determining the use of
+ * the smith-waterman algorithm [in]
+ */
 static void
 s_SetCompositionBasedStats(CBlastOptions& opt,
                            const string& comp_stat_string,
