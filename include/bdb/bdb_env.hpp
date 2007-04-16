@@ -282,7 +282,11 @@ private:
     string   m_HomePath;
     bool     m_LogInMemory;
     CBDB_Transaction::ETransSync m_TransSync;
+    unsigned m_MaxLocks;
     unsigned m_MaxLockers;
+    unsigned m_MaxLockObjects;
+    bool     m_DirectDB;
+    bool     m_DirectLOG;
 
 };
 

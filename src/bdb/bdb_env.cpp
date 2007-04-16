@@ -56,8 +56,10 @@ CBDB_Env::CBDB_Env()
   m_ErrFile(0),
   m_LogInMemory(false),
   m_TransSync(CBDB_Transaction::eTransSync),
-  m_MaxLockers(0)
+  m_DirectDB(false),
+  m_DirectLOG(true)
 {
+    m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
 }
@@ -68,8 +70,10 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
   m_ErrFile(0),
   m_LogInMemory(false),
   m_TransSync(CBDB_Transaction::eTransSync),
-  m_MaxLockers(0)
+  m_DirectDB(false),
+  m_DirectLOG(true)
 {
+    m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
 }
 
 CBDB_Env::~CBDB_Env()
@@ -119,6 +123,9 @@ void CBDB_Env::Open(const string& db_home, int flags)
 {
     int ret = x_Open(db_home.c_str(), flags);
     BDB_CHECK(ret, "DB_ENV");
+
+    SetDirectDB(m_DirectDB);
+    SetDirectLog(m_DirectLOG);
 }
 
 int CBDB_Env::x_Open(const char* db_home, int flags)
@@ -181,11 +188,15 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
     BDB_CHECK(ret, "DB_ENV");
 
-    if (m_MaxLockers) {
-        ret = m_Env->set_lk_max_objects(m_Env, m_MaxLockers);
-        BDB_CHECK(ret, "DB_ENV::set_lk_max_objects");
+    if (m_MaxLockObjects) {
+        this->SetMaxLockObjects(m_MaxLockObjects);
     }
-
+    if (m_MaxLocks) {
+        this->SetMaxLocks(m_MaxLocks);
+    }
+    if (m_MaxLockers) {
+        this->SetMaxLockers(m_MaxLockers);
+    }
     
     int flag =  DB_INIT_TXN |
                 DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL;
@@ -384,9 +395,11 @@ void CBDB_Env::SetLogFileMax(unsigned int lg_max)
 
 void CBDB_Env::SetMaxLocks(unsigned locks)
 {
-    _ASSERT(locks);
-    int ret = m_Env->set_lk_max_locks(m_Env, locks);
-    BDB_CHECK(ret, "DB_ENV::set_lk_max_locks");
+    m_MaxLocks = locks;
+    if (m_Env) {
+        int ret = m_Env->set_lk_max_locks(m_Env, locks);
+        BDB_CHECK(ret, "DB_ENV::set_lk_max_locks");
+    }
 }
 
 
@@ -406,6 +419,9 @@ void CBDB_Env::LsnReset(const char* file_name)
 
 unsigned CBDB_Env::GetMaxLocks()
 {
+    if (!m_Env)
+        return m_MaxLocks;
+
     u_int32_t lk_max;
     int ret = m_Env->get_lk_max_locks(m_Env, &lk_max);
     BDB_CHECK(ret, "DB_ENV::get_lk_max_locks");
@@ -414,15 +430,20 @@ unsigned CBDB_Env::GetMaxLocks()
 
 void CBDB_Env::SetMaxLockObjects(unsigned lock_obj_max)
 {
-    _ASSERT(lock_obj_max);
-    m_MaxLockers = lock_obj_max;
+    m_MaxLockObjects = lock_obj_max;
+    if (m_Env) {
+        int ret = m_Env->set_lk_max_objects(m_Env, m_MaxLockObjects);
+        BDB_CHECK(ret, "DB_ENV::set_lk_max_objects");
+    } 
 }
 
 void CBDB_Env::SetMaxLockers(unsigned max_lockers)
 {
-    _ASSERT(max_lockers);
-    int ret = m_Env->set_lk_max_lockers(m_Env, max_lockers);
-    BDB_CHECK(ret, "DB_ENV::set_lk_max_lockers");
+    m_MaxLockers = max_lockers;
+    if (m_Env) {
+        int ret = m_Env->set_lk_max_lockers(m_Env, max_lockers);
+        BDB_CHECK(ret, "DB_ENV::set_lk_max_lockers");
+    }
 }
 
 
@@ -468,16 +489,22 @@ void CBDB_Env::OpenErrFile(const string& file_name)
 
 void CBDB_Env::SetDirectDB(bool on_off)
 {
-    // error checking commented (not all platforms support direct IO)
-    /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_DB, (int)on_off);
-    // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_DB)");   
+    m_DirectDB = on_off;
+    if (m_Env) {
+        // error checking commented (not all platforms support direct IO)
+        /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_DB, (int)on_off);
+        // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_DB)");   
+    }
 }
 
 void CBDB_Env::SetDirectLog(bool on_off)
 {
-    // error checking commented (not all platforms support direct IO)
-    /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_LOG, (int)on_off);
-    // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");   
+    m_DirectLOG = on_off;
+    if (m_Env) {
+        // error checking commented (not all platforms support direct IO)
+        /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_LOG, (int)on_off);
+        // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");   
+    }
 }
 
 void CBDB_Env::SetLogAutoRemove(bool on_off)
