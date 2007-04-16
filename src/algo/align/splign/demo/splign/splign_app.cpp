@@ -472,8 +472,8 @@ CSplignApp::x_SetupBlastOptions(bool cross)
 
         const CArgs& args = GetArgs();
         blast_opt.SetWordSize(args["W"].AsInteger());
-        blast_opt.SetFilterString("m");
-        //blast_opt.SetMaskAtHash(true);
+        //blast_opt.SetFilterString("m");
+        blast_opt.SetMaskAtHash(true);
         //blast_opt.SetGapXDropoff(1);
         //blast_opt.SetGapXDropoffFinal(1);
     }
