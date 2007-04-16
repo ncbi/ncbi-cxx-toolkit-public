@@ -470,7 +470,7 @@ void SLockedQueue::ClearAffinityIdx()
             aff_idx.Delete();
         }
         trans.Commit();
-        cout << aff_id << " cleaned" << endl;
+//        cout << aff_id << " cleaned" << endl;
     } // for
 
     {{
