@@ -767,7 +767,7 @@ const char* CDiagContext::kProperty_ReqTime     = "request_time";
 const char* CDiagContext::kProperty_BytesRd     = "bytes_rd";
 const char* CDiagContext::kProperty_BytesWr     = "bytes_wr";
 
-static const char* kDiagTimeFormat = "Y/M/D:h:m:s";
+static const char* kDiagTimeFormat = "Y-M-DTh:m:s";
 // Fixed fields' widths
 static const int   kDiagW_PID      = 5;
 static const int   kDiagW_TID      = 3;
@@ -797,12 +797,10 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     string client = GetProperty(kProperty_ClientIP);
     string session = GetProperty(kProperty_SessionID);
     string app = GetProperty(kProperty_AppName);
-    /*
     string app_state = GetProperty(kProperty_AppState);
     if ( !app_state.empty() ) {
         app_state = "/" + app_state;
     }
-    */
 
     if ( msg ) {
         // When flushing collected messages, m_Messages should be NULL.
@@ -831,8 +829,7 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     // Print common fields
     ostr << setfill('0') << setw(kDiagW_PID) << pid << '/'
          << setw(kDiagW_TID) << tid << '/'
-         << setw(kDiagW_RID) << rid
-         // << app_state
+         << setw(kDiagW_RID) << rid << app_state
          << ' ' << setw(0) << setfill(' ') << uid << ' '
          << setfill('0') << setw(kDiagW_SN) << psn << '/'
          << setw(kDiagW_SN) << tsn << ' '
@@ -1694,8 +1691,8 @@ SDiagMessage::SDiagMessage(const string& message)
         // Fixed prefix
         m_PID = s_ParseInt(message, pos, kDiagW_PID, '/');
         m_TID = s_ParseInt(message, pos, kDiagW_TID, '/');
-        m_RequestId = s_ParseInt(message, pos, kDiagW_RID, ' ');
-        // s_ParseStr(message, pos, ' ', true);
+        m_RequestId = s_ParseInt(message, pos, kDiagW_RID, '/');
+        s_ParseStr(message, pos, ' ', true);
 
         if (message[pos + kDiagW_UID] != ' ') {
             return;
