@@ -608,8 +608,8 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
 
     auto_ptr<I_ITDescriptor> descr;
 
-    while(auto_stmt -> HasMoreResults()) {
-        auto_ptr<CDB_Result> rs(auto_stmt -> Result());
+    while(auto_stmt->HasMoreResults()) {
+        auto_ptr<CDB_Result> rs(auto_stmt->Result());
 
         if (rs.get() == NULL) {
             continue;
@@ -6921,7 +6921,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
-        && !(args.GetDriverName() == "ftds64"
+        && !(args.GetDriverName() == "ftds"
           && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
