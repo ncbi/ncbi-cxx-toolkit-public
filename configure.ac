@@ -1145,7 +1145,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
                   ;;
                 5[[89]]*)
                   # Work around optimizer bugs (-O = -xO3).
-                  subst='s/[ 	]-x*O[1-9]*//g'
+                  subst='s/[[ 	]]-x*O[[1-9]]*//g'
                   CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
                   CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
                   LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
