@@ -137,6 +137,11 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
             query->mask.Reset(query_masks);
         }
 
+        if (query->mask->IsNull() || query->mask->IsEmpty()) {
+            query->mask.Reset();
+            continue;
+        }
+
         // in the event this happens, change to Seq-interval so that
         // CSeq_loc::ChangeToPackedInt can process it
         if (query->mask->IsWhole()) {
