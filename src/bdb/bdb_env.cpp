@@ -57,7 +57,7 @@ CBDB_Env::CBDB_Env()
   m_LogInMemory(false),
   m_TransSync(CBDB_Transaction::eTransSync),
   m_DirectDB(false),
-  m_DirectLOG(true)
+  m_DirectLOG(false)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
     int ret = db_env_create(&m_Env, 0);
@@ -71,7 +71,7 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
   m_LogInMemory(false),
   m_TransSync(CBDB_Transaction::eTransSync),
   m_DirectDB(false),
-  m_DirectLOG(true)
+  m_DirectLOG(false)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
 }
@@ -278,7 +278,7 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
 void CBDB_Env::OpenConcurrentDB(const string& db_home)
 {
     int ret = 
-      m_Env->set_flags(m_Env, DB_CDB_ALLDB | DB_DIRECT_DB, 1);
+      m_Env->set_flags(m_Env, DB_CDB_ALLDB, 1);
     BDB_CHECK(ret, "DB_ENV::set_flags");
 
     Open(db_home, DB_INIT_CDB | DB_INIT_MPOOL);
