@@ -585,7 +585,7 @@ void CFastaReader::AssembleSeq(void)
     }
     AssignMolType();
     CSeq_data::E_Choice format
-        = inst.IsAa() ? CSeq_data::e_Iupacaa : CSeq_data::e_Iupacna;
+        = inst.IsAa() ? CSeq_data::e_Ncbieaa : CSeq_data::e_Iupacna;
     if (m_Gaps.empty()) {
         _ASSERT(m_TotalGapLength == 0);
         if (m_SeqData.empty()) {
