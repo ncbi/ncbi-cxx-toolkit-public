@@ -61,27 +61,25 @@ static void s_SingleBouncePrint
  FILE* data_file)
 {
     static const char write_str[] = "This is a s_*BouncePrint test string.\n";
-    EIO_Status status;
     size_t     n_written, n_read;
     char       buf[8192];
+    EIO_Status status;
 
     TEST_LOG(eIO_Success, "[s_SingleBouncePrint]  Starting...");
 
     /* WRITE */
     status = CONN_Write(conn, write_str, strlen(write_str),
                         &n_written, eIO_WritePersist);
-    if (status != eIO_Success  ||  n_written != strlen(write_str)) {
+    if (status != eIO_Success  ||  n_written != strlen(write_str))
         TEST_LOG(status, "[s_SingleBouncePrint] Write failed!");
-    }
     assert(n_written == strlen(write_str));
     assert(status == eIO_Success);
-
 
     /* READ the "bounced" data from the connection */
     status = CONN_Read(conn, buf, sizeof(buf) - 1, &n_read, eIO_ReadPersist);
     TEST_LOG(status, "[s_SingleBouncePrint] after READ");
 
-    /* Printout to LOG file, if any */
+    /* Printout to data file, if any */
     if (data_file  &&  n_read) {
         fprintf(data_file, "\ns_SingleBouncePrint(BEGIN PRINT)\n");
         assert(fwrite(buf, n_read, 1, data_file) == 1);
@@ -290,7 +288,7 @@ static void s_SingleBounceCheck
         if (status == eIO_Closed  ||  status == eIO_Timeout)
             break; /* okay */
 
-        assert(status == eIO_Success  ||  status == eIO_Timeout);
+        assert(status == eIO_Success);
     }
     fprintf(data_file, "\ns_SingleBounceCheck(END EXTRA DATA)\n\n");
     fflush(data_file);

@@ -123,7 +123,8 @@ static void Server(STimeout timeout, int n_cycle)
                 status = pipe.Read(buf, kBufferSize, &n_read);
 
                 // Dump received data
-                LOG_POST("Read " + NStr::UIntToString(n_read) + " bytes:");
+                LOG_POST("Read " + NStr::UIntToString(n_read) + " bytes" +
+                         (n_read ? ": " : IOStatus_Str(status)));
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
                 NcbiCout.flush();
