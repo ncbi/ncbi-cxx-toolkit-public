@@ -2,8 +2,8 @@
 # $Id$
 
 exit_code=0
-client_log=test_namedpipe_con_client.log
-server_log=test_namedpipe_con_server.log
+client_log=test_ncbi_namedpipe_connector_client.log
+server_log=test_ncbi_namedpipe_connector_server.log
 
 rm -f $client_log $server_log
 
@@ -30,6 +30,6 @@ if [ $exit_code != 0 ]; then
   fi
 fi
 
-rm ./.ncbi_test_con_pipename >/dev/null 2>&1
+rm ./.test_ncbi_namedpipe >/dev/null 2>&1
 
 exit $exit_code

@@ -48,9 +48,9 @@ USING_NCBI_SCOPE;
 
 // Test pipe name
 #if defined(NCBI_OS_MSWIN)
-    const char* kPipeName = "\\\\.\\pipe\\ncbi\\test_con_pipename";
+    const char* kPipeName = "\\\\.\\pipe\\ncbi\\test_ncbi_namedpipe";
 #elif defined(NCBI_OS_UNIX)
-    const char* kPipeName = "./.ncbi_test_con_pipename";
+    const char* kPipeName = "./.test_ncbi_namedpipe";
 #endif
 
 const size_t kBufferSize = 25*1024;
@@ -59,12 +59,11 @@ const size_t kBufferSize = 25*1024;
 static void Client(STimeout timeout)
 {
     CONNECTOR  connector;
-    FILE*      log_file;
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    log_file = fopen("test_namedpipe_con_client.log", "ab");
-    assert(log_file > 0);
+    FILE* data_file = fopen("test_ncbi_namedpipe_connector_client.log", "ab");
+    assert(data_file);
 
     // Tests for NAMEDPIPE CONNECTOR
     LOG_POST(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
@@ -73,16 +72,15 @@ static void Client(STimeout timeout)
              " sec.\n");
 
     connector = NAMEDPIPE_CreateConnector(kPipeName);
-    CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBouncePrint);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
     connector = NAMEDPIPE_CreateConnector(kPipeName, kBufferSize);
-    CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBounceCheck);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
     connector = NAMEDPIPE_CreateConnector(kPipeName, kBufferSize);
-    CONN_TestConnector(connector, &timeout, log_file, fTC_Everything);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
-    // Cleanup
-    fclose(log_file);
+    fclose(data_file);
 }
 
 
@@ -96,7 +94,7 @@ static void Server(STimeout timeout, int n_cycle)
     CFile(kPipeName).Remove();
 #endif  
 
-    LOG_POST(string("Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n") +
+    LOG_POST(string("Starting the NAMEDPIPE CONNECTOR bouncer ...\n\n") +
              kPipeName + ", timeout = " +
              NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)+
              ", n_cycle = " + NStr::UIntToString(n_cycle) + "\n");
@@ -121,12 +119,14 @@ static void Server(STimeout timeout, int n_cycle)
             LOG_POST("Client is connected...");
 
             // Bounce all incoming data back to the client
-            while ((status = pipe.Read(buf, kBufferSize, &n_read))
-                   == eIO_Success) {
+            do {
+                status = pipe.Read(buf, kBufferSize, &n_read);
+
                 // Dump received data
                 LOG_POST("Read " + NStr::UIntToString(n_read) + " bytes:");
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
+                NcbiCout.flush();
 
                 // Write data back to the pipe
                 size_t n_total = 0;
@@ -145,7 +145,7 @@ static void Server(STimeout timeout, int n_cycle)
                              ", remains " +
                              NStr::UIntToString(n_read - n_total) + " bytes");
                 }
-            }
+            } while (status == eIO_Success);
             assert(status == eIO_Timeout  ||  status == eIO_Closed);
 
             // Disconnect client
