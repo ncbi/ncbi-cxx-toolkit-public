@@ -418,7 +418,7 @@ EOF_launch
 
                # Get application execution time
                exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '??'\`
-               echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
+               echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
                if [ \$? -eq 0 ] ;  then
                    exec_time=\`echo \$exec_time |  \\
                               sed -e 's/??/?/g'    \\
