@@ -164,7 +164,7 @@ void CCleanupApp::Init(void)
         // show progress
         arg_desc->AddFlag("showprogress",
             "List ID for which cleanup is occuring");
-
+        arg_desc->AddFlag("debug", "Save before.sqn");
     }}
     SetupArgDescriptions(arg_desc.release());
 }
@@ -436,12 +436,22 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
 
     CArgs args = GetArgs();
 
+    bool any_changes = false;
     if (!args["nocleanup"]) {
         // perform ExtendedCleanup
         CCleanup cleanup;
         cleanup.SetScope(scope);
         try {
-            cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
+            CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())));
+            vector<string> changes_str = changes->GetAllDescriptions();
+            if (changes_str.size() == 0) {
+              printf ("No changes\n");
+            } else {
+              ITERATE(vector<string>, vit, changes_str) {
+                printf ("%s\n", (*vit).c_str());
+              }
+              any_changes = true;
+            }
 
 
         }
@@ -490,7 +500,15 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     
     ESerialDataFormat outFormat = eSerial_AsnText;
 
+    if (args["debug"]) {
+      auto_ptr<CObjectOStream> debug_out(CObjectOStream::Open(outFormat, "before.sqn",
+                                                      eSerial_StdWhenAny));
+
+      *debug_out << *(entry.GetCompleteSeq_entry());
+    }
+
     string file_name = args["o"].AsString();
+    bool any_changes = false;
     
     if (!args["nocleanup"]) {
         // perform ExtendedCleanup
@@ -505,6 +523,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
               ITERATE(vector<string>, vit, changes_str) {
                 printf ("%s\n", (*vit).c_str());
               }
+              any_changes = true;
             }
         }
         catch (CException& e) {
@@ -518,8 +537,14 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
                                                       eSerial_StdWhenAny));
 
     *out << *(entry.GetCompleteSeq_entry());
-    printf ("generated asn.1\n");
 
+    fflush(NULL);
+
+    if (any_changes && args["debug"]) {
+        string diff_cmd = "diff before.sqn " + file_name;
+        system (diff_cmd.c_str());
+    }
+    printf ("generated asn.1\n");
     return true;
 }
 
