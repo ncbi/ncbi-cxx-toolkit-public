@@ -79,5 +79,5 @@ BOOST_AUTO_UNIT_TEST(GenCodeSingleton_NonExistentGeneticCode)
     TAutoUint1ArrayPtr gc = FindGeneticCode(gc_id);
     BOOST_CHECK(gc.get() == NULL);
     Int2 rv = GenCodeSingletonAdd((Uint4)gc_id, gc.get());
-    BOOST_CHECK_EQUAL(rv, BLASTERR_INVALIDPARAM);
+    BOOST_CHECK(rv == BLASTERR_INVALIDPARAM);
 }
