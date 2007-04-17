@@ -837,9 +837,11 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
 {
     const TRealQueue& q = const_cast<const TRealQueue&>(m_Queue);
     if ( !(this->*pred)(q) ) {
+#if SIZEOF_INT == SIZEOF_LONG
         if (timeout_sec >= (unsigned long)kMax_Long) {
             timeout_sec = kMax_Long;
         }
+#endif
         CTimeSpan span(min((long)timeout_sec,
                            kMax_Long - (long)(timeout_nsec / 1000000000UL)),
                        timeout_nsec);
