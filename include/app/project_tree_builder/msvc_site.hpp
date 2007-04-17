@@ -172,6 +172,7 @@ public:
     static bool IsLibOk(const SLibInfo& lib_info, bool silent = false);
 private:
     CPtbRegistry m_Registry;
+    CSimpleMakeFileContents m_UnixMakeDef;
     
     set<string> m_ProvidedThing;
     set<string> m_NotProvidedThing;

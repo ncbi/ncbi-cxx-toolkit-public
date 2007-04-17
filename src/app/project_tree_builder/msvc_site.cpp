@@ -73,6 +73,11 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
         }
     } else {
         // unix
+        string unix_cfg = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(),"MetaData");
+        if (!unix_cfg.empty() && CFile(unix_cfg).Exists()) {
+            CSimpleMakeFileContents::LoadFrom(unix_cfg,&m_UnixMakeDef);
+        }
+    
         CDir status_dir(GetApp().m_StatusDir);
         CDir::TEntries files = status_dir.GetEntries("*.enabled");
         ITERATE(CDir::TEntries, f, files) {
@@ -236,6 +241,10 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
 
 string CMsvcSite::ResolveDefine(const string& define) const
 {
+    string res;
+    if (m_UnixMakeDef.GetValue(define,res)) {
+        return res;
+    }
     return ProcessMacros(m_Registry.Get("Defines", define));
 }
 

@@ -126,6 +126,44 @@ void CSimpleMakeFileContents::AddDefinition(const string& key,
     AddReadyKV(kv);
 }
 
+bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
+{
+    TContents::const_iterator k = m_Contents.find(key);
+    if (k == m_Contents.end()) {
+        return false;
+    }
+    value = " ";
+    const list<string>& lst = k->second;
+    list<string>::const_iterator i = lst.begin();
+    if (i != lst.end()) {
+        value = *i;
+        ++i;
+    }
+    for (; i != lst.end(); ++i) {
+        value += ' ';
+        value += *i;
+    }
+
+    string::size_type start, end, done = 0;
+    while ((start = value.find("$(", done)) != string::npos) {
+        end = value.find(")", start);
+        if (end == string::npos) {
+            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + value);
+            break;
+        }
+        string raw_macro = value.substr(start,end-start+1);
+        if (CSymResolver::IsDefine(raw_macro)) {
+            string macro = CSymResolver::StripDefine(raw_macro);
+            string definition;
+            GetValue(macro, definition);
+            value = NStr::Replace(value, raw_macro, definition);
+        }
+    }
+    value = NStr::Replace(value,"-l",kEmptyStr);
+    value = NStr::Replace(value,"-static",kEmptyStr);
+    return true;
+}
+
 
 void CSimpleMakeFileContents::Dump(CNcbiOfstream& ostr) const
 {

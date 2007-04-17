@@ -614,8 +614,12 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //depends
     list<string> depends;
     k = makefile.m_Contents.find("LIB");
-    if (k != makefile.m_Contents.end())
-        depends = k->second;
+    if (k != makefile.m_Contents.end()) {
+//        depends = k->second;
+        ITERATE(list<string>, i, k->second) {
+            depends.push_back( NStr::Replace( *i,"-static",kEmptyStr));
+        }
+    }
     //Adjust depends by information from msvc Makefile
     CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
         source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eApp)));
@@ -820,8 +824,12 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
-            if (k != m->second.m_Contents.end())
-                dll_depends = k->second;
+            if (k != m->second.m_Contents.end()) {
+//                dll_depends = k->second;
+                ITERATE(list<string>, i, k->second) {
+                    dll_depends.push_back( NStr::Replace( *i,"-static",kEmptyStr));
+                }
+            }
             list<CProjKey> dll_depends_ids;
             SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids);
             copy(dll_depends_ids.begin(), 
