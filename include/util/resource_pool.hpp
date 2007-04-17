@@ -85,6 +85,7 @@ class CResourcePool
 public: 
     typedef Value                          TValue;
     typedef Lock                           TLock;
+    typedef typename Lock::TReadLockGuard  TReadLockGuard;
     typedef typename Lock::TWriteLockGuard TWriteLockGuard;
     typedef CF                             TClassFactory;
     typedef Value*                         TValuePtr;
@@ -256,7 +257,7 @@ protected:
 
 protected:
     TPoolList                 m_FreeObjects;
-    TLock                     m_Lock;
+    mutable TLock             m_Lock;
     TClassFactory             m_CF;
     size_t                    m_UpperLimit; ///< Upper limit how much to pool
 };
@@ -321,6 +322,7 @@ public:
     typedef Lock                            TLock;
     typedef typename Lock::TWriteLockGuard  TWriteLockGuard;
     typedef RPool                           TResourcePool;
+    typedef vector<TResourcePool*>          TBucketVector;
 
 public:
     /// Construction
@@ -394,6 +396,8 @@ public:
         return rp;
     }
 
+    const TBucketVector& GetBucketVector() const { return m_Bucket; }
+
 private:
     CBucketPool(const CBucketPool&);
     CBucketPool& operator=(const CBucketPool&);
@@ -406,7 +410,7 @@ private:
     }
 
 protected:
-    vector<TResourcePool*>  m_Bucket;
+    TBucketVector           m_Bucket;
     TLock                   m_Lock;
     size_t                  m_ResourcePoolUpperLimit;
 };

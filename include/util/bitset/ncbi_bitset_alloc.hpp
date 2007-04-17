@@ -56,7 +56,7 @@ public:
 public:
     static bm::word_t* allocate(size_t n, const void *p)
     {
-        typename TBacketPool::TResourcePool* rp
+        typename TBucketPool::TResourcePool* rp
             = x_Instance().GetResourcePool(n);
         bm::word_t* block = rp->GetIfAvailable();
         if (!block) {
@@ -67,12 +67,12 @@ public:
 
     static void deallocate(bm::word_t* p, size_t n)
     {
-        typename TBacketPool::TResourcePool* rp
+        typename TBucketPool::TResourcePool* rp
             = x_Instance().GetResourcePool(n);
         rp->Put(p);
     }
 
-protected:
+//protected:
     struct CBlockFactory
     {
     /// Dummy (should be never called)
@@ -81,15 +81,24 @@ protected:
     static void Delete(bm::word_t* block) 
         { allocator_type::deallocate(block, 0); }
     };
-
     typedef CResourcePool<bm::word_t, Lock, CBlockFactory> TResourcePool;
-    typedef CBucketPool<bm::word_t, Lock, TResourcePool>   TBacketPool;
+    typedef CBucketPool<bm::word_t, Lock, TResourcePool>   TBucketPool;
+    typedef typename TBucketPool::TResourcePool            TRPool;
+    static const typename TBucketPool::TBucketVector& GetPoolVector() 
+            { return x_Instance().GetBucketVector(); }
+
+    static const typename TBucketPool::TResourcePool* GetPool(size_t n) 
+    {
+        const typename TBucketPool::TResourcePool* rp
+            = x_Instance().GetResourcePool(n);
+        return rp;
+    }
 
 private:
-    static TBacketPool& x_Instance() 
+    static TBucketPool& x_Instance() 
     {
-        static CSafeStaticPtr<TBacketPool>  backet_pool;
-        return backet_pool.Get();
+        static CSafeStaticPtr<TBucketPool>  bucket_pool;
+        return bucket_pool.Get();
     }
 };
 
