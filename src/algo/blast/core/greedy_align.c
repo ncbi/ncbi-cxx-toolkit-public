@@ -385,7 +385,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                        Int4* seq1_align_len, Int4* seq2_align_len, 
                        SGreedyAlignMem* aux_data, 
                        GapPrelimEditBlock *edit_block, Uint1 rem,
-                       Boolean * fence_hit)
+                       Boolean * fence_hit, SGreedySeed *seed)
 {
     Int4 seq1_index;
     Int4 seq2_index;
@@ -400,6 +400,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     Int4** last_seq2_off;
     Int4* max_score;
     Int4 xdrop_offset;
+    Int4 longest_match_run;
     Boolean end1_reached, end2_reached;
     SMBSpace* mem_pool;
  
@@ -463,6 +464,10 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     *seq1_align_len = index;
     *seq2_align_len = index;
     seq1_index = index;
+
+    seed->start_q = 0;
+    seed->start_s = 0;
+    seed->match_length = longest_match_run = index;
 
     if (index == len1 || index == len2) {
         /* Return the number of differences, which is zero here */
@@ -568,6 +573,12 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
             index = s_FindFirstMismatch(seq1, seq2, len1, len2, 
                                         seq1_index, seq2_index,
                                         fence_hit, reverse, rem);
+
+            if (index > longest_match_run) {
+                seed->start_q = seq1_index;
+                seed->start_s = seq2_index;
+                seed->match_length = longest_match_run = index;
+            }
             seq1_index += index;
             seq2_index += index;
 
@@ -745,7 +756,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                               Int4* seq1_align_len, Int4* seq2_align_len, 
                               SGreedyAlignMem* aux_data, 
                               GapPrelimEditBlock *edit_block, Uint1 rem,
-                              Boolean * fence_hit)
+                              Boolean * fence_hit, SGreedySeed *seed)
 {
     Int4 seq1_index;
     Int4 seq2_index;
@@ -757,6 +768,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     Int4 diag_origin;
     Int4 best_dist;
     Int4 best_diag;
+    Int4 longest_match_run;
     SGreedyOffset** last_seq2_off;
     Int4* max_score;
     Int4 xdrop_offset;
@@ -795,8 +807,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                                 xdrop_threshold, match_score, 
                                 mismatch_score, seq1_align_len, 
                                 seq2_align_len, aux_data, edit_block, 
-                                rem,
-                                fence_hit);
+                                rem, fence_hit, seed);
     }
     
     /* ordinary dynamic programming alignment, for each offset
@@ -868,6 +879,10 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     *seq1_align_len = index;
     *seq2_align_len = index;
     seq1_index = index;
+
+    seed->start_q = 0;
+    seed->start_s = 0;
+    seed->match_length = longest_match_run = index;
 
     if (index == len1 || index == len2) {
         /* return the score of the run of matches */
@@ -1047,6 +1062,12 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
             index = s_FindFirstMismatch(seq1, seq2, len1, len2, 
                                         seq1_index, seq2_index,
                                         fence_hit, reverse, rem);
+
+            if (index > longest_match_run) {
+                seed->start_q = seq1_index;
+                seed->start_s = seq2_index;
+                seed->match_length = longest_match_run = index;
+            }
             seq1_index += index;
             seq2_index += index;
 

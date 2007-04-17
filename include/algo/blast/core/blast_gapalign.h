@@ -80,6 +80,10 @@ typedef struct BlastGapAlignStruct {
    Int4 query_stop; /**< query end offseet of current alignment */
    Int4 subject_start;  /**< subject start offset current alignment */
    Int4 subject_stop; /**< subject end offset of current alignment */
+   Int4 greedy_query_seed_start;  /**< for greedy alignments, the query 
+                                       offset of the gapped start point */
+   Int4 greedy_subject_seed_start;  /**< for greedy alignments, the subject
+                                         offset of the gapped start point */
    Int4 score;   /**< Return value: alignment score */
 } BlastGapAlignStruct;
 

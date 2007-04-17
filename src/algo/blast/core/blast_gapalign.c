@@ -2511,24 +2511,31 @@ Blast_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
    return esp;
 }
 
-/** Fills the BlastGapAlignStruct structure with the results of a gapped 
- * extension.
+/** Fills the BlastGapAlignStruct structure with the results 
+ *  of a greedy gapped extension.
  * @param gap_align the initialized gapped alignment structure [in] [out]
  * @param q_start The starting offset in query [in]
  * @param s_start The starting offset in subject [in]
  * @param q_end The ending offset in query [in]
  * @param s_end The ending offset in subject [in]
+ * @param q_seed_start The query offset of the alignment start point [in]
+ * @param s_seed_start The subject offset of the alignment start point [in]
  * @param score The alignment score [in]
  * @param esp The edit script containing the traceback information [in]
  */
 static Int2
-s_BlastGapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start, 
-   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapEditScript* esp)
+s_BlastGreedyGapAlignStructFill(BlastGapAlignStruct* gap_align, 
+                                Int4 q_start, Int4 s_start, 
+                                Int4 q_end, Int4 s_end, 
+                                Int4 q_seed_start, Int4 s_seed_start,
+                                Int4 score, GapEditScript* esp)
 {
    gap_align->query_start = q_start;
    gap_align->query_stop = q_end;
    gap_align->subject_start = s_start;
    gap_align->subject_stop = s_end;
+   gap_align->greedy_query_seed_start = q_seed_start;
+   gap_align->greedy_subject_seed_start = s_seed_start;
    gap_align->score = score;
 
    if (esp)
@@ -2552,8 +2559,12 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
    Int4 q_ext_l, q_ext_r, s_ext_l, s_ext_r;
    GapPrelimEditBlock *fwd_prelim_tback = NULL;
    GapPrelimEditBlock *rev_prelim_tback = NULL;
+   SGreedySeed fwd_start_point;
+   SGreedySeed rev_start_point;
    Uint1 rem;
    GapEditScript* esp = NULL;
+   Int4 q_seed_start = q_off;
+   Int4 s_seed_start = s_off;
    
    q_avail = query_length - q_off;
    s_avail = subject_length - s_off;
@@ -2582,7 +2593,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
               score_params->reward, -score_params->penalty, 
               score_params->gap_open, score_params->gap_extend,
               &q_ext_r, &s_ext_r, gap_align->greedy_align_mem, 
-              fwd_prelim_tback, rem, fence_hit);
+              fwd_prelim_tback, rem, fence_hit, &fwd_start_point);
 
    if (compressed_subject)
       rem = 0;
@@ -2593,7 +2604,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
                score_params->reward, -score_params->penalty, 
                score_params->gap_open, score_params->gap_extend, 
                &q_ext_l, &s_ext_l, gap_align->greedy_align_mem, 
-               rev_prelim_tback, rem, fence_hit);
+               rev_prelim_tback, rem, fence_hit, &rev_start_point);
 
    /* In basic case the greedy algorithm returns number of 
       differences, hence we need to convert it to score */
@@ -2609,9 +2620,51 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
       esp = Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback, 
                                              fwd_prelim_tback);
    }
+   else {
+       /* estimate the best alignment start point. This is the middle
+          of the longest run of exact matches found by the aligner,
+          subject to the constraint that the start point lies in the
+          box formed by the optimal alignment */
+
+       Int4 q_box_l = q_off - q_ext_l;
+       Int4 s_box_l = s_off - s_ext_l;
+       Int4 q_box_r = q_off + q_ext_r;
+       Int4 s_box_r = s_off + s_ext_r;
+       Int4 q_seed_start_l = q_off - rev_start_point.start_q;
+       Int4 s_seed_start_l = s_off - rev_start_point.start_s;
+       Int4 q_seed_start_r = q_off + fwd_start_point.start_q;
+       Int4 s_seed_start_r = s_off + fwd_start_point.start_s;
+       Int4 valid_seed_len_l = 0;
+       Int4 valid_seed_len_r = 0;
+
+       if (q_seed_start_r < q_box_r && s_seed_start_r < s_box_r) {
+           valid_seed_len_r = MIN(q_box_r - q_seed_start,
+                                  s_box_r - s_seed_start);
+           valid_seed_len_r = MIN(valid_seed_len_r, 
+                                  fwd_start_point.match_length) / 2;
+       }
+       if (q_seed_start > q_box_l && s_seed_start > s_box_l) {
+           valid_seed_len_l = MIN(q_seed_start - q_box_l,
+                                  s_seed_start - s_box_l);
+           valid_seed_len_l = MIN(valid_seed_len_l, 
+                                  rev_start_point.match_length) / 2;
+       }
+
+       if (valid_seed_len_r > valid_seed_len_l) {
+           q_seed_start += valid_seed_len_r;
+           s_seed_start += valid_seed_len_r;
+       }
+       else {
+           q_seed_start -= valid_seed_len_l;
+           s_seed_start -= valid_seed_len_l;
+       }
+   }
    
-   s_BlastGapAlignStructFill(gap_align, q_off-q_ext_l, s_off-s_ext_l, 
-                             q_off+q_ext_r, s_off+s_ext_r, score, esp);
+   s_BlastGreedyGapAlignStructFill(gap_align, 
+                                   q_off-q_ext_l, s_off-s_ext_l, 
+                                   q_off+q_ext_r, s_off+s_ext_r, 
+                                   q_seed_start, s_seed_start,
+                                   score, esp);
    return 0;
 }
 
@@ -3184,6 +3237,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                          init_hsp->offsets.qs_offsets.q_off, 
                          init_hsp->offsets.qs_offsets.s_off, 
                          (Boolean) TRUE, FALSE, fence_hit);
+            /* override the alignment start point with the estimate
+               by the aligner of the best start point */
+            init_hsp->offsets.qs_offsets.q_off = 
+                                gap_align->greedy_query_seed_start;
+            init_hsp->offsets.qs_offsets.s_off =
+                                gap_align->greedy_subject_seed_start;
          } else {
             /*  Assuming the ungapped alignment is long enough to
                 contain an 8-letter seed of exact matches, start 

@@ -94,6 +94,13 @@ typedef struct SGreedyAlignMem {
                                            SGreedyOffset structs */
 } SGreedyAlignMem;
 
+/** Structure for locating high-scoring seeds for greedy alignment */
+typedef struct SGreedySeed {
+    Int4 start_q;       /**< query offset of start of run of matches */
+    Int4 start_s;       /**< subject offset of start of run of matches */
+    Int4 match_length;  /**< length of run of matches */
+} SGreedySeed;
+
 /** Perform the greedy extension algorithm with non-affine gap penalties.
  * @param seq1 First sequence (always uncompressed) [in]
  * @param len1 Maximal extension length in first sequence [in]
@@ -111,6 +118,7 @@ typedef struct SGreedyAlignMem {
  * @param rem Offset within a byte of the compressed second sequence. 
  *          Set to 4 if sequence is uncompressed. [in]
  * @param fence_hit True is returned here if overrun is detected. [in]
+ * @param seed Structure to remember longest run of exact matches [out]
  * @return The minimum distance between the two sequences, i.e.
  *          the number of mismatches plus gaps in the resulting alignment
  */
@@ -122,7 +130,7 @@ BLAST_GreedyAlign (const Uint1* seq1, Int4 len1,
                    Int4* seq1_align_len, Int4* seq2_align_len, 
                    SGreedyAlignMem* aux_data, 
                    GapPrelimEditBlock *edit_block, Uint1 rem,
-                   Boolean * fence_hit);
+                   Boolean * fence_hit, SGreedySeed *seed);
 
 /** Perform the greedy extension algorithm with affine gap penalties.
  * @param seq1 First sequence (always uncompressed) [in]
@@ -143,6 +151,7 @@ BLAST_GreedyAlign (const Uint1* seq1, Int4 len1,
  * @param rem Offset within a byte of the compressed second sequence.
  *          Set to 4 if sequence is uncompressed. [in]
  * @param fence_hit True is returned here if overrun is detected. [in]
+ * @param seed Structure to remember longest run of exact matches [out]
  * @return The score of the alignment
  */
 Int4 
@@ -154,7 +163,7 @@ BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                          Int4* seq1_align_len, Int4* seq2_align_len, 
                          SGreedyAlignMem* aux_data, 
                          GapPrelimEditBlock *edit_block, Uint1 rem,
-                         Boolean * fence_hit);
+                         Boolean * fence_hit, SGreedySeed *seed);
 
 #ifdef __cplusplus
 }
