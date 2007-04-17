@@ -2033,8 +2033,11 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
             ptr1  = ptrP - first;
             ptr1e = ptrP - last;
             ptr2  = probArrayStartLow + first;
-            for (innerSum = 0.; ptr1 >= ptr1e; )
-                innerSum += *ptr1--  *  *ptr2++;
+            for (innerSum = 0.; ptr1 >= ptr1e; ) {
+                innerSum += *ptr1  *  *ptr2;
+		ptr1--;
+		ptr2++;
+            }
             if (first)
                 --first;
             if (ptrP - alignmentScoreProbabilities <= range)
