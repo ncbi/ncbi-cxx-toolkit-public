@@ -158,8 +158,7 @@ CRef<CSeq_align_set> CContigAssembly::Blastn(const CSeq_loc& query_loc,
     }
 
     TSeqAlignVector res = bl2seq.Run();
-    CRef<CSeq_align> aln = res.front()->Set().front();
-    return CRef<CSeq_align_set>(&aln->SetSegs().SetDisc());
+    return res.front();
 }
 
 
