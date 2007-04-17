@@ -835,16 +835,19 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
                                                   unsigned int timeout_nsec)
     const
 {
+    static const unsigned int kBillion = 1000000000U;
     const TRealQueue& q = const_cast<const TRealQueue&>(m_Queue);
     if ( !(this->*pred)(q) ) {
-#if SIZEOF_INT == SIZEOF_LONG
-        if (timeout_sec >= (unsigned long)kMax_Long) {
-            timeout_sec = kMax_Long;
+        unsigned int extra_sec = timeout_nsec / kBillion;
+        timeout_nsec %= kBillion;
+        // Do the comparison this way to avoid overflow.
+        if (timeout_sec >= (unsigned long)kMax_Long - extra_sec) {
+            timeout_sec = kMax_Long; // clamp
+        } else {
+            timeout_sec += extra_sec;
         }
-#endif
-        CTimeSpan span(min((long)timeout_sec,
-                           kMax_Long - (long)(timeout_nsec / 1000000000UL)),
-                       timeout_nsec);
+        _ASSERT(timeout_nsec < (unsigned long)kMax_Long);
+        CTimeSpan span(timeout_sec, timeout_nsec);
         while (span.GetSign() == ePositive  &&  !(this->*pred)(q) ) {
             CTime start(CTime::eCurrent, CTime::eGmt);
             // Temporarily release the mutex while waiting, to avoid deadlock.
