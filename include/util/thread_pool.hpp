@@ -846,7 +846,7 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
         } else {
             timeout_sec += extra_sec;
         }
-        _ASSERT(timeout_nsec < (unsigned long)kMax_Long);
+        // _ASSERT(timeout_nsec < (unsigned long)kMax_Long);
         CTimeSpan span(timeout_sec, timeout_nsec);
         while (span.GetSign() == ePositive  &&  !(this->*pred)(q) ) {
             CTime start(CTime::eCurrent, CTime::eGmt);
