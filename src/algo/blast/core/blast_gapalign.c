@@ -2638,14 +2638,14 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
        Int4 valid_seed_len_r = 0;
 
        if (q_seed_start_r < q_box_r && s_seed_start_r < s_box_r) {
-           valid_seed_len_r = MIN(q_box_r - q_seed_start,
-                                  s_box_r - s_seed_start);
+           valid_seed_len_r = MIN(q_box_r - q_seed_start_r,
+                                  s_box_r - s_seed_start_r);
            valid_seed_len_r = MIN(valid_seed_len_r, 
                                   fwd_start_point.match_length) / 2;
        }
-       if (q_seed_start > q_box_l && s_seed_start > s_box_l) {
-           valid_seed_len_l = MIN(q_seed_start - q_box_l,
-                                  s_seed_start - s_box_l);
+       if (q_seed_start_l > q_box_l && s_seed_start_l > s_box_l) {
+           valid_seed_len_l = MIN(q_seed_start_l - q_box_l,
+                                  s_seed_start_l - s_box_l);
            valid_seed_len_l = MIN(valid_seed_len_l, 
                                   rev_start_point.match_length) / 2;
        }
