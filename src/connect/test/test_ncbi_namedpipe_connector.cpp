@@ -124,7 +124,7 @@ static void Server(STimeout timeout, int n_cycle)
 
                 // Dump received data
                 LOG_POST("Read " + NStr::UIntToString(n_read) + " bytes" +
-                         (n_read ? ": " : IOStatus_Str(status)));
+                         (n_read ? ": " : IO_StatusStr(status)));
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
                 NcbiCout.flush();
