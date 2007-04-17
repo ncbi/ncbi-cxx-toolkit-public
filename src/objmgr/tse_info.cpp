@@ -629,6 +629,7 @@ void CTSE_Info::GetBioseqsIds(TSeqIds& ids) const
         }
     }}
     if ( m_Split ) {
+        m_Split->GetBioseqsIds(ids);
         // after adding split bioseq Seq-ids the result may contain
         // duplicates and need to be sorted
         x_SortUnique(ids);
