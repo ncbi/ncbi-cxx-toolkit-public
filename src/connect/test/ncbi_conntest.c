@@ -86,6 +86,7 @@ static void s_SingleBouncePrint
         fprintf(data_file, "\ns_SingleBouncePrint(BEGIN PRINT)\n");
         assert(fwrite(buf, n_read, 1, data_file) == 1);
         fprintf(data_file, "\ns_SingleBouncePrint(END PRINT)\n");
+        fflush(data_file);
     }
 
     /* Check-up */
@@ -102,16 +103,20 @@ static void s_MultiBouncePrint
     int i;
 
     TEST_LOG(eIO_Success, "[s_MultiBouncePrint]  Starting...");
-    if ( data_file )
+    if ( data_file ) {
         fprintf(data_file, "\ns_MultiBouncePrint(BEGIN)\n");
+        fflush(data_file);
+    }
 
     for (i = 0;  i < 5;  i++) {
         s_SingleBouncePrint(conn, data_file);
     }
 
     TEST_LOG(eIO_Success, "[s_MultiBouncePrint]  ...finished");
-    if ( data_file )
+    if ( data_file ) {
         fprintf(data_file, "\ns_MultiBouncePrint(END)\n");
+        fflush(data_file);
+    }
 }
 
 
@@ -272,19 +277,23 @@ static void s_SingleBounceCheck
         return;
 
     fprintf(data_file, "\ns_SingleBounceCheck(BEGIN EXTRA DATA)\n");
+    fflush(data_file);
     for (;;) {
         size_t n_read;
 
         status = CONN_Read(conn, buf, sizeof(buf), &n_read, eIO_ReadPersist);
         TEST_LOG(status, "s_SingleBounceCheck(The extra data READ...)");
-        if ( n_read )
+        if ( n_read ) {
             assert(fwrite(buf, n_read, 1, data_file) == 1);
+            fflush(data_file);
+        }
         if (status == eIO_Closed  ||  status == eIO_Timeout)
             break; /* okay */
 
         assert(status == eIO_Success  ||  status == eIO_Timeout);
     }
     fprintf(data_file, "\ns_SingleBounceCheck(END EXTRA DATA)\n\n");
+    fflush(data_file);
 }
 
 
