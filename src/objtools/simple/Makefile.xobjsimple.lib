@@ -2,7 +2,7 @@
 
 # Build library "xobjsimple"
 ###############################
-ASN_DEP = seq
+ASN_DEP = seqset
 
 LIB = xobjsimple
 SRC = simple_om
