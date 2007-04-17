@@ -118,6 +118,13 @@ public:
         m_UpperLimit = capacity_upper_limit;
     }
 
+    /// Get current pool size (number of objects in the pool)
+    size_t GetSize() const 
+    {
+        TReadLockGuard guard(m_Lock);
+        return m_FreeObjects.size();
+    }
+
     /// Get object from the pool. 
     ///
     /// Pool makes no reinitialization or constructor 
