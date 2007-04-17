@@ -1192,6 +1192,9 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
                     CRef<CSeq_feat> new_gene(new CSeq_feat);
                     new_gene->Assign(gene_it->GetOriginalFeature());
                     CRef<CSeq_loc> new_loc = MakeFullLengthLocation(gene_it->GetOriginalFeature().GetLocation(), m_Scope);
+                    new_loc->SetPartialStart (gene_it->GetOriginalFeature().GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+                    new_loc->SetPartialStop (gene_it->GetOriginalFeature().GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
+                    
                     new_gene->SetLocation(*new_loc);
                     CSeq_feat_EditHandle efh(fh);
                     efh.Replace(*new_gene);
