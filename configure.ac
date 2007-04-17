@@ -1143,6 +1143,14 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
                   # Work around a WorkShop standard library bug.
                   DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
                   ;;
+                5[[89]]*)
+                  # Work around optimizer bugs (-O = -xO3).
+                  subst='s/[ 	]-x*O[1-9]*//g'
+                  CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
+                  CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
+                  LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
+                  DEF_FAST_FLAGS="-xO2"
+                  ;;
               esac
               ;;
         esac
@@ -1989,22 +1997,22 @@ if test "$compiler" != "MSVC" ; then
       STRIP="@:"
    fi
 
-   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-O[0-9]*//g'`
-   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-O[0-9]*//g'`
-   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
+   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-x*O[0-9]*//g'`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-x*O[0-9]*//g'`
+   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-x*O[0-9]*//g'`
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
-      LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
+      LDFLAGS="$NOPT_LDFLAGS"
       FAST_CFLAGS="$CFLAGS"
       FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
    else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
