@@ -129,7 +129,7 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
 
         const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
         if (query->mask.NotEmpty() && !query->mask->IsNull()) {
-            CRef<CSeq_loc> tmp(const_cast<CSeq_loc*>(&*query->mask));
+            CRef<CSeq_loc> tmp(query->mask);
             tmp->Add(*query_masks, kTopFlags, 0);
             tmp->Merge(kTopFlags, 0);
         } else {
@@ -137,7 +137,14 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
             query->mask.Reset(query_masks);
         }
 
-        const_cast<CSeq_loc*>(&*query->mask)->ChangeToPackedInt();
+        // in the event this happens, change to Seq-interval so that
+        // CSeq_loc::ChangeToPackedInt can process it
+        if (query->mask->IsWhole()) {
+            query->mask.Reset
+                (new CSeq_loc(query_id, 0, 
+                              sequence::GetLength(query_id, query->scope) -1 ));
+        }
+        query->mask->ChangeToPackedInt();
         _ASSERT(query->mask->IsPacked_int());
     }
 
