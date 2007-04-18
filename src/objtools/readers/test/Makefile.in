@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = agp_count
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
