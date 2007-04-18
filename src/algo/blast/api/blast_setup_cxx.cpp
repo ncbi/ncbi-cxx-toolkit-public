@@ -113,6 +113,14 @@ s_BlastSetup_GetStrand(objects::ENa_strand seqloc_strand,
     return retval;
 }
 
+/// Determine the strand of an input query sequence
+/// @param query_seqloc The query sequence [in]
+/// @param program Blast program [in]
+/// @param strand_opt Default value to use for the strand [in]
+/// @return The strand specified in the query if the sequence is assumed 
+///          to be nucleotide and strand_opt is "less specific", otherwise 
+///          strand_opt
+///
 objects::ENa_strand 
 BlastSetup_GetStrand(const objects::CSeq_loc& query_seqloc, 
                      EBlastProgramType program, 
@@ -148,6 +156,15 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
     }
 }
 
+/// Initialize query info structure for a blast search, independent
+/// of the C++ object manager
+/// @param queries Source of query sequences [in]
+/// @param prog Blast program [in]
+/// @param strand_opt For nucleotide queries, specifies whether
+///             query info is filled in for the plus strand, minus strand
+///             or both strands [in]
+/// @param qinfo Pointer to resulting structure [out]
+///
 void
 SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                    EBlastProgramType prog,
@@ -248,6 +265,14 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
     *qinfo = query_info.Release();
 }
 
+/// When preparing to initialize an array of context information
+/// for one sequence in a nucleotide search, this routine computes 
+/// the indices of the first and last valid contexts in the list
+/// @param strand Search strand [in]
+/// @param num_contexts The number of contexts for a single query [in]
+/// @param start Starting context for the list [out]
+/// @param end Ending context for the list [out]
+///
 static void
 s_ComputeStartEndContexts(ENa_strand   strand,
                           int          num_contexts,
@@ -274,6 +299,17 @@ s_ComputeStartEndContexts(ENa_strand   strand,
     }
 }
 
+
+/// Convert a set of mask locations from the blast core into a
+/// format usable by the C++ API
+/// @param prog Blast program [in]
+/// @param mask Destination for the converted masks [in][out]
+/// @param query_index Which query in a list to convert [in]
+/// @param core_seqloc The mask locations from the blast engine [in]
+/// @param strand strand to convert [in]
+/// @param query_length Length of query (for converting mask locations
+///                     to minus strand coordinates) [in]
+///
 static void
 s_AddMask(EBlastProgramType prog,
           BlastMaskLoc* mask,
@@ -341,6 +377,18 @@ s_AddMask(EBlastProgramType prog,
     }
 }
 
+/// Convert a set of mask locations from the blast core into a
+/// format usable by the C++ API. This version assumes that the
+/// mask locations for the different frames of the query sequence
+/// have already been converted
+/// @param prog Blast program [in]
+/// @param mask Destination for the converted masks [in][out]
+/// @param query_index Which query in a list to convert [in]
+/// @param seqloc_frames The mask locations from the blast engine [in]
+/// @param strand strand to convert [in]
+/// @param query_length Length of query (for converting mask locations
+///                     to minus strand coordinates) [in]
+///
 static void
 s_AddMask(EBlastProgramType           prog,
           BlastMaskLoc              * mask,
