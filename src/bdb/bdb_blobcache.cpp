@@ -3299,7 +3299,7 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         bool direct_db =
             GetParamBool(params, kCFParam_direct_db, false, false);
         bool direct_log =
-            GetParamBool(params, kCFParam_direct_log, false, true);
+            GetParamBool(params, kCFParam_direct_log, false, false);
 
         CBDB_Env* env = drv->GetEnv();
         env->SetDirectDB(direct_db);
