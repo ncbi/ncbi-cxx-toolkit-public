@@ -58,8 +58,8 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "0 or na component orientation may only be used in a singleton scaffold",
 
   "object_beg != previous object_end + 1",
+  "no valid AGP lines",
   kEmptyCStr, // E_Last
-  kEmptyCStr,
   kEmptyCStr,
   kEmptyCStr,
 
@@ -95,7 +95,7 @@ string CAgpErr::FormatMessage(int code, const string& details)
   SIZE_TYPE pos = NStr::Find( string(" ") + msg + " ", " X " );
   if(pos!=NPOS) {
     // Substitute "X" with the real value (e.g. a column name or value)
-    return msg.substr(0, pos) + details + msg.substr(pos+2);
+    return msg.substr(0, pos) + details + msg.substr(pos+1);
   }
   else{
     return msg + details;
@@ -109,7 +109,7 @@ void CAgpErr::Msg(int code, const string& details, int appliesTo)
   if(code<E_Last) {
     last_error = code;
     messages_apply_to |= appliesTo;
-    messages += "\tERROR: \n";
+    messages += "\tERROR: ";
     messages += FormatMessage(code, details);
     messages += "\n";
   }
@@ -117,7 +117,7 @@ void CAgpErr::Msg(int code, const string& details, int appliesTo)
     // Append warnings to preexisting errors.
     // To collect all warnings, Msg() should be overrided in a derived class.
     messages_apply_to |= appliesTo;
-    messages += "\tWARNING: \n";
+    messages += "\tWARNING: ";
     messages += FormatMessage(code, details);
     messages += "\n";
   }
@@ -257,7 +257,7 @@ int CAgpRow::FromString(const string& line)
         return 0;
       }
       else {
-        if(ParseGapCols()==0) {
+        if(ParseGapCols(false)==0) {
           agpErr->Msg( CAgpErr::W_LooksLikeGap, GetComponentType() );
         }
         return code;
@@ -284,7 +284,7 @@ int CAgpRow::FromString(const string& line)
         return 0;
       }
       else {
-        if(ParseComponentCols()==0) {
+        if(ParseComponentCols(false)==0) {
           agpErr->Msg( CAgpErr::W_LooksLikeComp, GetComponentType() );
         }
         return code;
@@ -463,7 +463,7 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
       }
     }
     if(at_beg) {
-      CAgpRow::agpErr->Msg(CAgpErr::E_NoValidLines);
+      CAgpRow::agpErr->Msg(CAgpErr::E_NoValidLines, CAgpErr::AT_None);
       return CAgpErr::E_NoValidLines;
     }
     else if( CAgpRow::agpErr->last_error) {
