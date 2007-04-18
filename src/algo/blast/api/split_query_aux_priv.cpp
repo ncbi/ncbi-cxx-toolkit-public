@@ -123,9 +123,8 @@ SplitQuery_ShouldSplit(EBlastProgramType program,
     bool retval = true;
 
     if ((concatenated_query_length <= chunk_size) ||
-        // do not split RPS-TBLASTN as it has many complications in determining
-        // number of contexts (pre- and post-splitting)
-        (program == eBlastTypeRpsTblastn) ||
+        // do not split RPS-BLAST
+        Blast_SubjectIsPssm(program) ||
         // the current implementation does NOT support splitting for multiple
         // blastx queries, loop over queries individually here...
         (program == eBlastTypeBlastx && num_queries > 1)) {
