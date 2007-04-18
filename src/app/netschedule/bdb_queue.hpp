@@ -227,6 +227,11 @@ public:
     /// Return monitor (no ownership transfer)
     CNetScheduleMonitor* GetMonitor(void);
 
+    /// Are we monitoring?
+    bool IsMonitoring();
+    /// Send string to monitor
+    void MonitorPost(const string& msg);
+
     /// UDP notification to all listeners
     void NotifyListeners(bool unconditional=false);
 

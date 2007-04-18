@@ -35,6 +35,7 @@
 
 
 #include <bdb/bdb_trans.hpp>
+#include <util/bitset/bmalgo.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -116,7 +117,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
 
 
-CNSTagMap::CNSTagMap(SLockedQueue& queue)
+CNSTagMap::CNSTagMap()
 {
 }
 
@@ -467,6 +468,13 @@ void SLockedQueue::ClearAffinityIdx()
             bvect.optimize();
             aff_idx.WriteVector(bvect, SQueueAffinityIdx::eNoCompact);
         } else {
+            // TODO: if there is no record in worker_aff_map, 
+            // remove record from SAffinityDictDB
+            //{{
+            //    CFastMutexGuard aff_guard(aff_map_lock);
+            //    if (!worker_aff_map.CheckAffinity(aff_id);
+            //        affinity_dict.RemoveToken(aff_id, trans);
+            //}}
             aff_idx.Delete();
         }
         trans.Commit();
@@ -490,13 +498,23 @@ void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 void SLockedQueue::AppendTags(CNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
 {
     ITERATE(TNSTagList, it, tags) {
+        /*
         auto_ptr<TNSBitVector> bv(new TNSBitVector(bm::BM_GAP));
         pair<TNSTagMap::iterator, bool> tag_map_it =
             (*tag_map).insert(TNSTagMap::value_type((*it), bv.get()));
         if (tag_map_it.second) {
             bv.release();
         }
-        (tag_map_it.first)->second->set(job_id);
+        */
+        TNSTagMap::iterator tag_it = (*tag_map).find((*it));
+        if (tag_it == (*tag_map).end()) {
+            pair<TNSTagMap::iterator, bool> tag_map_it =
+//                (*tag_map).insert(TNSTagMap::value_type((*it), new TNSBitVector(bm::BM_GAP)));
+                (*tag_map).insert(TNSTagMap::value_type((*it), new TNSShortIntSet));
+            tag_it = tag_map_it.first;
+        }
+//        tag_it->second->set(job_id);
+        tag_it->second->push_back(job_id);
     }
 }
 
@@ -508,6 +526,7 @@ void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
     NON_CONST_ITERATE(TNSTagMap, it, *tag_map) {
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
+        /*
         EBDB_ErrCode err = m_TagDb.ReadVector(it->second, bm::set_OR);
         if (err != eBDB_Ok && err != eBDB_NotFound) {
             // TODO: throw db error
@@ -515,7 +534,23 @@ void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
         it->second->optimize();
+        if (it->first.first == "transcript") {
+            it->second->stat();
+        }
         m_TagDb.WriteVector(*(it->second), STagDB::eNoCompact);
+        */
+
+        TNSBitVector bv_tmp(bm::BM_GAP);
+        EBDB_ErrCode err = m_TagDb.ReadVector(&bv_tmp);
+        if (err != eBDB_Ok && err != eBDB_NotFound) {
+            // TODO: throw db error
+        }
+        bm::combine_or(bv_tmp, it->second->begin(), it->second->end());
+
+        m_TagDb.key = it->first.first;
+        m_TagDb.val = it->first.second;
+        m_TagDb.WriteVector(bv_tmp, STagDB::eNoCompact);
+
         delete it->second;
         it->second = 0;
     }
@@ -666,6 +701,18 @@ CBDB_FileCursor* SLockedQueue::GetCursor(CBDB_Transaction& trans)
                               CBDB_FileCursor::eReadModifyUpdate);
     m_Cursor.reset(cur);
     return cur;
+}
+
+
+bool SLockedQueue::IsMonitoring()
+{
+    return monitor.IsMonitorActive();
+}
+
+
+void SLockedQueue::MonitorPost(const string& msg)
+{
+    monitor.SendString(msg);
 }
 
 

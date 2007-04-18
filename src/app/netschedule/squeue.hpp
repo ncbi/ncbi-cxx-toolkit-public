@@ -50,6 +50,8 @@
 
 #include "weak_ref.hpp"
 
+#include <deque>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -189,12 +191,14 @@ typedef list<TNSTag> TNSTagList;
 struct SLockedQueue;
 
 // key, value -> bitvector of job ids
-typedef map<TNSTag, TNSBitVector*> TNSTagMap;
+// typedef TNSBitVector TNSShortIntSet;
+typedef deque<unsigned> TNSShortIntSet;
+typedef map<TNSTag, TNSShortIntSet*> TNSTagMap;
 // Safe container for tag map
 class CNSTagMap
 {
 public:
-    CNSTagMap(SLockedQueue& queue);
+    CNSTagMap();
     ~CNSTagMap();
     TNSTagMap& operator*() { return m_TagMap; }
 private:
@@ -384,6 +388,12 @@ public:
     unsigned DeleteBatch(unsigned batch_size);
 
     CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
+
+
+    /// Are we monitoring?
+    bool IsMonitoring();
+    /// Send string to monitor
+    void MonitorPost(const string& msg);
 
     // Statistics gathering objects
     friend class CStatisticsThread;

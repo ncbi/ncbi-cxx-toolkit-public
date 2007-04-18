@@ -139,7 +139,7 @@ public:
                       unsigned      job_id);
 
     /// Remove affinity token association
-    void RemoveAffinity(unsigned   aff_id);
+    void RemoveAffinity(unsigned aff_id);
 
     /// Remove affinity token association, input is specified by a 
     /// vector of ids

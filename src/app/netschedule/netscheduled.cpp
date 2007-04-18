@@ -60,8 +60,10 @@
 #include "bdb_queue.hpp"
 #include <db.h>
 
+#include "ns_types.hpp"
 #include "job_status.hpp"
 #include "access_list.hpp"
+
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -73,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.25  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.26 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -249,6 +251,13 @@ private:
     void ProcessMsgBatchHeader(BUF buffer);
     void ProcessMsgBatchItem(BUF buffer);
     void ProcessMsgBatchEnd(BUF buffer);
+
+    // Monitoring
+    /// Are we monitoring?
+    bool IsMonitoring();
+    /// Send string to monitor
+    void MonitorPost(const string& msg);
+
 
 public:
     enum ENSAccess {
@@ -802,7 +811,6 @@ void CNetScheduleHandler::x_ParseTags(const string& strtags, TNSTagList& tags)
 void CNetScheduleHandler::x_MonitorRec(const SNS_SubmitRecord& rec)
 {
     string msg;
-    _ASSERT(m_Monitor && m_Monitor->IsMonitorActive());
 
     msg += string("id: ") + NStr::IntToString(rec.job_id);
     msg += string(" input: ") + rec.input;
@@ -1060,6 +1068,20 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
 }
 
 
+bool CNetScheduleHandler::IsMonitoring()
+{
+    return (m_Uncaps & eNSAC_Queue) || m_Queue->IsMonitoring();
+}
+
+
+void CNetScheduleHandler::MonitorPost(const string& msg)
+{
+    if (m_Uncaps & eNSAC_Queue)
+        return;
+    m_Queue->MonitorPost(msg);
+}
+
+
 void CNetScheduleHandler::ProcessCancel()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
@@ -1254,7 +1276,7 @@ void CNetScheduleHandler::ProcessGet()
         WriteMsg("OK:");
     }
 
-    if (m_Monitor && m_Monitor->IsMonitorActive() && job_id) {
+    if (job_id && IsMonitoring()) {
         CSocket& socket = GetSocket();
         string msg = "::ProcessGet ";
         msg += m_LocalTimer.GetLocalTime().AsString();
@@ -1264,7 +1286,7 @@ void CNetScheduleHandler::ProcessGet()
         msg += " ";
         msg += m_AuthString;
 
-        m_Monitor->SendString(msg);
+        MonitorPost(msg);
     }
 
     if (m_JobReq.port) {  // unregister notification
@@ -1573,6 +1595,7 @@ void CNetScheduleHandler::ProcessStatistics()
         WriteMsg("OK:", st_str);
     } // for
 
+    /*
     if (m_JobReq.param1 == "ALL") {
 
         unsigned db_recs = m_Queue->CountRecs();
@@ -1599,6 +1622,7 @@ void CNetScheduleHandler::ProcessStatistics()
         }}
 
     }
+    */
 
     WriteMsg("OK:", "[Berkeley DB Mutexes]:");
     {{
@@ -1649,6 +1673,30 @@ void CNetScheduleHandler::ProcessStatistics()
         }
         ostr.freeze(false);
 
+    }}
+
+    WriteMsg("OK:", "[BitVector block pool]:");
+
+    {{
+        const TBlockAlloc::TBucketPool::TBucketVector& bv = TBlockAlloc::GetPoolVector();
+        size_t pool_vec_size = bv.size();
+        string tmp_str = "Pool vector size: ";
+        tmp_str.append(NStr::UIntToString(pool_vec_size));
+        WriteMsg("OK:", tmp_str);  
+        for (size_t i = 0; i < pool_vec_size; ++i) {
+            const TBlockAlloc::TBucketPool::TResourcePool* rp = TBlockAlloc::GetPool(i);
+            if (rp) {
+                size_t pool_size = rp->GetSize();
+                if (pool_size) {
+                    tmp_str = "Pool [ ";
+                    tmp_str.append(NStr::UIntToString(i));
+                    tmp_str.append("] = ");
+                    tmp_str.append(NStr::UIntToString(pool_size));
+
+                    WriteMsg("OK:", tmp_str);  
+                }
+            }
+        }
     }}
 
     WriteMsg("OK:", "[Worker node statistics]:");

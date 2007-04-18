@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 typedef CBV_PoolBlockAlloc<bm::block_allocator, CFastMutex> TBlockAlloc;
 typedef bm::mem_alloc<TBlockAlloc, bm::ptr_allocator>       TMemAlloc;
 typedef bm::bvector<TMemAlloc>                              TNSBitVector;
+//typedef bm::bvector<>                              TNSBitVector;
 
 
 END_NCBI_SCOPE
