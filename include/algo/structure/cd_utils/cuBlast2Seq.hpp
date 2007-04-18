@@ -117,7 +117,7 @@ private:
 	vector< CRef< CBioseq > > m_truncatedBioseqs;
 
 	CRef< CBioseq > truncateBioseq(int row);
-	void processBlastHits(int queryRow, CSearchResults& hits);
+	void processBlastHits(int queryRow, CSearchResultSet& hits);
 	//void processBlastHits(TSeqAlignVector& hits);
 	//void processBlastHits(BlastHSPResults* hits, int numSubjects);
 	bool IsFootprintValid(int from, int to, int len);
