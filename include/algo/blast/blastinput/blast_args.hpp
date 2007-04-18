@@ -141,6 +141,24 @@ private:
     string m_ProgDesc;  ///< Application's description
 };
 
+/// Argument class to specify the supported tasks a given program
+class NCBI_XBLAST_EXPORT CTaskCmdLineArgs : public IBlastCmdLineArgs
+{
+public:
+    /** Constructor 
+     * @param supported_tasks list of supported tasks [in]
+     */
+    CTaskCmdLineArgs(const set<string>& supported_tasks)
+        : m_SupportedTasks(supported_tasks) {}
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+private:
+    const set<string> m_SupportedTasks;
+};
+
 /** Argument class to retrieve and set the window size BLAST algorithm 
  * option */
 class NCBI_XBLAST_EXPORT CWindowSizeArg : public IBlastCmdLineArgs

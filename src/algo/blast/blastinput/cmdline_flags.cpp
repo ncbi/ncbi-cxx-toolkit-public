@@ -57,6 +57,8 @@ const string kArgDbType("dbtype");
 
 const string kArgGiList("gilist");
 
+const string kTask("task");
+
 const string kArgQueryGeneticCode("query_gencode");
 const string kArgDbGeneticCode("db_gencode");
 

@@ -98,6 +98,11 @@ CBlastnAppArgs::CBlastnAppArgs()
     m_RemoteArgs.Reset(new CRemoteArgs);
     arg.Reset(m_RemoteArgs);
     m_Args.push_back(arg);
+
+    set<string> tasks;
+    tasks.insert("traditional");
+    arg.Reset(new CTaskCmdLineArgs(tasks));
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 
@@ -110,7 +115,21 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
         // CDiscontinuousMegablastArgs
         retval.Reset(new CDiscNucleotideOptionsHandle(locality));
     } else {
-        retval.Reset(new CBlastNucleotideOptionsHandle(locality));
+        CRef<CBlastNucleotideOptionsHandle> oh
+            (new CBlastNucleotideOptionsHandle(locality));
+        if (args[kTask]) {
+            const string& task =args[kTask].AsString();
+            if (task == "traditional") {
+                oh->SetTraditionalBlastnDefaults();
+                _ASSERT(oh->GetGapOpeningCost() == 5);
+                _ASSERT(oh->GetGapExtensionCost() == 2);
+            } else {
+                NCBI_THROW(CBlastException, eNotSupported,
+                           "Support for task '" + task + 
+                           "' is not implemented");
+            }
+        }
+        retval.Reset(&*oh);
     }
     return retval;
 }

@@ -62,6 +62,9 @@ extern const string kArgDbType;
 /// gi list file name to restrict BLAST database
 extern const string kArgGiList;
 
+/// Task to perform
+extern const string kTask;
+
 /// Query genetic code
 extern const string kArgQueryGeneticCode;
 /// Database genetic code

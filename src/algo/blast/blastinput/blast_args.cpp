@@ -106,45 +106,53 @@ private:
     double m_MaxValue;  /**< Maximum value for this object */
 };
 
-/// Class to constrain the values of an argument to in the set provided in the
-/// constructor
-class CArgAllowIntegerSet : public CArgAllow
-{
-public:
-    /// Constructor
-    CArgAllowIntegerSet(const set<int>& values) : m_AllowedValues(values) {
-        if (values.empty()) {
-            throw runtime_error("Allowed values set must not be empty");
-        }
-    }
+/** 
+ * @brief Macro to create a subclass of CArgAllow that allows the specification
+ * of sets of data
+ * 
+ * @param ClassName Name of the class to be created [in]
+ * @param DataType data type of the allowed arguments [in]
+ * @param ConversionFnx Conversion function from a string to DataType [in]
+ */
+#define DEFINE_CARGALLOW_SET_CLASS(ClassName, DataType, String2DataTypeFn)  \
+class ClassName : public CArgAllow                                          \
+{                                                                           \
+public:                                                                     \
+    ClassName(const set<DataType>& values)                                  \
+        : m_AllowedValues(values)                                           \
+    {                                                                       \
+        if (values.empty()) {                                               \
+            throw runtime_error("Allowed values set must not be empty");    \
+        }                                                                   \
+    }                                                                       \
+                                                                            \
+protected:                                                                  \
+    virtual bool Verify(const string& value) const {                        \
+        DataType value2check = String2DataTypeFn(value);                    \
+        ITERATE(set<DataType>, itr, m_AllowedValues) {                      \
+            if (*itr == value2check) {                                      \
+                return true;                                                \
+            }                                                               \
+        }                                                                   \
+        return false;                                                       \
+    }                                                                       \
+                                                                            \
+    virtual string GetUsage(void) const {                                   \
+        ostringstream os;                                                   \
+        os << "Permissible values: ";                                       \
+        ITERATE(set<DataType>, itr, m_AllowedValues) {                      \
+            os << *itr << " ";                                              \
+        }                                                                   \
+        return os.str();                                                    \
+    }                                                                       \
+                                                                            \
+private:                                                                    \
+    /* Set containing the permissible values */                             \
+    set<DataType> m_AllowedValues;                                          \
+}
 
-protected:
-    /// Overloaded method from CArgAllow
-    virtual bool Verify(const string& value) const {
-        int value2check = NStr::StringToInt(value);
-        ITERATE(set<int>, itr, m_AllowedValues) {
-            if (*itr == value2check) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /// Overloaded method from CArgAllow
-    virtual string GetUsage(void) const {
-        ostringstream os;
-        os << "Permissible values: ";
-        ITERATE(set<int>, itr, m_AllowedValues) {
-            os << *itr << " ";
-        }
-
-        return os.str();
-    }
-    
-private:
-    /// Set containing the permissible values
-    set<int> m_AllowedValues;
-};
+DEFINE_CARGALLOW_SET_CLASS(CArgAllowIntegerSet, int, NStr::StringToInt);
+DEFINE_CARGALLOW_SET_CLASS(CArgAllowStringSet, string, string);
 
 CProgramDescriptionArgs::CProgramDescriptionArgs(const string& program_name, 
                                                  const string& program_desc)
@@ -161,6 +169,26 @@ CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
+CTaskCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    if (m_SupportedTasks.empty()) {
+        return;
+    }
+
+    arg_desc.AddOptionalKey(kTask, "task_name", "Task to execute", 
+                           CArgDescriptions::eString);
+    arg_desc.SetConstraint(kTask, new CArgAllowStringSet(m_SupportedTasks));
+}
+
+void
+CTaskCmdLineArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
+                                          CBlastOptions& options)
+{
+    // N.B.: handling of tasks occurs at the application level to ensure that
+    // only relevant tasks are added (@sa CBlastnAppArgs)
+}
+
+void
 CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
@@ -172,19 +200,12 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      NStr::DoubleToString(BLAST_EXPECT_VALUE));
 
     // gap open penalty
-    const int kGOpen = m_QueryIsProtein 
-        ? BLAST_GAP_OPEN_PROT : BLAST_GAP_OPEN_MEGABLAST;
-    arg_desc.AddDefaultKey(kArgGapOpen, "open_penalty", "Cost to open a gap", 
-                           CArgDescriptions::eInteger, 
-                           NStr::IntToString(kGOpen));
+    arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty", "Cost to open a gap", 
+                           CArgDescriptions::eInteger);
 
     // gap extend penalty
-    const int kGExtn = m_QueryIsProtein 
-        ? BLAST_GAP_EXTN_PROT : BLAST_GAP_EXTN_MEGABLAST;
-    arg_desc.AddDefaultKey(kArgGapExtend, "extend_penalty",
-                           "Cost to extend a gap",
-                           CArgDescriptions::eInteger,
-                           NStr::IntToString(kGExtn));
+    arg_desc.AddOptionalKey(kArgGapExtend, "extend_penalty",
+                           "Cost to extend a gap", CArgDescriptions::eInteger);
 
     // ungapped X-drop
     // Default values: blastn=20, megablast=10, others=7

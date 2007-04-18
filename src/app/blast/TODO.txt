@@ -11,7 +11,7 @@
 
 * config file/saved search strategy support
 
-* rm c++/src/app/blast_client and c++/src/algo/blast/api/demo?
+* rm c++/src/algo/blast/api/demo?
 
 Deferred items
 * Should C toolkit checkpoint files be accepted? Provide conversion tool?
