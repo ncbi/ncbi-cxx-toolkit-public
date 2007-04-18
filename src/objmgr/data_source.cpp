@@ -202,7 +202,10 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
         // Set pointer to TSE itself as its BlobId.
         info->m_BlobId = blob_id = new CBlobIdPtr(info.GetPointer());
     }
-    _VERIFY(m_Blob_Map.insert(TBlob_Map::value_type(blob_id, info)).second);
+    if ( !m_Blob_Map.insert(TBlob_Map::value_type(blob_id, info)).second ) {
+        NCBI_THROW(CObjMgrException, eFindConflict,
+                   "Duplicated Blob-id");
+    }
     info->x_DSAttach(*this);
     x_SetLock(lock, info);
     _ASSERT(info->IsLocked());
