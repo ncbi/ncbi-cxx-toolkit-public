@@ -57,7 +57,10 @@ CBDB_Env::CBDB_Env()
   m_LogInMemory(false),
   m_TransSync(CBDB_Transaction::eTransSync),
   m_DirectDB(false),
-  m_DirectLOG(false)
+  m_DirectLOG(false),
+  m_CheckPointEnable(true),
+  m_CheckPointKB(0),
+  m_CheckPointMin(0)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
     int ret = db_env_create(&m_Env, 0);
@@ -71,7 +74,10 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
   m_LogInMemory(false),
   m_TransSync(CBDB_Transaction::eTransSync),
   m_DirectDB(false),
-  m_DirectLOG(false)
+  m_DirectLOG(false),
+  m_CheckPointEnable(true),
+  m_CheckPointKB(0),
+  m_CheckPointMin(0)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
 }
@@ -516,11 +522,22 @@ void CBDB_Env::SetLogAutoRemove(bool on_off)
 
 void CBDB_Env::TransactionCheckpoint()
 {
-    if (IsTransactional()) {
-        int ret = m_Env->txn_checkpoint(m_Env, 0, 0, 0);
+    if (m_CheckPointEnable && IsTransactional()) {
+        int ret = 
+            m_Env->txn_checkpoint(m_Env, m_CheckPointKB, m_CheckPointMin, 0);
         BDB_CHECK(ret, "DB_ENV::txn_checkpoint");   
     }
 }
+
+void CBDB_Env::ForceTransactionCheckpoint()
+{
+    if (IsTransactional()) {
+        int ret = 
+            m_Env->txn_checkpoint(m_Env, 0, 0, DB_FORCE);
+        BDB_CHECK(ret, "DB_ENV::txn_checkpoint");   
+    }
+}
+
 
 bool CBDB_Env::IsTransactional() const 
 { 

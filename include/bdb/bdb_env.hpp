@@ -142,6 +142,9 @@ public:
     /// Flush the underlying memory pools, logs and data bases
     void TransactionCheckpoint();
 
+    /// Forced checkpoint
+    void ForceTransactionCheckpoint();
+
     /// Turn off buffering of databases (DB_DIRECT_DB)
     void SetDirectDB(bool on_off);
 
@@ -266,6 +269,17 @@ public:
     /// return the path to the environment
     const string& GetPath() const { return m_HomePath; }
 
+    /// If the kb parameter is non-zero, a checkpoint will be done 
+    /// if more than kbyte kilobytes of log data have been written since 
+    /// the last checkpoint.
+    void SetCheckPointKB(unsigned kb) { m_CheckPointKB = kb; }
+
+    /// If the m parameter is non-zero, a checkpoint will be done 
+    /// if more than min minutes have passed since the last checkpoint.
+    void SetCheckPointMin(unsigned m) { m_CheckPointMin = m; }
+
+    /// When OFF calls to TransactionCheckpoint() will be ignored
+    void EnableCheckPoint(bool on_off) { m_CheckPointEnable = on_off; }
 
 private:
     /// Opens BDB environment returns error code
@@ -287,6 +301,9 @@ private:
     unsigned m_MaxLockObjects;
     bool     m_DirectDB;
     bool     m_DirectLOG;
+    bool     m_CheckPointEnable; ///< Checkpoint enabled
+    unsigned m_CheckPointKB;     ///< Checkpoint KBytes
+    unsigned m_CheckPointMin;    ///< Checkpoint minutes
 
 };
 
