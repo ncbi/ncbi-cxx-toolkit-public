@@ -381,8 +381,9 @@ void CQueueDataBase::Open(const string& path,
             CBDB_Env::eThreaded | CBDB_Env::eRunRecovery | CBDB_Env::ePrivate);
 
     } // if else
-    m_Env->SetDirectDB(true);
-    m_Env->SetDirectLog(true);
+// TODO: read direct_db and direct_log parameters
+//    m_Env->SetDirectDB(true);
+//    m_Env->SetDirectLog(true);
 
     m_Env->SetLockTimeout(10 * 1000000); // 10 sec
 
@@ -1868,7 +1869,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
         }
 
         // update tags
-        CNSTagMap tag_map(q.GetObject());
+        CNSTagMap tag_map;
         q->AppendTags(tag_map, rec->tags, job_id);
         q->FlushTags(tag_map, trans);
     }}
@@ -1937,9 +1938,9 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
-    CNSTagMap tag_map(q.GetObject());
 
     {{
+        CNSTagMap tag_map;
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
         job_db.SetTransaction(&trans);
@@ -3925,6 +3926,20 @@ CNetScheduleMonitor* CQueue::GetMonitor(void)
     return &q->monitor;
 }
 
+bool CQueue::IsMonitoring()
+{
+    CRef<SLockedQueue> ref(m_LQueue.Lock());
+    if (ref == NULL)
+        return false;
+    return ref->IsMonitoring();
+}
+
+void CQueue::MonitorPost(const string& msg)
+{
+    CRef<SLockedQueue> ref(m_LQueue.Lock());
+    if (ref == NULL) return;
+    return ref->MonitorPost(msg);
+}
 
 void CQueue::NotifyListeners(bool unconditional)
 {
