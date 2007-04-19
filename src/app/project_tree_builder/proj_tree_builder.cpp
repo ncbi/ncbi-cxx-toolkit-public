@@ -838,7 +838,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             if (!GetApp().GetDllsInfo().IsDllHosted(proj_id)) {
                 if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
                     NStr::CompareNocase(lib_or_dll,"both") == 0) {
-                    GetApp().GetDllsInfo().AddDllHostedLib(proj_id, proj_id);
+                    GetApp().GetDllsInfo().AddDllHostedLib(proj_id, proj_name);
                 }
             }
         }

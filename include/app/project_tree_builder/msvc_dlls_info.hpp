@@ -65,6 +65,7 @@ public:
     bool   IsDllHosted(const string& lib_id) const;
     string GetDllHost (const string& lib_id) const; 
     void AddDllHostedLib(const string& lib_id, const string& host);
+    string GetDllHostedLib(const string& host) const;
 
 private:
     CPtbRegistry m_Registry;

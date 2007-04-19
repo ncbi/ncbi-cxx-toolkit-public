@@ -147,6 +147,17 @@ void CMsvcDllsInfo::AddDllHostedLib(const string& lib_id, const string& host)
     m_DllHostedLibs[lib_id] = host;
 }
 
+string CMsvcDllsInfo::GetDllHostedLib(const string& host) const
+{
+    map< string,string >::const_iterator p;
+    for (p = m_DllHostedLibs.begin(); p != m_DllHostedLibs.end(); ++p) {
+        if (p->second == host) {
+            return p->first;
+        }
+    }
+    return host;
+}
+
 
 //-----------------------------------------------------------------------------
 void FilterOutDllHostedProjects(const CProjectItemsTree& tree_src, 
@@ -520,11 +531,13 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             s_AddProjItemToDll(lib, &dll);
             is_empty = false;
         }
-        k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib, dll_id));
+        k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib,
+            GetApp().GetDllsInfo().GetDllHostedLib(dll_id)));
         if (k != tree_src.m_Projects.end()) {
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
             is_empty = false;
+            str_log.clear();
         }
         if ( !is_empty ) {
             tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
