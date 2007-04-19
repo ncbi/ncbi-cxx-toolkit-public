@@ -861,6 +861,9 @@ void SBDB_CacheUnitStatistics::ConvertToRegistry(IRWRegistry* reg,
     reg->Set(sect_stat, "err_blob_put",
              NStr::UIntToString(err_blob_get), 0,
              "Number of errors when storing BLOBs");
+    reg->Set(sect_stat, "err_blob_over_quota",
+             NStr::UIntToString(err_blob_over_quota), 0,
+             "Number of errors when BLOB is over the size limit");
 
     // convert time access statistics
     //
