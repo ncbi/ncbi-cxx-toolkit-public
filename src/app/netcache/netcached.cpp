@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.3.3  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.3.4  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1184,7 +1184,6 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
                                  NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
-//    CNetCache_Key blob_id;
 
     CIdBusyGuard guard(&m_UsedIds);
 
@@ -1194,7 +1193,6 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
         guard.LockNewId(&m_MaxId, m_InactivityTimeout);
         unsigned int id = guard.GetId();
         CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
-        //CNetCache_GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
 
 
