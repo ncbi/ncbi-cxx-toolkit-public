@@ -52,8 +52,14 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-static const string g_m8("m8"), g_AsnTxt("asntxt"), g_AsnBin("asnbin");
-static const CAppHitFilter::THit::TCoord kMinOutputHitLen = 75;
+namespace {
+    const string g_m8("m8"), g_AsnTxt("asntxt"), g_AsnBin("asnbin");
+
+    const string kMode_Pairwise ("pairwise");
+    const string kMode_Multiple ("multiple");
+
+    const CAppHitFilter::THit::TCoord kMinHitLen (10);
+}
 
 void CAppHitFilter::Init()
 {
@@ -61,7 +67,13 @@ void CAppHitFilter::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "HitFilter v.2.0.1");
+                              "HitFilter v.2.0.2");
+    
+    argdescr->AddDefaultKey("mode", "mode", 
+                            "Specify whether the hits should be resolved in pairs "
+                            "or as a single set.",
+                            CArgDescriptions::eString, 
+                            kMode_Multiple);
 
     argdescr->AddDefaultKey("min_idty", "min_idty", 
                             "Minimal input hit identity",
@@ -90,7 +102,8 @@ void CAppHitFilter::Init()
                             "alignment overlap length ratio is greater "
                             "than this parameter. Any negative value will "
                             "turn merging off.",
-                            CArgDescriptions::eDouble, "-1.0");
+                            CArgDescriptions::eDouble,
+                            "-1.0");
 
     argdescr->AddOptionalKey("constraints", "constraints",
                              "Binary ASN file with constraining alignments",
@@ -128,15 +141,18 @@ void CAppHitFilter::Init()
     argdescr->SetConstraint("fmt_in", constrain_format);
     argdescr->SetConstraint("fmt_out", constrain_format);
     
-    CArgAllow* constrain_minlen = new CArgAllow_Integers(kMinOutputHitLen, 1000000);
+    CArgAllow* constrain_minlen = new CArgAllow_Integers(kMinHitLen, 1000000);
     argdescr->SetConstraint("min_len", constrain_minlen);
     
     CArgAllow* constrain_minidty = new CArgAllow_Doubles(0.0, 1.0);
     argdescr->SetConstraint("min_idty", constrain_minidty);
-
     
     CArgAllow* constrain_merge = new CArgAllow_Doubles(-1.0, 1.0);
     argdescr->SetConstraint("merge", constrain_merge);
+
+    CArgAllow_Strings* constrain_mode = new CArgAllow_Strings;
+    constrain_mode->Allow(kMode_Pairwise)->Allow(kMode_Multiple);
+    argdescr->SetConstraint("mode", constrain_mode);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -172,7 +188,7 @@ void CAppHitFilter::x_LoadIDs(CNcbiIstream& istr)
 }
 
 
-void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
+void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs, bool one_pair)
 {
     const CArgs& args = GetArgs();
 
@@ -183,7 +199,23 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
 
     CNcbiIstream& istr = args["file_in"]? args["file_in"].AsInputFile(): cin;
 
+    phitrefs->clear();
+  
     if(fmt_in == g_m8) {
+
+        static string firstline;
+        THit::TId id_query, id_subj;
+
+        if(one_pair && firstline.size()) {
+
+            THitRef hit (new THit(firstline.c_str()));
+            if(hit->GetIdentity() >= min_idty && hit->GetLength() >= min_len) {
+                phitrefs->push_back(hit);
+                id_query = hit->GetQueryId();
+                id_subj = hit->GetSubjId();
+            }
+            firstline.resize(0);
+        }
 
         while(istr) {
 
@@ -194,6 +226,27 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
             if(s.size()) {
 
                 THitRef hit (new THit(s.c_str()));
+
+                if(one_pair) {
+
+                    if(id_query.IsNull()) {
+                        id_query = hit->GetQueryId();
+                        id_subj = hit->GetSubjId();
+                    }
+                    else if( false == id_query -> Match(*(hit->GetQueryId()))
+                             || false == id_subj  -> Match(*(hit->GetSubjId())) )
+                    {
+                        if(phitrefs->size()) {
+                            firstline = s;
+                            break;
+                        }
+                        else {
+                            id_query = hit->GetQueryId();
+                            id_subj = hit->GetSubjId();
+                        }
+                    }
+                }
+
                 if(hit->GetIdentity() >= min_idty && hit->GetLength() >= min_len) {
                     phitrefs->push_back(hit);
                 }
@@ -231,6 +284,26 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
                 x_IterateSeqAlignList(sa_list, phitrefs, parse_aln, 
                                       min_len, min_idty);
             }
+        }
+    }
+
+    if(one_pair && phitrefs->size()) {
+
+        // check input validity
+
+        typedef set<string> TStringSet;
+        static TStringSet idtags;
+        
+        const string strid_query (phitrefs->front()->GetId(0)->GetSeqIdString(true));
+        const string strid_subj (phitrefs->front()->GetId(1)->GetSeqIdString(true));
+        const string tag (strid_subj + "$_#_&" + strid_query);
+        if(idtags.end() != idtags.find(tag)) {
+            NCBI_THROW(CException, eUnknown, 
+                       "In pairwise mode input hits must be collated "
+                       "by query and subject.");
+        }
+        else {
+            idtags.insert(tag);
         }
     }
 }
@@ -359,11 +432,11 @@ bool s_PHitRefScore(const CAppHitFilter::THitRef& lhs,
 int CAppHitFilter::Run()
 {    
     const CArgs& args = GetArgs();
-    const string fmt_in                   = args["fmt_in"].AsString();
-    const string fmt_out                  = args["fmt_out"].AsString();
-    const THit::TCoord min_len            = args["min_len"].AsInteger();
-    const double min_idty                 = args["min_idty"].AsDouble();
-    const THit::TCoord retain_overlap     = 1024 * args["retain_overlap"].AsInteger();
+
+    const bool   mode_multiple ( args["mode"].AsString() == kMode_Multiple );
+    const string fmt_in        ( args["fmt_in"].AsString() );
+    const string fmt_out       ( args["fmt_out"].AsString() );
+    const double maxlenfr      (args["merge"].AsDouble());
 
     if((fmt_out == g_AsnTxt || fmt_out == g_AsnBin) &&
        (fmt_in != g_AsnTxt && fmt_in != g_AsnBin)) 
@@ -373,23 +446,93 @@ int CAppHitFilter::Run()
                    "For ASN output, input must also be in ASN");
     }
 
+    if( mode_multiple == false && (args["ids"] || args["constraints"]
+                                   || fmt_in == g_AsnTxt || fmt_in == g_AsnBin ))
+    {
+
+        NCBI_THROW(CException, eUnknown, 
+                   "Invalid parameter combination - "
+                   "some options are not yet supported in pairwise mode.");
+    }
+
+    THitRefs all;
+
+    if(mode_multiple) {
+        x_DoMultiple(&all);
+    }
+    else {
+        x_DoPairwise(&all);
+    }
+
+    if(maxlenfr >= 0) {
+
+        THitRefs merged;
+        CHitFilter<THit>::s_MergeAbutting(all.begin(), all.end(), maxlenfr, &merged);
+        all = merged;
+    }
+
+    x_DumpOutput(all);
+
+    return 0;
+}
+
+
+void CAppHitFilter::x_DoPairwise(THitRefs* pall)
+{
+    THitRefs& all (*pall);
+
+    const CArgs & args (GetArgs());
+
+    const THit::TCoord min_len (args["min_len"].AsInteger());
+    const double min_idty      (args["min_idty"].AsDouble());
+    const size_t margin        (args["coord_margin"].AsInteger());
+    const THit::TCoord retain_overlap (1024 * args["retain_overlap"].AsInteger());
+
+    THitRefs hits;
+    for(x_ReadInputHits(&hits, true); hits.size(); x_ReadInputHits(&hits, true)) {
+
+        THitRefs hits_new;
+        CHitFilter<THit>::s_RunGreedy(hits.begin(), hits.end(), 
+                                      &hits_new, min_len, 
+                                      min_idty, margin,
+                                      retain_overlap);
+        sort(hits_new.begin(), hits_new.end(), s_PHitRefScore);
+        hits.resize(remove_if(hits.begin(), hits.end(), CHitFilter<THit>::s_PNullRef) 
+                    - hits.begin());
+        copy(hits.begin(), hits.end(), back_inserter(all));
+        copy(hits_new.begin(), hits_new.end(), back_inserter(all));
+        hits.clear();
+    }
+}
+
+
+void CAppHitFilter::x_DoMultiple(THitRefs* pall)
+{
+    THitRefs& all (*pall);
+
+    const CArgs & args (GetArgs());
+
+    const string fmt_in                   = args["fmt_in"].AsString();
+    const string fmt_out                  = args["fmt_out"].AsString();
+    const THit::TCoord min_len            = args["min_len"].AsInteger();
+    const double min_idty                 = args["min_idty"].AsDouble();
+    const THit::TCoord retain_overlap     = 1024 * args["retain_overlap"].AsInteger();
+    const size_t margin (args["coord_margin"].AsInteger());
+
+
     if(args["ids"]) {
         x_LoadIDs(args["ids"].AsInputFile());
     }
-
-    const size_t margin = args["coord_margin"].AsInteger();
 
     THitRefs restraint;
     if(args["constraints"]) {
         x_LoadConstraints(args["constraints"].AsInputFile(), restraint);
     }
 
-    THitRefs all;
     x_ReadInputHits(&all);
 
-    const double maxlenfr (args["merge"].AsDouble());
-
     copy(restraint.begin(), restraint.end(), back_inserter(all));
+
     sort(all.begin(), all.end(), s_PHitRefScore);
 
     const size_t M = args["hits_per_chunk"].AsInteger();
@@ -423,22 +566,11 @@ int CAppHitFilter::Run()
         THitRefs::iterator jj = hits_new.begin(), jje = hits_new.end();
         for(;jj != jje && ii_hi != ii_hi0; *ii_hi++ = *jj++);
         if(jj != jje) {
-            cerr << "Warning: space from eliminated alignments "
-                 << "not enough for all splits. " << endl;
+            LOG_POST("Warning: space from eliminated alignments "
+                     "not enough for all splits.");
         }
     }
     all.erase(ii_hi, ii_end);
-
-    if(maxlenfr >= 0) {
-
-        THitRefs merged;
-        CHitFilter<THit>::s_MergeAbutting(all.begin(), all.end(), maxlenfr, &merged);
-        all = merged;
-    }
-
-    x_DumpOutput(all);
-
-    return 0;
 }
 
 

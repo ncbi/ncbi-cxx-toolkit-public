@@ -84,7 +84,7 @@ private:
 
     typedef list<CRef<objects::CSeq_align> > TSeqAlignList;
 
-    void x_ReadInputHits(THitRefs* phitrefs);
+    void x_ReadInputHits(THitRefs* phitrefs, bool one_pair = false);
     void x_IterateSeqAlignList(const TSeqAlignList& sa_list, 
                                THitRefs* phitrefs,
                                bool parse_aln,
@@ -93,6 +93,9 @@ private:
     void x_DumpOutput(const THitRefs& hitrefs);
     void x_LoadConstraints(CNcbiIstream& istr, THitRefs& all);
     void x_LoadIDs(CNcbiIstream& istr);
+
+    void x_DoPairwise(THitRefs* pall);
+    void x_DoMultiple(THitRefs* pall);
 
     typedef map<string,string> TMapIds;
     TMapIds m_IDs;
