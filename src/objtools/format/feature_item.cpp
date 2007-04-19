@@ -757,7 +757,6 @@ static bool s_IsPseudo
             case  CSeqFeatData::eSubtype_enhancer:
             case  CSeqFeatData::eSubtype_GC_signal:
             case  CSeqFeatData::eSubtype_iDNA:
-            case  CSeqFeatData::eSubtype_intron:
             case  CSeqFeatData::eSubtype_LTR:
             case  CSeqFeatData::eSubtype_misc_binding:
             case  CSeqFeatData::eSubtype_misc_difference:

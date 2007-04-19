@@ -989,6 +989,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(note);
     ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
