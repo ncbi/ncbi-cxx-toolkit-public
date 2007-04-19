@@ -7,4 +7,4 @@ REQUIRES = objects
 APP = agp_count
 SRC = agp_count
 
-LIB = xobjread xncbi
+LIB = xobjread seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
