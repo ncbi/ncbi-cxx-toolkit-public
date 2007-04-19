@@ -358,16 +358,16 @@ public:
                 m_Cache.KillBlob(m_BlobKey.c_str(),
                                     m_Version,
                                     m_SubKey.c_str(), 1, 0);
+                {{
+                CFastMutexGuard guard(m_Cache.m_DB_Lock);
+                m_Cache.m_Statistics.AddBlobQuotaError(m_Owner);
+                }}
+                string msg("BLOB larger than allowed. size=");
+                msg.append(NStr::UIntToString(m_BlobSize));
+                msg.append(" quota=");
+                msg.append(NStr::UIntToString(m_Cache.GetMaxBlobSize()));
+                BDB_THROW(eQuotaLimit, msg);
             }
-            {{
-            CFastMutexGuard guard(m_Cache.m_DB_Lock);
-            m_Cache.m_Statistics.AddBlobQuotaError(m_Owner);
-            }}
-            string msg("BLOB larger than allowed. size=");
-            msg.append(NStr::UIntToString(m_BlobSize));
-            msg.append(" quota=");
-            msg.append(NStr::UIntToString(m_Cache.GetMaxBlobSize()));
-            BDB_THROW(eQuotaLimit, msg);
         }
 
 
@@ -1590,16 +1590,16 @@ void CBDB_Cache::Store(const string&  key,
     if (GetMaxBlobSize()) {
         if (size > GetMaxBlobSize()) {
             DropBlob(key, version, subkey, false /*delete*/, &blob_id);
+            {{
+            CFastMutexGuard guard(m_DB_Lock);
+            m_Statistics.AddBlobQuotaError(owner);
+            }}
+            string msg("BLOB larger than allowed. size=");
+            msg.append(NStr::UIntToString(size));
+            msg.append(" quota=");
+            msg.append(NStr::UIntToString(GetMaxBlobSize()));
+            BDB_THROW(eQuotaLimit, msg);
         }
-        {{
-        CFastMutexGuard guard(m_DB_Lock);
-        m_Statistics.AddBlobQuotaError(owner);
-        }}
-        string msg("BLOB larger than allowed. size=");
-        msg.append(NStr::UIntToString(size));
-        msg.append(" quota=");
-        msg.append(NStr::UIntToString(GetMaxBlobSize()));
-        BDB_THROW(eQuotaLimit, msg);
     }
 
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
