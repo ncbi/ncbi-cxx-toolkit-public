@@ -160,6 +160,7 @@ struct NCBI_BDB_CACHE_EXPORT SBDB_CacheUnitStatistics
     unsigned  err_no_blob;              ///< BLOB not found errors    
     unsigned  err_blob_get;             ///< retrive errors
     unsigned  err_blob_put;             ///< store errors
+    unsigned  err_blob_over_quota;      ///< BLOB max quota
 
     TBlobSizeHistogram  blob_size_hist; ///< Blob size historgam
     TTimeAccess         time_access;    ///< Hourly access history
@@ -191,6 +192,7 @@ public:
     void AddProtocolError(EErrGetPut operation);
     void AddNoBlobError(EErrGetPut operation);
     void AddCommError(EErrGetPut operation);
+    void AddBlobQuotaError();
 
 
     static
@@ -240,6 +242,7 @@ public:
                         SBDB_CacheUnitStatistics::EErrGetPut operation);
     void AddCommError(const string& client,
                       SBDB_CacheUnitStatistics::EErrGetPut operation);
+    void AddBlobQuotaError(const string& client);
 
 
     void ConvertToRegistry(IRWRegistry* reg) const;
@@ -431,6 +434,12 @@ public:
 
     /// Get max limit for read update
     unsigned GetTTL_Prolongation() const { return m_MaxTTL_prolong; }
+
+    /// Set max allowed BLOB size. 
+    void SetMaxBlobSize(unsigned max_size) { m_MaxBlobSize = max_size; }
+
+    /// Get max allowed BLOB size. 
+    unsigned GetMaxBlobSize() const { return m_MaxBlobSize; }
 
 
     /// Get cache operations statistics
@@ -685,7 +694,6 @@ private:
               cache.GetWriteSync() == eWriteSync ?
                  CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
         {
-//            cache.m_CacheDB->SetTransaction(this);
             cache.m_CacheAttrDB->SetTransaction(this);
             cache.m_CacheBLOB_DB->SetTransaction(this);
         }
@@ -769,6 +777,9 @@ private:
     CFastLocalTime             m_LocalTimer;
     /// Atomic counter for BLOB ids
     CAtomicCounter             m_BlobIdCounter;
+
+    /// Max.allowed BLOB size 
+    unsigned                   m_MaxBlobSize;
 };
 
 

@@ -349,6 +349,28 @@ public:
 		m_AttrUpdFlag = false;
         m_BlobSize += count;
 
+        // check BLOB size quota
+        if (m_Cache.GetMaxBlobSize()) {
+            unsigned blob_id;
+            if (m_BlobSize > m_Cache.GetMaxBlobSize()) {
+                delete m_Buffer; m_Buffer = 0;
+                delete m_OverflowFile; m_OverflowFile = 0;
+                m_Cache.KillBlob(m_BlobKey.c_str(),
+                                    m_Version,
+                                    m_SubKey.c_str(), 1, 0);
+            }
+            {{
+            CFastMutexGuard guard(m_Cache.m_DB_Lock);
+            m_Cache.m_Statistics.AddBlobQuotaError(m_Owner);
+            }}
+            string msg("BLOB larger than allowed. size=");
+            msg.append(NStr::UIntToString(m_BlobSize));
+            msg.append(" quota=");
+            msg.append(NStr::UIntToString(m_Cache.GetMaxBlobSize()));
+            BDB_THROW(eQuotaLimit, msg);
+        }
+
+
         if (m_Buffer) {
             unsigned int new_buf_length = m_BytesInBuffer + count;
             if (new_buf_length <= m_Cache.GetOverflowLimit()) {
@@ -626,7 +648,7 @@ void SBDB_CacheUnitStatistics::Init()
         blobs_overflow_total = blobs_read_total = blob_size_max_total = 0;
 
     err_protocol = err_internal = err_communication =
-        err_no_blob = err_blob_get = err_blob_put = 0;
+        err_no_blob = err_blob_get = err_blob_put = err_blob_over_quota = 0;
 
     blobs_size_total = blobs_size_db = 0.0;
     InitHistorgam(&blob_size_hist);
@@ -744,6 +766,12 @@ void SBDB_CacheUnitStatistics::AddInternalError(EErrGetPut operation)
 {
     ++err_internal;
     x_AddErrGetPut(operation);
+}
+
+void SBDB_CacheUnitStatistics::AddBlobQuotaError()
+{
+    ++err_blob_over_quota;
+    x_AddErrGetPut(eErr_Put);
 }
 
 void SBDB_CacheUnitStatistics::AddProtocolError(EErrGetPut operation)
@@ -975,6 +1003,14 @@ void SBDB_CacheStatistics::AddNeverRead(const string&   client)
     }
 }
 
+void SBDB_CacheStatistics::AddBlobQuotaError(const string& client)
+{
+    m_GlobalStat.AddBlobQuotaError();
+    if (!client.empty()) {
+        m_OwnerStatMap[client].AddBlobQuotaError();
+    }
+}
+
 void SBDB_CacheStatistics::AddInternalError(const string& client,
                      SBDB_CacheUnitStatistics::EErrGetPut operation)
 {
@@ -1048,7 +1084,8 @@ CBDB_Cache::CBDB_Cache()
   m_PurgeThreadDelay(10),
   m_CheckPointInterval(24 * (1024 * 1024)),
   m_OverflowLimit(512 * 1024),
-  m_MaxTTL_prolong(0)
+  m_MaxTTL_prolong(0),
+  m_MaxBlobSize(0)
 //  m_CollectOwnerStat(true)
 {
     m_TimeStampFlag = fTimeStampOnRead |
@@ -1544,8 +1581,24 @@ void CBDB_Cache::Store(const string&  key,
     if (IsReadOnly()) {
         return;
     }
-
     unsigned blob_id = 0;
+
+    // check BLOB size quota
+    if (GetMaxBlobSize()) {
+        if (size > GetMaxBlobSize()) {
+            DropBlob(key, version, subkey, false /*delete*/, &blob_id);
+        }
+        {{
+        CFastMutexGuard guard(m_DB_Lock);
+        m_Statistics.AddBlobQuotaError(owner);
+        }}
+        string msg("BLOB larger than allowed. size=");
+        msg.append(NStr::UIntToString(size));
+        msg.append(" quota=");
+        msg.append(NStr::UIntToString(GetMaxBlobSize()));
+        BDB_THROW(eQuotaLimit, msg);
+    }
+
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
     } else {
@@ -1582,20 +1635,7 @@ void CBDB_Cache::Store(const string&  key,
         overflow = 0;
 
     } else { // overflow BLOB
-        string path;
-        s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
-        _TRACE("LC: Making overflow file " << path);
-        CNcbiOfstream oveflow_file(path.c_str(),
-                                   IOS_BASE::out |
-                                   IOS_BASE::trunc |
-                                   IOS_BASE::binary);
-        if (!oveflow_file.is_open() || oveflow_file.bad()) {
-            string err = "LC: Cannot create overflow file ";
-            err += path;
-            BDB_THROW(eCannotOpenOverflowFile, err);
-        }
-        WriteOverflow(oveflow_file, path, (const char*)data, size);
-        overflow = 1;
+        overflow = 1; // actual write comes later not to lock the database
     }
 
     //
@@ -1679,13 +1719,27 @@ void CBDB_Cache::Store(const string&  key,
 
     }}
 
-
-    // check if BLOB shrinked in size but was an overflow
-    // and we need to delete the overflow file
-    //
-    if (overflow != old_overflow) {
-        if (old_overflow != 0) {
-            x_DropOverflow(key.c_str(), version, subkey.c_str());
+    if (overflow) {
+        string path;
+        s_MakeOverflowFileName(path, m_Path, GetName(), key, version, subkey);
+        CNcbiOfstream oveflow_file(path.c_str(),
+                                   IOS_BASE::out |
+                                   IOS_BASE::trunc |
+                                   IOS_BASE::binary);
+        if (!oveflow_file.is_open() || oveflow_file.bad()) {
+            string err = "LC: Cannot create overflow file ";
+            err += path;
+            BDB_THROW(eCannotOpenOverflowFile, err);
+        }
+        WriteOverflow(oveflow_file, path, (const char*)data, size);
+    } else {
+        // check if BLOB shrinked in size but was an overflow
+        // and we need to delete the overflow file
+        //
+        if (overflow != old_overflow) {
+            if (old_overflow != 0) {
+                x_DropOverflow(key.c_str(), version, subkey.c_str());
+            }
         }
     }
 
@@ -3150,6 +3204,7 @@ static const string kCFParam_log_file_max       = "log_file_max";
 static const string kCFParam_overflow_limit     = "overflow_limit";
 static const string kCFParam_ttl_prolong        = "ttl_prolong";
 static const string kCFParam_owner_stat         = "owner_stat";
+static const string kCFParam_max_blob_size      = "max_blob_size";
 
 
 
@@ -3252,6 +3307,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     unsigned ttl_prolong =
         GetParamInt(params, kCFParam_ttl_prolong, false, 0);
     drv->SetTTL_Prolongation(ttl_prolong);
+
+    unsigned max_blob_size =
+        GetParamDataSize(params, kCFParam_max_blob_size, false, 0);
+    drv->SetMaxBlobSize(max_blob_size);
 
 
     ConfigureICache(drv.get(), params);
