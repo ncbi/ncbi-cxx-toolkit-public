@@ -231,7 +231,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                     if (*alarm_time <= current_time)
                         timer_requests.push_back(it->first);
                 } else if (*alarm_time <= *min_alarm_time) {
-                    if (*alarm_time < *min_alarm_time) {
+                    if (*alarm_time != *min_alarm_time) {
                         min_alarm_time = *alarm_time > current_time ?
                             alarm_time : NULL;
                         timer_requests.clear();
