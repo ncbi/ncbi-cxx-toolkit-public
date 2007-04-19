@@ -174,7 +174,8 @@ public:
                             TCoord min_hit_len = 100,
                             double min_hit_idty = .9,
                             TCoord margin = 1,
-                            TCoord retain_overlap = 0) {
+                            TCoord retain_overlap = 0)
+    {
 
         if(hri_beg > hri_end) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal, 
@@ -344,7 +345,8 @@ public:
 
                     for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
                     
-                        const THitEnd& he = *ii;
+                        const THitEnd& he = *ii;                   
+
                         const size_t hitrefidx = he.m_Ptr - hitref_firstptr;
                         const bool alive       = skip[hitrefidx] == false;
                         const bool self        = he.m_Ptr == &hc;
@@ -593,7 +595,7 @@ protected:
                          TCoord cmin, TCoord cmax, 
                          TCoord min_hit_len, double& min_idty,
                          THitRef* pnew_hit,
-                         TCoord retain_overlap) 
+                         TCoord retain_overlap)
     {
         int rv = -1;
         pnew_hit->Reset(NULL);
@@ -719,6 +721,7 @@ protected:
                                xcript));
         }
         else {
+
             rv.Reset(new THit());
             rv->SetId(0, lhs->GetId(0));
             rv->SetId(1, lhs->GetId(1));
