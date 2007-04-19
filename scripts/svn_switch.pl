@@ -16,8 +16,6 @@ use lib $ScriptDir;
 use NCBI::SVN::SwitchMap;
 use NCBI::SVN::MultiSwitch;
 
-use IPC::Open2;
-
 if (@ARGV != 1 || $ARGV[0] eq '--help')
 {
     die <<EOF;
