@@ -499,7 +499,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_MaplocComments(ctx);
     x_RegionComments(ctx);
     x_HTGSComments(ctx);
-    x_FeatComments(ctx);
+//    x_FeatComments(ctx);
 
     x_FlushComments();
 }

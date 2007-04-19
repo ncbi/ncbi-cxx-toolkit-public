@@ -464,11 +464,11 @@ static bool s_SkipFeature(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqCon
     // NB: the test is performed on the bioseq the feature is
     // annotated on even in master style. full length features are
     // analogous to descriptors and those aren't propagated.
-    if ( type == CSeqFeatData::e_Comment ) {
-        if (s_SuppressCommentFeature(feat, loc, ctx)) {
-            return true;
-        }
-    }
+//    if ( type == CSeqFeatData::e_Comment ) {
+//        if (s_SuppressCommentFeature(feat, loc, ctx)) {
+//            return true;
+//        }
+//    }
 
     // if RELEASE mode, make sure we have all info to create mandatory quals.
     if ( cfg.NeedRequiredQuals() ) {
