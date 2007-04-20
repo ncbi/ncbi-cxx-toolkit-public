@@ -31,6 +31,7 @@
  */
 
 #include "../ncbi_ansi_ext.h"
+#include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_heapmgr.h>
@@ -65,7 +66,6 @@ int main(int argc, const char* argv[])
                          "Option \"lbsm\" has no useful effect on MS-Windows");
             }
 #else
-            extern ESwitch LBSMD_FastHeapAccess(ESwitch);
             LBSMD_FastHeapAccess(eOn);
             CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
 #endif /*NCBI_OS_MSWIN*/
@@ -79,7 +79,6 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
-    /*LBSMD_FastHeapAccess(eOn);*/
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
