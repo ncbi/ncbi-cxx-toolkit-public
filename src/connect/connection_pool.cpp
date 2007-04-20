@@ -206,7 +206,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
     CTime current_time(CTime::eEmpty, CTime::eGmt);
     const CTime* alarm_time = NULL;
-    const CTime* min_alarm_time;
+    const CTime* min_alarm_time = NULL;
     bool alarm_time_defined = false;
     ITERATE (TData, it, data) {
         // Check that socket is not processing packet - safeguards against
