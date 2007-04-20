@@ -46,7 +46,7 @@ extern "C" {
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     SSERV_Info** info,
                                     HOST_INFO*   host_info,
-                                    int/*bool*/  dispd_to_follow);
+                                    int/*bool*/  no_dispd);
 
 
 /* Get configuration file name. Returned '\0'-terminated string
@@ -75,6 +75,9 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
  * been set to "eOff" (which is the default setting).
  */
 extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
+
+
+extern NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 
 
 /* Host info getters */
