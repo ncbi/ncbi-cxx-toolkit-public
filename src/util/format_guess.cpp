@@ -717,7 +717,7 @@ bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
     // now, for remaining ones, we expect an alphanumeric item first,
     // followed by a set of floating-point values.  Unless we are at the last
     // line, the number of values should increase monotonically
-    for (int i = 1;  iter != lines.end();  ++i, ++iter) {
+    for (size_t i = 1;  iter != lines.end();  ++i, ++iter) {
         toks.clear();
         NStr::Split(*iter, "\t ", toks);
         if (toks.size() != i) {
@@ -800,7 +800,7 @@ bool x_IsInputTable(const char* byte_buf, size_t byte_count)
     list<string> toks;
 
     /// determine the number of observed columns
-    int ncols = 0;
+    size_t ncols = 0;
     for ( ;  iter != lines.end();  ++iter) {
         if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
             continue;
