@@ -10,7 +10,7 @@ fi
 test -x "$tar"  ||  exit 0
 
 mkdir /tmp/test_tar.$$.1  ||  exit 1
-trap 'rm -rf /tmp/test_tar.$$.*' 0 1 2 15
+trap 'rm -rf /tmp/test_tar.$$.* &' 0 1 2 15
 
 cp -rp . /tmp/test_tar.$$.1/ 2>/dev/null
 
