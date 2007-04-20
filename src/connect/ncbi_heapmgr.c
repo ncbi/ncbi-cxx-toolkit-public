@@ -250,7 +250,7 @@ HEAP HEAP_Attach(const void* base, int serial)
     TNCBI_Size size = 0;
 
     if (base) {
-        const SHEAP_HeapBlock* b = base;
+        const SHEAP_HeapBlock* b = (const SHEAP_HeapBlock*) base;
         for (;;) {
             if (!HEAP_ISUSED(b)  &&  !HEAP_ISFREE(b)) {
                 CORE_LOGF(eLOG_Error,
