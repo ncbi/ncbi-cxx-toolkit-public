@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_limits.h>
 #include <util/compress/tar.hpp>
 #include <common/test_assert.h>  // This header must go last
 
@@ -98,7 +99,7 @@ void CTest::Init(void)
                         CArgDescriptions::eInteger, "20");
     args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddExtra(0, 1 << 20, "List of files to process",
+    args->AddExtra(0, kMax_UInt, "List of files to process",
                    CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Tar test suite: VERY simplified tar utility");
