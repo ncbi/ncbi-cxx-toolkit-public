@@ -154,8 +154,6 @@ static SERV_ITER s_Open(const char*          service,
                         SSERV_Info**         info,
                         HOST_INFO*           host_info)
 {
-    const TSERV_Type special_flags =
-        fSERV_Promiscuous | fSERV_ReverseDns | fSERV_Stateless;
     int/*bool*/ do_lbsmd = -1/*unassigned*/, do_dispd = -1/*unassigned*/;
     const SSERV_VTable* op;
     SERV_ITER iter;
@@ -171,7 +169,7 @@ static SERV_ITER s_Open(const char*          service,
     }
 
     iter->name              = s;
-    iter->type              = types & ~special_flags;
+    iter->type              = types & fSERV_All;
     iter->host              = (preferred_host == SERV_LOCALHOST
                                ? SOCK_GetLocalHostAddress(eDefault)
                                : preferred_host);
@@ -183,8 +181,8 @@ static SERV_ITER s_Open(const char*          service,
                                           : preference));
     if (ismask)
         iter->ismask        = 1;
-    if (types & fSERV_IncludeDead)
-        iter->ok_dead       = 1;
+    if (types & fSERV_IncludeDown)
+        iter->ok_down       = 1;
     if (types & fSERV_IncludeSuppressed)
         iter->ok_suppressed = 1;
     if (types & fSERV_ReverseDns)
@@ -233,7 +231,7 @@ static SERV_ITER s_Open(const char*          service,
             do_lbsmd = 0/*false*/;
     } else
         do_dispd = 0/*false*/;
-    /* Ugly optimization not to access the registry more than needed */
+    /* Ugly optimization not to access the registry more than necessary */
     if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)  ||
          !(op = SERV_LOCAL_Open(iter, info, host_info)))  &&
         (!do_lbsmd  ||
