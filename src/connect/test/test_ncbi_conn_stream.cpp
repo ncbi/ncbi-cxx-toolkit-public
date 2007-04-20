@@ -180,7 +180,8 @@ int main(int argc, const char* argv[])
 
     LOG_POST("Test 1 of 3: Big buffer bounce");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
-                         fHCC_UrlEncodeArgs | fHCC_AutoReconnect);
+                         fHCC_UrlEncodeArgs | fHCC_AutoReconnect |
+                         fHCC_Flushable);
 
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
@@ -197,6 +198,11 @@ int main(int argc, const char* argv[])
         return 1;
     }
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(kBufferSize)));
+
+    if (!ios.flush()) {
+        ERR_POST("Error flushing data");
+        return 1;
+    }
 
     ios.read(buf2, kBufferSize + 1);
     streamsize buflen = ios.gcount();
