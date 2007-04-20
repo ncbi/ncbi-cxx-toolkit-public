@@ -899,23 +899,24 @@ static EIO_Status s_VT_Flush
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
-    const STimeout zero = {0, 0};
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
 
-    /* The real flush will be performed on the first "READ" (or "CLOSE"),
-     * or on "WAIT". Here, we just store the write timeout, that's all...
-     * ADDENDUM: fHCC_Flushable connectors are able to actually flush data.
-     */
-    if (timeout) {
-        uuu->ww_timeout = *timeout;
-        uuu->w_timeout  = &uuu->ww_timeout;
-    } else
-        uuu->w_timeout  = timeout;
-
     assert(connector->meta);
-    return !(uuu->flags & fHCC_Flushable) || !connector->meta->wait
-        ? eIO_Success
-        : connector->meta->wait(connector->meta->c_wait, eIO_Read, &zero);
+    if (!(uuu->flags & fHCC_Flushable)  ||  !connector->meta->wait) {
+        /* The real flush will be performed on the first "READ" (or "CLOSE"),
+         * or on "WAIT". Here, we just store the write timeout, that's all...
+         * ADDENDUM: fHCC_Flushable connectors are able to actually flush data.
+         */
+        if (timeout) {
+            uuu->ww_timeout = *timeout;
+            uuu->w_timeout  = &uuu->ww_timeout;
+        } else
+            uuu->w_timeout  = timeout;
+        
+        return eIO_Success;
+    }
+
+    return connector->meta->wait(connector->meta->c_wait, eIO_Read, timeout);
 }
 
 
