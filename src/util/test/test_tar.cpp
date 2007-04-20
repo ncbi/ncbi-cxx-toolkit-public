@@ -84,7 +84,7 @@ void CTest::Init(void)
     args->AddFlag("c", "Create archive");
     args->AddFlag("r", "Append archive");
     args->AddFlag("u", "Update archive");
-    args->AddFlag("U", "Update archive (existing only) [non-standard]");
+    args->AddFlag("U", "Update archive: existing entries only [non-standard]");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
     args->AddFlag("T", "Test archive [non-standard]");
@@ -94,11 +94,11 @@ void CTest::Init(void)
                          "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey("b", "blocking_factor",
                         "Archive block size in 512-byte units"
-                        " (default corresponds to 10K blocks to use)",
+                        " (10K blocks in use by default)",
                         CArgDescriptions::eInteger, "20");
     args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddExtra(0, 1<<20, "List of files to process",
+    args->AddExtra(0, 1 << 20, "List of files to process",
                    CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Tar test suite: VERY simplified tar utility");
