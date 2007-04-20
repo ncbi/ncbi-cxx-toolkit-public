@@ -93,19 +93,22 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 #define SERV_LOCALHOST ((unsigned int)(~0UL))
 #define SERV_ANYHOST   0             /* default, may be used as just 0       */
 
-/* Special "type" bit values that may be combined with server types */
+/* Special "type" bit values that may be combined with server types.
+ * NB:  Also, MSBs should be kept compatible with EMGHBN_Option */
 typedef enum {
-    /* Allows to get even dead services (but not the off ones!)
-     * NB: all preference params are ignored */
-    fSERV_IncludeSuppressed = 0x40000000,
-    fSERV_IncludeDead       = 0x20000000,
-    fSERV_Promiscuous       = 0x60000000,
-    /* Do reverse DNS translation of the would-be resulting info */
-    fSERV_ReverseDns        = 0x01000000,
+    fSERV_Any               = 0,
+    fSERV_All               = 0x0000FFFF,
     /* Only stateless servers should be returned */
     fSERV_Stateless         = 0x00100000,
-    fSERV_All               = 0x0000FFFF,
-    fSERV_Any               = 0
+    fSERV_Reserved_1        = 0x00200000, /*MBZ*/
+    /* Do reverse DNS translation of the would-be resulting info */
+    fSERV_ReverseDns        = 0x00800000,
+    fSERV_Reserved_2        = 0x10000000, /*MBZ*/
+    /* Allows to get even down services (but not the off ones!)
+     * NB: flex preference params are ignored */
+    fSERV_IncludeDown       = 0x20000000,
+    fSERV_IncludeSuppressed = 0x40000000,
+    fSERV_Promiscuous       = 0x60000000
 } ESERV_SpecialType;
 typedef unsigned int TSERV_Type;     /* Bitwise OR of ESERV_[Special]Type    */
 
