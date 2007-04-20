@@ -7,5 +7,5 @@ LIB = xconnect xpbacktest xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
-CHECK_CMD  = test_conn_stream_pushback.sh
+CHECK_CMD = test_conn_stream_pushback.sh
 CHECK_COPY = test_conn_stream_pushback.sh
