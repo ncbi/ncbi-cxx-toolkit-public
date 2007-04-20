@@ -659,6 +659,11 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eEngine_Gecko,   { 1,  7,  5},
         { 5, 0, -1}
     },
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20041107 Googlebot/2.1",
+        CCgiUserAgent::eCrawler,        { 2,  1, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
+        { 5,  0, -1}
+    },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; it-it) AppleWebKit/412 (KHTML, like Gecko) Safari/412",
         CCgiUserAgent::eSafari,         {412, -1, -1},
         CCgiUserAgent::eEngine_KHTML,   {412, -1, -1},
@@ -714,6 +719,11 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eMozilla,        { 6,  2, -1},
         CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
         { 6, 2, -1}
+    },
+    { "Mozilla/4.75 [en] (Win98; U)libwww-perl/5.41",
+        CCgiUserAgent::eScript,         { 5, 41, -1},
+        CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
+        { 4, 75, -1}
     },
 
      // Genuine Netscape/Mozilla
@@ -823,6 +833,22 @@ void TestUserAgent(void)
 
         cout << endl;
     }
+
+    // IsBot() -- simple test
+    {{
+        agent.Reset("Mozilla/4.75 [en] (Win98; U)libwww-perl/5.41");
+        assert(agent.GetBrowser() == CCgiUserAgent::eScript);
+        assert(agent.GetEngine()  == CCgiUserAgent::eEngine_Bot);
+        assert( agent.IsBot());
+        // Treat all as bots, except scripts
+        assert(!agent.IsBot(CCgiUserAgent::fBotAll & ~CCgiUserAgent::fBotScript));
+
+        agent.Reset("Mozilla/4.75 (SomeNewBot/1.2.3)");
+        assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
+        assert(agent.GetEngine()  == CCgiUserAgent::eEngine_Unknown);
+        assert(!agent.IsBot());
+        assert( agent.IsBot(CCgiUserAgent::fBotAll, "SomeNewCrawler SomeNewBot SomeOtherBot"));
+    }}
 }
 
 

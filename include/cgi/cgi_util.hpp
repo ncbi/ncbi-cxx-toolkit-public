@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/version.hpp>
 
 #include <map>
@@ -461,41 +462,48 @@ public:
         eUnknown = 0,           ///< Unknown user agent
 
         eIE,                    ///< Microsoft Internet Explorer (www.microsoft.com/windows/ie)
-        eiCab,                  ///< iCab      (www.icab.de)
-        eKonqueror,             ///< Konqueror (www.konqueror.org)
-        eLynx,                  ///< Lynx      (lynx.browser.org)
+        eiCab,                  ///< iCab       (www.icab.de)
+        eKonqueror,             ///< Konqueror  (www.konqueror.org)
+        eLynx,                  ///< Lynx       (lynx.browser.org)
         eNetscape,              ///< Netscape (Navigator), versions >=6 are Gecko-based (www.netscape.com)
-        eOpera,                 ///< Opera     (www.opera.com)
-        eW3m,                   ///< w3m       (www.w3m.org)
+        eOpera,                 ///< Opera      (www.opera.com)
+        eOregano,               ///< Oregano    (www.castle.org.uk/oregano/)
+        eW3m,                   ///< w3m        (www.w3m.org)
 
         // Gecko-based browsers
         eBeonex,                ///< Beonex Communicator (www.beonex.com)
-        eCamino,                ///< Camino    (www.caminobrowser.org)
-        eChimera,               ///< Chimera   (chimera.mozdev.org)
-        eEpiphany,              ///< Epiphany  (www.gnome.org/projects/epiphany)
-        eFirefox,               ///< Firefox   (www.mozilla.org/products/firefox)
-        eGaleon,                ///< Gakeon    (galeon.sourceforge.net)
-        eKMeleon,               ///< K-Meleon  (kmeleon.sf.net)
-        eMadfox,                ///< Madfox    (www.splyb.com/madfox)
-        eMinimo,                ///< Minimo    (www.mozilla.org/projects/minimo)
-        eSeaMonkey,             ///< SeaMonkey (www.mozilla.org/projects/seamonkey)
-        // unknown user-agent strings for:
-        // SkipStone            (www.muhri.net/skipstone)
-        // 3B                   (www.3b.net/browser)
-        // Aphrodite            (aphrodite.mozdev.org)
+        eCamino,                ///< Camino     (www.caminobrowser.org)
+        eChimera,               ///< Chimera    (chimera.mozdev.org)
+        eEpiphany,              ///< Epiphany   (www.gnome.org/projects/epiphany)
+        eFirefox,               ///< Firefox    (www.mozilla.org/products/firefox)
+        eFlock,                 ///< Flock      (www.flock.com)
+        eGaleon,                ///< Gakeon     (galeon.sourceforge.net)
+        eKMeleon,               ///< K-Meleon   (kmeleon.sf.net)
+        eMadfox,                ///< Madfox     (www.splyb.com/madfox)
+        eMinimo,                ///< Minimo     (www.mozilla.org/projects/minimo)
+        eMultiZilla,            ///< MultiZilla (multizilla.mozdev.org)
+        eSeaMonkey,             ///< SeaMonkey  (www.mozilla.org/projects/seamonkey)
 
         // IE-based
-        eAvantBrowser,          ///< Avant Browser (www.avantbrowser.com)
-        eCrazyBrowser,          ///< Crazy Browser (www.crazybrowser.com)
-        eFoxie,                 ///< Foxie     (www.getfoxie.com)
-        eIRider,                ///< iRider    (www.irider.com)
-        eMaxthon,               ///< Maxthon/MyIE2 (www.maxthon.com)
-        eNetCaptor,             ///< NetCaptor (www.netcaptor.com)
+        eAvantBrowser,          ///< Avant Browser  (www.avantbrowser.com)
+        eCrazyBrowser,          ///< Crazy Browser  (www.crazybrowser.com)
+        eEnigmaBrowser,         ///< Enigma Browser (www.suttondesigns.com)
+        eIRider,                ///< iRider         (www.irider.com)
+        eMaxthon,               ///< Maxthon/MyIE2  (www.maxthon.com)
+        eNetCaptor,             ///< NetCaptor      (www.netcaptor.com)
 
         // AppleWebKit/KHTML based
-        eOmniWeb,               ///< OmniWeb   (www.omnigroup.com/applications/omniweb)
-        eSafari,                ///< Safari    (www.apple.com/safari)
-        eShiira,                ///< Shiira    (hmdt-web.net/shiira/en)
+        eOmniWeb,               ///< OmniWeb     (www.omnigroup.com/applications/omniweb)
+        eNetNewsWire,           ///< NetNewsWire (www.apple.com)
+        eSafari,                ///< Safari      (www.apple.com/safari)
+        eShiira,                ///< Shiira      (hmdt-web.net/shiira/en)
+
+        /// Search robots/bots/validators
+        eCrawler,               ///< Class: crawlers / search robots
+        eOfflineBrowser,        ///< Class: offline browsers
+        eScript,                ///< Class: script tools (perl/php/...)
+        eLinkChecker,           ///< Class: link checkers
+        eWebValidator,          ///< Class: validators
 
         /// Any other Gecko-based not from the list above,
         /// Mozilla version >= 5.0
@@ -504,9 +512,7 @@ public:
         /// Any other not from list above.
         /// User agent string starts with "Mozilla/x.x (compatible;*".
         /// Not Gecko-based.
-        eMozillaCompatible      ///< Mozilla-compatible
-
-        //eSearchBot,                 ///< Known search robot/bot
+        eMozillaCompatible,     ///< Mozilla-compatible
     };
 
     /// Browser engine types.
@@ -514,7 +520,8 @@ public:
         eEngine_Unknown = eUnknown,     ///< Unknown engine
         eEngine_IE      = eIE,          ///< Microsoft Internet Explorer
         eEngine_Gecko   = eMozilla,     ///< Gecko-based
-        eEngine_KHTML   = eSafari       ///< Apple WebKit
+        eEngine_KHTML   = eSafari,      ///< Apple WebKit
+        eEngine_Bot     = eCrawler      ///< Search robot/bot/checker/...
     };
 
     /// Platform types
@@ -553,6 +560,35 @@ public:
         { return m_EngineVersion; }
     const TUserAgentVersion& GetMozillaVersion(void) const
         { return m_MozillaVersion; }
+
+
+    /// Bots check flags (what consider to be a bot).
+    /// @sa EBrowser, EBrowserEngine
+    enum EBotFlags {
+        fBotCrawler         = (1<<1), 
+        fBotOfflineBrowser  = (1<<2), 
+        fBotScript          = (1<<3), 
+        fBotLinkChecker     = (1<<4), 
+        fBotWebValidator    = (1<<5), 
+        fBotAll             = 0xFF
+    };
+    typedef unsigned int TBotFlags;    ///< Binary OR of "EBotFlags"
+
+    /// Check that this is known search robot/bot.
+    ///
+    /// By default it use GetBrowser() value to check on known bots,
+    /// and only here 'flags' parameter can be used. If standard check fails,
+    /// additonal parsing parameters from string and/or registry/environment
+    /// parameter (section 'CGI', name 'Bots') will be used.
+    /// String value should have patterns for search in the user agent string,
+    /// and should looks like:
+    ///     "Googlebot Scooter WebCrawler Slurp"
+    /// You can use any delimeters from next list " ;|~\t".
+    /// All patterns are case sensitive.
+    /// For details how to define registry/environment parameter see CParam
+    /// description.
+    /// @sa GetBrowser, GetEngine, CParam
+    bool IsBot(TBotFlags flags = fBotAll, const string& patterns = kEmptyStr) const;
 
 protected:
     /// Init class members.

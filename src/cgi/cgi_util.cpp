@@ -825,6 +825,73 @@ void CCgiUserAgent::Reset(const string& user_agent)
     x_Parse(user_agent);
 }
 
+
+// Declare the parameter to get additional bots names.
+// Registry file:
+//     [CGI]
+//     Bots = ...
+// Environment variable:
+//     NCBI_CONFIG__CGI__Bots / NCBI_CONFIG__Bots
+//
+// The value should looks like: "Googlebot Scooter WebCrawler Slurp"
+NCBI_PARAM_DECL(string, CGI, Bots); 
+NCBI_PARAM_DEF (string, CGI, Bots, kEmptyStr);
+
+bool CCgiUserAgent::IsBot(TBotFlags flags, const string& param_patterns) const
+{
+    const char* kDelim = " ;\t|~";
+
+    // Default check
+    if (GetEngine() == eEngine_Bot) {
+        if (flags == fBotAll) {
+            return true;
+        }
+        TBotFlags need_flag = 0;
+        switch ( GetBrowser() ) {
+            case eCrawler:
+                need_flag = fBotCrawler;
+                break;
+            case eOfflineBrowser:
+                need_flag = fBotOfflineBrowser;
+                break;
+            case eScript:
+                need_flag = fBotScript;
+                break;
+            case eLinkChecker:
+                need_flag = fBotLinkChecker;
+                break;
+            case eWebValidator:
+                need_flag = fBotWebValidator;
+                break;
+            default:
+                break;
+        }
+        if ( flags & need_flag ) {
+            return true;
+        }
+    }
+
+    // Get additional bots patterns
+    string bots = NCBI_PARAM_TYPE(CGI,Bots)::GetDefault();
+
+    // Split patterns strings
+    list<string> patterns;
+    if ( !bots.empty() ) {
+        NStr::Split(bots, kDelim, patterns);
+    }
+    if ( !param_patterns.empty() ) {
+        NStr::Split(param_patterns, kDelim, patterns);
+    }
+    // Search patterns
+    ITERATE(list<string>, i, patterns) {
+        if ( m_UserAgent.find(*i) !=  NPOS ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 //
 // Mozilla-compatible user agent always have next format:
 //     AppProduct (AppComment) *(VendorProduct|VendorComment)
@@ -850,51 +917,233 @@ struct SBrowser {
     TUASearchFlags                flags;  // Search flags
 };
 
+
 // Browser search table (the order does matter!)
 const SBrowser s_Browsers[] = {
+
+    // Bots (crawlers, offline-browsers, checkers, validators, ...)
+    // Check bots first, because they often sham to be IE or Mozilla.
+
+    { CCgiUserAgent::eCrawler,      "Advanced Email Extractor", CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "AnsearchBot",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "archive.org_bot",          CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "Amfibibot",                CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "AnswerBus",                CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "ASPseek",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "boitho.com",               CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "BaiduSpider",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "BDFetch",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "BrailleBot",               CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "BruinBot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Arachmo",                  CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "Accoona",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Cerberian Drtrs",          CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "ConveraCrawler",           CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "DataparkSearch",           CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "DiamondBot",               CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "EmailSiphon",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "EsperanzaBot",             CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Exabot",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "FAST Enterprise Crawler",  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "FAST-WebCrawler",          CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "FDSE robot",               CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "findlinks",                CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "FyberSpider",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Gaisbot",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "genieBot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "geniebot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Gigabot",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Googlebot",                CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "www.googlebot.com",        CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "Hatena Antenna",           CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "hl_ftien_spider",          CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "htdig",                    CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "ia_archiver",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "ichiro",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Iltrovatore-Setaccio",     CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "InfoSeek Sidewinder",      CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "IRLbot",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "IssueCrawler",             CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Jyxobot",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "k2spider",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "LapozzBot",                CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "larbin",                   CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "leipzig.de/findlinks/",    CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "Lycos_Spider",             CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "lmspider",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "maxamine.com",             CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "Mediapartners-Google",     CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "metacarta.com",            CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "MJ12bot",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Mnogosearch",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "mogimogi",                 CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "Morning Paper",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "msnbot",                   CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "MS Search",                CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "MSIECrawler",              CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "MSRBOT",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "NaverBot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "NetResearchServer",        CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "NG-Search",                CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "nicebot",                  CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "NuSearch Spider",          CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "NutchCVS",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "; obot",                   CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "OmniExplorer_Bot",         CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "/polybot/",                CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "Pompos",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "psbot",                    CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "giveRAMP.com",             CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "RufusBot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "SandCrawler",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "SearchSight",              CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "Scooter",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Seekbot",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "semanticdiscovery",        CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Sensis Web Crawler",       CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "SEOChat::Bot",             CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "ShopWiki",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Shoula robot",             CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "StackRambler",             CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "SurveyBot",                CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "SynooBot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Ask Jeeves",               CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "TheSuBot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Thumbnail.CZ robot",       CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "TurnitinBot",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "updated.com",              CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "Vagabondo",                CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "VoilaBot",                 CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "vspider",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "W3CRobot",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "webcollage",               CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Websquash.com",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      ".sitesell.com",            CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "www.abilogic.com",         CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.almaden.ibm.com",      CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "www.anyapex.com",          CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.baidu.com",            CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.become.com",           CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.btbot.com",            CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.emeraldshield.com",    CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.envolk.com",           CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.furl.net",             CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.galaxy.com/info/crawler", CCgiUserAgent::eEngine_Bot,  fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.girafa.com",           CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.mojeek.com",           CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.picsearch.com",        CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.seekbot.net",          CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.simpy.com/bot",        CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.scrubtheweb.com",      CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.sync2it.com",          CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.turnitin.com/robot",   CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.urltrends.com",        CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.walhello.com",         CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "www.WebSearch.com.au",     CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eCrawler,      "www.wisenutbot.com",       CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "yacy.net",                 CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eCrawler,      "Yahoo! Slurp",             CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "YahooSeeker",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "zspider",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eCrawler,      "ZyBorg",                   CCgiUserAgent::eEngine_Bot,     fApp },
+
+    { CCgiUserAgent::eCrawler,      "webcrawler",               CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "/robot.html",              CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "/crawler.html",            CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eCrawler,      "/slurp.html",              CCgiUserAgent::eEngine_Bot,     fAppComment },
+
+    { CCgiUserAgent::eOfflineBrowser, "HTMLParser",             CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eOfflineBrowser, "Offline Explorer",       CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eOfflineBrowser, "SuperBot",               CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eOfflineBrowser, "Web Downloader",         CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eOfflineBrowser, "WebCopier",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eOfflineBrowser, "WebZIP",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+
+    { CCgiUserAgent::eLinkChecker,  "Link Sleuth",              CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eLinkChecker,  "Link Valet",               CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "Linkbot",                  CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eLinkChecker,  "linksmanager.com",         CCgiUserAgent::eEngine_Bot,     fApp },
+    { CCgiUserAgent::eLinkChecker,  "LinkWalker",               CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eLinkChecker,  "SafariBookmarkChecker",    CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eLinkChecker,  "SiteBar",                  CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eLinkChecker,  "W3C-checklink",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eLinkChecker,  "www.dead-links.com",       CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "www.infowizards.com",      CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "www.lithopssoft.com",      CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "www.mojoo.com",            CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "www.vivante.com",          CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "www.w3dir.com",            CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eLinkChecker,  "Zealbot",                  CCgiUserAgent::eEngine_Bot,     fAppComment },
+
+    { CCgiUserAgent::eWebValidator, "CSSCheck",                 CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eWebValidator, "htmlvalidator.com",        CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eWebValidator, "W3C_CSS_Validator",        CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eWebValidator, "W3C_Validator",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eWebValidator, "WDG_Validator",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
+
+    { CCgiUserAgent::eScript,       "domainsdb.net",            CCgiUserAgent::eEngine_Bot,     fAppComment },
+    { CCgiUserAgent::eScript,       "Snoopy",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eScript,       "libwww-perl",              CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eScript,       "lwp-",                     CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eScript,       "LWP::Simple",              CCgiUserAgent::eEngine_Bot,     fAny },
+    { CCgiUserAgent::eScript,       "Microsoft Data Access",    CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eScript,       "Microsoft URL Control",    CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eScript,       "Microsoft-ATL-Native",     CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eScript,       "PycURL",                   CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eScript,       "Python-urllib",            CCgiUserAgent::eEngine_Bot,     fAppProduct },
+    { CCgiUserAgent::eScript,       "Wget",                     CCgiUserAgent::eEngine_Bot,     fAppProduct },
+
     // Gecko-based
 
-    { CCgiUserAgent::eBeonex,       "Beonex",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eCamino,       "Camino",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eChimera,      "Chimera",          CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eEpiphany,     "Epiphany",         CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eFirefox,      "Firefox",          CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eGaleon,       "Galeon",           CCgiUserAgent::eEngine_Gecko,   fAny },
-    { CCgiUserAgent::eKMeleon,      "K-Meleon",         CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eMadfox,       "Madfox",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eMinimo,       "Minimo",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eNetscape,     "Netscape6",        CCgiUserAgent::eEngine_Unknown, fAny },
-    { CCgiUserAgent::eNetscape,     "Netscape7",        CCgiUserAgent::eEngine_Unknown, fAny },
-    { CCgiUserAgent::eNetscape,     "Netscape",         CCgiUserAgent::eEngine_Unknown, fAny },
-    { CCgiUserAgent::eNetscape,     "NS8",              CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
-    { CCgiUserAgent::eSeaMonkey,    "SeaMonkey",        CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eBeonex,       "Beonex",                   CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eCamino,       "Camino",                   CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eChimera,      "Chimera",                  CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eEpiphany,     "Epiphany",                 CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eFirefox,      "Firefox",                  CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eFirefox,      "Firebird", /*ex-Firefox*/  CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eFlock,        "Flock",                    CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eGaleon,       "Galeon",                   CCgiUserAgent::eEngine_Gecko,   fAny },
+    { CCgiUserAgent::eKMeleon,      "K-Meleon",                 CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eMadfox,       "Madfox",                   CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eMinimo,       "Minimo",                   CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eMultiZilla,   "MultiZilla",               CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eNetscape,     "Netscape6",                CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eNetscape,     "Netscape7",                CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eNetscape,     "Netscape",                 CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eNetscape,     "NS8",                      CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eSeaMonkey,    "SeaMonkey",                CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
 
     // IE-based
 
-    { CCgiUserAgent::eAvantBrowser, "Avant Browser",    CCgiUserAgent::eEngine_IE,      fAny },
-    { CCgiUserAgent::eCrazyBrowser, "Crazy Browser",    CCgiUserAgent::eEngine_IE,      fAppComment },
-    //{ CCgiUserAgent::eFoxie,        "",    CCgiUserAgent::eEngine_IE,        fAppComment },
-    { CCgiUserAgent::eIRider,       "iRider",           CCgiUserAgent::eEngine_IE,      fAppComment },
-    { CCgiUserAgent::eMaxthon,      "Maxthon",          CCgiUserAgent::eEngine_IE,      fAppComment },
-    { CCgiUserAgent::eMaxthon,      "MyIE2",            CCgiUserAgent::eEngine_IE,      fAppComment },
-    { CCgiUserAgent::eNetCaptor,    "NetCaptor",        CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eAvantBrowser, "Avant Browser",            CCgiUserAgent::eEngine_IE,      fAny },
+    { CCgiUserAgent::eCrazyBrowser, "Crazy Browser",            CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eEnigmaBrowser,"Enigma Browser",           CCgiUserAgent::eEngine_IE,      fApp },
+    { CCgiUserAgent::eIRider,       "iRider",                   CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eMaxthon,      "Maxthon",                  CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eMaxthon,      "MyIE2",                    CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eNetCaptor,    "NetCaptor",                CCgiUserAgent::eEngine_IE,      fAppComment },
     // Check IE last, after all IE-based browsers
-    { CCgiUserAgent::eIE,           "Internet Explorer",CCgiUserAgent::eEngine_IE,      fProduct },
-    { CCgiUserAgent::eIE,           "MSIE",             CCgiUserAgent::eEngine_IE,      fApp },
+    { CCgiUserAgent::eIE,           "Internet Explorer",        CCgiUserAgent::eEngine_IE,      fProduct },
+    { CCgiUserAgent::eIE,           "MSIE",                     CCgiUserAgent::eEngine_IE,      fApp },
 
     // AppleQWebKit/KHTML-based
 
-    { CCgiUserAgent::eOmniWeb,      "OmniWeb",          CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
-    { CCgiUserAgent::eSafari,       "Safari",           CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
-    { CCgiUserAgent::eShiira,       "Shiira",           CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
+    { CCgiUserAgent::eOmniWeb,      "OmniWeb",                  CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
+    { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   fAny },
+    { CCgiUserAgent::eSafari,       "Safari",                   CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
+    { CCgiUserAgent::eShiira,       "Shiira",                   CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
 
     // Other
 
-    { CCgiUserAgent::eiCab,         "iCab",             CCgiUserAgent::eEngine_Unknown, fApp },
-    { CCgiUserAgent::eKonqueror,    "Konqueror",        CCgiUserAgent::eEngine_Unknown, fApp },
-    { CCgiUserAgent::eLynx,         "Lynx",             CCgiUserAgent::eEngine_Unknown, fAppProduct },
-    { CCgiUserAgent::eOpera,        "Opera",            CCgiUserAgent::eEngine_Unknown, fAny },
-    { CCgiUserAgent::eW3m,          "w3m",              CCgiUserAgent::eEngine_Unknown, fAppProduct }
+    { CCgiUserAgent::eiCab,         "iCab",                     CCgiUserAgent::eEngine_Unknown, fApp },
+    { CCgiUserAgent::eKonqueror,    "Konqueror",                CCgiUserAgent::eEngine_Unknown, fApp },
+    { CCgiUserAgent::eLynx,         "Lynx",                     CCgiUserAgent::eEngine_Unknown, fAppProduct },
+    { CCgiUserAgent::eLynx,         "ELynx", /* Linx based */   CCgiUserAgent::eEngine_Unknown, fAppProduct },
+    { CCgiUserAgent::eOregano,      "Oregano2",                 CCgiUserAgent::eEngine_Unknown, fAppComment },
+    { CCgiUserAgent::eOregano,      "Oregano",                  CCgiUserAgent::eEngine_Unknown, fAppComment },
+    { CCgiUserAgent::eOpera,        "Opera",                    CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eW3m,          "w3m",                      CCgiUserAgent::eEngine_Unknown, fAppProduct }
+
     // We have special case to detect Mozilla/Mozilla-based
 };
 const size_t kBrowserCount = sizeof(s_Browsers)/sizeof(s_Browsers[0]);
@@ -982,15 +1231,16 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         search = "Mozilla/";
         s_ParseVersion(m_UserAgent, search.length(), &m_MozillaVersion);
 
-        // Get Mozilla engine version
-        search = "; rv:";
-        pos = m_UserAgent.find(search);
-        if (pos != NPOS) {
-            m_Engine = eEngine_Gecko;
-            pos += search.length();
-            s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+        // Get Mozilla engine version (except bots)
+        if ( m_Engine != eEngine_Bot ) {
+            search = "; rv:";
+            pos = m_UserAgent.find(search);
+            if (pos != NPOS) {
+                m_Engine = eEngine_Gecko;
+                pos += search.length();
+                s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+            }
         }
-
         // Ignore next code if the browser type already detected
         if ( m_Browser == eUnknown ) {
 
