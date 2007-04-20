@@ -97,7 +97,7 @@ static string& s_URLDecode(const CTempString& s, string& out) {
 CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 {
     CStreamLineReader lr(in);
-    return Read(lr);
+    return Read(lr, flags);
 }
 
 CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
