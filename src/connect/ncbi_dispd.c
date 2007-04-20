@@ -151,10 +151,10 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
          || ConnNetInfo_OverrideUserHeader(net_info, s))
         &&
         ConnNetInfo_OverrideUserHeader(net_info,
-                                       iter->ok_dead  &&  iter->ok_suppressed
+                                       iter->ok_down  &&  iter->ok_suppressed
                                        ? "Dispatch-Mode: PROMISCUOUS\r\n"
-                                       : iter->ok_dead
-                                       ? "Dispatch-Mode: OK_DEAD\r\n"
+                                       : iter->ok_down
+                                       ? "Dispatch-Mode: OK_DOWN\r\n"
                                        : iter->ok_suppressed
                                        ? "Dispatch-Mode: OK_SUPPRESSED\r\n"
                                        : "Dispatch-Mode: INFORMATION_ONLY\r\n")

@@ -70,7 +70,7 @@ struct SSERV_IterTag {
 
     void*               data; /* private data field                          */
     unsigned        ismask:1; /* whether the name is to be treated as a mask */
-    unsigned       ok_dead:1; /* as taken..                                  */
+    unsigned       ok_down:1; /* as taken..                                  */
     unsigned ok_suppressed:1; /*      ..from types..                         */
     unsigned   reverse_dns:1; /*               ..as passed into..            */
     unsigned     stateless:1; /*                            ..SERV_*() calls */
