@@ -461,6 +461,10 @@
  *  @ingroup UTIL
  */
 
+/** @defgroup Transact Transactions and Transactional Objects
+ *  @ingroup UTIL
+ */
+
 
 /* ========================================================================= */
 
