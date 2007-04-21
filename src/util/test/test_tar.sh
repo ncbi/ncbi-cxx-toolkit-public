@@ -1,13 +1,12 @@
 #! /bin/sh
 
-# Locate native tar;  exit if none found
-string="`whereis tar 2>/dev/null`"
-if [ -z "$string" ]; then
-  tar="`which tar 2>/dev/null`"
+# Favor GNU tar if available, as vendor versions may have issues with
+# corner cases.
+if gtar --version >/dev/null 2>&1; then
+  tar=gtar
 else
-  tar="`echo $string | cut -f2 -d' '`"
+  tar=tar
 fi
-test -x "$tar"  ||  exit 0
 
 mkdir /tmp/test_tar.$$.1  ||  exit 1
 trap 'rm -rf /tmp/test_tar.$$.* &' 0 1 2 15
