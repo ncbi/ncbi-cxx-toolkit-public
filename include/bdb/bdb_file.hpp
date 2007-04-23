@@ -36,6 +36,7 @@
 /// BDB File management.
 
 #include <corelib/ncbistre.hpp>
+#include <util/itransaction.hpp>
 #include <bdb/bdb_types.hpp>
 #include <stdio.h>
 
@@ -67,7 +68,7 @@ class CBDB_Transaction;
 
 /// Raw file class wraps up basic Berkeley DB operations. 
 ///
-class NCBI_BDB_EXPORT CBDB_RawFile
+class NCBI_BDB_EXPORT CBDB_RawFile : public ITransactional
 {
 public:
     static const char kDefaultDatabase[];  // = "_table"
@@ -225,8 +226,11 @@ public:
     /// Print database statistics
     void PrintStat(CNcbiOstream & out);
     
-    /// Set current transaction
-    void SetTransaction(CBDB_Transaction* trans);
+    // ITransactional:
+
+    virtual void SetTransaction(ITransaction* trans);
+    virtual void RemoveTransaction(ITransaction* trans);
+
 
     /// Get current transaction
     CBDB_Transaction* GetTransaction() { return m_Trans; }
@@ -266,6 +270,10 @@ protected:
     /// @param rec_len 
     ///    record length (must be non zero for Queue type)
     void x_CreateDB(unsigned rec_len);
+
+
+    /// Set current transaction
+    void x_SetTransaction(CBDB_Transaction* trans);
 
     void x_RemoveTransaction(CBDB_Transaction* trans);
     
@@ -311,7 +319,6 @@ private:
 
     static const int kOpenFileMask;
     
-    friend class CBDB_Transaction;
     friend class CBDB_FileCursor;
 };
 

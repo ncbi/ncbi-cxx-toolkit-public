@@ -34,8 +34,8 @@
 /// @file bdb_trans.hpp
 /// Wrapper around Berkeley DB transaction structure
 
-//#include <bdb/bdb_env.hpp>
 #include <bdb/bdb_types.hpp>
+#include <util/itransaction.hpp>
 
 #include <vector>
 
@@ -58,7 +58,8 @@ class   CBDB_RawFile;
 ///   Transaction is aborted upon the desctruction of a non-commited
 ///   transaction object.
 
-class NCBI_BDB_EXPORT CBDB_Transaction
+class NCBI_BDB_EXPORT CBDB_Transaction : public ITransaction,
+                                         public ITransactionalRegistry
 {
 public:
     /// Enum controls if transaction is synchronous or not.
@@ -96,15 +97,20 @@ public:
     /// connected files (see CBDB_File::SetTransaction())
     ///
     ~CBDB_Transaction();
-        
-    /// Commit transaction
-    void Commit();
     
+    // ITransaction:
+
+    /// Commit transaction
+    virtual void Commit();
+    /// Rollback transaction (same as Abort)
+    virtual void Rollback() { Abort(); }
+
+    
+
+
     /// Abort transaction
     void Abort();
     
-    /// Rollback transaction (same as Abort)
-    void Rollback() { Abort(); }
 
     /// Get low level Berkeley DB transaction handle.
     ///
@@ -119,15 +125,24 @@ public:
     /// Transaction file association mode
     EKeepFileAssociation GetAssociationMode() const { return m_Assoc; }
 
-protected:
+    /// Downcast ITransaction
+    static
+    CBDB_Transaction* CastTransaction(ITransaction* trans);
+
+    // -----------------------------------------------------
+    // ITransactionalRegistry
+    // -----------------------------------------------------
 
     /// Add file to the list of connected files
-    void AddFile(CBDB_RawFile* dbfile);
+    virtual void Add(ITransactional* dbfile);
     
     /// Remove file from the list of connected files.
     /// Has no effect if file has not been added before by AddFile
-    void RemoveFile(CBDB_RawFile* dbfile);
-    
+    virtual void Remove(ITransactional* dbfile);
+
+protected:
+
+
     /// Return TRUE if transaction handle has been requested by some
     /// client (File)
     bool IsInProgress() const { return m_Txn != 0; }
@@ -143,11 +158,14 @@ private:
     CBDB_Transaction(const CBDB_Transaction& trans);
     CBDB_Transaction& operator=(const CBDB_Transaction& trans);
 protected:
+    /// Transaction association list
+    typedef vector<ITransactional*>  TTransVector;
+protected:
     CBDB_Env&               m_Env;        ///< Associated environment
     ETransSync              m_TSync;      ///< Sync. flag
     EKeepFileAssociation    m_Assoc;      ///< Association flag
     DB_TXN*                 m_Txn;        ///< Transaction handle
-    vector<CBDB_RawFile*>   m_TransFiles; ///< Files connected to transaction
+    TTransVector            m_TransFiles; ///< Files connected to transaction
     
 private:
     friend class CBDB_RawFile;

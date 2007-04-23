@@ -369,11 +369,11 @@ void CBDB_RawFile::RevSplitOff()
     m_RevSplitOff = true;
 }
 
-void CBDB_RawFile::SetTransaction(CBDB_Transaction* trans)
+void CBDB_RawFile::x_SetTransaction(CBDB_Transaction* trans)
 {
     if (m_Trans) {
         if (m_TransAssociation == (int) CBDB_Transaction::eFullAssociation) {
-            m_Trans->RemoveFile(this);
+            m_Trans->Remove(this);
         }
     }
 
@@ -381,7 +381,7 @@ void CBDB_RawFile::SetTransaction(CBDB_Transaction* trans)
     if (m_Trans) {
         m_TransAssociation = m_Trans->GetAssociationMode();
         if (m_TransAssociation == (int) CBDB_Transaction::eFullAssociation) {
-            m_Trans->AddFile(this);
+            m_Trans->Add(this);
         }
     }
 }
@@ -392,6 +392,19 @@ void CBDB_RawFile::x_RemoveTransaction(CBDB_Transaction* trans)
         m_Trans = 0;
     }
 }
+
+void CBDB_RawFile::SetTransaction(ITransaction* trans)
+{
+    CBDB_Transaction* db_trans = CBDB_Transaction::CastTransaction(trans);
+    x_SetTransaction(db_trans);
+}
+
+void CBDB_RawFile::RemoveTransaction(ITransaction* trans)
+{
+    CBDB_Transaction* db_trans = CBDB_Transaction::CastTransaction(trans);
+    x_RemoveTransaction(db_trans);
+}
+
 
 
 void CBDB_RawFile::x_CreateDB(unsigned rec_len)

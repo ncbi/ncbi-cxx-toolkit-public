@@ -103,16 +103,16 @@ void CBDB_Transaction::x_Abort(bool ignore_errors)
 void CBDB_Transaction::x_DetachFromFiles()
 {
     if (m_Assoc == eFullAssociation) {
-        NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
-            CBDB_RawFile* dbfile = *it;
-            dbfile->x_RemoveTransaction(this);
+        NON_CONST_ITERATE(TTransVector, it, m_TransFiles) {
+            ITransactional* dbfile = *it;
+            dbfile->RemoveTransaction(this);
         }
     }
     m_TransFiles.resize(0);
 }
 
 
-void CBDB_Transaction::AddFile(CBDB_RawFile* dbfile) 
+void CBDB_Transaction::Add(ITransactional* dbfile) 
 {
     if (m_Assoc == eFullAssociation) {
         m_TransFiles.push_back(dbfile);
@@ -120,10 +120,10 @@ void CBDB_Transaction::AddFile(CBDB_RawFile* dbfile)
 }
 
 
-void CBDB_Transaction::RemoveFile(CBDB_RawFile* dbfile)
+void CBDB_Transaction::Remove(ITransactional* dbfile)
 {
     if (m_Assoc == eFullAssociation) {
-        NON_CONST_ITERATE(vector<CBDB_RawFile*>, it, m_TransFiles) {
+        NON_CONST_ITERATE(TTransVector, it, m_TransFiles) {
             if (dbfile == *it) {
                 m_TransFiles.erase(it);
                 break;
@@ -131,6 +131,17 @@ void CBDB_Transaction::RemoveFile(CBDB_RawFile* dbfile)
         }
     }
 }
+
+CBDB_Transaction* CBDB_Transaction::CastTransaction(ITransaction* trans)
+{
+    CBDB_Transaction* db_trans = dynamic_cast<CBDB_Transaction*>(trans);
+    if (db_trans == 0) { 
+        BDB_THROW(eForeignTransaction, 
+                  "Incorrect transaction type (non-BerkeleyDB)");
+    }
+    return db_trans;
+}
+
 
 
 END_NCBI_SCOPE
