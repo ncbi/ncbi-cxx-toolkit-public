@@ -655,18 +655,20 @@ public:
                               TFlags        flags = 0 ///< Optional file flags
                              );
 
-    /// Add description for extra unnamed positional arguments.
+    /// Add description for the extra, unnamed positional arguments.
     ///
-    /// Provide description for the extra unnamed positional arguments.
-    /// By default, no extra args are allowed.
     /// The name of this description is always an empty string.
     /// Names of the resulting arg.values will be:  "#1", "#2", ...
+    /// By default, no extra args are allowed.
+    ///
+    /// To allow an unlimited # of optional argumens pass
+    /// "n_optional" = kMax_UInt.
     ///
     /// Will throw exception CArgException if:
     ///  - description with name "name" already exists
     ///  - "flags" are inconsistent with "type"
-    void AddExtra(unsigned      n_mandatory, ///< Number of mandatory args.
-                  unsigned      n_optional,  ///< Number of optional args.
+    void AddExtra(unsigned      n_mandatory, ///< Number of mandatory args
+                  unsigned      n_optional,  ///< Number of optional args
                   const string& comment,     ///< Argument description
                   EType         type,        ///< Argument type
                   TFlags        flags = 0    ///< Optional file flags
