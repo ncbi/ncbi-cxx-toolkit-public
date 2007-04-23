@@ -35,6 +35,7 @@
 #include <serial/serialbase.hpp>
 #include <objects/seq/seq__.hpp>
 #include <corelib/ncbifile.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 #include <math.h>
 
 #include <util/sequtil/sequtil_convert.hpp>
@@ -2795,6 +2796,38 @@ BOOST_AUTO_UNIT_TEST(OidRewriting)
             CHECK(oid == oi);
         }
     }
+}
+
+BOOST_AUTO_UNIT_TEST(GetSequenceAsString)
+{
+    START;
+    
+    CSeqDB N("data/seqn", CSeqDB::eNucleotide);
+    CSeqDB P("data/seqp", CSeqDB::eProtein);
+    
+    string nucl, prot;
+    
+    int nucl_gi = 46071107;
+    string nucl_str = ("AAGCTCTTCATTGATGGTAGAGAGCCTATTAACAGGCAAC"
+                       "AGTCAATGCTCCAAAGTCCAAACAAGATTACCTGTGCAAA"
+                       "GAACTTGCAGTGTAACAAACCCCNTTCACGGCCAGAAGTA"
+                       "TTTGCAACAATGTTGAAAGTCCTTCTGGCAGAGGAGGAGT"
+                       "CTAAT");
+    
+    int prot_gi = 43914529;
+    string prot_str = "MINKSGYEAKYKKSIKNNEEFWRKEGKRITWIKPYKKIKNVRYS";
+    
+    int nucl_oid(-1), prot_oid(-1);
+    
+    N.GiToOid(nucl_gi, nucl_oid);
+    P.GiToOid(prot_gi, prot_oid);
+    
+    string nstr, pstr;
+    N.GetSequenceAsString(nucl_oid, nstr);
+    P.GetSequenceAsString(prot_oid, pstr);
+    
+    CHECK_EQUAL(nstr, nucl_str);
+    CHECK_EQUAL(pstr, prot_str);
 }
 
 

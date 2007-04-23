@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 #include "seqdbimpl.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -804,6 +805,57 @@ const CSeqDBGiList * CSeqDB::GetGiList() const
 void CSeqDB::SetDefaultMemoryBound(Uint8 bytes)
 {
     CSeqDBImpl::SetDefaultMemoryBound(bytes);
+}
+
+void CSeqDB::GetSequenceAsString(int      oid,
+                                 string & output) const
+{
+    CSeqUtil::ECoding code_to = ((GetSequenceType() == CSeqDB::eProtein)
+                                 ? CSeqUtil::e_Iupacaa
+                                 : CSeqUtil::e_Iupacna);
+    
+    GetSequenceAsString(oid, code_to, output);
+}
+
+void CSeqDB::GetSequenceAsString(int                 oid,
+                                 CSeqUtil::ECoding   coding,
+                                 string            & output) const
+{
+    output.clear();
+
+    string raw;
+    const char * buffer = 0;
+
+    // Protein dbs ignore encodings, always returning ncbistdaa.
+    int length = GetAmbigSeq(oid, & buffer, kSeqDBNuclNcbiNA8);
+
+    try {
+        raw.assign(buffer, length);
+    }
+    catch(...) {
+        RetSequence(& buffer);
+        throw;
+    }
+    RetSequence(& buffer);
+    
+    CSeqUtil::ECoding code_from = ((GetSequenceType() == CSeqDB::eProtein)
+                                   ? CSeqUtil::e_Ncbistdaa
+                                   : CSeqUtil::e_Ncbi8na);
+    
+    string result;
+    
+    if (code_from == coding) {
+        result.swap(raw);
+    } else {
+        CSeqConvert::Convert(raw,
+                             code_from,
+                             0,
+                             length,
+                             result,
+                             coding);
+    }
+    
+    output.swap(result);
 }
 
 END_NCBI_SCOPE

@@ -48,6 +48,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <util/sequtil/sequtil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -876,6 +877,35 @@ public:
     /// memory bound.  If zero is specified, an appropriate default
     /// will be selected based on system information.
     static void SetDefaultMemoryBound(Uint8 bytes);
+    
+    /// Get a sequence in a given encoding.
+    ///
+    /// This method gets the sequence data for the given OID, converts
+    /// it to the specified encoding, and returns it in a string.  It
+    /// supports all values of the CSeqUtil::ECoding enumeration (but
+    /// the type must match the database type).  This method returns the
+    /// same data as GetAmbigSeq() (or GetSequence() for protein), but
+    /// may be less efficient due to the cost of translation and string
+    /// allocation.
+    ///
+    /// @param oid The OID of the sequence to fetch.
+    /// @param coding The encoding to use for the data.
+    /// @param output The returned sequence data as a string.
+    void GetSequenceAsString(int                 oid,
+                             CSeqUtil::ECoding   coding,
+                             string            & output) const;
+    
+    /// Get a sequence in a readable text encoding.
+    ///
+    /// This method gets the sequence data for an OID, converts it to a
+    /// human-readable encoding (either Iupacaa for protein, or Iupacna
+    /// for nucleotide), and returns it in a string.  This is equivalent
+    /// to calling the three-argument versions of this method with those
+    /// encodings.
+    ///
+    /// @param oid The OID of the sequence to fetch.
+    /// @param output The returned sequence data as a string.
+    void GetSequenceAsString(int oid, string & output) const;
     
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
