@@ -813,6 +813,13 @@ void CBDB_Env::MempTrickle(int percent, int *nwrotep)
     BDB_CHECK(ret, "DB_ENV::memp_trickle");
 }
 
+void CBDB_Env::MempSync()
+{
+    int ret = m_Env->memp_sync(m_Env, 0);
+    BDB_CHECK(ret, "DB_ENV::memp_sync");
+}
+
+
 void CBDB_Env::MpMaxWrite(int maxwrite, int maxwrite_sleep)
 {
     int ret = m_Env->set_mp_max_write(m_Env, maxwrite, maxwrite_sleep);

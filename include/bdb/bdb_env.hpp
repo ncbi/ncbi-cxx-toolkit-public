@@ -261,6 +261,9 @@ public:
     ///
     void MempTrickle(int percent, int *nwrotep);
 
+    /// Flushes modified pages in the cache to their backing files
+    void MempSync();
+
     /// limits the number of sequential write operations scheduled by the 
     /// library when flushing dirty pages from the cache
     void MpMaxWrite(int maxwrite, int maxwrite_sleep);
@@ -290,20 +293,20 @@ private:
     CBDB_Env(const CBDB_Env&);
     CBDB_Env& operator=(const CBDB_Env&);
 private:
-    DB_ENV*  m_Env;
-    bool     m_Transactional; ///< TRUE if environment is transactional
-    FILE*    m_ErrFile;
-    string   m_HomePath;
-    bool     m_LogInMemory;
+    DB_ENV*                      m_Env;
+    bool                         m_Transactional; ///< TRUE if transactional
+    FILE*                        m_ErrFile;
+    string                       m_HomePath;
+    bool                         m_LogInMemory;
     CBDB_Transaction::ETransSync m_TransSync;
-    unsigned m_MaxLocks;
-    unsigned m_MaxLockers;
-    unsigned m_MaxLockObjects;
-    bool     m_DirectDB;
-    bool     m_DirectLOG;
-    bool     m_CheckPointEnable; ///< Checkpoint enabled
-    unsigned m_CheckPointKB;     ///< Checkpoint KBytes
-    unsigned m_CheckPointMin;    ///< Checkpoint minutes
+    unsigned                     m_MaxLocks;
+    unsigned                     m_MaxLockers;
+    unsigned                     m_MaxLockObjects;
+    bool                         m_DirectDB;
+    bool                         m_DirectLOG;
+    bool                         m_CheckPointEnable; ///< Checkpoint enabled
+    unsigned                     m_CheckPointKB;     ///< Checkpoint KBytes
+    unsigned                     m_CheckPointMin;    ///< Checkpoint minutes
 
 };
 
