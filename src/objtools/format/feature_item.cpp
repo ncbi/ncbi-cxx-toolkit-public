@@ -907,7 +907,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 overlap_gene = GetBestOverlappingFeat(
                     *m_Feat,
                     CSeqFeatData::e_Gene,
-                    sequence::eOverlap_Contains,
+                    sequence::eOverlap_Contained,
                     scope,
                     fBestFeat_NoExpensive);
             } else {
