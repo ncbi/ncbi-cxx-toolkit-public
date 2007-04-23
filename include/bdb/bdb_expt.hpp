@@ -133,7 +133,8 @@ public:
         eQuerySyntaxError,
         eCannotOpenOverflowFile,
         eOverflowFileIO,
-        eQuotaLimit
+        eQuotaLimit,
+        eForeignTransaction
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -153,6 +154,7 @@ public:
         case eCannotOpenOverflowFile:  return "eCannotOpenOverflowFile";
         case eOverflowFileIO:          return "eOverflowFileIO";
         case eQuotaLimit:              return "eQuotaLimit";
+        case eForeignTransaction:      return "eForeignTransaction";
 
         default: return CException::GetErrCodeString();
         }
