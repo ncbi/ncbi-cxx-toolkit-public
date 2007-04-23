@@ -1154,20 +1154,99 @@ bool s_IsmRNA(CBioseq_Handle bsh)
 }
 
 
+bool s_IsmRNA(CBioseq_set_Handle bsh)
+{
+    bool is_mRNA = false;
+    if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
+        CSeq_entry_Handle seh = bsh.GetParentEntry();
+
+        for (CSeqdesc_CI desc(seh, CSeqdesc::e_Molinfo, 1); desc && !is_mRNA; ++desc) {
+            if (desc->GetMolinfo().CanGetBiomol()
+                && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                is_mRNA = true;
+            }
+        }
+    }
+    return is_mRNA;
+}
+
+const CBioSource* s_GetAssociatedBioSource(CBioseq_set_Handle bh)
+{
+    CSeq_entry_Handle seh = bh.GetParentEntry();
+    CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source, 1);
+
+    if (desc_ci) {
+        return &(desc_ci->GetSource());
+    } else {
+        seh = seh.GetParentEntry();
+    
+        if (seh && seh.IsSet()) {
+            return s_GetAssociatedBioSource(seh.GetSet());
+        }
+    }
+    return NULL;        
+}
+
+const CBioSource* s_GetAssociatedBioSource(CBioseq_Handle bh)
+{
+    CSeqdesc_CI desc_ci (bh, CSeqdesc::e_Source, 1);
+
+    if (desc_ci) {
+        return &(desc_ci->GetSource());
+    } else {
+        CSeq_entry_Handle seh = bh.GetParentEntry();
+        seh = seh.GetParentEntry();
+    
+        if (seh && seh.IsSet()) {
+            return s_GetAssociatedBioSource(seh.GetSet());
+        }
+    }
+    return NULL;
+}
+
+
+bool s_IsArtificialSyntheticConstruct (const CBioSource *bsrc)
+{
+    if (bsrc 
+        && bsrc->CanGetOrigin() && bsrc->GetOrigin() == CBioSource::eOrigin_artificial
+        && bsrc->CanGetOrg() && bsrc->GetOrg().CanGetTaxname() && NStr::EqualNocase (bsrc->GetOrg().GetTaxname(), "synthetic construct")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_IsArtificialSyntheticConstruct (CBioseq_Handle bsh)
+{
+    return s_IsArtificialSyntheticConstruct (s_GetAssociatedBioSource(bsh));
+}
+
+bool s_IsArtificialSyntheticConstruct (CBioseq_set_Handle bsh)
+{
+    CSeq_entry_Handle seh = bsh.GetParentEntry();
+    CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source);
+    while (desc_ci) {
+        if (s_IsArtificialSyntheticConstruct (&(desc_ci->GetSource()))) {
+            return true;
+        }
+        ++desc_ci;
+    }
+    
+    return s_IsArtificialSyntheticConstruct (s_GetAssociatedBioSource(bsh));
+}
+
 // Was ExtendSingleGeneOnMRNA in C Toolkit
 // Will change the location of a gene on an mRNA sequence to
 // cover the entire sequence, as long as there is only one gene
 // present and zero or one coding regions present.
-void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
+bool CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh, bool is_master_seq)
 {
-    if (!bsh.CanGetId() || !bsh.CanGetDescr()) {
-        return;
+    bool rval = false;
+    if (!bsh.CanGetId()) {
+        return false;
     }
 
-    if (!s_IsmRNA(bsh)) {
-        return;
-    }
-    
     int num_genes = 0;
     int num_cdss = 0;
     
@@ -1179,7 +1258,7 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
         }
     }
     
-    if (num_genes == 1 && num_cdss < 2) {
+    if (num_genes == 1 && (is_master_seq || num_cdss < 2)) {
         objects::SAnnotSelector sel(CSeqFeatData::eSubtype_gene);
 
         CFeat_CI gene_it(bsh, sel);
@@ -1191,42 +1270,53 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
                 if (!fh.GetSeq_feat().IsNull()) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat);
                     new_gene->Assign(gene_it->GetOriginalFeature());
-                    CRef<CSeq_loc> new_loc = MakeFullLengthLocation(gene_it->GetOriginalFeature().GetLocation(), m_Scope);
-                    new_loc->SetPartialStart (gene_it->GetOriginalFeature().GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
-                    new_loc->SetPartialStop (gene_it->GetOriginalFeature().GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
+                    CRef<CSeq_loc> new_loc = MakeFullLengthLocation(gene_it->GetLocation(), m_Scope);
+                    new_loc->SetPartialStart (gene_it->GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+                    new_loc->SetPartialStop (gene_it->GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
                     
                     new_gene->SetLocation(*new_loc);
                     CSeq_feat_EditHandle efh(fh);
                     efh.Replace(*new_gene);
                     ChangeMade(CCleanupChange::eChangeFeatureLocation);
+                    rval = true;
                 }
             }
         }  
-    }  
+    }
+    return rval;
 }
 
 
 void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh)
-{    
-    for (CBioseq_CI bioseq_ci(bssh); bioseq_ci; ++bioseq_ci) {
-        x_ExtendSingleGeneOnmRNA(*bioseq_ci);
-    }
-}
-
-
-void CCleanup_imp::x_MoveFeaturesOnPartsSets (CSeq_annot_Handle sa)
 {
-    if (sa.IsFtable()) {
-        CFeat_CI feat_ci(sa);
-        while (feat_ci) {
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat_ci->GetLocation());
-            if (bsh.CanGetId()) {
-                CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
-                // put feature in annotation for appropriate part            
-                // remove from this annotation
+    // the first bioseq from a segmented set will be the master sequence
+    bool is_master_seq = false;
+    bool did_extend;
 
+    if (bssh.CanGetClass() && bssh.GetClass() == CBioseq_set::eClass_segset) {
+        if (!s_IsmRNA(bssh) || s_IsArtificialSyntheticConstruct(bssh)) {
+            return;
+        } else {
+            is_master_seq = true;
+        }
+    }
+
+    CConstRef<CBioseq_set> b = bssh.GetCompleteBioseq_set();
+    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+        if ((*it)->IsSet()) {
+            x_ExtendSingleGeneOnmRNA (m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+        } else if ((*it)->IsSeq()) {
+            did_extend = false;
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle((*it)->GetSeq());
+            if (s_IsmRNA (bh) && ! s_IsArtificialSyntheticConstruct (bh)) {
+                did_extend = x_ExtendSingleGeneOnmRNA(bh, is_master_seq);
             }
-            ++feat_ci;                
+            // if we extended the gene to cover the master sequence, we are done
+            if (did_extend && is_master_seq) return;
+            // sequences after the first from a segmented set are parts
+            is_master_seq = false;
         }
     }
 }
@@ -2776,6 +2866,87 @@ void CCleanup_imp::x_RemoveAsn2ffGeneratedComments(CSeq_annot_Handle sa)
             feath.Replace(*new_feat);
         }
         ++feat_ci;
+    }
+}
+
+void CCleanup_imp::x_MoveFeaturesOnPartsToCorrectSeqAnnots(CBioseq_set_Handle bsh)
+{
+    CConstRef<CBioseq_set> bs = bsh.GetCompleteBioseq_set();
+    if (!bs || !bs->IsSetSeq_set()) {
+        return;
+    }
+
+    list< CRef< CSeq_entry > > set = (*bs).GetSeq_set();
+       
+    if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
+        // find master sequence and parts set
+        CBioseq_Handle     master_seq;
+        CBioseq_set_Handle parts_set;
+        bool               found_master_seq = false, found_parts_set = false;
+
+        ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
+                case CSeq_entry::e_Seq:
+                    master_seq = m_Scope->GetBioseqHandle ((*it)->GetSeq());
+                    found_master_seq = true;
+                    break;
+                case CSeq_entry::e_Set:
+                    parts_set = m_Scope->GetBioseq_setHandle((*it)->GetSet());
+                    found_parts_set = true;
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+        if (!found_master_seq || !found_parts_set) {
+            return;
+        }
+
+        // copy seqfeat handles to not break iterator while moving
+        // also, don't need to create SeqAnnot on master sequence unless there
+        // are features to put in it
+        vector<CSeq_feat_EditHandle> sfh; 
+
+        CFeat_CI feat_ci(parts_set.GetParentEntry());
+        while (feat_ci) {
+            const CSeq_loc& feat_loc = feat_ci->GetOriginalFeature().GetLocation();
+            if (!feat_loc.GetId()) {
+                // add to list to move
+                sfh.push_back(CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
+            }
+            ++feat_ci;
+        } 
+
+        if (sfh.size() > 0) {
+            CSeq_annot_EditHandle sah;
+            CSeq_annot_CI annot_it(master_seq.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+
+            while (annot_it && !annot_it->IsFtable()) {
+                ++annot_it;
+            }
+            if (annot_it) {
+                sah = (*annot_it).GetEditHandle();
+            } else {
+                CRef<CSeq_annot> new_annot(new CSeq_annot);
+                new_annot->SetData().SetFtable();                        
+                CBioseq_EditHandle master_edit = master_seq.GetEditHandle();
+                master_edit.AttachAnnot(*new_annot);
+                sah = m_Scope->GetSeq_annotEditHandle(*new_annot);
+            }
+
+            ITERATE (vector<CSeq_feat_EditHandle>, it, sfh) {
+                sah.TakeFeat (*it);
+                ChangeMade(CCleanupChange::eMoveFeat);
+            }
+        }
+    } else {
+        // look for segsets in this set       
+        ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            if ((*it)->IsSet()) {
+                x_MoveFeaturesOnPartsToCorrectSeqAnnots (m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+            }
+        }
     }
 }
 

@@ -286,9 +286,10 @@ private:
     void x_CheckCodingRegionEnds (CSeq_annot_Handle sah);
     
     void x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh);
-    void x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh);
+    bool x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh, bool is_master_seq);
     
-    void x_MoveFeaturesOnPartsSets (CSeq_annot_Handle sa);
+    void x_MoveFeaturesOnPartsToCorrectSeqAnnots(CBioseq_set_Handle bsh);
+
     void x_RemovePseudoProducts (CSeq_annot_Handle sa);
     void x_RemoveGeneXref(CRef<CSeq_feat> feat);
     void x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa);

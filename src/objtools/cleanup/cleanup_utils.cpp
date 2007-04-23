@@ -830,18 +830,42 @@ bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
 }
 
 
-CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope)
+CRef<CSeq_loc> MakeFullLengthLocation(CBioseq_Handle bh, CScope* scope, CRef<CSeq_loc> new_loc, bool &first)
 {
-    // Create a location that covers the entire sequence.
+    bool is_master_seq = false;
 
-    // if on segmented set, create location for each segment
-    CRef<CSeq_loc> new_loc(new CSeq_loc);
-    CSeq_loc_CI loc_it (loc);
-    bool first = true;
-    while (loc_it) {
-        CBioseq_Handle bh = scope->GetBioseqHandle(loc_it.GetSeq_id());
+    // if this is the master sequence, add whole locations for each of the parts
+    CSeq_entry_Handle seh = bh.GetParentEntry();
+    if (seh) {
+        seh = seh.GetParentEntry();
+    }
+    if (seh && seh.IsSet()) {
+        CBioseq_set_Handle bsh = seh.GetSet();
+        if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
+            // this is the master sequence
+            is_master_seq = true;
+            // add whole loc for each part
+            CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
+            list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+            ITERATE (list< CRef< CSeq_entry > >, it, set) {
+                if ((*it)->IsSet()) {
+                    const CBioseq_set& bs = (*it)->GetSet();
+                    if (bs.CanGetClass() && bs.GetClass() == CBioseq_set::eClass_parts) {
+                        list< CRef< CSeq_entry > > parts_set = bs.GetSeq_set();
+                        ITERATE (list< CRef< CSeq_entry > >, it2, parts_set) {
+                            if ((*it2)->IsSeq()) {
+                                new_loc = MakeFullLengthLocation (scope->GetBioseqHandle((*it2)->GetSeq()), scope, new_loc, first);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (!is_master_seq) {
         CRef <CSeq_loc> loc_part(new CSeq_loc);
-        
+
         CConstRef <CSeq_id> id = sequence::GetId (bh, sequence::eGetId_Default).GetSeqId();
         CRef <CSeq_id> new_id(new CSeq_id);
         new_id->Assign(*id);
@@ -857,6 +881,27 @@ CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope)
                                             CSeq_loc::fMerge_Abutting, scope);
             new_loc = tmp_loc;
         }
+    }
+    return new_loc;
+}
+
+CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope)
+{
+    // Create a location that covers the entire sequence.
+
+    // if on segmented set, create location for each segment
+    CRef<CSeq_loc> new_loc(new CSeq_loc);
+    CSeq_loc_CI loc_it (loc);
+    bool first = true;
+    CBioseq_Handle last_bh;
+    while (loc_it) {
+        CBioseq_Handle bh = scope->GetBioseqHandle(loc_it.GetSeq_id());
+        if (!first && bh == last_bh) {
+            // skip - only one location per sequence 
+        } else {
+            new_loc = MakeFullLengthLocation (bh, scope, new_loc, first);
+        }
+        last_bh = bh;
         ++loc_it;
     }
     return new_loc;   
