@@ -93,6 +93,8 @@ BEGIN_SCOPE( blast )
 USING_SCOPE( ncbi::objects );
 USING_SCOPE( ncbi::blastdbindex );
 
+int MinIndexWordSize() { return 16; }
+
 /** No-op presearch function. Used when index search is not enables.
     @sa DbIndexPreSearchFnType()
 */

@@ -1243,18 +1243,7 @@ inline void CBlastOptionsLocal::SetMBIndexLoaded( bool index_loaded )
 inline void CBlastOptionsLocal::SetUseIndex( bool use_index, const string & index_name )
 {
     m_UseMBIndex = use_index;
-
-    if( use_index ) {
-        if( GetLookupTableType() == eMBLookupTable ) {
-            SetLookupTableType( eIndexedMBLookupTable );
-            m_MBIndexName = index_name;
-        }
-    }
-    else {
-        if( GetLookupTableType() == eIndexedMBLookupTable ) {
-            SetLookupTableType( eMBLookupTable );
-        }
-    }
+    m_MBIndexName = index_name;
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

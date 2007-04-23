@@ -67,6 +67,11 @@ BlastSeqSrc * CloneSeqSrcInit( BlastSeqSrc * src );
 NCBI_XBLAST_EXPORT
 void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src );
 
+/** Get minimal word size accepted by indexing library.
+*/
+NCBI_XBLAST_EXPORT
+int MinIndexWordSize();
+
 /** Type of a callback that is called to invoke index based search.
 
     @param seq_src      Indexed database source object.

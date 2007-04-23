@@ -338,6 +338,27 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
 {
     _ASSERT(options->GetUseIndex());
 
+    if( options->GetProgramType() != eBlastTypeBlastn ) {
+        ERR_POST( Warning << "Database indexing is available for blastn only."
+                          << " Database index will not be used." );
+        options->SetUseIndex( false );
+        return;
+    }
+
+    if( options->GetMBTemplateLength() > 0 ) {
+        ERR_POST( Warning << "Database indexing is not available for discontiguous searches."
+                          << " Database index will not be used." );
+        options->SetUseIndex( false );
+        return;
+    }
+
+    if( options->GetWordSize() < MinIndexWordSize() ) {
+        ERR_POST( Warning << "Megablast database index requires word size greater than 15."
+                          << " Database index will not be used." );
+        options->SetUseIndex( false );
+        return;
+    }
+
     if (options->GetMBIndexLoaded()) {
         return;
     }
@@ -347,7 +368,7 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
     BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
 
     if( new_seqsrc == 0 ) {
-        ERR_POST( Error << "Allocation of new BlastSeqSrc structure failed."
+        ERR_POST( Warning << "Allocation of new BlastSeqSrc structure failed."
                           << " Database index will not be used." );
         options->SetUseIndex( false );
         return;
@@ -357,7 +378,7 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
             options->GetIndexName(), new_seqsrc );
 
     if( ind_seqsrc == 0 ) {
-        ERR_POST( Error << "Allocation of BlastSeqSrc structure for index failed."
+        ERR_POST( Warning << "Allocation of BlastSeqSrc structure for index failed."
                           << " Database index will not be used." );
         free( new_seqsrc );
         options->SetUseIndex( false );
@@ -367,6 +388,7 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
     CloneSeqSrc( seqsrc, ind_seqsrc );
     free( ind_seqsrc );
     options->SetMBIndexLoaded();
+    options->SetLookupTableType( eIndexedMBLookupTable );
 }
 
 SInternalData::SInternalData()
