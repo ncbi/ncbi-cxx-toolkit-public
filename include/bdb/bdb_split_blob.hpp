@@ -741,7 +741,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id, 
-                                                 size_t*    blob_size)
+                                                  size_t*    blob_size)
 {
     unsigned coord[2];
     bool found;
@@ -755,7 +755,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
-        dbp.db.SetTransaction(trans);
+        dbp.db.SetTransaction(m_Trans);
         dbp.db->id = id;
         EBDB_ErrCode e = dbp.db->Fetch();
         if (e != eBDB_Ok) {
