@@ -38,4 +38,10 @@ BEGIN_NCBI_SCOPE
 ITransaction::~ITransaction()
 {}
 
+ITransactional::~ITransactional()
+{}
+
+ITransactionalRegistry::~ITransactionalRegistry()
+{}
+
 END_NCBI_SCOPE

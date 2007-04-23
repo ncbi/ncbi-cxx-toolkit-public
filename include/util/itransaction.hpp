@@ -36,6 +36,32 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup Transact
+ *
+ * @{
+ *
+ *  The idea of ITransactional and ITransactionalRegistry
+ *  is that both form a pair of associated objects.
+ *  When Transaction goes out of scope it informs subjects of
+ *  transaction that they are free of the transaction context.
+ *
+ *  <pre>
+ *  {{
+ *  File        f1, f2;
+ *  Transaction tr;
+ *  f1.SetTransaction(tr);
+ *  f2.SetTransaction(tr);
+ *  ...... // do something with f1,f2
+ *  tr.Commit();
+ *  }}           <---- here transaction goes out of scope and
+ *                     all associated objects(transactional) are 
+ *                     free (from transaction)
+ *     Transaction in this case is derived from:
+ *                    ITransaction + ITransactionalRegistry
+ *     File  is derived of ITransactional
+ *  </pre>
+ *
+ */
 
 /// Transaction interface
 class NCBI_XUTIL_EXPORT ITransaction
@@ -48,6 +74,41 @@ public:
     /// Abort transaction 
     virtual void Rollback() = 0;
 };
+
+
+/// Interface for transactional objects. 
+/// Support of transaction association.
+///
+class NCBI_XUTIL_EXPORT ITransactional
+{
+public:
+    virtual ~ITransactional();
+
+    /// Establish transaction association  
+    ///
+    virtual void SetTransaction(ITransaction* trans) = 0;
+
+    /// Remove transaction association 
+    /// (must be established by  SetTransaction
+    ///
+    virtual void RemoveTransaction(ITransaction* trans) = 0;
+};
+
+/// Registration of transactional objects
+///
+class NCBI_XUTIL_EXPORT ITransactionalRegistry
+{
+public:
+    virtual ~ITransactionalRegistry();
+
+    /// Register transactional object
+    virtual void Add(ITransactional*) = 0;
+
+    /// Forget the transactional object
+    virtual void Remove(ITransactional*) = 0;
+};
+
+/* @} */
 
 
 END_NCBI_SCOPE
