@@ -47,7 +47,7 @@ class CAgpErr; // full definition below
 //// A container for both the original string column values (Get*() methods)
 //// and the values converted to int, char, bool types (member variables).
 //// Detects formatting errors within a single line.
-class CAgpRow
+class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
   // string line; int line_num;  ??
@@ -72,20 +72,20 @@ public:
   SIZE_TYPE pcomment; // NPOS if no comment for this line, 0 if entire line is comment
   vector<string> cols;
 
-  inline string& GetObject       () {return cols[0];} // no corresponding member variable
-  inline string& GetObjectBeg    () {return cols[1];}
-  inline string& GetObjectEnd    () {return cols[2];}
-  inline string& GetPartNumber   () {return cols[3];}
-  inline string& GetComponentType() {return cols[4];}
+  string& GetObject       () {return cols[0];} // no corresponding member variable
+  string& GetObjectBeg    () {return cols[1];}
+  string& GetObjectEnd    () {return cols[2];}
+  string& GetPartNumber   () {return cols[3];}
+  string& GetComponentType() {return cols[4];}
 
-  inline string& GetComponentId  () {return cols[5];}  // no corresponding member variable
-  inline string& GetComponentBeg () {return cols[6];}
-  inline string& GetComponentEnd () {return cols[7];}
-  inline string& GetOrientation  () {return cols[8];}
+  string& GetComponentId  () {return cols[5];}  // no corresponding member variable
+  string& GetComponentBeg () {return cols[6];}
+  string& GetComponentEnd () {return cols[7];}
+  string& GetOrientation  () {return cols[8];}
 
-  inline string& GetGapLength() {return cols[5];}
-  inline string& GetGapType  () {return cols[6];}
-  inline string& GetLinkage  () {return cols[7];}
+  string& GetGapLength() {return cols[5];}
+  string& GetGapType  () {return cols[6];}
+  string& GetLinkage  () {return cols[7];}
 
   int ParseComponentCols(bool log_errors=true);
   int ParseGapCols(bool log_errors=true);
@@ -135,16 +135,19 @@ public:
   static const string& GetErrors();
 };
 
+
+
+
 //// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
 //// Intented as a superclass for more complex readers.
-class CAgpReader
+class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
   CAgpReader();
   virtual ~CAgpReader();
 
   virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
-  virtual int CAgpReader::Finalize(); // by default, invoked automatically at the end of ReadStream()
+  virtual int Finalize(); // by default, invoked automatically at the end of ReadStream()
 
   bool at_beg;  // at the first valid gap or component line (this_row)
                 // prev_row undefined
@@ -202,7 +205,7 @@ public:
 //// are expected to die after a single incorrect line.
 //// (agp_validate uses a subclass can better handle
 //// errors on multiple lines, in multiple files, etc.)
-class CAgpErr
+class NCBI_XOBJREAD_EXPORT CAgpErr
 {
 public:
   virtual ~CAgpErr() {}
@@ -217,7 +220,7 @@ public:
   // Accumulate multiple errors on a single line (messages, messages_apply_to);
   // ignore warnings.
   virtual void Msg(int code, const string& details, int appliesTo=AT_ThisLine);
-  inline void Msg(int code, int appliesTo=AT_ThisLine)
+  void Msg(int code, int appliesTo=AT_ThisLine)
   {
     Msg(code, NcbiEmptyString, appliesTo);
   }
@@ -225,7 +228,7 @@ public:
   string messages;
   int messages_apply_to; // which lines to print before the message: previous, current, both
   int last_error;
-  inline void clear() {last_error=messages_apply_to=0; messages=""; }
+  void clear() {last_error=messages_apply_to=0; messages=""; }
 
   // When adding new errors to enum TCode, also update msg[]
   enum TCode{
@@ -283,5 +286,5 @@ public:
 
 
 END_NCBI_SCOPE
-#endif /* OBJTOOLS_READERS___AGP_UTIL__HPP */
 
+#endif /* OBJTOOLS_READERS___AGP_UTIL__HPP */
