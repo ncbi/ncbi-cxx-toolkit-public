@@ -64,6 +64,27 @@ const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
 
+static void s_StripTags( string& str )
+{
+    // Purpose: Strip HTML like tags from the given string
+    string stripped;
+    unsigned int gt = str.find('<');
+    while ( gt != string::npos ) {
+        unsigned int lt = str.find( '>', gt );
+        if ( lt != string::npos ) {
+            stripped += str.substr( 0, gt );
+            str = str.substr( lt+1 );
+            gt = str.find('<');
+        }
+        else {
+            stripped += str;
+            break;
+        }
+    }
+    str = stripped;
+}
+
+
 static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 {
     return (flags & IFlatQVal::fIsNote)  &&  !ctx.Config().IsModeDump();
@@ -344,6 +365,7 @@ void CFlatGeneQVal::Format
 {
     if (ctx.IsJournalScan()) {
         Sgml2Ascii(m_Value);
+        s_StripTags(m_Value);
     }
     CFlatStringQVal::Format(quals, name, ctx, flags);
 }
