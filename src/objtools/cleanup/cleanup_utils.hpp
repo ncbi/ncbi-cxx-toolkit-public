@@ -389,6 +389,18 @@ bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope);
 
 CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case = NStr::eNocase);
 
+bool IsmRNA(CBioseq_Handle bsh);
+bool IsmRNA(CBioseq_set_Handle bsh);
+const CBioSource* GetAssociatedBioSource(CBioseq_set_Handle bh);
+const CBioSource* GetAssociatedBioSource(CBioseq_Handle bh);
+bool IsArtificialSyntheticConstruct (const CBioSource *bsrc);
+bool IsArtificialSyntheticConstruct (CBioseq_Handle bsh);
+bool IsArtificialSyntheticConstruct (CBioseq_set_Handle bsh);
+
+
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

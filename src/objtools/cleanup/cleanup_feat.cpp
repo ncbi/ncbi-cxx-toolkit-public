@@ -1141,101 +1141,6 @@ void CCleanup_imp::x_CheckCodingRegionEnds (CSeq_annot_Handle sa)
 }
 
 
-bool s_IsmRNA(CBioseq_Handle bsh)
-{
-    bool is_mRNA = false;
-    for (CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo); desc && !is_mRNA; ++desc) {
-        if (desc->GetMolinfo().CanGetBiomol()
-            && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-            is_mRNA = true;
-        }
-    }
-    return is_mRNA;
-}
-
-
-bool s_IsmRNA(CBioseq_set_Handle bsh)
-{
-    bool is_mRNA = false;
-    if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
-        CSeq_entry_Handle seh = bsh.GetParentEntry();
-
-        for (CSeqdesc_CI desc(seh, CSeqdesc::e_Molinfo, 1); desc && !is_mRNA; ++desc) {
-            if (desc->GetMolinfo().CanGetBiomol()
-                && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                is_mRNA = true;
-            }
-        }
-    }
-    return is_mRNA;
-}
-
-const CBioSource* s_GetAssociatedBioSource(CBioseq_set_Handle bh)
-{
-    CSeq_entry_Handle seh = bh.GetParentEntry();
-    CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source, 1);
-
-    if (desc_ci) {
-        return &(desc_ci->GetSource());
-    } else {
-        seh = seh.GetParentEntry();
-    
-        if (seh && seh.IsSet()) {
-            return s_GetAssociatedBioSource(seh.GetSet());
-        }
-    }
-    return NULL;        
-}
-
-const CBioSource* s_GetAssociatedBioSource(CBioseq_Handle bh)
-{
-    CSeqdesc_CI desc_ci (bh, CSeqdesc::e_Source, 1);
-
-    if (desc_ci) {
-        return &(desc_ci->GetSource());
-    } else {
-        CSeq_entry_Handle seh = bh.GetParentEntry();
-        seh = seh.GetParentEntry();
-    
-        if (seh && seh.IsSet()) {
-            return s_GetAssociatedBioSource(seh.GetSet());
-        }
-    }
-    return NULL;
-}
-
-
-bool s_IsArtificialSyntheticConstruct (const CBioSource *bsrc)
-{
-    if (bsrc 
-        && bsrc->CanGetOrigin() && bsrc->GetOrigin() == CBioSource::eOrigin_artificial
-        && bsrc->CanGetOrg() && bsrc->GetOrg().CanGetTaxname() && NStr::EqualNocase (bsrc->GetOrg().GetTaxname(), "synthetic construct")) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-bool s_IsArtificialSyntheticConstruct (CBioseq_Handle bsh)
-{
-    return s_IsArtificialSyntheticConstruct (s_GetAssociatedBioSource(bsh));
-}
-
-bool s_IsArtificialSyntheticConstruct (CBioseq_set_Handle bsh)
-{
-    CSeq_entry_Handle seh = bsh.GetParentEntry();
-    CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source);
-    while (desc_ci) {
-        if (s_IsArtificialSyntheticConstruct (&(desc_ci->GetSource()))) {
-            return true;
-        }
-        ++desc_ci;
-    }
-    
-    return s_IsArtificialSyntheticConstruct (s_GetAssociatedBioSource(bsh));
-}
-
 // Was ExtendSingleGeneOnMRNA in C Toolkit
 // Will change the location of a gene on an mRNA sequence to
 // cover the entire sequence, as long as there is only one gene
@@ -1294,7 +1199,7 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh)
     bool did_extend;
 
     if (bssh.CanGetClass() && bssh.GetClass() == CBioseq_set::eClass_segset) {
-        if (!s_IsmRNA(bssh) || s_IsArtificialSyntheticConstruct(bssh)) {
+        if (!IsmRNA(bssh) || IsArtificialSyntheticConstruct(bssh)) {
             return;
         } else {
             is_master_seq = true;
@@ -1310,7 +1215,7 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh)
         } else if ((*it)->IsSeq()) {
             did_extend = false;
             CBioseq_Handle bh = m_Scope->GetBioseqHandle((*it)->GetSeq());
-            if (s_IsmRNA (bh) && ! s_IsArtificialSyntheticConstruct (bh)) {
+            if (IsmRNA (bh) && ! IsArtificialSyntheticConstruct (bh)) {
                 did_extend = x_ExtendSingleGeneOnmRNA(bh, is_master_seq);
             }
             // if we extended the gene to cover the master sequence, we are done

@@ -49,6 +49,12 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+
+#include <objmgr/seqdesc_ci.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -939,6 +945,106 @@ CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase
         
     return genome;
 }
+
+
+bool IsmRNA(CBioseq_Handle bsh)
+{
+    bool is_mRNA = false;
+    for (CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo); desc && !is_mRNA; ++desc) {
+        if (desc->GetMolinfo().CanGetBiomol()
+            && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+            is_mRNA = true;
+        }
+    }
+    return is_mRNA;
+}
+
+
+bool IsmRNA(CBioseq_set_Handle bsh)
+{
+    bool is_mRNA = false;
+    if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
+        CSeq_entry_Handle seh = bsh.GetParentEntry();
+
+        for (CSeqdesc_CI desc(seh, CSeqdesc::e_Molinfo, 1); desc && !is_mRNA; ++desc) {
+            if (desc->GetMolinfo().CanGetBiomol()
+                && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                is_mRNA = true;
+            }
+        }
+    }
+    return is_mRNA;
+}
+
+
+const CBioSource* GetAssociatedBioSource(CBioseq_set_Handle bh)
+{
+    CSeq_entry_Handle seh = bh.GetParentEntry();
+    CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source, 1);
+
+    if (desc_ci) {
+        return &(desc_ci->GetSource());
+    } else {
+        seh = seh.GetParentEntry();
+    
+        if (seh && seh.IsSet()) {
+            return GetAssociatedBioSource(seh.GetSet());
+        }
+    }
+    return NULL;        
+}
+
+
+const CBioSource* GetAssociatedBioSource(CBioseq_Handle bh)
+{
+    CSeqdesc_CI desc_ci (bh, CSeqdesc::e_Source, 1);
+
+    if (desc_ci) {
+        return &(desc_ci->GetSource());
+    } else {
+        CSeq_entry_Handle seh = bh.GetParentEntry();
+        seh = seh.GetParentEntry();
+    
+        if (seh && seh.IsSet()) {
+            return GetAssociatedBioSource(seh.GetSet());
+        }
+    }
+    return NULL;
+}
+
+
+bool IsArtificialSyntheticConstruct (const CBioSource *bsrc)
+{
+    if (bsrc 
+        && bsrc->CanGetOrigin() && bsrc->GetOrigin() == CBioSource::eOrigin_artificial
+        && bsrc->CanGetOrg() && bsrc->GetOrg().CanGetTaxname() && NStr::EqualNocase (bsrc->GetOrg().GetTaxname(), "synthetic construct")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool IsArtificialSyntheticConstruct (CBioseq_Handle bsh)
+{
+    return IsArtificialSyntheticConstruct (GetAssociatedBioSource(bsh));
+}
+
+
+bool IsArtificialSyntheticConstruct (CBioseq_set_Handle bsh)
+{
+    CSeq_entry_Handle seh = bsh.GetParentEntry();
+    CSeqdesc_CI desc_ci (seh, CSeqdesc::e_Source);
+    while (desc_ci) {
+        if (IsArtificialSyntheticConstruct (&(desc_ci->GetSource()))) {
+            return true;
+        }
+        ++desc_ci;
+    }
+    
+    return IsArtificialSyntheticConstruct (GetAssociatedBioSource(bsh));
+}
+
 
 
 END_SCOPE(objects)
