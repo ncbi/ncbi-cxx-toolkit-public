@@ -115,10 +115,11 @@ public:
                 if (seq_id->Match(*seq_id_db)) {
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
-
+/*
                     LOG_POST(Info << "LDS: Local object " << seq_id_str
                                   << " id=" << object_id << " matches "
                                   << seq_id->AsFastaString());
+*/
 
                     return;
                 }
@@ -165,11 +166,11 @@ public:
                 if (seq_id->Match(*seq_id_db)) {
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
-
+/*
                     LOG_POST(Info << "LDS: Local object " << seq_id_str
                                   << " id=" << object_id << " matches "
                                   << seq_id->AsFastaString());
-
+*/
                     return;
                 }
             } // ITERATE
