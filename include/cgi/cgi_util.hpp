@@ -512,7 +512,7 @@ public:
         /// Any other not from list above.
         /// User agent string starts with "Mozilla/x.x (compatible;*".
         /// Not Gecko-based.
-        eMozillaCompatible,     ///< Mozilla-compatible
+        eMozillaCompatible      ///< Mozilla-compatible
     };
 
     /// Browser engine types.
