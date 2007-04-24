@@ -73,7 +73,7 @@ private:
     StyleSettings *editedSettings;
     const StyleSettings originalSettings;
     const StructureSet *structureSet;
-    bool changedSinceApply, changedEver;
+    bool changedSinceApply, changedEver, initialized;
 
     FloatingPointSpinCtrl *fpSpaceFill, *fpBallRadius, *fpStickRadius, *fpTubeRadius,
         *fpTubeWormRadius, *fpHelixRadius, *fpStrandWidth, *fpStrandThickness;

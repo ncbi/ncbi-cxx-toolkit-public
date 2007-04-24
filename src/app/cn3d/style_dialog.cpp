@@ -159,7 +159,7 @@ END_EVENT_TABLE()
 StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const StructureSet *set) :
     wxDialog(parent, -1, "Style Options", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     editedSettings(settingsToEdit), originalSettings(*settingsToEdit),
-    structureSet(set), changedSinceApply(false), changedEver(false)
+    structureSet(set), changedSinceApply(false), changedEver(false), initialized(false)
 {
     // setup maps for associating style types with strings
     SetupStyleStrings();
@@ -185,6 +185,8 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
     topSizer->Fit(this);
     topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
+
+    initialized = true;
 }
 
 StyleDialog::~StyleDialog(void)
@@ -635,6 +637,10 @@ void StyleDialog::OnChange(wxCommandEvent& event)
 
 void StyleDialog::OnSpin(wxSpinEvent& event)
 {
+    if (!initialized) {
+        event.Skip();
+        return;
+    }
     wxCommandEvent fake;
     OnChange(fake);
 }
