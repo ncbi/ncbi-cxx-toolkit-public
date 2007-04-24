@@ -42,6 +42,8 @@
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cn3d_pssm.hpp"
 #include "block_multiple_alignment.hpp"
 #include "sequence_set.hpp"

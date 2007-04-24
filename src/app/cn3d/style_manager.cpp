@@ -53,6 +53,8 @@
 #include <memory>
 #include <string.h> // for memcpy()
 
+#include "remove_header_conflicts.hpp"
+
 #include "style_manager.hpp"
 #include "structure_set.hpp"
 #include "chemical_graph.hpp"

@@ -39,6 +39,8 @@
 #include <map>
 #include <memory>
 
+#include "remove_header_conflicts.hpp"
+
 #include "alignment_set.hpp"
 #include "sequence_set.hpp"
 #include "structure_set.hpp"

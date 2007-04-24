@@ -41,6 +41,8 @@
 #include <objects/mmdb3/Chem_graph_pntrs.hpp>
 #include <objects/mmdb2/Surface_coordinates.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "coord_set.hpp"
 #include "atom_set.hpp"
 #include "object_3d.hpp"

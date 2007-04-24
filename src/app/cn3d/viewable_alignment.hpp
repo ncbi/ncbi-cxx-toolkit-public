@@ -45,6 +45,8 @@ class wxColour;
 class ViewableAlignment
 {
 public:
+    virtual ~ViewableAlignment(void) { }
+    
     // should set the overall size of the display, in columns (width) and rows (height)
     virtual void GetSize(unsigned int *columns, unsigned int *rows) const = 0;
 

@@ -60,6 +60,8 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "sequence_set.hpp"
 #include "molecule.hpp"
 #include "structure_set.hpp"

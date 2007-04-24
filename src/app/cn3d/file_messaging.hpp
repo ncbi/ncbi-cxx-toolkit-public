@@ -55,6 +55,8 @@ BEGIN_NCBI_SCOPE
 class MessageResponder
 {
 public:
+    virtual ~MessageResponder(void) { }
+
     // called when a (new) command is received
     virtual void ReceivedCommand(const string& fromApp, unsigned long id,
         const string& command, const string& data) = 0;

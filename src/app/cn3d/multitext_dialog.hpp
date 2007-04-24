@@ -56,6 +56,8 @@ class MultiTextDialog;
 class MultiTextDialogOwner
 {
 public:
+    virtual ~MultiTextDialogOwner(void) { }
+    
     virtual void DialogTextChanged(const MultiTextDialog *changed) = 0;
     virtual void DialogDestroyed(const MultiTextDialog *destroyed) = 0;
 };

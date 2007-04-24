@@ -42,6 +42,8 @@
 #include <algo/structure/threader/thrdatd.h>
 #include <algo/structure/threader/thrddecl.h>
 
+#include "remove_header_conflicts.hpp"
+
 #include "block_multiple_alignment.hpp"
 #include "cn3d_threader.hpp"
 #include "sequence_set.hpp"

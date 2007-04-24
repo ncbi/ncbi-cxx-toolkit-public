@@ -38,6 +38,8 @@
 #include <objects/mmdb1/Residue_id.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "bond.hpp"
 #include "atom_set.hpp"
 #include "structure_set.hpp"

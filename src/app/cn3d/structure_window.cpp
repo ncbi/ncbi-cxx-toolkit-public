@@ -42,6 +42,8 @@
 #include <algorithm>
 #include <memory>
 
+#include "remove_header_conflicts.hpp"
+
 #ifdef __WXMSW__
 #include <windows.h>
 #include <wx/msw/winundef.h>

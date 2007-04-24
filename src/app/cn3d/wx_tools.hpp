@@ -72,6 +72,9 @@ class CustomSpinCtrl
 private:
     virtual void OnSpinButtonUp(wxSpinEvent& event) = 0;
     virtual void OnSpinButtonDown(wxSpinEvent& event) = 0;
+
+public:
+    virtual ~CustomSpinCtrl(void) { }
 };
 
 
@@ -131,6 +134,7 @@ public:
         int min, int max, int increment, int initial,
         const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
         const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
+    virtual ~IntegerSpinCtrl(void) { }
 
     bool GetInteger(int *value) const;
     bool GetUnsignedInteger(unsigned int *value) const;
@@ -185,6 +189,7 @@ public:
         double min, double max, double increment, double initial,
         const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
         const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
+    virtual ~FloatingPointSpinCtrl(void) { }
 
     bool GetDouble(double *value) const;
     bool SetDouble(double value);

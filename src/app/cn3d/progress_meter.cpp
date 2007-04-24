@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "progress_meter.hpp"
 #include "cn3d_tools.hpp"
 

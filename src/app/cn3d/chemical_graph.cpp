@@ -48,6 +48,8 @@
 #include <objects/mmdb1/Atom_id.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "chemical_graph.hpp"
 #include "asn_reader.hpp"
 #include "molecule.hpp"

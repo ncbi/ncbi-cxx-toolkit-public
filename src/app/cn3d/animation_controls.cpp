@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "animation_controls.hpp"
 #include "wx_tools.hpp"
 #include "cn3d_tools.hpp"

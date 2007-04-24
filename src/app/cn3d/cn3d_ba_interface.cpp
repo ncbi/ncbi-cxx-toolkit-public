@@ -41,6 +41,8 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #ifdef __WXMSW__
 #include <windows.h>
 #include <wx/msw/winundef.h>

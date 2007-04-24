@@ -52,6 +52,8 @@
 
 #include <list>
 
+#include "remove_header_conflicts.hpp"
+
 #include "command_processor.hpp"
 #include "structure_window.hpp"
 #include "cn3d_glcanvas.hpp"

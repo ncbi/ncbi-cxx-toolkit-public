@@ -57,6 +57,8 @@
 
 #include <png.h>
 
+#include "remove_header_conflicts.hpp"
+
 #include <wx/platform.h>
 
 #include "cn3d_png.hpp"

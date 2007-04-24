@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
 
 #if defined(__WXMSW__)
 #include <windows.h>
@@ -51,6 +52,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+
+#include "remove_header_conflicts.hpp"
 
 #ifdef __WXMSW__
 #include <windows.h>

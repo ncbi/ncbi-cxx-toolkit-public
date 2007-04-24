@@ -32,8 +32,13 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+
+#include "remove_header_conflicts.hpp"
+
 #include "vector_math.hpp"
 #include "cn3d_tools.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 

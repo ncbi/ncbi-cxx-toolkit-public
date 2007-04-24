@@ -39,6 +39,8 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #ifdef __WXMSW__
 #include <windows.h>
 #include <wx/msw/winundef.h>

@@ -48,6 +48,8 @@
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "messenger.hpp"
 #include "structure_window.hpp"
 #include "cn3d_glcanvas.hpp"
@@ -445,7 +447,7 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     }
 
     // check to see that all highlights are on a single structure object
-    int mmdbID;
+    int mmdbID = 0;
     MoleculeHighlightMap::const_iterator h, he = highlights.end();
     for (h=highlights.begin(); h!=he; ++h) {
         if (h == highlights.begin()) mmdbID = h->first->mmdbID;

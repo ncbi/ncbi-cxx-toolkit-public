@@ -41,6 +41,8 @@
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/mmdb1/Mmdb_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 // for file/directory manipulation stuff
 #ifdef __WXMSW__
 #include <windows.h>

@@ -39,6 +39,8 @@
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "object_3d.hpp"
 #include "opengl_renderer.hpp"
 #include "style_manager.hpp"

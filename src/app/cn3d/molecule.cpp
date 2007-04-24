@@ -42,6 +42,8 @@
 #include <objects/mmdb1/Residue_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "molecule.hpp"
 #include "residue.hpp"
 #include "bond.hpp"

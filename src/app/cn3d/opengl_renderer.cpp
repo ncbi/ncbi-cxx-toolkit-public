@@ -63,6 +63,8 @@
 #define GL_INT_TYPE GLint
 #define GL_DOUBLE_TYPE GLdouble
 
+#include "remove_header_conflicts.hpp"
+
 #include "opengl_renderer.hpp"
 #include "structure_window.hpp"
 #include "cn3d_glcanvas.hpp"

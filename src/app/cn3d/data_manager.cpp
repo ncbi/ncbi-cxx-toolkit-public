@@ -52,6 +52,8 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "asn_reader.hpp"
 #include "data_manager.hpp"
 #include "structure_set.hpp"

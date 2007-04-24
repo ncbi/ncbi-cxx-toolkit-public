@@ -38,6 +38,8 @@
 
 #include <objects/seq/Bioseq.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "sequence_viewer.hpp"
 #include "sequence_viewer_window.hpp"
 #include "sequence_display.hpp"

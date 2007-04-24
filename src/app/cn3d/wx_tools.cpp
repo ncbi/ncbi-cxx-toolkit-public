@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
+#include "remove_header_conflicts.hpp"
+
 #include "wx_tools.hpp"
 #include "cn3d_tools.hpp"
 
@@ -85,7 +87,7 @@ IntegerTextCtrl::IntegerTextCtrl(wxWindow* parent, wxWindowID id, const wxString
     const wxPoint& pos, const wxSize& size, long style,
     const wxValidator& validator, const wxString& name) :
         wxTextCtrl(parent, id, value, pos, size, style | wxTE_PROCESS_ENTER, validator, name),
-        minVal(kMin_Long), maxVal(kMax_Long)
+        minVal(kMin_Int), maxVal(kMax_Int)
 {
 }
 

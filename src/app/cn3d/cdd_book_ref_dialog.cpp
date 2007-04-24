@@ -37,6 +37,8 @@
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/cdd/Cdd_book_ref.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cdd_book_ref_dialog.hpp"
 #include "structure_set.hpp"
 #include "cn3d_tools.hpp"

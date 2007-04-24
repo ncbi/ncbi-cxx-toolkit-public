@@ -47,6 +47,8 @@
 #include <objects/mmdb3/Biostruc_feature_set_descr.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cdd_splash_dialog.hpp"
 #include "structure_window.hpp"
 #include "structure_set.hpp"

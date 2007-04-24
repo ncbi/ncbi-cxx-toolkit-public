@@ -57,6 +57,8 @@
 #include <objects/cn3d/Cn3d_general_style.hpp>
 #include <objects/cn3d/Cn3d_style_settings.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cdd_annot_dialog.hpp"
 #include "structure_set.hpp"
 #include "messenger.hpp"

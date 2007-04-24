@@ -39,6 +39,8 @@
 
 #include <algorithm>
 
+#include "remove_header_conflicts.hpp"
+
 #include "sequence_display.hpp"
 #include "viewer_window_base.hpp"
 #include "viewer_base.hpp"

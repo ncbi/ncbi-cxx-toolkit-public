@@ -36,6 +36,8 @@
 
 #include <memory>
 
+#include "remove_header_conflicts.hpp"
+
 #include <wx/fontutil.h>
 #include <wx/image.h>
 

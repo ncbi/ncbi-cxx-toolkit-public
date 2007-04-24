@@ -32,9 +32,11 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <util/tables/raw_scoremat.h>
+
+#include "remove_header_conflicts.hpp"
 
 #include "block_multiple_alignment.hpp"
 #include "conservation_colorer.hpp"

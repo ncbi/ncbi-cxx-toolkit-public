@@ -26,36 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Class definition for the Show/Hide dialog callback interface
+*      work around some symbol conflicts between ncbi and wx
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_SHOW_HIDE_CALLBACK__HPP
-#define CN3D_SHOW_HIDE_CALLBACK__HPP
-
-#include <corelib/ncbistl.hpp>
-
-#include <vector>
-
-
-BEGIN_SCOPE(Cn3D)
-
-class ShowHideCallbackObject
-{
-public:
-    virtual ~ShowHideCallbackObject(void) { }
-    
-    // called by the ShowHideDialog when the user hits 'done' or 'apply'
-    virtual void ShowHideCallbackFunction(const std::vector < bool > & itemsEnabled) = 0;
-
-    // called when the selection changes - the callback can then change the status
-    // of itemsEnabled, which will in turn be reflected in the listbox selection if
-    // the return value is true
-    virtual bool SelectionChangedCallback(
-        const std::vector < bool >& original, std::vector < bool > & itemsEnabled) { return false; }
-};
-
-END_SCOPE(Cn3D)
-
-#endif // CN3D_SHOW_HIDE_CALLBACK__HPP
+// ncbi uses #args, wx simply 0/1
+#ifdef HAVE_READDIR_R
+#undef HAVE_READDIR_R
+#define HAVE_READDIR_R 1
+#endif

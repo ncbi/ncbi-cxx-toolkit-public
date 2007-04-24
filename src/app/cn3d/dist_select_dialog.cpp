@@ -14,6 +14,10 @@
 #endif
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+
+#include "remove_header_conflicts.hpp"
+
 
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"

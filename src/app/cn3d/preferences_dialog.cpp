@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "preferences_dialog.hpp"
 #include "wx_tools.hpp"
 #include "opengl_renderer.hpp"

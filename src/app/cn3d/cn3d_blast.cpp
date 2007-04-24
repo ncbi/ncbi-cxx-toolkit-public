@@ -45,6 +45,8 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cn3d_blast.hpp"
 #include "block_multiple_alignment.hpp"
 #include "cn3d_pssm.hpp"

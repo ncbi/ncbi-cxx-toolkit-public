@@ -36,6 +36,8 @@
 
 #include <objects/seqalign/Dense_diag.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "block_multiple_alignment.hpp"
 #include "sequence_set.hpp"
 #include "molecule.hpp"

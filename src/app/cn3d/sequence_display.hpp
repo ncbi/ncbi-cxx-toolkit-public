@@ -56,6 +56,8 @@ typedef std::map < BlockMultipleAlignment *, BlockMultipleAlignment * > Old2NewA
 class DisplayRow
 {
 public:
+    virtual ~DisplayRow(void) { }
+    
     virtual unsigned int Width(void) const = 0;
     virtual bool GetCharacterTraitsAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const = 0;
@@ -76,6 +78,7 @@ public:
 
     DisplayRowFromAlignment(unsigned int r, BlockMultipleAlignment *a) :
         row(r), alignment(a) { }
+    virtual ~DisplayRowFromAlignment(void) { }
 
     unsigned int Width(void) const { return alignment->AlignmentWidth(); }
 
@@ -111,6 +114,7 @@ public:
     const unsigned int fromIndex, toIndex;
 
     DisplayRowFromSequence(const Sequence *s, unsigned int from, unsigned int to);
+    virtual ~DisplayRowFromSequence(void) { }
 
     unsigned int Width(void) const { return toIndex - fromIndex + 1; }
 

@@ -38,6 +38,8 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/biblio/PubMedId.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cdd_ref_dialog.hpp"
 #include "structure_set.hpp"
 #include "cn3d_tools.hpp"

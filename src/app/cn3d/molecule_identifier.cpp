@@ -42,6 +42,8 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "molecule_identifier.hpp"
 #include "structure_set.hpp"
 #include "molecule.hpp"

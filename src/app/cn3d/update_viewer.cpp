@@ -68,6 +68,8 @@
 #include <memory>
 #include <algorithm>
 
+#include "remove_header_conflicts.hpp"
+
 #include "update_viewer.hpp"
 #include "asn_reader.hpp"
 #include "update_viewer_window.hpp"

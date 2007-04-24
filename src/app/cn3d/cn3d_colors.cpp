@@ -36,6 +36,8 @@
 
 #include <math.h>
 
+#include "remove_header_conflicts.hpp"
+
 #include "cn3d_colors.hpp"
 #include "cn3d_tools.hpp"
 

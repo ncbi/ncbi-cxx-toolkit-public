@@ -47,6 +47,8 @@
 #include <objects/mmdb2/Conformation_ensemble.hpp>
 #include <objects/mmdb3/Atom_pntrs.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "atom_set.hpp"
 #include "vector_math.hpp"
 #include "cn3d_tools.hpp"

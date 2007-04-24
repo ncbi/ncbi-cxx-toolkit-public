@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "sequence_viewer_widget.hpp"
 #include "viewable_alignment.hpp"
 #include "cn3d_tools.hpp"

@@ -32,6 +32,10 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+
+#include "remove_header_conflicts.hpp"
+
 #include "show_hide_manager.hpp"
 #include "structure_set.hpp"
 #include "molecule.hpp"

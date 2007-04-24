@@ -69,6 +69,8 @@
 #include <objects/cdd/Reject_id.hpp>
 #include <objects/cdd/Update_comment.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "structure_set.hpp"
 #include "data_manager.hpp"
 #include "coord_set.hpp"

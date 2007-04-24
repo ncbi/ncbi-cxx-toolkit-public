@@ -36,6 +36,8 @@
 
 #include <map>
 
+#include "remove_header_conflicts.hpp"
+
 #include "viewer_base.hpp"
 #include "viewer_window_base.hpp"
 #include "sequence_display.hpp"

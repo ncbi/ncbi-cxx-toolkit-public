@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "structure_base.hpp"
 #include "structure_set.hpp"
 #include "cn3d_tools.hpp"

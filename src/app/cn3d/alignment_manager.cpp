@@ -41,6 +41,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/scoremat/scoremat__.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "alignment_manager.hpp"
 #include "sequence_set.hpp"
 #include "alignment_set.hpp"

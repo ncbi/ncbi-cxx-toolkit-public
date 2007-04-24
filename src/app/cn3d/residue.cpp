@@ -46,6 +46,8 @@
 #include <objects/mmdb1/Residue_graph_id.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
 
+#include "remove_header_conflicts.hpp"
+
 #include "residue.hpp"
 #include "bond.hpp"
 #include "structure_set.hpp"
@@ -151,7 +153,7 @@ Residue::Residue(StructureBase *parent,
     // get CResidue_graph*
     // standard (of correct type) or local dictionary?
     const ResidueGraphList *dictionary = NULL;
-    int graphID;
+    int graphID = 0;
     if (residue.GetResidue_graph().IsStandard() &&
         residue.GetResidue_graph().GetStandard().GetBiostruc_residue_graph_set_id().IsOther_database() &&
         residue.GetResidue_graph().GetStandard().GetBiostruc_residue_graph_set_id().GetOther_database().GetDb() == "Standard residue dictionary" &&
