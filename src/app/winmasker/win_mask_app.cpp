@@ -123,6 +123,9 @@ void CWinMaskApplication::Init(void)
                              "the way to handle ambiguity characters",
                              CArgDescriptions::eString, "break" );
 #endif
+    arg_desc->AddDefaultKey( "iformat", "input_format",
+                             "controls the format of the masker input",
+                             CArgDescriptions::eString, "fasta" );
     arg_desc->AddDefaultKey( "oformat", "output_format",
                              "controls the format of the masker output",
                              CArgDescriptions::eString, "interval" );
@@ -250,6 +253,9 @@ void CWinMaskApplication::Init(void)
     arg_desc->SetConstraint( "ambig",
                              (new CArgAllow_Strings())->Allow( "break" ) );
 #endif
+    arg_desc->SetConstraint( "iformat",
+                             (new CArgAllow_Strings())->Allow( "fasta" )
+                             ->Allow( "blastdb" ) );
     arg_desc->SetConstraint( "oformat",
                              (new CArgAllow_Strings())->Allow( "interval" )
                              ->Allow( "fasta" ) );

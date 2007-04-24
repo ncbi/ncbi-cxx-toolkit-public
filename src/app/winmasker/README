@@ -21,7 +21,7 @@ SYNOPSIS
 
     windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-text_match text_match_ids] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
 
-    windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-sdust use_sdust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
+    windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-iformat input_format] [-oformat output_format] [-dust use_dust] [-exclude_ids exclude_id_list] [-ids id_list] [-text_match text_match_ids] [-use_ba use_bit_arrays]
 
 
 DESCRIPTION
@@ -30,15 +30,8 @@ DESCRIPTION
     WinMask module is used to mask potentially repetitive sequences 
     by counting the number of times different n-mers (units) occur 
     in the genome. The DUST module is used to identify and mask low-
-    complexity regions. Two algorithms are currently implemented in
-    DUST module. Option "-dust true" selects the old non symmetric and
-    relatively slow algorithm, that is also used by the C Toolkit
-    version of BLAST software. Option "-sdust true" selects the new
-    DUST algorithm that is symmetric with respect to taking inverse
-    complements and is about 3.5 times faster than the non symmetric
-    algorithm. Symmetric DUST will mask slightly more bases ( usually
-    less than 1.5% more ) compared to non symmetric version.
-
+    complexity regions. 
+    
     The WinMask module works in two stages. During Stage 1, unit 
     counts are collected and stored in a separate file. During 
     Stage 2 that file is used to mask the input sequences. Usually 
@@ -76,7 +69,7 @@ DESCRIPTION
     Stage 2 corresponds to "-mk_counts false", which is the default.
     WindowMasker reads the data generated in Stage 1 and a set of 
     input DNA sequences to output information about masked 
-    subintervals. If "-dust true" or "-sdust true " is specified, then 
+    subintervals. If "-dust true" is specified, then 
     the corresponding algorithm of the DUST module is applied to the 
     input sequences in addition to window based masking. When DUST 
     module is run, the results of the DUST and WinMask modules are 
@@ -278,9 +271,8 @@ Stage 2 Options
 
         default: false
 
-        Use the non symmetric algorithm of the DUST module in addition 
-        to the WinMask module to mask out low-complexity regions. If
-        "-sdust true" is also specified, then "-dust true" is ignored.
+        Use the symmetric algorithm of the DUST module in addition 
+        to the WinMask module to mask out low-complexity regions. 
 
     -input input_file_name
 
@@ -289,6 +281,14 @@ Stage 2 Options
         Specifies the input file for masking. WindowMasker accepts 
         input in FASTA format. If this option is skipped, then the 
         standard input will be used as the source of input. 
+
+    -iformat input_format
+
+        default: fasta
+
+        The possible values are "fasta" for reading sequence data from
+        FASTA formatted file, and "blastdb" for reading sequence data
+        from a BLAST database. 
 
     -oformat output_format
 
@@ -312,13 +312,6 @@ Stage 2 Options
         the value of "-oformat" option. If this option is skipped,
         then the standard output will be used as the output file
         descriptor.
-
-    -sdust true/false
-
-        default: false
-
-        Use the symmetric algorithm of the DUST module in addition 
-        to the WinMask module to mask out low-complexity regions. 
 
     -set_t_high score
 
@@ -667,7 +660,7 @@ Pass 2..........................................................................
     progress information is printed on standard error (stderr).
 
 
-./windowmasker -ustat ustat.15 -input chr1.fa -output chr1.wm -sdust true
+./windowmasker -ustat ustat.15 -input chr1.fa -output chr1.wm -dust true
 
 
     The output in the interval format is written to chr1.wm.

@@ -34,6 +34,7 @@
 #include <corelib/ncbidbg.hpp>
 
 #include "win_mask_fasta_reader.hpp"
+#include "win_mask_bdb_reader.hpp"
 #include "win_mask_writer_int.hpp"
 #include "win_mask_writer_fasta.hpp"
 #include "win_mask_config.hpp"
@@ -44,7 +45,7 @@ USING_SCOPE(objects);
 
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args )
-    : is( !args["mk_counts"].AsBoolean() ? 
+    : is( !args["mk_counts"].AsBoolean() && args["iformat"].AsString() != "blastdb" ? 
           ( !args["input"].AsString().empty() 
             ? new CNcbiIfstream( args["input"].AsString().c_str() ) 
             : static_cast<CNcbiIstream*>(&NcbiCin) ) : NULL ), reader( NULL ), 
@@ -107,14 +108,20 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
 
     if( !mk_counts )
     {
-        if( !*is )
+        if( is && !*is )
         {
             NCBI_THROW( CWinMaskConfigException,
                         eInputOpenFail,
                         args["input"].AsString() );
         }
 
-        reader = new CWinMaskFastaReader( *is );
+        string iformatstr = args["iformat"].AsString();
+
+        if( iformatstr == "fasta" )
+            reader = new CWinMaskFastaReader( *is );
+        else if( iformatstr == "blastdb" )
+            reader = new CWinMaskBDBReader( args["input"].AsString() );
+
         string oformatstr = args["oformat"].AsString();
 
         if( oformatstr == "interval" )
