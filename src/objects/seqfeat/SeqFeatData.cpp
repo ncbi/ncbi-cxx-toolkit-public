@@ -1408,6 +1408,7 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
+    ADD_QUAL(mobile_element);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
@@ -2116,6 +2117,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_locus_tag, "locus_tag"),
     TQualPair(CSeqFeatData::eQual_map, "map"),
     TQualPair(CSeqFeatData::eQual_macronuclear, "macronuclear"),
+    TQualPair(CSeqFeatData::eQual_mobile_element, "mobile_element"),
     TQualPair(CSeqFeatData::eQual_mod_base, "mod_base"),
     TQualPair(CSeqFeatData::eQual_mol_type, "mol_type"),
     TQualPair(CSeqFeatData::eQual_note, "note"),

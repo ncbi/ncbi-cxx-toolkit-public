@@ -259,6 +259,7 @@ public:
         eQual_locus_tag,
         eQual_map,
         eQual_macronuclear,
+        eQual_mobile_element,
         eQual_mod_base,
         eQual_mol_type,
         eQual_note,
