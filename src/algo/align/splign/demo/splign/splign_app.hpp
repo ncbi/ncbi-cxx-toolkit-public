@@ -68,7 +68,14 @@ protected:
     typedef CSplign::THitRef  THitRef;
     typedef CSplign::THitRefs THitRefs;
 
-    void x_ProcessPair(THitRefs& hitrefs, const CArgs& args);
+
+    void x_RunSplign(bool raw_hits, THitRefs* phitrefs, 
+                     THit::TCoord smin, THit::TCoord smax,
+                     CSplign::TResults * psplign_results);
+
+    void x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
+                       THit::TCoord smin = 0,
+                       THit::TCoord smax = 0);
 
     blast::EProgram                  m_BlastProgram;
     CRef<blast::CBlastOptionsHandle> m_BlastOptionsHandle;
@@ -103,6 +110,11 @@ protected:
 
     bool x_GetNextPair(istream& ifs, THitRefs* hitrefs);
     bool x_GetNextPair(const THitRefs& hitrefs, THitRefs* hitrefs_pair);
+
+    bool x_GetNextComp(istream& ifs, THitRefs* hitrefs,
+                       THit::TCoord* psubj_min,
+                       THit::TCoord* psubj_max);
+
 
     void x_DoIncremental(void);
     void x_DoBatch2(void);

@@ -98,6 +98,17 @@ void CSplignApp::Init()
          "(e.g. sort -k 2,2 -k 1,1).",
          CArgDescriptions::eInputFile);
 
+    
+#ifdef GENOME_PIPELINE
+    argdescr->AddOptionalKey
+        ("comps", "comps",
+         "[Batch mode] Externally computed input blast compartments "
+         "specified in blast tabular format with one empty line as separator. "
+         "No built-in compartmentization will occur. "
+         "The hits must be collated by subject and query.",
+         CArgDescriptions::eInputFile);
+#endif
+
     argdescr->AddOptionalKey
         ("mklds", "mklds",
          "[Batch mode] "
@@ -318,6 +329,38 @@ CSplign::THitRef CSplignApp::s_ReadBlastHit(const string& m8)
 }
 
 
+bool CSplignApp::x_GetNextPair(const THitRefs& hitrefs, THitRefs* hitrefs_pair)
+{
+    USING_SCOPE(objects);
+    
+    hitrefs_pair->resize(0);
+    
+    const size_t dim = hitrefs.size();
+    if(dim == 0) {
+        return false;
+    }
+    
+    if(m_CurHitRef == dim) {
+        m_CurHitRef = numeric_limits<size_t>::max();
+        return false;
+    }
+ 
+    if(m_CurHitRef == numeric_limits<size_t>::max()) {
+        m_CurHitRef = 0;
+    }
+    
+    CConstRef<CSeq_id> query (hitrefs[m_CurHitRef]->GetQueryId());
+    CConstRef<CSeq_id> subj  (hitrefs[m_CurHitRef]->GetSubjId());
+    while(m_CurHitRef < dim 
+          && hitrefs[m_CurHitRef]->GetQueryId()->Match(*query)
+           && hitrefs[m_CurHitRef]->GetSubjId()->Match(*subj)  ) 
+    {
+        hitrefs_pair->push_back(hitrefs[m_CurHitRef++]);
+    }
+    return true;
+}
+
+
 bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 {
     hitrefs->resize(0);
@@ -328,7 +371,7 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
     
     if(!m_PendingHits.size()) {
 
-        CSplign::THit::TId query, subj;
+        THit::TId query, subj;
 
         if(m_firstline.size()) {
 
@@ -380,8 +423,8 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
     const size_t pending_size = m_PendingHits.size();
     if(pending_size) {
 
-        CSplign::THit::TId query = m_PendingHits[0]->GetQueryId();
-        CSplign::THit::TId subj  = m_PendingHits[0]->GetSubjId();
+        THit::TId query = m_PendingHits[0]->GetQueryId();
+        THit::TId subj  = m_PendingHits[0]->GetSubjId();
         size_t i = 1;
         for(; i < pending_size; ++i) {
 
@@ -401,42 +444,169 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 }
 
 
-bool CSplignApp::x_GetNextPair(const THitRefs& hitrefs, THitRefs* hitrefs_pair)
+bool CSplignApp::x_GetNextComp(istream& ifs, THitRefs* hitrefs,
+                               THit::TCoord* psubj_min, THit::TCoord* psubj_max)
 {
-    USING_SCOPE(objects);
+    hitrefs->resize(0);
 
-    hitrefs_pair->resize(0);
-
-    const size_t dim = hitrefs.size();
-    if(dim == 0) {
+    if(!ifs) {
         return false;
     }
 
-    if(m_CurHitRef == dim) {
-        m_CurHitRef = numeric_limits<size_t>::max();
-        return false;
+    THit::TCoord & smin = *psubj_min;
+    THit::TCoord & smax = *psubj_max;
+
+    smin = 0;
+    smax = numeric_limits<THit::TCoord>::max();
+
+    static THit::TId query, subj;
+    static bool strand (true);
+
+    static THit::TCoord last_coord (0);
+
+    if(m_firstline.size()) {
+
+        THitRef hit (s_ReadBlastHit(m_firstline));
+
+        if(last_coord) {
+
+            // no change in query, subj and strand
+            if(strand) {
+                smin = last_coord;
+                smax = hit->GetSubjStop();
+            }
+            else {
+                smax = last_coord;
+                smin = hit->GetSubjStop();
+            }
+            last_coord = 0;
+        }
+        else {
+            
+            // at least one <q,s,s> component has changed
+            query  = hit->GetQueryId();
+            subj   = hit->GetSubjId();
+            strand = hit->GetSubjStrand();
+
+            if(strand) {
+                smin = 0;
+                smax = hit->GetSubjStop();
+            }
+            else {
+                smin = hit->GetSubjStop();
+                smax = numeric_limits<THit::TCoord>::max();
+            }
+        }
+
+        hitrefs->push_back(hit);
+
+        m_firstline.resize(0);
+    }
+    
+    char buf [1024];
+    bool first_line_only (false);
+    while(ifs) {
+
+        buf[0] = 0;
+        CT_POS_TYPE pos0 = ifs.tellg();
+        ifs.getline(buf, sizeof buf, '\n');
+        CT_POS_TYPE pos1 = ifs.tellg();
+        if(pos1 == pos0) break; // GCC hack
+        if(buf[0] == '#') continue; // skip comments
+        const char* p = buf; // skip leading spaces
+        while(*p == ' ' || *p == '\t') ++p;
+        if(*p == 0) {
+            first_line_only = true;
+            continue;
+        }
+
+        THitRef hit (s_ReadBlastHit(p));
+
+        const THit::TId curr_query (hit->GetQueryId());
+        const THit::TId curr_subj (hit->GetSubjId());
+        if(query.IsNull()) {
+            query = curr_query;
+            subj  = curr_subj;
+            strand = hit->GetSubjStrand();
+        }
+        
+        const bool new_triple (hit->GetSubjStrand() != strand ||
+                               curr_query->Match(*query) == false ||
+                               curr_subj->Match(*subj) == false);
+
+        if(first_line_only) {
+            
+            if(new_triple) {
+                if(strand) {
+                    smax = numeric_limits<THit::TCoord>::max();
+                }
+                else {
+                    smin = 0;
+                }
+                last_coord = 0;
+            }
+            else {
+                if(strand) {
+                    last_coord = smax;
+                    smax = hit->GetSubjStart();
+                }
+                else {
+                    last_coord = smin;
+                    smin = hit->GetSubjStart();
+                }
+            }
+
+            m_firstline = p;
+            break;
+        }
+
+        if(new_triple) {
+
+            // reset smin, smax
+            query  = hit->GetQueryId();
+            subj   = hit->GetSubjId();
+            strand = hit->GetSubjStrand();
+
+            if(strand) {
+                smin = 0;
+                smax = hit->GetSubjStop();
+            }
+            else {
+                smin = hit->GetSubjStop();
+                smax = numeric_limits<THit::TCoord>::max();
+            }
+        }
+        else {
+
+            if(strand) {
+                smax = hit->GetSubjStop();
+            }
+            else {
+                smin = hit->GetSubjStop();
+            }
+        }
+
+        hitrefs->push_back(hit);
+
+    } // while(ifs)
+
+    if(!ifs && last_coord == 0) {
+        if(strand) {
+            smax = numeric_limits<THit::TCoord>::max();
+        }
+        else {
+            smin = 0;
+        }
     }
 
-    if(m_CurHitRef == numeric_limits<size_t>::max()) {
-        m_CurHitRef = 0;
-    }
-
-    CConstRef<CSeq_id> query (hitrefs[m_CurHitRef]->GetQueryId());
-    CConstRef<CSeq_id> subj  (hitrefs[m_CurHitRef]->GetSubjId());
-    while(m_CurHitRef < dim 
-          && hitrefs[m_CurHitRef]->GetQueryId()->Match(*query)
-          && hitrefs[m_CurHitRef]->GetSubjId()->Match(*subj)  ) 
-    {
-        hitrefs_pair->push_back(hitrefs[m_CurHitRef++]);
-    }
-    return true;
+    return hitrefs->size() > 0;
 }
 
 
 void CSplignApp::x_LogStatus(size_t model_id, 
                              bool query_strand,
-                             const CSplign::THit::TId& query, 
-                             const CSplign::THit::TId& subj, 
+                             const THit::TId& query, 
+                             const THit::TId& subj, 
 			     bool error, 
                              const string& msg)
 {
@@ -472,7 +642,6 @@ CSplignApp::x_SetupBlastOptions(bool cross)
 
         const CArgs& args = GetArgs();
         blast_opt.SetWordSize(args["W"].AsInteger());
-        //blast_opt.SetFilterString("m");
         blast_opt.SetMaskAtHash(true);
         //blast_opt.SetGapXDropoff(1);
         //blast_opt.SetGapXDropoffFinal(1);
@@ -491,8 +660,9 @@ CSplignApp::x_SetupBlastOptions(bool cross)
 enum ERunMode {
     eNotSet,
     ePairwise, // single query vs single subj
-    eBatch1,   // use external blast hits
-    eBatch2,   // run blast internally using external blast db of queries
+    eBatch1,   // use external raw blast hits
+    eBatch2,   // use pre-computed compartments
+    eBatch3,   // run blast internally using external blast db of queries
     eIncremental // run blast internally using external blastdb of subjects
 };
 
@@ -540,7 +710,7 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
                     THitRef hitref (new CBlastTabular(**sa_iter, false));
                     phitrefs->push_back(hitref);
                     
-                    CSplign::THit::TId id (hitref->GetSubjId());
+                    THit::TId id (hitref->GetSubjId());
                     int oid = -1;
                     seqdb.SeqidToOid(*id, oid);
                     id = seqdb.GetSeqIDs(oid).back();
@@ -594,7 +764,6 @@ void CSplignApp::x_DoIncremental(void)
         THitRefs hitrefs_pair;
         m_CurHitRef = numeric_limits<size_t>::max();
         while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
-
             x_ProcessPair(hitrefs_pair, args); 
         }
 
@@ -733,6 +902,7 @@ void CSplignApp::x_DoBatch2(void)
 }
 
 
+
 CRef<objects::CSeq_id> CSplignApp::x_ReadFastaSetId(const CArgValue& argval,
                                                     CRef<objects::CScope> scope)
 {
@@ -765,17 +935,18 @@ int CSplignApp::Run()
     // check that modes aren't mixed
 
     const bool is_mklds   = args["mklds"];
-    const bool is_hits    = args["hits"];
     const bool is_ldsdir  = args["ldsdir"];
 
+    const bool is_hits    = args["hits"];
     const bool is_query   = args["query"];
     const bool is_subj    = args["subj"];
 
 #ifdef GENOME_PIPELINE
+    const bool is_comps   = args["comps"];
     const bool is_querydb = args["querydb"];
-    const bool is_subjdb = args["subjdb"];
-
+    const bool is_subjdb  = args["subjdb"];
 #else
+    const bool is_comps (false);
     const bool is_querydb = false;
     const bool is_subjdb = false;
 #endif
@@ -808,19 +979,22 @@ int CSplignApp::Run()
     // determine mode and verify arguments
     ERunMode run_mode (eNotSet);
     
-    if(is_query && is_subj && !(is_hits || is_querydb || is_ldsdir)) {
+    if(is_query && is_subj && !(is_hits || is_comps || is_querydb || is_ldsdir)) {
         run_mode = ePairwise;
     }
     else if(is_subj && is_querydb
-            && !(is_query || is_hits || is_ldsdir)) 
+            && !(is_query || is_hits || is_comps || is_ldsdir)) 
     {
-        run_mode = eBatch2;
+        run_mode = eBatch3;
     }
-    else if(is_query && is_subjdb && !(is_subj || is_hits || is_ldsdir)) {
+    else if(is_query && is_subjdb && !(is_subj || is_hits || is_comps || is_ldsdir)) {
         run_mode = eIncremental;
     }
-    else if(is_hits && is_ldsdir && !(is_query || is_subj || is_querydb)) {
+    else if(is_hits && is_ldsdir && !(is_comps ||is_query || is_subj || is_querydb)) {
         run_mode = eBatch1;
+    }
+    else if(is_comps && is_ldsdir && !(is_hits ||is_query || is_subj || is_querydb)) {
+        run_mode = eBatch2;
     }
 
     if(run_mode == eNotSet) {
@@ -839,7 +1013,7 @@ int CSplignApp::Run()
     m_AlnOut = args["aln"]? & args["aln"].AsOutputFile(): NULL;
     
     // in pairwise, batch 2 or incremental mode, setup blast options
-    if(run_mode != eBatch1) {
+    if(run_mode != eBatch1 && run_mode != eBatch2) {
         m_BlastOptionsHandle = x_SetupBlastOptions(is_cross);
     }
 
@@ -909,7 +1083,7 @@ int CSplignApp::Run()
         seqid_query = x_ReadFastaSetId(args["query"], scope);
         seqid_subj  = x_ReadFastaSetId(args["subj"] , scope);
     }
-    else if(run_mode == eBatch1) {
+    else if(run_mode == eBatch1 || run_mode == eBatch2) {
         
         const string fasta_dir = args["ldsdir"].AsString();
         const string ldsdb_dir = GetLdsDbDir(fasta_dir);
@@ -925,7 +1099,7 @@ int CSplignApp::Run()
     else if(run_mode == eIncremental) {
         x_DoIncremental();
     }
-    else if(run_mode == eBatch2) {
+    else if(run_mode == eBatch3) {
         x_DoBatch2();
     }
     else {
@@ -951,7 +1125,17 @@ int CSplignApp::Run()
             x_ProcessPair(hitrefs, args);
         }
     }
-    else if (run_mode == eIncremental || run_mode == eBatch2) {
+    else if (run_mode == eBatch2) {
+
+        CNcbiIstream& hit_stream = args["comps"].AsInputFile();
+        THitRefs hitrefs;
+        THit::TCoord subj_min, subj_max;
+
+        while(x_GetNextComp(hit_stream, &hitrefs, &subj_min, &subj_max) ) {
+            x_ProcessPair(hitrefs, args, subj_min, subj_max);
+        }
+    }
+    else if (run_mode == eIncremental || run_mode == eBatch3) {
         // done at the preparation step
     }
     else {
@@ -1005,61 +1189,72 @@ void CSplignApp::x_GetBl2SeqHits(
     }
 }
 
-
-void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
+void CSplignApp::x_RunSplign(bool raw_hits, THitRefs* phitrefs, 
+                             THit::TCoord smin, THit::TCoord smax,
+                             CSplign::TResults * psplign_results)
 {
-    const CSplignFormatter::EFlags flags =
+    if(raw_hits) {
+        m_Splign->Run(phitrefs);
+        const CSplign::TResults& results (m_Splign->GetResult());
+        copy(results.begin(), results.end(), back_inserter(*psplign_results));
+    }
+    else {
+        CSplign::SAlignedCompartment ac;
+        m_Splign->AlignSingleCompartment(phitrefs, smin, smax, &ac);
+        psplign_results->push_back(ac);
+    }
+}
+
+
+void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
+                               THit::TCoord smin, THit::TCoord smax)
+{
+
 #ifdef GENOME_PIPELINE
-        CSplignFormatter::fNone;
+    const CSplignFormatter::EFlags flags (CSplignFormatter::fNone);
+    const bool raw_hits (! args["comps"]);
 #else
-        CSplignFormatter::fNoExonScores;
+    const CSplignFormatter::EFlags flags (CSplignFormatter::fNoExonScores);
+    const bool raw_hits (true);
 #endif
 
     if(hitrefs.size() == 0) {
         return;
     }
 
-    CSplign::THit::TId query = hitrefs.front()->GetQueryId();
-    CSplign::THit::TId subj  = hitrefs.front()->GetSubjId();
+    THit::TId query = hitrefs.front()->GetQueryId();
+    THit::TId subj  = hitrefs.front()->GetSubjId();
     
     m_Formatter->SetSeqIds(query, subj);
     
-    const string strand = args["direction"].AsString();
+    const string strand (args["direction"].AsString());
     CSplign::TResults splign_results;
 
     if(strand == kDirSense) {
 
         m_Splign->SetStrand(true);
-        m_Splign->Run(&hitrefs);
-        const CSplign::TResults& results = m_Splign->GetResult();
-        copy(results.begin(), results.end(), back_inserter(splign_results));
+        x_RunSplign(raw_hits, &hitrefs, smin, smax, &splign_results);
     }
     else if(strand == kDirAntisense) {
             
         m_Splign->SetStrand(false);
-        m_Splign->Run(&hitrefs);
-        const CSplign::TResults& results = m_Splign->GetResult();
-        copy(results.begin(), results.end(), back_inserter(splign_results));
+        x_RunSplign(raw_hits, &hitrefs, smin, smax, &splign_results);
     }
     else if(strand == kDirBoth) {
-        
+
         THitRefs hits0 (hitrefs.begin(), hitrefs.end());
         static size_t mid = 1;
         size_t mid_plus, mid_minus;
         {{
             m_Splign->SetStrand(true);
             m_Splign->SetStartModelId(mid);
-            m_Splign->Run(&hitrefs);
-            const CSplign::TResults& results = m_Splign->GetResult();
-            copy(results.begin(), results.end(), back_inserter(splign_results));
+            x_RunSplign(raw_hits, &hitrefs, smin, smax, &splign_results);
             mid_plus = m_Splign->GetNextModelId();
         }}
         {{
             m_Splign->SetStrand(false);
             m_Splign->SetStartModelId(mid);
-            m_Splign->Run(&hits0);
-            const CSplign::TResults& results = m_Splign->GetResult();
-            copy(results.begin(), results.end(), back_inserter(splign_results));
+            x_RunSplign(raw_hits, &hits0, smin, smax, &splign_results);
             mid_minus = m_Splign->GetNextModelId();
         }}
         mid = max(mid_plus, mid_minus);
