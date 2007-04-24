@@ -211,6 +211,8 @@ private:
     void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
     void x_CleanupConsSplice(CGb_qual& gbq);
     bool x_CleanupRptUnit(CGb_qual& gbq);
+    void x_ChangeTransposonToMobileElement(CGb_qual& gbq);
+    void x_ChangeInsertionSeqToMobileElement(CGb_qual& gbq);
 
     // Dbtag cleanup.
     void x_TagCleanup(CObject_id& tag);

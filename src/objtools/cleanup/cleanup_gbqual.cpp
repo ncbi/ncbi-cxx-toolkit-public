@@ -567,11 +567,69 @@ void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     }
+    x_ChangeTransposonToMobileElement(gbq);
+    x_ChangeInsertionSeqToMobileElement(gbq);
 }
 
 
 
 // Gb_qual cleanup
+
+void CCleanup_imp::x_ChangeInsertionSeqToMobileElement(CGb_qual& gbq)
+//
+//  As of Dec 2006, "insertion_seq" is no longer legal as a qualifier. The replacement
+//  qualifier is "mobile_element". In addition, the value has to be massaged to
+//  reflect the "insertion_seq".
+//
+{
+    if (NStr::EqualNocase(gbq.GetQual(), "insertion_seq")) {
+        gbq.SetQual("mobile_element");
+        gbq.SetVal( string("insertion_seq: ") + gbq.GetVal() );
+        ChangeMade(CCleanupChange::eChangeQualifiers);
+    }
+}
+
+
+void CCleanup_imp::x_ChangeTransposonToMobileElement(CGb_qual& gbq)
+//
+//  As of Dec 2006, "transposon" is no longer legal as a qualifier. The replacement
+//  qualifier is "mobile_element". In addition, the value has to be massaged to
+//  indicate "integron" or "transposon".
+//
+{
+    const string IntegronValues[] = {
+        "class I integron",
+        "class II integron",
+        "class III integron",
+        "class 1 integron",
+        "class 2 integron",
+        "class 3 integron"
+    };
+    const string* endIntegronValues 
+        = IntegronValues + sizeof(IntegronValues)/sizeof(*IntegronValues);
+
+    if (NStr::EqualNocase(gbq.GetQual(), "transposon")) {
+        const string* pValue = std::find(IntegronValues, endIntegronValues, gbq.GetVal());
+
+        gbq.SetQual("mobile_element");
+
+        // If the value is one of the IntegronValues, change it to "integron: class XXX":
+
+        if ( pValue != endIntegronValues ) {
+            string::size_type cutoff = pValue->find( " integron" );
+            _ASSERT( cutoff != string::npos ) /* typo in IntegronValues? */;
+            gbq.SetVal( string("integron: ") + pValue->substr(0, cutoff) );
+        }
+
+        // Otherwise, just prefix it with "transposon: ":
+        else {
+            gbq.SetVal( string("transposon: ") + gbq.GetVal() );
+        }
+        
+        ChangeMade(CCleanupChange::eChangeQualifiers);
+    }
+}
+
 
 void CCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
 
