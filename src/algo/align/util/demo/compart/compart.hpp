@@ -55,9 +55,53 @@ public:
     typedef CRef<THit>             THitRef;
     typedef vector<THitRef>        THitRefs;
 
+    class CCompartment: public CObject {
+    public:
+
+        CCompartment(const THitRefs& hitrefs, size_t length);
+
+        typedef pair<THit::TCoord, THit::TCoord> TRange;
+        TRange GetSpan    (void) const;
+
+        bool   GetStrand  (void) const;
+        bool   operator < (const CCompartment& rhs) const;
+
+        size_t GetIdentityBin(void) const {
+            return m_IdentityBin;
+        }
+
+        size_t GetExonCount(void) const {
+            return m_ExonCount;
+        }
+
+        size_t GetMatchCount(void) const {
+            return m_MatchCount;
+        }
+
+        friend ostream& operator << (ostream& ostr, const CCompartment& rhs);
+
+    protected:
+
+        THitRefs m_HitRefs;
+
+        size_t   m_SeqLength;
+
+        size_t   m_IdentityBin;
+        size_t   m_ExonCount;
+        size_t   m_MatchCount;
+
+        void     x_AddHit    (const THitRef& hitref);
+        void     x_EvalExons (void);
+    };
+
+    typedef CRef<CCompartment>  TCompartRef;
+    typedef vector<TCompartRef> TCompartRefs;
+
+
 private:
 
     typedef map<string,size_t> TStrIdToLen;
+
     TStrIdToLen            m_id2len;
     CRef<objects::CScope>  m_Scope;
 
@@ -65,9 +109,18 @@ private:
     double                 m_min_idty;
     double                 m_min_singleton_idty;
 
-    int     x_ProcessPair(const string& query0, THitRefs& hitrefs);
-    void    x_ReadSeqLens (CNcbiIstream& istr);
-    size_t  x_GetSeqLength(const string& id);
+    size_t                 m_MaxCompsPerQuery;
+
+    int     x_ProcessPair  (const string& query0, THitRefs& hitrefs);
+    void    x_RankAndStore (void);
+    void    x_ReadSeqLens  (CNcbiIstream& istr);
+    size_t  x_GetSeqLength (const string& id);
+
+    size_t  GetExonCont(void);
+    size_t  GetMatchCount(void);
+
+    TCompartRefs           m_Compartments;
+    TCompartRefs           m_CompartmentsPermanent;
 };
 
 
