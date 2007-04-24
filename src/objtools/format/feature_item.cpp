@@ -2169,9 +2169,9 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(frequency),
         DO_IMPORT(function),
         DO_IMPORT(inference),
-        DO_IMPORT(insertion_seq),
         DO_IMPORT(label),
         DO_IMPORT(map),
+        DO_IMPORT(mobile_element),
         DO_IMPORT(mod_base),
         DO_IMPORT(number),
         DO_IMPORT(old_locus_tag),
@@ -2189,7 +2189,6 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(rpt_unit_seq),
         DO_IMPORT(standard_name),
         DO_IMPORT(trans_splicing),
-        DO_IMPORT(transposon),
         DO_IMPORT(usedin)
 #undef DO_IMPORT
     };
@@ -2475,9 +2474,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(rpt_unit);
     DO_QUAL(rpt_unit_range);
     DO_QUAL(rpt_unit_seq);
-    DO_QUAL(insertion_seq);
     DO_QUAL(trans_splicing);
-    DO_QUAL(transposon);
+    DO_QUAL(mobile_element);
     DO_QUAL(usedin);
 
     // extra imports, actually...
@@ -2844,11 +2842,11 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_heterogen, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_illegal_qual, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_inference, CSeqFeatData::eQual_inference),
-    TQualPair(eFQ_insertion_seq, CSeqFeatData::eQual_insertion_seq),
     TQualPair(eFQ_label, CSeqFeatData::eQual_label),
     TQualPair(eFQ_locus_tag, CSeqFeatData::eQual_locus_tag),
     TQualPair(eFQ_map, CSeqFeatData::eQual_map),
     TQualPair(eFQ_maploc, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_mobile_element, CSeqFeatData::eQual_mobile_element),
     TQualPair(eFQ_mod_base, CSeqFeatData::eQual_mod_base),
     TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
     TQualPair(eFQ_number, CSeqFeatData::eQual_number),
@@ -2897,7 +2895,6 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_transl_except, CSeqFeatData::eQual_transl_except),
     TQualPair(eFQ_transl_table, CSeqFeatData::eQual_transl_table),
     TQualPair(eFQ_translation, CSeqFeatData::eQual_translation),
-    TQualPair(eFQ_transposon, CSeqFeatData::eQual_transposon),
     TQualPair(eFQ_trna_aa, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_trna_codons, CSeqFeatData::eQual_note),
     TQualPair(eFQ_usedin, CSeqFeatData::eQual_usedin),
@@ -3792,9 +3789,8 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(pop_variant);
     DO_QUAL(tissue_lib);
 
-    x_FormatQual(eSQ_plasmid_name,       "plasmid", qvec);
-    x_FormatQual(eSQ_transposon_name,    "transposon", qvec);
-    x_FormatQual(eSQ_insertion_seq_name, "insertion_seq", qvec);
+    x_FormatQual(eSQ_plasmid_name, "plasmid", qvec);
+    x_FormatQual(eSQ_mobile_element, "mobile_element", qvec);
 
     DO_QUAL(country);
 
