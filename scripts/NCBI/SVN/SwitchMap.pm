@@ -12,9 +12,21 @@ sub new
 {
     my $Self = NCBI::SVN::Base::new(@_);
 
-    my $MapFileName = $Self->{MapFileName};
+    if (my $MapFileName = $Self->{MapFileName})
+    {
+        $Self->ReadFromFile($MapFileName)
+    }
+    elsif (my $MapFileLines = $Self->{MapFileLines})
+    {
+        $Self->SetFromLines($MapFileLines)
+    }
 
-    confess 'MapFileName parameter is missing' unless $MapFileName;
+    return $Self
+}
+
+sub ReadFromFile
+{
+    my ($Self, $MapFileName) = @_;
 
     my @SwitchPlan;
 
@@ -22,23 +34,56 @@ sub new
 
     while (<FILE>)
     {
-        s/[\r\n]+$//os;
+        s/\s+$//os;
 
-        my ($FromDir, $ToDir) = split;
-
-        map {s/[;<>|&\\]+|\/{2,}/\//gos} $FromDir, $ToDir;
-        m/(?:^|\/)\.\.(?:\/|$)/o &&
-            die "$Self->{MyName}: $MapFileName\:$.: path '$_' contains '..'\n"
-            for $FromDir, $ToDir;
-
-        push @SwitchPlan, [$FromDir, $ToDir]
+        push @SwitchPlan, [split]
     }
 
     close FILE;
 
-    $Self->{SwitchPlan} = \@SwitchPlan;
+    $Self->SetSwitchPlan(\@SwitchPlan)
+}
 
-    return $Self
+sub SetFromLines
+{
+    my ($Self, $MapFileLines) = @_;
+
+    my @SwitchPlan;
+
+    for (@$MapFileLines)
+    {
+        s/\s+$//os;
+
+        push @SwitchPlan, [split]
+    }
+
+    $Self->SetSwitchPlan(\@SwitchPlan)
+}
+
+sub SetSwitchPlan
+{
+    my ($Self, $SwitchPlan) = @_;
+
+    # Verify the switch plan.
+    my %PathReg;
+
+    for (@$SwitchPlan)
+    {
+        for (@$_)
+        {
+            s/[;<>|&\\]+|\/{2,}/\//gos;
+
+            m/(?:^|\/)\.\.(?:\/|$)/o &&
+                die "$Self->{MyName}: map file contains '..'\n";
+
+            $PathReg{$_} &&
+                die "$Self->{MyName}: directory mapping conflict\n";
+
+            $PathReg{$_} = 1
+        }
+    }
+
+    $Self->{SwitchPlan} = $SwitchPlan
 }
 
 sub GetSwitchPlan
@@ -46,6 +91,36 @@ sub GetSwitchPlan
     my ($Self) = @_;
 
     return $Self->{SwitchPlan}
+}
+
+sub DiffSwitchPlan
+{
+    my ($Self, $RightSide, $InvertDirection) = @_;
+
+    my @Diff;
+
+    my ($FromIndex, $ToIndex) = $InvertDirection ? (1, 0) : (0, 1);
+
+    my %Map = map {$_->[$ToIndex] => $_->[$FromIndex]} @{$Self->{SwitchPlan}};
+
+    for my $NewSwitch (@{$RightSide->{SwitchPlan}})
+    {
+        my ($NewFrom, $NewTo) = @$NewSwitch[$FromIndex, $ToIndex];
+
+        my $OldFrom = delete $Map{$NewTo};
+
+        unless ($OldFrom && $OldFrom eq $NewSwitch->[$FromIndex])
+        {
+            push @Diff, [$NewTo, $NewFrom, $OldFrom]
+        }
+    }
+
+    while (my ($OldTo, $OldFrom) = each %Map)
+    {
+        unshift @Diff, [$OldTo, undef, $OldFrom]
+    }
+
+    return @Diff
 }
 
 1
