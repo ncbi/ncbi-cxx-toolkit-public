@@ -107,7 +107,7 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xcache_netcache.dll  \
         $(GBENCH)\bin\ncbi_xdbapi_ctlib.dll     \
         $(GBENCH)\bin\ncbi_xdbapi_dblib.dll     \
-        $(GBENCH)\bin\ncbi_xdbapi_ftds64.dll    \
+        $(GBENCH)\bin\ncbi_xdbapi_ftds.dll      \
         $(GBENCH)\bin\ncbi_xdbapi_msdblib.dll   \
         $(GBENCH)\bin\ncbi_xdbapi_mysql.dll     \
         $(GBENCH)\bin\ncbi_xdbapi_odbc.dll      \
