@@ -1348,12 +1348,15 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     
     bool weak=false;
     bool process_projects = !is_root && filter->CheckProject(dir_name,&weak);
+    if (!process_projects && !weak && !is_root) {
+        return;
+    }
     
     // Process Makefile.in
     map<string, EMakeFileType> subprojects;
     map<string, EMakeFileType> appprojects;
     map<string, EMakeFileType> libprojects;
-    if ( process_projects ) {
+    if ( process_projects || weak ) {
         ProcessMakeInFile(node_path, makefiles, maketype);
         TFiles::const_iterator p = makefiles->m_In.find(node_path);
         if (p != makefiles->m_In.end()) {
@@ -1374,6 +1377,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
+        if ( process_projects ) {
         string appproj[] = {"APP_PROJ","EXPENDABLE_APP_PROJ","POTENTIAL_APP_PROJ",""};
         EMakeFileType apptype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
         for (j=0; !appproj[j].empty(); ++j) {
@@ -1403,6 +1407,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                     libprojects["Makefile." + *i + ".lib"] = max(maketype, libtype[j]);
                 }
             }
+        }
         }
         }
     }
@@ -1453,7 +1458,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
             string name  = dir_entry->GetName();
-            if ( name == "."  ||  name == ".." ||  name == "CVS" ||  
+            if ( name == "."  ||  name == ".." ||  name == "CVS" ||  name == ".svn" ||
                  name == string(1,CDir::GetPathSeparator()) ) {
                 continue;
             }
@@ -1462,8 +1467,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                     subprojects_dirs[dir_entry->GetPath()] = subprojects[name];
                 } else {
                     subprojects_dirs[dir_entry->GetPath()] =
-                        (is_root || (!process_projects && weak)) ?
-                            eMakeType_Undefined : eMakeType_Excluded;
+                        is_root ? eMakeType_Undefined : eMakeType_Excluded;
                 }
             }
         }
