@@ -153,7 +153,7 @@ bool CSimpleB2SWrapper::DoBlast2Seqs()
 
     //  perform the blast 2 sequences and process the results...
     CPsiBl2Seq blaster(query,subject,blastOptions);
-    CSearchResultSet hits = *blaster.Run();
+    CSearchResultSet& hits = *blaster.Run();
     int total = hits.GetNumResults();
     for (int index=0; index<total; index++)
        processBlastHits(hits[index]);
@@ -227,28 +227,30 @@ void CSimpleB2SWrapper::processBlastHits(CSearchResults& hits)
     m_percIdents.clear();
     m_alignments.clear();
 
-	CRef< CSeq_align > sa = *(seqAlignList.begin());
-        int nIdent = 0;
+    if (seqAlignList.size() == 0) return;
+
+    int nIdent = 0;
 	double score = 0.0, eVal = kMax_Double, percIdent = 0.0;
+	CRef< CSeq_align > sa = *(seqAlignList.begin());
 	if (!sa.Empty()) 
 	{
 		sa->GetNamedScore(CSeq_align::eScore_Score, score);
 		sa->GetNamedScore(CSeq_align::eScore_EValue, eVal);
-           if (sa->GetNamedScore(CSeq_align::eScore_IdentityCount, nIdent)) {
-                percIdent = 100.0 * invLen1 * (double) nIdent; 
+        if (sa->GetNamedScore(CSeq_align::eScore_IdentityCount, nIdent)) {
+            percIdent = 100.0 * invLen1 * (double) nIdent; 
 //                cout << "nIdent = " << nIdent << "; percIdent = " << percIdent << endl;
 //         } else {
 //              cout << "????  Didn't find identity count\n";
-           }
+        }
 
 
 //            if (!sa->GetNamedScore(CSeq_align::eScore_PercentIdentity, percIdent))
 //                cout << "????  Didn't find percent identity\n";
 //            cout << "saving values:   score = " <<score << "; eval = " << eVal << "; id% = " << percIdent << endl;
-            m_scores.push_back(score);
-            m_evals.push_back(eVal);
-            m_percIdents.push_back(percIdent);
-            m_alignments.push_back(sa);
+        m_scores.push_back(score);
+        m_evals.push_back(eVal);
+        m_percIdents.push_back(percIdent);
+        m_alignments.push_back(sa);
 	}
 }
 
