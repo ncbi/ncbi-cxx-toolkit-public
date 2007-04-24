@@ -576,7 +576,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
 #ifdef NCBI_OS_UNIX
         tname = "hard link";
 #else
-        tname = "hard link - not FULLY supported"
+        tname = "hard link - not FULLY supported";
 #endif // NCBI_OS_UNIX
         break;
     case '2':
@@ -584,7 +584,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
 #ifdef NCBI_OS_UNIX
         tname = "symbolic link";
 #else
-        tname = "symbolic link - not FULLY supported"
+        tname = "symbolic link - not FULLY supported";
 #endif // NCBI_OS_UNIX
         break;
     case '3':
