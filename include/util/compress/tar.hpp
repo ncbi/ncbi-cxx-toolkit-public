@@ -248,6 +248,9 @@ public:
         // --- Update ---
         fUpdateExistingOnly = (1<<10),
 
+        // -- Debugging --
+        fDumpBlockHeaders   = (1<<20),
+
         /// Default flags
         fDefault            = fOverwrite | fPreserveAll
     };
@@ -448,7 +451,7 @@ protected:
     void x_Backspace(EAction action, size_t blocks);
 
     // Read information about next entry in the archive.
-    EStatus x_ReadEntryInfo(CTarEntryInfo& info);
+    EStatus x_ReadEntryInfo(CTarEntryInfo& info, bool dump = false);
 
     // Pack either name or linkname into archive file header.
     bool x_PackName(SHeader* header, const CTarEntryInfo& info, bool link);
@@ -493,6 +496,7 @@ protected:
     CNcbiIos*      m_Stream;         ///< Archive stream (used for all I/O).
     const size_t   m_BufferSize;     ///< Buffer size for I/O operations.
     size_t         m_BufferPos;      ///< Position within the record.
+    size_t         m_StreamPos;      ///< Position in stream (0-based).
     char*          m_BufPtr;         ///< Page unaligned buffer pointer.
     char*          m_Buffer;         ///< I/O buffer (page-aligned).
     TFlags         m_Flags;          ///< Bitwise OR of flags.

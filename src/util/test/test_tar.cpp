@@ -99,8 +99,9 @@ void CTest::Init(void)
                         CArgDescriptions::eInteger, "20");
     args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddExtra(0, kMax_UInt, "List of files to process",
-                   CArgDescriptions::eString);
+    args->AddFlag("v", "Turn on debugging information");
+    args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
+                   "List of files to process", CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Tar test suite: VERY simplified tar utility");
     SetupArgDescriptions(args.release());
@@ -167,12 +168,18 @@ int CTest::Run(void)
         tar->SetBaseDir(args["C"].AsString());
     }
 
+    CTar::TFlags flags = 0;
     if (args["i"].HasValue()) {
-        tar->SetFlags(tar->GetFlags() | CTar::fIgnoreZeroBlocks);
+        flags |= CTar::fIgnoreZeroBlocks;
     }
-
     if (args["U"].HasValue()) {
-        tar->SetFlags(tar->GetFlags() | CTar::fUpdateExistingOnly);
+        flags |= CTar::fUpdateExistingOnly;
+    }
+    if (args["v"].HasValue()) {
+        flags |= CTar::fDumpBlockHeaders;
+    }
+    if (flags) {
+        tar->SetFlags(tar->GetFlags() | flags);
     }
 
     if (action == fCreate) {
@@ -199,7 +206,7 @@ int CTest::Run(void)
             } else {
                 entries.reset(tar->Append(name).release());
             }
-            if (!entries->empty()) {
+            if (flags & CTar::fDumpBlockHeaders) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
                     LOG_POST(prefix << it->GetName());
                 }
@@ -229,8 +236,10 @@ int CTest::Run(void)
             }
         } else {
             entries.reset(tar->Extract().release());
-            ITERATE(CTar::TEntries, it, *entries.get()) {
-                LOG_POST("x " << it->GetName());
+            if (flags & CTar::fDumpBlockHeaders) {
+                ITERATE(CTar::TEntries, it, *entries.get()) {
+                    LOG_POST("x " << it->GetName());
+                }
             }
         }
     }
