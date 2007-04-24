@@ -107,6 +107,10 @@ public:
 %template(vector_CConstRef_CSeq_loc)
     std::vector<ncbi::CConstRef<ncbi::objects::CSeq_loc> >;
 
+#ifdef SWIGPYTHON
+%rename(is_) ncbi::CAgpReader::is;  // "is" is a reserved word in Python
+#endif
+
 %%
 
 // Obsolescent
@@ -228,6 +232,7 @@ objtools/edit/promote.hpp
 objtools/edit/seq_entry_edit.hpp
 
 objtools/readers/agp_read.hpp
+objtools/readers/agp_util.hpp
 objtools/readers/aln_reader.hpp
 objtools/readers/cigar.hpp
 objtools/readers/fasta.hpp
