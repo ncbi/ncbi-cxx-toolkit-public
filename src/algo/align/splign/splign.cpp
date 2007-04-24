@@ -275,9 +275,14 @@ void CSplign::x_LoadSequence(vector<char>* seq,
             if(finish > dim) {
                 finish = dim - 1;
             }
+
             if(start > finish) {
-                NCBI_THROW(CAlgoAlignException, eInternal, 
-                           "Invalid sequence interval requested.");
+                CNcbiOstrstream ostr;
+                ostr << "Invalid sequence interval requested for "
+                     << seqid.GetSeqIdString(true) << ":\t"
+                     << start << '\t' << finish;
+                const string err = CNcbiOstrstreamToString(ostr);
+                NCBI_THROW(CAlgoAlignException, eInternal, err);
             }
             
             string s;
@@ -355,12 +360,13 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
         const THitRef& h = (*phitrefs)[i];
         if(h->GetQuerySpan() >= m_MinPatternHitLength) {
+
             pattern0.push_back(h->GetQueryMin());
             pattern0.push_back(h->GetQueryMax());
             pattern0.push_back(h->GetSubjMin());
             pattern0.push_back(h->GetSubjMax());
-            const double idty = h->GetIdentity();
-            const bool imprf = idty < 1.00 || h->GetQuerySpan() != h->GetSubjSpan();
+            const double idty (h->GetIdentity());
+            const bool imprf  (idty < 1.00 || h->GetQuerySpan() != h->GetSubjSpan());
             imperfect.push_back(pair<bool,double>(imprf, idty));
         }
     }
@@ -401,7 +407,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     }
     else {
-        ostr_err << "Pattern must have a dimension multiple of four";
+        ostr_err << "Pattern dimension must be a multiple of four";
         severe = true;
     }
     
@@ -569,8 +575,9 @@ void CSplign::Run(THitRefs* phitrefs)
     
     // make sure query hit is in plus strand
     NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
+
         THitRef& h = *ii;
-        if(h->GetQueryStrand() == false) {
+        if(h.NotNull() && h->GetQueryStrand() == false) {
             h->FlipStrands();
         }
     }
@@ -598,12 +605,12 @@ void CSplign::Run(THitRefs* phitrefs)
     const TSeqPos min_singleton_matches = size_t(m_MinSingletonIdty * mrna_size);
 
     // iterate through compartments
-    CCompartmentAccessor<THit> comps (hitrefs.begin(), hitrefs.end(),
-                                      comp_penalty_bps,
-                                      min_matches,
-                                      min_singleton_matches);
+    CCompartmentAccessor<THit> comps ( hitrefs.begin(), hitrefs.end(),
+                                       comp_penalty_bps,
+                                       min_matches,
+                                       min_singleton_matches );
 
-    size_t dim = comps.GetCount();    
+    size_t dim (comps.GetCount());
     if(dim > 0) {
  
         // pre-load cDNA
@@ -696,7 +703,8 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     try {
         SAlignedCompartment ac = 
             x_RunOnCompartment(phitrefs, subj_min, subj_max, phitrefs_all);
-        ac.m_id = 1;
+
+        ac.m_id = ++m_model_id;
         ac.m_segments = m_segments;
         ac.m_error = false;
         ac.m_msg = "Ok";
@@ -716,6 +724,7 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
         }
         
         *result = SAlignedCompartment(0, true, e.GetMsg().c_str());
+        ++m_model_id;
         rv = false;
     }
 
@@ -781,7 +790,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
                 THitRef& h = (*phitrefs)[i];
                 THit::TCoord a0 = mrna_size - h->GetQueryMin() - 1;
                 THit::TCoord a1 = mrna_size - h->GetQueryMax() - 1;
-                const bool new_strand = ! (h->GetSubjStrand());
+                const bool new_strand (!(h->GetSubjStrand()));
                 h->SetQueryStart(a1);
                 h->SetQueryStop(a0);
                 h->SetSubjStrand(new_strand);
@@ -811,10 +820,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         THit::TCoord qspace = m_mrna.size() - qmax + 1;
         THit::TCoord extent_right = x_GetGenomicExtent(qspace);
 
-        bool ctg_strand = phitrefs->front()->GetSubjStrand();
+        const bool ctg_strand (phitrefs->front()->GetSubjStrand());
 
         if(ctg_strand) {
-
             smin = max(0, int(smin - extent_left));
             smax += extent_right;
         }
@@ -1065,7 +1073,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                  m_pattern.begin() + zone.m_pattern_end + 1,
                  back_inserter(pattern));
         }
-            
+        
         for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
 
 #ifdef  DBG_DUMP_PATTERN
@@ -1081,16 +1089,10 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             pattern[j+3] -= zone.m_box[2];
         }
 
-        if(pattern.size()) {
-            m_aligner->SetPattern(pattern);
-        }
-
         // setup esf
+        m_aligner->SetPattern(pattern);
         m_aligner->SetEndSpaceFree(true, true, true, true);
-        
         m_aligner->SetCDS(m_cds_start, m_cds_stop);
-        
-        // align
         m_aligner->Run();
 
         //#define DBG_DUMP_TYPE2
