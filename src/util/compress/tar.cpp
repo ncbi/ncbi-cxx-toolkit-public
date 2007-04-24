@@ -1220,7 +1220,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         if (fmt == eTar_OldGNU) {
             size_t size = (size_t) info.GetSize();
             m_StreamPos += ALIGN_SIZE(nread);
-            if (dump) {
+            if (dump  &&  (m_Flags & fDumpBlockHeaders)) {
                 s_Dump(h, fmt, m_StreamPos, m_BufferSize, size);
             }
             info.m_Type = (h->typeflag[0] == 'K'
@@ -1291,7 +1291,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     }
 
     m_StreamPos += ALIGN_SIZE(nread);
-    if (dump) {
+    if (dump  &&  (m_Flags & fDumpBlockHeaders)) {
         s_Dump(h, fmt, m_StreamPos, m_BufferSize, info.GetSize());
     }
 
