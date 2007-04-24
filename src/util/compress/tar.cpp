@@ -50,7 +50,10 @@
 
 #include <memory>
 
-#ifdef NCBI_OS_MSWIN
+#if   defined(NCBI_OS_UNIX)
+#  include <errno.h>
+#  include <unistd.h>
+#elif defined(NCBI_OS_MSWIN)
 #  include <io.h>
 typedef unsigned int mode_t;
 typedef short        uid_t;
@@ -258,13 +261,14 @@ struct SHeader {             // byte offset
     char devmajor[8];        // 329
     char devminor[8];        // 337
     union {                  // 345
-        char prefix[155];    // NB: not valid with old GNU format)
-        struct {
+        char prefix[155];    // NB: not valid with old GNU format
+        struct {             // NB: old GNU format only
+
             char atime[12];
             char ctime[12];  // 357  
-        } gt;                // NB: old GNU format only
+        } gt;
     };
-};                           // 500
+};
 
 
 /// Block as a header.
@@ -302,7 +306,7 @@ static bool s_TarChecksum(TBlock* block, bool isgnu = false)
 // CTarEntryInfo
 //
 
-unsigned int CTarEntryInfo::GetMode(void) const
+TTarMode CTarEntryInfo::GetMode(void) const
 {
     // Raw tar mode gets returned here (as kept in the info)
     return (TTarMode)(m_Stat.st_mode & 07777);
@@ -395,8 +399,9 @@ static char s_TypeAsChar(CTarEntryInfo::EType type)
 {
     switch (type) {
     case CTarEntryInfo::eFile:
+    case CTarEntryInfo::eHardLink:
         return '-';
-    case CTarEntryInfo::eLink:
+    case CTarEntryInfo::eSymLink:
         return 'l';
     case CTarEntryInfo::eDir:
         return 'd';
@@ -430,7 +435,8 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
        << setw(10) << NStr::UInt8ToString(info.GetSize()) << ' '
        << mtime.ToLocalTime().AsString("Y-M-D h:m:s")     << ' '
        << info.GetName();
-    if (info.GetType() == CTarEntryInfo::eLink) {
+    if (info.GetType() == CTarEntryInfo::eSymLink  ||
+        info.GetType() == CTarEntryInfo::eHardLink) {
         os << " -> " << info.GetLinkName();
     }
     return os;
@@ -553,15 +559,31 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
     switch (h->typeflag[0]) {
     case '\0':
     case '0':
-        tname = "regular entry";
         ok = true;
+        if (fmt != eTar_Ustar  &&  fmt != eTar_OldGNU) {
+            size_t namelen = s_Length(h->name, sizeof(h->name));
+            if (namelen  &&  h->name[namelen - 1] == '/') {
+                tname = "regular entry (directory)";
+                break;
+            }
+        }
+        tname = "regular entry (file)";
         break;
     case '1':
+        ok = true;
+#ifdef NCBI_OS_UNIX
         tname = "hard link";
+#else
+        tname = "hard link - not FULLY supported"
+#endif // NCBI_OS_UNIX
         break;
     case '2':
-        tname = "symbolic link";
         ok = true;
+#ifdef NCBI_OS_UNIX
+        tname = "symbolic link";
+#else
+        tname = "symbolic link - not FULLY supported"
+#endif // NCBI_OS_UNIX
         break;
     case '3':
         tname = "character device";
@@ -570,8 +592,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
         tname = "block device";
         break;
     case '5':
-        tname = "directory";
         ok = true;
+        tname = "directory";
         break;
     case '6':
         tname = "FIFO";
@@ -601,14 +623,14 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
         break;
     case 'K':
         if (fmt == eTar_OldGNU) {
-            tname = "GNU extension: long link";
             ok = true;
+            tname = "GNU extension: long link";
         }
         break;
     case 'L':
         if (fmt == eTar_OldGNU) {
-            tname = "GNU extension: long name";            
             ok = true;
+            tname = "GNU extension: long name";            
         }
         break;
     case 'M':
@@ -841,7 +863,7 @@ void CTar::x_Flush(void)
         }
     }
     if (m_Stream->rdbuf()->PUBSYNC() != 0) {
-        TAR_THROW(eWrite, "Archive flush error");
+        TAR_THROW(eWrite, "While flushing archive");
     }
     m_IsModified = false;
 }
@@ -877,7 +899,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
         }
         if (!m_Stream  ||  !m_Stream->good()  ||  !m_Stream->rdbuf()) {
             m_OpenMode = eNone;
-            TAR_THROW(eOpen, "Cannot open archive from bad IO stream");
+            TAR_THROW(eOpen, "Bad IO stream for archive");
         } else {
             m_OpenMode = EOpenMode((int) action & eRW);
         }
@@ -913,7 +935,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                 break;
             }
             if (!m_FileStream->good()) {
-                TAR_THROW(eOpen, "Cannot open archive '" + m_FileName + '\'');
+                TAR_THROW(eOpen, "Archive '" + m_FileName + '\'');
             }
             m_Stream = m_FileStream;
         }
@@ -1050,7 +1072,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         if (m_BufferPos == m_BufferSize) {
             if ((size_t) m_Stream->rdbuf()->sputn(m_Buffer, m_BufferSize)
                 != m_BufferSize) {
-                TAR_THROW(eWrite, "Archive write error");
+                TAR_THROW(eWrite, "While writing archive");
             }
             m_BufferPos = 0;
         }
@@ -1095,7 +1117,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) == 0) {
         fmt = eTar_Legacy;
     } else {
-        TAR_THROW_EX(eUnsupportedTarFormat, "Unknown archive format", h, fmt);
+        TAR_THROW_EX(eUnsupportedTarFormat, "Unrecognized format", h, fmt);
     }
 
     // Get checksum from header
@@ -1193,20 +1215,21 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     switch (h->typeflag[0]) {
     case '\0':
     case '0':
-        if (fmt == eTar_Ustar  ||  fmt == eTar_OldGNU) {
-            info.m_Type = CTarEntryInfo::eFile;
-        } else {
-            size_t name_size = s_Length(h->name, sizeof(h->name));
-            if (!name_size  ||  h->name[name_size - 1] != '/') {
-                info.m_Type = CTarEntryInfo::eFile;
-            } else {
+        if (fmt != eTar_Ustar  &&  fmt != eTar_OldGNU) {
+            size_t namelen = s_Length(h->name, sizeof(h->name));
+            if (namelen  &&  h->name[namelen - 1] == '/') {
                 info.m_Type = CTarEntryInfo::eDir;
                 info.m_Stat.st_size = 0;
+                break;
             }
         }
+        info.m_Type = CTarEntryInfo::eFile;
         break;
+    case '1':
     case '2':
-        info.m_Type = CTarEntryInfo::eLink;
+        info.m_Type = (h->typeflag[0] == '1'
+                       ? CTarEntryInfo::eHardLink
+                       : CTarEntryInfo::eSymLink);
         info.m_LinkName.assign(h->linkname,
                                s_Length(h->linkname, sizeof(h->linkname)));
         info.m_Stat.st_size = 0;
@@ -1220,7 +1243,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         if (fmt == eTar_OldGNU) {
             size_t size = (size_t) info.GetSize();
             m_StreamPos += ALIGN_SIZE(nread);
-            if (dump  &&  (m_Flags & fDumpBlockHeaders)) {
+            if (dump) {
                 s_Dump(h, fmt, m_StreamPos, m_BufferSize, size);
             }
             info.m_Type = (h->typeflag[0] == 'K'
@@ -1250,12 +1273,6 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
             info.m_Stat.st_size = 0;
             // NB: Input buffers may be trashed, so return right here
             return eSuccess;
-        }
-        /*FALLTHRU*/
-    case '1':
-        if (h->typeflag[0] == '1') {
-            // Fixup although we don't handle hard links
-            info.m_Stat.st_size = 0;
         }
         /*FALLTHRU*/
     default:
@@ -1291,7 +1308,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     }
 
     m_StreamPos += ALIGN_SIZE(nread);
-    if (dump  &&  (m_Flags & fDumpBlockHeaders)) {
+    if (dump) {
         s_Dump(h, fmt, m_StreamPos, m_BufferSize, info.GetSize());
     }
 
@@ -1315,7 +1332,7 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
                   "Name '" + info.GetName() + "' too long in"
                   " entry '" + name + '\'');
     }
-    if (type == CTarEntryInfo::eLink  &&  !x_PackName(h, info, true)) {
+    if (type == CTarEntryInfo::eSymLink  &&  !x_PackName(h, info, true)) {
         TAR_THROW(eNameTooLong,
                   "Link '" + info.GetLinkName() + "' too long in"
                   " entry '" + name + '\'');
@@ -1362,19 +1379,19 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
 
     // Type (GNU extension for SymLink)
     switch (type) {
-    case CDirEntry::eFile:
+    case CTarEntryInfo::eFile:
         h->typeflag[0] = '0';
         break;
-    case CDirEntry::eLink:
+    case CTarEntryInfo::eSymLink:
         h->typeflag[0] = '2';
         break;
-    case CDirEntry::eDir:
+    case CTarEntryInfo::eDir:
         h->typeflag[0] = '5';
         break;
     default:
         TAR_THROW(eUnsupportedEntryType,
                   "Don't know how to store entry type #"
-                  + NStr::IntToString(int(type)) + " in archive");
+                  + NStr::IntToString(int(type)) + " into archive");
         break;
     }
 
@@ -1490,7 +1507,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 
     CT_POS_TYPE pos = m_FileStream->tellg();  // Current read position
     if (pos == (CT_POS_TYPE)(-1)) {
-        TAR_THROW(eRead, "Archive backspace error");
+        TAR_THROW(eRead, "Archive backspace failed");
     }
     size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
     CT_POS_TYPE rec = 0;                      // Record number (0-based)
@@ -1536,7 +1553,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
     for (;;) {
         // Next block is supposed to be a header
         CTarEntryInfo info;
-        EStatus status = x_ReadEntryInfo(info, action == eTest);
+        EStatus status = x_ReadEntryInfo(info, action == eTest
+                                         &&  (m_Flags & fDumpBlockHeaders));
         switch (status) {
         case eSuccess:
             // processed below
@@ -1580,7 +1598,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
             nextLongName.erase();
         }
         if (!nextLongLink.empty()) {
-            if (info.GetType() == CTarEntryInfo::eLink) {
+            if (info.GetType() == CTarEntryInfo::eSymLink  ||
+                info.GetType() == CTarEntryInfo::eHardLink) {
                 info.m_LinkName.swap(nextLongLink);
             }
             nextLongLink.erase();
@@ -1623,7 +1642,7 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
     while (size) {
         size_t nskip = size;
         if (!x_ReadArchive(nskip)) {
-            TAR_THROW(eRead, "Archive read error");
+            TAR_THROW(eRead, "While reading archive");
         }
         m_StreamPos += ALIGN_SIZE(nskip);
         size -= nskip;
@@ -1638,13 +1657,21 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
     CTarEntryInfo::EType type = info.GetType();
     streamsize           size = (streamsize) info.GetSize();
 
+    // Source for extraction
+    auto_ptr<CDirEntry> src
+        (type == CTarEntryInfo::eHardLink
+         ? new CDirEntry(CDir::ConcatPath(m_BaseDir, info.GetLinkName()))
+         : 0);
+
     // Destination for extraction
-    auto_ptr<CDirEntry>
-        dst(CDirEntry::CreateObject(CDirEntry::EType(type),
-                                    CDir::ConcatPath(m_BaseDir,
-                                                     info.GetName())));
+    auto_ptr<CDirEntry> dst
+        (CDirEntry::CreateObject(CDirEntry::EType(type),
+                                 CDir::ConcatPath(m_BaseDir,
+                                                  info.GetName())));
+
     // Dereference sym.link if requested
-    if (type != CTarEntryInfo::eLink  &&  (m_Flags & fFollowLinks)) {
+    if (type != CTarEntryInfo::eSymLink  &&
+        type != CTarEntryInfo::eHardLink  &&  (m_Flags & fFollowLinks)) {
         dst->DereferenceLink();
     }
 
@@ -1656,8 +1683,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
             extract = false;
         } else { // The fOverwrite flag is set
             // Can update?
-            if (((m_Flags & fUpdate) == fUpdate)  &&
-                (type != CTarEntryInfo::eDir)) {
+            if ((m_Flags & fUpdate) == fUpdate  &&
+                type != CTarEntryInfo::eDir) {
                 // Update directories always, because archive can contain
                 // other subtree of existing destination directory.
                 time_t dst_time;
@@ -1668,28 +1695,25 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
                 }
             }
             // Have equal types?
-            if (extract  &&  (m_Flags & fEqualTypes)  &&
-                CDirEntry::EType(type) != dst->GetType()) {
+            if (extract  &&  (m_Flags & fEqualTypes)
+                &&  ((type == CTarEntryInfo::eHardLink  &&
+                      dst->GetType() != src->GetType())  ||
+                     (type != CTarEntryInfo::eHardLink  &&
+                      dst->GetType() != CDirEntry::EType(type)))) {
                 extract = false;
             }
             // Need to backup destination entry?
             if (extract  &&  ((m_Flags & fBackup) == fBackup)) {
-                try {
-                    CDirEntry dst_tmp(*dst);
-                    if (!dst_tmp.Backup(kEmptyStr,
-                                        CDirEntry::eBackup_Rename)) {
-                        TAR_THROW(eBackup,
-                                  "Cannot backup existing destination '" +
-                                  dst->GetPath() + '\'');
-                    } else {
-                        // The fOverwrite flag is set
-                        dst->Remove();
-                    }
-                } catch (...) {
-                    extract = false;
+                CDirEntry dst_tmp(*dst);
+                if (!dst_tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)) {
+                    TAR_THROW(eBackup,
+                              "Failed to backup '" + dst->GetPath() + '\'');
+                } else {
+                    // fOverwrite flag is set
+                    dst->Remove();
                 }
             }
-        } /* check on fOverwrite */
+        } // check on fOverwrite
     }
 
     if (!extract) {
@@ -1698,42 +1722,69 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
     }
 
     // Really extract the entry
-    switch (info.GetType()) {
+    switch (type) {
+    case CTarEntryInfo::eHardLink:
     case CTarEntryInfo::eFile:
         {{
             // Create base directory
             CDir dir(dst->GetDir());
             if (!dir.CreatePath()) {
                 TAR_THROW(eCreate,
-                          "Cannot create directory '" + dir.GetPath() + '\'');
-            }
-            // Create file
-            ofstream file(dst->GetPath().c_str(),
-                          IOS_BASE::out | IOS_BASE::binary | IOS_BASE::trunc);
-            if (!file) {
-                TAR_THROW(eCreate,
-                          "Cannot create file '" + dst->GetPath() + '\'');
+                          "Directory '" + dir.GetPath() + '\'');
             }
 
-            while (size) {
-                // Read from the archive
-                size_t nread = size;
-                const char* xbuf = x_ReadArchive(nread);
-                if (!xbuf) {
-                    TAR_THROW(eRead,
-                              "Cannot extract '" + info.GetName() + '\'');
+            if (type == CTarEntryInfo::eFile) {
+                // Create file
+                ofstream file(dst->GetPath().c_str(),
+                              IOS_BASE::out    |
+                              IOS_BASE::binary |
+                              IOS_BASE::trunc);
+                if (!file) {
+                    TAR_THROW(eCreate, "File '" + dst->GetPath() + '\'');
                 }
-                // Write file to disk
-                if (!file.write(xbuf, nread)) {
-                    TAR_THROW(eWrite,
-                              "Error writing file '" + dst->GetPath() + '\'');
-                }
-                m_StreamPos += ALIGN_SIZE(nread);
-                size -= nread;
-            }
 
-            _ASSERT(file.good());
-            file.close();
+                while (size) {
+                    // Read from the archive
+                    size_t nread = size;
+                    const char* xbuf = x_ReadArchive(nread);
+                    if (!xbuf) {
+                        TAR_THROW(eRead,
+                                  "In extracting '" + info.GetName() + '\'');
+                    }
+                    // Write file to disk
+                    if (!file.write(xbuf, nread)) {
+                        TAR_THROW(eWrite,
+                                  "While writing '" + dst->GetPath() + '\'');
+                    }
+                    m_StreamPos += ALIGN_SIZE(nread);
+                    size -= nread;
+                }
+
+                _ASSERT(file.good());
+                file.close();
+            } else {
+#ifdef NCBI_OS_UNIX
+                if (link(src->GetPath().c_str(),
+                         dst->GetPath().c_str()) == 0) {
+                    x_RestoreAttrs(info, dst.get());
+                    break;
+                }
+                const char* reason = errno ? strerror(errno) : 0;
+                ERR_POST(Warning << "Cannot hard-link '" +
+                         src->GetPath() + "' and '" +
+                         dst->GetPath() + '\'' +
+                         (reason ? string(": ") + reason : "") +
+                         ", trying to copy");            
+#endif // NCBI_OS_UNIX
+                if (!src->Copy(dst->GetPath(),
+                               CDirEntry::fCF_Overwrite |
+                               CDirEntry::fCF_PreserveAll)) {
+                    ERR_POST(Error << "Cannot hard-link '" +
+                             src->GetPath() + "' and '" +
+                             dst->GetPath() + "\' via copy");
+                }
+                _ASSERT(size == 0);
+            }
 
             // Restore attributes
             if (m_Flags & fPreserveAll) {
@@ -1744,15 +1795,14 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
 
     case CTarEntryInfo::eDir:
         if (!CDir(dst->GetPath()).CreatePath()) {
-            TAR_THROW(eCreate,
-                      "Cannot create directory '" + dst->GetPath() + '\'');
+            TAR_THROW(eCreate, "Directory '" + dst->GetPath() + '\'');
         }
         // Attributes for directories must be set only when all
         // its files have been already extracted.
         _ASSERT(size == 0);
         break;
 
-    case CTarEntryInfo::eLink:
+    case CTarEntryInfo::eSymLink:
         {{
             CSymLink symlink(dst->GetPath());
             if (!symlink.Create(info.GetLinkName())) {
@@ -1796,11 +1846,10 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         time_t modification = info.GetModificationTime();
         time_t last_access = info.GetLastAccessTime();
         time_t creation = info.GetCreationTime();
-        if ( !dst->SetTimeT(&modification,
-                            last_access ? &last_access : 0,
-                            creation    ? &creation    : 0) ) {
-            TAR_THROW(eRestoreAttrs,
-                      "Cannot restore date/time for '" + info.GetName() +'\'');
+        if (!dst->SetTimeT(&modification,
+                           last_access ? &last_access : 0,
+                           creation    ? &creation    : 0)) {
+            TAR_THROW(eRestoreAttrs, "Date/time for '" + dst->GetPath() +'\'');
         }
     }
 
@@ -1828,7 +1877,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
 #ifdef NCBI_OS_UNIX
         // We cannot change permissions for sym.links because lchmod()
         // is not portable and is not implemented on majority of platforms.
-        if (info.GetType() != CTarEntryInfo::eLink) {
+        if (info.GetType() != CTarEntryInfo::eSymLink) {
             // Use raw mode here to restore most of bits
             mode_t mode = s_TarToMode(info.m_Stat.st_mode);
             if (chmod(dst->GetPath().c_str(), mode) != 0) {
@@ -1842,10 +1891,9 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         CDirEntry::TSpecialModeBits special_bits;
         info.GetMode(&user, &group, &other, &special_bits);
         failed = !dst->SetMode(user, group, other, special_bits);
-#endif /*NCBI_OS_UNIX*/
+#endif // NCBI_OS_UNIX
         if (failed) {
-            TAR_THROW(eRestoreAttrs,
-                      "Cannot restore file mode for '" + info.GetName() +'\'');
+            TAR_THROW(eRestoreAttrs, "Mode bits for '" + dst->GetPath() +'\'');
         }
     }
 }
@@ -1891,7 +1939,7 @@ string CTar::x_ToArchiveName(const string& path) const
     // Check on '..'
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
-        TAR_THROW(eBadName, "Entry name contains '..' (parent) directory");
+        TAR_THROW(eBadName, "Contains '..' (parent) directory");
     }
 
     return retval;
@@ -1918,7 +1966,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
     CDirEntry::SStat st;
     if (!entry.Stat(&st, follow_links)) {
         TAR_THROW(eOpen,
-                  "Cannot get status information on '" + entry_name + '\'');
+                  "Cannot get status for '" + entry_name + '\'');
     }
     CDirEntry::EType type = entry.GetType();
 
@@ -1930,7 +1978,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   entry_name,
         TAR_THROW(eBadName, "Empty entry name not allowed");
     }
     info.m_Type = CTarEntryInfo::EType(type);
-    if (info.GetType() == CTarEntryInfo::eLink) {
+    if (info.GetType() == CTarEntryInfo::eSymLink) {
         _ASSERT(!follow_links);
         info.m_LinkName = entry.LookupLink();
         if (info.GetLinkName().empty()) {
@@ -2024,7 +2072,7 @@ void CTar::x_AppendFile(const string& filename, const CTarEntryInfo& info)
         // Open file
         ifs.open(filename.c_str(), IOS_BASE::binary | IOS_BASE::in);
         if (!ifs) {
-            TAR_THROW(eOpen, "Cannot open file '" + filename + '\'');
+            TAR_THROW(eOpen, "File '" + filename + '\'');
         }
     }
 
@@ -2040,7 +2088,7 @@ void CTar::x_AppendFile(const string& filename, const CTarEntryInfo& info)
         }
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
-            TAR_THROW(eRead, "Error reading file '" + filename + '\'');
+            TAR_THROW(eRead, "While reading file '" + filename + '\'');
         }
         avail = (size_t) ifs.gcount();
         // Write buffer to the archive

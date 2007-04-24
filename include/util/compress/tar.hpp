@@ -35,9 +35,11 @@
  *   Supports subset of POSIX.1-1988 (ustar) format.
  *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
  *   New archives are created using POSIX (genuine ustar) format, using
- *   GNU extensions for long names/links only when unavoidably.
- *   Can handle no exotics like sparse files, devices, etc,
- *   but just regular files, directories, and symbolic links.
+ *   GNU extensions for long names/links only when unavoidable.
+ *   Can handle no exotics like sparse / contiguous files, special
+ *   files (devices, FIFOs), multivolume / incremental archives, etc,
+ *   but just regular files, directories, and links:  can extract
+ *   both hard- and symlinks, but can store only symlinks.
  *
  */
 
@@ -114,18 +116,18 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eUnsupportedTarFormat: return "eUnsupportedTarFormat";
-        case eUnsupportedEntryType: return "eUnsupportedEntryType";
-        case eNameTooLong:          return "eNameTooLong";
-        case eChecksum:             return "eChecksum";
-        case eBadName:              return "eBadName";
-        case eCreate:               return "eCreate";
-        case eOpen:                 return "eOpen";
-        case eRead:                 return "eRead";
-        case eWrite:                return "eWrite";
-        case eBackup:               return "eBackup";
-        case eMemory:               return "eMemory";
-        case eRestoreAttrs:         return "eRestoreAttrs";
+        case eUnsupportedTarFormat: return "Unsupported tar format";
+        case eUnsupportedEntryType: return "Unsupported entry type";
+        case eNameTooLong:          return "Name too long";
+        case eChecksum:             return "Checksum error";
+        case eBadName:              return "Bad entry name";
+        case eCreate:               return "Cannot create";
+        case eOpen:                 return "Cannot open";
+        case eRead:                 return "Read error";
+        case eWrite:                return "Write error";
+        case eBackup:               return "Backup error";
+        case eMemory:               return "Out of memory";
+        case eRestoreAttrs:         return "Failed to restore file attributes";
         default:                    return CException::GetErrCodeString();
         }
     }
@@ -146,12 +148,13 @@ class NCBI_XUTIL_EXPORT CTarEntryInfo
 public:
     /// Which entry type.
     enum EType {
-        eFile        = CDirEntry::eFile,    ///< Regular file
-        eDir         = CDirEntry::eDir,     ///< Directory
-        eLink        = CDirEntry::eLink,    ///< Symbolic link
-        eUnknown     = CDirEntry::eUnknown, ///< Unknown type
-        eGNULongName = eUnknown + 1,        ///< GNU long name
-        eGNULongLink = eUnknown + 2         ///< GNU long link
+        eFile        = CDirEntry::eFile,        ///< Regular file
+        eDir         = CDirEntry::eDir,         ///< Directory
+        eSymLink     = CDirEntry::eLink,        ///< Symbolic link
+        eUnknown     = CDirEntry::eUnknown,     ///< Unknown type
+        eHardLink    = eUnknown + 1,            ///< Hard link
+        eGNULongName = eUnknown + 2,            ///< GNU long name
+        eGNULongLink = eUnknown + 3             ///< GNU long link
     };
 
     // Constructor
