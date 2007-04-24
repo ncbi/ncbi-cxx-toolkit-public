@@ -657,6 +657,11 @@ bool CCleanup_imp::x_CleanupRptUnit(CGb_qual& gbq)
     if (NStr::IsBlank(val)) {
         return false;
     }
+    if( string::npos != val.find_first_not_of( "ACGTUNacgtun0123456789()" ) ) {
+        // Has characters in it that are inappropriate for range or nucleotides.
+        // We don't understand it and we certainly won't mess with it...
+        return false;
+    } 
     bool    digits1, sep, digits2;
     digits1 = sep = digits2 = false;
     string s;
