@@ -30,11 +30,13 @@
  *   Tar archive API.
  *
  *   Supports subset of POSIX.1-1988 (ustar) format.
- *   Old GNU (POSIX 1003.1) and V7 formats are also partially supported.
+ *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
  *   New archives are created using POSIX (genuine ustar) format, using
  *   GNU extensions for long names/links only when unavoidable.
- *   Can handle no exotics like sparse files, devices, etc,
- *   but just regular files, directories, and symbolic links.
+ *   Can handle no exotics like sparse / contiguous files, special
+ *   files (devices, FIFOs), multivolume / incremental archives, etc,
+ *   but just regular files, directories, and links:  can extract
+ *   both hard- and symlinks, but can store only symlinks.
  *
  */
 
