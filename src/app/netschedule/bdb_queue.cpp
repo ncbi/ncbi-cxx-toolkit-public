@@ -268,7 +268,8 @@ void CQueueDataBase::Open(const string& path,
                           unsigned      max_lockobjects,
                           unsigned      log_mem_size,
                           unsigned      max_trans,
-                          bool          sync_transactions)
+                          bool          sync_transactions,
+                          bool          private_env)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
 
@@ -325,7 +326,10 @@ void CQueueDataBase::Open(const string& path,
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
 
-    if (fl.empty()) {
+    CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
+    if (private_env)
+        opt |= CBDB_Env::ePrivate;
+    if (private_env || fl.empty()) {
         if (cache_ram_size)
             m_Env->SetCacheSize(cache_ram_size);
         if (max_locks)
@@ -340,9 +344,12 @@ void CQueueDataBase::Open(const string& path,
                                       CBDB_Transaction::eTransSync :
                                       CBDB_Transaction::eTransASync);
 
-        m_Env->OpenWithTrans(path.c_str(), CBDB_Env::eThreaded | CBDB_Env::ePrivate);
-        LOG_POST(Info << "Opened BDB environment with "
+        m_Env->OpenWithTrans(path.c_str(), opt);
+        LOG_POST(Info << "Opened " << (private_env ? "private " : "")
+            << "BDB environment with "
             << m_Env->GetMaxLocks() << " max locks, "
+//            << m_Env->GetMaxLockers() << " max lockers, "
+//            << m_Env->GetMaxLockObjects() << " max lock objects, "
             << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
                                           "" : "a") << "syncronous transactions, "
             << m_Env->MutexGetMax() <<  " max mutexes");
@@ -350,7 +357,6 @@ void CQueueDataBase::Open(const string& path,
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
-        /*
         try {
             m_Env->JoinEnv(path.c_str(), CBDB_Env::eThreaded);
             if (!m_Env->IsTransactional()) {
@@ -374,13 +380,9 @@ void CQueueDataBase::Open(const string& path,
         catch (CBDB_Exception&)
         {
             m_Env->OpenWithTrans(path.c_str(), 
-                CBDB_Env::eThreaded | CBDB_Env::eRunRecovery | CBDB_Env::ePrivate);
+                CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
-        */
-        m_Env->OpenWithTrans(path.c_str(), 
-            CBDB_Env::eThreaded | CBDB_Env::eRunRecovery | CBDB_Env::ePrivate);
-
-    } // if else
+    }
 // TODO: read direct_db and direct_log parameters
 //    m_Env->SetDirectDB(true);
 //    m_Env->SetDirectLog(true);
@@ -462,7 +464,7 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
     x_CleanParamMap();
 
     CBDB_Transaction trans(*m_Env, 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
 
@@ -638,7 +640,7 @@ void CQueueDataBase::CreateQueue(const string& qname, const string& qclass,
         NCBI_THROW(CNetScheduleException, eUnknownQueueClass, err);
     }
     CBDB_Transaction trans(*m_Env, 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
     m_QueueDescriptionDB.queue = qname;
@@ -658,7 +660,7 @@ void CQueueDataBase::DeleteQueue(const string& qname)
 {
     CFastMutexGuard guard(m_ConfigureLock);
     CBDB_Transaction trans(*m_Env, 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
     m_QueueDescriptionDB.queue = qname;
@@ -1840,7 +1842,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
     SQueueDB& db = q->db;
     SJobInfoDB& job_db = q->m_JobInfoDB;
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
 
     rec->affinity_id = 0;
@@ -1912,7 +1914,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     // process affinity ids
     {{
         CBDB_Transaction trans(*db.GetEnv(), 
-                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
         for (unsigned i = 0; i < batch.size(); ++i) {
             SNS_SubmitRecord& subm = batch[i];
@@ -1936,7 +1938,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     }}
 
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
 
     {{
@@ -2078,7 +2080,7 @@ void CQueue::ForceReschedule(unsigned int job_id)
     {{
         SQueueDB& db = q->db;
         CBDB_Transaction trans(*db.GetEnv(), 
-                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
 
         CFastMutexGuard guard(q->lock);
@@ -2127,7 +2129,7 @@ void CQueue::Cancel(unsigned int job_id)
     {{
         SQueueDB& db = q->db;
         CBDB_Transaction trans(*db.GetEnv(), 
-                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
 
         CFastMutexGuard guard(q->lock);
@@ -2197,7 +2199,7 @@ void CQueue::PutResult(unsigned int  job_id,
     for (unsigned repeat = 0; true; ) {
         try {
             CBDB_Transaction trans(*db.GetEnv(), 
-                                   CBDB_Transaction::eTransASync,
+                                   CBDB_Transaction::eEnvDefault,
                                    CBDB_Transaction::eNoAssociation);
 
             {{
@@ -2425,7 +2427,7 @@ repeat_transaction:
 
     try {
         CBDB_Transaction trans(*(pqdb->GetEnv()), 
-                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
 
         if (use_db_mutex) {
@@ -2561,7 +2563,7 @@ void CQueue::PutProgressMessage(unsigned int  job_id,
 
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
 
     CFastMutexGuard guard(q->lock);
@@ -2617,7 +2619,7 @@ void CQueue::JobFailed(unsigned int  job_id,
 
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
 
     unsigned subm_addr, subm_port, subm_timeout, time_submit;
@@ -2717,7 +2719,7 @@ void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
     }
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
 
     unsigned exp_time = 0;
@@ -2794,7 +2796,7 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     }
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eEnvDefault,
                            CBDB_Transaction::eNoAssociation);
 
     unsigned exp_time = 0;
@@ -2901,7 +2903,7 @@ void CQueue::ReturnJob(unsigned int job_id)
         db.id = job_id;
         if (db.Fetch() == eBDB_Ok) {            
             CBDB_Transaction trans(*db.GetEnv(), 
-                                CBDB_Transaction::eTransASync,
+                                CBDB_Transaction::eEnvDefault,
                                 CBDB_Transaction::eNoAssociation);
             db.SetTransaction(&trans);
 
@@ -3022,7 +3024,7 @@ fetch_db:
     try {
         SQueueDB& db = q->db;
         CBDB_Transaction trans(*db.GetEnv(),
-                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
         {{
         CFastMutexGuard guard(q->lock);
@@ -3370,7 +3372,7 @@ get_job_id:
     try {
         SQueueDB& db = q->db;
         CBDB_Transaction trans(*db.GetEnv(), 
-                               CBDB_Transaction::eTransASync,
+                               CBDB_Transaction::eEnvDefault,
                                CBDB_Transaction::eNoAssociation);
 
 
@@ -4057,7 +4059,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
     }
 
     CBDB_Transaction trans(*db.GetEnv(), 
-                        CBDB_Transaction::eTransASync,
+                        CBDB_Transaction::eEnvDefault,
                         CBDB_Transaction::eNoAssociation);
 
     // TODO: get current job status from the status index

@@ -570,7 +570,8 @@ public:
               unsigned      max_lockobjects,
               unsigned      log_mem_size,
               unsigned      max_trans,
-              bool          sync_transactions);
+              bool          sync_transactions,
+              bool          private_env);
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);
 

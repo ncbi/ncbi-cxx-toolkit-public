@@ -442,7 +442,7 @@ void SLockedQueue::ClearAffinityIdx()
         unsigned aff_id = *en;
         CFastMutexGuard guard(lock);
         CBDB_Transaction trans(*db.GetEnv(), 
-                                CBDB_Transaction::eTransASync,
+                                CBDB_Transaction::eEnvDefault,
                                 CBDB_Transaction::eNoAssociation);
         aff_idx.SetTransaction(&trans);
         SQueueAffinityIdx::TParent::TBitVector bvect(bm::BM_GAP);
@@ -563,10 +563,6 @@ bool SLockedQueue::ReadTag(const string& key,
                            TBuffer* buf)
 {
     // Guarded by m_TagLock through GetTagLock()
-    //CBDB_Transaction trans(*m_TagDb.GetEnv(), 
-    //                    CBDB_Transaction::eTransASync,
-    //                    CBDB_Transaction::eNoAssociation);
-    //m_TagDb.SetTransaction(&trans);
     CBDB_FileCursor cur(m_TagDb);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key << val;

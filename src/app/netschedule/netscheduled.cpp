@@ -2410,6 +2410,10 @@ int CNetScheduleDApp::Run(void)
             bdb_conf.GetBool("netschedule", "sync_transactions",
                              CConfig::eErr_NoThrow, false);
 
+        bool private_env =
+            bdb_conf.GetBool("netschedule", "private_env",
+                             CConfig::eErr_NoThrow, false);
+
         LOG_POST(Info << "Mounting database at: " << db_path);
 
         unsigned max_threads =
@@ -2427,7 +2431,8 @@ int CNetScheduleDApp::Run(void)
             max_lockobjects,
             log_mem_size,
             max_trans,
-            sync_transactions);
+            sync_transactions,
+            private_env);
 
 
         int port = 
