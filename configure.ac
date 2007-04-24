@@ -1353,7 +1353,7 @@ else
    # would otherwise be illegal....
    case "$host_os:$host_cpu" in
       linux*:*86) ;;
-      linux* | darwin*)
+      linux* | darwin* | solaris*:sparc )
         CFLAGS="$CFLAGS $CFLAGS_DLL"
         CFLAGS_DLL=
         CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
