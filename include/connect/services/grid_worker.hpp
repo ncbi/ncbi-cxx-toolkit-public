@@ -535,7 +535,7 @@ public:
     void SetWaitServerTimeout(unsigned int sec) { m_WaitServerTimeout = sec; }
     /// Start jobs execution.
     ///
-    void Start();
+    void Run();
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -642,6 +642,6 @@ private:
 
 END_NCBI_SCOPE
 
-#define WN_BUILD_DATE " build " __DATE__ " " __TIME__
+#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 2.1)"
 
 #endif //CONNECT_SERVICES__GRID_WOKER_HPP

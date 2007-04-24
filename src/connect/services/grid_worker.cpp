@@ -341,7 +341,7 @@ CGridWorkerNode::~CGridWorkerNode()
 {
 }
 
-void CGridWorkerNode::Start()
+void CGridWorkerNode::Run()
 {
     _ASSERT(m_MaxThreads > 0);
     if (!x_CreateNSReadClient())
@@ -383,6 +383,7 @@ void CGridWorkerNode::Start()
                         //continue;
                     //////
                 } catch (CBlockingQueueException&) {
+                    // threaded pool is busy
                     continue;
                 }
             }
@@ -428,21 +429,40 @@ void CGridWorkerNode::Start()
             ERR_POST(CTime(CTime::eCurrent).AsString() << " " << ex.what());
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
+        } catch (...) {
+            ERR_POST(CTime(CTime::eCurrent).AsString() << " Unknown error");
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         }
     }
-    LOG_POST(CTime(CTime::eCurrent).AsString() << " Shutting down...");   
+    LOG_POST(CTime(CTime::eCurrent).AsString() << " Shutting down...");  
     if (m_MaxThreads > 1 ) {
-        m_ThreadsPool->KillAllThreads(true);
-        m_ThreadsPool.reset(0);
+        try {
+            LOG_POST(CTime(CTime::eCurrent).AsString() << " Stopping worker threads...");  
+            m_ThreadsPool->KillAllThreads(true);
+            m_ThreadsPool.reset(0);
+        } catch (exception& ex) {
+            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not stop worker threads: " << ex.what());
+        } catch (...) {
+            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not stop worker threads: Unknown error");
+        }
     }
     try {
         m_NSReadClient->UnRegisterClient(m_UdpPort);
-    } catch (CNetServiceException& e) {
+    } catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
-        if (e.GetErrCode() != CNetServiceException::eCommunicationError 
-            || NStr::Find(e.what(),"Server error:Unknown request") == NPOS)
-            throw;
+        if (ex.GetErrCode() != CNetServiceException::eCommunicationError 
+            || NStr::Find(ex.what(),"Server error:Unknown request") == NPOS)
+            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could unregister from NetScehdule services: " 
+                     << ex.what());
+    } catch(exception& ex) {
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Could unregister from NetScehdule services: " 
+                 << ex.what());
+    } catch(...) {
+        ERR_POST(CTime(CTime::eCurrent).AsString() 
+                 << " Could unregister from NetScehdule services: Unknown error." );
     }
+
     m_NSReadClient.reset(0);
     LOG_POST(CTime(CTime::eCurrent).AsString() << " Worker Node has been stopped.");
 }

@@ -85,8 +85,7 @@ private:
     STimeout         m_ThrdSrvAcceptTimeout;
     volatile bool    m_ShutdownRequested;
 
-    typedef map<string, AutoPtr<IRequestProcessor> > TProcessorCont;
-    TProcessorCont m_Processors;
+    static IRequestProcessor* x_MakeProcessor(const string& cmd);
 
     CWorkerNodeControlThread(const CWorkerNodeControlThread&);
     CWorkerNodeControlThread& operator=(const CWorkerNodeControlThread&);

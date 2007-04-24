@@ -121,6 +121,7 @@ public:
                          CGridWorkerNode& node)
     {       
         os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE << endl;
+        os << "Node started at: " << CGridGlobals::GetInstance().GetStartTime().AsString() << endl;
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)
             os << "Executable path: " << app->GetProgramExecutablePath() << endl;
@@ -207,6 +208,22 @@ const string GETLOAD_CMD = "GETLOAD";
 /////////////////////////////////////////////////////////////////////////////
 // 
 ///@internal
+
+/* static */
+CWorkerNodeControlThread::IRequestProcessor* 
+CWorkerNodeControlThread::x_MakeProcessor(const string& cmd)
+{
+    if (NStr::StartsWith(cmd, SHUTDOWN_CMD))
+        return new CShutdownProcessor;
+    else if (NStr::StartsWith(cmd, VERSION_CMD))
+        return new CGetVersionProcessor;
+    else if (NStr::StartsWith(cmd, STAT_CMD))
+        return new CGetStatisticsProcessor;
+    else if (NStr::StartsWith(cmd, GETLOAD_CMD))
+        return new CGetLoadProcessor;
+    return new CUnknownProcessor;
+}
+
 CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port, 
                                                    CGridWorkerNode& worker_node)
     : CThreadedServer(port), m_WorkerNode(worker_node), m_ShutdownRequested(false)
@@ -217,11 +234,6 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port,
     m_ThrdSrvAcceptTimeout.sec = 1;
     m_ThrdSrvAcceptTimeout.usec = 0;
     m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
-
-    m_Processors[VERSION_CMD] = new CGetVersionProcessor;
-    m_Processors[SHUTDOWN_CMD] = new CShutdownProcessor;
-    m_Processors[STAT_CMD] = new CGetStatisticsProcessor;
-    m_Processors[GETLOAD_CMD] = new CGetLoadProcessor;
 }
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
@@ -259,20 +271,10 @@ void CWorkerNodeControlThread::Process(SOCK sock)
 
         string host = socket.GetPeerAddress();
         
-        CNcbiOstrstream os;        
-        TProcessorCont::iterator it;
-        for (it = m_Processors.begin(); it != m_Processors.end(); ++it) {
-            if (NStr::StartsWith(request, it->first)) {
-                IRequestProcessor& processor = *(it->second);
-                if (processor.Authenticate(host, auth, queue, os, m_WorkerNode))
-                    processor.Process(request, os, m_WorkerNode);
-                break;
-            }
-        }
-        if (it == m_Processors.end()) {
-            CUnknownProcessor processor;
-            processor.Process(request, os, m_WorkerNode);
-        }
+        CNcbiOstrstream os;
+        auto_ptr<IRequestProcessor> processor(x_MakeProcessor(request));
+        processor->Authenticate(host, auth, queue, os, m_WorkerNode);
+        processor->Process(request, os, m_WorkerNode);
             
         os << ends;
         try {

@@ -89,6 +89,7 @@ private:
 //
 //    CLogWatcher
 /// @internal
+/*
 class CLogWatcher : public IWorkerNodeJobWatcher
 {
 public:
@@ -111,11 +112,12 @@ public:
 private:
     CNcbiOstream* m_Os;
 };
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CGridWorkerNodeThread
 /// @internal
+/*
 class CGridWorkerNodeThread : public CThread
 {
 public:
@@ -140,6 +142,7 @@ protected:
 private:
     CGridWorkerNode& m_WorkerNode;
 };
+*/
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -148,26 +151,28 @@ private:
 class CGridControlThread : public CThread
 {
 public:
-    CGridControlThread(CWorkerNodeControlThread& control) 
-        : m_Control(control) {}
+    CGridControlThread(unsigned int control_port, CGridWorkerNode& wnode) 
+        : m_Control(new CWorkerNodeControlThread(control_port, wnode)) {}
 
     ~CGridControlThread() {}
+
+    void Stop() { if (m_Control.get()) m_Control->RequestShutdown(); }
 protected:
 
     virtual void* Main(void)
     {
-        m_Control.Run();
+        m_Control->Run();
         return NULL;
     }
     virtual void OnExit(void)
     {
         CThread::OnExit();
         CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
-        LOG_POST(CTime(CTime::eCurrent).AsString() << " Control Thread exited.");
+        LOG_POST(CTime(CTime::eCurrent).AsString() << " Control Thread has been stopped.");
     }
 
 private:
-    CWorkerNodeControlThread& m_Control;
+    auto_ptr<CWorkerNodeControlThread> m_Control;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -309,7 +314,7 @@ void* CWorkerNodeIdleThread::Main()
 
 void CWorkerNodeIdleThread::OnExit(void)
 {
-    LOG_POST(CTime(CTime::eCurrent).AsString() << " Idle Thread stopped.");
+    LOG_POST(CTime(CTime::eCurrent).AsString() << " Idle Thread has been stopped.");
 }
 
 CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
@@ -569,8 +574,7 @@ int CGridWorkerApp_Impl::Run()
     }
 
     {{
-    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode);
-    CRef<CGridControlThread> control_thread(new CGridControlThread(control_server));
+     CRef<CGridControlThread> control_thread(new CGridControlThread(control_port, *m_WorkerNode));
 
     //CRef<CGridWorkerNodeThread> worker_thread(
     //                            new CGridWorkerNodeThread(*m_WorkerNode));
@@ -585,35 +589,33 @@ int CGridWorkerApp_Impl::Run()
                  << CGridGlobals::GetInstance().GetStartTime().AsString()
                  << " ===================\n"
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
-                 << "Waiting for control commands on TCP port " << control_port << "\n"
-                 << "Queue name: " << m_WorkerNode->GetQueueName()
-                 << "Maximum job threads: " << max_threads);
+                 << "Waiting for control commands on " 
+                 << CSocketAPI::gethostname() << ":" << control_port << "\n"
+                 << "Queue name: " << m_WorkerNode->GetQueueName() << "\n"
+                 << "Maximum job threads: " << max_threads << "\n");
 
+        m_WorkerNode->Run();
 
-        try {
-            m_WorkerNode->Start();
-                //control_server.Run();
-        } catch (exception& ex) {
-            ERR_POST(CTime(CTime::eCurrent).AsString()
-                     << " Couldn't run a worker node: " << ex.what()  << "\n");
-            RequestShutdown();
-        } catch (...) {
-            ERR_POST(CTime(CTime::eCurrent).AsString()
-                     << " Couldn't run a worker node: Unknown error\n");
-            RequestShutdown();
-        }
-        control_server.RequestShutdown();
+        LOG_POST(CTime(CTime::eCurrent).AsString() << " Stopping Control thread...");
+        control_thread->Stop();
+        CNcbiOstrstream os;
+        CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
+        LOG_POST(string(CNcbiOstrstreamToString(os)));
     }
     control_thread->Join();
     //    worker_thread->Join();
     if (m_IdleThread) {
-        m_IdleThread->RequestShutdown();
+        if (!m_IdleThread->IsShutdownRequested()) {
+            LOG_POST(CTime(CTime::eCurrent).AsString() << " Stopping Idle thread...");
+            m_IdleThread->RequestShutdown();
+        }
         m_IdleThread->Join();
     }
     }}
+
     m_WorkerNode.reset(0);    
     // give sometime the thread to shutdown
-    SleepMilliSec(500);
+    //SleepMilliSec(500);
     return 0;
 }
 
