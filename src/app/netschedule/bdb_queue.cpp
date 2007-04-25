@@ -2163,12 +2163,12 @@ void CQueue::DropJob(unsigned job_id)
     q->Erase(job_id);
     x_RemoveFromTimeLine(job_id);
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::DropJob() job id=";
         msg += NStr::IntToString(job_id);
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -2219,8 +2219,8 @@ void CQueue::PutResult(unsigned int  job_id,
         catch (CBDB_ErrnoException& ex) {
             if (ex.IsDeadLock()) {
                 if (++repeat < k_max_dead_locks) {
-                    if (q->monitor.IsMonitorActive()) {
-                        q->monitor.SendString(
+                    if (IsMonitoring()) {
+                        MonitorPost(
                             "DeadLock repeat in CQueue::PutResult");
                     }
                     SleepMilliSec(250);
@@ -2229,8 +2229,8 @@ void CQueue::PutResult(unsigned int  job_id,
             } else 
             if (ex.IsNoMem()) {
                 if (++repeat < k_max_dead_locks) {
-                    if (q->monitor.IsMonitorActive()) {
-                        q->monitor.SendString(
+                    if (IsMonitoring()) {
+                        MonitorPost(
                             "No resource repeat in CQueue::PutResult");
                     }
                     SleepMilliSec(250);
@@ -2273,7 +2273,7 @@ void CQueue::PutResult(unsigned int  job_id,
 
     }
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::PutResult() job id=";
@@ -2283,7 +2283,7 @@ void CQueue::PutResult(unsigned int  job_id,
         msg += " output=";
         msg += output;
 
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -2499,8 +2499,8 @@ repeat_transaction:
         }
         if (ex.IsDeadLock()) {
             if (++dead_locks < k_max_dead_locks) {
-                if (q->monitor.IsMonitorActive()) {
-                    q->monitor.SendString(
+                if (IsMonitoring()) {
+                    MonitorPost(
                         "DeadLock repeat in CQueue::JobExchange");
                 }
                 SleepMilliSec(250);
@@ -2510,8 +2510,8 @@ repeat_transaction:
         else
         if (ex.IsNoMem()) {
             if (++dead_locks < k_max_dead_locks) {
-                if (q->monitor.IsMonitorActive()) {
-                    q->monitor.SendString(
+                if (IsMonitoring()) {
+                    MonitorPost(
                         "No resource repeat in CQueue::JobExchange");
                 }
                 SleepMilliSec(250);
@@ -2540,7 +2540,7 @@ repeat_transaction:
         // TODO: send a UDP notification and update runtime stat
     }
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
 
@@ -2551,7 +2551,7 @@ repeat_transaction:
         msg += " output=";
         msg += output;
 
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -2586,7 +2586,7 @@ void CQueue::PutProgressMessage(unsigned int  job_id,
 
     trans.Commit();
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string mmsg = tmp_t.AsString();
         mmsg += " CQueue::PutProgressMessage() job id=";
@@ -2594,7 +2594,7 @@ void CQueue::PutProgressMessage(unsigned int  job_id,
         mmsg += " msg=";
         mmsg += msg;
 
-        q->monitor.SendString(mmsg);
+        MonitorPost(mmsg);
     }
 
 }
@@ -2693,7 +2693,7 @@ void CQueue::JobFailed(unsigned int  job_id,
                                   CSocketAPI::ntoa(subm_addr), subm_port);
     }
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::JobFailed() job id=";
@@ -2704,7 +2704,7 @@ void CQueue::JobFailed(unsigned int  job_id,
         msg += output;
         if (db.status == (int) CNetScheduleAPI::ePending)
             msg += " rescheduled";
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -2763,7 +2763,7 @@ void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
         tl.MoveObject(exp_time, curr + tm, job_id);
     }}
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::SetJobRunTimeout: Job id=";
@@ -2777,7 +2777,7 @@ void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
         msg += " job_timeout(minutes)=";
         msg += NStr::IntToString(tm/60);
 
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -2857,7 +2857,7 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         tl.MoveObject(exp_time, curr + tm, job_id);
     }}
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::JobDelayExpiration: Job id=";
@@ -2872,7 +2872,7 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         msg += " job_timeout(minutes)=";
         msg += NStr::IntToString(run_timeout/60);
 
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -2926,12 +2926,12 @@ void CQueue::ReturnJob(unsigned int job_id)
     js_guard.Commit();
     x_RemoveFromTimeLine(job_id);
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::ReturnJob: job id=";
         msg += NStr::IntToString(job_id);
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -3088,12 +3088,12 @@ fetch_db:
 
             bguard.ReturnToStatus(CNetScheduleAPI::eFailed);
 
-            if (q->monitor.IsMonitorActive()) {
+            if (IsMonitoring()) {
                 CTime tmp_t(CTime::eCurrent);
                 string msg = tmp_t.AsString();
                 msg += " CQueue::x_GetJobLB() timeout expired job id=";
                 msg += NStr::IntToString(*job_id);
-                q->monitor.SendString(msg);
+                MonitorPost(msg);
             }
 
             cur.Update();
@@ -3152,7 +3152,7 @@ fetch_db:
                 _ASSERT(0);
             } // switch
 
-            if (q->monitor.IsMonitorActive()) {
+            if (IsMonitoring()) {
                 CTime tmp_t(CTime::eCurrent);
                 string msg = " CQueue::x_GetJobLB() LB decision = ";
                 msg += CNSLB_DecisionModule::DecisionToStrint(lb_decision);
@@ -3160,7 +3160,7 @@ fetch_db:
                 msg += NStr::IntToString(*job_id);
                 msg += " worker_node=";
                 msg += CSocketAPI::gethostbyaddr(worker_node);
-                q->monitor.SendString(msg);
+                MonitorPost(msg);
             }
 
         }
@@ -3198,12 +3198,12 @@ grant_job:
                 db.time_done = curr;
                 db.run_counter = --run_counter;
 
-                if (q->monitor.IsMonitorActive()) {
+                if (IsMonitoring()) {
                     CTime tmp_t(CTime::eCurrent);
                     string msg = tmp_t.AsString();
                     msg += " CQueue::x_GetJobLB() Too many run attempts job id=";
                     msg += NStr::IntToString(*job_id);
-                    q->monitor.SendString(msg);
+                    MonitorPost(msg);
                 }
 
                 *job_id = 0; 
@@ -3225,14 +3225,14 @@ grant_job:
     }
     bguard.ReturnToStatus(CNetScheduleAPI::eRunning);
 
-    if (q->monitor.IsMonitorActive() && *job_id) {
+    if (IsMonitoring() && *job_id) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::x_GetJobLB() job id=";
         msg += NStr::IntToString(*job_id);
         msg += " worker_node=";
         msg += CSocketAPI::gethostbyaddr(worker_node);
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 
 
@@ -3410,14 +3410,14 @@ get_job_id:
 
         if (*job_id) x_Count(SLockedQueue::eStatGetEvent);
 
-        if (q->monitor.IsMonitorActive() && *job_id) {
+        if (IsMonitoring() && *job_id) {
             CTime tmp_t(CTime::eCurrent);
             string msg = tmp_t.AsString();
             msg += " CQueue::GetJob() job id=";
             msg += NStr::IntToString(*job_id);
             msg += " worker_node=";
             msg += CSocketAPI::gethostbyaddr(worker_node);
-            q->monitor.SendString(msg);
+            MonitorPost(msg);
         }
 
     } 
@@ -3522,13 +3522,13 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
 
             cur.Update();
 
-            if (q->monitor.IsMonitorActive()) {
+            if (IsMonitoring()) {
                 CTime tmp_t(CTime::eCurrent);
                 string msg = tmp_t.AsString();
                 msg += 
                  " CQueue::x_UpdateDB_GetJobNoLock() timeout expired job id=";
                 msg += NStr::IntToString(job_id);
-                q->monitor.SendString(msg);
+                MonitorPost(msg);
             }
             return eGetJobUpdate_JobFailed;
 
@@ -3560,12 +3560,12 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
 
                 cur.Update();
 
-                if (q->monitor.IsMonitorActive()) {
+                if (IsMonitoring()) {
                     CTime tmp_t(CTime::eCurrent);
                     string msg = tmp_t.AsString();
                     msg += " CQueue::GetJob() Too many run attempts job id=";
                     msg += NStr::IntToString(job_id);
-                    q->monitor.SendString(msg);
+                    MonitorPost(msg);
                 }
 
                 return eGetJobUpdate_JobFailed;
@@ -3767,12 +3767,12 @@ CQueue::DoDeleteBatch(unsigned batch_size)
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned del_rec = q->DeleteBatch(batch_size);
     // monitor this
-    if (del_rec > 0 && q->monitor.IsMonitorActive()) {
+    if (del_rec > 0 && IsMonitoring()) {
         CTime tm(CTime::eCurrent);
         string msg = tm.AsString();
         msg += " CQueue::DeleteBatch: " +
                 NStr::IntToString(del_rec) + " job(s) deleted";
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
     return del_rec;
 }
@@ -3815,12 +3815,12 @@ void CQueue::x_RemoveFromTimeLine(unsigned job_id)
         q->run_time_line->RemoveObject(job_id);
     }
 
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::RemoveFromTimeLine: job id=";
         msg += NStr::IntToString(job_id);
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -3841,14 +3841,14 @@ CQueue::x_TimeLineExchange(unsigned remove_job_id,
             tl.AddObject(projected_time_done, add_job_id);
         }
     }
-    if (q->monitor.IsMonitorActive()) {
+    if (IsMonitoring()) {
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
         msg += " CQueue::TimeLineExchange: job removed=";
         msg += NStr::IntToString(remove_job_id);
         msg += " job added=";
         msg += NStr::IntToString(add_job_id);
-        q->monitor.SendString(msg);
+        MonitorPost(msg);
     }
 }
 
@@ -3922,25 +3922,19 @@ void CQueue::SetMonitorSocket(SOCK sock)
     s.release();
 }
 
-CNetScheduleMonitor* CQueue::GetMonitor(void)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    return &q->monitor;
-}
-
 bool CQueue::IsMonitoring()
 {
-    CRef<SLockedQueue> ref(m_LQueue.Lock());
-    if (ref == NULL)
+    CRef<SLockedQueue> q(m_LQueue.Lock());
+    if (q == NULL)
         return false;
-    return ref->IsMonitoring();
+    return q->IsMonitoring();
 }
 
 void CQueue::MonitorPost(const string& msg)
 {
-    CRef<SLockedQueue> ref(m_LQueue.Lock());
-    if (ref == NULL) return;
-    return ref->MonitorPost(msg);
+    CRef<SLockedQueue> q(m_LQueue.Lock());
+    if (q == NULL) return;
+    return q->MonitorPost(msg);
 }
 
 void CQueue::NotifyListeners(bool unconditional)
@@ -4121,8 +4115,8 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
         msg += NStr::IntToString(run_timeout/60);
         ERR_POST(msg);
 
-        if (q->monitor.IsMonitorActive()) {
-            q->monitor.SendString(msg);
+        if (IsMonitoring()) {
+            MonitorPost(msg);
         }
     }}
 

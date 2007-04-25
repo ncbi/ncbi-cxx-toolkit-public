@@ -64,8 +64,8 @@ public:
 
     bool IsMonitorActive()
     {
-        if (m_Sock == 0) return false;
         CFastMutexGuard guard(m_Lock);
+        if (!m_Sock) return false;
 
         EIO_Status st = m_Sock->GetStatus(eIO_Open);
         if (st == eIO_Success) {
@@ -78,15 +78,12 @@ public:
 
     void SendMessage(const char* msg, size_t length)
     {
-        if (m_Sock) {
-            CFastMutexGuard guard(m_Lock);
-            if (m_Sock == 0)
-                return;
-            EIO_Status st = m_Sock->Write(msg, length);
-            if (st != eIO_Success) {
-                delete m_Sock; m_Sock = 0;
-                return;
-            }
+        CFastMutexGuard guard(m_Lock);
+        if (!m_Sock) return;
+        EIO_Status st = m_Sock->Write(msg, length);
+        if (st != eIO_Success) {
+            delete m_Sock; m_Sock = 0;
+            return;
         }
     }
     void SendString(const string& str)
@@ -96,13 +93,10 @@ public:
 
 
 private:
-    typedef CSocket*       TSocketPtr;
-
-    CFastMutex             m_Lock; 
-    volatile TSocketPtr    m_Sock;
+    CFastMutex m_Lock; 
+    CSocket*   m_Sock;
 };
 
 END_NCBI_SCOPE
 
-#endif
-
+#endif /* NS_MONITOR__HPP */

@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.26 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.27 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -397,7 +397,6 @@ private:
     CNetScheduleServer*         m_Server;
     string                      m_QueueName;
     auto_ptr<CQueue>            m_Queue;
-    CNetScheduleMonitor*        m_Monitor;
     SJS_Request                 m_JobReq;
     // Uncapabilities - that is combination of ENSAccess
     // rights, which can NOT be performed by this connection
@@ -522,8 +521,7 @@ static void s_ReadBufToString(BUF buffer, string& str)
 // ConnectionHandler implementation
 
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
-    : m_Server(server), m_Monitor(NULL),
-      m_Uncaps(~0L), m_VersionControl(false)
+    : m_Server(server), m_Uncaps(~0L), m_VersionControl(false)
 {
 }
 
@@ -648,8 +646,8 @@ string CNetScheduleHandler::x_FormatErrorMessage(string header, string what)
 
 void CNetScheduleHandler::x_WriteErrorToMonitor(string msg)
 {
-    if (m_Monitor) {
-        m_Monitor->SendString(m_LocalTimer.GetLocalTime().AsString() + msg);
+    if (IsMonitoring()) {
+        MonitorPost(m_LocalTimer.GetLocalTime().AsString() + msg);
     }
 }
 
@@ -681,7 +679,6 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
             m_Uncaps &= ~eNSAC_Worker;
         if (m_Queue->IsSubmitAllowed())
             m_Uncaps &= ~eNSAC_Submitter;
-        m_Monitor = m_Queue->GetMonitor();
         if (m_Queue->IsVersionControl())
             m_VersionControl = true;
     }
@@ -701,7 +698,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     m_CommandNumber = m_Server->GetCommandNumber();
 
     // Logging
-    if (is_log || (m_Monitor && m_Monitor->IsMonitorActive())) {
+    if (is_log || IsMonitoring()) {
         string lmsg;
         x_MakeLogMessage(buffer, lmsg);
         if (is_log) {
@@ -709,9 +706,9 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
                 << lmsg
                 << NCBI_NS_NCBI::Endm;
         }
-        if (m_Monitor && m_Monitor->IsMonitorActive()) {
+        if (IsMonitoring()) {
             lmsg += "\n";
-            m_Monitor->SendString(lmsg);
+            MonitorPost(lmsg);
         }
     }
 
@@ -821,7 +818,7 @@ void CNetScheduleHandler::x_MonitorRec(const SNS_SubmitRecord& rec)
     ITERATE(TNSTagList, it, rec.tags) {
         msg += it->first + "=" + it->second + "; ";
     }
-    m_Monitor->SendString(msg);
+    MonitorPost(msg);
 }
 
 
@@ -847,7 +844,7 @@ void CNetScheduleHandler::ProcessSubmit()
 
     WriteMsg("OK:", buf);
 
-    if (m_Monitor && m_Monitor->IsMonitorActive()) {
+    if (IsMonitoring()) {
         CSocket& socket = GetSocket();
         string msg = "::ProcessSubmit ";
         msg += m_LocalTimer.GetLocalTime().AsString();
@@ -857,7 +854,7 @@ void CNetScheduleHandler::ProcessSubmit()
         msg += " ";
         msg += m_AuthString;
 
-        m_Monitor->SendString(msg);
+        MonitorPost(msg);
         x_MonitorRec(rec);
     }
 
@@ -890,7 +887,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
             m_BatchStopWatch.Restart();
             m_BatchSubmitVector.resize(m_BatchSize);
             m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchItem;
-            if (m_Monitor && m_Monitor->IsMonitorActive()) {
+            if (IsMonitoring()) {
                 CSocket& socket = GetSocket();
                 string msg = "::ProcessMsgBatchHeader ";
                 msg += m_LocalTimer.GetLocalTime().AsString();
@@ -1034,7 +1031,7 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
         m_Queue->SubmitBatch(m_BatchSubmitVector);
     double db_elapsed = sw.Elapsed();
 
-    if (m_Monitor && m_Monitor->IsMonitorActive()) {
+    if (IsMonitoring()) {
         ITERATE(vector<SNS_SubmitRecord>, it, m_BatchSubmitVector) {
             x_MonitorRec(*it);
         }
@@ -1052,7 +1049,7 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
         msg += " trans.time=";
         msg += NStr::DoubleToString(db_elapsed, 4, NStr::fDoubleFixed);
 
-        m_Monitor->SendString(msg);
+        MonitorPost(msg);
     }
 
     {{
@@ -1325,7 +1322,7 @@ CNetScheduleHandler::ProcessJobExchange()
         WriteMsg("OK:");
     }
 
-    if (m_Monitor && m_Monitor->IsMonitorActive()) {
+    if (IsMonitoring()) {
         CSocket& socket = GetSocket();
         string msg = "::ProcessJobExchange ";
         msg += m_LocalTimer.GetLocalTime().AsString();
@@ -1336,7 +1333,7 @@ CNetScheduleHandler::ProcessJobExchange()
         msg += " ";
         msg += m_AuthString;
 
-        m_Monitor->SendString(msg);
+        MonitorPost(msg);
     }
 }
 
