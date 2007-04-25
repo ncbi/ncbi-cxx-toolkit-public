@@ -77,10 +77,10 @@ static void s_StripTags( string& str )
             gt = str.find('<');
         }
         else {
-            stripped += str;
             break;
         }
     }
+    stripped += str;
     str = stripped;
 }
 
@@ -364,8 +364,8 @@ void CFlatGeneQVal::Format
  TFlags flags) const
 {
     if (ctx.IsJournalScan()) {
-        Sgml2Ascii(m_Value);
         s_StripTags(m_Value);
+        Sgml2Ascii(m_Value);
     }
     CFlatStringQVal::Format(quals, name, ctx, flags);
 }
