@@ -49,9 +49,9 @@ This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
 
 Usage:
-    1. $ScriptName [-branches BranchConfFile] Project BuildDir
+    1. $ScriptName [-switch-map SwitchMapFile] Project BuildDir
 
-    2. $ScriptName [-branches BranchConfFile] Project
+    2. $ScriptName [-switch-map SwitchMapFile] Project
 
 Where:
     Project - The name of the project you want to build or a pathname
@@ -130,7 +130,7 @@ EOF
 
     print STDERR <<EOF;
 
-    BranchConfFile - Pathname of the file containing working copy directory
+    SwitchMapFile - Pathname of the file containing working copy directory
         switch plan.
 
     BuildDir - Path to the target directory. The presence (or absence)
@@ -145,7 +145,7 @@ Description:
         the C++ Toolkit tree out into it, along with any additional
         infrastructure needed for the build system to work.
         If the directory already exists, it must be empty.
-        If the BranchConfFile file is specified, the script will switch
+        If the SwitchMapFile file is specified, the script will switch
         working copy directories in accordance with this file.
         The script will then optionally configure and build
         the new tree.
@@ -154,7 +154,7 @@ Description:
         copy of the C++ source tree without sepcifying the BuildDir
         argument, it will update the sources and headers for the
         specified projects.
-        If the BranchConfFile file is specified, the script will switch
+        If the SwitchMapFile file is specified, the script will switch
         working copy directories in accordance with this file.
         The script will then optionally reconfigure and rebuild the tree.
 
@@ -261,7 +261,7 @@ sub FindProjectListing
 
 Usage() if @ARGV < 1 || $ARGV[0] eq '--help';
 
-my ($BranchConfFile, $MainProject, $BuildDir);
+my ($SwitchMapFile, $MainProject, $BuildDir);
 
 while (@ARGV)
 {
@@ -269,7 +269,7 @@ while (@ARGV)
 
     if ($Arg eq '-switch-map' || $Arg eq '-branches')
     {
-        $BranchConfFile = shift @ARGV or Usage("Pathname missing after $Arg")
+        $SwitchMapFile = shift @ARGV or Usage("Pathname missing after $Arg")
     }
     elsif (!$MainProject)
     {
@@ -347,7 +347,7 @@ if ($RepositoryURL)
 my $SwitchMap;
 
 $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $ScriptName,
-    MapFileName => $BranchConfFile) if $BranchConfFile;
+    MapFileName => $SwitchMapFile) if $SwitchMapFile;
 
 chdir $BuildDir;
 
