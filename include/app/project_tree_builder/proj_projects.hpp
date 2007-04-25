@@ -54,6 +54,10 @@ public:
     {
         return true;
     }
+    virtual bool ExcludePotential (void) const
+    {
+        return false;
+    }
 private:
     // Prohibited to:
     CProjectDummyFilter(const CProjectDummyFilter&);
@@ -75,6 +79,10 @@ public:
     virtual bool PassAll     (void) const
     {
         return m_PassAll;
+    }
+    virtual bool ExcludePotential (void) const
+    {
+        return true;
     }
 
 private:
@@ -106,6 +114,10 @@ public:
 
     virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const;
     virtual bool PassAll     (void) const
+    {
+        return false;
+    }
+    virtual bool ExcludePotential (void) const
     {
         return false;
     }

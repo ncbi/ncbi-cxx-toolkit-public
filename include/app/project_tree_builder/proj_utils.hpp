@@ -54,6 +54,7 @@ public:
     }
     virtual bool CheckProject(const string& project_base_dir, bool* weak=0) const = 0;
     virtual bool PassAll     (void)                                         const = 0;
+    virtual bool ExcludePotential (void)                                    const = 0;
 };
 
 

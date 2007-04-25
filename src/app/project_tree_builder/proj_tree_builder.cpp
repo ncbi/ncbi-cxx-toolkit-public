@@ -1369,6 +1369,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         int j;
         string subproj[] = {"SUB_PROJ","EXPENDABLE_SUB_PROJ","POTENTIAL_SUB_PROJ",""};
         EMakeFileType subtype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
+        if (filter->ExcludePotential()) {
+            subtype[2] = eMakeType_Excluded;
+        }
         for (j=0; !subproj[j].empty(); ++j) {
             k = makefile.m_Contents.find(subproj[j]);
             if (k != makefile.m_Contents.end()) {
@@ -1384,6 +1387,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         if ( process_projects ) {
         string appproj[] = {"APP_PROJ","EXPENDABLE_APP_PROJ","POTENTIAL_APP_PROJ",""};
         EMakeFileType apptype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
+        if (filter->ExcludePotential()) {
+            apptype[2] = eMakeType_Excluded;
+        }
         for (j=0; !appproj[j].empty(); ++j) {
             k = makefile.m_Contents.find(appproj[j]);
             if (k != makefile.m_Contents.end()) {
@@ -1400,6 +1406,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                             "ASN_PROJ","DTD_PROJ","XSD_PROJ",""};
         EMakeFileType libtype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential,
             eMakeType_Undefined, eMakeType_Undefined};
+        if (filter->ExcludePotential()) {
+            libtype[2] = eMakeType_Excluded;
+        }
         for (j=0; !libproj[j].empty(); ++j) {
             k = makefile.m_Contents.find(libproj[j]);
             if (k != makefile.m_Contents.end()) {

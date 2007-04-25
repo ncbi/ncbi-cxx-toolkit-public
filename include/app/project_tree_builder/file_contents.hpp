@@ -43,8 +43,8 @@ BEGIN_NCBI_SCOPE
 
 enum EMakeFileType {
     eMakeType_Undefined  = 0,
-    eMakeType_Expendable = 1,
-    eMakeType_Potential  = 2,
+    eMakeType_Potential  = 1,
+    eMakeType_Expendable = 2,
     eMakeType_Excluded   = 3,
     eMakeType_ExcludedByReq = 4
 };
