@@ -987,7 +987,9 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       options->lut_type = eRPSLookupTable;
    if (word_size)
       options->word_size = word_size;
-   if (program_number == eBlastTypeTblastn && word_size > 5)
+   if ((program_number == eBlastTypeTblastn ||
+        program_number == eBlastTypeBlastp) && 
+       word_size > 5)
        options->lut_type = eCompressedAaLookupTable;
 
    return 0;
@@ -1141,7 +1143,8 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         return BLASTERR_OPTION_VALUE_INVALID;
     } else if (program_number != eBlastTypeBlastn && options->word_size > 5)
     {
-        if (program_number == eBlastTypeTblastn)
+        if (program_number == eBlastTypeBlastp ||
+            program_number == eBlastTypeTblastn)
         {
             if (options->word_size > 7) {
                 Blast_MessageWrite(blast_msg, eBlastSevError, 
@@ -1154,7 +1157,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         else {
             Blast_MessageWrite(blast_msg, eBlastSevError, 
                                kBlastMessageNoContext,
-                               "Word-size must be less"
+                               "Word-size must be less "
                                "than 6 for protein comparison");
             return BLASTERR_OPTION_VALUE_INVALID;
         }
@@ -1168,12 +1171,13 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         return BLASTERR_OPTION_PROGRAM_INVALID;
     }
 
-    if (program_number == eBlastTypeTblastn)
+    if (program_number == eBlastTypeBlastp ||
+        program_number == eBlastTypeTblastn)
     {
         if (options->word_size > 5 &&
             options->lut_type != eCompressedAaLookupTable) {
            Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
-                         "Tblastn with word size > 5 requires a "
+                         "Blastp or Tblastn with word size > 5 requires a "
                          "compressed alphabet lookup table");
            return BLASTERR_OPTION_VALUE_INVALID;
         }
