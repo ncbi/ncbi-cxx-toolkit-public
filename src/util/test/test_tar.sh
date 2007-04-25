@@ -30,7 +30,8 @@ touch /tmp/test_tar.$$.1/1234567890123456789012345678901234567890123456789012345
 
 (cd /tmp/test_tar.$$.1  &&  $tar cvf /tmp/test_tar.$$.tar .)
 
-rm -rf /tmp/test_tar.$$.1  &&  mkdir /tmp/test_tar.$$.1               ||  exit 1
+rm -rf /tmp/test_tar.$$.1
+mkdir  /tmp/test_tar.$$.1                                             ||  exit 1
 
 (cd /tmp/test_tar.$$.1  &&  $tar xf  /tmp/test_tar.$$.tar)
 
