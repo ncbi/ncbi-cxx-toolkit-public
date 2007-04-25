@@ -663,6 +663,7 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
