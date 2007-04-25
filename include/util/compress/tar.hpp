@@ -116,18 +116,18 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eUnsupportedTarFormat: return "Unsupported tar format";
-        case eUnsupportedEntryType: return "Unsupported entry type";
-        case eNameTooLong:          return "Name too long";
-        case eChecksum:             return "Checksum error";
-        case eBadName:              return "Bad entry name";
-        case eCreate:               return "Cannot create";
-        case eOpen:                 return "Cannot open";
-        case eRead:                 return "Read error";
-        case eWrite:                return "Write error";
-        case eBackup:               return "Backup error";
-        case eMemory:               return "Out of memory";
-        case eRestoreAttrs:         return "Failed to restore file attributes";
+        case eUnsupportedTarFormat: return "eUnsupportedTarFormat";
+        case eUnsupportedEntryType: return "eUnsupportedEntryType";
+        case eNameTooLong:          return "eNameTooLong";
+        case eChecksum:             return "eChecksum";
+        case eBadName:              return "eBadName";
+        case eCreate:               return "eCreate";
+        case eOpen:                 return "eOpen";
+        case eRead:                 return "eRead";
+        case eWrite:                return "eWrite";
+        case eBackup:               return "eBackup";
+        case eMemory:               return "eMemory";
+        case eRestoreAttrs:         return "eRestoreAttrs";
         default:                    return CException::GetErrCodeString();
         }
     }
@@ -261,7 +261,7 @@ public:
 
 
     /// Constructors
-    CTar(const string& file_name, size_t blocking_factor = 20);
+    CTar(const string& filename, size_t blocking_factor = 20);
     /// Stream version does not at all use stream positioning and so
     /// is safe on non-positioning-able streams, like magnetic tapes :-I
     CTar(CNcbiIos& stream, size_t blocking_factor = 20);
@@ -274,6 +274,7 @@ public:
 
     /// Define a list of entries.
     typedef list< CTarEntryInfo > TEntries;
+
     /// Define a list of files with sizes.
     typedef list< pair<string, Uint8> > TFiles;
 
@@ -471,7 +472,7 @@ protected:
 
     // Extract an entry from the archive into the file system,
     // and return the entry size (if any) still remaining in the archive.
-    streamsize x_ExtractEntry(const CTarEntryInfo& info);
+    Uint8 x_ExtractEntry(const CTarEntryInfo& info);
 
     // Restore attributes of a specified entry.
     // If 'target' not specified, then CDirEntry will be constructed
@@ -493,21 +494,21 @@ protected:
     void x_AppendFile(const string& name, const CTarEntryInfo& info);
 
 protected:
-    string         m_FileName;       ///< Tar archive file name.
-    CNcbiFstream*  m_FileStream;     ///< File stream of the archive.
-    EOpenMode      m_OpenMode;       ///< What was it opened for.
-    CNcbiIos*      m_Stream;         ///< Archive stream (used for all I/O).
-    const size_t   m_BufferSize;     ///< Buffer size for I/O operations.
-    size_t         m_BufferPos;      ///< Position within the record.
-    size_t         m_StreamPos;      ///< Position in stream (0-based).
-    char*          m_BufPtr;         ///< Page unaligned buffer pointer.
-    char*          m_Buffer;         ///< I/O buffer (page-aligned).
-    TFlags         m_Flags;          ///< Bitwise OR of flags.
-    CMask*         m_Mask;           ///< Masks for list/test/extract.
-    EOwnership     m_MaskOwned;      ///< Flag to take ownership for m_Mask.
-    NStr::ECase    m_MaskUseCase;    ///< Flag for mask matching.
-    bool           m_IsModified;     ///< True after at least one write.
-    string         m_BaseDir;        ///< Base directory for relative paths.
+    string         m_FileName;     ///< Tar archive file name.
+    CNcbiFstream*  m_FileStream;   ///< File stream of the archive.
+    EOpenMode      m_OpenMode;     ///< What was it opened for.
+    CNcbiIos*      m_Stream;       ///< Archive stream (used for all I/O).
+    const size_t   m_BufferSize;   ///< Buffer(record) size for I/O operations.
+    size_t         m_BufferPos;    ///< Position within the record.
+    Uint8          m_StreamPos;    ///< Position in stream (0-based).
+    char*          m_BufPtr;       ///< Page unaligned buffer pointer.
+    char*          m_Buffer;       ///< I/O buffer (page-aligned).
+    TFlags         m_Flags;        ///< Bitwise OR of flags.
+    CMask*         m_Mask;         ///< Masks for list/test/extract.
+    EOwnership     m_MaskOwned;    ///< Flag to take ownership for m_Mask.
+    NStr::ECase    m_MaskUseCase;  ///< Flag for mask matching.
+    bool           m_IsModified;   ///< True after at least one write.
+    string         m_BaseDir;      ///< Base directory for relative paths.
 };
 
 

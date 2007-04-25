@@ -451,14 +451,12 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
 // Debugging utilities
 //
 
-static string s_PositionAsString(size_t pos, size_t recsize)
+static string s_PositionAsString(Uint8 pos, size_t recsize)
 {
     string result =
-        "At record " + NStr::UIntToString((unsigned long) (pos / recsize))
-        + ", block " + NStr::UIntToString((unsigned long)((pos % recsize)
-                                                          / kBlockSize))
-        + " [block #" + NStr::UIntToString((unsigned long)(pos
-                                                           / kBlockSize))
+        "At record "  + NStr::UInt8ToString(pos / recsize)
+        + ", block "  + NStr::UInt8ToString((pos % recsize) / kBlockSize)
+        + " [block #" + NStr::UInt8ToString(pos / kBlockSize,NStr::fWithCommas)
         + ']';
     return result;
 }
@@ -495,7 +493,7 @@ static string s_Printable(const char* field, size_t maxsize, bool ifnum)
 }
 
 
-#if !defined(__GNUC__) && !defined(offsetof)
+#if !defined(__GNUC__)  &&  !defined(offsetof)
 #  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
 #endif
 
@@ -505,9 +503,9 @@ static string s_Printable(const char* field, size_t maxsize, bool ifnum)
 #define TAR_PRINTABLE(h, field, ifnum)                                  \
     "@" + s_AddressAsString((unsigned long) offsetof(SHeader, field)) + \
     '[' + _STR(field) + "]:" + string(10 - sizeof(_STR(field)), ' ') +  \
-    '"' + s_Printable(h->field, sizeof(h->field), ifnum) + '"'
+    '"' + s_Printable(h->field, sizeof(h->field), ifnum && !ex) + '"'
 
-static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
+static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 {
     unsigned long val;
     string dump;
@@ -760,8 +758,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt)
 // CTar
 //
 
-CTar::CTar(const string& file_name, size_t blocking_factor)
-    : m_FileName(file_name),
+CTar::CTar(const string& filename, size_t blocking_factor)
+    : m_FileName(filename),
       m_FileStream(new CNcbiFstream),
       m_OpenMode(eNone),
       m_Stream(0),
@@ -819,10 +817,10 @@ CTar::~CTar()
                errcode, s_PositionAsString(m_StreamPos, m_BufferSize) + \
                ": " + (message))
 
-#define TAR_THROW_EX(errcode, message, header, fmt)                     \
+#define TAR_THROW_EX(errcode, message, h, fmt)                          \
     TAR_THROW(errcode,                                                  \
               m_Flags & fDumpBlockHeaders                               \
-              ? (message) + string(":\n") + s_DumpHeader(header, fmt)   \
+              ? (message) + string(":\n") + s_DumpHeader(h, fmt, true)  \
               : (message))
 
 
@@ -865,7 +863,7 @@ void CTar::x_Flush(void)
         }
     }
     if (m_Stream->rdbuf()->PUBSYNC() != 0) {
-        TAR_THROW(eWrite, "While flushing archive");
+        TAR_THROW(eWrite, "Archive flush failed");
     }
     m_IsModified = false;
 }
@@ -901,7 +899,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
         }
         if (!m_Stream  ||  !m_Stream->good()  ||  !m_Stream->rdbuf()) {
             m_OpenMode = eNone;
-            TAR_THROW(eOpen, "Bad IO stream for archive");
+            TAR_THROW(eOpen, "Bad IO stream provided for archive");
         } else {
             m_OpenMode = EOpenMode((int) action & eRW);
         }
@@ -937,7 +935,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                 break;
             }
             if (!m_FileStream->good()) {
-                TAR_THROW(eOpen, "Archive '" + m_FileName + '\'');
+                TAR_THROW(eOpen, "Cannot open archive '" + m_FileName + '\'');
             }
             m_Stream = m_FileStream;
         }
@@ -1074,7 +1072,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         if (m_BufferPos == m_BufferSize) {
             if ((size_t) m_Stream->rdbuf()->sputn(m_Buffer, m_BufferSize)
                 != m_BufferSize) {
-                TAR_THROW(eWrite, "While writing archive");
+                TAR_THROW(eWrite, "Archive write failed");
             }
             m_BufferPos = 0;
         }
@@ -1086,7 +1084,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 
 
 static void s_Dump(const SHeader* h, ETar_Format fmt,
-                   size_t pos, size_t recsize, Uint8 datasize)
+                   Uint8 pos, size_t recsize, Uint8 datasize)
 {
     unsigned long blocks = (unsigned long)(ALIGN_SIZE(datasize) / kBlockSize);
     LOG_POST(s_PositionAsString(pos, recsize) + ":\n"
@@ -1126,7 +1124,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     unsigned long value;
     if (!s_OctalToNum(value, h->checksum, sizeof(h->checksum))) {
         // We must allow all zero bytes here in case of pad/zero blocks
-        for (size_t i = 0; i < sizeof(block->buffer); i++) {
+        for (size_t i = 0;  i < sizeof(block->buffer);  i++) {
             if (block->buffer[i]) {
                 TAR_THROW_EX(eUnsupportedTarFormat, "Bad checksum", h, fmt);
             }
@@ -1139,13 +1137,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     int ssum = 0;
     unsigned int usum = 0;
     const char* p = block->buffer;
-    for (size_t i = 0; i < sizeof(block->buffer); i++)  {
+    for (size_t i = 0;  i < sizeof(block->buffer);  i++)  {
         ssum +=                 *p;
         usum += (unsigned char)(*p);
         p++;
     }
     p = h->checksum;
-    for (size_t j = 0; j < sizeof(h->checksum); j++) {
+    for (size_t j = 0;  j < sizeof(h->checksum);  j++) {
         ssum -=                 *p  - ' ';
         usum -= (unsigned char)(*p) - ' ';
         p++;
@@ -1514,7 +1512,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
     size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
     CT_POS_TYPE rec = 0;                      // Record number (0-based)
 
-    if (pos > (CT_POS_TYPE)(gap)) {
+    if (pos > (CT_POS_TYPE) gap) {
         pos -= 1;                             // NB: pos > 0 here
         rec = pos / m_BufferSize;
         if (!m_BufferPos)
@@ -1522,13 +1520,13 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         if (gap > m_BufferPos) {
             gap -= m_BufferPos;
             size_t n = gap / m_BufferSize;
-            rec -= (CT_OFF_TYPE)(n);          // Backup this many records
+            rec -= (CT_OFF_TYPE) n;           // Backup this many records
             gap %= m_BufferSize;              // Gap size remaining
             m_BufferPos = 0;
             if (gap) {
                 rec -= 1;                     // Compensation for partial rec.
                 m_FileStream->seekg(rec * m_BufferSize);
-                m_StreamPos = (size_t) rec * m_BufferSize;
+                m_StreamPos = (Uint8) rec * m_BufferSize;
                 n = kBlockSize;
                 x_ReadArchive(n);             // Refetch the record
                 m_BufferPos = m_BufferSize - gap;
@@ -1541,7 +1539,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
     }
 
     m_FileStream->seekp(rec * m_BufferSize);  // Always set put position here
-    m_StreamPos = (size_t) rec * m_BufferSize + m_BufferPos;
+    m_StreamPos = (Uint8) rec * m_BufferSize + m_BufferPos;
 }
 
 
@@ -1633,18 +1631,18 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
 void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
 {
     // Remaining entry size in the archive
-    streamsize size;
+    Uint8 size;
     
     if (extract) {
         size = x_ExtractEntry(info);
     } else {
-        size = (streamsize) info.GetSize();
+        size = info.GetSize();
     }
 
     while (size) {
-        size_t nskip = size;
+        size_t nskip = size < m_BufferSize ? size : m_BufferSize;
         if (!x_ReadArchive(nskip)) {
-            TAR_THROW(eRead, "While reading archive");
+            TAR_THROW(eRead, "Archive read failed");
         }
         m_StreamPos += ALIGN_SIZE(nskip);
         size -= nskip;
@@ -1652,12 +1650,12 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
 }
 
 
-streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
+Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
 {
     bool extract = true;
 
     CTarEntryInfo::EType type = info.GetType();
-    streamsize           size = (streamsize) info.GetSize();
+    Uint8                size = info.GetSize();
 
     // Source for extraction
     auto_ptr<CDirEntry> src
@@ -1732,7 +1730,7 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
             CDir dir(dst->GetDir());
             if (!dir.CreatePath()) {
                 TAR_THROW(eCreate,
-                          "Directory '" + dir.GetPath() + '\'');
+                          "Cannot create directory '" + dir.GetPath() + '\'');
             }
 
             if (type == CTarEntryInfo::eFile) {
@@ -1742,21 +1740,22 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
                               IOS_BASE::binary |
                               IOS_BASE::trunc);
                 if (!file) {
-                    TAR_THROW(eCreate, "File '" + dst->GetPath() + '\'');
+                    TAR_THROW(eCreate,
+                              "Cannot create file '" + dst->GetPath() + '\'');
                 }
 
                 while (size) {
                     // Read from the archive
-                    size_t nread = size;
+                    size_t nread = size < m_BufferSize ? size : m_BufferSize;
                     const char* xbuf = x_ReadArchive(nread);
                     if (!xbuf) {
                         TAR_THROW(eRead,
-                                  "In extracting '" + info.GetName() + '\'');
+                                  "Cannot extract '" + info.GetName() + '\'');
                     }
                     // Write file to disk
                     if (!file.write(xbuf, nread)) {
                         TAR_THROW(eWrite,
-                                  "While writing '" + dst->GetPath() + '\'');
+                                  "Error writing file '" +dst->GetPath()+'\'');
                     }
                     m_StreamPos += ALIGN_SIZE(nread);
                     size -= nread;
@@ -1797,7 +1796,8 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
 
     case CTarEntryInfo::eDir:
         if (!CDir(dst->GetPath()).CreatePath()) {
-            TAR_THROW(eCreate, "Directory '" + dst->GetPath() + '\'');
+            TAR_THROW(eCreate,
+                      "Cannot create directory '" + dst->GetPath() + '\'');
         }
         // Attributes for directories must be set only when all
         // its files have been already extracted.
@@ -1851,7 +1851,8 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         if (!dst->SetTimeT(&modification,
                            last_access ? &last_access : 0,
                            creation    ? &creation    : 0)) {
-            TAR_THROW(eRestoreAttrs, "Date/time for '" + dst->GetPath() +'\'');
+            TAR_THROW(eRestoreAttrs,
+                      "Cannot restore date/time for '" + dst->GetPath() +'\'');
         }
     }
 
@@ -1895,7 +1896,8 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
         failed = !dst->SetMode(user, group, other, special_bits);
 #endif // NCBI_OS_UNIX
         if (failed) {
-            TAR_THROW(eRestoreAttrs, "Mode bits for '" + dst->GetPath() +'\'');
+            TAR_THROW(eRestoreAttrs,
+                      "Cannot restore mode bits for '" + dst->GetPath() +'\'');
         }
     }
 }
@@ -1941,7 +1943,7 @@ string CTar::x_ToArchiveName(const string& path) const
     // Check on '..'
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
-        TAR_THROW(eBadName, "Contains '..' (parent) directory");
+        TAR_THROW(eBadName, "Name may not contain '..' (parent) directory");
     }
 
     return retval;
@@ -2074,13 +2076,13 @@ void CTar::x_AppendFile(const string& filename, const CTarEntryInfo& info)
         // Open file
         ifs.open(filename.c_str(), IOS_BASE::binary | IOS_BASE::in);
         if (!ifs) {
-            TAR_THROW(eOpen, "File '" + filename + '\'');
+            TAR_THROW(eOpen, "Cannot open file '" + filename + '\'');
         }
     }
 
     // Write file header
     x_WriteEntryInfo(filename, info);
-    streamsize size = (streamsize) info.GetSize();
+    Uint8 size = info.GetSize();
 
     while (size) {
         // Write file contents
@@ -2090,7 +2092,7 @@ void CTar::x_AppendFile(const string& filename, const CTarEntryInfo& info)
         }
         // Read file
         if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
-            TAR_THROW(eRead, "While reading file '" + filename + '\'');
+            TAR_THROW(eRead, "Error reading file '" + filename + '\'');
         }
         avail = (size_t) ifs.gcount();
         // Write buffer to the archive
