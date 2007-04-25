@@ -103,7 +103,7 @@ public:
     }
 
     /// Adjust the severity of this message.
-    /// @param The severity to assign. [in]
+    /// @param sev The severity to assign. [in]
     void SetSeverity(EBlastSeverity sev) { m_Severity = sev; }
     
     /// Get the severity of this message as a string.
@@ -173,7 +173,7 @@ class NCBI_XBLAST_EXPORT TQueryMessages : public vector< CRef<CSearchMessage> >
 {
 public:
     /// Set the query id as a string.
-    /// @param The query id.
+    /// @param id The query id.
     void SetQueryId(const string& id);
 
     /// Get the query id as a string.
