@@ -222,11 +222,8 @@ public:
     void ClearAffinity(unsigned int  host_addr,
                        const string& auth);
 
-    void SetMonitorSocket(SOCK sock);
-
-    /// Return monitor (no ownership transfer)
-    CNetScheduleMonitor* GetMonitor(void);
-
+    /// Pass socket for monitor
+    void SetMonitorSocket(CSocket& socket);
     /// Are we monitoring?
     bool IsMonitoring();
     /// Send string to monitor

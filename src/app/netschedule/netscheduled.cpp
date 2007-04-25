@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.28 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.29 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -1448,11 +1448,9 @@ void CNetScheduleHandler::ProcessMonitor()
     WriteMsg("OK:", NETSCHEDULED_VERSION);
     string started = "Started: " + m_Server->GetStartTime().AsString();
     WriteMsg("OK:", started);
-    m_Queue->SetMonitorSocket(socket.GetSOCK());
-    // Release socket from regular scheduling here - it is
+    // Socket is released from regular scheduling here - it is
     // write only for monitor since this moment.
-    socket.SetOwnership(eNoOwnership);
-    socket.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+    m_Queue->SetMonitorSocket(socket);
 }
 
 

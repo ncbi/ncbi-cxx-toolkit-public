@@ -577,35 +577,7 @@ void CQueueDataBase::MountQueue(const string& qname,
             new CJobTimeLine(params.run_timeout_precision, 0);
     }
 
-    // scan the queue, load the state machine from DB
-
-    CBDB_FileCursor cur(queue.db);
-    cur.InitMultiFetch(1024*1024);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << 0;
-
-    unsigned recs = 0;
-
-    for (;cur.Fetch() == eBDB_Ok; ++recs) {
-        unsigned job_id = queue.db.id;
-        int status = queue.db.status;
-
-
-        if (job_id > (unsigned)queue.m_LastId.Get()) {
-            queue.m_LastId.Set(job_id);
-        }
-        queue.status_tracker.SetExactStatusNoLock(job_id, 
-                      (CNetScheduleAPI::EJobStatus) status, 
-                      true);
-
-        if (status == (int) CNetScheduleAPI::eRunning && 
-            queue.run_time_line) {
-            // Add object to the first available slot
-            // it is going to be rescheduled or dropped
-            // in the background control thread
-            queue.run_time_line->AddObjectToSlot(0, job_id);
-        }
-    }
+    unsigned recs = queue.ReadStatus();
 
     queue.udp_socket.SetReuseAddress(eOn);
     unsigned short udp_port = GetUdpPort();
@@ -1706,12 +1678,12 @@ void CQueue::x_ExecSelect(TRecordSet&         record_set,
         }
         if (n > 0) {
             x_ExecSelectChunk(record_set, q, &chunk, field_nums, p_pos_to_tag);
-            if (q.monitor.IsMonitorActive()) {
+            if (IsMonitoring()) {
                 CTime tmp_t(CTime::eCurrent);
                 string msg = tmp_t.AsString();
                 msg += " CQueue::ExecSelect() chunk " +
                        NStr::IntToString(n_chunk) + " processed\n";
-                q.monitor.SendString(msg);
+                MonitorPost(msg);
             }
         }
         n_chunk++;
@@ -3915,13 +3887,10 @@ void CQueue::ClearAffinity(unsigned int  host_addr,
     q->worker_aff_map.ClearAffinity(host_addr, auth);
 }
 
-void CQueue::SetMonitorSocket(SOCK sock)
+void CQueue::SetMonitorSocket(CSocket& socket)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    auto_ptr<CSocket> s(new CSocket());
-    s->Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
-    q->monitor.SetSocket(s.get());
-    s.release();
+    q->SetMonitorSocket(socket);
 }
 
 bool CQueue::IsMonitoring()

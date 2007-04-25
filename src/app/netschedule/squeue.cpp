@@ -133,22 +133,6 @@ CNSTagMap::~CNSTagMap()
 }
 
 
-/* obsolete
-CNSTagDetails::CNSTagDetails(SLockedQueue& queue)
-{
-}
-
-
-CNSTagDetails::~CNSTagDetails()
-{
-    NON_CONST_ITERATE(TNSTagDetails, it, m_TagDetails) {
-        delete it->second;
-        it->second = 0;
-    }
-}
-*/
-
-
 SLockedQueue::SLockedQueue(const string& queue_name,
                            const string& qclass_name,
                            TQueueKind queue_kind)
@@ -171,6 +155,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     lb_stall_time(6),
     lb_stall_time_mult(1.0),
     delete_database(false),
+    m_CurrAffId(0),
     m_LastAffId(0)
 {
     _ASSERT(!queue_name.empty());
@@ -219,6 +204,11 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
     fname = prefix + "_jobinfo.db";
     m_JobInfoDB.SetEnv(env);
     m_JobInfoDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    files.push_back(path + fname);
+
+    fname = prefix + "_deleted.db";
+    m_DeletedJobsDB.SetEnv(env);
+    m_DeletedJobsDB.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
     files.push_back(path + fname);
 
     fname = prefix + "_affid.idx";
@@ -282,6 +272,63 @@ string SLockedQueue::GetField(int index)
     }
     const CBDB_Field& fld = bm->GetField(index);
     return fld.GetString();
+}
+
+
+unsigned SLockedQueue::ReadStatus()
+{
+    EBDB_ErrCode err;
+    m_DeletedJobsDB.id = eVIJob;
+    err = m_DeletedJobsDB.ReadVector(&m_JobsToDelete);
+    if (err != eBDB_Ok && err != eBDB_NotFound) {
+        // TODO: throw db error
+    }
+    m_JobsToDelete.optimize();
+
+    m_DeletedJobsDB.id = eVITag;
+    err = m_DeletedJobsDB.ReadVector(&m_DeletedJobs);
+    if (err != eBDB_Ok && err != eBDB_NotFound) {
+        // TODO: throw db error
+    }
+    m_DeletedJobs.optimize();
+
+    m_DeletedJobsDB.id = eVIAffinity;
+    err = m_DeletedJobsDB.ReadVector(&m_AffJobsToDelete);
+    if (err != eBDB_Ok && err != eBDB_NotFound) {
+        // TODO: throw db error
+    }
+    m_AffJobsToDelete.optimize();
+
+    // scan the queue, load the state machine from DB
+
+    CBDB_FileCursor cur(db);
+    cur.InitMultiFetch(1024*1024);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << 0;
+
+    unsigned recs = 0;
+
+    for (;cur.Fetch() == eBDB_Ok; ++recs) {
+        unsigned job_id = db.id;
+        if (m_JobsToDelete.test(job_id)) continue;
+        int status = db.status;
+
+        if (job_id > (unsigned)m_LastId.Get()) {
+            m_LastId.Set(job_id);
+        }
+        status_tracker.SetExactStatusNoLock(job_id, 
+                      (CNetScheduleAPI::EJobStatus) status, 
+                      true);
+
+        if (status == (int) CNetScheduleAPI::eRunning && 
+            run_time_line) {
+            // Add object to the first available slot
+            // it is going to be rescheduled or dropped
+            // in the background control thread
+            run_time_line->AddObjectToSlot(0, job_id);
+        }
+    }
+    return recs;
 }
 
 
@@ -355,6 +402,17 @@ void SLockedQueue::Clear()
 
 void SLockedQueue::FlushDeletedVectors()
 {
+    m_DeletedJobsDB.id = eVIJob;
+    m_JobsToDelete.optimize();
+    m_DeletedJobsDB.WriteVector(m_JobsToDelete, SDeletedJobsDB::eNoCompact);
+
+    m_DeletedJobsDB.id = eVITag;
+    m_DeletedJobs.optimize();
+    m_DeletedJobsDB.WriteVector(m_DeletedJobs, SDeletedJobsDB::eNoCompact);
+
+    m_DeletedJobsDB.id = eVIAffinity;
+    m_AffJobsToDelete.optimize();
+    m_DeletedJobsDB.WriteVector(m_AffJobsToDelete, SDeletedJobsDB::eNoCompact);
 }
 
 
@@ -483,8 +541,10 @@ void SLockedQueue::ClearAffinityIdx()
 
     {{
         CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
-        if (on_left && m_CurrAffId >= m_LastAffId)
+        if (on_left && m_CurrAffId >= m_LastAffId) {
             m_AffJobsToDelete.clear(true);
+            FlushDeletedVectors(); // TODO: hint - only one vector changed
+        }
     }}
 }
 
@@ -638,6 +698,7 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
         {
             batch.set(job_id);
         }
+        FlushDeletedVectors(); // TODO: hint - only one vector changed
     }}
     if (batch.none()) return 0;
 
@@ -700,15 +761,28 @@ CBDB_FileCursor* SLockedQueue::GetCursor(CBDB_Transaction& trans)
 }
 
 
+void SLockedQueue::SetMonitorSocket(CSocket& socket)
+{
+    SOCK sock = socket.GetSOCK();
+    socket.SetOwnership(eNoOwnership);
+    socket.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
+
+    auto_ptr<CSocket> s(new CSocket());
+    s->Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
+    m_Monitor.SetSocket(s.get());
+    s.release();
+}
+
+
 bool SLockedQueue::IsMonitoring()
 {
-    return monitor.IsMonitorActive();
+    return m_Monitor.IsMonitorActive();
 }
 
 
 void SLockedQueue::MonitorPost(const string& msg)
 {
-    monitor.SendString(msg);
+    m_Monitor.SendString(msg);
 }
 
 

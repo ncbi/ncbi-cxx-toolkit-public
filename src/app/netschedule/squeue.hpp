@@ -237,8 +237,13 @@ class CNSLB_Coordinator;
 struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 {
     enum EQueueKind {
-        eKindStatic = 0,
+        eKindStatic  = 0,
         eKindDynamic = 1
+    };
+    enum EVectorId {
+        eVIJob      = 0,
+        eVITag      = 1,
+        eVIAffinity = 2
     };
     typedef int TQueueKind;
     string                       qname;
@@ -305,7 +310,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CNetSchedule_AccessList      wnode_hosts;
 
     /// Queue monitor
-    CNetScheduleMonitor          monitor;
+    CNetScheduleMonitor          m_Monitor;
 
     mutable bool                 lb_flag;  ///< Load balancing flag
     CNSLB_Coordinator*           lb_coordinator;
@@ -327,6 +332,8 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 
     /// Lock for deleted jobs vectors
     CFastMutex                   m_JobsToDeleteLock;
+    /// Database for vectors of deleted jobs
+    SDeletedJobsDB               m_DeletedJobsDB;
     /// vector of jobs to be deleted from db unconditionally
     /// keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;
@@ -353,6 +360,8 @@ public:
 
     int GetFieldIndex(const string& name);
     string GetField(int index);
+
+    unsigned ReadStatus();
 
     /// get next job id (counter increment)
     unsigned int GetNextId();
@@ -390,6 +399,8 @@ public:
     CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
 
+    /// Pass socket for monitor (takes ownership)
+    void SetMonitorSocket(CSocket& socket);
     /// Are we monitoring?
     bool IsMonitoring();
     /// Send string to monitor

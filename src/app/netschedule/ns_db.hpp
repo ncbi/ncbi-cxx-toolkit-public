@@ -152,6 +152,28 @@ struct SJobInfoDB : public CBDB_File
 };
 
 
+/// Database of vectors of jobs to be deleted. Because deletion
+/// occurs in background, with different pace for different tables,
+/// and even in different manner (blocks of jobs from main and aux job
+/// tables, and whole vectors from several records from affinity and tag
+/// tables), we need to maintain several bitvectors with deleted jobs.
+///
+/// @internal
+///
+struct SDeletedJobsDB : public CBDB_BvStore<TNSBitVector>
+{
+    ///< Vector ID, 0 - job table, 1 - tag table, 2 - affinities
+    CBDB_FieldUint4 id;
+
+    typedef CBDB_BvStore<TNSBitVector> TParent;
+
+    SDeletedJobsDB()
+    {
+        DisableNull(); 
+        BindKey("id", &id);
+    }
+};
+
 /// Index of queue database (affinity to jobs)
 ///
 /// @internal

@@ -229,10 +229,7 @@ void CAffinityDict::RemoveToken(unsigned          aff_id,
 }
 
 
-
-
-
-
+// WorkerNodeAffinity
 
 CWorkerNodeAffinity::CWorkerNodeAffinity()
 {
