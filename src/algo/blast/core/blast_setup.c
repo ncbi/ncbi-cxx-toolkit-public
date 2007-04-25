@@ -663,9 +663,19 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
                                        db_num_seqs, &length_adjustment);
 
          if (effective_search_space == 0) {
-             effective_search_space =
-                        (query_length - length_adjustment) * 
-                        (db_length - db_num_seqs*length_adjustment);
+
+             /* if the database length was specified, do not
+                adjust it when calculating the search space;
+                it's counter-intuitive to specify a value and 
+                not have that value be used */
+
+             Int8 effective_db_length = db_length;
+
+             if (eff_len_options->db_length == 0)
+                 effective_db_length -= (Int8)db_num_seqs * length_adjustment;
+
+             effective_search_space = effective_db_length *
+                             (query_length - length_adjustment);
          }
       }
       query_info->contexts[index].eff_searchsp = effective_search_space;
