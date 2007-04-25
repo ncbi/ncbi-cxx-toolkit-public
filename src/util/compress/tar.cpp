@@ -454,19 +454,19 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
 static string s_PositionAsString(Uint8 pos, size_t recsize)
 {
     string result =
-        "At record "  + NStr::UInt8ToString(pos / recsize)
-        + ", block "  + NStr::UInt8ToString((pos % recsize) / kBlockSize)
-        + " [block #" + NStr::UInt8ToString(pos / kBlockSize,NStr::fWithCommas)
-        + ']';
+        "At record " + NStr::UInt8ToString( pos / recsize)
+        + ", block " + NStr::UInt8ToString((pos % recsize) / kBlockSize)
+        + " [thru #" + NStr::UInt8ToString( pos            / kBlockSize,
+                                            NStr::fWithCommas) + ']';
     return result;
 }
 
 
-static string s_AddressAsString(unsigned long offset)
+static string s_AddressAsString(size_t offset)
 {
-    // All addresses are greater than 100 but the base:
+    // All addresses but the base are greater than 100:
     // do the quick and dirty formatting here
-    return offset ? NStr::UIntToString(offset) : "000";
+    return offset ? NStr::UIntToString((unsigned long) offset) : "000";
 }
 
 
@@ -480,9 +480,9 @@ static bool memcchr(const char* s, char c, size_t len)
 }
 
 
-static string s_Printable(const char* field, size_t maxsize, bool ifnum)
+static string s_Printable(const char* field, size_t maxsize, bool text)
 {
-    if (ifnum  &&  maxsize > 1  &&  !*field)
+    if (!text  &&  maxsize > 1  &&  !*field)
         field++, maxsize--;
     size_t len = s_Length(field, maxsize);
     return NStr::PrintableString(string(field,
@@ -494,16 +494,16 @@ static string s_Printable(const char* field, size_t maxsize, bool ifnum)
 
 
 #if !defined(__GNUC__)  &&  !defined(offsetof)
-#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
+#  define offsetof(T, F) ((char*) &(((T*) 0)->F) - (char*) 0)
 #endif
 
 
 #define _STR(s) #s
 
-#define TAR_PRINTABLE(h, field, ifnum)                                  \
-    "@" + s_AddressAsString((unsigned long) offsetof(SHeader, field)) + \
+#define TAR_PRINTABLE(field, text)                                      \
+    "@" + s_AddressAsString((size_t) offsetof(SHeader, field)) +        \
     '[' + _STR(field) + "]:" + string(10 - sizeof(_STR(field)), ' ') +  \
-    '"' + s_Printable(h->field, sizeof(h->field), ifnum && !ex) + '"'
+    '"' + s_Printable(h->field, sizeof(h->field), text  ||  ex) + '"'
 
 static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 {
@@ -511,38 +511,38 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     string dump;
     bool ok;
 
-    dump += TAR_PRINTABLE(h, name, false) + '\n';
+    dump += TAR_PRINTABLE(name, true) + '\n';
 
     ok = s_OctalToNum(val, h->mode, sizeof(h->mode));
-    dump += TAR_PRINTABLE(h, mode, ok);
+    dump += TAR_PRINTABLE(mode, !ok);
     if (ok  &&  val) {
         dump += " [" + s_ModeAsString((TTarMode) val) + ']';
     }
     dump += '\n';
 
     ok = s_OctalToNum(val, h->uid, sizeof(h->uid));
-    dump += TAR_PRINTABLE(h, uid, ok);
+    dump += TAR_PRINTABLE(uid, !ok);
     if (ok  &&  val > 7) {
         dump += " [" + NStr::UIntToString(val) + ']';
     }
     dump += '\n';
     
     ok = s_OctalToNum(val, h->gid, sizeof(h->gid));
-    dump += TAR_PRINTABLE(h, gid, ok);
+    dump += TAR_PRINTABLE(gid, !ok);
     if (ok  &&  val > 7) {
         dump += " [" + NStr::UIntToString(val) + ']';
     }
     dump += '\n';
 
     ok = s_OctalToNum(val, h->size, sizeof(h->size));
-    dump += TAR_PRINTABLE(h, size, ok);
+    dump += TAR_PRINTABLE(size, !ok);
     if (ok  &&  val > 7) {
         dump += " [" + NStr::UIntToString(val) + ']';
     }
     dump += '\n';
 
     ok = s_OctalToNum(val, h->mtime, sizeof(h->mtime));
-    dump += TAR_PRINTABLE(h, mtime, ok);
+    dump += TAR_PRINTABLE(mtime, !ok);
     if (ok  &&  val) {
         CTime mtime((time_t) val);
         dump += " [" + mtime.ToLocalTime().AsString("Y-M-D h:m:s") + ']';
@@ -550,10 +550,10 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += '\n';
 
     ok = s_OctalToNum(val, h->checksum, sizeof(h->checksum));
-    dump += TAR_PRINTABLE(h, checksum, ok) + '\n';
+    dump += TAR_PRINTABLE(checksum, !ok) + '\n';
 
     // Classify to the extent possible to help debug the problem (if any)
-    dump += TAR_PRINTABLE(h, typeflag, false);
+    dump += TAR_PRINTABLE(typeflag, true);
     ok = false;
     const char* tname = 0;
     switch (h->typeflag[0]) {
@@ -667,7 +667,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
               ? "]\n"
               : " -- NOT SUPPORTED]\n"));
 
-    dump += TAR_PRINTABLE(h, linkname, false) + '\n';
+    dump += TAR_PRINTABLE(linkname, true) + '\n';
 
     switch (fmt) {
     case eTar_Legacy:
@@ -683,28 +683,28 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         tname = 0;
         break;
     }
-    dump += TAR_PRINTABLE(h, magic, false);
+    dump += TAR_PRINTABLE(magic, true);
     if (tname) {
         dump += " [" + string(tname) + ']';
     }
     dump += '\n';
 
-    dump += TAR_PRINTABLE(h, version, false) + '\n';
+    dump += TAR_PRINTABLE(version, true) + '\n';
 
     if (fmt != eTar_Legacy) {
-        dump += TAR_PRINTABLE(h, uname, false) + '\n';
+        dump += TAR_PRINTABLE(uname, true) + '\n';
 
-        dump += TAR_PRINTABLE(h, gname, false) + '\n';
+        dump += TAR_PRINTABLE(gname, true) + '\n';
 
         ok = s_OctalToNum(val, h->devmajor, sizeof(h->devmajor));
-        dump += TAR_PRINTABLE(h, devmajor, ok);
+        dump += TAR_PRINTABLE(devmajor, !ok);
         if (ok  &&  val > 7) {
             dump += " [" + NStr::UIntToString(val) + ']';
         }
         dump += '\n';
 
         ok = s_OctalToNum(val, h->devminor, sizeof(h->devminor));
-        dump += TAR_PRINTABLE(h, devminor, ok);
+        dump += TAR_PRINTABLE(devminor, !ok);
         if (ok  &&  val > 7) {
             dump += " [" + NStr::UIntToString(val) + ']';
         }
@@ -712,7 +712,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 
         if (fmt == eTar_OldGNU) {
             ok = s_OctalToNum(val, h->gt.atime, sizeof(h->gt.atime));
-            dump += TAR_PRINTABLE(h, gt.atime, ok);
+            dump += TAR_PRINTABLE(gt.atime, !ok);
             if (ok  &&  val) {
                 CTime mtime((time_t) val);
                 dump += " [" +mtime.ToLocalTime().AsString("Y-M-D h:m:s")+ ']';
@@ -720,7 +720,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += '\n';
 
             ok = s_OctalToNum(val, h->gt.ctime, sizeof(h->gt.ctime));
-            dump += TAR_PRINTABLE(h, gt.ctime, ok);
+            dump += TAR_PRINTABLE(gt.ctime, !ok);
             if (ok  &&  val) {
                 CTime mtime((time_t) val);
                 dump += " [" +mtime.ToLocalTime().AsString("Y-M-D h:m:s")+ ']';
@@ -728,7 +728,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += '\n';
             tname = h->gt.ctime + sizeof(h->gt.ctime);
         } else {
-            dump += TAR_PRINTABLE(h, prefix, false) + '\n';
+            dump += TAR_PRINTABLE(prefix, true) + '\n';
             tname = h->prefix + sizeof(h->prefix);
         }
     } else
