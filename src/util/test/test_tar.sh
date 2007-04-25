@@ -28,7 +28,11 @@ touch /tmp/test_tar.$$.1/testdir.$$/12345678901234567890123456789012345678901234
 
 touch /tmp/test_tar.$$.1/12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 2>/dev/null
 
-(cd /tmp/test_tar.$$.1  &&  $tar cvf /tmp/test_tar.$$.tar .)          ||  exit 1
+(cd /tmp/test_tar.$$.1  &&  $tar cvf /tmp/test_tar.$$.tar .)
+
+rm -rf /tmp/test_tar.$$.1  &&  mkdir /tmp/test_tar.$$.1               ||  exit 1
+
+(cd /tmp/test_tar.$$.1  &&  $tar xf  /tmp/test_tar.$$.tar)
 
 test_tar -T -f /tmp/test_tar.$$.tar                                   ||  exit 1
 
