@@ -789,17 +789,20 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     ITERATE (CSeq_align_set::Tdata, sa_i, GetSegs().GetDisc().Get()) {
         const CDense_seg& ds = (*sa_i)->GetSegs().GetDenseg();
         ds_vec.push_back(make_pair<TSeqPos, const CDense_seg *>(ds.GetSeqStart(0), &ds));
-        if (strand < 0) {
-            strand = ds.GetStrands()[0];
-        } else {
-            if (strand != ds.GetStrands()[0]) {
-                NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
-                           "CreateDensegFromDisc(): "
-                           "Inconsistent strands!");
+        if (ds.IsSetStrands()  &&
+            !ds.GetStrands().empty()) {
+            if (strand < 0) {
+                strand = ds.GetStrands()[0];
+            } else {
+                if (strand != ds.GetStrands()[0]) {
+                    NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                               "CreateDensegFromDisc(): "
+                               "Inconsistent strands!");
+                }
             }
         }
     }
-    if (strand != eNa_strand_minus) {
+    if ( !IsReverse(ENa_strand(strand)) ) {
         sort(ds_vec.begin(), ds_vec.end(),
              ds_cmp<TPosDsPair>());
     } else {
