@@ -134,6 +134,9 @@ void CBDB_Transaction::Remove(ITransactional* dbfile)
 
 CBDB_Transaction* CBDB_Transaction::CastTransaction(ITransaction* trans)
 {
+    if (trans == 0) {
+        return 0;
+    }
     CBDB_Transaction* db_trans = dynamic_cast<CBDB_Transaction*>(trans);
     if (db_trans == 0) { 
         BDB_THROW(eForeignTransaction, 
