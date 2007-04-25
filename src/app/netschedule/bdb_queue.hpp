@@ -571,6 +571,8 @@ public:
               unsigned      log_mem_size,
               unsigned      max_trans,
               bool          sync_transactions,
+              bool          direct_db,
+              bool          direct_log,
               bool          private_env);
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);

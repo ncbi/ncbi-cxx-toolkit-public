@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.27 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.28 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -2407,6 +2407,12 @@ int CNetScheduleDApp::Run(void)
             bdb_conf.GetBool("netschedule", "sync_transactions",
                              CConfig::eErr_NoThrow, false);
 
+        bool direct_db =
+            bdb_conf.GetBool("netschedule", "direct_db",
+                             CConfig::eErr_NoThrow, false);
+        bool direct_log =
+            bdb_conf.GetBool("netschedule", "direct_log",
+                             CConfig::eErr_NoThrow, false);
         bool private_env =
             bdb_conf.GetBool("netschedule", "private_env",
                              CConfig::eErr_NoThrow, false);
@@ -2429,6 +2435,8 @@ int CNetScheduleDApp::Run(void)
             log_mem_size,
             max_trans,
             sync_transactions,
+            direct_db,
+            direct_log,
             private_env);
 
 

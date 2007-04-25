@@ -269,6 +269,8 @@ void CQueueDataBase::Open(const string& path,
                           unsigned      log_mem_size,
                           unsigned      max_trans,
                           bool          sync_transactions,
+                          bool          direct_db,
+                          bool          direct_log,
                           bool          private_env)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
@@ -383,9 +385,9 @@ void CQueueDataBase::Open(const string& path,
                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
     }
-// TODO: read direct_db and direct_log parameters
-//    m_Env->SetDirectDB(true);
-//    m_Env->SetDirectLog(true);
+
+    m_Env->SetDirectDB(direct_db);
+    m_Env->SetDirectLog(direct_log);
 
     m_Env->SetLockTimeout(10 * 1000000); // 10 sec
 
