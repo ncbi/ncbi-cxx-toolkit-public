@@ -29,15 +29,16 @@
  * Author:  Victor Sapojnikov
  *
  * File Description:
- *   Generic fast AGP stream reader    (CAgpReader),
- *   and even more generic line parser (CAgpRow).
- *   Usage examples in test/agp_*.cpp
+ *     Generic fast AGP stream reader    (CAgpReader),
+ *     and even more generic line parser (CAgpRow).
+ *     Usage examples in test/agp_*.cpp
  */
 
 
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -46,244 +47,282 @@ class CAgpErr; // full definition below
 
 //// A container for both the original string column values (Get*() methods)
 //// and the values converted to int, char, bool types (member variables).
-//// Detects formatting errors within a single line.
+//// Detects formatting errors within a single line, checks that
+//// object range length equals gap length or component range length.
 class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
-  // string line; int line_num;  ??
-  static CAgpErr* agpErr;
+    CAgpRow(CAgpErr* arg);
+    CAgpRow(); // constructs a default error handler
+    ~CAgpRow();
 
-  CAgpRow();
+    // Returns:
+    //   -1 comment line (to be silently skipped)
+    //    0 parsed successfully
+    //   >0 an error code (copied to last_error)
+    int FromString(const string& line);
+    string GetErrorMessage();
+    string ToString(); // 9 column tab-separated string without EOL comments
 
-  // Returns:
-  //   -1 comment line (to be silently skipped)
-  //    0 parsed successfully
-  //   >0 an error code (copied to last_error)
-  //
-  // Sets last_error to the warning code if a warning is generated, but still returns 0.
-  // For some errors and warnings, also sets error_details.
-  //
-  // strips end of line comments from line
-  int FromString(const string& line);
+    //// Unparsed columns
+    SIZE_TYPE pcomment; // NPOS if no comment for this line, 0 if the entire line is comment
+    vector<string> cols;
 
-  string ToString(); // 9 column tab-separated string without EOL comments
+    string& GetObject       () {return cols[0];} // no corresponding member variable
+    string& GetObjectBeg    () {return cols[1];}
+    string& GetObjectEnd    () {return cols[2];}
+    string& GetPartNumber   () {return cols[3];}
+    string& GetComponentType() {return cols[4];}
 
-  // Unparsed columns
-  SIZE_TYPE pcomment; // NPOS if no comment for this line, 0 if entire line is comment
-  vector<string> cols;
+    string& GetComponentId  () {return cols[5];}  // no corresponding member variable
+    string& GetComponentBeg () {return cols[6];}
+    string& GetComponentEnd () {return cols[7];}
+    string& GetOrientation  () {return cols[8];}
 
-  string& GetObject       () {return cols[0];} // no corresponding member variable
-  string& GetObjectBeg    () {return cols[1];}
-  string& GetObjectEnd    () {return cols[2];}
-  string& GetPartNumber   () {return cols[3];}
-  string& GetComponentType() {return cols[4];}
+    string& GetGapLength() {return cols[5];}
+    string& GetGapType  () {return cols[6];}
+    string& GetLinkage  () {return cols[7];}
 
-  string& GetComponentId  () {return cols[5];}  // no corresponding member variable
-  string& GetComponentBeg () {return cols[6];}
-  string& GetComponentEnd () {return cols[7];}
-  string& GetOrientation  () {return cols[8];}
+    //// Parsed columns
+    int object_beg, object_end, part_number;
+    char component_type;
 
-  string& GetGapLength() {return cols[5];}
-  string& GetGapType  () {return cols[6];}
-  string& GetLinkage  () {return cols[7];}
+    bool is_gap;
 
-  int ParseComponentCols(bool log_errors=true);
-  int ParseGapCols(bool log_errors=true);
+    int component_beg, component_end;
+    char orientation; // + - 0 n (instead of na)
 
-  //bool has_eol_comment;
+    int gap_length;
+    enum EGap{
+        eGapClone          ,
+        eGapFragment       ,
+        eGapRepeat         ,
 
-  // Parsed columns
-  int object_beg, object_end, part_number;
-  char component_type;
+        eGapContig         ,
+        eGapCentromere     ,
+        eGapShort_arm      ,
+        eGapHeterochromatin,
+        eGapTelomere       ,
 
-  bool is_gap;
+        eGapCount,
+        eGapYes_count=eGapRepeat+1
+    } gap_type;
+    bool linkage;
 
-  int component_beg, component_end;
-  char orientation; // + - 0 n (instead of na)
+    bool IsGap() const
+    {
+      return is_gap;
+    }
+    bool GapEndsScaffold() const
+    {
+        if(gap_type==eGapFragment) return false;
+        return linkage==false;
+    }
+    bool GapValidAtObjectEnd() const
+    {
+        return gap_type==eGapCentromere || gap_type==eGapTelomere || gap_type==eGapShort_arm;
+    }
 
-  int gap_length;
-  enum TGap{
-    GAP_clone          ,
-    GAP_fragment       ,
-    GAP_repeat         ,
+protected:
+    int ParseComponentCols(bool log_errors=true);
+    int ParseGapCols(bool log_errors=true);
 
-    GAP_contig         ,
-    GAP_centromere     ,
-    GAP_short_arm      ,
-    GAP_heterochromatin,
-    GAP_telomere       ,
+    typedef const char* TStr;
+    static const TStr gap_types[eGapCount];
 
-    GAP_count,
-    GAP_yes_count=GAP_repeat+1
-  } gap_type;
-  bool linkage;
+    typedef map<string, EGap> TMapStrEGap;
+    static TMapStrEGap* gap_type_codes;
 
-  bool GapEndsScaffold() const
-  {
-    if(gap_type==GAP_fragment) return false;
-    return linkage==false;
-  }
-  bool GapValidAtObjectEnd() const
-  {
-    return gap_type==GAP_centromere || gap_type==GAP_telomere || gap_type==GAP_short_arm;
-  }
+private:
+    CAgpErr* m_AgpErr;
+    bool m_OwnAgpErr;
+    // for initializing gap_type_codes:
+    DECLARE_CLASS_STATIC_FAST_MUTEX(init_mutex);
+    static void StaticInit();
 
-  typedef const char* TStr;
-  static const TStr gap_types[GAP_count];
-  static map<string, TGap> gap_type_codes;
-
-  static const string& GetErrors();
+public:
+    CAgpErr* GetErrorHandler() { return m_AgpErr; }
+    void SetErrorHandler(CAgpErr* arg);
 };
-
-
-
 
 //// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
 //// Intented as a superclass for more complex readers.
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
-  CAgpReader();
-  virtual ~CAgpReader();
+    CAgpReader(CAgpErr* arg);
+    CAgpReader(); // constructs a default error handler for this object instance
+    virtual ~CAgpReader();
 
-  virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
-  virtual int Finalize(); // by default, invoked automatically at the end of ReadStream()
+    virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
+    virtual int Finalize(); // by default, invoked automatically at the end of ReadStream()
 
-  bool at_beg;  // at the first valid gap or component line (this_row)
-                // prev_row undefined
-  bool at_end;  // after the last line; last gap or component in prev_row
-                // this_row undefined
-  bool row_skipped; // true after a syntax error or E_Obj/CompEndLtBeg, E_ObjRangeNeGap/Comp
-                    // (i.e. single-line errors detected by CAgpRow);
-                    // not affected by comment lines, even though are skipped, too
-  bool new_obj;     // in OnScaffoldEnd(): true if this scaffold ends with an object
-                    // (false if there are scaffold-breaking gaps at object end)
+    // Print one or two source line(s) on which the error occured,
+    // along with error message(s).
+    // Source line are preceded with "filename:", if not empty
+    // (useful when reading several files).
+    virtual string GetErrorMessage(const string& filename=NcbiEmptyString);
 
-  CAgpRow *prev_row;
-  CAgpRow *this_row;
-  CNcbiIstream* is;
-  int line_num, prev_line_num;
-  string  line;  // for valid gap/componentr lines, corresponds to this_row
-  // We do not save line corresponding to prev_row, to save time.
-  // You can use prev_row->ToString(), or save it at the end of OnGapOrComponent():
-  //   prev_line=line; // save the previous input line preserving with EOL comments
-  //
-  // Note that prev_line_num != line_num -1:
-  // - after skipped lines (comments or syntax errors)
-  // - when reading from multiple files.
+protected:
+    bool m_at_beg;  // m_this_row is the first valid component or gap line;
+                    // m_prev_row undefined.
+    bool m_at_end;  // after the last line; could be true only in OnScaffoldEnd(), OnObjectChange().
+                    // m_prev_row is the last component or gap line;
+                    // m_this_row undefined.
+    bool m_prev_line_skipped; // true after a syntax error or E_Obj/CompEndLtBeg, E_ObjRangeNeGap/Comp
+                      // (i.e. single-line errors detected by CAgpRow);
+                      // Not affected by comment lines, even though these are skipped, too.
+    bool m_new_obj;   // For OnScaffoldEnd(), true if this scaffold ends with an object.
+                      // (false if there are scaffold-breaking gaps at object end)
+    int m_error_code;
 
+    CAgpRow *m_prev_row;
+    CAgpRow *m_this_row;
+    int m_line_num, m_prev_line_num;
+    string  m_line;  // for valid gap/componentr lines, corresponds to this_row
+    // We do not save line corresponding to m_prev_row, to save time.
+    // You can use m_prev_row->ToString(), or save it at the end of OnGapOrComponent():
+    //   m_prev_line=m_line; // preserves EOL comments
+    //
+    // Note that m_prev_line_num != m_line_num -1:
+    // - after skipped lines (syntax errors or comments)
+    // - when reading from multiple files.
 
-  //virtual int ReadLine(const string& str);
+    //// Callbacks, in the order of invocation.
+    //// Override to implement custom functionality.
+    //// Callbacks can read m_this_row, m_prev_row and all other instance variables.
 
-  //// Callbacks. Override to implement custom functionality.
-  //// Callbacks can use this_row, prev_row and other instance variables.
+    virtual void OnScaffoldEnd()
+    {
+        // m_prev_row = the last line of the scaffold --
+        // usually component, but could be non-breaking gap (which generates a warning)
+    }
 
-  // this_row = current gap or component (test this_row->is_gap)
-  virtual void OnGapOrComponent(){}
+    virtual void OnObjectChange()
+    {
+        // unless(at_beg): m_prev_row = the last  line of the old object
+        // unless(at_end): m_this_row = the first line of the new object
+    }
 
-  // prev_row = last line of the scaffold
-  virtual void OnScaffoldEnd()  {}
+    virtual void OnGapOrComponent()
+    {
+        // m_this_row = current gap or component (check with m_this_row->IsGap())
+    }
 
-  // unless(at_beg): prev_row = the last  line of the old object
-  // unless(at_end): this_row = the first line of the new object
-  virtual void OnObjectChange() {}
+    virtual bool OnError(int code)
+    {
+        // code=0: Non-fatal error, line saved to m_this_row.
+        //         Preceding callbacks might still be invoked.
+        //         They can check m_error_code, if they need to (which is unlikely).
+        //     >0: Syntax error; m_this_row most likely incomplete.
+        //         No other callbacks invoked for this line.
+        //         On the next iteration, m_prev_row will retain the last known valid line.
 
-  virtual bool OnError(int code)
-  {
-    // code=0: non-fatal error, line saved to this_row; row_skipped=false.
-    //     >0: syntax error, row_skipped=true;
-    //         this_row most likely incomplete;
-    //         prev_row still contains the last known valid line.
+        return false; // abort on any error
+    }
 
-    return false; // abort on any error
-  }
-  virtual void OnComment()       {}
+    virtual void OnComment()
+    {
+        // Line that starts with "#".
+        // No other callbacks invoked for this line.
+    }
 
+private:
+    CAgpErr* m_AgpErr; // Error handler
+    bool m_OwnAgpErr;
+    void Init();
+
+public:
+    CAgpErr* GetErrorHandler() { return m_AgpErr; }
+    void SetErrorHandler(CAgpErr* arg);
 };
 
-//// Programs that use this default error handler
-//// are expected to die after a single incorrect line.
-//// (agp_validate uses a subclass can better handle
-//// errors on multiple lines, in multiple files, etc.)
+
 class NCBI_XOBJREAD_EXPORT CAgpErr
 {
 public:
-  virtual ~CAgpErr() {}
+    virtual ~CAgpErr() {}
 
-  enum TAppliesTo{
-    AT_ThisLine=1,
-    //AT_SkipAfterBad=2, // Suppress this error if the previous line was invalid
-    AT_PrevLine=4, // use AT_ThisLine|AT_PrevLine when both lines are involved
-    AT_None    =8  // Not tied to any specifc line(s) (empty file, possibly taxid errors)
-  };
+    enum EAppliesTo{
+      fAtThisLine=1,
+      //fAtSkipAfterBad=2, // Suppress this error if the previous line was invalid
+      fAtPrevLine=4, // use fAtThisLine|fAtPrevLine when both lines are involved
+      fAtNone    =8  // Not tied to any specifc line(s) (empty file; possibly, taxid errors)
+    };
 
-  // Accumulate multiple errors on a single line (messages, messages_apply_to);
-  // ignore warnings.
-  virtual void Msg(int code, const string& details, int appliesTo=AT_ThisLine);
-  void Msg(int code, int appliesTo=AT_ThisLine)
-  {
-    Msg(code, NcbiEmptyString, appliesTo);
-  }
+    // Accumulate multiple errors on a single line (messages, messages_apply_to);
+    // ignore warnings.
+    virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
+    void Msg(int code, int appliesTo=fAtThisLine)
+    {
+      Msg(code, NcbiEmptyString, appliesTo);
+    }
+    void Clear();
 
-  string messages;
-  int messages_apply_to; // which lines to print before the message: previous, current, both
-  int last_error;
-  void clear() {last_error=messages_apply_to=0; messages=""; }
+    // The following 2 methods are used in CAgpRow/CAgpReader::PrintErrors()
+    virtual string GetErrorMessage(int mask=0xFFFFFFFF);
+    virtual int AppliesTo(int mask=0xFFFFFFFF);
 
-  // When adding new errors to enum TCode, also update msg[]
-  enum TCode{
-    // Errors within one line (detected in CAgpRow)
-    E_ColumnCount=1 ,
-    E_EmptyColumn,
-    E_EmptyLine,
-    E_InvalidValue  ,
-    E_InvalidYes   ,
+    // When adding new errors to enum TCode, also update s_msg[]
+    enum {
+        // Errors within one line (detected in CAgpRow)
+        E_ColumnCount=1 ,
+        E_EmptyColumn,
+        E_EmptyLine,
+        E_InvalidValue  ,
+        E_InvalidYes   ,
 
-    E_MustBePositive,
-    E_ObjEndLtBeg ,
-    E_CompEndLtBeg,
-    E_ObjRangeNeGap ,
-    E_ObjRangeNeComp,
+        E_MustBePositive,
+        E_ObjEndLtBeg ,
+        E_CompEndLtBeg,
+        E_ObjRangeNeGap ,
+        E_ObjRangeNeComp,
 
-    // Other errors, some detected only by agp_validate.
-    // We define the codes here to preserve the historical error codes.
-    // CAgpRow and CAgpReader no nothing of such errors.
-    E_DuplicateObj  ,       // -- agp_validate --
-    E_ObjMustBegin1 ,       // CAgpReader
-    E_PartNumberNot1,       // CAgpReader
-    E_PartNumberNotPlus1,   // CAgpReader
-    E_UnknownOrientation,   // -- agp_validate --
+        // Other errors, some detected only by agp_validate.
+        // We define the codes here to preserve the historical error codes.
+        // CAgpRow and CAgpReader do not know such errors.
+        E_DuplicateObj  ,       // -- agp_validate --
+        E_ObjMustBegin1 ,       // CAgpReader
+        E_PartNumberNot1,       // CAgpReader
+        E_PartNumberNotPlus1,   // CAgpReader
+        E_UnknownOrientation,   // -- agp_validate --
 
-    E_ObjBegNePrevEndPlus1, // CAgpReader
-    E_NoValidLines,         // CAgpReader
-    E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
+        E_ObjBegNePrevEndPlus1, // CAgpReader
+        E_NoValidLines,         // CAgpReader
+        E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
-    // Warnings.
-    W_GapObjEnd=21 ,        // CAgpReader
-    W_GapObjBegin ,         // CAgpReader
-    W_ConseqGaps ,          // CAgpReader
-    W_ObjNoComp,            // -- agp_validate --
-    W_SpansOverlap,         // -- agp_validate --
+        // Warnings.
+        W_GapObjEnd=21 ,        // CAgpReader
+        W_GapObjBegin ,         // CAgpReader
+        W_ConseqGaps ,          // CAgpReader
+        W_ObjNoComp,            // -- agp_validate --
+        W_SpansOverlap,         // -- agp_validate --
 
-    W_SpansOrder ,          // -- agp_validate --
-    W_DuplicateComp,        // -- agp_validate --
-    W_LooksLikeGap,         // CAgpRow
-    W_LooksLikeComp,        // CAgpRow
-    W_ExtraTab,             // CAgpRow
+        W_SpansOrder ,          // -- agp_validate --
+        W_DuplicateComp,        // -- agp_validate --
+        W_LooksLikeGap,         // CAgpRow
+        W_LooksLikeComp,        // CAgpRow
+        W_ExtraTab,             // CAgpRow
 
-    W_GapLineMissingCol9,   // CAgpRow
-    W_NoEolAtEof,           // CAgpReader
-    W_Last, W_First = 21,
+        W_GapLineMissingCol9,   // CAgpRow
+        W_NoEolAtEof,           // CAgpReader
+        W_Last, W_First = 21
+    };
 
+    static const char* GetMsg(int code);
 
-  };
+protected:
+    typedef const char* TStr;
+    static const TStr s_msg[];
+    static string FormatMessage(const string& msg, const string& details);
 
-  typedef const char* TStr;
-  static const TStr msg[];
-  static const char* GetMsg(int code);
-  static string FormatMessage(int code, const string& details);
+    string m_messages;
+    string m_messages_prev_line; // Messages that apply ONLY to the previous line;
+                                 // relatively uncommon - most that apply to previous
+                                 // also apply to current, and are saved in m_messages instead.
+
+    int m_apply_to; // which lines to print before the message(s): previous, current, both, whole file
 };
-
 
 END_NCBI_SCOPE
 

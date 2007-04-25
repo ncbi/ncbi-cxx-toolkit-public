@@ -26,7 +26,7 @@
  * Author:  Victor Sapojnikov
  *
  * File Description:
- *   Usage example for CAgpReader (CAgpErr, CAgpRow).
+ *     Usage example for CAgpReader (CAgpErr, CAgpRow).
  */
 
 #include <ncbi_pch.hpp>
@@ -43,65 +43,60 @@ USING_NCBI_SCOPE;
 class CTestAgpReader : public CAgpReader
 {
 public:
-  int objects1, objects2, scaffolds, components, gaps, comments;
-  CTestAgpReader()
-  {
-    objects1=objects2=scaffolds=components=gaps=comments=0;
-  }
+    int objects1, objects2, scaffolds, components, gaps, comments;
+    CTestAgpReader()
+    {
+        objects1=objects2=scaffolds=components=gaps=comments=0;
+    }
 
 #define P(x) cout << #x << "=" << x << "\n"
 #define PPP(x, y, z) P(x); P(y); P(z)
-  void PrintResults()
-  {
-    PPP(objects1, objects2, scaffolds);
-    cout << "\n";
-    PPP(components, gaps, comments);
+    void PrintResults()
+    {
+        PPP(objects1, objects2, scaffolds);
+        cout << "\n";
+        PPP(components, gaps, comments);
 
-  }
+    }
 
-  // Callbacks
-  virtual void OnGapOrComponent()
-  {
-    if(this_row->is_gap) gaps++;
-    else components++;
-  }
+    // Callbacks
+    virtual void OnGapOrComponent()
+    {
+        if(m_this_row->IsGap()) gaps++;
+        else components++;
+    }
 
-  virtual void OnScaffoldEnd()
-  {
-    scaffolds++;
-  }
+    virtual void OnScaffoldEnd()
+    {
+        scaffolds++;
+    }
 
-  virtual void OnObjectChange()
-  {
-    // If CAgpReader works properly, both counts are the same.
-    if(!at_end) objects1++;
-    if(!at_beg) objects2++;
-  }
+    virtual void OnObjectChange()
+    {
+        // If CAgpReader works properly, both counts are the same.
+        if(!m_at_end) objects1++;
+        if(!m_at_beg) objects2++;
+    }
 
-  virtual void OnComment()
-  {
-    comments++;
-  }
+    virtual void OnComment()
+    {
+        comments++;
+    }
 
 
 };
 
 int main(int argc, char* argv[])
 {
-  CTestAgpReader reader;
-  int code=reader.ReadStream(cin);
-  if(code) {
-    // Print line(s) on which the error occured
-    if(CAgpRow::agpErr->messages_apply_to & CAgpErr::AT_PrevLine) {
-      cerr <<  reader.prev_line_num << ": " <<reader.prev_row->ToString() << "\n";
+    CTestAgpReader reader;
+    int code=reader.ReadStream(cin);
+    if(code) {
+        // cerr << "Code " << code << "\n";
+        string msg = reader.GetErrorMessage();
+        cerr << msg;
     }
-    if(CAgpRow::agpErr->messages_apply_to & CAgpErr::AT_ThisLine) {
-      cerr <<  reader.line_num << ": " <<reader.line << "\n";
+    else {
+        reader.PrintResults(); // object/scaffold/gap/component counts
     }
-    cerr << CAgpRow::GetErrors();
-  }
-  else {
-    reader.PrintResults();
-  }
-  return 0;
+    return 0;
 }
