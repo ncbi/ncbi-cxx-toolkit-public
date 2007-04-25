@@ -29,7 +29,7 @@ Usage:
 
     $ScriptName commit_merge
 
-    $ScriptName commit [<log_message>]
+    $ScriptName commit <branch_path> [<log_message>]
 
 Where:
     branch_map_file     Pathname of the file containing branch directory

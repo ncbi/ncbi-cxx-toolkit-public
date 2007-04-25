@@ -294,7 +294,7 @@ sub Remove
 
     my %RmDirTree;
 
-    # Read the old branch_map, if it exists.
+    # Read the branch map, if it exists.
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
     my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
@@ -337,6 +337,45 @@ sub Remove
     }
 
     unlink $BranchListFN if $BranchListFN;
+}
+
+sub Commit
+{
+    my ($Self, $BranchPath, $LogMessage) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n" unless $BranchPath;
+
+    unless ($LogMessage)
+    {
+        print "Enter the log message here - press Ctrl-D\n" .
+            "(or Ctrl-Z, Enter on Windows) to finish:\n";
+
+        $LogMessage = '';
+
+        while (<STDIN>)
+        {
+            $LogMessage .= $_
+        }
+
+        chomp $LogMessage
+    }
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+
+    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
+
+    if ($@)
+    {
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n"
+    }
+
+    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
+        MapFileLines => \@BranchMapLines);
+
+    system($SVN->GetSvnPath(), 'commit', '-m', $LogMessage,
+        map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
 }
 
 1
