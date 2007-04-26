@@ -2587,13 +2587,9 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
     if (GetContext()->Config().GoQualsToNote()) {
         qvec.clear();
-
-#define DO_NOTE(x) x_FormatNoteQual(eFQ_##x, #x, qvec)
-        DO_NOTE(go_component);
-        DO_NOTE(go_function);
-        DO_NOTE(go_process);
-#undef DO_NOTE
-
+        x_FormatNoteQual(eFQ_go_component, "GO_component", qvec);
+        x_FormatNoteQual(eFQ_go_function, "GO_function", qvec);
+        x_FormatNoteQual(eFQ_go_process, "GO_process", qvec);
         s_QualVectorToNote(qvec, false, notestr, suffix, add_period);
     }
     s_NoteFinalize(add_period, notestr, ff);
