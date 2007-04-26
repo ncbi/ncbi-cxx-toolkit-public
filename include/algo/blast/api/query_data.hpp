@@ -95,6 +95,9 @@ public:
 
     /// Determine if a given query sequence is valid or not
     bool IsValidQuery(size_t index);
+
+    /// Determine if at least one query sequence is valid or not
+    bool IsAtLeastOneQueryValid();
     
 protected:
     /// Data member to cache the BLAST_SequenceBlk

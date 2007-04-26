@@ -107,6 +107,20 @@ ILocalQueryData::IsValidQuery(size_t index)
     return all_contexts_valid;
 }
 
+bool
+ILocalQueryData::IsAtLeastOneQueryValid()
+{
+    bool found_valid_query = false;
+
+    for (size_t i = 0; i < GetNumQueries(); i++) {
+        if (IsValidQuery(i)) {
+            found_valid_query = true;
+            break;
+        }
+    }
+    return found_valid_query;
+}
+
 void
 ILocalQueryData::GetQueryMessages(size_t index, TQueryMessages& qmsgs)
 {

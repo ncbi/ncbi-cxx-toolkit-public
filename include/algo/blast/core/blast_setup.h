@@ -243,6 +243,18 @@ void
 BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
                        Int8* total_length,
                        Int4* num_seqs);
+
+/** Validation function for the setup of queries for the BLAST search.
+ * @param query_info properly set up BlastQueryInfo structure [in]
+ * @param score_blk optional properly set up BlastScoreBlk structure (may be
+ * NULL)[in]
+ * @return If no valid queries are found, 1 is returned, otherwise 0.
+ */
+NCBI_XBLAST_EXPORT
+Int2
+BlastSetup_Validate(const BlastQueryInfo* query_info, 
+                    const BlastScoreBlk* score_blk);
+
 #ifdef __cplusplus
 }
 #endif

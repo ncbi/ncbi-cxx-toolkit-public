@@ -645,10 +645,12 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             // the rest are freed by frame_to_bsl in the destructor.
         
         } catch (const CException& e) {
-            // FIXME: is index this the right value for the 2nd arg?
+            // FIXME: is index this the right value for the 2nd arg? Also, how
+            // to determine whether the message should contain a warning or
+            // error?
             CRef<CSearchMessage> m
                 (new CSearchMessage(eBlastSevWarning, index, 
-                                    e.ReportThis(eDPF_ErrCodeExplanation)));
+                                    e.what()));
             messages[index].push_back(m);
             s_InvalidateQueryContexts(qinfo, index);
         }
@@ -658,6 +660,11 @@ SetupQueries_OMF(IBlastQuerySource& queries,
     
     if (BlastSeqBlkNew(seqblk) < 0) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query sequence block");
+    }
+
+    // Validate that at least one query context is valid 
+    if (BlastSetup_Validate(qinfo, NULL) != 0 && messages.HasMessages()) {
+        NCBI_THROW(CBlastException, eSetup, messages.ToString());
     }
     
     BlastSeqBlkSetSequence(*seqblk, buf.release(), buflen - 2);

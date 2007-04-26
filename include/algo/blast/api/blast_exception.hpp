@@ -81,7 +81,8 @@ public:
         eInvalidCharacter,  ///< Invalid character in sequence data
         eSeqSrcInit,        ///< Initialization error in BlastSeqSrc 
                             /// implementation
-        eRpsInit            ///< Error while initializing RPS-BLAST
+        eRpsInit,           ///< Error while initializing RPS-BLAST
+        eSetup              ///< Error while setting up BLAST
     };
 
     /// Translate from the error code value to its string representation

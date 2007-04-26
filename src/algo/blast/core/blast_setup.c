@@ -393,12 +393,9 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     return status;
 }
 
-/** Validation function for the setup of queries for the BLAST search.
- * @return If no valid queries are found, 1 is returned, otherwise 0.
- */
-static Int2
-s_BlastSetup_Validate(const BlastQueryInfo* query_info,
-                      const BlastScoreBlk* score_blk) 
+Int2
+BlastSetup_Validate(const BlastQueryInfo* query_info, 
+                    const BlastScoreBlk* score_blk) 
 {
     int index;
     Boolean valid_context_found = FALSE;
@@ -409,7 +406,7 @@ s_BlastSetup_Validate(const BlastQueryInfo* query_info,
          index++) {
         if (query_info->contexts[index].is_valid) {
             valid_context_found = TRUE;
-        } else {
+        } else if (score_blk) {
             ASSERT(score_blk->kbp[index] == NULL);
             ASSERT(score_blk->sfp[index] == NULL);
             if (score_blk->kbp_gap) {
@@ -521,7 +518,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         return status;
     }
 
-    if ( (status = s_BlastSetup_Validate(query_info, *sbpp) != 0)) {
+    if ( (status = BlastSetup_Validate(query_info, *sbpp) != 0)) {
         if (*blast_message == NULL) {
             Blast_Perror(blast_message, BLASTERR_INVALIDQUERIES, -1);
         }
