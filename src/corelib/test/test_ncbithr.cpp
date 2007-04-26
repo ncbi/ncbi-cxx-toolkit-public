@@ -503,6 +503,9 @@ void CThreadedApp::Init(void)
     arg_desc->SetConstraint
         ("wcycles", new CArgAllow_Integers(cWCyclesMin, cWCyclesMax));
 
+    arg_desc->AddFlag("favorwriters",
+                      "Operate the RW-lock in fFavorWriters mode.");
+
     string prog_description =
         "This is a program testing thread, TLS, mutex and RW-lock classes.";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -530,11 +533,18 @@ int CThreadedApp::Run(void)
     sRCycles    = args["rcycles"].AsInteger();
     sWCycles    = args["wcycles"].AsInteger();
 
+    CRWLock::TFlags rwflags = 0;
+    if (args["favorwriters"]) {
+        rwflags |= CRWLock::fFavorWriters;
+    }
+
     NcbiCout << "Test parameters:" << NcbiEndl;
     NcbiCout << "\tTotal threads     " << sNumThreads << NcbiEndl;
     NcbiCout << "\tSpawn threads by  " << sSpawnBy << NcbiEndl;
     NcbiCout << "\tR-cycles          " << sRCycles << NcbiEndl;
-    NcbiCout << "\tW-cycles          " << sWCycles << NcbiEndl << NcbiEndl;
+    NcbiCout << "\tW-cycles          " << sWCycles << NcbiEndl;
+    NcbiCout << "\tRW-lock flags     0x" << NStr::IntToString(rwflags, 0, 16)
+             << NcbiEndl << NcbiEndl;
 
     // Redirect error log to hide messages sent by delay()
     SetDiagStream(0);
@@ -554,7 +564,7 @@ int CThreadedApp::Run(void)
     main_cleanup_flag = 0;
     CRef< CTls<int> > tls(new CTls<int>);
     tls->SetValue(0);
-    CRWLock rw;
+    CRWLock rw(rwflags);
     CSharedResource res;
     {{
         CFastMutexGuard guard(s_GlobalLock);

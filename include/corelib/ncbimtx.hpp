@@ -837,8 +837,16 @@ typedef TWriteLockGuard                              CWriteLockGuard;
 class NCBI_XNCBI_EXPORT CRWLock
 {
 public:
+    /// Flags (passed at construction time) for fine-tuning lock behavior.
+    enum EFlags {
+        /// Forbid further readers from acquiring the lock if any writers
+        /// are waiting for it, to keep would-be writers from starving.
+        fFavorWriters = 0x1
+    };
+    typedef int TFlags; ///< binary OR of EFlags
+
     /// Constructor.
-    CRWLock(void);
+    CRWLock(TFlags flags = 0);
 
     /// Destructor.
     ~CRWLock(void);
@@ -881,21 +889,31 @@ public:
     void Unlock(void);
 
 private:
-    
+    enum EInternalFlags {
+        /// Keep track of which threads have read locks
+        fTrackReaders = 0x40000000
+    };
+
+    TFlags                     m_Flags; ///< Configuration flags
+
     auto_ptr<CInternalRWLock>  m_RW;    ///< Platform-dependent RW-lock data
-    
+
     volatile CThreadSystemID   m_Owner; ///< Writer ID, one of the readers ID
-    
+
     volatile int               m_Count; ///< Number of readers (if >0) or
                                         ///< writers (if <0)
 
-    
+    volatile unsigned int      m_WaitingWriters; ///< Number of writers waiting;
+                                                 ///< zero if not keeping track
+
     vector<CThreadSystemID>    m_Readers;   ///< List of all readers or writers
                                             ///< for debugging
-    
+
+    bool x_MayAcquireForReading(CThreadSystemID self_id);
+
     /// Private copy constructor to disallow initialization.
     CRWLock(const CRWLock&);
-                           
+
     /// Private assignment operator to disallow assignment.
     CRWLock& operator= (const CRWLock&);
 };

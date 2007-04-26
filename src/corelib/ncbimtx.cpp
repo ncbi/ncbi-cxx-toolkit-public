@@ -421,8 +421,9 @@ public:
 
     // Platform-dependent RW-lock data
 #if defined(NCBI_WIN32_THREADS)
-    CWindowsSemaphore   m_Rsema;
-    CWindowsSemaphore   m_Wsema;
+    CWindowsSemaphore   m_Rsema;  // down when locked for writing
+    CWindowsSemaphore   m_Rsema2; // down when writers are waiting
+    CWindowsSemaphore   m_Wsema;  // down when locked for reading OR writing
 #  if defined(NCBI_USE_CRITICAL_SECTION)
     CWindowsHandle      m_Mutex;
 #  else
@@ -438,7 +439,7 @@ public:
 inline
 CInternalRWLock::CInternalRWLock(void)
 #if defined(NCBI_WIN32_THREADS)
-    : m_Rsema(1, 1), m_Wsema(1, 1)
+    : m_Rsema(1, 1), m_Rsema2(1, 1), m_Wsema(1, 1)
 #endif
 {
 #if defined(NCBI_USE_CRITICAL_SECTION)
@@ -450,13 +451,22 @@ CInternalRWLock::CInternalRWLock(void)
 //  CRWLock::
 //
 
-CRWLock::CRWLock(void)
-    : m_RW(new CInternalRWLock),
-      m_Count(0)
+CRWLock::CRWLock(TFlags flags)
+    : m_Flags(flags),
+      m_RW(new CInternalRWLock),
+      m_Count(0),
+      m_WaitingWriters(0)
 {
 #if defined(_DEBUG)
-    m_Readers.reserve(16);
+    m_Flags |= fTrackReaders;
+#else
+    if (m_Flags & fFavorWriters) {
+        m_Flags |= fTrackReaders;
+    }
 #endif
+    if (m_Flags & fTrackReaders) {
+        m_Readers.reserve(16);
+    }
 }
 
 
@@ -464,6 +474,22 @@ CRWLock::~CRWLock(void)
 {
 }
 
+
+bool CRWLock::x_MayAcquireForReading(CThreadSystemID self_id)
+{
+    _ASSERT(self_id == CThreadSystemID::GetCurrent());
+    if (m_Count < 0) { // locked for writing, possibly by self
+        // return m_Owner.Is(self_id);
+        return false; // allow special handling of self-locked cases
+    } else if ( !(m_Flags & fFavorWriters) ) {
+        return true; // no other concerns
+    } else if (find(m_Readers.begin(), m_Readers.end(), self_id)
+               != m_Readers.end()) {
+        return true; // allow recursive read locks
+    } else {
+        return !m_WaitingWriters;
+    }
+}
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
 
@@ -508,26 +534,28 @@ void CRWLock::ReadLock(void)
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
-    if ( m_Count < 0 ) {
-        if ( m_Owner.Is(self_id) ) {
+    if ( !x_MayAcquireForReading(self_id) ) {
+        if (m_Count < 0  &&  m_Owner.Is(self_id)) {
             // if W-locked by the same thread - update W-counter
             m_Count--;
         }
         else {
-            // W-locked by another thread
+            // (due to be) W-locked by another thread
 #if defined(NCBI_WIN32_THREADS)
-            HANDLE obj[2];
+            HANDLE obj[3];
             DWORD  wait_res;
             obj[0] = m_RW->m_Mutex.GetHandle();
             obj[1] = m_RW->m_Rsema;
+            obj[2] = m_RW->m_Rsema2;
             xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
                            "CRWLock::ReadLock() - release mutex error");
-            wait_res = WaitForMultipleObjects(2, obj, TRUE, INFINITE);
+            wait_res = WaitForMultipleObjects(3, obj, TRUE, INFINITE);
             xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
-                           wait_res < WAIT_OBJECT_0 + 2,
+                           wait_res < WAIT_OBJECT_0 + 3,
                            "CRWLock::ReadLock() - R-lock waiting error");
             // Success, check the semaphore
-            xncbi_Validate(m_RW->m_Rsema.Release() == 0,
+            xncbi_Validate(m_RW->m_Rsema.Release() == 0
+                           &&  m_RW->m_Rsema2.Release() == 0,
                            "CRWLock::ReadLock() - invalid R-semaphore state");
             if (m_Count == 0) {
                 xncbi_Validate(WaitForSingleObject(m_RW->m_Wsema,
@@ -536,7 +564,7 @@ void CRWLock::ReadLock(void)
                                "failed to lock W-semaphore");
             }
 #elif defined(NCBI_POSIX_THREADS)
-            while (m_Count < 0) {
+            while ( !x_MayAcquireForReading(self_id) ) {
                 xncbi_Validate(pthread_cond_wait(m_RW->m_Rcond,
                                                  m_RW->m_Mutex.GetHandle())
                                == 0,
@@ -567,12 +595,10 @@ void CRWLock::ReadLock(void)
         m_Count++;
     }
 
-#if defined(_DEBUG)
     // Remember new reader
-    if (m_Count > 0) {
+    if ((m_Flags & fTrackReaders) != 0  &&  m_Count > 0) {
         m_Readers.push_back(self_id);
     }
-#endif
 #endif
 }
 
@@ -590,9 +616,9 @@ bool CRWLock::TryReadLock(void)
 #endif
     CThreadSystemID self_id = CThreadSystemID::GetCurrent();
 
-    if (m_Count < 0) {
-        if ( m_Owner.IsNot(self_id) ) {
-            // W-locked by another thread
+    if ( !x_MayAcquireForReading(self_id) ) {
+        if (m_Count >= 0  ||  m_Owner.IsNot(self_id)) {
+            // (due to be) W-locked by another thread
             return false;
         }
         else {
@@ -613,9 +639,9 @@ bool CRWLock::TryReadLock(void)
     }
 #endif
     m_Count++;
-#if defined(_DEBUG)
-    m_Readers.push_back(self_id);
-#endif
+    if (m_Flags & fTrackReaders) {
+        m_Readers.push_back(self_id);
+    }
     return true;
 #endif
 }
@@ -663,20 +689,44 @@ void CRWLock::WriteLock(void)
         }
         else {
             // Locked by another thread - wait for unlock
+            if (m_Flags & fFavorWriters) {
+                if (++m_WaitingWriters == 1) {
+                    // First waiting writer - lock out readers
+                    xncbi_Validate(WaitForSingleObject(m_RW->m_Rsema2, 0)
+                                   == WAIT_OBJECT_0,
+                                   "CRWLock::WriteLock() - "
+                                   "error locking R-semaphore 2");
+                }
+            }
             xncbi_Validate(ReleaseMutex(m_RW->m_Mutex.GetHandle()),
-                           "CRWLock::ReadLock() - release mutex error");
+                           "CRWLock::WriteLock() - release mutex error");
             wait_res = WaitForMultipleObjects(3, obj, TRUE, INFINITE);
             xncbi_Validate(wait_res >= WAIT_OBJECT_0  &&
                            wait_res < WAIT_OBJECT_0+3,
                            "CRWLock::WriteLock() - "
                            "error locking R&W-semaphores");
+            if (m_Flags & fFavorWriters) {
+                if (--m_WaitingWriters == 0) {
+                    xncbi_Validate(m_RW->m_Rsema2.Release() == 0,
+                                   "CRWLock::WriteLock() - "
+                                   "invalid R-semaphore 2 state");
+                    // Readers still won't be able to proceed, but releasing
+                    // the semaphore here simplifies bookkeeping.
+                }
+            }
         }
 #elif defined(NCBI_POSIX_THREADS)
+        if (m_Flags & fFavorWriters) {
+            m_WaitingWriters++;
+        }
         while (m_Count != 0) {
             xncbi_Validate(pthread_cond_wait(m_RW->m_Wcond,
                                              m_RW->m_Mutex.GetHandle()) == 0,
                            "CRWLock::WriteLock() - "
                            "error locking R&W-conditionals");
+        }
+        if (m_Flags & fFavorWriters) {
+            m_WaitingWriters--;
         }
 #endif
         xncbi_Validate(m_Count >= 0,
@@ -769,17 +819,19 @@ void CRWLock::Unlock(void)
             xncbi_Validate(m_RW->m_Wsema.Release() == 0,
                            "CRWLock::Unlock() - invalid R-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-            xncbi_Validate(pthread_cond_broadcast(m_RW->m_Rcond) == 0,
-                           "CRWLock::Unlock() - error signalling unlock");
+            if ( !m_WaitingWriters ) {
+                xncbi_Validate(pthread_cond_broadcast(m_RW->m_Rcond) == 0,
+                               "CRWLock::Unlock() - error signalling unlock");
+            }
             xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
                            "CRWLock::Unlock() - error signalling unlock");
 #endif
         }
-#if defined(_DEBUG)
-        // Check if the unlocking thread is in the owners list
-        _ASSERT(find(m_Readers.begin(), m_Readers.end(), self_id)
-               == m_Readers.end());
-#endif
+        if (m_Flags & fTrackReaders) {
+            // Check if the unlocking thread is in the owners list
+            _ASSERT(find(m_Readers.begin(), m_Readers.end(), self_id)
+                    == m_Readers.end());
+        }
     }
     else {
         xncbi_Validate(m_Count != 0,
@@ -794,16 +846,16 @@ void CRWLock::Unlock(void)
                            "CRWLock::Unlock() - error signaling unlock");
 #endif
         }
-#if defined(_DEBUG)
-        // Check if the unlocking thread is in the owners list
-        vector<CThreadSystemID>::iterator found =
-            find(m_Readers.begin(), m_Readers.end(), self_id);
-        _ASSERT(found != m_Readers.end());
-        m_Readers.erase(found);
-        if ( m_Count == 0 ) {
-            _ASSERT(m_Readers.empty());
+        if (m_Flags & fTrackReaders) {
+            // Check if the unlocking thread is in the owners list
+            vector<CThreadSystemID>::iterator found =
+                find(m_Readers.begin(), m_Readers.end(), self_id);
+            _ASSERT(found != m_Readers.end());
+            m_Readers.erase(found);
+            if ( m_Count == 0 ) {
+                _ASSERT(m_Readers.empty());
+            }
         }
-#endif
     }
 #endif
 }

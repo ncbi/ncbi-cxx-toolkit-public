@@ -6,4 +6,5 @@ LIB = xncbi
 
 REQUIRES = MT
 
-CHECK_CMD =
+CHECK_CMD = test_ncbithr
+CHECK_CMD = test_ncbithr -favorwriters
