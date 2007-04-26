@@ -40,13 +40,17 @@
 USING_NCBI_SCOPE;
 
 // Count objects, scaffolds, components, gaps
-class CTestAgpReader : public CAgpReader
+class CAgpCounter : public CAgpReader
 {
 public:
     int objects1, objects2, scaffolds, components, gaps, comments;
-    CTestAgpReader()
+    int singleton_objects, singleton_scaffolds;
+    int components_in_object, components_in_scaffold;
+    CAgpCounter()
     {
         objects1=objects2=scaffolds=components=gaps=comments=0;
+        singleton_objects=singleton_scaffolds=0;
+        components_in_object=components_in_scaffold=0;
     }
 
 #define P(x) cout << #x << "=" << x << "\n"
@@ -54,28 +58,40 @@ public:
     void PrintResults()
     {
         PPP(objects1, objects2, scaffolds);
+        P(singleton_objects);
+        P(singleton_scaffolds);
         cout << "\n";
         PPP(components, gaps, comments);
-
     }
 
     // Callbacks
-    virtual void OnGapOrComponent()
-    {
-        if(m_this_row->IsGap()) gaps++;
-        else components++;
-    }
-
     virtual void OnScaffoldEnd()
     {
         scaffolds++;
+        if(components_in_scaffold==1) singleton_scaffolds++;
+        components_in_scaffold=0;
     }
 
     virtual void OnObjectChange()
     {
         // If CAgpReader works properly, both counts are the same.
         if(!m_at_end) objects1++;
-        if(!m_at_beg) objects2++;
+        if(!m_at_beg) {
+          objects2++;
+
+          if(components_in_object==1) singleton_objects++;
+          components_in_object=0;
+        }
+    }
+
+    virtual void OnGapOrComponent()
+    {
+        if(m_this_row->IsGap()) gaps++;
+        else {
+          components++;
+          components_in_object++;
+          components_in_scaffold++;
+        }
     }
 
     virtual void OnComment()
@@ -88,7 +104,7 @@ public:
 
 int main(int argc, char* argv[])
 {
-    CTestAgpReader reader;
+    CAgpCounter reader;
     int code=reader.ReadStream(cin);
     if(code) {
         // cerr << "Code " << code << "\n";
