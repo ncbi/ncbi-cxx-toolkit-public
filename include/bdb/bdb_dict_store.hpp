@@ -156,6 +156,7 @@ private:
             : CBDB_File(eDuplicatesDisable, eQueue)
             {
                 DisableNull();
+                SetCacheSize(128 * 1024);
                 BindKey ("uid", &uid);
                 BindData("key", &key);
             }
