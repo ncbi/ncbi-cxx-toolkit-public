@@ -250,8 +250,8 @@ public:
       fAtNone    =8  // Not tied to any specifc line(s) (empty file; possibly, taxid errors)
     };
 
-    // Accumulate multiple errors on a single line (messages, messages_apply_to);
-    // ignore warnings.
+    // This implementation accumulates multiple errors separeately for
+    // the current and the previous lines, ignores warnings.
     virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
     void Msg(int code, int appliesTo=fAtThisLine)
     {
@@ -259,11 +259,11 @@ public:
     }
     void Clear();
 
-    // The following 2 methods are used in CAgpRow/CAgpReader::PrintErrors()
+    // The following 2 methods are needed for CAgpRow/CAgpReader::GetErrorMessage()
     virtual string GetErrorMessage(int mask=0xFFFFFFFF);
     virtual int AppliesTo(int mask=0xFFFFFFFF);
 
-    // When adding new errors to enum TCode, also update s_msg[]
+    // When adding new errors to this enum, also update s_msg[]
     enum {
         // Errors within one line (detected in CAgpRow)
         E_ColumnCount=1 ,
