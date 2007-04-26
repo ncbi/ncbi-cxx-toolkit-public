@@ -134,7 +134,12 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
             CSeqdesc_CI desc_it(query->GetScope()->GetBioseqHandle(*id), 
                                 CSeqdesc::e_Source);
             if (desc_it) {
-                query->SetGeneticCodeId(desc_it->GetSource().GetGenCode());
+                try {
+                    query->SetGeneticCodeId(desc_it->GetSource().GetGenCode());
+                }
+                catch(CUnassignedMember & e) {
+                    query->SetGeneticCodeId(BLAST_GENETIC_CODE);
+                }
             }
         }
     } else {
@@ -151,7 +156,12 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
             CSeqdesc_CI desc_it(sseqloc->scope->GetBioseqHandle(*id),
                                 CSeqdesc::e_Source);
             if (desc_it) {
-                sseqloc->genetic_code_id = desc_it->GetSource().GetGenCode();
+                try {
+                    sseqloc->genetic_code_id = desc_it->GetSource().GetGenCode();
+                }
+                catch(CUnassignedMember & e) {
+                    sseqloc->genetic_code_id = BLAST_GENETIC_CODE;
+                }
             }
         }
     }
