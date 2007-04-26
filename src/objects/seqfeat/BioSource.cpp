@@ -61,12 +61,11 @@ CBioSource::~CBioSource(void)
 int CBioSource::GetGenCode(void) const
 {
     try {
-        int genome = 0;
+        TGenome genome = CanGetGenome() ? GetGenome() : eGenome_unknown;
 
-        if ( IsSetGenome() ) {
-            genome = GetGenome();
+        if ( !CanGetOrg()  ||  !GetOrg().CanGetOrgname() ) {
+            return 1; // assume standard genetic code
         }
-
         const COrgName& orn = GetOrg().GetOrgname();
 
         switch ( genome ) {
@@ -86,8 +85,8 @@ int CBioSource::GetGenCode(void) const
         default:
             return orn.GetGcode();
         }
-    } catch ( CCoreException exp ) {
-        return 0;
+    } catch (...) {
+        return 1; // was 0(!)
     }
 }
 
