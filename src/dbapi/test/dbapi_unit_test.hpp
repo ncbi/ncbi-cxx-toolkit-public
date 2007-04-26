@@ -151,6 +151,7 @@ public:
     // Test IStatement interface.
 
     // Testing Approach for value wrappers
+    void Test_CDB_Object(void);
     void Test_Variant(void);
     void Test_Variant2(void);
 

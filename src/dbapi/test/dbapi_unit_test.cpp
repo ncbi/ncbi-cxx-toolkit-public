@@ -4629,6 +4629,175 @@ CDBAPIUnitTest::CheckGetRowCount2(
 
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_CDB_Object(void)
+{
+    // Check for NULL a default constructor ...
+    {
+        CDB_Bit value_Bit;
+        CDB_Int value_Int;
+        CDB_SmallInt value_SmallInt;
+        CDB_TinyInt value_TinyInt;
+        CDB_BigInt value_BigInt;
+        CDB_VarChar value_VarChar;
+        CDB_Char value_Char;
+        CDB_LongChar value_LongChar;
+        CDB_VarBinary value_VarBinary;
+        CDB_Binary value_Binary;
+        CDB_LongBinary value_LongBinary;
+        CDB_Float value_Float;
+        CDB_Double value_Double;
+        CDB_SmallDateTime value_SmallDateTime;
+        CDB_DateTime value_DateTime;
+        CDB_Numeric value_Numeric;
+
+        BOOST_CHECK(value_Bit.IsNULL());
+        BOOST_CHECK(value_Int.IsNULL());
+        BOOST_CHECK(value_SmallInt.IsNULL());
+        BOOST_CHECK(value_TinyInt.IsNULL());
+        BOOST_CHECK(value_BigInt.IsNULL());
+        BOOST_CHECK(value_VarChar.IsNULL());
+        BOOST_CHECK(value_Char.IsNULL());
+        BOOST_CHECK(value_LongChar.IsNULL());
+        BOOST_CHECK(value_VarBinary.IsNULL());
+        BOOST_CHECK(value_Binary.IsNULL());
+        BOOST_CHECK(value_LongBinary.IsNULL());
+        BOOST_CHECK(value_Float.IsNULL());
+        BOOST_CHECK(value_Double.IsNULL());
+        BOOST_CHECK(value_SmallDateTime.IsNULL());
+        BOOST_CHECK(value_DateTime.IsNULL());
+        BOOST_CHECK(value_Numeric.IsNULL());
+    }
+
+    // Check for NOT NULL a non-default constructor ...
+    {
+        CDB_Bit value_Bit(false);
+        CDB_Int value_Int(1);
+        CDB_SmallInt value_SmallInt(1);
+        CDB_TinyInt value_TinyInt(1);
+        CDB_BigInt value_BigInt(1);
+        CDB_VarChar value_VarChar("ABC");
+        CDB_Char value_Char(3, "ABC");
+        CDB_LongChar value_LongChar(3, "ABC");
+        CDB_VarBinary value_VarBinary("ABC", 3);
+        CDB_Binary value_Binary(3, "ABC", 3);
+        CDB_LongBinary value_LongBinary(3, "ABC", 3);
+        CDB_Float value_Float(1.0);
+        CDB_Double value_Double(1.0);
+        CDB_SmallDateTime value_SmallDateTime(CTime("04/24/2007 11:17:01"));
+        CDB_DateTime value_DateTime(CTime("04/24/2007 11:17:01"));
+        CDB_Numeric value_Numeric(10, 2, "10");
+
+        BOOST_CHECK(!value_Bit.IsNULL());
+        BOOST_CHECK(!value_Int.IsNULL());
+        BOOST_CHECK(!value_SmallInt.IsNULL());
+        BOOST_CHECK(!value_TinyInt.IsNULL());
+        BOOST_CHECK(!value_BigInt.IsNULL());
+        BOOST_CHECK(!value_VarChar.IsNULL());
+        BOOST_CHECK(!value_Char.IsNULL());
+        BOOST_CHECK(!value_LongChar.IsNULL());
+        BOOST_CHECK(!value_VarBinary.IsNULL());
+        BOOST_CHECK(!value_Binary.IsNULL());
+        BOOST_CHECK(!value_LongBinary.IsNULL());
+        BOOST_CHECK(!value_Float.IsNULL());
+        BOOST_CHECK(!value_Double.IsNULL());
+        BOOST_CHECK(!value_SmallDateTime.IsNULL());
+        BOOST_CHECK(!value_DateTime.IsNULL());
+        BOOST_CHECK(!value_Numeric.IsNULL());
+    }
+
+    // Check for NOT NULL after a value assignment operator ...
+    {
+        CDB_Bit value_Bit;
+        CDB_Int value_Int;
+        CDB_SmallInt value_SmallInt;
+        CDB_TinyInt value_TinyInt;
+        CDB_BigInt value_BigInt;
+        CDB_VarChar value_VarChar;
+        CDB_Char value_Char(10);
+        CDB_LongChar value_LongChar;
+        CDB_VarBinary value_VarBinary;
+        CDB_Binary value_Binary;
+        CDB_LongBinary value_LongBinary;
+        CDB_Float value_Float;
+        CDB_Double value_Double;
+        CDB_SmallDateTime value_SmallDateTime;
+        CDB_DateTime value_DateTime;
+        CDB_Numeric value_Numeric;
+
+        value_Bit = true;
+        value_Int = 1;
+        value_SmallInt = 1;
+        value_TinyInt = 1;
+        value_BigInt = 1;
+        value_VarChar = "ABC";
+        value_Char = "ABC";
+        value_LongChar = "ABC";
+        value_VarBinary.SetValue("ABC", 3);
+        value_Binary.SetValue("ABC", 3);
+        value_LongBinary.SetValue("ABC", 3);
+        value_Float = 1.0;
+        value_Double = 1.0;
+        value_SmallDateTime = CTime("04/24/2007 11:17:01");
+        value_DateTime = CTime("04/24/2007 11:17:01");
+        value_Numeric = "10";
+
+        BOOST_CHECK(!value_Bit.IsNULL());
+        BOOST_CHECK(!value_Int.IsNULL());
+        BOOST_CHECK(!value_SmallInt.IsNULL());
+        BOOST_CHECK(!value_TinyInt.IsNULL());
+        BOOST_CHECK(!value_BigInt.IsNULL());
+        BOOST_CHECK(!value_VarChar.IsNULL());
+        BOOST_CHECK(!value_Char.IsNULL());
+        BOOST_CHECK(!value_LongChar.IsNULL());
+        BOOST_CHECK(!value_VarBinary.IsNULL());
+        BOOST_CHECK(!value_Binary.IsNULL());
+        BOOST_CHECK(!value_LongBinary.IsNULL());
+        BOOST_CHECK(!value_Float.IsNULL());
+        BOOST_CHECK(!value_Double.IsNULL());
+        BOOST_CHECK(!value_SmallDateTime.IsNULL());
+        BOOST_CHECK(!value_DateTime.IsNULL());
+        BOOST_CHECK(!value_Numeric.IsNULL());
+
+        // A copy constructor ...
+        CDB_Bit value_Bit2(value_Bit);
+        CDB_Int value_Int2(value_Int);
+        CDB_SmallInt value_SmallInt2(value_SmallInt);
+        CDB_TinyInt value_TinyInt2(value_TinyInt);
+        CDB_BigInt value_BigInt2(value_BigInt);
+        CDB_VarChar value_VarChar2(value_VarChar);
+        CDB_Char value_Char2(value_Char);
+        CDB_LongChar value_LongChar2(value_LongChar);
+        CDB_VarBinary value_VarBinary2(value_VarBinary);
+        CDB_Binary value_Binary2(value_Binary);
+        CDB_LongBinary value_LongBinary2(value_LongBinary);
+        CDB_Float value_Float2(value_Float);
+        CDB_Double value_Double2(value_Double);
+        CDB_SmallDateTime value_SmallDateTime2(value_SmallDateTime);
+        CDB_DateTime value_DateTime2(value_DateTime);
+        CDB_Numeric value_Numeric2(value_Numeric);
+
+        BOOST_CHECK(!value_Bit2.IsNULL());
+        BOOST_CHECK(!value_Int2.IsNULL());
+        BOOST_CHECK(!value_SmallInt2.IsNULL());
+        BOOST_CHECK(!value_TinyInt2.IsNULL());
+        BOOST_CHECK(!value_BigInt2.IsNULL());
+        BOOST_CHECK(!value_VarChar2.IsNULL());
+        BOOST_CHECK(!value_Char2.IsNULL());
+        BOOST_CHECK(!value_LongChar2.IsNULL());
+        BOOST_CHECK(!value_VarBinary2.IsNULL());
+        BOOST_CHECK(!value_Binary2.IsNULL());
+        BOOST_CHECK(!value_LongBinary2.IsNULL());
+        BOOST_CHECK(!value_Float2.IsNULL());
+        BOOST_CHECK(!value_Double2.IsNULL());
+        BOOST_CHECK(!value_SmallDateTime2.IsNULL());
+        BOOST_CHECK(!value_DateTime2.IsNULL());
+        BOOST_CHECK(!value_Numeric2.IsNULL());
+
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Variant(void)
@@ -6720,6 +6889,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     //
+    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Object, DBAPIInstance));
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception,
                               DBAPIInstance));
@@ -7204,9 +7374,9 @@ CTestArguments::SetDatabaseParameters(void)
     if ( (GetDriverName() == "ftds" ||
           GetDriverName() == "ftds63" ||
 //           GetDriverName() == "ftds64" ||
-//           GetDriverName() == "ftds64_odbc" ||
-          GetDriverName() == "ftds64_dblib") &&
-        GetServerType() == eMsSql) {
+//           GetDriverName() == "ftds64_odbc"  ||
+          GetDriverName() == "ftds64_dblib")
+         && GetServerType() == eMsSql) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
     }
 }
