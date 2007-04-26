@@ -263,7 +263,7 @@ GetBestGeneForMrna(const CSeq_feat& mrna_feat,
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
-GetBestGeneForCds(const CSeq_feat& mrna_feat,
+GetBestGeneForCds(const CSeq_feat& cds_feat,
                   CScope& scope,
                   TBestFeatOpts opts = fBestFeat_Defaults);
 
