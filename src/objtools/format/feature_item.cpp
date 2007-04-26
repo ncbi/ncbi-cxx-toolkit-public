@@ -1136,6 +1136,14 @@ void CFeatureItem::x_AddRnaQuals
                     // !!!
                     return;
                 }
+                if (aa == 'U') {
+                    if ( ctx.Config().SelenocysteineToNote() ) {
+                        x_AddQual(eFQ_selenocysteine_note,
+                            new CFlatStringQVal("selenocysteine"));
+                    } else {
+                        x_AddQual(eFQ_selenocysteine, new CFlatBoolQVal(true));
+                    }
+                }
                 if ( cfg.IupacaaOnly() ) {
                     aa = s_ToIupacaa(aa);
                 }
