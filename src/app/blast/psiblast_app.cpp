@@ -195,10 +195,8 @@ int CPsiBlastApp::Run(void)
             CRef<CSearchResultSet> results = psiblast->Run();
             CConstRef<CSeq_align_set> alignment = (*results)[0].GetSeqAlign();
 
-            out << "Results from round "
-                << NStr::IntToString(itr.GetIterationNumber()) << NcbiEndl;
-            
-            format.PrintOneAlignSet((*results)[0], *scope);
+            format.PrintOneAlignSet((*results)[0], *scope,
+                                    itr.GetIterationNumber());
 
             CPsiBlastIterationState::TSeqIds ids;
             CPsiBlastIterationState::GetSeqIds(alignment, opts, ids);

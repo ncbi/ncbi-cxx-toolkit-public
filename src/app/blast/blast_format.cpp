@@ -204,7 +204,8 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 
 void
 CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
-                               CScope& scope)
+                               CScope& scope,
+                               unsigned int itr_num)
 {
     const CSeq_align_set& aln_set = *results.GetSeqAlign();
 
@@ -239,6 +240,10 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
                 tabinfo.Print();
         }
         return;
+    }
+
+    if (itr_num != numeric_limits<unsigned int>::max()) {
+        m_Outfile << "Results from round " << itr_num << NcbiEndl;
     }
 
     // other output types will need a bioseq handle

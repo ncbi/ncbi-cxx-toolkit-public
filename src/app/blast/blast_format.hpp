@@ -36,6 +36,7 @@ Author: Jason Papadopoulos
 #ifndef APP___BLAST_FORMAT__HPP
 #define APP___BLAST_FORMAT__HPP
 
+#include <corelib/ncbi_limits.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
@@ -107,7 +108,9 @@ public:
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
     void PrintOneAlignSet(const blast::CSearchResults& results,
-                          objects::CScope& scope);
+                          objects::CScope& scope,
+                          unsigned int itr_num =
+                          numeric_limits<unsigned int>::max());
 
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]
