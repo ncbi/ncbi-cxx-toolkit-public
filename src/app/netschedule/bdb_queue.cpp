@@ -243,7 +243,6 @@ CQueueDataBase::CQueueDataBase()
 : m_Env(0),
   m_QueueCollection(*this),
   m_StopPurge(false),
-  m_DeleteChkPointCnt(0),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
   m_LastR2P(time(0)),
@@ -262,16 +261,7 @@ CQueueDataBase::~CQueueDataBase()
 
 
 void CQueueDataBase::Open(const string& path, 
-                          unsigned      cache_ram_size,
-                          unsigned      max_locks,
-                          unsigned      max_lockers,
-                          unsigned      max_lockobjects,
-                          unsigned      log_mem_size,
-                          unsigned      max_trans,
-                          bool          sync_transactions,
-                          bool          direct_db,
-                          bool          direct_log,
-                          bool          private_env)
+                          const SNSDBEnvironmentParams& params)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
 
@@ -314,9 +304,9 @@ void CQueueDataBase::Open(const string& path,
     string err_file = m_Path + "err" + string(m_Name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
-    if (log_mem_size) {
+    if (params.log_mem_size) {
         m_Env->SetLogInMemory(true);
-        m_Env->SetLogBSize(log_mem_size);
+        m_Env->SetLogBSize(params.log_mem_size);
     } else {
         m_Env->SetLogFileMax(200 * 1024 * 1024);
         m_Env->SetLogAutoRemove(true);
@@ -329,25 +319,25 @@ void CQueueDataBase::Open(const string& path,
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
 
     CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
-    if (private_env)
+    if (params.private_env)
         opt |= CBDB_Env::ePrivate;
-    if (private_env || fl.empty()) {
-        if (cache_ram_size)
-            m_Env->SetCacheSize(cache_ram_size);
-        if (max_locks)
-            m_Env->SetMaxLocks(max_locks);
-        if (max_lockers)
-            m_Env->SetMaxLockers(max_lockers);
-        if (max_lockobjects)
-            m_Env->SetMaxLockObjects(max_lockobjects);
-        if (max_trans)
-            m_Env->SetTransactionMax(max_trans);
-        m_Env->SetTransactionSync(sync_transactions ?
+    if (params.private_env || fl.empty()) {
+        if (params.cache_ram_size)
+            m_Env->SetCacheSize(params.cache_ram_size);
+        if (params.max_locks)
+            m_Env->SetMaxLocks(params.max_locks);
+        if (params.max_lockers)
+            m_Env->SetMaxLockers(params.max_lockers);
+        if (params.max_lockobjects)
+            m_Env->SetMaxLockObjects(params.max_lockobjects);
+        if (params.max_trans)
+            m_Env->SetTransactionMax(params.max_trans);
+        m_Env->SetTransactionSync(params.sync_transactions ?
                                       CBDB_Transaction::eTransSync :
                                       CBDB_Transaction::eTransASync);
 
         m_Env->OpenWithTrans(path.c_str(), opt);
-        LOG_POST(Info << "Opened " << (private_env ? "private " : "")
+        LOG_POST(Info << "Opened " << (params.private_env ? "private " : "")
             << "BDB environment with "
             << m_Env->GetMaxLocks() << " max locks, "
 //            << m_Env->GetMaxLockers() << " max lockers, "
@@ -356,8 +346,8 @@ void CQueueDataBase::Open(const string& path,
                                           "" : "a") << "syncronous transactions, "
             << m_Env->MutexGetMax() <<  " max mutexes");
     } else {
-        if (cache_ram_size) {
-            m_Env->SetCacheSize(cache_ram_size);
+        if (params.cache_ram_size) {
+            m_Env->SetCacheSize(params.cache_ram_size);
         }
         try {
             m_Env->JoinEnv(path.c_str(), CBDB_Env::eThreaded);
@@ -386,8 +376,11 @@ void CQueueDataBase::Open(const string& path,
         }
     }
 
-    m_Env->SetDirectDB(direct_db);
-    m_Env->SetDirectLog(direct_log);
+    m_Env->SetDirectDB(params.direct_db);
+    m_Env->SetDirectLog(params.direct_log);
+
+    m_Env->SetCheckPointKB(params.checkpoint_kb);
+    m_Env->SetCheckPointMin(params.checkpoint_min);
 
     m_Env->SetLockTimeout(10 * 1000000); // 10 sec
 
@@ -395,7 +388,8 @@ void CQueueDataBase::Open(const string& path,
 
     if (m_Env->IsTransactional()) {
         m_Env->SetTransactionTimeout(10 * 1000000); // 10 sec
-        m_Env->TransactionCheckpoint();
+        m_Env->ForceTransactionCheckpoint();
+        m_Env->CleanLog();
     }
 
     m_QueueDescriptionDB.SetEnv(*m_Env);
@@ -807,7 +801,8 @@ void CQueueDataBase::Close()
     StopExecutionWatcherThread();
 
     if (m_Env) {
-        m_Env->TransactionCheckpoint();
+        m_Env->ForceTransactionCheckpoint();
+        m_Env->CleanLog();
     }
 
     x_CleanParamMap();
@@ -955,11 +950,7 @@ void CQueueDataBase::Purge(void)
         (*it).ClearAffinityIdx();
     }
 
-    m_DeleteChkPointCnt += global_del_rec;
-    if (m_DeleteChkPointCnt > 100000) {
-        m_DeleteChkPointCnt = 0;
-        TransactionCheckPoint(true);
-    }
+    TransactionCheckPoint();
 
     m_FreeStatusMemCnt += global_del_rec;
     x_OptimizeStatusMatrix();
@@ -971,11 +962,6 @@ void CQueueDataBase::Purge(void)
             LOG_POST(Warning << "Queue " << (*it) << " already gone.");
         }
     }
-
-//    if (global_del_rec >
-//          n_jobs_to_delete + n_queue_limit * m_QueueCollection.GetSize()) {
-//        SleepMilliSec(1000);
-//    }
 }
 
 unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
@@ -1854,13 +1840,6 @@ CQueue::Submit(SNS_SubmitRecord* rec,
     q->status_tracker.SetStatus(job_id, CNetScheduleAPI::ePending);
 
     if (was_empty) NotifyListeners(true);
-
-    if ((job_id % 1000) == 0) {
-        db.GetEnv()->TransactionCheckpoint();
-    }
-    if ((job_id % 1000000) == 0) {
-        db.GetEnv()->CleanLog();
-    }
 
     return job_id;
 }
@@ -2777,47 +2756,46 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     time_t curr = time(0);
 
     {{
-    CFastMutexGuard guard(q->lock);
-    db.SetTransaction(&trans);
+        CFastMutexGuard guard(q->lock);
+        db.SetTransaction(&trans);
 
-    CBDB_FileCursor& cur = *q->GetCursor(trans);
-    CBDB_CursorGuard cg(cur);    
+        CBDB_FileCursor& cur = *q->GetCursor(trans);
+        CBDB_CursorGuard cg(cur);    
 
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << job_id;
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << job_id;
 
-    if (cur.FetchFirst() != eBDB_Ok) {
-        return;
-    }
+        if (cur.FetchFirst() != eBDB_Ok) {
+            return;
+        }
 
-    //    int status = db.status;
+        //    int status = db.status;
 
-    time_run = db.time_run;
-    run_timeout = db.run_timeout;
-    if (run_timeout == 0) {
-        run_timeout = q->run_timeout;
-    }
-    old_run_timeout = run_timeout;
+        time_run = db.time_run;
+        run_timeout = db.run_timeout;
+        if (run_timeout == 0) {
+            run_timeout = q->run_timeout;
+        }
+        old_run_timeout = run_timeout;
 
-    // check if current timeout is enought and job requires no prolongation
-    time_t safe_exp_time = 
-        curr + std::max((unsigned)q->run_timeout, 2*tm) + q_time_descr;
-    if (time_run + run_timeout > (unsigned) safe_exp_time) {
-        return;
-    }
+        // check if current timeout is enough and job requires no prolongation
+        time_t safe_exp_time = 
+            curr + std::max((unsigned)q->run_timeout, 2*tm) + q_time_descr;
+        if (time_run + run_timeout > (unsigned) safe_exp_time) {
+            return;
+        }
 
-    if (time_run == 0) {
-        time_run = curr;
-        db.time_run = curr;
-    }
+        if (time_run == 0) {
+            time_run = curr;
+            db.time_run = curr;
+        }
 
-    while (time_run + run_timeout <= (unsigned) safe_exp_time) {
-        run_timeout += std::max((unsigned)q->run_timeout, tm);
-    }
-    db.run_timeout = run_timeout;
+        while (time_run + run_timeout <= (unsigned) safe_exp_time) {
+            run_timeout += std::max((unsigned)q->run_timeout, tm);
+        }
+        db.run_timeout = run_timeout;
 
-    cur.Update();
-
+        cur.Update();
     }}
 
     trans.Commit();
@@ -2909,6 +2887,7 @@ void CQueue::ReturnJob(unsigned int job_id)
     }
 }
 
+/* obsolete, non-working code
 void CQueue::x_GetJobLB(unsigned int   worker_node,
                         unsigned int*  job_id, 
                         char*          input,
@@ -3212,6 +3191,7 @@ grant_job:
 
     x_AddToTimeLine(*job_id, curr);
 }
+*/
 
 
 unsigned 
@@ -3313,10 +3293,12 @@ void CQueue::GetJob(unsigned int   worker_node,
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
+    /* obsolete, non-working code
     if (q->lb_flag) {
         x_GetJobLB(worker_node, job_id, input, job_mask);
         return;
     }
+    */
 
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;

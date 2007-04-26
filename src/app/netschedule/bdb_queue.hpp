@@ -332,11 +332,13 @@ private:
     x_FindPendingJob(const string&  client_name,
                      unsigned       client_addr);
 
+    /* obsolete, non-working code
     /// Get job with load balancing
     void x_GetJobLB(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input,
                     unsigned*      job_mask);
+    */
 
     time_t x_ComputeExpirationTime(unsigned time_run, 
                                    unsigned run_timeout) const; 
@@ -536,6 +538,24 @@ private:
 };
 
 
+struct SNSDBEnvironmentParams
+{
+    unsigned  cache_ram_size;      ///< Size of database cache
+    unsigned  max_locks;           ///< Number of locks
+    unsigned  max_lockers;         ///< Number of lockers
+    unsigned  max_lockobjects;     ///< Number of lock objects
+    ///    Size of in-memory LOG (when 0 log is put to disk)
+    ///    In memory LOG is not durable, put it to memory
+    ///    only if you need better performance 
+    unsigned  log_mem_size;
+    unsigned  max_trans;           ///< Maximum number of active transactions
+    unsigned  checkpoint_kb;
+    unsigned  checkpoint_min;
+    bool      sync_transactions;
+    bool      direct_db;
+    bool      direct_log;
+    bool      private_env;
+};
 
 /// Top level queue database.
 /// (Thread-Safe, syncronized.)
@@ -550,27 +570,10 @@ public:
 
     /// @param path
     ///    Path to the database
-    /// @param cache_ram_size
-    ///    Size of database cache
-    /// @param max_locks
-    ///    Number of locks and lock objects
-    /// @param log_mem_size
-    ///    Size of in-memory LOG (when 0 log is put to disk)
-    ///    In memory LOG is not durable, put it to memory
-    ///    only if you need better performance 
-    /// @param max_trans
-    ///    Maximum number of active transactions
-    void Open(const string& path, 
-              unsigned      cache_ram_size,
-              unsigned      max_locks,
-              unsigned      max_lockers,
-              unsigned      max_lockobjects,
-              unsigned      log_mem_size,
-              unsigned      max_trans,
-              bool          sync_transactions,
-              bool          direct_db,
-              bool          direct_log,
-              bool          private_env);
+    /// @param params
+    ///    Parameters of DB environment
+    void Open(const string& path,
+              const SNSDBEnvironmentParams& params);
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);
 
@@ -647,7 +650,6 @@ private:
 
     bool                 m_StopPurge;         ///< Purge stop flag
     CFastMutex           m_PurgeLock;
-    unsigned int         m_DeleteChkPointCnt; ///< trans. checkpnt counter
     unsigned int         m_FreeStatusMemCnt;  ///< Free memory counter
     time_t               m_LastFreeMem;       ///< time of the last memory opt
     time_t               m_LastR2P;           ///< Return 2 Pending timestamp

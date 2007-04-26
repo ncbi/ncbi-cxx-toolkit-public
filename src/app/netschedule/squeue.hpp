@@ -63,17 +63,18 @@ struct SQueueParameters
         eLBRegression = 1
     };
 
-    /// General parameters
+    /// General parameters, reconfigurable at run time
     int timeout;
     int notif_timeout;
     int run_timeout;
-    int run_timeout_precision;
     string program_name;
     bool delete_when_done;
     int failed_retries;
     time_t empty_lifetime;
     string subm_hosts;
     string wnode_hosts;
+    // This parameter is not reconfigurable
+    int run_timeout_precision;
 
     /// Parameters for Load Balancing
     bool   lb_flag;
@@ -91,12 +92,12 @@ struct SQueueParameters
         timeout(3600),
         notif_timeout(7),
         run_timeout(3600),
-        run_timeout_precision(3600),
         program_name(""),
         delete_when_done(false),
         failed_retries(0),
         subm_hosts(""),
         wnode_hosts(""),
+        run_timeout_precision(3600),
 
         lb_flag(false),
         lb_service(""),
@@ -271,13 +272,21 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     STagDB                       m_TagDb;
     CFastMutex                   m_TagLock;
 
-    // queue parameters
-    int                          timeout;        ///< Result exp. timeout
-    int                          notif_timeout;  ///< Notification interval
-    bool                         delete_done;    ///< Delete done jobs
+    // Configurable queue parameters
+    int                          timeout;          ///< Result exp. timeout
+    int                          notif_timeout;    ///< Notification interval
+    bool                         delete_done;      ///< Delete done jobs
+    int                          run_timeout;      ///< Execution timeout
     /// How many attemts to make on different nodes before failure
     unsigned                     failed_retries;
-    int                          empty_lifetime; ///< How long to live after empty
+    int                          empty_lifetime;   ///< How long to live after empty
+    /// Client program version control
+    CQueueClientInfoList         program_version_list;
+    /// Host access list for job submission
+    CNetSchedule_AccessList      subm_hosts;
+    /// Host access list for job execution (workers)
+    CNetSchedule_AccessList      wnode_hosts;
+
 
     ///< When it became empty, guarded by 'lock'
     time_t                       became_empty;
@@ -293,21 +302,12 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 
     // Timeline object to control job execution timeout
     CJobTimeLine*                run_time_line;
-    int                          run_timeout;
     CRWLock                      rtl_lock;      ///< run_time_line locker
 
     // datagram notification socket 
     // (used to notify worker nodes and waiting clients)
     CDatagramSocket              udp_socket;    ///< UDP notification socket
     CFastMutex                   us_lock;       ///< UDP socket lock
-
-    /// Client program version control
-    CQueueClientInfoList         program_version_list;
-
-    /// Host access list for job submission
-    CNetSchedule_AccessList      subm_hosts;
-    /// Host access list for job execution (workers)
-    CNetSchedule_AccessList      wnode_hosts;
 
     /// Queue monitor
     CNetScheduleMonitor          m_Monitor;

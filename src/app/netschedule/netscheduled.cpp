@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.29 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.30 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -907,9 +907,6 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
     }
     m_BatchSubmitVector.clear();
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
-    // TODO: replace this HACK with counter and logic in SLockedQueue
-    if (m_BatchSize >= 2000) // Dirty HACK
-        m_Server->GetQueueDB()->TransactionCheckPoint();
     WriteMsg("OK:");
 }
 
@@ -2360,6 +2357,8 @@ int CNetScheduleDApp::Run(void)
                    
         CConfig conf(reg);
 
+        SNSDBEnvironmentParams bdb_params;
+        
         const CConfig::TParamTree* param_tree = conf.GetTree();
         const TPluginManagerParamTree* bdb_tree = 
             param_tree->FindSubNode("bdb");
@@ -2384,34 +2383,41 @@ int CNetScheduleDApp::Run(void)
                           << " removed. \n");
         }
 
-        unsigned mem_size = (unsigned)
+        bdb_params.cache_ram_size = (unsigned)
             bdb_conf.GetDataSize("netschedule", "mem_size", 
                                  CConfig::eErr_NoThrow, 0);
-        int max_locks = 
+        bdb_params.max_locks = (unsigned)
             bdb_conf.GetInt("netschedule", "max_locks", 
-                                 CConfig::eErr_NoThrow, 0);
-        int max_lockers = 
+                            CConfig::eErr_NoThrow, 0);
+        bdb_params.max_lockers = (unsigned)
             bdb_conf.GetInt("netschedule", "max_lockers", 
-                                 CConfig::eErr_NoThrow, 0);
-        int max_lockobjects = 
+                            CConfig::eErr_NoThrow, 0);
+        bdb_params.max_lockobjects = (unsigned)
             bdb_conf.GetInt("netschedule", "max_lockobjects", 
-                                 CConfig::eErr_NoThrow, 0);
+                            CConfig::eErr_NoThrow, 0);
 
-        unsigned log_mem_size = (unsigned)
+        bdb_params.log_mem_size = (unsigned)
             bdb_conf.GetDataSize("netschedule", "log_mem_size", 
                                  CConfig::eErr_NoThrow, 0);
 
-        bool sync_transactions =
+        bdb_params.checkpoint_kb = (unsigned)
+            bdb_conf.GetInt("netschedule", "checkpoint_kb", 
+                            CConfig::eErr_NoThrow, 5000);
+        bdb_params.checkpoint_min = (unsigned)
+            bdb_conf.GetInt("netschedule", "checkpoint_min", 
+                            CConfig::eErr_NoThrow, 5);
+
+        bdb_params.sync_transactions =
             bdb_conf.GetBool("netschedule", "sync_transactions",
                              CConfig::eErr_NoThrow, false);
 
-        bool direct_db =
+        bdb_params.direct_db =
             bdb_conf.GetBool("netschedule", "direct_db",
                              CConfig::eErr_NoThrow, false);
-        bool direct_log =
+        bdb_params.direct_log =
             bdb_conf.GetBool("netschedule", "direct_log",
                              CConfig::eErr_NoThrow, false);
-        bool private_env =
+        bdb_params.private_env =
             bdb_conf.GetBool("netschedule", "private_env",
                              CConfig::eErr_NoThrow, false);
 
@@ -2421,22 +2427,11 @@ int CNetScheduleDApp::Run(void)
             reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
 
         // two transactions per thread should be enough
-        unsigned max_trans = max_threads * 2;
+        bdb_params.max_trans = max_threads * 2;
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
 
-        qdb->Open(db_path,
-            mem_size,
-            max_locks,
-            max_lockers,
-            max_lockobjects,
-            log_mem_size,
-            max_trans,
-            sync_transactions,
-            direct_db,
-            direct_log,
-            private_env);
-
+        qdb->Open(db_path, bdb_params);
 
         int port = 
             reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);
