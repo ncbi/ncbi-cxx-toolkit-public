@@ -666,9 +666,9 @@ EBDB_ErrCode CBDB_BvStore<TBV>::Read(TBitVector*  bv,
                                      bool         clear_target_vec)
 {
     if (m_Buffer.size() < m_Buffer.capacity()) {
-        m_Buffer.resize_mem(m_Buffer.size());
+        m_Buffer.resize_mem(m_Buffer.capacity());
     }	
-	else
+    else
     if (m_Buffer.size() == 0) {
         m_Buffer.resize_mem(16384);
     }
