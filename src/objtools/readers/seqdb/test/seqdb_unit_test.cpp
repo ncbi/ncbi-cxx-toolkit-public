@@ -2621,7 +2621,7 @@ BOOST_AUTO_UNIT_TEST(EmptyVolume)
     
     CHECK_EQUAL(db.GetNumSeqs(), 0);
     CHECK_EQUAL(db.GetNumOIDs(), 0);
-    CHECK_EQUAL(db.GetTitle(), "empty test database");
+    CHECK_EQUAL(db.GetTitle(), string("empty test database"));
     
     CHECK_THROW_SEQDB(db.GetSeqLength(0));
     CHECK_THROW_SEQDB(db.GetSeqLengthApprox(0));
