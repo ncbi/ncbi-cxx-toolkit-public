@@ -655,7 +655,7 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	CRef<CSeq_entry> seqEntry;
 
 	//for BLAST, if the master is PDB, the master seqid (gi from BLAST) needs to be changed
-	if (m_config.blastType == eBLAST)
+    if (m_config.blastType == eBLAST && it != seqAligns.end())
 	{
 		CSeq_align::C_Segs& oldSegs = (*it)->SetSegs();
 		CRef< CSeq_align::C_Segs::TDenseg> denseg( &(oldSegs.SetDenseg()) );
