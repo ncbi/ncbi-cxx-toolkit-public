@@ -293,6 +293,11 @@ public:
     /// @return SubNode pointer or NULL
     const TTreeType* FindSubNode(const TKeyType& key) const;
 
+    /// Non recursive linear scan of all subnodes, with key comparison
+    ///
+    /// @return SubNode pointer or NULL
+    TTreeType* FindSubNode(const TKeyType& key);
+
     /// Parameters for node search by key
     ///
     enum ENodeSearchType
@@ -787,7 +792,7 @@ void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
 
     } // ITERATE
 
-    res.push_back(tr);
+    res->push_back(tr);
 }
 
 template<class TValue, class TKeyGetter>
@@ -863,6 +868,21 @@ CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key) const
 {
     TNodeList_CI it = SubNodeBegin();
     TNodeList_CI it_end = SubNodeEnd();
+
+    for(; it != it_end; ++it) {
+        if ((*it)->GetKey() == key) {
+            return *it;
+        }
+    }
+    return 0;
+}
+
+template<class TValue, class TKeyGetter>
+typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key)
+{
+    TNodeList_I it = SubNodeBegin();
+    TNodeList_I it_end = SubNodeEnd();
 
     for(; it != it_end; ++it) {
         if ((*it)->GetKey() == key) {
