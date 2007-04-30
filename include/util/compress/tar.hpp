@@ -186,12 +186,12 @@ public:
     time_t        GetCreationTime(void)     const { return m_Stat.st_ctime; }
 
 private:
-    string       m_Name;       ///< Name of file
+    string       m_Name;       ///< Entry name
     EType        m_Type;       ///< Type
     string       m_UserName;   ///< User name
     string       m_GroupName;  ///< Group name (empty string for MSWin)
-    string       m_LinkName;   ///< Name of linked file if type is eLink
-    struct stat  m_Stat;       ///< Dir entry compatible info
+    string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
+    struct stat  m_Stat;       ///< Dir-entry compatible info
 
     friend class CTar;
 };
@@ -263,7 +263,7 @@ public:
     /// Constructors
     CTar(const string& filename, size_t blocking_factor = 20);
     /// Stream version does not at all use stream positioning and so
-    /// is safe on non-positioning-able streams, like magnetic tapes :-I
+    /// is safe on non-positionable streams, like magnetic tapes :-I
     CTar(CNcbiIos& stream, size_t blocking_factor = 20);
 
     /// Destructor (finalize the archive if currently open).
@@ -285,7 +285,7 @@ public:
 
     /// Create a new empty archive.
     ///
-    /// If a file with such name already exists it will be reset.
+    /// If a file with such name already exists it will be rewritten.
     /// @sa
     ///   Append
     void Create(void);
@@ -305,13 +305,13 @@ public:
     ///
     /// Appended entry can be either a file, a directory, or a symbolic link.
     /// The name of the entry may not contain leading '..'.
-    /// Leading slash in the absolute path will be removed.
+    /// Leading slash in the absolute path will be retained.
     /// The names of all appended entries will be converted to Unix format
     /// (that is, to have forward slashes in the paths).
     /// All entries will be added at the end of the archive.
     /// @sa
     ///   Create, Update, SetBaseDir
-    auto_ptr<TEntries> Append(const string& entry_name);
+    auto_ptr<TEntries> Append(const string& name);
 
     /// Look for more recent copies, if available, of archive members,
     /// and place them at the end of the archive:
@@ -331,11 +331,11 @@ public:
     ///
     /// @sa
     ///   Append, SetBaseDir, SetFlags
-    auto_ptr<TEntries> Update(const string& entry_name);
+    auto_ptr<TEntries> Update(const string& name);
 
 /*
     // Delete an entry from the archive (not for use on magnetic tapes :-)
-    void Delete(const string& entry_name);
+    void Delete(const string& name);
 
     // Find file system entries that differ from corresponding
     // entries already in the archive.
@@ -396,7 +396,7 @@ public:
     ///   Whether to do a case sensitive (eCase = default),
     ///   or a case-insensitive (eNocase) match.
     /// @sa UnsetMask
-    void SetMask(CMask *mask, EOwnership if_to_own = eNoOwnership,
+    void SetMask(CMask* mask, EOwnership if_to_own = eNoOwnership,
                  NStr::ECase use_case = NStr::eCase);
 
     /// Unset name mask.
@@ -404,7 +404,7 @@ public:
     /// Upon mask reset, all entries become subject to archive processing in
     /// list/test/extract operations.
     /// @sa SetMask
-    void UnsetMask();
+    void UnsetMask(void);
 
     /// Get base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
@@ -414,7 +414,7 @@ public:
     /// Set base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
     /// @sa GetBaseDir
-    void SetBaseDir(const string& dir_name);
+    void SetBaseDir(const string& dirname);
 
 protected:
     /// Archive action
@@ -457,7 +457,7 @@ protected:
     // Read information about next entry in the archive.
     EStatus x_ReadEntryInfo(CTarEntryInfo& info, bool dump = false);
 
-    // Pack either name or linkname into archive file header.
+    // Pack either name or linkname into archive entry header.
     bool x_PackName(SHeader* header, const CTarEntryInfo& info, bool link);
 
     // Write information about entry into the archive.
@@ -487,11 +487,14 @@ protected:
     // Check path and convert it to an archive name.
     string x_ToArchiveName(const string& path) const;
 
+    // Convert from entry name to path in filesystem
+    string x_ToFilesystemPath(const string& name) const;
+
     // Append an entry to the archive.
     auto_ptr<TEntries> x_Append(const string&   name,
                                 const TEntries* toc = 0);
     // Append a file/symlink entry to the archive.
-    void x_AppendFile(const string& name, const CTarEntryInfo& info);
+    void x_AppendFile(const string& file, const CTarEntryInfo& info);
 
 protected:
     string         m_FileName;     ///< Tar archive file name.
@@ -509,6 +512,7 @@ protected:
     NStr::ECase    m_MaskUseCase;  ///< Flag for mask matching.
     bool           m_IsModified;   ///< True after at least one write.
     string         m_BaseDir;      ///< Base directory for relative paths.
+    const string*  m_Name;         ///< Current entry name being processed.
 };
 
 
@@ -592,16 +596,11 @@ const string& CTar::GetBaseDir(void) const
     return m_BaseDir;
 }
 
-inline
-void CTar::SetBaseDir(const string& dir_name)
-{
-    m_BaseDir = CDirEntry::AddTrailingPathSeparator(dir_name);
-}
-
 
 END_NCBI_SCOPE
 
 
 /* @} */
+
 
 #endif  /* UTIL_COMPRESS__TAR__HPP */
