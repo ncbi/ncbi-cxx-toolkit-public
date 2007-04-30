@@ -63,7 +63,7 @@ public:
                                   const TSvrRef&   server);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
-                                  double           preference = 100);
+                                  double           preference = 100.0);
 
 private:
     typedef set<string> TSrvSet;
@@ -91,7 +91,7 @@ public:
                                   const TSvrRef&   server);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
-                                  double           preference = 100);
+                                  double           preference = 100.0);
 
     void Push(const CRef<IDBServiceMapper>& mapper);
     void Pop(void);
@@ -126,7 +126,7 @@ public:
                                   const TSvrRef&   server);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
-                                  double           preference = 100);
+                                  double           preference = 100.0);
 
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
@@ -166,7 +166,7 @@ public:
                                   const TSvrRef&   server);
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
-                                  double           preference = 100);
+                                  double           preference = 100.0);
 
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
