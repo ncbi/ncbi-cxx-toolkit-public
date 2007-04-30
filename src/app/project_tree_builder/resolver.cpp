@@ -162,7 +162,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
         resolved_def->clear();
         resolved_def->push_back(data);
     }
-    if ( IsDefine(define) && resolved_def->empty() ) {
+    if ( HasDefine(define) && resolved_def->empty() ) {
         Resolve(define, resolved_def);
     }
 }

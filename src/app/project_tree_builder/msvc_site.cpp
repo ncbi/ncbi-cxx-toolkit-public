@@ -239,13 +239,17 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
 }
 
 
-string CMsvcSite::ResolveDefine(const string& define) const
+bool CMsvcSite::ResolveDefine(const string& define, string& resolved) const
 {
-    string res;
-    if (m_UnixMakeDef.GetValue(define,res)) {
-        return res;
+    if (m_UnixMakeDef.GetValue(define,resolved)) {
+        return true;
     }
-    return ProcessMacros(m_Registry.Get("Defines", define));
+    resolved = m_Registry.Get("Defines", define);
+    if (resolved.empty()) {
+        return m_Registry.HasEntry("Defines");
+    }
+    resolved = ProcessMacros(resolved);
+    return true;
 }
 
 

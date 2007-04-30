@@ -230,7 +230,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,9) );
+    SetVersion( CVersionInfo(1,3,0) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -603,16 +603,15 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                 // exclude missing projects
                 CProjectItemsTree::TProjects::const_iterator n = projects_tree.m_Projects.find(id);
                 if (n == projects_tree.m_Projects.end()) {
-                    // also check user projects
-//                    CProjKey id_alt(CProjKey::eMsvc,id.Id());
-//                    n = projects_tree.m_Projects.find(id_alt);
-//                    if (n == projects_tree.m_Projects.end()) {
+                    CProjKey id_alt(CProjKey::eDll,GetDllsInfo().GetDllHost(id.Id()));
+                    n = projects_tree.m_Projects.find(id_alt);
+                    if (n == projects_tree.m_Projects.end()) {
                         LOG_POST(Warning << "Project " + 
                                 p->first.Id() + " depends on missing project " + id.Id());
                         continue;
-//                    }
+                    }
                 }
-                dependencies.push_back(CreateProjectName(id));
+                dependencies.push_back(CreateProjectName(n->first));
             }
             string rel_path = CDirEntry::CreateRelativePath(GetProjectTreeInfo().m_Src,
                                                             p->second.m_MsvcProjectMakefileDir);

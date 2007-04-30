@@ -157,12 +157,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                     } else {
                         list<string> resolved_def;
                         string val_define = FilterDefine(val);
-                        if (val_define == val) {
-	                        resolver.Resolve(val_define, &resolved_def, p->second);
-	                    }
-	                    if ( resolved_def.empty() ) {
-    	                    resolver.Resolve(val_define, &resolved_def);
-    	                }
+	                    resolver.Resolve(val_define, &resolved_def, p->second);
 	                    if ( resolved_def.empty() ) {
                             defs_unresolved.insert(val);
 		                    new_vals.push_back(val); //not resolved - keep old val
@@ -173,8 +168,8 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                 const string& define = *l;
                                 if ( IsConfigurableDefine(define) ) {
                                     string stripped = StripConfigurableDefine(define);
-                                    string resolved_def_str = 
-                                        GetApp().GetSite().ResolveDefine(stripped);
+                                    string resolved_def_str;
+                                    GetApp().GetSite().ResolveDefine(stripped, resolved_def_str);
                                     if ( !resolved_def_str.empty() ) {
                                         defs_resolved[define] = resolved_def_str;
                                         list<string> resolved_defs;
@@ -207,8 +202,11 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                 } else if (HasConfigurableDefine(define)) {
                                     string raw = ExtractConfigurableDefine(define);
                                     string stripped = StripConfigurableDefine(raw);
-                                    string resolved_def_str = 
-                                        GetApp().GetSite().ResolveDefine(stripped);
+                                    string resolved_def_str;
+                                    GetApp().GetSite().ResolveDefine(stripped, resolved_def_str);
+                                    if (resolved_def_str == " ") {
+                                        resolved_def_str.clear();
+                                    }
                                     if (msvc_empty) {
                                         new_vals.push_back( NStr::Replace(define, raw, resolved_def_str));
                                     } else {
@@ -297,8 +295,8 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
         
         // process defines like NCBI_C_INCLUDE
         if(CSymResolver::IsDefine(flag)) {
-            string dir_all = GetApp().GetSite().ResolveDefine
-                                             (CSymResolver::StripDefine(flag));
+            string dir_all;
+            GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(flag), dir_all);
             if ( !dir_all.empty() ) {
                 list<string> dir_list;
                 NStr::Split(dir_all, LIST_SEPARATOR, dir_list);
@@ -476,8 +474,8 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
     ITERATE(list<string>, p, depends_libs) {
         string id = *p;
         if(CSymResolver::IsDefine(id)) {
-            string def = GetApp().GetSite().ResolveDefine(
-                CSymResolver::StripDefine(id));
+            string def;
+            GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(id), def);
             list<string> resolved_def;
             NStr::Split(def, LIST_SEPARATOR, resolved_def);
             ITERATE(list<string>, r, resolved_def) {
@@ -1069,6 +1067,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         if ( !CSymResolver::IsDefine(src) )
             project.m_Sources.push_front(src);    
     }
+    project.m_Sources.remove(proj_name);
     project.m_Sources.push_back(proj_name + "__");
     project.m_Sources.push_back(proj_name + "___");
     ITERATE(list<string>, p, asn_names) {
@@ -1082,6 +1081,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         src += CDirEntry::GetPathSeparator();
         src += asn;
 
+        project.m_Sources.remove(asn);
         project.m_Sources.push_back(src + "__");
         project.m_Sources.push_back(src + "___");
     }

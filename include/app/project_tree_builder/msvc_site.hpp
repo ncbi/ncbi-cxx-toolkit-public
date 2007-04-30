@@ -108,7 +108,7 @@ public:
                               const SConfigInfo& config) const;
     
     // Resolve define (now from CPPFLAGS)
-    string ResolveDefine(const string& define) const;
+    bool ResolveDefine(const string& define, string& resolved) const;
 
     // Configure related:
     // Path from tree root to file where configure defines must be.
