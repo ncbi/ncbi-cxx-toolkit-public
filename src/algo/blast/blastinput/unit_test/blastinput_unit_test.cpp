@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -310,6 +311,19 @@ BOOST_AUTO_UNIT_TEST(s_NoDeflineUnexpected)
 
     source.m_Config.SetBelieveDeflines(true);
     BOOST_CHECK_THROW(in.GetAllSeqLocs(), CException);
+}
+
+BOOST_AUTO_UNIT_TEST(s_ForceProtSeq)
+{
+    DECLARE_SOURCE("data/isprot.fa", true);
+    CBlastInput in(&source);
+
+    blast::TSeqLocVector v = in.GetAllSeqLocs();
+
+    const CBioseq_Handle& bhandle = source.GetScope()->GetBioseqHandle(
+                                          v[0].seqloc->GetInt().GetId());
+    CHECK(bhandle.IsSetInst_Mol());
+    CHECK_EQUAL(CSeq_inst::eMol_aa, bhandle.GetInst_Mol());
 }
 
 /// Auxiliary class to convert a string into an argument count and vector
