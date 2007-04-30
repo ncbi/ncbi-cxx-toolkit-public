@@ -137,7 +137,7 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
                 try {
                     query->SetGeneticCodeId(desc_it->GetSource().GetGenCode());
                 }
-                catch(CUnassignedMember & e) {
+                catch(CUnassignedMember &) {
                     query->SetGeneticCodeId(BLAST_GENETIC_CODE);
                 }
             }
@@ -159,7 +159,7 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
                 try {
                     sseqloc->genetic_code_id = desc_it->GetSource().GetGenCode();
                 }
-                catch(CUnassignedMember & e) {
+                catch(CUnassignedMember &) {
                     sseqloc->genetic_code_id = BLAST_GENETIC_CODE;
                 }
             }
