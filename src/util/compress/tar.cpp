@@ -825,13 +825,13 @@ CTar::~CTar()
 #define TAR_THROW(errcode, message)                                     \
     NCBI_THROW(CTarException, errcode,                                  \
                s_PositionAsString(m_StreamPos, m_BufferSize, m_Name) +  \
-               ":\n" + (message))
+               ":\n" + string(message))
 
 #define TAR_THROW_EX(errcode, message, h, fmt)                          \
     TAR_THROW(errcode,                                                  \
               m_Flags & fDumpBlockHeaders                               \
-              ? (message) + string(":\n") + s_DumpHeader(h, fmt, true)  \
-              : (message))
+              ? string(message) + ":\n" + s_DumpHeader(h, fmt, true)    \
+              : string(message))
 
 
 void CTar::x_Init(void)
@@ -2039,7 +2039,8 @@ string CTar::x_ToArchiveName(const string& path) const
     // Check on '..'
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
-        TAR_THROW(eBadName, "Name may not contain '..' (parent) directory:\n"
+        TAR_THROW(eBadName,
+                  string("Name may not contain '..' (parent) directory:\n")
                   + retval);
     }
 
