@@ -90,14 +90,14 @@ using boost::unit_test::test_suite;
 #define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 
-#define DECLARE_SOURCE(file)                                    \
+#define DECLARE_SOURCE(file, is_protein)                        \
     CRef<CObjectManager> om(CObjectManager::GetInstance());     \
     CNcbiIfstream infile(file);                                 \
-    CBlastFastaInputSource source(*om, infile);
+    CBlastFastaInputSource source(*om, infile, is_protein);
 
 BOOST_AUTO_UNIT_TEST(s_ReadFastaProtein)
 {
-    DECLARE_SOURCE("data/aa.129295");
+    DECLARE_SOURCE("data/aa.129295", true);
 
     CHECK(source.End() == false);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
@@ -122,7 +122,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaProtein)
 
 BOOST_AUTO_UNIT_TEST(s_RangeBoth)
 {
-    DECLARE_SOURCE("data/aa.129295");
+    DECLARE_SOURCE("data/aa.129295", true);
 
     source.m_Config.SetRange().SetFrom(50);
     source.m_Config.SetRange().SetTo(100);
@@ -136,7 +136,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeBoth)
 
 BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
 {
-    DECLARE_SOURCE("data/aa.129295");
+    DECLARE_SOURCE("data/aa.129295", true);
 
     source.m_Config.SetRange().SetFrom(50);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
@@ -149,7 +149,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
 
 BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
 {
-    DECLARE_SOURCE("data/aa.129295");
+    DECLARE_SOURCE("data/aa.129295", true);
 
     source.m_Config.SetRange().SetFrom(100);
     source.m_Config.SetRange().SetTo(50);
@@ -158,7 +158,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
 
 BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 {
-    DECLARE_SOURCE("data/aa.129295");
+    DECLARE_SOURCE("data/aa.129295", true);
 
     source.m_Config.SetBelieveDeflines(true);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
@@ -170,7 +170,7 @@ BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 
 BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
 {
-    DECLARE_SOURCE("data/aa.129295");
+    DECLARE_SOURCE("data/aa.129295", true);
 
     source.m_Config.SetStrand(eNa_strand_both);
     BOOST_CHECK_THROW(source.GetNextSSeqLoc(), CBlastException);
@@ -178,7 +178,7 @@ BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
 
 BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
 {
-    DECLARE_SOURCE("data/nt.cat");
+    DECLARE_SOURCE("data/nt.cat", false);
 
     // note that the side effect of this is that the length of the sequence
     // will be computed and set
@@ -204,7 +204,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
 
 BOOST_AUTO_UNIT_TEST(s_NuclStrand)
 {
-    DECLARE_SOURCE("data/nt.cat");
+    DECLARE_SOURCE("data/nt.cat", false);
 
     source.m_Config.SetStrand(eNa_strand_plus);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
@@ -219,7 +219,7 @@ BOOST_AUTO_UNIT_TEST(s_NuclStrand)
 
 BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
 {
-    DECLARE_SOURCE("data/nt.cat");
+    DECLARE_SOURCE("data/nt.cat", false);
 
     source.m_Config.SetLowercaseMask(true);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
@@ -240,7 +240,7 @@ BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
 
 BOOST_AUTO_UNIT_TEST(s_MultiSeq)
 {
-    DECLARE_SOURCE("data/aa.cat");
+    DECLARE_SOURCE("data/aa.cat", true);
     CBlastInput in(&source);
 
     blast::TSeqLocVector v = in.GetAllSeqLocs();
@@ -250,7 +250,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiSeq)
 
 BOOST_AUTO_UNIT_TEST(s_MultiRange)
 {
-    DECLARE_SOURCE("data/aa.cat");
+    DECLARE_SOURCE("data/aa.cat", true);
     source.m_Config.SetRange().SetFrom(50);
     source.m_Config.SetRange().SetTo(100);
     CBlastInput in(&source);
@@ -266,7 +266,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiRange)
 
 BOOST_AUTO_UNIT_TEST(s_MultiBatch)
 {
-    DECLARE_SOURCE("data/aa.cat");
+    DECLARE_SOURCE("data/aa.cat", true);
     source.m_Config.SetBelieveDeflines(true);
     CBlastInput in(&source, 5000);
 
@@ -295,7 +295,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
 
 BOOST_AUTO_UNIT_TEST(s_NoDeflineExpected)
 {
-    DECLARE_SOURCE("data/tiny.fa");
+    DECLARE_SOURCE("data/tiny.fa", false);
     CBlastInput in(&source);
 
     blast::TSeqLocVector v = in.GetAllSeqLocs();
@@ -305,7 +305,7 @@ BOOST_AUTO_UNIT_TEST(s_NoDeflineExpected)
 
 BOOST_AUTO_UNIT_TEST(s_NoDeflineUnexpected)
 {
-    DECLARE_SOURCE("data/tiny.fa");
+    DECLARE_SOURCE("data/tiny.fa", false);
     CBlastInput in(&source);
 
     source.m_Config.SetBelieveDeflines(true);
