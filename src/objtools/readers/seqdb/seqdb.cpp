@@ -821,7 +821,7 @@ void CSeqDB::GetSequenceAsString(int                 oid,
                                  CSeqUtil::ECoding   coding,
                                  string            & output) const
 {
-    output.clear();
+    output.erase();
 
     string raw;
     const char * buffer = 0;
