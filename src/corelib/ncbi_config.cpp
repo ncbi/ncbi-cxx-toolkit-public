@@ -44,24 +44,12 @@
 BEGIN_NCBI_SCOPE
 
 
-/// @internal
-static
-void s_ParamTree_ConvertSubNodes(const IRegistry&      reg,
-                                 const list<string>&   sub_nodes,
-                                 CConfig::TParamTree*  node);
-/// @internal
-static
-void s_ParamTree_SplitConvertSubNodes(const IRegistry&      reg,
-                                      const string&         sub_nodes,
-                                      CConfig::TParamTree*  node);
-
 static const string kSubNode           = ".SubNode";
 static const string kSubSection        = ".SubSection";
 static const string kNodeName          = ".NodeName";
 static const string kIncludeSections   = ".Include";
 
 
-/// @internal
 static
 void s_List2Set(const list<string>& src, set<string>* dst)
 {
@@ -70,8 +58,7 @@ void s_List2Set(const list<string>& src, set<string>* dst)
     }
 }
 
-/// @internal
-static 
+
 bool s_IsSubNode(const string& str)
 {
     const string* aliases[] = { &kSubNode, &kSubSection };
@@ -85,216 +72,160 @@ bool s_IsSubNode(const string& str)
     return false;
 }
 
-/// @internal
-static
-void s_GetSubNodes(const IRegistry&      reg, 
-                   const string&         section, 
-                   set<string>*          dst)
-{
-    const string* aliases[] = { &kSubNode, &kSubSection };
 
-    for (unsigned int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
-        const string& element_name = *aliases[i];
-        const string& element = reg.Get(section, element_name);
-        if (!element.empty()) {
-            list<string> sub_node_list;
-            NStr::Split(element, ",; \t\n\r", sub_node_list);
-            s_List2Set(sub_node_list, dst);
-        }
-    }
-}
+typedef CConfig::TParamTree TParamTree;
+typedef CConfig::TParamValue TParamValue;
+typedef map<TParamTree*, set<string> > TSectionMap;
 
-/// @internal
-static
-void s_AddOrReplaceSubNode(CConfig::TParamTree* node_ptr,
+
+void s_AddOrReplaceSubNode(TParamTree*   node_ptr,
                            const string& element_name,
                            const string& element_value)
 {
-    CConfig::TParamTree* existing_node = const_cast<CConfig::TParamTree*>
+    TParamTree* existing_node = const_cast<TParamTree*>
         (node_ptr->FindNode(element_name,
-                            CConfig::TParamTree::eImmediateSubNodes));
+                            TParamTree::eImmediateSubNodes));
     if ( existing_node ) {
         existing_node->GetValue().value = element_value;
     }
     else {
-        node_ptr->AddNode(CConfig::TParamValue(element_name, element_value));
+        node_ptr->AddNode(TParamValue(element_name, element_value));
     }
 }
 
-static
-void s_ParamTree_SplitConvertSubNodes(const IRegistry&      reg,
-                                      const string&         sub_nodes,
-                                      CConfig::TParamTree*  node);
 
-/// @internal
-static
-void s_ParamTree_IncludeSections(const IRegistry& reg,
-                                 const string& section_name,
-                                 CConfig::TParamTree* node_ptr)
+TParamTree* s_FindSubNode(const string& path,
+                          TParamTree*   tree_root)
 {
-    if ( !reg.HasEntry(section_name, kIncludeSections) ) {
-        return;
+    list<string> name_list;
+    list<TParamTree*> node_list;
+
+    NStr::Split(path, "/", name_list);
+    tree_root->FindNodes(name_list, &node_list);
+    return node_list.empty() ? 0 : *node_list.rbegin();
+}
+
+
+void s_ParseSubNodes(const string& sub_nodes,
+                     TParamTree*   parent_node,
+                     TSectionMap&  inc_sections,
+                     set<string>&  rm_sections)
+{
+    list<string> sub_list;
+    NStr::Split(sub_nodes, ",; \t\n\r", sub_list);
+    set<string> sub_set;
+    s_List2Set(sub_list, &sub_set);
+    ITERATE(set<string>, sub_it, sub_set) {
+        auto_ptr<TParamTree> sub_node(new TParamTree);
+        size_t pos = sub_it->rfind('/');
+        if (pos == string::npos) {
+            sub_node->GetKey() = *sub_it;
+        } else {
+            // extract the last element in the path
+            sub_node->GetKey() = sub_it->substr(pos + 1, sub_it->length());
+        }
+        inc_sections[sub_node.get()].insert(*sub_it);
+        rm_sections.insert(*sub_it);
+        parent_node->AddNode(sub_node.release());
     }
+}
 
-    const string& element = reg.Get(section_name, kIncludeSections);
-    list<string> inc_list;
-    if ( element.empty() ) {
-        return;
+
+bool s_IsParentNode(TParamTree* parent, TParamTree* child)
+{
+    TParamTree* node = child;
+    while ( node ) {
+        if (node == parent) {
+            return true;
+        }
+        node = (TParamTree*)node->GetParent();
     }
-    NStr::Split(element, ",; \t\n\r", inc_list);
+    return false;
+}
 
-    ITERATE(list<string>, inc_it, inc_list) {
-        const string& inc_section_name = *inc_it;
-        const string& inc_alias_name = reg.Get(inc_section_name, kNodeName);
-        string inc_node_name(inc_alias_name.empty() ?
-            inc_section_name : inc_alias_name);
 
-        // Check if this node is an ancestor (circular reference)
-        CConfig::TParamTree* parent_node =  node_ptr;
-        while (parent_node) {
-            const string& id = parent_node->GetKey();
-            if (NStr::CompareNocase(inc_node_name, id) == 0) {
-                _TRACE(Error << "PluginManger: circular section reference "
-                             << node_ptr->GetKey() << "->" << inc_node_name);
+void s_IncludeNode(TParamTree*       parent_node,
+                   const TParamTree* inc_node)
+{
+    TParamTree::TNodeList_CI sub_it = inc_node->SubNodeBegin();
+    TParamTree::TNodeList_CI sub_end = inc_node->SubNodeEnd();
+    for ( ; sub_it != sub_end; ++sub_it) {
+        TParamTree* sub_node =
+            parent_node->FindSubNode((*sub_it)->GetKey());
+        if ( sub_node ) {
+            // Update the existing subtree to include all missing nodes
+            s_IncludeNode(sub_node, *sub_it);
+        }
+        else {
+            // Copy the whole subtree
+            parent_node->AddNode(new TParamTree(**sub_it));
+        }
+    }
+}
+
+
+void s_ExpandSubNodes(TSectionMap& inc_sections,
+                      TParamTree*  tree_root,
+                      TParamTree*  node)
+{
+    TSectionMap::iterator current;
+    if ( node ) {
+        current = inc_sections.find(node);
+    }
+    else {
+        current = inc_sections.begin();
+        node = current->first;
+    }
+    if (current != inc_sections.end()) {
+        // Node has included sections, expand them first.
+        ITERATE(set<string>, inc_it, current->second) {
+            TParamTree* inc_node = s_FindSubNode(*inc_it, tree_root);
+            if ( !inc_node ) {
+                continue;
+            }
+            if ( s_IsParentNode(inc_node, node) ) {
+                _TRACE(Error << "Circular section reference: "
+                            << node->GetKey() << "->" << *inc_it);
                 continue; // skip the offending subnode
             }
-            parent_node = (CConfig::TParamTree*)parent_node->GetParent();
-        } // while
-
-        list<string> entries;
-        reg.EnumerateEntries(inc_section_name, &entries);
-        if (entries.empty()) {
-            continue;
+            s_ExpandSubNodes(inc_sections, tree_root, inc_node);
+            s_IncludeNode(node, inc_node);
         }
-
-        // Include other sections before processing any values
-        s_ParamTree_IncludeSections(reg, inc_section_name, node_ptr);
-
-        // include elements
-        ITERATE(list<string>, eit, entries) {
-            const string& element_name = *eit;
-
-            if (NStr::CompareNocase(element_name, kNodeName) == 0) {
-                continue;
-            }
-            if (NStr::CompareNocase(element_name, kIncludeSections) == 0) {
-                continue;
-            }
-            const string& element_value =
-                reg.Get(inc_section_name, element_name);
-
-            if (s_IsSubNode(element_name)) {
-                s_ParamTree_SplitConvertSubNodes(reg, element_value, node_ptr);
-                continue;
-            }
-
-            s_AddOrReplaceSubNode(node_ptr, element_name, element_value);
-        } // ITERATE eit
-    } // ITERATE inc_it
-}
-
-/// @internal
-static
-void s_ParamTree_ConvertSubNode(const IRegistry&      reg,
-                                const string&         sub_node_name,
-                                CConfig::TParamTree*  node)
-{
-    const string& section_name = sub_node_name;
-    const string& alias_name = reg.Get(section_name, kNodeName);
-
-    string node_name(alias_name.empty() ? section_name : alias_name);
-
-    // Check if this node is an ancestor (circular reference)
-
-    CConfig::TParamTree* parent_node =  node;
-    while (parent_node) {
-        const string& id = parent_node->GetKey();
-        if (NStr::CompareNocase(node_name, id) == 0) {
-            _TRACE(Error << "PluginManger: circular section reference " 
-                            << node->GetKey() << "->" << node_name);
-            return; // skip the offending subnode
-        }
-        parent_node = (CConfig::TParamTree*)parent_node->GetParent();
-    } // while
-
-    list<string> entries;
-    reg.EnumerateEntries(section_name, &entries);
-    if (entries.empty()) {
-        return;
+        inc_sections.erase(current);
     }
-
-    CConfig::TParamTree* sub_node_ptr = const_cast<CConfig::TParamTree*>
-        (node->FindNode(node_name,
-                        CConfig::TParamTree::eImmediateSubNodes));
-    if ( !sub_node_ptr ) {
-        auto_ptr<CConfig::TParamTree> sub_node(new CConfig::TParamTree);
-        sub_node->GetKey() = node_name;
-        sub_node_ptr = sub_node.release();
-        node->AddNode(sub_node_ptr);
-    }
-
-    // Include other sections before processing any values
-    s_ParamTree_IncludeSections(reg, section_name, sub_node_ptr);
-
-    // convert elements
-    ITERATE(list<string>, eit, entries) {
-        const string& element_name = *eit;
-
-        if (NStr::CompareNocase(element_name, kIncludeSections) == 0) {
-            continue;
-        }
-        if (NStr::CompareNocase(element_name, kNodeName) == 0) {
-            continue;
-        }
-        const string& element_value = reg.Get(section_name, element_name);
-
-        if (s_IsSubNode(element_name)) {
-            s_ParamTree_SplitConvertSubNodes(reg, element_value,sub_node_ptr);
-            continue;
-        }
-        s_AddOrReplaceSubNode(sub_node_ptr, element_name, element_value);
-    } // ITERATE eit
-}
-
-
-/// @internal
-static
-void s_ParamTree_SplitConvertSubNodes(const IRegistry&      reg,
-                                      const string&         sub_nodes,
-                                      CConfig::TParamTree*  node)
-{
-    list<string> sub_node_list;
-    NStr::Split(sub_nodes, ",; \t\n\r", sub_node_list);
-    s_ParamTree_ConvertSubNodes(reg, sub_node_list, node);
-}
-
-
-/// @internal
-static
-void s_ParamTree_ConvertSubNodes(const IRegistry&      reg,
-                                 const list<string>&   sub_nodes,
-                                 CConfig::TParamTree*  node)
-{
-    _ASSERT(node);
-    ITERATE(list<string>, it, sub_nodes) {
-        const string& sub_node = *it;
-        s_ParamTree_ConvertSubNode(reg, sub_node, node);
+    // In case there are includes on deeper levels expand them too
+    TParamTree::TNodeList_I sub_it = node->SubNodeBegin();
+    TParamTree::TNodeList_I sub_end = node->SubNodeEnd();
+    for ( ; sub_it != sub_end; ++sub_it) {
+        s_ExpandSubNodes(inc_sections, tree_root, *sub_it);
     }
 }
 
-/// @internal
-static
-void s_GetIncludes(const IRegistry&      reg, 
-                   const string&         section, 
-                   set<string>*          dst)
+
+struct SNodeNameUpdater
 {
-    const string& element = reg.Get(section, kIncludeSections);
-    if ( !element.empty() ) {
-        list<string> inc_list;
-        NStr::Split(element, ",; \t\n\r", inc_list);
-        s_List2Set(inc_list, dst);
+    typedef set<TParamTree*> TNodeSet;
+    TNodeSet& rm_node_name;
+    SNodeNameUpdater(TNodeSet& node_set) : rm_node_name(node_set) {}
+
+    ETreeTraverseCode operator()(TParamTree& node,
+                                 int /* delta_level */);
+};
+
+
+ETreeTraverseCode SNodeNameUpdater::operator()(TParamTree& node,
+                                               int /* delta_level */)
+{
+    if (NStr::CompareNocase(node.GetKey(), kNodeName) == 0) {
+        TParamTree* parent = node.GetParent();
+        if ( parent  &&  !node.GetValue().value.empty() ) {
+            parent->GetKey() = node.GetValue().value;
+            rm_node_name.insert(&node);
+        }
     }
+    return eTreeTraverse;
 }
+
 
 CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 {
@@ -305,6 +236,80 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 
     // find the non-redundant set of top level sections
 
+    set<string> all_section_names;
+    s_List2Set(sections, &all_section_names);
+
+    // Collect included and sub-noded names for each section.
+    TSectionMap inc_sections;
+    // Nodes used in .SubNode must be removed from the tree root.
+    set<string> rm_sections;
+
+    ITERATE(set<string>, name_it, all_section_names) {
+        const string& section_name = *name_it;
+        TParamTree* node_ptr;
+        if (section_name.find('/') == string::npos) {
+            auto_ptr<TParamTree> node(new TParamTree);
+            node->GetKey() = section_name;
+            tree_root->AddNode(node_ptr = node.release());
+        } else {
+            list<string> sub_node_list;
+            NStr::Split(section_name, "/", sub_node_list);
+            node_ptr = tree_root->FindOrCreateNode(sub_node_list);
+        }
+
+        bool have_explicit_name = false;
+
+        // Create section entries
+        list<string> entries;
+        reg.EnumerateEntries(section_name, &entries);
+
+        ITERATE(list<string>, eit, entries) {
+            const string& element_name = *eit;
+            const string& element_value = reg.Get(section_name, element_name);
+
+            if (NStr::CompareNocase(element_name, kNodeName) == 0) {
+                have_explicit_name = true;
+            }
+            if (NStr::CompareNocase(element_name, kIncludeSections) == 0) {
+                list<string> inc_list;
+                NStr::Split(element_value, ",; \t\n\r", inc_list);
+                s_List2Set(inc_list, &inc_sections[node_ptr]);
+                continue;
+            }
+            if (s_IsSubNode(element_name)) {
+                s_ParseSubNodes(element_value,
+                                node_ptr,
+                                inc_sections,
+                                rm_sections);
+                continue;
+            }
+
+            s_AddOrReplaceSubNode(node_ptr, element_name, element_value);
+        }
+        // Force node name to prevent overriding it by includes
+        if ( !have_explicit_name ) {
+            node_ptr->AddNode(TParamValue(kNodeName, node_ptr->GetKey()));
+        }
+    }
+    s_ExpandSubNodes(inc_sections, tree_root.get(), tree_root.get());
+
+    // Remove nodes used in .SubNode
+    ITERATE(set<string>, rm_it, rm_sections) {
+        TParamTree* rm_node = s_FindSubNode(*rm_it, tree_root.get());
+        if ( rm_node ) {
+            rm_node->GetParent()->RemoveNode(rm_node);
+        }
+    }
+
+    // Rename nodes as requested and remove .NodeName entries
+    set<TParamTree*> rm_node_names;
+    SNodeNameUpdater name_updater(rm_node_names);
+    TreeDepthFirstTraverse(*tree_root, name_updater);
+    ITERATE(set<TParamTree*>, rm_it, rm_node_names) {
+        (*rm_it)->GetParent()->RemoveNode(*rm_it);
+    }
+
+    /*
     set<string> all_sections;
     set<string> sub_sections;
     set<string> top_sections;
@@ -320,7 +325,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
         }
         set<string> non_top;
         non_top.insert(sub_sections.begin(), sub_sections.end());
-        non_top.insert(inc_sections.begin(), inc_sections.end());
+        //non_top.insert(inc_sections.begin(), inc_sections.end());
         insert_iterator<set<string> > ins(top_sections, top_sections.begin());
         set_difference(all_sections.begin(), all_sections.end(),
                        non_top.begin(), non_top.end(),
@@ -352,7 +357,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
         ITERATE(list<string>, eit, entries) {
             const string& element_name = *eit;
             const string& element_value = reg.Get(section_name, element_name);
-            
+
             if (NStr::CompareNocase(element_name, kIncludeSections) == 0) {
                 continue;
             }
@@ -369,6 +374,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
         } // ITERATE eit
 
     } // ITERATE sit
+    */
 
     return tree_root.release();
 }
