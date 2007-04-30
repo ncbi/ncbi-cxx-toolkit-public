@@ -667,7 +667,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                     "\n"
                     "#ifndef " << hppDefine << "\n"
                     "#define " << hppDefine << "\n"
-                    "\n";
+                    "\n#include <serial/serialbase.hpp>\n\n";
                 ns.Set(code->GetNamespace(), *out, true);
                 *out << '\n';
                 if (!CClassCode::GetExportSpecifier().empty()) {
