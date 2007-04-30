@@ -1831,10 +1831,13 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
                 _ASSERT(ofs.good());
                 ofs.close();
             } else {
+                _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
                 if (link(src->GetPath().c_str(),
                          dst->GetPath().c_str()) == 0) {
-                    x_RestoreAttrs(info, dst.get());
+                    if (m_Flags & fPreserveAll) {
+                        x_RestoreAttrs(info, dst.get());
+                    }
                     break;
                 }
                 int x_errno = errno;
@@ -1848,8 +1851,8 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
                     ERR_POST(Error << "Cannot hard-link '"
                              + src->GetPath() + "' and '" + dst->GetPath()
                              + "\' via copy");
+                    break;
                 }
-                _ASSERT(size == 0);
             }
 
             // Restore attributes
@@ -1905,9 +1908,10 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
     auto_ptr<CDirEntry> dst_ptr;
     if (!dst) {
         dst = CDirEntry::CreateObject(CDirEntry::EType(info.GetType()),
-                                      CDir::ConcatPath(m_BaseDir,
-                                                       info.GetName()));
-        dst_ptr.reset(dst);
+                                      CDirEntry::NormalizePath
+                                      (CDir::ConcatPath(m_BaseDir,
+                                                        info.GetName())));
+        dst_ptr.reset(dst); // deleter
     }
 
     // Date/time.
