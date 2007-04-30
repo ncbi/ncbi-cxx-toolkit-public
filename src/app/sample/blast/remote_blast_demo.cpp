@@ -192,7 +192,9 @@ int CBlastDemoApplication::Run(void)
          throw std::runtime_error("Could not initialize object manager");
     }
 
-    CBlastFastaInputSource fasta_input(*objmgr, args["in"].AsInputFile(), objects::eNa_strand_other, 
+    CBlastFastaInputSource fasta_input(*objmgr, args["in"].AsInputFile(), 
+               Blast_QueryIsProtein(opts->GetOptions().GetProgramType()),
+               objects::eNa_strand_other, 
                false, args["parse"].AsBoolean());
 
     CBlastInput blast_input(&fasta_input);
