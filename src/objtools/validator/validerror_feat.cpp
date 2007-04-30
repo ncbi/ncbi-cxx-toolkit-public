@@ -419,18 +419,22 @@ int CValidError_feat::CheckForRaggedEnd
     int ragged = len % 3;
     if ( ragged > 0 ) {
         len = GetLength(loc, m_Scope);
+        size_t last_pos = 0;
 
         CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
         ITERATE( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
             SRelLoc rl(loc, (*cbr)->GetLoc(), m_Scope);
-            CRef<CSeq_loc> rel_loc = rl.Resolve(m_Scope);
-            range += rel_loc->GetTotalRange();
+            ITERATE (SRelLoc::TRanges, rit, rl.m_Ranges) {
+                if ((*rit)->GetTo() > last_pos) {
+                    last_pos = (*rit)->GetTo();
+                }
+            }
         }
 
         // allowing a partial codon at the end
         TSeqPos codon_length = range.GetLength();
         if ( (codon_length == 0 || codon_length == 1)  && 
-            range.GetTo() == len - 1 ) {
+            last_pos == len - 1 ) {
             ragged = 0;
         }
     }
