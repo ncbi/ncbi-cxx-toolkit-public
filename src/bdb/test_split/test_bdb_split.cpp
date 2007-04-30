@@ -266,13 +266,13 @@ int CBDB_SplitTest::Run(void)
         EBDB_ErrCode err;
         err = 
             split_store.Fetch(1, &buf, 
-                              2*1024*1024, CBDB_RawFile::eReallocForbidden);
+                              2*1024*1024, CBDB_RawFile::eReallocForbidden, 0);
         assert(err == eBDB_Ok);
         int res = strcmp(buf_read, "test small 1");
         assert(res == 0);
         err = 
             split_store.Fetch(4, &buf, 
-                              2*1024*1024, CBDB_RawFile::eReallocForbidden);
+                              2*1024*1024, CBDB_RawFile::eReallocForbidden, 0);
         assert(err == eBDB_Ok);
         res = strcmp(buf_read, "test large 2");
         assert(res == 0);
