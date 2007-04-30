@@ -736,7 +736,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int     id,
         found = m_IdDeMux->GetCoordinatesFast(id, coord);
     }}
     if (!found) {
-        return this->Insert(id, data, size, coords);
+        return this->Insert(id, data, size, coord);
     }
 
     unsigned slice = m_ObjDeMux->SelectSplit(size);
@@ -1095,7 +1095,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::OpenProjections()
     }
     for (unsigned i = 0; i < max_vol; ++i) {
         for (unsigned j = 0; j < max_split; ++j) {
-            SLockedDb& db = this->GetDb(i, j, eGetRead);
+            /* SLockedDb& db = */ this->GetDb(i, j, eGetRead);
         }
     }
     m_AllProjAvail = true;
@@ -1252,7 +1252,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
         lp = volume.db_vect[slice].get();
 
         _ASSERT(lp->db.get());
-        _ASSERT(*(lp->lock->get()));
+        _ASSERT(lp->lock.get());
 
         return *lp;
     }
