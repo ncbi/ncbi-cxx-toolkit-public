@@ -54,6 +54,7 @@ USING_SCOPE(objects);
 
 CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
                                                CNcbiIstream& infile,
+                                               bool read_proteins,
                                                objects::ENa_strand strand,
                                                bool lowercase,
                                                bool believe_defline,
@@ -61,7 +62,8 @@ CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
     : CBlastInputSource(objmgr),
       m_Config(strand, lowercase, believe_defline, range),
       m_LineReader(infile),
-      m_IdGenerator()
+      m_IdGenerator(),
+      m_ReadProteins(read_proteins)
 {
 }
 
@@ -74,17 +76,18 @@ CBlastFastaInputSource::End()
 
 
 CRef<CSeq_loc>
-CBlastFastaInputSource::x_FastaToSeqLoc(
-                         CRef<objects::CSeq_loc>& lcase_mask,
-                         bool *query_is_protein)
+CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
 {
-    bool seq_is_protein;
     static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
 
-    const CFastaReader::TFlags flags = m_Config.GetBelieveDeflines() ? 
+    CFastaReader::TFlags flags = m_Config.GetBelieveDeflines() ? 
                                     CFastaReader::fAllSeqIds :
                                     (CFastaReader::fNoParseID |
                                      CFastaReader::fDLOptional);
+    // N.B.: fForceType is needed otherwise fAssumeProt is overriden...
+    flags += ((m_ReadProteins
+              ? CFastaReader::fAssumeProt 
+              : CFastaReader::fAssumeNuc) | CFastaReader::fForceType);
 
     CRef<CSeq_entry> seq_entry;
     CFastaReader fasta_reader(m_LineReader, flags);
@@ -104,17 +107,17 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
     CRef<CSeq_loc> retval(new CSeq_loc());
 
-    seq_is_protein = itr->IsAa();
+    _ASSERT(m_ReadProteins == itr->IsAa());
 
     // set strand
     if (m_Config.GetStrand() == eNa_strand_other ||
         m_Config.GetStrand() == eNa_strand_unknown) {
-        if (seq_is_protein)
+        if (m_ReadProteins)
             retval->SetInt().SetStrand(eNa_strand_unknown);
         else
             retval->SetInt().SetStrand(eNa_strand_both);
     } else {
-        if (seq_is_protein) {
+        if (m_ReadProteins) {
             NCBI_THROW(CBlastException, eInvalidArgument, 
                        "Cannot assign nucleotide strand to protein sequence");
         }
@@ -139,10 +142,6 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
     // set ID
     retval->SetInt().SetId().Assign(*itr->GetId().front());
 
-    // remember the type of sequence
-    if (query_is_protein)
-        *query_is_protein = seq_is_protein;
-
     return retval;
 }
 
@@ -164,13 +163,12 @@ CBlastFastaInputSource::GetNextSSeqLoc()
 CRef<CBlastSearchQuery>
 CBlastFastaInputSource::GetNextSequence()
 {
-    bool query_is_protein = false;
     CRef<CSeq_loc> lcase_mask;
-    CRef<CSeq_loc> seqloc(x_FastaToSeqLoc(lcase_mask, &query_is_protein));
+    CRef<CSeq_loc> seqloc(x_FastaToSeqLoc(lcase_mask));
 
     TMaskedQueryRegions masks_in_query;
     if (m_Config.GetLowercaseMask()) {
-        const EBlastProgramType program = query_is_protein ? 
+        const EBlastProgramType program = m_ReadProteins ? 
                                 eBlastTypeBlastp : eBlastTypeBlastn;
         const bool apply_mask_to_both_strands = true;
         masks_in_query = 

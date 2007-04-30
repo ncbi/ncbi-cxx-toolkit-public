@@ -51,6 +51,8 @@ public:
     /// Constructor
     /// @param objmgr Object Manager instance
     /// @param infile The file to read
+    /// @param read_proteins Specifies to read the sequence data as proteins or
+    /// nucleotides [in]
     /// @param strand All SeqLoc types will have this strand assigned [in]
     /// @param lowercase If true, lowercase mask locations are generated
     ///                 for all input sequences [in]
@@ -61,6 +63,7 @@ public:
     //                  restriction) [in]
     CBlastFastaInputSource(objects::CObjectManager& objmgr,
                    CNcbiIstream& infile,
+                   bool read_proteins,
                    objects::ENa_strand strand = objects::eNa_strand_other,
                    bool lowercase = false,
                    bool believe_defline = false,
@@ -89,21 +92,17 @@ public:
 private:
     CStreamLineReader m_LineReader; ///< interface to read lines
     objects::CSeqIdGenerator m_IdGenerator;  ///< creates local sequence IDs
+    bool m_ReadProteins;        ///< read protein sequences?
 
     /// Read a single sequence from file and convert to a Seq_loc
     /// @param lcase_mask A Seq_loc that describes the
     ///           lowercase-masked regions in the query that was read in.
     ///           If there are no such locations, the Seq_loc is of type
     ///           'null', otherwise it is of type 'packed_seqint' [out]
-    /// @param query_is_protein if not NULL, the value of this variable will
-    ///           be filled with a boolean value which is set to true if 
-    ///           a protein query was read or false if a nucleotide 
-    ///           query was read [out]
     /// @return The sequence in Seq_loc format
     ///
-    CRef<objects::CSeq_loc> x_FastaToSeqLoc(
-                          CRef<objects::CSeq_loc>& lcase_mask,
-                          bool* query_is_protein = NULL);
+    CRef<objects::CSeq_loc> 
+    x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask);
 };
 
 END_SCOPE(blast)

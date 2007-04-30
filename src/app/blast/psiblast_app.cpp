@@ -129,6 +129,7 @@ int CPsiBlastApp::Run(void)
 
         CBlastFastaInputSource fasta(*m_ObjMgr, 
                                      m_CmdLineArgs->GetInputStream(), 
+                                     query_opts->QueryIsProtein(),
                                      query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->BelieveQueryDefline(),

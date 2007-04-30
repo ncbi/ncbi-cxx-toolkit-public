@@ -548,6 +548,8 @@ public:
     /// Should the defline be parsed?
     bool BelieveQueryDefline() const { return m_BelieveQueryDefline; }
 
+    // Is the query sequence protein?
+    bool QueryIsProtein() const { return m_QueryCannotBeNucl; }
 private:
     /// Strand(s) to search
     objects::ENa_strand m_Strand;
