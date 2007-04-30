@@ -265,7 +265,6 @@ struct SHeader {             // byte offset
     union {                  // 345
         char prefix[155];    // NB: not valid with old GNU format
         struct {             // NB: old GNU format only
-
             char atime[12];
             char ctime[12];  // 357  
         } gt;
@@ -1162,8 +1161,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         TAR_THROW_EX(eUnsupportedTarFormat, "Unrecognized format", h, fmt);
     }
 
-    // Get checksum from header
     unsigned long value;
+    // Get checksum from header
     if (!s_OctalToNum(value, h->checksum, sizeof(h->checksum))) {
         // We must allow all zero bytes here in case of pad/zero blocks
         for (size_t i = 0;  i < sizeof(block->buffer);  i++) {
@@ -1173,7 +1172,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         }
         return eZeroBlock;
     }
-    int checksum = (int)value;
+    int checksum = (int) value;
 
     // Compute both signed and unsigned checksums (for compatibility)
     int ssum = 0;
@@ -1719,14 +1718,16 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
     // Source for extraction
     auto_ptr<CDirEntry> src
         (type == CTarEntryInfo::eHardLink
-         ? new CDirEntry(CDir::ConcatPath(m_BaseDir, info.GetLinkName()))
+         ? new CDirEntry(CDirEntry::NormalizePath
+                         (CDir::ConcatPath(m_BaseDir, info.GetLinkName())))
          : 0);
 
     // Destination for extraction
     auto_ptr<CDirEntry> dst
         (CDirEntry::CreateObject(CDirEntry::EType(type),
-                                 CDir::ConcatPath(m_BaseDir,
-                                                  info.GetName())));
+                                 CDirEntry::NormalizePath
+                                 (CDir::ConcatPath(m_BaseDir,
+                                                   info.GetName()))));
 
     // Dereference sym.link if requested
     if (type != CTarEntryInfo::eSymLink  &&
