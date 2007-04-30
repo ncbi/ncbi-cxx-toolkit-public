@@ -33,6 +33,9 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
+
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -88,6 +91,10 @@ public:
     ///
     virtual void SetTransaction(ITransaction* trans) = 0;
 
+    /// Get current transaction
+    ///
+    virtual ITransaction* GetTransaction() = 0;
+
     /// Remove transaction association 
     /// (must be established by  SetTransaction
     ///
@@ -106,6 +113,27 @@ public:
 
     /// Forget the transactional object
     virtual void Remove(ITransactional*) = 0;
+};
+
+/// Thread local transactional object
+/// 
+/// Thread locality means if you set transaction it is only
+/// visible in the same thread. 
+/// Other threads if they call GetTransaction() - see NULL.
+///
+/// Class is thread safe and syncronised for concurrent access.
+///
+class NCBI_XUTIL_EXPORT CThreadLocalTransactional : public ITransactional
+{
+public:
+    virtual void SetTransaction(ITransaction* trans);
+    virtual ITransaction* GetTransaction();
+    virtual void RemoveTransaction(ITransaction* trans);
+protected:
+    typedef map<CThread::TID, ITransaction*>  TThreadCtxMap;
+protected:
+    TThreadCtxMap  m_ThreadMap;
+    CFastMutex     m_ThreadMapLock;
 };
 
 /* @} */

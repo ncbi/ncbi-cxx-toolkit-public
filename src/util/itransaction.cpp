@@ -44,4 +44,38 @@ ITransactional::~ITransactional()
 ITransactionalRegistry::~ITransactionalRegistry()
 {}
 
+void CThreadLocalTransactional::SetTransaction(ITransaction* trans)
+{
+    CThread::TID self_tid = CThread::GetSelf();
+
+    CFastMutexGuard lock(m_ThreadMapLock);
+    m_ThreadMap[self_tid] = trans;
+}
+
+ITransaction* CThreadLocalTransactional::GetTransaction()
+{
+    CThread::TID self_tid = CThread::GetSelf();
+
+    CFastMutexGuard lock(m_ThreadMapLock);
+    TThreadCtxMap::const_iterator it = m_ThreadMap.find(self_tid);
+    if (it == m_ThreadMap.end()) {
+        return 0;
+    }
+    return it->second;
+}
+
+void CThreadLocalTransactional::RemoveTransaction(ITransaction* trans)
+{
+    CThread::TID self_tid = CThread::GetSelf();
+
+    CFastMutexGuard lock(m_ThreadMapLock);
+    TThreadCtxMap::iterator it = m_ThreadMap.find(self_tid);
+    if (it == m_ThreadMap.end()) {
+        return;
+    }
+    if (it->second == trans) {
+        it->second = 0;
+    }
+}
+
 END_NCBI_SCOPE
