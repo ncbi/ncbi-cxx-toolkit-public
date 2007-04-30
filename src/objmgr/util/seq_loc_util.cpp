@@ -2121,7 +2121,7 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                 diff += diff_plus;
                 Int8 diff_minus = x_GetRangeDiff(it1->second,
                                                  it2->second,
-                                                 CHandleRange::eStrandPlus);
+                                                 CHandleRange::eStrandMinus);
                 if (diff_minus < 0) {
                     return -1;
                 }
@@ -2131,7 +2131,7 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
         }
     case eOverlap_Contains:
         {
-            // loc2 is contained in loc1
+            // loc2 contains loc1
             CHandleRangeMap rm1, rm2;
             rm1.AddLocation(loc1);
             rm2.AddLocation(loc2);
@@ -2153,7 +2153,7 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
                 diff += diff_plus;
                 Int8 diff_minus = x_GetRangeDiff(it2->second,
                                                  it1->second,
-                                                 CHandleRange::eStrandPlus);
+                                                 CHandleRange::eStrandMinus);
                 if (diff_minus < 0) {
                     return -1;
                 }
@@ -2435,9 +2435,10 @@ Int8 TestForOverlap64(const CSeq_loc& loc1,
                     return -1;
                 }
             }
-            if (rg1.GetFrom() <= rg2.GetFrom()  && rg1.GetTo() >= rg2.GetTo()) {
-                return (rg2.GetFrom() - rg1.GetFrom()) + 
-                    (rg1.GetTo() - rg2.GetTo());
+            if ( rg2.GetFrom() <= rg1.GetFrom()  &&
+                rg2.GetTo() >= rg1.GetTo()) {
+                return (rg1.GetFrom() - rg2.GetFrom()) + 
+                    (rg2.GetTo() - rg1.GetTo());
             }
             return -1;
         }
