@@ -406,6 +406,30 @@ static void s_TestMisc(void)
             assert(month_week_num >= 1  &&  month_week_num <= 6);
         }
     }}
+
+    // Rounding time
+    {{
+        CTime::SetFormat("M/D/Y h:m:s.S");
+        CTime t(2000, 1, 2, 20, 40, 29, 998933833);
+
+        t.Round(CTime::eRound_Microsecond);
+        assert(t.AsString() == "01/02/2000 20:40:29.998934000");
+        t.Round(CTime::eRound_Millisecond);
+        assert(t.AsString() == "01/02/2000 20:40:29.999000000");
+        t.Round(CTime::eRound_Second);
+        assert(t.AsString() == "01/02/2000 20:40:30.000000000");
+        t.Round(CTime::eRound_Minute);
+        assert(t.AsString() == "01/02/2000 20:41:00.000000000");
+        t.Round(CTime::eRound_Hour);
+        assert(t.AsString() == "01/02/2000 21:00:00.000000000");
+        t.Round(CTime::eRound_Day);
+        assert(t.AsString() == "01/03/2000 00:00:00.000000000");
+
+        // Special case
+        CTime t1(2000, 1, 2, 20, 40, 29, 999999991);
+        t1.Round(CTime::eRound_Microsecond);
+        assert(t1.AsString() == "01/02/2000 20:40:30.000000000");
+    }}
 }
 
 
