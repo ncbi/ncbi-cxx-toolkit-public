@@ -825,7 +825,7 @@ CTar::~CTar()
 #define TAR_THROW(errcode, message)                                     \
     NCBI_THROW(CTarException, errcode,                                  \
                s_PositionAsString(m_StreamPos, m_BufferSize, m_Name) +  \
-               ":\n" + string(message))
+               ":\n" + (message))
 
 #define TAR_THROW_EX(errcode, message, h, fmt)                          \
     TAR_THROW(errcode,                                                  \
