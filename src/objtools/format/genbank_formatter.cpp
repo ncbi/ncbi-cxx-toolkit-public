@@ -598,13 +598,12 @@ void CGenbankFormatter::FormatFeatHeader
     text_os.AddParagraph(l, NULL);
 }
 
-
 void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
  IFlatTextOStream& text_os)
 { 
     CConstRef<CFlatFeature> feat = f.Format();
-    list<string>        l;
+    list<string>        l, l_new;
     Wrap(l, feat->GetKey(), feat->GetLoc().GetString(), eFeat);
     ITERATE (vector<CRef<CFormatQual> >, it, feat->GetQuals()) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
@@ -622,12 +621,22 @@ void CGenbankFormatter::FormatFeature
         }
         // Call NStr::Wrap directly to avoid unwanted line breaks right
         // before the start of the value (in /translation, e.g.)
-        NStr::Wrap(value, GetWidth(), l, SetWrapFlags(), GetFeatIndent(),
+        NStr::Wrap(value, GetWidth(), l_new, SetWrapFlags(), GetFeatIndent(),
             GetFeatIndent() + qual);
+
+        // Values of qualifiers coming down this path do not carry additional
+        // internal format (at least, they aren't supposed to). So we strip extra
+        // blanks from both the begin and the end of qualifier lines.
+        // (May have to be amended once sizeable numbers of violators are found
+        // in existing data).
+        NON_CONST_ITERATE (list<string>, it, l_new) {
+            string str = (*it).substr( GetFeatIndent().size() );
+            *it = GetFeatIndent() + NStr::TruncateSpaces(str, NStr::eTrunc_Both);
+        }
+        l.insert( l.end(), l_new.begin(), l_new.end() );
+        l_new.clear();
     }
-    NON_CONST_ITERATE (list<string>, it, l) {
-        NStr::TruncateSpacesInPlace(*it, NStr::eTrunc_End);
-    }
+        
     text_os.AddParagraph(l, f.GetObject());
 }
 
