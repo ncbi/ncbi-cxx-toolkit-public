@@ -318,8 +318,21 @@ unsigned int CBDB_RawFile::Truncate()
 
 /// Compact the database.  The target fill percent per page can be
 /// supplied, to allow for known expansion
+static bool s_DefaultCompactCallback()
+{
+    return true;
+}
+
 void CBDB_RawFile::Compact(ECompact compact_type,
                            int target_fill_pct)
+{
+    CompactEx(s_DefaultCompactCallback, compact_type, target_fill_pct);
+}
+
+
+void CBDB_RawFile::CompactEx(FContinueCompact compact_callback,
+                             ECompact         compact_type,
+                             int              target_fill_pct)
 {
 #ifdef DB_COMPACT_FLAGS
     _ASSERT(m_DB != 0);
@@ -336,20 +349,42 @@ void CBDB_RawFile::Compact(ECompact compact_type,
     target_fill_pct = max(target_fill_pct, 0);
     DB_TXN* txn = GetTxn();
 
-    DB_COMPACT compact;
-    memset(&compact, 0, sizeof(compact));
-    compact.compact_fillpercent = target_fill_pct;
-    compact.compact_timeout     = 0;
+    unsigned int pages_examined  = 0;
+    unsigned int pages_freed     = 0;
+    unsigned int levels_removed  = 0;
+    unsigned int pages_truncated = 0;
+    for (int i = 0;  i < 2;  ++i) {
+        DB_COMPACT compact;
+        memset(&compact, 0, sizeof(compact));
+        compact.compact_fillpercent = target_fill_pct;
+        compact.compact_timeout     = 0;
 
-    int ret = m_DB->compact(m_DB, txn, NULL, NULL, &compact,
-                            flags, NULL);
-    BDB_CHECK(ret, FileName().c_str());
+        int ret = m_DB->compact(m_DB, txn, NULL, NULL, &compact,
+                                flags, NULL);
+        BDB_CHECK(ret, FileName().c_str());
+
+        pages_examined += compact.compact_pages_examine;
+        pages_freed += compact.compact_pages_free;
+        levels_removed += compact.compact_levels;
+        pages_truncated += compact.compact_pages_truncated;
+
+        LOG_POST(Info << "CBDB_RawFile::Compact(): "
+                 << "round " << i + 1 << ": "
+                 << compact.compact_pages_examine << " pages examined / "
+                 << compact.compact_pages_free << " pages freed / "
+                 << compact.compact_levels << " levels removed / "
+                 << compact.compact_pages_truncated << " pages truncated");
+
+        if ( !compact_callback() ) {
+            break;
+        }
+    }
 
     LOG_POST(Info << "CBDB_RawFile::Compact(): "
-             << compact.compact_pages_examine << " pages examined / "
-             << compact.compact_pages_free << " pages freed / "
-             << compact.compact_levels << " levels removed / "
-             << compact.compact_pages_truncated << " pages truncated");
+             << pages_examined << " pages examined / "
+             << pages_freed << " pages freed / "
+             << levels_removed << " levels removed / "
+             << pages_truncated << " pages truncated");
 #endif
 }
 
@@ -427,8 +462,6 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
     if ( m_PageSize ) {
         ret = m_DB->set_pagesize(m_DB, m_PageSize);
         BDB_CHECK(ret, 0);
-    } else {
-        m_DB->get_pagesize(m_DB, &m_PageSize);
     }
 
     if (!m_Env) {
@@ -593,7 +626,6 @@ void CBDB_RawFile::x_Open(const char* filename,
     } // else open_mode == Create
 
     m_OpenMode = open_mode;
-
 }
 
 
@@ -606,9 +638,12 @@ void CBDB_RawFile::SetPageSize(unsigned int page_size)
     m_PageSize = page_size;
 }
 
-unsigned int CBDB_RawFile::GetPageSize() const
+unsigned int CBDB_RawFile::GetPageSize()
 {
-    _ASSERT(m_DB == 0); // we can set page size only before opening the file
+    if ( !m_PageSize  &&  m_DB) {
+        int ret = m_DB->get_pagesize(m_DB, &m_PageSize);
+        BDB_CHECK(ret, 0);
+    }
     return m_PageSize;
 }
 
@@ -778,7 +813,18 @@ void CBDB_RawFile::SetHash(DB* db)
 
 void CBDB_RawFile::SetBtreeMinKeysPerPage(unsigned int keys_per_page)
 {
+    _ASSERT(m_DB_Type == eBtree);
     m_BT_minkey = max((unsigned int)2, keys_per_page);
+}
+
+unsigned int CBDB_RawFile::GetBtreeMinKeysPerPage()
+{
+    _ASSERT(m_DB_Type == eBtree);
+    if ( !m_BT_minkey  &&  m_DB) {
+        int ret = m_DB->get_bt_minkey(m_DB, &m_BT_minkey);
+        BDB_CHECK(ret, 0);
+    }
+    return m_BT_minkey;
 }
 
 /////////////////////////////////////////////////////////////////////////////

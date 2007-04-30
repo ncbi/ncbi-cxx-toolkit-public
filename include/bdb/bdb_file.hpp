@@ -168,11 +168,19 @@ public:
     void Compact(ECompact compact_type = eCompactNoFree,
                  int target_fill_pct = 0);
 
+    /// Extended version of compact
+    /// This version performs iterative compacting and uses a callback
+    /// to request an exit
+    typedef bool (*FContinueCompact)(void);
+    void CompactEx(FContinueCompact compact_callback,
+                   ECompact compact_type = eCompactNoFree,
+                   int target_fill_pct = 0);
+
     // Set Berkeley DB page size value. By default OS default is used.
     void SetPageSize(unsigned int page_size);
 
-    // Set Berkeley DB page size value. By default OS default is used.
-    unsigned int GetPageSize() const;
+    // Get Berkeley DB page size value. By default OS default is used.
+    unsigned int GetPageSize();
 
     /// Set Berkeley DB memory cache size for the file (default is 256K).
     void SetCacheSize(unsigned int cache_size);
@@ -251,6 +259,7 @@ public:
 
     /// Set the minimum number of keys per page (BTREE access methods only)
     void SetBtreeMinKeysPerPage(unsigned int keys_per_page);
+    unsigned int GetBtreeMinKeysPerPage();
 
 private:
     CBDB_RawFile(const CBDB_RawFile&);
