@@ -505,10 +505,28 @@ public:
     /// AsString() format symbol "s".
     int Second(void) const;
 
+    /// Get milliseconds.
+    ///
+    /// Milliseconds after the second = 0..999
+    /// AsString() format symbol "l".
+    /// @sa
+    ///   NanoSecond
+    long MilliSecond(void) const;
+
+    /// Get microseconds.
+    ///
+    /// Microseconds after the second = 0..999999
+    /// AsString() format symbol "r".
+    /// @sa
+    ///   NanoSecond
+    long MicroSecond(void) const;
+
     /// Get nano-seconds.
     ///
     /// Nano-seconds after the second = 0..999999999
     /// AsString() format symbol "S".
+    /// @sa
+    ///   MilliSecond, MicroSecond
     long NanoSecond(void) const;
 
     //
@@ -577,12 +595,28 @@ public:
     ///   Second
     void SetSecond(int second);
 
-    /// Set nano-seconds.
+    /// Set milliseconds.
+    ///
+    /// @param millisecond
+    ///   Milliseconds after the second = 0..999.
+    /// @sa
+    ///   MilliSecond, SetNanoSecond
+    void SetMilliSecond(long millisecond);
+
+    /// Set microseconds.
+    ///
+    /// @param microsecond
+    ///   Microseconds after the second = 0..999999.
+    /// @sa
+    ///   MicroSecond, SetNanoSecond
+    void SetMicroSecond(long microsecond);
+
+    /// Set nanoseconds.
     ///
     /// @param nanosecond
-    ///   Nano-seconds after the second = 0..999999999.
+    ///   Nanoseconds after the second = 0..999999999.
     /// @sa
-    ///   NanoSecond
+    ///   NanoSecond, SetMilliSecond, SetMicroSecond
     void SetNanoSecond(long nanosecond);
 
     /// Get year's day number.
@@ -699,6 +733,32 @@ public:
     ///   Object of CTimeSpan class to add.
     ///   If negative, it will result in a "subtraction" operation.
     CTime& AddTimeSpan(const CTimeSpan& timespan);
+
+
+    /// Precision for rounding time.
+    /// @sa Round
+    enum ERoundPrecision {
+        eRound_Day,        ///< Round to days
+        eRound_Hour,       ///< Round to hours
+        eRound_Minute,     ///< Round to minutes
+        eRound_Second,     ///< Round to seconds
+        eRound_Millisecond,///< Round to milliseconds
+        eRound_Microsecond ///< Round to microseconds
+    };
+
+    /// Round time.
+    ///
+    /// Round stored time to specified precision. All time components with
+    /// precision less that specified will be zero-filled.
+    /// @param precision
+    ///   Rounding precision. 
+    /// @param adl
+    ///   Whether to adjust for daylight saving time. Default is to adjust
+    ///   for daylight saving time. This parameter is for eLocal time zone
+    ///   and where the time zone precision is not eNone.
+    /// @sa ERoundPrecision
+    CTime& Round(ERoundPrecision precision, 
+                 EDaylight adl = eDaylightDefault);
 
     //
     // Add/subtract days
@@ -1543,6 +1603,12 @@ int CTime::Minute(void) const { return m_Data.min; }
 
 inline
 int CTime::Second(void) const { return m_Data.sec; }
+
+inline
+long CTime::MilliSecond(void) const { return (long)m_Data.nanosec/1000; }
+
+inline
+long CTime::MicroSecond(void) const { return (long)m_Data.nanosec/1000000; }
 
 inline
 long CTime::NanoSecond(void) const { return (long)m_Data.nanosec; }

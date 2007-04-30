@@ -652,6 +652,20 @@ void CTime::SetSecond(int second)
 }
 
 
+void CTime::SetMilliSecond(long millisecond)
+{
+    CHECK_RANGE_NSEC(millisecond * 1000000);
+    m_Data.nanosec = (Int4)millisecond * 1000000;
+}
+
+
+void CTime::SetMicroSecond(long microsecond)
+{
+    CHECK_RANGE_NSEC(microsecond * 1000);
+    m_Data.nanosec = (Int4)microsecond * 1000;
+}
+
+
 void CTime::SetNanoSecond(long nanosecond)
 {
     CHECK_RANGE_NSEC(nanosecond);
@@ -1299,6 +1313,63 @@ CTime& CTime::AddTimeSpan(const CTimeSpan& ts)
     }
     AddSecond(ts.GetCompleteSeconds());
     AddNanoSecond(ts.GetNanoSecondsAfterSecond());
+    return *this;
+}
+
+
+CTime& CTime::Round(ERoundPrecision precision, EDaylight adl)
+{
+    if ( IsEmptyDate() ) {
+        return *this;
+    }
+    switch (precision) {
+        case eRound_Day:
+            if ( m_Data.hour >= 12 )
+                AddDay(1, adl);
+            break;
+        case eRound_Hour:
+            if ( m_Data.min >= 30 )
+                AddHour(1, adl);
+            break;
+        case eRound_Minute:
+            if ( m_Data.sec >= 30 )
+                AddMinute(1, adl);
+            break;
+        case eRound_Second:
+            if ( m_Data.nanosec >= kNanoSecondsPerSecond/2 )
+                AddSecond(1, adl);
+            m_Data.nanosec = 0;
+            break;
+        case eRound_Millisecond:
+            m_Data.nanosec = (m_Data.nanosec + kNanoSecondsPerSecond/2000) 
+                             / 1000000 * 1000000;
+            break;
+        case eRound_Microsecond:
+            m_Data.nanosec = (m_Data.nanosec + kNanoSecondsPerSecond/2000000) 
+                             / 1000 * 1000;
+            break;
+        default:
+            NCBI_THROW(CTimeException, eArgument,
+                       "CTime: rounding precision is out of range");
+    }
+    if ( m_Data.nanosec == kNanoSecondsPerSecond ) {
+        AddSecond(1, adl);
+        m_Data.nanosec = 0;
+    }
+
+    // Clean time components with lesser precision
+    switch (precision) {
+        case eRound_Day:
+            m_Data.hour = 0;
+        case eRound_Hour:
+            m_Data.min = 0;
+        case eRound_Minute:
+            m_Data.sec = 0;
+        case eRound_Second:
+            m_Data.nanosec = 0;
+        default:
+            break;
+    }
     return *this;
 }
 
