@@ -454,7 +454,7 @@ void CWString::Assign(const wstring& str)
 #endif
 
 
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 static
 void CheckStringTruncation(size_t cur_len, size_t max_len)
 {
@@ -464,7 +464,18 @@ void CheckStringTruncation(size_t cur_len, size_t max_len)
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+static
+void CheckBinaryTruncation(size_t cur_len, size_t max_len)
+{
+    if (cur_len > max_len) {
+        ERR_POST(Warning << "Binary data of size " << cur_len <<
+                 " was truncated to " << max_len << " bytes");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 //  CDB_Object::
 //
 
@@ -806,11 +817,11 @@ CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l,
     Assign(s, l, enc);
 
     if (s) {
-        CheckStringTruncation(min(strlen(s), l), sizeof(m_Val) - 1);
+        CheckStringTruncation(l, sizeof(m_Val) - 1);
     }
 
-    if ( s ) {
-        m_Size = l < sizeof(m_Val) ? l : sizeof(m_Val) - 1;
+    if (s) {
+        m_Size = min(l, sizeof(m_Val) - 1);
         if ( m_Size ) {
             memcpy(m_Val, s, m_Size);
         }
@@ -1184,7 +1195,8 @@ CDB_LongChar::~CDB_LongChar()
 void CDB_VarBinary::SetValue(const void* v, size_t l)
 {
     if (v  &&  l) {
-        m_Size = l > sizeof(m_Val) ? sizeof(m_Val) : l;
+        m_Size = min(l, sizeof(m_Val));
+        CheckBinaryTruncation(l, m_Size);
         memcpy(m_Val, v, m_Size);
         SetNULL(false);
     }
@@ -1246,8 +1258,10 @@ CDB_Binary::CDB_Binary(const CDB_Binary& v)
 void CDB_Binary::SetValue(const void* v, size_t v_size)
 {
     if (v  &&  v_size) {
+        CheckBinaryTruncation(v_size, m_Size);
         memcpy(m_Val, v, (v_size > m_Size) ? m_Size : v_size);
         if (v_size < m_Size) {
+            // Padding ...
             memset(m_Val + v_size, 0, m_Size - v_size);
         }
         SetNULL(false);
@@ -1260,9 +1274,11 @@ void CDB_Binary::SetValue(const void* v, size_t v_size)
 CDB_Binary& CDB_Binary::operator= (const CDB_Binary& v)
 {
     SetNULL(v.IsNULL());
-    size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+    size_t l = min(m_Size, v.m_Size);
+    CheckBinaryTruncation(v.m_Size, m_Size);
     memmove(m_Val, v.m_Val, l);
     if (l < m_Size) {
+        // Padding ...
         memset(m_Val+l, 0, m_Size - l);
     }
     return *this;
@@ -1285,12 +1301,12 @@ void CDB_Binary::AssignValue(CDB_Object& v)
 {
     CHECK_DRIVER_ERROR( v.GetType() != eDB_Binary, "wrong type of CDB_Object", 2 );
 
-    register CDB_Binary& cv= (CDB_Binary&)v;
+    register CDB_Binary& cv = (CDB_Binary&)v;
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
-        m_Val= new unsigned char[cv.m_Size];
+        m_Val = new unsigned char[cv.m_Size];
     }
-    m_Size= cv.m_Size;
+    m_Size = cv.m_Size;
     if(cv.IsNULL()) {
         SetNULL();
     }
@@ -1318,7 +1334,7 @@ CDB_LongBinary::CDB_LongBinary(size_t s) : CDB_Object(true)
 {
     m_Size = (s < 1) ? 1 : s;
     m_Val = new unsigned char[m_Size];
-    m_DataSize= 0;
+    m_DataSize = 0;
 }
 
 
@@ -1334,7 +1350,7 @@ CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v)
 {
     SetNULL(v.IsNULL());
     m_Size = v.m_Size;
-    m_DataSize= v.m_DataSize;
+    m_DataSize = v.m_DataSize;
     m_Val = new unsigned char[m_Size];
     memcpy(m_Val, v.m_Val, m_DataSize);
 }
@@ -1343,12 +1359,13 @@ CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v)
 void CDB_LongBinary::SetValue(const void* v, size_t v_size)
 {
     if (v  &&  v_size) {
-        m_DataSize= (v_size > m_Size) ? m_Size : v_size;
+        m_DataSize = min(v_size, m_Size);
+        CheckBinaryTruncation(v_size, m_Size);
         memcpy(m_Val, v, m_DataSize);
         SetNULL(false);
     } else {
         SetNULL();
-        m_DataSize= 0;
+        m_DataSize = 0;
     }
 }
 
@@ -1356,7 +1373,8 @@ void CDB_LongBinary::SetValue(const void* v, size_t v_size)
 CDB_LongBinary& CDB_LongBinary::operator= (const CDB_LongBinary& v)
 {
     SetNULL(v.IsNULL());
-    m_DataSize = (m_Size > v.m_DataSize) ? v.m_DataSize : m_Size;
+    m_DataSize = min(m_Size, v.m_DataSize);
+    CheckBinaryTruncation(v.m_DataSize, m_Size);
     if(m_DataSize) {
         memmove(m_Val, v.m_Val, m_DataSize);
     }
@@ -1382,13 +1400,14 @@ void CDB_LongBinary::AssignValue(CDB_Object& v)
         v.GetType() != eDB_LongBinary,
         "wrong type of CDB_Object",
         2 );
-    register CDB_LongBinary& cv= (CDB_LongBinary&)v;
+    register CDB_LongBinary& cv = (CDB_LongBinary&)v;
     if(cv.IsNULL()) {
         SetNULL();
     }
     else {
         SetNULL(false);
-        m_DataSize= (m_Size < cv.m_DataSize)? m_Size : cv.m_DataSize;
+        m_DataSize = min(m_Size, cv.m_DataSize);
+        CheckBinaryTruncation(cv.m_DataSize, m_Size);
         memcpy(m_Val, cv.m_Val, m_DataSize);
     }
 }
@@ -1429,9 +1448,9 @@ CDB_Object* CDB_Float::Clone() const
 void CDB_Float::AssignValue(CDB_Object& v)
 {
     switch( v.GetType() ) {
-        case eDB_Float   : *this= (CDB_Float&)v; break;
-        case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
-        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        case eDB_Float   : *this = (CDB_Float&)v; break;
+        case eDB_SmallInt: *this = ((CDB_SmallInt&)v).Value(); break;
+        case eDB_TinyInt : *this = ((CDB_TinyInt &)v).Value(); break;
         default:
             DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
@@ -1462,11 +1481,11 @@ CDB_Object* CDB_Double::Clone() const
 void CDB_Double::AssignValue(CDB_Object& v)
 {
     switch( v.GetType() ) {
-        case eDB_Double  : *this= (CDB_Double&)v; break;
-        case eDB_Float   : *this= ((CDB_Float   &)v).Value(); break;
-        case eDB_Int     : *this= ((CDB_Int     &)v).Value(); break;
-        case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
-        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        case eDB_Double  : *this = (CDB_Double&)v; break;
+        case eDB_Float   : *this = ((CDB_Float   &)v).Value(); break;
+        case eDB_Int     : *this = ((CDB_Int     &)v).Value(); break;
+        case eDB_SmallInt: *this = ((CDB_SmallInt&)v).Value(); break;
+        case eDB_TinyInt : *this = ((CDB_TinyInt &)v).Value(); break;
         default:
             DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
@@ -1539,7 +1558,8 @@ void CDB_Stream::AssignValue(CDB_Object& v)
     CHECK_DRIVER_ERROR(
         (v.GetType() != eDB_Image) && (v.GetType() != eDB_Text),
         "wrong type of CDB_Object",
-        2 );
+        2
+        );
     Assign((CDB_Stream&)v);
 }
 
@@ -1571,7 +1591,8 @@ CDB_Object* CDB_Image::Clone() const
     CHECK_DRIVER_ERROR(
         !IsNULL(),
         "Clone for the non NULL image is not supported",
-        1 );
+        1
+        );
 
     return new CDB_Image;
 }
@@ -1608,7 +1629,8 @@ CDB_Object* CDB_Text::Clone() const
     CHECK_DRIVER_ERROR(
         !IsNULL(),
         "Clone for the non-NULL text is not supported",
-        1 );
+        1
+        );
 
     return new CDB_Text;
 }
@@ -1874,7 +1896,7 @@ void CDB_Bit::AssignValue(CDB_Object& v)
 
 CDB_Numeric::CDB_Numeric() : CDB_Object(true)
 {
-    m_Precision= m_Scale= 0;
+    m_Precision = m_Scale= 0;
     return;
 }
 
@@ -1942,7 +1964,7 @@ CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
     m_Precision = precision;
     m_Scale     = scale;
     SetNULL(false);
-    m_Body[0]= is_negative? 1 : 0;
+    m_Body[0] = is_negative? 1 : 0;
     memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
     return *this;
 }
@@ -2206,7 +2228,7 @@ void CDB_Numeric::AssignValue(CDB_Object& v)
         v.GetType() != eDB_Numeric,
         "wrong type of CDB_Object",
         2 );
-    *this= (CDB_Numeric&)v;
+    *this = (CDB_Numeric&)v;
 }
 
 END_NCBI_SCOPE
