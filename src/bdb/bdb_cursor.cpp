@@ -172,7 +172,7 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
   m_MultiFetchMode(eFetchAll)
 {
     CBDB_Env* env = m_Dbf.GetEnv();
-    CBDB_Transaction* trans = dbf.GetTransaction();
+    CBDB_Transaction* trans = dbf.GetBDBTransaction();
     if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
         m_FetchFlags = DB_RMW;
    } 
@@ -240,7 +240,7 @@ void CBDB_FileCursor::ReOpen(CBDB_Transaction* trans)
 {
     Close();
     if (trans == 0) {
-        trans = m_Dbf.GetTransaction();
+        trans = m_Dbf.GetBDBTransaction();
     }
     m_DBC = m_Dbf.CreateCursor(trans);
 

@@ -238,10 +238,10 @@ public:
 
     virtual void SetTransaction(ITransaction* trans);
     virtual void RemoveTransaction(ITransaction* trans);
-
+    virtual ITransaction* GetTransaction();
 
     /// Get current transaction
-    CBDB_Transaction* GetTransaction() { return m_Trans; }
+    CBDB_Transaction* GetBDBTransaction() { return m_Trans; }
 
     /// Get record length 
     /// Works for fixed length record DBs only (Queue)

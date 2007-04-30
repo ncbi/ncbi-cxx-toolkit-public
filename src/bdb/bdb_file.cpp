@@ -440,6 +440,10 @@ void CBDB_RawFile::RemoveTransaction(ITransaction* trans)
     x_RemoveTransaction(db_trans);
 }
 
+ITransaction* CBDB_RawFile::GetTransaction()
+{
+    return m_Trans;
+}
 
 
 void CBDB_RawFile::x_CreateDB(unsigned rec_len)
@@ -669,7 +673,7 @@ unsigned CBDB_RawFile::CountRecs()
 {
     DB_BTREE_STAT* stp;
 #ifdef BDB_USE_NEW_STAT
-    CBDB_Transaction* trans = GetTransaction();
+    CBDB_Transaction* trans = GetBDBTransaction();
     DB_TXN* txn = trans ? trans->GetTxn() : 0;
     int ret = m_DB->stat(m_DB, txn, &stp, 0);
 #else
@@ -688,7 +692,7 @@ void CBDB_RawFile::PrintStat(CNcbiOstream & out)
 {
     DB_BTREE_STAT* stp = 0;
 #ifdef BDB_USE_NEW_STAT
-    CBDB_Transaction* trans = GetTransaction();
+    CBDB_Transaction* trans = GetBDBTransaction();
     DB_TXN* txn = trans ? trans->GetTxn() : 0;
     int ret = m_DB->stat(m_DB, txn, &stp, 0);
 #else

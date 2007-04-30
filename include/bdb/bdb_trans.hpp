@@ -86,7 +86,7 @@ public:
 
     /// Construct transaction
     CBDB_Transaction(CBDB_Env&             env, 
-                     ETransSync            tsync = eTransSync,
+                     ETransSync            tsync = eEnvDefault,
                      EKeepFileAssociation  assoc = eFullAssociation);
 
 

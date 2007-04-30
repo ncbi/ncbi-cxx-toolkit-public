@@ -86,7 +86,7 @@ public:
     EBDB_ErrCode UpdateInsert(const TBuffer& buf);
 
 
-    /// Fetche the record corresponding to the current key value.
+    /// Fetch the record corresponding to the current key value.
     ///
     /// Key fields should be assigned before calling this function.
     /// This call actually translates into a BerkeleyDB call, so the target page

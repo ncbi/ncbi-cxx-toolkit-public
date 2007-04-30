@@ -41,11 +41,13 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <util/cache/icache.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/bdb_split_blob.hpp>
 
 #include <deque>
 
@@ -59,10 +61,18 @@ BEGIN_NCBI_SCOPE
 /// Register NCBI_BDB_ICacheEntryPoint
 void BDB_Register_Cache(void);
 
+typedef bm::bvector<> TNCBVector;
+
+/// Split store for BLOBs
+typedef CBDB_BlobSplitStore<TNCBVector, 
+                            CBDB_BlobDeMux_RoundRobin, 
+                            CFastMutex>                 TSplitStore;
+
 
 /// BLOB storage table id->BLOB, id is supposed to be incremental,
 /// Berkeley DB is reduculously faster when it writes records in sorted order.
 /// 
+/*
 struct NCBI_BDB_CACHE_EXPORT SCacheBLOB_DB : public CBDB_BLobFile
 {
     CBDB_FieldUint4  blob_id;
@@ -72,7 +82,7 @@ struct NCBI_BDB_CACHE_EXPORT SCacheBLOB_DB : public CBDB_BLobFile
         BindKey("blob_id",  &blob_id);
     }
 };
-
+*/
 
 
 /// BLOB attributes DB
@@ -88,6 +98,9 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
     CBDB_FieldUint4        upd_count;   ///< update counter
     CBDB_FieldUint4        read_count;  ///< read counter
     CBDB_FieldUint4        blob_id;     ///< BLOB counter
+    CBDB_FieldUint4        volume_id;   ///< demux coord[0]
+    CBDB_FieldUint4        split_id;    ///< demux coord[1]
+
 
     CBDB_FieldString       owner_name;  ///< owner's name
 
@@ -107,6 +120,8 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
         BindData("upd_count",  &upd_count);
         BindData("read_count", &read_count);
         BindData("blob_id",    &blob_id);
+        BindData("volume_id",  &volume_id);
+        BindData("split_id",   &split_id);
 
         BindData("owner_name", &owner_name, 512);
     }
@@ -271,15 +286,17 @@ public:
 
     /// Hint to CBDB_Cache about size of cache entry
     /// Large BLOBs work faster with large pages
+    /*
     enum EPageSize
     {
         eSmall,
         eLarge
     };
+    */
 
     /// Suggest page size. Should be called before Open.
     /// Does not have any effect if cache is already created.
-    void SetPageSize(EPageSize page_size) { m_PageSizeHint = page_size; }
+    //void SetPageSize(EPageSize page_size) { m_PageSizeHint = page_size; }
 
     /// Options controlling transaction and write syncronicity.
     enum EWriteSyncMode
@@ -441,6 +458,8 @@ public:
     /// Get max allowed BLOB size. 
     unsigned GetMaxBlobSize() const { return m_MaxBlobSize; }
 
+    /// Set number of rotated round-robin volumes
+    void SetRR_Volumes(unsigned rrv) { m_RoundRobinVolumes = rrv; }
 
     /// Get cache operations statistics
     const SBDB_CacheStatistics& GetStatistics() const
@@ -483,7 +502,7 @@ public:
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int     max_timeout = 0);
-    virtual bool IsOpen() const { return m_CacheBLOB_DB != 0; }
+    virtual bool IsOpen() const { return m_BLOB_SplitStore != 0; }
 
     virtual TTimeStampFlags GetTimeStampPolicy() const;
     virtual int GetTimeout() const;
@@ -557,7 +576,8 @@ public:
                   int            version,
                   const string&  subkey,
                   bool           for_update,
-                  unsigned*      blob_id);
+                  unsigned*      blob_id,
+                  unsigned*      coord);
 
     virtual bool SameCacheParams(const TCacheParams* params) const;
     virtual string GetCacheName(void) const
@@ -570,14 +590,14 @@ protected:
     /// Remove BLOB (using transaction) without updating statistics
     /// (for error recovery situations)
     /// No concurrent access locking
-    void KillBlobNoLock(const char*    key,
+    void KillBlobNoLock(const string&  key,
                         int            version,
-                        const char*    subkey,
+                        const string&  subkey,
                         int            overflow,
                         unsigned       blob_id);
-    void KillBlob(const char*    key,
+    void KillBlob(const string&  key,
                   int            version,
-                  const char*    subkey,
+                  const string&  subkey,        
                   int            overflow,
                   unsigned       blob_id);
 
@@ -638,7 +658,9 @@ private:
                                   const string&  subkey,
 	 							  int*           overflow,
                                   unsigned int*  ttl,
-                                  unsigned int*  blob_id);
+                                  unsigned int*  blob_id,
+                                  unsigned int*  volume_id,
+                                  unsigned int*  split_id);
 
 	bool x_FetchBlobAttributes(const string&  key,
                                int            version,
@@ -673,9 +695,11 @@ private:
     void x_UpdateOwnerStatOnDelete(const string& owner, bool expl_delete);
 
     /// Determines BLOB size (requires fetched attribute record)
+    /*
     size_t x_GetBlobSize(const char* key,
                          int         version,
                          const char* subkey);
+    */
 
 private:
     CBDB_Cache(const CBDB_Cache&);
@@ -686,18 +710,20 @@ private:
     /// Connects all cache tables automatically
     ///
     /// @internal
+/*
     class CCacheTransaction : public CBDB_Transaction
     {
     public:
         CCacheTransaction(CBDB_Cache& cache)
             : CBDB_Transaction(*(cache.m_Env),
-              cache.GetWriteSync() == eWriteSync ?
-                 CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
+              CBDB_Transaction::eEnvDefault,
+              CBDB_Transaction::eNoAssociation)
         {
             cache.m_CacheAttrDB->SetTransaction(this);
-            cache.m_CacheBLOB_DB->SetTransaction(this);
+            cache.m_BLOB_SplitStore->SetTransaction(this);
         }
     };
+*/
 
 public:
 
@@ -727,7 +753,8 @@ private:
 
     bool                    m_JoinedEnv;    ///< Joined environment
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
-    SCacheBLOB_DB*          m_CacheBLOB_DB; ///< Cache BLOB storage
+    //SCacheBLOB_DB*          m_CacheBLOB_DB; ///< Cache BLOB storage
+    TSplitStore*            m_BLOB_SplitStore;///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     mutable CFastMutex      m_DB_Lock;      ///< Database lock
 
@@ -737,7 +764,7 @@ private:
     unsigned                m_MaxTimeout;   ///< Maximum time to live
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
-    EPageSize               m_PageSizeHint; ///< Suggested page size
+//    EPageSize               m_PageSizeHint; ///< Suggested page size
     EWriteSyncMode          m_WSync;        ///< Write syncronization
     /// Number of records to process in Purge() (with locking)
     unsigned                m_PurgeBatchSize;
@@ -747,7 +774,7 @@ private:
     //bool                    m_PurgeStop;
     CSemaphore              m_PurgeStopSignal;
     /// Number of bytes stored in cache since last checkpoint
-    unsigned                m_BytesWritten;
+    //unsigned                m_BytesWritten;
     /// Clean log on Purge (factor)
     unsigned                m_CleanLogOnPurge;
     /// Number of times we run purge
@@ -780,6 +807,9 @@ private:
 
     /// Max.allowed BLOB size 
     unsigned                   m_MaxBlobSize;
+
+    /// Number of rotated volumes
+    unsigned                   m_RoundRobinVolumes;
 };
 
 
