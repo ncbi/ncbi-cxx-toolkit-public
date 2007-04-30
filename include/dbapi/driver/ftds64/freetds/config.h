@@ -22,6 +22,7 @@
 
 #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 #include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
+#include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
 
 #ifdef _DEBUG
 #define DEBUG 1

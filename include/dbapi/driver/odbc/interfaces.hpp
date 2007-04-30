@@ -52,6 +52,7 @@
 
 #if defined(FTDS_IN_USE)
 #  define HAVE_SQLGETPRIVATEPROFILESTRING 0
+#  include <dbapi/driver/ftds64/freetds/rename_ftds64_odbc.h>
 #elif defined(NCBI_OS_MSWIN)
 #  define HAVE_SQLGETPRIVATEPROFILESTRING 1
 #endif
