@@ -2040,12 +2040,11 @@ string CTar::x_ToArchiveName(const string& path) const
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
         TAR_THROW(eBadName,
-                  string("Name may not contain '..' (parent) directory:\n")
-                  + retval);
+                  "Name may not contain '..' (parent) directory:\n" + retval);
     }
 
     if (absolute) {
-        retval.insert(0, 1, '/');
+        retval.insert((SIZE_TYPE) 0, 1, '/');
     }
     return retval;
 }
