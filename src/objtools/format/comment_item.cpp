@@ -858,6 +858,14 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
             NStr::ReplaceInPlace(str, "\"", "\'");
         }}
         break;
+
+    case CSeqdesc::e_Name:
+        {{
+            prefix = "Name: ";
+            str = desc.GetName();
+        }}
+        break;
+
     default:
         break;
     }

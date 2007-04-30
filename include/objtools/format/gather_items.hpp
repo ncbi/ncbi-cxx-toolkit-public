@@ -123,6 +123,7 @@ protected:
     void x_RegionComments(CBioseqContext& ctx) const;
     void x_HTGSComments(CBioseqContext& ctx) const;
     void x_FeatComments(CBioseqContext& ctx) const;
+    void x_NameComments(CBioseqContext& ctx) const;
 
     // sequence 
     void x_GatherSequence  (void) const;

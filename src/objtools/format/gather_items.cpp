@@ -498,6 +498,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_DescComments(ctx);
     x_MaplocComments(ctx);
     x_RegionComments(ctx);
+    x_NameComments(ctx);
     x_HTGSComments(ctx);
 //    x_FeatComments(ctx);
 
@@ -795,6 +796,14 @@ void CFlatGatherer::x_MaplocComments(CBioseqContext& ctx) const
 void CFlatGatherer::x_RegionComments(CBioseqContext& ctx) const
 {
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Region); it; ++it) {
+        x_AddComment(new CCommentItem(*it, ctx));
+    }
+}
+
+
+void CFlatGatherer::x_NameComments(CBioseqContext& ctx) const
+{
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Name); it; ++it) {
         x_AddComment(new CCommentItem(*it, ctx));
     }
 }
