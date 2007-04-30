@@ -18,7 +18,9 @@ mkdir /tmp/test_tar.$$.1/testdir.$$ 2>/dev/null
 
 date >/tmp/test_tar.$$.1/testdir.$$/datefile 2>/dev/null
 
-ln -s /tmp/test_tar.$$.1/testdir.$$/datefile  /tmp/test_tar.$$.1/testdir.$$/12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 2>/dev/null
+ln -s /tmp/test_tar.$$.1/testdir.$$/datefile  /tmp/test_tar.$$.1/testdir.$$/ABS12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 2>/dev/null
+
+ln -s                 ../testdir.$$/datefile  /tmp/test_tar.$$.1/testdir.$$/REL12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 2>/dev/null
 
 ln    /tmp/test_tar.$$.1/testdir.$$/datefile  /tmp/test_tar.$$.1/testdir.$$/linkfile 2>/dev/null
 
