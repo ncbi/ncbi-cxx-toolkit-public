@@ -1286,10 +1286,10 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     case 'L':
         if (fmt == eTar_OldGNU) {
             size_t size = (size_t) info.GetSize();
-            m_StreamPos += ALIGN_SIZE(nread);
             if (dump) {
                 s_Dump(h, fmt, m_StreamPos, m_BufferSize, size);
             }
+            m_StreamPos += ALIGN_SIZE(nread);
             info.m_Type = (h->typeflag[0] == 'K'
                            ? CTarEntryInfo::eGNULongLink
                            : CTarEntryInfo::eGNULongName);
@@ -1353,10 +1353,10 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
             info.m_Stat.st_ctime = value;
     }
 
-    m_StreamPos += ALIGN_SIZE(nread);
     if (dump) {
         s_Dump(h, fmt, m_StreamPos, m_BufferSize, info.GetSize());
     }
+    m_StreamPos += ALIGN_SIZE(nread);
 
     return eSuccess;
 }
