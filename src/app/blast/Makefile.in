@@ -3,7 +3,7 @@
 # Meta-makefile("APP" project)
 #################################
 
-APP_PROJ = psiblast blastp blastn blastx tblastn tblastx
+APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
