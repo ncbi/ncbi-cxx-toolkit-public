@@ -39,39 +39,39 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
                  FGetCandidate get_candidate, double bonus)
 {
     double total = 0.0, access = 0.0, point = 0.0, p = 0.0, status = 0.0;
-    int/*bool*/ best_match;
     const SSERV_Info* info;
     SLB_Candidate* cand;
+    int/*bool*/ fixed;
     size_t i = 0, n;
 
     assert(bonus >= 1.0);
     assert(iter  &&  get_candidate);
     if (iter->ismask  ||  iter->ok_down  ||  iter->ok_suppressed)
         return 0/*first entry (DISPD: probably) fits*/;
-    best_match = 0/*false*/;
+    fixed = 0/*false*/;
     for (n = 0; ; n++) {
-        int/*bool*/ match;
+        int/*bool*/ latch;
         if (!(cand = get_candidate(data, n)))
             break;
         info   = cand->info;
         status = cand->status;
-        match  = iter->host  &&  iter->host == info->host
+        latch  = iter->host  &&  iter->host == info->host
             && (!iter->port  ||  iter->port == info->port);
-        if (match  ||  (!best_match  &&  !iter->host  &&
+        if (latch  ||  (!fixed  &&  !iter->host  &&
                         info->locl  &&  info->coef < 0.0)) {
-            if (best_match < match) {
-                best_match = match;
+            if (fixed < latch) {
+                fixed = latch;
                 access = point = 0.0;
             }
             if (iter->pref  ||  info->coef <= 0.0) {
                 status *= bonus;
                 if (access < status  &&  (iter->pref  ||  info->coef < 0.0)) {
                     access =  status;         /* always take the largest */
-                    point  =  total + status; /* latch this local server */
+                    point  =  total + status; /* mark this local server  */
                     p      = -info->coef;     /* NB: may end up negative */
                     i      = n;
                 }
-            } else /* assert(match); */
+            } else /* assert(latch); */
                 status *= info->coef;
         }
         total       += status;
@@ -79,8 +79,8 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
     }
     assert(n > 0);
 
-    if (best_match  &&  iter->pref < 0.0) {
-        /* Latched preference */
+    if (fixed  &&  iter->pref < 0.0) {
+        /* fixed preference */
         cand = get_candidate(data, i);
         status = access;
     } else {
