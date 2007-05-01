@@ -972,30 +972,21 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
     }
 
     if (crp.CanGetCode_break()) {
+        TSeqPos feat_len = sequence::GetLength (feat->GetLocation(), m_Scope);
+        // if code break is length 0 or 1 and ends at end of feature, allow partial end codon
         ITERATE (list< CRef< CCode_break > >, it, crp.GetCode_break()) {
-            int pos1 = INT_MAX;
-            int pos2 = -10;
-            int pos = 0;
-        
-            for(CSeq_loc_CI loc_it((*it)->GetLoc()); loc_it; ++loc_it) {
-                pos = sequence::LocationOffset(feat->GetLocation(), loc_it.GetSeq_loc(), 
-                                               sequence::eOffset_FromStart, m_Scope);
-                if (pos < pos1) {
-                    pos1 = pos;
+            TSeqPos codon_length = sequence::GetLength((*it)->GetLoc(), m_Scope);
+            if (codon_length == 1 || codon_length == 2) {
+                /* code break has correct length */
+                SRelLoc rl(feat->GetLocation(), (*it)->GetLoc(), m_Scope);
+                ITERATE (SRelLoc::TRanges, rit, rl.m_Ranges) {
+                    if ((*rit)->GetTo() == feat_len - 1) {
+                        /* code break ends */ 
+                        return false;
+                    }
                 }
-                
-                pos = sequence::LocationOffset(feat->GetLocation(), loc_it.GetSeq_loc(),
-                                               sequence::eOffset_FromEnd, m_Scope);
-                if (pos > pos2)
-                    pos2 = pos;
-            }
-        
-            pos = pos2 - pos1;
-            if (pos >= 0 && pos <= 1 && pos2 == feat_len - 1) {
-                return false;
             }
         }
-
     }
     
     // create a copy of the feature location called new_location
@@ -1115,6 +1106,7 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
                     gene_feat->SetLocation (*new_gene_loc);    
                     CSeq_feat_EditHandle efh(fh);
                     efh.Replace(*gene_feat);
+                    ChangeMade (CCleanupChange::eChangeFeatureLocation);
                 }        
             }
         }
@@ -1125,6 +1117,7 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
     
     CSeq_feat_EditHandle efh(ofh);
     efh.Replace(*feat);
+    ChangeMade (CCleanupChange::eChangeFeatureLocation);
     return true;
 }
 
