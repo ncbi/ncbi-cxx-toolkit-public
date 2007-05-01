@@ -364,15 +364,23 @@ int CTestApp::Run(void)
     if ( !tests ) {
         ERR_POST(Fatal << "[Tests] not found in config file");
     }
-    TParamTree::TNodeList_CI test_it = tests->SubNodeBegin();
+
+    // Sort subsections before iterating them
+    set<string> subsections;
+    TParamTree::TNodeList_CI subsection_it = tests->SubNodeBegin();
+    for ( ; subsection_it != tests->SubNodeEnd(); subsection_it++) {
+        subsections.insert((*subsection_it)->GetKey());
+    }
 
     // Capture errors
     CNcbiOstrstream err_out;
     SetDiagStream(&err_out);
 
-    for ( ; test_it != tests->SubNodeEnd(); test_it++) {
-        const TParams& param = **test_it;
-        string title = (*test_it)->GetValue().id;
+    ITERATE(set<string>, test_it, subsections) {
+        const TParamTree* param_ptr = tests->FindNode(*test_it);
+        _ASSERT(param_ptr);
+        const TParams& param = *param_ptr;
+        string title = param_ptr->GetValue().id;
 
         CSeq_loc loc;
         {{
