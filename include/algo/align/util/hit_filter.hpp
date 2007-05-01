@@ -836,8 +836,8 @@ protected:
                     const THitEndsIter ii0 = hit_ends.lower_bound(he_ii);
                     const THitEndsIter ii1 = hit_ends.upper_bound(he_jj);
 
-                    const size_t max_len = 
-                        size_t(maxlenfr * min((*ii)->GetLength(),(*jj)->GetLength()));
+                    const size_t max_len (size_t(round(maxlenfr 
+                                     * min((*ii)->GetLength(), (*jj)->GetLength()))));
 
                     for(THitEndsIter ii = ii0; ii != ii1; ++ii) {
 

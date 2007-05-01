@@ -91,7 +91,7 @@ public:
     }
 
 
-    size_t Run(void); // do the compartment search
+    size_t Run(bool cross_filter = false); // do the compartment search
 
     // order compartments by lower subj coordinate
     void OrderCompartments(void);
@@ -102,7 +102,6 @@ public:
     public:
         
         CCompartment(void) {
-            m_coverage = 0;
             m_box[0] = m_box[2] = numeric_limits<TCoord>::max();
             m_box[1] = m_box[3] = 0;
         }
@@ -115,8 +114,8 @@ public:
             m_members.push_back(hitref);
         }
 
-        void SetMembers(const THitRefs& hits) {
-            m_members = hits;
+        THitRefs& SetMembers(void) {
+            return m_members;
         }
     
         void UpdateMinMax(void);
@@ -138,11 +137,7 @@ public:
         const TCoord* GetBox(void) const {
             return m_box;
         }
-        
-        bool operator < (const CCompartment& rhs) {
-            return m_coverage < rhs.m_coverage;
-        }
-        
+              
         static bool s_PLowerSubj(const CCompartment& c1,
                                  const CCompartment& c2) {
 
@@ -151,7 +146,6 @@ public:
         
     protected:
         
-        TCoord              m_coverage;
         THitRefs            m_members;
         TCoord              m_box[4];
         mutable size_t      m_iter;
@@ -190,6 +184,12 @@ private:
             m_type(type), m_prev(prev), m_score(score) 
         {}
     };    
+
+
+    // helper predicate
+    static bool s_PNullRef(const THitRef& hr) {
+        return hr.IsNull();
+    }
 };
 
 
@@ -208,7 +208,8 @@ public:
                          typename THitRefs::iterator finish,
                          TCoord comp_penalty_bps,
                          TCoord min_matches,
-                         TCoord min_singleton_matches =numeric_limits<TCoord>::max());
+                         TCoord min_singleton_matches =numeric_limits<TCoord>::max(),
+                         bool cross_filter = false);
     
     bool GetFirst(THitRefs& compartment);
     bool GetNext(THitRefs& compartment);
@@ -288,27 +289,25 @@ CCompartmentFinder<THit>::CCompartmentFinder(
     copy(start, finish, m_hitrefs.begin());
 }
 
-
 // accumulate matches on query
 template<class THit>
 class CQueryMatchAccumulator:
-    public binary_function<float, CRef<THit>, float>
+    public binary_function<double, CRef<THit>, double>
 {
 public:
 
-    CQueryMatchAccumulator(void):
-        m_Finish(-1.0f)
+    CQueryMatchAccumulator(void): m_Finish(-1.0)
     {}
 
-    float operator() (float acm, CRef<THit> ph)
+    double operator() (double acm, CRef<THit> ph)
     {
-        typename THit::TCoord qmin = ph->GetQueryMin(), 
-            qmax = ph->GetQueryMax();
+        const typename THit::TCoord qmin (ph->GetQueryMin()), 
+            qmax (ph->GetQueryMax());
         if(qmin > m_Finish)
             return acm + ph->GetIdentity() * ((m_Finish = qmax) - qmin + 1);
         else {
             if(qmax > m_Finish) {
-                float finish0 = m_Finish;
+                const double finish0 (m_Finish);
                 return acm + ph->GetIdentity() * ((m_Finish = qmax) - finish0);
             }
             else {
@@ -319,7 +318,7 @@ public:
 
 private:
 
-    float m_Finish;
+    double m_Finish;
 };
 
 
@@ -333,23 +332,23 @@ double GetTotalMatches(
     THitComparator sorter (THitComparator::eQueryMin);
     stable_sort(hitrefs.begin(), hitrefs.end(), sorter);
 
-    const float rv = accumulate(hitrefs.begin(), hitrefs.end(), 0.0f, 
-                                CQueryMatchAccumulator<THit>());
+    const double rv (accumulate(hitrefs.begin(), hitrefs.end(), 0.0, 
+                                CQueryMatchAccumulator<THit>()));
     return rv;
 }
 
 
 template<class THit>
-size_t CCompartmentFinder<THit>::Run()
+size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 {
-    const double kMinusInf = -1e12;
+    const double kMinusInf (-1e12);
 
     m_compartments.clear();
     const int dimhits = m_hitrefs.size();
     if(dimhits == 0) {
         return 0;
     }
-    
+
     // sort the hits to make sure that each hit is placed after:
     // - hits from which to continue a compartment
     // - hits from which to open a new compartment
@@ -357,7 +356,7 @@ size_t CCompartmentFinder<THit>::Run()
     typedef CHitComparator<THit> THitComparator;
     THitComparator sorter (THitComparator::eSubjMaxQueryMax);
     stable_sort(m_hitrefs.begin(), m_hitrefs.end(), sorter);
-        
+
     // For every hit:
     // - evaluate its best extension potential
     // - evaluate its best potential to start a new compartment
@@ -369,9 +368,11 @@ size_t CCompartmentFinder<THit>::Run()
 
     const TCoord subj_min_global (m_hitrefs.front()->GetSubjMin());
 
-    for(int i = 0; i < dimhits; ++i) {
+    int i_bestsofar (0);
+    for(int i (0); i < dimhits; ++i) {
         
-        const THitRef& h = m_hitrefs[i];
+        const THitRef& h (m_hitrefs[i]);
+        const double identity (h->GetIdentity());
         const typename THit::TCoord hbox [4] = {
             h->GetQueryMin(),  h->GetQueryMax(),
             h->GetSubjMin(),   h->GetSubjMax()
@@ -382,10 +383,39 @@ size_t CCompartmentFinder<THit>::Run()
         cerr << endl << *h << endl;
 #endif
 
-        double best_ext_score = kMinusInf;
-        int    i_best_ext = -1;
-        double best_open_score = kMinusInf;
-        int    i_best_open = -1;
+        double best_ext_score (kMinusInf);
+        int    i_best_ext (-1);
+
+        double best_open_score (identity*(hbox[1] - hbox[0] + 1) - m_penalty);
+        int    i_best_open (-1); // each can be a start of the very first compartment
+
+        if(hbox[2] > m_hitrefs[i_bestsofar]->GetSubjMax()) {
+
+            const double score_open (identity*(hbox[1] - hbox[0] + 1) 
+                                     + hitstatus[i_bestsofar].m_score
+                                     - m_penalty);
+
+            if(score_open > best_open_score) {
+                best_open_score = score_open;
+                i_best_open = i_bestsofar;
+            }
+        }
+        else {
+            // try every prior hit
+            for(int j (i - 1); j >= 0; --j) {
+
+                const double score_open (identity * (hbox[1] - hbox[0] + 1)
+                                         + hitstatus[j].m_score
+                                         - m_penalty);
+
+                if(score_open > best_open_score 
+                   && hbox[2] > m_hitrefs[j]->GetSubjMax())
+                {
+                    best_open_score = score_open;
+                    i_best_open = j;
+                }
+            }
+        }
 
         for(int j = i; j >= 0; --j) {
             
@@ -398,6 +428,7 @@ size_t CCompartmentFinder<THit>::Run()
                 phcbox[1] = phc->GetQueryMax();
                 phcbox[2] = phc->GetSubjMin();
                 phcbox[3] = phc->GetSubjMax();
+
 #ifdef CF_DBG_TRACE
                 cerr << '\t' << *phc << endl;
 #endif
@@ -411,9 +442,10 @@ size_t CCompartmentFinder<THit>::Run()
             // check if good for extension
             {{
                 typename THit::TCoord q0, s0; // possible continuation
-                bool good = false;
+                bool good (false);
                 int subj_space;
                 TCoord intron_start (0);
+
                 if(i != j) {
 
                     if(phcbox[1] < hbox[1] && phcbox[0] < hbox[0]) {
@@ -436,10 +468,10 @@ size_t CCompartmentFinder<THit>::Run()
                         }
                         subj_space = s0 - phcbox[3] - 1;
 
-                        const TCoord max_gap = 50; // max run of spaces
-                                                   // inside an exon
-                        good = subj_space <= int(m_intron_max)
-                            && subj_space + max_gap >= q0 - phcbox[1] - 1;
+                        const TCoord max_gap = 50; // max run of spaces inside an exon
+                        good = (subj_space <= int(m_intron_max))
+                            && (subj_space + max_gap >= q0 - phcbox[1] - 1)
+                            && (s0 < hbox[3] && q0 < hbox[1]);
 
                         if(good) {
                             intron_start = phcbox[3];
@@ -449,15 +481,13 @@ size_t CCompartmentFinder<THit>::Run()
                 
                 if(good) {
                     
-                    const double identity = h->GetIdentity();
-                    const double jscore = hitstatus[j].m_score;
-                    const double intron_penalty = (subj_space > 0)?
-                        (kPenaltyPerIntronPos * (intron_start - subj_min_global) 
-                         + subj_space * kPenaltyPerIntronBase):
-                        0.0;
+                    const double jscore (hitstatus[j].m_score);
+                    const double intron_penalty ((subj_space > 0)?
+                         (kPenaltyPerIntronPos * (intron_start - subj_min_global) 
+                         + subj_space * kPenaltyPerIntronBase): 0.0);
 
-                    const double ext_score = jscore +
-                        identity * (hbox[1] - q0 + 1) + intron_penalty;
+                    const double ext_score (jscore +
+                        identity * (hbox[1] - q0 + 1) + intron_penalty);
 
                     if(ext_score > best_ext_score) {
                         best_ext_score = ext_score;
@@ -467,23 +497,7 @@ size_t CCompartmentFinder<THit>::Run()
                     cerr << "\tGood for extension with score = " << ext_score << endl;
 #endif
                 }
-            }}
-            
-            // check if good to open a new compartment
-            if(i == j || hbox[2] > phcbox[3]) {
-
-                const double identity = h->GetIdentity();
-                const double jscore = (i == j)? 0: hitstatus[j].m_score;
-                double score_open = jscore - m_penalty +
-                    identity * (hbox[1] - hbox[0] + 1);
-                if(score_open > best_open_score) {
-                    best_open_score = score_open;
-                    i_best_open = (i == j)? -1: j;
-                }
-#ifdef CF_DBG_TRACE
-                cerr << "\tGood for opening with score = " << score_open << endl;
-#endif
-            }
+            }}          
         }
         
         typename SHitStatus::EType hit_type;
@@ -502,9 +516,13 @@ size_t CCompartmentFinder<THit>::Run()
             best_score = best_open_score;
         }
                 
-        hitstatus[i].m_type = hit_type;
-        hitstatus[i].m_prev = prev_hit;
+        hitstatus[i].m_type  = hit_type;
+        hitstatus[i].m_prev  = prev_hit;
         hitstatus[i].m_score = best_score;
+
+        if(best_score > hitstatus[i_bestsofar].m_score) {
+            i_bestsofar = i;
+        }
 
 #ifdef CF_DBG_TRACE
         cerr << "Status = " << ((hit_type == SHitStatus::eOpening)? "Open": "Extend")
@@ -523,31 +541,24 @@ size_t CCompartmentFinder<THit>::Run()
 #endif
 
     // *** backtrace ***
-    // - find the chain with the highest score and trace it back
-    int ibest = -1;
-    double score_best = kMinusInf;
-    for(int i = 0, n = hitstatus.size(); i < n; ++i) {
-        if(score_best < hitstatus[i].m_score) {
-            score_best = hitstatus[i].m_score;
-            ibest = i;
-        }
-    }
-    
-    const double min_matches = m_MinSingletonMatches < m_MinMatches? 
-        m_MinSingletonMatches: m_MinMatches;
+    // -  trace back the chain with the highest score
+    const double score_best    (hitstatus[i_bestsofar].m_score);    
+    const double min_matches   (m_MinSingletonMatches < m_MinMatches? 
+        m_MinSingletonMatches: m_MinMatches);
+
     if(score_best + m_penalty >= min_matches) {
 
-        int i = ibest;
-        bool new_compartment = true;
+        int i (i_bestsofar);
+        bool new_compartment (true);
         THitRefs hitrefs;
         while(i != -1) {
 
             if(new_compartment) {
-                float mp (GetTotalMatches<THit>(hitrefs));
+                const double mp (GetTotalMatches<THit>(hitrefs));
                 if(mp >= m_MinMatches) {
                     // save the current compartment
                     m_compartments.push_back(CCompartment());
-                    m_compartments.back().SetMembers(hitrefs);
+                    m_compartments.back().SetMembers() = hitrefs;
                 }
                 hitrefs.resize(0);
                 new_compartment = false;
@@ -564,15 +575,130 @@ size_t CCompartmentFinder<THit>::Run()
             i = hitstatus[i].m_prev;
         }
 
-        float mp (GetTotalMatches<THit>(hitrefs));
+        const double mp (GetTotalMatches<THit>(hitrefs));
         if(m_compartments.size() == 0 && mp >= m_MinSingletonMatches 
            || mp >= m_MinMatches) 
         {
             m_compartments.push_back(CCompartment());
-            m_compartments.back().SetMembers(hitrefs);
+            m_compartments.back().SetMembers() = hitrefs;
         }
     }
-    
+
+    if(cross_filter) {
+
+        // x-filter within the compartment hits
+        for(size_t icn (m_compartments.size()), ic (0); ic < icn; ++ic) {
+
+            CCompartment & comp (m_compartments[ic]);
+            THitRefs& hitrefs (comp.SetMembers());
+            size_t nullified (0);
+            for(int in (hitrefs.size()), i (in - 1); i > 0; --i) {
+
+                THitRef& h1 (hitrefs[i]);
+                THitRef& h2 (hitrefs[i-1]);
+
+                if(h1.IsNull()) continue;
+
+                const TCoord * box1o (h1->GetBox());
+                const TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
+                const TCoord * box2o (h2->GetBox());
+                const TCoord box2 [4] = {box2o[0], box2o[1], box2o[2], box2o[3]};
+                const int qd (box1[1] - box2[0] + 1);
+                const int sd (box1[3] - box2[2] + 1);
+                if(qd > sd && qd > 0) {
+
+                    if(box1[0] + 1 >= box2[0]) {
+                        if(i + 1 == in) {
+                            TCoord new_coord ((box1[0] + box1[1]) / 2);
+                            if(box1[0] + 1 <= new_coord) {
+                                --new_coord;
+                            }
+                            else {
+                                new_coord = box1[0];
+                            }
+                            h1->Modify(1, new_coord);
+                        }
+                        else {
+                            h1.Reset(0);
+                            ++nullified;
+                        }
+                    }
+                    else {
+                        h1->Modify(1, box2[0] - 1);
+                    }
+                    
+                    if(box1[1] + 1 >= box2[1]) {
+                        if(i == 1) {
+                            TCoord new_coord ((box2[0] + box2[1]) / 2);
+                            if(box2[1] >= new_coord + 1) {
+                                ++new_coord;
+                            }
+                            else {
+                                new_coord = box2[1];
+                            }
+                            h2->Modify(0, new_coord);
+                        }
+                        else {
+                            h2.Reset(0);
+                            ++nullified;
+                        }
+                    }
+                    else {
+                        h2->Modify(0, box1[1] + 1);
+                    }
+                }
+                else if (sd > 0) {
+
+                    if(box1[2] + 1 >= box2[2]) {
+                        if(i + 1 == in) {
+                            TCoord new_coord ((box1[2] + box1[3]) / 2);
+                            if(box1[2] + 1 <= new_coord) {
+                                --new_coord;
+                            }
+                            else {
+                                new_coord = box1[2];
+                            }
+                            h1->Modify(3, new_coord);
+                        }
+                        else {
+                            h1.Reset(0);
+                            ++nullified;
+                        }
+                    }
+                    else {
+                        h1->Modify(3, box2[2] - 1);
+                    }
+                    
+                    if(box1[3] + 1 >= box2[3]) {
+                        if(i == 1) {
+                            TCoord new_coord ((box2[2] + box2[3]) / 2);
+                            if(box2[3] >= new_coord + 1) {
+                                ++new_coord;
+                            }
+                            else {
+                                new_coord = box2[3];
+                            }
+                            h2->Modify(2, new_coord);
+                        }
+                        else {
+                            h2.Reset(0);
+                            ++nullified;
+                        }
+                    }
+                    else {
+                        h2->Modify(2, box1[3] + 1);
+                    }
+                }
+            }
+
+            if(nullified > 0) {
+                hitrefs.erase(remove_if(hitrefs.begin(), hitrefs.end(),
+                                        CCompartmentFinder<THit>::s_PNullRef),
+                              hitrefs.end());
+            }
+        }
+    }
+
     return m_compartments.size();
 }
 
@@ -623,7 +749,8 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
      typename THitRefs::iterator ifinish,
      TCoord comp_penalty,
      TCoord min_matches,
-     TCoord min_singleton_matches)
+     TCoord min_singleton_matches,
+     bool cross_filter)
 {
     const TCoord kMax_TCoord = numeric_limits<TCoord>::max();
 
@@ -651,7 +778,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
             }
         }
     }
-    
+
     // minus
     {{
         // flip
@@ -670,7 +797,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         finder.SetMinMatches(min_matches);
         finder.SetMinSingletonMatches(min_singleton_matches);
         finder.SetMaxIntron(max_intron);
-        finder.Run();
+        finder.Run(cross_filter);
         
         // un-flip
         for(ii = ib; ii != iplus_beg; ++ii) {
@@ -692,7 +819,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         finder.SetMinMatches(min_matches);
         finder.SetMinSingletonMatches(min_singleton_matches);
         finder.SetMaxIntron(max_intron);
-        finder.Run();
+        finder.Run(cross_filter);
         x_Copy2Pending(finder);
     }}
 }

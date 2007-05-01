@@ -46,6 +46,9 @@
 
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 
+#include <math.h>
+
+
 BEGIN_SCOPE(objects)
     class CSeq_id;
 END_SCOPE(objects)
@@ -184,6 +187,14 @@ protected:
 
     TTranscript m_Transcript;
 };
+
+
+template <typename T>
+T round (const T& v)
+{
+    const T fl (floor(v));
+    return v < fl + 0.5? v: fl + 1;
+}
 
 
 END_NCBI_SCOPE
