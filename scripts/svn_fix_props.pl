@@ -29,11 +29,22 @@ while (<CONFIG>)
 
     my ($Mask, $Props) = split(m/\s*=\s*/, $_, 2);
 
+    my %Props;
+
+    for my $Prop (split(';', $Props))
+    {
+        my ($PropName, $PropValue) = split(m/\s*=\s*/, $Prop, 2);
+
+        if ($PropName eq 'svn:mime-type' || $PropName eq 'svn:eol-style')
+        {
+            $Props{$PropName} = $PropValue
+        }
+    }
+
     $Mask = quotemeta($Mask);
     $Mask =~ s/\\\*/.*/;
 
-    push @MaskProps,
-        [qr/^$Mask$/, {map {split(m/\s*=\s*/, $_, 2)} split(';', $Props)}]
+    push @MaskProps, [qr/^$Mask$/, \%Props]
 }
 
 close CONFIG;
