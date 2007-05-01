@@ -44,9 +44,9 @@
 #include <stdlib.h>
 
 /* Lower bound of up-to-date/out-of-date ratio */
-#define SERV_DISPD_STALE_RATIO_OK  0.8
+#define DISPD_STALE_RATIO_OK  0.8
 /* Default rate increase 20% if svc runs locally */
-#define SERV_DISPD_LOCAL_SVC_BONUS 1.2
+#define DISPD_LOCAL_BONUS 1.2
 
 
 #ifdef __cplusplus
@@ -282,7 +282,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
         }
     }
 
-    return total == 0.0 ? 1 : status/total < SERV_DISPD_STALE_RATIO_OK;
+    return total == 0.0 ? 1 : status/total < DISPD_STALE_RATIO_OK;
 }
 
 
@@ -307,7 +307,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     for (n = 0; n < data->n_cand; n++)
         data->cand[n].status = data->cand[n].info->rate;
-    n = LB_Select(iter, data, s_GetCandidate, SERV_DISPD_LOCAL_SVC_BONUS);
+    n = LB_Select(iter, data, s_GetCandidate, DISPD_LOCAL_BONUS);
     info = (SSERV_Info*) data->cand[n].info;
     info->rate = data->cand[n].status;
     if (n < --data->n_cand) {
