@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 /// Number of tests.
 const size_t  kTestCount = 3;
 /// Length of data buffers for tests.
-const size_t  kDataLength[kTestCount] = {20, 16*1024, 100*1024};
+const size_t  kDataLength[kTestCount] = { 20, 16*1024, 100*1024 };
 /// Output buffer length. ~20% more than maximum value from kDataLength[].
 const size_t  kBufLen = 120*1024;  
 /// Maximum number of bytes to read.
@@ -156,30 +156,23 @@ int CTest::Run(void)
     char* src_buf = src_buf_arr.get();
     assert(src_buf);
 
-    // Preparing a data for compression
+    // Set a random starting point
     unsigned int seed = (unsigned int)time(0);
     LOG_POST("Random seed = " << seed);
     srand(seed);
 
+    // Preparing a data for compression
     for (size_t i=0; i<kBufLen; i++) {
         // Use a set of 25 chars [A-Z]
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
 
     }
-
     // Test compressors with different size of data
     for (size_t i = 0; i < kTestCount; i++) {
 
         LOG_POST("====================================\n" << 
                  "Data size = " << kDataLength[i] << "\n\n");
 
-#if defined(HAVE_LIBLZO)
-        LOG_POST("-------------- LZO -----------------\n");
-
-        CTestCompressor<CLZOCompression, CLZOCompressionFile,
-                        CLZOStreamCompressor, CLZOStreamDecompressor>
-            ::Run(src_buf, kDataLength[i]);
-#endif
         LOG_POST("-------------- BZip2 ---------------\n");
         CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
                         CBZip2StreamCompressor, CBZip2StreamDecompressor>
@@ -189,6 +182,14 @@ int CTest::Run(void)
         CTestCompressor<CZipCompression, CZipCompressionFile,
                         CZipStreamCompressor, CZipStreamDecompressor>
             ::Run(src_buf, kDataLength[i]);
+
+#if defined(HAVE_LIBLZO)
+        LOG_POST("-------------- LZO -----------------\n");
+
+        CTestCompressor<CLZOCompression, CLZOCompressionFile,
+                        CLZOStreamCompressor, CLZOStreamDecompressor>
+            ::Run(src_buf, kDataLength[i]);
+#endif
 
         LOG_POST("\nTEST execution completed successfully!\n");
     }

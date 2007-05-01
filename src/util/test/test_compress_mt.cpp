@@ -156,11 +156,12 @@ bool CTest::Thread_Run(int idx)
     char* src_buf = src_buf_arr.get();
     assert(src_buf);
 
-    // Preparing a data for compression
+    // Set a random starting point
     unsigned int seed = (unsigned int)time(0) + idx*999;
     LOG_POST("Random seed = " << seed);
     CRandom gen(seed);
 
+    // Preparing a data for compression
     for (size_t i=0; i<kBufLen; i++) {
         // Use a set of 25 chars [A-Z]
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
@@ -172,13 +173,6 @@ bool CTest::Thread_Run(int idx)
         LOG_POST("====================================\n" << 
                  "Data size = " << kDataLength[i] << "\n\n");
 
-#if defined(HAVE_LIBLZO)
-        LOG_POST("-------------- LZO -----------------\n");
-
-        CTestCompressor<CLZOCompression, CLZOCompressionFile,
-                        CLZOStreamCompressor, CLZOStreamDecompressor>
-            ::Run(idx, src_buf, kDataLength[i]);
-#endif
         LOG_POST("-------------- BZip2 ---------------\n");
         CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
                         CBZip2StreamCompressor, CBZip2StreamDecompressor>
@@ -189,6 +183,13 @@ bool CTest::Thread_Run(int idx)
                         CZipStreamCompressor, CZipStreamDecompressor>
             ::Run(idx, src_buf, kDataLength[i]);
 
+#if defined(HAVE_LIBLZO)
+        LOG_POST("-------------- LZO -----------------\n");
+
+        CTestCompressor<CLZOCompression, CLZOCompressionFile,
+                        CLZOStreamCompressor, CLZOStreamDecompressor>
+            ::Run(idx, src_buf, kDataLength[i]);
+#endif
         LOG_POST("\nTEST execution completed successfully!\n");
     }
 

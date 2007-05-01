@@ -25,8 +25,8 @@
     CVersionInfo version = TCompression().GetVersion();
     LOG_POST("Compression library name and version: " << version.Print());
 
-    // zlib v1.1.4 and earlier have a bug with decoding. In some cases
-    // decompressor can produce output data on invalid input compressed data.
+    // zlib v1.1.4 and earlier have a bug in decoding. In some cases
+    // decompressor can produce output data on invalid compressed data.
     // So, we do not run such tests if zlib version < 1.2.x.
     bool allow_transparent_read_test = 
             version.GetName() != "zlib"  || 
@@ -44,7 +44,6 @@
 
         // Compress data
         TCompression c(CCompression::eLevel_Medium);
-
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
@@ -76,7 +75,6 @@
         // Compress data
         TCompression c(CCompression::eLevel_Best);
         c.SetFlags(c.GetFlags() | CLZOCompression::fChecksum);
-
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
         PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
@@ -153,35 +151,46 @@
         LOG_POST("File compress/decompress test...");
         size_t n;
 
-        // First test
+        // First test -- write 1k blocks and read in bulk
 
         INIT_BUFFERS;
         {{
-            TCompressionFile zf;
+            {{
+                TCompressionFile zf;
+                // Compressing data and write it to the file
+                assert(zf.Open(kFileName, TCompressionFile::eMode_Write)); 
+                size_t i;
+                for (i = 0; i < kDataLen/1024; i++) {
+                    n = zf.Write(src_buf + i*1024, 1024);
+                    assert(n == 1024);
+                }
+                n = zf.Write(src_buf + i*1024, kDataLen % 1024);
+                assert(n == kDataLen % 1024);
 
-            // Compressing data and write it to the file
-            assert(zf.Open(kFileName, TCompressionFile::eMode_Write)); 
-            size_t i;
-            for (i = 0; i < kDataLen/1024; i++) {
-                n = zf.Write(src_buf + i*1024, 1024);
-                assert(n == 1024);
-            }
-            n = zf.Write(src_buf + i*1024, kDataLen % 1024);
-            assert(n == kDataLen % 1024);
+                assert(zf.Close()); 
+                assert(CFile(kFileName).GetLength() > 0);
+            }}
+            {{
+                TCompressionFile zf;
+#if defined(HAVE_LIBLZO)
+                // The blocksize and flags stored in the header should be
+                // used for decompression instead of the values passed
+                // as parameters.
+                // Add bogus flag to check CRC32 checksum
+                // (compressed data doesn't have it).
+                zf.SetFlags(zf.GetFlags() | CLZOCompression::fChecksum);
+#endif
+                // Decompress data from file
+                assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
+                assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
+                assert(zf.Close()); 
 
-            assert(zf.Close()); 
-            assert(CFile(kFileName).GetLength() > 0);
-            
-            // Decompress data from file
-            assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
-            assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
-            assert(zf.Close()); 
-
-            // Compare original and decompressed data
-            assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+                // Compare original and decompressed data
+                assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+            }}
         }}
 
-        // Second test
+        // Second test -- write in bulk and read by 100 bytes
 
         INIT_BUFFERS;
         {{
@@ -251,7 +260,7 @@
         assert(os.good());
         os.write(src_buf, kDataLen);
         os.close();
-        assert(CFile(kFileName).GetLength() == kDataLen);
+        assert(CFile(kFileName).GetLength() == (int)kDataLen);
 
         // Transparent read from this file
         assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
@@ -281,7 +290,7 @@
         ics_zip.read(dst_buf, kReadMax);
         dst_len = ics_zip.gcount();
         // We should have all packed data here, because compressor
-        // finalization for input streams accompishes automaticaly.
+        // finalization for input streams accomplishes automaticaly.
         PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, dst_len);
         assert(ics_zip.GetProcessedSize() == kDataLen);
         assert(ics_zip.GetOutputSize() == dst_len);
@@ -291,7 +300,7 @@
 #if defined(HAVE_LIBLZO)
         if (version.GetName() == "lzo") {
             // For LZO we should use fStreamFormat flag for DecompressBuffer()
-            // method to decompress data compressed inside compression stream.
+            // method to decompress data, compressed using streams.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
         }
 #endif
@@ -318,7 +327,7 @@
 #if defined(HAVE_LIBLZO)
         if (version.GetName() == "lzo") {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
-            // method for following decompress of data using compression
+            // method, because we will decompress it using decompression
             // stream.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
         }
@@ -405,7 +414,8 @@
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method for following decompress of data using compression
             // stream.
-            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
+            c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat | 
+                       CLZOCompression::fChecksum);
         }
 #endif
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
@@ -415,9 +425,14 @@
 
         // Write compressed data to decompressing stream
         CNcbiOstrstream os_str;
-
         CCompressionOStream os_zip(os_str, new TStreamDecompressor(),
                                    CCompressionStream::fOwnProcessor);
+
+#if defined(HAVE_LIBLZO)
+        // The blocksize and flags stored in the header should be used
+        // instead of the value passed in the parameters for decompressor.
+        c.SetFlags(c.GetFlags() | CLZOCompression::fChecksum);
+#endif
 
         os_zip.write(dst_buf, out_len);
         // Finalize a compression stream via direct call Finalize().
