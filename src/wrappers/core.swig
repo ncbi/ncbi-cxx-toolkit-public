@@ -29,6 +29,10 @@
  *
  */
 
+// SWIG mishandles template argument defaults for
+// bvector forward declaration in util/bitset/bmfwd.h
+#define BMFWD__H__INCLUDED__   
+
 // SWIG hangs on corelib/ncbimtx, so define its #include guard
 #define CORELIB___NCBIMTX__HPP
 
