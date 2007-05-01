@@ -364,7 +364,6 @@ void CSplitCacheApp::SetupCache(void)
         cache->SetTimeStampPolicy(flags, id_age*24*60*60);
         cache->SetVersionRetention(ICache::eKeepAll);
         cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
-        cache->SetPageSize(CBDB_Cache::eSmall);
         
         cache->Open(cache_dir.c_str(), "ids");
     }}
