@@ -114,6 +114,10 @@ public:
         ///< if data source contains broken data and API cannot detect that
         ///< it is compressed data, that you can get binary instead of
         ///< decompressed data. By default this flag is OFF.
+        ///< NOTE: zlib v1.1.4 and earlier have a bug in decoding. 
+        ///< In some cases decompressor can produce output data on invalid 
+        ///< compressed data. So, this is not recommended to use this flag
+        ///< with old zlib versions.
         fAllowTransparentRead = (1<<0), 
         ///< Check (and skip) file header for decompression stream
         fCheckFileHeader      = (1<<1), 
