@@ -221,7 +221,7 @@ int CCompartApp::Run()
 int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
 {
 
-    const size_t qlen = x_GetSeqLength(query0);
+    const size_t qlen (x_GetSeqLength(query0));
 
     if(qlen == 0) {
         cerr << "Cannot retrieve sequence lengths for: " 
@@ -229,15 +229,16 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
         return 1;
     }
 
-    const size_t penalty_bps   = size_t(m_penalty * qlen);
-    const size_t min_matches   = size_t(m_min_idty * qlen);
-    const size_t min_singleton_matches 
-        = size_t(m_min_singleton_idty * qlen);
+    const size_t penalty_bps (size_t(round(m_penalty * qlen)));
+    const size_t min_matches (size_t(round(m_min_idty * qlen)));
+    const size_t min_singleton_matches (size_t(round(m_min_singleton_idty * qlen)));
 
     CCompartmentAccessor<THit> ca (hitrefs.begin(), hitrefs.end(),
                                    penalty_bps,
                                    min_matches,
-                                   min_singleton_matches);
+                                   min_singleton_matches,
+                                   true);
+
     THitRefs comp;
     for(bool b0 (ca.GetFirst(comp)); b0 ; b0 = ca.GetNext(comp)) {
 
@@ -480,8 +481,7 @@ void CCompartApp::CCompartment::x_EvalExons(void)
     }
     
     m_ExonCount = exons;
-    const double fl (floor(matches));
-    m_MatchCount = size_t((fl + 0.5 > matches)? fl: (fl + 1));
+    m_MatchCount = size_t(round(matches));
     m_IdentityBin = size_t(floor(double(m_MatchCount) / m_SeqLength / 0.1));
 }
 
