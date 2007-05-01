@@ -86,7 +86,6 @@ for my $FileName (sort @FileNames)
 {
     my $FileProps = $ExistingProps{$FileName};
 
-    print "anal $FileName\n";
     my ($BaseName) = $FileName =~ m/([^\/]+)$/;
 
     for my $MaskProps (@MaskProps)
@@ -136,9 +135,6 @@ while (my ($PropName, $PropVals) = each %PropsToSet)
 {
     while (my ($PropValue, $Files) = each %$PropVals)
     {
-        print "Setting $PropName=$PropValue for " .
-            scalar(@$Files) . " file(s)...\n";
-
         system('svn', '--non-interactive', 'propset',
             $PropName, $PropValue, @$Files)
     }
