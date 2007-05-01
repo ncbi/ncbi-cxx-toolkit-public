@@ -590,8 +590,8 @@ private:
 
     // Parameters read from header (used for compression).
     // See fStreamFormat flag description.
-    size_t  m_HeaderLen;       ///< Length of the header.
-    size_t  m_HeaderFlags;     ///< Flags used for compression.
+    size_t       m_HeaderLen;   ///< Length of the header.
+    unsigned int m_HeaderFlags; ///< Flags used for compression.
 };
 
 
