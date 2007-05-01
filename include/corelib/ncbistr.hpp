@@ -35,22 +35,13 @@
 /// The NCBI C++ standard methods for dealing with std::string
 
 
-#include <corelib/ncbitype.h>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbidbg.hpp>
-#include <corelib/ncbistl.hpp>
 #include <corelib/tempstr.hpp>
-#include <string.h>
 #ifdef NCBI_OS_OSF1
 #  include <strings.h>
 #endif
 #include <time.h>
 #include <stdarg.h>
-#include <string>
-#include <list>
 #include <vector>
-#include <algorithm>
 
 
 

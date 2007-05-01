@@ -34,11 +34,6 @@
 /// Include a standard set of the NCBI C++ Toolkit most basic headers
 
 
-#include <corelib/ncbitype.h>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
-#include <corelib/ncbidbg.hpp>
-#include <corelib/ncbimisc.hpp>
 
 #endif  /* CORELIB___NCBISTD__HPP */

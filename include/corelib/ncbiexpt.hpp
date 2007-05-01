@@ -42,9 +42,6 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_stack.hpp>
 #include <errno.h>
-#include <string.h>
-#include <string>
-#include <stdexcept>
 #include <typeinfo>
 
 #ifdef NCBI_OS_MSWIN
