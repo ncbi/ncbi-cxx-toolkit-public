@@ -1055,9 +1055,18 @@ const char* CTar::x_ReadArchive(size_t& n)
     if (!m_BufferPos) {
         nread = 0;
         do {
+#ifdef NCBI_COMPILER_MIPSPRO
+            // Work around a bug in MIPSPro 7.3's xsgetn()
+            istream* is = dynamic_cast<istream*>(m_Stream);
+            _ASSERT(is);
+            is->read(m_Buffer + nread, m_BufferSize - nread);
+            long xread = (long) is->gcount();
+            is->clear();
+#else
             long xread =
                 (long) m_Stream->rdbuf()->sgetn(m_Buffer     + nread,
                                                 m_BufferSize - nread);
+#endif // NCBI_COMPILER_MIPSPRO
             if (xread <= 0) {
                 break;
             }
