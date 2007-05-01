@@ -147,6 +147,18 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ s_IsQuoted(unsigned char c)
+{
+    return (c == '\t'  ||   c == '\v'  ||  c == '\b'  ||
+            c == '\r'  ||   c == '\f'  ||  c == '\a'  ||
+            c == '\n'  ||   c == '\\'  ||  c == '\''  ||
+            c == '"' ? 1/*true*/ : 0/*false*/);
+}
+
+
 extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags)
@@ -235,10 +247,7 @@ extern char* LOG_ComposeMessage
         const unsigned char* d = (const unsigned char*) call_data->raw_data;
         size_t i = call_data->raw_size;
         for (data_len = 0;  i;  i--, d++) {
-            if (*d == '\t'  ||  *d == '\v'  ||  *d == '\b'  ||
-                *d == '\r'  ||  *d == '\f'  ||  *d == '\a'  ||
-                *d == '\n'  ||  *d == '\\'  ||  *d == '\''  ||
-                *d == '"') {
+            if (s_IsQuoted(*d)) {
                 data_len++;
             } else if (!isprint(*d)) {
                 data_len += 3;
@@ -325,10 +334,21 @@ extern char* LOG_ComposeMessage
                 break;
             default:
                 if (!isprint(*d)) {
+                    int/*bool*/ small;
+                    unsigned char v;
+                    small = (i == 1          ||  s_IsQuoted(d[1])  ||
+                             !isprint(d[1])  ||  d[1] < '0'  ||  d[1] > '7');
                     *s++ = '\\';
-                    *s++ = '0' +  (*d >> 6);
-                    *s++ = '0' + ((*d >> 3) & 7);
-                    *s++ = '0' +  (*d & 7);
+                    v =  *d >> 6;
+                    if (v  ||  !small) {
+                        *s++ = '0' + v;
+                        small = 0;
+                    }
+                    v = (*d >> 3) & 7;
+                    if (v  ||  !small)
+                        *s++ = '0' + v;
+                    v =  *d & 7;
+                    *s++ =     '0' + v;
                     continue;
                 }
                 break;
