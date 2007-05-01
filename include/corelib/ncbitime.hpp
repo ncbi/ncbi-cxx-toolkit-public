@@ -55,8 +55,6 @@
 ///     less than January 1, 1900.
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbitype.h>
-#include <time.h>
 
 
 BEGIN_NCBI_SCOPE
