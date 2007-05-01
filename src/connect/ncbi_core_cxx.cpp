@@ -37,10 +37,10 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_util.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
+#include <stdlib.h>
 #include <time.h>
 
 
@@ -216,6 +216,26 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 
 
 /***********************************************************************
+ *                                 Fini                                *
+ ***********************************************************************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
+    static void s_Fini(void);
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
+
+static void s_Fini(void)
+{
+    CORE_SetREG(0);
+    CORE_SetLOG(0);
+    CORE_SetLOCK(0);
+}
+
+
+/***********************************************************************
  *                                 Init                                *
  ***********************************************************************/
 
@@ -242,6 +262,9 @@ static void s_Init(IRWRegistry*      reg = 0,
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(reg, flags & eConnectInit_OwnRegistry));
     s_ConnectInit = how;
+    if (how == eConnectInit_Weak) {
+        atexit(s_Fini);
+    }
 }
 
 
