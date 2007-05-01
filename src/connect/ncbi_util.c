@@ -334,18 +334,18 @@ extern char* LOG_ComposeMessage
                 break;
             default:
                 if (!isprint(*d)) {
-                    int/*bool*/ small;
+                    int/*bool*/ reduce;
                     unsigned char v;
-                    small = (i == 1          ||  s_IsQuoted(d[1])  ||
-                             !isprint(d[1])  ||  d[1] < '0'  ||  d[1] > '7');
+                    reduce = (i == 1          ||  s_IsQuoted(d[1])  ||
+                              !isprint(d[1])  ||  d[1] < '0'  ||  d[1] > '7');
                     *s++ = '\\';
                     v =  *d >> 6;
-                    if (v  ||  !small) {
+                    if (v  ||  !reduce) {
                         *s++ = '0' + v;
-                        small = 0;
+                        reduce = 0;
                     }
                     v = (*d >> 3) & 7;
-                    if (v  ||  !small)
+                    if (v  ||  !reduce)
                         *s++ = '0' + v;
                     v =  *d & 7;
                     *s++ =     '0' + v;

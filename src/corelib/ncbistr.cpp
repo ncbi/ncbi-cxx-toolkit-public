@@ -1811,23 +1811,23 @@ static string s_PrintableString(const string&        str,
         }
         out->put('\\');
         if (!isprint((unsigned char) c)  &&  c != '\n') {
-            bool small;
+            bool reduce;
             if (!(mode & NStr::fPrintable_Full)) {
-                small = (i == str.size() - 1  ||  s_IsQuoted(str[i + 1], lang)
-                         ||  str[i + 1] < '0'  ||  str[i + 1] > '7');
+                reduce = (i == str.size() - 1  ||  s_IsQuoted(str[i + 1], lang)
+                          ||  str[i + 1] < '0'  ||  str[i + 1] > '7');
             } else {
-                small = false;
+                reduce = false;
             }
             unsigned char v;
             char octal[3];
             int k = 0;
             v =  (unsigned char) c >> 6;
-            if (v  ||  !small) {
+            if (v  ||  !reduce) {
                 octal[k++] = '0' + v;
-                small = false;
+                reduce = false;
             }
             v = ((unsigned char) c >> 3) & 7;
-            if (v  ||  !small) {
+            if (v  ||  !reduce) {
                 octal[k++] = '0' + v;
             }
             v =  (unsigned char) c & 7;
