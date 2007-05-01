@@ -104,6 +104,15 @@ for my $FileName (sort @FileNames)
         }
     }
 
+    if ($FileProps->{'svn:mime-type'})
+    {
+        push @{$PropsToSet{'svn:eol-style'}->{'native'}}, $FileName
+            if $FileProps->{'svn:mime-type'} =~ m/^text\//o &&
+                !$FileProps->{'svn:eol-style'};
+
+        next NextFile
+    }
+
     my $IsText;
 
     $ChildPID = open2($ReadFH, $WriteFH, 'file', $FileName);
