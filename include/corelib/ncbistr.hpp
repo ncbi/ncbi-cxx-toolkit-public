@@ -1605,32 +1605,42 @@ public:
     static string Join(const list<string>& arr,   const string& delim);
     static string Join(const vector<string>& arr, const string& delim);
 
-    /// How to display new line characters.
+    /// How to display printable strings.
     ///
     /// Assists in making a printable version of "str".
-    enum ENewLineMode {
-        eNewLine_Quote,         ///< Display "\n" instead of actual linebreak
-        eNewLine_Passthru       ///< Break the line on every "\n" occurrence
+    enum EPrintableMode {
+        fNewLine_Quote    = 0,   ///< Display "\n" instead of actual linebreak
+        eNewLine_Quote    = fNewLine_Quote,
+        fNewLine_Passthru = 1,   ///< Break the line at every "\n" occurrence
+        eNewLine_Passthru = fNewLine_Passthru,
+        fPrintable_Full   = 2    ///< Show all octal digits at all times
     };
+    typedef int TPrintableMode;  ///< Bitwise OR of EPrintableMode flags
 
     /// Get a printable version of the specified string. 
     ///
-    /// The non-printable characters will be represented as "\r", "\n", "\v",
-    /// "\t", "\"", "\\", or "\xDD" where DD is the character's code in
-    /// hexadecimal.
+    /// All non-printable characters will be represented as "\r", "\n", "\v",
+    /// "\t", "\"", "\\", etc, or "\ooo" where 'ooo' is the octal code of the
+    /// character.  The resultant string is a well-formed C string literal,
+    /// which, without alterations, can be compiled by a C/C++ compiler.
+    /// In many instances, octal representations of non-printable characters
+    /// can be reduced to take less than all 3 digits, if there is no
+    /// ambiguity in the interpretation.  fPrintable_Full cancels the
+    /// reduction, and forces to produce full 3-digit octal codes throughout.
     ///
     /// @param str
     ///   The string whose printable version is wanted.
-    /// @param nl_mode
-    ///   How to represent the new line character. The default setting of 
-    ///   eNewLine_Quote displays the new line as "\n". If set to
-    ///   eNewLine_Passthru, a line break is used instead.
+    /// @param mode
+    ///   How to display the string.  The default setting of fNewLine_Quote
+    ///   displays the new lines as "\n", and uses the octal code reduction.
+    ///   When set to fNewLine_Passthru, line breaks are actually
+    ///   produced on output but preceded with trailing backslashes.
     /// @return
     ///   Return a printable version of "str".
     /// @sa
     ///   ParseEscapes
-    static string PrintableString(const string& str,
-                                  ENewLineMode  nl_mode = eNewLine_Quote);
+    static string PrintableString(const string&  str,
+                                  TPrintableMode mode = eNewLine_Quote);
 
     /// Parse C-style escape sequences in the specified string, including
     /// all those produced by PrintableString.

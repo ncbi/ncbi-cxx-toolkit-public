@@ -1747,9 +1747,20 @@ enum ELanguage {
     eLanguage_Javascript
 };
 
-static string s_PrintableString(const string&      str,
-                                NStr::ENewLineMode nl_mode,
-                                ELanguage          lang)
+
+static inline bool s_IsQuoted(char c, ELanguage lang)
+{
+    return (c == '\t'  ||   c == '\v'  ||  c == '\b'                      ||
+            c == '\r'  ||   c == '\f'  ||  c == '\a'                      ||
+            c == '\n'  ||   c == '\\'  ||  c == '\''                      ||
+            c == '"'   ||  (c == '&'   &&  lang == eLanguage_Javascript)  ||
+            !isprint((unsigned char) c) ? true : false);
+}
+
+
+static string s_PrintableString(const string&        str,
+                                NStr::TPrintableMode mode,
+                                ELanguage            lang)
 {
     auto_ptr<CNcbiOstrstream> out;
     SIZE_TYPE i, j = 0;
@@ -1776,7 +1787,7 @@ static string s_PrintableString(const string&      str,
             c = 'a';
             break;
         case '\n':
-            if (nl_mode == NStr::eNewLine_Quote)
+            if (!(mode & NStr::fNewLine_Passthru))
                 c = 'n';
             /*FALLTHRU*/
         case '\\':
@@ -1800,9 +1811,28 @@ static string s_PrintableString(const string&      str,
         }
         out->put('\\');
         if (!isprint((unsigned char) c)  &&  c != '\n') {
-            out->put('0' +  ((unsigned char) c >> 6));
-            out->put('0' + (((unsigned char) c >> 3) & 7));
-            out->put('0' +  ((unsigned char) c & 7));
+            bool small;
+            if (!(mode & NStr::fPrintable_Full)) {
+                small = (i == str.size() - 1  ||  s_IsQuoted(str[i + 1], lang)
+                         ||  str[i + 1] < '0'  ||  str[i + 1] > '7');
+            } else {
+                small = false;
+            }
+            unsigned char v;
+            char octal[3];
+            int k = 0;
+            v =  (unsigned char) c >> 6;
+            if (v  ||  !small) {
+                octal[k++] = '0' + v;
+                small = false;
+            }
+            v = ((unsigned char) c >> 3) & 7;
+            if (v  ||  !small) {
+                octal[k++] = '0' + v;
+            }
+            v =  (unsigned char) c & 7;
+            octal    [k++] = '0' + v;
+            out->write(octal, k);
         } else {
             out->put(c);
         }
@@ -1822,10 +1852,10 @@ static string s_PrintableString(const string&      str,
 }
 
         
-string NStr::PrintableString(const string&      str,
-                             NStr::ENewLineMode nl_mode)
+string NStr::PrintableString(const string&        str,
+                             NStr::TPrintableMode mode)
 {
-    return s_PrintableString(str, nl_mode, eLanguage_C);
+    return s_PrintableString(str, mode, eLanguage_C);
 }
 
 
@@ -1861,33 +1891,33 @@ string NStr::ParseEscapes(const string& str)
         case 't':  out += '\t';  break;
         case 'v':  out += '\v';  break;
         case 'x':
-            {
-                pos = pos2 + 1;
-                while (pos2 <= pos  &&  pos2 + 1 < str.size()
-                       &&  isxdigit((unsigned char) str[pos2 + 1])) {
-                    ++pos2;
+            {{
+                pos = ++pos2;
+                while (pos < str.size()
+                       &&  isxdigit((unsigned char) str[pos])) {
+                    pos++;
                 }
-                if (pos2 >= pos) {
+                if (pos > pos2) {
                     out += static_cast<char>
-                        (StringToUInt(str.substr(pos, pos2 - pos + 1), 0, 16));
+                        (StringToUInt(str.substr(pos2, pos - pos2), 0, 16));
                 } else {
                     NCBI_THROW2(CStringException, eFormat,
                                 "\\x followed by no hexadecimal digits", pos);
                 }
-            }
-            break;
+            }}
+            continue;
         case '0':  case '1':  case '2':  case '3':
         case '4':  case '5':  case '6':  case '7':
-            {
+            {{
                 pos = pos2;
-                unsigned char c = str[pos2] - '0';
-                while (pos2 < pos + 3  &&  pos2 + 1 < str.size()
-                       &&  str[pos2 + 1] >= '0'  &&  str[pos2 + 1] <= '7') {
-                    c = (c << 3) | (str[++pos2] - '0');
+                unsigned char c = str[pos++] - '0';
+                while (pos < pos2 + 3  &&  pos < str.size()
+                       &&  str[pos] >= '0'  &&  str[pos] <= '7') {
+                    c = (c << 3) | (str[pos++] - '0');
                 }
                 out += c;
-            }
-            break;
+            }}
+            continue;
         default:
             out += str[pos2];
             break;

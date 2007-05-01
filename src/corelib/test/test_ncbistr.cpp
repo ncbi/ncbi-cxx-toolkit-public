@@ -773,8 +773,12 @@ static void s_PrintableString()
            ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
            ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"") == 0);
     assert(NStr::PrintableString
-           ("A\x01\x000F\020B" + string(1, '\0') + "CD").compare
-           ("A\\001\\017\\020B\\000CD") == 0);
+           ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD").compare
+           ("A\\1\\r\\202\\17\\0205B\\0CD") == 0);
+    assert(NStr::PrintableString
+           ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD",
+            NStr::fPrintable_Full).compare
+           ("A\\001\\r\\202\\017\\0205B\\000CD") == 0);
 
     // NStr::ParseEscapes
     assert(NStr::ParseEscapes(kEmptyStr).empty());
@@ -782,8 +786,8 @@ static void s_PrintableString()
            ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"").compare
            ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"") == 0);
     assert(NStr::ParseEscapes
-           ("A\\1\\17\\020B\\x00""CD""\x000F").compare
-           ("A\x01\x0F\020B" + string(1, '\0') + "CD\x0F") == 0);
+           ("A\\1\\r2\\17\\0205B\\x00CD\\x000F").compare
+           ("A\x01\r2\x0F\x10""5B\xCD\x0F") == 0);
 
     OK;
 }
