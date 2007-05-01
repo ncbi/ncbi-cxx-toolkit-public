@@ -124,11 +124,18 @@ public:
         ///< redundancy check. We use the safe decompressor, but this can be
         ///< not enough, because many data errors will not result in
         ///< a compressed data violation.
-        fChecksum = (1<<1),
+        fChecksum             = (1<<1),
         ///< Use stream compatible format for data compression.
         ///< This flag have an effect only for CompressBuffer/DecompressBuffer.
         ///< File and stream oriented compressors always use it by default.
-        fStreamFormat = (1<<2)
+        ///< Use this flag with DecompressBuffer() to decompress data,
+        ///< compressed using streams, or compress data with CompressBuffer(),
+        ///< that can be decompressed using decompression stream.
+        fStreamFormat         = (1<<2),
+        ///< Store file information like file name and file modification date
+        ///< of the compressed file into the file/stream.
+        ///< Works only with fStreamFormat flag.
+        fStoreFileInfo        = (1<<3) | fStreamFormat
     }; 
     /// Define a pointer to LZO1X compression function.
     typedef int(*TLZOCompressionFunc)
@@ -233,6 +240,15 @@ public:
 
     /// Estimate buffer size for data compression.
     ///
+    /// Simplified method for estimation of the size of buffer required
+    /// to compress specified number of bytes of data.
+    /// @sa
+    ///   EstimateCompressionBufferSize, CompressBuffer
+    size_t EstimateCompressionBufferSize(size_t src_len, 
+                                         size_t blocksize = 0);
+
+    /// Estimate buffer size for data compression.
+    ///
     /// The function shall estimate the size of buffer required to compress
     /// specified number of bytes of data. This function return a conservative
     /// value that larger than 'src_len'. 
@@ -241,13 +257,15 @@ public:
     /// @blocksize
     ///   Size of blocks used by compressor to compress source data.
     ///   Value 0 means that will be used block size specified in constructor. 
+    /// @flags
+    ///   Flags that will be used for compression.
     /// @return
     ///   Estimated buffer size.
     /// @sa
     ///   CompressBuffer
     size_t EstimateCompressionBufferSize(size_t src_len, 
-                                         size_t block_size = 0);
-
+                                         size_t blocksize, 
+                                         TFlags flags);
     /// Compress file.
     ///
     /// @param src_file
@@ -322,7 +340,8 @@ protected:
     /// @return
     ///   Return decompressor error code.
     int DecompressBlock(const lzo_bytep src_buf, lzo_uint src_len,
-                              lzo_bytep dst_buf, lzo_uintp dst_len /* out */);
+                              lzo_bytep dst_buf, lzo_uintp dst_len /* out */,
+                              TFlags flags);
 
     /// Decompress block of data for stream format (fStreamFormat flag).
     ///
@@ -331,6 +350,7 @@ protected:
     int DecompressBlockStream(
                         const lzo_bytep src_buf, lzo_uint src_len,
                               lzo_bytep dst_buf, lzo_uintp dst_len /* out */,
+                              TFlags flags,
                               lzo_uintp processed /* out */);
 
 protected:
@@ -468,10 +488,10 @@ private:
     size_t          m_Size;      ///< Size of In/Out buffers.
     AutoArray<char> m_Buf;       ///< Buffer for caching (size of m_Size*2).
     char*           m_InBuf;     ///< Pointer to input buffer.
-    size_t          m_InSize;    ///< Size   of the input buffer.
+    size_t          m_InSize;    ///< Size of the input buffer.
     size_t          m_InLen;     ///< Length of data in the input buffer.
     char*           m_OutBuf;    ///< Pointer to output buffer. 
-    size_t          m_OutSize;   ///< Size   of the output buffer.
+    size_t          m_OutSize;   ///< Size of the output buffer.
     char*           m_OutBegPtr; ///< Pointer to begin of data in out buffer.
     char*           m_OutEndPtr; ///< Pointer to end of data in out buffer.
 
@@ -522,7 +542,8 @@ protected:
     bool CompressCache(void);
 
 private:
-    SFileInfo  m_FileInfo; ///< Compressed file info.
+    bool       m_NeedWriteHeader;  ///< TRUE if needed to write a header.
+    SFileInfo  m_FileInfo;         ///< Compressed file info.
 };
 
 
@@ -564,8 +585,13 @@ protected:
     bool DecompressCache(void);
 
 private:
-    size_t  m_BlockLen;   ///< Length of the compressed data in the block
-    size_t  m_HeaderLen;  ///< Length of the header for fStreamFormat
+    size_t  m_BlockLen;        ///< Length of the compressed data in the block
+    string  m_Cache;           ///< Buffer to cache header.
+
+    // Parameters read from header (used for compression).
+    // See fStreamFormat flag description.
+    size_t  m_HeaderLen;       ///< Length of the header.
+    size_t  m_HeaderFlags;     ///< Flags used for compression.
 };
 
 
