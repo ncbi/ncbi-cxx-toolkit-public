@@ -45,7 +45,6 @@
 
 #include <corelib/ncbifile.hpp>
 #include <list>
-#include <memory>
 #include <utility>
 
 

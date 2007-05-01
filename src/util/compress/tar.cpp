@@ -51,7 +51,6 @@
 #endif
 
 #include <errno.h>
-#include <memory>
 
 #if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
