@@ -1124,6 +1124,14 @@
 #  define NCBI_XREADER_PUBSEQOS_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library xreader_pubseqos
+ */
+#ifdef NCBI_XREADER_PUBSEQOS2_EXPORTS
+#  define NCBI_XREADER_PUBSEQOS2_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XREADER_PUBSEQOS2_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xregexp
  */
 #ifdef NCBI_XREGEXP_EXPORTS
@@ -1278,6 +1286,7 @@
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
+#  define NCBI_XREADER_PUBSEQOS2_EXPORT
 #  define NCBI_XREGEXP_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XSQLITE_EXPORT
