@@ -122,7 +122,7 @@ for my $FileName (sort @FileNames)
     }
     else
     {
-        my @ExistingKeywords = split $ExistingKeywords;
+        my @ExistingKeywords = split(m/\s+/, $ExistingKeywords);
 
         $Keywords = shift @ExistingKeywords;
 
