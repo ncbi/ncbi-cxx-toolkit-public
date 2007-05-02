@@ -92,6 +92,17 @@ NCBI_PARAM_DEF_EX(int, GENBANK, PUBSEQOS2_DEBUG, 0,
                   eParam_NoThread, GENBANK_PUBSEQOS2_DEBUG);
 
 namespace {
+    int GetDebugLevel(void)
+    {
+        static NCBI_PARAM_TYPE(GENBANK, PUBSEQOS2_DEBUG) s_Value;
+        return s_Value.Get();
+    }
+}
+
+#else
+# define GetDebugLevel() (0)
+#endif
+namespace {
     class CDebugPrinter : public CNcbiOstrstream
     {
     public:
@@ -107,11 +118,6 @@ namespace {
                 LOG_POST(rdbuf());
             }
     };
-    int GetDebugLevel(void)
-    {
-        static NCBI_PARAM_TYPE(GENBANK, PUBSEQOS2_DEBUG) s_Value;
-        return s_Value.Get();
-    }
     enum EDebugLevel
     {
         eTraceConn     = 4,
@@ -120,10 +126,6 @@ namespace {
         eTraceBlobData = 9
     };
 }
-
-#else
-# define GetDebugLevel() (0)
-#endif
 
 CPubseq2Reader::CPubseq2Reader(int max_connections,
                              const string& server,
