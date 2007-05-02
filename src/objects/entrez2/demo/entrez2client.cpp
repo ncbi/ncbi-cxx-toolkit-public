@@ -41,9 +41,12 @@
 #include <objects/entrez2/Entrez2_db_id.hpp>
 #include <objects/entrez2/Entrez2_docsum_list.hpp>
 #include <objects/entrez2/Entrez2_eval_boolean.hpp>
+#include <objects/entrez2/Entrez2_id.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
 #include <objects/entrez2/Entrez2_info.hpp>
 #include <objects/entrez2/Entrez2_limits.hpp>
+#include <objects/entrez2/Entrez2_link_count.hpp>
+#include <objects/entrez2/Entrez2_link_count_list.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
 #include <serial/objostrasn.hpp>
@@ -79,19 +82,18 @@ private:
     void x_GetDocsums      (CEntrez2Client& client,
                             const string& query, const string& db,
                             int start, int max_num);
-
-    void x_GetTermPositions(CEntrez2Client& client,
+    void x_GetTermPos      (CEntrez2Client& client,
                             const string& query, const string& db);
-    void x_GetTermList(CEntrez2Client& client,
-                       const string& query, const string& db);
+    void x_GetTermList     (CEntrez2Client& client,
+                            const string& query, const string& db);
     void x_GetTermHierarchy(CEntrez2Client& client,
                             const string& query, const string& db);
-    void x_GetLinks(CEntrez2Client& client,
-                    const string& query, const string& db);
-    void x_GetLinked(CEntrez2Client& client,
-                     const string& query, const string& db);
-    void x_GetLinkCounts(CEntrez2Client& client,
-                         const string& query, const string& db);
+    void x_GetLinks        (CEntrez2Client& client,
+                            const string& query, const string& db);
+    void x_GetLinked       (CEntrez2Client& client,
+                            const string& query, const string& db);
+    void x_GetLinkCounts   (CEntrez2Client& client,
+                            const string& query, const string& db);
 
     // format a reply (basic formatting only)
     void x_FormatReply(CEntrez2_boolean_reply& reply);
@@ -163,7 +165,7 @@ int CEntrez2ClientApp::Run(void)
     int max_num        = args["max"].AsInteger();
 
     m_Client.Reset(new CEntrez2Client());
-    m_Client->SetDefaultRequest().SetTool("Entrez2 Command-line Test");
+    m_Client->SetDefaultRequest().SetTool("Entrez2 Command-Line Test");
     m_ObjOstream.reset(CObjectOStream::Open(eSerial_AsnText, ostr));
     m_Ostream = &ostr;
 
@@ -175,20 +177,38 @@ int CEntrez2ClientApp::Run(void)
         LOG_POST(Info << "performing look-up type: get-info");
         x_GetInfo(*m_Client);
     } else if (lt == "count") {
-        LOG_POST(Info << "performing look-up type: eval-boolean (count only)");
+        LOG_POST(Info << "performing look-up type: eval-boolean "
+                 "(count only)");
         x_GetCount(*m_Client, query, db);
     } else if (lt == "parse") {
-        LOG_POST(Info << "performing look-up type: eval-boolean (show parsed expression)");
+        LOG_POST(Info << "performing look-up type: eval-boolean"
+                 " (show parsed expression)");
         x_GetParsedQuery(*m_Client, query, db);
     } else if (lt == "uids") {
-        LOG_POST(Info << "performing look-up type: eval-boolean (UID list)");
+        LOG_POST(Info << "performing look-up type: eval-boolean"
+                 " (UID list)");
         x_GetUids(*m_Client, query, db);
     } else if (lt == "docsum") {
         LOG_POST(Info << "performing look-up type: get-docsum");
         x_GetDocsums(*m_Client, query, db, start, max_num);
     } else if (lt == "termpos") {
-        LOG_POST(Info << "performing look-up type: get-termpos");
-        x_GetTermPositions(*m_Client, query, db);
+        LOG_POST(Info << "performing look-up type: get-term-pos");
+        x_GetTermPos(*m_Client, query, db);
+    } else if (lt == "termlist") {
+        LOG_POST(Info << "performing look-up type: get-term-list");
+        x_GetTermList(*m_Client, query, db);
+    } else if (lt == "termhier") {
+        LOG_POST(Info << "performing look-up type: get-term-hierarchy");
+        x_GetTermHierarchy(*m_Client, query, db);
+    } else if (lt == "links") {
+        LOG_POST(Info << "performing look-up type: get-links");
+        x_GetLinks(*m_Client, query, db);
+    } else if (lt == "linked") {
+        LOG_POST(Info << "performing look-up type: get-linked");
+        x_GetLinked(*m_Client, query, db);
+    } else if (lt == "linkct") {
+        LOG_POST(Info << "performing look-up type: get-link-counts");
+        x_GetLinkCounts(*m_Client, query, db);
     } else {
         LOG_POST(Error << "unrecognized lookup type: " << lt);
         return 1;
@@ -274,11 +294,11 @@ void CEntrez2ClientApp::x_GetDocsums(CEntrez2Client& client,
 
 
 //
-// display term positions for a given query
+// display term position for a given query
 //
-void CEntrez2ClientApp::x_GetTermPositions(CEntrez2Client& /* client */,
-                                           const string& /* query */,
-                                           const string& /* db */)
+void CEntrez2ClientApp::x_GetTermPos(CEntrez2Client& /* client */,
+                                     const string& /* query */,
+                                     const string& /* db */)
 {
     LOG_POST(Error << "get-term-pos query unimplemented");
 }
@@ -331,11 +351,24 @@ void CEntrez2ClientApp::x_GetLinked(CEntrez2Client& /* client */,
 //
 // display link counts for a given query
 //
-void CEntrez2ClientApp::x_GetLinkCounts(CEntrez2Client& /* client */,
-                                        const string& /* query */,
-                                        const string& /* db */)
+void CEntrez2ClientApp::x_GetLinkCounts(CEntrez2Client& client,
+                                        const string& query,
+                                        const string& db)
 {
-    LOG_POST(Error << "get-link-counts query unimplemented");
+    *m_Ostream << "query: " << query << endl;
+
+    CEntrez2_id req;
+
+    req.SetDb(CEntrez2_db_id(db));
+    req.SetUid(NStr::StringToInt(query));
+
+    CRef<CEntrez2_link_count_list> reply = client.AskGet_link_counts(req);
+
+    *m_Ostream << "Link counts: " << reply->GetLink_type_count() << endl;
+    ITERATE(CEntrez2_link_count_list::TLinks, it, reply->GetLinks()) {
+        *m_Ostream << "       Type: " << string((*it)->GetLink_type()) << endl;
+        *m_Ostream << "      Count: " << (*it)->GetLink_count() << endl;
+    }
 }
 
 
