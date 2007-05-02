@@ -487,7 +487,7 @@ BOOST_AUTO_UNIT_TEST(CheckNoGreedyExtension) {
     BOOST_CHECK_THROW(opts->Validate(), CBlastException);
 }
 
-BOOST_AUTO_UNIT_TEST(CheckMaxNumHSPs) {
+BOOST_AUTO_UNIT_TEST(CheckCulling) {
     typedef vector< CRef<CBlastAppArgs> > TArgClasses;
     vector< CRef<CBlastAppArgs> > arg_classes;
     arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
@@ -500,12 +500,12 @@ BOOST_AUTO_UNIT_TEST(CheckMaxNumHSPs) {
     NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
         auto_ptr<CArgs> args;
         // invalid value
-        CString2Args s2a("-db ecoli -max_hsps_per_subject -4");
+        CString2Args s2a("-db ecoli -culling_limit -4");
         BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(**itr)), 
                           CArgException);
 
         // valid combination
-        s2a.Reset("-db ecoli -max_hsps_per_subject 0");
+        s2a.Reset("-db ecoli -culling_limit 0");
         BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(**itr)));
     }
 
