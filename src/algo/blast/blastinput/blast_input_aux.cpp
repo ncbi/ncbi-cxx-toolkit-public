@@ -47,6 +47,20 @@ CArgDescriptions*
 SetUpCommandLineArguments(TBlastCmdLineArgs& args)
 {
     auto_ptr<CArgDescriptions> retval(new CArgDescriptions);
+
+    // Create the groups so that the ordering is established
+    retval->SetCurrentGroup("General search options");
+    retval->SetCurrentGroup("BLAST database options");
+    retval->SetCurrentGroup("BLAST-2-Sequences options");
+    retval->SetCurrentGroup("Input query options");
+    retval->SetCurrentGroup("Query filtering options");
+    retval->SetCurrentGroup("Nucleotide scoring options");
+    retval->SetCurrentGroup("Discontiguous Megablast options");
+    retval->SetCurrentGroup("Formatting options");
+    retval->SetCurrentGroup("Search strategy options");
+    retval->SetCurrentGroup("");
+
+
     NON_CONST_ITERATE(TBlastCmdLineArgs, arg, args) {
         (*arg)->SetArgumentDescriptions(*retval);
     }

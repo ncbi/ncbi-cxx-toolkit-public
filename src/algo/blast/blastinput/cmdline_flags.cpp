@@ -77,6 +77,7 @@ const string kArgNumDescriptions("num_descriptions");
 const size_t kDfltArgNumDescriptions = 500;
 const string kArgNumAlignments("num_alignments");
 const size_t kDfltArgNumAlignments = 250;
+const string kArgProduceHtml("html");
 
 
 const string kArgGapOpen("gapopen");
@@ -143,8 +144,10 @@ const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
 const string kArgPHIPatternFile("phi_pattern");
 
+#if 0
 const string kArgMaxHSPsPerSubject("max_hsps_per_subject");
 const int kDfltArgMaxHSPsPerSubject = 0;
+#endif
 const string kArgTargetPercentIdentity("target_perc_identity");
 const string kArgNoGreedyExtension("no_greedy");
 const string kArgDMBTemplateType("template_type");

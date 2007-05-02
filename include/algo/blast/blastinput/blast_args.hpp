@@ -265,8 +265,8 @@ public:
                                          CBlastOptions& options);
 };
 
-/// Argument class to retrieve discontinuous megablast arguments
-class NCBI_XBLAST_EXPORT CDiscontinuousMegablastArgs : public IBlastCmdLineArgs
+/// Argument class to retrieve discontiguous megablast arguments
+class NCBI_XBLAST_EXPORT CDiscontiguousMegablastArgs : public IBlastCmdLineArgs
 {
 public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */

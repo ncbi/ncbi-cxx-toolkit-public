@@ -86,6 +86,9 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CWordThresholdArg);
     m_Args.push_back(arg);
 
+    arg.Reset(new CCullingArgs);
+    m_Args.push_back(arg);
+
     arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
 

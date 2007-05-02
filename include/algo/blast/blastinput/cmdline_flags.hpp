@@ -109,6 +109,8 @@ NCBI_XBLAST_EXPORT extern const size_t kDfltArgNumDescriptions;
 extern const string kArgNumAlignments;
 /// Default number of alignments to display in the traditional BLAST report
 NCBI_XBLAST_EXPORT extern const size_t kDfltArgNumAlignments;
+/// Argument to specify whether to create output as HTML or not
+extern const string kArgProduceHtml;
 
 
 /// Argument to select the gap opening penalty
@@ -227,10 +229,13 @@ extern const string kArgDMBTemplateType;
 /// Argument to specify the discontinuous megablast template length
 extern const string kArgDMBTemplateLength;
 
+#if 0
 /// Argument to specify the maximum number of HPSs to save per subject
 extern const string kArgMaxHSPsPerSubject;
 /// Default value for specifying the maximum number of HPSs to save per subject
 extern const int kDfltArgMaxHSPsPerSubject;
+#endif
+
 /// Argument to specify the target percent identity
 extern const string kArgTargetPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST

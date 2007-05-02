@@ -68,7 +68,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(new CNuclArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CDiscontinuousMegablastArgs);
+    arg.Reset(new CDiscontiguousMegablastArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CFilteringArgs(kQueryIsProtein));
@@ -77,7 +77,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(new CGappedArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CWordThresholdArg);
+    arg.Reset(new CCullingArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CWindowSizeArg);
@@ -112,7 +112,7 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     CRef<CBlastOptionsHandle> retval;
     if (args[kArgDMBTemplateType] || args[kArgDMBTemplateLength]) {
         // the setting of both arguments in the above test is enforced by 
-        // CDiscontinuousMegablastArgs
+        // CDiscontiguousMegablastArgs
         retval.Reset(new CDiscNucleotideOptionsHandle(locality));
     } else {
         CRef<CBlastNucleotideOptionsHandle> oh

@@ -163,8 +163,8 @@ void
 CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // program description
-    arg_desc.SetUsageContext(m_ProgName, m_ProgDesc + " v. " + 
-                             blast::Version.Print() + " released " + 
+    arg_desc.SetUsageContext(m_ProgName, m_ProgDesc + " " + 
+                             blast::Version.Print() + ", released " + 
                              blast::Version.GetReleaseDate());
 }
 
@@ -250,6 +250,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgEffSearchSpace, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
+#if 0
     arg_desc.AddDefaultKey(kArgMaxHSPsPerSubject, "int_value",
                            "Maximum number of HPSs per subject to save "
                            "( " + NStr::IntToString(kDfltArgMaxHSPsPerSubject)
@@ -258,6 +259,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            NStr::IntToString(kDfltArgMaxHSPsPerSubject));
     arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
                            new CArgAllowValuesGreaterThanOrEqual(0));
+#endif
 
     arg_desc.SetCurrentGroup("");
 }
@@ -302,12 +304,14 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetPercentIdentity(args[kArgTargetPercentIdentity].AsDouble());
     }
 
+#if 0
     if (args[kArgMaxHSPsPerSubject]) {
         const int value = args[kArgMaxHSPsPerSubject].AsInteger();
         if (value != kDfltArgMaxHSPsPerSubject) {
             opt.SetMaxNumHspPerSequence(value);
         }
     }
+#endif
 }
 
 void
@@ -499,13 +503,13 @@ CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
     }
 }
 
-const string CDiscontinuousMegablastArgs::kTemplType_Coding("coding");
-const string CDiscontinuousMegablastArgs::kTemplType_Optimal("optimal");
+const string CDiscontiguousMegablastArgs::kTemplType_Coding("coding");
+const string CDiscontiguousMegablastArgs::kTemplType_Optimal("optimal");
 const string 
-CDiscontinuousMegablastArgs::kTemplType_CodingAndOptimal("coding_and_optimal");
+CDiscontiguousMegablastArgs::kTemplType_CodingAndOptimal("coding_and_optimal");
 
 void
-CDiscontinuousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // FIXME: this can be applied to any program, but since it was only offered
     // in megablast, we're putting it here 
@@ -514,10 +518,10 @@ CDiscontinuousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "in the preliminary gapped and traceback stages",
                             CArgDescriptions::eInteger);
 
-    arg_desc.SetCurrentGroup("Discontinuous Megablast options");
+    arg_desc.SetCurrentGroup("Discontiguous Megablast options");
 
     arg_desc.AddOptionalKey(kArgDMBTemplateType, "type", 
-                 "Discontinuous megablast template type",
+                 "Discontiguous megablast template type",
                  CArgDescriptions::eString);
     arg_desc.SetConstraint(kArgDMBTemplateType, &(*new CArgAllow_Strings, 
                                                   kTemplType_Coding,
@@ -528,7 +532,7 @@ CDiscontinuousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            kArgDMBTemplateLength);
 
     arg_desc.AddOptionalKey(kArgDMBTemplateLength, "int_value", 
-                 "Discontinuous megablast template length",
+                 "Discontiguous megablast template length",
                  CArgDescriptions::eInteger);
     set<int> allowed_values;
     allowed_values.insert(16);
@@ -544,7 +548,7 @@ CDiscontinuousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 }
 
 void
-CDiscontinuousMegablastArgs::ExtractAlgorithmOptions(const CArgs& args,
+CDiscontiguousMegablastArgs::ExtractAlgorithmOptions(const CArgs& args,
                                                      CBlastOptions& options)
 {
     if (args[kArgMinRawGappedScore]) {
@@ -1180,15 +1184,8 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgNumAlignments, 
                            new CArgAllowValuesGreaterThanOrEqual(1));
 
-# if 0
-    // Deprecate this?
-    // HTML output
-    arg_desc.AddOptionalKey(ARG_HTML, "html", 
-                            "Produce HTML output (default F)",
-                            CArgDescriptions::eBoolean,
-                            CArgDescriptions::fOptionalSeparator);
-    arg_desc.AddAlias("-html", ARG_HTML);
-#endif
+    // Produce HTML?
+    arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -1211,11 +1208,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         m_NumAlignments = args[kArgNumAlignments].AsInteger();
     }
 
-#if 0
-    if (args[ARG_HTML]) {
-        m_Html = args[ARG_HTML].AsBoolean();
-    }
-#endif
+    m_Html = static_cast<bool>(args[kArgProduceHtml]);
 }
 
 void
