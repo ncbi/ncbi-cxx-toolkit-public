@@ -71,7 +71,7 @@ class CLoadLockBlob_ids;
 class CReaderRequestResult;
 struct SId2LoadedSet;
 
-class NCBI_XREADER_ID2_EXPORT CId2ReaderBase : public CReader
+class NCBI_XREADER_EXPORT CId2ReaderBase : public CReader
 {
 public:
     CId2ReaderBase(void);
