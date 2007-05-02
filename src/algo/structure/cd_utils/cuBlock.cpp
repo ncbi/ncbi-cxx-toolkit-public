@@ -26,6 +26,7 @@
 #include <algo/structure/cd_utils/cuBlock.hpp>
 #include <algo/structure/cd_utils/cuAlign.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
+#include <algo/structure/cd_utils/cuUtils.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -760,6 +761,10 @@ string BlockModel::toString() const
 {
     string blockModelStr, tmp;
     unsigned int nBlocks = m_blocks.size();
+
+    if (m_seqId.NotEmpty()) {
+        blockModelStr = "Sequence:  " + GetSeqIDStr(m_seqId) + "\n";
+    }
 
     for (unsigned int i = 0; i < nBlocks; ++i) {
         tmp  = "  Block Id = " + NStr::IntToString(m_blocks[i].getId());
