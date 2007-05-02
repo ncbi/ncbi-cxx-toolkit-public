@@ -37,12 +37,12 @@ BEGIN_NCBI_SCOPE
 extern "C" 
 {
 
-NCBI_XREADER_PUBSEQOS_EXPORT
+NCBI_XREADER_PUBSEQOS2_EXPORT
 void NCBI_EntryPoint_ReaderPubseqos2(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);
 
-NCBI_XREADER_PUBSEQOS_EXPORT
+NCBI_XREADER_PUBSEQOS2_EXPORT
 void NCBI_EntryPoint_xreader_pubseqos2(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);

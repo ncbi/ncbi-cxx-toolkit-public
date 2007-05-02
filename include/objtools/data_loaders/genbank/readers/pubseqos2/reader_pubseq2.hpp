@@ -42,7 +42,7 @@ class I_BaseCmd;
 
 BEGIN_SCOPE(objects)
 
-class NCBI_XREADER_PUBSEQOS_EXPORT CPubseq2Reader : public CId2ReaderBase
+class NCBI_XREADER_PUBSEQOS2_EXPORT CPubseq2Reader : public CId2ReaderBase
 {
 public:
     CPubseq2Reader(int max_connections = 0,
