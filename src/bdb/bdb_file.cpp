@@ -1733,7 +1733,7 @@ read_epilog:
 #ifdef HAVE_UNALIGNED_READS
             bytes_compressed = *((unsigned*)multirow_buf->m_LastData);
 #else
-            ::memccpy(&bytes_compressed, multirow_buf->m_LastData, 4);
+            ::memcpy(&bytes_compressed, multirow_buf->m_LastData, 4);
 #endif
             uncompressed_data += 4;
 
