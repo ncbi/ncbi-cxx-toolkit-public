@@ -210,9 +210,10 @@ public:
      * @brief Constructor
      * 
      * @param query_is_protein is the query sequence(s) protein?
+     * @param is_rpsblast is it RPS-BLAST?
      */
-    CGenericSearchArgs(bool query_is_protein = true)
-        : m_QueryIsProtein(query_is_protein) {}
+    CGenericSearchArgs(bool query_is_protein = true, bool is_rpsblast = false)
+        : m_QueryIsProtein(query_is_protein), m_IsRpsBlast(is_rpsblast) {}
          
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -221,6 +222,7 @@ public:
                                          CBlastOptions& options);
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
+    bool m_IsRpsBlast;      /**< true if the search is RPS-BLAST */
 };
 
 /** Argument class for collecting filtering options */
@@ -578,7 +580,8 @@ public:
     /// @param request_mol_type If true, the command line arguments will
     /// include a mandatory option to disambiguate whether a protein or a
     /// nucleotide database is searched
-    CBlastDatabaseArgs(bool request_mol_type = false);
+    /// @param is_rpsblast is it RPS-BLAST?
+    CBlastDatabaseArgs(bool request_mol_type = false, bool is_rpsblast = false);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -603,6 +606,7 @@ private:
                                       molecule type should be requested in the
                                       command line, true in case of PSI-BLAST
                                       */
+    bool m_IsRpsBlast;              /**< true if the search is RPS-BLAST */
 };
 
 /// Argument class to collect formatting options, use this to create a 

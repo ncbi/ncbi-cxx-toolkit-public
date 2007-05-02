@@ -199,13 +199,17 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(BLAST_EXPECT_VALUE));
 
-    // gap open penalty
-    arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty", "Cost to open a gap", 
-                           CArgDescriptions::eInteger);
+    if ( !m_IsRpsBlast ) {
+        // gap open penalty
+        arg_desc.AddOptionalKey(kArgGapOpen, "open_penalty", 
+                                "Cost to open a gap", 
+                                CArgDescriptions::eInteger);
 
-    // gap extend penalty
-    arg_desc.AddOptionalKey(kArgGapExtend, "extend_penalty",
-                           "Cost to extend a gap", CArgDescriptions::eInteger);
+        // gap extend penalty
+        arg_desc.AddOptionalKey(kArgGapExtend, "extend_penalty",
+                               "Cost to extend a gap", 
+                               CArgDescriptions::eInteger);
+    }
 
     // ungapped X-drop
     // Default values: blastn=20, megablast=10, others=7
@@ -272,11 +276,11 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetEvalueThreshold(args[kArgEvalue].AsDouble());
     }
 
-    if (args[kArgGapOpen]) {
+    if (args.Exist(kArgGapOpen) && args[kArgGapOpen]) {
         opt.SetGapOpeningCost(args[kArgGapOpen].AsInteger());
     }
 
-    if (args[kArgGapExtend]) {
+    if (args.Exist(kArgGapExtend) && args[kArgGapExtend]) {
         opt.SetGapExtensionCost(args[kArgGapExtend].AsInteger());
     }
 
@@ -1033,8 +1037,9 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_BelieveQueryDefline = static_cast<bool>(args[kArgParseQueryDefline]);
 }
 
-CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */)
-    : m_RequestMoleculeType(request_mol_type)
+CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
+                                       bool is_rpsblast /* = false */)
+    : m_RequestMoleculeType(request_mol_type), m_IsRpsBlast(is_rpsblast)
 {}
 
 void
@@ -1059,28 +1064,34 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Effective length of the database ",
                             CArgDescriptions::eInt8);
 
-    // GI list
-    arg_desc.AddOptionalKey(kArgGiList, "filename", 
-                            "Restrict search of database to list of GI's",
-                            CArgDescriptions::eString);
+    if ( !m_IsRpsBlast) {
 
-    arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
-    // subject sequence input (for bl2seq)
-    arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
-                            "Subject sequence(s) to search",
-                            CArgDescriptions::eInputFile);
-    arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, kArgDb);
-    arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
-                           kArgGiList);
-    // subject location
-    arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
-                            "Location on the subject sequence "
-                            "(Format: start-stop)",
-                            CArgDescriptions::eString);
-    arg_desc.SetDependency(kArgSubjectLocation, 
-                           CArgDescriptions::eExcludes, kArgDb);
-    arg_desc.SetDependency(kArgSubjectLocation, CArgDescriptions::eExcludes, 
-                           kArgGiList);
+        // GI list
+        arg_desc.AddOptionalKey(kArgGiList, "filename", 
+                                "Restrict search of database to list of GI's",
+                                CArgDescriptions::eString);
+
+        arg_desc.SetCurrentGroup("BLAST-2-Sequences options");
+        // subject sequence input (for bl2seq)
+        arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
+                                "Subject sequence(s) to search",
+                                CArgDescriptions::eInputFile);
+        arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
+                               kArgDb);
+        arg_desc.SetDependency(kArgSubject, CArgDescriptions::eExcludes, 
+                               kArgGiList);
+        // subject location
+        arg_desc.AddOptionalKey(kArgSubjectLocation, "range", 
+                                "Location on the subject sequence "
+                                "(Format: start-stop)",
+                                CArgDescriptions::eString);
+        arg_desc.SetDependency(kArgSubjectLocation, 
+                               CArgDescriptions::eExcludes, kArgDb);
+        arg_desc.SetDependency(kArgSubjectLocation, 
+                               CArgDescriptions::eExcludes, 
+                               kArgGiList);
+
+    }
 
     arg_desc.SetCurrentGroup("");
 }

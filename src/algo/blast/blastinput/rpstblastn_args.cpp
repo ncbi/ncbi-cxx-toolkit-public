@@ -51,19 +51,20 @@ CRPSTBlastnAppArgs::CRPSTBlastnAppArgs()
     arg.Reset(new CProgramDescriptionArgs("rpstblastn", 
                                "Translated Reverse Position Specific BLAST"));
     const bool kQueryIsProtein = false;
+    const bool kIsRpsBlast = true;
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
+    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, kIsRpsBlast));
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
     // N.B.: query is not protein because the options are applied on the 
     // translated query
-    arg.Reset(new CGenericSearchArgs( !kQueryIsProtein ));
+    arg.Reset(new CGenericSearchArgs( !kQueryIsProtein, kIsRpsBlast ));
     m_Args.push_back(arg);
 
     arg.Reset(new CGeneticCodeArgs(CGeneticCodeArgs::eQuery));

@@ -48,20 +48,21 @@ USING_SCOPE(objects);
 CRPSBlastAppArgs::CRPSBlastAppArgs()
 {
     const bool kQueryIsProtein = true;
+    const bool kIsRpsBlast = true;
     CRef<IBlastCmdLineArgs> arg;
     arg.Reset(new CProgramDescriptionArgs("rpsblast", 
-                                          "reverse Position Specific BLAST"));
+                                          "Reverse Position Specific BLAST"));
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
+    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, kIsRpsBlast));
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs(kQueryIsProtein));
+    arg.Reset(new CGenericSearchArgs(kQueryIsProtein, kIsRpsBlast));
     m_Args.push_back(arg);
 
     arg.Reset(new CFilteringArgs(kQueryIsProtein));
