@@ -175,7 +175,7 @@ void CEntrez2Client::Query(const string& query, const string& db,
     CRef<CEntrez2_boolean_reply> bool_reply = AskEval_boolean(req, reply);
     
     // now extract the UIDs
-    if (!bool_reply->GetUids().CanGetUids ()) {
+    if (!bool_reply->GetUids().CanGetUids()) {
         // this happens when no matches were found
         return;
     }
@@ -278,6 +278,12 @@ CEntrez2Client::GetAffinity(const CEntrez2_request& request) const
         break;
     case CE2Request::e_Get_term_hierarchy:
         db = &e2req.GetGet_term_hierarchy().GetDb();
+        break;
+    case CE2Request::e_Get_links:
+        db = &e2req.GetGet_links().GetUids().GetDb();
+        break;
+    case CE2Request::e_Get_linked:
+        db = &e2req.GetGet_linked().GetUids().GetDb();
         break;
     case CE2Request::e_Get_link_counts:
         db = &e2req.GetGet_link_counts().GetDb();
