@@ -609,6 +609,20 @@ protected:
                        const string&  overflow_file_path,
                        const char*    buf, 
                        streamsize     count);
+
+    /// Register BLOB object as overflow file
+    void RegisterOverflow(const string&  key,
+                          int            version,
+                          const string&  subkey,
+                          unsigned       time_to_live,
+                          const string&  owner);
+
+    /// Compute maximum TTL
+    time_t ComputeMaxTime(time_t start) const 
+    {
+        return start + (GetTimeout() * GetTTL_Prolongation());
+    }
+
 private:
     /// Return TRUE if cache item expired according to the current timestamp
     /// prerequisite: attributes record fetched to memory
