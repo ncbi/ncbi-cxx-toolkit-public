@@ -1,0 +1,8 @@
+# $Id$
+# Author: Sergey Sikorskiy
+
+SUB_PROJ = common
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
