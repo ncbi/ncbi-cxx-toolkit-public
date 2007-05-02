@@ -1343,25 +1343,6 @@ case "$with_dll:$with_static" in
    *)       LIB_OR_DLL="lib";  dll_sfx=""  ;;
 esac
 
-if test "$with_dll" = "no"; then # no DLLs whatsoever!
-   FORCE_STATIC_LIB="LIB_OR_DLL = lib"
-else
-   FORCE_STATIC_LIB=
-   NCBI_FEATURE(DLL)
-   # Some shared libraries end up containing static libraries, so make
-   # sure to use DLL flags for both on platforms where such inclusion
-   # would otherwise be illegal....
-   case "$host_os:$host_cpu" in
-      linux*:*86) ;;
-      linux* | darwin* | solaris*:sparc )
-        CFLAGS="$CFLAGS $CFLAGS_DLL"
-        CFLAGS_DLL=
-        CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
-        CXXFLAGS_DLL=
-        ;;
-   esac
-fi
-
 DLL_LIB_SETTING='$(DLL_DLIB)'
 STATIC="-static"
 USUAL_AND_DLL=both
@@ -1849,6 +1830,7 @@ case "$compiler" in
    FORBID_UNDEF="-no_unresolved"
    ;;
  Compaq )
+   LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
    ALLOW_UNDEF='-expect_unresolved \*'
    FORBID_UNDEF='-error_unresolved'
    ;;
@@ -1869,10 +1851,30 @@ case "$compiler" in
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
       AC_MSG_ERROR([Do not know how to build DLLs with compiler $CXX $compiler_ver])
+   elif test -z "$LINK_DLL"; then
+      with_dll=no
    fi
    ;;
 esac
 
+if test "$with_dll" = "no"; then # no DLLs whatsoever!
+   FORCE_STATIC_LIB="LIB_OR_DLL = lib"
+else
+   FORCE_STATIC_LIB=
+   NCBI_FEATURE(DLL)
+   # Some shared libraries end up containing static libraries, so make
+   # sure to use DLL flags for both on platforms where such inclusion
+   # would otherwise be illegal....
+   case "$host_os:$host_cpu" in
+      linux*:*86) ;;
+      linux* | darwin* | solaris*:sparc )
+        CFLAGS="$CFLAGS $CFLAGS_DLL"
+        CFLAGS_DLL=
+        CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
+        CXXFLAGS_DLL=
+        ;;
+   esac
+fi
 
 # Make sure we have commands for both C and C++ preprocessors
 AC_PROG_CPP
@@ -3934,6 +3936,15 @@ if test "$with_opengl" != "no"; then
       *) # Default -- assume X-based
          LIBS="$orig_LIBS"
          CPPFLAGS="$orig_CPPFLAGS"
+         # Look in /usr/X11R6/lib64 if necessary
+         xlib=`ls -d /usr/X11R6/lib$bit64_sfx/libX11.* 2>/dev/null | sed -ne 1p`
+         if test -f "$xlib"; then
+            base=`basename $xlib`
+            cmp -s /usr/X11R6/lib/$base $xlib  || \
+               cmp -s /usr/lib/$base $xlib  || \
+               cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
+               ac_x_libraries=/usr/X11R6/lib$bit64_sfx
+         fi
          AC_PATH_XTRA
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
