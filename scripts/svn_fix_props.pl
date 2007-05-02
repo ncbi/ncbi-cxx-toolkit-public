@@ -97,6 +97,55 @@ for my $FileName (sort @FileNames)
 {
     my $FileProps = $ExistingProps{$FileName};
 
+    my %Keywords;
+
+    open FILE, '<', $FileName or die "$FileName\: $!\n";
+
+    {
+        local $/ = undef;
+
+        my $FileContents = <FILE>;
+
+        %Keywords = map {$_ => 1} $FileContents =~ m{\$(URL | HeadURL |
+            Author | LastChangedBy | Date | LastChangedDate |
+            Rev | Revision | LastChangedRevision | Id)[\ :\$]}xgo
+    }
+
+    close FILE;
+
+    my $Keywords;
+    my $ExistingKeywords = $FileProps->{'svn:keywords'} || '';
+
+    unless ($ExistingKeywords)
+    {
+        $Keywords = join(' ', sort keys %Keywords)
+    }
+    else
+    {
+        my @ExistingKeywords = split $ExistingKeywords;
+
+        $Keywords = shift @ExistingKeywords;
+
+        my %ExistingKeywords = ($Keywords => 1);
+
+        for (@ExistingKeywords)
+        {
+            unless ($ExistingKeywords{$_})
+            {
+                $ExistingKeywords{$_} = 1;
+                $Keywords .= ' ' . $_
+            }
+        }
+
+        for (keys %Keywords)
+        {
+            $Keywords .= ' ' . $_ unless $ExistingKeywords{$_}
+        }
+    }
+
+    push @{$PropsToSet{'svn:keywords'}->{$Keywords}}, $FileName
+        if $ExistingKeywords ne $Keywords;
+
     my ($BaseName) = $FileName =~ m/([^\/]+)$/;
 
     for my $MaskProps (@MaskProps)
