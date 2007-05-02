@@ -133,18 +133,11 @@ static void SetRandomFail(CNcbiIostream& stream, CId2Reader::TConn conn)
 #endif
 
 
-NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
-NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
+//NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(string, GENBANK, ID2_CGI_NAME);
 NCBI_PARAM_DECL(string, GENBANK, ID2_SERVICE_NAME);
 NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID2);
 
-#if 0 // now defined in reader_id2_base.cpp
-NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, 0,
-                  eParam_NoThread, GENBANK_ID2_DEBUG);
-NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 20,
-                  eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
-#endif
 NCBI_PARAM_DEF_EX(string, GENBANK, ID2_CGI_NAME, kEmptyStr,
                   eParam_NoThread, GENBANK_ID2_CGI_NAME);
 NCBI_PARAM_DEF_EX(string, GENBANK, ID2_SERVICE_NAME, kEmptyStr,
@@ -154,8 +147,11 @@ NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE,
 
 static int GetDebugLevel(void)
 {
+    return 0;
+    /*
     static NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG) s_Value;
     return s_Value.Get();
+    */
 }
 
 
@@ -165,48 +161,6 @@ enum EDebugLevel
     eTraceASN      = 5,
     eTraceBlob     = 8,
     eTraceBlobData = 9
-};
-
-
-// Number of chunks allowed in a single request
-// 0 = unlimited request size
-// 1 = do not use packets or get-chunks requests
-static size_t GetMaxChunksRequestSize(void)
-{
-    static NCBI_PARAM_TYPE(GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE) s_Value;
-    return s_Value.Get();
-}
-
-
-static inline
-bool
-SeparateChunksRequests(size_t max_request_size = GetMaxChunksRequestSize())
-{
-    return max_request_size == 1;
-}
-
-
-static inline
-bool
-LimitChunksRequests(size_t max_request_size = GetMaxChunksRequestSize())
-{
-    return max_request_size > 0;
-}
-
-
-struct SId2LoadedSet
-{
-    typedef set<string> TStringSet;
-    typedef set<CSeq_id_Handle> TSeq_idSet;
-    typedef map<CBlob_id, CId2Reader::TContentsMask> TBlob_ids;
-    typedef pair<int, TBlob_ids> TBlob_idsInfo;
-    typedef map<CSeq_id_Handle, TBlob_idsInfo> TBlob_idSet;
-    typedef map<CBlob_id, CConstRef<CID2_Reply_Data> > TSkeletons;
-
-    TStringSet  m_Seq_idsByString;
-    TSeq_idSet  m_Seq_ids;
-    TBlob_idSet m_Blob_ids;
-    TSkeletons  m_Skeletons;
 };
 
 
