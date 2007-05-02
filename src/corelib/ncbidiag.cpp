@@ -3114,13 +3114,13 @@ extern bool SetLogFile(const string& file_name,
                 return false;
             }
             // output to file
-            CFileHandleDiagHandler* fhandler =
-                new CFileHandleDiagHandler(file_name);
+            auto_ptr<CFileHandleDiagHandler> fhandler(
+                new CFileHandleDiagHandler(file_name));
             if ( !fhandler->Valid() ) {
                 ERR_POST(Info << "Failed to initialize log: " << file_name);
                 return false;
             }
-            SetDiagHandler(fhandler);
+            SetDiagHandler(fhandler.release());
         }
     }
     else {
@@ -3128,9 +3128,10 @@ extern bool SetLogFile(const string& file_name,
             dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
         if ( !handler ) {
             // Install new handler
-            handler = new CFileDiagHandler();
-            if ( handler->SetLogFile(file_name, file_type, quick_flush) ) {
-                SetDiagHandler(handler);
+            auto_ptr<CFileDiagHandler> fhandler(new CFileDiagHandler());
+            if ( fhandler->SetLogFile(file_name, file_type, quick_flush) ) {
+                handler = fhandler.get();
+                SetDiagHandler(fhandler.release());
                 return true;
             }
             else {
