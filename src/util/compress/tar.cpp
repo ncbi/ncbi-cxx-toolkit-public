@@ -50,8 +50,6 @@
 #  error "Class CTar can be defined on MS-Windows and UNIX platforms only!"
 #endif
 
-#include <errno.h>
-
 #if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #elif defined(NCBI_OS_MSWIN)
@@ -452,7 +450,7 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
 static string s_OSReason(int x_errno)
 {
     const char* strerr = x_errno ? strerror(x_errno) : 0;
-    return strerr ? string(": ") + strerr : kEmptyStr;
+    return strerr  &&  *strerr ? string(": ") + strerr : kEmptyStr;
 }
 
 
@@ -572,11 +570,11 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         if (fmt != eTar_Ustar  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
-                tname = "regular entry (directory)";
+                tname = "legacy regular entry (dir)" + (h->typeflag[0]? 7 : 0);
                 break;
             }
         }
-        tname = "regular entry (file)";
+        tname = "legacy regular entry (file)" + (h->typeflag[0] ? 7 : 0);
         break;
     case '1':
         ok = true;
@@ -992,10 +990,10 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
     // Extract
     auto_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
 
-    // Restore attributes of "delayed" directory entries
-    ITERATE(TEntries, i, *entries.get()) {
-        if (i->GetType() == CTarEntryInfo::eDir) {
-            if (m_Flags & fPreserveAll) {
+    // Restore attributes of "postponed" directory entries
+    if (m_Flags & fPreserveAll) {
+        ITERATE(TEntries, i, *entries.get()) {
+            if (i->GetType() == CTarEntryInfo::eDir) {
                 x_RestoreAttrs(*i);
             }
         }
@@ -1033,7 +1031,6 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files)
 }
 
 
-
 void CTar::SetBaseDir(const string& dirname)
 {
     m_BaseDir = CDirEntry::AddTrailingPathSeparator(dirname);
@@ -1055,7 +1052,7 @@ const char* CTar::x_ReadArchive(size_t& n)
         nread = 0;
         do {
 #ifdef NCBI_COMPILER_MIPSPRO
-            // Work around a bug in MIPSPro 7.3's xsgetn()
+            // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
             istream* is = dynamic_cast<istream*>(m_Stream);
             _ASSERT(is);
             is->read(m_Buffer + nread, m_BufferSize - nread);
@@ -1494,11 +1491,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
         if (i > sizeof(h->prefix)) {
             i = sizeof(h->prefix);
         }
-        while (i > 0) {
-            if (CDirEntry::IsPathSeparator(src[--i])) {
-                break;
-            }
-        }
+        while (i > 0  &&  src[--i] != '/');
         if (i  &&  len - i <= sizeof(h->name) + 1) {
             memcpy(h->prefix, src,         i);
             memcpy(h->name,   src + i + 1, len - i - 1);
@@ -2046,7 +2039,7 @@ string CTar::x_ToArchiveName(const string& path) const
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
         TAR_THROW(eBadName,
-                  "Name may not contain '..' (parent) directory:\n" + retval);
+                  "Name may not contain parent ('..') directory:\n" + retval);
     }
 
     if (absolute) {
@@ -2073,8 +2066,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     if (!entry.Stat(&st, follow_links)) {
         int x_errno = errno;
         TAR_THROW(eOpen,
-                  "Cannot get status of '" + path + '\''
-                  + s_OSReason(x_errno));
+                  "Cannot get status of '" + path + '\''+ s_OSReason(x_errno));
     }
     CDirEntry::EType type = entry.GetType();
 
@@ -2193,8 +2185,7 @@ void CTar::x_AppendFile(const string& file, const CTarEntryInfo& info)
         if (!ifs) {
             int x_errno = errno;
             TAR_THROW(eOpen,
-                      "Cannot open file '" + file + '\''
-                      + s_OSReason(x_errno));
+                      "Cannot open file '" + file + '\''+ s_OSReason(x_errno));
         }
     }
 
@@ -2212,8 +2203,7 @@ void CTar::x_AppendFile(const string& file, const CTarEntryInfo& info)
         if (!ifs.read(m_Buffer + m_BufferPos, avail)) {
             int x_errno = errno;
             TAR_THROW(eRead,
-                      "Error reading file '" + file + '\''
-                      + s_OSReason(x_errno));
+                      "Error reading file '" +file+ '\''+ s_OSReason(x_errno));
         }
         avail = (size_t) ifs.gcount();
         // Write buffer to the archive
