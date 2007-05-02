@@ -36,4 +36,5 @@
 
 #include <corelib/ncbistr.hpp>
 
+
 #endif  /* CORELIB___NCBISTD__HPP */
