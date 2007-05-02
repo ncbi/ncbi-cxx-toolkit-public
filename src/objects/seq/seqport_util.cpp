@@ -6031,7 +6031,10 @@ void CSeqportUtil_implementation::x_GetSeqFromSeqData
     case CSeq_data::e_Ncbistdaa:
         *vec = &(data.GetNcbistdaa().Get());
         break;
-    } // end of switch statemen
+
+    default:
+        break;
+    } // end of switch statement
 }
 
 
@@ -6077,7 +6080,10 @@ void CSeqportUtil_implementation::x_GetSeqFromSeqData
     case CSeq_data::e_Ncbistdaa:
         *vec = &(data.SetNcbistdaa().Set());
         break;
-    } // end of switch statemen
+
+    default:
+        break;
+    } // end of switch statement
 }
 
 
