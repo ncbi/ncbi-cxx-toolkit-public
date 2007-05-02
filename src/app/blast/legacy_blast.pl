@@ -174,7 +174,7 @@ sub handle_blastall($)
                "Q=i"            => \$opt_Q,
                "R=s"            => \$opt_R,
                "S=i"            => \$opt_S,
-               "T:s"            => \$opt_T, # deprecated
+               "T:s"            => \$opt_T,
                "U:s"            => \$opt_U,
                "V:s"            => \$opt_V, # not handled, not applicable
                "W=i"            => \$opt_W,
@@ -245,7 +245,13 @@ sub handle_blastall($)
     }
     $retval .= "-word_size $opt_W "         if (defined $opt_W);
     $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
-    $retval .= "-min_word_score $opt_f "    if (defined $opt_f);
+    if (defined $opt_f) {
+        unless ($opt_p eq "blastn") {
+            $retval .= "-min_word_score $opt_f "    
+        } else {
+            print STDERR "Warning: -f is not supported for blastn\n";
+        }
+    }
     if (defined $opt_I and $opt_I =~ /t/i) {
         $retval .= "-show_gis ";
     }
@@ -278,6 +284,9 @@ sub handle_blastall($)
             print STDERR "Warning: overriding output format\n";
         }
     }
+    if (defined $opt_T and $opt_T =~ /t/i) {
+        $retval .= "-html "                     
+    }
 
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
     if (defined $opt_U and $opt_U =~ /t/i) {
@@ -296,10 +305,6 @@ sub handle_blastall($)
 
     if (defined $opt_F) {
         $retval .= &convert_filter_string($opt_F, $opt_p);
-    }
-
-    if (defined $opt_T) {
-        print STDERR "Warning: HTML output is deprecated\n";
     }
 
     return $retval;
@@ -384,6 +389,9 @@ sub handle_megablast($)
             print STDERR "Warning: overriding output format\n";
         }
     }
+    if (defined $opt_T and $opt_T =~ /t/i) {
+        $retval .= "-html "                     
+    }
     $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
     $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
     $retval .= "-num_threads $opt_a "       if (defined $opt_a);
@@ -411,7 +419,6 @@ sub handle_megablast($)
 
 
     $retval .= "-target_perc_identity $opt_p " if (defined $opt_p);
-    $retval .= "-max_hsps_per_subject $opt_H " if (defined $opt_H);
     $retval .= "-min_raw_gapped_score $opt_s " if (defined $opt_s);
     $retval .= &convert_strand($opt_S) if (defined $opt_S);
     $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
@@ -432,11 +439,11 @@ sub handle_megablast($)
     if (defined $opt_g and $opt_g =~ /f/i) {
         print STDERR "Warning: -g option is not supported!\n";
     }
+    if (defined $opt_H) {
+        print STDERR "Warning -H option is not supported!\n";
+    }
 
     # Deprecated options
-    if (defined $opt_T) {
-        print STDERR "Warning: HTML output is deprecated\n";
-    }
     if (defined $opt_f) {
         print STDERR "Warning: -f option is deprecated\n";
     }
@@ -567,6 +574,9 @@ sub handle_blastpgp($)
             print STDERR "Warning: overriding output format\n";
         }
     }
+    if (defined $opt_T and $opt_T =~ /t/i) {
+        $retval .= "-html "                     
+    }
     if (defined $opt_I and $opt_I =~ /t/i) {
         $retval .= "-show_gis ";
     }
@@ -599,9 +609,6 @@ sub handle_blastpgp($)
         $retval .= &convert_sequence_locations($location, "query");
     }
 
-    if (defined $opt_T) {
-        print STDERR "Warning: HTML output is deprecated\n";
-    }
 
     # Checkpoint file recovery
     if (defined $opt_R) {
@@ -655,7 +662,7 @@ sub handle_bl2seq
                "J=s"            => \$opt_J,
                "M=s"            => \$opt_M,
                "S=i"            => \$opt_S,
-               "T:s"            => \$opt_T, # deprecated
+               "T:s"            => \$opt_T,
                "U:s"            => \$opt_U,
                "V:s"            => \$opt_V, # not handled, not applicable
                "W=i"            => \$opt_W,
@@ -706,6 +713,9 @@ sub handle_bl2seq
             print STDERR "Warning: overriding output format\n";
         }
     }
+    if (defined $opt_T and $opt_T =~ /t/i) {
+        $retval .= "-html "                     
+    }
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
     $retval .= "-gapopen $opt_G "           if (defined $opt_G);
     $retval .= "-gapextend $opt_E "         if (defined $opt_E);
@@ -735,9 +745,6 @@ sub handle_bl2seq
     }
     if (defined $opt_D) {
         die "Tabular is not handled yet in new C++ binaries!\n";
-    }
-    if (defined $opt_T) {
-        print STDERR "Warning: HTML output is deprecated\n";
     }
 
     return $cmd_prefix . $retval . $cmd_suffix;
