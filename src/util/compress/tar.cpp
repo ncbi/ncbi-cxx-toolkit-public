@@ -1446,7 +1446,6 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
         TAR_THROW(eUnsupportedEntryType,
                   "Don't know how to store entry '" + name + "' w/type #" +
                   NStr::IntToString(int(type)) + " into archive");
-        break;
     }
 
     // User and group
@@ -1636,7 +1635,6 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
             return entries;
         default:
             NCBI_THROW(CCoreException, eCore, "Unknown error");
-            break;
         }
         zeroblock_count = 0;
 
@@ -2170,6 +2168,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             TAR_THROW(eBadName,
                       "Cannot find '" + path + '\'' + s_OSReason(x_errno));
         }}
+        /*NOTREACHED*/
         break;
 
     default:
