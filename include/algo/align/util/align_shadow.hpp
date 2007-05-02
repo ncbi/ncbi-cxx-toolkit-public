@@ -193,7 +193,7 @@ template <typename T>
 T round (const T& v)
 {
     const T fl (floor(v));
-    return v < fl + 0.5? v: fl + 1;
+    return v < fl + 0.5? fl: fl + 1;
 }
 
 
