@@ -2490,8 +2490,10 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
         }
         // Collect optional args
         for (size_t grp = 0;  grp < m_ArgGroups.size();  ++grp) {
+            list<string> grp_opt;
+            bool group_not_empty = false;
             if ( !m_ArgGroups[grp].empty() ) {
-                NStr::Wrap(m_ArgGroups[grp], m_UsageWidth, opt,
+                NStr::Wrap(m_ArgGroups[grp], m_UsageWidth, grp_opt,
                     NStr::fWrap_Hyphenate, " *** ");
             }
             for (it = args.begin();  it != args.end();  ++it) {
@@ -2499,10 +2501,14 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
                     continue;
                 }
                 if ((*it)->GetGroup() == grp) {
-                    x_PrintComment(opt, **it, m_UsageWidth);
+                    x_PrintComment(grp_opt, **it, m_UsageWidth);
+                    group_not_empty = true;
                 }
             }
-            opt.push_back(kEmptyStr);
+            if ( group_not_empty ) {
+                opt.merge(grp_opt);
+                opt.push_back(kEmptyStr);
+            }
         }
         if ( !req.empty() ) {
             arr.push_back(kEmptyStr);
