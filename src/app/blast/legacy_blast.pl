@@ -788,7 +788,56 @@ sub handle_rpsblast
                );
     my $retval;
 
-    $retval = "Conversion to $application NOT IMPLEMENTED yet\n";
+    if (defined $opt_p and $opt_p =~ /f/i) {
+        $retval = "./rpstblastn ";
+    } else {
+        $retval = "./rpsblast ";
+    }
+
+    $retval .= "-query $opt_i "             if (defined $opt_i);
+    $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
+    $retval .= "-evalue $opt_e "            if (defined $opt_e);
+    $retval .= "-out $opt_o "               if (defined $opt_o);
+    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
+    $retval .= "-xdrop_ungap $opt_y "       if (defined $opt_y);
+    $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
+    $retval .= "-min_raw_gapped_score $opt_N " if (defined $opt_N);
+    $retval .= "-num_threads $opt_a "       if (defined $opt_a);
+    $retval .= "-num_descriptions $opt_v "  if (defined $opt_v);
+    $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
+    $retval .= "-dbsize $opt_z "            if (defined $opt_z);
+    $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
+    $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
+    if (defined $opt_O) {
+        unless ($retval =~ s/-out \S+ /-out $opt_O /) {
+            $retval .= "-out $opt_O ";
+        }
+        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
+            $retval .= "-outfmt 10 ";
+        } else {
+            print STDERR "Warning: overriding output format\n";
+        }
+    }
+    if (defined $opt_T and $opt_T =~ /t/i) {
+        $retval .= "-html "                     
+    }
+    if (defined $opt_P and $opt_P eq "1") {
+        $retval .= "-window_size 0 ";
+    }
+    if (defined $opt_F) {
+        $retval .= &convert_filter_string($opt_F, "blastp");
+    }
+    if (defined $opt_I and $opt_I =~ /t/i) {
+        $retval .= "-show_gis ";
+    }
+    if (defined $opt_J and $opt_J =~ /t/i) {
+        $retval .= "-parse_query_defline ";
+    }
+    if (defined $opt_U and $opt_U =~ /t/i) {
+        $retval .= "-lcase_masking ";
+    }
+    $retval .= &convert_sequence_locations($opt_L, "query") if ($opt_L);
+
     return $retval;
 }
 
