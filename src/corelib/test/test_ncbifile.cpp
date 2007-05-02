@@ -63,21 +63,28 @@ static void s_TEST_SplitPath(void)
     string path, disk, dir, title, ext;
     
 #if defined(NCBI_OS_MSWIN)
-    CFile::SplitPath("c:\\windows\\command\\win.ini", &dir, &title, &ext);
-    assert( dir   == "c:\\windows\\command\\" );
-    assert( title == "win" );
-    assert( ext   == ".ini" );
+    CFile::SplitPath("c:\\dir\\subdir\\file.ext", &dir, &title, &ext);
+    assert( dir   == "c:\\dir\\subdir\\" );
+    assert( title == "file" );
+    assert( ext   == ".ext" );
+    path = CFile::MakePath("c:\\dir\\", "file.ext");
+    assert( path == "c:\\dir\\file.ext" );
 
-    path = CFile::MakePath("c:\\windows\\", "win.ini");
-    assert( path == "c:\\windows\\win.ini" );
-
-    CFile::SplitPath("c:win.ini", &dir, &title, &ext);
+    CFile::SplitPath("c:file.ext", &dir, &title, &ext);
     assert( dir   == "c:" );
-    assert( title == "win" );
-    assert( ext   == ".ini" );
+    assert( title == "file" );
+    assert( ext   == ".ext" );
+    path = CFile::MakePath("c:", "file", "ext");
+    assert( path == "c:file.ext" );
 
-    path = CFile::MakePath("c:", "win", "ini");
-    assert( path == "c:win.ini" );
+    CFile::SplitPath("c:\\file.ext", &dir, &title, &ext);
+    assert( dir   == "c:\\" );
+    assert( title == "file" );
+    assert( ext   == ".ext" );
+    path = CFile::MakePath("c:\\", "file", "ext");
+    assert( path == "c:\\file.ext" );
+    path = CFile::MakePath("c:\\", "file", ".ext");
+    assert( path == "c:\\file.ext" );
 
     {{
         CFile f("c:\\dir\\subdir\\file.ext");
@@ -107,6 +114,8 @@ static void s_TEST_SplitPath(void)
     assert( ext   == ".lib" );
     
     path = CFile::MakePath("/dir/subdir", "file", "ext");
+    assert( path == "/dir/subdir/file.ext" );
+    path = CFile::MakePath("/dir/subdir", "file", ".ext");
     assert( path == "/dir/subdir/file.ext" );
 
     {{
