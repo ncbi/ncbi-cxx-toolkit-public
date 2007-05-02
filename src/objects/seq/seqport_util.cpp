@@ -6032,7 +6032,10 @@ void CSeqportUtil_implementation::x_GetSeqFromSeqData
         *vec = &(data.GetNcbistdaa().Get());
         break;
 
-    default:
+    case CSeq_data::e_not_set:
+    case CSeq_data::e_Ncbipna:
+    case CSeq_data::e_Ncbipaa:
+    case CSeq_data::e_Gap:
         break;
     } // end of switch statement
 }
@@ -6081,7 +6084,10 @@ void CSeqportUtil_implementation::x_GetSeqFromSeqData
         *vec = &(data.SetNcbistdaa().Set());
         break;
 
-    default:
+    case CSeq_data::e_not_set:
+    case CSeq_data::e_Ncbipna:
+    case CSeq_data::e_Ncbipaa:
+    case CSeq_data::e_Gap:
         break;
     } // end of switch statement
 }
