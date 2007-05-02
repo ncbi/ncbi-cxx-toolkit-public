@@ -30,7 +30,7 @@
 *
 */
 
-#include <objtools/data_loaders/genbank/reader.hpp>
+#include <objtools/data_loaders/genbank/reader_id2_base.hpp>
 #include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -72,7 +72,7 @@ class CLoadLockBlob_ids;
 class CReaderRequestResult;
 struct SId2LoadedSet;
 
-class NCBI_XREADER_ID2_EXPORT CId2Reader : public CReader
+class NCBI_XREADER_ID2_EXPORT CId2Reader : public CId2ReaderBase
 {
 public:
     CId2Reader(int max_connections = 0);
@@ -82,137 +82,28 @@ public:
 
     int GetMaximumConnectionsLimit(void) const;
 
-    // new interface
-    bool LoadStringSeq_ids(CReaderRequestResult& result,
-                           const string& seq_id);
-    bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
-                           const CSeq_id_Handle& seq_id);
-    bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                            const CSeq_id_Handle& seq_id);
-    bool LoadBlobVersion(CReaderRequestResult& result,
-                         const TBlobId& blob_id);
-
-    bool LoadBlobs(CReaderRequestResult& result,
-                   const string& seq_id,
-                   TContentsMask mask);
-    bool LoadBlobs(CReaderRequestResult& result,
-                   const CSeq_id_Handle& seq_id,
-                   TContentsMask mask);
-    bool LoadBlobs(CReaderRequestResult& result,
-                   CLoadLockBlob_ids blobs,
-                   TContentsMask mask);
-    bool LoadBlob(CReaderRequestResult& result,
-                  const TBlobId& blob_id);
-    bool LoadChunk(CReaderRequestResult& result,
-                   const TBlobId& blob_id, TChunkId chunk_id);
-    bool LoadChunks(CReaderRequestResult& result,
-                    const TBlobId& blob_id,
-                    const TChunkIds& chunk_ids);
-    bool LoadBlobSet(CReaderRequestResult& result,
-                     const TSeqIds& seq_ids);
-
-    static TBlobId GetBlobId(const CID2_Blob_Id& blob_id);
-
 protected:
     virtual void x_AddConnectionSlot(TConn conn);
     virtual void x_RemoveConnectionSlot(TConn conn);
     virtual void x_DisconnectAtSlot(TConn conn);
     virtual void x_ConnectAtSlot(TConn conn);
+    virtual string x_ConnDescription(TConn conn) const;
+
+    virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet);
+    virtual void x_ReceiveReply(TConn conn, CID2_Reply& reply);
 
     string x_ConnDescription(CConn_IOStream& stream) const;
+    CConn_IOStream* x_GetCurrentConnection(TConn conn) const;
     CConn_IOStream* x_GetConnection(TConn conn);
     CConn_IOStream* x_NewConnection(TConn conn);
     void x_InitConnection(CConn_IOStream& stream, TConn conn);
 
-    void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
-                      const CSeq_id& seq_id);
-    void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
-                      const string& seq_id);
-    void x_SetResolve(CID2_Blob_Id& blob_id, const CBlob_id& src);
-
-    void x_SetDetails(CID2_Get_Blob_Details& details,
-                      TContentsMask mask);
-
-    void x_SetExclude_blobs(CID2_Request_Get_Blob_Info& get_blob_info,
-                            const CSeq_id_Handle& idh,
-                            CReaderRequestResult& result);
-
-    void x_ProcessRequest(CReaderRequestResult& result,
-                          CID2_Request& req);
-    void x_ProcessPacket(CReaderRequestResult& result,
-                         CID2_Request_Packet& packet);
-
-    enum EErrorFlags {
-        fError_warning          = 1 << 0,
-        fError_no_data          = 1 << 1,
-        fError_bad_command      = 1 << 2,
-        fError_bad_connection   = 1 << 3,
-        fError_warning_dead     = 1 << 4,
-        fError_restricted       = 1 << 5,
-        fError_withdrawn        = 1 << 6,
-        fError_warning_suppressed = 1<<7
-    };
-    typedef int TErrorFlags;
-    TErrorFlags x_ProcessError(CReaderRequestResult& result,
-                               const CID2_Error& error);
-
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const string& seq_id,
-                        const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CSeq_id_Handle& seq_id,
-                        const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CID2_Reply_Get_Blob_Id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CID2_Reply_Get_Blob_Seq_ids& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CID2_Reply_Get_Blob& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CID2S_Reply_Get_Split_Info& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
-                        const CID2S_Reply_Get_Chunk& reply);
-
-    void x_UpdateLoadedSet(CReaderRequestResult& result,
-                           const SId2LoadedSet& loaded_set);
-
-    bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
-                                 const TSeqIds& seq_ids);
 private:
     string m_ServiceName;
     int    m_Timeout;
 
     typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
     TConnections   m_Connections;
-
-    CAtomicCounter m_RequestSerialNumber;
-
-    enum {
-        fAvoidRequest_nested_get_blob_info = 1
-    };
-    typedef int TAvoidRequests;
-    TAvoidRequests m_AvoidRequest;
 };
 
 
