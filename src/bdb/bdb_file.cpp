@@ -122,6 +122,8 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_H_ffactor(0),
   m_H_nelem(0),
   m_BT_minkey(0),
+  m_Compressor(0),
+  m_OwnCompressor(eNoOwnership),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_RevSplitOff(false),
@@ -170,6 +172,9 @@ CBDB_RawFile::~CBDB_RawFile()
         BDB_THROW(eTransInProgress, 
                   "Cannot close the file while transaction is in progress.");
     }
+    if (m_OwnCompressor == eTakeOwnership) {
+        delete m_Compressor;
+    }
 }
 
 
@@ -195,6 +200,15 @@ DB_TXN* CBDB_RawFile::GetTxn()
     if (m_Trans)
         return m_Trans->GetTxn();
     return 0;
+}
+
+void CBDB_RawFile::SetCompressor(CCompression* compressor, EOwnership own)
+{
+    if (m_OwnCompressor == eTakeOwnership) {
+        delete m_Compressor;
+    }
+    m_Compressor = compressor;
+    m_OwnCompressor = own;
 }
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
@@ -831,6 +845,250 @@ unsigned int CBDB_RawFile::GetBtreeMinKeysPerPage()
     return m_BT_minkey;
 }
 
+int CBDB_RawFile::x_FetchBufferDecompress(DBT *data, void* usr_data)
+{
+    data->data = usr_data;
+    
+    unsigned char* compressed = m_CompressBuffer.data();
+    unsigned bytes_compressed;
+#ifdef HAVE_UNALIGNED_READS
+    bytes_compressed = *((unsigned*)compressed);
+#else
+    ::memcpy(&bytes_compressed, compressed, 4);
+#endif
+
+    if (bytes_compressed == 0) {
+        data->size-=4;
+        if (data->data) {
+            ::memcpy(data->data, compressed + 4, data->size);
+        }
+    } else {
+        if (data->ulen < bytes_compressed) {
+            data->size = bytes_compressed;
+            return DB_BUFFER_SMALL;
+        }
+        data->size-=4;
+        if (data->data) {
+            size_t dst_len;
+            bool decomp_ok = 
+                m_Compressor->DecompressBuffer(compressed + 4,
+                                               data->size,
+                                               data->data,
+                                               data->ulen,
+                                               &dst_len);
+            data->size = bytes_compressed;
+            if (!decomp_ok) {
+                BDB_THROW(eCompressorError, 
+                          m_Compressor->GetErrorDescription());
+            }
+            _ASSERT(dst_len == bytes_compressed);
+        }
+    }
+    return 0;
+}
+
+int CBDB_RawFile::x_DB_Fetch(DBT *key, 
+                             DBT *data, 
+                             unsigned flags)
+{
+    _ASSERT(key);
+    _ASSERT(data);
+
+    int ret;
+    DB_TXN* txn = GetTxn();
+
+    if (m_Compressor) {
+        _ASSERT(flags == 0 || flags & DB_DBT_USERMEM);
+        _ASSERT(data->doff == 0);
+
+        m_CompressBuffer.resize_mem(data->ulen + 4);
+        void* usr_data = data->data;
+        data->data = m_CompressBuffer.data();
+
+        ret = m_DB->get(m_DB, txn, key, data, flags);
+        if (ret == 0) {
+            ret = x_FetchBufferDecompress(data, usr_data);
+        }
+    } else {
+        ret = m_DB->get(m_DB, txn, key, data, flags);
+    }
+    return ret;
+}
+
+
+int CBDB_RawFile::x_DBC_Fetch(DBC* dbc,
+                              DBT *key, 
+                              DBT *data, 
+                              unsigned flags)
+{
+    int ret;
+    if (m_Compressor) {
+        m_CompressBuffer.resize_mem(data->ulen + 4);
+        void* usr_data = data->data;
+        data->data = m_CompressBuffer.data();
+
+        ret = dbc->c_get(dbc, key, data, flags);
+        if (ret == 0) {
+            ret = x_FetchBufferDecompress(data, usr_data);
+        }        
+    } else {
+        ret = dbc->c_get(dbc, key, data, flags);
+    }
+    return ret;
+}
+
+/// Record size cut off for compression
+///
+const unsigned k_BDB_CompressionCutOff = 128;
+
+int CBDB_RawFile::x_DB_Put(DBT *key, 
+                           DBT *data, 
+                           unsigned flags)
+{
+   int ret;
+
+   DB_TXN* txn = GetTxn();
+   if (m_Compressor) {
+       // save original data fields
+        void* usr_data = data->data;
+        unsigned usr_size = data->size;
+
+        m_CompressBuffer.resize_mem(data->size + 4);
+
+        bool compressed = false;
+
+        if (data->size > k_BDB_CompressionCutOff) { 
+            m_CompressBuffer.resize_mem(data->size + 4);
+
+            unsigned *buf = (unsigned*)m_CompressBuffer.data();
+#ifdef HAVE_UNALIGNED_READS
+            *buf = 0; 
+#else
+            ::memset(buf, 0, 4);
+#endif
+            buf += 4;
+
+            size_t dst_len;
+
+            bool compressed = 
+                m_Compressor->CompressBuffer(data->data, data->size,
+                                             buf, data->size,
+                                             &dst_len);
+            if (compressed) {
+                _ASSERT(dst_len <= data->size);
+                buf = (unsigned*)m_CompressBuffer.data();
+#ifdef HAVE_UNALIGNED_READS
+                *buf = dst_len;
+#else
+                ::memcpy(buf, &dst_len, 4);
+#endif
+                m_CompressBuffer.resize_mem(dst_len);
+            }                                             
+        } 
+        
+        if (!compressed)  { // store uncompressed data
+            unsigned *buf = (unsigned*)m_CompressBuffer.data();
+#ifdef HAVE_UNALIGNED_READS
+            *buf = 0; 
+#else
+            ::memset(buf, 0, 4);
+#endif
+            buf += 4;
+            ::memcpy(buf, data->data, data->size);            
+        }
+
+        // store the compress buffer
+        data->data = m_CompressBuffer.data();
+        data->size = m_CompressBuffer.size();
+
+        ret = m_DB->put(m_DB, txn, key, data, flags);
+
+        // restore buffers
+        data->data = usr_data;
+        data->size = usr_size;
+
+    } else {
+        ret = m_DB->put(m_DB, txn, key, data, flags);
+    }
+    return ret;
+}
+
+
+int CBDB_RawFile::x_DB_CPut(DBC *dbc,
+                            DBT *key, 
+                            DBT *data, 
+                            unsigned flags)
+{
+   int ret;
+
+   if (m_Compressor) {
+       // save original data fields
+        void* usr_data = data->data;
+        unsigned usr_size = data->size;
+
+        m_CompressBuffer.resize_mem(data->size + 4);
+
+        bool compressed = false;
+
+        if (data->size > k_BDB_CompressionCutOff) { 
+            m_CompressBuffer.resize_mem(data->size + 4);
+
+            unsigned *buf = (unsigned*)m_CompressBuffer.data();
+#ifdef HAVE_UNALIGNED_READS
+            *buf = 0; 
+#else
+            ::memset(buf, 0, 4);
+#endif
+            buf += 4;
+
+            size_t dst_len;
+
+            bool compressed = 
+                m_Compressor->CompressBuffer(data->data, data->size,
+                                             buf, data->size,
+                                             &dst_len);
+            if (compressed) {
+                _ASSERT(dst_len <= data->size);
+                buf = (unsigned*)m_CompressBuffer.data();
+#ifdef HAVE_UNALIGNED_READS
+                *buf = dst_len;
+#else
+                ::memcpy(buf, &dst_len, 4);
+#endif
+                m_CompressBuffer.resize_mem(dst_len);
+            }                                             
+        } 
+        
+        if (!compressed)  { // store uncompressed data
+            unsigned *buf = (unsigned*)m_CompressBuffer.data();
+#ifdef HAVE_UNALIGNED_READS
+            *buf = 0; 
+#else
+            ::memset(buf, 0, 4);
+#endif
+            buf += 4;
+            ::memcpy(buf, data->data, data->size);            
+        }
+
+        // store the compress buffer
+        data->data = m_CompressBuffer.data();
+        data->size = m_CompressBuffer.size();
+
+        ret = dbc->c_put(dbc, key, data, flags);
+
+        // restore buffers
+        data->data = usr_data;
+        data->size = usr_size;
+
+    } else {
+        ret = dbc->c_put(dbc, key, data, flags);
+    }
+
+    return ret;
+
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CBDB_File::
@@ -1015,14 +1273,10 @@ EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 {
     x_StartRead();
 
-    DB_TXN* txn = GetTxn();
+    int ret = x_DB_Fetch(m_DBT_Key,
+                         m_DBT_Data,
+                         flags);
 
-    int ret = m_DB->get(m_DB,
-                        txn,
-                        m_DBT_Key,
-                        m_DBT_Data,
-                        flags);
-                        
     if (ret == DB_NOTFOUND) {
         return eBDB_NotFound;
     }
@@ -1282,11 +1536,8 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
         m_DBT_Data->flags = 0;
         m_DBT_Data->data  = 0;        
     }
-
-    int ret = dbc->c_get(dbc,
-                         m_DBT_Key,
-                         m_DBT_Data,
-                         bdb_flag);
+    
+    int ret = x_DBC_Fetch(dbc, m_DBT_Key, m_DBT_Data, bdb_flag);
 
     switch (ret) {
     case DB_NOTFOUND:
@@ -1320,10 +1571,7 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
     m_DBT_Data->size = 0;
     m_DBT_Data->flags = DB_DBT_USERMEM;
 
-    int ret = dbc->c_get(dbc,
-                         m_DBT_Key,
-                         m_DBT_Data,
-                         bdb_flag);
+    int ret = x_DBC_Fetch(dbc, m_DBT_Key, m_DBT_Data, bdb_flag);
 
     switch (ret) {
     case DB_NOTFOUND:
@@ -1374,14 +1622,19 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
         if (m_DBT_Data->data == 0) {
             m_DBT_Data->flags = DB_DBT_MALLOC;
         } else {
+            // compressor does not support re-alloc mode
+            _ASSERT(m_Compressor == 0);
+
+            if (m_Compressor) {
+                BDB_THROW(eCompressorError, 
+                  "Use of dynamic reallocation on compressed file - not implemented");
+            }
+            
             m_DBT_Data->flags = DB_DBT_REALLOC;
         }
     }
 
-    int ret = dbc->c_get(dbc,
-                         m_DBT_Key,
-                         m_DBT_Data,
-                         bdb_flag);
+    int ret = x_DBC_Fetch(dbc, m_DBT_Key, m_DBT_Data, bdb_flag);
 
     if ( buf )
         *buf = m_DBT_Data->data;
@@ -1472,8 +1725,44 @@ read_epilog:
     m_KeyBuf->CopyPackedFrom(multirow_buf->m_LastKey,  
                              multirow_buf->m_LastKeyLen);
     if ( m_DataBuf.get() ) {
-        m_DataBuf->CopyPackedFrom(multirow_buf->m_LastData,  
-                                  multirow_buf->m_LastDataLen);
+        if (m_Compressor) {
+            // first 4 bytes in the buffer encode length
+            unsigned char* uncompressed_data = 
+                (unsigned char*) multirow_buf->m_LastData;
+            unsigned bytes_compressed;
+#ifdef HAVE_UNALIGNED_READS
+            bytes_compressed = *((unsigned*)multirow_buf->m_LastData);
+#else
+            ::memccpy(&bytes_compressed, multirow_buf->m_LastData, 4);
+#endif
+            uncompressed_data += 4;
+
+            if (bytes_compressed == 0) {
+                m_DataBuf->CopyPackedFrom(uncompressed_data,  
+                                          multirow_buf->m_LastDataLen-4);
+            } else {
+                m_CompressBuffer.resize_mem(bytes_compressed);
+                size_t dst_len;
+                bool decomp_ok = 
+                    m_Compressor->DecompressBuffer(uncompressed_data,
+                                                multirow_buf->m_LastDataLen-4,
+                                                m_CompressBuffer.data(),
+                                                m_CompressBuffer.size(),
+                                                &dst_len);
+                if (!decomp_ok) {
+                    BDB_THROW(eCompressorError, 
+                              m_Compressor->GetErrorDescription());
+                }
+                _ASSERT(dst_len == m_CompressBuffer.size());
+                m_DataBuf->CopyPackedFrom(m_CompressBuffer.data(),  
+                                          dst_len);
+
+            }
+
+        } else {
+            m_DataBuf->CopyPackedFrom(multirow_buf->m_LastData,  
+                                      multirow_buf->m_LastDataLen);
+        }
     }
     return eBDB_Ok;
 }
@@ -1506,7 +1795,7 @@ EBDB_ErrCode CBDB_File::WriteCursor(const void* data,
 
 EBDB_ErrCode CBDB_File::DeleteCursor(DBC* dbc, EIgnoreError on_error)
 {
-    int ret = dbc->c_del(dbc,0);
+    int ret = dbc->c_del(dbc, 0);
 
     if (on_error != CBDB_File::eIgnoreError) {
         BDB_CHECK(ret, FileName().c_str());
@@ -1573,24 +1862,11 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags,
     }
 
     int ret=0;
-    if(dbc) {
-        ret = dbc->c_put(dbc,
-                         m_DBT_Key,
-                         m_DBT_Data,
-                         flags
-            );
-        
+    if (dbc) {
+        ret = x_DB_CPut(dbc, m_DBT_Key, m_DBT_Data, flags);        
     } else {
-        DB_TXN* txn = GetTxn();
-    
-        ret = m_DB->put(m_DB,
-                        txn,
-                        m_DBT_Key,
-                        m_DBT_Data,
-                        flags
-            );
-    }
-    
+        x_DB_Put(m_DBT_Key, m_DBT_Data, flags);
+    }    
     if (ret == DB_KEYEXIST)
         return eBDB_KeyDup;
 

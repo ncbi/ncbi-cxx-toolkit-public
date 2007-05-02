@@ -134,7 +134,8 @@ public:
         eCannotOpenOverflowFile,
         eOverflowFileIO,
         eQuotaLimit,
-        eForeignTransaction
+        eForeignTransaction,
+        eCompressorError
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -155,6 +156,7 @@ public:
         case eOverflowFileIO:          return "eOverflowFileIO";
         case eQuotaLimit:              return "eQuotaLimit";
         case eForeignTransaction:      return "eForeignTransaction";
+        case eCompressorError:         return "eCompressorError";
 
         default: return CException::GetErrCodeString();
         }

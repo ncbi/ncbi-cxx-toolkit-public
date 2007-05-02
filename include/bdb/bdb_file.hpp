@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <util/itransaction.hpp>
+#include <util/compress/compress.hpp>
 #include <bdb/bdb_types.hpp>
 #include <stdio.h>
 
@@ -261,6 +262,15 @@ public:
     void SetBtreeMinKeysPerPage(unsigned int keys_per_page);
     unsigned int GetBtreeMinKeysPerPage();
 
+
+    /// Set record compressor
+    ///
+    /// Record compression should only be used if we do not
+    /// use partial record storage and retrieval.
+    ///
+    void SetCompressor(CCompression* compressor, 
+                       EOwnership    own = eTakeOwnership);
+
 private:
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
@@ -297,9 +307,47 @@ protected:
     DBC* CreateCursor(CBDB_Transaction* trans = 0, 
                       unsigned int      flags = 0) const;
 
+
+    /// Internal override for DB->get(...)
+    /// This method overrides destination buffer and uses compressor:
+    /// Should only be used with DB_DBT_USERMEM flag.
+    ///
+    int x_DB_Fetch(DBT *key, 
+                   DBT *data, 
+                   unsigned flags);
+
+
+    /// Internal override for DBC->c_get(...)
+    /// This method overrides destination buffer and uses compressor:
+    /// Should only be used with DB_DBT_USERMEM flag.
+    ///
+    int x_DBC_Fetch(DBC* dbc,
+                    DBT *key, 
+                    DBT *data, 
+                    unsigned flags);
+
+    /// Override for DB->put(...)
+    /// Handles compression.
+    ///
+    int x_DB_Put(DBT *key, 
+                 DBT *data, 
+                 unsigned flags);
+
+    /// Override for DBC->c_put(...)
+    /// Handles compression.
+    ///
+    int x_DB_CPut(DBC* dbc,
+                  DBT *key, 
+                  DBT *data, 
+                  unsigned flags);
+
+
+    int x_FetchBufferDecompress(DBT *data, void* usr_data);
+
 	/// Set byte order swapping. Can be overloaded on derived classes
 	/// @note When overloading DO call parent::x_SetByteSwapped
 	virtual void x_SetByteSwapped(bool bswp);
+
 
 protected:
     EDBType           m_DB_Type;
@@ -313,6 +361,10 @@ protected:
     unsigned          m_H_ffactor;
     unsigned          m_H_nelem;
     unsigned          m_BT_minkey;
+
+    CCompression*     m_Compressor;    ///< Record compressor
+    EOwnership        m_OwnCompressor;
+    TBuffer           m_CompressBuffer;
 
 private:
     bool             m_DB_Attached;    //!< TRUE if m_DB doesn't belong here
