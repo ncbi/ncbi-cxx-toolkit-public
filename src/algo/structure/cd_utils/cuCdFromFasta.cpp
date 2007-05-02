@@ -82,6 +82,10 @@ CCdFromFasta::CCdFromFasta(const string& fastaFile, const Fasta2CdParams& params
 
 }
 
+void CCdFromFasta::ResetInitialMasterSequenceIndex() 
+{
+    m_initialMasterSequenceIndex = (unsigned int) CSeqAnnotFromFasta::eUnassignedMaster;
+}
     
 void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
 {
@@ -102,6 +106,7 @@ void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
     m_parameters.masterIndex = (isNull) ? 0 : params->masterIndex;
 
 //    cerr << m_parameters.Print() << endl;
+    ResetInitialMasterSequenceIndex();
 }
 
 
@@ -146,6 +151,7 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile, bool cleanUp)
         if (cleanUp) CleanUpFastaIO();
         return false;
     }
+    m_initialMasterSequenceIndex = fastaSeqAnnot.GetMasterIndex();
 
     //  Testing....
 /*

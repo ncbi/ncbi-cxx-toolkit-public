@@ -573,8 +573,8 @@ unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, Masterin
         break;
     };
 
-    //cout << "Master index determined to be " << m_masterIndex << endl;
-    _TRACE("Master index (zero-based) determined to be " << m_masterIndex << "\n");
+    //cout << "Master sequence index determined to be " << m_masterIndex << endl;
+    _TRACE("Master sequence index (zero-based) determined to be " << m_masterIndex << "\n");
         
     return m_masterIndex;
 }

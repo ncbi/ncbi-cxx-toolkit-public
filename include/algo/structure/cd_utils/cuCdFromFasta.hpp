@@ -121,10 +121,21 @@ public:
     //  A gapless column is one containing only letters.
     unsigned int GetGaplessColumnsReadFromFile(map<unsigned int, string>& gaplessColumns) const;
 
+    //  This only refers to the master sequence index when initial created.  If the object
+    //  has been edited (e.g., by remastering, delete rows) this value becomes obsolete.
+    //  When not defined or has been reset, return CSeqAnnotFromFasta::eUnassignedMaster.
+    unsigned int GetInitialMasterSequenceIndex() const {return m_initialMasterSequenceIndex;}
+    void ResetInitialMasterSequenceIndex();
+
 private:
 
     string m_fastaInputErrorMsg;
     Fasta2CdParams m_parameters;
+
+    //  When there are repeats, the mapping can be ambiguous.  Set from the corresponding parameter
+    //  in CSeqAnnotFromFasta when the alignment is imported -- not subsequently modified if the CD
+    //  changes!!!!
+    unsigned int m_initialMasterSequenceIndex;  
 
     //  Fasta I/O object that uses NCBI C++ toolkit ReadFasta and CFastaReader classes.
     bool m_ownsFastaIO;
