@@ -1106,10 +1106,10 @@ private:
     bool m_IsProtein;
     
     /// Number of sequences.
-    mutable int m_NumSeqs;
+    mutable Int8 m_NumSeqs;
     
     /// Number of OIDs.
-    mutable int m_NumOIDs;
+    mutable Int8 m_NumOIDs;
     
     /// Total length.
     mutable Int8 m_TotalLength;
