@@ -83,11 +83,9 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
     CBDB_FieldInt4         ret_code;        ///< Return code
 
-    CBDB_FieldUint4        time_lb_first_eval;  ///< First LB evaluation time
     /// Affinity token id (refers to the affinity dictionary DB)
     CBDB_FieldUint4        aff_id;
     CBDB_FieldUint4        mask;
-
 
     CBDB_FieldString       input;           ///< Input data
     CBDB_FieldString       output;          ///< Result data
@@ -120,7 +118,7 @@ struct SQueueDB : public CBDB_File
 
         BindData("run_counter",        &run_counter);
         BindData("ret_code",           &ret_code);
-        BindData("time_lb_first_eval", &time_lb_first_eval);
+
         BindData("aff_id", &aff_id);
         BindData("mask",   &mask);
 

@@ -58,11 +58,6 @@ BEGIN_NCBI_SCOPE
 /// Queue parameters
 struct SQueueParameters
 {
-    enum ELBCurveType {
-        eLBLinear = 0,
-        eLBRegression = 1
-    };
-
     /// General parameters, reconfigurable at run time
     int timeout;
     int notif_timeout;
@@ -76,18 +71,6 @@ struct SQueueParameters
     // This parameter is not reconfigurable
     int run_timeout_precision;
 
-    /// Parameters for Load Balancing
-    bool   lb_flag;
-    string lb_service;
-    int    lb_collect_time;
-    string lb_unknown_host;
-    string lb_exec_delay_str;
-    double lb_stall_time_mult;
-    ELBCurveType lb_curve;
-    double lb_curve_high;
-    double lb_curve_linear_low;
-    double lb_curve_regression_a;
-
     SQueueParameters() :
         timeout(3600),
         notif_timeout(7),
@@ -97,29 +80,10 @@ struct SQueueParameters
         failed_retries(0),
         subm_hosts(""),
         wnode_hosts(""),
-        run_timeout_precision(3600),
-
-        lb_flag(false),
-        lb_service(""),
-        lb_collect_time(5),
-        lb_unknown_host(""),
-        lb_exec_delay_str(""),
-        lb_stall_time_mult(0.5),
-        lb_curve(eLBLinear),
-        lb_curve_high(0.6),
-        lb_curve_linear_low(0.15),
-        lb_curve_regression_a(0)
+        run_timeout_precision(3600)
     { }
     ///
     void Read(const IRegistry& reg, const string& sname);
-};
-
-
-/// @internal
-enum ENSLB_RunDelayType
-{
-    eNSLB_Constant,   ///< Constant delay
-    eNSLB_RunTimeAvg  ///< Running time based delay (averaged)
 };
 
 
@@ -272,22 +236,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     STagDB                       m_TagDb;
     CFastMutex                   m_TagLock;
 
-    // Configurable queue parameters
-    int                          timeout;          ///< Result exp. timeout
-    int                          notif_timeout;    ///< Notification interval
-    bool                         delete_done;      ///< Delete done jobs
-    int                          run_timeout;      ///< Execution timeout
-    /// How many attemts to make on different nodes before failure
-    unsigned                     failed_retries;
-    int                          empty_lifetime;   ///< How long to live after empty
-    /// Client program version control
-    CQueueClientInfoList         program_version_list;
-    /// Host access list for job submission
-    CNetSchedule_AccessList      subm_hosts;
-    /// Host access list for job execution (workers)
-    CNetSchedule_AccessList      wnode_hosts;
-
-
     ///< When it became empty, guarded by 'lock'
     time_t                       became_empty;
 
@@ -311,14 +259,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 
     /// Queue monitor
     CNetScheduleMonitor          m_Monitor;
-
-    mutable bool                 lb_flag;  ///< Load balancing flag
-    CNSLB_Coordinator*           lb_coordinator;
-
-    ENSLB_RunDelayType           lb_stall_delay_type;
-    unsigned                     lb_stall_time;      ///< job delay (seconds)
-    double                       lb_stall_time_mult; ///< stall coeff
-    CFastMutex                   lb_stall_time_lock;
 
     SQueueStatictics             qstat;
     CFastMutex                   qstat_lock;
@@ -357,6 +297,9 @@ public:
 
     void Open(CBDB_Env& env, const string& path);
     void x_ReadFieldInfo(void);
+
+    // Thread-safe parameter set
+    void SetParameters(const SQueueParameters& params);
 
     int GetFieldIndex(const string& name);
     string GetField(int index);
@@ -430,6 +373,47 @@ public:
     unsigned m_Average[eStatNumEvents];
     void CountEvent(TStatEvent);
     double GetAverage(TStatEvent);
+private:
+    // Configurable queue parameters
+    friend class CQueueParamAccessor;
+    CRWLock                      m_ParamLock;
+    int                          m_Timeout;         ///< Result exp. timeout
+    int                          m_NotifTimeout;    ///< Notification interval
+    bool                         m_DeleteDone;      ///< Delete done jobs
+    int                          m_RunTimeout;      ///< Execution timeout
+    /// How many attemts to make on different nodes before failure
+    unsigned                     m_FailedRetries;
+    int                          m_EmptyLifetime;   ///< How long to live after empty
+    /// Client program version control
+    CQueueClientInfoList         m_ProgramVersionList;
+    /// Host access list for job submission
+    CNetSchedule_AccessList      m_SubmHosts;
+    /// Host access list for job execution (workers)
+    CNetSchedule_AccessList      m_WnodeHosts;
+};
+
+
+class CQueueParamAccessor
+{
+public:
+    CQueueParamAccessor(SLockedQueue& queue) :
+        m_Queue(queue), m_Guard(queue.m_ParamLock) { }
+    int GetTimeout() { return m_Queue.m_Timeout; }
+    int GetNotifTimeout() { return m_Queue.m_NotifTimeout; }
+    bool GetDeleteDone() { return m_Queue.m_DeleteDone; }
+    int GetRunTimeout() { return m_Queue.m_RunTimeout; }
+    unsigned GetFailedRetries() { return m_Queue.m_FailedRetries; }
+    int GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
+    const CQueueClientInfoList& GetProgramVersionList()
+        { return m_Queue.m_ProgramVersionList; }
+    const CNetSchedule_AccessList& GetSubmHosts()
+        { return m_Queue.m_SubmHosts; }
+    const CNetSchedule_AccessList& GetWnodeHosts()
+        { return m_Queue.m_WnodeHosts; }
+
+private:
+    SLockedQueue& m_Queue;
+    CReadLockGuard m_Guard;
 };
 
 

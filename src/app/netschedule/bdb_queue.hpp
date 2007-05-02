@@ -332,27 +332,20 @@ private:
     x_FindPendingJob(const string&  client_name,
                      unsigned       client_addr);
 
-    /* obsolete, non-working code
-    /// Get job with load balancing
-    void x_GetJobLB(unsigned int   worker_node,
-                    unsigned int*  job_id, 
-                    char*          input,
-                    unsigned*      job_mask);
-    */
-
     time_t x_ComputeExpirationTime(unsigned time_run, 
                                    unsigned run_timeout) const; 
 
 
     /// db should be already positioned
-    void x_PrintJobDbStat(SQueueDB&     db, 
+    void x_PrintJobDbStat(SQueueDB&     db,
+                          unsigned      queue_run_timeout,
                           CNcbiOstream& out,
                           const char*   fld_separator = "\n",
                           bool          print_fname = true);
 
     void x_PrintShortJobDbStat(SQueueDB&     db, 
                                const string& host,
-                               unsigned port,
+                               unsigned      port,
                                CNcbiOstream& out,
                                const char*   fld_separator = "\t");
 
@@ -592,8 +585,7 @@ public:
 
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
-    void UpdateQueueLBParameters(const string& qname,
-                                 const SQueueParameters& params);
+
     void Close(void);
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }

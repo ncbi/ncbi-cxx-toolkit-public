@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.30 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.31 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -2333,23 +2333,14 @@ int CNetScheduleDApp::Run(void)
 {
     LOG_POST(NETSCHEDULED_VERSION);
     
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
+
+    const CNcbiRegistry& reg = GetConfig();
+    bool is_daemon =
+        reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
 
     try {
-        const CNcbiRegistry& reg = GetConfig();
-
 #if defined(NCBI_OS_UNIX)
-        bool is_daemon =
-            reg.GetBool("server", "daemon", false, 0, CNcbiRegistry::eReturn);
-        if (is_daemon) {
-            LOG_POST("Entering UNIX daemon mode...");
-            bool daemon = Daemonize(0, fDaemon_DontChroot);
-            if (!daemon) {
-                return 0;
-            }
-
-        }
-        
         // attempt to get server gracefully shutdown on signal
         signal( SIGINT, Threaded_Server_SignalHandler);
         signal( SIGTERM, Threaded_Server_SignalHandler);    
@@ -2459,6 +2450,18 @@ int CNetScheduleDApp::Run(void)
 
         qdb->Configure(reg, &min_run_timeout);
 
+#if defined(NCBI_OS_UNIX)
+        if (is_daemon) {
+            LOG_POST("Entering UNIX daemon mode...");
+            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            if (!daemon) {
+                return 0;
+            }
+
+        }
+        
+#endif
+
         LOG_POST(Info << "Running execution control every " 
                       << min_run_timeout << " seconds. ");
         min_run_timeout = min_run_timeout >= 0 ? min_run_timeout : 2;
@@ -2529,7 +2532,7 @@ int CNetScheduleDApp::Run(void)
     catch (CBDB_ErrnoException& ex)
     {
         LOG_POST(Error << "Error: DBD errno exception:" << ex.what());
-        return 1;
+        return ex.BDB_GetErrno();
     }
     catch (CBDB_LibException& ex)
     {

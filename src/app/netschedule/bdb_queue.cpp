@@ -130,12 +130,6 @@ CQueueCollection::~CQueueCollection()
 void CQueueCollection::Close()
 {
     CWriteLockGuard guard(m_Lock);
-    NON_CONST_ITERATE(TQueueMap, it, m_QMap) {
-        SLockedQueue* q = it->second;
-        if (q->lb_coordinator) {
-            q->lb_coordinator->StopCollectorThread();
-        }
-    }
     m_QMap.clear();
 }
 
@@ -318,63 +312,40 @@ void CQueueDataBase::Open(const string& path,
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
 
+    if (!params.private_env && !fl.empty()) {
+        // Opening db with recover flags is unreliable.
+        NcbiCout << "Run db_recover tool" << NcbiEndl;
+        BDB_ERRNO_THROW(DB_RUNRECOVERY, "Run db_recover tool");
+    }
+
     CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
     if (params.private_env)
         opt |= CBDB_Env::ePrivate;
-    if (params.private_env || fl.empty()) {
-        if (params.cache_ram_size)
-            m_Env->SetCacheSize(params.cache_ram_size);
-        if (params.max_locks)
-            m_Env->SetMaxLocks(params.max_locks);
-        if (params.max_lockers)
-            m_Env->SetMaxLockers(params.max_lockers);
-        if (params.max_lockobjects)
-            m_Env->SetMaxLockObjects(params.max_lockobjects);
-        if (params.max_trans)
-            m_Env->SetTransactionMax(params.max_trans);
-        m_Env->SetTransactionSync(params.sync_transactions ?
-                                      CBDB_Transaction::eTransSync :
-                                      CBDB_Transaction::eTransASync);
 
-        m_Env->OpenWithTrans(path.c_str(), opt);
-        LOG_POST(Info << "Opened " << (params.private_env ? "private " : "")
-            << "BDB environment with "
-            << m_Env->GetMaxLocks() << " max locks, "
+    if (params.cache_ram_size)
+        m_Env->SetCacheSize(params.cache_ram_size);
+    if (params.max_locks)
+        m_Env->SetMaxLocks(params.max_locks);
+    if (params.max_lockers)
+        m_Env->SetMaxLockers(params.max_lockers);
+    if (params.max_lockobjects)
+        m_Env->SetMaxLockObjects(params.max_lockobjects);
+    if (params.max_trans)
+        m_Env->SetTransactionMax(params.max_trans);
+    m_Env->SetTransactionSync(params.sync_transactions ?
+                                    CBDB_Transaction::eTransSync :
+                                    CBDB_Transaction::eTransASync);
+
+    m_Env->OpenWithTrans(path.c_str(), opt);
+    LOG_POST(Info << "Opened " << (params.private_env ? "private " : "")
+        << "BDB environment with "
+        << m_Env->GetMaxLocks() << " max locks, "
 //            << m_Env->GetMaxLockers() << " max lockers, "
 //            << m_Env->GetMaxLockObjects() << " max lock objects, "
-            << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
-                                          "" : "a") << "syncronous transactions, "
-            << m_Env->MutexGetMax() <<  " max mutexes");
-    } else {
-        if (params.cache_ram_size) {
-            m_Env->SetCacheSize(params.cache_ram_size);
-        }
-        try {
-            m_Env->JoinEnv(path.c_str(), CBDB_Env::eThreaded);
-            if (!m_Env->IsTransactional()) {
-                LOG_POST(Info << 
-                         "JS: '" << 
-                         "' Warning: Joined non-transactional environment ");
-            }
-        } 
-        catch (CBDB_ErrnoException& err_ex) 
-        {
-            if (err_ex.BDB_GetErrno() == DB_RUNRECOVERY) {
-                LOG_POST(Warning << 
-                         "JS: '" << 
-                         "'Warning: DB_ENV returned DB_RUNRECOVERY code."
-                         " Running the recovery procedure.");
-            }
-            m_Env->OpenWithTrans(path.c_str(), 
-                                CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+        << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
+                                        "" : "a") << "syncronous transactions, "
+        << m_Env->MutexGetMax() <<  " max mutexes");
 
-        }
-        catch (CBDB_Exception&)
-        {
-            m_Env->OpenWithTrans(path.c_str(), 
-                CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
-        }
-    }
 
     m_Env->SetDirectDB(params.direct_db);
     m_Env->SetDirectLog(params.direct_log);
@@ -396,59 +367,6 @@ void CQueueDataBase::Open(const string& path,
     m_QueueDescriptionDB.Open("sys_qdescr.db", CBDB_RawFile::eReadWriteCreate);
 }
 
-
-static
-CNSLB_ThreasholdCurve* s_ConfigureCurve(const SQueueParameters& params,
-                                        unsigned                exec_delay)
-{
-    auto_ptr<CNSLB_ThreasholdCurve> curve;
-    do {
-
-    if (params.lb_curve == SQueueParameters::eLBLinear) {
-        curve.reset(new CNSLB_ThreasholdCurve_Linear(params.lb_curve_high,
-                                                     params.lb_curve_linear_low));
-        break;
-    }
-
-    if (params.lb_curve == SQueueParameters::eLBRegression) {
-        curve.reset(new CNSLB_ThreasholdCurve_Regression(params.lb_curve_high,
-                                                params.lb_curve_regression_a));
-        break;
-    }
-
-    } while(0);
-
-    if (curve.get()) {
-        curve->ReGenerateCurve(exec_delay);
-    }
-    return curve.release();
-}
-
-/*
-static
-CNSLB_DecisionModule* s_ConfigureDecision(const IRegistry& reg, 
-                                          const string&    sname)
-{
-    auto_ptr<CNSLB_DecisionModule> decision;
-    string lb_policy = 
-        reg.GetString(sname, "lb_policy", kEmptyStr);
-
-    do {
-    if (lb_policy.empty() ||
-        NStr::CompareNocase(lb_policy, "rate")==0) {
-        decision.reset(new CNSLB_DecisionModule_DistributeRate());
-        break;
-    }
-    if (NStr::CompareNocase(lb_policy, "cpu_avail")==0) {
-        decision.reset(new CNSLB_DecisionModule_CPU_Avail());
-        break;
-    }
-
-    } while(0);
-
-    return decision.release();
-}
-*/
 
 void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
 {
@@ -522,6 +440,9 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
         if (it == m_QueueParamMap.end()) {
             LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
+            // TODO: Mark queue as dynamic, so we can delete it
+            // m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
+            // cur.Update();
             continue;
         }
         const SQueueParameters& params = *(it->second);
@@ -538,12 +459,8 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
             );
             MountQueue(qname, qclass, kind, params);
         } else {
-            // update non-critical queue parameters
             UpdateQueueParameters(qname, params);
         }
-
-        // re-load load balancing settings
-        UpdateQueueLBParameters(qname, params);
     }
 }
 
@@ -558,18 +475,9 @@ void CQueueDataBase::MountQueue(const string& qname,
     auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass, kind));
     q->Open(*m_Env, m_Path);
 
-    q->timeout = params.timeout;
-    q->notif_timeout = params.notif_timeout;
-    q->delete_done = params.delete_when_done;
-    q->last_notif = time(0);
+    q->SetParameters(params);
 
     SLockedQueue& queue = m_QueueCollection.AddQueue(qname, q.release());
-
-    queue.run_timeout = params.run_timeout;
-    if (params.run_timeout) {
-        queue.run_time_line =
-            new CJobTimeLine(params.run_timeout_precision, 0);
-    }
 
     unsigned recs = queue.ReadStatus();
 
@@ -578,16 +486,6 @@ void CQueueDataBase::MountQueue(const string& qname,
     if (udp_port) {
         queue.udp_socket.Bind(udp_port);
     }
-
-    // program version control
-    if (!params.program_name.empty()) {
-        queue.program_version_list.AddClientInfo(params.program_name);
-    }
-
-    queue.subm_hosts.SetHosts(params.subm_hosts);
-    queue.failed_retries = params.failed_retries;
-    queue.empty_lifetime = params.empty_lifetime;
-    queue.wnode_hosts.SetHosts(params.wnode_hosts);
 
     LOG_POST(Info << "Queue records = " << recs);
 }
@@ -620,7 +518,6 @@ void CQueueDataBase::CreateQueue(const string& qname, const string& qclass,
     m_QueueDescriptionDB.Sync();
     const SQueueParameters& params = *(it->second);
     MountQueue(qname, qclass, SLockedQueue::eKindDynamic, params);
-    UpdateQueueLBParameters(qname, params);
 }
 
 
@@ -690,109 +587,8 @@ void CQueueDataBase::UpdateQueueParameters(const string& qname,
                                            const SQueueParameters& params)
 {
     CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
-
-    queue->program_version_list.Clear();
-    if (!params.program_name.empty()) {
-        queue->program_version_list.AddClientInfo(params.program_name);
-    }
-    queue->subm_hosts.SetHosts(params.subm_hosts);
-    queue->failed_retries = params.failed_retries;
-    queue->wnode_hosts.SetHosts(params.wnode_hosts);
+    queue->SetParameters(params);
 }
-
-void CQueueDataBase::UpdateQueueLBParameters(const string& qname,
-                                             const SQueueParameters& params)
-{
-    CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
-
-    if (params.lb_flag == queue->lb_flag) return;
-
-    if (params.lb_service.empty()) {
-        if (params.lb_flag) {
-            LOG_POST(Error << "Queue:" << qname 
-                << "cannot be load balanced. Missing lb_service ini setting");
-        }
-        queue->lb_flag = false;
-    } else {
-        ENSLB_RunDelayType lb_delay_type = eNSLB_Constant;
-        unsigned lb_stall_time = 6;
-        if (NStr::CompareNocase(params.lb_exec_delay_str, "run_time")) {
-            lb_delay_type = eNSLB_RunTimeAvg;
-        } else {
-            try {
-                int stall_time =
-                    NStr::StringToInt(params.lb_exec_delay_str);
-                if (stall_time > 0) {
-                    lb_stall_time = stall_time;
-                }
-            } 
-            catch(exception& ex)
-            {
-                ERR_POST("Invalid value of lb_exec_delay " 
-                        << ex.what()
-                        << " Offending value:"
-                        << params.lb_exec_delay_str
-                        );
-            }
-        }
-
-        CNSLB_Coordinator::ENonLbHostsPolicy non_lb_hosts = 
-            CNSLB_Coordinator::eNonLB_Allow;
-        if (NStr::CompareNocase(params.lb_unknown_host, "deny") == 0) {
-            non_lb_hosts = CNSLB_Coordinator::eNonLB_Deny;
-        } else
-        if (NStr::CompareNocase(params.lb_unknown_host, "allow") == 0) {
-            non_lb_hosts = CNSLB_Coordinator::eNonLB_Allow;
-        } else
-        if (NStr::CompareNocase(params.lb_unknown_host, "reserve") == 0) {
-            non_lb_hosts = CNSLB_Coordinator::eNonLB_Reserve;
-        }
-
-        if (queue->lb_flag == false) { // LB is OFF
-            LOG_POST(Error << "Queue:" << qname 
-                        << " is load balanced. " << params.lb_service);
-
-            if (queue->lb_coordinator == 0) {
-                auto_ptr<CNSLB_ThreasholdCurve> 
-                deny_curve(s_ConfigureCurve(params, lb_stall_time));
-
-                //CNSLB_DecisionModule*   decision_maker = 0;
-
-                auto_ptr<CNSLB_DecisionModule_DistributeRate> 
-                    decision_distr_rate(
-                        new CNSLB_DecisionModule_DistributeRate);
-
-                auto_ptr<INSLB_Collector>   
-                    collect(new CNSLB_LBSMD_Collector());
-
-                auto_ptr<CNSLB_Coordinator> 
-                coord(new CNSLB_Coordinator(
-                                params.lb_service,
-                                collect.release(),
-                                deny_curve.release(),
-                                decision_distr_rate.release(),
-                                params.lb_collect_time,
-                                non_lb_hosts));
-
-                queue->lb_coordinator = coord.release();
-                queue->lb_stall_delay_type = lb_delay_type;
-                queue->lb_stall_time = lb_stall_time;
-                queue->lb_stall_time_mult = params.lb_stall_time_mult;
-                queue->lb_flag = true;
-
-            } else {  // LB is ON
-                // reconfigure the LB delay
-                CFastMutexGuard guard(queue->lb_stall_time_lock);
-                queue->lb_stall_delay_type = lb_delay_type;
-                if (lb_delay_type == eNSLB_Constant) {
-                    queue->lb_stall_time = lb_stall_time;
-                }
-                queue->lb_stall_time_mult = params.lb_stall_time_mult;
-            }
-        }
-    }
-}
-
 
 void CQueueDataBase::Close()
 {
@@ -1151,19 +947,21 @@ unsigned CQueue::CountRecs()
 bool CQueue::IsExpired(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     CFastMutexGuard guard(q->lock);
-    if (q->kind && q->empty_lifetime != -1) {
+    if (q->kind && qp.GetEmptyLifetime() != -1) {
         unsigned cnt = q->status_tracker.Count();
         if (cnt) {
             q->became_empty = -1;
         } else {
             if (q->became_empty != -1 &&
-                q->became_empty + q->empty_lifetime < time(0))
+                q->became_empty + qp.GetEmptyLifetime() < time(0))
             {
                 LOG_POST(Info << "Queue " << q->qname << " expired."
                     << " Became empty: "
                     << CTime(q->became_empty).ToLocalTime().AsString()
-                    << " Empty lifetime: " << q->empty_lifetime << " sec." );
+                    << " Empty lifetime: " << qp.GetEmptyLifetime()
+                    << " sec." );
                 return true;
             }
             if (q->became_empty == -1)
@@ -1184,10 +982,11 @@ bool CQueue::IsExpired(void)
 #define NS_PFNAME(x_fname) \
     (fflag ? (const char*) x_fname : (const char*) "")
 
-void CQueue::x_PrintJobDbStat(SQueueDB&      db, 
-                              CNcbiOstream&  out,
-                              const char*    fsp,
-                              bool           fflag)
+void CQueue::x_PrintJobDbStat(SQueueDB&     db,
+                              unsigned      queue_run_timeout,
+                              CNcbiOstream& out,
+                              const char*   fsp,
+                              bool          fflag)
 {
     out << fsp << NS_PFNAME("id: ") << (unsigned) db.id << fsp;
     CNetScheduleAPI::EJobStatus status = 
@@ -1202,9 +1001,10 @@ void CQueue::x_PrintJobDbStat(SQueueDB&      db,
     out << NS_PFNAME("timeout: ") << (unsigned)db.timeout << fsp;
     out << NS_PFNAME("run_timeout: ") << (unsigned)db.run_timeout << fsp;
 
+    unsigned run_timeout = (unsigned)db.run_timeout;
+    if (run_timeout == 0) run_timeout = queue_run_timeout;
     time_t exp_time = 
-        x_ComputeExpirationTime((unsigned)db.time_run, 
-                                (unsigned)db.run_timeout);
+        x_ComputeExpirationTime((unsigned)db.time_run, run_timeout);
     NS_PRINT_TIME(NS_PFNAME("time_run_expire: "), exp_time);
 
 
@@ -1282,6 +1082,7 @@ CQueue::PrintJobDbStat(unsigned                    job_id,
                        CNetScheduleAPI::EJobStatus status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
     SQueueDB& db = q->db;
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1289,7 +1090,7 @@ CQueue::PrintJobDbStat(unsigned                    job_id,
         db.SetTransaction(0);
         db.id = job_id;
         if (db.Fetch() == eBDB_Ok) {
-            x_PrintJobDbStat(db, out);
+            x_PrintJobDbStat(db, queue_run_timeout, out);
         } else {
             out << "Job not found id=" << job_id;
         }
@@ -1308,7 +1109,7 @@ CQueue::PrintJobDbStat(unsigned                    job_id,
                 db.id = id;
 
                 if (db.Fetch() == eBDB_Ok) {
-                    x_PrintJobDbStat(db, out);
+                    x_PrintJobDbStat(db, queue_run_timeout, out);
                 }
             }}
         } // for
@@ -1327,30 +1128,34 @@ void CQueue::PrintJobStatusMatrix(CNcbiOstream& out)
 bool CQueue::IsVersionControl() const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    return q->program_version_list.IsConfigured();
+    CQueueParamAccessor qp(*q);
+    return qp.GetProgramVersionList().IsConfigured();
 }
 
 
 bool CQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    return q->program_version_list.IsMatchingClient(cinfo);
+    CQueueParamAccessor qp(*q);
+    return qp.GetProgramVersionList().IsMatchingClient(cinfo);
 }
 
 
 bool CQueue::IsSubmitAllowed() const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     return (m_ClientHostAddr == 0) || 
-            q->subm_hosts.IsAllowed(m_ClientHostAddr);
+            qp.GetSubmHosts().IsAllowed(m_ClientHostAddr);
 }
 
 
 bool CQueue::IsWorkerAllowed() const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     return (m_ClientHostAddr == 0) || 
-            q->wnode_hosts.IsAllowed(m_ClientHostAddr);
+            qp.GetWnodeHosts().IsAllowed(m_ClientHostAddr);
 }
 
 
@@ -1370,6 +1175,7 @@ CBDB_Env& CQueue::GetBDBEnv()
 void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
     SQueueDB& db = q->db;
     CFastMutexGuard guard(q->lock);
@@ -1380,7 +1186,7 @@ void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
     cur.SetCondition(CBDB_FileCursor::eFirst);
 
     while (cur.Fetch() == eBDB_Ok) {
-        x_PrintJobDbStat(db, out);
+        x_PrintJobDbStat(db, queue_run_timeout, out);
         if (!out.good()) break;
     }
 }
@@ -1774,14 +1580,16 @@ void CQueue::PrintNodeStat(CNcbiOstream& out) const
 void CQueue::PrintSubmHosts(CNcbiOstream& out) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->subm_hosts.PrintHosts(out);
+    CQueueParamAccessor qp(*q);
+    qp.GetSubmHosts().PrintHosts(out);
 }
 
 
 void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    q->wnode_hosts.PrintHosts(out);
+    CQueueParamAccessor qp(*q);
+    qp.GetWnodeHosts().PrintHosts(out);
 }
 
 
@@ -1981,7 +1789,6 @@ CQueue::x_AssignSubmitRec(SQueueDB&     db,
 
     db.run_counter = 0;
     db.ret_code = 0;
-    db.time_lb_first_eval = 0;
     db.aff_id = rec->affinity_id;
     db.mask = rec->mask;
 
@@ -2131,11 +1938,12 @@ void CQueue::PutResult(unsigned int  job_id,
                        const char*   output)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
                                    CNetScheduleAPI::eDone);
-    if (q->delete_done) {
+    if (qp.GetDeleteDone()) {
         q->Erase(job_id);
     }
     CNetScheduleAPI::EJobStatus st = js_guard.GetOldStatus();
@@ -2251,6 +2059,7 @@ CQueue::x_UpdateDB_PutResultNoLock(SQueueDB&            db,
                                    SSubmitNotifInfo*    subm_info)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
@@ -2268,7 +2077,7 @@ CQueue::x_UpdateDB_PutResultNoLock(SQueueDB&            db,
         subm_info->subm_timeout = db.subm_timeout;
     }
 
-    if (q->delete_done) {
+    if (qp.GetDeleteDone()) {
         cur.Delete();
     } else {
         db.status = (int) CNetScheduleAPI::eDone;
@@ -2337,6 +2146,7 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
     _ASSERT(job_mask);
 
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
 
     unsigned dead_locks = 0;       // dead lock counter
 
@@ -2350,7 +2160,7 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
                                    &need_update);
     // This is a HACK - if js_guard is not commited, it will rollback
     // to previous state, so it is safe to change status after the guard.
-    if (q->delete_done) {
+    if (qp.GetDeleteDone()) {
         q->Erase(done_job_id);
     }
     // TODO: implement transaction wrapper (a la js_guard above)
@@ -2561,6 +2371,7 @@ void CQueue::JobFailed(unsigned int  job_id,
                        const string& client_name)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned failed_retries = CQueueParamAccessor(*q).GetFailedRetries();
 
     // We first change memory state to "Failed", it is safer because
     // there is only danger to find job in inconsistent state, and because
@@ -2600,7 +2411,7 @@ void CQueue::JobFailed(unsigned int  job_id,
         db.ret_code = ret_code;
 
         unsigned run_counter = db.run_counter;
-        if (run_counter <= q->failed_retries) {
+        if (run_counter <= failed_retries) {
             // NB: due to conflict with locking pattern of x_FindPendingJob we can not
             // acquire aff_map_lock here! So we aquire it earlier (see above).
             q->worker_aff_map.BlacklistJob(worker_node, client_name, job_id);
@@ -2664,67 +2475,12 @@ void CQueue::JobFailed(unsigned int  job_id,
 
 void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    CNetScheduleAPI::EJobStatus st = GetStatus(job_id);
-    if (st != CNetScheduleAPI::eRunning) {
-        return;
-    }
-    SQueueDB& db = q->db;
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eEnvDefault,
-                           CBDB_Transaction::eNoAssociation);
-
-    unsigned exp_time = 0;
-    time_t curr = time(0);
-
-    {{
-    CFastMutexGuard guard(q->lock);
-    db.SetTransaction(&trans);
-
-    CBDB_FileCursor& cur = *q->GetCursor(trans);
-    CBDB_CursorGuard cg(cur);    
-
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << job_id;
-
-    if (cur.FetchFirst() != eBDB_Ok) {
-        return;
-    }
-
-    unsigned time_run = db.time_run;
-    unsigned run_timeout = db.run_timeout;
-
-    exp_time = x_ComputeExpirationTime(time_run, run_timeout);
-    if (exp_time == 0) {
-        return;
-    }
-
-    db.run_timeout = tm;
-    db.time_run = curr;
-
-    cur.Update();
-
-    }}
-
-    trans.Commit();
-
-    {{
-        CJobTimeLine& tl = *q->run_time_line;
-
-        CWriteLockGuard guard(q->rtl_lock);
-        tl.MoveObject(exp_time, curr + tm, job_id);
-    }}
-
     if (IsMonitoring()) {
+        CRef<SLockedQueue> q(x_GetLQueue());
         CTime tmp_t(CTime::eCurrent);
         string msg = tmp_t.AsString();
-        msg += " CQueue::SetJobRunTimeout: Job id=";
+        msg += " OBSOLETE CQueue::SetJobRunTimeout: Job id=";
         msg += NStr::IntToString(job_id);
-        tmp_t.SetTimeT(curr + tm);
-        tmp_t.ToLocalTime();
-        msg += " new_expiration_time=";
-        msg += tmp_t.AsString();
         msg += " job_timeout(sec)=";
         msg += NStr::IntToString(tm);
         msg += " job_timeout(minutes)=";
@@ -2732,16 +2488,19 @@ void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
 
         MonitorPost(msg);
     }
+    LOG_POST(Warning << "Obsolete API SetRunTimeout called");
+    NCBI_THROW(CNetScheduleException,
+        eObsoleteCommand, "Use API JobDelayExpiration (cmd JDEX) instead");
 }
 
 void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
 
     unsigned q_time_descr = 20;
     unsigned run_timeout;
     unsigned time_run;
-    unsigned old_run_timeout;
 
     CNetScheduleAPI::EJobStatus st = GetStatus(job_id);
     if (st != CNetScheduleAPI::eRunning) {
@@ -2772,26 +2531,29 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         //    int status = db.status;
 
         time_run = db.time_run;
+        if (time_run == 0) {
+            // Impossible
+            LOG_POST(Error
+                << "Internal error: time_run==0 for running job id="
+                << job_id);
+            // Fix it just in case
+            time_run = curr;
+            db.time_run = curr;
+        }
         run_timeout = db.run_timeout;
         if (run_timeout == 0) {
-            run_timeout = q->run_timeout;
+            run_timeout = queue_run_timeout;
         }
-        old_run_timeout = run_timeout;
 
         // check if current timeout is enough and job requires no prolongation
         time_t safe_exp_time = 
-            curr + std::max((unsigned)q->run_timeout, 2*tm) + q_time_descr;
+            curr + std::max(queue_run_timeout, 2*tm) + q_time_descr;
         if (time_run + run_timeout > (unsigned) safe_exp_time) {
             return;
         }
 
-        if (time_run == 0) {
-            time_run = curr;
-            db.time_run = curr;
-        }
-
         while (time_run + run_timeout <= (unsigned) safe_exp_time) {
-            run_timeout += std::max((unsigned)q->run_timeout, tm);
+            run_timeout += std::max(queue_run_timeout, tm);
         }
         db.run_timeout = run_timeout;
 
@@ -2801,12 +2563,9 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     trans.Commit();
     exp_time = x_ComputeExpirationTime(time_run, run_timeout);
 
-
     {{
-        CJobTimeLine& tl = *q->run_time_line;
-
         CWriteLockGuard guard(q->rtl_lock);
-        tl.MoveObject(exp_time, curr + tm, job_id);
+        q->run_time_line->MoveObject(exp_time, curr + tm, job_id);
     }}
 
     if (IsMonitoring()) {
@@ -2819,7 +2578,6 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
         msg += " new_expiration_time=";
         msg += tmp_t.AsString();
         msg += " job_timeout(sec)=";
-        if (run_timeout == 0) run_timeout = q->run_timeout;
         msg += NStr::IntToString(run_timeout);
         msg += " job_timeout(minutes)=";
         msg += NStr::IntToString(run_timeout/60);
@@ -2886,312 +2644,6 @@ void CQueue::ReturnJob(unsigned int job_id)
         MonitorPost(msg);
     }
 }
-
-/* obsolete, non-working code
-void CQueue::x_GetJobLB(unsigned int   worker_node,
-                        unsigned int*  job_id, 
-                        char*          input,
-                        unsigned*      job_mask)
-{
-    _ASSERT(worker_node && input);
-    _ASSERT(job_mask);
-
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    unsigned get_attempts = 0;
-    unsigned fetch_attempts = 0;
-    const unsigned kMaxGetAttempts = 100;
-
-
-    ++get_attempts;
-    if (get_attempts > kMaxGetAttempts) {
-        *job_id = 0;
-        return;
-    }
-
-    *job_id = q->status_tracker.BorrowPendingJob();
-
-    if (!*job_id) {
-        return;
-    }
-    CNetSchedule_JS_BorrowGuard bguard(q->status_tracker, 
-                                       *job_id,
-                                       CNetScheduleAPI::ePending);
-
-    time_t curr = time(0);
-    unsigned lb_stall_time = 0;
-    ENSLB_RunDelayType stall_delay_type;
-
-
-    //
-    // Define current execution delay
-    //
-
-    {{
-        CFastMutexGuard guard(q->lb_stall_time_lock);
-        stall_delay_type = q->lb_stall_delay_type;
-        lb_stall_time    = q->lb_stall_time;
-    }}
-
-    switch (stall_delay_type) {
-    case eNSLB_Constant:
-        break;
-    case eNSLB_RunTimeAvg:
-        {
-            double total_run_time, run_count, lb_stall_time_mult;
-
-            {{
-            CFastMutexGuard guard(q->qstat_lock);
-            if (q->qstat.run_count) {
-                total_run_time = q->qstat.total_run_time;
-                run_count = q->qstat.run_count;
-                lb_stall_time_mult = q->lb_stall_time_mult;
-            } else {
-                // no statistics yet, nothing to do, take default queue value
-                break;
-            }
-            }}
-
-            double avg_time = total_run_time / run_count;
-            lb_stall_time = (unsigned)(avg_time * lb_stall_time_mult);
-        }
-        break;
-    default:
-        _ASSERT(0);
-    } // switch
-
-    if (lb_stall_time == 0) {
-        lb_stall_time = 6;
-    }
-
-
-fetch_db:
-    ++fetch_attempts;
-    if (fetch_attempts > kMaxGetAttempts) {
-        LOG_POST(Error << "Failed to fetch the job record job_id=" << *job_id);
-        *job_id = 0;
-        return;
-    }
- 
-
-    try {
-        SQueueDB& db = q->db;
-        CBDB_Transaction trans(*db.GetEnv(),
-                            CBDB_Transaction::eEnvDefault,
-                            CBDB_Transaction::eNoAssociation);
-        {{
-        CFastMutexGuard guard(q->lock);
-        db.SetTransaction(&trans);
-
-        CBDB_FileCursor& cur = *q->GetCursor(trans);
-        CBDB_CursorGuard cg(cur);    
-
-        cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << *job_id;
-        if (cur.Fetch() != eBDB_Ok) {
-            if (fetch_attempts < kMaxGetAttempts) {
-                goto fetch_db;
-            }
-            *job_id = 0;
-            return;
-        }
-        CNetScheduleAPI::EJobStatus status = 
-            (CNetScheduleAPI::EJobStatus)(int)db.status;
-
-        // internal integrity check
-        if (!(status == CNetScheduleAPI::ePending ||
-              status == CNetScheduleAPI::eReturned)
-            ) {
-            if (q->status_tracker.IsCancelCode(
-                (CNetScheduleAPI::EJobStatus) status)) {
-                // this job has been canceled while i'm fetching
-                *job_id = 0;
-                return;
-            }
-                ERR_POST(Error << "x_GetJobLB()::Status integrity violation "
-                            << " job = " << *job_id
-                            << " status = " << status
-                            << " expected status = "
-                            << (int)CNetScheduleAPI::ePending);
-            *job_id = 0;
-            return;
-        }
-
-        const char* fld_str = db.input;
-        ::strcpy(input, fld_str);
-
-        unsigned run_counter = db.run_counter;
-
-        unsigned time_submit = db.time_submit;
-        unsigned timeout = db.timeout;
-        if (timeout == 0) {
-            timeout = q->timeout;
-        }
-        *job_mask = db.mask;
-
-        _ASSERT(timeout);
-
-        // check if job already expired
-        if (timeout && (time_submit + timeout < (unsigned)curr)) {
-            *job_id = 0; 
-            db.time_run = 0;
-            db.time_done = curr;
-            db.status = (int) CNetScheduleAPI::eFailed;
-            db.err_msg = "Job expired and cannot be scheduled.";
-
-            bguard.ReturnToStatus(CNetScheduleAPI::eFailed);
-
-            if (IsMonitoring()) {
-                CTime tmp_t(CTime::eCurrent);
-                string msg = tmp_t.AsString();
-                msg += " CQueue::x_GetJobLB() timeout expired job id=";
-                msg += NStr::IntToString(*job_id);
-                MonitorPost(msg);
-            }
-
-            cur.Update();
-            trans.Commit();
-
-            return;
-        } 
-
-        CNSLB_Coordinator::ENonLbHostsPolicy unk_host_policy =
-            q->lb_coordinator->GetNonLBPolicy();
-
-        // check if job must be scheduled immediatelly, 
-        // because it's stalled for too long
-        //
-        unsigned time_lb_first_eval = db.time_lb_first_eval;
-        unsigned stall_time = 0; 
-        if (time_lb_first_eval) {
-            stall_time = curr - time_lb_first_eval;
-            if (lb_stall_time) {
-                if (stall_time > lb_stall_time) {
-                    // stalled for too long! schedule the job
-                    if (unk_host_policy != CNSLB_Coordinator::eNonLB_Deny) {
-                        goto grant_job;
-                    }
-                }
-            } else {
-                // exec delay not set, schedule the job
-                goto grant_job;
-            }
-        } else { // first LB evaluation
-            db.time_lb_first_eval = curr;
-        }
-
-        // job can be scheduled now, if load balancing situation is permitting
-        {{
-        CNSLB_Coordinator* coordinator = q->lb_coordinator;
-        if (coordinator) {
-            CNSLB_DecisionModule::EDecision lb_decision = 
-                coordinator->Evaluate(worker_node, stall_time);
-            switch (lb_decision) {
-            case CNSLB_DecisionModule::eGrantJob:
-                break;
-            case CNSLB_DecisionModule::eDenyJob:
-                *job_id = 0;
-                break;
-            case CNSLB_DecisionModule::eHostUnknown:
-                if (unk_host_policy != CNSLB_Coordinator::eNonLB_Allow) {
-                    *job_id = 0;
-                }
-                break;
-            case CNSLB_DecisionModule::eNoLBInfo:
-                break;
-            case CNSLB_DecisionModule::eInsufficientInfo:
-                break;
-            default:
-                _ASSERT(0);
-            } // switch
-
-            if (IsMonitoring()) {
-                CTime tmp_t(CTime::eCurrent);
-                string msg = " CQueue::x_GetJobLB() LB decision = ";
-                msg += CNSLB_DecisionModule::DecisionToStrint(lb_decision);
-                msg += " job id = ";
-                msg += NStr::IntToString(*job_id);
-                msg += " worker_node=";
-                msg += CSocketAPI::gethostbyaddr(worker_node);
-                MonitorPost(msg);
-            }
-
-        }
-        }}
-grant_job:
-        // execution granted, update job record information
-        if (*job_id) {
-            db.status = (int) CNetScheduleAPI::eRunning;
-            db.time_run = curr;
-            db.run_timeout = 0;
-            db.run_counter = ++run_counter;
-
-            switch (run_counter) {
-            case 1:
-                db.worker_node1 = worker_node;
-                break;
-            case 2:
-                db.worker_node2 = worker_node;
-                break;
-            case 3:
-                db.worker_node3 = worker_node;
-                break;
-            case 4:
-                db.worker_node4 = worker_node;
-                break;
-            case 5:
-                db.worker_node5 = worker_node;
-                break;
-            default:
-
-                bguard.ReturnToStatus(CNetScheduleAPI::eFailed);
-                ERR_POST(Error << "Too many run attempts. job=" << *job_id);
-                db.status = (int) CNetScheduleAPI::eFailed;
-                db.err_msg = "Too many run attempts.";
-                db.time_done = curr;
-                db.run_counter = --run_counter;
-
-                if (IsMonitoring()) {
-                    CTime tmp_t(CTime::eCurrent);
-                    string msg = tmp_t.AsString();
-                    msg += " CQueue::x_GetJobLB() Too many run attempts job id=";
-                    msg += NStr::IntToString(*job_id);
-                    MonitorPost(msg);
-                }
-
-                *job_id = 0; 
-
-            } // switch
-
-        } // if (*job_id)
-
-        cur.Update();
-
-        }}
-        trans.Commit();
-
-    } 
-    catch (exception&)
-    {
-        *job_id = 0;
-        throw;
-    }
-    bguard.ReturnToStatus(CNetScheduleAPI::eRunning);
-
-    if (IsMonitoring() && *job_id) {
-        CTime tmp_t(CTime::eCurrent);
-        string msg = tmp_t.AsString();
-        msg += " CQueue::x_GetJobLB() job id=";
-        msg += NStr::IntToString(*job_id);
-        msg += " worker_node=";
-        msg += CSocketAPI::gethostbyaddr(worker_node);
-        MonitorPost(msg);
-    }
-
-
-    x_AddToTimeLine(*job_id, curr);
-}
-*/
 
 
 unsigned 
@@ -3292,13 +2744,6 @@ void CQueue::GetJob(unsigned int   worker_node,
                     unsigned*      job_mask)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-
-    /* obsolete, non-working code
-    if (q->lb_flag) {
-        x_GetJobLB(worker_node, job_id, input, job_mask);
-        return;
-    }
-    */
 
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;
@@ -3413,6 +2858,7 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
                                 unsigned*            job_mask)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned queue_timeout = CQueueParamAccessor(*q).GetTimeout();
 
     const unsigned kMaxGetAttempts = 100;
 
@@ -3439,8 +2885,8 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
                 // this job has been canceled while i'm fetching
                 return eGetJobUpdate_JobStopped;
             }
-            ERR_POST(Error 
-                << "x_UpdateDB_GetJobNoLock::Status integrity violation "
+            ERR_POST(Error
+                << "x_UpdateDB_GetJobNoLock: Status integrity violation "
                 << " job = "     << job_id
                 << " status = "  << status
                 << " expected status = "
@@ -3461,9 +2907,7 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
 
         unsigned time_submit = db.time_submit;
         unsigned timeout = db.timeout;
-        if (timeout == 0) {
-            timeout = q->timeout;
-        }
+        if (timeout == 0) timeout = queue_timeout;
 
         _ASSERT(timeout);
         // check if job already expired
@@ -3639,6 +3083,7 @@ bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
 bool CQueue::CheckDelete(unsigned int job_id)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     SQueueDB& db = q->db;
 
     time_t curr = time(0);
@@ -3659,7 +3104,7 @@ bool CQueue::CheckDelete(unsigned int job_id)
 
         int status = db.status;
 
-        unsigned queue_ttl = q->timeout;
+        unsigned queue_ttl = qp.GetTimeout();
         job_ttl = db.timeout;
         if (job_ttl <= 0) {
             job_ttl = queue_ttl;
@@ -3674,8 +3119,11 @@ bool CQueue::CheckDelete(unsigned int job_id)
             time_done = time_submit;
         }
 
-        if (time_done == 0) { 
+        if (time_done == 0) {
+            // Job is running (? see prev if)
             if (time_submit + (job_ttl * 10) > (unsigned)curr) {
+                // Give the job ample time to
+                // complete before trying to delete
                 return false;
             }
         } else {
@@ -3753,9 +3201,10 @@ void CQueue::Truncate(void)
 void CQueue::x_AddToTimeLine(unsigned job_id, time_t curr)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     if (job_id && q->run_time_line) {
         CJobTimeLine& tl = *q->run_time_line;
-        time_t projected_time_done = curr + q->run_timeout;
+        time_t projected_time_done = curr + qp.GetRunTimeout();
 
         CWriteLockGuard guard(q->rtl_lock);
         tl.AddObject(projected_time_done, job_id);
@@ -3787,13 +3236,14 @@ CQueue::x_TimeLineExchange(unsigned remove_job_id,
                            time_t   curr)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     if (q->run_time_line) {
         CWriteLockGuard guard(q->rtl_lock);
         q->run_time_line->RemoveObject(remove_job_id);
 
         if (add_job_id) {
             CJobTimeLine& tl = *q->run_time_line;
-            time_t projected_time_done = curr + q->run_timeout;
+            time_t projected_time_done = curr + qp.GetRunTimeout();
             tl.AddObject(projected_time_done, add_job_id);
         }
     }
@@ -3893,6 +3343,7 @@ void CQueue::MonitorPost(const string& msg)
 void CQueue::NotifyListeners(bool unconditional)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    CQueueParamAccessor qp(*q);
     unsigned short udp_port = m_Db.GetUdpPort();
     if (udp_port == 0) {
         return;
@@ -3903,7 +3354,7 @@ void CQueue::NotifyListeners(bool unconditional)
     time_t curr = time(0);
 
     if (!unconditional &&
-        (q->notif_timeout == 0 ||
+        (qp.GetNotifTimeout() == 0 ||
          !q->status_tracker.AnyPending())) {
         return;
     }
@@ -3913,7 +3364,7 @@ void CQueue::NotifyListeners(bool unconditional)
         CWriteLockGuard guard(q->wn_lock);
         lst_size = wnodes.size();
         if ((lst_size == 0) ||
-            (!unconditional && q->last_notif + q->notif_timeout > curr)) {
+            (!unconditional && q->last_notif + qp.GetNotifTimeout() > curr)) {
             return;
         } 
         q->last_notif = curr;
@@ -3997,6 +3448,7 @@ void CQueue::CheckExecutionTimeout()
 time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+    unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
     SQueueDB& db = q->db;
 
     CNetScheduleAPI::EJobStatus status = GetStatus(job_id);
@@ -4032,11 +3484,14 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
         time_run = db.time_run;
         _ASSERT(time_run);
         run_timeout = db.run_timeout;
+        if (run_timeout == 0) run_timeout = queue_run_timeout;
 
         exp_time = x_ComputeExpirationTime(time_run, run_timeout);
         if (curr_time < exp_time) { 
             return exp_time;
         }
+        // NB! here DB and matrix status deviate. Matrix gets short-lived
+        // Returned status for some reason
         db.status = (int) CNetScheduleAPI::ePending;
         db.time_done = 0;
 
@@ -4045,6 +3500,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
 
     trans.Commit();
 
+    // See NB above.
     q->status_tracker.SetStatus(job_id, CNetScheduleAPI::eReturned);
 
     {{
@@ -4061,7 +3517,6 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
         tm.ToLocalTime();
         msg += " exp_time=";
         msg += tm.AsString();
-        if (run_timeout == 0) run_timeout = q->run_timeout;
         msg += " run_timeout(sec)=";
         msg += NStr::IntToString(run_timeout);
         msg += " run_timeout(minutes)=";
@@ -4079,14 +3534,8 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
 time_t 
 CQueue::x_ComputeExpirationTime(unsigned time_run, unsigned run_timeout) const
 {
-    if (run_timeout == 0) {
-        run_timeout = x_GetLQueue()->run_timeout;
-    }
-    if (run_timeout == 0) {
-        return 0;
-    }
-    time_t exp_time = time_run + run_timeout;
-    return exp_time;
+    if (run_timeout == 0) return 0;
+    return time_run + run_timeout;
 }
 
 void CQueue::x_AddToAffIdx_NoLock(unsigned aff_id, 

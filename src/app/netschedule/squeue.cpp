@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 {
-    // Read general parameters
+    // Read parameters
     timeout = reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
     notif_timeout =
         reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
@@ -67,52 +67,6 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
-
-    // Read load balancing parameters
-    lb_flag = reg.GetBool(sname, "lb", false, 0, IRegistry::eReturn);
-    lb_service = reg.GetString(sname, "lb_service", kEmptyStr);
-    lb_collect_time =
-        reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
-    lb_unknown_host = reg.GetString(sname, "lb_unknown_host", kEmptyStr);
-    lb_exec_delay_str = reg.GetString(sname, "lb_exec_delay", kEmptyStr);
-    lb_stall_time_mult = 
-        reg.GetDouble(sname, "lb_exec_delay_mult", 0.5, 0, IRegistry::eReturn);
-
-    string curve_type = reg.GetString(sname, "lb_curve", kEmptyStr);
-    if (curve_type.empty() || 
-        NStr::CompareNocase(curve_type, "linear") == 0) {
-        lb_curve = eLBLinear;
-        lb_curve_high = reg.GetDouble(sname,
-                                      "lb_curve_high",
-                                      0.6,
-                                      0,
-                                      IRegistry::eReturn);
-        lb_curve_linear_low = reg.GetDouble(sname,
-                                            "lb_curve_linear_low",
-                                            0.15,
-                                            0,
-                                            IRegistry::eReturn);
-//        LOG_POST(Info << sname 
-//                      << " initializing linear LB curve"
-//                      << " y0=" << lb_curve_high
-//                      << " yN=" << lb_curve_linear_low);
-    } else if (NStr::CompareNocase(curve_type, "regression") == 0) {
-        lb_curve = eLBRegression;
-        lb_curve_high = reg.GetDouble(sname,
-                                      "lb_curve_high",
-                                      0.85,
-                                      0,
-                                      IRegistry::eReturn);
-        lb_curve_regression_a = reg.GetDouble(sname,
-                                              "lb_curve_regression_a",
-                                              -0.2,
-                                              0,
-                                              IRegistry::eReturn);
-//        LOG_POST(Info << sname 
-//                      << " initializing regression LB curve."
-//                      << " y0=" << lb_curve_high 
-//                      << " a="  << lb_curve_regression_a);
-    }
 }
 
 
@@ -140,20 +94,19 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     qname(queue_name),
     qclass(qclass_name),
     kind(queue_kind),
-    timeout(3600), 
-    notif_timeout(7), 
-    delete_done(false),
-    failed_retries(0),
-    empty_lifetime(-1),
+
+    m_ParamLock(CRWLock::fFavorWriters),
+    m_Timeout(3600), 
+    m_NotifTimeout(7), 
+    m_DeleteDone(false),
+    m_RunTimeout(3600),
+    m_FailedRetries(0),
+    m_EmptyLifetime(-1),
+
     became_empty(-1),
     last_notif(0), 
     q_notif("NCBI_JSQ_"),
-    run_time_line(0),
-    lb_flag(false),
-    lb_coordinator(0),
-    lb_stall_delay_type(eNSLB_Constant),
-    lb_stall_time(6),
-    lb_stall_time_mult(1.0),
+    run_time_line(NULL),
     delete_database(false),
     m_CurrAffId(0),
     m_LastAffId(0)
@@ -175,7 +128,6 @@ SLockedQueue::~SLockedQueue()
         delete node;
     }
     delete run_time_line;
-    delete lb_coordinator;
     if (delete_database) {
         db.Close();
         aff_idx.Close();
@@ -226,6 +178,8 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
     m_TagDb.RevSplitOff();
     m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
     files.push_back(path + fname);
+
+    last_notif = time(0);
 }
 
 
@@ -250,6 +204,33 @@ void SLockedQueue::x_ReadFieldInfo(void)
             m_FieldMap[fld.GetName()] = m_NKeys + i;
         }
     }
+}
+
+
+void SLockedQueue::SetParameters(const SQueueParameters& params)
+{
+    CWriteLockGuard guard(m_ParamLock);
+    m_Timeout = params.timeout;
+    m_NotifTimeout = params.notif_timeout;
+    m_DeleteDone = params.delete_when_done;
+
+    m_RunTimeout = params.run_timeout;
+    if (params.run_timeout && !run_time_line) {
+        // One time only. Precision can not be reset.
+        run_time_line =
+            new CJobTimeLine(params.run_timeout_precision, 0);
+    }
+
+    // program version control
+    m_ProgramVersionList.Clear();
+    if (!params.program_name.empty()) {
+        m_ProgramVersionList.AddClientInfo(params.program_name);
+    }
+
+    m_SubmHosts.SetHosts(params.subm_hosts);
+    m_FailedRetries = params.failed_retries;
+    m_EmptyLifetime = params.empty_lifetime;
+    m_WnodeHosts.SetHosts(params.wnode_hosts);
 }
 
 

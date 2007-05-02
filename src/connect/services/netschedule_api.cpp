@@ -132,6 +132,8 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eAccessDenied"]        = CNetScheduleException::eAccessDenied;
     m_Map["eDuplicateName"]       = CNetScheduleException::eDuplicateName;
     m_Map["eQuerySyntaxError"]    = CNetScheduleException::eQuerySyntaxError;
+    m_Map["eCommandIsNotAllowed"] = CNetScheduleException::eCommandIsNotAllowed;
+    m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
 }
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)

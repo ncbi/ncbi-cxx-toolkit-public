@@ -804,7 +804,8 @@ public:
         eAccessDenied,
         eDuplicateName,
         eQuerySyntaxError,
-        eCommandIsNotAllowed
+        eCommandIsNotAllowed,
+        eObsoleteCommand
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -825,6 +826,7 @@ public:
         case eDuplicateName:       return "eDuplicateName";
         case eQuerySyntaxError:    return "eQuerySyntaxError";
         case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
+        case eObsoleteCommand:     return "eObsoleteCommand";
         default:                   return CNetServiceException::GetErrCodeString();
         }
     }
