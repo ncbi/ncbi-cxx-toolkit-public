@@ -108,7 +108,7 @@ for my $FileName (sort @FileNames)
 
         %Keywords = map {$_ => 1} $FileContents =~ m{\$(URL | HeadURL |
             Author | LastChangedBy | Date | LastChangedDate |
-            Rev | Revision | LastChangedRevision | Id)[\ :\$]}xgo
+            Rev | Revision | LastChangedRevision | Id)[:\$]}xgo
     }
 
     close FILE;
