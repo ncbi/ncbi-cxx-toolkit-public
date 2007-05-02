@@ -58,7 +58,7 @@ if ($application eq "blastall") {
 } elsif ($application eq "rpsblast") {
     $cmd = &handle_rpsblast(\$print_only);
 } else {
-    die "$application is not supported\n";
+    die "Application: '$application' is not supported\n";
 }
 
 if ($print_only) {
