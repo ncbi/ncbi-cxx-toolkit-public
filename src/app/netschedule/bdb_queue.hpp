@@ -247,7 +247,10 @@ public:
                           TNSBitVector::statistics* st) const;
 
     /// Count database records
-    unsigned CountRecs(void);
+    unsigned CountRecs() const;
+
+    unsigned GetMaxInputSize() const;
+    unsigned GetMaxOutputSize() const;
 
     void PrintStat(CNcbiOstream & out);
     void PrintNodeStat(CNcbiOstream & out) const;

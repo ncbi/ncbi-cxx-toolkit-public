@@ -109,7 +109,9 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_DeleteDone(false),
     m_RunTimeout(3600),
     m_FailedRetries(0),
-    m_EmptyLifetime(-1)
+    m_EmptyLifetime(-1),
+    m_MaxInputSize(kNetScheduleMaxDBDataSize),
+    m_MaxOutputSize(kNetScheduleMaxDBDataSize)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
@@ -230,6 +232,8 @@ void SLockedQueue::SetParameters(const SQueueParameters& params)
     m_SubmHosts.SetHosts(params.subm_hosts);
     m_FailedRetries = params.failed_retries;
     m_EmptyLifetime = params.empty_lifetime;
+    m_MaxInputSize  = params.max_input_size;
+    m_MaxOutputSize = params.max_output_size;
     m_WnodeHosts.SetHosts(params.wnode_hosts);
 }
 

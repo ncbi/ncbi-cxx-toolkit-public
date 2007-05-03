@@ -66,6 +66,8 @@ struct SQueueParameters
     bool delete_when_done;
     int failed_retries;
     time_t empty_lifetime;
+    unsigned max_input_size;
+    unsigned max_output_size;
     string subm_hosts;
     string wnode_hosts;
     // This parameter is not reconfigurable
@@ -78,6 +80,9 @@ struct SQueueParameters
         program_name(""),
         delete_when_done(false),
         failed_retries(0),
+        empty_lifetime(0),
+        max_input_size(kNetScheduleMaxDBDataSize),
+        max_output_size(kNetScheduleMaxDBDataSize),
         subm_hosts(""),
         wnode_hosts(""),
         run_timeout_precision(3600)
@@ -383,7 +388,10 @@ private:
     int                          m_RunTimeout;      ///< Execution timeout
     /// How many attemts to make on different nodes before failure
     unsigned                     m_FailedRetries;
-    int                          m_EmptyLifetime;   ///< How long to live after empty
+    ///< How long to live after becoming empty, if -1 - infinitely
+    int                          m_EmptyLifetime;
+    unsigned                     m_MaxInputSize;                    
+    unsigned                     m_MaxOutputSize;                    
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -404,6 +412,8 @@ public:
     int GetRunTimeout() { return m_Queue.m_RunTimeout; }
     unsigned GetFailedRetries() { return m_Queue.m_FailedRetries; }
     int GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
+    unsigned GetMaxInputSize() { return m_Queue.m_MaxInputSize; }
+    unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
     const CQueueClientInfoList& GetProgramVersionList()
         { return m_Queue.m_ProgramVersionList; }
     const CNetSchedule_AccessList& GetSubmHosts()

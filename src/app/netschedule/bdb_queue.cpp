@@ -936,7 +936,7 @@ CQueue::CQueue(CQueueDataBase& db,
 }
 
 
-unsigned CQueue::CountRecs()
+unsigned CQueue::CountRecs() const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     CFastMutexGuard guard(q->lock);
@@ -944,23 +944,38 @@ unsigned CQueue::CountRecs()
     return q->db.CountRecs();
 }
 
+
+unsigned CQueue::GetMaxInputSize() const
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    return CQueueParamAccessor(*q).GetMaxInputSize();
+}
+
+
+unsigned CQueue::GetMaxOutputSize() const
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    return CQueueParamAccessor(*q).GetMaxOutputSize();
+}
+
+
 bool CQueue::IsExpired(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    CQueueParamAccessor qp(*q);
+    int empty_lifetime = CQueueParamAccessor(*q).GetEmptyLifetime();
     CFastMutexGuard guard(q->lock);
-    if (q->kind && qp.GetEmptyLifetime() != -1) {
+    if (q->kind && empty_lifetime != -1) {
         unsigned cnt = q->status_tracker.Count();
         if (cnt) {
             q->became_empty = -1;
         } else {
             if (q->became_empty != -1 &&
-                q->became_empty + qp.GetEmptyLifetime() < time(0))
+                q->became_empty + empty_lifetime < time(0))
             {
                 LOG_POST(Info << "Queue " << q->qname << " expired."
                     << " Became empty: "
                     << CTime(q->became_empty).ToLocalTime().AsString()
-                    << " Empty lifetime: " << qp.GetEmptyLifetime()
+                    << " Empty lifetime: " << empty_lifetime
                     << " sec." );
                 return true;
             }
@@ -2928,7 +2943,7 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
             return eGetJobUpdate_JobFailed;
 
         } else {  // job not expired
-            unsigned run_counter = db.run_counter;
+            unsigned run_counter = (unsigned) db.run_counter + 1;
 
             switch (run_counter) {
             case 1:
@@ -2977,7 +2992,7 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
             db.status = (int) CNetScheduleAPI::eRunning;
             db.time_run = curr;
             db.run_timeout = 0;
-            db.run_counter = ++run_counter;
+            db.run_counter = run_counter;
 
             cur.Update();
             return eGetJobUpdate_Ok;

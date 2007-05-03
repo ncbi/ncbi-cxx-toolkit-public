@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.32 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.33 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -361,6 +361,7 @@ private:
     void ProcessDeleteQueue();
     void ProcessQueueInfo();
     void ProcessQuery();
+    void ProcessGetParam();
 
 private:
     static
@@ -1765,6 +1766,16 @@ void CNetScheduleHandler::ProcessQuery()
 }
 
 
+void CNetScheduleHandler::ProcessGetParam()
+{
+    string res("max_input_size=");
+    res += NStr::IntToString(m_Queue->GetMaxInputSize());
+    res += ";max_output_size=";
+    res += NStr::IntToString(m_Queue->GetMaxOutputSize());
+    WriteMsg("OK:", res);
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 
 /// NetSchedule command parser
@@ -1887,6 +1898,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { eNSA_Required, eNST_Str,     eNSRF_Select },
           { eNSA_Optional, eNST_Id,      eNSRF_Action, "COUNT" },
           { eNSA_Optional, eNST_Str,     eNSRF_Fields }, sm_End} },
+    { "GETP",     &CNetScheduleHandler::ProcessGetParam, eNSCR_Queue,
+        NO_ARGS },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
 
