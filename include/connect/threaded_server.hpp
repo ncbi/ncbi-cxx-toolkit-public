@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_socket.h>
+#include <connect/ncbi_socket.hpp>
 
 
 /** @addtogroup ThreadedServer
@@ -86,6 +86,15 @@ public:
     /// Enter the main loop.
     void Run(void);
 
+    /// Start listening immediately, or throw an exception if it is
+    /// impossible to do so.  (Does nothing if *this* object is
+    /// already listening on the port.)  Calling StartListening()
+    /// before Run() will permit detecting port-in-use problems before
+    /// the last minute.  (On the other hand, clients that attempt to
+    /// connect in the interim will get no response until the main
+    /// loop actually starts.)
+    void StartListening(void);
+
     /// Runs asynchronously (from a separate thread) for each request.
     /// Implementor must take care of closing the socket when done.
     /// (Using it as the basis of a CConn_SocketStream object will do
@@ -121,7 +130,8 @@ protected:
     bool            m_TemporarilyStopListening;
 
 private:
-    unsigned short  m_Port; ///< TCP port to listen on
+    unsigned short   m_Port;  ///< TCP port to listen on
+    CListeningSocket m_LSock; ///< Listening socket
 };
 
 

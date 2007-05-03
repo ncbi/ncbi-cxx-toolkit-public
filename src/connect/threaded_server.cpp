@@ -31,7 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/threaded_server.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <util/thread_pool.hpp>
 
 
@@ -59,6 +58,20 @@ void CSocketRequest::Process(void)
 }
 
 
+void CThreadedServer::StartListening(void)
+{
+    if (m_LSock.GetStatus() == eIO_Success) {
+        return; // already listening; nothing to do
+    }
+    if (m_LSock.Listen(m_Port) != eIO_Success) {
+        NCBI_THROW(CThreadedServerException, eCouldntListen,
+                   "CThreadedServer: Unable to start listening on "
+                   + NStr::IntToString(m_Port) + ": "
+                   + string(strerror(errno)));
+    }
+}
+
+
 void CThreadedServer::Run(void)
 {
     SetParams();
@@ -69,12 +82,7 @@ void CThreadedServer::Run(void)
                    "CThreadedServer::Run: Bad parameters");
     }
 
-    CListeningSocket lsock(m_Port);
-    if (lsock.GetStatus() != eIO_Success) {
-        NCBI_THROW(CThreadedServerException, eCouldntListen,
-                   "CThreadedServer::Run: Unable to create listening socket: "
-                   + string(strerror(errno)));
-    }
+    StartListening();
 
     CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
     pool.Spawn(m_InitThreads);
@@ -82,7 +90,7 @@ void CThreadedServer::Run(void)
 
     while ( !ShutdownRequested() ) {
         CSocket    sock;
-        EIO_Status status = lsock.GetStatus();
+        EIO_Status status = m_LSock.GetStatus();
         if (status != eIO_Success) {
             if (m_AcceptTimeout != kDefaultTimeout
                 &&  m_AcceptTimeout != kInfiniteTimeout) {
@@ -91,10 +99,10 @@ void CThreadedServer::Run(void)
             } else {
                 pool.WaitForRoom();
             }
-            lsock.Listen(m_Port);
+            m_LSock.Listen(m_Port);
             continue;
         }
-        status = lsock.Accept(sock, m_AcceptTimeout);
+        status = m_LSock.Accept(sock, m_AcceptTimeout);
         if (status == eIO_Success) {
             sock.SetOwnership(eNoOwnership); // Process[Overflow] will close it
             try {
@@ -102,7 +110,7 @@ void CThreadedServer::Run(void)
                     (CRef<ncbi::CStdRequest>
                      (new CSocketRequest(*this, sock.GetSOCK())));
                 if (pool.IsFull()  &&  m_TemporarilyStopListening) {
-                    lsock.Close();
+                    m_LSock.Close();
                 }
             } catch (CBlockingQueueException&) {
                 _ASSERT( !m_TemporarilyStopListening );
@@ -115,7 +123,7 @@ void CThreadedServer::Run(void)
         }
     }
 
-    lsock.Close();
+    m_LSock.Close();
     pool.KillAllThreads(true);
 }
 
