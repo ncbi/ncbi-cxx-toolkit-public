@@ -229,15 +229,18 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
         return 1;
     }
 
-    const size_t penalty_bps (size_t(m_penalty * qlen + 0.5));
-    const size_t min_matches (size_t(m_min_idty * qlen + 0.5));
-    const size_t min_singleton_matches (size_t(m_min_singleton_idty * qlen + 0.5));
+    typedef CCompartmentAccessor<THit> TAccessor;
+    typedef TAccessor::TCoord TCoord;
 
-    CCompartmentAccessor<THit> ca (hitrefs.begin(), hitrefs.end(),
-                                   penalty_bps,
-                                   min_matches,
-                                   min_singleton_matches,
-                                   true);
+    const TCoord penalty_bps (TCoord(m_penalty * qlen + 0.5));
+    const TCoord min_matches (TCoord(m_min_idty * qlen + 0.5));
+    const TCoord min_singleton_matches (TCoord(m_min_singleton_idty * qlen + 0.5));
+
+    TAccessor ca (hitrefs.begin(), hitrefs.end(),
+                  penalty_bps,
+                  min_matches,
+                  min_singleton_matches,
+                  true);
 
     THitRefs comp;
     for(bool b0 (ca.GetFirst(comp)); b0 ; b0 = ca.GetNext(comp)) {
