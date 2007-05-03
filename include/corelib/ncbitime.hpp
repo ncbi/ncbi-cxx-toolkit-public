@@ -946,9 +946,10 @@ private:
                      bool shift_time = true);
 
 private:
-#if defined(NCBI_COMPILER_WORKSHOP)  &&  defined(__x86_64)
-// Work around WorkShop's incorrect handling of bitfields when compiling for
-// x86-64 (at least with optimization enabled) by not using them at all. :-/
+#if defined(NCBI_COMPILER_WORKSHOP)  &&  defined(__x86_64)  &&  NCBI_COMPILER_VERSION < 590
+// Work around some WorkShop versions' incorrect handling of bitfields
+// when compiling for x86-64 (at least with optimization enabled) by
+// not using them at all. :-/
 #  define NCBI_TIME_BITFIELD(n)
 #  define NCBI_TIME_EMPTY_BITFIELD
 #else
