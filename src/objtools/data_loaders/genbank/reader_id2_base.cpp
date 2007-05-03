@@ -74,43 +74,26 @@ NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, 0,
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 20,
                   eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
 
-static int GetDebugLevel(void)
+int CId2ReaderBase::GetDebugLevel(void)
 {
     static NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG) s_Value;
     return s_Value.Get();
 }
 
 
-enum EDebugLevel
+CId2ReaderBase::CDebugPrinter::CDebugPrinter(CReader::TConn conn,
+                                             const char* name)
 {
-    eTraceConn     = 4,
-    eTraceASN      = 5,
-    eTraceBlob     = 8,
-    eTraceBlobData = 9
-};
-
-
-namespace {
-    class CDebugPrinter : public CNcbiOstrstream
-    {
-    public:
-        CDebugPrinter(CReader::TConn conn)
-            {
-                flush() << "CId2Reader(" << conn << "): ";
+    flush() << name << '(' << conn << "): ";
 #ifdef NCBI_THREADS
-                flush() << "T" << CThread::GetSelf() << ' ';
+    flush() << "T" << CThread::GetSelf() << ' ';
 #endif
-            }
-        ~CDebugPrinter()
-            {
-                LOG_POST(rdbuf());
-                /*
-                DEFINE_STATIC_FAST_MUTEX(sx_DebugPrinterMutex);
-                CFastMutexGuard guard(sx_DebugPrinterMutex);
-                (NcbiCout << rdbuf()).flush();
-                */
-            }
-    };
+}
+
+
+CId2ReaderBase::CDebugPrinter::~CDebugPrinter()
+{
+    LOG_POST(rdbuf());
 }
 
 
@@ -698,7 +681,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     // send request
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Sending";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << packet;
@@ -717,7 +700,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                          x_ConnDescription(conn));
         }
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Sent ID2-Request-Packet.";
         }
     }}
@@ -727,7 +710,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     while ( remaining_count > 0 ) {
         CID2_Reply reply;
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Receiving ID2-Reply...";
         }
         try {
@@ -739,7 +722,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                          x_ConnDescription(conn));
         }
         if ( GetDebugLevel() >= eTraceConn   ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Received";
             if ( GetDebugLevel() >= eTraceASN ) {
                 if ( GetDebugLevel() >= eTraceBlobData ) {

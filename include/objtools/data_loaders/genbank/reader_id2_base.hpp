@@ -107,15 +107,27 @@ public:
                      const TSeqIds& seq_ids);
 
     static TBlobId GetBlobId(const CID2_Blob_Id& blob_id);
+    
+    enum EDebugLevel
+    {
+        eTraceConn     = 4,
+        eTraceASN      = 5,
+        eTraceBlob     = 8,
+        eTraceBlobData = 9
+    };
+    static int GetDebugLevel(void);
 
+    class CDebugPrinter : public CNcbiOstrstream
+    {
+    public:
+        CDebugPrinter(TConn conn, const char* name);
+        ~CDebugPrinter();
+    };
+    
 protected:
-    //virtual void x_AddConnectionSlot(TConn conn);
-    //virtual void x_RemoveConnectionSlot(TConn conn);
-    //virtual void x_DisconnectAtSlot(TConn conn);
-    //virtual void x_ConnectAtSlot(TConn conn);
     virtual string x_ConnDescription(TConn conn) const = 0;
 
-    virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet) = 0;
+    virtual void x_SendPacket(TConn conn, const CID2_Request_Packet& packet)=0;
     virtual void x_ReceiveReply(TConn conn, CID2_Reply& reply) = 0;
 
     void x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,

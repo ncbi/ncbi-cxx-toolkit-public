@@ -81,25 +81,6 @@ BEGIN_SCOPE(objects)
 #define GENBANK_ID2_RANDOM_FAILS_FREQUENCY 20
 #define GENBANK_ID2_RANDOM_FAILS_RECOVER 10 // new + write + read
 
-namespace {
-    class CDebugPrinter : public CNcbiOstrstream
-    {
-    public:
-        CDebugPrinter(CId2Reader::TConn conn)
-            {
-                flush() << "CId2Reader(" << conn << "): ";
-#ifdef NCBI_THREADS
-                flush() << "T" << CThread::GetSelf() << ' ';
-#endif
-            }
-        ~CDebugPrinter()
-            {
-                LOG_POST(rdbuf());
-            }
-    };
-}
-
-
 #ifdef GENBANK_ID2_RANDOM_FAILS
 static int& GetFailCounter(CId2Reader::TConn /*conn*/)
 {
@@ -133,7 +114,6 @@ static void SetRandomFail(CNcbiIostream& stream, CId2Reader::TConn conn)
 #endif
 
 
-//NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(string, GENBANK, ID2_CGI_NAME);
 NCBI_PARAM_DECL(string, GENBANK, ID2_SERVICE_NAME);
 NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID2);
@@ -144,25 +124,6 @@ NCBI_PARAM_DEF_EX(string, GENBANK, ID2_SERVICE_NAME, kEmptyStr,
                   eParam_NoThread, GENBANK_ID2_SERVICE_NAME);
 NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE,
                   eParam_NoThread, GENBANK_SERVICE_NAME_ID2);
-
-static int GetDebugLevel(void)
-{
-    return 0;
-    /*
-    static NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG) s_Value;
-    return s_Value.Get();
-    */
-}
-
-
-enum EDebugLevel
-{
-    eTraceConn     = 4,
-    eTraceASN      = 5,
-    eTraceBlob     = 8,
-    eTraceBlobData = 9
-};
-
 
 CId2Reader::CId2Reader(int max_connections)
     : m_ServiceName(DEFAULT_SERVICE),
@@ -303,7 +264,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId2Reader");
         s << "New connection to " << m_ServiceName << "...";
     }
         
@@ -329,7 +290,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
     }
 
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId2Reader");
         s << "New connection: " << x_ConnDescription(*stream);
     }
     try {
@@ -368,7 +329,7 @@ void CId2Reader::x_InitConnection(CConn_IOStream& stream, TConn conn)
     // send init request
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Sending";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << packet;
@@ -387,7 +348,7 @@ void CId2Reader::x_InitConnection(CConn_IOStream& stream, TConn conn)
                          x_ConnDescription(stream));
         }
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Sent ID2-Request-Packet.";
         }
         if ( !stream ) {
@@ -401,12 +362,12 @@ void CId2Reader::x_InitConnection(CConn_IOStream& stream, TConn conn)
     CID2_Reply reply;
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Receiving ID2-Reply...";
         }
         stream >> MConnFormat >> reply;
         if ( GetDebugLevel() >= eTraceConn   ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CId2Reader");
             s << "Received";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << reply;

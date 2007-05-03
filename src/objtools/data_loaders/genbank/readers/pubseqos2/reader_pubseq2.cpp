@@ -86,46 +86,6 @@ BEGIN_SCOPE(objects)
 static CAtomicCounter s_pubseq_readers;
 #endif
 
-#ifdef _DEBUG
-NCBI_PARAM_DECL(int, GENBANK, PUBSEQOS2_DEBUG);
-NCBI_PARAM_DEF_EX(int, GENBANK, PUBSEQOS2_DEBUG, 0,
-                  eParam_NoThread, GENBANK_PUBSEQOS2_DEBUG);
-
-namespace {
-    int GetDebugLevel(void)
-    {
-        static NCBI_PARAM_TYPE(GENBANK, PUBSEQOS2_DEBUG) s_Value;
-        return s_Value.Get();
-    }
-}
-
-#else
-# define GetDebugLevel() (0)
-#endif
-namespace {
-    class CDebugPrinter : public CNcbiOstrstream
-    {
-    public:
-        CDebugPrinter(CReader::TConn conn)
-            {
-                flush() << "CPubseq2Reader(" << conn << "): ";
-#ifdef NCBI_THREADS
-                flush() << "T" << CThread::GetSelf() << ' ';
-#endif
-            }
-        ~CDebugPrinter()
-            {
-                LOG_POST(rdbuf());
-            }
-    };
-    enum EDebugLevel
-    {
-        eTraceConn     = 4,
-        eTraceASN      = 5,
-        eTraceBlob     = 8,
-        eTraceBlobData = 9
-    };
-}
 
 CPubseq2Reader::CPubseq2Reader(int max_connections,
                              const string& server,
@@ -365,7 +325,7 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
     // send init request
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CPubseq2Reader");
             s << "Sending";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << packet;
@@ -383,7 +343,7 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
                          "failed to send init request");
         }
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CPubseq2Reader");
             s << "Sent ID2-Request-Packet.";
         }
     }}
@@ -392,12 +352,12 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
     CID2_Reply reply;
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CPubseq2Reader");
             s << "Receiving ID2-Reply...";
         }
         x_ReceiveReply(*result, conn, reply);
         if ( GetDebugLevel() >= eTraceConn   ) {
-            CDebugPrinter s(conn);
+            CDebugPrinter s(conn, "CPubseq2Reader");
             s << "Received";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << reply;
@@ -560,7 +520,7 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
 
 
 void CPubseq2Reader::x_ReceiveReply(CObjectIStream& stream,
-                                    TConn conn,
+                                    TConn /*conn*/,
                                     CID2_Reply& reply)
 {
     stream >> reply;
