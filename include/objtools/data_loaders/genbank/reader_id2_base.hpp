@@ -117,7 +117,7 @@ public:
     };
     static int GetDebugLevel(void);
 
-    class CDebugPrinter : public CNcbiOstrstream
+    class NCBI_XREADER_EXPORT CDebugPrinter : public CNcbiOstrstream
     {
     public:
         CDebugPrinter(TConn conn, const char* name);
