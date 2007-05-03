@@ -229,9 +229,9 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
         return 1;
     }
 
-    const size_t penalty_bps (size_t(round(m_penalty * qlen)));
-    const size_t min_matches (size_t(round(m_min_idty * qlen)));
-    const size_t min_singleton_matches (size_t(round(m_min_singleton_idty * qlen)));
+    const size_t penalty_bps (size_t(m_penalty * qlen + 0.5));
+    const size_t min_matches (size_t(m_min_idty * qlen + 0.5));
+    const size_t min_singleton_matches (size_t(m_min_singleton_idty * qlen + 0.5));
 
     CCompartmentAccessor<THit> ca (hitrefs.begin(), hitrefs.end(),
                                    penalty_bps,
