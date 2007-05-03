@@ -55,6 +55,8 @@
 
 BEGIN_NCBI_SCOPE
 
+const unsigned kNetScheduleSplitSize = 64;
+
 /// BDB table to store queue
 ///
 /// @internal
@@ -87,8 +89,8 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        aff_id;
     CBDB_FieldUint4        mask;
 
-    CBDB_FieldString       input;           ///< Input data
-    CBDB_FieldString       output;          ///< Result data
+    CBDB_FieldLString      input;           ///< Input data
+    CBDB_FieldLString      output;          ///< Result data
 
     CBDB_FieldString       err_msg;         ///< Error message (exception::what())
     CBDB_FieldString       progress_msg;    ///< Progress report message
@@ -122,8 +124,8 @@ struct SQueueDB : public CBDB_File
         BindData("aff_id", &aff_id);
         BindData("mask",   &mask);
 
-        BindData("input",  &input,  kNetScheduleMaxDBDataSize);
-        BindData("output", &output, kNetScheduleMaxDBDataSize);
+        BindData("input",  &input,  kNetScheduleMaxDBDataSize); // kNetScheduleSplitSize
+        BindData("output", &output, kNetScheduleMaxDBDataSize); // kNetScheduleSplitSize
 
         BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
@@ -131,6 +133,7 @@ struct SQueueDB : public CBDB_File
 };
 
 
+const unsigned kNetScheduleMaxOverflowSize = 1024*1024;
 /// BDB table to store infrequently needed job info
 ///
 /// @internal
@@ -139,13 +142,15 @@ struct SJobInfoDB : public CBDB_File
 {
     CBDB_FieldUint4        id;              ///< Job id
     CBDB_FieldString       tags;            ///< Tags for the job
+    CBDB_FieldLString      input;           ///< Job input overflow
+    CBDB_FieldLString      output;          ///< Job output overflow
 
     SJobInfoDB()
     {
-        DisableNull(); 
-
         BindKey("id", &id);
-        BindData("tags",  &tags, kNetScheduleMaxDBDataSize);
+        BindData("tags",   &tags,   kNetScheduleMaxOverflowSize);
+        BindData("input",  &input,  kNetScheduleMaxOverflowSize);
+        BindData("output", &output, kNetScheduleMaxOverflowSize);
     }
 };
 

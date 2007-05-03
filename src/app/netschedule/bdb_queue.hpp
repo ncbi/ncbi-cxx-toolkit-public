@@ -153,10 +153,10 @@ public:
     ///    and submitters)
     bool GetJobDescr(unsigned int job_id,
                      int*         ret_code,
-                     char*        input,
-                     char*        output,
-                     char*        err_msg,
-                     char*        progress_msg,
+                     string*      input,
+                     string*      output,
+                     string*      err_msg,
+                     string*      progress_msg,
                      CNetScheduleAPI::EJobStatus expected_status 
                                         = CNetScheduleAPI::eJobNotFound);
 
@@ -383,6 +383,8 @@ private:
                                     const char*          output,
                                     SSubmitNotifInfo*    subm_info);
 
+    void x_GetInput(SQueueDB& db, string& str);
+    void x_GetOutput(SQueueDB& db, string& str);
 
     enum EGetJobUpdateStatus
     {

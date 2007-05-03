@@ -95,21 +95,21 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     qclass(qclass_name),
     kind(queue_kind),
 
-    m_ParamLock(CRWLock::fFavorWriters),
-    m_Timeout(3600), 
-    m_NotifTimeout(7), 
-    m_DeleteDone(false),
-    m_RunTimeout(3600),
-    m_FailedRetries(0),
-    m_EmptyLifetime(-1),
-
     became_empty(-1),
     last_notif(0), 
     q_notif("NCBI_JSQ_"),
     run_time_line(NULL),
     delete_database(false),
     m_CurrAffId(0),
-    m_LastAffId(0)
+    m_LastAffId(0),
+
+    m_ParamLock(CRWLock::fFavorWriters),
+    m_Timeout(3600), 
+    m_NotifTimeout(7), 
+    m_DeleteDone(false),
+    m_RunTimeout(3600),
+    m_FailedRetries(0),
+    m_EmptyLifetime(-1)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);

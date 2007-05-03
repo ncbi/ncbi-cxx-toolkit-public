@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.31 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.32 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -1142,100 +1142,48 @@ void CNetScheduleHandler::ProcessStatus()
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
 
     CNetScheduleAPI::EJobStatus status = m_Queue->GetStatus(job_id);
-    char szBuf[kNetScheduleMaxDBDataSize * 2];
-    int st = (int) status;
     int ret_code = 0;
+    string input, output, error;
 
+    bool res = m_Queue->GetJobDescr(job_id, &ret_code, 
+                                    &input, &output,
+                                    &error, 0, status);
+    if (!res) status = CNetScheduleAPI::eJobNotFound;
+    string buf = NStr::IntToString((int) status);
+    if (status != CNetScheduleAPI::eJobNotFound) {
+            buf += " ";
+            buf += ret_code;
+    }
     switch (status) {
     case CNetScheduleAPI::eDone:
-        {
-            if (m_Queue->GetJobDescr(job_id, &ret_code, 
-                                     m_JobReq.input,
-                                     m_JobReq.output,
-                                     0, 0,
-                                     status)) {
-                sprintf(szBuf, 
-                        "%i %i \"%s\" \"\" \"%s\"", 
-                        st, ret_code, 
-                        m_JobReq.output,
-                        m_JobReq.input);
-                WriteMsg("OK:", szBuf);
-                return;
-            } else {
-                st = (int)CNetScheduleAPI::eJobNotFound;
-            }
-        }
-    break;
+        buf += string(" \"") + output + "\" \"\" \"" + input + "\"";
+        break;
 
     case CNetScheduleAPI::eRunning:
     case CNetScheduleAPI::eReturned:
     case CNetScheduleAPI::ePending:
-        {
-            bool b = m_Queue->GetJobDescr(job_id, 0, 
-                                          m_JobReq.input,
-                                          0,
-                                          0, 0,
-                                          status);
-
-            if (b) {
-                m_JobReq.output[0] = 0;
-                sprintf(szBuf, 
-                        "%i %i \"%s\" \"\" \"%s\"", 
-                        st, ret_code, 
-                        m_JobReq.output,
-                        m_JobReq.input);
-                WriteMsg("OK:", szBuf);
-                return;
-            } else {
-                st = (int) CNetScheduleAPI::eJobNotFound;
-            }
-        }
+        buf += string(" \"\" \"\" \"") + input + "\"";
         break;
 
     case CNetScheduleAPI::eFailed:
-        {
-            char err[kNetScheduleMaxDBErrSize];
-            bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
-                                          m_JobReq.input,
-                                          m_JobReq.output,
-                                          err,
-                                          0,
-                                          status);
-
-            if (b) {
-                sprintf(szBuf, 
-                        "%i %i \"%s\" \"%s\" \"%s\"", 
-                        st, ret_code, 
-                        m_JobReq.output,
-                        err,
-                        m_JobReq.input);
-                WriteMsg("OK:", szBuf);
-                return;
-            } else {
-                st = (int) CNetScheduleAPI::eJobNotFound;
-            }
-        }
+        buf += string(" \"") + output + "\" \"" + error + "\" \"" + input + "\"";
         break;
     default:
         break;
+    }
 
-    } // switch
-
-
-    sprintf(szBuf, "%i", st);
-    WriteMsg("OK:", szBuf);
+    WriteMsg("OK:", buf);
 }
 
 
 void CNetScheduleHandler::ProcessGetMessage()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    int ret_code;
-    bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
-                                  0, 0, 0, m_JobReq.progress_msg);
+    string progress_msg;
 
-    if (b) {
-        WriteMsg("OK:", m_JobReq.progress_msg);
+    if (m_Queue->GetJobDescr(job_id, 0, 0, 0, 0,
+                             &progress_msg)) {
+        WriteMsg("OK:", progress_msg);
     } else {
         WriteMsg("ERR:", "Job not found");
     }
