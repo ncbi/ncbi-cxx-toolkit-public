@@ -60,6 +60,8 @@ USING_SCOPE(objects);
 class CEntrez2ClientApp : public CNcbiApplication
 {
 public:
+    CEntrez2ClientApp();
+
     virtual void Init(void);
     virtual int  Run (void);
 
@@ -107,6 +109,14 @@ private:
 };
 
 
+CEntrez2ClientApp::CEntrez2ClientApp()
+{
+    DisableArgDescriptions(fDisableStdArgs);
+    // Hide meaningless options so not to confuse the public
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
+}
+
+
 void CEntrez2ClientApp::Init(void)
 {
     // Prepare command line descriptions
@@ -145,9 +155,10 @@ void CEntrez2ClientApp::Init(void)
     arg_desc->AddDefaultKey("out", "OutputFile", "File to dump output to",
                             CArgDescriptions::eOutputFile, "-");
 
-    // Pass argument descriptions to the application
-    //
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Entrez2Client command-line demo application");
 
+    // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -420,7 +431,7 @@ CEntrez2ClientApp::x_EvalBoolean(CEntrez2Client& client,
 void CEntrez2ClientApp::x_FormatReply(CEntrez2_boolean_reply& reply)
 {
     if (reply.CanGetCount()) {
-        *m_Ostream << reply.GetCount() << " uids match" << endl;
+        *m_Ostream << reply.GetCount() << " uid(s) match" << endl;
     }
 
     if (reply.IsSetQuery()) {
