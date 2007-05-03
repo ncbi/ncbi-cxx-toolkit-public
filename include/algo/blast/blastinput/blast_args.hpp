@@ -709,6 +709,17 @@ public:
                                          CBlastOptions& opts);
 };
 
+/// Argument class to retrieve megablast database indexing options
+class NCBI_XBLAST_EXPORT CMbIndexArgs : public IBlastCmdLineArgs
+{
+public:
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& args, 
+                                         CBlastOptions& opts);
+};
+
 /// Type definition of a container of IBlastCmdLineArgs
 typedef vector< CRef<IBlastCmdLineArgs> > TBlastCmdLineArgs;
 

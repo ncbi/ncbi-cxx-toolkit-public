@@ -83,6 +83,9 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
 
+    arg.Reset(new CMbIndexArgs);
+    m_Args.push_back(arg);
+
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);

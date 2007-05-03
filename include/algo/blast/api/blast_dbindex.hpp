@@ -94,6 +94,28 @@ typedef void (*DbIndexPreSearchFnType)(
 */
 extern DbIndexPreSearchFnType GetDbIndexPreSearchFn();
 
+//------------------------------------------------------------------------------
+/// Index wrapper exceptions.
+class CIndexedDbException : public CException
+{
+    public:
+
+        /// Error types that BLAST can generate
+        enum EErrCode {
+            eIndexInitError     ///< Index initialization error.
+        };
+
+        /// Translate from the error code value to its string representation
+        virtual const char* GetErrCodeString(void) const {
+            switch ( GetErrCode() ) {
+                case eIndexInitError: return "eIndexInitError";
+                default: return CException::GetErrCodeString();
+            }
+        }
+
+        NCBI_EXCEPTION_DEFAULT( CIndexedDbException, CException );
+};
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

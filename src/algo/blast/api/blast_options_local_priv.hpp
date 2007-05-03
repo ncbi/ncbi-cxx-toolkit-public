@@ -258,8 +258,9 @@ public:
     
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
+    bool GetForceIndex() const;
     const string GetIndexName() const;
-    void SetUseIndex( bool use_index = true, const string & index_name = "" );
+    void SetUseIndex( bool use_index = true, const string & index_name = "", bool force_index = false );
     bool GetMBIndexLoaded() const;
     void SetMBIndexLoaded( bool index_loaded = true );
 
@@ -300,6 +301,7 @@ private:
 
     /// Use megablast database index.
     bool m_UseMBIndex;
+    bool m_ForceMBIndex;
 
     /// Database index has been loaded.
     bool m_MBIndexLoaded;
@@ -1225,6 +1227,11 @@ inline bool CBlastOptionsLocal::GetUseIndex() const
     return m_UseMBIndex;
 }
 
+inline bool CBlastOptionsLocal::GetForceIndex() const
+{
+    return m_ForceMBIndex;
+}
+
 inline bool CBlastOptionsLocal::GetMBIndexLoaded() const
 {
     return m_MBIndexLoaded;
@@ -1240,10 +1247,15 @@ inline void CBlastOptionsLocal::SetMBIndexLoaded( bool index_loaded )
     m_MBIndexLoaded = index_loaded;
 }
 
-inline void CBlastOptionsLocal::SetUseIndex( bool use_index, const string & index_name )
+inline void CBlastOptionsLocal::SetUseIndex( 
+        bool use_index, const string & index_name, bool force_index )
 {
     m_UseMBIndex = use_index;
-    m_MBIndexName = index_name;
+
+    if( m_UseMBIndex ) {
+        m_ForceMBIndex = force_index;
+        m_MBIndexName  = index_name;
+    }
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

@@ -1893,6 +1893,15 @@ bool CBlastOptions::GetUseIndex() const
     return m_Local->GetUseIndex();
 }
 
+bool CBlastOptions::GetForceIndex() const 
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetForceIndex() not available.");
+    }
+
+    return m_Local->GetForceIndex();
+}
+
 bool CBlastOptions::GetMBIndexLoaded() const
 {
     if (! m_Local) {
@@ -1911,13 +1920,13 @@ const string CBlastOptions::GetIndexName() const
     return m_Local->GetIndexName();
 }
 
-void CBlastOptions::SetUseIndex( bool use_index, const string & index_name )
+void CBlastOptions::SetUseIndex( bool use_index, const string & index_name, bool force_index )
 {
     if (! m_Local) {
         x_Throwx("Error: SetUseIndex() not available.");
     }
 
-    m_Local->SetUseIndex( use_index, index_name );
+    m_Local->SetUseIndex( use_index, index_name, force_index );
 }
 
 void CBlastOptions::SetMBIndexLoaded( bool index_loaded )

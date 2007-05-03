@@ -522,10 +522,10 @@ CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "in the preliminary gapped and traceback stages",
                             CArgDescriptions::eInteger);
 
-    arg_desc.SetCurrentGroup("Discontiguous Megablast options");
+    arg_desc.SetCurrentGroup("Discontiguous MegaBLAST options");
 
     arg_desc.AddOptionalKey(kArgDMBTemplateType, "type", 
-                 "Discontiguous megablast template type",
+                 "Discontiguous MegaBLAST template type",
                  CArgDescriptions::eString);
     arg_desc.SetConstraint(kArgDMBTemplateType, &(*new CArgAllow_Strings, 
                                                   kTemplType_Coding,
@@ -536,7 +536,7 @@ CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            kArgDMBTemplateLength);
 
     arg_desc.AddOptionalKey(kArgDMBTemplateLength, "int_value", 
-                 "Discontiguous megablast template length",
+                 "Discontiguous MegaBLAST template length",
                  CArgDescriptions::eInteger);
     set<int> allowed_values;
     allowed_values.insert(16);
@@ -875,6 +875,7 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                new CArgAllowValuesGreaterThanOrEqual(1));
         // checkpoint file
         arg_desc.AddOptionalKey(kArgPSIOutputChkPntFile, "checkpoint_file",
+
                                 "File name to store checkpoint file",
                                 CArgDescriptions::eOutputFile);
         // ASCII matrix file
@@ -1289,6 +1290,53 @@ CCullingArgs::ExtractAlgorithmOptions(const CArgs& args,
 {
     if (args[kArgCullingLimit]) {
         opts.SetCullingLimit(args[kArgCullingLimit].AsInteger());
+    }
+}
+
+void
+CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup( "MegaBLAST database index options" );
+    arg_desc.AddOptionalKey( 
+            kArgUseIndex, "boolean",
+            "Use MegaBLAST database index",
+            CArgDescriptions::eBoolean );
+    arg_desc.AddOptionalKey(
+            kArgIndexName, "string",
+            "MegaBLAST database index name",
+            CArgDescriptions::eString );
+    arg_desc.SetCurrentGroup( "" );
+}
+
+void
+CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                      CBlastOptions& opts)
+{
+    if( args.Exist( kArgUseIndex ) ) {
+        bool use_index   = true;
+        bool force_index = false;
+
+        if( args[kArgUseIndex] ) {
+            if( args[kArgUseIndex].AsBoolean() ) force_index = true;
+            else use_index = false;
+        }
+
+        if( use_index ) {
+            string index_name;
+
+            if( args.Exist( kArgIndexName ) && args[kArgIndexName] ) {
+                index_name = args[kArgIndexName].AsString();
+            }
+            else if( args.Exist( kArgDb ) && args[kArgDb] ) {
+                index_name = args[kArgDb].AsString();
+            }
+            else {
+                NCBI_THROW( CBlastException, eInvalidArgument,
+                        "Can not deduce database index name" );
+            }
+    
+            opts.SetUseIndex( true, index_name, force_index );
+        }
     }
 }
 

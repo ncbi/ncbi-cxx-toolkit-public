@@ -156,6 +156,9 @@ const string kArgDMBTemplateLength("template_length");
 const string kArgInputSearchStrategy("import_search_strategy");
 const string kArgOutputSearchStrategy("export_search_strategy");
 
+const string kArgUseIndex("use_index");
+const string kArgIndexName("index_name");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

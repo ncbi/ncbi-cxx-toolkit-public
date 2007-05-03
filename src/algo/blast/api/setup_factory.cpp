@@ -337,52 +337,51 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
                                           CRef<CBlastOptions> options)
 {
     _ASSERT(options->GetUseIndex());
-
-    if( options->GetProgramType() != eBlastTypeBlastn ) {
-        ERR_POST( Warning << "Database indexing is available for blastn only."
-                          << " Database index will not be used." );
-        options->SetUseIndex( false );
-        return;
-    }
-
-    if( options->GetMBTemplateLength() > 0 ) {
-        ERR_POST( Warning << "Database indexing is not available for discontiguous searches."
-                          << " Database index will not be used." );
-        options->SetUseIndex( false );
-        return;
-    }
-
-    if( options->GetWordSize() < MinIndexWordSize() ) {
-        ERR_POST( Warning << "Megablast database index requires word size greater than 15."
-                          << " Database index will not be used." );
-        options->SetUseIndex( false );
-        return;
-    }
+    _ASSERT(seqsrc);
 
     if (options->GetMBIndexLoaded()) {
         return;
     }
 
-    _ASSERT(seqsrc);
+    string errstr = "";
+    BlastSeqSrc * ind_seqsrc = 0;
 
-    BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
-
-    if( new_seqsrc == 0 ) {
-        ERR_POST( Warning << "Allocation of new BlastSeqSrc structure failed."
-                          << " Database index will not be used." );
-        options->SetUseIndex( false );
-        return;
+    if( options->GetProgramType() != eBlastTypeBlastn ) {
+        errstr = "Database indexing is available for blastn only.";
     }
+    else if( options->GetMBTemplateLength() > 0 ) {
+        errstr = "Database indexing is not available for discontiguous searches.";
+    }
+    else if( options->GetWordSize() < MinIndexWordSize() ) {
+        errstr = "MegaBLAST database index requires word size greater than ";
+        errstr += NStr::IntToString(MinIndexWordSize() - 1);
+    }
+    else {
+        BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
 
-    BlastSeqSrc * ind_seqsrc = DbIndexSeqSrcInit(
+        if( new_seqsrc == 0 ) {
+            errstr = "Allocation of new BlastSeqSrc structure failed.";
+        }
+        else {
+            ind_seqsrc = DbIndexSeqSrcInit(
             options->GetIndexName(), new_seqsrc );
 
-    if( ind_seqsrc == 0 ) {
-        ERR_POST( Warning << "Allocation of BlastSeqSrc structure for index failed."
-                          << " Database index will not be used." );
-        free( new_seqsrc );
-        options->SetUseIndex( false );
-        return;
+            if( ind_seqsrc == 0 ) {
+                errstr = "Allocation of BlastSeqSrc structure for index failed.";
+                free( new_seqsrc );
+            }
+        }
+    }
+
+    if( errstr != "" ) {
+        if( options->GetForceIndex() ) {
+            NCBI_THROW( CIndexedDbException, eIndexInitError, errstr );
+        }
+        else {
+            ERR_POST( Warning << errstr << " Database index will not be used." );
+            options->SetUseIndex( false );
+            return;
+        }
     }
 
     CloneSeqSrc( seqsrc, ind_seqsrc );

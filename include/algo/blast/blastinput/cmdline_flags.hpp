@@ -244,6 +244,10 @@ extern const string kArgInputSearchStrategy;
 /// Argument to specify the file name to save the search strategy used for a 
 /// BLAST search
 extern const string kArgOutputSearchStrategy;
+/// Flag to force using or not using megablast database index.
+extern const string kArgUseIndex;
+/// Megablast database index name.
+extern const string kArgIndexName;
 
 /* OLD C TOOLKIT ARGUMENTS */
 

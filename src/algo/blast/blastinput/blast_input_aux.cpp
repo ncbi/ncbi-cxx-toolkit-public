@@ -55,7 +55,8 @@ SetUpCommandLineArguments(TBlastCmdLineArgs& args)
     retval->SetCurrentGroup("Input query options");
     retval->SetCurrentGroup("Query filtering options");
     retval->SetCurrentGroup("Nucleotide scoring options");
-    retval->SetCurrentGroup("Discontiguous Megablast options");
+    retval->SetCurrentGroup("Discontiguous MegaBLAST options");
+    retval->SetCurrentGroup("MegaBLAST database index options");
     retval->SetCurrentGroup("Formatting options");
     retval->SetCurrentGroup("Search strategy options");
     retval->SetCurrentGroup("");
