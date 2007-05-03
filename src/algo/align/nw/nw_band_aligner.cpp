@@ -297,10 +297,20 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
                    "Input sequence interval too small.");        
     }
 
+    if(m_Shift > 0 && m_Shift > data->m_len1 + m_band) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Shift is greater than the first sequence's length.");
+    }
+
+    if(m_Shift < 0 && -m_Shift > data->m_len2 + m_band) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Shift is greater than the second sequence's length.");
+    }
+
     // Each of the following checks will verify if a corresponding end 
     // is within the band and, if it is not, whether the end-space free
     // mode was specified for that end.
-    // When doing restrained alignment, an exception may be caused by improper
+    // When doing restrained alignment, the exception may be caused by improper
     // adjustment of the band offset.
 
     string msg_head;
