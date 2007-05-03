@@ -222,17 +222,16 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-    static void s_Fini(void);
-#ifdef __cplusplus
-}
-#endif /*__cplusplus*/
-
 static void s_Fini(void)
 {
     CORE_SetREG(0);
     CORE_SetLOG(0);
     CORE_SetLOCK(0);
 }
+#ifdef __cplusplus
+}
+#endif /*__cplusplus*/
+
 
 
 /***********************************************************************
