@@ -60,7 +60,7 @@ const unsigned char* s_GetLString(const unsigned char* str,
             *str_len = ::strlen((const char*)str);
         }
     } else {  // no legacy strings
-        if (*str_len < 0) { // true L-string
+        if (*str_len <= 0) { // true L-string
             *str_len = -(*str_len);
             str += 4;
         } else {
