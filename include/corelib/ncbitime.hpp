@@ -946,21 +946,30 @@ private:
                      bool shift_time = true);
 
 private:
+#if defined(NCBI_COMPILER_WORKSHOP)  &&  defined(__x86_64)
+// Work around WorkShop's incorrect handling of bitfields when compiling for
+// x86-64 (at least with optimization enabled) by not using them at all. :-/
+#  define NCBI_TIME_BITFIELD(n)
+#  define NCBI_TIME_EMPTY_BITFIELD
+#else
+#  define NCBI_TIME_BITFIELD(n)    : n
+#  define NCBI_TIME_EMPTY_BITFIELD unsigned : 0;
+#endif
     typedef struct {
         // Time
-        unsigned int  year        : 12;  // 4 digits
-        unsigned char month       :  4;  // 0..12
-        unsigned char day         :  5;  // 0..31
-        unsigned char hour        :  5;  // 0..23
-        unsigned char min         :  6;  // 0..59
-        unsigned char sec         :  6;  // 0..61
+        unsigned int  year        NCBI_TIME_BITFIELD(12);  // 4 digits
+        unsigned char month       NCBI_TIME_BITFIELD( 4);  // 0..12
+        unsigned char day         NCBI_TIME_BITFIELD( 5);  // 0..31
+        unsigned char hour        NCBI_TIME_BITFIELD( 5);  // 0..23
+        unsigned char min         NCBI_TIME_BITFIELD( 6);  // 0..59
+        unsigned char sec         NCBI_TIME_BITFIELD( 6);  // 0..61
         // Difference between GMT and local time in seconds,
         // as stored during the last call to x_AdjustTime***().
-        Int4          adjTimeDiff : 18;
+        Int4          adjTimeDiff NCBI_TIME_BITFIELD(18);
         // Timezone and precision
-        ETimeZone     tz          :  2;  // Time format local/GMT
-        ETimeZonePrecision tzprec :  4;  // Time zone precission
-        unsigned                  :  0;  // Force alignment
+        ETimeZone     tz          NCBI_TIME_BITFIELD(2);  // local/GMT
+        ETimeZonePrecision tzprec NCBI_TIME_BITFIELD(4);  // Time zone precision
+        NCBI_TIME_EMPTY_BITFIELD  // Force alignment
         Int4          nanosec;
     } TData;
     TData m_Data;  ///< Packed members
