@@ -1187,8 +1187,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
     if ( exitcode ) {
         // Get real exit code or -1 on error
-        *exitcode = (status == eIO_Success  &&  x_exitcode != -1) ?
-            WEXITSTATUS(x_exitcode) : -1;
+        *exitcode = (status == eIO_Success  &&  x_exitcode != -1  &&
+                     WIFEXITED(x_exitcode) ? WEXITSTATUS(x_exitcode) : -1);
     }
     return status;
 }
