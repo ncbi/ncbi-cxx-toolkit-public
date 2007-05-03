@@ -223,7 +223,7 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
     case C_Segs::e_Denseg:
         {
             if ( GetSegs().GetDenseg().IsSetIds()  &&
-                row < GetSegs().GetDenseg().GetIds().size()) {
+                 (size_t)row < GetSegs().GetDenseg().GetIds().size()) {
                 return *GetSegs().GetDenseg().GetIds()[row];
             }
             break;
@@ -234,7 +234,7 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
             // to find the segment with enough rows to get the id.
             ITERATE(CSeq_align::C_Segs::TDendiag, seg, GetSegs().GetDendiag()) {
                 if( (*seg)->IsSetIds()  &&
-                    row < (*seg)->GetIds().size() ) {
+                    (size_t)row < (*seg)->GetIds().size() ) {
                     return *(*seg)->GetIds()[row];
                 }
             }
@@ -246,7 +246,7 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
             // to find the segment with enough rows to get the id.
             ITERATE(CSeq_align::C_Segs::TStd, seg, GetSegs().GetStd()) {
                 if ( (*seg)->IsSetLoc()  &&
-                    row < (*seg)->GetLoc().size() ) {
+                     (size_t)row < (*seg)->GetLoc().size() ) {
                     CSeq_loc_CI loc_iter(*(*seg)->GetLoc()[row]);
                     return loc_iter.GetSeq_id();
                 }
@@ -867,7 +867,7 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     ITERATE(TDsVec, ds_i, ds_vec) {
         const CDense_seg& ds = *ds_i->second;
         
-        _ASSERT(ds.GetStarts().size() == ds.GetNumseg() * ds.GetDim());
+        _ASSERT(ds.GetStarts().size() == (size_t)ds.GetNumseg() * ds.GetDim());
         _ASSERT(new_ds.GetDim() == ds.GetDim());
 
         /// Ids

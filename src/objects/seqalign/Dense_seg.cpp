@@ -1040,7 +1040,7 @@ CRef<CDense_seg> CDense_seg::FillUnaligned()
         new_ids[row] = id;
     }
 
-    size_t new_seg = 0;
+    TNumseg new_seg = 0;
     
     // temporary data
     vector<TSignedSeqPos> expected_positions;

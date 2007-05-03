@@ -79,7 +79,7 @@ void CDense_diag::OffsetRow(TDim row,
     _ASSERT(GetStarts()[row] >= 0);
     if (offset < 0) {
         _ASSERT((TSignedSeqPos)GetStarts()[row] + offset >= 0);
-        if (GetStarts()[row] < -offset) {
+        if ((TSignedSeqPos)GetStarts()[row] < -offset) {
             NCBI_THROW(CSeqalignException, eOutOfRange,
                        "Negative offset greater than seq position");
         }
