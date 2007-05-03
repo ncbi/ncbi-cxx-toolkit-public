@@ -27,6 +27,10 @@ For more information please visit:  http://bmagic.sourceforge.net
 #ifndef BMALGO_IMPL__H__INCLUDED__
 #define BMALGO_IMPL__H__INCLUDED__
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4311 4312)
+#endif
+
 
 namespace bm
 {
@@ -1577,5 +1581,8 @@ void export_array(BV& bv, It first, It last)
 
 } // namespace bm
 
+#ifdef _MSC_VER
+#pragma warning( default : 4311 4312)
+#endif
 
 #endif

@@ -40,6 +40,12 @@ For more information please visit:  http://bmagic.sourceforge.net
 
 #endif
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4311 4312)
+#endif
+
+
+
 #include "encoding.h"
 #include "bmdef.h"
 #include "bmfunc.h"
@@ -2416,5 +2422,10 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
 } // namespace bm
 
 #include "bmundef.h"
+
+#ifdef _MSC_VER
+#pragma warning( default : 4311 4312)
+#endif
+
 
 #endif

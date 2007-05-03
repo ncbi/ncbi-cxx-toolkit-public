@@ -37,6 +37,12 @@ For more information please visit:  http://bmagic.sourceforge.net
 # include <iterator>
 #endif
 
+#ifdef _MSC_VER
+#pragma warning( disable : 4311 4312)
+#endif
+
+
+
 #include "bmconst.h"
 #include "bmdef.h"
 
@@ -2997,6 +3003,11 @@ void bvector<Alloc, MS>::set_range_no_check(bm::id_t left,
 } // namespace
 
 #include "bmundef.h"
+
+#ifdef _MSC_VER
+#pragma warning( default : 4311 4312)
+#endif
+
 
 #endif
 
