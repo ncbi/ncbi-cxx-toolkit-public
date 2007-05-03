@@ -30,6 +30,9 @@
  */
 
 
+// Declared in readers.hpp, but the library is not built by a recursive build
+%ignore ncbi::GenBankReaders_Register_Pubseq2;
+
 // require operator==
 %ignore ncbi::CTreeNode::FindNode;
 %ignore ncbi::CTreeNode::FindNodes;
