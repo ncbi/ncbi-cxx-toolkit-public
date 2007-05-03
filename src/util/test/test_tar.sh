@@ -45,6 +45,6 @@ cat /tmp/test_tar.$$.tar | test_tar -C /tmp/test_tar.$$.2 -v -x -f -  ||  exit 1
 
 diff -r /tmp/test_tar.$$.1 /tmp/test_tar.$$.2 2>/dev/null             ||  exit 1
 
-test_tar -C /tmp/test_tar.$$.2 -c -f - . 2>/dev/null | $tar tvf -     ||  exit 1
+test_tar -C /tmp/test_tar.$$.2 -c -f - . 2>/dev/null | $tar tBvf -    ||  exit 1
 
 exit 0
