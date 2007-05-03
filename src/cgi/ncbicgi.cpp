@@ -624,6 +624,7 @@ static const char* s_TrackingVars[] =
     "HTTP_CAF_PROXIED_HOST",
     "HTTP_X_FORWARDED_FOR",
     "PROXIED_IP",
+    "HTTP_X_FWD_IP_ADDR",
     "HTTP_CLIENT_HOST",
     "REMOTE_HOST",
     "REMOTE_ADDR",
