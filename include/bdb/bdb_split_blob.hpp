@@ -1153,9 +1153,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(
     TLockGuard     lg1(m_DictFileLock);
     CReadLockGuard lg2(m_IdDeMuxLock);
 
-    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile,
-                      GetBDBTransaction(),
-                      compact_vectors);
+    // use NULL transaction (autocommit)
+    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, 0, compact_vectors);
 }
 
 
