@@ -333,13 +333,13 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         "Filter query sequence with DUST "
                         "(Format: 'level window linker', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgDustFiltering);
-    }
+        arg_desc.AddFlag(kArgLookupTableMaskingOnly,
+                         "Apply filtering locations as soft masks?", true);
+        arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
+                "BLAST database containing filtering elements (i.e.: repeats)",
+                CArgDescriptions::eString);
 
-    arg_desc.AddFlag(kArgLookupTableMaskingOnly,
-                     "Apply filtering locations as soft masks?", true);
-    arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
-            "BLAST database containing filtering elements (i.e.: repeats)",
-            CArgDescriptions::eString);
+    }
 
     arg_desc.SetCurrentGroup("");
 }
