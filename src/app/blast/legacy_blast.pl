@@ -87,8 +87,8 @@ sub convert_sequence_locations($$)
 
 sub convert_filter_string($$)
 {
-    use constant DUST_ARGS => "'20 64 1'";
-    use constant SEG_ARGS => "'12 2.2 2.5'";
+    use constant DUST_ARGS => "\"20 64 1\"";
+    use constant SEG_ARGS => "\"12 2.2 2.5\"";
     my $filter_string = shift;
     my $program = shift;
 
