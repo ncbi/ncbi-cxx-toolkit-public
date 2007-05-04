@@ -1865,9 +1865,9 @@ else
    # Some shared libraries end up containing static libraries, so make
    # sure to use DLL flags for both on platforms where such inclusion
    # would otherwise be illegal....
-   case "$host_os:$host_cpu" in
-      linux*:*86) ;;
-      linux* | darwin* | solaris*:sparc )
+   case "$host_os:$host_cpu:$bit64_sfx" in
+      linux*:*86:*) ;;
+      linux* | darwin* | solaris*:64 )
         CFLAGS="$CFLAGS $CFLAGS_DLL"
         CFLAGS_DLL=
         CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
