@@ -58,11 +58,10 @@ public:
 
     enum ESoap_FaultcodeEnum {
         e_not_set = 0,
-        eDataEncodingUnknown = 1,
+        eVersionMismatch,
         eMustUnderstand,
-        eReceiver,
-        eSender,
-        eVersionMismatch
+        eClient,
+        eServer
     };
 
     ESoap_FaultcodeEnum GetFaultcodeEnum(void) const;

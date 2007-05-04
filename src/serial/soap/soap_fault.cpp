@@ -47,11 +47,10 @@ static struct tag_FaultcodeEnum {
     const char* value;
 } s_FaultCodeEnum[] = {
 
-    {CSoapFault::eDataEncodingUnknown, "DataEncodingUnknown"},
-    {CSoapFault::eMustUnderstand,      "MustUnderstand"},
-    {CSoapFault::eReceiver,            "Receiver"},
-    {CSoapFault::eSender,              "Sender"},
-    {CSoapFault::eVersionMismatch,     "VersionMismatch"},
+    {CSoapFault::eVersionMismatch, "VersionMismatch"},
+    {CSoapFault::eMustUnderstand,  "MustUnderstand"},
+    {CSoapFault::eClient,          "Client"},
+    {CSoapFault::eServer,          "Server"},
     {CSoapFault::e_not_set, 0}
 };
 
