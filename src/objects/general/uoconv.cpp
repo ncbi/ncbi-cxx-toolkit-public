@@ -186,13 +186,18 @@ static void s_SetPrimitiveData(CUser_field& field, CConstObjectInfo obj)
         break;
     }
 
-    case ePrimitiveValueOther: // AnyContent
+    case ePrimitiveValueAny:
     {
         CAnyContentObject obj2;
         obj.GetPrimitiveValueAnyContent(obj2);
         s_SetFieldsFromAnyContent(field, obj2);
         break;
     }
+
+    case ePrimitiveValueOther:
+        ERR_POST(Warning
+                 << "s_SetPrimitiveData: ignoring ePrimitiveValueOther");
+        break;
     }
 }
 
@@ -228,8 +233,12 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
             case ePrimitiveValueBitString:
                 data.SetOss().reserve(count);
                 break;
-            case ePrimitiveValueOther:
+            case ePrimitiveValueAny:
                 data.SetFields().reserve(count);
+                break;
+            case ePrimitiveValueOther:
+                ERR_POST(Warning << "s_SetContainerData:"
+                         " ignoring ePrimitiveValueOther");
                 break;
             }
         default:
@@ -295,7 +304,7 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 data.SetOss().push_back(os);
                 break;
             }
-            case ePrimitiveValueOther:
+            case ePrimitiveValueAny:
             {
                 CRef<CUser_field> field(new CUser_field);
                 CAnyContentObject aco;
@@ -304,6 +313,10 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 data.SetFields().push_back(field);
                 break;
             }
+            case ePrimitiveValueOther:
+                ERR_POST(Warning << "s_SetContainerData:"
+                         " ignoring ePrimitiveValueOther");
+                break;
             }
             break;
 
@@ -448,12 +461,17 @@ static void s_UnpackPrimitiveField(const TUFData& data, CObjectInfo obj)
         obj.SetPrimitiveValueBitString(bs);
     }
 
-    case ePrimitiveValueOther:
+    case ePrimitiveValueAny:
     {
         CAnyContentObject aco;
         s_SetAnyContentFromFields(aco, data.GetFields());
         obj.SetPrimitiveValueAnyContent(aco);
     }
+
+    case ePrimitiveValueOther:
+        ERR_POST(Warning << "s_UnpackPrimitiveField:"
+                 " ignoring ePrimitiveValueOther");
+        break;
     }
 }
 
