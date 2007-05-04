@@ -2506,7 +2506,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
                 }
             }
             if ( group_not_empty ) {
-                opt.merge(grp_opt);
+                opt.insert(opt.end(), grp_opt.begin(), grp_opt.end());
                 opt.push_back(kEmptyStr);
             }
         }
