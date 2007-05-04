@@ -1,7 +1,7 @@
 #ifndef UTIL__QUERY_EXEC_HPP__
 #define UTIL__QUERY_EXEC_HPP__
 
-/*  $Id: bdb_query.cpp 52191 2004-12-17 12:10:41Z kuznets $
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
