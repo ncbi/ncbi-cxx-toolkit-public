@@ -1163,8 +1163,11 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
             }
           
             num_align++;
+      
         }
-        hit.Set().push_back(*iter);
+        if (num_align < m_NumToShow) { //no adding if number to show already reached
+            hit.Set().push_back(*iter);
+        }
         is_first_aln = false;
         previous_id = subid;
     }
@@ -1618,7 +1621,13 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 CShowBlastDefline::SDeflineInfo* 
 CShowBlastDefline::x_GetHitDeflineInfo(const CSeq_align_set& aln)
 {
+  
     SDeflineInfo* sdl = NULL;
+
+    if(aln.Get().empty()){
+        return sdl;
+    }
+        
     const CSeq_id& id = aln.Get().front()->GetSeq_id(1); 
     string evalue_buf, bit_score_buf, total_bit_score_buf;
 
@@ -1635,12 +1644,6 @@ CShowBlastDefline::x_GetHitDeflineInfo(const CSeq_align_set& aln)
     int highest_identity = 0;
     int highest_ident = 0;
     int highest_length = 1;
-    
-
-    if(aln.Get().empty()){
-        return sdl;
-    }
-    
     
     int master_covered_lenghth = CBlastFormatUtil::GetMasterCoverage(aln);
     
