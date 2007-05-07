@@ -1687,10 +1687,13 @@ public:
     ///
     /// @param flusher A callback functor to flush held regions.
     /// @param locked The lock holder object for this thread.
-    void AddRegionFlusher(CSeqDBFlushCB * flusher, CSeqDBLockHold & locked)
+    void AddRegionFlusher(CSeqDBFlushCB  * flusher,
+                          CSeqDBFlushCB ** flushp,
+                          CSeqDBLockHold & locked)
     {
         Lock(locked);
         m_Flushers.push_back(flusher);
+        *flushp = flusher;
     }
     
     /// Remove a garbage collection callback.

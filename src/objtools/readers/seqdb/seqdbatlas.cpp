@@ -1658,7 +1658,7 @@ void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
 
 CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
                                      CSeqDBFlushCB * flush)
-    : m_FlushCB(flush)
+    : m_FlushCB(0)
 {
     CFastMutexGuard guard(m_Lock);
     
@@ -1668,7 +1668,7 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
     
     if (flush) {
         CSeqDBLockHold locked(*m_Atlas);
-        m_Atlas->AddRegionFlusher(flush, locked);
+        m_Atlas->AddRegionFlusher(flush, & m_FlushCB, locked);
     }
     
     m_Count ++;
