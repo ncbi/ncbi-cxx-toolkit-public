@@ -39,11 +39,10 @@
 BEGIN_NCBI_SCOPE
 
 
-BEGIN_SCOPE(impl)
-
-class CDriverContext;
-
-END_SCOPE(impl)
+namespace impl
+{
+    class CDriverContext;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

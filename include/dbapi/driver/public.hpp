@@ -46,13 +46,12 @@ BEGIN_NCBI_SCOPE
 NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 10, 0, 0);
 
 
-BEGIN_SCOPE(impl)
-
-class CDriverContext;
-class CConnection;
-class CCommand;
-
-END_SCOPE(impl)
+namespace impl
+{
+    class CDriverContext;
+    class CConnection;
+    class CCommand;
+}
 
 
 template <class I> class CInterfaceHook;

@@ -74,15 +74,15 @@ class CDB_ResultProcessor;
 
 class IConnValidator;
 
-BEGIN_SCOPE(impl)
+namespace impl
+{
+    class CResult;
+    class CBaseCmd;
+    class CBCPInCmd;
+    class CCursorCmd;
+    class CSendDataCmd;
+}
 
-class CResult;
-class CBaseCmd;
-class CBCPInCmd;
-class CCursorCmd;
-class CSendDataCmd;
-
-END_SCOPE(impl)
 
 /////////////////////////////////////////////////////////////////////////////
 ///
