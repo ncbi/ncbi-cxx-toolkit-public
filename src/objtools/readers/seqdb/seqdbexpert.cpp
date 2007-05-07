@@ -114,5 +114,10 @@ void CSeqDBExpert::SetOffsetRanges(int                oid,
     m_Impl->Verify();
 }
 
+void CSeqDBExpert::Verify()
+{
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 

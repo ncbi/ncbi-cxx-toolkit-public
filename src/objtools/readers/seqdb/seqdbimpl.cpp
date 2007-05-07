@@ -79,7 +79,9 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     SetIterationRange(0, m_NumOIDs);
     
     try {
+        m_Atlas.Verify(false);
         m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
+        m_Atlas.Verify(false);
     }
     catch(CSeqDBException &) {
     }
@@ -111,6 +113,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
             // approximate length mode.
             
             x_ScanTotals(true, & m_NumSeqs, & m_TotalLength, locked);
+            m_Atlas.Verify(locked);
         } else {
             m_NumSeqs     = x_GetNumSeqs();
             m_TotalLength = x_GetTotalLength();

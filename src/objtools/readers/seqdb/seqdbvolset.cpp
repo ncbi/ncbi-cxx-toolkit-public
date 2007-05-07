@@ -42,6 +42,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     : m_RecentVol(0)
 {
     CSeqDBLockHold locked(atlas);
+    atlas.Verify(locked);
     
     try {
         for(int i = 0; i < (int) vol_names.size(); i++) {

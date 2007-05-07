@@ -101,6 +101,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
       m_AliasSets(alias_sets)
 {
     CSeqDBLockHold locked(atlas);
+    m_Atlas.Verify(locked);
     
     m_Values["DBLIST"] = dbname_list;
     

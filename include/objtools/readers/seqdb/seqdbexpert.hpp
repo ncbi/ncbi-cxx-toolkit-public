@@ -213,6 +213,9 @@ public:
                          const TRangeList & offset_ranges,
                          bool               append_ranges,
                          bool               cache_data);
+    
+    /// Verify internal SeqDB data structures for consistency.
+    void Verify();
 };
 
 END_NCBI_SCOPE

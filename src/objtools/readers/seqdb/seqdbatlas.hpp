@@ -1686,6 +1686,7 @@ public:
     /// adds this functor to the atlas using the interface shown here.
     ///
     /// @param flusher A callback functor to flush held regions.
+    /// @param flushp A pointer which is set when the flusher is added.
     /// @param locked The lock holder object for this thread.
     void AddRegionFlusher(CSeqDBFlushCB  * flusher,
                           CSeqDBFlushCB ** flushp,
