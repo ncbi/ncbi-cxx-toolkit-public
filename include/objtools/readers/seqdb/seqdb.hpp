@@ -539,6 +539,11 @@ public:
     /// Returns the number of sequences available.
     int GetNumSeqs() const;
     
+    /// Returns the number of sequences available.
+    ///
+    /// This may be overridden by the STATS_NSEQ key.
+    int GetNumSeqsStats() const;
+    
     /// Returns the size of the (possibly sparse) OID range.
     int GetNumOIDs() const;
     
@@ -548,6 +553,13 @@ public:
     /// or alias files.  It provides an exact value, without iterating
     /// over individual sequences.
     Uint8 GetTotalLength() const;
+    
+    /// Returns the sum of the lengths of all available sequences.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  It provides either an exact value or a value
+    /// changed in the alias files by the STATS_TOTLEN key.
+    Uint8 GetTotalLengthStats() const;
     
     /// Returns the sum of the lengths of all volumes.
     ///

@@ -55,8 +55,10 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_RestrictEnd     (oid_end),
       m_NextChunkOID    (0),
       m_NumSeqs         (0),
+      m_NumSeqsStats    (0),
       m_NumOIDs         (0),
       m_TotalLength     (0),
+      m_TotalLengthStats(0),
       m_VolumeLength    (0),
       m_SeqType         (prot_nucl),
       m_OidListSetup    (false),
@@ -113,6 +115,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
             m_NumSeqs     = x_GetNumSeqs();
             m_TotalLength = x_GetTotalLength();
         }
+        m_NumSeqsStats     = x_GetNumSeqsStats();
+        m_TotalLengthStats = x_GetTotalLengthStats();
     }
     catch(CSeqDBException & e) {
         m_UserGiList.Reset();
@@ -597,6 +601,12 @@ int CSeqDBImpl::GetNumSeqs() const
     return m_NumSeqs;
 }
 
+int CSeqDBImpl::GetNumSeqsStats() const
+{
+    CHECK_MARKER();
+    return m_NumSeqsStats;
+}
+
 int CSeqDBImpl::GetNumOIDs() const
 {
     CHECK_MARKER();
@@ -607,6 +617,12 @@ Uint8 CSeqDBImpl::GetTotalLength() const
 {
     CHECK_MARKER();
     return m_TotalLength;
+}
+
+Uint8 CSeqDBImpl::GetTotalLengthStats() const
+{
+    CHECK_MARKER();
+    return m_TotalLengthStats;
 }
 
 Uint8 CSeqDBImpl::GetVolumeLength() const
@@ -622,6 +638,18 @@ int CSeqDBImpl::x_GetNumSeqs() const
     // GetNumSeqs should not overflow, even for alias files.
     
     Int8 rv = m_Aliases.GetNumSeqs(m_VolSet);
+    _ASSERT((rv & 0x7FFFFFFF) == rv);
+    
+    return (int) rv;
+}
+
+int CSeqDBImpl::x_GetNumSeqsStats() const
+{
+    CHECK_MARKER();
+    
+    // GetNumSeqs should not overflow, even for alias files.
+    
+    Int8 rv = m_Aliases.GetNumSeqsStats(m_VolSet);
     _ASSERT((rv & 0x7FFFFFFF) == rv);
     
     return (int) rv;
@@ -652,6 +680,12 @@ Uint8 CSeqDBImpl::x_GetTotalLength() const
 {
     CHECK_MARKER();
     return m_Aliases.GetTotalLength(m_VolSet);
+}
+
+Uint8 CSeqDBImpl::x_GetTotalLengthStats() const
+{
+    CHECK_MARKER();
+    return m_Aliases.GetTotalLengthStats(m_VolSet);
 }
 
 Uint8 CSeqDBImpl::x_GetVolumeLength() const

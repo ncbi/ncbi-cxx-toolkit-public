@@ -56,15 +56,17 @@ BEGIN_NCBI_SCOPE
 CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                                  const string    & name_list,
                                  char              prot_nucl)
-    : m_AliasSets     (atlas),
-      m_IsProtein     (prot_nucl == 'p'),
-      m_NumSeqs       (-1),
-      m_NumOIDs       (-1),
-      m_TotalLength   (-1),
-      m_VolumeLength  (-1),
-      m_MembBit       (-1),
-      m_HaveTitle     (false),
-      m_NeedTotalsScan(-1)
+    : m_AliasSets        (atlas),
+      m_IsProtein        (prot_nucl == 'p'),
+      m_NumSeqs          (-1),
+      m_NumSeqsStats     (-1),
+      m_NumOIDs          (-1),
+      m_TotalLength      (-1),
+      m_TotalLengthStats (-1),
+      m_VolumeLength     (-1),
+      m_MembBit          (-1),
+      m_HaveTitle        (false),
+      m_NeedTotalsScan   (-1)
 {
     if (name_list.size() && prot_nucl != '-') {
         m_Node.Reset(new CSeqDBAliasNode(atlas,
@@ -978,6 +980,22 @@ public:
     }
 };
 
+/// Walker for STATS_NSEQ field of alias file
+///
+/// The STATS_NSEQ field of the alias file specifies the number of
+/// sequences to use when reporting information via the
+/// "CSeqDB::GetNumSeqsStats()" method.  It is not the same as the
+/// number of OIDs unless there are no filtering mechanisms in use.
+
+class CSeqDB_NSeqsStatsWalker : public CSeqDB_NSeqsWalker {
+public:
+    /// This does the same calculation as above but uses another key.
+    virtual const char * GetFileKey() const
+    {
+        return "STATS_NSEQ";
+    }
+};
+
 
 /// Walker for total length accumulation.
 ///
@@ -1048,6 +1066,21 @@ public:
     virtual const char * GetFileKey() const
     {
         return " no key ";
+    }
+};
+
+
+/// Walker for total length stats accumulation.
+///
+/// The total length of the database is the sum of the lengths of all
+/// volumes of the database (measured in bases).
+
+class CSeqDB_TotalLengthStatsWalker : public CSeqDB_TotalLengthWalker {
+public:
+    /// This does the same calculation as above but uses another key.
+    virtual const char * GetFileKey() const
+    {
+        return "STATS_TOTLEN";
     }
 };
 
@@ -1428,6 +1461,14 @@ Int8 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
     return walk.GetNum();
 }
 
+Int8 CSeqDBAliasNode::GetNumSeqsStats(const CSeqDBVolSet & vols) const
+{
+    CSeqDB_NSeqsStatsWalker walk;
+    WalkNodes(& walk, vols);
+    
+    return walk.GetNum();
+}
+
 Int8 CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
 {
     CSeqDB_NOIDsWalker walk;
@@ -1439,6 +1480,14 @@ Int8 CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
 Uint8 CSeqDBAliasNode::GetTotalLength(const CSeqDBVolSet & volset) const
 {
     CSeqDB_TotalLengthWalker walk;
+    WalkNodes(& walk, volset);
+    
+    return walk.GetLength();
+}
+
+Uint8 CSeqDBAliasNode::GetTotalLengthStats(const CSeqDBVolSet & volset) const
+{
+    CSeqDB_TotalLengthStatsWalker walk;
     WalkNodes(& walk, volset);
     
     return walk.GetLength();
@@ -1560,6 +1609,15 @@ Int8 CSeqDBAliasFile::GetNumSeqs(const CSeqDBVolSet & volset) const
 }
 
 
+Int8 CSeqDBAliasFile::GetNumSeqsStats(const CSeqDBVolSet & volset) const
+{
+    if (m_NumSeqsStats == -1)
+        m_NumSeqsStats = m_Node->GetNumSeqsStats(volset);
+    
+    return m_NumSeqsStats;
+}
+
+
 Int8 CSeqDBAliasFile::GetNumOIDs(const CSeqDBVolSet & volset) const
 {
     if (m_NumOIDs == -1)
@@ -1575,6 +1633,15 @@ Uint8 CSeqDBAliasFile::GetTotalLength(const CSeqDBVolSet & volset) const
         m_TotalLength = m_Node->GetTotalLength(volset);
     
     return m_TotalLength;
+}
+
+
+Uint8 CSeqDBAliasFile::GetTotalLengthStats(const CSeqDBVolSet & volset) const
+{
+    if (m_TotalLengthStats == -1)
+        m_TotalLengthStats = m_Node->GetTotalLengthStats(volset);
+    
+    return m_TotalLengthStats;
 }
 
 

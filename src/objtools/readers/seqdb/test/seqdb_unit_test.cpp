@@ -2830,6 +2830,20 @@ BOOST_AUTO_UNIT_TEST(GetSequenceAsString)
     CHECK_EQUAL(pstr, prot_str);
 }
 
+BOOST_AUTO_UNIT_TEST(TotalLengths)
+{
+    START;
+    
+    // Test both constructors; make sure sizes are equal and non-zero.
+    
+    CSeqDB local("data/totals", CSeqDB::eNucleotide);
+    
+    CHECK_EQUAL((int)local.GetTotalLength(),      12345);
+    CHECK_EQUAL((int)local.GetTotalLengthStats(), 23456);
+    CHECK_EQUAL((int)local.GetNumSeqs(),          123);
+    CHECK_EQUAL((int)local.GetNumSeqsStats(),     234);
+}
+
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)

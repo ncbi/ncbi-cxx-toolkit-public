@@ -494,6 +494,20 @@ public:
     ///   The number of included sequences
     Int8 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
+    /// Get the number of sequences available
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the number of sequences available here.  Alias files may
+    /// override this value (stopping traversal at that depth).  It is
+    /// normally used to provide information on how many OIDs exist
+    /// after filtering has been applied.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The number of included sequences
+    Int8 GetNumSeqsStats(const CSeqDBVolSet & volset) const;
+    
     /// Get the size of the OID range
     ///
     /// This iterates this node and possibly subnodes of it to compute
@@ -522,6 +536,22 @@ public:
     /// @return
     ///   The total length of all included sequences
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
+    
+    /// Get the total length of the set of databases
+    ///
+    /// This iterates this node and possibly subnodes of it to compute
+    /// the total length of all sequences in all volumes included in
+    /// the database.  This may count volumes several times (depending
+    /// on alias tree structure).  Alias files can override this value
+    /// (stopping traversal at that depth).  It is normally used to
+    /// describe the amount of sequence data remaining after filtering
+    /// has been applied.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The total length of all included sequences
+    Uint8 GetTotalLengthStats(const CSeqDBVolSet & volset) const;
     
     /// Get the sum of the volume lengths
     ///
@@ -980,6 +1010,20 @@ public:
     ///   The number of included sequences
     Int8 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
+    /// Get the number of sequences available
+    ///
+    /// This iterates the alias node tree to compute the number of
+    /// sequences available here.  Alias files may override this value
+    /// (stopping traversal at that depth).  It is normally used to
+    /// provide information on how many OIDs exist after filtering has
+    /// been applied.  This is like GetNumSeqs, but uses STATS_NSEQ.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The number of included sequences
+    Int8 GetNumSeqsStats(const CSeqDBVolSet & volset) const;
+    
     /// Get the size of the OID range
     ///
     /// This iterates the alias node tree to compute the number of
@@ -1008,6 +1052,22 @@ public:
     /// @return
     ///   The total length of all included sequences
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
+    
+    /// Get the total length of the set of databases
+    ///
+    /// This iterates the alias node tree to compute the total length
+    /// of all sequences in all volumes included in the database.
+    /// This may count volumes several times (depending on alias tree
+    /// structure).  Alias files can override this value (stopping
+    /// traversal at that depth).  It is normally used to describe the
+    /// amount of sequence data remaining after filtering has been
+    /// applied.  This is like GetTotalLength but uses STATS_TOTLEN.
+    ///
+    /// @param volset
+    ///   The set of database volumes
+    /// @return
+    ///   The total length of all included sequences
+    Uint8 GetTotalLengthStats(const CSeqDBVolSet & volset) const;
     
     /// Get the sum of the volume lengths
     ///
@@ -1108,11 +1168,17 @@ private:
     /// Number of sequences.
     mutable Int8 m_NumSeqs;
     
+    /// Number of sequences for statistics purposes.
+    mutable int m_NumSeqsStats;
+    
     /// Number of OIDs.
     mutable Int8 m_NumOIDs;
     
     /// Total length.
     mutable Int8 m_TotalLength;
+    
+    /// Total length for statistics purposes.
+    mutable Int8 m_TotalLengthStats;
     
     /// Total length ignoring filtering.
     mutable Int8 m_VolumeLength;

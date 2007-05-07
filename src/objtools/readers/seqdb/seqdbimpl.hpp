@@ -337,6 +337,11 @@ public:
     /// Returns the number of sequences available.
     int GetNumSeqs() const;
     
+    /// Returns the number of sequences available.
+    ///
+    /// This may be overridden by the STATS_NSEQ key.
+    int GetNumSeqsStats() const;
+    
     /// Returns the size of the (possibly sparse) OID range.
     int GetNumOIDs() const;
     
@@ -346,6 +351,13 @@ public:
     /// or alias files.  It provides an exact value, without iterating
     /// over individual sequences.
     Uint8 GetTotalLength() const;
+    
+    /// Returns the sum of the lengths of all available sequences.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  It provides either an exact value or a value
+    /// changed in the alias files by the STATS_TOTLEN key.
+    Uint8 GetTotalLengthStats() const;
     
     /// Returns the sum of the lengths of all volumes.
     ///
@@ -743,6 +755,9 @@ private:
     /// Returns the number of sequences available.
     int x_GetNumSeqs() const;
     
+    /// Returns the number of sequences available.
+    int x_GetNumSeqsStats() const;
+    
     /// Returns the size of the (possibly sparse) OID range.
     int x_GetNumOIDs() const;
     
@@ -754,6 +769,17 @@ private:
     /// alias files, and is used to populate a field that caches the
     /// value; the corresponding public method uses that cached value.
     Uint8 x_GetTotalLength() const;
+    
+    /// Returns the sum of the lengths of all available sequences.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  It provides an exact value, without iterating
+    /// over individual sequences.  This private version uses the
+    /// alias files, and is used to populate a field that caches the
+    /// value; the corresponding public method uses that cached value.
+    /// It works just like x_GetTotalLengthStats() except that it uses
+    /// the STATS_TOTLEN alias key.
+    Uint8 x_GetTotalLengthStats() const;
     
     /// Returns the sum of the lengths of all volumes.
     ///
@@ -858,11 +884,17 @@ private:
     /// Number of sequences in the overall database.
     int m_NumSeqs;
     
+    /// Number of sequences in the overall database.
+    int m_NumSeqsStats;
+    
     /// Size of databases OID range.
     int m_NumOIDs;
     
     /// Total length of database (in bases).
     Uint8 m_TotalLength;
+    
+    /// Total length of database (in bases).
+    Uint8 m_TotalLengthStats;
     
     /// Total length of all database volumes combined (in bases).
     Uint8 m_VolumeLength;

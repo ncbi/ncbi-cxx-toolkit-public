@@ -408,6 +408,11 @@ int CSeqDB::GetNumSeqs() const
     return m_Impl->GetNumSeqs();
 }
 
+int CSeqDB::GetNumSeqsStats() const
+{
+    return m_Impl->GetNumSeqsStats();
+}
+
 int CSeqDB::GetNumOIDs() const
 {
     return m_Impl->GetNumOIDs();
@@ -416,6 +421,11 @@ int CSeqDB::GetNumOIDs() const
 Uint8 CSeqDB::GetTotalLength() const
 {
     return m_Impl->GetTotalLength();
+}
+
+Uint8 CSeqDB::GetTotalLengthStats() const
+{
+    return m_Impl->GetTotalLengthStats();
 }
 
 Uint8 CSeqDB::GetVolumeLength() const
