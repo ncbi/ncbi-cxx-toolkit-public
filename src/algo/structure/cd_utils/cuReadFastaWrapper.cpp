@@ -86,7 +86,7 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
         oss << iStream.rdbuf();
         iStream.seekg(0);  
 
-        m_activeFastaString = oss.str();
+        m_activeFastaString = CNcbiOstrstreamToString(oss);
         if (m_cacheRawFasta) m_rawFastaString = m_activeFastaString;
 
         //  temporarily turn off warning messages (in case of '.' in *.a2m files)
