@@ -98,45 +98,26 @@ struct SCacheDescr
 class CBDB_CacheIReader : public IReader
 {
 public:
-
     CBDB_CacheIReader(CBDB_Cache&                bdb_cache,
-                      CBDB_BLobStream*           blob_stream,
-                      CBDB_Cache::EWriteSyncMode wsync)
+                      CNcbiIfstream*             overflow_file)
     : m_Cache(bdb_cache),
-      m_BlobStream(blob_stream),
-      m_OverflowFile(0),
-      m_RawBuffer(0),
-      m_BufferPtr(0),
-      m_WSync(wsync)
-    {}
-
-    CBDB_CacheIReader(CBDB_Cache&                bdb_cache,
-                      CNcbiIfstream*             overflow_file,
-                      CBDB_Cache::EWriteSyncMode wsync)
-    : m_Cache(bdb_cache),
-      m_BlobStream(0),
       m_OverflowFile(overflow_file),
       m_RawBuffer(0),
-      m_BufferPtr(0),
-      m_WSync(wsync)
+      m_BufferPtr(0)
     {}
 
     CBDB_CacheIReader(CBDB_Cache&                bdb_cache,
-                      CBDB_RawFile::TBuffer*     raw_buffer,
-                      CBDB_Cache::EWriteSyncMode wsync)
+                      CBDB_RawFile::TBuffer*     raw_buffer)
     : m_Cache(bdb_cache),
-      m_BlobStream(0),
       m_OverflowFile(0),
       m_RawBuffer(raw_buffer),
       m_BufferPtr(raw_buffer->data()),
-      m_BufferSize(raw_buffer->size()),
-      m_WSync(wsync)
+      m_BufferSize(raw_buffer->size())
     {
     }
 
     virtual ~CBDB_CacheIReader()
     {
-        delete m_BlobStream;
         delete m_OverflowFile;
         delete m_RawBuffer;
     }
@@ -164,8 +145,6 @@ public:
 
         // Check if BLOB is file based...
         if (m_OverflowFile) {
-            CFastMutexGuard guard(m_Cache.m_DB_Lock);
-
             m_OverflowFile->read((char*)buf, count);
             *bytes_read = m_OverflowFile->gcount();
             if (*bytes_read == 0) {
@@ -174,20 +153,6 @@ public:
             return eRW_Success;
         }
 
-        // Reading from the BDB stream
-
-        size_t br;
-
-        {{
-            CFastMutexGuard guard(m_Cache.m_DB_Lock);
-            m_BlobStream->Read(buf, count, &br);
-        }}
-
-        if (bytes_read)
-            *bytes_read = br;
-
-        if (br == 0)
-            return eRW_Eof;
         return eRW_Success;
     }
 
@@ -201,11 +166,6 @@ public:
             *count = m_OverflowFile->good()? 1: 0;
             return eRW_Success;
         }
-        else if (m_BlobStream) {
-            *count = m_BlobStream->PendingCount();
-            return eRW_Success;
-        }
-
         *count = 0;
         return eRW_Error;
     }
@@ -217,13 +177,10 @@ private:
 
 private:
     CBDB_Cache&                 m_Cache;
-    CBDB_BLobStream*            m_BlobStream;
     CNcbiIfstream*              m_OverflowFile;
-    //unsigned char*              m_Buffer;
     CBDB_RawFile::TBuffer*      m_RawBuffer;
     unsigned char*              m_BufferPtr;
     size_t                      m_BufferSize;
-    CBDB_Cache::EWriteSyncMode  m_WSync;
 };
 
 
@@ -2167,7 +2124,7 @@ IReader* CBDB_Cache::x_CreateOverflowReader(int            overflow,
         CFile entry(path);
         file_length = (size_t) entry.GetLength();
 
-        return new CBDB_CacheIReader(*this, overflow_file.release(), m_WSync);
+        return new CBDB_CacheIReader(*this, overflow_file.release());
     }
     return 0;
 }
@@ -2244,7 +2201,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     if (ret != eBDB_Ok) {
         return 0;
     }
-    return new CBDB_CacheIReader(*this, buffer.release(), m_WSync);
+    return new CBDB_CacheIReader(*this, buffer.release());
 
 }
 
@@ -2367,7 +2324,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     blob_descr->blob_found = true;
     blob_descr->blob_size = buffer->size();
     blob_descr->reader.reset(
-        new CBDB_CacheIReader(*this, buffer.release(), m_WSync));
+        new CBDB_CacheIReader(*this, buffer.release()));
     return;
 
 }
