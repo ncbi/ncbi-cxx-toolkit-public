@@ -2144,6 +2144,8 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     {{
         CFastMutexGuard guard(m_DB_Lock);
 
+        m_CacheAttrDB->SetTransaction(0);
+
 	    bool rec_exists =
             x_RetrieveBlobAttributes(key, version, subkey, 
                                     &overflow, &ttl, 
@@ -3532,14 +3534,14 @@ bool CBDB_Cache::SameCacheParams(const TCacheParams* params) const
     if ( !driver_params ) {
         return false;
     }
-    const TCacheParams* path = params->FindNode(kCFParam_path);
+    const TCacheParams* path = driver_params->FindNode(kCFParam_path);
     string str_path = path ?
         CDirEntry::AddTrailingPathSeparator(
         path->GetValue().value) : kEmptyStr;
     if (!path  || str_path != m_Path) {
         return false;
     }
-    const TCacheParams* name = params->FindNode(kCFParam_name);
+    const TCacheParams* name = driver_params->FindNode(kCFParam_name);
     return name  &&  name->GetValue().value == m_Name;
 }
 
