@@ -584,9 +584,11 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
         }
     }
 
-    if(cross_filter) {
+    if(cross_filter && m_compartments.size()) {
 
-        // x-filter within the compartment hits
+        const TCoord kMinCompartmentHitLength (8);
+
+        // partial x-filtering using compartment hits only
         for(size_t icn (m_compartments.size()), ic (0); ic < icn; ++ic) {
 
             CCompartment & comp (m_compartments[ic]);
@@ -600,14 +602,16 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 if(h1.IsNull()) continue;
 
                 const TCoord * box1o (h1->GetBox());
-                const TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
+                TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
                 const TCoord * box2o (h2->GetBox());
-                const TCoord box2 [4] = {box2o[0], box2o[1], box2o[2], box2o[3]};
+                TCoord box2 [4] = {box2o[0], box2o[1], box2o[2], box2o[3]};
+
                 const int qd (box1[1] - box2[0] + 1);
                 const int sd (box1[3] - box2[2] + 1);
                 if(qd > sd && qd > 0) {
 
-                    if(box1[0] + 1 >= box2[0]) {
+                    if(box2[0] <= box1[0] + kMinCompartmentHitLength) {
+
                         if(i + 1 == in) {
                             TCoord new_coord ((box1[0] + box1[1]) / 2);
                             if(box1[0] + 1 <= new_coord) {
@@ -627,7 +631,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                         h1->Modify(1, box2[0] - 1);
                     }
                     
-                    if(box1[1] + 1 >= box2[1]) {
+                    if(box2[1] <= box1[1]+ kMinCompartmentHitLength) {
+
                         if(i == 1) {
                             TCoord new_coord ((box2[0] + box2[1]) / 2);
                             if(box2[1] >= new_coord + 1) {
@@ -649,7 +654,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 }
                 else if (sd > 0) {
 
-                    if(box1[2] + 1 >= box2[2]) {
+                    if(box2[2] <= box1[2] + kMinCompartmentHitLength) {
+
                         if(i + 1 == in) {
                             TCoord new_coord ((box1[2] + box1[3]) / 2);
                             if(box1[2] + 1 <= new_coord) {
@@ -669,7 +675,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                         h1->Modify(3, box2[2] - 1);
                     }
                     
-                    if(box1[3] + 1 >= box2[3]) {
+                    if(box2[3] <= box1[3] + kMinCompartmentHitLength) {
+
                         if(i == 1) {
                             TCoord new_coord ((box2[2] + box2[3]) / 2);
                             if(box2[3] >= new_coord + 1) {
@@ -695,6 +702,101 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 hitrefs.erase(remove_if(hitrefs.begin(), hitrefs.end(),
                                         CCompartmentFinder<THit>::s_PNullRef),
                               hitrefs.end());
+            }
+        }
+
+        // complete x-filtering using the full set of hits
+        typename THitRefs::iterator ihr_b (m_hitrefs.begin()),
+            ihr_e(m_hitrefs.end()), ihr (ihr_b);
+
+        for(size_t icn (m_compartments.size()), ic (0); ic < icn; ++ic) {
+
+            CCompartment & comp (m_compartments[ic]);
+            THitRefs& hitrefs (comp.SetMembers());
+
+            if(hitrefs.size() < 3) {
+                continue;
+            }
+            else {
+                NON_CONST_ITERATE(typename THitRefs, ii, hitrefs) {
+                    (*ii)->SetScore( - (*ii)->GetScore());
+                }
+            }
+
+            const TCoord comp_subj_min (hitrefs.front()->GetSubjStart());
+            while(ihr != ihr_e && (*ihr)->GetSubjStart() < comp_subj_min) ++ihr;
+            typename THitRefs::const_iterator ihrc_b (ihr);
+
+            size_t nullified (0);
+            for(int in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
+
+                THitRef& h1 (hitrefs[i]);
+                if(h1.IsNull()) continue;
+                
+                const TCoord * box1o (h1->GetBox());
+                TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
+
+                while(ihr != ihr_e && ((*ihr)->GetSubjStop() < box1[2] 
+                      || (*ihr)->GetScore() < 0))
+                {
+                    ++ihr;
+                }
+
+                if(ihr == ihr_e) break;
+                
+                const TCoord ihr_subj_start ((*ihr)->GetSubjStart());
+                if(ihr_subj_start <= box1[3]) {
+                    if(ihr_subj_start <= box1[2] + kMinCompartmentHitLength) {
+                        h1.Reset(0);
+                        ++nullified;
+                    }
+                    else {
+                        h1->Modify(3, ihr_subj_start - 1);
+                    }
+                }
+            }
+
+            stable_sort(ihr_b, ihr, THitComparator (THitComparator::eQueryMin));
+            ihr = ihr_b;
+            for(int in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
+
+                THitRef& h1 (hitrefs[i]);
+                if(h1.IsNull()) continue;
+
+                const TCoord * box1o (h1->GetBox());
+                TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
+
+                while(ihr != ihr_e && ((*ihr)->GetQueryStop() < box1[0] 
+                      || (*ihr)->GetScore() < 0))
+                {
+                    ++ihr;
+                }
+
+                if(ihr == ihr_e) break;
+                
+                const TCoord ihr_query_start ((*ihr)->GetQueryStart());
+                if(ihr_query_start <= box1[1]) {
+                    if(ihr_query_start <= box1[0] + kMinCompartmentHitLength) {
+                        h1.Reset(0);
+                        ++nullified;
+                    }
+                    else {
+                        h1->Modify(1, ihr_query_start - 1);
+                    }
+                }
+            }
+
+            if(nullified > 0) {
+                hitrefs.erase(remove_if(hitrefs.begin(), hitrefs.end(),
+                                        CCompartmentFinder<THit>::s_PNullRef),
+                              hitrefs.end());
+            }
+
+            NON_CONST_ITERATE(typename THitRefs, ii, hitrefs) {
+                const double score ((*ii)->GetScore());
+                if(score < 0) {
+                    (*ii)->SetScore(-score);
+                }
             }
         }
     }
