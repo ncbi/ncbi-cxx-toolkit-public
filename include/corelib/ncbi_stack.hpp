@@ -34,7 +34,6 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
-#include <string>
 #include <list>
 
 BEGIN_NCBI_SCOPE

@@ -35,7 +35,6 @@
 /// Portable reference counted smart pointers using CRef and CObject.
 
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ddumpable.hpp>

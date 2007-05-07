@@ -115,7 +115,6 @@
 // Obsolete
 #define SEEKOFF         PUBSEEKOFF
 
-
 #include <string>
 
 
