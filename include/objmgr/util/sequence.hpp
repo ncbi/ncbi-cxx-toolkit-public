@@ -242,6 +242,26 @@ enum EBestFeatOpts {
 };
 typedef int TBestFeatOpts;
 
+
+/// Storage for features and scores.
+typedef pair<Int8, CConstRef<CSeq_feat> > TFeatScore;
+typedef vector<TFeatScore> TFeatScores;
+
+/// Find all features overlapping the location. Features and corresponding
+/// scores are stored in the 'feats' vector. The scores are calculated as
+/// difference between the input location and each feature's location.
+NCBI_XOBJUTIL_EXPORT
+void GetOverlappingFeatures(const CSeq_loc& loc,
+                            CSeqFeatData::E_Choice feat_type,
+                            CSeqFeatData::ESubtype feat_subtype,
+                            EOverlapType overlap_type,
+                            TFeatScores& feats,
+                            CScope& scope);
+
+
+/// overlap_type defines how the location must be related to the feature.
+/// E.g. with eOverlap_Contains, the location will contain the feature,
+/// with eOverlap_Contained, it will be contained within the feature.
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,

@@ -468,13 +468,13 @@ struct SPairLessBySecond
     }
 };
 
-static
-void x_GetBestOverlappingFeat(const CSeq_loc& loc,
-                              CSeqFeatData::E_Choice feat_type,
-                              CSeqFeatData::ESubtype feat_subtype,
-                              EOverlapType overlap_type,
-                              TFeatScores& feats,
-                              CScope& scope)
+
+void GetOverlappingFeatures(const CSeq_loc& loc,
+                            CSeqFeatData::E_Choice feat_type,
+                            CSeqFeatData::ESubtype feat_subtype,
+                            EOverlapType overlap_type,
+                            TFeatScores& feats,
+                            CScope& scope)
 {
     bool revert_locations = false;
     SAnnotSelector::EOverlapType annot_overlap_type;
@@ -552,7 +552,7 @@ void x_GetBestOverlappingFeat(const CSeq_loc& loc,
         }
     }
     catch (CException&) {
-        _TRACE("x_GetBestOverlappingFeat(): error: feature iterator failed");
+        _TRACE("GetOverlappingFeatures(): error: feature iterator failed");
     }
 
     std::sort(feats.begin(), feats.end(),
@@ -567,9 +567,9 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             TBestFeatOpts opts)
 {
     TFeatScores scores;
-    x_GetBestOverlappingFeat(loc,
-                             feat_type, CSeqFeatData::eSubtype_any,
-                             overlap_type, scores, scope);
+    GetOverlappingFeatures(loc,
+                           feat_type, CSeqFeatData::eSubtype_any,
+                           overlap_type, scores, scope);
     if (scores.size()) {
         if (opts & fBestFeat_FavorLonger) {
             return scores.back().second;
@@ -588,7 +588,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             TBestFeatOpts opts)
 {
     TFeatScores scores;
-    x_GetBestOverlappingFeat(loc,
+    GetOverlappingFeatures(loc,
         CSeqFeatData::GetTypeFromSubtype(feat_type), feat_type,
         overlap_type, scores, scope);
 
@@ -612,10 +612,10 @@ CConstRef<CSeq_feat> x_GetBestOverlapForSNP(const CSeq_feat& snp_feat,
 {
     TFeatScores scores;
     CConstRef<CSeq_feat> overlap;
-    x_GetBestOverlappingFeat(snp_feat.GetLocation(),
-                             type, subtype,
-                             eOverlap_Contains, scores,
-                             scope);
+    GetOverlappingFeatures(snp_feat.GetLocation(),
+                           type, subtype,
+                           eOverlap_Contained, scores,
+                           scope);
     if (scores.size()) {
         overlap = scores.front().second;
     }
@@ -632,10 +632,10 @@ CConstRef<CSeq_feat> x_GetBestOverlapForSNP(const CSeq_feat& snp_feat,
         }
 
         scores.clear();
-        x_GetBestOverlappingFeat(*loc,
-                                 type, subtype,
-                                 eOverlap_Contains, scores,
-                                 scope);
+        GetOverlappingFeatures(*loc,
+                               type, subtype,
+                               eOverlap_Contained, scores,
+                               scope);
         if (scores.size()) {
             overlap = scores.front().second;
         }
@@ -669,42 +669,42 @@ CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
 CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene,
-                                  eOverlap_Contains, scope);
+                                  eOverlap_Contained, scope);
 }
 
 
 CConstRef<CSeq_feat> GetOverlappingmRNA(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_mRNA,
-                                  eOverlap_Contains, scope);
+                                  eOverlap_Contained, scope);
 }
 
 
 CConstRef<CSeq_feat> GetOverlappingCDS(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_cdregion,
-                                  eOverlap_Contains, scope);
+                                  eOverlap_Contained, scope);
 }
 
 
 CConstRef<CSeq_feat> GetOverlappingPub(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_pub,
-                                  eOverlap_Contains, scope);
+                                  eOverlap_Contained, scope);
 }
 
 
 CConstRef<CSeq_feat> GetOverlappingSource(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_biosrc,
-                                  eOverlap_Contains, scope);
+                                  eOverlap_Contained, scope);
 }
 
 
 CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_operon,
-                                  eOverlap_Contains, scope);
+                                  eOverlap_Contained, scope);
 }
 
 
@@ -719,11 +719,11 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     // we start with a scan through the product accessions because we need
     // to insure that the chosen transcript does indeed match what we want
     TFeatScores feats;
-    x_GetBestOverlappingFeat(cds_feat.GetLocation(),
-                             CSeqFeatData::e_Rna,
-                             CSeqFeatData::eSubtype_mRNA,
-                             eOverlap_CheckIntRev,
-                             feats, scope);
+    GetOverlappingFeatures(cds_feat.GetLocation(),
+                           CSeqFeatData::e_Rna,
+                           CSeqFeatData::eSubtype_mRNA,
+                           eOverlap_CheckIntRev,
+                           feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
@@ -867,11 +867,11 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     // we start with a scan through the product accessions because we need
     // to insure that the chosen transcript does indeed match what we want
     TFeatScores feats;
-    x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
-                             CSeqFeatData::e_Cdregion,
-                             CSeqFeatData::eSubtype_cdregion,
-                             eOverlap_CheckIntervals,
-                             feats, scope);
+    GetOverlappingFeatures(mrna_feat.GetLocation(),
+                           CSeqFeatData::e_Cdregion,
+                           CSeqFeatData::eSubtype_cdregion,
+                           eOverlap_CheckIntervals,
+                           feats, scope);
 
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
@@ -1029,11 +1029,11 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
 
     // search for a best overlapping gene
     TFeatScores feats;
-    x_GetBestOverlappingFeat(mrna_feat.GetLocation(),
-                             CSeqFeatData::e_Gene,
-                             CSeqFeatData::eSubtype_any,
-                             eOverlap_Contained,
-                             feats, scope);
+    GetOverlappingFeatures(mrna_feat.GetLocation(),
+                           CSeqFeatData::e_Gene,
+                           CSeqFeatData::eSubtype_any,
+                           eOverlap_Contained,
+                           feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
@@ -1117,11 +1117,11 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
 
     // search for a best overlapping gene
     TFeatScores feats;
-    x_GetBestOverlappingFeat(cds_feat.GetLocation(),
-                             CSeqFeatData::e_Gene,
-                             CSeqFeatData::eSubtype_any,
-                             eOverlap_Contained,
-                             feats, scope);
+    GetOverlappingFeatures(cds_feat.GetLocation(),
+                           CSeqFeatData::e_Gene,
+                           CSeqFeatData::eSubtype_any,
+                           eOverlap_Contained,
+                           feats, scope);
     /// easy out: 0 or 1 possible features
     if (feats.size() < 2) {
         if (feats.size() == 1) {
