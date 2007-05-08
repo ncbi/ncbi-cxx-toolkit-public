@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.33 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.34 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -261,17 +261,18 @@ private:
 
 public:
     enum ENSAccess {
-        eNSAC_Queue     = 1 << 0,
-        eNSAC_Worker    = 1 << 1,
-        eNSAC_Submitter = 1 << 2,
-        eNSAC_Admin     = 1 << 3,
+        eNSAC_Queue      = 1 << 0,
+        eNSAC_Worker     = 1 << 1,
+        eNSAC_Submitter  = 1 << 2,
+        eNSAC_Admin      = 1 << 3,
+        eNSAC_QueueAdmin = 1 << 4,
         // Combination of flags for client roles
         eNSCR_Any        = 0,
         eNSCR_Queue      = eNSAC_Queue,
         eNSCR_Worker     = eNSAC_Worker + eNSAC_Queue,
         eNSCR_Submitter  = eNSAC_Submitter + eNSAC_Queue,
         eNSCR_Admin      = eNSAC_Admin,
-        eNSCR_QueueAdmin = eNSAC_Admin + eNSAC_Queue 
+        eNSCR_QueueAdmin = eNSAC_QueueAdmin + eNSAC_Queue 
     };
     typedef unsigned TNSClientRole;
 
@@ -662,7 +663,7 @@ void CNetScheduleHandler::ProcessMsgAuth(BUF buffer)
         (m_AuthString == "netschedule_control" ||
          m_AuthString == "netschedule_admin"))
     {
-        m_Uncaps &= ~eNSAC_Admin;
+        m_Uncaps &= ~(eNSAC_Admin | eNSAC_QueueAdmin);
     }
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgQueue;
 }
@@ -778,12 +779,14 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
     string msg = "Access denied:";
     if (deficiencies & eNSAC_Queue)
         msg.append(" queue required");
-    if (deficiencies  & eNSAC_Worker)
+    if (deficiencies & eNSAC_Worker)
         msg.append(" worker node privileges required");
-    if (deficiencies  & eNSAC_Submitter)
+    if (deficiencies & eNSAC_Submitter)
         msg.append(" submitter privileges required");
-    if (deficiencies  & eNSAC_Admin)
+    if (deficiencies & eNSAC_Admin)
         msg.append(" admin privileges required");
+    if (deficiencies & eNSAC_QueueAdmin)
+        msg.append(" queue admin privileges required");
     NCBI_THROW(CNetScheduleException, eAccessDenied, msg);
 }
 
@@ -1153,7 +1156,7 @@ void CNetScheduleHandler::ProcessStatus()
     string buf = NStr::IntToString((int) status);
     if (status != CNetScheduleAPI::eJobNotFound) {
             buf += " ";
-            buf += ret_code;
+            buf += NStr::IntToString(ret_code);
     }
     switch (status) {
     case CNetScheduleAPI::eDone:

@@ -953,7 +953,7 @@ void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
     if ( !str )
         str = kEmptyCStr;
 
-    size_t new_len = ::strlen(str) + 1;
+    size_t new_len = ::strlen(str);
 
     this->Set(str, new_len, if_overflow);
 }
