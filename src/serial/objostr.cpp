@@ -206,8 +206,8 @@ CObjectOStream::~CObjectOStream(void)
         Close();
         ResetLocalHooks();
     }
-    catch (...) {
-        ERR_POST("Can not close output stream");
+    catch (CException& exc) {
+        ERR_POST("Can not close output stream: "<<exc.what());
     }
 }
 
@@ -233,9 +233,9 @@ void CObjectOStream::Close(void)
             ClearStack();
             m_Fail = fNotOpen;
         }
-        catch (...) {
+        catch (CException& exc) {
             if ( InGoodState() )
-                ThrowError(fWriteError, "cannot close output stream");
+                RethrowError(fWriteError, "cannot close output stream",exc);
         }
     }
 }
@@ -386,13 +386,15 @@ string CObjectOStream::GetPosition(void) const
 }
 
 void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info, 
-                                 TFailFlags fail, const char* message)
+                                 TFailFlags fail, const char* message,
+                                 CException* exc)
 {
-    ThrowError1(diag_info,fail,string(message));
+    ThrowError1(diag_info,fail,string(message),exc);
 }
 
 void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info, 
-                                 TFailFlags fail, const string& message)
+                                 TFailFlags fail, const string& message,
+                                 CException* exc)
 {
     CSerialException::EErrCode err;
     SetFailFlags(fail, message.c_str());
@@ -416,10 +418,10 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     case fNotOpen:        err = CSerialException::eNotOpen;        break;
     case fNotImplemented: err = CSerialException::eNotImplemented; break;
     case fUnassigned:
-        throw CUnassignedMember(diag_info,0,CUnassignedMember::eWrite,
+        throw CUnassignedMember(diag_info,exc,CUnassignedMember::eWrite,
                                 GetPosition()+": "+message);
     }
-    throw CSerialException(diag_info,0,err,GetPosition()+": "+message);
+    throw CSerialException(diag_info,exc,err,GetPosition()+": "+message);
 }
 
 void CObjectOStream::EndOfWrite(void)

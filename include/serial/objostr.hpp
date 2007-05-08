@@ -470,10 +470,14 @@ public:
     void HandleEOF(CEofException&);
 
     void ThrowError1(const CDiagCompileInfo& diag_info,
-                     TFailFlags fail, const char* message);
+                     TFailFlags fail, const char* message,
+                     CException* exc = 0);
     void ThrowError1(const CDiagCompileInfo& diag_info,
-                     TFailFlags fail, const string& message);
+                     TFailFlags fail, const string& message,
+                     CException* exc = 0);
 #define ThrowError(flag, mess) ThrowError1(DIAG_COMPILE_INFO,flag,mess)
+#define RethrowError(flag,mess,exc) \
+    ThrowError1(DIAG_COMPILE_INFO,flag,mess,&exc)
 
     // report error about unended block
     void Unended(const string& msg);
