@@ -55,10 +55,12 @@ struct BlastSeqSrc {
 
    /* Functions to get information about database as a whole */
     GetInt4FnPtr      GetNumSeqs;     /**< Get number of sequences in set */
+    GetInt4FnPtr      GetNumSeqsStats; /**< Number of sequences for statistical purposes. */
     GetInt4FnPtr      GetMaxSeqLen;   /**< Get length of longest seq in set */
     GetInt4FnPtr      GetAvgSeqLen;   /**< Get average length of sequences in 
                                          the set */
     GetInt8FnPtr      GetTotLen;      /**< Get tot length of all seqs in set */
+    GetInt8FnPtr      GetTotLenStats; /**< Total length of all seqs for statistical purposes. */
     GetStrFnPtr       GetName;        /**< Get the name of the database */
     GetBoolFnPtr      GetIsProt;      /**< Find if database is a protein or 
                                          nucleotide */
@@ -167,6 +169,14 @@ BlastSeqSrcGetNumSeqs(const BlastSeqSrc* seq_src)
 }
 
 Int4
+BlastSeqSrcGetNumSeqsStats(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetNumSeqsStats);
+    return (*seq_src->GetNumSeqsStats)(seq_src->DataStructure, NULL);
+}
+
+Int4
 BlastSeqSrcGetMaxSeqLen(const BlastSeqSrc* seq_src)
 {
     ASSERT(seq_src);
@@ -188,6 +198,14 @@ BlastSeqSrcGetTotLen(const BlastSeqSrc* seq_src)
     ASSERT(seq_src);
     ASSERT(seq_src->GetTotLen);
     return (*seq_src->GetTotLen)(seq_src->DataStructure, NULL);
+}
+
+Int8
+BlastSeqSrcGetTotLenStats(const BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->GetTotLenStats);
+    return (*seq_src->GetTotLenStats)(seq_src->DataStructure, NULL);
 }
 
 const char*
@@ -418,9 +436,11 @@ DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(void*, DataStructure)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqsStats)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen)
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLenStats)
 
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetStrFnPtr, GetName)
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt)
