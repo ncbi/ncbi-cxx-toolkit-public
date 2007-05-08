@@ -45,6 +45,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/link_hsps.h>
+#include <algo/blast/core/gencode_singleton.h>
 #include "blast_psi_priv.h"
 #include "blast_gapalign_priv.h"
 #include "blast_hits_priv.h"
