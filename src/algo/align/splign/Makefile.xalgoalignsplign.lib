@@ -2,8 +2,7 @@
 
 ASN_DEP = seq xnetblast
 
-SRC = splign splign_util splign_hit splign_hitparser \
-      splign_formatter splign_simple splign_cmdargs
+SRC = splign splign_util splign_formatter splign_simple splign_cmdargs
 
 LIB = xalgoalignsplign
 

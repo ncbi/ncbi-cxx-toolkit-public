@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include "splign_util.hpp"
-#include "splign_hitparser.hpp"
 #include "messages.hpp"
 
 #include <algo/align/nw/align_exception.hpp>
@@ -73,6 +72,8 @@ void CleaveOffByTail(CSplign::THitRefs* phitrefs, size_t polya_start)
     phitrefs->erase(ii0, phitrefs->end());
 }
 
+
+/* 
 
 void BTRefsToHits(const CSplign::THitRefs& src, vector<CHit>* dst)
 {
@@ -201,5 +202,6 @@ void XFilter(CSplign::THitRefs* phitrefs)
     HitsToBTRefs(hp.m_Out, phitrefs);
 }
 
+*/
 
 END_NCBI_SCOPE

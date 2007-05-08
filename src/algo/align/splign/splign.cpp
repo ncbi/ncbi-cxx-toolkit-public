@@ -608,7 +608,8 @@ void CSplign::Run(THitRefs* phitrefs)
     CCompartmentAccessor<THit> comps ( hitrefs.begin(), hitrefs.end(),
                                        comp_penalty_bps,
                                        min_matches,
-                                       min_singleton_matches );
+                                       min_singleton_matches,
+                                       true );
 
     size_t dim (comps.GetCount());
     if(dim > 0) {
@@ -654,8 +655,7 @@ void CSplign::Run(THitRefs* phitrefs)
             THitRefs comp_hits;
             comps.Get(i, comp_hits);
 
-            SAlignedCompartment ac = 
-                x_RunOnCompartment(&comp_hits, smin, smax, 0 /* phitrefs */ );
+            SAlignedCompartment ac (x_RunOnCompartment(&comp_hits, smin, smax));
 
             ac.m_id = ++m_model_id;
             ac.m_segments = m_segments;
@@ -682,8 +682,7 @@ void CSplign::Run(THitRefs* phitrefs)
 
 bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
                                      size_t subj_min, size_t subj_max,
-                                     SAlignedCompartment* result,
-                                     const THitRefs* phitrefs_all)
+                                     SAlignedCompartment* result)
 {
     m_mrna.resize(0);
 
@@ -701,8 +700,8 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
 
     bool rv = true;
     try {
-        SAlignedCompartment ac = 
-            x_RunOnCompartment(phitrefs, subj_min, subj_max, phitrefs_all);
+
+        SAlignedCompartment ac (x_RunOnCompartment(phitrefs, subj_min, subj_max));
 
         ac.m_id = ++m_model_id;
         ac.m_segments = m_segments;
@@ -749,9 +748,9 @@ size_t CSplign::x_TestPolyA(void)
 //       pre-loaded and appropriately transformed query sequence.
 // POST: A set of segments packed into the aligned compartment.
 
-CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
-    THitRefs* phitrefs, size_t range_left, size_t range_right,
-    const THitRefs* phitrefs_all)
+CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs, 
+                                                         size_t range_left, 
+                                                         size_t range_right)
 {    
     SAlignedCompartment rv;
 
@@ -762,25 +761,13 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
         }
 
-        if(phitrefs_all == 0) {
-            XFilter(phitrefs); // use all compartment hits
-        }
-        else {
-            // 1. Mark (reset ids) the compartment hits
-            // 2. Create two sets of 'hot' intervals using non-compartment hits
-            //    of same strand and fitting the genomic span, and also from
-            //    all overlapping intervals of the compartment hits
-            // 3. Filter the compartment hits using the 'hot' intervals as follows:
-            //    a. Drop the hit if 50% or more is covered by the intervals
-            //    b. Truncate covered hit ends
-            //    c. Ignore all other intervals
-        }
+        // XFilter(phitrefs);
 
         if(phitrefs->size() == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoHitsAfterFiltering);
         }
     
-        const size_t mrna_size = m_mrna.size();
+        const size_t mrna_size (m_mrna.size());
     
         if(m_strand == false) {
         

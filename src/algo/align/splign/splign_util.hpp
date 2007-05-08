@@ -39,14 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-
 void   CleaveOffByTail(CSplign::THitRefs* hitrefs, size_t polya_start);
-
-void   GetHitsMinMax(const CSplign::THitRefs& hitrefs,
-		     size_t* qmin, size_t* qmax,
-		     size_t* smin, size_t* smax);
-
-void   XFilter(CSplign::THitRefs* hitrefs);
 
 struct SCompliment
 {
