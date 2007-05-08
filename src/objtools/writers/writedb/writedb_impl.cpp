@@ -233,6 +233,49 @@ void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
     }
 }
 
+static void
+s_CheckEmptyLists(CRef<CBlast_def_line_set> & deflines, bool owner);
+
+static CRef<CBlast_def_line_set>
+s_EditDeflineSet(CConstRef<CBlast_def_line_set> & deflines)
+{
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
+    SerialAssign(*bdls, *deflines);
+    s_CheckEmptyLists(bdls, true);
+    return bdls;
+}
+
+static void
+s_CheckEmptyLists(CRef<CBlast_def_line_set> & deflines, bool owner)
+{
+    CBlast_def_line_set * bdls = 0;
+    CConstRef<CBlast_def_line_set> here(&*deflines);
+    
+    if (! owner) {
+        here = s_EditDeflineSet(here);
+        return;
+    }
+    
+    bdls = const_cast<CBlast_def_line_set*>(here.GetPointer());
+    
+    NON_CONST_ITERATE(list< CRef< CBlast_def_line > >, iter, bdls->Set()) {
+        CRef<CBlast_def_line> defline = *iter;
+        if (defline->CanGetMemberships() &&
+            defline->GetMemberships().size() == 0) {
+            
+            defline->ResetMemberships();
+        }
+        
+        if (defline->CanGetLinks() &&
+            defline->GetLinks().size() == 0) {
+            
+            defline->ResetLinks();
+        }
+    }
+    
+    deflines.Reset(bdls);
+}
+
 void
 CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq,
                                          CConstRef<CBlast_def_line_set> & deflines,
@@ -344,6 +387,7 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
         bdls->Set().push_back(defline);
     }
     
+    s_CheckEmptyLists(bdls, true);
     deflines = bdls;
 }
 
@@ -356,15 +400,8 @@ x_SetDeflinesFromBinary(const string                   & bin_hdr,
     istringstream iss(bin_hdr);
     iss >> MSerial_AsnBinary >> *bdls;
     
+    s_CheckEmptyLists(bdls, true);
     deflines.Reset(&* bdls);
-}
-
-static CRef<CBlast_def_line_set>
-s_EditDeflineSet(CConstRef<CBlast_def_line_set> & deflines)
-{
-    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
-    SerialAssign(*bdls, *deflines);
-    return bdls;
 }
 
 void
@@ -691,7 +728,11 @@ void CWriteDB_Impl::x_Publish()
 
 void CWriteDB_Impl::SetDeflines(const CBlast_def_line_set & deflines)
 {
-    m_Deflines.Reset(& deflines);
+    CRef<CBlast_def_line_set>
+        bdls(const_cast<CBlast_def_line_set*>(& deflines));
+    
+    s_CheckEmptyLists(bdls, false);
+    m_Deflines = bdls;
 }
 
 void CWriteDB_Impl::SetPig(int pig)
