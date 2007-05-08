@@ -1112,6 +1112,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    BlastHSPResults* results = NULL;
    BlastHSPList* hsp_list = NULL;
    BlastScoreBlk* sbp;
+   Int4 default_db_genetic_code = db_options->genetic_code;
  
    if (!query_info || !seq_src || !hsp_stream || !results_out) {
       return -1;
@@ -1139,8 +1140,9 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
               ext_params->options->eTbackExt == eSmithWatermanTbck) {
       status =
           Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
-                                  hsp_stream, seq_src, score_params, 
-                                  ext_params, hit_params, psi_options, results);
+                                  hsp_stream, seq_src, default_db_genetic_code,
+                                  score_params, ext_params, hit_params, 
+                                  psi_options, results);
    } else {
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
@@ -1174,7 +1176,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
             if (Blast_SubjectIsTranslated(program_number) && 
                 seq_arg.seq->gen_code_string == NULL) {
                 seq_arg.seq->gen_code_string = 
-                    GenCodeSingletonFind(BLAST_GENETIC_CODE);
+                    GenCodeSingletonFind(default_db_genetic_code);
                 ASSERT(seq_arg.seq->gen_code_string);
             }
             

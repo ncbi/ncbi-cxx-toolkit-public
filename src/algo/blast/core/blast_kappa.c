@@ -810,12 +810,16 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
  *                          may be obtained
  * @param program_number    identifies the type of blast search being
  *                          performed.
+ * @param default_db_genetic_code   default genetic code to use when
+ *                          subject sequences are translated and there is
+ *                          no other guidance on what code to use
  * @param subject_index     index of the matching sequence in the database
  */
 static int
 s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
                              EBlastProgramType program_number,
                              const BlastSeqSrc* seqSrc,
+                             Int4 default_db_genetic_code,
                              Int4 subject_index)
 {
     BlastKappa_SequenceInfo * seq_info;  /* BLAST-specific sequence
@@ -841,6 +845,16 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
         if (BlastSeqSrcGetSequence(seqSrc, (void*) &seq_info->seq_arg) >= 0) {
             self->length =
                 BlastSeqSrcGetSeqLen(seqSrc, (void*) &seq_info->seq_arg);
+
+            /* If the subject is translated and the BlastSeqSrc implementation
+             * doesn't provide a genetic code string, use the default genetic
+             * code for all subjects (as in the C toolkit) */
+            if (Blast_SubjectIsTranslated(program_number) &&
+                seq_info->seq_arg.seq->gen_code_string == NULL) {
+                seq_info->seq_arg.seq->gen_code_string =
+                             GenCodeSingletonFind(default_db_genetic_code);
+                ASSERT(seq_info->seq_arg.seq->gen_code_string);
+            }
         } else {
             self->length = 0;
         }
@@ -1825,6 +1839,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                         BlastScoreBlk* sbp,
                         BlastHSPStream* hsp_stream,
                         const BlastSeqSrc* seqSrc,
+                        Int4 default_db_genetic_code,
                         BlastScoringParameters* scoringParams,
                         const BlastExtensionParameters* extendParams,
                         const BlastHitSavingParameters* hitParams,
@@ -2018,7 +2033,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         /* Get the sequence for this match */
         status_code =
             s_MatchingSequenceInitialize(&matchingSeq, program_number,
-                                         seqSrc, thisMatch->oid);
+                                         seqSrc, default_db_genetic_code,
+                                         thisMatch->oid);
         if (status_code != 0) {
             goto match_loop_cleanup;
         }
