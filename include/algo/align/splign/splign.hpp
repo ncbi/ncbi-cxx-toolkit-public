@@ -155,8 +155,7 @@ public:
     // align as a single compartment within given genomic bounds
     bool AlignSingleCompartment(THitRefs* hitrefs,
                                 size_t range_left, size_t range_right,
-                                SAlignedCompartment* result,
-                                const THitRefs* hitrefs_all = 0);
+                                SAlignedCompartment* result);
 
     // clear sequence vectors and scope - use with caution
     void ClearMem(void);
@@ -227,8 +226,7 @@ protected:
 
     SAlignedCompartment x_RunOnCompartment( THitRefs* hitrefs,
                                             size_t range_left,
-                                            size_t range_right,
-                                            const THitRefs* hitrefs_all = 0);
+                                            size_t range_right);
 
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
