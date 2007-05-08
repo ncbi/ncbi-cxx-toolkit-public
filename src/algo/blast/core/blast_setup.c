@@ -695,10 +695,14 @@ BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
         return;
     }
 
-    *total_length = BlastSeqSrcGetTotLen(seqsrc);
+    *total_length = BlastSeqSrcGetTotLenStats(seqsrc);
+    if (*total_length <= 0)
+       *total_length = BlastSeqSrcGetTotLen(seqsrc);
 
     if (*total_length > 0) {
-        *num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
+        *num_seqs = BlastSeqSrcGetNumSeqsStats(seqsrc);
+        if (*num_seqs <= 0)
+           *num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
     } else {
         /* Not a database search; each subject sequence is considered
            individually */
