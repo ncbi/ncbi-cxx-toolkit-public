@@ -41,6 +41,12 @@
 /* This header must go last */
 #include "test_assert.h"
 
+#ifdef NCBI_OS_UNIX
+#  define DEV_NULL "/dev/null"
+#else
+#  define DEV_NULL "NUL"
+#endif // NCBI_OS_UNIX
+
 
 static const size_t kBufferSize = 512*1024;
 
@@ -97,10 +103,13 @@ int main(int argc, const char* argv[])
     reg = s_CreateRegistry();
     CONNECT_Init(reg);
 
-    LOG_POST(Info << "Checking error log setup"); // short explanatory mesg
+    // short explanatory message
+    LOG_POST(Info << "Test 0: Checking error log setup");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
+    LOG_POST(Info << "Test 0 completed\n");
 
+    LOG_POST("Test 1 of 6: Memory stream");
     // Testing memory stream out-of-sequence interleaving operations
     CConn_MemoryStream ms;
     m = (rand() & 0x00FF) + 1;
@@ -131,13 +140,13 @@ int main(int argc, const char* argv[])
             ms.ToString(&back);
         assert(back == data);
     }
-    ERR_POST(Info << "Memory stream test completed in " <<
+    LOG_POST("Test 1 completed in " <<
              (int) m    << " iteration(s) with " <<
-             (int) size << " byte(s) transferred");
+             (int) size << " byte(s) transferred\n");
 
-    if (!(net_info = ConnNetInfo_Create(0))) {
+    LOG_POST("Test 2 of 6:  FTP download");
+    if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
-    }
     if (env) {
         if (    strcasecmp(env, "1")    == 0  ||
                 strcasecmp(env, "TRUE") == 0  ||
@@ -154,19 +163,17 @@ int main(int argc, const char* argv[])
                                 "/toolbox/ncbi_tools++/DATA",
                                 0/*port = default*/, flag,
                                 0/*offset*/, net_info->timeout);
+    ConnNetInfo_Destroy(net_info);
     for (size = 0; ftp.good(); size += ftp.gcount()) {
         char buf[512];
         ftp.read(buf, sizeof(buf));
     }
     ftp.Close();
-    LOG_POST("Test 0 of 3: " << (unsigned long) size <<
-             " bytes downloaded via FTP");
-    if (!size) {
-        ERR_POST(Fatal << "Test 0 failed");
-    } else {
-        LOG_POST(Info << "Test 0 passed");
-    }
-    ConnNetInfo_Destroy(net_info);
+    if (size) {
+        LOG_POST("Test 2 completed: " << (unsigned long) size <<
+                 " bytes downloaded via FTP\n");
+    } else
+        ERR_POST(Fatal << "Test 2 failed");
 
 #if 1
     {{
@@ -178,7 +185,7 @@ int main(int argc, const char* argv[])
     }}
 #endif
 
-    LOG_POST("Test 1 of 3: Big buffer bounce");
+    LOG_POST("Test 3 of 6: Big buffer bounce");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHCC_UrlEncodeArgs | fHCC_AutoReconnect |
                          fHCC_Flushable);
@@ -212,8 +219,7 @@ int main(int argc, const char* argv[])
         return 2;
     }
 
-    LOG_POST(Info << buflen << " bytes obtained" <<
-             (ios.eof() ? " (EOF)" : ""));
+    LOG_POST(buflen << " bytes obtained" << (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
 
     for (i = 0; i < kBufferSize; i++) {
@@ -227,12 +233,12 @@ int main(int argc, const char* argv[])
     else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST(Info << "Test 1 passed");
+        LOG_POST("Test 3 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
-    LOG_POST("Test 2 of 3: Random bounce");
+    LOG_POST("Test 4 of 6: Random bounce");
 
     if (!(ios << buf1)) {
         ERR_POST("Error sending data");
@@ -261,7 +267,7 @@ int main(int argc, const char* argv[])
             break;
     }
 
-    LOG_POST(Info << buflen << " bytes obtained in " << l << " iteration(s)" <<
+    LOG_POST(buflen << " bytes obtained in " << l << " iteration(s)" <<
              (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
 
@@ -276,12 +282,12 @@ int main(int argc, const char* argv[])
     else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST(Info << "Test 2 passed");
+        LOG_POST("Test 4 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
-    LOG_POST("Test 3 of 3: Truly binary bounce");
+    LOG_POST("Test 5 of 6: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
         buf1[i] = (char)(255/*rand()%256*/);
@@ -302,8 +308,7 @@ int main(int argc, const char* argv[])
         return 2;
     }
 
-    LOG_POST(Info << buflen << " bytes obtained" <<
-             (ios.eof() ? " (EOF)" : ""));
+    LOG_POST(buflen << " bytes obtained" << (ios.eof() ? " (EOF)" : ""));
 
     for (i = 0; i < kBufferSize; i++) {
         if (buf2[i] != buf1[i])
@@ -314,10 +319,24 @@ int main(int argc, const char* argv[])
     else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
-        LOG_POST(Info << "Test 3 passed");
+        LOG_POST("Test 5 passed\n");
 
     delete[] buf1;
     delete[] buf2;
+
+    LOG_POST("Test 6 of 6: NcbiStreamCopy()");
+
+    ofstream ofs(DEV_NULL);
+    assert(ofs);
+
+    CConn_HttpStream ifs("http://www.ncbi.nlm.nih.gov", 0,
+                        "My-Header: Header\r\n", fHCC_Flushable);
+    ifs << "Sample input -- should be ignored";
+
+    if (!ifs.good()  ||  !ifs.flush()  ||  !NcbiStreamCopy(ofs, ifs))
+        ERR_POST(Fatal << "Test 6 failed");
+    else
+        LOG_POST("Test 6 passed\n");
 
     CORE_SetREG(0);
     delete reg;
