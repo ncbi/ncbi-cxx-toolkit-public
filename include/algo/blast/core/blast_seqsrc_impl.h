@@ -243,9 +243,11 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr);
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr);
 
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs);
+DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqsStats);
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen);
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen);
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen);
+DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLenStats);
 
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetStrFnPtr, GetName);
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt);
@@ -304,11 +306,15 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
  *  // required signature: GetInt4FnPtr
  *  Int4 MyDatabaseFormatGetNumSeqs(void*, void*);
  *  // required signature: GetInt4FnPtr
+ *  Int4 MyDatabaseFormatGetNumSeqsStats(void*, void*);
+ *  // required signature: GetInt4FnPtr
  *  Int4 MyDatabaseFormatGetMaxSeqLen(void*, void*);
  *  // required signature: GetInt4FnPtr
  *  Int4 MyDatabaseFormatGetAvgSeqLen(void*, void*);
  *  // required signature: GetInt8FnPtr
  *  Int8 MyDatabaseFormatGetTotLen(void*, void*);
+ *  // required signature: GetInt8FnPtr
+ *  Int8 MyDatabaseFormatGetTotLenStats(void*, void*);
  *  // required signature: GetStrFnPtr
  *  const char* MyDatabaseFormatGetName(void*, void*);
  *  // required signature: GetBoolFnPtr

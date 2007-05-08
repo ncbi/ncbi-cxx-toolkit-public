@@ -64,7 +64,7 @@ extern "C" {
  *    BlastSeqSrcIterator abstraction, as well as resetting of any applicable
  *    implementation internal 'bookmarks' which keep track of the iteration
  *    progress, as to allow multiple passes over the set of sequences (@sa
- *    BlastSeqSrcResetChunkIterator)
+ *    BlastSeqSrcResetChunkIterator).
  *  .
  *
  *  Currently available client implementations of the BlastSeqSrc API include:
@@ -134,6 +134,13 @@ NCBI_XBLAST_EXPORT
 Int4
 BlastSeqSrcGetNumSeqs(const BlastSeqSrc* seq_src);
 
+/** Get the number of sequences used for calculation of expect values etc.
+ * @param seq_src the BLAST sequence source [in]
+ */
+NCBI_XBLAST_EXPORT
+Int4
+BlastSeqSrcGetNumSeqsStats(const BlastSeqSrc* seq_src);
+
 /** Get the length of the longest sequence in the sequence source.
  * @param seq_src the BLAST sequence source [in]
  */
@@ -154,6 +161,13 @@ BlastSeqSrcGetAvgSeqLen(const BlastSeqSrc* seq_src);
 NCBI_XBLAST_EXPORT
 Int8
 BlastSeqSrcGetTotLen(const BlastSeqSrc* seq_src);
+
+/** Get the total length of all sequences for calculation of expect value etc.
+ * @param seq_src the BLAST sequence source [in]
+ */
+NCBI_XBLAST_EXPORT
+Int8
+BlastSeqSrcGetTotLenStats(const BlastSeqSrc* seq_src);
 
 /** Get the Blast Sequence source name (e.g.: BLAST database name).
  * @param seq_src the BLAST sequence source [in]
