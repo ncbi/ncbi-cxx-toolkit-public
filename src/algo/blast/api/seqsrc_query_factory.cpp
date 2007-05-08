@@ -188,6 +188,14 @@ s_QueryFactoryGetNumSeqs(void* multiseq_handle, void*)
     return seq_info->GetNumSeqs();
 }
 
+
+/// Returns zero as this implementation does not use an alias file.
+static Int4 
+s_QueryFactoryGetNumSeqsStats(void* /*multiseq_handle*/, void*)
+{
+    return 0;
+}
+
 /// Returns 0 as total length, indicating that this is NOT a database!
 static Int8 
 s_QueryFactoryGetTotLen(void* /*multiseq_handle*/, void*)
@@ -195,6 +203,14 @@ s_QueryFactoryGetTotLen(void* /*multiseq_handle*/, void*)
     return 0;
 }
 
+/// Returns 0 as total statistic length, as this implementation does not use alias files.
+static Int8 
+s_QueryFactoryGetTotLenStats(void* /*multiseq_handle*/, void*)
+{
+    return 0;
+}
+
+/// Always returns NcbiEmptyCStr
 /// Always returns NcbiEmptyCStr
 static const char* 
 s_QueryFactoryGetName(void* /*multiseq_handle*/, void*)
@@ -395,9 +411,11 @@ s_QueryFactorySrcNew(BlastSeqSrc* retval, void* args)
     ///       If so, should CQueryFactoryInfo* be changed to a CRef
     _BlastSeqSrcImpl_SetDataStructure(retval, (void*) seq_info);
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_QueryFactoryGetNumSeqs);
+    _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, &s_QueryFactoryGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen(retval, &s_QueryFactoryGetMaxLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen(retval, &s_QueryFactoryGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen(retval, &s_QueryFactoryGetTotLen);
+    _BlastSeqSrcImpl_SetGetTotLenStats(retval, &s_QueryFactoryGetTotLenStats);
     _BlastSeqSrcImpl_SetGetName(retval, &s_QueryFactoryGetName);
     _BlastSeqSrcImpl_SetGetIsProt(retval, &s_QueryFactoryGetIsProt);
     _BlastSeqSrcImpl_SetGetSequence(retval, &s_QueryFactoryGetSequence);

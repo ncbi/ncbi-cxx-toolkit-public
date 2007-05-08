@@ -168,8 +168,12 @@ SplitQuery_SetEffectiveSearchSpace(CRef<CBlastOptions> options,
     }
 
     const BlastSeqSrc* seqsrc = full_data->m_SeqSrc->GetPointer();
-    const Int8 total_length = BlastSeqSrcGetTotLen(seqsrc);
-    const Int4 num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
+    Int8 total_length = BlastSeqSrcGetTotLenStats(seqsrc);
+    if (total_length <= 0)
+        total_length = BlastSeqSrcGetTotLen(seqsrc);
+    Int4 num_seqs = BlastSeqSrcGetNumSeqsStats(seqsrc);
+    if (num_seqs <= 0)
+        num_seqs = BlastSeqSrcGetNumSeqs(seqsrc);
 
     CEffectiveSearchSpaceCalculator calc(full_query_fact, *options, 
                                          num_seqs, total_length);

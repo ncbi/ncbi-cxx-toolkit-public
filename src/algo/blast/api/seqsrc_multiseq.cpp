@@ -201,9 +201,23 @@ s_MultiSeqGetNumSeqs(void* multiseq_handle, void*)
     return seq_info->GetNumSeqs();
 }
 
+/// Returns zero as this implementation does not support alias files.
+static Int4 
+s_MultiSeqGetNumSeqsStats(void* /*multiseq_handle*/, void*)
+{
+    return 0;
+}
+
 /// Returns 0 as total length, indicating that this is NOT a database!
 static Int8 
 s_MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
+{
+    return 0;
+}
+
+/// Returns 0 as this implementation does not use alias files.
+static Int8 
+s_MultiSeqGetTotLenStats(void* /*multiseq_handle*/, void*)
 {
     return 0;
 }
@@ -409,9 +423,11 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     ///       If so, should CMultiSeqInfo* be changed to a CRef
     _BlastSeqSrcImpl_SetDataStructure(retval, (void*) seq_info);
     _BlastSeqSrcImpl_SetGetNumSeqs(retval, &s_MultiSeqGetNumSeqs);
+    _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, &s_MultiSeqGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen(retval, &s_MultiSeqGetMaxLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen(retval, &s_MultiSeqGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen(retval, &s_MultiSeqGetTotLen);
+    _BlastSeqSrcImpl_SetGetTotLenStats(retval, &s_MultiSeqGetTotLenStats);
     _BlastSeqSrcImpl_SetGetName(retval, &s_MultiSeqGetName);
     _BlastSeqSrcImpl_SetGetIsProt(retval, &s_MultiSeqGetIsProt);
     _BlastSeqSrcImpl_SetGetSequence(retval, &s_MultiSeqGetSequence);

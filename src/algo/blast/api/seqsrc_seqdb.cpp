@@ -89,6 +89,16 @@ s_SeqDbGetNumSeqs(void* seqdb_handle, void*)
     return (*seqdb)->GetNumSeqs();
 }
 
+/// Retrieves the number of sequences from alias file to be used for
+//  search-space calculations.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+static Int4 
+s_SeqDbGetNumSeqsStats(void* seqdb_handle, void*)
+{
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return (*seqdb)->GetNumSeqsStats();
+}
+
 /// Retrieves the total length of all sequences in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Int8 
@@ -96,6 +106,16 @@ s_SeqDbGetTotLen(void* seqdb_handle, void*)
 {
     CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
     return (*seqdb)->GetTotalLength();
+}
+
+/// Retrieves the total length of all sequences from alias file
+// to be used for search space calculations.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+static Int8 
+s_SeqDbGetTotLenStats(void* seqdb_handle, void*)
+{
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    return (*seqdb)->GetTotalLengthStats();  
 }
 
 /// Retrieves the average length of sequences in the BlastSeqSrc.
@@ -421,9 +441,11 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
     _BlastSeqSrcImpl_SetCopyFnPtr     (retval, & s_SeqDbSrcCopy);
     _BlastSeqSrcImpl_SetDataStructure (retval, (void*) seqdb);
     _BlastSeqSrcImpl_SetGetNumSeqs    (retval, & s_SeqDbGetNumSeqs);
+    _BlastSeqSrcImpl_SetGetNumSeqsStats(retval, & s_SeqDbGetNumSeqsStats);
     _BlastSeqSrcImpl_SetGetMaxSeqLen  (retval, & s_SeqDbGetMaxLength);
     _BlastSeqSrcImpl_SetGetAvgSeqLen  (retval, & s_SeqDbGetAvgLength);
     _BlastSeqSrcImpl_SetGetTotLen     (retval, & s_SeqDbGetTotLen);
+    _BlastSeqSrcImpl_SetGetTotLenStats(retval, & s_SeqDbGetTotLenStats);
     _BlastSeqSrcImpl_SetGetName       (retval, & s_SeqDbGetName);
     _BlastSeqSrcImpl_SetGetIsProt     (retval, & s_SeqDbGetIsProt);
     _BlastSeqSrcImpl_SetGetSequence   (retval, & s_SeqDbGetSequence);
