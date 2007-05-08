@@ -1650,6 +1650,13 @@ public:
 
     explicit CBDB_FieldStringCase() : CBDB_FieldString() {}
 
+    virtual CBDB_Field* Construct(size_t buf_size) const
+    {
+        CBDB_FieldStringCase* fld = new CBDB_FieldStringCase();
+        fld->SetBufferSize(buf_size ? buf_size : GetBufferSize());
+        return fld;
+    }
+
     // Accessors
     operator const char* () const { return (const char*) GetBuffer(); }
 	
