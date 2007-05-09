@@ -39,24 +39,24 @@ BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////
-//
-// Internal class used by CBDB_FileCursor to represent search
-// condition criteries.
-//
+///
+/// Internal class used by CBDB_FileCursor to represent search
+/// condition criteries.
+///
 
 class CBDB_FC_Condition
 {
 public:
-    // Get field buffer reference (non-const)
+    /// Get field buffer reference (non-const)
     CBDB_BufferManager&       GetBuffer()       { return m_Buf; }
-    // Get field buffer reference (const)
+    /// Get field buffer reference (const)
     const CBDB_BufferManager& GetBuffer() const { return m_Buf; }
 
-    // Get number of fields assigned to condition
+    /// Get number of fields assigned to condition
     unsigned int GetFieldsAssigned() const { return m_FieldsAssigned; }
 
-    // +1 increment of number of assigned fields.
-    // Return new fields count
+    /// +1 increment of number of assigned fields.
+    /// Return new fields count
     unsigned int IncFieldsAssigned()
     {
         _ASSERT(m_Buf.FieldCount()-1 >= m_FieldsAssigned);
@@ -64,13 +64,13 @@ public:
         return ++m_FieldsAssigned;
     }
 
-    // Return TRUE if all search criteria fileds have been assigned
+    /// Return TRUE if all search criteria fileds have been assigned
     bool IsComplete() const
     {
         return m_KeyBuf.FieldCount() == GetFieldsAssigned();
     }
 
-    // Return next unassigned field
+    /// Return next unassigned field
     IBDB_FieldConvert& GetUnassignedField()
     {
         _ASSERT(m_FieldsAssigned < m_Buf.FieldCount());
@@ -86,7 +86,7 @@ protected:
         eAssignMaxVal
     };
 
-    // Constructor. key_buf - key buffer of the main table
+    /// Constructor. key_buf - key buffer of the main table
     CBDB_FC_Condition(const CBDB_BufferManager& key_buf,
                       CBDB_FileCursor&          cursor)
         : m_KeyBuf(key_buf),
@@ -97,7 +97,7 @@ protected:
         m_Buf.Construct();
     }
 
-    // Set incomplete (non assigned) fields to min(max) possible values
+    /// Set incomplete (non assigned) fields to min(max) possible values
     void InitUnassignedFields(EIncompleteVal incv)
     {
         if (incv == eAssignMinVal) {
@@ -107,7 +107,7 @@ protected:
         }
     }
 
-    // Set number of assigned fields to zero
+    /// Set number of assigned fields to zero
     void ResetUnassigned()
     {
         m_FieldsAssigned = 0;
@@ -119,14 +119,14 @@ private:
                operator= (const CBDB_FC_Condition&);
 
 private:
-    // Reference on "parent file" key buffer
+    /// Reference on "parent file" key buffer
     const CBDB_BufferManager&   m_KeyBuf;
-    // Reference on parent cursor
+    /// Reference on parent cursor
     CBDB_FileCursor&            m_Cursor;
 
-    // Field buffer. Correspond to
+    /// Field buffer. 
     CBDB_BufferManager          m_Buf;
-    // Number of fields assigned (for multi-segment) prefix searches
+    /// Number of fields assigned (for multi-segment) prefix searches
     unsigned int                m_FieldsAssigned;
 
     friend class CBDB_FileCursor;
@@ -845,7 +845,7 @@ CBDB_ConditionHandle& CBDB_ConditionHandle::operator<< (const char* val)
 CBDB_ConditionHandle& CBDB_ConditionHandle::operator<< (const string& val)
 {
     IBDB_FieldConvert& cnv = m_Condition.GetUnassignedField();
-    cnv.SetString(val.c_str());
+    cnv.SetStdString(val);
     m_Condition.IncFieldsAssigned();
     return *this;
 }
