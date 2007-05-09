@@ -40,12 +40,14 @@
 BEGIN_NCBI_SCOPE
 
 
+//////////////////////////////////////////////////////////////////////////////
+
 template <class PropKey, class PropValue>
 class CBDB_PropertyDictionary : public CBDB_File
 {
 public:
     typedef pair<PropKey, PropValue> TKey;
-    typedef Uint4 TKeyId;
+    typedef Uint4                    TKeyId;
 
     CBDB_PropertyDictionary();
 
@@ -94,6 +96,9 @@ private:
     auto_ptr<SReverseDictionary> m_RevDict;
 };
 
+
+
+//////////////////////////////////////////////////////////////////////////////
 
 template <typename PropKey, typename PropValue,
           typename Dictionary = CBDB_PropertyDictionary<PropKey, PropValue>,
