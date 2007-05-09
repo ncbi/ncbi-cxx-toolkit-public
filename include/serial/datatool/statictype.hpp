@@ -124,6 +124,11 @@ public:
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
+    
+    EType GetStringType(void) const
+    {
+        return m_Type;
+    }
 protected:
     EType m_Type;
 };

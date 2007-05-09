@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 #define STRING_TYPE_FULL "NCBI_NS_STD::string"
 #define STRING_TYPE "string"
 #define STRING_MEMBER "m_string"
+#define UTF8_STRING_MEMBER "m_string_utf8"
 #define OBJECT_TYPE_FULL "NCBI_NS_NCBI::CSerialObject"
 #define OBJECT_TYPE "CSerialObject"
 #define OBJECT_MEMBER "m_object"
@@ -97,6 +98,13 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
     switch ( type->GetKind() ) {
     case eKindString:
         memberType = eStringMember;
+        {
+            const CStringDataType* strtype =
+                dynamic_cast<const CStringDataType*>(dataType);
+            if (strtype && strtype->GetStringType() == CStringDataType::eStringTypeUTF8) {
+                memberType = eUtf8StringMember;
+            }
+        }
         break;
     case eKindStd:
     case eKindEnum:
@@ -148,10 +156,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     bool haveObjectPointer = false;
     bool havePointers = false;
     bool haveSimple = false;
-    bool haveString = false;
+    bool haveString = false, haveUtf8String = false;
     bool delayed = false;
     bool haveAttlist = false;
     bool haveBuffer = false;
+    string utf8CType;
     string codeClassName = GetClassNameDT();
     if ( haveUserClass )
         codeClassName += "_Base";
@@ -186,6 +195,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 haveString = true;
                 i->type->GenerateTypeCode(code);
                 break;
+            case eUtf8StringMember:
+                if ( i->in_union ) {
+                    haveBuffer = true;
+                }
+                haveUtf8String = true;
+                i->type->GenerateTypeCode(code);
+                utf8CType = i->type->GetCType(code.GetNamespace());
+                break;
             }
             if ( i->delayed )
                 delayed = true;
@@ -195,8 +212,8 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.HPPIncludes().insert("serial/delaybuf");
 
     bool haveUnion = havePointers || haveSimple || haveBuffer ||
-        (haveString && haveObjectPointer);
-    if ( haveString && haveUnion && !haveBuffer ) {
+        ((haveString || haveUtf8String) && haveObjectPointer);
+    if ( (haveString || haveUtf8String) && haveUnion && !haveBuffer ) {
         // convert string member to pointer member
         havePointers = true;
     }
@@ -475,7 +492,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
         }
-        if ( haveObjectPointer || havePointers || haveString || haveBuffer ) {
+        if ( haveObjectPointer || havePointers || haveString || haveUtf8String || haveBuffer ) {
             if ( delayed ) {
                 methods <<
                     "    if ( "DELAY_MEMBER" )\n"
@@ -539,6 +556,35 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods <<
                     "        break;\n";
             }
+            if ( haveUtf8String ) {
+                // generate destruction code for string
+                ITERATE ( TVariants, i, m_Variants ) {
+                    if (i->attlist) {
+                        continue;
+                    }
+                    if ( i->memberType == eUtf8StringMember ) {
+                        methods <<
+                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                    }
+                }
+                if ( haveUnion ) {
+                    // string is pointer inside union
+                    if ( haveBuffer ) {
+                        methods <<
+                            "        "UTF8_STRING_MEMBER".Destruct();\n";
+                    }
+                    else {
+                        methods <<
+                            "        delete "UTF8_STRING_MEMBER";\n";
+                    }
+                }
+                else {
+                    methods <<
+                        "        "UTF8_STRING_MEMBER".erase();\n";
+                }
+                methods <<
+                    "        break;\n";
+            }
             if ( haveObjectPointer ) {
                 // generate destruction code for pointers to CObject
                 ITERATE ( TVariants, i, m_Variants ) {
@@ -597,6 +643,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 _ASSERT(haveString);
                 // will be handled specially
                 break;
+            case eUtf8StringMember:
+                _ASSERT(haveUtf8String);
+                // will be handled specially
+                break;
             case eObjectPointerMember:
                 // will be handled specially
                 _ASSERT(haveObjectPointer);
@@ -626,6 +676,35 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 methods <<
                     "        "STRING_MEMBER" = src."STRING_MEMBER";\n";
+            }
+            methods <<
+                "        break;\n";
+        }
+        if ( haveUtf8String ) {
+            // generate copy code for string
+            ITERATE ( TVariants, i, m_Variants ) {
+                if ( i->memberType == eUtf8StringMember ) {
+                    methods <<
+                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                }
+            }
+            if ( haveUnion ) {
+                if ( haveBuffer ) {
+                    methods <<
+                        "        "UTF8_STRING_MEMBER".Construct();\n"
+                        "        *"UTF8_STRING_MEMBER" = *src."UTF8_STRING_MEMBER";\n";
+                }
+                else {
+                    // string is pointer
+                    methods <<
+                        "        "UTF8_STRING_MEMBER" = new " <<
+                        utf8CType <<
+                        "(*src."UTF8_STRING_MEMBER");\n";
+                }
+            }
+            else {
+                methods <<
+                    "        "UTF8_STRING_MEMBER" = src."UTF8_STRING_MEMBER";\n";
             }
             methods <<
                 "        break;\n";
@@ -701,6 +780,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "        break;\n";
                     break;
                 case eStringMember:
+                case eUtf8StringMember:
                     // will be handled specially
                     break;
                 }
@@ -721,6 +801,25 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     methods <<
                         "        "STRING_MEMBER" = new "STRING_TYPE_FULL";\n"
                         "        break;\n";
+                }
+            }
+            if ( haveUtf8String ) {
+                ITERATE ( TVariants, i, m_Variants ) {
+                    if ( i->memberType == eUtf8StringMember ) {
+                        methods <<
+                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                    }
+                }
+                if ( haveBuffer ) {
+                    methods <<
+                        "        "UTF8_STRING_MEMBER".Construct();\n"
+                        "        break;\n";
+                }
+                else {
+                    methods <<
+                        "        "UTF8_STRING_MEMBER" = new " <<
+                        utf8CType <<
+                        ";\n        break;\n";
                 }
             }
             methods <<
@@ -960,6 +1059,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 constMemberRef = memberRef;
                 break;
+            case eUtf8StringMember:
+                memberRef = UTF8_STRING_MEMBER;
+                if ( haveUnion ) {
+                    // string is pointer
+                    memberRef = '*'+memberRef;
+                }
+                constMemberRef = memberRef;
+                break;
             case eObjectPointerMember:
                 memberRef = "*static_cast<T"+i->cName+"*>("OBJECT_MEMBER")";
                 constMemberRef = "*static_cast<const T"+i->cName+"*>("OBJECT_MEMBER")";
@@ -1181,6 +1288,20 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "        "STRING_TYPE_FULL" *"STRING_MEMBER";\n";
                 }
             }
+            if ( haveUtf8String ) {
+                if ( haveBuffer ) {
+                    code.ClassPrivate() <<
+                        "        NCBI_NS_NCBI::CUnionBuffer<" <<
+                        utf8CType <<
+                        "> "UTF8_STRING_MEMBER";\n";
+                }
+                else {
+                    code.ClassPrivate() <<
+                        "        " <<
+                        utf8CType <<
+                        " *"UTF8_STRING_MEMBER";\n";
+                }
+            }
             if ( haveObjectPointer ) {
                 code.ClassPrivate() <<
                     "        "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
@@ -1194,9 +1315,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             code.ClassPrivate() <<
                 "    };\n";
         }
-        else if ( haveString ) {
-            code.ClassPrivate() <<
-                "    "STRING_TYPE_FULL" "STRING_MEMBER";\n";
+        else if ( haveString || haveUtf8String ) {
+            if (haveString) {
+                code.ClassPrivate() <<
+                    "    "STRING_TYPE_FULL" "STRING_MEMBER";\n";
+            }
+            if (haveUtf8String) {
+                code.ClassPrivate() <<
+                    "    " <<
+                    utf8CType <<
+                    " "UTF8_STRING_MEMBER";\n";
+            }
         }
         else if ( haveObjectPointer ) {
             code.ClassPrivate() <<
@@ -1308,6 +1437,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 break;
             case eStringMember:
+            case eUtf8StringMember:
                 if ( haveUnion ) {
                     if ( haveBuffer ) {
                         methods << "BUF_";
@@ -1345,6 +1475,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 break;
             case eStringMember:
                 methods << STRING_MEMBER;
+                break;
+            case eUtf8StringMember:
+                methods << UTF8_STRING_MEMBER;
                 break;
             default:
                 if (!isNull) {

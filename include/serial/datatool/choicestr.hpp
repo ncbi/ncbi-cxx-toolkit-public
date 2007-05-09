@@ -46,6 +46,7 @@ public:
     enum EMemberType {
         eSimpleMember,
         eStringMember,
+        eUtf8StringMember,
         ePointerMember,
         eObjectPointerMember,
         eBufferMember
