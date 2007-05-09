@@ -48,19 +48,56 @@ BEGIN_NCBI_SCOPE
 ///
 
 template <typename Key>
-class CBDB_BlobDictionary
+class CBDB_BlobDictionary : public CBDB_File
 {
-    Uint4 GetKey(const Key& key)
-    {
-        NCBI_THROW(CException, eUnknown,
-                   "Key type not implemented");
-    }
+public:
+    CBDB_BlobDictionary();
 
-    Uint4 PutKey(const Key& key)
+    /// @name Required CBDB_BlobDictionary<> interface
+    /// @{
+
+    Uint4  GetKey(const Key& key);
+    Uint4  PutKey(const Key& key);
+
+    /// @}
+
+    /// retrieve the current key
+    Key GetCurrentKey() const;
+    Uint4  GetCurrentUid() const;
+
+    /// read a particular key's value
+    EBDB_ErrCode Read (const Key& key, Uint4* val);
+
+    /// read the current key's value
+    EBDB_ErrCode Read (Uint4* val);
+
+    /// write a key/value pair to the store
+    EBDB_ErrCode Write(const Key& key, Uint4 val);
+
+private:
+    /// key
+    typename SBDB_TypeTraits<Key>::TFieldType   m_Key;
+    /// data
+    typename SBDB_TypeTraits<Uint4>::TFieldType m_Uid;
+
+    struct SReverseDictionary : public CBDB_File
     {
-        NCBI_THROW(CException, eUnknown,
-                   "Key type not implemented");
-    }
+        /// key
+        typename SBDB_TypeTraits<Uint4>::TFieldType uid;
+        /// data
+        typename SBDB_TypeTraits<Key>::TFieldType key;
+
+        SReverseDictionary()
+            : CBDB_File(eDuplicatesDisable, eQueue)
+            {
+                DisableNull();
+                SetCacheSize(128 * 1024);
+                BindKey ("uid", &uid);
+                BindData("key", &key);
+            }
+    };
+
+    auto_ptr<SReverseDictionary> m_RevDict;
 };
 
 
@@ -104,65 +141,6 @@ public:
     void SetEnv(CBDB_Env& env) {}
     void Open(const char*, CBDB_RawFile::EOpenMode) {}
     bool IsOpen() const { return true; }
-};
-
-
-////////////////////////////////////////////////////////////////////////////
-///
-/// Concrete dictionary for simple string
-///
-
-template<>
-class CBDB_BlobDictionary<string> : public CBDB_File
-{
-public:
-    CBDB_BlobDictionary<string>();
-
-    /// @name Required CBDB_BlobDictionary<> interface
-    /// @{
-
-    Uint4  GetKey(const string& key);
-    Uint4  PutKey(const string& key);
-
-    /// @}
-
-    /// retrieve the current key
-    string GetCurrentKey() const;
-    Uint4  GetCurrentUid() const;
-
-    /// read a particular key's value
-    EBDB_ErrCode Read (const string& key, Uint4* val);
-
-    /// read the current key's value
-    EBDB_ErrCode Read (Uint4* val);
-
-    /// write a key/value pair to the store
-    EBDB_ErrCode Write(const string& key, Uint4 val);
-
-private:
-    /// key
-    CBDB_FieldString m_Key;
-    /// data
-    CBDB_FieldUint4  m_Uid;
-
-    struct SReverseDictionary : public CBDB_File
-    {
-        /// key
-        CBDB_FieldUint4  uid;
-        /// data
-        CBDB_FieldString key;
-
-        SReverseDictionary()
-            : CBDB_File(eDuplicatesDisable, eQueue)
-            {
-                DisableNull();
-                SetCacheSize(128 * 1024);
-                BindKey ("uid", &uid);
-                BindData("key", &key);
-            }
-    };
-
-    auto_ptr<SReverseDictionary> m_RevDict;
 };
 
 
@@ -237,6 +215,104 @@ private:
     auto_ptr<Dictionary> m_DictOwned;
     auto_ptr<BvStore>    m_StoreOwned;
 };
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+template <typename Key>
+inline
+CBDB_BlobDictionary<Key>::CBDB_BlobDictionary()
+{
+    BindKey ("key", &m_Key);
+    BindData("uid", &m_Uid);
+}
+
+template <typename Key>
+inline
+EBDB_ErrCode CBDB_BlobDictionary<Key>::Read(const Key& key, Uint4* val)
+{
+    m_Key = key;
+    return Read(val);
+}
+
+
+template <typename Key>
+inline
+EBDB_ErrCode CBDB_BlobDictionary<Key>::Read(Uint4* val)
+{
+    EBDB_ErrCode err = Fetch();
+    if (err == eBDB_Ok  &&  val) {
+        *val = m_Uid;
+    }
+    return err;
+}
+
+
+template <typename Key>
+inline
+EBDB_ErrCode CBDB_BlobDictionary<Key>::Write(const Key& key, Uint4 val)
+{
+    m_Key = key;
+    m_Uid = val;
+    return UpdateInsert();
+}
+
+
+template <typename Key>
+inline
+Key CBDB_BlobDictionary<Key>::GetCurrentKey() const
+{
+    return (Key)m_Key;
+}
+
+
+template <typename Key>
+inline
+Uint4 CBDB_BlobDictionary<Key>::GetCurrentUid() const
+{
+    return (Uint4)m_Uid;
+}
+
+
+template <typename Key>
+inline
+Uint4 CBDB_BlobDictionary<Key>::GetKey(const Key& key)
+{
+    Uint4 uid = 0;
+    Read(key, &uid) ;
+    return uid;
+}
+
+
+template <typename Key>
+inline
+Uint4 CBDB_BlobDictionary<Key>::PutKey(const Key& key)
+{
+    Uint4 uid = GetKey(key);
+    if (uid != 0) {
+        return uid;
+    }
+
+    if ( !m_RevDict.get() ) {
+        m_RevDict.reset(new SReverseDictionary);
+        if (GetEnv()) {
+            m_RevDict->SetEnv(*GetEnv());
+        } else {
+            m_RevDict->SetCacheSize(128 * 1024 * 1024);
+        }
+        m_RevDict->Open(GetFileName() + ".inv", GetOpenMode());
+    }
+
+    m_RevDict->key = key;
+    uid = m_RevDict->Append();
+    if (uid) {
+        if (Write(key, uid) != eBDB_Ok) {
+            uid = 0;
+        }
+    }
+    return uid;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

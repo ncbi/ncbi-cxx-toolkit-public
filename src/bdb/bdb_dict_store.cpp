@@ -34,6 +34,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if 0
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -115,6 +116,7 @@ Uint4 CBDB_BlobDictionary<string>::PutKey(const string& key)
     }
     return uid;
 }
+#endif
 
 
 END_NCBI_SCOPE
