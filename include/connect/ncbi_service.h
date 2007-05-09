@@ -37,9 +37,9 @@
 #include <connect/ncbi_host_info.h>
 
 
-/* Revision 6.220 */
+/* Revision 6.230 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  220
+#define SERV_CLIENT_REVISION_MINOR  230
 
 
 /** @addtogroup ServiceSupport
