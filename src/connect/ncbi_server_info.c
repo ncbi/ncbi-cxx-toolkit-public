@@ -296,7 +296,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
                     if (fabs(d) < 0.001)
                         d = 0.0;
                     else if (fabs(d) > 100000.0)
-                        d = (d < 0.0 ? -1.0 : 1.0)*100000.0;
+                        d = copysign(100000.0, d < 0.0 ? -1.0 : 1.0);
                     info->rate = d;
                     str += n;
                     rate = 1;
