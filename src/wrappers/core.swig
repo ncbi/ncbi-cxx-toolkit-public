@@ -386,3 +386,8 @@ public:
 // for corelib/ncbi_stack.hpp
 %template(list_CStackTrace_SStackFrameInfo)
     std::list<ncbi::CStackTrace::SStackFrameInfo>;
+
+// for CNetCacheClient::SBlobData data member
+%template(AutoPtr_unsigned_char_ArrayDeleter_unsigned_char)
+ncbi::AutoPtr<unsigned char, ncbi::ArrayDeleter<unsigned char> >;
+
