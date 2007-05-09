@@ -203,6 +203,7 @@ public:
     void Test_Query_Cancelation(void);
     void Test_Timeout(void);
     void Test_SetLogStream(void);
+    void Test_Identity(void);
 
 public:
     void Test_Exception_Safety(void);

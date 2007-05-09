@@ -2639,6 +2639,30 @@ CDBAPIUnitTest::Test_Cursor(void)
         BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
     }
 
+    // Check that a cursor can be opened twice ...
+    {
+        sql = "select int_field from " + GetTableName();
+
+        // Open a cursor for the first time ...
+        {
+            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+            auto_ptr<IResultSet> rs(auto_cursor->Open());
+            BOOST_CHECK(rs.get());
+
+            while (rs->Next()) {
+            }
+        }
+
+        // Open a cursor for the second time ...
+        {
+            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+            auto_ptr<IResultSet> rs(auto_cursor->Open());
+            BOOST_CHECK(rs.get());
+
+            while (rs->Next()) {
+            }
+        }
+    }
     // Test CLOB field update ...
     // It doesn't work right now.
 //     {
@@ -6712,6 +6736,64 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_Identity(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+    Int8 table_id = 0;
+    Int8 identity_id = 0;
+
+    // Clean table ...
+    auto_stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
+
+    // Insert data ...
+    {
+        // Pure SQL ...
+        auto_stmt->ExecuteUpdate(
+            "INSERT INTO " + GetTableName() + "(int_field) VALUES(1)");
+    }
+
+    // Retrieve data ...
+    {
+        sql  = " SELECT id, int_field FROM " + GetTableName();
+
+        auto_stmt->SendSql( sql );
+
+        BOOST_CHECK(auto_stmt->HasMoreResults());
+        BOOST_CHECK(auto_stmt->HasRows());
+        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+        BOOST_CHECK(rs.get() != NULL);
+        BOOST_CHECK(rs->Next());
+        const CVariant& id_value = rs->GetVariant(1);
+        BOOST_CHECK(!id_value.IsNull());
+        table_id = id_value.GetInt8();
+        BOOST_CHECK(!rs->Next());
+    }
+
+    // Retrieve identity ...
+    {
+        sql  = " SELECT CONVERT(NUMERIC(18, 0), @@identity) ";
+
+        auto_stmt->SendSql(sql);
+
+        BOOST_CHECK(auto_stmt->HasMoreResults());
+        BOOST_CHECK(auto_stmt->HasRows());
+        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+        BOOST_CHECK(rs.get() != NULL);
+        BOOST_CHECK(rs->Next());
+        const CVariant& id_value = rs->GetVariant(1);
+        BOOST_CHECK(!id_value.IsNull());
+        Int8 identity_id = id_value.GetInt8();
+        BOOST_CHECK(!rs->Next());
+    }
+
+    // !!!!! Doesn't work ... !!!!!!
+//     BOOST_CHECK_EQUAL(table_id, identity_id);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
@@ -7173,6 +7255,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SetLogStream,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    if (!(args.GetDriverName() == "ftds"
+          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        )
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Identity,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
