@@ -2837,11 +2837,14 @@ BOOST_AUTO_UNIT_TEST(TotalLengths)
     // Test both constructors; make sure sizes are equal and non-zero.
     
     CSeqDB local("data/totals", CSeqDB::eNucleotide);
+    CSeqDB seqn("data/seqn", CSeqDB::eNucleotide);
     
     CHECK_EQUAL((int)local.GetTotalLength(),      12345);
     CHECK_EQUAL((int)local.GetTotalLengthStats(), 23456);
     CHECK_EQUAL((int)local.GetNumSeqs(),          123);
     CHECK_EQUAL((int)local.GetNumSeqsStats(),     234);
+    CHECK_EQUAL((int)seqn.GetNumSeqsStats(),      0);
+    CHECK_EQUAL((int)seqn.GetTotalLengthStats(),  0);
 }
 
 

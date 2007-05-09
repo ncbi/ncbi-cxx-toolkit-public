@@ -995,6 +995,19 @@ public:
     {
         return "STATS_NSEQ";
     }
+    
+    /// STATS_NSEQ field
+    ///
+    /// The STATS_* versions of these walkers do not return volume
+    /// lengths, instead the value zero will be returned if the field
+    /// is not specified.
+    ///
+    /// @param vol
+    ///   A database volume
+    virtual void Accumulate(const CSeqDBVol & vol)
+    {
+        // only alias file data is included.
+    }
 };
 
 
@@ -1082,6 +1095,19 @@ public:
     virtual const char * GetFileKey() const
     {
         return "STATS_TOTLEN";
+    }
+    
+    /// STATS_TOTLEN field
+    ///
+    /// The STATS_* versions of these walkers do not return volume
+    /// lengths, instead the value zero will be returned if the field
+    /// is not specified.
+    ///
+    /// @param vol
+    ///   A database volume
+    virtual void Accumulate(const CSeqDBVol & vol)
+    {
+        // only alias file data is included.
     }
 };
 
