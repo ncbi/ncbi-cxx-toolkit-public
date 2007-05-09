@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.4.2  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.4.3  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -786,7 +786,7 @@ void CNetCacheServer::ProcessGetConfig(CSocket& sock)
 
 void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
 {
-    CNcbiRegistry reg;
+    //CNcbiRegistry reg;
 
     SOCK sk = sock.GetSOCK();
     sock.SetOwnership(eNoOwnership);
@@ -803,7 +803,8 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     try {
 
         const SBDB_CacheStatistics& cs = bdb_cache->GetStatistics();
-        cs.ConvertToRegistry(&reg);
+        cs.PrintStatistics(ios);
+        //cs.ConvertToRegistry(&reg);
 
     } catch(...) {
         bdb_cache->Unlock();
@@ -811,7 +812,7 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     }
     bdb_cache->Unlock();
 
-    reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
+    //reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
 }
 
 void CNetCacheServer::ProcessDropStat(CSocket& sock)

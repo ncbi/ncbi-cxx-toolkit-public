@@ -219,6 +219,8 @@ public:
     void ConvertToRegistry(IRWRegistry* reg, 
                            const string& sect_name_postfix) const;
 
+    void PrintStatistics(CNcbiOstream& out) const;
+
 private:
     void InitHistorgam(TBlobSizeHistogram* hist);
     void x_AddErrGetPut(EErrGetPut operation);
@@ -261,6 +263,8 @@ public:
 
 
     void ConvertToRegistry(IRWRegistry* reg) const;
+
+    void PrintStatistics(CNcbiOstream& out) const;
 
     SBDB_CacheUnitStatistics& GlobalStatistics() { return m_GlobalStat; }
 

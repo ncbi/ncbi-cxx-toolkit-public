@@ -665,6 +665,70 @@ void SBDB_CacheUnitStatistics::AddCommError(EErrGetPut operation)
     x_AddErrGetPut(operation);
 }
 
+void SBDB_CacheUnitStatistics::PrintStatistics(CNcbiOstream& out) const
+{
+    out 
+        << "Total number of blobs ever stored                  " << "\t" << blobs_stored_total   << "\n"
+        << "Total number of overflow blobs (large size)        " << "\t" << blobs_overflow_total << "\n"
+        << "Total number of blobs updates                      " << "\t" << blobs_updates_total    << "\n"
+        << "Total number of blobs stored but never read        " << "\t" << blobs_never_read_total << "\n"
+        << "Total number of reads                              " << "\t" << blobs_read_total << "\n"
+        << "Total number of explicit deletes                   " << "\t" << blobs_expl_deleted_total << "\n"
+        << "Total number of BLOBs deletes by garbage collector " << "\t" << blobs_purge_deleted_total << "\n"
+        << "Total size of all BLOBs ever stored                " << "\t" << blob_size_max_total << "\n"
+
+        << "Current database number of records(BLOBs)          " << "\t" << blobs_db << "\n"
+        << "Current size of all BLOBs                          "  << "\t" << blobs_size_db << "\n"
+
+        << "Number of NetCache protocol errors                 " << "\t" << err_protocol << "\n"
+        << "Number of communication errors                     " << "\t" << err_communication << "\n"
+        << "Number of NetCache server internal errors          " << "\t" << err_internal << "\n"
+        << "Number of BLOB not found situations                " << "\t" << err_no_blob << "\n"
+        << "Number of errors when getting BLOBs                " << "\t" << err_blob_get << "\n"
+        << "Number of errors when storing BLOBs                " << "\t" << err_blob_put << "\n"
+        << "Number of errors when BLOB is over the size limit  " << "\t" << err_blob_over_quota << "\n";
+
+    out << "\n\n";
+
+    if (!time_access.empty()) {
+        out << "# Time access statistics:" << "\n" << "\n";
+        out << "# Hour \t Puts \t Gets" << "\n";
+
+        ITERATE(TTimeAccess, it, time_access) {
+            const SBDB_TimeAccessStatistics& ta_stat = *it;
+            out << ta_stat.hour << "\t" 
+                << ta_stat.put_count << "\t"
+                << ta_stat.get_count;
+        }
+    }
+    out << "\n\n";
+
+    if (!blob_size_hist.empty()) {
+        out << "# BLOB size histogram:" << "\n" << "\n";
+        out << "# Size \t Count" << "\n";
+
+        const TBlobSizeHistogram& hist = blob_size_hist;
+        SBDB_CacheUnitStatistics::TBlobSizeHistogram::const_iterator hist_end = 
+            hist.end();
+
+        ITERATE(SBDB_CacheUnitStatistics::TBlobSizeHistogram, it, hist) {
+            if (it->second > 0) {
+                hist_end = it;
+            }
+        }
+        SBDB_CacheUnitStatistics::TBlobSizeHistogram::const_iterator it = 
+            hist.begin();
+
+        for (; it != hist.end(); ++it) {
+            out << it->first << "\t" << it->second << "\n";
+            if (it == hist_end) {
+                break;
+            }
+        } // for
+    }
+
+}
+
 void SBDB_CacheUnitStatistics::ConvertToRegistry(IRWRegistry* reg,
                                                  const string& sect_name_postfix) const
 {
@@ -732,7 +796,7 @@ void SBDB_CacheUnitStatistics::ConvertToRegistry(IRWRegistry* reg,
              NStr::UIntToString(err_blob_get), 0,
              "Number of errors when getting BLOBs");
     reg->Set(sect_stat, "err_blob_put",
-             NStr::UIntToString(err_blob_get), 0,
+             NStr::UIntToString(err_blob_put), 0,
              "Number of errors when storing BLOBs");
     reg->Set(sect_stat, "err_blob_over_quota",
              NStr::UIntToString(err_blob_over_quota), 0,
@@ -933,6 +997,26 @@ void SBDB_CacheStatistics::ConvertToRegistry(IRWRegistry* reg) const
     }
 }
 
+void SBDB_CacheStatistics::PrintStatistics(CNcbiOstream& out) const
+{
+    out << "## " << "\n" 
+        << "## Global statistics" << "\n" 
+        << "## " << "\n\n";
+    m_GlobalStat.PrintStatistics(out);
+    out << "\n\n";
+
+    ITERATE(TOwnerStatMap, it, m_OwnerStatMap) {
+        const string& client = it->first;
+        const SBDB_CacheUnitStatistics& stat = it->second;
+
+        out << "## " << "\n" 
+            << "## Owner statistics:" << client << "\n" 
+            << "## " << "\n\n";
+
+        stat.PrintStatistics(out);
+        out << "\n\n";
+    }
+}
 
 
 
