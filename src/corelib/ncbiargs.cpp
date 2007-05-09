@@ -2095,16 +2095,10 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     // Compose an ordered list of args
     list<const CArgDesc*> def_args;
     ITERATE (TKeyFlagArgs, it, m_KeyFlagArgs) {
-        if (exclude.find(*it) != exclude.end()) {
-            continue;
-        }
         const CArgDesc& arg = **x_Find(*it);
         def_args.push_back(&arg);
     }
     ITERATE (TPosArgs, it, m_PosArgs) {
-        if (exclude.find(*it) != exclude.end()) {
-            continue;
-        }
         const CArgDesc& arg = **x_Find(*it);
         def_args.push_back(&arg);
     }
@@ -2126,6 +2120,12 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
                 "Explicit value required by dependencies", kEmptyStr));
         }
 
+        if (exclude.find(arg.GetName()) != exclude.end()) {
+            CRef<CArg_NoValue> arg_novalue(new CArg_NoValue(arg.GetName()));
+            // Add the no-value argument to "args"
+            args.Add(arg_novalue);
+            continue;
+        }
         // Use default argument value
         try {
             CRef<CArgValue> arg_value(arg.ProcessDefault());
