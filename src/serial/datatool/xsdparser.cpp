@@ -596,6 +596,12 @@ void XSDParser::ParseContainer(DTDElement& node)
 void XSDParser::ParseComplexType(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
+    if (GetAttribute("mixed")) {
+        if (IsValue("true")) {
+            string name(s_SpecialName);
+	        AddElementContent(node,name);
+        }
+    }
     if (tok == K_CLOSING) {
         ParseContent(node);
     }

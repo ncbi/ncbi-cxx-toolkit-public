@@ -142,6 +142,7 @@ protected:
     ESrcType  m_SrcType;
     CComments* m_Comments;
     bool m_ExpectLastComment;
+    static const string& s_SpecialName;
 };
 
 END_NCBI_SCOPE
