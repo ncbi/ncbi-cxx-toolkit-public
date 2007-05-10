@@ -50,7 +50,7 @@
 
 BEGIN_NCBI_SCOPE
 
-const string& s_SpecialName = "#PCDATA";
+const string& DTDParser::s_SpecialName = "#PCDATA";
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDParser
@@ -378,7 +378,7 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
                 skip = true;
                 break;
             case ')':
-                AddElementContent(node, id_name);
+                AddElementContent(node, id_name, symbol);
                 EndElementContent( node);
                 return;
             case ',':
@@ -406,7 +406,7 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
 }
 
 void DTDParser::AddElementContent(DTDElement& node, string& id_name,
-    char separator)
+    char separator /* =0 */)
 {
     DTDElement::EType type = node.GetType();
     if (type != DTDElement::eUnknown &&
@@ -415,11 +415,11 @@ void DTDParser::AddElementContent(DTDElement& node, string& id_name,
         ParseError("Unexpected element contents", "");
     }
     if (id_name == s_SpecialName) {
-        if (type == DTDElement::eUnknown && separator == 0) {
+        if (type == DTDElement::eUnknown && separator == ')') {
             node.SetType(DTDElement::eString);
         } else {
             node.AddContent(id_name);
-            if (separator != 0) {
+            if (separator == ',' || separator == '|') {
                 node.SetType(separator == ',' ?
                     DTDElement::eSequence : DTDElement::eChoice);
             }
@@ -428,7 +428,7 @@ void DTDParser::AddElementContent(DTDElement& node, string& id_name,
         return;
     }
     node.AddContent(id_name);
-    if (separator != 0) {
+    if (separator == ',' || separator == '|') {
         node.SetType(separator == ',' ?
             DTDElement::eSequence : DTDElement::eChoice);
     } else {
@@ -941,15 +941,18 @@ CDataType* DTDParser::TypesBlock(
         }
         AutoPtr<CDataType> type(Type(refNode, occ, true));
         if (refNode.IsEmbedded() && refNode.IsNamed()) {
-            bool optional = false, uniseq = false, uniseq2 = false;
+            bool optional = false, uniseq = false, uniseq2 = false, refseq = false;
             uniseq = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
             optional = (occ == DTDElement::eZeroOrOne || occ == DTDElement::eZeroOrMore);
+            refseq = refNode.GetType() == DTDElement::eSequence ||
+                     refNode.GetType() == DTDElement::eChoice;
             occ = node.GetOccurrence(*i);
             uniseq2 = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
-            if (uniseq) {
+
+            if (uniseq || (optional && refseq)) {
 
                 string refname(refNode.GetName());
-                if (uniseq2) {
+                if (uniseq2 || (optional && refseq)) {
                     refname.insert(0,"E");
                 }
                 AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());

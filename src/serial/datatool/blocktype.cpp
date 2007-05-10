@@ -123,9 +123,9 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
     string asnk = GetASNKeyword();
     string xsdk, tmp;
     bool hasAttlist= false, isAttlist= false;
-    bool hasNotag= false, isOptional= false, isSeq= false, isMixed=false;
-    bool isSimple= false, isSimpleSeq= false;
-    bool parent_isSeq= false;
+    bool hasNotag= false, isOptionalMember= false, isOptionalContent= false;
+    bool isSimple= false, isSimpleSeq= false, isSeq= false, isMixed=false;
+    bool isSimpleContainer= false, parent_isSeq= false;
     string simpleType;
     list<string> opentag, closetag1, closetag2;
 
@@ -153,11 +153,11 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
         if (GetDataMember()) {
             isAttlist = GetDataMember()->Attlist();
             hasNotag   = GetDataMember()->Notag();
-            isOptional= GetDataMember()->Optional();
+            isOptionalMember= GetDataMember()->Optional();
         }
         if (hasNotag && GetMembers().size()==1) {
             const CDataMember* member = GetMembers().front().get();
-            isOptional = member->Optional();
+            isOptionalMember = member->Optional();
             const CUniSequenceDataType* typeSeq =
                 dynamic_cast<const CUniSequenceDataType*>(member->GetType());
             isSeq = (typeSeq != 0);
@@ -184,13 +184,17 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                     bool any = (typeSeq != 0) &&
                         dynamic_cast<const CAnyContentDataType*>(
                             typeSeq->GetElementType()) != 0;
-                    isSimpleSeq = !any && typeSeq != 0;
+                    const CDataMemberContainerType* data =
+                        dynamic_cast<const CDataMemberContainerType*>(i->get()->GetType());
+                    isSimpleSeq = !any && (typeSeq != 0 || data != 0);
+                    isSimpleContainer = data != 0;
                     if (isSimpleSeq) {
-                        isSeq = true;
-                        const CDataMember *mem = typeSeq->GetDataMember();
+                        isSeq = typeSeq != 0;
+                        const CDataMember *mem = i->get()->GetType()->GetDataMember();
                         if (mem) {
-                            const CDataMemberContainerType* data =
-                                dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                            if (typeSeq) {
+                                data = dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                            }
                             if (data) {
                                 asnk = data->GetASNKeyword();
                                 ITERATE ( TMembers, m, data->m_Members ) {
@@ -205,21 +209,39 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                                 }
                             }
                             if (mem->Notag()) {
-                                isOptional = mem->Optional();
+                                isOptionalContent = mem->Optional();
                             } else {
                                 isSeq = isSimpleSeq = false;
+                            }
+                        }
+                    } else {
+                        if (i->get()->Notag()) {
+                            const CStringDataType* str =
+                                dynamic_cast<const CStringDataType*>(i->get()->GetType());
+                            if (str != 0) {
+                                isMixed = true;
                             }
                         }
                     }
                 }
             }
         }
+    } else {
+        if (GetDataMember()) {
+            isOptionalMember= GetDataMember()->Optional();
+        }
     }
+    
 
     if (!isAttlist && !parent_isSeq) {
         if (!hasNotag) {
             if (!contents_only) {
-                opentag.push_back("<xs:element name=\"" + tag + "\">");
+                tmp = "<xs:element name=\"" + tag + "\"";
+                if (isOptionalMember) {
+                    tmp += " minOccurs=\"0\"";
+                }
+                tmp += ">";
+                opentag.push_back(tmp);
                 closetag2.push_front("</xs:element>");
 
                 tmp = "<xs:complexType";
@@ -230,23 +252,25 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 closetag2.push_front("</xs:complexType>");
             }
         }
-        if (!isSimple) {
-            if(NStr::CompareCase(asnk,"CHOICE")==0) {
-                xsdk = "choice";
-            } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
-                xsdk = "sequence";
-            } else if(NStr::CompareCase(asnk,"SET")==0) {
-                xsdk = "all";
+        if (!isSimple && !isSimpleContainer) {
+            if (!contents_only || hasNotag) {
+                if(NStr::CompareCase(asnk,"CHOICE")==0) {
+                    xsdk = "choice";
+                } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
+                    xsdk = "sequence";
+                } else if(NStr::CompareCase(asnk,"SET")==0) {
+                    xsdk = "all";
+                }
+                tmp = "<xs:" + xsdk;
+                if (isOptionalContent || (hasNotag && isOptionalMember)) {
+                    tmp += " minOccurs=\"0\"";
+                }
+                if (isSeq) {
+                    tmp += " maxOccurs=\"unbounded\"";
+                }
+                opentag.push_back(tmp + ">");
+                closetag1.push_front("</xs:" + xsdk + ">");
             }
-            tmp = "<xs:" + xsdk;
-            if (isOptional) {
-                tmp += " minOccurs=\"0\"";
-            }
-            if (isSeq) {
-                tmp += " maxOccurs=\"unbounded\"";
-            }
-            opentag.push_back(tmp + ">");
-            closetag1.push_front("</xs:" + xsdk + ">");
         } else if (!simpleType.empty()) {
             opentag.push_back("<xs:simpleContent>");
             closetag2.push_front("</xs:simpleContent>");
