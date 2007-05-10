@@ -63,9 +63,9 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     max_output_size = GetIntNoErr("max_output_size", kNetScheduleMaxDBDataSize);
     max_output_size = min(kNetScheduleMaxOverflowSize, max_output_size);
 
-    deny_access_violations = reg.GetBool(sname, "deny_access_violations", true,
+    deny_access_violations = reg.GetBool(sname, "deny_access_violations", false,
         0, IRegistry::eReturn);
-    log_access_violations = reg.GetBool(sname, "log_access_violations", false,
+    log_access_violations = reg.GetBool(sname, "log_access_violations", true,
         0, IRegistry::eReturn);
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
@@ -114,9 +114,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_FailedRetries(0),
     m_EmptyLifetime(-1),
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
-    m_MaxOutputSize(kNetScheduleMaxDBDataSize),
-    m_DenyAccessViolations(true),
-    m_LogAccessViolations(false)
+    m_MaxOutputSize(kNetScheduleMaxDBDataSize)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
