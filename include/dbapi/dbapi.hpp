@@ -822,7 +822,7 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 inline
-CAutoTrans make_trans(IConnection& connection)
+CAutoTrans DBAPI_MakeTrans(IConnection& connection)
 {
     return CAutoTrans(*connection.GetCDB_Connection());
 }

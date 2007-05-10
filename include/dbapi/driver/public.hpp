@@ -630,14 +630,14 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 inline
-CAutoTrans make_trans(CDB_Connection& connection)
+CAutoTrans DBAPI_MakeTrans(CDB_Connection& connection)
 {
     return CAutoTrans(connection);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-#define TRANSACTION(connection) \
-for(ncbi::CAutoTrans auto_trans = ncbi::make_trans(connection); \
+#define DBAPI_TRANSACTION(connection) \
+for(ncbi::CAutoTrans auto_trans = ncbi::DBAPI_MakeTrans(connection); \
     auto_trans.Continue(); \
     auto_trans.Finish())
 
