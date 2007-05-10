@@ -687,10 +687,11 @@ void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle,
 #endif
 
             ComputedCharge = eChargeNot1; 
-            int i;
-            NumCharges = MaxCharge - MinCharge + 1;
+            int i, NewMinCharge(MinCharge);
+            if(MinCharge <= 1) NewMinCharge = 2;
+            NumCharges = MaxCharge - NewMinCharge + 1;
             for (i = 0; i < NumCharges; i++) {
-                Charges[i] = i + MinCharge;
+                Charges[i] = i + NewMinCharge;
             }
         }
     }

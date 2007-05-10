@@ -1332,7 +1332,6 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
     double Evalcutoff = GetSettings()->GetCutoff();
 
     CMSPeak* Peaks;
-    TPeakSet::iterator iPeakSet;
 
     TScoreList ScoreList;
     TScoreList::iterator iScoreList;
@@ -1344,10 +1343,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
     // Reset the oid set for tracking results
     SetOidSet().clear();
 
-    for (iPeakSet = PeakSet.GetPeaks().begin();
-        iPeakSet != PeakSet.GetPeaks().end();
-        iPeakSet++ ) {
-        Peaks = *iPeakSet;
+    while(!PeakSet.GetPeaks().empty()) {
+        Peaks = *(PeakSet.GetPeaks().begin());
 
         // add to hitset
         CRef< CMSHitSet > HitSet(null);
@@ -1539,6 +1536,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             }
         }
         ScoreList.clear();
+        delete *PeakSet.GetPeaks().begin();
+        PeakSet.GetPeaks().pop_front();
     }
     // write bioseqs to output
     WriteBioseqs();
