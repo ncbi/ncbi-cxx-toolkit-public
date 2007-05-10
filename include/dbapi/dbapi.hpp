@@ -201,7 +201,7 @@ public:
     /// Get column number, currently available for Read()
     ///
     /// @return
-	///    Returns current item number we can retrieve (1,2,...) using Read()
+    ///    Returns current item number we can retrieve (1,2,...) using Read()
     ///    Returns "0" if no more items left (or available) to read
     virtual int GetColumnNo() = 0;
 
@@ -248,7 +248,7 @@ public:
                                          EAllowLog log_it = eEnableLog,
                                          size_t buf_size = 0) = 0;
 
-    /// Get a Blob Reader. 
+    /// Get a Blob Reader.
     ///
     /// @param
     ///  Pointer to the Blob Reader.
@@ -286,13 +286,13 @@ public:
     ///   Pointer to resultset. For statements with no resultset return 0.
     virtual IResultSet* GetResultSet() = 0;
 
-    /// Check for more results available. 
-	///
-	/// Each call advances to the next result and the current one 
-	/// will be cancelled it not retrieved before next call.
-	/// The amount of retured results may be bigger than the expected amount
-	/// due to auxiliary results returned depending on the driver and server
-	/// platform.
+    /// Check for more results available.
+    ///
+    /// Each call advances to the next result and the current one
+    /// will be cancelled it not retrieved before next call.
+    /// The amount of retured results may be bigger than the expected amount
+    /// due to auxiliary results returned depending on the driver and server
+    /// platform.
     ///
     /// @return
     ///   Return true, if there are more results available.
@@ -330,11 +330,11 @@ public:
     ///   SQL statement to execute.
     virtual void SendSql(const string& sql) = 0;
 
-	/// Sends one or more SQL statements to the SQL server (replaced by the SendSql())
+    /// Sends one or more SQL statements to the SQL server (replaced by the SendSql())
     ///
     /// @param sql
     ///   SQL statement to execute.
-	/// @deprecated
+    /// @deprecated
     NCBI_DEPRECATED virtual void Execute(const string& sql) = 0;
 
     /// Executes SQL statement with no results returned.
@@ -349,7 +349,7 @@ public:
     /// If there is more than one resultset, the rest remain
     /// pending unless either PurgeResults() is called or next statement
     /// is run or the statement is closed.
-	/// NOTE: Provided only for queries containing a single sql statement returning rows.
+    /// NOTE: Provided only for queries containing a single sql statement returning rows.
     /// @param sql
     ///   SQL statement to execute.
     /// @return
@@ -401,9 +401,9 @@ public:
     virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d,
                                          size_t blob_size,
                                          EAllowLog log_it = eEnableLog,
-										 size_t buf_size = 0) = 0;
+                                         size_t buf_size = 0) = 0;
 
-	/// Get the parent connection.
+    /// Get the parent connection.
     ///
     /// If the original connections was cloned, returns cloned
     /// connection.
@@ -413,8 +413,8 @@ public:
     ///
     /// @param flag
     ///   auto-clear input parameter flag
-    /// In case when flag == true implicitly clear a statement's parameter list 
-    /// after each Execute, ExecuteUpdate and ExecuteQuery call. Default value 
+    /// In case when flag == true implicitly clear a statement's parameter list
+    /// after each Execute, ExecuteUpdate and ExecuteQuery call. Default value
     //. is true.
     virtual void SetAutoClearInParams(bool flag = true) = 0;
 
@@ -520,7 +520,7 @@ public:
                                          EAllowLog log_it = eEnableLog,
                                          size_t buf_size = 0) = 0;
 
-    /// Get Blob Writer 
+    /// Get Blob Writer
     ///
     /// Implementation of IWriter interface
     /// @param col
@@ -663,7 +663,7 @@ public:
              const string& database = kEmptyStr) = 0;
 
     /// Connect to a database using connect validator
-    /// 
+    ///
     /// @param validator
     ///   Validator implementation class.
     /// @param user
@@ -675,7 +675,7 @@ public:
     /// @param database
     ///   Database to connect to.
     virtual void ConnectValidated(IConnValidator& validator,
-		     const string& user,
+             const string& user,
              const string& password,
              const string& server,
              const string& database = kEmptyStr) = 0;
@@ -813,11 +813,19 @@ public:
     virtual I_DriverContext* GetDriverContext() = 0;
     virtual const I_DriverContext* GetDriverContext() const = 0;
 
-	// app_name defines the application name that a connection will use when 
+    // app_name defines the application name that a connection will use when
     // connecting to a server.
     void SetApplicationName(const string& app_name);
     const string& GetApplicationName(void) const;
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+inline
+CAutoTrans make_trans(IConnection& connection)
+{
+    return CAutoTrans(*connection.GetCDB_Connection());
+}
 
 
 END_NCBI_SCOPE

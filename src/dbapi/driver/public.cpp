@@ -763,6 +763,105 @@ void CDB_ResultProcessor::ReleaseConn(void)
     m_Con = NULL;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+CAutoTrans::CAutoTrans(CDB_Connection& connection)
+: m_Abort(true)
+, m_Conn(connection)
+, m_TranCount(0)
+{
+    BeginTransaction();
+    m_TranCount = GetTranCount();
+}
+
+
+CAutoTrans::~CAutoTrans(void)
+{
+    try
+    {
+        const int curr_TranCount = GetTranCount();
+
+        if (curr_TranCount >= m_TranCount) {
+            if (curr_TranCount > m_TranCount) {
+                // A nested transaction is started and not finished yet ...
+                ERR_POST(Warning << "A nested transaction was started and "
+                                    "it is not finished yet.");
+            }
+
+            // Assume that we are on the same level of transaction nesting.
+            if(m_Abort) {
+                Rollback();
+            } else {
+                Commit();
+            }
+        }
+
+        // Skip commit/rollback if this transaction was previously
+        // explicitly finished ...
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+}
+
+void
+CAutoTrans::BeginTransaction(void)
+{
+    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("BEGIN TRANSACTION"));
+    auto_stmt->Send();
+    auto_stmt->DumpResults();
+}
+
+
+void
+CAutoTrans::Commit(void)
+{
+    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("COMMIT"));
+    auto_stmt->Send();
+    auto_stmt->DumpResults();
+}
+
+
+void
+CAutoTrans::Rollback(void)
+{
+    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("ROLLBACK"));
+    auto_stmt->Send();
+    auto_stmt->DumpResults();
+}
+
+
+int
+CAutoTrans::GetTranCount(void)
+{
+    int result = 0;
+    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("SELECT @@trancount as tc"));
+
+    if (auto_stmt->Send()) {
+        while(auto_stmt->HasMoreResults()) {
+            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+            if (rs.get() == NULL) {
+                continue;
+            }
+
+            if (rs->ResultType() != eDB_RowResult) {
+                continue;
+            }
+
+            if (rs->Fetch()) {
+                CDB_Int tran_count;
+                rs->GetItem(&tran_count);
+                result = tran_count.Value();
+            }
+
+            while(rs->Fetch()) {
+            }
+        }
+    }
+
+    return result;
+}
+
+
 END_NCBI_SCOPE
 
 

@@ -599,6 +599,49 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CAutoTrans
+{
+public:
+    CAutoTrans(CDB_Connection& connection);
+    ~CAutoTrans(void);
+
+public:
+    bool Continue(void) const
+    {
+        return m_Abort;
+    }
+    void Finish(void)
+    {
+        m_Abort = false;
+    }
+
+private:
+    void BeginTransaction(void);
+    void Commit(void);
+    void Rollback(void);
+    int GetTranCount(void);
+
+private:
+    bool m_Abort;
+    CDB_Connection& m_Conn;
+    int m_TranCount;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+inline
+CAutoTrans make_trans(CDB_Connection& connection)
+{
+    return CAutoTrans(connection);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+#define TRANSACTION(connection) \
+for(ncbi::CAutoTrans auto_trans = ncbi::make_trans(connection); \
+    auto_trans.Continue(); \
+    auto_trans.Finish())
+
+
 END_NCBI_SCOPE
 
 
