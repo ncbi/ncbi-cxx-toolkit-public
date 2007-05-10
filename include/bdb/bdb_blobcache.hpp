@@ -598,7 +598,8 @@ protected:
                         int            version,
                         const string&  subkey,
                         int            overflow,
-                        unsigned       blob_id);
+                        unsigned       blob_id,
+                        CBDB_Transaction& trans);
     void KillBlob(const string&  key,
                   int            version,
                   const string&  subkey,        
@@ -645,26 +646,30 @@ private:
 
     void x_UpdateReadAccessTime(const string&  key,
                                 int            version,
-                                const string&  subkey);
+                                const string&  subkey,
+                                CBDB_Transaction& trans);
 
 	/// Transactional update of access time attributes
     void x_UpdateAccessTime(const string&   key,
                             int             version,
                             const string&   subkey,
-                            EBlobAccessType access_type);
+                            EBlobAccessType access_type,
+                            CBDB_Transaction& trans);
 
 	/// Non transactional update of access time
     void x_UpdateAccessTime_NonTrans(const string&  key,
                                      int            version,
                                      const string&  subkey,
-                                     EBlobAccessType access_type);
+                                     EBlobAccessType access_type,
+                                     CBDB_Transaction& trans);
 
 	/// Non transactional update of access time
     void x_UpdateAccessTime_NonTrans(const string&  key,
                                      int            version,
                                      const string&  subkey,
                                      unsigned       timeout,
-                                     EBlobAccessType access_type);
+                                     EBlobAccessType access_type,
+                                     CBDB_Transaction& trans);
 
 	/// 1. Retrive overflow attributes for the BLOB (using subkey)
 	/// 2. If required retrive empty subkey attribute record
@@ -684,11 +689,12 @@ private:
                                int            version,
                                const string&  subkey);
 
-    void x_DropBlob(const char*    key,
-                    int            version,
-                    const char*    subkey,
-                    int            overflow,
-                    unsigned       blob_id);
+    void x_DropBlob(const char*        key,
+                    int                version,
+                    const char*        subkey,
+                    int                overflow,
+                    unsigned           blob_id,
+                    CBDB_Transaction&  trans);
 
     void x_DropOverflow(const char*    key,
                         int            version,
