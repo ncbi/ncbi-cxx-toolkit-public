@@ -7481,6 +7481,8 @@ END_NCBI_SCOPE
 test_suite*
 init_unit_test_suite( int argc, char * argv[] )
 {
+    ncbi::CException::SetStackTraceLevel(ncbi::eDiag_Warning);
+
     // Configure UTF ...
     // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
     // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
