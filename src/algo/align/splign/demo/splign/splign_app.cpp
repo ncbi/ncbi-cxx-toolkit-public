@@ -731,14 +731,23 @@ void CSplignApp::x_DoIncremental(void)
     const CArgs& args = GetArgs();
     const string dbname = args["subjdb"].AsString();
 
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
     CBlastDbDataLoader::RegisterInObjectManager(
         *objmgr, dbname, CBlastDbDataLoader::eNucleotide, 
         CObjectManager::eDefault);
 
-    CNcbiIstream& ifa = args["query"].AsInputFile();
-    for(CRef<CSeq_entry> se (ReadFasta(ifa, fReadFasta_OneSeq));
-        se.NotEmpty(); se = ReadFasta(ifa, fReadFasta_OneSeq)) 
+    CRef<ILineReader> line_reader;
+    const CArgValue& argval (args["query"]);
+    try {
+        line_reader.Reset(
+            new CMemoryLineReader(new CMemoryFile(argval.AsString()),
+                                  eTakeOwnership));
+    } catch (...) { // fall back to streams
+        line_reader.Reset(new CStreamLineReader(argval.AsInputFile()));
+    }
+    CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
+    for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+        se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
     {
         CRef<CScope> scope (new CScope(*objmgr));
         scope->AddDefaults();
@@ -766,8 +775,6 @@ void CSplignApp::x_DoIncremental(void)
         while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
             x_ProcessPair(hitrefs_pair, args); 
         }
-
-        if(ifa.eof()) { break; }
     }
 }
 
@@ -776,20 +783,27 @@ void CSplignApp::x_DoBatch2(void)
 {
     USING_SCOPE(objects);
     USING_SCOPE(blast);
-    
+
     const CArgs& args = GetArgs();
     const string dbname = args["querydb"].AsString();
     const size_t W = args["W"].AsInteger();
     
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<CObjectManager> objmgr (CObjectManager::GetInstance());
     CBlastDbDataLoader::RegisterInObjectManager(
         *objmgr, dbname, CBlastDbDataLoader::eNucleotide, 
         CObjectManager::eDefault);
 
-    CNcbiIstream& ifa = args["subj"].AsInputFile();
-
-    for(CRef<CSeq_entry> se (ReadFasta(ifa, fReadFasta_OneSeq));
-        se.NotEmpty(); se = ReadFasta(ifa, fReadFasta_OneSeq)) 
+    CRef<ILineReader> line_reader;
+    try {
+        line_reader.Reset(
+                     new CMemoryLineReader(new CMemoryFile(args["subj"].AsString()),
+                                           eTakeOwnership));
+    } catch (...) { // fall back to streams
+        line_reader.Reset(new CStreamLineReader(args["subj"].AsInputFile()));
+    }
+    CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
+    for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+        se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
     {
         CRef<CScope> scope (new CScope(*objmgr));
         scope->AddDefaults();
@@ -896,8 +910,6 @@ void CSplignApp::x_DoBatch2(void)
 
             offset = (to + 1 >= len)? len: (to - 2*W);
         }
-
-        if(ifa.eof()) { break; }
     }
 }
 
@@ -911,7 +923,8 @@ CRef<objects::CSeq_id> CSplignApp::x_ReadFastaSetId(const CArgValue& argval,
     CRef<ILineReader> line_reader;
     try {
         line_reader.Reset(
-            new CMemoryLineReader(new CMemoryFile(argval.AsString()),eTakeOwnership));
+            new CMemoryLineReader(new CMemoryFile(argval.AsString()),
+                                  eTakeOwnership));
     } catch (...) { // fall back to streams
         line_reader.Reset(new CStreamLineReader(argval.AsInputFile()));
     }
@@ -1242,8 +1255,15 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     }
     else if(strand == kDirBoth) {
 
-        THitRefs hits0 (hitrefs.begin(), hitrefs.end());
-        static size_t mid = 1;
+        // save original hits
+        THitRefs hits0;
+        ITERATE(THitRefs, ii, hitrefs) {
+            const THitRef & h0 (*ii);
+            THitRef h1 (new THit (*h0));
+            hits0.push_back(h1);
+        }
+
+        static size_t mid (1);
         size_t mid_plus, mid_minus;
         {{
             m_Splign->SetStrand(true);
