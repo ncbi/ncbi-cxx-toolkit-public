@@ -254,6 +254,12 @@ public:
         return m_IsAlias;
     }
 
+    static void EnableDTDEntities(bool enable = true) {
+        sm_EnableDTDEntities = enable;
+    }
+    static bool DTDEntitiesEnabled(void) {
+        return sm_EnableDTDEntities;
+    }
     static void SetEnforcedStdXml(bool set = true) {
         sm_EnforcedStdXml = set;
     }
@@ -316,6 +322,7 @@ private:
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);
+    static bool sm_EnableDTDEntities;
     static bool sm_EnforcedStdXml;
     static bool sm_XmlSourceSpec;
     static set<string> sm_SavedNames;

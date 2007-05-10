@@ -275,6 +275,7 @@ bool CDataTool::ProcessModules(void)
                 CDataTypeModule::SetModuleFileSuffix(ms.AsString());
             }
             generator.ResolveImportRefs();
+            CDataType::EnableDTDEntities(true);
             generator.GetMainModules().PrintDTDModular();
         } else {
             generator.GetMainModules().PrintDTD(fx.AsOutputFile());

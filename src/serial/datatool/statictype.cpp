@@ -331,7 +331,7 @@ const char* CRealDataType::GetDEFKeyword(void) const
 
 const char* CRealDataType::GetXMLContents(void) const
 {
-    return "%REAL;";
+    return DTDEntitiesEnabled() ? "%REAL;" : "#PCDATA";
 }
 
 string CRealDataType::GetSchemaTypeString(void) const
@@ -577,7 +577,7 @@ const char* CBitStringDataType::GetDefaultCType(void) const
 
 const char* CBitStringDataType::GetXMLContents(void) const
 {
-    return "%BITS;";
+    return DTDEntitiesEnabled() ? "%BITS;" : "#PCDATA";
 }
 
 bool CBitStringDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
@@ -611,7 +611,7 @@ const char* COctetStringDataType::GetDefaultCType(void) const
 
 const char* COctetStringDataType::GetXMLContents(void) const
 {
-    return "%OCTETS;";
+    return DTDEntitiesEnabled() ? "%OCTETS;" : "#PCDATA";
 }
 
 string COctetStringDataType::GetSchemaTypeString(void) const
@@ -674,7 +674,7 @@ const char* CIntDataType::GetDEFKeyword(void) const
 
 const char* CIntDataType::GetXMLContents(void) const
 {
-    return "%INTEGER;";
+    return DTDEntitiesEnabled() ? "%INTEGER;" : "#PCDATA";
 }
 
 string CIntDataType::GetSchemaTypeString(void) const
@@ -722,7 +722,7 @@ const char* CBigIntDataType::GetDEFKeyword(void) const
 
 const char* CBigIntDataType::GetXMLContents(void) const
 {
-    return "%INTEGER;";
+    return DTDEntitiesEnabled() ? "%INTEGER;" : "#PCDATA";
 }
 
 string CBigIntDataType::GetSchemaTypeString(void) const

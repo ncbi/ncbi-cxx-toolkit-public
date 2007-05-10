@@ -230,10 +230,19 @@ void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
     } else {
         out <<
             "\n<!ELEMENT " << tag << " ";
-        if ( IsInteger() )
-            out << "(%INTEGER;)>";
-        else
-            out << "%ENUM;>";
+        if ( IsInteger() ) {
+            if (DTDEntitiesEnabled()) {
+                out << "(%INTEGER;)>";
+            } else {
+                out << "(#PCDATA)>";
+            }
+        } else {
+            if (DTDEntitiesEnabled()) {
+                out << "%ENUM;>";
+            } else {
+                out << "EMPTY>";
+            }
+        }
     }
 }
 

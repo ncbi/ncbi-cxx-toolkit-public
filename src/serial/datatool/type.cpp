@@ -50,6 +50,7 @@
 BEGIN_NCBI_SCOPE
 
 
+bool CDataType::sm_EnableDTDEntities = false;
 bool CDataType::sm_EnforcedStdXml = false;
 bool CDataType::sm_XmlSourceSpec = false;
 set<string> CDataType::sm_SavedNames;
