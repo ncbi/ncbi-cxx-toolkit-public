@@ -766,7 +766,7 @@ return 1;
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
-        sleep(10);
+        SleepSec(10);
     
     }
 
