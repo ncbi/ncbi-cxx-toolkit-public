@@ -6,7 +6,7 @@
 # Meta-makefile -- BDB test app
 #################################
 
-APP_PROJ = bdbtest bdbtestthr bdbtest_bvstore
+APP_PROJ = bdbtest bdbtestthr bdbtest_bvstore bdbtest_leak
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
