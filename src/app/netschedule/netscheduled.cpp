@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.34 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.35 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -182,9 +182,11 @@ struct SJS_Request
         case eNSRF_Option:
         case eNSRF_Status:
         case eNSRF_QueueName:
+        case eNSRF_AffinityPrev:
             param1.erase(); param1.append(val, eff_size);
             break;
         case eNSRF_QueueClass:
+        case eNSRF_Action:
             param2.erase(); param2.append(val, eff_size);
             break;
         case eNSRF_QueueComment:
@@ -193,14 +195,8 @@ struct SJS_Request
         case eNSRF_Tags:
             tags.erase(); tags.append(val, size);
             break;
-        case eNSRF_AffinityPrev:
-            param1.erase(); param1.append(val, eff_size);
-            break;
         case eNSRF_Select:
             param1.erase(); param1.append(val, size);
-            break;
-        case eNSRF_Action:
-            param2.erase(); param2.append(val, eff_size);
             break;
         case eNSRF_Fields:
             param3.erase(); param3.append(val, size);
@@ -261,11 +257,16 @@ private:
 
 public:
     enum ENSAccess {
-        eNSAC_Queue      = 1 << 0,
-        eNSAC_Worker     = 1 << 1,
-        eNSAC_Submitter  = 1 << 2,
-        eNSAC_Admin      = 1 << 3,
-        eNSAC_QueueAdmin = 1 << 4,
+        eNSAC_Queue         = 1 << 0,
+        eNSAC_Worker        = 1 << 1,
+        eNSAC_Submitter     = 1 << 2,
+        eNSAC_Admin         = 1 << 3,
+        eNSAC_QueueAdmin    = 1 << 4,
+        eNSAC_Test          = 1 << 5,
+        eNSAC_DynQueueAdmin = 1 << 6,
+        eNSAC_DynClassAdmin = 1 << 7,
+        eNSAC_AnyAdminMask  = eNSAC_Admin | eNSAC_QueueAdmin |
+                              eNSAC_DynQueueAdmin | eNSAC_DynClassAdmin,
         // Combination of flags for client roles
         eNSCR_Any        = 0,
         eNSCR_Queue      = eNSAC_Queue,
@@ -382,6 +383,7 @@ private:
 
     bool x_CheckVersion(void);
     void x_CheckAccess(TNSClientRole role);
+    void x_AccessViolationMessage(unsigned deficit, string& msg);
     string x_FormatErrorMessage(string header, string what);
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
@@ -403,6 +405,7 @@ private:
     // Uncapabilities - that is combination of ENSAccess
     // rights, which can NOT be performed by this connection
     unsigned                    m_Uncaps;
+    unsigned                    m_Unreported;
     bool                        m_VersionControl;
     unsigned                    m_CommandNumber;
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
@@ -523,7 +526,8 @@ static void s_ReadBufToString(BUF buffer, string& str)
 // ConnectionHandler implementation
 
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
-    : m_Server(server), m_Uncaps(~0L), m_VersionControl(false)
+    : m_Server(server), m_Uncaps(~0L), m_Unreported(~0L),
+      m_VersionControl(false)
 {
 }
 
@@ -774,20 +778,58 @@ bool CNetScheduleHandler::x_CheckVersion()
 
 void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 {
-    unsigned deficiencies = role & m_Uncaps;
-    if (!deficiencies) return;
-    string msg = "Access denied:";
-    if (deficiencies & eNSAC_Queue)
-        msg.append(" queue required");
-    if (deficiencies & eNSAC_Worker)
-        msg.append(" worker node privileges required");
-    if (deficiencies & eNSAC_Submitter)
-        msg.append(" submitter privileges required");
-    if (deficiencies & eNSAC_Admin)
-        msg.append(" admin privileges required");
-    if (deficiencies & eNSAC_QueueAdmin)
-        msg.append(" queue admin privileges required");
-    NCBI_THROW(CNetScheduleException, eAccessDenied, msg);
+    unsigned deficit = role & m_Uncaps;
+    if (!deficit) return;
+    if (deficit & eNSAC_DynQueueAdmin) {
+        // check that we have admin rights on queue m_JobReq.param1
+        deficit &= ~eNSAC_DynQueueAdmin;
+    }
+    if (deficit & eNSAC_DynClassAdmin) {
+        // check that we have admin rights on class m_JobReq.param2
+        deficit &= ~eNSAC_DynClassAdmin;
+    }
+    if (!deficit) return;
+    bool deny =
+        (deficit & eNSAC_AnyAdminMask)  ||  // for any admin access
+        (m_Uncaps & eNSAC_Queue)        ||  // or if no queue
+        m_Queue->IsDenyAccessViolations();  // or if queue configured so
+    bool report =
+        !(m_Uncaps & eNSAC_Queue)         &&  // only if there is a queue
+        m_Queue->IsLogAccessViolations()  &&  // so configured
+        (m_Unreported & deficit);             // and we did not report it yet
+    if (report) {
+        m_Unreported &= ~deficit;
+        CSocket& socket = GetSocket();
+        string msg = "Unauthorized access from: ";
+        msg += socket.GetPeerAddress();
+        msg += " ";
+        msg += m_AuthString;
+        x_AccessViolationMessage(deficit, msg);
+        LOG_POST(Warning << msg);
+    } else {
+        m_Unreported = ~0L;
+    }
+    if (deny) {
+        string msg = "Access denied:";
+        x_AccessViolationMessage(deficit, msg);
+        NCBI_THROW(CNetScheduleException, eAccessDenied, msg);
+    }
+}
+
+
+void CNetScheduleHandler::x_AccessViolationMessage(unsigned deficit,
+                                                   string& msg)
+{
+    if (deficit & eNSAC_Queue)
+        msg += " queue required";
+    if (deficit & eNSAC_Worker)
+        msg += " worker node privileges required";
+    if (deficit & eNSAC_Submitter)
+        msg += " submitter privileges required";
+    if (deficit & eNSAC_Admin)
+        msg += " admin privileges required";
+    if (deficit & eNSAC_QueueAdmin)
+        msg += " queue admin privileges required";
 }
 
 
@@ -1888,12 +1930,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "STSN",     &CNetScheduleHandler::ProcessStatusSnapshot, eNSCR_Queue,
         { { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" }, sm_End} },
     // QCRE qname : id  qclass : id [ comment : str ]
-    { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue, eNSCR_Admin,
+    { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue, eNSAC_DynClassAdmin,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName },
           { eNSA_Required, eNST_Id, eNSRF_QueueClass },
           { eNSA_Optional, eNST_Str, eNSRF_QueueComment }, sm_End} },
     // QDEL qname : id
-    { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue, eNSCR_Admin,
+    { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue, eNSAC_DynQueueAdmin,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
     { "QINF",     &CNetScheduleHandler::ProcessQueueInfo, eNSCR_Any,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },

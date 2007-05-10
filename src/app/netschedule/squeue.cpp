@@ -42,28 +42,31 @@ BEGIN_NCBI_SCOPE
 
 void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 {
+#define GetIntNoErr(name, dflt) reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
     // Read parameters
-    timeout = reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
-    notif_timeout =
-        reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
-    run_timeout =
-        reg.GetInt(sname, "run_timeout", 
-                                    timeout, 0, IRegistry::eReturn);
-    run_timeout_precision =
-        reg.GetInt(sname, "run_timeout_precision", 
-                                    run_timeout, 0, IRegistry::eReturn);
+    timeout = GetIntNoErr("timeout", 3600);
+
+    notif_timeout = GetIntNoErr("notif_timeout", 7);
+    run_timeout = GetIntNoErr("run_timeout", timeout);
+    run_timeout_precision = GetIntNoErr("run_timeout_precision", run_timeout);
 
     program_name = reg.GetString(sname, "program", kEmptyStr);
 
-    delete_when_done = reg.GetBool(sname, "delete_done", 
-                                        false, 0, IRegistry::eReturn);
-    failed_retries = 
-        reg.GetInt(sname, "failed_retries", 
-                                    0, 0, IRegistry::eReturn);
+    delete_when_done = reg.GetBool(sname, "delete_done", false,
+        0, IRegistry::eReturn);
+    failed_retries = GetIntNoErr("failed_retries", 0);
 
-    empty_lifetime =
-        reg.GetInt(sname, "empty_lifetime", 
-                                    -1, 0, IRegistry::eReturn);
+    empty_lifetime = GetIntNoErr("empty_lifetime", -1);
+
+    max_input_size = GetIntNoErr("max_input_size", kNetScheduleMaxDBDataSize);
+    max_input_size = min(kNetScheduleMaxOverflowSize, max_input_size);
+    max_output_size = GetIntNoErr("max_output_size", kNetScheduleMaxDBDataSize);
+    max_output_size = min(kNetScheduleMaxOverflowSize, max_output_size);
+
+    deny_access_violations = reg.GetBool(sname, "deny_access_violations", true,
+        0, IRegistry::eReturn);
+    log_access_violations = reg.GetBool(sname, "log_access_violations", false,
+        0, IRegistry::eReturn);
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
@@ -111,7 +114,9 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     m_FailedRetries(0),
     m_EmptyLifetime(-1),
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
-    m_MaxOutputSize(kNetScheduleMaxDBDataSize)
+    m_MaxOutputSize(kNetScheduleMaxDBDataSize),
+    m_DenyAccessViolations(true),
+    m_LogAccessViolations(false)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
@@ -234,6 +239,8 @@ void SLockedQueue::SetParameters(const SQueueParameters& params)
     m_EmptyLifetime = params.empty_lifetime;
     m_MaxInputSize  = params.max_input_size;
     m_MaxOutputSize = params.max_output_size;
+    m_DenyAccessViolations = params.deny_access_violations;
+    m_LogAccessViolations  = params.log_access_violations;
     m_WnodeHosts.SetHosts(params.wnode_hosts);
 }
 

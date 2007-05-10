@@ -68,6 +68,8 @@ struct SQueueParameters
     time_t empty_lifetime;
     unsigned max_input_size;
     unsigned max_output_size;
+    bool deny_access_violations;
+    bool log_access_violations;
     string subm_hosts;
     string wnode_hosts;
     // This parameter is not reconfigurable
@@ -83,6 +85,8 @@ struct SQueueParameters
         empty_lifetime(0),
         max_input_size(kNetScheduleMaxDBDataSize),
         max_output_size(kNetScheduleMaxDBDataSize),
+        deny_access_violations(true),
+        log_access_violations(false),
         subm_hosts(""),
         wnode_hosts(""),
         run_timeout_precision(3600)
@@ -391,7 +395,9 @@ private:
     ///< How long to live after becoming empty, if -1 - infinitely
     int                          m_EmptyLifetime;
     unsigned                     m_MaxInputSize;                    
-    unsigned                     m_MaxOutputSize;                    
+    unsigned                     m_MaxOutputSize;
+    bool                         m_DenyAccessViolations;
+    bool                         m_LogAccessViolations;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -414,6 +420,8 @@ public:
     int GetEmptyLifetime() { return m_Queue.m_EmptyLifetime; }
     unsigned GetMaxInputSize() { return m_Queue.m_MaxInputSize; }
     unsigned GetMaxOutputSize() { return m_Queue.m_MaxOutputSize; }
+    bool GetDenyAccessViolations() { return m_Queue.m_DenyAccessViolations; }
+    bool GetLogAccessViolations() { return m_Queue.m_LogAccessViolations; }
     const CQueueClientInfoList& GetProgramVersionList()
         { return m_Queue.m_ProgramVersionList; }
     const CNetSchedule_AccessList& GetSubmHosts()

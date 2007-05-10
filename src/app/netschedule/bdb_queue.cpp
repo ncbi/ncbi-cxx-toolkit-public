@@ -1146,6 +1146,20 @@ void CQueue::PrintJobStatusMatrix(CNcbiOstream& out)
 }
 
 
+bool CQueue::IsDenyAccessViolations() const
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    return CQueueParamAccessor(*q).GetDenyAccessViolations();
+}
+
+
+bool CQueue::IsLogAccessViolations() const
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    return CQueueParamAccessor(*q).GetLogAccessViolations();
+}
+
+
 bool CQueue::IsVersionControl() const
 {
     CRef<SLockedQueue> q(x_GetLQueue());

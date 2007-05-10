@@ -283,12 +283,16 @@ public:
 
     void PrintJobStatusMatrix(CNcbiOstream & out);
 
+    // Access control
+    bool IsDenyAccessViolations() const;
+    bool IsLogAccessViolations() const;
     bool IsVersionControl() const;
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     /// Check if client is a configured submitter
     bool IsSubmitAllowed() const;
     /// Check if client is a configured worker node
     bool IsWorkerAllowed() const;
+
 
     typedef SLockedQueue::TStatEvent TStatEvent;
     double GetAverage(TStatEvent);
