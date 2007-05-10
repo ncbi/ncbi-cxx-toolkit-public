@@ -42,6 +42,20 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
+string GuideChainToString(const TGuideChain& chain) {
+    string s;
+    unsigned int i, len = chain.size();
+    if (len > 0) {
+        for (i = 0; i < len; ++i) {
+            s += "Chain Link " + NStr::UIntToString(i) + ":  " + chain[i].Print(true);
+        }
+    } else {
+        s = "Empty chain";
+    }
+    return s;
+}
+
+
 // ============================================
 //      CGuideAlignment_Base implementation
 // ============================================

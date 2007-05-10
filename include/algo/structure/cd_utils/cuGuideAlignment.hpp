@@ -58,6 +58,19 @@ struct SGuideAlignmentLink
     int familyIndex;        // Optional; ignored if <0
 
     SGuideAlignmentLink(const CCdCore* cdIn, unsigned int rowIn = 0, int bmiIn = -1, int fiIn = -1) : cd(cdIn), row(rowIn), blockModelIndex(bmiIn), familyIndex(fiIn) {}
+
+    string Print(bool addNewline = false) const {
+        string s = (cd) ? cd->GetAccession() : "<NULL CD>";
+        s += ", row = " + NStr::UIntToString(row);
+        if (blockModelIndex >= 0) {
+            s+= "; block model index = " + NStr::IntToString(blockModelIndex);
+        }
+        if (familyIndex >= 0) {
+            s+= "; family index = " + NStr::IntToString(familyIndex);
+        }
+        if (addNewline) s += "\n";
+        return s;
+    }
 };
 
 
@@ -68,6 +81,8 @@ struct SGuideAlignmentLink
 //  relationships are modeled, in which case the familyIndex would change between links.
 typedef vector<SGuideAlignmentLink> TGuideChain;
 
+NCBI_CDUTILS_EXPORT 
+string GuideChainToString(const TGuideChain& chain);
 
 // ==========================================
 //      CGuideAlignment_Base declaration
