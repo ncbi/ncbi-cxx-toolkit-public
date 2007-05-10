@@ -716,54 +716,59 @@ return 1;
 
     return 0;
 */
-
+/*
     s_StressTest(host, port, 921600, 50, &log, &log_read, &rep_keys, 30);
     NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
     NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
     s_ReportStatistics(log_read);
     NcbiCout << NcbiEndl;
+*/
+
+    unsigned repeats = 1000;
+
+    for (int i=0; i < 20; ++i)
+    {   
+        s_StressTest(host, port, 256, repeats, &log, &log_read, &rep_keys, 10);
+        NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+        s_ReportStatistics(log);
+        NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+        s_ReportStatistics(log_read);
+        NcbiCout << NcbiEndl << NcbiEndl;
 
 
-    unsigned repeats = 2000;
+        s_StressTest(host, port, 1024 * 5, repeats, &log, &log_read, &rep_keys, 10);
+        NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+        s_ReportStatistics(log);
+        NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+        s_ReportStatistics(log_read);
+        NcbiCout << NcbiEndl;
 
-    s_StressTest(host, port, 256, repeats, &log, &log_read, &rep_keys, 10);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl << NcbiEndl;
+        s_StressTest(host, port, 1024 * 100, repeats/2, &log, &log_read, &rep_keys, 20);
+        NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+        s_ReportStatistics(log);
+        NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+        s_ReportStatistics(log_read);
+        NcbiCout << NcbiEndl;
 
+        s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
+        NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+        s_ReportStatistics(log);
+        NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+        s_ReportStatistics(log_read);
+        NcbiCout << NcbiEndl;
 
-    s_StressTest(host, port, 1024 * 5, repeats, &log, &log_read, &rep_keys, 10);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
+        log_read.resize(0);
+        NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs=" 
+                 << rep_keys.size() 
+                 << NcbiEndl;
+        s_TestKeysRead(rep_keys, 1024 * 1024 * 10, &log_read);
+        s_ReportStatistics(log_read);
+        NcbiCout << NcbiEndl;
 
-    s_StressTest(host, port, 1024 * 100, repeats/2, &log, &log_read, &rep_keys, 20);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
-
-    s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
-    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
-
-
-    log_read.resize(0);
-    NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs=" 
-             << rep_keys.size() 
-             << NcbiEndl;
-    s_TestKeysRead(rep_keys, 1024 * 1024 * 10, &log_read);
-    s_ReportStatistics(log_read);
-    NcbiCout << NcbiEndl;
+        sleep(10);
+    
+    }
 
 
 
