@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 
 /// NB: now that registries are CObjects, any we "own" will be deleted
-/// only if nothing else still holds a reference to them.
+/// if and only if nothing else still holds a reference to them.
 extern NCBI_XCONNECT_EXPORT REG     REG_cxx2c
 (IRWRegistry* reg,
  bool         pass_ownership = false
@@ -61,8 +61,8 @@ extern NCBI_XCONNECT_EXPORT LOG     LOG_cxx2c(void);
 
 
 extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_cxx2c
-(CRWLock*       lock = 0,
- bool           pass_ownership = false
+(CRWLock*     lock = 0,
+ bool         pass_ownership = false
  );
 
 
@@ -72,12 +72,13 @@ typedef enum {
     eConnectInit_OwnLock     = 0x02
 } EConnectInitFlags;
 
-typedef unsigned int FConnectInitFlags;  /* bitwise OR of EConnectInitFlags*/
+typedef unsigned int FConnectInitFlags;  // bitwise OR of EConnectInitFlags
 
 
-extern NCBI_XCONNECT_EXPORT void CONNECT_Init(IRWRegistry*      reg  = 0,
-                                              CRWLock*          lock = 0,
-                                              FConnectInitFlags flag = 0);
+extern NCBI_XCONNECT_EXPORT void CONNECT_Init
+(IRWRegistry*      reg  = 0,
+ CRWLock*          lock = 0,
+ FConnectInitFlags flag = eConnectInit_OwnNothing);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -98,4 +99,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif  /* CONNECT___NCBI_CORE_CXX__HPP */
+#endif  // CONNECT___NCBI_CORE_CXX__HPP
