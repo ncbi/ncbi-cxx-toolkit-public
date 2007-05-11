@@ -298,7 +298,7 @@ void CSoapMessage::x_VerifyFaultObj(bool add_prefix) const
             code = str2;
         }
         if (add_prefix) {
-            code.insert(0,':');
+            code.insert(0, 1, ':');
             code.insert(0, prefix);
         }
         fault->SetFaultcode(code);
