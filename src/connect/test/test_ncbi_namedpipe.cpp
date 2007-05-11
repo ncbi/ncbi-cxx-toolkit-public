@@ -35,7 +35,6 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
-
 #include <connect/ncbi_namedpipe.hpp>
 #include <common/test_assert.h>  // This header must go last
 
@@ -48,9 +47,9 @@ USING_NCBI_SCOPE;
 
 // Test pipe name
 #if defined(NCBI_OS_MSWIN)
-    const string  kPipeName = "\\\\.\\pipe\\ncbi\\test_pipename";
+const string kPipeName = "\\\\.\\pipe\\ncbi\\test_pipename";
 #elif defined(NCBI_OS_UNIX)
-    const string  kPipeName = "./.ncbi_test_pipename";
+const string kPipeName = "./.ncbi_test_pipename";
 #endif
 
 const size_t kNumSubBlobs = 10;
@@ -73,7 +72,7 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
     do {
         status = pipe.Read((char*)buf + n_read_total,
                            size - n_read_total, &x_read);
-        LOG_POST("Read from pipe "+ NStr::UIntToString(x_read) + " bytes");
+        LOG_POST("Read from pipe: " + NStr::UIntToString(x_read) + " bytes");
         n_read_total += x_read;
     } while (status == eIO_Success  &&  n_read_total < size);
     
@@ -96,7 +95,7 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
     do {
         status = pipe.Write((char*)buf + n_written_total,
                            size - n_written_total, &x_written);
-        LOG_POST("Write to pipe "+ NStr::UIntToString(x_written) + " bytes");
+        LOG_POST("Write to pipe: " + NStr::UIntToString(x_written) + " bytes");
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
     
