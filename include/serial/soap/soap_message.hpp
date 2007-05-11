@@ -33,7 +33,7 @@
 */
 
 #include <serial/serialbase.hpp>
-
+#include <serial/soap/soap_11__.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,7 +80,17 @@ public:
     CConstRef<CAnyContentObject> GetAnyContentObject(const string& name,
                                                      EMessagePart source) const;
 
+
+    CSoapFault::ESoap_FaultcodeEnum GetFaultCode(void) const
+    {
+        return m_Fault;
+    }
+
 private:
+    void x_Check(const CSoapEnvelope& env);
+    void x_VerifyFaultObj(bool add_prefix) const;
+
+    CSoapFault::ESoap_FaultcodeEnum m_Fault;
     string m_Prefix;
     string m_DefNamespaceName;
     TSoapContent m_Header;
