@@ -94,7 +94,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         }
         if ( !*outStream ) {
             delete outStream;
-            NCBI_THROW(CSerialException,eNotOpen, "cannot open file");
+            NCBI_THROW(CSerialException,eNotOpen, string("cannot open file: ")+fileName);
         }
         deleteStream = true;
     }

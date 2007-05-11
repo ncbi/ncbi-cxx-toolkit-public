@@ -151,7 +151,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
                                              const CCgiRequest& request)
 {
 // read request
-    CSoapMessage soap_in;
+    CSoapMessage soap_in, soap_out;
     vector< TTypeInfoGetter >::iterator types_in;
     for (types_in = m_Types.begin(); types_in != m_Types.end(); ++types_in) {
         soap_in.RegisterObjectType(*types_in);
@@ -160,19 +160,27 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
         auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
         *is >> soap_in;
     }
+    soap_out.SetDefaultObjectNamespaceName(GetDefaultNamespaceName());
+
+// check version
+    if (soap_in.GetFaultCode() == CSoapFault::eVersionMismatch) {
+        CRef<CSoapFault> fault(new CSoapFault);
+        fault->SetFaultcodeEnum(CSoapFault::eVersionMismatch);
+        fault->SetFaultstring("Server supports SOAP v1.1 only");
+        soap_out.AddObject( *fault, CSoapMessage::eMsgBody);
+    } else {
 
 // find listeners
-    const TListeners* listeners = x_FindListeners(soap_in);
+        const TListeners* listeners = x_FindListeners(soap_in);
 
 // process request
-    CSoapMessage soap_out;
-    soap_out.SetDefaultObjectNamespaceName(GetDefaultNamespaceName());
-    if (listeners) {
-        TListeners::const_iterator it;
-        for (it = listeners->begin(); it != listeners->end(); ++it) {
-            const TWebMethod listener = *it;
-            if (!(this->*listener)(soap_out, soap_in)) {
-                break;
+        if (listeners) {
+            TListeners::const_iterator it;
+            for (it = listeners->begin(); it != listeners->end(); ++it) {
+                const TWebMethod listener = *it;
+                if (!(this->*listener)(soap_out, soap_in)) {
+                    break;
+                }
             }
         }
     }

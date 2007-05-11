@@ -79,6 +79,33 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
                              const CSoapMessage& request,
                              const string& soap_action /*= kEmptyStr*/)
 {
+//gur
+#if 0
+cout << "test!" << endl;
+//write
+#if 1
+    {
+        auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, "e:\\dump.xml"));
+#if 0
+        *os << request;
+#else
+        CSoapMessage fault;
+        CRef<CSoapFault> req(new CSoapFault);
+        req->SetFaultcodeEnum(CSoapFault::eVersionMismatch);
+        req->SetFaultstring("Server supports SOAP v1.1 only");
+        fault.AddObject( *req, CSoapMessage::eMsgBody);
+        *os << fault;
+#endif
+    }
+#endif
+//read
+#if 0
+    {
+        auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, "e:\\dump.xml"));
+        *is >> response;
+    }
+#endif
+#else
     response.Reset();
     vector< TTypeInfoGetter >::iterator types_in;
     for (types_in = m_Types.begin(); types_in != m_Types.end(); ++types_in) {
@@ -106,6 +133,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 
     *os << request;
     *is >> response;
+#endif
 }
 
 END_NCBI_SCOPE

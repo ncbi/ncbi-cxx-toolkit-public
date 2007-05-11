@@ -35,7 +35,6 @@
 #include <serial/objistr.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/soap/soap_message.hpp>
-#include <serial/soap/soap_11__.hpp>
 #include "soap_writehook.hpp"
 #include "soap_readhook.hpp"
 #include <algorithm>
@@ -47,13 +46,14 @@ const string& CSoapMessage::ms_SoapNamespace =
     "http://schemas.xmlsoap.org/soap/envelope/";   // v1.1
 
 CSoapMessage::CSoapMessage(void)
-    : m_Prefix("env")
+    : m_Fault(CSoapFault::e_not_set), m_Prefix("env")
 {
     RegisterObjectType(CSoapFault::GetTypeInfo);
 }
 
 CSoapMessage::CSoapMessage(const string& namespace_name)
-    : m_Prefix("env"), m_DefNamespaceName(namespace_name)
+    : m_Fault(CSoapFault::e_not_set), m_Prefix("env"),
+      m_DefNamespaceName(namespace_name)
 {
     RegisterObjectType(CSoapFault::GetTypeInfo);
 }
@@ -171,7 +171,9 @@ void CSoapMessage::Write(CObjectOStream& out) const
     CObjectTypeInfo typeF = CType<CSoapDetail>();
     typeF.SetLocalWriteHook(out, new CSoapWriteHook(m_FaultDetail));
 
+    x_VerifyFaultObj(true);
     out << env;
+    x_VerifyFaultObj(false);
 
     if (flt) {
         flt->SetDetail().SetAnyContent().clear();
@@ -198,7 +200,12 @@ void CSoapMessage::Read(CObjectIStream& in)
     CObjectTypeInfo typeF = CType<CSoapDetail>();
     typeF.SetLocalReadHook(in, new CSoapReadHook(m_FaultDetail,m_Types));
 
-    in >> env;
+    try {
+        in >> env;
+    } catch (...) {
+    }
+    x_Check(env);
+    x_VerifyFaultObj(false);
 }
 
 
@@ -222,6 +229,7 @@ void CSoapMessage::RegisterObjectType(const CSerialObject& obj)
 
 void CSoapMessage::Reset(void)
 {
+    m_Fault = CSoapFault::e_not_set;
     m_Header.clear();
     m_Body.clear();
     m_FaultDetail.clear();
@@ -267,6 +275,34 @@ CSoapMessage::GetAnyContentObject(const string& name,
         }
     }
     return CConstRef<CAnyContentObject>(0);
+}
+
+void CSoapMessage::x_Check(const CSoapEnvelope& env)
+{
+    if (env.GetNamespaceName() != GetSoapNamespace()) {
+        m_Fault = CSoapFault::eVersionMismatch;
+        return;
+    }
+}
+
+// serial lib does not support QName, so...
+void CSoapMessage::x_VerifyFaultObj(bool add_prefix) const
+{
+    CConstRef<CSoapFault> fault_ref = SOAP_GetKnownObject<CSoapFault>(*this);
+    if (fault_ref) {
+        CSoapFault* fault = const_cast<CSoapFault*>(fault_ref.GetPointer());
+        string code = fault->GetFaultcode();
+        const string& prefix = GetSoapNamespacePrefix();
+        string str1, str2, newcode;
+        if (NStr::SplitInTwo(code, ":", str1, str2)) {
+            code = str2;
+        }
+        if (add_prefix) {
+            code.insert(0,':');
+            code.insert(0, prefix);
+        }
+        fault->SetFaultcode(code);
+    }
 }
 
 
