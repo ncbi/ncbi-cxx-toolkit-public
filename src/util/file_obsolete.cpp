@@ -87,7 +87,7 @@ void CFileObsolete::Remove(const string&  mask,
         CTime access;
 
         bool res = 
-            (*it)->GetTime(&modification, &creation, &access);
+            (*it)->GetTime(&modification, &access, &creation);
 
         if (!res) {
             continue;
