@@ -164,6 +164,8 @@ void
 CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs, 
                                    vector<SSegmentLoc>& filler_segs)
 {
+    const int kBlastBatchSize = 10000;
+
     if (filler_locs.empty())
         return;
 
@@ -173,31 +175,50 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     // deliberately set the cutoff e-value too high
     blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
     blastp_opts.SetSegFiltering(false);
-//    blastp_opts.SetGappedMode(false);
-    CBl2Seq blaster(filler_locs, m_tQueries, blastp_opts);
-    TSeqAlignVector v = blaster.Run();
 
-    // Convert each resulting HSP into a CHit object
+    // use blast on one batch of filler segments at a time
 
-    // iterate over query sequence fragments
+    int batch_start = 0; 
+    while (batch_start < (int)filler_locs.size()) {
 
-    for (int i = 0; i < (int)filler_locs.size(); i++) {
+        TSeqLocVector curr_batch;
+        int batch_size = 0;
 
-        int list1_oid = filler_segs[i].seq_index;
-        int list2_oid = 0;
+        for (int i = batch_start; i < (int)filler_locs.size(); i++) {
+            const CSeq_loc& curr_loc = *filler_locs[i].seqloc;
+            int fragment_size = curr_loc.GetInt().GetTo() -
+                                curr_loc.GetInt().GetFrom() + 1;
+            if (batch_size + fragment_size >= kBlastBatchSize)
+                break;
 
-        // iterate over hitlists
+            curr_batch.push_back(filler_locs[i]);
+            batch_size += fragment_size;
+        }
 
-        ITERATE(CSeq_align_set::Tdata, itr, v[i]->Get()) {
+        CBl2Seq blaster(curr_batch, m_tQueries, blastp_opts);
+        TSeqAlignVector v = blaster.Run();
 
-            // skip hits that map to the same query sequence
+        // Convert each resulting HSP into a CHit object
 
-            if (list1_oid == list2_oid) {
-                list2_oid++;
-                continue;
-            }
+        // iterate over query sequence fragments for the current batch
 
-            // iterate over hits
+        for (int i = 0; i < (int)curr_batch.size(); i++) {
+
+            int list1_oid = filler_segs[batch_start + i].seq_index;
+            int list2_oid = 0;
+
+            // iterate over hitlists
+
+            ITERATE(CSeq_align_set::Tdata, itr, v[i]->Get()) {
+
+                // skip hits that map to the same query sequence
+
+                if (list1_oid == list2_oid) {
+                    list2_oid++;
+                    continue;
+                }
+
+                // iterate over hits
 
                 const CSeq_align& s = **itr;
 
@@ -207,7 +228,7 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
                     const CDense_seg& denseg = s.GetSegs().GetDenseg();
                     int align_score = 0;
                     double evalue = 0;
-    
+        
                     ITERATE(CSeq_align::TScore, score_itr, s.GetScore()) {
                         const CScore& curr_score = **score_itr;
                         if (curr_score.GetId().GetStr() == "score")
@@ -215,13 +236,13 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
                         else if (curr_score.GetId().GetStr() == "e_value")
                             evalue = curr_score.GetValue().GetReal();
                     }
-    
+        
                     // check if the hit is worth saving
                     if (evalue > m_BlastpEvalue)
                         continue;
-    
+        
                     m_LocalHits.AddToHitList(new CHit(list1_oid, list2_oid,
-                                                        align_score, denseg));
+                                                  align_score, denseg));
                 }
                 else if (s.GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag) {
                     // Dense-diag (all hits)
@@ -231,29 +252,32 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
                         const CDense_diag& dendiag = **diag_itr;
                         int align_score = 0;
                         double evalue = 0;
-        
+            
                         // compute the score of the hit
-        
+          
                         ITERATE(CDense_diag::TScores, score_itr, 
-                                                        dendiag.GetScores()) {
+                                                       dendiag.GetScores()) {
                             const CScore& curr_score = **score_itr;
                             if (curr_score.GetId().GetStr() == "score")
                                 align_score = curr_score.GetValue().GetInt();
                             else if (curr_score.GetId().GetStr() == "e_value")
                                 evalue = curr_score.GetValue().GetReal();
                         }
-        
+            
                         // check if the hit is worth saving
                         if (evalue > m_BlastpEvalue)
                             continue;
-        
+            
                         m_LocalHits.AddToHitList(new CHit(list1_oid, list2_oid,
                                                        align_score, dendiag));
                     }
                 }
 
-            list2_oid++;
+                list2_oid++;
+            }
         }
+
+        batch_start += curr_batch.size();
     }
 }
 
