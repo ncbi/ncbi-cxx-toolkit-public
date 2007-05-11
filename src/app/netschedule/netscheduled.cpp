@@ -111,8 +111,8 @@ enum ENSRequestField {
 };
 struct SJS_Request
 {
-    char               input[kNetScheduleMaxDBDataSize];
-    char               output[kNetScheduleMaxDBDataSize];
+    string             input;
+    string             output;
     char               progress_msg[kNetScheduleMaxDBDataSize];
     char               affinity_token[kNetScheduleMaxDBDataSize];
     string             job_key;
@@ -146,12 +146,10 @@ struct SJS_Request
             (unsigned) size;
         switch (fld) {
         case eNSRF_Input:
-            strncpy(input, val, eff_size);
-            input[eff_size] = 0;
+            input.erase(); input.append(val, size);
             break;
         case eNSRF_Output:
-            strncpy(output, val, eff_size);
-            output[eff_size] = 0;
+            output.erase(); output.append(val, size);
             break;
         case eNSRF_ProgressMsg:
             strncpy(progress_msg, val, eff_size);
@@ -388,7 +386,7 @@ private:
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
     void x_MakeLogMessage(BUF buffer, string& lmsg);
-    void x_MakeGetAnswer(const char* key_buf, unsigned     job_mask);
+    void x_MakeGetAnswer(const char* key_buf, unsigned job_mask);
 
     // Data
     char m_Request[kMaxMessageSize];
@@ -874,7 +872,7 @@ void CNetScheduleHandler::x_MonitorRec(const SNS_SubmitRecord& rec)
 void CNetScheduleHandler::ProcessSubmit()
 {
     SNS_SubmitRecord rec;
-    strcpy(rec.input, m_JobReq.input);
+    rec.input = m_JobReq.input;
     strcpy(rec.affinity_token, m_JobReq.affinity_token);
     x_ParseTags(m_JobReq.tags, rec.tags);
     rec.mask = m_JobReq.job_mask;
@@ -1036,7 +1034,7 @@ void CNetScheduleHandler::ProcessMsgBatchItem(BUF buffer)
         m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
         return;
     }
-    strcpy(rec.input, m_JobReq.input);
+    rec.input = m_JobReq.input;
     if (m_JobReq.param1 == "affp") {
         rec.affinity_id = kMax_I4;
     } else {

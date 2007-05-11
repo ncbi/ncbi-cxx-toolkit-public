@@ -67,7 +67,7 @@ struct SQueueDB : public CBDB_File
 
     CBDB_FieldInt4         status;          ///< Current job status
     CBDB_FieldUint4        time_submit;     ///< Job submit time
-    CBDB_FieldUint4        time_run;        ///<     run time
+    CBDB_FieldUint4        time_run;        ///<     start time
     CBDB_FieldUint4        time_done;       ///<     result submission time
     CBDB_FieldUint4        timeout;         ///<     individual timeout
     CBDB_FieldUint4        run_timeout;     ///<     job run timeout
@@ -89,6 +89,8 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        aff_id;
     CBDB_FieldUint4        mask;
 
+    CBDB_FieldChar         input_overflow;  ///< Is input in JobInfo table
+    CBDB_FieldChar         output_overflow; ///< Is output in JobInfo table
     CBDB_FieldLString      input;           ///< Input data
     CBDB_FieldLString      output;          ///< Result data
 
@@ -124,8 +126,10 @@ struct SQueueDB : public CBDB_File
         BindData("aff_id", &aff_id);
         BindData("mask",   &mask);
 
-        BindData("input",  &input,  kNetScheduleMaxDBDataSize); // kNetScheduleSplitSize
-        BindData("output", &output, kNetScheduleMaxDBDataSize); // kNetScheduleSplitSize
+        BindData("input_overflow", &input_overflow);
+        BindData("output_overflow", &output_overflow);
+        BindData("input",  &input,  kNetScheduleSplitSize+4); // workaround
+        BindData("output", &output, kNetScheduleSplitSize+4);
 
         BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);

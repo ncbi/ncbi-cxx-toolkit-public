@@ -61,7 +61,7 @@ BEGIN_NCBI_SCOPE
 struct SNS_SubmitRecord
 {
     unsigned   job_id;
-    char       input[kNetScheduleMaxDBDataSize];
+    string     input;
     char       affinity_token[kNetScheduleMaxDBDataSize];
     unsigned   affinity_id;
     TNSTagList tags;
@@ -69,7 +69,7 @@ struct SNS_SubmitRecord
 
     SNS_SubmitRecord()
     {
-        input[0] = affinity_token[0] = 0;
+        affinity_token[0] = 0;
         affinity_id = job_id = mask = 0;
     }
 };
@@ -113,14 +113,14 @@ public:
 
     void PutResult(unsigned int  job_id,
                    int           ret_code,
-                   const char*   output);
+                   const string& output);
 
     void PutResultGetJob(unsigned int   done_job_id,
                          int            ret_code,
-                         const char*    output,
+                         const string&  output,
                          unsigned int   worker_node,
                          unsigned int*  job_id, 
-                         char*          input,
+                         string&        input,
                          const string&  client_name,
                          unsigned*      job_mask);
 
@@ -141,7 +141,7 @@ public:
 
     void GetJob(unsigned int   worker_node,
                 unsigned int*  job_id, 
-                char*          input,
+                string&        input,
                 const string&  client_name,
                 unsigned*      job_mask);
 
@@ -345,31 +345,32 @@ private:
 
     /// db should be already positioned
     void x_PrintJobDbStat(SQueueDB&     db,
+                          SJobInfoDB&   job_info_db,
                           unsigned      queue_run_timeout,
                           CNcbiOstream& out,
                           const char*   fld_separator = "\n",
                           bool          print_fname = true);
 
-    void x_PrintShortJobDbStat(SQueueDB&     db, 
+    void x_PrintShortJobDbStat(SQueueDB&     db,
+                               SJobInfoDB&   job_info_db, 
                                const string& host,
                                unsigned      port,
                                CNcbiOstream& out,
                                const char*   fld_separator = "\t");
 
-    /// Delete record using positioned cursor, dumps content
-    /// to text file if necessary
+    /// Delete record using positioned cursor
     void x_DeleteDBRec(SQueueDB& db, 
                        CBDB_FileCursor& cur);
 
-    void x_AssignSubmitRec(SQueueDB&     db,
+    bool x_AssignSubmitRec(SQueueDB&     db,
+                           SJobInfoDB&   job_info_db,
                            const SNS_SubmitRecord* rec,
+                           unsigned      max_input_size,
                            time_t        time_submit,
                            unsigned      host_addr,
                            unsigned      port,
                            unsigned      wait_timeout,
                            const char*   progress_msg);
-
-    void x_AssignJobInfoRec(SJobInfoDB& db, const SNS_SubmitRecord* rec);
 
     /// Info on how to notify job submitter
     struct SSubmitNotifInfo
@@ -383,15 +384,22 @@ private:
 
     /// @return TRUE if job record has been found and updated
     bool x_UpdateDB_PutResultNoLock(SQueueDB&            db,
+                                    SJobInfoDB&          job_info_db,
+                                    CBDB_Transaction&    trans,
+                                    bool                 delete_done,
                                     time_t               curr,
                                     CBDB_FileCursor&     cur,
                                     unsigned             job_id,
                                     int                  ret_code,
-                                    const char*          output,
+                                    const string&        output,
                                     SSubmitNotifInfo*    subm_info);
 
-    void x_GetInput(SQueueDB& db, string& str);
-    void x_GetOutput(SQueueDB& db, string& str);
+    bool x_GetInput(SQueueDB& db, SJobInfoDB& job_info_db,
+        bool fetched, string& str);
+    bool x_GetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
+        bool fetched, string& str);
+    void x_SetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
+        CBDB_Transaction& trans, const string& str);
 
     enum EGetJobUpdateStatus
     {
@@ -402,12 +410,13 @@ private:
     };
     EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
                                 SQueueDB&            db,
+                                SJobInfoDB&          job_info_db,
                                 time_t               curr,
                                 CBDB_FileCursor&     cur,
                                 CBDB_Transaction&    trans,
                                 unsigned int         worker_node,
                                 unsigned             job_id,
-                                char*                input,
+                                string&              input,
                                 unsigned*            aff_id,
                                 unsigned*            job_mask);
 
