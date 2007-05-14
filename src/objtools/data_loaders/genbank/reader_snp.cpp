@@ -401,7 +401,7 @@ void LoadIndexedOctetStringsFrom(CNcbiIstream& stream,
     if ( element_size ) {
         size_t total_size = read_size(stream);
         if ( !stream || element_size == 0 || total_size%element_size != 0 ||
-             element_size*(max_index+1) > total_size ) {
+             total_size > element_size*(max_index+1) ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Bad format of SNP table");
         }
