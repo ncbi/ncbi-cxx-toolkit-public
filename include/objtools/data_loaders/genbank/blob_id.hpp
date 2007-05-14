@@ -60,6 +60,7 @@ public:
             return m_SatKey;
         }
 
+    CNcbiOstream& Dump(CNcbiOstream& ostr) const;
     string ToString(void) const;
     static CBlob_id* CreateFromString(const string& str);
 
@@ -112,6 +113,12 @@ protected:
     int m_SubSat;
     int m_SatKey;
 };
+
+
+inline CNcbiOstream& operator<<(CNcbiOstream& ostr, const CBlob_id& id)
+{
+    return id.Dump(ostr);
+}
 
 
 enum EBlobContentsMask

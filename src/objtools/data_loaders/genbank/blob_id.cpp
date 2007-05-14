@@ -36,14 +36,24 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-string CBlob_id::ToString(void) const
+class CBlob_id;
+
+
+CNcbiOstream& CBlob_id::Dump(CNcbiOstream& ostr) const
 {
-    CNcbiOstrstream ostr;
     ostr << "Blob(";
     ostr << GetSat()<<','<<GetSatKey();
     if ( !IsMainBlob() )
         ostr << ",sub="<<GetSubSat();
     ostr << ')';
+    return ostr;
+}
+
+
+string CBlob_id::ToString(void) const
+{
+    CNcbiOstrstream ostr;
+    Dump(ostr);
     return CNcbiOstrstreamToString(ostr);
 }
 
