@@ -44,6 +44,10 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 
+#define DBAPI_BOOST_FAIL(ex) \
+    ERR_POST(ex); \
+    BOOST_FAIL(ex.GetMsg())
+
 BEGIN_NCBI_SCOPE
 
 enum { max_text_size = 8000 };
@@ -310,13 +314,13 @@ CDBAPIUnitTest::TestInit(void)
         auto_stmt->ExecuteUpdate(sql);
     }
     catch(const CDB_Exception& ex) {
-        BOOST_FAIL(ex.GetMsg());
+        DBAPI_BOOST_FAIL(ex);
     }
     catch(const CPluginManagerException& ex) {
-        BOOST_FAIL(ex.GetMsg());
+        DBAPI_BOOST_FAIL(ex);
     }
     catch(const CException& ex) {
-        BOOST_FAIL(ex.GetMsg());
+        DBAPI_BOOST_FAIL(ex);
     }
     catch (...) {
         BOOST_FAIL("Couldn't initialize the test-suite.");
@@ -575,11 +579,11 @@ void CDBAPIUnitTest::Test_Unicode(void)
             }
         }
     }
-    catch(CDB_Exception& ex) {
-        BOOST_FAIL(ex.GetMsg());
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
-    catch(CException& ex) {
-        BOOST_FAIL(ex.GetMsg());
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -589,41 +593,46 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
 {
     string sql;
 
-    auto_ptr<CDB_Connection> auto_conn(
-        m_DS->GetDriverContext()->Connect(
-            "LINK_OS",
-            "anyone",
-            "allowed",
-            0)
-        );
-    BOOST_CHECK( auto_conn.get() != NULL );
+    try {
+        auto_ptr<CDB_Connection> auto_conn(
+            m_DS->GetDriverContext()->Connect(
+                "LINK_OS",
+                "anyone",
+                "allowed",
+                0)
+            );
+        BOOST_CHECK( auto_conn.get() != NULL );
 
-    sql  = "get_iodesc_for_link pubmed_pubmed";
+        sql  = "get_iodesc_for_link pubmed_pubmed";
 
-    auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
-    BOOST_CHECK( auto_stmt.get() != NULL );
+        auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+        BOOST_CHECK( auto_stmt.get() != NULL );
 
-    bool rc = auto_stmt->Send();
-    BOOST_CHECK( rc );
+        bool rc = auto_stmt->Send();
+        BOOST_CHECK( rc );
 
-    auto_ptr<I_ITDescriptor> descr;
+        auto_ptr<I_ITDescriptor> descr;
 
-    while(auto_stmt->HasMoreResults()) {
-        auto_ptr<CDB_Result> rs(auto_stmt->Result());
+        while(auto_stmt->HasMoreResults()) {
+            auto_ptr<CDB_Result> rs(auto_stmt->Result());
 
-        if (rs.get() == NULL) {
-            continue;
+            if (rs.get() == NULL) {
+                continue;
+            }
+
+            if (rs->ResultType() != eDB_RowResult) {
+                continue;
+            }
+
+            while(rs->Fetch()) {
+                rs->ReadItem(NULL, 0);
+
+                descr.reset(rs->GetImageOrTextDescriptor());
+            }
         }
-
-        if (rs->ResultType() != eDB_RowResult) {
-            continue;
-        }
-
-        while(rs->Fetch()) {
-            rs->ReadItem(NULL, 0);
-
-            descr.reset(rs->GetImageOrTextDescriptor());
-        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -632,235 +641,245 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
 void
 CDBAPIUnitTest::Test_Create_Destroy(void)
 {
-    ///////////////////////
-    // CreateStatement
-    ///////////////////////
+    try {
+        ///////////////////////
+        // CreateStatement
+        ///////////////////////
 
-    // Destroy a statement before a connection get destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
+        // Destroy a statement before a connection get destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
 
-        auto_ptr<IStatement> stmt(local_conn->CreateStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt.get());
+            auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt.get());
+        }
+
+        // Do not destroy statement, let it be destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            IStatement* stmt(local_conn->CreateStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt);
+        }
+
+        ///////////////////////
+        // GetStatement
+        ///////////////////////
+
+        // Destroy a statement before a connection get destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            auto_ptr<IStatement> stmt(local_conn->GetStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt.get());
+        }
+
+        // Do not destroy statement, let it be destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            IStatement* stmt(local_conn->GetStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt);
+        }
     }
-
-    // Do not destroy statement, let it be destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        IStatement* stmt(local_conn->CreateStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt);
-    }
-
-    ///////////////////////
-    // GetStatement
-    ///////////////////////
-
-    // Destroy a statement before a connection get destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        auto_ptr<IStatement> stmt(local_conn->GetStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt.get());
-    }
-
-    // Do not destroy statement, let it be destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        IStatement* stmt(local_conn->GetStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt);
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
 void CDBAPIUnitTest::Test_Multiple_Close(void)
 {
-    ///////////////////////
-    // CreateStatement
-    ///////////////////////
+    try {
+        ///////////////////////
+        // CreateStatement
+        ///////////////////////
 
-    // Destroy a statement before a connection get destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
+        // Destroy a statement before a connection get destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
 
-        auto_ptr<IStatement> stmt(local_conn->CreateStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt.get());
+            auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt.get());
 
-        // Close a statement first ...
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
+            // Close a statement first ...
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
 
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+        }
+
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            auto_ptr<IStatement> stmt(local_conn->CreateStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt.get());
+
+            // Close a connection first ...
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+        }
+
+        // Do not destroy a statement, let it be destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            IStatement* stmt(local_conn->CreateStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt);
+
+            // Close a statement first ...
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+        }
+
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            IStatement* stmt(local_conn->CreateStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt);
+
+            // Close a connection first ...
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+        }
+
+        ///////////////////////
+        // GetStatement
+        ///////////////////////
+
+        // Destroy a statement before a connection get destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            auto_ptr<IStatement> stmt(local_conn->GetStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt.get());
+
+            // Close a statement first ...
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+        }
+
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            auto_ptr<IStatement> stmt(local_conn->GetStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt.get());
+
+            // Close a connection first ...
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+        }
+
+        // Do not destroy a statement, let it be destroyed ...
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            IStatement* stmt(local_conn->GetStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt);
+
+            // Close a statement first ...
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+        }
+
+        {
+            auto_ptr<IConnection> local_conn(
+                m_DS->CreateConnection( CONN_OWNERSHIP )
+                );
+            Connect(local_conn);
+
+            IStatement* stmt(local_conn->GetStatement());
+            stmt->SendSql( "SELECT name FROM sysobjects" );
+            DumpResults(stmt);
+
+            // Close a connection first ...
+            local_conn->Close();
+            local_conn->Close();
+            local_conn->Close();
+
+            stmt->Close();
+            stmt->Close();
+            stmt->Close();
+        }
     }
-
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        auto_ptr<IStatement> stmt(local_conn->CreateStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt.get());
-
-        // Close a connection first ...
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
-    }
-
-    // Do not destroy a statement, let it be destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        IStatement* stmt(local_conn->CreateStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt);
-
-        // Close a statement first ...
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
-
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-    }
-
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        IStatement* stmt(local_conn->CreateStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt);
-
-        // Close a connection first ...
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
-    }
-
-    ///////////////////////
-    // GetStatement
-    ///////////////////////
-
-    // Destroy a statement before a connection get destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        auto_ptr<IStatement> stmt(local_conn->GetStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt.get());
-
-        // Close a statement first ...
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
-
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-    }
-
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        auto_ptr<IStatement> stmt(local_conn->GetStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt.get());
-
-        // Close a connection first ...
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
-    }
-
-    // Do not destroy a statement, let it be destroyed ...
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        IStatement* stmt(local_conn->GetStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt);
-
-        // Close a statement first ...
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
-
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-    }
-
-    {
-        auto_ptr<IConnection> local_conn(
-            m_DS->CreateConnection( CONN_OWNERSHIP )
-            );
-        Connect(local_conn);
-
-        IStatement* stmt(local_conn->GetStatement());
-        stmt->SendSql( "SELECT name FROM sysobjects" );
-        DumpResults(stmt);
-
-        // Close a connection first ...
-        local_conn->Close();
-        local_conn->Close();
-        local_conn->Close();
-
-        stmt->Close();
-        stmt->Close();
-        stmt->Close();
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -892,7 +911,7 @@ CDBAPIUnitTest::Test_HasMoreResults(void)
         }
     }
     catch( const CDB_Exception& ex ) {
-        BOOST_FAIL( ex.GetMsg() );
+        DBAPI_BOOST_FAIL(ex);
     }
     catch(...) {
         BOOST_FAIL("Unknown error in Test_HasMoreResults");
@@ -915,7 +934,7 @@ CDBAPIUnitTest::Test_HasMoreResults(void)
             }
         }
         catch( const CDB_Exception& ex ) {
-            BOOST_FAIL( ex.GetMsg() );
+            DBAPI_BOOST_FAIL(ex);
         }
     }
 }
@@ -929,76 +948,81 @@ CDBAPIUnitTest::Test_Insert(void)
     const string test_msg(300, 'A');
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Clean table ...
-    auto_stmt->ExecuteUpdate( "DELETE FROM " + GetTableName() );
+    try {
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM " + GetTableName() );
 
-    // Insert data ...
-    {
-        // Pure SQL ...
-        auto_stmt->ExecuteUpdate(
-            "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
-            "VALUES(1, '" + test_msg + "')"
-            );
+        // Insert data ...
+        {
+            // Pure SQL ...
+            auto_stmt->ExecuteUpdate(
+                "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
+                "VALUES(1, '" + test_msg + "')"
+                );
 
-        // Using parameters ...
-        string sql = "INSERT INTO " + GetTableName() +
-                     "(int_field, vc1000_field) VALUES(@id, @vc_val)";
+            // Using parameters ...
+            string sql = "INSERT INTO " + GetTableName() +
+                         "(int_field, vc1000_field) VALUES(@id, @vc_val)";
 
-        auto_stmt->SetParam( CVariant( Int4(2) ), "@id" );
-        auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(),
-                                                test_msg.size()),
-                             "@vc_val"
-                             );
-        auto_stmt->ExecuteUpdate( sql );
+            auto_stmt->SetParam( CVariant( Int4(2) ), "@id" );
+            auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(),
+                                                    test_msg.size()),
+                                 "@vc_val"
+                                 );
+            auto_stmt->ExecuteUpdate( sql );
 
-        auto_stmt->SetParam( CVariant( Int4(3) ), "@id" );
-        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
-                                                small_msg.size()),
-                             "@vc_val"
-                             );
-        auto_stmt->ExecuteUpdate( sql );
+            auto_stmt->SetParam( CVariant( Int4(3) ), "@id" );
+            auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
+                                                    small_msg.size()),
+                                 "@vc_val"
+                                 );
+            auto_stmt->ExecuteUpdate( sql );
 
-        CVariant var_value(CVariant::LongChar(NULL, 1024));
-        var_value = CVariant::LongChar(small_msg.c_str(), small_msg.size());
-        auto_stmt->SetParam( CVariant( Int4(4) ), "@id" );
-        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
-                                                small_msg.size()),
-                             "@vc_val"
-                             );
-        auto_stmt->ExecuteUpdate( sql );
-    }
-
-    // Retrieve data ...
-    {
-        enum { num_of_tests = 2 };
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
-        sql += " ORDER BY int_field";
-
-        auto_stmt->SendSql( sql );
-
-        BOOST_CHECK( auto_stmt->HasMoreResults() );
-        BOOST_CHECK( auto_stmt->HasRows() );
-        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-        BOOST_CHECK( rs.get() != NULL );
-
-        for(int i = 0; i < num_of_tests; ++i) {
-            BOOST_CHECK( rs->Next() );
-
-            string vc1000_value = rs->GetVariant(2).GetString();
-
-            BOOST_CHECK_EQUAL( test_msg.size(), vc1000_value.size() );
-            BOOST_CHECK_EQUAL( test_msg, vc1000_value );
+            CVariant var_value(CVariant::LongChar(NULL, 1024));
+            var_value = CVariant::LongChar(small_msg.c_str(), small_msg.size());
+            auto_stmt->SetParam( CVariant( Int4(4) ), "@id" );
+            auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
+                                                    small_msg.size()),
+                                 "@vc_val"
+                                 );
+            auto_stmt->ExecuteUpdate( sql );
         }
 
-        BOOST_CHECK( rs->Next() );
-        string small_value1 = rs->GetVariant(2).GetString();
-        BOOST_CHECK_EQUAL( small_msg, small_value1 );
+        // Retrieve data ...
+        {
+            enum { num_of_tests = 2 };
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        BOOST_CHECK( rs->Next() );
-        string small_value2 = rs->GetVariant(2).GetString();
-        BOOST_CHECK_EQUAL( small_msg, small_value2 );
+            sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
+            sql += " ORDER BY int_field";
+
+            auto_stmt->SendSql( sql );
+
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+
+            for(int i = 0; i < num_of_tests; ++i) {
+                BOOST_CHECK( rs->Next() );
+
+                string vc1000_value = rs->GetVariant(2).GetString();
+
+                BOOST_CHECK_EQUAL( test_msg.size(), vc1000_value.size() );
+                BOOST_CHECK_EQUAL( test_msg, vc1000_value );
+            }
+
+            BOOST_CHECK( rs->Next() );
+            string small_value1 = rs->GetVariant(2).GetString();
+            BOOST_CHECK_EQUAL( small_msg, small_value1 );
+
+            BOOST_CHECK( rs->Next() );
+            string small_value2 = rs->GetVariant(2).GetString();
+            BOOST_CHECK_EQUAL( small_msg, small_value2 );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 };
 
@@ -1013,11 +1037,272 @@ CDBAPIUnitTest::Test_DateTime(void)
     CVariant null_date(t, eLong);
     CTime dt_value;
 
-    if (true) {
+    try {
+        if (true) {
+            // Initialization ...
+            {
+                sql =
+                    "CREATE TABLE #test_datetime ( \n"
+                    "   id INT, \n"
+                    "   dt_field DATETIME NULL \n"
+                    ") \n";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            {
+                // Initialization ...
+                {
+                    sql = "INSERT INTO #test_datetime(id, dt_field) "
+                          "VALUES(1, GETDATE() )";
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_datetime";
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    value = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value.IsNull() );
+
+                    dt_value = value.GetCTime();
+                    BOOST_CHECK( !dt_value.IsEmpty() );
+                }
+
+                // Insert data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                    auto_stmt->SetParam( value, "@dt_val" );
+
+                    sql = "INSERT INTO #test_datetime(id, dt_field) "
+                          "VALUES(1, @dt_val)";
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+                // Retrieve data again ...
+                {
+                    sql = "SELECT * FROM #test_datetime";
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    const CTime& dt_value2 = value2.GetCTime();
+                    BOOST_CHECK( !dt_value2.IsEmpty() );
+                    CTime dt_value3 = value.GetCTime();
+                    BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+
+                    // Tracing ...
+                    if (dt_value2.AsString() != dt_value3.AsString()) {
+                        cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
+                            << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
+                            << endl;
+                    }
+                }
+
+                // Insert NULL data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                    auto_stmt->SetParam( null_date, "@dt_val" );
+
+                    sql = "INSERT INTO #test_datetime(id, dt_field) "
+                          "VALUES(1, @dt_val)";
+
+                    auto_stmt->ExecuteUpdate( sql );
+                }
+
+
+                // Retrieve data again ...
+                {
+                    sql = "SELECT * FROM #test_datetime";
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( value2.IsNull() );
+                }
+            }
+
+            // Insert data using stored procedure ...
+            {
+                value = CTime(CTime::eCurrent);
+
+                // Set a database ...
+                {
+                    auto_stmt->ExecuteUpdate("use DBAPI_Sample");
+                }
+                // Create a stored procedure ...
+                {
+                    bool already_exist = false;
+
+                    // auto_stmt->SendSql( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
+                    auto_stmt->SendSql( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
+                    while( auto_stmt->HasMoreResults() ) {
+                        if( auto_stmt->HasRows() ) {
+                            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                            while ( rs->Next() ) {
+                                already_exist = true;
+                            }
+                        }
+                    }
+
+                    if ( !already_exist ) {
+                        sql =
+                            " CREATE PROC sp_test_datetime(@dt_val datetime) \n"
+                            " AS \n"
+                            " INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val) \n";
+
+                        auto_stmt->ExecuteUpdate( sql );
+                    }
+
+                }
+
+                // Insert data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                    auto_ptr<ICallableStatement> call_auto_stmt(
+                        m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                        );
+
+                    call_auto_stmt->SetParam( value, "@dt_val" );
+                    call_auto_stmt->Execute();
+                    DumpResults(call_auto_stmt.get());
+
+                    auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime" );
+                    int nRows = auto_stmt->GetRowCount();
+                    BOOST_CHECK_EQUAL(nRows, 1);
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_datetime";
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( !value2.IsNull() );
+
+                    const CTime& dt_value2 = value2.GetCTime();
+                    BOOST_CHECK( !dt_value2.IsEmpty() );
+                    CTime dt_value3 = value.GetCTime();
+                    BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+
+                    // Tracing ...
+                    if (dt_value2.AsString() != dt_value3.AsString()) {
+                        cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
+                            << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
+                            << endl;
+                    }
+
+                    // Failed for some reason ...
+                    // BOOST_CHECK(dt_value2 == dt_value);
+                }
+
+                // Insert NULL data using parameters ...
+                {
+                    auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                    auto_ptr<ICallableStatement> call_auto_stmt(
+                        m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                        );
+
+                    call_auto_stmt->SetParam( null_date, "@dt_val" );
+                    call_auto_stmt->Execute();
+                    DumpResults(call_auto_stmt.get());
+                }
+
+                // Retrieve data ...
+                {
+                    sql = "SELECT * FROM #test_datetime";
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+
+                    auto_stmt->SendSql( sql );
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+
+                    const CVariant& value2 = rs->GetVariant(2);
+
+                    BOOST_CHECK( value2.IsNull() );
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_DateTimeBCP(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    CVariant value(eDB_DateTime);
+    CTime t;
+    CVariant null_date(t, eLong);
+    CTime dt_value;
+
+    try {
         // Initialization ...
         {
             sql =
-                "CREATE TABLE #test_datetime ( \n"
+                "CREATE TABLE #test_bcp_datetime ( \n"
                 "   id INT, \n"
                 "   dt_field DATETIME NULL \n"
                 ") \n";
@@ -1025,169 +1310,38 @@ CDBAPIUnitTest::Test_DateTime(void)
             auto_stmt->ExecuteUpdate( sql );
         }
 
-        {
-            // Initialization ...
-            {
-                sql = "INSERT INTO #test_datetime(id, dt_field) "
-                      "VALUES(1, GETDATE() )";
-
-                auto_stmt->ExecuteUpdate( sql );
-            }
-
-            // Retrieve data ...
-            {
-                sql = "SELECT * FROM #test_datetime";
-
-                auto_stmt->SendSql( sql );
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
-
-                value = rs->GetVariant(2);
-
-                BOOST_CHECK( !value.IsNull() );
-
-                dt_value = value.GetCTime();
-                BOOST_CHECK( !dt_value.IsEmpty() );
-            }
-
-            // Insert data using parameters ...
-            {
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
-
-                auto_stmt->SetParam( value, "@dt_val" );
-
-                sql = "INSERT INTO #test_datetime(id, dt_field) "
-                      "VALUES(1, @dt_val)";
-
-                auto_stmt->ExecuteUpdate( sql );
-            }
-
-            // Retrieve data again ...
-            {
-                sql = "SELECT * FROM #test_datetime";
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-
-                auto_stmt->SendSql( sql );
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
-
-                const CVariant& value2 = rs->GetVariant(2);
-
-                BOOST_CHECK( !value2.IsNull() );
-
-                const CTime& dt_value2 = value2.GetCTime();
-                BOOST_CHECK( !dt_value2.IsEmpty() );
-                CTime dt_value3 = value.GetCTime();
-                BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
-
-                // Tracing ...
-                if (dt_value2.AsString() != dt_value3.AsString()) {
-                    cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
-                        << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
-                        << endl;
-                }
-            }
-
-            // Insert NULL data using parameters ...
-            {
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
-
-                auto_stmt->SetParam( null_date, "@dt_val" );
-
-                sql = "INSERT INTO #test_datetime(id, dt_field) "
-                      "VALUES(1, @dt_val)";
-
-                auto_stmt->ExecuteUpdate( sql );
-            }
-
-
-            // Retrieve data again ...
-            {
-                sql = "SELECT * FROM #test_datetime";
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-
-                auto_stmt->SendSql( sql );
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
-
-                const CVariant& value2 = rs->GetVariant(2);
-
-                BOOST_CHECK( value2.IsNull() );
-            }
-        }
-
-        // Insert data using stored procedure ...
+        // Insert data using BCP ...
         {
             value = CTime(CTime::eCurrent);
 
-            // Set a database ...
-            {
-                auto_stmt->ExecuteUpdate("use DBAPI_Sample");
-            }
-            // Create a stored procedure ...
-            {
-                bool already_exist = false;
-
-                // auto_stmt->SendSql( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
-                auto_stmt->SendSql( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
-                while( auto_stmt->HasMoreResults() ) {
-                    if( auto_stmt->HasRows() ) {
-                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                        while ( rs->Next() ) {
-                            already_exist = true;
-                        }
-                    }
-                }
-
-                if ( !already_exist ) {
-                    sql =
-                        " CREATE PROC sp_test_datetime(@dt_val datetime) \n"
-                        " AS \n"
-                        " INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val) \n";
-
-                    auto_stmt->ExecuteUpdate( sql );
-                }
-
-            }
-
             // Insert data using parameters ...
             {
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_DateTime);
 
-                auto_ptr<ICallableStatement> call_auto_stmt(
-                    m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
+
+                auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
                     );
 
-                call_auto_stmt->SetParam( value, "@dt_val" );
-                call_auto_stmt->Execute();
-                DumpResults(call_auto_stmt.get());
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
 
-                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime" );
+                col1 = 1;
+                col2 = value;
+
+                bi->AddRow();
+                bi->Complete();
+
+                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
                 int nRows = auto_stmt->GetRowCount();
                 BOOST_CHECK_EQUAL(nRows, 1);
             }
 
             // Retrieve data ...
             {
-                sql = "SELECT * FROM #test_datetime";
+                sql = "SELECT * FROM #test_bcp_datetime";
 
                 // !!! Do not forget to clear a parameter list ....
                 // Workaround for the ctlib driver ...
@@ -1223,20 +1377,31 @@ CDBAPIUnitTest::Test_DateTime(void)
 
             // Insert NULL data using parameters ...
             {
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_DateTime);
 
-                auto_ptr<ICallableStatement> call_auto_stmt(
-                    m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
+
+                auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
                     );
 
-                call_auto_stmt->SetParam( null_date, "@dt_val" );
-                call_auto_stmt->Execute();
-                DumpResults(call_auto_stmt.get());
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+
+                col1 = 1;
+
+                bi->AddRow();
+                bi->Complete();
+
+                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
+                int nRows = auto_stmt->GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
             }
 
             // Retrieve data ...
             {
-                sql = "SELECT * FROM #test_datetime";
+                sql = "SELECT * FROM #test_bcp_datetime";
 
                 // !!! Do not forget to clear a parameter list ....
                 // Workaround for the ctlib driver ...
@@ -1256,139 +1421,8 @@ CDBAPIUnitTest::Test_DateTime(void)
             }
         }
     }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_DateTimeBCP(void)
-{
-    string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-    CVariant value(eDB_DateTime);
-    CTime t;
-    CVariant null_date(t, eLong);
-    CTime dt_value;
-
-    // Initialization ...
-    {
-        sql =
-            "CREATE TABLE #test_bcp_datetime ( \n"
-            "   id INT, \n"
-            "   dt_field DATETIME NULL \n"
-            ") \n";
-
-        auto_stmt->ExecuteUpdate( sql );
-    }
-
-    // Insert data using BCP ...
-    {
-        value = CTime(CTime::eCurrent);
-
-        // Insert data using parameters ...
-        {
-            CVariant col1(eDB_Int);
-            CVariant col2(eDB_DateTime);
-
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
-
-            auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
-                );
-
-            bi->Bind(1, &col1);
-            bi->Bind(2, &col2);
-
-            col1 = 1;
-            col2 = value;
-
-            bi->AddRow();
-            bi->Complete();
-
-            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
-            int nRows = auto_stmt->GetRowCount();
-            BOOST_CHECK_EQUAL(nRows, 1);
-        }
-
-        // Retrieve data ...
-        {
-            sql = "SELECT * FROM #test_bcp_datetime";
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
-
-            const CVariant& value2 = rs->GetVariant(2);
-
-            BOOST_CHECK( !value2.IsNull() );
-
-            const CTime& dt_value2 = value2.GetCTime();
-            BOOST_CHECK( !dt_value2.IsEmpty() );
-            CTime dt_value3 = value.GetCTime();
-            BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
-
-            // Tracing ...
-            if (dt_value2.AsString() != dt_value3.AsString()) {
-                cout << "dt_value2 nanoseconds = " << dt_value2.NanoSecond()
-                    << " dt_value3 nanoseconds = " << dt_value3.NanoSecond()
-                    << endl;
-            }
-
-            // Failed for some reason ...
-            // BOOST_CHECK(dt_value2 == dt_value);
-        }
-
-        // Insert NULL data using parameters ...
-        {
-            CVariant col1(eDB_Int);
-            CVariant col2(eDB_DateTime);
-
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
-
-            auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
-                );
-
-            bi->Bind(1, &col1);
-            bi->Bind(2, &col2);
-
-            col1 = 1;
-
-            bi->AddRow();
-            bi->Complete();
-
-            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
-            int nRows = auto_stmt->GetRowCount();
-            BOOST_CHECK_EQUAL(nRows, 1);
-        }
-
-        // Retrieve data ...
-        {
-            sql = "SELECT * FROM #test_bcp_datetime";
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
-
-            const CVariant& value2 = rs->GetVariant(2);
-
-            BOOST_CHECK( value2.IsNull() );
-        }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -1399,66 +1433,70 @@ CDBAPIUnitTest::Test_UNIQUE(void)
     string sql;
     CVariant value(eDB_VarBinary, 16);
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Initialization ...
-    {
-        sql =
-            "CREATE TABLE #test_unique ( \n"
-            "   id INT , \n"
-            "   unique_field UNIQUEIDENTIFIER DEFAULT NEWID() \n"
-            ") \n";
+        // Initialization ...
+        {
+            sql =
+                "CREATE TABLE #test_unique ( \n"
+                "   id INT , \n"
+                "   unique_field UNIQUEIDENTIFIER DEFAULT NEWID() \n"
+                ") \n";
 
-        auto_stmt->ExecuteUpdate( sql );
+            auto_stmt->ExecuteUpdate( sql );
 
-        sql = "INSERT INTO #test_unique(id) VALUES(1)";
+            sql = "INSERT INTO #test_unique(id) VALUES(1)";
 
-        auto_stmt->ExecuteUpdate( sql );
-    }
+            auto_stmt->ExecuteUpdate( sql );
+        }
 
-    // Retrieve data ...
-    {
-        sql = "SELECT * FROM #test_unique";
+        // Retrieve data ...
+        {
+            sql = "SELECT * FROM #test_unique";
 
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                while ( rs->Next() ) {
-                    value = rs->GetVariant(2);
-                    string str_value = value.GetString();
-                    string str_value2 = str_value;
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    while ( rs->Next() ) {
+                        value = rs->GetVariant(2);
+                        string str_value = value.GetString();
+                        string str_value2 = str_value;
+                    }
+                }
+            }
+        }
+
+        // Insert retrieved data back into the table ...
+        {
+            auto_stmt->SetParam( value, "@guid" );
+
+            sql = "INSERT INTO #test_unique(id, unique_field) VALUES(2, @guid)";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Retrieve data again ...
+        {
+            sql = "SELECT * FROM #test_unique";
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    while ( rs->Next() ) {
+                        const CVariant& cur_value = rs->GetVariant(2);
+
+                        BOOST_CHECK( !cur_value.IsNull() );
+                    }
                 }
             }
         }
     }
-
-    // Insert retrieved data back into the table ...
-    {
-        auto_stmt->SetParam( value, "@guid" );
-
-        sql = "INSERT INTO #test_unique(id, unique_field) VALUES(2, @guid)";
-
-        auto_stmt->ExecuteUpdate( sql );
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
-
-    // Retrieve data again ...
-    {
-        sql = "SELECT * FROM #test_unique";
-
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                while ( rs->Next() ) {
-                    const CVariant& cur_value = rs->GetVariant(2);
-
-                    BOOST_CHECK( !cur_value.IsNull() );
-                }
-            }
-        }
-    }
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1468,69 +1506,74 @@ CDBAPIUnitTest::Test_LOB(void)
     static char clob_value[] = "1234567890";
     string sql;
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Prepare data ...
-    {
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+        // Prepare data ...
+        {
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
 
-        // Insert data ...
-        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
-        sql += " VALUES(0, '')";
-        auto_stmt->ExecuteUpdate( sql );
+            // Insert data ...
+            sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
+            sql += " VALUES(0, '')";
+            auto_stmt->ExecuteUpdate( sql );
 
-        sql  = " SELECT text_field FROM " + GetTableName();
-        // sql += " FOR UPDATE OF text_field";
+            sql  = " SELECT text_field FROM " + GetTableName();
+            // sql += " FOR UPDATE OF text_field";
 
-        auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
 
-        // blobRs should be destroyed before auto_cursor ...
-        auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-        while(blobRs->Next()) {
-            ostream& out = auto_cursor->GetBlobOStream(1,
-                                                       sizeof(clob_value) - 1,
-                                                       eDisableLog);
-            out.write(clob_value, sizeof(clob_value) - 1);
-            out.flush();
+            // blobRs should be destroyed before auto_cursor ...
+            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            while(blobRs->Next()) {
+                ostream& out = auto_cursor->GetBlobOStream(1,
+                                                           sizeof(clob_value) - 1,
+                                                           eDisableLog);
+                out.write(clob_value, sizeof(clob_value) - 1);
+                out.flush();
+            }
+
+    //         auto_stmt->SendSql( sql );
+    //         while( auto_stmt->HasMoreResults() ) {
+    //             if( auto_stmt->HasRows() ) {
+    //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //                 while ( rs->Next() ) {
+    //                     ostream& out = rs->GetBlobOStream(sizeof(clob_value) - 1, eDisableLog);
+    //                     out.write(clob_value, sizeof(clob_value) - 1);
+    //                     out.flush();
+    //                 }
+    //             }
+    //         }
         }
 
-//         auto_stmt->SendSql( sql );
-//         while( auto_stmt->HasMoreResults() ) {
-//             if( auto_stmt->HasRows() ) {
-//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//                 while ( rs->Next() ) {
-//                     ostream& out = rs->GetBlobOStream(sizeof(clob_value) - 1, eDisableLog);
-//                     out.write(clob_value, sizeof(clob_value) - 1);
-//                     out.flush();
-//                 }
-//             }
-//         }
-    }
+        // Retrieve data ...
+        {
+            sql = "SELECT text_field FROM "+ GetTableName();
 
-    // Retrieve data ...
-    {
-        sql = "SELECT text_field FROM "+ GetTableName();
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    rs->BindBlobToVariant(true);
 
-                rs->BindBlobToVariant(true);
-
-                while ( rs->Next() ) {
-                    const CVariant& value = rs->GetVariant(1);
+                    while ( rs->Next() ) {
+                        const CVariant& value = rs->GetVariant(1);
 
 
-                    BOOST_CHECK( !value.IsNull() );
+                        BOOST_CHECK( !value.IsNull() );
 
-                    size_t blob_size = value.GetBlobSize();
-                    BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
-                    // Int8 value = rs->GetVariant(1).GetInt8();
+                        size_t blob_size = value.GetBlobSize();
+                        BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
+                        // Int8 value = rs->GetVariant(1).GetInt8();
+                    }
                 }
             }
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -1543,67 +1586,72 @@ CDBAPIUnitTest::Test_LOB2(void)
     string sql;
     enum {num_of_records = 10};
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Prepare data ...
-    {
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
-
-        // Insert data ...
-
-        // Insert empty CLOB.
+        // Prepare data ...
         {
-            sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
-            sql += " VALUES(0, '')";
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
 
-            for (int i = 0; i < num_of_records; ++i) {
-                auto_stmt->ExecuteUpdate( sql );
+            // Insert data ...
+
+            // Insert empty CLOB.
+            {
+                sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
+                sql += " VALUES(0, '')";
+
+                for (int i = 0; i < num_of_records; ++i) {
+                    auto_stmt->ExecuteUpdate( sql );
+                }
             }
-        }
 
-        // Update CLOB value.
-        {
-            sql  = " SELECT text_field FROM " + GetTableName();
-            // sql += " FOR UPDATE OF text_field";
+            // Update CLOB value.
+            {
+                sql  = " SELECT text_field FROM " + GetTableName();
+                // sql += " FOR UPDATE OF text_field";
 
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
 
-            // blobRs should be destroyed before auto_cursor ...
-            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-            while(blobRs->Next()) {
-                ostream& out =
-                    auto_cursor->GetBlobOStream(1,
-                                                sizeof(clob_value) - 1,
-                                                eDisableLog
-                                                );
-                out.write(clob_value, sizeof(clob_value) - 1);
-                out.flush();
-            }
-        }
-    }
-
-    // Retrieve data ...
-    {
-        sql = "SELECT text_field FROM "+ GetTableName();
-
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                rs->BindBlobToVariant(true);
-
-                while ( rs->Next() ) {
-                    const CVariant& value = rs->GetVariant(1);
-
-                    BOOST_CHECK( !value.IsNull() );
-
-                    size_t blob_size = value.GetBlobSize();
-                    BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
+                // blobRs should be destroyed before auto_cursor ...
+                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                while(blobRs->Next()) {
+                    ostream& out =
+                        auto_cursor->GetBlobOStream(1,
+                                                    sizeof(clob_value) - 1,
+                                                    eDisableLog
+                                                    );
+                    out.write(clob_value, sizeof(clob_value) - 1);
+                    out.flush();
                 }
             }
         }
+
+        // Retrieve data ...
+        {
+            sql = "SELECT text_field FROM "+ GetTableName();
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    rs->BindBlobToVariant(true);
+
+                    while ( rs->Next() ) {
+                        const CVariant& value = rs->GetVariant(1);
+
+                        BOOST_CHECK( !value.IsNull() );
+
+                        size_t blob_size = value.GetBlobSize();
+                        BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -1614,38 +1662,43 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
     string sql;
     enum { record_num = 100 };
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Prepare data ...
-    {
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
-    }
-
-    // Insert data ...
-    {
-        auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
-        CVariant col1(eDB_Int);
-        CVariant col2(eDB_Int);
-        CVariant col3(eDB_VarChar);
-        CVariant col4(eDB_Text);
-
-        bi->Bind(1, &col1);
-        bi->Bind(2, &col2);
-        bi->Bind(3, &col3);
-        bi->Bind(4, &col4);
-
-        for( int i = 0; i < record_num; ++i ) {
-            string im = NStr::IntToString(i);
-            col1 = i;
-            col2 = i;
-            col3 = im;
-            col4.Truncate();
-            col4.Append(im.c_str(), im.size());
-            bi->AddRow();
+        // Prepare data ...
+        {
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
         }
 
-        bi->Complete();
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_Int);
+            CVariant col3(eDB_VarChar);
+            CVariant col4(eDB_Text);
+
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
+            bi->Bind(3, &col3);
+            bi->Bind(4, &col4);
+
+            for( int i = 0; i < record_num; ++i ) {
+                string im = NStr::IntToString(i);
+                col1 = i;
+                col2 = i;
+                col3 = im;
+                col4.Truncate();
+                col4.Append(im.c_str(), im.size());
+                bi->AddRow();
+            }
+
+            bi->Complete();
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -1657,101 +1710,106 @@ CDBAPIUnitTest::Test_BlobStream(void)
     long data_len = 0;
     long write_data_len = 0;
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Prepare data ...
-    {
-        ostrstream out;
+        // Prepare data ...
+        {
+            ostrstream out;
 
-        for (int i = 0; i < test_size; ++i) {
-            out << i << " ";
+            for (int i = 0; i < test_size; ++i) {
+                out << i << " ";
+            }
+
+            data_len = out.pcount();
+            BOOST_CHECK(data_len > 0);
+
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+
+            // Insert data ...
+            sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
+            sql += " VALUES(0, '')";
+            auto_stmt->ExecuteUpdate( sql );
+
+            sql  = " SELECT text_field FROM " + GetTableName();
+
+            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+
+            // blobRs should be destroyed before auto_cursor ...
+            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+            while(blobRs->Next()) {
+                ostream& ostrm = auto_cursor->GetBlobOStream(1,
+                                                             data_len,
+                                                             eDisableLog);
+
+                ostrm.write(out.str(), data_len);
+                out.freeze(false);
+
+                BOOST_CHECK_EQUAL(ostrm.fail(), false);
+
+                ostrm.flush();
+
+                BOOST_CHECK_EQUAL(ostrm.fail(), false);
+                BOOST_CHECK_EQUAL(ostrm.good(), true);
+                // BOOST_CHECK_EQUAL(int(ostrm.tellp()), int(out.pcount()));
+            }
+
+            auto_stmt->SendSql( "SELECT datalength(text_field) FROM " +
+                                GetTableName() );
+
+            while (auto_stmt->HasMoreResults()) {
+                if (auto_stmt->HasRows()) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+                    write_data_len = rs->GetVariant(1).GetInt4();
+                    BOOST_CHECK_EQUAL( data_len, write_data_len );
+                    while (rs->Next()) {}
+                }
+            }
         }
 
-        data_len = out.pcount();
-        BOOST_CHECK(data_len > 0);
+        // Retrieve data ...
+        {
+            auto_stmt->ExecuteUpdate("set textsize 2000000");
 
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+            sql = "SELECT text_field FROM "+ GetTableName();
 
-        // Insert data ...
-        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
-        sql += " VALUES(0, '')";
-        auto_stmt->ExecuteUpdate( sql );
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-        sql  = " SELECT text_field FROM " + GetTableName();
+                    try {
+                        while (rs->Next()) {
+                            istream& strm = rs->GetBlobIStream();
+                            int j = 0;
+                            for (int i = 0; i < test_size; ++i) {
+                                strm >> j;
 
-        auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+                                // if (i == 5000) {
+                                //     DATABASE_DRIVER_ERROR( "Exception safety test.", 0 );
+                                // }
 
-        // blobRs should be destroyed before auto_cursor ...
-        auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-        while(blobRs->Next()) {
-            ostream& ostrm = auto_cursor->GetBlobOStream(1,
-                                                         data_len,
-                                                         eDisableLog);
-
-            ostrm.write(out.str(), data_len);
-            out.freeze(false);
-
-            BOOST_CHECK_EQUAL(ostrm.fail(), false);
-
-            ostrm.flush();
-
-            BOOST_CHECK_EQUAL(ostrm.fail(), false);
-            BOOST_CHECK_EQUAL(ostrm.good(), true);
-            // BOOST_CHECK_EQUAL(int(ostrm.tellp()), int(out.pcount()));
-        }
-
-        auto_stmt->SendSql( "SELECT datalength(text_field) FROM " +
-                            GetTableName() );
-
-        while (auto_stmt->HasMoreResults()) {
-            if (auto_stmt->HasRows()) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
-                write_data_len = rs->GetVariant(1).GetInt4();
-                BOOST_CHECK_EQUAL( data_len, write_data_len );
-                while (rs->Next()) {}
+                                BOOST_CHECK_EQUAL(strm.good(), true);
+                                BOOST_CHECK_EQUAL(strm.eof(), false);
+                                BOOST_CHECK_EQUAL(j, i);
+                            }
+                            long read_data_len = strm.tellg();
+                            // Calculate a trailing space.
+                            BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
+                        }
+                    }
+                    catch( const CDB_Exception& ) {
+                        rs->Close();
+                    }
+                }
             }
         }
     }
-
-    // Retrieve data ...
-    {
-        auto_stmt->ExecuteUpdate("set textsize 2000000");
-
-        sql = "SELECT text_field FROM "+ GetTableName();
-
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                try {
-                    while (rs->Next()) {
-                        istream& strm = rs->GetBlobIStream();
-                        int j = 0;
-                        for (int i = 0; i < test_size; ++i) {
-                            strm >> j;
-
-                            // if (i == 5000) {
-                            //     DATABASE_DRIVER_ERROR( "Exception safety test.", 0 );
-                            // }
-
-                            BOOST_CHECK_EQUAL(strm.good(), true);
-                            BOOST_CHECK_EQUAL(strm.eof(), false);
-                            BOOST_CHECK_EQUAL(j, i);
-                        }
-                        long read_data_len = strm.tellg();
-                        // Calculate a trailing space.
-                        BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
-                    }
-                }
-                catch( const CDB_Exception& ) {
-                    rs->Close();
-                }
-            }
-        }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -1761,76 +1819,81 @@ CDBAPIUnitTest::Test_GetTotalColumns(void)
 {
     string sql;
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Create table ...
-    {
-        sql =
-            "CREATE TABLE #Overlaps ( \n"
-            "   pairId int NOT NULL , \n"
-            "   overlapNum smallint NOT NULL , \n"
-            "   start1 int NOT NULL , \n"
-            "   start2 int NOT NULL , \n"
-            "   stop1 int NOT NULL , \n"
-            "   stop2 int NOT NULL , \n"
-            "   orient char (2) NOT NULL , \n"
-            "   gaps int NOT NULL , \n"
-            "   mismatches int NOT NULL , \n"
-            "   adjustedLen int NOT NULL , \n"
-            "   length int NOT NULL , \n"
-            "   contained tinyint NOT NULL , \n"
-            "   seq_align text  NULL , \n"
-            "   merged_sa char (1) NOT NULL , \n"
-            "   PRIMARY KEY  \n"
-            "   ( \n"
-            "       pairId, \n"
-            "       overlapNum \n"
-            "   ) \n"
-            ") \n";
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE #Overlaps ( \n"
+                "   pairId int NOT NULL , \n"
+                "   overlapNum smallint NOT NULL , \n"
+                "   start1 int NOT NULL , \n"
+                "   start2 int NOT NULL , \n"
+                "   stop1 int NOT NULL , \n"
+                "   stop2 int NOT NULL , \n"
+                "   orient char (2) NOT NULL , \n"
+                "   gaps int NOT NULL , \n"
+                "   mismatches int NOT NULL , \n"
+                "   adjustedLen int NOT NULL , \n"
+                "   length int NOT NULL , \n"
+                "   contained tinyint NOT NULL , \n"
+                "   seq_align text  NULL , \n"
+                "   merged_sa char (1) NOT NULL , \n"
+                "   PRIMARY KEY  \n"
+                "   ( \n"
+                "       pairId, \n"
+                "       overlapNum \n"
+                "   ) \n"
+                ") \n";
 
-        auto_stmt->ExecuteUpdate( sql );
-    }
+            auto_stmt->ExecuteUpdate( sql );
+        }
 
-    // Insert data into the table ...
-    {
-        sql =
-            "INSERT INTO #Overlaps VALUES( \n"
-            "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n"
-            "'Seq-align ::= { }', 'n')";
+        // Insert data into the table ...
+        {
+            sql =
+                "INSERT INTO #Overlaps VALUES( \n"
+                "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n"
+                "'Seq-align ::= { }', 'n')";
 
-        auto_stmt->ExecuteUpdate( sql );
-    }
+            auto_stmt->ExecuteUpdate( sql );
+        }
 
-    // Actual check ...
-    {
-        sql = "SELECT * FROM #Overlaps";
+        // Actual check ...
+        {
+            sql = "SELECT * FROM #Overlaps";
 
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                int col_num = -2;
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    int col_num = -2;
 
-//                 switch ( rs->GetResultType() ) {
-//                 case eDB_RowResult:
-//                     col_num = rs->GetColumnNo();
-//                     break;
-//                 case eDB_ParamResult:
-//                     col_num = rs->GetColumnNo();
-//                     break;
-//                 case eDB_StatusResult:
-//                     col_num = rs->GetColumnNo();
-//                     break;
-//                 case eDB_ComputeResult:
-//                 case eDB_CursorResult:
-//                     col_num = rs->GetColumnNo();
-//                     break;
-//                 }
+    //                 switch ( rs->GetResultType() ) {
+    //                 case eDB_RowResult:
+    //                     col_num = rs->GetColumnNo();
+    //                     break;
+    //                 case eDB_ParamResult:
+    //                     col_num = rs->GetColumnNo();
+    //                     break;
+    //                 case eDB_StatusResult:
+    //                     col_num = rs->GetColumnNo();
+    //                     break;
+    //                 case eDB_ComputeResult:
+    //                 case eDB_CursorResult:
+    //                     col_num = rs->GetColumnNo();
+    //                     break;
+    //                 }
 
-                col_num = rs->GetTotalColumns();
-                BOOST_CHECK_EQUAL( 14, col_num );
+                    col_num = rs->GetTotalColumns();
+                    BOOST_CHECK_EQUAL( 14, col_num );
+                }
             }
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -1841,9 +1904,14 @@ BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
     string msg(8000, 'A');
     CVariant col2(col);
 
-    bi->Bind(2, &col2);
-    col2 = msg;
-    bi->AddRow();
+    try {
+        bi->Bind(2, &col2);
+        col2 = msg;
+        bi->AddRow();
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 void
@@ -1862,77 +1930,82 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
     string sql;
     enum {column_size = 32, data_size = 64};
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-    // Initialize ...
-    {
-        sql =
-            "CREATE TABLE #test_bulk_overflow ( \n"
-            "   vc32_field VARCHAR(32) \n"
-            ") \n";
-
-        auto_stmt->ExecuteUpdate( sql );
-    }
-
-    // Insert data ...
-    {
-        bool exception_catched = false;
-        auto_ptr<IBulkInsert> bi(
-            m_Conn->GetBulkInsert("#test_bulk_overflow", 1)
-            );
-
-        CVariant col1(eDB_VarChar, data_size);
-
-        bi->Bind(1, &col1);
-
-        col1 = string(data_size, 'O');
-
-        // Either AddRow() or Complete() should throw an exception.
-        try
+        // Initialize ...
         {
-            bi->AddRow();
+            sql =
+                "CREATE TABLE #test_bulk_overflow ( \n"
+                "   vc32_field VARCHAR(32) \n"
+                ") \n";
 
-        } catch(const CDB_Exception&)
-        {
-            exception_catched = true;
+            auto_stmt->ExecuteUpdate( sql );
         }
 
-        try
+        // Insert data ...
         {
-            bi->Complete();
-        } catch(const CDB_Exception&)
-        {
-            if ( exception_catched ) {
-                throw;
-            } else {
+            bool exception_catched = false;
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#test_bulk_overflow", 1)
+                );
+
+            CVariant col1(eDB_VarChar, data_size);
+
+            bi->Bind(1, &col1);
+
+            col1 = string(data_size, 'O');
+
+            // Either AddRow() or Complete() should throw an exception.
+            try
+            {
+                bi->AddRow();
+
+            } catch(const CDB_Exception&)
+            {
                 exception_catched = true;
+            }
+
+            try
+            {
+                bi->Complete();
+            } catch(const CDB_Exception&)
+            {
+                if ( exception_catched ) {
+                    throw;
+                } else {
+                    exception_catched = true;
+                }
+            }
+
+            if ( !exception_catched ) {
+                BOOST_FAIL("Exception CDB_ClientEx expected.");
             }
         }
 
-        if ( !exception_catched ) {
-            BOOST_FAIL("Exception CDB_ClientEx expected.");
-        }
+        // Retrieve data ...
+    //     {
+    //         sql = "SELECT * FROM #test_bulk_overflow";
+    //
+    //         auto_stmt->SendSql( sql );
+    //         BOOST_CHECK( auto_stmt->HasMoreResults() );
+    //         BOOST_CHECK( !auto_stmt->HasRows() );
+    //         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //
+    //         BOOST_CHECK( rs.get() );
+    //         BOOST_CHECK( rs->Next() );
+    //
+    //         const CVariant& value = rs->GetVariant(1);
+    //
+    //         BOOST_CHECK( !value.IsNull() );
+    //
+    //         string str_value = value.GetString();
+    //         BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
+    //     }
     }
-
-    // Retrieve data ...
-//     {
-//         sql = "SELECT * FROM #test_bulk_overflow";
-//
-//         auto_stmt->SendSql( sql );
-//         BOOST_CHECK( auto_stmt->HasMoreResults() );
-//         BOOST_CHECK( !auto_stmt->HasRows() );
-//         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//
-//         BOOST_CHECK( rs.get() );
-//         BOOST_CHECK( rs->Next() );
-//
-//         const CVariant& value = rs->GetVariant(1);
-//
-//         BOOST_CHECK( !value.IsNull() );
-//
-//         string str_value = value.GetString();
-//         BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
-//     }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 void
@@ -1940,101 +2013,39 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 {
     string sql;
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
 
-    // VARBINARY ...
-    {
-        enum { num_of_tests = 10 };
-        const char char_val('2');
-
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM #bin_bulk_insert_table" );
-
-        // Insert data ...
+        // VARBINARY ...
         {
-            auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#bin_bulk_insert_table", 2)
-                );
+            enum { num_of_tests = 10 };
+            const char char_val('2');
 
-            CVariant col1(eDB_Int);
-            CVariant col2(eDB_LongBinary, m_max_varchar_size);
-
-            bi->Bind(1, &col1);
-            bi->Bind(2, &col2);
-
-            for(int i = 0; i < num_of_tests; ++i ) {
-                int int_value = m_max_varchar_size / num_of_tests * i;
-                string str_val(int_value , char_val);
-
-                col1 = int_value;
-                col2 = CVariant::LongBinary(m_max_varchar_size,
-                                            str_val.c_str(),
-                                            str_val.size()
-                                            );
-                bi->AddRow();
-            }
-            bi->Complete();
-        }
-
-        // Retrieve data ...
-        {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-            sql  = " SELECT id, vb8000_field FROM #bin_bulk_insert_table";
-            sql += " ORDER BY id";
-
-            auto_stmt->SendSql( sql );
-
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-            BOOST_CHECK( rs.get() != NULL );
-
-            for(int i = 0; i < num_of_tests; ++i ) {
-                BOOST_CHECK( rs->Next() );
-
-                int int_value = m_max_varchar_size / num_of_tests * i;
-                Int4 id = rs->GetVariant(1).GetInt4();
-                string vb8000_value = rs->GetVariant(2).GetString();
-
-                BOOST_CHECK_EQUAL( int_value, id );
-                BOOST_CHECK_EQUAL(string::size_type(int_value),
-                                  vb8000_value.size()
-                                  );
-            }
-
-            // Dump results ...
-            DumpResults( auto_stmt.get() );
-        }
-    }
-
-    // INT, BIGINT
-    {
-
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
-
-        // INT collumn ...
-        {
-            enum { num_of_tests = 8 };
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM #bin_bulk_insert_table" );
 
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bulk_insert_table", 3)
+                    m_Conn->GetBulkInsert("#bin_bulk_insert_table", 2)
                     );
 
                 CVariant col1(eDB_Int);
-                CVariant col2(eDB_Int);
+                CVariant col2(eDB_LongBinary, m_max_varchar_size);
 
                 bi->Bind(1, &col1);
-                bi->Bind(3, &col2);
+                bi->Bind(2, &col2);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
-                    col1 = i;
-                    Int4 value = Int4( 1 ) << (i * 4);
-                    col2 = value;
+                    int int_value = m_max_varchar_size / num_of_tests * i;
+                    string str_val(int_value , char_val);
+
+                    col1 = int_value;
+                    col2 = CVariant::LongBinary(m_max_varchar_size,
+                                                str_val.c_str(),
+                                                str_val.size()
+                                                );
                     bi->AddRow();
                 }
                 bi->Complete();
@@ -2042,7 +2053,9 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
             // Retrieve data ...
             {
-                sql  = " SELECT int_field FROM #bulk_insert_table";
+                auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+                sql  = " SELECT id, vb8000_field FROM #bin_bulk_insert_table";
                 sql += " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
@@ -2054,9 +2067,15 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     BOOST_CHECK( rs->Next() );
-                    Int4 value = rs->GetVariant(1).GetInt4();
-                    Int4 expected_value = Int4( 1 ) << (i * 4);
-                    BOOST_CHECK_EQUAL( expected_value, value );
+
+                    int int_value = m_max_varchar_size / num_of_tests * i;
+                    Int4 id = rs->GetVariant(1).GetInt4();
+                    string vb8000_value = rs->GetVariant(2).GetString();
+
+                    BOOST_CHECK_EQUAL( int_value, id );
+                    BOOST_CHECK_EQUAL(string::size_type(int_value),
+                                      vb8000_value.size()
+                                      );
                 }
 
                 // Dump results ...
@@ -2064,236 +2083,295 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             }
         }
 
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
-
-        // BIGINT collumn ...
+        // INT, BIGINT
         {
-            // There is a problem at least with the ftds driver ...
-            // enum { num_of_tests = 16 };
-            enum { num_of_tests = 14 };
 
-            // Insert data ...
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+
+            // INT collumn ...
             {
-                auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#bulk_insert_table", 4)
+                enum { num_of_tests = 8 };
+
+                // Insert data ...
+                {
+                    auto_ptr<IBulkInsert> bi(
+                        m_Conn->GetBulkInsert("#bulk_insert_table", 3)
+                        );
+
+                    CVariant col1(eDB_Int);
+                    CVariant col2(eDB_Int);
+
+                    bi->Bind(1, &col1);
+                    bi->Bind(3, &col2);
+
+                    for(int i = 0; i < num_of_tests; ++i ) {
+                        col1 = i;
+                        Int4 value = Int4( 1 ) << (i * 4);
+                        col2 = value;
+                        bi->AddRow();
+                    }
+                    bi->Complete();
+                }
+
+                // Retrieve data ...
+                {
+                    sql  = " SELECT int_field FROM #bulk_insert_table";
+                    sql += " ORDER BY id";
+
+                    auto_stmt->SendSql( sql );
+
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
+
+                    for(int i = 0; i < num_of_tests; ++i ) {
+                        BOOST_CHECK( rs->Next() );
+                        Int4 value = rs->GetVariant(1).GetInt4();
+                        Int4 expected_value = Int4( 1 ) << (i * 4);
+                        BOOST_CHECK_EQUAL( expected_value, value );
+                    }
+
+                    // Dump results ...
+                    DumpResults( auto_stmt.get() );
+                }
+            }
+
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+
+            // BIGINT collumn ...
+            {
+                // There is a problem at least with the ftds driver ...
+                // enum { num_of_tests = 16 };
+                enum { num_of_tests = 14 };
+
+                // Insert data ...
+                {
+                    auto_ptr<IBulkInsert> bi(
+                        m_Conn->GetBulkInsert("#bulk_insert_table", 4)
+                        );
+
+                    CVariant col1(eDB_Int);
+                    CVariant col2(eDB_BigInt);
+
+                    bi->Bind(1, &col1);
+                    bi->Bind(4, &col2);
+
+                    for(int i = 0; i < num_of_tests; ++i ) {
+                        col1 = i;
+                        Int8 value = Int8( 1 ) << (i * 4);
+                        col2 = value;
+                        bi->AddRow();
+                    }
+                    bi->Complete();
+                }
+
+                // Retrieve data ...
+                {
+                    sql  = " SELECT bigint_field FROM #bulk_insert_table";
+                    sql += " ORDER BY id";
+
+                    auto_stmt->SendSql( sql );
+
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
+
+                    for(int i = 0; i < num_of_tests; ++i ) {
+                        BOOST_CHECK( rs->Next() );
+                        Int8 value = rs->GetVariant(1).GetInt8();
+                        Int8 expected_value = Int8( 1 ) << (i * 4);
+                        BOOST_CHECK_EQUAL( expected_value, value );
+                    }
+
+                    // Dump results ...
+                    DumpResults( auto_stmt.get() );
+                }
+            }
+        }
+
+        // Yet another BIGINT test (and more) ...
+        {
+            auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
+
+            // Create table ...
+            {
+                stmt->ExecuteUpdate(
+                    // "create table #__blki_test ( name char(32) not null, value bigint null )" );
+                    "create table #__blki_test ( name char(32), value bigint null )"
+                    );
+                stmt->Close();
+            }
+
+            // First test ...
+            {
+                auto_ptr<IBulkInsert> blki(
+                    m_Conn->CreateBulkInsert("#__blki_test", 2)
                     );
 
-                CVariant col1(eDB_Int);
+                CVariant col1(eDB_Char,32);
                 CVariant col2(eDB_BigInt);
 
+                blki->Bind(1, &col1);
+                blki->Bind(2, &col2);
+
+                col1 = "Hello-1";
+                col2 = Int8( 123 );
+                blki->AddRow();
+
+                col1 = "Hello-2";
+                col2 = Int8( 1234 );
+                blki->AddRow();
+
+                col1 = "Hello-3";
+                col2 = Int8( 12345 );
+                blki->AddRow();
+
+                col1 = "Hello-4";
+                col2 = Int8( 123456 );
+                blki->AddRow();
+
+                blki->Complete();
+                blki->Close();
+            }
+
+            // Second test ...
+            // Overflow test.
+            // !!! Current behavior is not defined properly and not consistent between drivers.
+    //         {
+    //             auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+    //
+    //             CVariant col1(eDB_Char,64);
+    //             CVariant col2(eDB_BigInt);
+    //
+    //             blki->Bind(1, &col1);
+    //             blki->Bind(2, &col2);
+    //
+    //             string name(8000, 'A');
+    //             col1 = name;
+    //             col2 = Int8( 123 );
+    //             blki->AddRow();
+    //         }
+        }
+
+        // VARCHAR ...
+        {
+            int num_of_tests;
+
+            if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+                num_of_tests = 7;
+            } else {
+                // Sybase
+                num_of_tests = 3;
+            }
+
+            // Clean table ...
+            auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+
+            // Insert data ...
+            {
+                auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#bulk_insert_table", 2)
+                    );
+
+                CVariant col1(eDB_Int);
+
                 bi->Bind(1, &col1);
-                bi->Bind(4, &col2);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     col1 = i;
-                    Int8 value = Int8( 1 ) << (i * 4);
-                    col2 = value;
-                    bi->AddRow();
+                    switch (i) {
+                    case 0:
+                        BulkAddRow(bi, CVariant(eDB_VarChar));
+                        break;
+                    case 1:
+                        BulkAddRow(bi, CVariant(eDB_LongChar, m_max_varchar_size));
+                        break;
+                    case 2:
+                        BulkAddRow(bi, CVariant(eDB_LongChar, 1024));
+                        break;
+                    case 3:
+                        BulkAddRow(bi, CVariant(eDB_LongChar, 4112));
+                        break;
+                    case 4:
+                        BulkAddRow(bi, CVariant(eDB_LongChar, 4113));
+                        break;
+                    case 5:
+                        BulkAddRow(bi, CVariant(eDB_LongChar, 4138));
+                        break;
+                    case 6:
+                        BulkAddRow(bi, CVariant(eDB_LongChar, 4139));
+                        break;
+                    };
+
                 }
                 bi->Complete();
             }
 
             // Retrieve data ...
             {
-                sql  = " SELECT bigint_field FROM #bulk_insert_table";
+                sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
                 sql += " ORDER BY id";
 
                 auto_stmt->SendSql( sql );
+                while( auto_stmt->HasMoreResults() ) {
+                    if( auto_stmt->HasRows() ) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK( rs.get() != NULL );
+                        // Retrieve results, if any
+                        while( rs->Next() ) {
+                            Int4 i = rs->GetVariant(1).GetInt4();
+                            string col1 = rs->GetVariant(2).GetString();
 
-                for(int i = 0; i < num_of_tests; ++i ) {
-                    BOOST_CHECK( rs->Next() );
-                    Int8 value = rs->GetVariant(1).GetInt8();
-                    Int8 expected_value = Int8( 1 ) << (i * 4);
-                    BOOST_CHECK_EQUAL( expected_value, value );
-                }
-
-                // Dump results ...
-                DumpResults( auto_stmt.get() );
-            }
-        }
-    }
-
-    // Yet another BIGINT test (and more) ...
-    {
-        auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
-
-        // Create table ...
-        {
-            stmt->ExecuteUpdate(
-                // "create table #__blki_test ( name char(32) not null, value bigint null )" );
-                "create table #__blki_test ( name char(32), value bigint null )"
-                );
-            stmt->Close();
-        }
-
-        // First test ...
-        {
-            auto_ptr<IBulkInsert> blki(
-                m_Conn->CreateBulkInsert("#__blki_test", 2)
-                );
-
-            CVariant col1(eDB_Char,32);
-            CVariant col2(eDB_BigInt);
-
-            blki->Bind(1, &col1);
-            blki->Bind(2, &col2);
-
-            col1 = "Hello-1";
-            col2 = Int8( 123 );
-            blki->AddRow();
-
-            col1 = "Hello-2";
-            col2 = Int8( 1234 );
-            blki->AddRow();
-
-            col1 = "Hello-3";
-            col2 = Int8( 12345 );
-            blki->AddRow();
-
-            col1 = "Hello-4";
-            col2 = Int8( 123456 );
-            blki->AddRow();
-
-            blki->Complete();
-            blki->Close();
-        }
-
-        // Second test ...
-        // Overflow test.
-        // !!! Current behavior is not defined properly and not consistent between drivers.
-//         {
-//             auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
-//
-//             CVariant col1(eDB_Char,64);
-//             CVariant col2(eDB_BigInt);
-//
-//             blki->Bind(1, &col1);
-//             blki->Bind(2, &col2);
-//
-//             string name(8000, 'A');
-//             col1 = name;
-//             col2 = Int8( 123 );
-//             blki->AddRow();
-//         }
-    }
-
-    // VARCHAR ...
-    {
-        int num_of_tests;
-
-        if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
-            num_of_tests = 7;
-        } else {
-            // Sybase
-            num_of_tests = 3;
-        }
-
-        // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
-
-        // Insert data ...
-        {
-            auto_ptr<IBulkInsert> bi(
-                m_Conn->GetBulkInsert("#bulk_insert_table", 2)
-                );
-
-            CVariant col1(eDB_Int);
-
-            bi->Bind(1, &col1);
-
-            for(int i = 0; i < num_of_tests; ++i ) {
-                col1 = i;
-                switch (i) {
-                case 0:
-                    BulkAddRow(bi, CVariant(eDB_VarChar));
-                    break;
-                case 1:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, m_max_varchar_size));
-                    break;
-                case 2:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, 1024));
-                    break;
-                case 3:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, 4112));
-                    break;
-                case 4:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, 4113));
-                    break;
-                case 5:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, 4138));
-                    break;
-                case 6:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, 4139));
-                    break;
-                };
-
-            }
-            bi->Complete();
-        }
-
-        // Retrieve data ...
-        {
-            sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
-            sql += " ORDER BY id";
-
-            auto_stmt->SendSql( sql );
-            while( auto_stmt->HasMoreResults() ) {
-                if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-                    // Retrieve results, if any
-                    while( rs->Next() ) {
-                        Int4 i = rs->GetVariant(1).GetInt4();
-                        string col1 = rs->GetVariant(2).GetString();
-
-                        switch (i) {
-                        case 0:
-                            BOOST_CHECK_EQUAL(col1.size(),
-                                              string::size_type(255)
-                                              );
-                            break;
-                        case 1:
-                            BOOST_CHECK_EQUAL(
-                                col1.size(),
-                                string::size_type(m_max_varchar_size)
-                                );
-                            break;
-                        case 2:
-                            BOOST_CHECK_EQUAL(col1.size(),
-                                              string::size_type(1024)
-                                              );
-                            break;
-                        case 3:
-                            BOOST_CHECK_EQUAL(col1.size(),
-                                              string::size_type(4112)
-                                              );
-                            break;
-                        case 4:
-                            BOOST_CHECK_EQUAL(col1.size(),
-                                              string::size_type(4113)
-                                              );
-                            break;
-                        case 5:
-                            BOOST_CHECK_EQUAL(col1.size(),
-                                              string::size_type(4138)
-                                              );
-                            break;
-                        case 6:
-                            BOOST_CHECK_EQUAL(col1.size(),
-                                              string::size_type(4139)
-                                              );
-                            break;
-                        };
+                            switch (i) {
+                            case 0:
+                                BOOST_CHECK_EQUAL(col1.size(),
+                                                  string::size_type(255)
+                                                  );
+                                break;
+                            case 1:
+                                BOOST_CHECK_EQUAL(
+                                    col1.size(),
+                                    string::size_type(m_max_varchar_size)
+                                    );
+                                break;
+                            case 2:
+                                BOOST_CHECK_EQUAL(col1.size(),
+                                                  string::size_type(1024)
+                                                  );
+                                break;
+                            case 3:
+                                BOOST_CHECK_EQUAL(col1.size(),
+                                                  string::size_type(4112)
+                                                  );
+                                break;
+                            case 4:
+                                BOOST_CHECK_EQUAL(col1.size(),
+                                                  string::size_type(4113)
+                                                  );
+                                break;
+                            case 5:
+                                BOOST_CHECK_EQUAL(col1.size(),
+                                                  string::size_type(4138)
+                                                  );
+                                break;
+                            case 6:
+                                BOOST_CHECK_EQUAL(col1.size(),
+                                                  string::size_type(4139)
+                                                  );
+                                break;
+                            };
+                        }
                     }
                 }
             }
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -2305,57 +2383,62 @@ CDBAPIUnitTest::Test_Variant2(void)
     const size_t size_step = 10;
     string sql;
 
-    // Initialize a test table ...
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        // Initialize a test table ...
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        // Drop all records ...
-        sql  = " DELETE FROM " + GetTableName();
-        auto_stmt->ExecuteUpdate(sql);
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
 
-        // Insert new vc1000_field records ...
-        sql  = " INSERT INTO " + GetTableName();
-        sql += "(int_field, vc1000_field) VALUES(@id, @val) \n";
+            // Insert new vc1000_field records ...
+            sql  = " INSERT INTO " + GetTableName();
+            sql += "(int_field, vc1000_field) VALUES(@id, @val) \n";
 
-        string::size_type str_size(10);
-        char char_val('1');
-        for (long i = 0; i < rec_num; ++i) {
-            string str_val(str_size, char_val);
-            str_size *= size_step;
-            char_val += 1;
+            string::size_type str_size(10);
+            char char_val('1');
+            for (long i = 0; i < rec_num; ++i) {
+                string str_val(str_size, char_val);
+                str_size *= size_step;
+                char_val += 1;
 
-            auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-            auto_stmt->SetParam(
-                CVariant::LongChar(str_val.c_str(), str_val.size()),
-                "@val"
-                );
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
+                auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                auto_stmt->SetParam(
+                    CVariant::LongChar(str_val.c_str(), str_val.size()),
+                    "@val"
+                    );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+            }
         }
-    }
 
-    // Test VarChar ...
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        // Test VarChar ...
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        sql  = "SELECT vc1000_field FROM " + GetTableName();
-        sql += " ORDER BY int_field";
+            sql  = "SELECT vc1000_field FROM " + GetTableName();
+            sql += " ORDER BY int_field";
 
-        string::size_type str_size(10);
-        auto_stmt->SendSql( sql );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            string::size_type str_size(10);
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-                // Retrieve results, if any
-                while( rs->Next() ) {
-                    BOOST_CHECK_EQUAL(false, rs->GetVariant(1).IsNull());
-                    string col1 = rs->GetVariant(1).GetString();
-                    BOOST_CHECK(col1.size() == str_size || col1.size() == 255);
-                    str_size *= size_step;
+                    // Retrieve results, if any
+                    while( rs->Next() ) {
+                        BOOST_CHECK_EQUAL(false, rs->GetVariant(1).IsNull());
+                        string col1 = rs->GetVariant(1).GetString();
+                        BOOST_CHECK(col1.size() == str_size || col1.size() == 255);
+                        str_size *= size_step;
+                    }
                 }
             }
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -2366,208 +2449,212 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
     const string message("Very dangerous message");
     const int msgnumber = 67890;
 
-    {
-        const string server_name("server_name");
-        const string user_name("user_name");
-        const int severity = 12345;
+    try {
+        {
+            const string server_name("server_name");
+            const string user_name("user_name");
+            const int severity = 12345;
 
-        CDB_Exception ex(
-            kBlankCompileInfo,
-            NULL,
-            CDB_Exception::eMulti,
-            message,
-            eDiag_Trace,
-            msgnumber);
+            CDB_Exception ex(
+                kBlankCompileInfo,
+                NULL,
+                CDB_Exception::eMulti,
+                message,
+                eDiag_Trace,
+                msgnumber);
 
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(severity);
+            ex.SetServerName(server_name);
+            ex.SetUserName(user_name);
+            ex.SetSybaseSeverity(severity);
 
-        BOOST_CHECK_EQUAL(server_name, ex.GetServerName());
-        BOOST_CHECK_EQUAL(user_name, ex.GetUserName());
-        BOOST_CHECK_EQUAL(severity, ex.GetSybaseSeverity());
+            BOOST_CHECK_EQUAL(server_name, ex.GetServerName());
+            BOOST_CHECK_EQUAL(user_name, ex.GetUserName());
+            BOOST_CHECK_EQUAL(severity, ex.GetSybaseSeverity());
 
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Trace, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
+            BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Trace, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
 
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
 
-        BOOST_CHECK_EQUAL(server_name, auto_ex->GetServerName());
-        BOOST_CHECK_EQUAL(user_name, auto_ex->GetUserName());
-        BOOST_CHECK_EQUAL(severity, auto_ex->GetSybaseSeverity());
+            BOOST_CHECK_EQUAL(server_name, auto_ex->GetServerName());
+            BOOST_CHECK_EQUAL(user_name, auto_ex->GetUserName());
+            BOOST_CHECK_EQUAL(severity, auto_ex->GetSybaseSeverity());
 
-        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Trace, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, auto_ex->Type());
+            BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Trace, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eMulti, auto_ex->Type());
+        }
+
+        {
+            CDB_DSEx ex(
+                kBlankCompileInfo,
+                NULL,
+                message,
+                eDiag_Fatal,
+                msgnumber);
+
+            BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Fatal, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eDS, ex.Type());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Fatal, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eDS, auto_ex->Type());
+        }
+
+        {
+            const string proc_name("proc_name");
+            const int proc_line = 12345;
+
+            CDB_RPCEx ex(
+                kBlankCompileInfo,
+                NULL,
+                message,
+                eDiag_Critical,
+                msgnumber,
+                proc_name,
+                proc_line);
+
+            BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Critical, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eRPC, ex.Type());
+            BOOST_CHECK_EQUAL(proc_name, ex.ProcName());
+            BOOST_CHECK_EQUAL(proc_line, ex.ProcLine());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Critical, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eRPC, auto_ex->Type());
+        }
+
+        {
+            const string sql_state("sql_state");
+            const int batch_line = 12345;
+
+            CDB_SQLEx ex(
+                kBlankCompileInfo,
+                NULL,
+                message,
+                eDiag_Error,
+                msgnumber,
+                sql_state,
+                batch_line);
+
+            BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.GetErrCode());
+            BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.Type());
+            BOOST_CHECK_EQUAL(sql_state, ex.SqlState());
+            BOOST_CHECK_EQUAL(batch_line, ex.BatchLine());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eSQL, auto_ex->Type());
+        }
+
+        {
+            CDB_DeadlockEx ex(
+                kBlankCompileInfo,
+                NULL,
+                message);
+
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, ex.Type());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, auto_ex->Type());
+        }
+
+        {
+            CDB_TimeoutEx ex(
+                kBlankCompileInfo,
+                NULL,
+                message,
+                msgnumber);
+
+            BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, ex.Type());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, auto_ex->Type());
+        }
+
+        {
+            CDB_ClientEx ex(
+                kBlankCompileInfo,
+                NULL,
+                message,
+                eDiag_Warning,
+                msgnumber);
+
+            BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Warning, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eClient, ex.Type());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Warning, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eClient, auto_ex->Type());
+        }
+
+        {
+            CDB_MultiEx ex(
+                kBlankCompileInfo,
+                NULL);
+
+            BOOST_CHECK_EQUAL(0, ex.GetDBErrCode());
+            BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(kEmptyStr, ex.GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
+
+            //
+            auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+            BOOST_CHECK_EQUAL(0, auto_ex->GetDBErrCode());
+            BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(kEmptyStr, auto_ex->GetMsg());
+            BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
+            BOOST_CHECK_EQUAL(CDB_Exception::eMulti, auto_ex->Type());
+        }
     }
-
-    {
-        CDB_DSEx ex(
-            kBlankCompileInfo,
-            NULL,
-            message,
-            eDiag_Fatal,
-            msgnumber);
-
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Fatal, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eDS, ex.Type());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Fatal, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eDS, auto_ex->Type());
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
-
-    {
-        const string proc_name("proc_name");
-        const int proc_line = 12345;
-
-        CDB_RPCEx ex(
-            kBlankCompileInfo,
-            NULL,
-            message,
-            eDiag_Critical,
-            msgnumber,
-            proc_name,
-            proc_line);
-
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Critical, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eRPC, ex.Type());
-        BOOST_CHECK_EQUAL(proc_name, ex.ProcName());
-        BOOST_CHECK_EQUAL(proc_line, ex.ProcLine());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Critical, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eRPC, auto_ex->Type());
-    }
-
-    {
-        const string sql_state("sql_state");
-        const int batch_line = 12345;
-
-        CDB_SQLEx ex(
-            kBlankCompileInfo,
-            NULL,
-            message,
-            eDiag_Error,
-            msgnumber,
-            sql_state,
-            batch_line);
-
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.GetErrCode());
-        BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.Type());
-        BOOST_CHECK_EQUAL(sql_state, ex.SqlState());
-        BOOST_CHECK_EQUAL(batch_line, ex.BatchLine());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eSQL, auto_ex->Type());
-    }
-
-    {
-        CDB_DeadlockEx ex(
-            kBlankCompileInfo,
-            NULL,
-            message);
-
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, ex.Type());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, auto_ex->Type());
-    }
-
-    {
-        CDB_TimeoutEx ex(
-            kBlankCompileInfo,
-            NULL,
-            message,
-            msgnumber);
-
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, ex.Type());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, auto_ex->Type());
-    }
-
-    {
-        CDB_ClientEx ex(
-            kBlankCompileInfo,
-            NULL,
-            message,
-            eDiag_Warning,
-            msgnumber);
-
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Warning, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eClient, ex.Type());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Warning, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eClient, auto_ex->Type());
-    }
-
-    {
-        CDB_MultiEx ex(
-            kBlankCompileInfo,
-            NULL);
-
-        BOOST_CHECK_EQUAL(0, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(kEmptyStr, ex.GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
-
-        //
-        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
-
-        BOOST_CHECK_EQUAL(0, auto_ex->GetDBErrCode());
-        BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(kEmptyStr, auto_ex->GetMsg());
-        BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
-        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, auto_ex->Type());
-    }
-
 }
 
 
@@ -2615,114 +2702,119 @@ CDBAPIUnitTest::Test_Cursor(void)
     const long rec_num = 2;
     string sql;
 
-    // Initialize a test table ...
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        // Drop all records ...
-        sql  = " DELETE FROM " + GetTableName();
-        auto_stmt->ExecuteUpdate(sql);
-
-        // Insert new LOB records ...
-        sql  = " INSERT INTO " + GetTableName() +
-            "(int_field, text_field) VALUES(@id, '') \n";
-
-        // CVariant variant(eDB_Text);
-        // variant.Append(" ", 1);
-
-        for (long i = 0; i < rec_num; ++i) {
-            auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
-        }
-        // Check record number ...
-        BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
-    }
-
-    // Check that a cursor can be opened twice ...
-    {
-        sql = "select int_field from " + GetTableName();
-
-        // Open a cursor for the first time ...
+    try {
+        // Initialize a test table ...
         {
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-            auto_ptr<IResultSet> rs(auto_cursor->Open());
-            BOOST_CHECK(rs.get());
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            while (rs->Next()) {
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
+
+            // Insert new LOB records ...
+            sql  = " INSERT INTO " + GetTableName() +
+                "(int_field, text_field) VALUES(@id, '') \n";
+
+            // CVariant variant(eDB_Text);
+            // variant.Append(" ", 1);
+
+            for (long i = 0; i < rec_num; ++i) {
+                auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+            }
+            // Check record number ...
+            BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
+        }
+
+        // Check that a cursor can be opened twice ...
+        {
+            sql = "select int_field from " + GetTableName();
+
+            // Open a cursor for the first time ...
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get());
+
+                while (rs->Next()) {
+                }
+            }
+
+            // Open a cursor for the second time ...
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get());
+
+                while (rs->Next()) {
+                }
             }
         }
-
-        // Open a cursor for the second time ...
-        {
-            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-            auto_ptr<IResultSet> rs(auto_cursor->Open());
-            BOOST_CHECK(rs.get());
-
-            while (rs->Next()) {
-            }
-        }
+        // Test CLOB field update ...
+        // It doesn't work right now.
+    //     {
+    //         const char* clob = "abc";
+    //
+    //         sql = "select text_field from " + GetTableName() + " for update of text_field \n";
+    //         auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+    //
+    //         {
+    //             // blobRs should be destroyed before auto_cursor ...
+    //             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+    // //             while(blobRs->Next()) {
+    // //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    // //                 out.write(clob, sizeof(clob) - 1);
+    // //                 out.flush();
+    // //             }
+    //
+    //             if (blobRs->Next()) {
+    //                 try {
+    //                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    //                 } catch(...)
+    //                 {
+    //                 }
+    // //                 out.write(clob, sizeof(clob) - 1);
+    // //                 out.flush();
+    //             } else {
+    //                 BOOST_FAIL( msg_record_expected );
+    //             }
+    //
+    //             if (blobRs->Next()) {
+    // //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    // //                 out.write(clob, sizeof(clob) - 1);
+    // //                 out.flush();
+    //             } else {
+    //                 BOOST_FAIL( msg_record_expected );
+    //             }
+    //         }
+    //
+    //         // Check record number ...
+    //         {
+    //             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    //             BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
+    //         }
+    //
+    //         // Another cursor ...
+    //         sql  = " select text_field from " + GetTableName();
+    //         sql += " where int_field = 1 for update of text_field";
+    //
+    //         auto_cursor.reset(m_Conn->GetCursor("test02", sql));
+    //         {
+    //             // blobRs should be destroyed before auto_cursor ...
+    //             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+    //             if ( !blobRs->Next() ) {
+    //                 BOOST_FAIL( msg_record_expected );
+    //             }
+    //             ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    //             out.write(clob, sizeof(clob) - 1);
+    //             out.flush();
+    //         }
+    //     }
     }
-    // Test CLOB field update ...
-    // It doesn't work right now.
-//     {
-//         const char* clob = "abc";
-//
-//         sql = "select text_field from " + GetTableName() + " for update of text_field \n";
-//         auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-//
-//         {
-//             // blobRs should be destroyed before auto_cursor ...
-//             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-// //             while(blobRs->Next()) {
-// //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-// //                 out.write(clob, sizeof(clob) - 1);
-// //                 out.flush();
-// //             }
-//
-//             if (blobRs->Next()) {
-//                 try {
-//                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//                 } catch(...)
-//                 {
-//                 }
-// //                 out.write(clob, sizeof(clob) - 1);
-// //                 out.flush();
-//             } else {
-//                 BOOST_FAIL( msg_record_expected );
-//             }
-//
-//             if (blobRs->Next()) {
-// //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-// //                 out.write(clob, sizeof(clob) - 1);
-// //                 out.flush();
-//             } else {
-//                 BOOST_FAIL( msg_record_expected );
-//             }
-//         }
-//
-//         // Check record number ...
-//         {
-//             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-//             BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
-//         }
-//
-//         // Another cursor ...
-//         sql  = " select text_field from " + GetTableName();
-//         sql += " where int_field = 1 for update of text_field";
-//
-//         auto_cursor.reset(m_Conn->GetCursor("test02", sql));
-//         {
-//             // blobRs should be destroyed before auto_cursor ...
-//             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-//             if ( !blobRs->Next() ) {
-//                 BOOST_FAIL( msg_record_expected );
-//             }
-//             ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//             out.write(clob, sizeof(clob) - 1);
-//             out.flush();
-//         }
-//     }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2732,988 +2824,170 @@ CDBAPIUnitTest::Test_Cursor2(void)
     const long rec_num = 2;
     string sql;
 
-    // Initialize a test table ...
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    try {
+        // Initialize a test table ...
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        // Drop all records ...
-        sql  = " DELETE FROM " + GetTableName();
-        auto_stmt->ExecuteUpdate(sql);
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
 
-        // Insert new LOB records ...
-        sql  = " INSERT INTO " + GetTableName() +
-            "(int_field, text_field) VALUES(@id, '') \n";
+            // Insert new LOB records ...
+            sql  = " INSERT INTO " + GetTableName() +
+                "(int_field, text_field) VALUES(@id, '') \n";
 
-        // CVariant variant(eDB_Text);
-        // variant.Append(" ", 1);
+            // CVariant variant(eDB_Text);
+            // variant.Append(" ", 1);
 
-        for (long i = 0; i < rec_num; ++i) {
-            auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
+            for (long i = 0; i < rec_num; ++i) {
+                auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+            }
+            // Check record number ...
+            BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
         }
-        // Check record number ...
-        BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
-    }
 
-    // Test CLOB field update ...
-    // It doesn't work right now.
-//     {
-//         const char* clob = "abc";
-//
-//         sql = "select text_field from " + GetTableName() + " for update of text_field \n";
-//         auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-//
-//         {
-//             // blobRs should be destroyed before auto_cursor ...
-//             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-// //             while(blobRs->Next()) {
-// //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-// //                 out.write(clob, sizeof(clob) - 1);
-// //                 out.flush();
-// //             }
-//
-//             if (blobRs->Next()) {
-//                 try {
-//                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//                 } catch(...)
-//                 {
-//                 }
-// //                 out.write(clob, sizeof(clob) - 1);
-// //                 out.flush();
-//             } else {
-//                 BOOST_FAIL( msg_record_expected );
-//             }
-//
-//             if (blobRs->Next()) {
-// //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-// //                 out.write(clob, sizeof(clob) - 1);
-// //                 out.flush();
-//             } else {
-//                 BOOST_FAIL( msg_record_expected );
-//             }
-//         }
-//
-//         // Check record number ...
-//         {
-//             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-//             BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
-//         }
-//
-//         // Another cursor ...
-//         sql  = " select text_field from " + GetTableName();
-//         sql += " where int_field = 1 for update of text_field";
-//
-//         auto_cursor.reset(m_Conn->GetCursor("test02", sql));
-//         {
-//             // blobRs should be destroyed before auto_cursor ...
-//             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-//             if ( !blobRs->Next() ) {
-//                 BOOST_FAIL( msg_record_expected );
-//             }
-//             ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//             out.write(clob, sizeof(clob) - 1);
-//             out.flush();
-//         }
-//     }
+        // Test CLOB field update ...
+        // It doesn't work right now.
+    //     {
+    //         const char* clob = "abc";
+    //
+    //         sql = "select text_field from " + GetTableName() + " for update of text_field \n";
+    //         auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+    //
+    //         {
+    //             // blobRs should be destroyed before auto_cursor ...
+    //             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+    // //             while(blobRs->Next()) {
+    // //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    // //                 out.write(clob, sizeof(clob) - 1);
+    // //                 out.flush();
+    // //             }
+    //
+    //             if (blobRs->Next()) {
+    //                 try {
+    //                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    //                 } catch(...)
+    //                 {
+    //                 }
+    // //                 out.write(clob, sizeof(clob) - 1);
+    // //                 out.flush();
+    //             } else {
+    //                 BOOST_FAIL( msg_record_expected );
+    //             }
+    //
+    //             if (blobRs->Next()) {
+    // //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    // //                 out.write(clob, sizeof(clob) - 1);
+    // //                 out.flush();
+    //             } else {
+    //                 BOOST_FAIL( msg_record_expected );
+    //             }
+    //         }
+    //
+    //         // Check record number ...
+    //         {
+    //             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    //             BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
+    //         }
+    //
+    //         // Another cursor ...
+    //         sql  = " select text_field from " + GetTableName();
+    //         sql += " where int_field = 1 for update of text_field";
+    //
+    //         auto_cursor.reset(m_Conn->GetCursor("test02", sql));
+    //         {
+    //             // blobRs should be destroyed before auto_cursor ...
+    //             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+    //             if ( !blobRs->Next() ) {
+    //                 BOOST_FAIL( msg_record_expected );
+    //             }
+    //             ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+    //             out.write(clob, sizeof(clob) - 1);
+    //             out.flush();
+    //         }
+    //     }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_SelectStmt(void)
 {
-    // Scenario:
-    // 1) Select recordset with just one record
-    // 2) Retrive only one record.
-    // 3) Select another recordset with just one record
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-        auto_ptr<IResultSet> rs;
-
+    try {
+        // Scenario:
         // 1) Select recordset with just one record
-        rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
-        BOOST_CHECK( rs.get() != NULL );
-
-        // 2) Retrive a record.
-        BOOST_CHECK( rs->Next() );
-        BOOST_CHECK( !rs->Next() );
-
-        // 3) Select another recordset with just one record
-        rs.reset( auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
-        BOOST_CHECK( rs.get() != NULL );
-        BOOST_CHECK( rs->Next() );
-        BOOST_CHECK( !rs->Next() );
-    }
-
-    // Same as before but uses two differenr connections ...
-    if (false) {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-        auto_ptr<IResultSet> rs;
-
-        // 1) Select recordset with just one record
-        rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
-        BOOST_CHECK( rs.get() != NULL );
-
         // 2) Retrive only one record.
-        BOOST_CHECK( rs->Next() );
-        BOOST_CHECK( !rs->Next() );
-
         // 3) Select another recordset with just one record
-        auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
-        rs.reset( auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
-        BOOST_CHECK( rs.get() != NULL );
-        BOOST_CHECK( rs->Next() );
-        BOOST_CHECK( !rs->Next() );
-    }
-
-    // Check column name ...
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        auto_ptr<IResultSet> rs(
-            auto_stmt->ExecuteQuery( "select @@version as oops" )
-            );
-        BOOST_CHECK( rs.get() != NULL );
-        BOOST_CHECK( rs->Next() );
-        auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
-        BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
-    }
-
-    // Check resultset ...
-    {
-        int num = 0;
-        string sql = "select user_id(), convert(varchar(64), user_name()), "
-            "convert(nvarchar(64), user_name())";
-
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        // 1) Select recordset with just one record
-        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( sql ) );
-        BOOST_CHECK( rs.get() != NULL );
-
-        while (rs->Next()) {
-            BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
-            BOOST_CHECK(rs->GetVariant(2).GetString().size() > 0);
-            BOOST_CHECK(rs->GetVariant(3).GetString().size() > 0);
-            ++num;
-        }
-
-        BOOST_CHECK_EQUAL(num, 1);
-
-        DumpResults(auto_stmt.get());
-    }
-
-//     // TMP
-//     {
-//         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-//         BOOST_CHECK( conn.get() != NULL );
-//
-//         conn->SetMode(IConnection::eBulkInsert);
-//
-//         conn->Connect(
-//             "anyone",
-//             "allowed",
-//             "MSSQL10",
-//             "gMapDB"
-//             );
-//
-//         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
-//
-//         string sql;
-//
-//         sql  = "SELECT len(seq_loc) l, seq_loc FROM protein where ProtGi =56964519";
-//
-//         auto_stmt->SendSql( sql );
-//         while( auto_stmt->HasMoreResults() ) {
-//             if( auto_stmt->HasRows() ) {
-//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//
-//                 // Retrieve results, if any
-//                 while( rs->Next() ) {
-//                     string col2 = rs->GetVariant(2).GetString();
-//                     BOOST_CHECK_EQUAL(col2.size(), 355);
-//                 }
-//             }
-//         }
-//     }
-
-//     // TMP
-//     {
-//         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-//         BOOST_CHECK( conn.get() != NULL );
-//
-//         conn->SetMode(IConnection::eBulkInsert);
-//
-//         conn->Connect(
-//             "mvread",
-//             "daervm",
-//             "MSSQL29",
-//             "MapViewHum36"
-//             );
-//
-//         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
-//
-//         string sql;
-//
-//         sql  = "MM_GetData \'model\',\'1\',8335044,8800111,9606";
-//
-//         auto_stmt->SendSql( sql );
-//         while( auto_stmt->HasMoreResults() ) {
-//             if( auto_stmt->HasRows() ) {
-//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//
-//                 // Retrieve results, if any
-//                 while( rs->Next() ) {
-//                 }
-//             }
-//         }
-//     }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_SelectStmtXML(void)
-{
-    // SQL + XML
-    {
-        string sql;
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-        auto_ptr<IResultSet> rs;
-
-        sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
-        rs.reset( auto_stmt->ExecuteQuery( sql ) );
-        BOOST_CHECK( rs.get() != NULL );
-
-        if ( !rs->Next() ) {
-            BOOST_FAIL( msg_record_expected );
-        }
-
-        // Same but call Execute instead of ExecuteQuery.
-        auto_stmt->SendSql( sql );
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Recordset(void)
-{
-    auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
-    auto_ptr<IResultSet> rs;
-
-    // bit
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(bit, 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // tinyint
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(tinyint, 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // smallint
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(smallint, 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // int
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(int, 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // numeric
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // decimal
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // float
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(float(4), 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // double
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(double precision, 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // real
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(real, 1)"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // smallmoney
-    // Unsupported type ...
-//     {
-//         rs.reset(auto_stmt->ExecuteQuery("select convert(smallmoney, 1)"));
-//         BOOST_CHECK(rs.get() != NULL);
-//
-//         BOOST_CHECK(rs->Next());
-//         BOOST_CHECK(!rs->Next());
-//
-//         DumpResults(auto_stmt.get());
-//     }
-
-    // money
-    // Unsupported type ...
-//     {
-//         rs.reset(auto_stmt->ExecuteQuery("select convert(money, 1)"));
-//         BOOST_CHECK(rs.get() != NULL);
-//
-//         BOOST_CHECK(rs->Next());
-//         BOOST_CHECK(!rs->Next());
-//
-//         DumpResults(auto_stmt.get());
-//     }
-
-    // smalldatetime
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // datetime
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // char
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(char(32), '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // varchar
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // nchar
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // nvarchar
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // binary
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(binary(32), '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // varbinary
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // text
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(text, '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-
-    // image
-    {
-        rs.reset(auto_stmt->ExecuteQuery("select convert(image, '12345')"));
-        BOOST_CHECK(rs.get() != NULL);
-
-        BOOST_CHECK(rs->Next());
-        BOOST_CHECK(!rs->Next());
-
-        DumpResults(auto_stmt.get());
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_UserErrorHandler(void)
-{
-    // Set up an user-defined error handler ..
-
-    // Push message handler into a context ...
-    I_DriverContext* drv_context = m_DS->GetDriverContext();
-
-    // Check PushCntxMsgHandler ...
-    // PushCntxMsgHandler - Add message handler "h" to process 'context-wide' (not bound
-    // to any particular connection) error messages.
-    {
-        auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
-
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
-        Connect(local_conn);
-
-        drv_context->PushCntxMsgHandler( drv_err_handler.get() );
-
-        // Connection process should be affected ...
         {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IResultSet> rs;
 
-            try {
-                conn->Connect(
-                    "unknown",
-                    "invalid",
-                    m_args.GetServerName()
-                    );
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() );
-            }
-            catch( const CException& ) {
-                BOOST_FAIL( "CException was catched instead of CDB_Exception." );
-            }
-            catch( ... ) {
-                BOOST_FAIL( "... was catched instead of CDB_Exception." );
-            }
+            // 1) Select recordset with just one record
+            rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
+            BOOST_CHECK( rs.get() != NULL );
 
-            drv_err_handler->Init();
+            // 2) Retrive a record.
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK( !rs->Next() );
+
+            // 3) Select another recordset with just one record
+            rs.reset( auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK( !rs->Next() );
         }
 
-        // Current connection should not be affected ...
+        // Same as before but uses two differenr connections ...
+        if (false) {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IResultSet> rs;
+
+            // 1) Select recordset with just one record
+            rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
+            BOOST_CHECK( rs.get() != NULL );
+
+            // 2) Retrive only one record.
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK( !rs->Next() );
+
+            // 3) Select another recordset with just one record
+            auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
+            rs.reset( auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+            BOOST_CHECK( !rs->Next() );
+        }
+
+        // Check column name ...
         {
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            auto_ptr<IResultSet> rs(
+                auto_stmt->ExecuteQuery( "select @@version as oops" )
+                );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+            auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
+            BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
         }
 
-        // New connection should not be affected ...
-        {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-            Connect(conn);
-
-            // Reinit the errot handler because it can be affected during connection.
-            drv_err_handler->Init();
-
-            try {
-                Test_ES_01(*conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Push a message handler into a connection ...
-        {
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-
-            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( msg_handler->GetSucceed() );
-            }
-
-            // Remove handler ...
-            local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
-        }
-
-        // New connection should not be affected
-        // after pushing a message handler into another connection
-        {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-            Connect(conn);
-
-            // Reinit the errot handler because it can be affected during connection.
-            drv_err_handler->Init();
-
-            try {
-                Test_ES_01(*conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Remove all inserted handlers ...
-        drv_context->PopCntxMsgHandler( drv_err_handler.get() );
-    }
-
-
-    // Check PushDefConnMsgHandler ...
-    // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
-    // handlers which are inherited by all newly created connections.
-    {
-        auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
-
-
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
-        Connect(local_conn);
-
-        drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
-
-        // Current connection should not be affected ...
-        {
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Push a message handler into a connection ...
-        // This is supposed to be okay.
-        {
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-
-            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( msg_handler->GetSucceed() );
-            }
-
-            // Remove handler ...
-            local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
-        }
-
-
-        ////////////////////////////////////////////////////////////////////////
-        // Create a new connection.
-        auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
-        Connect(new_conn);
-
-        // New connection should be affected ...
-        {
-            try {
-                Test_ES_01(*new_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Push a message handler into a connection ...
-        // This is supposed to be okay.
-        {
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-
-            new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
-
-            try {
-                Test_ES_01(*new_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( msg_handler->GetSucceed() );
-            }
-
-            // Remove handler ...
-            new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
-        }
-
-        // New connection should be affected
-        // after pushing a message handler into another connection
-        {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-            Connect(conn);
-
-            try {
-                Test_ES_01(*conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Remove handlers ...
-        drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
-    }
-
-    // SetLogStream ...
-    {
-        {
-            IConnection* conn = NULL;
-
-            // Enable multiexception ...
-            m_DS->SetLogStream(0);
-
-            try {
-                // Create a new connection ...
-                conn = m_DS->CreateConnection();
-            } catch(...)
-            {
-                delete conn;
-            }
-
-            m_DS->SetLogStream(&cerr);
-        }
-
-        {
-            IConnection* conn = NULL;
-
-            // Enable multiexception ...
-            m_DS->SetLogStream(0);
-
-            try {
-                // Create a new connection ...
-                conn = m_DS->CreateConnection();
-
-                m_DS->SetLogStream(&cerr);
-            } catch(...)
-            {
-                delete conn;
-            }
-        }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Test_Procedure(void)
-{
-    // Test a regular IStatement with "exec"
-    // Parameters are not allowed with this construction.
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        // Execute it first time ...
-        auto_stmt->SendSql( "exec sp_databases" );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-
-                switch ( rs->GetResultType() ) {
-                case eDB_RowResult:
-                    while( rs->Next() ) {
-                        // int col1 = rs->GetVariant(1).GetInt4();
-                    }
-                    break;
-                case eDB_ParamResult:
-                    while( rs->Next() ) {
-                        // int col1 = rs->GetVariant(1).GetInt4();
-                    }
-                    break;
-                case eDB_StatusResult:
-                    while( rs->Next() ) {
-                        int status = rs->GetVariant(1).GetInt4();
-                        status = status;
-                    }
-                    break;
-                case eDB_ComputeResult:
-                case eDB_CursorResult:
-                    break;
-                }
-            }
-        }
-
-        // Execute it second time ...
-        auto_stmt->SendSql( "exec sp_databases" );
-        while( auto_stmt->HasMoreResults() ) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-
-                switch ( rs->GetResultType() ) {
-                case eDB_RowResult:
-                    while( rs->Next() ) {
-                        // int col1 = rs->GetVariant(1).GetInt4();
-                    }
-                    break;
-                case eDB_ParamResult:
-                    while( rs->Next() ) {
-                        // int col1 = rs->GetVariant(1).GetInt4();
-                    }
-                    break;
-                case eDB_StatusResult:
-                    while( rs->Next() ) {
-                        int status = rs->GetVariant(1).GetInt4();
-                        status = status;
-                    }
-                    break;
-                case eDB_ComputeResult:
-                case eDB_CursorResult:
-                    break;
-                }
-            }
-        }
-
-        // Same as before but do not retrieve data ...
-        auto_stmt->SendSql( "exec sp_databases" );
-        auto_stmt->SendSql( "exec sp_databases" );
-    }
-
-    // Test ICallableStatement
-    // No parameters at this time.
-    {
-        // Execute it first time ...
-        auto_ptr<ICallableStatement> auto_stmt(
-            m_Conn->GetCallableStatement("sp_databases")
-            );
-        auto_stmt->Execute();
-        while(auto_stmt->HasMoreResults()) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-
-                switch( rs->GetResultType() ) {
-                case eDB_RowResult:
-                    while(rs->Next()) {
-                        // retrieve row results
-                    }
-                    break;
-                case eDB_ParamResult:
-                    while(rs->Next()) {
-                        // Retrieve parameter row
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-        // Get status
-        int status = auto_stmt->GetReturnStatus();
-
-
-        // Execute it second time ...
-        auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
-        auto_stmt->Execute();
-        while(auto_stmt->HasMoreResults()) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-
-                switch( rs->GetResultType() ) {
-                case eDB_RowResult:
-                    while(rs->Next()) {
-                        // retrieve row results
-                    }
-                    break;
-                case eDB_ParamResult:
-                    while(rs->Next()) {
-                        // Retrieve parameter row
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-        // Get status
-        status = auto_stmt->GetReturnStatus();
-
-
-        // Same as before but do not retrieve data ...
-        auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
-        auto_stmt->Execute();
-        auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
-        auto_stmt->Execute();
-    }
-
-    // Temporary test ...
-    // !!! This is a bug ...
-    if (false) {
-        auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        BOOST_CHECK( conn.get() != NULL );
-
-        conn->Connect(
-            "anyone",
-            "allowed",
-            "PUBSEQ_OS_LXA",
-            ""
-            );
-
-        auto_ptr<ICallableStatement> auto_stmt(
-            conn->GetCallableStatement("id_seqid4gi")
-            );
-        auto_stmt->SetParam( CVariant(1), "@gi" );
-        auto_stmt->Execute();
-        while(auto_stmt->HasMoreResults()) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-
-                switch( rs->GetResultType() ) {
-                case eDB_RowResult:
-                    while(rs->Next()) {
-                        // retrieve row results
-                    }
-                    break;
-                case eDB_ParamResult:
-                    _ASSERT(false);
-                    while(rs->Next()) {
-                        // Retrieve parameter row
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-        // Get status
-        int status = auto_stmt->GetReturnStatus();
-        status = status; // Get rid of warnings.
-    }
-
-
-    // Test returned recordset ...
-    {
+        // Check resultset ...
         {
             int num = 0;
-            // Execute it first time ...
-            auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("sp_databases", 3)
-                );
+            string sql = "select user_id(), convert(varchar(64), user_name()), "
+                "convert(nvarchar(64), user_name())";
 
-            auto_stmt->Execute();
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get() != NULL);
-
-            while (rs->Next()) {
-                BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
-                BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
-                BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
-                ++num;
-            }
-
-            BOOST_CHECK(num > 0);
-
-            DumpResults(auto_stmt.get());
-        }
-
-        {
-            int num = 0;
-            auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("sp_server_info", 3)
-                );
-
-            auto_stmt->Execute();
-
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get() != NULL);
+            // 1) Select recordset with just one record
+            auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( sql ) );
+            BOOST_CHECK( rs.get() != NULL );
 
             while (rs->Next()) {
                 BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
@@ -3722,179 +2996,1027 @@ CDBAPIUnitTest::Test_Procedure(void)
                 ++num;
             }
 
-            BOOST_CHECK(num > 0);
+            BOOST_CHECK_EQUAL(num, 1);
+
+            DumpResults(auto_stmt.get());
+        }
+
+    //     // TMP
+    //     {
+    //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+    //         BOOST_CHECK( conn.get() != NULL );
+    //
+    //         conn->SetMode(IConnection::eBulkInsert);
+    //
+    //         conn->Connect(
+    //             "anyone",
+    //             "allowed",
+    //             "MSSQL10",
+    //             "gMapDB"
+    //             );
+    //
+    //         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+    //
+    //         string sql;
+    //
+    //         sql  = "SELECT len(seq_loc) l, seq_loc FROM protein where ProtGi =56964519";
+    //
+    //         auto_stmt->SendSql( sql );
+    //         while( auto_stmt->HasMoreResults() ) {
+    //             if( auto_stmt->HasRows() ) {
+    //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //
+    //                 // Retrieve results, if any
+    //                 while( rs->Next() ) {
+    //                     string col2 = rs->GetVariant(2).GetString();
+    //                     BOOST_CHECK_EQUAL(col2.size(), 355);
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // TMP
+    //     {
+    //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+    //         BOOST_CHECK( conn.get() != NULL );
+    //
+    //         conn->SetMode(IConnection::eBulkInsert);
+    //
+    //         conn->Connect(
+    //             "mvread",
+    //             "daervm",
+    //             "MSSQL29",
+    //             "MapViewHum36"
+    //             );
+    //
+    //         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+    //
+    //         string sql;
+    //
+    //         sql  = "MM_GetData \'model\',\'1\',8335044,8800111,9606";
+    //
+    //         auto_stmt->SendSql( sql );
+    //         while( auto_stmt->HasMoreResults() ) {
+    //             if( auto_stmt->HasRows() ) {
+    //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //
+    //                 // Retrieve results, if any
+    //                 while( rs->Next() ) {
+    //                 }
+    //             }
+    //         }
+    //     }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_SelectStmtXML(void)
+{
+    try {
+        // SQL + XML
+        {
+            string sql;
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+            auto_ptr<IResultSet> rs;
+
+            sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
+            rs.reset( auto_stmt->ExecuteQuery( sql ) );
+            BOOST_CHECK( rs.get() != NULL );
+
+            if ( !rs->Next() ) {
+                BOOST_FAIL( msg_record_expected );
+            }
+
+            // Same but call Execute instead of ExecuteQuery.
+            auto_stmt->SendSql( sql );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_Recordset(void)
+{
+    try {
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IResultSet> rs;
+
+        // bit
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(bit, 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // tinyint
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(tinyint, 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // smallint
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(smallint, 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // int
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(int, 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // numeric
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // decimal
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // float
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(float(4), 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // double
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(double precision, 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // real
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(real, 1)"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // smallmoney
+        // Unsupported type ...
+    //     {
+    //         rs.reset(auto_stmt->ExecuteQuery("select convert(smallmoney, 1)"));
+    //         BOOST_CHECK(rs.get() != NULL);
+    //
+    //         BOOST_CHECK(rs->Next());
+    //         BOOST_CHECK(!rs->Next());
+    //
+    //         DumpResults(auto_stmt.get());
+    //     }
+
+        // money
+        // Unsupported type ...
+    //     {
+    //         rs.reset(auto_stmt->ExecuteQuery("select convert(money, 1)"));
+    //         BOOST_CHECK(rs.get() != NULL);
+    //
+    //         BOOST_CHECK(rs->Next());
+    //         BOOST_CHECK(!rs->Next());
+    //
+    //         DumpResults(auto_stmt.get());
+    //     }
+
+        // smalldatetime
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // datetime
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // char
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(char(32), '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // varchar
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // nchar
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // nvarchar
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // binary
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(binary(32), '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // varbinary
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // text
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(text, '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // image
+        {
+            rs.reset(auto_stmt->ExecuteQuery("select convert(image, '12345')"));
+            BOOST_CHECK(rs.get() != NULL);
+
+            BOOST_CHECK(rs->Next());
+            BOOST_CHECK(!rs->Next());
 
             DumpResults(auto_stmt.get());
         }
     }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
-    // Test ICallableStatement
-    // With parameters.
-    {
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_UserErrorHandler(void)
+{
+    try {
+        // Set up an user-defined error handler ..
+
+        // Push message handler into a context ...
+        I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+        // Check PushCntxMsgHandler ...
+        // PushCntxMsgHandler - Add message handler "h" to process 'context-wide' (not bound
+        // to any particular connection) error messages.
         {
-            auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("sp_server_info", 1)
-                );
+            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
-            // Set parameter to NULL ...
-            auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
-            auto_stmt->Execute();
+            auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+            Connect(local_conn);
 
-            if (m_args.GetServerType() == CTestArguments::eSybase) {
-                BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
-            } else {
-                BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+            drv_context->PushCntxMsgHandler( drv_err_handler.get() );
+
+            // Connection process should be affected ...
+            {
+                // Create a new connection ...
+                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+
+                try {
+                    conn->Connect(
+                        "unknown",
+                        "invalid",
+                        m_args.GetServerName()
+                        );
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( drv_err_handler->GetSucceed() );
+                }
+                catch( const CException& ) {
+                    BOOST_FAIL( "CException was catched instead of CDB_Exception." );
+                }
+                catch( ... ) {
+                    BOOST_FAIL( "... was catched instead of CDB_Exception." );
+                }
+
+                drv_err_handler->Init();
             }
 
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
+            // Current connection should not be affected ...
+            {
+                try {
+                    Test_ES_01(*local_conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( !drv_err_handler->GetSucceed() );
+                }
+            }
 
-            // Set parameter to 1 ...
-            auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
-            auto_stmt->Execute();
+            // New connection should not be affected ...
+            {
+                // Create a new connection ...
+                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                Connect(conn);
 
-            BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+                // Reinit the errot handler because it can be affected during connection.
+                drv_err_handler->Init();
+
+                try {
+                    Test_ES_01(*conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( !drv_err_handler->GetSucceed() );
+                }
+            }
+
+            // Push a message handler into a connection ...
+            {
+                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+                local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+
+                try {
+                    Test_ES_01(*local_conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( msg_handler->GetSucceed() );
+                }
+
+                // Remove handler ...
+                local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
+            }
+
+            // New connection should not be affected
+            // after pushing a message handler into another connection
+            {
+                // Create a new connection ...
+                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                Connect(conn);
+
+                // Reinit the errot handler because it can be affected during connection.
+                drv_err_handler->Init();
+
+                try {
+                    Test_ES_01(*conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( !drv_err_handler->GetSucceed() );
+                }
+            }
+
+            // Remove all inserted handlers ...
+            drv_context->PopCntxMsgHandler( drv_err_handler.get() );
         }
 
-        // Doesn't work for some reason ...
-        if (false) {
-            // Execute it first time ...
-            auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("sp_statistics")
-                );
 
-            auto_stmt->SetParam(CVariant(GetTableName()), "@table_name");
-            auto_stmt->Execute();
+        // Check PushDefConnMsgHandler ...
+        // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
+        // handlers which are inherited by all newly created connections.
+        {
+            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
+
+            auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+            Connect(local_conn);
+
+            drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
+
+            // Current connection should not be affected ...
             {
-                BOOST_CHECK(auto_stmt->HasMoreResults());
-                BOOST_CHECK(auto_stmt->HasRows());
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                BOOST_CHECK(rs.get() != NULL);
-
-                BOOST_CHECK(rs->Next());
-                DumpResults(auto_stmt.get());
+                try {
+                    Test_ES_01(*local_conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( !drv_err_handler->GetSucceed() );
+                }
             }
 
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
+            // Push a message handler into a connection ...
+            // This is supposed to be okay.
+            {
+                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+                local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+
+                try {
+                    Test_ES_01(*local_conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( msg_handler->GetSucceed() );
+                }
+
+                // Remove handler ...
+                local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+            }
+
+
+            ////////////////////////////////////////////////////////////////////////
+            // Create a new connection.
+            auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
+            Connect(new_conn);
+
+            // New connection should be affected ...
+            {
+                try {
+                    Test_ES_01(*new_conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( drv_err_handler->GetSucceed() );
+                }
+            }
+
+            // Push a message handler into a connection ...
+            // This is supposed to be okay.
+            {
+                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+                new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
+
+                try {
+                    Test_ES_01(*new_conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( msg_handler->GetSucceed() );
+                }
+
+                // Remove handler ...
+                new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
+            }
+
+            // New connection should be affected
+            // after pushing a message handler into another connection
+            {
+                // Create a new connection ...
+                auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+                Connect(conn);
+
+                try {
+                    Test_ES_01(*conn);
+                }
+                catch( const CDB_Exception& ) {
+                    // Ignore it
+                    BOOST_CHECK( drv_err_handler->GetSucceed() );
+                }
+            }
+
+            // Remove handlers ...
+            drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
+        }
+
+        // SetLogStream ...
+        {
+            {
+                IConnection* conn = NULL;
+
+                // Enable multiexception ...
+                m_DS->SetLogStream(0);
+
+                try {
+                    // Create a new connection ...
+                    conn = m_DS->CreateConnection();
+                } catch(...)
+                {
+                    delete conn;
+                }
+
+                m_DS->SetLogStream(&cerr);
+            }
+
+            {
+                IConnection* conn = NULL;
+
+                // Enable multiexception ...
+                m_DS->SetLogStream(0);
+
+                try {
+                    // Create a new connection ...
+                    conn = m_DS->CreateConnection();
+
+                    m_DS->SetLogStream(&cerr);
+                } catch(...)
+                {
+                    delete conn;
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_Procedure(void)
+{
+    try {
+        // Test a regular IStatement with "exec"
+        // Parameters are not allowed with this construction.
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            // Execute it first time ...
+            auto_stmt->SendSql( "exec sp_databases" );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch ( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while( rs->Next() ) {
+                            // int col1 = rs->GetVariant(1).GetInt4();
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        while( rs->Next() ) {
+                            // int col1 = rs->GetVariant(1).GetInt4();
+                        }
+                        break;
+                    case eDB_StatusResult:
+                        while( rs->Next() ) {
+                            int status = rs->GetVariant(1).GetInt4();
+                            status = status;
+                        }
+                        break;
+                    case eDB_ComputeResult:
+                    case eDB_CursorResult:
+                        break;
+                    }
+                }
+            }
 
             // Execute it second time ...
-            auto_stmt->SetParam(CVariant("#bulk_insert_table"), "@table_name");
-            auto_stmt->Execute();
+            auto_stmt->SendSql( "exec sp_databases" );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 
+                    switch ( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while( rs->Next() ) {
+                            // int col1 = rs->GetVariant(1).GetInt4();
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        while( rs->Next() ) {
+                            // int col1 = rs->GetVariant(1).GetInt4();
+                        }
+                        break;
+                    case eDB_StatusResult:
+                        while( rs->Next() ) {
+                            int status = rs->GetVariant(1).GetInt4();
+                            status = status;
+                        }
+                        break;
+                    case eDB_ComputeResult:
+                    case eDB_CursorResult:
+                        break;
+                    }
+                }
+            }
+
+            // Same as before but do not retrieve data ...
+            auto_stmt->SendSql( "exec sp_databases" );
+            auto_stmt->SendSql( "exec sp_databases" );
+        }
+
+        // Test ICallableStatement
+        // No parameters at this time.
+        {
+            // Execute it first time ...
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("sp_databases")
+                );
+            auto_stmt->Execute();
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            // Get status
+            int status = auto_stmt->GetReturnStatus();
+
+
+            // Execute it second time ...
+            auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+            auto_stmt->Execute();
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            // Get status
+            status = auto_stmt->GetReturnStatus();
+
+
+            // Same as before but do not retrieve data ...
+            auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+            auto_stmt->Execute();
+            auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
+            auto_stmt->Execute();
+        }
+
+        // Temporary test ...
+        // !!! This is a bug ...
+        if (false) {
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            BOOST_CHECK( conn.get() != NULL );
+
+            conn->Connect(
+                "anyone",
+                "allowed",
+                "PUBSEQ_OS_LXA",
+                ""
+                );
+
+            auto_ptr<ICallableStatement> auto_stmt(
+                conn->GetCallableStatement("id_seqid4gi")
+                );
+            auto_stmt->SetParam( CVariant(1), "@gi" );
+            auto_stmt->Execute();
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        _ASSERT(false);
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            // Get status
+            int status = auto_stmt->GetReturnStatus();
+            status = status; // Get rid of warnings.
+        }
+
+
+        // Test returned recordset ...
+        {
             {
+                int num = 0;
+                // Execute it first time ...
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_databases", 3)
+                    );
+
+                auto_stmt->Execute();
+
                 BOOST_CHECK(auto_stmt->HasMoreResults());
                 BOOST_CHECK(auto_stmt->HasRows());
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                 BOOST_CHECK(rs.get() != NULL);
 
-                BOOST_CHECK(rs->Next());
+                while (rs->Next()) {
+                    BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
+                    BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+                    BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
+                    ++num;
+                }
+
+                BOOST_CHECK(num > 0);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            {
+                int num = 0;
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_server_info", 3)
+                    );
+
+                auto_stmt->Execute();
+
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                while (rs->Next()) {
+                    BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
+                    BOOST_CHECK(rs->GetVariant(2).GetString().size() > 0);
+                    BOOST_CHECK(rs->GetVariant(3).GetString().size() > 0);
+                    ++num;
+                }
+
+                BOOST_CHECK(num > 0);
+
                 DumpResults(auto_stmt.get());
             }
         }
-    }
 
-    // Test output parameters ...
-    if (false) {
-        auto_ptr<ICallableStatement> auto_stmt(
-            m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc", 3)
-            );
-        auto_stmt->SetParam(CVariant(1), "@id");
-        auto_stmt->SetParam(CVariant(2.0), "@f");
-        auto_stmt->SetOutputParam(CVariant(eDB_Int), "@o");
+        // Test ICallableStatement
+        // With parameters.
+        {
+            {
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_server_info", 1)
+                    );
 
-        auto_stmt->Execute();
-//         auto_stmt->SendSql( "exec DBAPI_Sample..TestProc4 @test_out output" );
+                // Set parameter to NULL ...
+                auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
+                auto_stmt->Execute();
 
-         while(auto_stmt->HasMoreResults()) {
-             if( auto_stmt->HasRows() ) {
-                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                if (m_args.GetServerType() == CTestArguments::eSybase) {
+                    BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
+                } else {
+                    BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+                }
 
-                 switch( rs->GetResultType() ) {
-                 case eDB_RowResult:
-                     while(rs->Next()) {
-                         // retrieve row results
-                     }
-                     break;
-                 case eDB_ParamResult:
-                     BOOST_CHECK(rs->Next());
-                     NcbiCout << "Output param: "
-                              << rs->GetVariant(1).GetInt4()
-                              << endl;
-                     break;
-                 default:
-                     break;
-                 }
-             }
-         }
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
 
-//         BOOST_CHECK(auto_stmt->HasMoreResults());
-//         BOOST_CHECK(auto_stmt->HasRows());
-//         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//         BOOST_CHECK(rs.get() != NULL);
-//
-//         while (rs->Next()) {
-//             BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
-//             BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
-//             BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
-//             ++num;
-//         }
-//
-//         BOOST_CHECK(num > 0);
+                // Set parameter to 1 ...
+                auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
+                auto_stmt->Execute();
 
-        DumpResults(auto_stmt.get());
-    }
+                BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+            }
 
-    // Temporary test ...
-    if (false) {
-        auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        BOOST_CHECK( conn.get() != NULL );
+            // Doesn't work for some reason ...
+            if (false) {
+                // Execute it first time ...
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_statistics")
+                    );
 
-        conn->Connect(
-            "anyone",
-            "allowed",
-            "mssql58.nac.ncbi.nlm.nih.gov",
-            "GenomeHits"
-            );
+                auto_stmt->SetParam(CVariant(GetTableName()), "@table_name");
+                auto_stmt->Execute();
 
-        auto_ptr<ICallableStatement> auto_stmt(
-            conn->GetCallableStatement("NewSub")
-            );
-        auto_stmt->SetParam(CVariant("tsub2"), "@name");
-        auto_stmt->SetParam(CVariant("tst"), "@center");
-        auto_stmt->SetParam(CVariant("9606"), "@taxid");
-        auto_stmt->SetParam(CVariant("Homo sapiens"), "@organism");
-        auto_stmt->SetParam(CVariant(""), "@notes");
-        auto_stmt->Execute();
+                {
+                    BOOST_CHECK(auto_stmt->HasMoreResults());
+                    BOOST_CHECK(auto_stmt->HasRows());
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK(rs.get() != NULL);
 
-        while(auto_stmt->HasMoreResults()) {
-            if( auto_stmt->HasRows() ) {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK(rs->Next());
+                    DumpResults(auto_stmt.get());
+                }
 
-                switch( rs->GetResultType() ) {
-                case eDB_RowResult:
-                    while(rs->Next()) {
-                        // retrieve row results
-                    }
-                    break;
-                case eDB_ParamResult:
-                    _ASSERT(false);
-                    while(rs->Next()) {
-                        // Retrieve parameter row
-                    }
-                    break;
-                default:
-                    break;
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                // Execute it second time ...
+                auto_stmt->SetParam(CVariant("#bulk_insert_table"), "@table_name");
+                auto_stmt->Execute();
+
+                {
+                    BOOST_CHECK(auto_stmt->HasMoreResults());
+                    BOOST_CHECK(auto_stmt->HasRows());
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK(rs.get() != NULL);
+
+                    BOOST_CHECK(rs->Next());
+                    DumpResults(auto_stmt.get());
                 }
             }
         }
 
-        // Get status
-        int status = auto_stmt->GetReturnStatus();
-        status = status; // Get rid of warnings.
+        // Test output parameters ...
+        if (false) {
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("DBAPI_Sample..SampleProc", 3)
+                );
+            auto_stmt->SetParam(CVariant(1), "@id");
+            auto_stmt->SetParam(CVariant(2.0), "@f");
+            auto_stmt->SetOutputParam(CVariant(eDB_Int), "@o");
+
+            auto_stmt->Execute();
+    //         auto_stmt->SendSql( "exec DBAPI_Sample..TestProc4 @test_out output" );
+
+             while(auto_stmt->HasMoreResults()) {
+                 if( auto_stmt->HasRows() ) {
+                     auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                     switch( rs->GetResultType() ) {
+                     case eDB_RowResult:
+                         while(rs->Next()) {
+                             // retrieve row results
+                         }
+                         break;
+                     case eDB_ParamResult:
+                         BOOST_CHECK(rs->Next());
+                         NcbiCout << "Output param: "
+                                  << rs->GetVariant(1).GetInt4()
+                                  << endl;
+                         break;
+                     default:
+                         break;
+                     }
+                 }
+             }
+
+    //         BOOST_CHECK(auto_stmt->HasMoreResults());
+    //         BOOST_CHECK(auto_stmt->HasRows());
+    //         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //         BOOST_CHECK(rs.get() != NULL);
+    //
+    //         while (rs->Next()) {
+    //             BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
+    //             BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+    //             BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
+    //             ++num;
+    //         }
+    //
+    //         BOOST_CHECK(num > 0);
+
+            DumpResults(auto_stmt.get());
+        }
+
+        // Temporary test ...
+        if (false) {
+            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            BOOST_CHECK( conn.get() != NULL );
+
+            conn->Connect(
+                "anyone",
+                "allowed",
+                "mssql58.nac.ncbi.nlm.nih.gov",
+                "GenomeHits"
+                );
+
+            auto_ptr<ICallableStatement> auto_stmt(
+                conn->GetCallableStatement("NewSub")
+                );
+            auto_stmt->SetParam(CVariant("tsub2"), "@name");
+            auto_stmt->SetParam(CVariant("tst"), "@center");
+            auto_stmt->SetParam(CVariant("9606"), "@taxid");
+            auto_stmt->SetParam(CVariant("Homo sapiens"), "@organism");
+            auto_stmt->SetParam(CVariant(""), "@notes");
+            auto_stmt->Execute();
+
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        _ASSERT(false);
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+
+            // Get status
+            int status = auto_stmt->GetReturnStatus();
+            status = status; // Get rid of warnings.
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -3930,83 +4052,88 @@ CDBAPIUnitTest::Test_ES_01(IConnection& conn)
 void
 CDBAPIUnitTest::Test_StatementParameters(void)
 {
-    // Very first test ...
-    {
-        string sql;
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
+    try {
+        // Very first test ...
         {
-            sql  = " INSERT INTO " + GetTableName() +
-                "(int_field) VALUES( @value ) \n";
+            string sql;
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            auto_stmt->SetParam( CVariant(0), "@value" );
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
+            {
+                sql  = " INSERT INTO " + GetTableName() +
+                    "(int_field) VALUES( @value ) \n";
 
-            auto_stmt->SetParam( CVariant(1), "@value" );
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
+                auto_stmt->SetParam( CVariant(0), "@value" );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
 
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
+                auto_stmt->SetParam( CVariant(1), "@value" );
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+            }
+
+
+            {
+                sql  = " SELECT int_field FROM " + GetTableName() +
+                    " ORDER BY int_field";
+                // Execute a statement without parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Get number of records ...
+            {
+                auto_stmt->SendSql( "SELECT COUNT(*) FROM " + GetTableName() );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs->Next() );
+                BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 2 );
+                DumpResults(auto_stmt.get());
+            }
+
+            // Read first inserted value back ...
+            {
+                auto_stmt->SetParam( CVariant(0), "@value" );
+                auto_stmt->SendSql( " SELECT int_field FROM " + GetTableName() +
+                                    " WHERE int_field = @value");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs->Next() );
+                BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 0 );
+                DumpResults(auto_stmt.get());
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+            }
+
+            // Read second inserted value back ...
+            {
+                auto_stmt->SetParam( CVariant(1), "@value" );
+                auto_stmt->SendSql( " SELECT int_field FROM " + GetTableName() +
+                                    " WHERE int_field = @value");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs->Next() );
+                BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 1 );
+                DumpResults(auto_stmt.get());
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+            }
+
+            // Clean previously inserted data ...
+            {
+                auto_stmt->ExecuteUpdate( "DELETE FROM " + GetTableName() );
+            }
         }
-
-
-        {
-            sql  = " SELECT int_field FROM " + GetTableName() +
-                " ORDER BY int_field";
-            // Execute a statement without parameters ...
-            auto_stmt->ExecuteUpdate( sql );
-        }
-
-        // Get number of records ...
-        {
-            auto_stmt->SendSql( "SELECT COUNT(*) FROM " + GetTableName() );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-            BOOST_CHECK( rs->Next() );
-            BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 2 );
-            DumpResults(auto_stmt.get());
-        }
-
-        // Read first inserted value back ...
-        {
-            auto_stmt->SetParam( CVariant(0), "@value" );
-            auto_stmt->SendSql( " SELECT int_field FROM " + GetTableName() +
-                                " WHERE int_field = @value");
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-            BOOST_CHECK( rs->Next() );
-            BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 0 );
-            DumpResults(auto_stmt.get());
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-        }
-
-        // Read second inserted value back ...
-        {
-            auto_stmt->SetParam( CVariant(1), "@value" );
-            auto_stmt->SendSql( " SELECT int_field FROM " + GetTableName() +
-                                " WHERE int_field = @value");
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-            BOOST_CHECK( rs->Next() );
-            BOOST_CHECK_EQUAL( rs->GetVariant(1).GetInt4(), 1 );
-            DumpResults(auto_stmt.get());
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-        }
-
-        // Clean previously inserted data ...
-        {
-            auto_stmt->ExecuteUpdate( "DELETE FROM " + GetTableName() );
-        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -4018,16 +4145,89 @@ CDBAPIUnitTest::Test_NULL(void)
     enum {rec_num = 10};
     string sql;
 
-    // Initialize data (strings are NOT empty) ...
-    {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
+    try {
+        // Initialize data (strings are NOT empty) ...
         {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM " + GetTableName();
+                auto_stmt->ExecuteUpdate(sql);
+
+                sql  = " INSERT INTO " + GetTableName() +
+                    "(int_field, vc1000_field) "
+                    "VALUES(@int_field, @vc1000_field) \n";
+
+                // CVariant variant(eDB_Text);
+                // variant.Append(" ", 1);
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    if (ind % 2 == 0) {
+                        auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                        auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
+                    } else {
+                        auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                        auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
+                                             "@vc1000_field"
+                                             );
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(int(rec_num),
+                                  GetNumOfRecords(auto_stmt, GetTableName())
+                                  );
+            }
+
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM #test_unicode_table";
+                auto_stmt->ExecuteUpdate(sql);
+
+                sql  = " INSERT INTO #test_unicode_table"
+                    "(nvc255_field) VALUES(@nvc255_field)";
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    if (ind % 2 == 0) {
+                        auto_stmt->SetParam(CVariant(eDB_VarChar), "@nvc255_field");
+                    } else {
+                        auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
+                                             "@nvc255_field"
+                                             );
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(int(rec_num),
+                                  GetNumOfRecords(auto_stmt, GetTableName()));
+            }
+        }
+
+        if (false) {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
             // Drop all records ...
-            sql  = " DELETE FROM " + GetTableName();
+            sql  = " DELETE FROM DBAPI_Sample..dbapi_unit_test";
             auto_stmt->ExecuteUpdate(sql);
 
-            sql  = " INSERT INTO " + GetTableName() +
+            sql  = " INSERT INTO DBAPI_Sample..dbapi_unit_test"
                 "(int_field, vc1000_field) "
                 "VALUES(@int_field, @vc1000_field) \n";
 
@@ -4038,7 +4238,7 @@ CDBAPIUnitTest::Test_NULL(void)
             for (long ind = 0; ind < rec_num; ++ind) {
                 if (ind % 2 == 0) {
                     auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                    auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
+                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
                 } else {
                     auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
                     auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
@@ -4060,249 +4260,180 @@ CDBAPIUnitTest::Test_NULL(void)
                               );
         }
 
-        {
-            // Drop all records ...
-            sql  = " DELETE FROM #test_unicode_table";
-            auto_stmt->ExecuteUpdate(sql);
-
-            sql  = " INSERT INTO #test_unicode_table"
-                "(nvc255_field) VALUES(@nvc255_field)";
-
-            // Insert data ...
-            for (long ind = 0; ind < rec_num; ++ind) {
-                if (ind % 2 == 0) {
-                    auto_stmt->SetParam(CVariant(eDB_VarChar), "@nvc255_field");
-                } else {
-                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
-                                         "@nvc255_field"
-                                         );
-                }
-
-                // Execute a statement with parameters ...
-                auto_stmt->ExecuteUpdate( sql );
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-            }
-
-            // Check record number ...
-            BOOST_CHECK_EQUAL(int(rec_num),
-                              GetNumOfRecords(auto_stmt, GetTableName()));
-        }
-    }
-
-    if (false) {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        // Drop all records ...
-        sql  = " DELETE FROM DBAPI_Sample..dbapi_unit_test";
-        auto_stmt->ExecuteUpdate(sql);
-
-        sql  = " INSERT INTO DBAPI_Sample..dbapi_unit_test"
-            "(int_field, vc1000_field) "
-            "VALUES(@int_field, @vc1000_field) \n";
-
-        // CVariant variant(eDB_Text);
-        // variant.Append(" ", 1);
-
-        // Insert data ...
-        for (long ind = 0; ind < rec_num; ++ind) {
-            if (ind % 2 == 0) {
-                auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
-            } else {
-                auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
-                                     "@vc1000_field"
-                                     );
-            }
-
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-        }
-
-        // Check record number ...
-        BOOST_CHECK_EQUAL(int(rec_num),
-                          GetNumOfRecords(auto_stmt, GetTableName())
-                          );
-    }
-
-    // Check ...
-    if (true) {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        {
-            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
-                " ORDER BY id";
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get() != NULL);
-
-            for (long ind = 0; ind < rec_num; ++ind) {
-                BOOST_CHECK(rs->Next());
-
-                const CVariant& int_field = rs->GetVariant(1);
-                const CVariant& vc1000_field = rs->GetVariant(2);
-
-                if (ind % 2 == 0) {
-                    BOOST_CHECK( !int_field.IsNull() );
-                    BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
-
-                    BOOST_CHECK( vc1000_field.IsNull() );
-                } else {
-                    BOOST_CHECK( int_field.IsNull() );
-
-                    BOOST_CHECK( !vc1000_field.IsNull() );
-                    BOOST_CHECK_EQUAL( vc1000_field.GetString(),
-                                       NStr::IntToString(ind) );
-                }
-            }
-
-            DumpResults(auto_stmt.get());
-        }
-
-        {
-            sql = "SELECT nvc255_field FROM #test_unicode_table ORDER BY id";
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get() != NULL);
-
-            for (long ind = 0; ind < rec_num; ++ind) {
-                BOOST_CHECK(rs->Next());
-
-                const CVariant& nvc255_field = rs->GetVariant(1);
-
-                if (ind % 2 == 0) {
-                    BOOST_CHECK( nvc255_field.IsNull() );
-                } else {
-                    BOOST_CHECK( !nvc255_field.IsNull() );
-                    BOOST_CHECK_EQUAL( nvc255_field.GetString(),
-                                       NStr::IntToString(ind) );
-                }
-            }
-
-            DumpResults(auto_stmt.get());
-        }
-    }
-
-    // Check NULL with stored procedures ...
-    {
-        {
-            auto_ptr<ICallableStatement> auto_stmt(
-                m_Conn->GetCallableStatement("sp_server_info", 1)
-                );
-
-            // Set parameter to NULL ...
-            auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
-            auto_stmt->Execute();
-
-            if (m_args.GetServerType() == CTestArguments::eSybase) {
-                BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
-            } else {
-                BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
-            }
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-
-            // Set parameter to 1 ...
-            auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
-            auto_stmt->Execute();
-
-            BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
-        }
-
-        {
-        }
-    }
-
-
-    // Special case: empty strings.
-    if (false) {
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-        // Initialize data (strings are EMPTY) ...
-        {
-            // Drop all records ...
-            sql  = " DELETE FROM " + GetTableName();
-            auto_stmt->ExecuteUpdate(sql);
-
-            sql  = " INSERT INTO " + GetTableName() +
-                "(int_field, vc1000_field) "
-                "VALUES(@int_field, @vc1000_field) \n";
-
-            // CVariant variant(eDB_Text);
-            // variant.Append(" ", 1);
-
-            // Insert data ...
-            for (long ind = 0; ind < rec_num; ++ind) {
-                if (ind % 2 == 0) {
-                    auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                    auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
-                } else {
-                    auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                    auto_stmt->SetParam( CVariant(string()), "@vc1000_field" );
-                }
-
-                // Execute a statement with parameters ...
-                auto_stmt->ExecuteUpdate( sql );
-
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
-            }
-
-            // Check record number ...
-            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
-                                                            GetTableName()));
-        }
-
         // Check ...
-        {
-            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
-                " ORDER BY id";
+        if (true) {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get() != NULL);
+            {
+                sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                    " ORDER BY id";
 
-            for (long ind = 0; ind < rec_num; ++ind) {
-                BOOST_CHECK(rs->Next());
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
 
-                const CVariant& int_field = rs->GetVariant(1);
-                const CVariant& vc1000_field = rs->GetVariant(2);
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    BOOST_CHECK(rs->Next());
 
-                if (ind % 2 == 0) {
-                    BOOST_CHECK( !int_field.IsNull() );
-                    BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+                    const CVariant& int_field = rs->GetVariant(1);
+                    const CVariant& vc1000_field = rs->GetVariant(2);
 
-                    BOOST_CHECK( vc1000_field.IsNull() );
-                } else {
-                    BOOST_CHECK( int_field.IsNull() );
+                    if (ind % 2 == 0) {
+                        BOOST_CHECK( !int_field.IsNull() );
+                        BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
 
-                    BOOST_CHECK( !vc1000_field.IsNull() );
-                    BOOST_CHECK_EQUAL( vc1000_field.GetString(), string() );
+                        BOOST_CHECK( vc1000_field.IsNull() );
+                    } else {
+                        BOOST_CHECK( int_field.IsNull() );
+
+                        BOOST_CHECK( !vc1000_field.IsNull() );
+                        BOOST_CHECK_EQUAL( vc1000_field.GetString(),
+                                           NStr::IntToString(ind) );
+                    }
                 }
+
+                DumpResults(auto_stmt.get());
             }
 
-            DumpResults(auto_stmt.get());
+            {
+                sql = "SELECT nvc255_field FROM #test_unicode_table ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    BOOST_CHECK(rs->Next());
+
+                    const CVariant& nvc255_field = rs->GetVariant(1);
+
+                    if (ind % 2 == 0) {
+                        BOOST_CHECK( nvc255_field.IsNull() );
+                    } else {
+                        BOOST_CHECK( !nvc255_field.IsNull() );
+                        BOOST_CHECK_EQUAL( nvc255_field.GetString(),
+                                           NStr::IntToString(ind) );
+                    }
+                }
+
+                DumpResults(auto_stmt.get());
+            }
+        }
+
+        // Check NULL with stored procedures ...
+        {
+            {
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("sp_server_info", 1)
+                    );
+
+                // Set parameter to NULL ...
+                auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
+                auto_stmt->Execute();
+
+                if (m_args.GetServerType() == CTestArguments::eSybase) {
+                    BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
+                } else {
+                    BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+                }
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                // Set parameter to 1 ...
+                auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
+                auto_stmt->Execute();
+
+                BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+            }
+
+            {
+            }
+        }
+
+
+        // Special case: empty strings.
+        if (false) {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            // Initialize data (strings are EMPTY) ...
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM " + GetTableName();
+                auto_stmt->ExecuteUpdate(sql);
+
+                sql  = " INSERT INTO " + GetTableName() +
+                    "(int_field, vc1000_field) "
+                    "VALUES(@int_field, @vc1000_field) \n";
+
+                // CVariant variant(eDB_Text);
+                // variant.Append(" ", 1);
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    if (ind % 2 == 0) {
+                        auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                        auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
+                    } else {
+                        auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                        auto_stmt->SetParam( CVariant(string()), "@vc1000_field" );
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate( sql );
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
+                                                                GetTableName()));
+            }
+
+            // Check ...
+            {
+                sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                    " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    BOOST_CHECK(rs->Next());
+
+                    const CVariant& int_field = rs->GetVariant(1);
+                    const CVariant& vc1000_field = rs->GetVariant(2);
+
+                    if (ind % 2 == 0) {
+                        BOOST_CHECK( !int_field.IsNull() );
+                        BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+
+                        BOOST_CHECK( vc1000_field.IsNull() );
+                    } else {
+                        BOOST_CHECK( int_field.IsNull() );
+
+                        BOOST_CHECK( !vc1000_field.IsNull() );
+                        BOOST_CHECK_EQUAL( vc1000_field.GetString(), string() );
+                    }
+                }
+
+                DumpResults(auto_stmt.get());
+            }
         }
     }
-
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 
@@ -4310,39 +4441,44 @@ CDBAPIUnitTest::Test_NULL(void)
 void
 CDBAPIUnitTest::Test_GetRowCount()
 {
-    enum {repeat_num = 5};
-    for ( int i = 0; i < repeat_num; ++i ) {
-        // Shared/Reusable statement
-        {
-            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+    try {
+        enum {repeat_num = 5};
+        for ( int i = 0; i < repeat_num; ++i ) {
+            // Shared/Reusable statement
+            {
+                auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
 
-            CheckGetRowCount( i, eNoTrans, stmt.get() );
-            CheckGetRowCount( i, eTransCommit, stmt.get() );
-            CheckGetRowCount( i, eTransRollback, stmt.get() );
+                CheckGetRowCount( i, eNoTrans, stmt.get() );
+                CheckGetRowCount( i, eTransCommit, stmt.get() );
+                CheckGetRowCount( i, eTransRollback, stmt.get() );
+            }
+            // Dedicated statement
+            {
+                CheckGetRowCount( i, eNoTrans );
+                CheckGetRowCount( i, eTransCommit );
+                CheckGetRowCount( i, eTransRollback );
+            }
         }
-        // Dedicated statement
-        {
-            CheckGetRowCount( i, eNoTrans );
-            CheckGetRowCount( i, eTransCommit );
-            CheckGetRowCount( i, eTransRollback );
+
+        for ( int i = 0; i < repeat_num; ++i ) {
+            // Shared/Reusable statement
+            {
+                auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
+
+                CheckGetRowCount2( i, eNoTrans, stmt.get() );
+                CheckGetRowCount2( i, eTransCommit, stmt.get() );
+                CheckGetRowCount2( i, eTransRollback, stmt.get() );
+            }
+            // Dedicated statement
+            {
+                CheckGetRowCount2( i, eNoTrans );
+                CheckGetRowCount2( i, eTransCommit );
+                CheckGetRowCount2( i, eTransRollback );
+            }
         }
     }
-
-    for ( int i = 0; i < repeat_num; ++i ) {
-        // Shared/Reusable statement
-        {
-            auto_ptr<IStatement> stmt( m_Conn->GetStatement() );
-
-            CheckGetRowCount2( i, eNoTrans, stmt.get() );
-            CheckGetRowCount2( i, eTransCommit, stmt.get() );
-            CheckGetRowCount2( i, eTransRollback, stmt.get() );
-        }
-        // Dedicated statement
-        {
-            CheckGetRowCount2( i, eNoTrans );
-            CheckGetRowCount2( i, eTransCommit );
-            CheckGetRowCount2( i, eTransRollback );
-        }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -4657,168 +4793,173 @@ CDBAPIUnitTest::CheckGetRowCount2(
 ////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Object(void)
 {
-    // Check for NULL a default constructor ...
-    {
-        CDB_Bit value_Bit;
-        CDB_Int value_Int;
-        CDB_SmallInt value_SmallInt;
-        CDB_TinyInt value_TinyInt;
-        CDB_BigInt value_BigInt;
-        CDB_VarChar value_VarChar;
-        CDB_Char value_Char;
-        CDB_LongChar value_LongChar;
-        CDB_VarBinary value_VarBinary;
-        CDB_Binary value_Binary;
-        CDB_LongBinary value_LongBinary;
-        CDB_Float value_Float;
-        CDB_Double value_Double;
-        CDB_SmallDateTime value_SmallDateTime;
-        CDB_DateTime value_DateTime;
-        CDB_Numeric value_Numeric;
+    try {
+        // Check for NULL a default constructor ...
+        {
+            CDB_Bit value_Bit;
+            CDB_Int value_Int;
+            CDB_SmallInt value_SmallInt;
+            CDB_TinyInt value_TinyInt;
+            CDB_BigInt value_BigInt;
+            CDB_VarChar value_VarChar;
+            CDB_Char value_Char;
+            CDB_LongChar value_LongChar;
+            CDB_VarBinary value_VarBinary;
+            CDB_Binary value_Binary;
+            CDB_LongBinary value_LongBinary;
+            CDB_Float value_Float;
+            CDB_Double value_Double;
+            CDB_SmallDateTime value_SmallDateTime;
+            CDB_DateTime value_DateTime;
+            CDB_Numeric value_Numeric;
 
-        BOOST_CHECK(value_Bit.IsNULL());
-        BOOST_CHECK(value_Int.IsNULL());
-        BOOST_CHECK(value_SmallInt.IsNULL());
-        BOOST_CHECK(value_TinyInt.IsNULL());
-        BOOST_CHECK(value_BigInt.IsNULL());
-        BOOST_CHECK(value_VarChar.IsNULL());
-        BOOST_CHECK(value_Char.IsNULL());
-        BOOST_CHECK(value_LongChar.IsNULL());
-        BOOST_CHECK(value_VarBinary.IsNULL());
-        BOOST_CHECK(value_Binary.IsNULL());
-        BOOST_CHECK(value_LongBinary.IsNULL());
-        BOOST_CHECK(value_Float.IsNULL());
-        BOOST_CHECK(value_Double.IsNULL());
-        BOOST_CHECK(value_SmallDateTime.IsNULL());
-        BOOST_CHECK(value_DateTime.IsNULL());
-        BOOST_CHECK(value_Numeric.IsNULL());
+            BOOST_CHECK(value_Bit.IsNULL());
+            BOOST_CHECK(value_Int.IsNULL());
+            BOOST_CHECK(value_SmallInt.IsNULL());
+            BOOST_CHECK(value_TinyInt.IsNULL());
+            BOOST_CHECK(value_BigInt.IsNULL());
+            BOOST_CHECK(value_VarChar.IsNULL());
+            BOOST_CHECK(value_Char.IsNULL());
+            BOOST_CHECK(value_LongChar.IsNULL());
+            BOOST_CHECK(value_VarBinary.IsNULL());
+            BOOST_CHECK(value_Binary.IsNULL());
+            BOOST_CHECK(value_LongBinary.IsNULL());
+            BOOST_CHECK(value_Float.IsNULL());
+            BOOST_CHECK(value_Double.IsNULL());
+            BOOST_CHECK(value_SmallDateTime.IsNULL());
+            BOOST_CHECK(value_DateTime.IsNULL());
+            BOOST_CHECK(value_Numeric.IsNULL());
+        }
+
+        // Check for NOT NULL a non-default constructor ...
+        {
+            CDB_Bit value_Bit(false);
+            CDB_Int value_Int(1);
+            CDB_SmallInt value_SmallInt(1);
+            CDB_TinyInt value_TinyInt(1);
+            CDB_BigInt value_BigInt(1);
+            CDB_VarChar value_VarChar("ABC");
+            CDB_Char value_Char(3, "ABC");
+            CDB_LongChar value_LongChar(3, "ABC");
+            CDB_VarBinary value_VarBinary("ABC", 3);
+            CDB_Binary value_Binary(3, "ABC", 3);
+            CDB_LongBinary value_LongBinary(3, "ABC", 3);
+            CDB_Float value_Float(1.0);
+            CDB_Double value_Double(1.0);
+            CDB_SmallDateTime value_SmallDateTime(CTime("04/24/2007 11:17:01"));
+            CDB_DateTime value_DateTime(CTime("04/24/2007 11:17:01"));
+            CDB_Numeric value_Numeric(10, 2, "10");
+
+            BOOST_CHECK(!value_Bit.IsNULL());
+            BOOST_CHECK(!value_Int.IsNULL());
+            BOOST_CHECK(!value_SmallInt.IsNULL());
+            BOOST_CHECK(!value_TinyInt.IsNULL());
+            BOOST_CHECK(!value_BigInt.IsNULL());
+            BOOST_CHECK(!value_VarChar.IsNULL());
+            BOOST_CHECK(!value_Char.IsNULL());
+            BOOST_CHECK(!value_LongChar.IsNULL());
+            BOOST_CHECK(!value_VarBinary.IsNULL());
+            BOOST_CHECK(!value_Binary.IsNULL());
+            BOOST_CHECK(!value_LongBinary.IsNULL());
+            BOOST_CHECK(!value_Float.IsNULL());
+            BOOST_CHECK(!value_Double.IsNULL());
+            BOOST_CHECK(!value_SmallDateTime.IsNULL());
+            BOOST_CHECK(!value_DateTime.IsNULL());
+            BOOST_CHECK(!value_Numeric.IsNULL());
+        }
+
+        // Check for NOT NULL after a value assignment operator ...
+        {
+            CDB_Bit value_Bit;
+            CDB_Int value_Int;
+            CDB_SmallInt value_SmallInt;
+            CDB_TinyInt value_TinyInt;
+            CDB_BigInt value_BigInt;
+            CDB_VarChar value_VarChar;
+            CDB_Char value_Char(10);
+            CDB_LongChar value_LongChar;
+            CDB_VarBinary value_VarBinary;
+            CDB_Binary value_Binary;
+            CDB_LongBinary value_LongBinary;
+            CDB_Float value_Float;
+            CDB_Double value_Double;
+            CDB_SmallDateTime value_SmallDateTime;
+            CDB_DateTime value_DateTime;
+            CDB_Numeric value_Numeric;
+
+            value_Bit = true;
+            value_Int = 1;
+            value_SmallInt = 1;
+            value_TinyInt = 1;
+            value_BigInt = 1;
+            value_VarChar = "ABC";
+            value_Char = "ABC";
+            value_LongChar = "ABC";
+            value_VarBinary.SetValue("ABC", 3);
+            value_Binary.SetValue("ABC", 3);
+            value_LongBinary.SetValue("ABC", 3);
+            value_Float = 1.0;
+            value_Double = 1.0;
+            value_SmallDateTime = CTime("04/24/2007 11:17:01");
+            value_DateTime = CTime("04/24/2007 11:17:01");
+            value_Numeric = "10";
+
+            BOOST_CHECK(!value_Bit.IsNULL());
+            BOOST_CHECK(!value_Int.IsNULL());
+            BOOST_CHECK(!value_SmallInt.IsNULL());
+            BOOST_CHECK(!value_TinyInt.IsNULL());
+            BOOST_CHECK(!value_BigInt.IsNULL());
+            BOOST_CHECK(!value_VarChar.IsNULL());
+            BOOST_CHECK(!value_Char.IsNULL());
+            BOOST_CHECK(!value_LongChar.IsNULL());
+            BOOST_CHECK(!value_VarBinary.IsNULL());
+            BOOST_CHECK(!value_Binary.IsNULL());
+            BOOST_CHECK(!value_LongBinary.IsNULL());
+            BOOST_CHECK(!value_Float.IsNULL());
+            BOOST_CHECK(!value_Double.IsNULL());
+            BOOST_CHECK(!value_SmallDateTime.IsNULL());
+            BOOST_CHECK(!value_DateTime.IsNULL());
+            BOOST_CHECK(!value_Numeric.IsNULL());
+
+            // A copy constructor ...
+            CDB_Bit value_Bit2(value_Bit);
+            CDB_Int value_Int2(value_Int);
+            CDB_SmallInt value_SmallInt2(value_SmallInt);
+            CDB_TinyInt value_TinyInt2(value_TinyInt);
+            CDB_BigInt value_BigInt2(value_BigInt);
+            CDB_VarChar value_VarChar2(value_VarChar);
+            CDB_Char value_Char2(value_Char);
+            CDB_LongChar value_LongChar2(value_LongChar);
+            CDB_VarBinary value_VarBinary2(value_VarBinary);
+            CDB_Binary value_Binary2(value_Binary);
+            CDB_LongBinary value_LongBinary2(value_LongBinary);
+            CDB_Float value_Float2(value_Float);
+            CDB_Double value_Double2(value_Double);
+            CDB_SmallDateTime value_SmallDateTime2(value_SmallDateTime);
+            CDB_DateTime value_DateTime2(value_DateTime);
+            CDB_Numeric value_Numeric2(value_Numeric);
+
+            BOOST_CHECK(!value_Bit2.IsNULL());
+            BOOST_CHECK(!value_Int2.IsNULL());
+            BOOST_CHECK(!value_SmallInt2.IsNULL());
+            BOOST_CHECK(!value_TinyInt2.IsNULL());
+            BOOST_CHECK(!value_BigInt2.IsNULL());
+            BOOST_CHECK(!value_VarChar2.IsNULL());
+            BOOST_CHECK(!value_Char2.IsNULL());
+            BOOST_CHECK(!value_LongChar2.IsNULL());
+            BOOST_CHECK(!value_VarBinary2.IsNULL());
+            BOOST_CHECK(!value_Binary2.IsNULL());
+            BOOST_CHECK(!value_LongBinary2.IsNULL());
+            BOOST_CHECK(!value_Float2.IsNULL());
+            BOOST_CHECK(!value_Double2.IsNULL());
+            BOOST_CHECK(!value_SmallDateTime2.IsNULL());
+            BOOST_CHECK(!value_DateTime2.IsNULL());
+            BOOST_CHECK(!value_Numeric2.IsNULL());
+
+        }
     }
-
-    // Check for NOT NULL a non-default constructor ...
-    {
-        CDB_Bit value_Bit(false);
-        CDB_Int value_Int(1);
-        CDB_SmallInt value_SmallInt(1);
-        CDB_TinyInt value_TinyInt(1);
-        CDB_BigInt value_BigInt(1);
-        CDB_VarChar value_VarChar("ABC");
-        CDB_Char value_Char(3, "ABC");
-        CDB_LongChar value_LongChar(3, "ABC");
-        CDB_VarBinary value_VarBinary("ABC", 3);
-        CDB_Binary value_Binary(3, "ABC", 3);
-        CDB_LongBinary value_LongBinary(3, "ABC", 3);
-        CDB_Float value_Float(1.0);
-        CDB_Double value_Double(1.0);
-        CDB_SmallDateTime value_SmallDateTime(CTime("04/24/2007 11:17:01"));
-        CDB_DateTime value_DateTime(CTime("04/24/2007 11:17:01"));
-        CDB_Numeric value_Numeric(10, 2, "10");
-
-        BOOST_CHECK(!value_Bit.IsNULL());
-        BOOST_CHECK(!value_Int.IsNULL());
-        BOOST_CHECK(!value_SmallInt.IsNULL());
-        BOOST_CHECK(!value_TinyInt.IsNULL());
-        BOOST_CHECK(!value_BigInt.IsNULL());
-        BOOST_CHECK(!value_VarChar.IsNULL());
-        BOOST_CHECK(!value_Char.IsNULL());
-        BOOST_CHECK(!value_LongChar.IsNULL());
-        BOOST_CHECK(!value_VarBinary.IsNULL());
-        BOOST_CHECK(!value_Binary.IsNULL());
-        BOOST_CHECK(!value_LongBinary.IsNULL());
-        BOOST_CHECK(!value_Float.IsNULL());
-        BOOST_CHECK(!value_Double.IsNULL());
-        BOOST_CHECK(!value_SmallDateTime.IsNULL());
-        BOOST_CHECK(!value_DateTime.IsNULL());
-        BOOST_CHECK(!value_Numeric.IsNULL());
-    }
-
-    // Check for NOT NULL after a value assignment operator ...
-    {
-        CDB_Bit value_Bit;
-        CDB_Int value_Int;
-        CDB_SmallInt value_SmallInt;
-        CDB_TinyInt value_TinyInt;
-        CDB_BigInt value_BigInt;
-        CDB_VarChar value_VarChar;
-        CDB_Char value_Char(10);
-        CDB_LongChar value_LongChar;
-        CDB_VarBinary value_VarBinary;
-        CDB_Binary value_Binary;
-        CDB_LongBinary value_LongBinary;
-        CDB_Float value_Float;
-        CDB_Double value_Double;
-        CDB_SmallDateTime value_SmallDateTime;
-        CDB_DateTime value_DateTime;
-        CDB_Numeric value_Numeric;
-
-        value_Bit = true;
-        value_Int = 1;
-        value_SmallInt = 1;
-        value_TinyInt = 1;
-        value_BigInt = 1;
-        value_VarChar = "ABC";
-        value_Char = "ABC";
-        value_LongChar = "ABC";
-        value_VarBinary.SetValue("ABC", 3);
-        value_Binary.SetValue("ABC", 3);
-        value_LongBinary.SetValue("ABC", 3);
-        value_Float = 1.0;
-        value_Double = 1.0;
-        value_SmallDateTime = CTime("04/24/2007 11:17:01");
-        value_DateTime = CTime("04/24/2007 11:17:01");
-        value_Numeric = "10";
-
-        BOOST_CHECK(!value_Bit.IsNULL());
-        BOOST_CHECK(!value_Int.IsNULL());
-        BOOST_CHECK(!value_SmallInt.IsNULL());
-        BOOST_CHECK(!value_TinyInt.IsNULL());
-        BOOST_CHECK(!value_BigInt.IsNULL());
-        BOOST_CHECK(!value_VarChar.IsNULL());
-        BOOST_CHECK(!value_Char.IsNULL());
-        BOOST_CHECK(!value_LongChar.IsNULL());
-        BOOST_CHECK(!value_VarBinary.IsNULL());
-        BOOST_CHECK(!value_Binary.IsNULL());
-        BOOST_CHECK(!value_LongBinary.IsNULL());
-        BOOST_CHECK(!value_Float.IsNULL());
-        BOOST_CHECK(!value_Double.IsNULL());
-        BOOST_CHECK(!value_SmallDateTime.IsNULL());
-        BOOST_CHECK(!value_DateTime.IsNULL());
-        BOOST_CHECK(!value_Numeric.IsNULL());
-
-        // A copy constructor ...
-        CDB_Bit value_Bit2(value_Bit);
-        CDB_Int value_Int2(value_Int);
-        CDB_SmallInt value_SmallInt2(value_SmallInt);
-        CDB_TinyInt value_TinyInt2(value_TinyInt);
-        CDB_BigInt value_BigInt2(value_BigInt);
-        CDB_VarChar value_VarChar2(value_VarChar);
-        CDB_Char value_Char2(value_Char);
-        CDB_LongChar value_LongChar2(value_LongChar);
-        CDB_VarBinary value_VarBinary2(value_VarBinary);
-        CDB_Binary value_Binary2(value_Binary);
-        CDB_LongBinary value_LongBinary2(value_LongBinary);
-        CDB_Float value_Float2(value_Float);
-        CDB_Double value_Double2(value_Double);
-        CDB_SmallDateTime value_SmallDateTime2(value_SmallDateTime);
-        CDB_DateTime value_DateTime2(value_DateTime);
-        CDB_Numeric value_Numeric2(value_Numeric);
-
-        BOOST_CHECK(!value_Bit2.IsNULL());
-        BOOST_CHECK(!value_Int2.IsNULL());
-        BOOST_CHECK(!value_SmallInt2.IsNULL());
-        BOOST_CHECK(!value_TinyInt2.IsNULL());
-        BOOST_CHECK(!value_BigInt2.IsNULL());
-        BOOST_CHECK(!value_VarChar2.IsNULL());
-        BOOST_CHECK(!value_Char2.IsNULL());
-        BOOST_CHECK(!value_LongChar2.IsNULL());
-        BOOST_CHECK(!value_VarBinary2.IsNULL());
-        BOOST_CHECK(!value_Binary2.IsNULL());
-        BOOST_CHECK(!value_LongBinary2.IsNULL());
-        BOOST_CHECK(!value_Float2.IsNULL());
-        BOOST_CHECK(!value_Double2.IsNULL());
-        BOOST_CHECK(!value_SmallDateTime2.IsNULL());
-        BOOST_CHECK(!value_DateTime2.IsNULL());
-        BOOST_CHECK(!value_Numeric2.IsNULL());
-
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -4838,934 +4979,939 @@ CDBAPIUnitTest::Test_Variant(void)
     const char* value_binary = "test binary 1234567890 binary";
     const CTime value_CTime( CTime::eCurrent );
 
-    // Check constructors
-    {
-        const CVariant variant_Int8( value_Int8 );
-        BOOST_CHECK( !variant_Int8.IsNull() );
-        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
-
-        const CVariant variant_Int4( value_Int4 );
-        BOOST_CHECK( !variant_Int4.IsNull() );
-        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
-
-        const CVariant variant_Int2( value_Int2 );
-        BOOST_CHECK( !variant_Int2.IsNull() );
-        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
-
-        const CVariant variant_Uint1( value_Uint1 );
-        BOOST_CHECK( !variant_Uint1.IsNull() );
-        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
-
-        const CVariant variant_float( value_float );
-        BOOST_CHECK( !variant_float.IsNull() );
-        BOOST_CHECK( variant_float.GetFloat() == value_float );
-
-        const CVariant variant_double( value_double );
-        BOOST_CHECK( !variant_double.IsNull() );
-        BOOST_CHECK( variant_double.GetDouble() == value_double );
-
-        const CVariant variant_bool( value_bool );
-        BOOST_CHECK( !variant_bool.IsNull() );
-        BOOST_CHECK( variant_bool.GetBit() == value_bool );
-
-        const CVariant variant_string( value_string );
-        BOOST_CHECK( !variant_string.IsNull() );
-        BOOST_CHECK( variant_string.GetString() == value_string );
-
-        const CVariant variant_char( value_char );
-        BOOST_CHECK( !variant_char.IsNull() );
-        BOOST_CHECK( variant_char.GetString() == value_char );
-
-        const CVariant variant_CTimeShort( value_CTime, eShort );
-        BOOST_CHECK( !variant_CTimeShort.IsNull() );
-        BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
-
-        const CVariant variant_CTimeLong( value_CTime, eLong );
-        BOOST_CHECK( !variant_CTimeLong.IsNull() );
-        BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
-
-//        explicit CVariant(CDB_Object* obj);
-
-    }
-
-    // Check the CVariant(EDB_Type type, size_t size = 0) constructor
-    {
-//        enum EDB_Type {
-//            eDB_Int,
-//            eDB_SmallInt,
-//            eDB_TinyInt,
-//            eDB_BigInt,
-//            eDB_VarChar,
-//            eDB_Char,
-//            eDB_VarBinary,
-//            eDB_Binary,
-//            eDB_Float,
-//            eDB_Double,
-//            eDB_DateTime,
-//            eDB_SmallDateTime,
-//            eDB_Text,
-//            eDB_Image,
-//            eDB_Bit,
-//            eDB_Numeric,
-
-//            eDB_UnsupportedType,
-//            eDB_LongChar,
-//            eDB_LongBinary
-//        };
-
+    try {
+        // Check constructors
         {
-            CVariant value_variant( eDB_Int );
+            const CVariant variant_Int8( value_Int8 );
+            BOOST_CHECK( !variant_Int8.IsNull() );
+            BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
-            BOOST_CHECK_EQUAL( eDB_Int, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
+            const CVariant variant_Int4( value_Int4 );
+            BOOST_CHECK( !variant_Int4.IsNull() );
+            BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
+
+            const CVariant variant_Int2( value_Int2 );
+            BOOST_CHECK( !variant_Int2.IsNull() );
+            BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
+
+            const CVariant variant_Uint1( value_Uint1 );
+            BOOST_CHECK( !variant_Uint1.IsNull() );
+            BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
+
+            const CVariant variant_float( value_float );
+            BOOST_CHECK( !variant_float.IsNull() );
+            BOOST_CHECK( variant_float.GetFloat() == value_float );
+
+            const CVariant variant_double( value_double );
+            BOOST_CHECK( !variant_double.IsNull() );
+            BOOST_CHECK( variant_double.GetDouble() == value_double );
+
+            const CVariant variant_bool( value_bool );
+            BOOST_CHECK( !variant_bool.IsNull() );
+            BOOST_CHECK( variant_bool.GetBit() == value_bool );
+
+            const CVariant variant_string( value_string );
+            BOOST_CHECK( !variant_string.IsNull() );
+            BOOST_CHECK( variant_string.GetString() == value_string );
+
+            const CVariant variant_char( value_char );
+            BOOST_CHECK( !variant_char.IsNull() );
+            BOOST_CHECK( variant_char.GetString() == value_char );
+
+            const CVariant variant_CTimeShort( value_CTime, eShort );
+            BOOST_CHECK( !variant_CTimeShort.IsNull() );
+            BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
+
+            const CVariant variant_CTimeLong( value_CTime, eLong );
+            BOOST_CHECK( !variant_CTimeLong.IsNull() );
+            BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
+
+    //        explicit CVariant(CDB_Object* obj);
+
         }
+
+        // Check the CVariant(EDB_Type type, size_t size = 0) constructor
         {
-            CVariant value_variant( eDB_SmallInt );
+    //        enum EDB_Type {
+    //            eDB_Int,
+    //            eDB_SmallInt,
+    //            eDB_TinyInt,
+    //            eDB_BigInt,
+    //            eDB_VarChar,
+    //            eDB_Char,
+    //            eDB_VarBinary,
+    //            eDB_Binary,
+    //            eDB_Float,
+    //            eDB_Double,
+    //            eDB_DateTime,
+    //            eDB_SmallDateTime,
+    //            eDB_Text,
+    //            eDB_Image,
+    //            eDB_Bit,
+    //            eDB_Numeric,
 
-            BOOST_CHECK_EQUAL( eDB_SmallInt, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
+    //            eDB_UnsupportedType,
+    //            eDB_LongChar,
+    //            eDB_LongBinary
+    //        };
+
+            {
+                CVariant value_variant( eDB_Int );
+
+                BOOST_CHECK_EQUAL( eDB_Int, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_SmallInt );
+
+                BOOST_CHECK_EQUAL( eDB_SmallInt, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_TinyInt );
+
+                BOOST_CHECK_EQUAL( eDB_TinyInt, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_BigInt );
+
+                BOOST_CHECK_EQUAL( eDB_BigInt, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_VarChar );
+
+                BOOST_CHECK_EQUAL( eDB_VarChar, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Char, max_text_size );
+
+                BOOST_CHECK_EQUAL( eDB_Char, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_VarBinary );
+
+                BOOST_CHECK_EQUAL( eDB_VarBinary, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Binary, max_text_size );
+
+                BOOST_CHECK_EQUAL( eDB_Binary, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Float );
+
+                BOOST_CHECK_EQUAL( eDB_Float, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Double );
+
+                BOOST_CHECK_EQUAL( eDB_Double, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_DateTime );
+
+                BOOST_CHECK_EQUAL( eDB_DateTime, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_SmallDateTime );
+
+                BOOST_CHECK_EQUAL( eDB_SmallDateTime, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Text );
+
+                BOOST_CHECK_EQUAL( eDB_Text, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Image );
+
+                BOOST_CHECK_EQUAL( eDB_Image, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Bit );
+
+                BOOST_CHECK_EQUAL( eDB_Bit, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_Numeric );
+
+                BOOST_CHECK_EQUAL( eDB_Numeric, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_LongChar, max_text_size );
+
+                BOOST_CHECK_EQUAL( eDB_LongChar, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            {
+                CVariant value_variant( eDB_LongBinary, max_text_size );
+
+                BOOST_CHECK_EQUAL( eDB_LongBinary, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
+            if (false) {
+                CVariant value_variant( eDB_UnsupportedType );
+
+                BOOST_CHECK_EQUAL( eDB_UnsupportedType, value_variant.GetType() );
+                BOOST_CHECK( value_variant.IsNull() );
+            }
         }
+
+        // Check the copy-constructor CVariant(const CVariant& v)
         {
-            CVariant value_variant( eDB_TinyInt );
+            const CVariant variant_Int8 = CVariant(value_Int8);
+            BOOST_CHECK( !variant_Int8.IsNull() );
+            BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
-            BOOST_CHECK_EQUAL( eDB_TinyInt, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
+            const CVariant variant_Int4 = CVariant(value_Int4);
+            BOOST_CHECK( !variant_Int4.IsNull() );
+            BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
+
+            const CVariant variant_Int2 = CVariant(value_Int2);
+            BOOST_CHECK( !variant_Int2.IsNull() );
+            BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
+
+            const CVariant variant_Uint1 = CVariant(value_Uint1);
+            BOOST_CHECK( !variant_Uint1.IsNull() );
+            BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
+
+            const CVariant variant_float = CVariant(value_float);
+            BOOST_CHECK( !variant_float.IsNull() );
+            BOOST_CHECK( variant_float.GetFloat() == value_float );
+
+            const CVariant variant_double = CVariant(value_double);
+            BOOST_CHECK( !variant_double.IsNull() );
+            BOOST_CHECK( variant_double.GetDouble() == value_double );
+
+            const CVariant variant_bool = CVariant(value_bool);
+            BOOST_CHECK( !variant_bool.IsNull() );
+            BOOST_CHECK( variant_bool.GetBit() == value_bool );
+
+            const CVariant variant_string = CVariant(value_string);
+            BOOST_CHECK( !variant_string.IsNull() );
+            BOOST_CHECK( variant_string.GetString() == value_string );
+
+            const CVariant variant_char = CVariant(value_char);
+            BOOST_CHECK( !variant_char.IsNull() );
+            BOOST_CHECK( variant_char.GetString() == value_char );
+
+            const CVariant variant_CTimeShort = CVariant( value_CTime, eShort );
+            BOOST_CHECK( !variant_CTimeShort.IsNull() );
+            BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
+
+            const CVariant variant_CTimeLong = CVariant( value_CTime, eLong );
+            BOOST_CHECK( !variant_CTimeLong.IsNull() );
+            BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
         }
+
+        // Call Factories for different types
         {
-            CVariant value_variant( eDB_BigInt );
+            const CVariant variant_Int8 = CVariant::BigInt( const_cast<Int8*>(&value_Int8) );
+            BOOST_CHECK( !variant_Int8.IsNull() );
+            BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
-            BOOST_CHECK_EQUAL( eDB_BigInt, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
+            const CVariant variant_Int4 = CVariant::Int( const_cast<Int4*>(&value_Int4) );
+            BOOST_CHECK( !variant_Int4.IsNull() );
+            BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
+
+            const CVariant variant_Int2 = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) );
+            BOOST_CHECK( !variant_Int2.IsNull() );
+            BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
+
+            const CVariant variant_Uint1 = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) );
+            BOOST_CHECK( !variant_Uint1.IsNull() );
+            BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
+
+            const CVariant variant_float = CVariant::Float( const_cast<float*>(&value_float) );
+            BOOST_CHECK( !variant_float.IsNull() );
+            BOOST_CHECK( variant_float.GetFloat() == value_float );
+
+            const CVariant variant_double = CVariant::Double( const_cast<double*>(&value_double) );
+            BOOST_CHECK( !variant_double.IsNull() );
+            BOOST_CHECK( variant_double.GetDouble() == value_double );
+
+            const CVariant variant_bool = CVariant::Bit( const_cast<bool*>(&value_bool) );
+            BOOST_CHECK( !variant_bool.IsNull() );
+            BOOST_CHECK( variant_bool.GetBit() == value_bool );
+
+            const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
+            BOOST_CHECK( !variant_LongChar.IsNull() );
+            BOOST_CHECK( variant_LongChar.GetString() == value_char );
+
+            const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
+            BOOST_CHECK( !variant_VarChar.IsNull() );
+            BOOST_CHECK( variant_VarChar.GetString() == value_char );
+
+            const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
+            BOOST_CHECK( !variant_Char.IsNull() );
+            BOOST_CHECK( variant_Char.GetString() == value_char );
+
+            const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
+            BOOST_CHECK( !variant_LongBinary.IsNull() );
+
+            const CVariant variant_VarBinary = CVariant::VarBinary( value_binary, strlen(value_binary) );
+            BOOST_CHECK( !variant_VarBinary.IsNull() );
+
+            const CVariant variant_Binary = CVariant::Binary( strlen(value_binary), value_binary, strlen(value_binary) );
+            BOOST_CHECK( !variant_Binary.IsNull() );
+
+            const CVariant variant_SmallDateTime = CVariant::SmallDateTime( const_cast<CTime*>(&value_CTime) );
+            BOOST_CHECK( !variant_SmallDateTime.IsNull() );
+            BOOST_CHECK( variant_SmallDateTime.GetCTime() == value_CTime );
+
+            const CVariant variant_DateTime = CVariant::DateTime( const_cast<CTime*>(&value_CTime) );
+            BOOST_CHECK( !variant_DateTime.IsNull() );
+            BOOST_CHECK( variant_DateTime.GetCTime() == value_CTime );
+
+    //        CVariant variant_Numeric = CVariant::Numeric  (unsigned int precision, unsigned int scale, const char* p);
         }
+
+        // Call Get method for different types
         {
-            CVariant value_variant( eDB_VarChar );
+            const Uint1 value_Uint1_tmp = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) ).GetByte();
+            BOOST_CHECK_EQUAL( value_Uint1, value_Uint1_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_VarChar, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Char, max_text_size );
+            const Int2 value_Int2_tmp = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) ).GetInt2();
+            BOOST_CHECK_EQUAL( value_Int2, value_Int2_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_Char, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_VarBinary );
+            const Int4 value_Int4_tmp = CVariant::Int( const_cast<Int4*>(&value_Int4) ).GetInt4();
+            BOOST_CHECK_EQUAL( value_Int4, value_Int4_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_VarBinary, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Binary, max_text_size );
+            const Int8 value_Int8_tmp = CVariant::BigInt( const_cast<Int8*>(&value_Int8) ).GetInt8();
+            BOOST_CHECK_EQUAL( value_Int8, value_Int8_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_Binary, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Float );
+            const float value_float_tmp = CVariant::Float( const_cast<float*>(&value_float) ).GetFloat();
+            BOOST_CHECK_EQUAL( value_float, value_float_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_Float, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Double );
+            const double value_double_tmp = CVariant::Double( const_cast<double*>(&value_double) ).GetDouble();
+            BOOST_CHECK_EQUAL( value_double, value_double_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_Double, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_DateTime );
+            const bool value_bool_tmp = CVariant::Bit( const_cast<bool*>(&value_bool) ).GetBit();
+            BOOST_CHECK_EQUAL( value_bool, value_bool_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_DateTime, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_SmallDateTime );
+            const CTime value_CTime_tmp = CVariant::DateTime( const_cast<CTime*>(&value_CTime) ).GetCTime();
+            BOOST_CHECK( value_CTime == value_CTime_tmp );
 
-            BOOST_CHECK_EQUAL( eDB_SmallDateTime, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Text );
-
-            BOOST_CHECK_EQUAL( eDB_Text, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Image );
-
-            BOOST_CHECK_EQUAL( eDB_Image, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Bit );
-
-            BOOST_CHECK_EQUAL( eDB_Bit, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_Numeric );
-
-            BOOST_CHECK_EQUAL( eDB_Numeric, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_LongChar, max_text_size );
-
-            BOOST_CHECK_EQUAL( eDB_LongChar, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        {
-            CVariant value_variant( eDB_LongBinary, max_text_size );
-
-            BOOST_CHECK_EQUAL( eDB_LongBinary, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-        if (false) {
-            CVariant value_variant( eDB_UnsupportedType );
-
-            BOOST_CHECK_EQUAL( eDB_UnsupportedType, value_variant.GetType() );
-            BOOST_CHECK( value_variant.IsNull() );
-        }
-    }
-
-    // Check the copy-constructor CVariant(const CVariant& v)
-    {
-        const CVariant variant_Int8 = CVariant(value_Int8);
-        BOOST_CHECK( !variant_Int8.IsNull() );
-        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
-
-        const CVariant variant_Int4 = CVariant(value_Int4);
-        BOOST_CHECK( !variant_Int4.IsNull() );
-        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
-
-        const CVariant variant_Int2 = CVariant(value_Int2);
-        BOOST_CHECK( !variant_Int2.IsNull() );
-        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
-
-        const CVariant variant_Uint1 = CVariant(value_Uint1);
-        BOOST_CHECK( !variant_Uint1.IsNull() );
-        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
-
-        const CVariant variant_float = CVariant(value_float);
-        BOOST_CHECK( !variant_float.IsNull() );
-        BOOST_CHECK( variant_float.GetFloat() == value_float );
-
-        const CVariant variant_double = CVariant(value_double);
-        BOOST_CHECK( !variant_double.IsNull() );
-        BOOST_CHECK( variant_double.GetDouble() == value_double );
-
-        const CVariant variant_bool = CVariant(value_bool);
-        BOOST_CHECK( !variant_bool.IsNull() );
-        BOOST_CHECK( variant_bool.GetBit() == value_bool );
-
-        const CVariant variant_string = CVariant(value_string);
-        BOOST_CHECK( !variant_string.IsNull() );
-        BOOST_CHECK( variant_string.GetString() == value_string );
-
-        const CVariant variant_char = CVariant(value_char);
-        BOOST_CHECK( !variant_char.IsNull() );
-        BOOST_CHECK( variant_char.GetString() == value_char );
-
-        const CVariant variant_CTimeShort = CVariant( value_CTime, eShort );
-        BOOST_CHECK( !variant_CTimeShort.IsNull() );
-        BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
-
-        const CVariant variant_CTimeLong = CVariant( value_CTime, eLong );
-        BOOST_CHECK( !variant_CTimeLong.IsNull() );
-        BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
-    }
-
-    // Call Factories for different types
-    {
-        const CVariant variant_Int8 = CVariant::BigInt( const_cast<Int8*>(&value_Int8) );
-        BOOST_CHECK( !variant_Int8.IsNull() );
-        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
-
-        const CVariant variant_Int4 = CVariant::Int( const_cast<Int4*>(&value_Int4) );
-        BOOST_CHECK( !variant_Int4.IsNull() );
-        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
-
-        const CVariant variant_Int2 = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) );
-        BOOST_CHECK( !variant_Int2.IsNull() );
-        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
-
-        const CVariant variant_Uint1 = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) );
-        BOOST_CHECK( !variant_Uint1.IsNull() );
-        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
-
-        const CVariant variant_float = CVariant::Float( const_cast<float*>(&value_float) );
-        BOOST_CHECK( !variant_float.IsNull() );
-        BOOST_CHECK( variant_float.GetFloat() == value_float );
-
-        const CVariant variant_double = CVariant::Double( const_cast<double*>(&value_double) );
-        BOOST_CHECK( !variant_double.IsNull() );
-        BOOST_CHECK( variant_double.GetDouble() == value_double );
-
-        const CVariant variant_bool = CVariant::Bit( const_cast<bool*>(&value_bool) );
-        BOOST_CHECK( !variant_bool.IsNull() );
-        BOOST_CHECK( variant_bool.GetBit() == value_bool );
-
-        const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
-        BOOST_CHECK( !variant_LongChar.IsNull() );
-        BOOST_CHECK( variant_LongChar.GetString() == value_char );
-
-        const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
-        BOOST_CHECK( !variant_VarChar.IsNull() );
-        BOOST_CHECK( variant_VarChar.GetString() == value_char );
-
-        const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
-        BOOST_CHECK( !variant_Char.IsNull() );
-        BOOST_CHECK( variant_Char.GetString() == value_char );
-
-        const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
-        BOOST_CHECK( !variant_LongBinary.IsNull() );
-
-        const CVariant variant_VarBinary = CVariant::VarBinary( value_binary, strlen(value_binary) );
-        BOOST_CHECK( !variant_VarBinary.IsNull() );
-
-        const CVariant variant_Binary = CVariant::Binary( strlen(value_binary), value_binary, strlen(value_binary) );
-        BOOST_CHECK( !variant_Binary.IsNull() );
-
-        const CVariant variant_SmallDateTime = CVariant::SmallDateTime( const_cast<CTime*>(&value_CTime) );
-        BOOST_CHECK( !variant_SmallDateTime.IsNull() );
-        BOOST_CHECK( variant_SmallDateTime.GetCTime() == value_CTime );
-
-        const CVariant variant_DateTime = CVariant::DateTime( const_cast<CTime*>(&value_CTime) );
-        BOOST_CHECK( !variant_DateTime.IsNull() );
-        BOOST_CHECK( variant_DateTime.GetCTime() == value_CTime );
-
-//        CVariant variant_Numeric = CVariant::Numeric  (unsigned int precision, unsigned int scale, const char* p);
-    }
-
-    // Call Get method for different types
-    {
-        const Uint1 value_Uint1_tmp = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) ).GetByte();
-        BOOST_CHECK_EQUAL( value_Uint1, value_Uint1_tmp );
-
-        const Int2 value_Int2_tmp = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) ).GetInt2();
-        BOOST_CHECK_EQUAL( value_Int2, value_Int2_tmp );
-
-        const Int4 value_Int4_tmp = CVariant::Int( const_cast<Int4*>(&value_Int4) ).GetInt4();
-        BOOST_CHECK_EQUAL( value_Int4, value_Int4_tmp );
-
-        const Int8 value_Int8_tmp = CVariant::BigInt( const_cast<Int8*>(&value_Int8) ).GetInt8();
-        BOOST_CHECK_EQUAL( value_Int8, value_Int8_tmp );
-
-        const float value_float_tmp = CVariant::Float( const_cast<float*>(&value_float) ).GetFloat();
-        BOOST_CHECK_EQUAL( value_float, value_float_tmp );
-
-        const double value_double_tmp = CVariant::Double( const_cast<double*>(&value_double) ).GetDouble();
-        BOOST_CHECK_EQUAL( value_double, value_double_tmp );
-
-        const bool value_bool_tmp = CVariant::Bit( const_cast<bool*>(&value_bool) ).GetBit();
-        BOOST_CHECK_EQUAL( value_bool, value_bool_tmp );
-
-        const CTime value_CTime_tmp = CVariant::DateTime( const_cast<CTime*>(&value_CTime) ).GetCTime();
-        BOOST_CHECK( value_CTime == value_CTime_tmp );
-
-        // GetNumeric() ????
-    }
-
-    // Call operator= for different types
-    //!!! It *fails* !!!
-    if (false) {
-        CVariant value_variant(0);
-        value_variant.SetNull();
-
-        value_variant = CVariant(0);
-        BOOST_CHECK( CVariant(0) == value_variant );
-
-        value_variant = value_Int8;
-        BOOST_CHECK( CVariant( value_Int8 ) == value_variant );
-
-        value_variant = value_Int4;
-        BOOST_CHECK( CVariant( value_Int4 ) == value_variant );
-
-        value_variant = value_Int2;
-        BOOST_CHECK( CVariant( value_Int2 ) == value_variant );
-
-        value_variant = value_Uint1;
-        BOOST_CHECK( CVariant( value_Uint1 ) == value_variant );
-
-        value_variant = value_float;
-        BOOST_CHECK( CVariant( value_float ) == value_variant );
-
-        value_variant = value_double;
-        BOOST_CHECK( CVariant( value_double ) == value_variant );
-
-        value_variant = value_string;
-        BOOST_CHECK( CVariant( value_string ) == value_variant );
-
-        value_variant = value_char;
-        BOOST_CHECK( CVariant( value_char ) == value_variant );
-
-        value_variant = value_bool;
-        BOOST_CHECK( CVariant( value_bool ) == value_variant );
-
-        value_variant = value_CTime;
-        BOOST_CHECK( CVariant( value_CTime ) == value_variant );
-
-    }
-
-    // Check assigning of values of same type ...
-    {
-        CVariant variant_Int8( value_Int8 );
-        BOOST_CHECK( !variant_Int8.IsNull() );
-        variant_Int8 = CVariant( value_Int8 );
-        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
-        variant_Int8 = value_Int8;
-        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
-
-        CVariant variant_Int4( value_Int4 );
-        BOOST_CHECK( !variant_Int4.IsNull() );
-        variant_Int4 = CVariant( value_Int4 );
-        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
-        variant_Int4 = value_Int4;
-        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
-
-        CVariant variant_Int2( value_Int2 );
-        BOOST_CHECK( !variant_Int2.IsNull() );
-        variant_Int2 = CVariant( value_Int2 );
-        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
-        variant_Int2 = value_Int2;
-        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
-
-        CVariant variant_Uint1( value_Uint1 );
-        BOOST_CHECK( !variant_Uint1.IsNull() );
-        variant_Uint1 = CVariant( value_Uint1 );
-        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
-        variant_Uint1 = value_Uint1;
-        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
-
-        CVariant variant_float( value_float );
-        BOOST_CHECK( !variant_float.IsNull() );
-        variant_float = CVariant( value_float );
-        BOOST_CHECK( variant_float.GetFloat() == value_float );
-        variant_float = value_float;
-        BOOST_CHECK( variant_float.GetFloat() == value_float );
-
-        CVariant variant_double( value_double );
-        BOOST_CHECK( !variant_double.IsNull() );
-        variant_double = CVariant( value_double );
-        BOOST_CHECK( variant_double.GetDouble() == value_double );
-        variant_double = value_double;
-        BOOST_CHECK( variant_double.GetDouble() == value_double );
-
-        CVariant variant_bool( value_bool );
-        BOOST_CHECK( !variant_bool.IsNull() );
-        variant_bool = CVariant( value_bool );
-        BOOST_CHECK( variant_bool.GetBit() == value_bool );
-        variant_bool = value_bool;
-        BOOST_CHECK( variant_bool.GetBit() == value_bool );
-
-        CVariant variant_string( value_string );
-        BOOST_CHECK( !variant_string.IsNull() );
-        variant_string = CVariant( value_string );
-        BOOST_CHECK( variant_string.GetString() == value_string );
-        variant_string = value_string;
-        BOOST_CHECK( variant_string.GetString() == value_string );
-
-        CVariant variant_char( value_char );
-        BOOST_CHECK( !variant_char.IsNull() );
-        variant_char = CVariant( value_char );
-        BOOST_CHECK( variant_char.GetString() == value_char );
-        variant_char = value_char;
-        BOOST_CHECK( variant_char.GetString() == value_char );
-
-        CVariant variant_CTimeShort( value_CTime, eShort );
-        BOOST_CHECK( !variant_CTimeShort.IsNull() );
-        variant_CTimeShort = CVariant( value_CTime, eShort );
-        BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
-
-        CVariant variant_CTimeLong( value_CTime, eLong );
-        BOOST_CHECK( !variant_CTimeLong.IsNull() );
-        variant_CTimeLong = CVariant( value_CTime, eLong );
-        BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
-
-//        explicit CVariant(CDB_Object* obj);
-
-    }
-
-    // Call operator= for different Variant types
-    {
-        // Assign to CVariant(NULL)
-        if (false) {
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant(0);
-                value_variant = CVariant( value_CTime );
-            }
+            // GetNumeric() ????
         }
 
-        // Assign to CVariant( value_Uint1 )
-        if (false) {
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant(value_Uint1);
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_Int2 )
-        if (false) {
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_Int2 );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_Int4 )
-        if (false) {
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_Int4 );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_Int8 )
-        if (false) {
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_Int8 );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_float )
-        if (false) {
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_float );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_double )
-        if (false) {
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_double );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_bool )
-        if (false) {
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_bool );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-
-        // Assign to CVariant( value_CTime )
-        if (false) {
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant(0);
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_Int8 );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_Int4 );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_Int2 );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_Uint1 );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_float );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_double );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_bool );
-            }
-            {
-                CVariant value_variant( value_CTime );
-                value_variant = CVariant( value_CTime );
-            }
-        }
-    }
-
-    // Test Null cases ...
-    {
-        CVariant value_variant(0);
-
-        BOOST_CHECK( !value_variant.IsNull() );
-
-        value_variant.SetNull();
-        BOOST_CHECK( value_variant.IsNull() );
-
-        value_variant.SetNull();
-        BOOST_CHECK( value_variant.IsNull() );
-
-        value_variant.SetNull();
-        BOOST_CHECK( value_variant.IsNull() );
-    }
-
-    // Check operator==
-    {
-        // Check values of same type ...
-        BOOST_CHECK( CVariant( true ) == CVariant( true ) );
-        BOOST_CHECK( CVariant( false ) == CVariant( false ) );
-        BOOST_CHECK( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
-        BOOST_CHECK( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
-        BOOST_CHECK( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
-        BOOST_CHECK( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
-        BOOST_CHECK( CVariant( float(1) ) == CVariant( float(1) ) );
-        BOOST_CHECK( CVariant( double(1) ) == CVariant( double(1) ) );
-        BOOST_CHECK( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
-        BOOST_CHECK( CVariant( "abcd" ) == CVariant( "abcd" ) );
-        BOOST_CHECK( CVariant( value_CTime, eShort ) ==
-                     CVariant( value_CTime, eShort )
-                     );
-        BOOST_CHECK( CVariant( value_CTime, eLong ) ==
-                     CVariant( value_CTime, eLong )
-                     );
-    }
-
-    // Check operator<
-    {
-        // Check values of same type ...
-        {
-            //  Type not supported
-            // BOOST_CHECK( CVariant( false ) < CVariant( true ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
-            BOOST_CHECK( CVariant( Int2(-1) ) < CVariant( Int2(1) ) );
-            BOOST_CHECK( CVariant( Int4(-1) ) < CVariant( Int4(1) ) );
-            BOOST_CHECK( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
-            BOOST_CHECK( CVariant( float(-1) ) < CVariant( float(1) ) );
-            BOOST_CHECK( CVariant( double(-1) ) < CVariant( double(1) ) );
-            BOOST_CHECK( CVariant(string("abcd")) < CVariant( string("bcde")));
-            BOOST_CHECK( CVariant( "abcd" ) < CVariant( "bcde" ) );
-            CTime new_time = value_CTime;
-            new_time += 1;
-            BOOST_CHECK( CVariant( value_CTime, eShort ) <
-                         CVariant( new_time, eShort )
-                         );
-            BOOST_CHECK( CVariant( value_CTime, eLong ) <
-                         CVariant( new_time, eLong )
-                         );
-        }
-
-        // Check comparasion wit Uint1(0) ...
+        // Call operator= for different types
         //!!! It *fails* !!!
         if (false) {
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int2(1) ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int4(1) ) );
-            // !!! Does not work ...
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int8(1) ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( float(1) ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( double(1) ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( string("bcde") ) );
-            BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( "bcde" ) );
+            CVariant value_variant(0);
+            value_variant.SetNull();
+
+            value_variant = CVariant(0);
+            BOOST_CHECK( CVariant(0) == value_variant );
+
+            value_variant = value_Int8;
+            BOOST_CHECK( CVariant( value_Int8 ) == value_variant );
+
+            value_variant = value_Int4;
+            BOOST_CHECK( CVariant( value_Int4 ) == value_variant );
+
+            value_variant = value_Int2;
+            BOOST_CHECK( CVariant( value_Int2 ) == value_variant );
+
+            value_variant = value_Uint1;
+            BOOST_CHECK( CVariant( value_Uint1 ) == value_variant );
+
+            value_variant = value_float;
+            BOOST_CHECK( CVariant( value_float ) == value_variant );
+
+            value_variant = value_double;
+            BOOST_CHECK( CVariant( value_double ) == value_variant );
+
+            value_variant = value_string;
+            BOOST_CHECK( CVariant( value_string ) == value_variant );
+
+            value_variant = value_char;
+            BOOST_CHECK( CVariant( value_char ) == value_variant );
+
+            value_variant = value_bool;
+            BOOST_CHECK( CVariant( value_bool ) == value_variant );
+
+            value_variant = value_CTime;
+            BOOST_CHECK( CVariant( value_CTime ) == value_variant );
+
+        }
+
+        // Check assigning of values of same type ...
+        {
+            CVariant variant_Int8( value_Int8 );
+            BOOST_CHECK( !variant_Int8.IsNull() );
+            variant_Int8 = CVariant( value_Int8 );
+            BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
+            variant_Int8 = value_Int8;
+            BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
+
+            CVariant variant_Int4( value_Int4 );
+            BOOST_CHECK( !variant_Int4.IsNull() );
+            variant_Int4 = CVariant( value_Int4 );
+            BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
+            variant_Int4 = value_Int4;
+            BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
+
+            CVariant variant_Int2( value_Int2 );
+            BOOST_CHECK( !variant_Int2.IsNull() );
+            variant_Int2 = CVariant( value_Int2 );
+            BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
+            variant_Int2 = value_Int2;
+            BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
+
+            CVariant variant_Uint1( value_Uint1 );
+            BOOST_CHECK( !variant_Uint1.IsNull() );
+            variant_Uint1 = CVariant( value_Uint1 );
+            BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
+            variant_Uint1 = value_Uint1;
+            BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
+
+            CVariant variant_float( value_float );
+            BOOST_CHECK( !variant_float.IsNull() );
+            variant_float = CVariant( value_float );
+            BOOST_CHECK( variant_float.GetFloat() == value_float );
+            variant_float = value_float;
+            BOOST_CHECK( variant_float.GetFloat() == value_float );
+
+            CVariant variant_double( value_double );
+            BOOST_CHECK( !variant_double.IsNull() );
+            variant_double = CVariant( value_double );
+            BOOST_CHECK( variant_double.GetDouble() == value_double );
+            variant_double = value_double;
+            BOOST_CHECK( variant_double.GetDouble() == value_double );
+
+            CVariant variant_bool( value_bool );
+            BOOST_CHECK( !variant_bool.IsNull() );
+            variant_bool = CVariant( value_bool );
+            BOOST_CHECK( variant_bool.GetBit() == value_bool );
+            variant_bool = value_bool;
+            BOOST_CHECK( variant_bool.GetBit() == value_bool );
+
+            CVariant variant_string( value_string );
+            BOOST_CHECK( !variant_string.IsNull() );
+            variant_string = CVariant( value_string );
+            BOOST_CHECK( variant_string.GetString() == value_string );
+            variant_string = value_string;
+            BOOST_CHECK( variant_string.GetString() == value_string );
+
+            CVariant variant_char( value_char );
+            BOOST_CHECK( !variant_char.IsNull() );
+            variant_char = CVariant( value_char );
+            BOOST_CHECK( variant_char.GetString() == value_char );
+            variant_char = value_char;
+            BOOST_CHECK( variant_char.GetString() == value_char );
+
+            CVariant variant_CTimeShort( value_CTime, eShort );
+            BOOST_CHECK( !variant_CTimeShort.IsNull() );
+            variant_CTimeShort = CVariant( value_CTime, eShort );
+            BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
+
+            CVariant variant_CTimeLong( value_CTime, eLong );
+            BOOST_CHECK( !variant_CTimeLong.IsNull() );
+            variant_CTimeLong = CVariant( value_CTime, eLong );
+            BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
+
+    //        explicit CVariant(CDB_Object* obj);
+
+        }
+
+        // Call operator= for different Variant types
+        {
+            // Assign to CVariant(NULL)
+            if (false) {
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant(0);
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_Uint1 )
+            if (false) {
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant(value_Uint1);
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_Int2 )
+            if (false) {
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_Int2 );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_Int4 )
+            if (false) {
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_Int4 );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_Int8 )
+            if (false) {
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_Int8 );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_float )
+            if (false) {
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_float );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_double )
+            if (false) {
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_double );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_bool )
+            if (false) {
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_bool );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+
+            // Assign to CVariant( value_CTime )
+            if (false) {
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant(0);
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_Int8 );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_Int4 );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_Int2 );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_Uint1 );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_float );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_double );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_bool );
+                }
+                {
+                    CVariant value_variant( value_CTime );
+                    value_variant = CVariant( value_CTime );
+                }
+            }
+        }
+
+        // Test Null cases ...
+        {
+            CVariant value_variant(0);
+
+            BOOST_CHECK( !value_variant.IsNull() );
+
+            value_variant.SetNull();
+            BOOST_CHECK( value_variant.IsNull() );
+
+            value_variant.SetNull();
+            BOOST_CHECK( value_variant.IsNull() );
+
+            value_variant.SetNull();
+            BOOST_CHECK( value_variant.IsNull() );
+        }
+
+        // Check operator==
+        {
+            // Check values of same type ...
+            BOOST_CHECK( CVariant( true ) == CVariant( true ) );
+            BOOST_CHECK( CVariant( false ) == CVariant( false ) );
+            BOOST_CHECK( CVariant( Uint1(1) ) == CVariant( Uint1(1) ) );
+            BOOST_CHECK( CVariant( Int2(1) ) == CVariant( Int2(1) ) );
+            BOOST_CHECK( CVariant( Int4(1) ) == CVariant( Int4(1) ) );
+            BOOST_CHECK( CVariant( Int8(1) ) == CVariant( Int8(1) ) );
+            BOOST_CHECK( CVariant( float(1) ) == CVariant( float(1) ) );
+            BOOST_CHECK( CVariant( double(1) ) == CVariant( double(1) ) );
+            BOOST_CHECK( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
+            BOOST_CHECK( CVariant( "abcd" ) == CVariant( "abcd" ) );
+            BOOST_CHECK( CVariant( value_CTime, eShort ) ==
+                         CVariant( value_CTime, eShort )
+                         );
+            BOOST_CHECK( CVariant( value_CTime, eLong ) ==
+                         CVariant( value_CTime, eLong )
+                         );
+        }
+
+        // Check operator<
+        {
+            // Check values of same type ...
+            {
+                //  Type not supported
+                // BOOST_CHECK( CVariant( false ) < CVariant( true ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
+                BOOST_CHECK( CVariant( Int2(-1) ) < CVariant( Int2(1) ) );
+                BOOST_CHECK( CVariant( Int4(-1) ) < CVariant( Int4(1) ) );
+                BOOST_CHECK( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
+                BOOST_CHECK( CVariant( float(-1) ) < CVariant( float(1) ) );
+                BOOST_CHECK( CVariant( double(-1) ) < CVariant( double(1) ) );
+                BOOST_CHECK( CVariant(string("abcd")) < CVariant( string("bcde")));
+                BOOST_CHECK( CVariant( "abcd" ) < CVariant( "bcde" ) );
+                CTime new_time = value_CTime;
+                new_time += 1;
+                BOOST_CHECK( CVariant( value_CTime, eShort ) <
+                             CVariant( new_time, eShort )
+                             );
+                BOOST_CHECK( CVariant( value_CTime, eLong ) <
+                             CVariant( new_time, eLong )
+                             );
+            }
+
+            // Check comparasion wit Uint1(0) ...
+            //!!! It *fails* !!!
+            if (false) {
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Uint1(1) ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int2(1) ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int4(1) ) );
+                // !!! Does not work ...
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( Int8(1) ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( float(1) ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( double(1) ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( string("bcde") ) );
+                BOOST_CHECK( CVariant( Uint1(0) ) < CVariant( "bcde" ) );
+            }
+        }
+
+        // Check GetType
+        {
+            const CVariant variant_Int8( value_Int8 );
+            BOOST_CHECK_EQUAL( eDB_BigInt, variant_Int8.GetType() );
+
+            const CVariant variant_Int4( value_Int4 );
+            BOOST_CHECK_EQUAL( eDB_Int, variant_Int4.GetType() );
+
+            const CVariant variant_Int2( value_Int2 );
+            BOOST_CHECK_EQUAL( eDB_SmallInt, variant_Int2.GetType() );
+
+            const CVariant variant_Uint1( value_Uint1 );
+            BOOST_CHECK_EQUAL( eDB_TinyInt, variant_Uint1.GetType() );
+
+            const CVariant variant_float( value_float );
+            BOOST_CHECK_EQUAL( eDB_Float, variant_float.GetType() );
+
+            const CVariant variant_double( value_double );
+            BOOST_CHECK_EQUAL( eDB_Double, variant_double.GetType() );
+
+            const CVariant variant_bool( value_bool );
+            BOOST_CHECK_EQUAL( eDB_Bit, variant_bool.GetType() );
+
+            const CVariant variant_string( value_string );
+            BOOST_CHECK_EQUAL( eDB_VarChar, variant_string.GetType() );
+
+            const CVariant variant_char( value_char );
+            BOOST_CHECK_EQUAL( eDB_VarChar, variant_char.GetType() );
+        }
+
+        // Test BLOB ...
+        {
+        }
+
+        // Check AsNotNullString
+        {
+        }
+
+        // Assignment of bound values ...
+        {
         }
     }
-
-    // Check GetType
-    {
-        const CVariant variant_Int8( value_Int8 );
-        BOOST_CHECK_EQUAL( eDB_BigInt, variant_Int8.GetType() );
-
-        const CVariant variant_Int4( value_Int4 );
-        BOOST_CHECK_EQUAL( eDB_Int, variant_Int4.GetType() );
-
-        const CVariant variant_Int2( value_Int2 );
-        BOOST_CHECK_EQUAL( eDB_SmallInt, variant_Int2.GetType() );
-
-        const CVariant variant_Uint1( value_Uint1 );
-        BOOST_CHECK_EQUAL( eDB_TinyInt, variant_Uint1.GetType() );
-
-        const CVariant variant_float( value_float );
-        BOOST_CHECK_EQUAL( eDB_Float, variant_float.GetType() );
-
-        const CVariant variant_double( value_double );
-        BOOST_CHECK_EQUAL( eDB_Double, variant_double.GetType() );
-
-        const CVariant variant_bool( value_bool );
-        BOOST_CHECK_EQUAL( eDB_Bit, variant_bool.GetType() );
-
-        const CVariant variant_string( value_string );
-        BOOST_CHECK_EQUAL( eDB_VarChar, variant_string.GetType() );
-
-        const CVariant variant_char( value_char );
-        BOOST_CHECK_EQUAL( eDB_VarChar, variant_char.GetType() );
-    }
-
-    // Test BLOB ...
-    {
-    }
-
-    // Check AsNotNullString
-    {
-    }
-
-    // Assignment of bound values ...
-    {
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -5774,373 +5920,378 @@ CDBAPIUnitTest::Test_Variant(void)
 void
 CDBAPIUnitTest::Test_NCBI_LS(void)
 {
-    if (true) {
-        static time_t s_tTimeOut = 30; // in seconds
-        CDB_Connection* pDbLink = NULL;
+    try {
+        if (true) {
+            static time_t s_tTimeOut = 30; // in seconds
+            CDB_Connection* pDbLink = NULL;
 
-        string sDbDriver(m_args.GetDriverName());
-//         string sDbServer("MSSQL57");
-        string sDbServer("mssql57.nac.ncbi.nlm.nih.gov");
-        string sDbName("NCBI_LS");
-        string sDbUser("anyone");
-        string sDbPasswd("allowed");
-        string sErr;
+            string sDbDriver(m_args.GetDriverName());
+    //         string sDbServer("MSSQL57");
+            string sDbServer("mssql57.nac.ncbi.nlm.nih.gov");
+            string sDbName("NCBI_LS");
+            string sDbUser("anyone");
+            string sDbPasswd("allowed");
+            string sErr;
 
-        try {
-            I_DriverContext* drv_context = m_DS->GetDriverContext();
+            try {
+                I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-            if( drv_context == NULL ) {
-                BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
-                           sDbDriver);
+                if( drv_context == NULL ) {
+                    BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
+                               sDbDriver);
+                }
+                drv_context->SetMaxTextImageSize( 0x7fffffff );
+                drv_context->SetLoginTimeout( s_tTimeOut );
+                drv_context->SetTimeout( s_tTimeOut );
+
+                pDbLink = drv_context->Connect( sDbServer, sDbUser, sDbPasswd,
+                                0, true, "Service" );
+
+                string sUseDb = "use "+sDbName;
+                auto_ptr<CDB_LangCmd> pUseCmd( pDbLink->LangCmd( sUseDb.c_str() ) );
+                if( pUseCmd->Send() ) {
+                    pUseCmd->DumpResults();
+                } else {
+                    BOOST_FAIL("Unable to send sql command "+ sUseDb);
+                }
+            } catch( CDB_Exception& dbe ) {
+                sErr = "CDB Exception from "+dbe.OriginatedFrom()+":"+
+                    dbe.SeverityString(dbe.Severity())+": "+
+                    dbe.Message();
+
+                BOOST_FAIL(sErr);
             }
-            drv_context->SetMaxTextImageSize( 0x7fffffff );
-            drv_context->SetLoginTimeout( s_tTimeOut );
-            drv_context->SetTimeout( s_tTimeOut );
-
-            pDbLink = drv_context->Connect( sDbServer, sDbUser, sDbPasswd,
-                            0, true, "Service" );
-
-            string sUseDb = "use "+sDbName;
-            auto_ptr<CDB_LangCmd> pUseCmd( pDbLink->LangCmd( sUseDb.c_str() ) );
-            if( pUseCmd->Send() ) {
-                pUseCmd->DumpResults();
-            } else {
-                BOOST_FAIL("Unable to send sql command "+ sUseDb);
-            }
-        } catch( CDB_Exception& dbe ) {
-            sErr = "CDB Exception from "+dbe.OriginatedFrom()+":"+
-                dbe.SeverityString(dbe.Severity())+": "+
-                dbe.Message();
-
-            BOOST_FAIL(sErr);
-        }
 
 
-        CDB_Connection* m_Connect = pDbLink;
+            CDB_Connection* m_Connect = pDbLink;
 
-        // id(7777777) is going to expire soon ...
-//         int uid = 0;
-//         bool need_userInfo = true;
-//
-//         try {
-//             CDB_RPCCmd* r_cmd= m_Connect->RPC("getAcc4Sid", 2);
-//             CDB_Int id(7777777);
-//             CDB_TinyInt info(need_userInfo? 1 : 0);
-//
-//             r_cmd->SetParam("@sid", &id);
-//             r_cmd->SetParam("@need_info", &info);
-//
-//             r_cmd->Send();
-//
-//             CDB_Result* r;
-//             const char* res_name;
-//             while(r_cmd->HasMoreResults()) {
-//                 r= r_cmd->Result();
-//                 if(r == 0) continue;
-//                 if(r->ResultType() == eDB_RowResult) {
-//                     res_name= r->ItemName(0);
-//                     if(strstr(res_name, "uId") == res_name) {
-//                         while(r->Fetch()) {
-//                             r->GetItem(&id);
-//                         }
-//                         uid = id.Value();
-//                     }
-//                     else if((strstr(res_name, "login_name") == res_name)) {
-//                         CDB_LongChar name;
-//                         while(r->Fetch()) {
-//                             r->GetItem(&name); // login name
-//                             r->GetItem(&name); // user name
-//                             r->GetItem(&name); // first name
-//                             r->GetItem(&name); // last name
-//                             r->GetItem(&name); // affiliation
-//                             r->GetItem(&name); // question
-//                             r->GetItem(&info); // status
-//                             r->GetItem(&info); // role
-//                         }
-//                     }
-//                     else if((strstr(res_name, "gID") == res_name)) {
-//                         // int gID;
-//                         // int bID= 0;
-//                         CDB_VarChar label;
-//                         CDB_LongChar val;
-//
-//                         while(r->Fetch()) {
-//                             r->GetItem(&id); // gID
-//                             r->GetItem(&id); // bID
-//
-//                             r->GetItem(&info); // flag
-//                             r->GetItem(&label);
-//                             r->GetItem(&val);
-//
-//                         }
-//                     }
-//                     else if((strstr(res_name, "addr") == res_name)) {
-//                         CDB_LongChar addr;
-//                         CDB_LongChar comment(2048);
-//                         while(r->Fetch()) {
-//                             r->GetItem(&addr);
-//                             r->GetItem(&info);
-//                             r->GetItem(&comment);
-//                         }
-//                     }
-//                     else if((strstr(res_name, "num") == res_name)) {
-//                         CDB_LongChar num;
-//                         CDB_LongChar comment(2048);
-//                         while(r->Fetch()) {
-//                             r->GetItem(&num);
-//                             r->GetItem(&info);
-//                             r->GetItem(&comment);
-//                         }
-//                     }
-//                 }
-//                 delete r;
-//             }
-//             delete r_cmd;
-//         }
-//         catch (CDB_Exception& e) {
-//             CDB_UserHandler::GetDefault().HandleIt(&e);
-//         }
+            // id(7777777) is going to expire soon ...
+    //         int uid = 0;
+    //         bool need_userInfo = true;
+    //
+    //         try {
+    //             CDB_RPCCmd* r_cmd= m_Connect->RPC("getAcc4Sid", 2);
+    //             CDB_Int id(7777777);
+    //             CDB_TinyInt info(need_userInfo? 1 : 0);
+    //
+    //             r_cmd->SetParam("@sid", &id);
+    //             r_cmd->SetParam("@need_info", &info);
+    //
+    //             r_cmd->Send();
+    //
+    //             CDB_Result* r;
+    //             const char* res_name;
+    //             while(r_cmd->HasMoreResults()) {
+    //                 r= r_cmd->Result();
+    //                 if(r == 0) continue;
+    //                 if(r->ResultType() == eDB_RowResult) {
+    //                     res_name= r->ItemName(0);
+    //                     if(strstr(res_name, "uId") == res_name) {
+    //                         while(r->Fetch()) {
+    //                             r->GetItem(&id);
+    //                         }
+    //                         uid = id.Value();
+    //                     }
+    //                     else if((strstr(res_name, "login_name") == res_name)) {
+    //                         CDB_LongChar name;
+    //                         while(r->Fetch()) {
+    //                             r->GetItem(&name); // login name
+    //                             r->GetItem(&name); // user name
+    //                             r->GetItem(&name); // first name
+    //                             r->GetItem(&name); // last name
+    //                             r->GetItem(&name); // affiliation
+    //                             r->GetItem(&name); // question
+    //                             r->GetItem(&info); // status
+    //                             r->GetItem(&info); // role
+    //                         }
+    //                     }
+    //                     else if((strstr(res_name, "gID") == res_name)) {
+    //                         // int gID;
+    //                         // int bID= 0;
+    //                         CDB_VarChar label;
+    //                         CDB_LongChar val;
+    //
+    //                         while(r->Fetch()) {
+    //                             r->GetItem(&id); // gID
+    //                             r->GetItem(&id); // bID
+    //
+    //                             r->GetItem(&info); // flag
+    //                             r->GetItem(&label);
+    //                             r->GetItem(&val);
+    //
+    //                         }
+    //                     }
+    //                     else if((strstr(res_name, "addr") == res_name)) {
+    //                         CDB_LongChar addr;
+    //                         CDB_LongChar comment(2048);
+    //                         while(r->Fetch()) {
+    //                             r->GetItem(&addr);
+    //                             r->GetItem(&info);
+    //                             r->GetItem(&comment);
+    //                         }
+    //                     }
+    //                     else if((strstr(res_name, "num") == res_name)) {
+    //                         CDB_LongChar num;
+    //                         CDB_LongChar comment(2048);
+    //                         while(r->Fetch()) {
+    //                             r->GetItem(&num);
+    //                             r->GetItem(&info);
+    //                             r->GetItem(&comment);
+    //                         }
+    //                     }
+    //                 }
+    //                 delete r;
+    //             }
+    //             delete r_cmd;
+    //         }
+    //         catch (CDB_Exception& e) {
+    //             CDB_UserHandler::GetDefault().HandleIt(&e);
+    //         }
 
-        // Find accounts
-        int acc_num   = 0;
-        CDB_Int       status;
-        // Request
-        CDB_VarChar   db_login( NULL, 64 );
-        CDB_VarChar   db_title( NULL, 64 );
-        CDB_VarChar   db_first( NULL, 127 );
-        CDB_VarChar   db_last( NULL, 127 );
-        CDB_VarChar   db_affil( NULL, 127 );
-        // grp ids
-        CDB_Int       db_gid1;
-        CDB_LongChar  db_val1;
-        CDB_VarChar   db_label1( NULL, 32 );
-        CDB_Int       db_gid2;
-        CDB_LongChar  db_val2;
-        CDB_VarChar   db_label2( NULL, 32 );
-        CDB_Int       db_gid3;
-        CDB_LongChar  db_val3;
-        CDB_VarChar   db_label3( NULL, 32 );
-        // emails
-        CDB_VarChar   db_email1( NULL, 255 );
-        CDB_VarChar   db_email2( NULL, 255 );
-        CDB_VarChar   db_email3( NULL, 255 );
-        // phones
-        CDB_VarChar   db_phone1( NULL, 20 );
-        CDB_VarChar   db_phone2( NULL, 20 );
-        CDB_VarChar   db_phone3( NULL, 20 );
-        // Reply
-        CDB_Int       db_uid;
-        CDB_Int       db_score;
+            // Find accounts
+            int acc_num   = 0;
+            CDB_Int       status;
+            // Request
+            CDB_VarChar   db_login( NULL, 64 );
+            CDB_VarChar   db_title( NULL, 64 );
+            CDB_VarChar   db_first( NULL, 127 );
+            CDB_VarChar   db_last( NULL, 127 );
+            CDB_VarChar   db_affil( NULL, 127 );
+            // grp ids
+            CDB_Int       db_gid1;
+            CDB_LongChar  db_val1;
+            CDB_VarChar   db_label1( NULL, 32 );
+            CDB_Int       db_gid2;
+            CDB_LongChar  db_val2;
+            CDB_VarChar   db_label2( NULL, 32 );
+            CDB_Int       db_gid3;
+            CDB_LongChar  db_val3;
+            CDB_VarChar   db_label3( NULL, 32 );
+            // emails
+            CDB_VarChar   db_email1( NULL, 255 );
+            CDB_VarChar   db_email2( NULL, 255 );
+            CDB_VarChar   db_email3( NULL, 255 );
+            // phones
+            CDB_VarChar   db_phone1( NULL, 20 );
+            CDB_VarChar   db_phone2( NULL, 20 );
+            CDB_VarChar   db_phone3( NULL, 20 );
+            // Reply
+            CDB_Int       db_uid;
+            CDB_Int       db_score;
 
-        auto_ptr<CDB_RPCCmd> pRpc( NULL );
+            auto_ptr<CDB_RPCCmd> pRpc( NULL );
 
-//         pRpc.reset( m_Connect->RPC("FindAccount",20) );
-        pRpc.reset( m_Connect->RPC("FindAccountMatchAll",20) );
+    //         pRpc.reset( m_Connect->RPC("FindAccount",20) );
+            pRpc.reset( m_Connect->RPC("FindAccountMatchAll",20) );
 
-        db_login.SetValue( "lsroot" );
-        // db_last.SetValue( "%" );
+            db_login.SetValue( "lsroot" );
+            // db_last.SetValue( "%" );
 
-        pRpc->SetParam( "@login",  &db_login );
-        pRpc->SetParam( "@title",   &db_title );
-        pRpc->SetParam( "@first", &db_first );
-        pRpc->SetParam( "@last", &db_last );
-        pRpc->SetParam( "@affil", &db_affil );
-        pRpc->SetParam( "@gid1", &db_gid1 );
-        pRpc->SetParam( "@val1", &db_val1 );
-        pRpc->SetParam( "@label1", &db_label1 );
-        pRpc->SetParam( "@gid2", &db_gid2 );
-        pRpc->SetParam( "@val2", &db_val2 );
-        pRpc->SetParam( "@label2", &db_label2 );
-        pRpc->SetParam( "@gid3",  &db_gid3 );
-        pRpc->SetParam( "@val3", &db_val3 );
-        pRpc->SetParam( "@label3", &db_label3 );
-        pRpc->SetParam( "@email1", &db_email1 );
-        pRpc->SetParam( "@email2", &db_email2 );
-        pRpc->SetParam( "@email3", &db_email3 );
-        pRpc->SetParam( "@phone1", &db_phone1 );
-        pRpc->SetParam( "@phone2", &db_phone2 );
-        pRpc->SetParam( "@phone3", &db_phone3 );
-        bool bFetchErr = false;
-        string sError;
+            pRpc->SetParam( "@login",  &db_login );
+            pRpc->SetParam( "@title",   &db_title );
+            pRpc->SetParam( "@first", &db_first );
+            pRpc->SetParam( "@last", &db_last );
+            pRpc->SetParam( "@affil", &db_affil );
+            pRpc->SetParam( "@gid1", &db_gid1 );
+            pRpc->SetParam( "@val1", &db_val1 );
+            pRpc->SetParam( "@label1", &db_label1 );
+            pRpc->SetParam( "@gid2", &db_gid2 );
+            pRpc->SetParam( "@val2", &db_val2 );
+            pRpc->SetParam( "@label2", &db_label2 );
+            pRpc->SetParam( "@gid3",  &db_gid3 );
+            pRpc->SetParam( "@val3", &db_val3 );
+            pRpc->SetParam( "@label3", &db_label3 );
+            pRpc->SetParam( "@email1", &db_email1 );
+            pRpc->SetParam( "@email2", &db_email2 );
+            pRpc->SetParam( "@email3", &db_email3 );
+            pRpc->SetParam( "@phone1", &db_phone1 );
+            pRpc->SetParam( "@phone2", &db_phone2 );
+            pRpc->SetParam( "@phone3", &db_phone3 );
+            bool bFetchErr = false;
+            string sError;
 
-        try {
-            if( pRpc->Send() ) {
-                // Save results
-                while ( !bFetchErr && pRpc->HasMoreResults() ) {
-                    auto_ptr<CDB_Result> pRes( pRpc->Result() );
-                    if( !pRes.get() ) {
-                        continue;
-                    }
-                    if( pRes->ResultType() == eDB_RowResult ) {
-                        while( pRes->Fetch() ) {
-                            ++acc_num;
-                            pRes->GetItem( &db_uid );
-                                    // cout << "uid=" << db_uid.Value();
-                            pRes->GetItem( &db_score );
-                                    // cout << " score=" << db_score.Value() << endl;
+            try {
+                if( pRpc->Send() ) {
+                    // Save results
+                    while ( !bFetchErr && pRpc->HasMoreResults() ) {
+                        auto_ptr<CDB_Result> pRes( pRpc->Result() );
+                        if( !pRes.get() ) {
+                            continue;
                         }
-                    } else if( pRes->ResultType() == eDB_StatusResult ) {
-                        while( pRes->Fetch() ) {
-                            pRes->GetItem( &status );
-                            if( status.Value() < 0 ) {
-                                sError = "Bad status value " +
-                                    NStr::IntToString(status.Value())
-                                + " from RPC 'FindAccount'";
-                                bFetchErr = true;
-                                break;
+                        if( pRes->ResultType() == eDB_RowResult ) {
+                            while( pRes->Fetch() ) {
+                                ++acc_num;
+                                pRes->GetItem( &db_uid );
+                                        // cout << "uid=" << db_uid.Value();
+                                pRes->GetItem( &db_score );
+                                        // cout << " score=" << db_score.Value() << endl;
+                            }
+                        } else if( pRes->ResultType() == eDB_StatusResult ) {
+                            while( pRes->Fetch() ) {
+                                pRes->GetItem( &status );
+                                if( status.Value() < 0 ) {
+                                    sError = "Bad status value " +
+                                        NStr::IntToString(status.Value())
+                                    + " from RPC 'FindAccount'";
+                                    bFetchErr = true;
+                                    break;
+                                }
                             }
                         }
                     }
+                } else { // Error sending rpc
+                    sError = "Error sending rpc 'FindAccount' to db server";
+                    bFetchErr = true;
                 }
-            } else { // Error sending rpc
-                sError = "Error sending rpc 'FindAccount' to db server";
+            }  catch( CDB_Exception& dbe ) {
+                sError = "CDB Exception from "+dbe.OriginatedFrom()+":"+
+                    dbe.SeverityString(dbe.Severity())+": "+
+                    dbe.Message();
                 bFetchErr = true;
             }
-        }  catch( CDB_Exception& dbe ) {
-            sError = "CDB Exception from "+dbe.OriginatedFrom()+":"+
-                dbe.SeverityString(dbe.Severity())+": "+
-                dbe.Message();
-            bFetchErr = true;
+
+            BOOST_CHECK( acc_num > 0 );
+            BOOST_CHECK_EQUAL( bFetchErr, false );
         }
 
-        BOOST_CHECK( acc_num > 0 );
-        BOOST_CHECK_EQUAL( bFetchErr, false );
-    }
+        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+        BOOST_CHECK( auto_conn.get() != NULL );
 
-    auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
-    BOOST_CHECK( auto_conn.get() != NULL );
-
-    auto_conn->Connect(
-        "anyone",
-        "allowed",
-//         "MSSQL57",
-        "mssql57.nac.ncbi.nlm.nih.gov",
-        "NCBI_LS"
-        );
-
-    // Does not work with ftds64_odbc ...
-//     {
-//         int sid = 0;
-//
-//         {
-//             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
-//
-//             auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
-//             BOOST_CHECK( rs.get() != NULL );
-//             BOOST_CHECK( rs->Next() );
-//             sid = rs->GetVariant(1).GetInt4();
-//             BOOST_CHECK( sid > 0 );
-//         }
-//
-//         {
-//             int num = 0;
-//             auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
-//
-//             auto_stmt->SetParam( CVariant(Int4(sid)), "@sid" );
-//             auto_stmt->SetParam( CVariant(Int2(1)), "@need_info" );
-//
-//             auto_stmt->Execute();
-//
-//             BOOST_CHECK(auto_stmt->HasMoreResults());
-//             BOOST_CHECK(auto_stmt->HasMoreResults());
-//             BOOST_CHECK(auto_stmt->HasMoreResults());
-//             BOOST_CHECK(auto_stmt->HasRows());
-//             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//             BOOST_CHECK(rs.get() != NULL);
-//
-//             while (rs->Next()) {
-//                 BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
-//                 BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
-//                 BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), false);
-//                 BOOST_CHECK(rs->GetVariant(4).GetString().size() > 0);
-//                 // BOOST_CHECK(rs->GetVariant(5).GetString().size() > 0); // Stoped to work for some reason ...
-//                 ++num;
-//             }
-//
-//             BOOST_CHECK(num > 0);
-//
-// //             DumpResults(auto_stmt.get());
-//         }
-//     }
-
-    //
-    {
-        auto_ptr<ICallableStatement> auto_stmt(
-            auto_conn->GetCallableStatement("FindAccount", 20)
+        auto_conn->Connect(
+            "anyone",
+            "allowed",
+    //         "MSSQL57",
+            "mssql57.nac.ncbi.nlm.nih.gov",
+            "NCBI_LS"
             );
 
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
-        auto_stmt->SetParam( CVariant("a%"), "@last" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
-        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
-        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
-        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
-
-        auto_stmt->Execute();
-
-        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
-
-        auto_stmt->Execute();
-
-        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
-    }
-
+        // Does not work with ftds64_odbc ...
+    //     {
+    //         int sid = 0;
     //
-    {
-        auto_ptr<ICallableStatement> auto_stmt(
-            auto_conn->GetCallableStatement("FindAccountMatchAll", 20)
-            );
+    //         {
+    //             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+    //
+    //             auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
+    //             BOOST_CHECK( rs.get() != NULL );
+    //             BOOST_CHECK( rs->Next() );
+    //             sid = rs->GetVariant(1).GetInt4();
+    //             BOOST_CHECK( sid > 0 );
+    //         }
+    //
+    //         {
+    //             int num = 0;
+    //             auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
+    //
+    //             auto_stmt->SetParam( CVariant(Int4(sid)), "@sid" );
+    //             auto_stmt->SetParam( CVariant(Int2(1)), "@need_info" );
+    //
+    //             auto_stmt->Execute();
+    //
+    //             BOOST_CHECK(auto_stmt->HasMoreResults());
+    //             BOOST_CHECK(auto_stmt->HasMoreResults());
+    //             BOOST_CHECK(auto_stmt->HasMoreResults());
+    //             BOOST_CHECK(auto_stmt->HasRows());
+    //             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+    //             BOOST_CHECK(rs.get() != NULL);
+    //
+    //             while (rs->Next()) {
+    //                 BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
+    //                 BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+    //                 BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), false);
+    //                 BOOST_CHECK(rs->GetVariant(4).GetString().size() > 0);
+    //                 // BOOST_CHECK(rs->GetVariant(5).GetString().size() > 0); // Stoped to work for some reason ...
+    //                 ++num;
+    //             }
+    //
+    //             BOOST_CHECK(num > 0);
+    //
+    // //             DumpResults(auto_stmt.get());
+    //         }
+    //     }
 
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
-        auto_stmt->SetParam( CVariant("a%"), "@last" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
-        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
-        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
-        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
+        //
+        {
+            auto_ptr<ICallableStatement> auto_stmt(
+                auto_conn->GetCallableStatement("FindAccount", 20)
+                );
 
-        auto_stmt->Execute();
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
+            auto_stmt->SetParam( CVariant("a%"), "@last" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
+            auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
+            auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val1" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
+            auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
+            auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val2" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
+            auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
+            auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val3" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
 
-        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+            auto_stmt->Execute();
 
-        auto_stmt->Execute();
+            BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
 
-        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+            auto_stmt->Execute();
 
-        // Another set of values ....
-        auto_stmt->SetParam( CVariant("lsroot"), "@login" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@last" );
+            BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+        }
 
-        auto_stmt->Execute();
+        //
+        {
+            auto_ptr<ICallableStatement> auto_stmt(
+                auto_conn->GetCallableStatement("FindAccountMatchAll", 20)
+                );
 
-        BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt), 1 );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
+            auto_stmt->SetParam( CVariant("a%"), "@last" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
+            auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
+            auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val1" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
+            auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
+            auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val2" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
+            auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
+            auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val3" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+
+            // Another set of values ....
+            auto_stmt->SetParam( CVariant("lsroot"), "@login" );
+            auto_stmt->SetParam( CVariant(eDB_VarChar), "@last" );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt), 1 );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -6148,39 +6299,44 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 void
 CDBAPIUnitTest::Test_Authentication(void)
 {
-    // MSSQL10 has SSL certificate.
-    // There is no MSSQL10 any more ...
-//     {
-//         auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
-//
-//         auto_conn->Connect(
-//             "NCBI_NT\\anyone",
-//             "Perm1tted",
-//             "MSSQL10"
-//             );
-//
-//         auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
-//
-//         auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
-//         BOOST_CHECK( rs.get() != NULL );
-//         BOOST_CHECK( rs->Next() );
-//     }
+    try {
+        // MSSQL10 has SSL certificate.
+        // There is no MSSQL10 any more ...
+    //     {
+    //         auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+    //
+    //         auto_conn->Connect(
+    //             "NCBI_NT\\anyone",
+    //             "Perm1tted",
+    //             "MSSQL10"
+    //             );
+    //
+    //         auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+    //
+    //         auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
+    //         BOOST_CHECK( rs.get() != NULL );
+    //         BOOST_CHECK( rs->Next() );
+    //     }
 
-    // No SSL certificate.
-    if (true) {
-        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+        // No SSL certificate.
+        if (true) {
+            auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
 
-        auto_conn->Connect(
-            "NAC\\anyone",
-            "permitted",
-            "MS_DEV2"
-            );
+            auto_conn->Connect(
+                "NAC\\anyone",
+                "permitted",
+                "MS_DEV2"
+                );
 
-        auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+            auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
 
-        auto_ptr<IResultSet> rs(auto_stmt->ExecuteQuery("select @@version"));
-        BOOST_CHECK( rs.get() != NULL );
-        BOOST_CHECK( rs->Next() );
+            auto_ptr<IResultSet> rs(auto_stmt->ExecuteQuery("select @@version"));
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -6318,421 +6474,436 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
 {
     string sql;
 
-    // Cancel without a previously thrown exception.
-    {
-        // IStatement
+    try {
+        // Cancel without a previously thrown exception.
         {
-            auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
-
-            // 1
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-
-            // 2
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
+            // IStatement
             {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK( rs.get() != NULL );
-            }
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
+                auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
 
-            // 3
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
-            }
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-
-            // 4
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            {
-                int i = 0;
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                BOOST_CHECK(rs.get() != NULL);
-                while (rs->Next()) {
-                    ++i;
-                }
-                BOOST_CHECK(i > 0);
-            }
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-        }
-
-        // IColableStatement
-        {
-            auto_ptr<ICallableStatement> auto_stmt;
-
-            // 1
-            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
-            auto_stmt->Execute();
-            DumpResults(auto_stmt.get());
-            auto_stmt->Execute();
-            DumpResults(auto_stmt.get());
-
-            // 2
-            auto_stmt->Execute();
-            auto_stmt->Cancel();
-            auto_stmt->Execute();
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-
-            // 3
-            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
-            auto_stmt->Execute();
-            auto_stmt->Cancel();
-            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
-            auto_stmt->Execute();
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-
-            // 4
-            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
-            auto_stmt->Execute();
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK(rs.get() != NULL);
-            }
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-
-            // 5
-            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
-            auto_stmt->Execute();
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            {
-                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-                BOOST_CHECK(rs.get() != NULL);
-                BOOST_CHECK(rs->Next());
-            }
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-
-            // 6
-            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
-            auto_stmt->Execute();
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            {
-                int i = 0;
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                BOOST_CHECK(rs.get() != NULL);
-                while (rs->Next()) {
-                    ++i;
-                }
-                BOOST_CHECK(i > 0);
-            }
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-            auto_stmt->Cancel();
-        }
-
-        // BCP
-        {
-        }
-    }
-
-    // Cancel with a previously thrown exception.
-    {
-        // IStatement
-        {
-            auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
-
-            // 1
-            try {
-                auto_stmt->SendSql("SELECT oops FROM sysobjects");
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-            } catch(const CDB_Exception&)
-            {
+                // 1
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
                 auto_stmt->Cancel();
-            }
-            auto_stmt->Cancel();
-
-            // Check that everything is fine ...
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            DumpResults(auto_stmt.get());
-
-            // 2
-            try {
-                sql = "SELECT name FROM sysobjects WHERE name = 'oops'";
-                auto_stmt->SendSql(sql);
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                BOOST_CHECK(rs.get() != NULL);
-                rs->Next();
-            } catch(const CDB_Exception&)
-            {
                 auto_stmt->Cancel();
-            }
-            auto_stmt->Cancel();
 
-            // Check that everything is fine ...
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            DumpResults(auto_stmt.get());
-
-            // 3
-            try {
-                int i = 0;
+                // 2
                 auto_stmt->SendSql("SELECT name FROM sysobjects");
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                BOOST_CHECK(rs.get() != NULL);
-                while (rs->Next()) {
-                    ++i;
+                {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
                 }
-                BOOST_CHECK(i > 0);
-                rs->Next();
-            } catch(const CDB_Exception&)
-            {
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+
+                // 3
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK( rs.get() != NULL );
+                    BOOST_CHECK( rs->Next() );
+                }
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+
+                // 4
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                {
+                    int i = 0;
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK(rs.get() != NULL);
+                    while (rs->Next()) {
+                        ++i;
+                    }
+                    BOOST_CHECK(i > 0);
+                }
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
                 auto_stmt->Cancel();
             }
-            auto_stmt->Cancel();
 
-            // Check that everything is fine ...
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            DumpResults(auto_stmt.get());
+            // IColableStatement
+            {
+                auto_ptr<ICallableStatement> auto_stmt;
+
+                // 1
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+                auto_stmt->Execute();
+                DumpResults(auto_stmt.get());
+                auto_stmt->Execute();
+                DumpResults(auto_stmt.get());
+
+                // 2
+                auto_stmt->Execute();
+                auto_stmt->Cancel();
+                auto_stmt->Execute();
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+
+                // 3
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+                auto_stmt->Execute();
+                auto_stmt->Cancel();
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+                auto_stmt->Execute();
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+
+                // 4
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+                auto_stmt->Execute();
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK(rs.get() != NULL);
+                }
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+
+                // 5
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+                auto_stmt->Execute();
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                    BOOST_CHECK(rs.get() != NULL);
+                    BOOST_CHECK(rs->Next());
+                }
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+
+                // 6
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+                auto_stmt->Execute();
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                BOOST_CHECK(auto_stmt->HasRows());
+                {
+                    int i = 0;
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK(rs.get() != NULL);
+                    while (rs->Next()) {
+                        ++i;
+                    }
+                    BOOST_CHECK(i > 0);
+                }
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+                auto_stmt->Cancel();
+            }
+
+            // BCP
+            {
+            }
         }
 
-
-        // IColableStatement
+        // Cancel with a previously thrown exception.
         {
-            auto_ptr<ICallableStatement> auto_stmt;
-
-            // 1
-            try {
-                auto_stmt.reset(m_Conn->GetCallableStatement("sp_wrong"));
-                auto_stmt->Execute();
-            } catch(const CDB_Exception&)
+            // IStatement
             {
+                auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+
+                // 1
+                try {
+                    auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                } catch(const CDB_Exception&)
+                {
+                    auto_stmt->Cancel();
+                }
                 auto_stmt->Cancel();
+
+                // Check that everything is fine ...
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                DumpResults(auto_stmt.get());
+
+                // 2
+                try {
+                    sql = "SELECT name FROM sysobjects WHERE name = 'oops'";
+                    auto_stmt->SendSql(sql);
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK(rs.get() != NULL);
+                    rs->Next();
+                } catch(const CDB_Exception&)
+                {
+                    auto_stmt->Cancel();
+                }
+                auto_stmt->Cancel();
+
+                // Check that everything is fine ...
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                DumpResults(auto_stmt.get());
+
+                // 3
+                try {
+                    int i = 0;
+                    auto_stmt->SendSql("SELECT name FROM sysobjects");
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                    BOOST_CHECK( auto_stmt->HasRows() );
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    BOOST_CHECK(rs.get() != NULL);
+                    while (rs->Next()) {
+                        ++i;
+                    }
+                    BOOST_CHECK(i > 0);
+                    rs->Next();
+                } catch(const CDB_Exception&)
+                {
+                    auto_stmt->Cancel();
+                }
+                auto_stmt->Cancel();
+
+                // Check that everything is fine ...
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                DumpResults(auto_stmt.get());
             }
 
-            try {
-                auto_stmt->Execute();
-            } catch(const CDB_Exception&)
+
+            // IColableStatement
             {
-                auto_stmt->Cancel();
+                auto_ptr<ICallableStatement> auto_stmt;
+
+                // 1
+                try {
+                    auto_stmt.reset(m_Conn->GetCallableStatement("sp_wrong"));
+                    auto_stmt->Execute();
+                } catch(const CDB_Exception&)
+                {
+                    auto_stmt->Cancel();
+                }
+
+                try {
+                    auto_stmt->Execute();
+                } catch(const CDB_Exception&)
+                {
+                    auto_stmt->Cancel();
+                }
             }
         }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
 
 void CDBAPIUnitTest::Test_Timeout(void)
 {
-    bool timeout_was_reported = false;
-    auto_ptr<IConnection> auto_conn;
-    I_DriverContext* dc = m_DS->GetDriverContext();
-    unsigned int timeout = dc->GetTimeout();
-
-    dc->SetTimeout(1);
-
-    auto_conn.reset(m_DS->CreateConnection());
-    BOOST_CHECK(auto_conn.get() != NULL);
-    auto_conn->Connect(
-        m_args.GetUserName(),
-        m_args.GetUserPassword(),
-        m_args.GetServerName()
-        );
-
-    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-
     try {
-        auto_stmt->SendSql("waitfor delay '0:00:03'");
-        BOOST_CHECK(auto_stmt->HasMoreResults());
-    // } catch(const CDB_TimeoutEx&) {
-    } catch(const CDB_Exception&) {
-        timeout_was_reported = true;
-        auto_stmt->Cancel();
+        bool timeout_was_reported = false;
+        auto_ptr<IConnection> auto_conn;
+        I_DriverContext* dc = m_DS->GetDriverContext();
+        unsigned int timeout = dc->GetTimeout();
+
+        dc->SetTimeout(1);
+
+        auto_conn.reset(m_DS->CreateConnection());
+        BOOST_CHECK(auto_conn.get() != NULL);
+        auto_conn->Connect(
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            m_args.GetServerName()
+            );
+
+        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+
+        try {
+            auto_stmt->SendSql("waitfor delay '0:00:03'");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+        // } catch(const CDB_TimeoutEx&) {
+        } catch(const CDB_Exception&) {
+            timeout_was_reported = true;
+            auto_stmt->Cancel();
+        }
+
+        // Check if connection is alive ...
+        if (false) {
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            BOOST_CHECK( rs.get() != NULL );
+        }
+
+        dc->SetTimeout(timeout);
+
+        BOOST_CHECK(timeout_was_reported);
     }
-
-    // Check if connection is alive ...
-    if (false) {
-        auto_stmt->SendSql("SELECT name FROM sysobjects");
-        BOOST_CHECK( auto_stmt->HasMoreResults() );
-        BOOST_CHECK( auto_stmt->HasRows() );
-        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-        BOOST_CHECK( rs.get() != NULL );
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
-
-    dc->SetTimeout(timeout);
-
-    BOOST_CHECK(timeout_was_reported);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_SetLogStream(void)
 {
-    CNcbiOfstream logfile("dbapi_unit_test.log");
-
-    m_DS->SetLogStream(&logfile);
-    m_DS->SetLogStream(&logfile);
-
-    // Test block ...
-    {
-        // No errors ...
-        {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
-
-            Connect(auto_conn);
-
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            DumpResults(auto_stmt.get());
-        }
+    try {
+        CNcbiOfstream logfile("dbapi_unit_test.log");
 
         m_DS->SetLogStream(&logfile);
+        m_DS->SetLogStream(&logfile);
 
-        // Force errors ...
+        // Test block ...
         {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
+            // No errors ...
+            {
+                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                BOOST_CHECK(auto_conn.get() != NULL);
 
-            Connect(auto_conn);
+                Connect(auto_conn);
 
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            try {
-                auto_stmt->SendSql("SELECT oops FROM sysobjects");
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-            } catch(const CDB_Exception&) {
-                auto_stmt->Cancel();
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                DumpResults(auto_stmt.get());
+            }
+
+            m_DS->SetLogStream(&logfile);
+
+            // Force errors ...
+            {
+                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                BOOST_CHECK(auto_conn.get() != NULL);
+
+                Connect(auto_conn);
+
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                try {
+                    auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                } catch(const CDB_Exception&) {
+                    auto_stmt->Cancel();
+                }
+            }
+
+            m_DS->SetLogStream(&logfile);
+        }
+
+        // Install user-defined error handler (eTakeOwnership)
+        {
+            I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+            if (m_args.GetDriverName() == "odbc" ||
+                m_args.GetDriverName() == "odbcw" ||
+                m_args.GetDriverName() == "ftds64_odbc"
+                ) {
+                drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                                                eTakeOwnership
+                                                );
+                drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                                                   eTakeOwnership
+                                                   );
+            } else {
+                CRef<CDB_UserHandler> hx(new CErrHandler);
+                CDB_UserHandler::SetDefault(hx);
+                drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
+                drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
             }
         }
 
-        m_DS->SetLogStream(&logfile);
-    }
-
-    // Install user-defined error handler (eTakeOwnership)
-    {
-        I_DriverContext* drv_context = m_DS->GetDriverContext();
-
-        if (m_args.GetDriverName() == "odbc" ||
-            m_args.GetDriverName() == "odbcw" ||
-            m_args.GetDriverName() == "ftds64_odbc"
-            ) {
-            drv_context->PushCntxMsgHandler(new CODBCErrHandler,
-                                            eTakeOwnership
-                                            );
-            drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
-                                               eTakeOwnership
-                                               );
-        } else {
-            CRef<CDB_UserHandler> hx(new CErrHandler);
-            CDB_UserHandler::SetDefault(hx);
-            drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
-            drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
-        }
-    }
-
-    // Test block ...
-    {
-        // No errors ...
+        // Test block ...
         {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
+            // No errors ...
+            {
+                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                BOOST_CHECK(auto_conn.get() != NULL);
 
-            Connect(auto_conn);
+                Connect(auto_conn);
 
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            DumpResults(auto_stmt.get());
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                DumpResults(auto_stmt.get());
+            }
+
+            m_DS->SetLogStream(&logfile);
+
+            // Force errors ...
+            {
+                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                BOOST_CHECK(auto_conn.get() != NULL);
+
+                Connect(auto_conn);
+
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                try {
+                    auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                } catch(const CDB_Exception&) {
+                    auto_stmt->Cancel();
+                }
+            }
+
+            m_DS->SetLogStream(&logfile);
         }
 
-        m_DS->SetLogStream(&logfile);
-
-        // Force errors ...
+        // Install user-defined error handler (eNoOwnership)
         {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
+            I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-            Connect(auto_conn);
-
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            try {
-                auto_stmt->SendSql("SELECT oops FROM sysobjects");
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-            } catch(const CDB_Exception&) {
-                auto_stmt->Cancel();
+            if (m_args.GetDriverName() == "odbc" ||
+                m_args.GetDriverName() == "odbcw" ||
+                m_args.GetDriverName() == "ftds64_odbc"
+                ) {
+                drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                                                eNoOwnership
+                                                );
+                drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                                                   eNoOwnership
+                                                   );
+            } else {
+                drv_context->PushCntxMsgHandler(new CErrHandler, eNoOwnership);
+                drv_context->PushDefConnMsgHandler(new CErrHandler, eNoOwnership);
             }
         }
 
-        m_DS->SetLogStream(&logfile);
-    }
-
-    // Install user-defined error handler (eNoOwnership)
-    {
-        I_DriverContext* drv_context = m_DS->GetDriverContext();
-
-        if (m_args.GetDriverName() == "odbc" ||
-            m_args.GetDriverName() == "odbcw" ||
-            m_args.GetDriverName() == "ftds64_odbc"
-            ) {
-            drv_context->PushCntxMsgHandler(new CODBCErrHandler,
-                                            eNoOwnership
-                                            );
-            drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
-                                               eNoOwnership
-                                               );
-        } else {
-            drv_context->PushCntxMsgHandler(new CErrHandler, eNoOwnership);
-            drv_context->PushDefConnMsgHandler(new CErrHandler, eNoOwnership);
-        }
-    }
-
-    // Test block ...
-    {
-        // No errors ...
+        // Test block ...
         {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
+            // No errors ...
+            {
+                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                BOOST_CHECK(auto_conn.get() != NULL);
 
-            Connect(auto_conn);
+                Connect(auto_conn);
 
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            auto_stmt->SendSql("SELECT name FROM sysobjects");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            DumpResults(auto_stmt.get());
-        }
-
-        m_DS->SetLogStream(&logfile);
-
-        // Force errors ...
-        {
-            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
-            BOOST_CHECK(auto_conn.get() != NULL);
-
-            Connect(auto_conn);
-
-            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
-            try {
-                auto_stmt->SendSql("SELECT oops FROM sysobjects");
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-            } catch(const CDB_Exception&) {
-                auto_stmt->Cancel();
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+                DumpResults(auto_stmt.get());
             }
-        }
 
-        m_DS->SetLogStream(&logfile);
+            m_DS->SetLogStream(&logfile);
+
+            // Force errors ...
+            {
+                auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+                BOOST_CHECK(auto_conn.get() != NULL);
+
+                Connect(auto_conn);
+
+                auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                try {
+                    auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                    BOOST_CHECK( auto_stmt->HasMoreResults() );
+                } catch(const CDB_Exception&) {
+                    auto_stmt->Cancel();
+                }
+            }
+
+            m_DS->SetLogStream(&logfile);
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
 }
 
@@ -6742,56 +6913,62 @@ void
 CDBAPIUnitTest::Test_Identity(void)
 {
     string sql;
-    auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
     Int8 table_id = 0;
     Int8 identity_id = 0;
 
-    // Clean table ...
-    auto_stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
+    try {
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
 
-    // Insert data ...
-    {
-        // Pure SQL ...
-        auto_stmt->ExecuteUpdate(
-            "INSERT INTO " + GetTableName() + "(int_field) VALUES(1)");
+        // Clean table ...
+        auto_stmt->ExecuteUpdate("DELETE FROM " + GetTableName());
+
+        // Insert data ...
+        {
+            // Pure SQL ...
+            auto_stmt->ExecuteUpdate(
+                "INSERT INTO " + GetTableName() + "(int_field) VALUES(1)");
+        }
+
+        // Retrieve data ...
+        {
+            sql  = " SELECT id, int_field FROM " + GetTableName();
+
+            auto_stmt->SendSql( sql );
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+            BOOST_CHECK(rs->Next());
+            const CVariant& id_value = rs->GetVariant(1);
+            BOOST_CHECK(!id_value.IsNull());
+            table_id = id_value.GetInt8();
+            BOOST_CHECK(!rs->Next());
+        }
+
+        // Retrieve identity ...
+        {
+            sql  = " SELECT CONVERT(NUMERIC(18, 0), @@identity) ";
+
+            auto_stmt->SendSql(sql);
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+            BOOST_CHECK(rs->Next());
+            const CVariant& id_value = rs->GetVariant(1);
+            BOOST_CHECK(!id_value.IsNull());
+            Int8 identity_id = id_value.GetInt8();
+            BOOST_CHECK(!rs->Next());
+        }
+
+        // !!!!! Doesn't work ... !!!!!!
+        //     BOOST_CHECK_EQUAL(table_id, identity_id);
     }
-
-    // Retrieve data ...
-    {
-        sql  = " SELECT id, int_field FROM " + GetTableName();
-
-        auto_stmt->SendSql( sql );
-
-        BOOST_CHECK(auto_stmt->HasMoreResults());
-        BOOST_CHECK(auto_stmt->HasRows());
-        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-        BOOST_CHECK(rs.get() != NULL);
-        BOOST_CHECK(rs->Next());
-        const CVariant& id_value = rs->GetVariant(1);
-        BOOST_CHECK(!id_value.IsNull());
-        table_id = id_value.GetInt8();
-        BOOST_CHECK(!rs->Next());
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
     }
-
-    // Retrieve identity ...
-    {
-        sql  = " SELECT CONVERT(NUMERIC(18, 0), @@identity) ";
-
-        auto_stmt->SendSql(sql);
-
-        BOOST_CHECK(auto_stmt->HasMoreResults());
-        BOOST_CHECK(auto_stmt->HasRows());
-        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-        BOOST_CHECK(rs.get() != NULL);
-        BOOST_CHECK(rs->Next());
-        const CVariant& id_value = rs->GetVariant(1);
-        BOOST_CHECK(!id_value.IsNull());
-        Int8 identity_id = id_value.GetInt8();
-        BOOST_CHECK(!rs->Next());
-    }
-
-    // !!!!! Doesn't work ... !!!!!!
-//     BOOST_CHECK_EQUAL(table_id, identity_id);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -7260,8 +7437,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (!(args.GetDriverName() == "ftds"
-          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+    if (!((args.GetDriverName() == "ftds"
+           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+          || args.GetDriverName() == "msdblib"
+          )
         )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Identity,
