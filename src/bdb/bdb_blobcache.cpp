@@ -1645,6 +1645,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
     }
 
 	// Time stamp the key with empty subkey
+/*
 	if ((m_TimeStampFlag & fTrackSubKey) && !subkey.empty()) {
         {{
             CBDB_FileCursor cur(*m_CacheAttrDB, 
@@ -1680,7 +1681,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
             m_CacheAttrDB->Insert();
         }
     }
-
+*/
 
     }} // m_DB_Lock
 
@@ -1950,6 +1951,7 @@ void CBDB_Cache::Store(const string&  key,
 
             // update timestamp of all subkeys of this key
             //
+/*
 	        if ((m_TimeStampFlag & fTrackSubKey)) {
                 if (!subkey.empty()) {
                     m_CacheAttrDB->SetTransaction(&trans);
@@ -1958,6 +1960,7 @@ void CBDB_Cache::Store(const string&  key,
                                                 access_type, trans);
                 }
 	        }
+*/
 
         }} // m_DB_Lock
 
@@ -2496,8 +2499,6 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                               version,
                               subkey,
                               *m_CacheAttrDB,
-                              //m_TimeStampFlag & fTrackSubKey,
-                              //m_WSync,
                               time_to_live,
                               curr - tz_delta,
                               owner);
@@ -2674,7 +2675,8 @@ time_t CBDB_Cache::GetAccessTime(const string&  key,
 
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
+    m_CacheAttrDB->subkey = subkey;
+        //(m_TimeStampFlag & fTrackSubKey) ? subkey : "";
 
     EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
     if (ret != eBDB_Ok) {
@@ -3189,7 +3191,7 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
                                              EBlobAccessType access_type,
                                              CBDB_Transaction& trans)
 {
-    int track_sk = (m_TimeStampFlag & fTrackSubKey);
+//    int track_sk = (m_TimeStampFlag & fTrackSubKey);
     bool updated = false;
     {{
         CBDB_FileCursor cur(*m_CacheAttrDB, trans,
@@ -3202,10 +3204,11 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
 
         // if we are not tracking subkeys we blindly update ALL subkeys
         // not allowing them to expire, otherwise just one exactl subkey
+/*
         if (track_sk)
             cur.From << subkey;
-
-        while (cur.Fetch() == eBDB_Ok) {
+*/
+        if (cur.Fetch() == eBDB_Ok) {
             unsigned old_ts = m_CacheAttrDB->time_stamp;
             if (old_ts < timeout) {
                 unsigned max_time = m_CacheAttrDB->max_time;
@@ -3237,11 +3240,11 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
                 }
                 updated = true;
             }
-
+/*
             if (track_sk) {
                 break;
             }
-
+*/
         } // while
 
     }}
@@ -3323,6 +3326,7 @@ bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
     *volume_id = m_CacheAttrDB->volume_id;
     *split_id  = m_CacheAttrDB->split_id;
 
+/*
 	if (!(m_TimeStampFlag & fTrackSubKey)) {
 	    m_CacheAttrDB->subkey = "";
 
@@ -3331,6 +3335,7 @@ bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
 			return false;
 		}
 	}
+*/
 	return true;
 }
 
@@ -3845,7 +3850,7 @@ void BDB_ConfigureCache(CBDB_Cache&             bdb_cache,
             ICache::fTimeStampOnCreate         |
             ICache::fExpireLeastFrequentlyUsed |
             ICache::fPurgeOnStartup            |
-            ICache::fTrackSubKey               |
+//            ICache::fTrackSubKey               |
             ICache::fCheckExpirationAlways;
     }
     if (timeout == 0) {
