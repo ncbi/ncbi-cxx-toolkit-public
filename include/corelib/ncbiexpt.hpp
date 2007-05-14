@@ -429,6 +429,12 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /////////////////////////////////////////////////////////////////////////////
 // CException: useful macros
 
+/// Format message using iostreams library.
+/// This macro returns an object convertible to std::string.
+#define FORMAT(message) \
+    CNcbiOstrstreamToString(static_cast<CNcbiOstrstream&>(CNcbiOstrstream().flush() << message))
+
+
 /// Create an exception instance to be thrown later, given the exception
 /// class, previous exception pointer, error code and message string.
 #define NCBI_EXCEPTION_VAR_EX(name, prev_exception_ptr,              \
@@ -458,6 +464,10 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 #define NCBI_THROW(exception_class, err_code, message) \
     NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code, message))
 
+/// The same as NCBI_THROW but with message processed as output to ostream.
+#define NCBI_THROW_FMT(exception_class, err_code, message)  \
+    NCBI_THROW(exception_class, err_code, FORMAT(message))
+
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
 #define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)\
@@ -467,6 +477,10 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Generic macro to re-throw an exception.
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
     throw NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)
+
+/// The same as NCBI_RETHROW but with message pricessed as output to ostream.
+#define NCBI_RETHROW_FMT(prev_exception, exception_class, err_code, message) \
+    NCBI_RETHROW(prev_exception, exception_class, err_code, FORMAT(message))
 
 /// Generic macro to re-throw the same exception.
 #define NCBI_RETHROW_SAME(prev_exception, message)              \
