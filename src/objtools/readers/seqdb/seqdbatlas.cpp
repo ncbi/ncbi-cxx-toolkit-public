@@ -1674,6 +1674,8 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
     m_Count ++;
 }
 
+CFastMutex CSeqDBAtlasHolder::m_Lock;
+
 CSeqDBAtlasHolder::~CSeqDBAtlasHolder()
 {
     CFastMutexGuard guard(m_Lock);

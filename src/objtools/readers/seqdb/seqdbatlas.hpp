@@ -2104,7 +2104,7 @@ private:
     CSeqDBFlushCB * m_FlushCB;
     
     /// Lock protecting this object's fields
-    CFastMutex m_Lock;
+    static CFastMutex m_Lock;
     
     /// Count of users of the CSeqDBAtlas object.
     static int m_Count;
