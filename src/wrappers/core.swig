@@ -293,9 +293,10 @@ serial/impl/classinfob.hpp
 serial/delaybuf.hpp
 serial/enumvalues.hpp
 serial/exception.hpp
+// before iterator.hpp to avoid %include within %import
+serial/objectinfo.hpp
 serial/iterator.hpp
 serial/objcopy.hpp
-serial/objectinfo.hpp
 serial/objectio.hpp
 serial/objectiter.hpp
 serial/objhook.hpp
@@ -319,6 +320,8 @@ serial/serialutil.hpp
 serial/typeinfo.hpp
 
 // No export specifiers
+// need this because soap_message.hpp #include's soap_11__.hpp
+%ifndef WINDOWS serial/soap/soap_11__.hpp
 %ifndef WINDOWS serial/soap/soap_11_module.hpp
 %ifndef WINDOWS serial/soap/soap_body.hpp
 %ifndef WINDOWS serial/soap/soap_body_.hpp
