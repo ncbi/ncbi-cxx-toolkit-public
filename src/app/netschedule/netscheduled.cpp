@@ -75,7 +75,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.37 build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.38 build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags;tags_select"
@@ -96,6 +96,7 @@ enum ENSRequestField {
     eNSRF_Port,
     eNSRF_Timeout,
     eNSRF_JobMask,
+    eNSRF_Flags,
     eNSRF_ErrMsg,
     eNSRF_Option,
     eNSRF_Status,
@@ -111,20 +112,21 @@ enum ENSRequestField {
 };
 struct SJS_Request
 {
-    string             input;
-    string             output;
-    char               progress_msg[kNetScheduleMaxDBDataSize];
-    char               affinity_token[kNetScheduleMaxDBDataSize];
-    string             job_key;
-    unsigned int       job_return_code;
-    unsigned int       port;
-    unsigned int       timeout;
-    unsigned int       job_mask;
-    string             err_msg;
-    string             param1;
-    string             param2;
-    string             param3;
-    string             tags;
+    string    input;
+    string    output;
+    char      progress_msg[kNetScheduleMaxDBDataSize];
+    char      affinity_token[kNetScheduleMaxDBDataSize];
+    string    job_key;
+    unsigned  job_return_code;
+    unsigned  port;
+    unsigned  timeout;
+    unsigned  job_mask;
+    unsigned  flags;   
+    string    err_msg;
+    string    param1;
+    string    param2;
+    string    param3;
+    string    tags;
 
     void Init()
     {
@@ -173,6 +175,9 @@ struct SJS_Request
             break;
         case eNSRF_JobMask:
             job_mask = atoi(val);
+            break;
+        case eNSRF_Flags:
+	    flags = atoi(val);   
             break;
         case eNSRF_ErrMsg:
             err_msg.erase(); err_msg.append(val, eff_size);
@@ -326,6 +331,8 @@ private:
     FProcessor ParseRequest(const char* reqstr);
 
     // Command processors
+    void ProcessFastStatusS();
+    void ProcessFastStatusW();
     void ProcessSubmit();
     void ProcessSubmitBatch();
     void ProcessCancel();
@@ -868,6 +875,25 @@ void CNetScheduleHandler::x_MonitorRec(const SNS_SubmitRecord& rec)
 
 //////////////////////////////////////////////////////////////////////////
 // Process* methods for processing commands
+
+void CNetScheduleHandler::ProcessFastStatusS()
+{
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
+
+    CNetScheduleAPI::EJobStatus status = m_Queue->GetStatus(job_id);
+    // TODO: update timestamp
+    WriteMsg("OK:", NStr::IntToString((int) status));
+}
+
+
+void CNetScheduleHandler::ProcessFastStatusW()
+{
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
+
+    CNetScheduleAPI::EJobStatus status = m_Queue->GetStatus(job_id);
+    WriteMsg("OK:", NStr::IntToString((int) status));
+}
+
 
 void CNetScheduleHandler::ProcessSubmit()
 {
@@ -1829,6 +1855,12 @@ void CNetScheduleHandler::ProcessGetParam()
 CNetScheduleHandler::SArgument CNetScheduleHandler::sm_End = { eNSA_None };
 #define NO_ARGS {sm_End}
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
+    // SST job_key : id -- submitter fast status, changes timestamp
+    { "SST",      &CNetScheduleHandler::ProcessFastStatusS, eNSCR_Submitter,
+        { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
+    // WST job_key : id -- worker node fast status, does not change timestamp
+    { "WST",      &CNetScheduleHandler::ProcessFastStatusW, eNSCR_Worker,
+        { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // SUBMIT input : str [ progress_msg : str ] [ port : uint [ timeout : uint ]]
     //        [ affinity_token : keystr(aff) ] [ job_mask : keyint(msk) ]
     //        [ tags : keystr(tags) ]
