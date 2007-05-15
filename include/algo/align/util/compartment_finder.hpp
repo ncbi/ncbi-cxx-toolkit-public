@@ -613,7 +613,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                     if(box2[0] <= box1[0] + kMinCompartmentHitLength) {
 
                         if(i + 1 == in) {
-                            TCoord new_coord ((box1[0] + box1[1]) / 2);
+                            TCoord new_coord (box1[0] + (box1[1] - box1[0])/2);
                             if(box1[0] + 1 <= new_coord) {
                                 --new_coord;
                             }
@@ -631,10 +631,10 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                         h1->Modify(1, box2[0] - 1);
                     }
                     
-                    if(box2[1] <= box1[1]+ kMinCompartmentHitLength) {
+                    if(box2[1] <= box1[1] + kMinCompartmentHitLength) {
 
                         if(i == 1) {
-                            TCoord new_coord ((box2[0] + box2[1]) / 2);
+                            TCoord new_coord (box2[0] + (box2[1] - box2[0])/2);
                             if(box2[1] >= new_coord + 1) {
                                 ++new_coord;
                             }
@@ -657,7 +657,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                     if(box2[2] <= box1[2] + kMinCompartmentHitLength) {
 
                         if(i + 1 == in) {
-                            TCoord new_coord ((box1[2] + box1[3]) / 2);
+                            TCoord new_coord (box1[2] + (box1[3] - box1[2])/2);
                             if(box1[2] + 1 <= new_coord) {
                                 --new_coord;
                             }
@@ -678,13 +678,14 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                     if(box2[3] <= box1[3] + kMinCompartmentHitLength) {
 
                         if(i == 1) {
-                            TCoord new_coord ((box2[2] + box2[3]) / 2);
+                            TCoord new_coord (box2[2] + (box2[3] - box2[2])/2);
                             if(box2[3] >= new_coord + 1) {
                                 ++new_coord;
                             }
                             else {
                                 new_coord = box2[3];
                             }
+
                             h2->Modify(2, new_coord);
                         }
                         else {
@@ -882,6 +883,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
     }
 
     // minus
+    /*
     {{
         // flip
         for(ii = ib; ii != iplus_beg; ++ii) {
@@ -913,6 +915,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         }        
         x_Copy2Pending(finder);
     }}
+    */
 
     // plus
     {{
