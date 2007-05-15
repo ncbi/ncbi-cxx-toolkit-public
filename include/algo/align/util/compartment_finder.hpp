@@ -883,7 +883,6 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
     }
 
     // minus
-    /*
     {{
         // flip
         for(ii = ib; ii != iplus_beg; ++ii) {
@@ -915,7 +914,6 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
         }        
         x_Copy2Pending(finder);
     }}
-    */
 
     // plus
     {{
