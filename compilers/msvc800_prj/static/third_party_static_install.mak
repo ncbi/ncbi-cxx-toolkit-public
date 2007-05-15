@@ -29,20 +29,8 @@ INSTALL       = .\bin
 # line
 #
 
-!IF "$(INTDIR)" == ".\Debug"
-INTDIR = Debug
-!ELSEIF "$(INTDIR)" == ".\DebugMT"
-INTDIR = DebugMT
-!ELSEIF "$(INTDIR)" == ".\DebugDLL"
-INTDIR = DebugDLL
-!ELSEIF "$(INTDIR)" == ".\Release"
-INTDIR = Release
-!ELSEIF "$(INTDIR)" == ".\ReleaseMT"
-INTDIR = ReleaseMT
-!ELSEIF "$(INTDIR)" == ".\ReleaseDLL"
-INTDIR = ReleaseDLL
-!ENDIF
-
+INTDIR = $(INTDIR:.\=)
+ALTDIR = $(INTDIR:VTune_=)
 
 #
 # Third-party DLLs' installation path and rules

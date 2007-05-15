@@ -25,6 +25,9 @@ TEST_IF__STAMP      = @if exist     $(THIRDPARTY_CFG_PATH)
 
 
 FLTK_SRC = $(FLTK_BINPATH)\$(INTDIR)
+!IF !EXIST($(FLTK_SRC))
+FLTK_SRC            = $(FLTK_BINPATH)\$(ALTDIR)
+!ENDIF
 
 install_fltk : $(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed
 
@@ -38,6 +41,9 @@ $(THIRDPARTY_CFG_PATH)\fltk$(STAMP_SUFFIX).installed : $(FLTK_SRC)/fltkdll.dll
 $(FLTK_SRC)/fltkdll.dll :
 
 BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(INTDIR)
+!IF !EXIST($(BERKELEYDB_SRC))
+BERKELEYDB_SRC      = $(BERKELEYDB_BINPATH)\$(ALTDIR)
+!ENDIF
 install_berkeleydb:
 	$(TEST_NOT_STAMP)\berkeleydb$(STAMP_SUFFIX).installed echo Copying BerkeleyDB DLLs...
 	$(TEST_IF__STAMP)\berkeleydb$(STAMP_SUFFIX).installed echo BerkeleyDB DLLs are already installed
@@ -46,6 +52,9 @@ install_berkeleydb:
 	$(TEST_NOT_STAMP)\berkeleydb$(STAMP_SUFFIX).installed if exist "$(BERKELEYDB_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\berkeleydb$(STAMP_SUFFIX).installed")
 
 SQLITE_SRC = $(SQLITE_BINPATH)\$(INTDIR)
+!IF !EXIST($(SQLITE_SRC))
+SQLITE_SRC          = $(SQLITE_BINPATH)\$(ALTDIR)
+!ENDIF
 install_sqlite:
 	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     echo Copying SQLite DLLs...
 	$(TEST_IF__STAMP)\sqlite$(STAMP_SUFFIX).installed     echo SQLite DLLs are already installed
@@ -54,6 +63,9 @@ install_sqlite:
 	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     if exist "$(SQLITE_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\sqlite$(STAMP_SUFFIX).installed")
 
 SQLITE3_SRC = $(SQLITE3_BINPATH)\$(INTDIR)
+!IF !EXIST($(SQLITE3_SRC))
+SQLITE3_SRC         = $(SQLITE3_BINPATH)\$(ALTDIR)
+!ENDIF
 install_sqlite3:
 	$(TEST_NOT_STAMP)\sqlite3$(STAMP_SUFFIX).installed     echo Copying SQLite3 DLLs...
 	$(TEST_IF__STAMP)\sqlite3$(STAMP_SUFFIX).installed     echo SQLite3 DLLs are already installed
@@ -66,6 +78,9 @@ install_sqlite3:
 #
 
 WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(INTDIR)
+!IF !EXIST($(WXWINDOWS_SRC))
+WXWINDOWS_SRC       = $(WXWINDOWS_BINPATH)\$(ALTDIR)
+!ENDIF
 install_wxwindows:
 	$(TEST_NOT_STAMP)\wxwindows$(STAMP_SUFFIX).installed  echo Copying wxWindows DLLs...
 	$(TEST_IF__STAMP)\wxwindows$(STAMP_SUFFIX).installed  echo wxWindows DLLs are already installed
@@ -74,6 +89,9 @@ install_wxwindows:
 	$(TEST_NOT_STAMP)\wxwindows$(STAMP_SUFFIX).installed  if exist "$(WXWINDOWS_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\wxwindows$(STAMP_SUFFIX).installed")
 
 SYBASE_SRC = $(SYBASE_BINPATH)\$(INTDIR)
+!IF !EXIST($(SYBASE_SRC))
+SYBASE_SRC       = $(SYBASE_BINPATH)\$(ALTDIR)
+!ENDIF
 install_sybase:
 	$(TEST_NOT_STAMP)\sybase$(STAMP_SUFFIX).installed     echo Copying Sybase DLLs...
 	$(TEST_IF__STAMP)\sybase$(STAMP_SUFFIX).installed     echo Sybase DLLs are already installed
@@ -83,6 +101,9 @@ install_sybase:
 
 
 MYSQL_SRC = $(MYSQL_BINPATH)\$(INTDIR)
+!IF !EXIST($(MYSQL_SRC))
+MYSQL_SRC        = $(MYSQL_BINPATH)\$(ALTDIR)
+!ENDIF
 install_mysql:
 	$(TEST_NOT_STAMP)\mysql$(STAMP_SUFFIX).installed      echo Copying MySQL DLLs...
 	$(TEST_IF__STAMP)\mysql$(STAMP_SUFFIX).installed      echo MySQL DLLs are already installed
@@ -91,6 +112,9 @@ install_mysql:
 	$(TEST_NOT_STAMP)\mysql$(STAMP_SUFFIX).installed      if exist "$(MYSQL_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\mysql$(STAMP_SUFFIX).installed")
 
 MSSQL_SRC = $(MSSQL_BINPATH)\$(INTDIR)
+!IF !EXIST($(MSSQL_SRC))
+MSSQL_SRC        = $(MSSQL_BINPATH)\$(ALTDIR)
+!ENDIF
 install_mssql:
 	$(TEST_NOT_STAMP)\mssql$(STAMP_SUFFIX).installed      echo Copying MSSQL DLLs...
 	$(TEST_IF__STAMP)\mssql$(STAMP_SUFFIX).installed      echo MSSQL DLLs are already installed
@@ -99,6 +123,9 @@ install_mssql:
 	$(TEST_NOT_STAMP)\mssql$(STAMP_SUFFIX).installed      if exist "$(MSSQL_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\mssql$(STAMP_SUFFIX).installed")
 
 OPENSSL_SRC = $(OPENSSL_BINPATH)\$(INTDIR)
+!IF !EXIST($(OPENSSL_SRC))
+OPENSSL_SRC      = $(OPENSSL_BINPATH)\$(ALTDIR)
+!ENDIF
 install_openssl:
 	$(TEST_NOT_STAMP)\openssl$(STAMP_SUFFIX).installed    echo Copying OpenSSL DLLs...
 	$(TEST_IF__STAMP)\openssl$(STAMP_SUFFIX).installed    echo OpenSSL DLLs are already installed
@@ -106,6 +133,9 @@ install_openssl:
 	$(TEST_NOT_STAMP)\openssl$(STAMP_SUFFIX).installed    if exist "$(OPENSSL_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\openssl$(STAMP_SUFFIX).installed")
 
 LZO_SRC = $(LZO_BINPATH)\$(INTDIR)
+!IF !EXIST($(LZO_SRC))
+LZO_SRC          = $(LZO_BINPATH)\$(ALTDIR)
+!ENDIF
 install_lzo:
 	$(TEST_NOT_STAMP)\lzo$(STAMP_SUFFIX).installed        echo Copying LZO DLLs...
 	$(TEST_IF__STAMP)\lzo$(STAMP_SUFFIX).installed        echo LZO DLLs are already installed

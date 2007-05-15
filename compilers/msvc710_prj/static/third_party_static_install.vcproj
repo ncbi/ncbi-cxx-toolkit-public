@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
@@ -24,8 +24,8 @@
 		</Configuration>
 		<Configuration
 			Name="DebugMT|Win32"
-			OutputDirectory="DebugMT"
-			IntermediateDirectory="DebugMT"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
@@ -36,8 +36,8 @@
 		</Configuration>
 		<Configuration
 			Name="DebugDLL|Win32"
-			OutputDirectory="DebugDLL"
-			IntermediateDirectory="DebugDLL"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
@@ -48,8 +48,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
@@ -60,8 +60,8 @@
 		</Configuration>
 		<Configuration
 			Name="ReleaseMT|Win32"
-			OutputDirectory="ReleaseMT"
-			IntermediateDirectory="ReleaseMT"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
@@ -72,8 +72,80 @@
 		</Configuration>
 		<Configuration
 			Name="ReleaseDLL|Win32"
-			OutputDirectory="ReleaseDLL"
-			IntermediateDirectory="ReleaseDLL"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_DebugMT|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_DebugDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_ReleaseMT|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; all IntDir=&quot;$(IntDir)&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; clean IntDir=&quot;$(IntDir)&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_ReleaseDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"

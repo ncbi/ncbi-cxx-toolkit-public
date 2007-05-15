@@ -29,11 +29,8 @@ INSTALL       = .\bin
 # line
 #
 
-!IF "$(INTDIR)" == ".\DebugDLL"
-INTDIR = DebugDLL
-!ELSEIF "$(INTDIR)" == ".\ReleaseDLL"
-INTDIR = ReleaseDLL
-!ENDIF
+INTDIR = $(INTDIR:.\=)
+ALTDIR = $(INTDIR:VTune_=)
 
 
 #
