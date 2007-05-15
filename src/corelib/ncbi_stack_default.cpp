@@ -34,9 +34,12 @@
 BEGIN_NCBI_SCOPE
 
 
-void CStackTrace::GetStackTrace(TStack& stack_trace)
+class CStackTraceImpl
 {
-}
+public:
+    void Expand(CStackTrace::TStack& stack)
+        { /* no-op */ }
+};
 
 
 
