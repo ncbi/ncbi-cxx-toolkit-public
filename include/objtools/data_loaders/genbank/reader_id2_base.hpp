@@ -159,45 +159,47 @@ protected:
         fError_warning_suppressed = 1<<7
     };
     typedef int TErrorFlags;
-    TErrorFlags x_ProcessError(CReaderRequestResult& result,
-                               const CID2_Error& error);
+    TErrorFlags x_GetError(const CID2_Error& error);
+    TErrorFlags x_GetMessageError(const CID2_Error& error);
+    TErrorFlags x_GetError(const CID2_Reply& reply);
+    TErrorFlags x_GetMessageError(const CID2_Reply& reply);
 
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
                         const CID2_Reply& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CID2_Reply_Get_Seq_id& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const string& seq_id,
                         const CID2_Reply_Get_Seq_id& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CSeq_id_Handle& seq_id,
                         const CID2_Reply_Get_Seq_id& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CID2_Reply_Get_Blob_Id& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CID2_Reply_Get_Blob_Seq_ids& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CID2_Reply_Get_Blob& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CID2S_Reply_Get_Split_Info& reply);
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
-                        TErrorFlags errors,
+                        const CID2_Reply& main_reply,
                         const CID2S_Reply_Get_Chunk& reply);
 
     void x_UpdateLoadedSet(CReaderRequestResult& result,

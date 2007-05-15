@@ -433,7 +433,7 @@ bool CId2ReaderBase::LoadChunk(CReaderRequestResult& result,
         req2.SetGet_data();
         x_ProcessRequest(result, req);
         if ( !chunk_info.IsLoaded() ) {
-            ERR_POST("ExtAnnot chunk is not loaded: "<<blob_id.ToString());
+            ERR_POST("ExtAnnot chunk is not loaded: "<<blob_id);
             chunk_info.SetLoaded();
         }
     }
@@ -460,7 +460,7 @@ void LoadedChunksPacket(CID2_Request_Packet& packet,
 {
     NON_CONST_ITERATE(vector<CTSE_Chunk_Info*>, it, chunks) {
         if ( !(*it)->IsLoaded() ) {
-            ERR_POST("ExtAnnot chunk is not loaded: " << blob_id.ToString());
+            ERR_POST("ExtAnnot chunk is not loaded: " << blob_id);
             (*it)->SetLoaded();
         }
     }
@@ -814,59 +814,46 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& reply)
+CId2ReaderBase::TErrorFlags CId2ReaderBase::x_GetError(const CID2_Error& error)
 {
-    TErrorFlags errors = 0;
-    if ( reply.IsSetError() ) {
-        ITERATE ( CID2_Reply::TError, it, reply.GetError() ) {
-            errors |= x_ProcessError(result, **it);
-        }
-    }
-    if ( errors & (fError_bad_command | fError_bad_connection) ) {
-        return;
-    }
-    switch ( reply.GetReply().Which() ) {
-    case CID2_Reply::TReply::e_Get_seq_id:
-        x_ProcessReply(result, loaded_set, errors,
-                       reply.GetReply().GetGet_seq_id());
+    TErrorFlags error_flags = 0;
+    switch ( error.GetSeverity() ) {
+    case CID2_Error::eSeverity_warning:
+        error_flags |= fError_warning;
         break;
-    case CID2_Reply::TReply::e_Get_blob_id:
-        x_ProcessReply(result, loaded_set, errors,
-                       reply.GetReply().GetGet_blob_id());
+    case CID2_Error::eSeverity_failed_command:
+        error_flags |= fError_bad_command;
         break;
-    case CID2_Reply::TReply::e_Get_blob_seq_ids:
-        x_ProcessReply(result, loaded_set, errors,
-                       reply.GetReply().GetGet_blob_seq_ids());
+    case CID2_Error::eSeverity_failed_connection:
+        error_flags |= fError_bad_connection;
         break;
-    case CID2_Reply::TReply::e_Get_blob:
-        x_ProcessReply(result, loaded_set, errors,
-                       reply.GetReply().GetGet_blob());
+    case CID2_Error::eSeverity_failed_server:
+        error_flags |= fError_bad_connection;
         break;
-    case CID2_Reply::TReply::e_Get_split_info:
-        x_ProcessReply(result, loaded_set, errors,
-                       reply.GetReply().GetGet_split_info());
+    case CID2_Error::eSeverity_no_data:
+        error_flags |= fError_no_data;
         break;
-    case CID2_Reply::TReply::e_Get_chunk:
-        x_ProcessReply(result, loaded_set, errors,
-                       reply.GetReply().GetGet_chunk());
+    case CID2_Error::eSeverity_restricted_data:
+        error_flags |= fError_no_data;
         break;
-    default:
+    case CID2_Error::eSeverity_unsupported_command:
+        m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
+        error_flags |= fError_bad_command;
+        break;
+    case CID2_Error::eSeverity_invalid_arguments:
+        error_flags |= fError_bad_command;
         break;
     }
+    return error_flags;
 }
 
 
 CId2ReaderBase::TErrorFlags
-CId2ReaderBase::x_ProcessError(CReaderRequestResult& /*result*/,
-                               const CID2_Error& error)
+CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
 {
     TErrorFlags error_flags = 0;
-    const char* severity = "";
     switch ( error.GetSeverity() ) {
     case CID2_Error::eSeverity_warning:
-        severity = "warning: ";
         error_flags |= fError_warning;
         if ( error.IsSetMessage() ) {
             if ( NStr::FindNoCase(error.GetMessage(), "obsolete") != NPOS ) {
@@ -881,25 +868,18 @@ CId2ReaderBase::x_ProcessError(CReaderRequestResult& /*result*/,
         }
         break;
     case CID2_Error::eSeverity_failed_command:
-        severity = "request error: ";
         error_flags |= fError_bad_command;
         break;
     case CID2_Error::eSeverity_failed_connection:
-        severity = "connection error: ";
         error_flags |= fError_bad_connection;
-        //        x_Reconnect(result, error, 1);
         break;
     case CID2_Error::eSeverity_failed_server:
-        severity = "server error: ";
         error_flags |= fError_bad_connection;
-        //        x_Reconnect(result, error, 10);
         break;
     case CID2_Error::eSeverity_no_data:
-        severity = "no data: ";
         error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_restricted_data:
-        severity = "restricted data: ";
         error_flags |= fError_no_data;
         if ( error.IsSetMessage() &&
              (NStr::FindNoCase(error.GetMessage(), "withdrawn") != NPOS ||
@@ -912,57 +892,83 @@ CId2ReaderBase::x_ProcessError(CReaderRequestResult& /*result*/,
         break;
     case CID2_Error::eSeverity_unsupported_command:
         m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
-        severity = "unsupported command: ";
         error_flags |= fError_bad_command;
         break;
     case CID2_Error::eSeverity_invalid_arguments:
-        severity = "invalid argument: ";
         error_flags |= fError_bad_command;
         break;
     }
-    /*
-    const char* message;
-    if ( error.IsSetMessage() ) {
-        message = error.GetMessage().c_str();
-    }
-    else {
-        message = "<empty>";
-    }
-    if ( (error_flags & ~fError_warning) ) {
-        ERR_POST(message);
-    }
-    else {
-        //ERR_POST(Warning << message);
-    }
-    */
     return error_flags;
 }
 
 
-/*void CId2ReaderBase::x_Reconnect(CReaderRequestResult& result,
-                                 const CID2_Error& error,
-                                 int retry_delay)
+CId2ReaderBase::TErrorFlags
+CId2ReaderBase::x_GetError(const CID2_Reply& reply)
 {
-    if ( error.IsSetRetry_delay() && error.GetRetry_delay() >= 0 ) {
-        retry_delay = error.GetRetry_delay();
+    TErrorFlags errors = 0;
+    if ( reply.IsSetError() ) {
+        ITERATE ( CID2_Reply::TError, it, reply.GetError() ) {
+            errors |= x_GetError(**it);
+        }
     }
-    x_Reconnect(result, retry_delay);
-    }*/
+    return errors;
+}
 
 
-/*void CId2ReaderBase::x_Reconnect(CReaderRequestResult& result,
-                             int retry_delay)
+CId2ReaderBase::TErrorFlags
+CId2ReaderBase::x_GetMessageError(const CID2_Reply& reply)
 {
-    CReaderRequestConn conn(result);
-    if ( conn.GetConn() >= 0 ) {
-        Reconnect(conn.GetConn());
+    TErrorFlags errors = 0;
+    if ( reply.IsSetError() ) {
+        ITERATE ( CID2_Reply::TError, it, reply.GetError() ) {
+            errors |= x_GetMessageError(**it);
+        }
     }
-    }*/
+    return errors;
+}
 
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    TErrorFlags errors,
+                                    const CID2_Reply& reply)
+{
+    if ( x_GetError(reply) & (fError_bad_command | fError_bad_connection) ) {
+        return;
+    }
+    switch ( reply.GetReply().Which() ) {
+    case CID2_Reply::TReply::e_Get_seq_id:
+        x_ProcessReply(result, loaded_set, reply,
+                       reply.GetReply().GetGet_seq_id());
+        break;
+    case CID2_Reply::TReply::e_Get_blob_id:
+        x_ProcessReply(result, loaded_set, reply,
+                       reply.GetReply().GetGet_blob_id());
+        break;
+    case CID2_Reply::TReply::e_Get_blob_seq_ids:
+        x_ProcessReply(result, loaded_set, reply,
+                       reply.GetReply().GetGet_blob_seq_ids());
+        break;
+    case CID2_Reply::TReply::e_Get_blob:
+        x_ProcessReply(result, loaded_set, reply,
+                       reply.GetReply().GetGet_blob());
+        break;
+    case CID2_Reply::TReply::e_Get_split_info:
+        x_ProcessReply(result, loaded_set, reply,
+                       reply.GetReply().GetGet_split_info());
+        break;
+    case CID2_Reply::TReply::e_Get_chunk:
+        x_ProcessReply(result, loaded_set, reply,
+                       reply.GetReply().GetGet_chunk());
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
+                                    SId2LoadedSet& loaded_set,
+                                    const CID2_Reply& main_reply,
                                     const CID2_Reply_Get_Seq_id& reply)
 {
     // we can save this data in cache
@@ -970,13 +976,13 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
     const CID2_Seq_id& request_id = request.GetSeq_id();
     switch ( request_id.Which() ) {
     case CID2_Seq_id::e_String:
-        x_ProcessReply(result, loaded_set, errors,
+        x_ProcessReply(result, loaded_set, main_reply,
                        request_id.GetString(),
                        reply);
         break;
 
     case CID2_Seq_id::e_Seq_id:
-        x_ProcessReply(result, loaded_set, errors,
+        x_ProcessReply(result, loaded_set, main_reply,
                        CSeq_id_Handle::GetHandle(request_id.GetSeq_id()),
                        reply);
         break;
@@ -989,7 +995,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    TErrorFlags errors,
+                                    const CID2_Reply& main_reply,
                                     const string& seq_id,
                                     const CID2_Reply_Get_Seq_id& reply)
 {
@@ -998,6 +1004,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
         return;
     }
 
+    TErrorFlags errors = x_GetMessageError(main_reply);
     if ( errors & fError_no_data ) {
         // no Seq-ids
         int state = CBioseq_Handle::fState_no_data;
@@ -1045,7 +1052,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    TErrorFlags errors,
+                                    const CID2_Reply& main_reply,
                                     const CSeq_id_Handle& seq_id,
                                     const CID2_Reply_Get_Seq_id& reply)
 {
@@ -1054,6 +1061,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
         return;
     }
 
+    TErrorFlags errors = x_GetMessageError(main_reply);
     if ( errors & fError_no_data ) {
         // no Seq-ids
         int state = CBioseq_Handle::fState_no_data;
@@ -1100,11 +1108,12 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    TErrorFlags errors,
+                                    const CID2_Reply& main_reply,
                                     const CID2_Reply_Get_Blob_Id& reply)
 {
     const CSeq_id& seq_id = reply.GetSeq_id();
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
+    TErrorFlags errors = x_GetMessageError(main_reply);
     if ( errors & fError_no_data ) {
         int state = CBioseq_Handle::fState_no_data;
         if ( errors & fError_restricted ) {
@@ -1155,7 +1164,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& /* result */,
                                     SId2LoadedSet& /*loaded_set*/,
-                                    TErrorFlags /* errors */,
+                                    const CID2_Reply& /*main_reply*/,
                                     const CID2_Reply_Get_Blob_Seq_ids&/*reply*/)
 {
 /*
@@ -1175,7 +1184,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& /* result */,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    TErrorFlags errors,
+                                    const CID2_Reply& main_reply,
                                     const CID2_Reply_Get_Blob& reply)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
@@ -1192,17 +1201,18 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
         else {
             m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
             ERR_POST(Info << "CId2ReaderBase: ID2-Reply-Get-Blob: "
-                     "blob already loaded: " << blob_id.ToString());
+                     "blob already loaded: "<<blob_id);
             return;
         }
     }
 
     if ( blob->HasSeq_entry() ) {
         ERR_POST("CId2ReaderBase: ID2-Reply-Get-Blob: "
-                 "Seq-entry already loaded: "<<blob_id.ToString());
+                 "Seq-entry already loaded: "<<blob_id);
         return;
     }
 
+    TErrorFlags errors = x_GetMessageError(main_reply);
     if ( errors & fError_no_data ) {
         int state = CBioseq_Handle::fState_no_data;
         if ( errors & fError_restricted ) {
@@ -1224,7 +1234,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
     if ( reply.GetData().GetData().empty() ) {
         ERR_POST("CId2ReaderBase: ID2-Reply-Get-Blob: "
-                 "no data in reply: "<<blob_id.ToString());
+                 "no data in reply: "<<blob_id);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
         _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
         return;
@@ -1260,7 +1270,7 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& loaded_set,
-                                    TErrorFlags /* errors */,
+                                    const CID2_Reply& /*main_reply*/,
                                     const CID2S_Reply_Get_Split_Info& reply)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
@@ -1268,17 +1278,17 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
     CLoadLockBlob blob(result, blob_id);
     if ( !blob ) {
         ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                 "no blob: " << blob_id.ToString());
+                 "no blob: " << blob_id);
         return;
     }
     if ( blob.IsLoaded() ) {
         ERR_POST(Info << "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                 "blob already loaded: " << blob_id.ToString());
+                 "blob already loaded: " << blob_id);
         return;
     }
     if ( !reply.IsSetData() ) {
         ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                 "no data in reply: "<<blob_id.ToString());
+                 "no data in reply: "<<blob_id);
         return;
     }
 
@@ -1303,24 +1313,24 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 
 void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     SId2LoadedSet& /*loaded_set*/,
-                                    TErrorFlags /* errors */,
+                                    const CID2_Reply& /*main_reply*/,
                                     const CID2S_Reply_Get_Chunk& reply)
 {
     TBlobId blob_id = GetBlobId(reply.GetBlob_id());
     CLoadLockBlob blob(result, blob_id);
     if ( !blob ) {
         ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Chunk: "
-                 "no blob: " << blob_id.ToString());
+                 "no blob: " << blob_id);
         return;
     }
     if ( !blob.IsLoaded() ) {
         ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Chunk: "
-                 "blob is not loaded yet: " << blob_id.ToString());
+                 "blob is not loaded yet: " << blob_id);
         return;
     }
     if ( !reply.IsSetData() ) {
         ERR_POST("CId2ReaderBase: ID2S-Reply-Get-Chunk: "
-                 "no data in reply: "<<blob_id.ToString());
+                 "no data in reply: "<<blob_id);
         return;
     }
     
