@@ -639,14 +639,6 @@ void CAlignShadow::Shift(Int4 shift_query, Int4 shift_subj)
 }
 
 
-Int4 Round(const double& d)
-{
-    const double fd = floor(d);
-    const double rv = d - fd < .5? fd: fd + 1;
-    return Int4(rv);
-}
-
-
 void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 {
     TCoord qmin, qmax;
@@ -686,7 +678,7 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
             newpos_invalid = true;
         }        
     }
-
+    
     if(newpos_invalid) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::Modify(): requested new position invalid"); 
@@ -799,7 +791,7 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
         case 0: // query min
 
             delta_q = new_pos - qmin;
-            delta_s = Round(delta_q / k);
+            delta_s = Int4(round(delta_q / k));
 
             SetQueryMin(qmin + delta_q);
             if(same_strands) {
@@ -814,7 +806,7 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
         case 1: // query max
 
             delta_q = new_pos - qmax;
-            delta_s = Round(delta_q / k);
+            delta_s = Int4(round(delta_q / k));
 
             SetQueryMax(qmax + delta_q);
             if(same_strands) {
@@ -829,7 +821,7 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
         case 2: // subj min
 
             delta_s = new_pos - smin;
-            delta_q = Round(delta_s * k);
+            delta_q = Int4(round(delta_s * k));
 
             SetSubjMin(smin + delta_s);
             if(same_strands) {
@@ -844,7 +836,7 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
         case 3: // subj max
 
             delta_s = new_pos - smax;
-            delta_q = Round(delta_s * k);
+            delta_q = Int4(round(delta_s * k));
 
             SetSubjMax(smax + delta_s);
             if(same_strands) {
