@@ -373,8 +373,7 @@ struct SMultiSeqSrcNewArgs {
         : seq_vector(sv), program(p) {}
 };
 
-/// Multi sequence source destructor: frees its internal data structure and the
-/// BlastSeqSrc structure itself.
+/// Multi sequence source destructor: frees its internal data structure
 /// @param seq_src BlastSeqSrc structure to free [in]
 /// @return NULL
 static BlastSeqSrc* 
@@ -386,7 +385,6 @@ s_MultiSeqSrcFree(BlastSeqSrc* seq_src)
                                 (_BlastSeqSrcImpl_GetDataStructure(seq_src));
 
     delete seq_info;
-    sfree(seq_src);
 
     return NULL;
 }

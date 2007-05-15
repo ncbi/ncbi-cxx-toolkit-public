@@ -111,6 +111,7 @@ BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
 BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src)
 {
     BlastSeqSrcDestructor destructor_fnptr = NULL;
+    BlastSeqSrc* retval;
 
     if (!seq_src) {
         return (BlastSeqSrc*) NULL;
@@ -127,7 +128,10 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src)
         return (BlastSeqSrc*) NULL;
     }
 
-    return (BlastSeqSrc*) (*destructor_fnptr)(seq_src);
+    retval = (BlastSeqSrc*) (*destructor_fnptr)(seq_src);
+    ASSERT(retval == NULL);
+    sfree(seq_src);
+    return retval;
 }
 
 BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src)

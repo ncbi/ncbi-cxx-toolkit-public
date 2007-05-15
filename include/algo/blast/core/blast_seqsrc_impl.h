@@ -74,8 +74,8 @@ struct BlastSeqSrcNewInfo {
 
 /** Function pointer typedef to deallocate a BlastSeqSrc structure, always 
  * returns NULL. This function's implementation should free resources allocated
- * in the BlastSeqSrcConstructor and BlastSeqSrcNew except the error 
- * initialization string */
+ * in the BlastSeqSrcConstructor, the BlastSeqSrc structure itself is free'd by
+ * BlastSeqSrcFree */
 typedef BlastSeqSrc* (*BlastSeqSrcDestructor) 
     (BlastSeqSrc* seqrc /**< BlastSeqSrc structure to free */
      );
@@ -336,7 +336,7 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
  *  called by the BlastSeqSrc framework (BlastSeqSrc* functions declared in
  *  blast_seqsrc.h), no exceptions should be thrown in C++ implementations.
  *  When not obvious, please see the required signature's documentation for
- *  determining what to implement.
+ *  determining what to implement (@sa blast_seqsrc_impl.h).
  *   
  *  For ease of maintenance, please follow the following conventions:
  *  - Client implementations' initialization function should be called 

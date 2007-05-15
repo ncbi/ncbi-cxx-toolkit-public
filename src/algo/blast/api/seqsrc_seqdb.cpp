@@ -391,8 +391,7 @@ private:
 
 extern "C" {
 
-/// SeqDb sequence source destructor: frees its internal data structure and the
-/// BlastSeqSrc structure itself.
+/// SeqDb sequence source destructor: frees its internal data structure
 /// @param seq_src BlastSeqSrc structure to free [in]
 /// @return NULL
 static BlastSeqSrc* 
@@ -403,7 +402,6 @@ s_SeqDbSrcFree(BlastSeqSrc* seq_src)
     CRef<CSeqDB>* seqdb = static_cast<CRef<CSeqDB>*>
         (_BlastSeqSrcImpl_GetDataStructure(seq_src));
     delete seqdb;
-    sfree(seq_src);
     return NULL;
 }
 

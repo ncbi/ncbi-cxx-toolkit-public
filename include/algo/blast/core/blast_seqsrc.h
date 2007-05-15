@@ -199,8 +199,9 @@ typedef struct BlastSeqSrcGetSeqArg {
      * TRUE to disable ranges, FALSE to use them if they exist [in] */
     Boolean enable_ranges;
 
-    /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr, else
-     * its contents are freed and the structure is reused [out]*/
+    /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr
+     * (using BlastSeqBlkNew or BlastSetUp_SeqBlkNew), else its contents are 
+     * freed (using BlastSequenceBlkClean) and the structure is reused [out]*/
     BLAST_SequenceBlk* seq;
 } BlastSeqSrcGetSeqArg;
 
@@ -220,7 +221,7 @@ Int2
 BlastSeqSrcGetSequence(const BlastSeqSrc* seq_src, 
                        void* sequence);
 
-/** Retrieve sequence length.
+/** Retrieve sequence length (number of residues/bases)
  * @param seq_src the BLAST sequence source [in]
  * @param oid ordinal id of the sequence desired (should be Uint4) [in]
  */
