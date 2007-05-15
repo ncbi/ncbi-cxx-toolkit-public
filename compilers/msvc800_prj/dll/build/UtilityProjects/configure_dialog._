@@ -11,7 +11,7 @@ echo ***************************************************************************
 echo -CONFIGURE- has succeeded
 echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
 echo ******************************************************************************
-exit 0
+exit /b 0
 
 :report_error
 echo ******************************************************************************
@@ -19,4 +19,5 @@ echo -CONFIGURE- has failed
 echo Configuration log was saved at "file://%SLN_PATH%_configuration_log.txt"
 echo ******************************************************************************
 start "" "%SLN_PATH%_configuration_log.txt"
-exit 1
+exit /b 1
+
