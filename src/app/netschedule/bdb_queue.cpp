@@ -3116,7 +3116,7 @@ bool CQueue::x_GetInput(SQueueDB& db, SJobInfoDB& job_info_db,
 }
 
 
-bool CQueue::CQueue::x_GetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
+bool CQueue::x_GetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
                                  bool fetched, string& str)
 {
     if ((char) db.output_overflow) {
