@@ -433,15 +433,15 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     const CProcessor& processor =
         m_Dispatcher->GetProcessor(CProcessor::EType(processor_type));
     if ( processor_type != processor.GetType() ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "invalid processor type: "+
-                   NStr::IntToString(processor_type));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CCacheReader::LoadChunk: "
+                       "invalid processor type: "<<processor_type);
     }
     int processor_magic = ReadInt(stream);
     if ( processor_magic != int(processor.GetMagic()) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "invalid processor magic number: "+
-                   NStr::IntToString(processor_magic));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CCacheReader::LoadChunk: "
+                       "invalid processor magic number: "<<processor_magic);
     }
     processor.ProcessStream(result, blob_id, chunk_id, stream);
     conn.Release();

@@ -712,7 +712,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
         return;
     }
 
-    LINE("Processing blob "<< blob_id.ToString());
+    LINE("Processing blob "<< blob_id);
     CLevelGuard level(m_RecursionLevel);
     PrintVersion(version);
 
@@ -753,7 +753,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
             blob_id = real_blob_id;
             version = tse.GetBlobVersion();
 
-            LINE("***New blob id: "<<blob_id.ToString()<<"!");
+            LINE("***New blob id: "<<blob_id<<"!");
             PrintVersion(version);
 
             if ( !m_ProcessedBlobs.insert(blob_id).second ) {

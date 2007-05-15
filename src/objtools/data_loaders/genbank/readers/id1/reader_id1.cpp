@@ -639,8 +639,9 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
         default:
             ERR_POST("CId1Reader::GetBlobVersion: "
                      "ID1server-back.error "<<error);
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "ID1server-back.error "+NStr::IntToString(error));
+            NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                           "CId1Reader::GetBlobVersion: "
+                           "ID1server-back.error "<<error);
         }
         break;
     }}
@@ -648,6 +649,7 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
         ERR_POST("CId1Reader::GetBlobVersion: "
                  "invalid ID1server-back.");
         NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "CId1Reader::GetBlobVersion: "
                    "invalid ID1server-back");
     }
 

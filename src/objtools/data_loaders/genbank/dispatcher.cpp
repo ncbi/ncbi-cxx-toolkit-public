@@ -139,8 +139,9 @@ const CProcessor& CReadDispatcher::GetProcessor(CProcessor::EType type) const
 {
     TProcessors::const_iterator iter = m_Processors.find(type);
     if ( iter == m_Processors.end() ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "processor unknown: "+NStr::IntToString(type));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CReadDispatcher::GetProcessor: "
+                       "processor unknown: "<<type);
     }
     return *iter->second;
 }

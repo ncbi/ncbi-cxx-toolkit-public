@@ -509,9 +509,9 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_ID1: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID1: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
     CID1server_back reply;
     {{
@@ -612,17 +612,17 @@ CRef<CSeq_entry> CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
             break;
         default:
             ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<error);
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "ID1server-back.error "+NStr::IntToString(error));
+            NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                           "CProcessor_ID1::GetSeq_entry: "
+                           "ID1server-back.error "<<error);
         }
         break;
     }}
     default:
         // no data
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_ID1::SetSeq_entry:: "
-                   "bad ID1server-back type: "+
-                   NStr::IntToString(reply.Which()));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID1::GetSeq_entry: "
+                       "bad ID1server-back type: "<<reply.Which());
     }
 
     m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
@@ -716,9 +716,9 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_ID1_SNP: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID1_SNP: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
     CTSE_SetObjectInfo set_info;
     CID1server_back reply;
@@ -803,9 +803,9 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_SE: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_SE: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     {{
@@ -888,9 +888,9 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_SE_SNP: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_SE_SNP: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
     CTSE_SetObjectInfo set_info;
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
@@ -985,9 +985,9 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_St_SE: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_St_SE: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
 
     TBlobState blob_state;
@@ -1174,9 +1174,9 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_St_SE_SNPT: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_St_SE_SNPT: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
 
     TBlobState blob_state;
@@ -1270,9 +1270,9 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_ID2: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID2: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
 
     size_t data_size = 0;
@@ -1282,10 +1282,12 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         // plain seq-entry
         if ( split_version != 0 || skel ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID2: "
                        "plain Seq-entry with extra ID2S-Split-Info");
         }
         if ( chunk_id != kMain_ChunkId && chunk_id != kDelayedMain_ChunkId ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID2: "
                        "plain Seq-entry in chunk reply");
         }
         CRef<CSeq_entry> entry(new CSeq_entry);
@@ -1322,6 +1324,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
     {
         if ( chunk_id != kMain_ChunkId ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID2: "
                        "plain ID2S-Split-Info in non-main reply");
         }
         CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
@@ -1339,6 +1342,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             // update skeleton field
             if ( !skel ) {
                 NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "CProcessor_ID2: "
                            "ID2S-Split-Info without skeleton Seq-entry");
             }
             x_ReadData(*skel, Begin(split_info->SetSkeleton()), data_size);
@@ -1367,6 +1371,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
     {
         if ( chunk_id == kMain_ChunkId || chunk_id == kDelayedMain_ChunkId ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID2: "
                        "ID2S-Chunk in main reply");
         }
         CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
@@ -1391,9 +1396,9 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         break;
     }
     default:
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "invalid data type: "+
-                   NStr::IntToString(data.GetData_type()));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ID2: "
+                       "invalid data type: "<<data.GetData_type());
     }
     SetLoaded(result, blob_id, chunk_id, blob);
 }
@@ -1714,15 +1719,15 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
                                   TChunkId chunk_id) const
 {
     if ( !IsExtAnnot(blob_id) || chunk_id != kMain_ChunkId ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_ExtAnnot: bad blob "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ExtAnnot: "
+                       "bad blob "<<blob_id<<'/'<<chunk_id);
     }
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CProcessor_ExtAnnot: double load of "+
-                   blob_id.ToString()+"/"+NStr::IntToString(chunk_id));
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CProcessor_ExtAnnot: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
     }
     // create special external annotations blob
     CAnnotName name;
