@@ -37,6 +37,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/stream_utils.hpp>
 
 #include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
@@ -1176,10 +1177,22 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                     pos += count;
                 }
             }
-            // parse query from the POST content
-            s_ParsePostQuery(content_type, *pstr, m_Entries);
-            m_Input    = 0;
-            m_InputFD = -1;
+            if (content_type.empty()) {
+                // allow interpretation as either application/octet-stream
+                // or application/x-www-form-urlencoded
+                try {
+                    s_ParsePostQuery(content_type, *pstr, m_Entries);
+                } NCBI_CATCH_ALL("CCgiRequest: POST with no content type");
+                CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
+                m_Input    = istr;
+                // m_InputFD  = ifd; // would be exhausted
+                m_InputFD  = -1;
+            } else {
+                // parse query from the POST content
+                s_ParsePostQuery(content_type, *pstr, m_Entries);
+                m_Input    = 0;
+                m_InputFD = -1;
+            }
         }
         else {
             if ( (flags & fSaveRequestContent) ) {

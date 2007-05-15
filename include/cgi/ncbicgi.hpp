@@ -672,7 +672,7 @@ public:
     /// Return pointer to the input stream.
     ///
     /// Return NULL if the input stream is absent, or if it has been
-    /// automagically read and parsed already (the "POST" method, and empty or
+    /// automagically read and parsed already (the "POST" method, and
     /// "application/x-www-form-urlencoded" or "multipart/form-data" type,
     /// and "fDoNotParseContent" flag was not passed to the constructor).
     CNcbiIstream* GetInputStream(void) const;
