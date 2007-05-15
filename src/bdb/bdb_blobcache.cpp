@@ -3139,15 +3139,6 @@ bool CBDB_Cache::x_CheckTimestampExpired()
     return x_CheckTimestampExpired(curr);
 }
 
-void CBDB_Cache::x_UpdateReadAccessTime(const string&  key,
-                                        int            version,
-                                        const string&  subkey,
-                                        CBDB_Transaction& trans)
-{
-    x_UpdateAccessTime(key, version, subkey, eBlobRead, trans);
-}
-
-
 
 void CBDB_Cache::x_UpdateAccessTime(const string&  key,
                                     int            version,
@@ -3159,55 +3150,14 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
         return;
     }
 
-	x_UpdateAccessTime_NonTrans(key, version, subkey, access_type, trans);
-
-}
-
-
-
-
-void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
-                                             int            version,
-                                             const string&  subkey,
-                                             EBlobAccessType access_type,
-                                             CBDB_Transaction& trans)
-{
-    if (IsReadOnly()) {
-        return;
-    }
-    time_t curr = time(0);
-    x_UpdateAccessTime_NonTrans(key,
-                                version,
-                                subkey,
-                                (unsigned)curr,
-                                access_type,
-                                trans);
-}
-
-void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
-                                             int            version,
-                                             const string&  subkey,
-                                             unsigned       timeout,
-                                             EBlobAccessType access_type,
-                                             CBDB_Transaction& trans)
-{
-//    int track_sk = (m_TimeStampFlag & fTrackSubKey);
-    bool updated = false;
+    unsigned   timeout = time(0);
     {{
         CBDB_FileCursor cur(*m_CacheAttrDB, trans,
                             CBDB_FileCursor::eReadModifyUpdate);
 
-        //CBDB_FileCursor cur(*m_CacheAttrDB);
-
         cur.SetCondition(CBDB_FileCursor::eEQ);
         cur.From << key << version;
 
-        // if we are not tracking subkeys we blindly update ALL subkeys
-        // not allowing them to expire, otherwise just one exactl subkey
-/*
-        if (track_sk)
-            cur.From << subkey;
-*/
         if (cur.Fetch() == eBDB_Ok) {
             unsigned old_ts = m_CacheAttrDB->time_stamp;
             if (old_ts < timeout) {
@@ -3238,18 +3188,11 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
 
                     cur.Update();
                 }
-                updated = true;
             }
-/*
-            if (track_sk) {
-                break;
-            }
-*/
-        } // while
+        } // if
 
-    }}
+    }} // cursor
 }
-
 
 void CBDB_Cache::x_TruncateDB()
 {

@@ -69,30 +69,15 @@ typedef CBDB_BlobSplitStore<TNCBVector,
                             CFastMutex>                 TSplitStore;
 
 
-/// BLOB storage table id->BLOB, id is supposed to be incremental,
-/// Berkeley DB is reduculously faster when it writes records in sorted order.
-/// 
-/*
-struct NCBI_BDB_CACHE_EXPORT SCacheBLOB_DB : public CBDB_BLobFile
-{
-    CBDB_FieldUint4  blob_id;
-
-    SCacheBLOB_DB()
-    {
-        BindKey("blob_id",  &blob_id);
-    }
-};
-*/
-
 
 /// BLOB attributes DB
 struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
 {
     CBDB_FieldString       key;
     CBDB_FieldInt4         version;
-    CBDB_FieldString       subkey;
-    CBDB_FieldUint4        time_stamp;
-    CBDB_FieldInt4         overflow;
+    CBDB_FieldString       subkey;      
+    CBDB_FieldUint4        time_stamp;  ///< access timestamp
+    CBDB_FieldInt4         overflow;    ///< overflow flag
     CBDB_FieldUint4        ttl;         ///< time-to-live
     CBDB_FieldUint4        max_time;    ///< max ttl limit for BLOB
     CBDB_FieldUint4        upd_count;   ///< update counter
@@ -100,7 +85,6 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
     CBDB_FieldUint4        blob_id;     ///< BLOB counter
     CBDB_FieldUint4        volume_id;   ///< demux coord[0]
     CBDB_FieldUint4        split_id;    ///< demux coord[1]
-
 
     CBDB_FieldString       owner_name;  ///< owner's name
 
@@ -287,16 +271,6 @@ class NCBI_BDB_CACHE_EXPORT CBDB_Cache : public ICache
 public:
     CBDB_Cache();
     virtual ~CBDB_Cache();
-
-    /// Hint to CBDB_Cache about size of cache entry
-    /// Large BLOBs work faster with large pages
-    /*
-    enum EPageSize
-    {
-        eSmall,
-        eLarge
-    };
-    */
 
     /// Suggest page size. Should be called before Open.
     /// Does not have any effect if cache is already created.
@@ -647,7 +621,10 @@ private:
     void x_UpdateReadAccessTime(const string&  key,
                                 int            version,
                                 const string&  subkey,
-                                CBDB_Transaction& trans);
+                                CBDB_Transaction& trans)
+    {
+        x_UpdateAccessTime(key, version, subkey, eBlobRead, trans);
+    }
 
 	/// Transactional update of access time attributes
     void x_UpdateAccessTime(const string&   key,
@@ -655,21 +632,6 @@ private:
                             const string&   subkey,
                             EBlobAccessType access_type,
                             CBDB_Transaction& trans);
-
-	/// Non transactional update of access time
-    void x_UpdateAccessTime_NonTrans(const string&  key,
-                                     int            version,
-                                     const string&  subkey,
-                                     EBlobAccessType access_type,
-                                     CBDB_Transaction& trans);
-
-	/// Non transactional update of access time
-    void x_UpdateAccessTime_NonTrans(const string&  key,
-                                     int            version,
-                                     const string&  subkey,
-                                     unsigned       timeout,
-                                     EBlobAccessType access_type,
-                                     CBDB_Transaction& trans);
 
 	/// 1. Retrive overflow attributes for the BLOB (using subkey)
 	/// 2. If required retrive empty subkey attribute record
