@@ -38,6 +38,22 @@
 BEGIN_NCBI_SCOPE
 
 
+class CStackTraceImpl
+{
+public:
+    CStackTraceImpl(void);
+    ~CStackTraceImpl(void);
+
+    typedef CStackTrace::SStackFrameInfo TStackFrame;
+    typedef CStackTrace::TStack          TStack;
+
+    void Expand(TStack& stack);
+
+private:
+    TStack m_Stack;
+};
+
+
 struct SFrame
 {
     struct SFrame* next;
@@ -69,11 +85,22 @@ int s_StackWalker(uintptr_t int_ptr, int, void* data)
 }
 
 
-void CStackTrace::GetStackTrace(TStack& stack_trace)
+CStackTraceImpl::CStackTraceImpl(void)
 {
     ucontext_t ctx;
     getcontext(&ctx);
-    walkcontext(&ctx, s_StackWalker, &stack_trace);
+    walkcontext(&ctx, s_StackWalker, &m_Stack);
+}
+
+
+CStackTraceImpl::~CStackTraceImpl(void)
+{
+}
+
+
+void CStackTraceImpl::Expand(TStack& stack)
+{
+    stack.splice(stack.end(), m_Stack);
 }
 
 

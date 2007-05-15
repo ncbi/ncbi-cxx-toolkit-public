@@ -52,14 +52,48 @@ BEGIN_NCBI_SCOPE
 
 
 CStackTrace::CStackTrace(const string& prefix)
-    : m_Prefix(prefix)
+    : m_Impl(new CStackTraceImpl),
+      m_Prefix(prefix)
 {
-    GetStackTrace(m_Stack);
+}
+
+
+CStackTrace::~CStackTrace(void)
+{
+}
+
+
+CStackTrace::CStackTrace(const CStackTrace& stack_trace)
+{
+    *this = stack_trace;
+}
+
+
+CStackTrace& CStackTrace::operator=(const CStackTrace& stack_trace)
+{
+    if (&stack_trace != this) {
+        const TStack& stack = stack_trace.GetStack();
+        m_Stack.clear();
+        m_Stack.insert(m_Stack.end(), stack.begin(), stack.end());
+        m_Prefix = stack_trace.m_Prefix;
+    }
+    return *this;
+}
+
+
+void CStackTrace::x_ExpandStackTrace(void) const
+{
+    if ( m_Impl.get() ) {
+        m_Impl->Expand(m_Stack);
+        m_Impl.reset();
+    }
 }
 
 
 void CStackTrace::Write(CNcbiOstream& os) const
 {
+    x_ExpandStackTrace();
+
     if ( Empty() ) {
         os << m_Prefix << "NOT AVAILABLE" << endl;
         return;

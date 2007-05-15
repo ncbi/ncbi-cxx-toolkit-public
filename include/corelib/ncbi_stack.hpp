@@ -39,6 +39,10 @@
 BEGIN_NCBI_SCOPE
 
 
+// Forward declaration - internal class for holding stack trace data.
+class CStackTraceImpl;
+
+
 class NCBI_XNCBI_EXPORT CStackTrace
 {
 public:
@@ -59,12 +63,24 @@ public:
     /// Get and store current stack trace. When printing the stack trace
     /// to a stream, each line is prepended with "prefix".
     CStackTrace(const string& prefix = "");
+    ~CStackTrace(void);
+
+    // Copy - required by some compilers for operator<<()
+    CStackTrace(const CStackTrace& stack_trace);
+    CStackTrace& operator=(const CStackTrace& stack_trace);
 
     /// Check if stack trace information is available
-    bool Empty(void) const { return m_Stack.empty(); }
+    bool Empty(void) const
+        {
+            x_ExpandStackTrace();
+            return m_Stack.empty();
+        }
 
     /// Get the stack trace data
-    const TStack& GetStack(void) const { return m_Stack; }
+    const TStack& GetStack(void) const
+        {
+            x_ExpandStackTrace(); return m_Stack;
+        }
 
     /// Get current prefix
     const string& GetPrefix(void) const { return m_Prefix; }
@@ -73,10 +89,14 @@ public:
     /// Write stack trace to the stream, prepend each line with the prefix.
     void Write(CNcbiOstream& os) const;
 
-    static void GetStackTrace(TStack& stack_trace);
-
 private:
-    TStack         m_Stack;
+    // Convert internal stack trace data (collected addresses)
+    // to the list of SStackFrameInfo.
+    void x_ExpandStackTrace(void) const;
+
+    mutable auto_ptr<CStackTraceImpl> m_Impl;
+
+    mutable TStack m_Stack;
     mutable string m_Prefix;
 };
 

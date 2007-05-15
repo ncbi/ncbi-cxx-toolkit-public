@@ -382,29 +382,6 @@ static bool s_FillModuleList(TModules& modules, DWORD pid, HANDLE hProcess)
 }
 
 
-static void s_IterateSymbols(HANDLE proc, DWORD pid)
-{
-
-    // Enumerate modules and tell imagehlp.dll about them.
-    // On NT, this is not necessary, but it won't hurt.
-    TModules modules;
-
-    // fill in module list
-    s_FillModuleList(modules, pid, proc);
-
-    NON_CONST_ITERATE (TModules, it, modules) {
-        if ( !SymLoadModule(proc, 0,
-                            const_cast<char*>(it->imageName.c_str()),
-                            const_cast<char*>(it->moduleName.c_str()),
-                            it->baseAddress, it->size) ) {
-            ERR_POST(Error << "Error loading symbols for module: "
-                     << it->moduleName);
-        } else {
-            _TRACE("Loaded symbols from " << it->moduleName);
-        }
-    }
-}
-
 static bool s_SymbolInit()
 {
     if (StackWalk) {
@@ -466,6 +443,149 @@ static bool s_SymbolInit()
 }
 
 
+class CSymbolGuard
+{
+public:
+    CSymbolGuard(void);
+    ~CSymbolGuard(void);
+
+    void UpdateSymbols(void);
+private:
+    // Remember loaded modules
+    typedef set<string> TLoadedModules;
+
+    TLoadedModules m_Loaded;
+};
+
+
+CSymbolGuard::CSymbolGuard(void)
+{
+    if ( !s_SymbolInit() ) {
+        ERR_POST(Error << "Error initializing symbols for stack trace.");
+        return;
+    }
+
+    if ( !SymInitialize  ||  !StackWalk ) {
+        ERR_POST(Error << "Error initializing stack trace functions.");
+        return;
+    }
+
+    // our current process and thread within that process
+    HANDLE curr_proc = GetCurrentProcess();
+
+    try {
+        string search_path(CDir::GetCwd());
+        string tmp;
+        tmp.resize(2048);
+        if (GetModuleFileName(0, const_cast<char*>(tmp.data()),
+            tmp.length())) {
+            string::size_type pos = tmp.find_last_of("\\/");
+            if (pos != string::npos) {
+                tmp.erase(pos);
+            }
+            search_path = tmp + ';' + search_path;
+        }
+
+        const char* ptr = getenv("_NT_SYMBOL_PATH");
+        if (ptr) {
+            string tmp(ptr);
+            search_path = tmp + ';' + search_path;
+        }
+        ptr = getenv("_NT_ALTERNATE_SYMBOL_PATH");
+        if (ptr) {
+            string tmp(ptr);
+            search_path = tmp + ';' + search_path;
+        }
+        ptr = getenv("SYSTEMROOT");
+        if (ptr) {
+            string tmp(ptr);
+            search_path = tmp + ';' + search_path;
+        }
+
+        // init symbol handler stuff (SymInitialize())
+        if ( !SymInitialize(curr_proc,
+                            const_cast<char*>(search_path.c_str()),
+                            false) ) {
+            NCBI_THROW(CCoreException, eCore, "SymInitialize() failed");
+        }
+
+        // set up default options
+        DWORD symOptions = SymGetOptions();
+        symOptions |= SYMOPT_LOAD_LINES;
+        symOptions &= ~SYMOPT_UNDNAME;
+        SymSetOptions(symOptions);
+
+        // pre-load our symbols
+        UpdateSymbols();
+    }
+    catch (exception& e) {
+        ERR_POST(Error << "Error loading symbols for stack trace: "
+            << e.what());
+    }
+    catch (...) {
+        ERR_POST(Error
+            << "Unknown error initializing symbols for stack trace.");
+    }
+}
+
+
+CSymbolGuard::~CSymbolGuard(void)
+{
+    SymCleanup(GetCurrentProcess());
+}
+
+
+void CSymbolGuard::UpdateSymbols(void)
+{
+    HANDLE proc = GetCurrentProcess();
+    DWORD pid = GetCurrentProcessId();
+
+    // Enumerate modules and tell imagehlp.dll about them.
+    // On NT, this is not necessary, but it won't hurt.
+    TModules modules;
+
+    // fill in module list
+    s_FillModuleList(modules, pid, proc);
+
+    NON_CONST_ITERATE (TModules, it, modules) {
+        TLoadedModules::const_iterator module = m_Loaded.find(it->moduleName);
+        if (module != m_Loaded.end()) {
+            continue;
+        }
+        DWORD module_addr = SymLoadModule(proc, 0,
+            const_cast<char*>(it->imageName.c_str()),
+            const_cast<char*>(it->moduleName.c_str()),
+            it->baseAddress, it->size);
+        if ( !module_addr ) {
+            ERR_POST(Error << "Error loading symbols for module: "
+                     << it->moduleName);
+        } else {
+            _TRACE("Loaded symbols from " << it->moduleName);
+            m_Loaded.insert(it->moduleName);
+        }
+    }
+}
+
+
+static CSymbolGuard s_SymbolGuard;
+
+
+class CStackTraceImpl
+{
+public:
+    CStackTraceImpl(void);
+    ~CStackTraceImpl(void);
+
+    void Expand(CStackTrace::TStack& stack);
+
+private:
+    typedef STACKFRAME TStackFrame;
+    typedef vector<TStackFrame> TStack;
+
+    TStack m_Stack;
+};
+
+
 #define GET_CURRENT_CONTEXT(c, contextFlags) \
     do { \
         memset(&c, 0, sizeof(CONTEXT)); \
@@ -478,107 +598,30 @@ static bool s_SymbolInit()
     } while(0)
 
 
-void CStackTrace::GetStackTrace(TStack& stack_trace)
+CStackTraceImpl::CStackTraceImpl(void)
 {
-    if ( !s_SymbolInit() ) {
-        ERR_POST(Error << "Error initializing stack trace: "
-                 "No stack trace retrieved.");
-        return;
-    }
-
-    if ( !SymInitialize  ||  !StackWalk ) {
-        ERR_POST(Error << "Error initializing stack trace: "
-                 "No stack trace retrieved.");
-        return;
-    }
-
-    IMAGEHLP_SYMBOL *pSym = NULL;
-    // our current process and thread within that process
     HANDLE curr_proc = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
 
+    // we could use ImageNtHeader() here instead
+    DWORD img_type = IMAGE_FILE_MACHINE_I386;
+
+    // init CONTEXT record so we know where to start the stackwalk
+    CONTEXT c;
+    GET_CURRENT_CONTEXT(c, CONTEXT_FULL);
+
+    // current stack frame
+    STACKFRAME s;
+    memset(&s, 0, sizeof s);
+    s.AddrPC.Offset    = c.Eip;
+    s.AddrPC.Mode      = AddrModeFlat;
+    s.AddrFrame.Offset = c.Ebp;
+    s.AddrFrame.Mode   = AddrModeFlat;
+    s.AddrStack.Offset = c.Esp;
+    s.AddrStack.Mode   = AddrModeFlat;
+
     try {
-        string search_path(CDir::GetCwd());
-        {{
-             string tmp;
-             tmp.resize(2048);
-             if (GetModuleFileName(0, const_cast<char*>(tmp.data()),
-                                   tmp.length())) {
-                 string::size_type pos = tmp.find_last_of("\\/");
-                 if (pos != string::npos) {
-                     tmp.erase(pos);
-                 }
-                 search_path = tmp + ';' + search_path;
-             }
-
-             const char* ptr = getenv("_NT_SYMBOL_PATH");
-             if (ptr) {
-                 string tmp(ptr);
-                 search_path = tmp + ';' + search_path;
-             }
-             ptr = getenv("_NT_ALTERNATE_SYMBOL_PATH");
-             if (ptr) {
-                 string tmp(ptr);
-                 search_path = tmp + ';' + search_path;
-             }
-             ptr = getenv("SYSTEMROOT");
-             if (ptr) {
-                 string tmp(ptr);
-                 search_path = tmp + ';' + search_path;
-             }
-        }}
-
-        // init symbol handler stuff (SymInitialize())
-        if ( !SymInitialize(curr_proc,
-                            const_cast<char*>(search_path.c_str()),
-                            false) ) {
-            NCBI_THROW(CCoreException, eCore,
-                       "SymInitialize() failed");
-        }
-
-        // set up default options
-        //SymGetOptions()
-        DWORD symOptions = SymGetOptions();
-        symOptions |= SYMOPT_LOAD_LINES;
-        symOptions &= ~SYMOPT_UNDNAME;
-        SymSetOptions(symOptions);
-
-        // pre-load our symbols
-        s_IterateSymbols(curr_proc, GetCurrentProcessId());
-
-        // we could use ImageNtHeader() here instead
-        DWORD img_type = IMAGE_FILE_MACHINE_I386;
-
-        // init CONTEXT record so we know where to start the stackwalk
-        CONTEXT c;
-        GET_CURRENT_CONTEXT(c, CONTEXT_FULL);
-
-        // current stack frame
-        STACKFRAME s;
-        memset(&s, '\0', sizeof s);
-        s.AddrPC.Offset    = c.Eip;
-        s.AddrPC.Mode      = AddrModeFlat;
-        s.AddrFrame.Offset = c.Ebp;
-        s.AddrFrame.Mode   = AddrModeFlat;
-        s.AddrStack.Offset = c.Esp;
-        s.AddrStack.Mode   = AddrModeFlat;
-
-        pSym = (IMAGEHLP_SYMBOL *) malloc(IMGSYMLEN + MAXNAMELEN);
-        memset(pSym, '\0', IMGSYMLEN + MAXNAMELEN);
-        pSym->SizeOfStruct = IMGSYMLEN;
-        pSym->MaxNameLength = MAXNAMELEN;
-
-        IMAGEHLP_LINE Line;
-        memset(&Line, '\0', sizeof Line);
-        Line.SizeOfStruct = sizeof(Line);
-
-        IMAGEHLP_MODULE Module;
-        memset(&Module, '\0', sizeof Module);
-        Module.SizeOfStruct = sizeof(Module);
-
-        DWORD offs = 0;
-
-        for (size_t frame = 0;  ;  ++frame) {
+        for (size_t frame = 0; ; ++frame) {
             // get next stack frame
             if ( !StackWalk(img_type, curr_proc, thread, &s, &c, NULL,
                             SymFunctionTableAccess,
@@ -587,7 +630,7 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
                 break;
             }
 
-            // Discard the top frame describing the GetStackTrace() call
+            // Discard the top frames describing current function
             if (frame < 1) {
                 continue;
             }
@@ -596,69 +639,112 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
                 continue;
             }
 
-            SStackFrameInfo sf_info;
+            m_Stack.push_back(s);
+        }
+    }
+    catch (exception& e) {
+        ERR_POST(Error << "Error getting stack trace: " << e.what());
+    }
+    catch (...) {
+        ERR_POST(Error << "Unknown error getting stack trace");
+    }
+}
+
+
+CStackTraceImpl::~CStackTraceImpl(void)
+{
+}
+
+
+void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
+{
+    if ( m_Stack.empty() ) {
+        return;
+    }
+
+    if ( !SymGetSymFromAddr ) {
+        return;
+    }
+
+    s_SymbolGuard.UpdateSymbols();
+
+    HANDLE curr_proc = GetCurrentProcess();
+
+    IMAGEHLP_SYMBOL *pSym = NULL;
+    pSym = (IMAGEHLP_SYMBOL *) malloc(IMGSYMLEN + MAXNAMELEN);
+    memset(pSym, 0, IMGSYMLEN + MAXNAMELEN);
+    pSym->SizeOfStruct = IMGSYMLEN;
+    pSym->MaxNameLength = MAXNAMELEN;
+
+    IMAGEHLP_LINE Line;
+    memset(&Line, 0, sizeof Line);
+    Line.SizeOfStruct = sizeof(Line);
+
+    IMAGEHLP_MODULE Module;
+    memset(&Module, 0, sizeof Module);
+    Module.SizeOfStruct = sizeof(Module);
+
+    DWORD offs = 0;
+
+    try {
+        ITERATE(TStack, it, m_Stack) {
+            CStackTrace::SStackFrameInfo sf_info;
             sf_info.func = "???";
             sf_info.file = "???";
             sf_info.offs = 0;
             sf_info.line = 0;
 
-            // show procedure info (SymGetSymFromAddr())
-            if ( !SymGetSymFromAddr ) {
-                continue;
-            }
-
             if ( !SymGetSymFromAddr(curr_proc,
-                                    s.AddrPC.Offset,
+                                    it->AddrPC.Offset,
                                     &offs,
                                     pSym) ) {
                 ERR_POST(Error << "failed to get symbol for address: "
-                    << s.AddrPC.Offset);
-            } else {
+                    << it->AddrPC.Offset);
+                continue;
+            }
+            sf_info.offs = offs;
 
-                // retrieve function names, if we can
-                if (UnDecorateSymbolName) {
-                    char undName[MAXNAMELEN];
-                    char undFullName[MAXNAMELEN];
-                    UnDecorateSymbolName(pSym->Name, undName,
-                                         MAXNAMELEN, UNDNAME_NAME_ONLY);
-                    UnDecorateSymbolName(pSym->Name, undFullName,
-                                         MAXNAMELEN, UNDNAME_COMPLETE);
+            // retrieve function names, if we can
+            if ( UnDecorateSymbolName ) {
+                //char undName[MAXNAMELEN];
+                char undFullName[MAXNAMELEN];
+                //UnDecorateSymbolName(pSym->Name, undName,
+                //                     MAXNAMELEN, UNDNAME_NAME_ONLY);
+                UnDecorateSymbolName(pSym->Name, undFullName,
+                                     MAXNAMELEN, UNDNAME_COMPLETE);
 
-                    sf_info.func = undFullName;
-                    sf_info.offs = offs;
-                }
+                sf_info.func = undFullName;
+            }
 
-                // retrieve file and line number info
-                if (SymGetLineFromAddr) {
-                    if (SymGetLineFromAddr(curr_proc,
-                                           s.AddrPC.Offset,
-                                           &offs,
-                                           &Line) ) {
-                        sf_info.file = Line.FileName;
-                        sf_info.line = Line.LineNumber;
-                    } else {
-                        _TRACE("failed to get line number for "
-                               << sf_info.func);
-                    }
-                }
-
-                // get library info, if it is available
-                if (SymGetModuleInfo) {
-                    if ( !SymGetModuleInfo(curr_proc,
-                                           s.AddrPC.Offset,
-                                           &Module) ) {
-                        ERR_POST(Error << "failed to get module info for "
-                                 << sf_info.func);
-                    } else {
-                        sf_info.module = Module.ModuleName;
-                        sf_info.module += "[";
-                        sf_info.module += Module.ImageName;
-                        sf_info.module += "]";
-                    }
+            // retrieve file and line number info
+            if ( SymGetLineFromAddr ) {
+                if (SymGetLineFromAddr(curr_proc,
+                                       it->AddrPC.Offset,
+                                       &offs,
+                                       &Line)) {
+                    sf_info.file = Line.FileName;
+                    sf_info.line = Line.LineNumber;
+                } else {
+                    _TRACE("failed to get line number for " << sf_info.func);
                 }
             }
 
-            stack_trace.push_back(sf_info);
+            // get library info, if it is available
+            if ( SymGetModuleInfo ) {
+                if ( !SymGetModuleInfo(curr_proc,
+                                       it->AddrPC.Offset,
+                                       &Module) ) {
+                    ERR_POST(Error << "failed to get module info for "
+                        << sf_info.func);
+                } else {
+                    sf_info.module = Module.ModuleName;
+                    sf_info.module += "[";
+                    sf_info.module += Module.ImageName;
+                    sf_info.module += "]";
+                }
+            }
+
+            stack.push_back(sf_info);
         }
     }
     catch (exception& e) {
@@ -668,12 +754,7 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
         ERR_POST(Error << "Unknown error getting stack trace");
     }
 
-    // return to our caller after cleaning up
-    ResumeThread(thread);
-    if (pSym) {
-        free(pSym);
-    }
-    SymCleanup(curr_proc);
+    free(pSym);
 }
 
 

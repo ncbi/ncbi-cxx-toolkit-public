@@ -40,18 +40,45 @@
 BEGIN_NCBI_SCOPE
 
 
-void CStackTrace::GetStackTrace(TStack& stack_trace)
+class CStackTraceImpl
 {
-    vector<void*> trace(100);
-    size_t items = backtrace(&trace[0], 100);
-    trace.resize(items);
+public:
+    CStackTraceImpl(void);
+    ~CStackTraceImpl(void);
 
-    char** syms = backtrace_symbols(&trace[0], trace.size());
-    for (size_t i = 0;  i < items;  ++i) {
+    void Expand(CStackTrace::TStack& stack);
+
+private:
+    typedef void*               TStackFrame;
+    typedef vector<TStackFrame> TStack;
+
+    TStack m_Stack;
+};
+
+
+CStackTraceImpl::CStackTraceImpl(void)
+{
+    m_Stack.resize(1024);
+    m_Stack.resize(backtrace(&m_Stack[0], m_Stack.size()));
+}
+
+
+CStackTraceImpl::~CStackTraceImpl(void)
+{
+}
+
+
+void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
+{
+    char** syms = backtrace_symbols(&m_Stack[0], m_Stack.size());
+    for (size_t i = 0;  i < m_Stack.size();  ++i) {
         string sym = syms[i];
 
-        SStackFrameInfo info;
-        info.func = sym;
+        CStackTrace::SStackFrameInfo info;
+        info.func = sym.empty() ? "???" : sym;
+        info.file = "???";
+        info.offs = 0;
+        info.line = 0;
 
         string::size_type pos = sym.find_first_of("(");
         if (pos != string::npos) {
@@ -70,17 +97,9 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
             }
         }
 
-        stack_trace.push_back(info);
-    }
-
-    free(syms);
-
-    //
-    // name demangling
-    //
-    NON_CONST_ITERATE (list<SStackFrameInfo>, iter, stack_trace) {
-        SStackFrameInfo& info = *iter;
-
+        //
+        // name demangling
+        //
         if ( !info.func.empty()  &&  info.func[0] == '_') {
 #if NCBI_COMPILER_VERSION >= 310
             // use abi::__cxa_demangle
@@ -95,8 +114,11 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
             }
 #endif
         }
+
+        stack.push_back(info);
     }
 
+    free(syms);
 }
 
 
