@@ -169,7 +169,8 @@ struct BlastSeqSrcIterator {
     /** This is a half-closed interval [a,b) */
     int  oid_range[2];
 
-    /** Keep track of this iterator's current position */
+    /** Keep track of this iterator's current position, implementations use
+     * UINT4_MAX to indicate this is uninitialized/invalid  */
     unsigned int  current_pos;
     /** Size of the chunks to advance over the BlastSeqSrc, also size of 
       * oid_list member, this is provided to reduce mutex contention when
