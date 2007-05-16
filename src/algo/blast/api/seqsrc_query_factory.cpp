@@ -374,8 +374,6 @@ s_QueryFactorySrcFree(BlastSeqSrc* seq_src)
                                 (_BlastSeqSrcImpl_GetDataStructure(seq_src));
 
     delete seq_info;
-    sfree(seq_src);
-
     return NULL;
 }
 
