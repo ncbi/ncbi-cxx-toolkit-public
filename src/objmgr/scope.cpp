@@ -479,5 +479,11 @@ CScopeTransaction CScope::GetTransaction()
 }
 
 
+void CScope::UpdateAnnotIndex(void)
+{
+    m_Impl->x_ClearAnnotCache();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

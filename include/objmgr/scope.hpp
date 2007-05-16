@@ -340,6 +340,8 @@ public:
 
     CScopeTransaction GetTransaction();
 
+    void UpdateAnnotIndex(void);
+
 protected:
     CScope_Impl& GetImpl(void);
 
