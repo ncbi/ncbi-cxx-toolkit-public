@@ -112,7 +112,7 @@ const string kArgMaxIntronLength("max_intron_length");
 const int kDfltArgMaxIntronLength = 0;
 
 const string kArgCullingLimit("culling_limit");
-const int kDfltArgCullingLimit = 1;
+const int kDfltArgCullingLimit = 0;
 
 const string kArgFrameShiftPenalty("frame_shift_penalty");
 
