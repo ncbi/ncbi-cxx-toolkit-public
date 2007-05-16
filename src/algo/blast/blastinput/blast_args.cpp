@@ -164,8 +164,7 @@ CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // program description
     arg_desc.SetUsageContext(m_ProgName, m_ProgDesc + " " + 
-                             blast::Version.Print() + ", released " + 
-                             blast::Version.GetReleaseDate());
+                             blast::Version.Print());
 }
 
 void

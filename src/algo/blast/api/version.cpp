@@ -43,20 +43,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CVersion::CVersion(int major, int minor, int patch, 
-                             const string& date)
-    : CVersionInfo(major, minor, patch), m_ReleaseDate(date)
-{
-}
-
-string
-CVersion::Print(void) const
-{
-    ostringstream os;
-    os << GetMajor() << "." << GetMinor() << "." << GetPatchLevel();
-    return os.str();
-}
-
 /// References for the various BLAST publications
 static const string kReferences[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast

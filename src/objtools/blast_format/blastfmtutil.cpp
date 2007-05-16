@@ -187,8 +187,7 @@ void CBlastFormatUtil::BlastPrintError(list<SBlastError>&
 string CBlastFormatUtil::BlastGetVersion(const string program)
 {
     string program_uc = program;
-    return NStr::ToUpper(program_uc) + " " + blast::Version.Print() + " [" + 
-        blast::Version.GetReleaseDate() + "]";
+    return NStr::ToUpper(program_uc) + " " + blast::Version.Print();
 }
 
 void CBlastFormatUtil::BlastPrintVersionInfo(const string program, bool html, 

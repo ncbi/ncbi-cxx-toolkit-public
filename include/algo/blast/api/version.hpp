@@ -50,31 +50,10 @@ BEGIN_SCOPE(blast)
 /// Used to perform run-time version checks
 ///
 /// For reference, please refer to http://apr.apache.org/versioning.html
-class NCBI_XBLAST_EXPORT CVersion : public CVersionInfo
-{
-public:
-    /// Constructor - should only be used to create the static object below
-    /// @param major major revision [in]
-    /// @param minor minor revision [in]
-    /// @param patch patch level [in]
-    /// @param date release date [in]
-    CVersion(int major, int minor, int patch, const string& date);
-
-    /// Get the version string: "Major.Minor.Patch"
-    string Print(void) const;
-
-    /// Get the release date (not the compiled date!)
-    string GetReleaseDate(void) const;
-
-private:
-    string m_ReleaseDate;   ///< date of the most recent release
-};
-
-/// Static object which defines the current version of the BLAST engine
-static const CVersion Version(kBlastMajorVersion, 
-                              kBlastMinorVersion, 
-                              kBlastPatchVersion, 
-                              kBlastReleaseDate);
+static const CVersionInfo Version(kBlastMajorVersion, 
+                                  kBlastMinorVersion, 
+                                  kBlastPatchVersion, 
+                                  kBlastReleaseDate);
 
 /// Class to keep track of the various BLAST references
 class NCBI_XBLAST_EXPORT CReference
@@ -103,13 +82,6 @@ private:
     /// Prohibit assignment operator
     CReference& operator=(const CReference& rhs);
 };
-
-
-inline string
-CVersion::GetReleaseDate(void) const
-{
-    return m_ReleaseDate;
-}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
