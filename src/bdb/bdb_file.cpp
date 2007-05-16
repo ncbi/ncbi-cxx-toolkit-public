@@ -1658,6 +1658,7 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
                                    bool                  multirow_only)
 {
 	int ret;
+    db_recno_t recno = 0;
     if (multirow_buf == 0) {
         return ReadCursor(dbc, bdb_flag);
     }
@@ -1665,11 +1666,35 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
     // Something sits in the memory buffer already, get the next record
     //
     if (multirow_buf->m_BufPtr != 0) {
-        DB_MULTIPLE_KEY_NEXT(
-            multirow_buf->m_BufPtr,
-            multirow_buf->m_Data_DBT,
-            multirow_buf->m_LastKey,  multirow_buf->m_LastKeyLen,
-            multirow_buf->m_LastData, multirow_buf->m_LastDataLen);
+        switch (m_DB_Type) {
+        case eBtree:
+        case eHash:
+            {{
+                 DB_MULTIPLE_KEY_NEXT(multirow_buf->m_BufPtr,
+                                      multirow_buf->m_Data_DBT,
+                                      multirow_buf->m_LastKey,
+                                      multirow_buf->m_LastKeyLen,
+                                      multirow_buf->m_LastData,
+                                      multirow_buf->m_LastDataLen);
+             }}
+            break;
+
+        case eQueue:
+            {{
+                 DB_MULTIPLE_RECNO_NEXT(multirow_buf->m_BufPtr,
+                                        multirow_buf->m_Data_DBT,
+                                        recno,
+                                        multirow_buf->m_LastData,
+                                        multirow_buf->m_LastDataLen);
+                 multirow_buf->m_LastKey    = &recno;
+                 multirow_buf->m_LastKeyLen = sizeof(recno);
+             }}
+            break;
+
+        default:
+            _ASSERT(0);
+            NCBI_THROW(CException, eUnknown, "invalid multifetch cursor type");
+        }
 
         if (multirow_buf->m_BufPtr != 0) {
             goto read_epilog;
@@ -1710,11 +1735,36 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
     //
     multirow_buf->MultipleInit();
 
-    DB_MULTIPLE_KEY_NEXT(
-            multirow_buf->m_BufPtr,
-            multirow_buf->m_Data_DBT,
-            multirow_buf->m_LastKey,  multirow_buf->m_LastKeyLen,
-            multirow_buf->m_LastData, multirow_buf->m_LastDataLen);
+    switch (m_DB_Type) {
+    case eBtree:
+    case eHash:
+        {{
+             DB_MULTIPLE_KEY_NEXT(multirow_buf->m_BufPtr,
+                                  multirow_buf->m_Data_DBT,
+                                  multirow_buf->m_LastKey,
+                                  multirow_buf->m_LastKeyLen,
+                                  multirow_buf->m_LastData,
+                                  multirow_buf->m_LastDataLen);
+         }}
+        break;
+
+    case eQueue:
+        {{
+             DB_MULTIPLE_RECNO_NEXT(multirow_buf->m_BufPtr,
+                                    multirow_buf->m_Data_DBT,
+                                    recno,
+                                    multirow_buf->m_LastData,
+                                    multirow_buf->m_LastDataLen);
+             multirow_buf->m_LastKey    = &recno;
+             multirow_buf->m_LastKeyLen = sizeof(recno);
+         }}
+        break;
+
+    default:
+        _ASSERT(0);
+        NCBI_THROW(CException, eUnknown, "invalid multifetch cursor type");
+    }
+
     if (multirow_buf->m_BufPtr == 0) {
         return eBDB_NotFound;
     }
