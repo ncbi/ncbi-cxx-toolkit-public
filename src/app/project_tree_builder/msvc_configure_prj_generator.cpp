@@ -270,7 +270,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
         << "echo Configuration log was saved at \"file://%SLN_PATH%_configuration_log.txt\"" << endl
         << "echo ******************************************************************************" << endl;
     if (!with_gui) {
-        ofs << "if not .%DIAG_SILENT_ABORT%==. ";
+        ofs << "if .%DIAG_SILENT_ABORT%==. ";
     }
     ofs << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
         << "exit /b 1" << endl;
