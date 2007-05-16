@@ -157,18 +157,67 @@ public:
     bool Kill(unsigned long kill_timeout   = kDefaultKillTimeout,
               unsigned long linger_timeout = kDefaultLingerTimeout) const;
 
+
+    /// The extended exit information for waited process.
+    /// All information about the process available only after Wait() method
+    /// with specified parameter 'info' and if IsPresent() method returns
+    /// TRUE. 
+    class NCBI_XNCBI_EXPORT CExitInfo
+    {
+    public:
+        /// Constructor.
+        CExitInfo(void);
+
+        /// TRUE if the object contains information about the process state.
+        ///
+        /// All other methods returns value only if this method returns
+        /// TRUE, otherwise they trow an exception.
+        bool IsPresent(void);
+    
+        /// TRUE if the process is still alive.
+        bool IsAlive(void);
+    
+        /// TRUE if the process terminated normally.
+        bool IsExited(void);
+       
+        /// TRUE if the process terminated by signal (UNIX only).
+        bool IsSignaled(void);
+
+        /// Get process exit code.
+        /// Works only if IsExited() returns TRUE, otherwise return -1.
+        int GetExitCode(void);
+        
+        /// Get the number of the signal that caused process to terminate.
+        /// (UNIX only).
+        /// Works only if IsSignaled() returns TRUE, otherwise return -1.
+        int GetSignal(void);
+        
+    private:
+        int state;    ///< Process state (unknown/alive/terminated).
+        int status;   ///< Process status information.
+       
+        friend class CProcess;
+    };
+
     /// Wait until process terminates.
     ///
     /// Wait until the process has terminates or timeout expired.
     /// Return immediately if specifed process has already terminated.
     /// @param timeout
     ///   Time-out interval in milliceconds. By default it is infinite.
+    /// @param info
+    ///   Extended exit information for terminated process.
+    ///   Note, that if CProcess:Kill() was used to terminate a process
+    ///   that extended information is not available in most cases.
     /// @return
     ///   - Exit code of the process, if no errors.
-    ///   - (-1), if error has occurred.
+    ///   - (-1), if error has occurred or impossible to get exit code
+    ///     of the process. If 'info' parameter is specified that it is
+    ///     possible to get additional information about the process.
     /// @sa
-    ///   IsAlive
-    int Wait(unsigned long timeout = kInfiniteTimeoutMs) const;
+    ///   IsAlive, CExitInfo
+    int Wait(unsigned long timeout = kInfiniteTimeoutMs,
+             CExitInfo* info = 0) const;
 
 private:
 #if defined NCBI_THREAD_PID_WORKAROUND

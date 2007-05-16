@@ -55,6 +55,111 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// CProcess::CExitInfo
+//
+
+// CExitInfo process state
+enum EExitInfoState {
+    eExitInfo_Unknown,
+    eExitInfo_Alive,
+    eExitInfo_Terminated
+};
+
+
+#define EXIT_INFO_CHECK \
+    if ( !IsPresent() ) { \
+        NCBI_THROW(CCoreException, eCore, \
+                  "CProcess::CExitInfo state is unknown. " \
+                  "Please check IsPresent() first."); \
+    }
+
+
+CProcess::CExitInfo::CExitInfo(void)
+{
+    state  = eExitInfo_Unknown;
+    status = 0;
+}
+
+
+bool CProcess::CExitInfo::IsPresent(void)
+{
+    return state != eExitInfo_Unknown;
+}
+
+
+bool CProcess::CExitInfo::IsAlive(void)
+{
+    EXIT_INFO_CHECK;
+    return state == eExitInfo_Alive;
+}
+
+
+bool CProcess::CExitInfo::IsExited(void)
+{
+    EXIT_INFO_CHECK;
+    if (state != eExitInfo_Terminated) {
+        return false;
+    }
+#if defined(NCBI_OS_UNIX)
+    return WIFEXITED(status) != 0;
+#elif defined(NCBI_OS_MSWIN)
+    // The process always terminates with exit code
+    return true;
+#else
+#  error "Not implemented on this platform"
+#endif
+}
+
+
+bool CProcess::CExitInfo::IsSignaled(void)
+{
+    EXIT_INFO_CHECK;
+    if (state != eExitInfo_Terminated) {
+        return false;
+    }
+#if defined(NCBI_OS_UNIX)
+    return WIFSIGNALED(status) != 0;
+#elif defined(NCBI_OS_MSWIN)
+    // The process always terminates with exit code
+    return false;
+#else
+#  error "Not implemented on this platform"
+#endif
+}
+
+
+int CProcess::CExitInfo::GetExitCode(void)
+{
+    if ( !IsExited() ) {
+        return -1;
+    }
+#if defined(NCBI_OS_UNIX)
+    return WEXITSTATUS(status);
+#elif defined(NCBI_OS_MSWIN)
+    return status;
+#else
+#  error "Not implemented on this platform"
+#endif
+}
+
+
+int CProcess::CExitInfo::GetSignal(void)
+{
+    if ( !IsSignaled() ) {
+        return -1;
+    }
+#if defined(NCBI_OS_UNIX)
+    return WTERMSIG(status);
+#elif defined(NCBI_OS_MSWIN)
+    return -1;
+#else
+#  error "Not implemented on this platform"
+#endif
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // CProcess 
 //
 
@@ -351,8 +456,15 @@ bool CProcess::Kill(unsigned long kill_timeout,
 }
 
 
-int CProcess::Wait(unsigned long timeout) const
+
+int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 {
+    // Reset extended information
+    if (info) {
+        info->state  = eExitInfo_Unknown;
+        info->status = 0;
+    }
+
 #if defined(NCBI_OS_UNIX)
     TPid pid     = (TPid)m_Process;
     int  options = (timeout == kInfiniteTimeoutMs) ? 0 : WNOHANG;
@@ -364,6 +476,10 @@ int CProcess::Wait(unsigned long timeout) const
         if (ws > 0) {
             // Process has terminated.
             _ASSERT(ws == pid);
+            if (info) {
+                info->state  = eExitInfo_Terminated;
+                info->status = status;
+            }
             return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
         } else if (ws == 0) {
             // Process is still running
@@ -373,6 +489,9 @@ int CProcess::Wait(unsigned long timeout) const
                 x_sleep = timeout;
             }
             if ( !x_sleep ) {
+                if (info) {
+                    info->state = eExitInfo_Alive;
+                }
                 break;
             }
             SleepMilliSec(x_sleep);
@@ -382,7 +501,6 @@ int CProcess::Wait(unsigned long timeout) const
             break;
         }
     }
-
     return -1;
 
 #elif defined(NCBI_OS_MSWIN)
@@ -405,28 +523,53 @@ int CProcess::Wait(unsigned long timeout) const
     DWORD status = -1;
     try {
         // Is process still running?
-        if ( !hProcess  || hProcess == INVALID_HANDLE_VALUE ) {
+        if (!hProcess  ||  hProcess == INVALID_HANDLE_VALUE) {
             throw -1;
         }
-        if ( GetExitCodeProcess(hProcess, &status)  &&
-             status != STILL_ACTIVE ) {
+        if (GetExitCodeProcess(hProcess, &status)  &&
+            status != STILL_ACTIVE) {
             throw (int)status;
+        }
+        if (info  &&  status == STILL_ACTIVE) {
+            info->state = eExitInfo_Alive;
         }
         status = -1;
         // Wait for process termination, or timeout expired
         if (enable_sync  &&  timeout) {
-            DWORD tv = (timeout == kInfiniteTimeoutMs) ? INFINITE : (DWORD)timeout;
-            if (WaitForSingleObject(hProcess, tv) != WAIT_OBJECT_0) {
-                throw -1;
+            DWORD tv = (timeout == kInfiniteTimeoutMs) ? INFINITE : 
+                                                         (DWORD)timeout;
+            DWORD ws = WaitForSingleObject(hProcess, tv);
+            switch(ws) {
+                case WAIT_OBJECT_0:
+                    // Get exit code below
+                    break;
+                case WAIT_TIMEOUT:
+                    throw (int)STILL_ACTIVE;
+                default:
+                    throw -1;
             }
             // Get process exit code
-            if ( !GetExitCodeProcess(hProcess, &status) ) {
-                throw -1;
+            if (GetExitCodeProcess(hProcess, &status)) {
+                throw (int)status;
             }
+            throw -1;
         }
     }
     catch (int e) {
         status = e;
+        if (info) {
+            info->status = status;
+            if (status < 0) {
+                info->state = eExitInfo_Unknown;
+            } else if (status == STILL_ACTIVE) {
+                info->state = eExitInfo_Alive;
+            } else {
+                info->state = eExitInfo_Terminated;
+            }
+        }
+        if (status == STILL_ACTIVE) {
+            status = -1;
+        }
     }
     if (m_Type == ePid ) {
         CloseHandle(hProcess);
