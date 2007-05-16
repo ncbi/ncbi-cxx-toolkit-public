@@ -195,7 +195,10 @@ typedef struct BlastSeqSrcGetSeqArg {
      * eBlastEncodingNucleotide, etc [in] */
     EBlastEncoding encoding;
 
-    /** Specify true here to disable this OID's ranges before fetching.
+    /** Specify true here to disable this OID's ranges before
+     * fetching.  OID ranges are a (somewhat complicated) performance
+     * feature that allows less nucleotide unpacking to be done in
+     * some cases.  If in doubt, specify FALSE here.
      * TRUE to disable ranges, FALSE to use them if they exist [in] */
     Boolean enable_ranges;
 
