@@ -215,7 +215,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
             }
             else {
                 E = kInfMinus;
-                tracer = 0; // to fire on the backtrace
+                tracer = 0; // to fire during the backtrace
             }
 
             if(j + 1 == int(N2) && data->m_esf_R2) {
@@ -275,9 +275,10 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 
     m_LastCoordSeq1 = iend - 1;
 
-    const bool uninit = m_TermK == kMax_size_t 
-        || m_LastCoordSeq1 == kMax_size_t 
-        || m_LastCoordSeq2 == kMax_size_t;
+    const bool uninit (m_TermK == kMax_size_t 
+                       || m_LastCoordSeq1 == kMax_size_t 
+                       || m_LastCoordSeq2 == kMax_size_t);
+
     if(uninit && !m_terminate) {
         NCBI_THROW(CAlgoAlignException, eInternal, g_msg_UnexpectedTermIndex);
     }
@@ -353,8 +354,8 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
 
     size_t k = m_TermK;
 
-    size_t i1 = data->m_offset1 + m_LastCoordSeq1;
-    size_t i2 = data->m_offset2 + m_LastCoordSeq2;
+    size_t i1 (m_LastCoordSeq1);
+    size_t i2 (m_LastCoordSeq2);
 
     if(m_LastCoordSeq1 + 1 < data->m_len1 && data->m_esf_R2) {
         data->m_transcript.insert(data->m_transcript.begin(),
@@ -401,7 +402,8 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
         }
 
         if (Key & kMaskD) {
-            data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));
+            data->m_transcript.push_back(
+               x_GetDiagTS(data->m_offset1 + i1--, data->m_offset2 + i2--));
             k -= N2;
         }
         else if (Key & kMaskE) {
