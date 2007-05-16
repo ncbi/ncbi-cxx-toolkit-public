@@ -51,41 +51,15 @@ template <typename Key>
 class CBDB_BlobDictionary : public CBDB_File
 {
 public:
-    CBDB_BlobDictionary();
-
-    /// @name Required CBDB_BlobDictionary<> interface
-    /// @{
-
-    Uint4  GetKey(const Key& key);
-    Uint4  PutKey(const Key& key);
-
-    /// @}
-
-    /// retrieve the current key
-    Key GetCurrentKey() const;
-    Uint4  GetCurrentUid() const;
-
-    /// read a particular key's value
-    EBDB_ErrCode Read (const Key& key, Uint4* val);
-
-    /// read the current key's value
-    EBDB_ErrCode Read (Uint4* val);
-
-    /// write a key/value pair to the store
-    EBDB_ErrCode Write(const Key& key, Uint4 val);
-
-private:
-    /// key
-    typename SBDB_TypeTraits<Key>::TFieldType   m_Key;
-    /// data
-    typename SBDB_TypeTraits<Uint4>::TFieldType m_Uid;
+    typedef Key   TKey;
+    typedef Uint4 TKeyId;
 
     struct SReverseDictionary : public CBDB_File
     {
         /// key
         typename SBDB_TypeTraits<Uint4>::TFieldType uid;
         /// data
-        typename SBDB_TypeTraits<Key>::TFieldType key;
+        typename SBDB_TypeTraits<Key>::TFieldType   key;
 
         SReverseDictionary()
             : CBDB_File(eDuplicatesDisable, eQueue)
@@ -95,7 +69,46 @@ private:
                 BindKey ("uid", &uid);
                 BindData("key", &key);
             }
+
+        Uint4 GetCurrentUid() const
+        {
+            return (Uint4)uid;
+        }
+
+        TKey GetCurrentKey() const
+        {
+            return (TKey)key;
+        }
     };
+
+    CBDB_BlobDictionary();
+
+    /// @name Required CBDB_BlobDictionary<> interface
+    /// @{
+
+    TKeyId  GetKey(const TKey& key);
+    TKeyId  PutKey(const TKey& key);
+
+    /// @}
+
+    /// retrieve the current key
+    Key    GetCurrentKey() const;
+    TKeyId GetCurrentUid() const;
+
+    /// read a particular key's value
+    EBDB_ErrCode Read (const TKey& key, TKeyId* val);
+
+    /// read the current key's value
+    EBDB_ErrCode Read (TKeyId* val);
+
+    /// write a key/value pair to the store
+    EBDB_ErrCode Write(const TKey& key, TKeyId val);
+
+private:
+    /// key
+    typename SBDB_TypeTraits<Key>::TFieldType   m_Key;
+    /// data
+    typename SBDB_TypeTraits<Uint4>::TFieldType m_Uid;
 
     auto_ptr<SReverseDictionary> m_RevDict;
 };

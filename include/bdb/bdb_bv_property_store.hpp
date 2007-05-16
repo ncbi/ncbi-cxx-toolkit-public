@@ -49,6 +49,33 @@ public:
     typedef pair<PropKey, PropValue> TKey;
     typedef Uint4                    TKeyId;
 
+    struct SReverseDictionary : public CBDB_File
+    {
+        typename SBDB_TypeTraits<TKeyId>::TFieldType    uid;
+        typename SBDB_TypeTraits<PropKey>::TFieldType   prop_key;
+        typename SBDB_TypeTraits<PropValue>::TFieldType prop_val;
+
+        SReverseDictionary()
+            : CBDB_File(eDuplicatesDisable, eQueue)
+            {
+                DisableNull();
+                SetCacheSize(128 * 1024);
+                BindKey ("uid", &uid);
+                BindData("key", &prop_key);
+                BindData("val", &prop_val);
+            }
+
+        TKeyId GetCurrentUid() const
+        {
+            return (TKeyId)uid;
+        }
+
+        TKey GetCurrentKey() const
+        {
+            return TKey((PropKey)prop_key, (PropValue)prop_val);
+        }
+    };
+
     CBDB_PropertyDictionary();
 
     /// @name Interface required for split dictionary store
@@ -75,23 +102,6 @@ private:
     typename SBDB_TypeTraits<PropKey>::TFieldType   m_PropKey;
     typename SBDB_TypeTraits<PropValue>::TFieldType m_PropVal;
     typename SBDB_TypeTraits<TKeyId>::TFieldType    m_Uid;
-
-    struct SReverseDictionary : public CBDB_File
-    {
-        typename SBDB_TypeTraits<TKeyId>::TFieldType    uid;
-        typename SBDB_TypeTraits<PropKey>::TFieldType   prop_key;
-        typename SBDB_TypeTraits<PropValue>::TFieldType prop_val;
-
-        SReverseDictionary()
-            : CBDB_File(eDuplicatesDisable, eQueue)
-            {
-                DisableNull();
-                SetCacheSize(128 * 1024);
-                BindKey ("uid", &uid);
-                BindData("key", &prop_key);
-                BindData("val", &prop_val);
-            }
-    };
 
     auto_ptr<SReverseDictionary> m_RevDict;
 };
