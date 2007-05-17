@@ -29,6 +29,13 @@
  *
  */
 
+
+// Nested structs in template classes
+// bdb_dict_store.hpp (bdb/bdb_dict_store.hpp)
+// and CBDB_PropertyDictionary (bdb/bdb_bv_property_store.hpp)
+#define BDB___BDB_DICT_STORE__HPP
+#define BDB___BV_PROPERTY_STORE__HPP
+
 %ignore *::CBlastDbDataLoader_CCachedSeqData;
 %ignore *::CBlastDbDataLoader_SBlastDbParam;
 %ignore *::CGB_Writer_PluginManager_DllResolver::GetDllNameMask;
