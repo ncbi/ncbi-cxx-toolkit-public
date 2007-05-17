@@ -302,6 +302,27 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
         }
     }
     
+    // Adjust the query masks for bl2seq searches
+
+    TSeqLocInfoVector adjusted_seqlocinfovec;
+    if (result_type == ncbi::blast::eSequenceComparison
+        && query_masks != 0)
+    {
+        adjusted_seqlocinfovec.resize(alignments.size());
+
+        const size_t num_subjects = alignments.size()/query_ids.size();
+        for(size_t i = 0; i < alignments.size(); i++)
+        {
+            const TMaskedQueryRegions& query_regs =
+                (*query_masks)[i/num_subjects];
+
+            copy(query_regs.begin(), query_regs.end(),
+                 back_inserter(adjusted_seqlocinfovec[i]));
+        }
+
+        query_masks = &adjusted_seqlocinfovec;
+    }
+
     // The preliminary stage also produces errors and warnings; they
     // should be copied from that code to this class somehow, and
     // returned here if they have not been returned or reported yet.
