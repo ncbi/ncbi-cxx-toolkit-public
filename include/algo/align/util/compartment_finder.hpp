@@ -706,11 +706,10 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             }
         }
 
-        // complete x-filtering using the full set of hits
-        typename THitRefs::iterator ihr_b (m_hitrefs.begin()),
-            ihr_e(m_hitrefs.end()), ihr (ihr_b);
+#ifdef ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
 
-        for(size_t icn (m_compartments.size()), ic (0); ic < icn; ++ic) {
+        // complete x-filtering using the full set of hits
+        for(int icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
 
             CCompartment & comp (m_compartments[ic]);
             THitRefs& hitrefs (comp.SetMembers());
@@ -723,8 +722,11 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                     (*ii)->SetScore( - (*ii)->GetScore());
                 }
             }
+            
+            typename THitRefs::iterator ihr_b (m_hitrefs.begin()),
+                ihr_e(m_hitrefs.end()), ihr (ihr_b);
 
-            const TCoord comp_subj_min (hitrefs.front()->GetSubjStart());
+            const TCoord comp_subj_min (hitrefs.back()->GetSubjStart());
             while(ihr != ihr_e && (*ihr)->GetSubjStart() < comp_subj_min) ++ihr;
             typename THitRefs::const_iterator ihrc_b (ihr);
 
@@ -800,6 +802,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 }
             }
         }
+#endif
+
     }
 
     return m_compartments.size();
