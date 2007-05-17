@@ -67,7 +67,8 @@ public:
                    objects::ENa_strand strand = objects::eNa_strand_other,
                    bool lowercase = false,
                    bool believe_defline = false,
-                   TSeqRange range = TSeqRange());
+                   TSeqRange range = TSeqRange(),
+                   int local_id_counter = 1);
 
     /// Destructor
     ///
