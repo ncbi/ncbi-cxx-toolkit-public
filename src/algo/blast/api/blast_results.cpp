@@ -117,7 +117,7 @@ CSearchResultSet::GetResults(size_type qi, size_type si)
     if (m_ResultType != eSequenceComparison) {
         NCBI_THROW(CBlastException, eNotSupported, "Invalid method accessed");
     }
-    return *m_Results[qi * m_NumQueries + si];
+    return *m_Results[qi * (GetNumResults() / m_NumQueries) + si];
 }
 
 const CSearchResults&
@@ -232,7 +232,28 @@ void CSearchResultSet::x_Init(vector< CConstRef<objects::CSeq_id> > queries,
     _ASSERT(aligns.size() == msg_vec.size());
     _ASSERT(aligns.size() == ancillary_data.size());
 
-    m_NumQueries = queries.size();
+    // determine the number of unique queries
+    if (m_ResultType == eSequenceComparison)
+    {
+        // determine how many times is the first query id
+        // repeated in the queries vector
+        int num_repeated_ids = 1;
+        for (size_t i_id = 1; i_id < queries.size(); i_id++)
+        {
+            if (queries[i_id]->Match(queries[0].GetObject()))
+            {
+                num_repeated_ids++;
+            }
+        }
+
+        // calculate the actual number of queries
+        m_NumQueries = queries.size() / num_repeated_ids;
+    }
+    else    // database search, no repeated query ids
+    {
+        m_NumQueries = queries.size();
+    }
+
     m_Results.resize(aligns.size());
     
     for(size_t i = 0; i < aligns.size(); i++) {
