@@ -90,7 +90,7 @@ public:
 
 public:
     /// Destructor
-    virtual ~ICompression(void) = 0;
+    virtual ~ICompression(void) {}
 
     /// Return name and version of the compression library.
     virtual CVersionInfo GetVersion(void) const = 0;
