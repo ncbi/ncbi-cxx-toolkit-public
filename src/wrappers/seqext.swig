@@ -111,6 +111,17 @@ public:
 %rename(is_) ncbi::CAgpReader::is;  // "is" is a reserved word in Python
 #endif
 
+// CBlob_id stream inserter
+%ignore ncbi::objects::operator<<(CNcbiOstream& ostr, const CBlob_id& id);
+#ifdef SWIGPYTHON
+%extend ncbi::objects::CBlob_id {
+    std::ostream&
+    __rlshift__(std::ostream& ostr) {
+        return ostr << *self;
+    }
+};
+#endif
+
 %%
 
 // Obsolescent
