@@ -1510,8 +1510,8 @@ Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const
 
     if(query_len >= kNonCoveredEndThreshold) {
 
-        return 10; // there is probably no good alignment at the term;
-                   // allow only a nominal amount
+        return 100; // there is probably no good alignment at the term;
+                    // allow only a nominal amount
     }
     else {
 
