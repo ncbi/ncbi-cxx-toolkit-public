@@ -59,7 +59,7 @@ public:
 
     /// Constructor
     /// @param program Blast program name ("blastn", "blastp", etc) [in]
-    /// @param dbname Name of database to search [in]
+    /// @param dbname Name of database to search ("" if none) [in]
     /// @param format_type Integer indication the type of output [in]
     /// @param db_is_aa true if database contains protein sequences [in]
     /// @param believe_query true if sequence ID's of query sequences
@@ -130,6 +130,7 @@ private:
     int m_DbGenCode;            ///< database genetic code
     bool m_ShowGi;              ///< add GI number of database sequence IDs
     bool m_ShowLinkedSetSize;   ///< show size of linked set in 1-line summary
+    bool m_IsDbAvailable;       ///< true if a database is available
 
     /// True if a user-specified score matrix is required
     /// for formatting

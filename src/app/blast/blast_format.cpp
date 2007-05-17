@@ -64,6 +64,7 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_DbName(dbname),
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
           m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
+          m_IsDbAvailable(dbname.length() > 0),
           m_MatrixSet(false)
 {
     // blast formatter cannot handle these output types
@@ -79,7 +80,9 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
     }
 
     x_FillScoreMatrix(matrix_name);
-    x_FillDbInfo();
+    if (m_IsDbAvailable) {
+        x_FillDbInfo();
+    }
 }
 
 
@@ -172,8 +175,11 @@ CBlastFormat::PrintProlog()
     CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                                           m_Outfile);
 
-    CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
-                                    m_Outfile, true);
+    if (m_IsDbAvailable)
+    {
+        CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
+                                        m_Outfile, true);
+    }
 }
 
 void
@@ -352,8 +358,11 @@ CBlastFormat::PrintEpilog(const CBlastOptions& options)
         return;
 
     m_Outfile << endl << endl;
-    CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
-                                    m_Outfile, false);
+    if (m_IsDbAvailable)
+    {
+        CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
+                                        m_Outfile, false);
+    }
 
     if (m_Program == "blastn" || m_Program == "megablast") {
         m_Outfile << "\n\nMatrix: " << "blastn matrix " <<
