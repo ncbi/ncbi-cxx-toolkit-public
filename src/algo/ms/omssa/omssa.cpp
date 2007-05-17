@@ -1373,6 +1373,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
         if (Peaks->GetError() == eMSHitError_notenuffpeaks) {
             _TRACE("empty set");
             HitSet->SetError(eMSHitError_notenuffpeaks);
+            ScoreList.clear();
             delete *PeakSet.GetPeaks().begin();
             PeakSet.GetPeaks().pop_front();
             continue;
@@ -1411,6 +1412,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
                 HitSet->SetHits().clear();
             }
             else {
+                ScoreList.clear();
                 delete *PeakSet.GetPeaks().begin();
                 PeakSet.GetPeaks().pop_front();
                 continue;
