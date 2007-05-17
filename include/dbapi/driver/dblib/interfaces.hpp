@@ -215,6 +215,16 @@ public:
     virtual bool ConnectedToMSSQLServer(void) const;
     int GetTDSVersion(void) const;
 
+    //
+    unsigned int GetBufferSize(void) const
+    {
+        return m_BufferSize;
+    }
+    void SetBufferSize(unsigned int size)
+    {
+        m_BufferSize = size;
+    }
+
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
@@ -223,6 +233,7 @@ private:
     LOGINREC*              m_Login;
     int                    m_TDSVersion;
     CDblibContextRegistry* m_Registry;
+    unsigned int           m_BufferSize;
 
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,

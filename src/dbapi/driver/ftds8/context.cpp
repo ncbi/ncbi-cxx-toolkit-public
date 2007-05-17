@@ -191,10 +191,11 @@ DEFINE_STATIC_FAST_MUTEX(s_CtxMutex);
 static CTDSContext* g_pTDSContext = NULL;
 
 
-CTDSContext::CTDSContext(DBINT version) :
-    m_PacketSize(0),
-    m_TDSVersion(version),
-    m_Registry(NULL)
+CTDSContext::CTDSContext(DBINT version)
+: m_PacketSize(0)
+, m_TDSVersion(version)
+, m_Registry(NULL)
+, m_BufferSize(1)
 {
     CFastMutexGuard mg(s_CtxMutex);
 
@@ -642,9 +643,23 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
     tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)GetLoginTimeout(),
                      (int)GetTimeout(), 0 /*(int)m_Timeout*/);
     tds_setTDS_version((tds_login*)(m_Login->tds_login), m_TDSVersion);
-    return Check(dbopen(m_Login, (char*) srv_name.c_str()));
-}
+    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) srv_name.c_str()));
 
+    // It doesn't work correclty (buffer is full) ...
+//     if (dbprocess) {
+//         CHECK_DRIVER_ERROR(
+//             Check(dbsetopt(
+//                 dbprocess,
+//                 DBBUFFER,
+//                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
+//                 -1)) != SUCCEED,
+//             "dbsetopt failed",
+//             200001
+//             );
+//     }
+
+    return dbprocess;
+}
 
 void CTDSContext::CheckFunctCall(void)
 {
@@ -773,6 +788,7 @@ CDbapiFtdsCF2::CreateInstance(
         // Optional parameters ...
         CS_INT page_size = 0;
         string client_charset;
+        string buffer_size;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -816,6 +832,8 @@ CDbapiFtdsCF2::CreateInstance(
                     page_size = NStr::StringToInt( v.value );
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
+                } else if ( v.id == "buffer_size" ) {
+                    buffer_size = v.value;
                 }
             }
         }
@@ -831,6 +849,11 @@ CDbapiFtdsCF2::CreateInstance(
         // Set client's charset ...
         if ( !client_charset.empty() ) {
             drv->SetClientCharset( client_charset.c_str() );
+        }
+
+        // Set buffer size ...
+        if ( !buffer_size.empty() ) {
+            drv->SetBufferSize(NStr::StringToUInt(buffer_size));
         }
     }
 

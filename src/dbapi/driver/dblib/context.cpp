@@ -239,6 +239,7 @@ static CDBLibContext* g_pContext = NULL;
 CDBLibContext::CDBLibContext(DBINT version)
 : m_PacketSize( 0 )
 , m_TDSVersion( version )
+, m_BufferSize(1)
 {
     SetApplicationName("DBLibDriver");
 
@@ -744,7 +745,22 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
-    return Check(dbopen(m_Login, (char*) srv_name.c_str()));
+    DBPROCESS* dbprocess = Check(dbopen(m_Login, (char*) srv_name.c_str()));
+
+    // It doesn't work currently ...
+//     if (dbprocess) {
+//         CHECK_DRIVER_ERROR(
+//             Check(dbsetopt(
+//                 dbprocess,
+//                 DBBUFFER,
+//                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
+//                 -1)) != SUCCEED,
+//             "dbsetopt failed",
+//             200001
+//             );
+//     }
+
+    return dbprocess;
 }
 
 
