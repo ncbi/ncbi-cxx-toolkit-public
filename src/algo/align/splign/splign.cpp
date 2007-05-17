@@ -242,7 +242,6 @@ double CSplign::GetCompartmentPenalty( void ) const
     return m_compartment_penalty;
 }
 
-
 void CSplign::x_LoadSequence(vector<char>* seq, 
                              const objects::CSeq_id& seqid,
                              THit::TCoord start,
@@ -332,10 +331,11 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     // (extra short hits skipped)
     const size_t max_intron = 1048575; // 2^20
     size_t prev = 0;
-    ITERATE(THitRefs, ii, *phitrefs) {
+    NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
-        const THitRef& h = *ii;
+        THitRef& h = *ii;
         if(h->GetQuerySpan() < m_MinPatternHitLength) {
+            h.Reset(NULL);
             continue;
         }
 
@@ -344,6 +344,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             const bool consistent = h->GetSubjStrand()?
                 (h->GetSubjStart() < prev + max_intron):
                 (h->GetSubjStart() + max_intron > prev);
+
             if(!consistent) {
                 const string errmsg = g_msg_CompartmentInconsistent
                     + string(" (extra long introns)");
@@ -353,13 +354,19 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         prev = h->GetSubjStop();
     }
 
+    phitrefs->erase(remove_if(phitrefs->begin(), phitrefs->end(),
+                              CHitFilter<THit>::s_PNullRef),
+                    phitrefs->end());
+
     // save each hit longer than the minimum and test whether the hit is perfect
     vector<size_t> pattern0;
     vector<pair<bool,double> > imperfect;
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
         const THitRef& h = (*phitrefs)[i];
-        if(h->GetQuerySpan() >= m_MinPatternHitLength) {
+        const bool valid_seed ((n > 1) && (i == 0 || i + 1 == n)
+                               && (h->GetQuerySpan() <= 20));
+        if(valid_seed) {
 
             pattern0.push_back(h->GetQueryMin());
             pattern0.push_back(h->GetQueryMax());
@@ -438,9 +445,9 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     for(size_t i = 0; i < dim; i += 4) {    
             
         size_t L1, R1, L2, R2;
-        size_t max_seg_size = 0;
+        size_t max_seg_size (0);
 
-        bool imprf = imperfect[i/4].first;
+        const bool imprf (imperfect[i/4].first);
         if(imprf) {                
 
             const size_t len1 (pattern0[i+1] - pattern0[i] + 1);
@@ -457,6 +464,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
         }
         else {
+
             L1 = 0;
             R1 = pattern0[i+1] - pattern0[i];
             L2 = 0;
@@ -468,33 +476,41 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
             // make the core
             {{
-                const size_t cut = (1 + R1 - L1) / 5;
-                const size_t l1 = L1 + cut, l2 = L2 + cut;
-                const size_t r1 = R1 - cut, r2 = R2 - cut;
+                size_t cut ((1 + R1 - L1) / 5);
+                if(cut > 20) cut = 20;
+
+                const size_t l1 (L1 + cut), l2 (L2 + cut);
+                const size_t r1 (R1 - cut), r2 (R2 - cut);
                 if(l1 < r1 && l2 < r2) {
                     L1 = l1; L2 = l2; 
                     R1 = r1; R2 = r2;
                 }
             }}
 
-            const size_t hitlen_q = pattern0[i + 1] - pattern0[i] + 1;
-            const size_t hlq4 = hitlen_q/4;
-            const size_t sh = hlq4;
+            size_t q0 (pattern0[i] + L1);
+            size_t s0 (pattern0[i+2] + L2);
+            size_t q1 (pattern0[i] + R1);
+            size_t s1 (pattern0[i+2] + R2);
+
+            if(imprf) {
+                const size_t hitlen_q (pattern0[i + 1] - pattern0[i] + 1);
+                const size_t sh (hitlen_q / 4);
                 
-            size_t delta = sh > L1? sh - L1: 0;
-            size_t q0 = pattern0[i] + L1 + delta;
-            size_t s0 = pattern0[i+2] + L2 + delta;
+                size_t delta (sh > L1? sh - L1: 0);
+                q0 += delta;
+                s0 += delta;
+
+                const size_t h2s_right (hitlen_q - R1 - 1);
+                delta = sh > h2s_right? sh - h2s_right: 0;
+                q1 -= delta;
+                s1 -= delta;
                 
-            const size_t h2s_right = hitlen_q - R1 - 1;
-            delta = sh > h2s_right? sh - h2s_right: 0;
-            size_t q1 = pattern0[i] + R1 - delta;
-            size_t s1 = pattern0[i+2] + R2 - delta;
-                
-            if(q0 > q1 || s0 > s1) { // the longest segment too short
-                q0 = pattern0[i] + L1;
-                s0 = pattern0[i+2] + L2;
-                q1 = pattern0[i] + R1;
-                s1 = pattern0[i+2] + R2;
+                if(q0 > q1 || s0 > s1) { // the longest segment too short
+                    q0 = pattern0[i] + L1;
+                    s0 = pattern0[i+2] + L2;
+                    q1 = pattern0[i] + R1;
+                    s1 = pattern0[i+2] + R2;
+                }
             }
 
             m_pattern.push_back(q0); m_pattern.push_back(q1);
@@ -761,8 +777,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
         }
 
-        // XFilter(phitrefs);
-
         if(phitrefs->size() == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoHitsAfterFiltering);
         }
@@ -791,7 +805,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             // cleave off hits beyond cds
             CleaveOffByTail(phitrefs, m_polya_start); 
             if(phitrefs->size() == 0) {
-                NCBI_THROW(CAlgoAlignException,eNoAlignment,g_msg_NoHitsBeyondPolya);
+                NCBI_THROW(CAlgoAlignException, eNoAlignment,
+                           g_msg_NoHitsBeyondPolya);
             }
         }
     
@@ -800,13 +815,14 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord span [4];
         CHitFilter<THit>::s_GetSpan(*phitrefs, span);
         THit::TCoord qmin = span[0], qmax = span[1], 
-            smin = span[2], smax = span[3];    
+                     smin = span[2], smax = span[3];    
 
         // select terminal genomic extents based on uncovered end sizes
-        THit::TCoord extent_left = x_GetGenomicExtent(qmin);
-        THit::TCoord qspace = m_mrna.size() - qmax + 1;
-        THit::TCoord extent_right = x_GetGenomicExtent(qspace);
-
+        const THit::TCoord extent_left (x_GetGenomicExtent(qmin));
+        const THit::TCoord qspace (
+            (m_polya_start < kMax_UInt? m_polya_start:mrna_size) - qmax + 1);
+        const THit::TCoord extent_right (x_GetGenomicExtent(qspace));
+        
         const bool ctg_strand (phitrefs->front()->GetSubjStrand());
 
         if(ctg_strand) {
@@ -861,11 +877,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         rv.m_SubjStrand  = ctg_strand;
     
         // shift hits so that they originate from zero
-
         NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
             (*ii)->Shift(-qmin, -smin);
-        }  
-    
+        }
+        
         x_SetPattern(phitrefs);
         x_Run(&m_mrna.front(), &m_genomic.front());
 
@@ -1494,9 +1509,12 @@ Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const
     }
 
     if(query_len >= kNonCoveredEndThreshold) {
-        return GetMaxGenomicExtent();
+
+        return 10; // there is probably no good alignment at the term;
+                   // allow only a nominal amount
     }
     else {
+
         const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext;
         const double rv = k * pow(query_len, 1. / kPower);
         return Uint4(rv);
