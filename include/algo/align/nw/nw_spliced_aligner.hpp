@@ -33,7 +33,7 @@
 *
 */
 
-#include "nw_aligner.hpp"
+#include "nw_band_aligner.hpp"
 
 
 /** @addtogroup AlgoAlignSpliced
@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XALGOALIGN_EXPORT CSplicedAligner: public CNWAligner
+class NCBI_XALGOALIGN_EXPORT CSplicedAligner: public CBandAligner
 {
 public:
 
