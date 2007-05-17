@@ -171,6 +171,12 @@ protected:
     /// Return a seqalign list for each query/subject pair, even if it is empty.
     virtual TSeqAlignVector x_Results2SeqAlign();
 
+    /// Transpose the (linearly organized) seqalign set matrix from
+    /// (q1 s1 q2 s1 ... qN s1, ..., q1 sM q2 sM ... qN sM) to
+    /// (q1 s1 q1 s2 ... q1 sM, ..., qN s1 qN s2 ... qN sM)
+    /// this method only reorganizes the seqalign sets, does not copy them.
+    TSeqAlignVector x_TransposeSeqAlignVector(const TSeqAlignVector& alnvec);
+
 private:
     // Data members received from client code
     TSeqLocVector        m_tQueries;         ///< query sequence(s)
