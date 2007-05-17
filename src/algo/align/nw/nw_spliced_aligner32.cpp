@@ -159,6 +159,17 @@ CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
 // Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
 {
+    // use the banded version if there is no space for introns
+    const int len_dif (data->m_len2 - data->m_len1);
+    if(len_dif < 2 * int (m_IntronMinSize) / 3) {
+        const Uint1 where  (len_dif < 0? 0: 1);
+        const size_t shift (abs(len_dif) / 2);
+        const size_t band  (abs(len_dif) + 2*(max(data->m_len1,data->m_len2)/20 + 1));
+        SetShift(where, shift);
+        SetBand(band);
+        return CBandAligner::x_Align(data);
+    }
+
     // redefine TScore as a floating-point type for this procedure only
     typedef double TScore;
     const TScore cds_penalty_extra = -2e-6;

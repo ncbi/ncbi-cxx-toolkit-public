@@ -50,7 +50,7 @@ CSplicedAligner::CSplicedAligner():
 
 CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
                                  const char* seq2, size_t len2)
-    : CNWAligner(seq1, len1, seq2, len2),
+    : CBandAligner(seq1, len1, seq2, len2),
       m_IntronMinSize(GetDefaultIntronMinSize())
 {
     SetEndSpaceFree(true, true, false, false);
@@ -58,7 +58,7 @@ CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
 
 
 CSplicedAligner::CSplicedAligner(const string& seq1, const string& seq2)
-    : CNWAligner(seq1, seq2),
+    : CBandAligner(seq1, seq2),
       m_IntronMinSize(GetDefaultIntronMinSize())
 {
     SetEndSpaceFree(true, true, false, false);
