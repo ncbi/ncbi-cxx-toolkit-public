@@ -1039,7 +1039,8 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */)
-    : m_RequestMoleculeType(request_mol_type), m_IsRpsBlast(is_rpsblast)
+    : m_RequestMoleculeType(request_mol_type), m_IsRpsBlast(is_rpsblast),
+    m_IsSubjectProvided(false), m_SubjectInputStream(0)
 {}
 
 void
@@ -1119,24 +1120,39 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
             }
         }
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
+
         if (args.Exist(kArgRemote) && args[kArgRemote]) {
             NCBI_THROW(CBlastException, eInvalidArgument,
                "Submission of remote BLAST-2-Sequences is not supported\n"
                "Please visit the NCBI web site to submit your search");
         }
-        throw runtime_error("Setting of subject sequences unimplemented");
+        else {
+            m_IsSubjectProvided = true;
+            m_SubjectInputStream = &args[kArgSubject].AsInputFile();
+        }
     } else {
         NCBI_THROW(CBlastException, eInvalidArgument,
            "Either a BLAST database or subject sequence(s) must be specified");
     }
 
+    if (m_IsSubjectProvided &&
+        args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
+
+        // set the sequence range
+        const string delimiters("-");
+        vector<string> tokens;
+        NStr::Tokenize(args[kArgSubjectLocation].AsString(), delimiters, tokens);
+        if (tokens.size() != 2) {
+            NCBI_THROW(CBlastException, eInvalidArgument, 
+                       "Invalid specification of subject location");
+        }
+        m_SubjectRange.SetFrom(NStr::StringToInt(tokens.front()));
+        m_SubjectRange.SetToOpen(NStr::StringToInt(tokens.back()));
+    }
+
     if (opts.GetEffectiveSearchSpace() != 0) {
         // no need to set any other options, as this trumps them
         return;
-    }
-
-    if (args.Exist(kArgSubjectLocation) && args[kArgSubjectLocation]) {
-        throw runtime_error("Setting of subject sequence location unimplemented");
     }
 
     if (args[kArgDbSize]) {
@@ -1149,6 +1165,13 @@ bool
 CBlastDatabaseArgs::IsProtein() const
 {
     return m_SearchDb->GetMoleculeType() == CSearchDatabase::eBlastDbIsProtein;
+}
+
+CNcbiIstream&
+CBlastDatabaseArgs::GetSubjectInputStream() const
+{
+    _ASSERT(m_SubjectInputStream); 
+    return *m_SubjectInputStream;
 }
 
 void
@@ -1311,7 +1334,10 @@ void
 CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opts)
 {
-    if( args.Exist( kArgUseIndex ) ) {
+    // MB Index does not apply to Blast2Sequences
+    if( args.Exist( kArgUseIndex ) &&
+        !(args.Exist( kArgSubject ) && args[kArgSubject])) {
+
         bool use_index   = true;
         bool force_index = false;
 
