@@ -44,23 +44,23 @@
 BEGIN_NCBI_SCOPE
 
 
-// Default compression I/O stream buffer size
+/// Default compression I/O stream buffer size.
 const streamsize kCompressionDefaultBufSize = 16*1024;
+
+/// Macro to report errors in compression API.
+#define ERR_COMPRESS(message) ERR_POST(Warning << message)
 
 // Forward declaration
 class CCompressionFile;
 class CCompressionStreambuf;
 
-// Macro to report errors in compression API
-#define ERR_COMPRESS(message) ERR_POST(Warning << message)
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// CCompression -- abstract base class
+// ICompression -- abstract interface class
 //
 
-class NCBI_XUTIL_EXPORT CCompression
+class NCBI_XUTIL_EXPORT ICompression
 {
 public:
     /// Compression level.
@@ -84,44 +84,32 @@ public:
         eLevel_Best          =  9
     };
 
-    // 'ctors
-    CCompression(ELevel level = eLevel_Default);
-    virtual ~CCompression(void);
-
-    /// Return name and version of the compression library.
-    virtual CVersionInfo GetVersion(void) const;
-
-    // Get/set compression level.
-    // NOTE 1:  Changing compression level after compression has begun will
-    //          be ignored.
-    // NOTE 2:  If the level is not supported by the underlying algorithm,
-    //          then it will be translated to the nearest supported value.
-    void SetLevel(ELevel level);
-    virtual ELevel GetLevel(void) const;
-
-    // Return the default compression level for current compression algorithm
-    virtual ELevel GetDefaultLevel(void) const = 0;
-
-    // Get compressor's internal status/error code and description
-    // for the last operation.
-    int    GetErrorCode(void) const;
-    string GetErrorDescription(void) const;
-
     /// Compression flags. The flag selection depends from compression
     /// algorithm implementation.
     typedef unsigned int TFlags;    // Bitwise OR of EFlags*
 
+public:
+    /// Destructor
+    virtual ~ICompression(void) = 0;
+
+    /// Return name and version of the compression library.
+    virtual CVersionInfo GetVersion(void) const = 0;
+
+    // Get/set compression level.
+    virtual void   SetLevel(ELevel level) = 0;
+    virtual ELevel GetLevel(void) const = 0;
+
+    /// Return the default compression level for current compression algorithm.
+    virtual ELevel GetDefaultLevel(void) const = 0;
+
+    // Get compressor's internal status/error code and description
+    // for the last operation.
+    virtual int    GetErrorCode(void) const = 0;
+    virtual string GetErrorDescription(void) const = 0;
+
     // Get/set flags
-    TFlags GetFlags(void) const;
-    void SetFlags(TFlags flags);
-
-    /// Decompression mode (see fAllowTransparentRead flag).
-    enum EDecompressMode {
-        eMode_Unknown,         ///< Not known yet (decompress/transparent read)
-        eMode_Decompress,      ///< Generic decompression
-        eMode_TransparentRead  ///< Transparent read, the data is uncompressed
-    };
-
+    virtual TFlags GetFlags(void) const = 0;
+    virtual void   SetFlags(TFlags flags) = 0;
 
     //
     // Utility functions 
@@ -132,12 +120,12 @@ public:
     // The compressor error code can be acquired via GetErrorCode() call.
     // Notice that altogether the total size of the destination buffer must
     // be little more then size of the source buffer. 
-
     virtual bool CompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
         /* out */            size_t* dst_len
     ) = 0;
+
     virtual bool DecompressBuffer(
         const void* src_buf, size_t  src_len,
         void*       dst_buf, size_t  dst_size,
@@ -156,6 +144,41 @@ public:
         const string&     dst_file, 
         size_t            buf_size = kCompressionDefaultBufSize
     ) = 0;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompression -- abstract base class
+//
+
+class NCBI_XUTIL_EXPORT CCompression : public ICompression
+{
+public:
+    // 'ctors
+    CCompression(ELevel level = eLevel_Default);
+    virtual ~CCompression(void);
+
+    /// Return name and version of the compression library.
+    virtual CVersionInfo GetVersion(void) const = 0;
+
+    // Get/set compression level.
+    // NOTE 1:  Changing compression level after compression has begun will
+    //          be ignored.
+    // NOTE 2:  If the level is not supported by the underlying algorithm,
+    //          then it will be translated to the nearest supported value.
+    virtual void   SetLevel(ELevel level);
+    virtual ELevel GetLevel(void) const;
+
+    // Get compressor's internal status/error code and description
+    // for the last operation.
+    virtual int    GetErrorCode(void) const;
+    virtual string GetErrorDescription(void) const;
+
+    /// Get flags.
+    virtual TFlags GetFlags(void) const;
+    /// Set flags.
+    virtual void   SetFlags(TFlags flags);
 
 protected:
     // Universal file compression/decompression functions.
@@ -175,6 +198,12 @@ protected:
     void SetError(int status, const char* description = 0);
 
 protected:
+    /// Decompression mode (see fAllowTransparentRead flag).
+    enum EDecompressMode {
+        eMode_Unknown,         ///< Not known yet (decompress/transparent read)
+        eMode_Decompress,      ///< Generic decompression
+        eMode_TransparentRead  ///< Transparent read, the data is uncompressed
+    };
     ///< Decompress mode (Decompress/TransparentRead/Unknown).
     EDecompressMode m_DecompressMode;
 
@@ -404,43 +433,6 @@ public:
 //  Inline
 //
 //===========================================================================
-
-inline
-void CCompression::SetLevel(ELevel level)
-{
-    m_Level = level;
-}
-
-inline
-int CCompression::GetErrorCode(void) const
-{
-    return m_ErrorCode;
-}
-
-inline
-string CCompression::GetErrorDescription(void) const
-{
-    return m_ErrorMsg;
-}
-
-inline
-void CCompression::SetError(int errcode, const char* description)
-{
-    m_ErrorCode = errcode;
-    m_ErrorMsg  = description ? description : kEmptyStr;
-}
-
-inline
-CCompression::TFlags CCompression::GetFlags(void) const
-{
-    return m_Flags;
-}
-
-inline
-void CCompression::SetFlags(TFlags flags)
-{
-    m_Flags = flags;
-}
 
 inline
 void CCompressionProcessor::Reset(void)

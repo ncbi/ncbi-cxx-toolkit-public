@@ -56,18 +56,49 @@ CCompression::~CCompression(void)
 }
 
 
-CVersionInfo CCompression::GetVersion(void) const
-{
-    return CVersionInfo(kEmptyStr);
-}
-
-
 CCompression::ELevel CCompression::GetLevel(void) const
 {
     if ( m_Level == eLevel_Default) {
         return GetDefaultLevel();
     }
     return m_Level;
+}
+
+
+void CCompression::SetLevel(ELevel level)
+{
+    m_Level = level;
+}
+
+
+int CCompression::GetErrorCode(void) const
+{
+    return m_ErrorCode;
+}
+
+
+string CCompression::GetErrorDescription(void) const
+{
+    return m_ErrorMsg;
+}
+
+
+void CCompression::SetError(int errcode, const char* description)
+{
+    m_ErrorCode = errcode;
+    m_ErrorMsg  = description ? description : kEmptyStr;
+}
+
+
+CCompression::TFlags CCompression::GetFlags(void) const
+{
+    return m_Flags;
+}
+
+
+void CCompression::SetFlags(TFlags flags)
+{
+    m_Flags = flags;
 }
 
 
