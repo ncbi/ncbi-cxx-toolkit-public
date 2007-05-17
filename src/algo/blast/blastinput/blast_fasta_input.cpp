@@ -58,11 +58,12 @@ CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
                                                objects::ENa_strand strand,
                                                bool lowercase,
                                                bool believe_defline,
-                                               TSeqRange range)
+                                               TSeqRange range,
+                                               int local_id_counter)
     : CBlastInputSource(objmgr),
       m_Config(strand, lowercase, believe_defline, range),
       m_LineReader(infile),
-      m_IdGenerator(),
+      m_IdGenerator(local_id_counter),
       m_ReadProteins(read_proteins)
 {
 }
