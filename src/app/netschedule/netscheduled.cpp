@@ -73,12 +73,14 @@
 
 USING_NCBI_SCOPE;
 
+#define NETSCHEDULED_VERSION "2.10.3"
 
-#define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.10.2 build " __DATE__ " " __TIME__
+#define NETSCHEDULED_FULL_VERSION \
+    "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
+    " build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
-    "protocol=1;dyn_queues;tags;tags_select"
+    "fast_status=1;dyn_queues=1;tags=1;version=" NETSCHEDULED_VERSION
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1460,7 +1462,7 @@ void CNetScheduleHandler::ProcessMonitor()
 {
     CSocket& socket = GetSocket();
     socket.DisableOSSendDelay(false);
-    WriteMsg("OK:", NETSCHEDULED_VERSION);
+    WriteMsg("OK:", NETSCHEDULED_FULL_VERSION);
     string started = "Started: " + m_Server->GetStartTime().AsString();
     WriteMsg("OK:", started);
     // Socket is released from regular scheduling here - it is
@@ -1509,7 +1511,7 @@ void CNetScheduleHandler::ProcessDump()
 
     CConn_SocketStream ios(sock);
 
-    ios << "OK:" << NETSCHEDULED_VERSION << endl;
+    ios << "OK:" << NETSCHEDULED_FULL_VERSION << endl;
 
     if (m_JobReq.job_key.empty()) {
         ios << "OK:" << "[Job status matrix]:";
@@ -1570,7 +1572,7 @@ void CNetScheduleHandler::ProcessStatistics()
     CSocket& socket = GetSocket();
     socket.DisableOSSendDelay(false);
 
-    WriteMsg("OK:", NETSCHEDULED_VERSION);
+    WriteMsg("OK:", NETSCHEDULED_FULL_VERSION);
     string started = "Started: " + m_Server->GetStartTime().AsString();
     WriteMsg("OK:", started);
 
@@ -1794,7 +1796,7 @@ void CNetScheduleHandler::ProcessShutdown()
 
 void CNetScheduleHandler::ProcessVersion()
 {
-    WriteMsg("OK:", NETSCHEDULED_VERSION);
+    WriteMsg("OK:", NETSCHEDULED_FULL_VERSION);
 }
 
 void CNetScheduleHandler::ProcessCreateQueue()
@@ -1841,6 +1843,8 @@ void CNetScheduleHandler::ProcessGetParam()
     res += NStr::IntToString(m_Queue->GetMaxInputSize());
     res += ";max_output_size=";
     res += NStr::IntToString(m_Queue->GetMaxOutputSize());
+    res += ";";
+    res += NETSCHEDULED_FEATURES;
     WriteMsg("OK:", res);
 }
 
@@ -2367,7 +2371,7 @@ extern "C" void Threaded_Server_SignalHandler(int signum)
 
 int CNetScheduleDApp::Run(void)
 {
-    LOG_POST(NETSCHEDULED_VERSION);
+    LOG_POST(NETSCHEDULED_FULL_VERSION);
     
     const CArgs& args = GetArgs();
 
