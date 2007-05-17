@@ -328,6 +328,12 @@ public:
         return m_Results.size();
     }
 
+    /// Return the number of unique query ID's represented by this object
+    size_type GetNumQueries()
+    {
+        return m_NumQueries;
+    }
+
     /// Identical to GetNumResults, provided to facilitate STL-style iteration
     /// @sa note in GetNumResults
     size_type size() const { return GetNumResults(); }
