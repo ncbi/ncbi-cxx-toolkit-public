@@ -202,7 +202,7 @@ DB_TXN* CBDB_RawFile::GetTxn()
     return 0;
 }
 
-void CBDB_RawFile::SetCompressor(CCompression* compressor, EOwnership own)
+void CBDB_RawFile::SetCompressor(ICompression* compressor, EOwnership own)
 {
     if (m_OwnCompressor == eTakeOwnership) {
         delete m_Compressor;

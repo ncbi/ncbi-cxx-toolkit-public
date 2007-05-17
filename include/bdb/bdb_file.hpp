@@ -268,7 +268,7 @@ public:
     /// Record compression should only be used if we do not
     /// use partial record storage and retrieval.
     ///
-    void SetCompressor(CCompression* compressor, 
+    void SetCompressor(ICompression* compressor, 
                        EOwnership    own = eTakeOwnership);
 
 private:
@@ -362,7 +362,7 @@ protected:
     unsigned          m_H_nelem;
     unsigned          m_BT_minkey;
 
-    CCompression*     m_Compressor;    ///< Record compressor
+    ICompression*     m_Compressor;    ///< Record compressor
     EOwnership        m_OwnCompressor;
     TBuffer           m_CompressBuffer;
 
