@@ -110,7 +110,6 @@ int CSoapServerApplication::ProcessRequest(CCgiContext& ctx)
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
     response.SetContentType("text/xml");
-    response.WriteHeader();
     if (!x_ProcessWsdlRequest(response, request)) {
         x_ProcessSoapRequest(response, request);
     }
@@ -121,7 +120,7 @@ int CSoapServerApplication::ProcessRequest(CCgiContext& ctx)
 
 bool
 CSoapServerApplication::x_ProcessWsdlRequest(CCgiResponse& response,
-                                             const CCgiRequest& request)
+                                             const CCgiRequest& request) const
 {
     const TCgiEntries& entries = request.GetEntries();
     if (entries.empty()) {
@@ -130,6 +129,7 @@ CSoapServerApplication::x_ProcessWsdlRequest(CCgiResponse& response,
     for(TCgiEntries::const_iterator i = entries.begin();
         i != entries.end(); ++i) {
         if (NStr::CompareNocase(i->first, "wsdl") == 0) {
+            response.WriteHeader();
             if (!m_Wsdl.empty()) {
                 int len = (int)CFile(m_Wsdl).GetLength();
                 if (len > 0) {
@@ -150,42 +150,76 @@ bool
 CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
                                              const CCgiRequest& request)
 {
-// read request
+    bool input_ok=true;
+    string fault_text;
     CSoapMessage soap_in, soap_out;
-    vector< TTypeInfoGetter >::iterator types_in;
+    soap_out.SetDefaultObjectNamespaceName(GetDefaultNamespaceName());
+
+    vector< TTypeInfoGetter >::const_iterator types_in;
     for (types_in = m_Types.begin(); types_in != m_Types.end(); ++types_in) {
         soap_in.RegisterObjectType(*types_in);
     }
-    {
-        auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
-        *is >> soap_in;
+// read request
+    if (request.GetInputStream()) {
+        try {            
+            auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
+            *is >> soap_in;
+        }
+        catch (exception& e) {
+            input_ok = false;
+            fault_text = e.what();
+        }            
     }
-    soap_out.SetDefaultObjectNamespaceName(GetDefaultNamespaceName());
+#if 1
+    else {
+        input_ok = false;
+        fault_text = "No input stream in CCgiRequest";
+    }
+#else
+// for debugging only!
+    else {
+        try {            
+#if 0
+            auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"-",eSerial_StdWhenDash));
+#else
+            auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"input.xml"));
+#endif
+            *is >> soap_in;
+        }
+        catch (exception& e) {
+            input_ok = false;
+            fault_text = e.what();
+        }            
+    }
+#endif
 
-// check version
-    if (soap_in.GetFaultCode() == CSoapFault::eVersionMismatch) {
-        CRef<CSoapFault> fault(new CSoapFault);
-        fault->SetFaultcodeEnum(CSoapFault::eVersionMismatch);
-        fault->SetFaultstring("Server supports SOAP v1.1 only");
-        soap_out.AddObject( *fault, CSoapMessage::eMsgBody);
-    } else {
+    if (input_ok) {
+        if (soap_in.GetFaultCode() == CSoapFault::eVersionMismatch) {
+            x_FaultVersionMismatch(soap_out);
+        } else if (soap_in.GetFaultCode() == CSoapFault::eMustUnderstand) {
+            x_FaultMustUnderstand(soap_out);
+        } else {
 
-// find listeners
-        const TListeners* listeners = x_FindListeners(soap_in);
-
+            const TListeners* listeners = x_FindListeners(soap_in);
 // process request
-        if (listeners) {
-            TListeners::const_iterator it;
-            for (it = listeners->begin(); it != listeners->end(); ++it) {
-                const TWebMethod listener = *it;
-                if (!(this->*listener)(soap_out, soap_in)) {
-                    break;
+            if (listeners) {
+                TListeners::const_iterator it;
+                for (it = listeners->begin(); it != listeners->end(); ++it) {
+                    const TWebMethod listener = *it;
+                    if (!(this->*listener)(soap_out, soap_in)) {
+                        break;
+                    }
                 }
+            } else {
+                x_FaultNoListeners(soap_out, soap_in);
             }
         }
+    } else {
+        x_FaultServer(soap_out, fault_text);
     }
 
 // send it back
+    response.WriteHeader();
     {
         auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_Xml,response.out()));
         *out << soap_out;
@@ -261,6 +295,65 @@ CSoapServerApplication::AddMessageListener(TWebMethod listener,
         m_Listeners.insert(
             pair<string const, pair<string,TListeners> >(message_name,
                 make_pair(ns,new_listeners)));
+    }
+}
+
+void
+CSoapServerApplication::x_FaultVersionMismatch(CSoapMessage& response) const
+{
+    CRef<CSoapFault> fault(new CSoapFault);
+    fault->SetFaultcodeEnum(CSoapFault::eVersionMismatch);
+    fault->SetFaultstring("Server supports SOAP v1.1 only");
+    response.AddObject( *fault, CSoapMessage::eMsgBody);
+}
+
+void
+CSoapServerApplication::x_FaultMustUnderstand(CSoapMessage& response) const
+{
+    CRef<CSoapFault> fault(new CSoapFault);
+    fault->SetFaultcodeEnum(CSoapFault::eMustUnderstand);
+    fault->SetFaultstring("An immediate child element of the SOAP Header not understood");
+    response.AddObject( *fault, CSoapMessage::eMsgBody);
+}
+
+void
+CSoapServerApplication::x_FaultServer(CSoapMessage& response, const string& text) const
+{
+    CRef<CSoapFault> fault(new CSoapFault);
+    fault->SetFaultcodeEnum(CSoapFault::eServer);
+    fault->SetFaultstring(text);
+    response.AddObject( *fault, CSoapMessage::eMsgBody);
+}
+
+void
+CSoapServerApplication::x_FaultNoListeners(
+    CSoapMessage& response, const CSoapMessage& request) const
+{
+    CRef<CSoapFault> fault(new CSoapFault);
+    fault->SetFaultcodeEnum(CSoapFault::eClient);
+    fault->SetFaultstring("Unrecognized message. See detail for incoming message Body summary");
+    response.AddObject( *fault, CSoapMessage::eMsgBody);
+
+    const CSoapMessage::TSoapContent& content =
+        request.GetContent(CSoapMessage::eMsgBody);
+    CSoapMessage::TSoapContent::const_iterator i;
+    for (i = content.begin(); i != content.end(); ++i) {
+
+        CRef<CAnyContentObject> any(new CAnyContentObject);
+        string name, ns_name;
+        const CAnyContentObject* obj =
+            dynamic_cast<const CAnyContentObject*>(i->GetPointer());
+        if (obj) {
+            name = obj->GetName();
+            ns_name = obj->GetNamespaceName();
+        } else {
+            name = (*i)->GetThisTypeInfo()->GetName();
+            ns_name = (*i)->GetNamespaceName();
+        }
+        any->SetName(name);
+        any->SetNamespaceName(ns_name);
+        any->SetValue("...");
+        response.AddObject( *any, CSoapMessage::eFaultDetail);
     }
 }
 

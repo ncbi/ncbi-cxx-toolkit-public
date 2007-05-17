@@ -200,10 +200,7 @@ void CSoapMessage::Read(CObjectIStream& in)
     CObjectTypeInfo typeF = CType<CSoapDetail>();
     typeF.SetLocalReadHook(in, new CSoapReadHook(m_FaultDetail,m_Types));
 
-    try {
-        in >> env;
-    } catch (...) {
-    }
+    in >> env;
     x_Check(env);
     x_VerifyFaultObj(false);
 }
@@ -279,9 +276,29 @@ CSoapMessage::GetAnyContentObject(const string& name,
 
 void CSoapMessage::x_Check(const CSoapEnvelope& env)
 {
+
     if (env.GetNamespaceName() != GetSoapNamespace()) {
         m_Fault = CSoapFault::eVersionMismatch;
         return;
+    }
+
+// http://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383510
+// An immediate child element of the SOAP Header not understood 
+    const TSoapContent& src = GetContent(eMsgHeader);
+    if (!src.empty()) {
+        TSoapContent::const_iterator it= src.begin();
+        const CAnyContentObject* obj =
+            dynamic_cast<const CAnyContentObject*>(it->GetPointer());
+        if (obj) {
+            const vector<CSerialAttribInfoItem>& att = obj->GetAttributes();
+            vector<CSerialAttribInfoItem>::const_iterator a;
+            for (a= att.begin(); a != att.end(); ++a) {
+                if (a->GetName() == "mustUnderstand" &&
+                    (a->GetValue() == "1" || a->GetValue() == "true")) {
+                    m_Fault = CSoapFault::eMustUnderstand;
+                }
+            }
+        }
     }
 }
 

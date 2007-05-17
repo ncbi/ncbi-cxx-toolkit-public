@@ -90,13 +90,18 @@ public:
 
 private:
     bool x_ProcessWsdlRequest(CCgiResponse& response,
-                              const CCgiRequest& request);
+                              const CCgiRequest& request) const;
     bool x_ProcessSoapRequest(CCgiResponse& response,
                               const CCgiRequest& request);
 
     const TListeners* x_FindListeners(const CSoapMessage& request);
     TListeners* x_FindListenersByName(const string& message_name,
                                       const string& namespace_name);
+
+    void x_FaultVersionMismatch(CSoapMessage& response) const;
+    void x_FaultMustUnderstand(CSoapMessage& response) const;
+    void x_FaultServer(CSoapMessage& response, const string& text) const;
+    void x_FaultNoListeners(CSoapMessage& response, const CSoapMessage& request) const;
 
     string m_DefNamespace;
     string m_Wsdl;
