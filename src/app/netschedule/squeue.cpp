@@ -58,9 +58,20 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
     empty_lifetime = GetIntNoErr("empty_lifetime", -1);
 
-    max_input_size = GetIntNoErr("max_input_size", kNetScheduleMaxDBDataSize);
+    string s = reg.GetString(sname, "max_input_size", kEmptyStr);
+    max_input_size = kNetScheduleMaxDBDataSize;
+    try {
+        max_input_size = NStr::StringToUInt8_DataSize(s);
+    }
+    catch (CStringException&) {}
     max_input_size = min(kNetScheduleMaxOverflowSize, max_input_size);
-    max_output_size = GetIntNoErr("max_output_size", kNetScheduleMaxDBDataSize);
+
+    s =  reg.GetString(sname, "max_output_size", kEmptyStr);
+    max_output_size = kNetScheduleMaxDBDataSize;
+    try {
+        max_output_size = NStr::StringToUInt8_DataSize(s);
+    }
+    catch (CStringException&) {}
     max_output_size = min(kNetScheduleMaxOverflowSize, max_output_size);
 
     deny_access_violations = reg.GetBool(sname, "deny_access_violations", false,
