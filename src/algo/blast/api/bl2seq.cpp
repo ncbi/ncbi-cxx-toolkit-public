@@ -198,7 +198,8 @@ CBl2Seq::RunEx()
     return BlastBuildSearchResultSet(query_ids, mi_pScoreBlock,
                                  mi_clsQueryInfo,
                                  m_OptsHandle->GetOptions().GetProgramType(),
-                                 alignments, m_Messages, &masks);
+                                 alignments, m_Messages, &masks,
+                                 ncbi::blast::eSequenceComparison);
 }
 
 void
@@ -321,6 +322,23 @@ CBl2Seq::RunFullSearch()
     }
 }
 
+TSeqAlignVector CBl2Seq::x_TransposeSeqAlignVector(const TSeqAlignVector& alnvec)
+{
+    TSeqAlignVector result_alnvec;
+
+    for (size_t iQuery = 0; iQuery < m_tQueries.size(); iQuery++)
+    {
+        for (size_t iSubject = 0; iSubject < m_tSubjects.size(); iSubject++)
+        {
+            size_t iLinearIndex = iSubject * m_tQueries.size() + iQuery;
+            CRef<CSeq_align_set> aln_set = alnvec[iLinearIndex];
+            result_alnvec.push_back(aln_set);
+        }
+    }
+
+    _ASSERT(result_alnvec.size() == alnvec.size());
+    return result_alnvec;
+}
 
 /* Unlike the database search, we want to make sure that a seqalign list is   
  * returned for each query/subject pair, even if it is empty. Also we don't 
@@ -340,9 +358,10 @@ CBl2Seq::x_Results2SeqAlign()
     CRef<ILocalQueryData> query_data =
         qf.MakeLocalQueryData(&m_OptsHandle->GetOptions());
 
-    return LocalBlastResults2SeqAlign(mi_pResults, *query_data, seqinfo_src,
+    return x_TransposeSeqAlignVector(
+            LocalBlastResults2SeqAlign(mi_pResults, *query_data, seqinfo_src,
                                       program, gappedMode, outOfFrameMode,
-                                      eSequenceComparison);
+                                      eSequenceComparison));
 }
 
 TSeqLocInfoVector
