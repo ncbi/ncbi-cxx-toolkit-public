@@ -3125,8 +3125,8 @@ bool CQueue::x_GetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
             if (job_info_db.Fetch() != eBDB_Ok)
                 return false;
             fetched = true;
-            job_info_db.output.ToString(str);
         }
+        job_info_db.output.ToString(str);
     } else {
         db.output.ToString(str);
     }
@@ -3160,6 +3160,7 @@ void CQueue::x_SetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
                 cur.Update();
             }
         } else {
+            db.output_overflow = 0;
             db.output = output;
         }
 }
