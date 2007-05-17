@@ -599,6 +599,15 @@ public:
     /// Retrieve the search database information
     CRef<CSearchDatabase> GetSearchDatabase() const { return m_SearchDb; }
 
+    /// Is subject sequence provided instead of a database?
+    bool IsSubjectProvided() const {return m_IsSubjectProvided;}
+
+    /// Get the subject sequence input stream (only if subject is provided)
+    CNcbiIstream& GetSubjectInputStream() const;
+
+    /// Get subject sequence range restriction
+    TSeqRange GetSubjectRange() const {return m_SubjectRange;}
+
 private:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
     string m_GiListFileName;        /**< File name of gi list DB restriction */
@@ -607,6 +616,10 @@ private:
                                       command line, true in case of PSI-BLAST
                                       */
     bool m_IsRpsBlast;              /**< true if the search is RPS-BLAST */
+
+    bool m_IsSubjectProvided;               /**< Is subject sequence argument provided */
+    CNcbiIstream* m_SubjectInputStream;     /**< Input stream for the subject sequence */
+    TSeqRange m_SubjectRange;               /**< Range to restrict the subject sequence(s) */
 };
 
 /// Argument class to collect formatting options, use this to create a 
