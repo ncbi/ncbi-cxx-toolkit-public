@@ -78,7 +78,7 @@ void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 22, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 23, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
     string program_name ("Splign v.1.22");
@@ -699,22 +699,22 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
 
     const size_t num_results = results.GetNumResults();
     for(size_t query_index = 0; query_index != num_results; ++query_index) {
-
-        CConstRef<objects::CSeq_align_set> ref_sas0 = 
-            results[query_index].GetSeqAlign();
+        
+        CConstRef<objects::CSeq_align_set> ref_sas0 (results[query_index].
+                                                     GetSeqAlign());
         if(ref_sas0->IsSet()) {
-
-            const CSeq_align_set::Tdata &sas0 = ref_sas0->Get();
-             ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
-
-                    THitRef hitref (new CBlastTabular(**sa_iter, false));
-                    phitrefs->push_back(hitref);
-                    
-                    THit::TId id (hitref->GetSubjId());
-                    int oid = -1;
-                    seqdb.SeqidToOid(*id, oid);
-                    id = seqdb.GetSeqIDs(oid).back();
-                    hitref->SetSubjId(id);
+            
+            const CSeq_align_set::Tdata & sas0 (ref_sas0->Get());
+            ITERATE(CSeq_align_set::Tdata, sa_iter, sas0) {
+                
+                THitRef hitref (new CBlastTabular(**sa_iter, false));
+                phitrefs->push_back(hitref);
+                
+                THit::TId id (hitref->GetSubjId());
+                int oid = -1;
+                seqdb.SeqidToOid(*id, oid);
+                id = seqdb.GetSeqIDs(oid).back();
+                hitref->SetSubjId(id);
             }
         }
     }
