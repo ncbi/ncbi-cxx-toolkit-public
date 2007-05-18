@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Lewis Y. Geer
+ * Authors:  Lewis Y. Geer, Douglas J. Slotta
  *  
  * File Description:
  *    command line OMSSA search
@@ -37,6 +37,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
@@ -88,6 +89,10 @@ void COMSSA::AppInit(CArgDescriptions *argDesc)
                  "file containing user modification data",
                  CArgDescriptions::eString,
                  "usermods.xml");
+     argDesc->AddDefaultKey("nt", "numthreads",
+			    "number of search threads to use, 0=autodetect",
+			    CArgDescriptions::eInteger, 
+			    "0");
      argDesc->AddFlag("ni", "don't print informational messages");
      argDesc->AddFlag("ns", "depreciated flag"); // to be deprecated
      argDesc->AddFlag("os", "use omssa 1.0 scoring"); // to be deprecated
@@ -171,11 +176,26 @@ int COMSSA::Run()
 
     CSearchHelper::ValidateSearchSettings(SearchSettings);
 
-    CSearch SearchEngine;
+    int nThreads;
+#if defined(_MT)
+    nThreads = args["nt"].AsInteger();
+    if (nThreads == 0) nThreads = GetCpuCount();
+    if (nThreads > 1) {
+      ERR_POST(Info << "Using " << nThreads << " search threads");
+    }
+#else
+    nThreads = 1;
+#endif
+
+    vector < CRef<CSearch> > searchThreads;
+    CRef <CSearch> SearchEngine (new CSearch(0));
+    searchThreads.push_back(SearchEngine);
+    
+    //CSearch* SearchEngine = new CSearch();
 
     // set up rank scoring
-    if(args["os"]) SearchEngine.SetRankScore() = false;
-    else SearchEngine.SetRankScore() = true;
+    if(args["os"]) SearchEngine->SetRankScore() = false;
+    else SearchEngine->SetRankScore() = true;
 
     int FileRetVal(1);
 
@@ -185,7 +205,7 @@ int COMSSA::Run()
             FileRetVal = 
                 CSearchHelper::LoadAnyFile(MySearch,
                                            *(SearchSettings->GetInfiles().begin()),
-                                            &(SearchEngine.SetIterative()));
+                                            &(SearchEngine->SetIterative()));
             if(FileRetVal == -1) {
                 ERR_POST(Fatal << "omssacl: too many spectra in input file");
                 return 1;
@@ -202,11 +222,11 @@ int COMSSA::Run()
         
         // place search settings in search object
         MySearch.SetUpSearchSettings(SearchSettings, 
-                                     SearchEngine.GetIterative());
+                                     SearchEngine->GetIterative());
     }
 
     try {
-        SearchEngine.InitBlast(SearchSettings->GetDb().c_str(),
+        SearchEngine->InitBlast(SearchSettings->GetDb().c_str(),
 	args["umm"]);
     }
     catch (const NCBI_NS_STD::exception &e) {
@@ -223,15 +243,32 @@ int COMSSA::Run()
         MySearch.SetResponse().push_back(Response);
     }
 
+    // Used to be a call to SearchEngine.Search(...)
+    SearchEngine->SetupSearch(*MySearch.SetRequest().begin(),
+                              *MySearch.SetResponse().begin(), 
+                              Modset,
+                              SearchSettings,
+                              &OMSSACallback);
 
-	_TRACE("omssa: search begin");
-	SearchEngine.Search(*MySearch.SetRequest().begin(),
-                        *MySearch.SetResponse().begin(), 
-                        Modset,
-                        SearchSettings,
-                        &OMSSACallback);
-	_TRACE("omssa: search end");
+    for (int i=1; i < nThreads; i++) { 
+       CRef <CSearch> SearchThread (new CSearch(i));
+       SearchThread->CopySettings(SearchEngine);
+       searchThreads.push_back(SearchThread);
+    }
+    
+    _TRACE("omssa: search begin");
+    for (int i=0; i < nThreads; i++) { 
+       searchThreads[i]->Run(CThread::fRunAllowST);
+    }
 
+    bool* result;
+    for (int i=0; i < nThreads; i++) {
+        searchThreads[i]->Join(reinterpret_cast<void**>(&result));
+        //cout << "Returned value: " << *result << endl;
+    }
+    searchThreads[0]->SetResult(searchThreads[0]->SharedPeakSet);
+    _TRACE("omssa: search end");
+    
 
 #if _DEBUG
 	// read out hits

@@ -37,6 +37,7 @@
 #include <corelib/ncbi_limits.h>
 
 #include <algorithm>
+#include <vector>
 #include <math.h>
 
 #include "mspeak.hpp"
@@ -277,7 +278,6 @@ void CMSPeakList::CreateLists(int Size)
     SetSorted() = eMSPeakListSortNone;
     SetNum() = Size;
     SetMZI(new CMZI[Size]);
-    SetUsed(new char[Size]);
 }
 
 
@@ -422,7 +422,8 @@ const bool CMSPeak::ContainsFast(const int value,
 
 
 int CMSPeak::CompareSortedRank(CLadder& Ladder,
-                               EMSPeakListTypes Which)
+                               EMSPeakListTypes Which,
+                               vector<bool>& usedPeaks)
 {
 
     int i(0), j(0);
@@ -430,7 +431,7 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder,
     CRef <CMSPeakList> PeakList = SetPeakLists()[Which];
 
     if (Ladder.size() == 0 ||  PeakList->GetNum() == 0) return 0;
-
+    
     Ladder.SetM() = 0;
     Ladder.SetSum() = 0;
 
@@ -445,8 +446,8 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder,
             continue;
         } else {
             // avoid double count
-            if (PeakList->GetUsed()[j] == 0) {
-                PeakList->GetUsed()[j] = 1;
+            if (!usedPeaks[j]) {
+                usedPeaks[j] = true;
                 Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
                 // sum up the ranks
                 Ladder.SetSum() += PeakList->GetMZI()[j].GetRank();
@@ -506,7 +507,6 @@ int CMSPeak::Read(const CMSSpectrum& Spectrum,
         const CMSSpectrum::TMz& Mz = Spectrum.GetMz();
         const CMSSpectrum::TAbundance& Abundance = Spectrum.GetAbundance();
         SetPeakLists()[eMSPeakListOriginal]->CreateLists(Mz.size());
-        SetPeakLists()[eMSPeakListOriginal]->ClearUsed();
 
         int i;
         for (i = 0; i < SetPeakLists()[eMSPeakListOriginal]->GetNum(); i++) {
@@ -926,7 +926,6 @@ void CMSPeak::CullChargeAndWhich(const CMSSearchSettings& Settings)
         // make the array of culled peaks
     	EMSPeakListTypes Which = GetWhich(GetCharges()[iCharges]);
         SetPeakLists()[Which]->CreateLists(TempLen);
-        SetPeakLists()[Which]->ClearUsed();
         copy(Temp, Temp+TempLen, SetPeakLists()[Which]->GetMZI());
         SetPeakLists()[Which]->Sort(eMSPeakListSortIntensity);
         SetPeakLists()[Which]->Rank();
@@ -961,7 +960,6 @@ void CMSPeak::CullAll(const CMSSearchSettings& Settings)
     else 
         SetPeakLists()[eMSPeakListTop]->CreateLists(SetPeakLists()[Which]->GetNum());
 
-    SetPeakLists()[eMSPeakListTop]->ClearUsed();
     copy(Temp, Temp + SetPeakLists()[eMSPeakListTop]->GetNum(), 
          SetPeakLists()[eMSPeakListTop]->GetMZI());
     SetPeakLists()[eMSPeakListTop]->Sort(eMSPeakListSortMZ);

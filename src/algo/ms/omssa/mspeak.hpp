@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Lewis Y. Geer
+ * Authors:  Lewis Y. Geer, Douglas J. Slotta
  *
  * File Description:
  *    code to deal with spectra and m/z ladders
@@ -567,9 +567,6 @@ public:
     CMZI * const GetMZI(void) const;
     void SetMZI(CMZI *In);
 
-    char * const GetUsed(void) const;
-    void SetUsed(char * In);
-
     const int GetNum(void) const;
     int& SetNum(void);
 
@@ -582,11 +579,6 @@ public:
      * @param Size size of the arrays
      */
     void CreateLists(int Size);
-
-    /**
-     * zero out the used list
-     */
-    void ClearUsed(void);
 
     /**
      * sort the peak by sort type
@@ -604,20 +596,12 @@ public:
 private:
     /**  m/z values and intensities */
     AutoPtr <CMZI, ArrayDeleter<CMZI> > MZI; 
-    /** used to mark m/z values as used in a match */
-    AutoPtr <char, ArrayDeleter<char> > Used;
+
     /** number of CMZI */
     int Num;
     /** have the CMZI been sorted? */
     EMSPeakListSort Sorted;
 };
-
-
-inline 
-void CMSPeakList::ClearUsed(void)
-{
-    memset(GetUsed(), 0, GetNum());
-}
 
 inline
 CMZI * const CMSPeakList::GetMZI(void) const
@@ -629,18 +613,6 @@ inline
 void CMSPeakList::SetMZI(CMZI *In)
 {
     MZI.reset(In);
-}
-
-inline
-char * const CMSPeakList::GetUsed(void) const
-{
-    return Used.get();
-}
-
-inline
-void CMSPeakList::SetUsed(char * In)
-{
-    Used.reset(In);
 }
 
 inline
@@ -716,7 +688,8 @@ public:
      *
      */
     int CompareSortedRank(CLadder& Ladder,
-                          EMSPeakListTypes Which);
+                          EMSPeakListTypes Which,
+                          vector<bool>& usedPeaks);
 
     /**
      * Read a spectrum set into a CMSPeak
@@ -1095,11 +1068,6 @@ public:
      */
 	const int GetPrecursorTol(void) const;
 
-    /**
-     * clear used arrays for all cull types
-     */
-    void ClearUsedAll(void);
-
     // functions for testing if peaks are h2o or nh3 losses
     
     /**
@@ -1304,15 +1272,6 @@ const int CMSPeak::GetPrecursorTol(void) const
     return PrecursorTol; 
 }
 
-inline 
-void CMSPeak::ClearUsedAll(void)
-{
-    int iCharges;
-    for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
-        SetPeakLists()[GetWhich(GetCharges()[iCharges])]->ClearUsed();
-    SetPeakLists()[eMSPeakListTop]->ClearUsed();
-}
-
 // returns the cull array index
 inline 
 const EMSPeakListTypes CMSPeak::GetWhich(const int Charge) const
@@ -1358,7 +1317,7 @@ typedef _MassPeak TMassPeak;
 // range type for peptide mass +/- some tolerance
 typedef CRange<TSignedSeqPos> TMassRange;
 
-class NCBI_XOMSSA_EXPORT CMSPeakSet {
+class NCBI_XOMSSA_EXPORT CMSPeakSet: public CObject {
 public:
     // tor's
     CMSPeakSet(void);

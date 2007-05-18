@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Lewis Y. Geer
+* Authors:  Lewis Y. Geer, Douglas J. Slotta
 *  
 * File Description:
 *    code to do the ms/ms search and score matches
@@ -360,11 +360,12 @@ CSearchHelper::CreateSearchSettings(string FileName,
 //
 
 
-CSearch::CSearch(void): 
+CSearch::CSearch(int tNum): 
 UseRankScore(false),
 Iterative(false),
 RestrictedSearch(false)
 {
+    ThreadNum = tNum;
 }
 
 int CSearch::InitBlast(const char *blastdb, bool use_mmap)
@@ -430,8 +431,9 @@ int CSearch::CompareLadders(int iMod,
         ChargeLimit = 1;
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
+    vector<bool> usedPeaks(Peaks->SetPeakLists()[Which]->GetNum(), false);
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
-        Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which);
+        Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which, usedPeaks);
         SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
     }
     return 0;
@@ -476,7 +478,8 @@ CSearch::ReSearch(const int Number) const
 }
 
 // loads spectra into peaks
-void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
+//void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
+void CSearch::Spectrum2Peak(CRef<CMSPeakSet> PeakSet)
 {
     CSpectrumSet::Tdata::const_iterator iSpectrum;
     CMSPeak* Peaks;
@@ -506,10 +509,10 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
             Peaks->Write(os, eMSSpectrumFileType_dta, eMSPeakListCharge1);
         }
 //#endif
-        PeakSet.AddPeak(Peaks);
+        PeakSet->AddPeak(Peaks);
 
     }
-    MaxMZ = PeakSet.SortPeaks(MSSCALE2INT(GetSettings()->GetPeptol()),
+    MaxMZ = PeakSet->SortPeaks(MSSCALE2INT(GetSettings()->GetPeptol()),
                               GetSettings()->GetZdep());
 
 }
@@ -833,15 +836,65 @@ void CSearch::MakeOidSet(void)
     }
 }
 
-
-int CSearch::Search(CRef <CMSRequest> MyRequestIn,
-                    CRef <CMSResponse> MyResponseIn,
-                    CRef <CMSModSpecSet> Modset,
-                    CRef <CMSSearchSettings> SettingsIn,
-                    TOMSSACallback Callback,
-                    void *CallbackData)
+int CSearch::iSearchGlobal = -1;
+int CSearch::MaxMZ = 0;
+CRef<CMSPeakSet> CSearch::SharedPeakSet = null;
+DEFINE_STATIC_FAST_MUTEX(iSearchMutex);
+DEFINE_STATIC_FAST_MUTEX(PeakSetMutex);
+DEFINE_STATIC_FAST_MUTEX(PeaksExaminedMutex);
+ 
+void CSearch::SetupSearch(CRef <CMSRequest> MyRequestIn,
+			  CRef <CMSResponse> MyResponseIn,
+			  CRef <CMSModSpecSet> Modset,
+			  CRef <CMSSearchSettings> SettingsIn,
+			  TOMSSACallback Callback,
+			  void *CallbackData)
 {
+  initRequestIn = MyRequestIn;
+  initResponseIn = MyResponseIn;
+  initModset = Modset;
+  initSettingsIn = SettingsIn;
+  initCallback = Callback;
+  initCallbackData = CallbackData;
+}
+ 
+void* CSearch::Main(void)
+{
+   Search(initRequestIn,
+          initResponseIn,
+          initModset,
+          initSettingsIn,
+          initCallback);
 
+    return new bool(true);
+}
+ 
+void CSearch::OnExit(void)
+{
+}
+
+void CSearch::CopySettings(CRef <CSearch> fromObj)
+{
+  initRequestIn = fromObj->initRequestIn;
+  initResponseIn = fromObj->initResponseIn;
+  initModset = fromObj->initModset;
+  initSettingsIn = fromObj->initSettingsIn;
+  initCallback = fromObj->initCallback;
+  initCallbackData = fromObj->initCallbackData;
+  UseRankScore = fromObj->UseRankScore;
+  Iterative = fromObj->Iterative;
+  numseq = fromObj->numseq;
+  rdfp = fromObj->rdfp;
+  
+}
+
+void CSearch::Search(CRef <CMSRequest> MyRequestIn,
+                                 CRef <CMSResponse> MyResponseIn,
+                                 CRef <CMSModSpecSet> Modset,
+                                 CRef <CMSSearchSettings> SettingsIn,
+                                 TOMSSACallback Callback,
+                                 void *CallbackData)
+{
     try {
         SetSettings().Reset(SettingsIn);
         SetRequest().Reset(MyRequestIn);
@@ -922,7 +975,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         int Masses[MAXMISSEDCLEAVE];
         int EndMasses[MAXMISSEDCLEAVE];
 
-
         int iMod;   // used to iterate thru modifications
 
         bool SequenceDone;  // are we done iterating through the sequences?
@@ -933,8 +985,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         CMSHit NewHit;  // a new hit of a ladder to an m/z value
         CMSHit *NewHitOut;  // copy of new hit
 
-
-        CMSPeakSet PeakSet;
         const TMassPeak *MassPeak; // peak currently in consideration
         CMSPeak* Peaks;
         CIntervalTree::const_iterator im; // iterates over interval tree
@@ -942,22 +992,38 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         // iterates over ladders
         TLadderMap::iterator Iter;
 
-        Spectrum2Peak(PeakSet);
-
-
+        {{
+           CFastMutexGuard guard(PeakSetMutex);
+           if (SharedPeakSet == null) {
+              SharedPeakSet = new CMSPeakSet();
+              Spectrum2Peak(SharedPeakSet);
+           }
+        }}
         vector <int> taxids;
         vector <int>::iterator itaxids;
         bool TaxInfo(false);  // check to see if any tax information in blast library
+	    bool iSearchNotDone(true);
 
         // iterate through sequences
-        for (iSearch = 0; rdfp->CheckOrFindOID(iSearch); iSearch++) {
-            if (iSearch/10000*10000 == iSearch) 
-                if(Callback) Callback(Getnumseq(), iSearch, CallbackData);
-
+	    //for (iSearch = 0; rdfp->CheckOrFindOID(iSearch); iSearch++) {
+	    while (iSearchNotDone) {
+            {{
+                CFastMutexGuard guard(iSearchMutex);
+                iSearchGlobal++;
+                if (!rdfp->CheckOrFindOID(iSearchGlobal)) {
+                    iSearchNotDone = false;
+                    continue;
+                }                
+                iSearch = iSearchGlobal;
+                if (iSearch % 10000 == 0) {
+                   if(Callback) Callback(Getnumseq(), iSearch, CallbackData);
+                }
+            }}
+            
             // if oid restricted search, check to see if oid is in set
             if (GetRestrictedSearch() && SetOidSet().find(iSearch) == SetOidSet().end())
                 continue;
-
+            
             if (SetSettings()->IsSetTaxids()) {
                 rdfp->GetTaxIDs(iSearch, taxids, false);
                 for (itaxids = taxids.begin(); itaxids != taxids.end(); ++itaxids) {
@@ -1067,10 +1133,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                         // return peaks where theoretical mass is <= precursor mass + tol
                         // and >= precursor mass - tol
                         if (!SetEnzyme()->GetTopDown())
-                            im = PeakSet.SetIntervalTree().IntervalsContaining(OldMass);
+                            im = SharedPeakSet->SetIntervalTree().IntervalsContaining(OldMass);
                         // if top-down enzyme, skip the interval tree match
                         else
-                            im = PeakSet.SetIntervalTree().AllIntervals();
+                            im = SharedPeakSet->SetIntervalTree().AllIntervals();
 
                         for (; im; ++im ) {
                             MassPeak = static_cast <const TMassPeak *> (im.GetValue().GetPointerOrNull());
@@ -1078,8 +1144,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                             Peaks = MassPeak->Peak;
                             // make sure we look thru other mod masks with the same mass
                             NoMassMatch = false;
-
-
 
                             if (!GetLadderCalc(iMod)) {
                                 if (CreateLadders(Sequence.GetData(), 
@@ -1107,15 +1171,20 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                 }
                             }
 
-                            if (UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
-
+                            if (UseRankScore) {
+                                {{
+                                    CFastMutexGuard guard(PeaksExaminedMutex);   
+                                    Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+                                }}
+                            }
                             if (CompareLaddersTop(iMod, 
                                                   Peaks,
                                                   MassPeak)
                                ) {
-
-                                if (!UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
-                                Peaks->ClearUsedAll();
+                                {{
+                                    CFastMutexGuard guard(PeaksExaminedMutex);
+                                    if (!UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+                                }}
                                 CompareLadders(iMod, 
                                                Peaks,
                                                false,
@@ -1126,32 +1195,36 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                     hits += (*(Iter->second))[iMod]->HitCount();
                                     SetLadderContainer().Next(Iter);
                                 }
-                                if (hits >= SetSettings()->GetMinhit()) {
-                                    // need to save mods.  bool map?
-                                    NewHit.SetHits() = hits;   
-                                    NewHit.SetCharge() = MassPeak->Charge;
-                                    // only record if hit kept
-                                    if (Peaks->AddHit(NewHit, NewHitOut)) {
-                                        NewHitOut->SetStart() = position;
-                                        NewHitOut->SetStop() = endposition;
-                                        NewHitOut->SetSeqIndex() = iSearch;
-                                        NewHitOut->SetExpMass() = MassPeak->Mass;
-                                        // record the hits
-                                        Peaks->ClearUsedAll();
-                                        NewHitOut->
-                                        RecordMatches(SetLadderContainer(),
-                                                      iMod,
-                                                      Peaks,
-                                                      SetMassAndMask(iMissed, iMod).Mask,
-                                                      ModList[iMissed],
-                                                      NumMod[iMissed],
-                                                      PepStart[iMissed],
-                                                      SetSettings()->GetSearchctermproduct(),
-                                                      SetSettings()->GetSearchb1(),
-                                                      SetMassAndMask(iMissed, iMod).Mass
-                                                     );
-                                    }
-                                }
+                                
+                                    
+                                {{
+                                   CFastMutexGuard guard(PeakSetMutex);
+                                   if (hits >= SetSettings()->GetMinhit()) {
+                                      // need to save mods.  bool map?
+                                      NewHit.SetHits() = hits;   
+                                      NewHit.SetCharge() = MassPeak->Charge;
+                                      // only record if hit kept
+                                      if (Peaks->AddHit(NewHit, NewHitOut)) {
+                                         NewHitOut->SetStart() = position;
+                                         NewHitOut->SetStop() = endposition;
+                                         NewHitOut->SetSeqIndex() = iSearch;
+                                         NewHitOut->SetExpMass() = MassPeak->Mass;
+                                         // record the hits
+                                         NewHitOut->
+                                            RecordMatches(SetLadderContainer(),
+                                                          iMod,
+                                                          Peaks,
+                                                          SetMassAndMask(iMissed, iMod).Mask,
+                                                          ModList[iMissed],
+                                                          NumMod[iMissed],
+                                                          PepStart[iMissed],
+                                                          SetSettings()->GetSearchctermproduct(),
+                                                          SetSettings()->GetSearchb1(),
+                                                          SetMassAndMask(iMissed, iMod).Mass
+                                                          );
+                                      }
+                                   }
+                                }}
                             } // new addition
                         } // MassPeak
                     } //iMod
@@ -1188,7 +1261,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                         NonSpecificMass = 0;
                         const char *iSeqChar;
                         for (iSeqChar = PepStart[0]; iSeqChar <= SetEnzyme()->GetStop(); iSeqChar++)
-                            PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
+                           PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
                         // reset sequence done flag if at end of sequence
                         SequenceDone = false;
                     }
@@ -1259,17 +1332,13 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
             ERR_POST(Warning << 
                      "Taxonomically restricted search specified and no matching organisms found in sequence library.  Did you use a sequence library with taxonomic information?");
 
-        // read out hits
-        SetResult(PeakSet);
-
     }
     catch (NCBI_NS_STD::exception& e) {
         ERR_POST(Info << "Exception caught in CSearch::Search: " << e.what());
         throw;
     }
 
-
-    return 0;
+    //return PeakSet;
 }
 
 ///
@@ -1322,8 +1391,7 @@ void CSearch::MakeModString(string& seqstring, string& modseqstring, CMSHit *MSH
     }
 }
 
-
-void CSearch::SetResult(CMSPeakSet& PeakSet)
+void CSearch::SetResult(CRef<CMSPeakSet> PeakSet)
 {
 
     double ThreshStart = GetSettings()->GetCutlo(); 
@@ -1343,8 +1411,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
     // Reset the oid set for tracking results
     SetOidSet().clear();
 
-    while(!PeakSet.GetPeaks().empty()) {
-        Peaks = *(PeakSet.GetPeaks().begin());
+    while(!PeakSet->GetPeaks().empty()) {
+        Peaks = *(PeakSet->GetPeaks().begin());
 
         // add to hitset
         CRef< CMSHitSet > HitSet(null);
@@ -1355,7 +1423,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             if (HitSet.IsNull())
                 ERR_POST(Warning << "unable to find matching hitset");
         }
-
+        
         // create a hitset if necessary
         if (HitSet.IsNull()) {
             HitSet = new CMSHitSet;
@@ -1374,8 +1442,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             _TRACE("empty set");
             HitSet->SetError(eMSHitError_notenuffpeaks);
             ScoreList.clear();
-            delete *PeakSet.GetPeaks().begin();
-            PeakSet.GetPeaks().pop_front();
+            delete *(PeakSet->GetPeaks().begin());
+            PeakSet->GetPeaks().pop_front();
             continue;
         }
 
@@ -1413,8 +1481,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             }
             else {
                 ScoreList.clear();
-                delete *PeakSet.GetPeaks().begin();
-                PeakSet.GetPeaks().pop_front();
+                delete *(PeakSet->GetPeaks().begin());
+                PeakSet->GetPeaks().pop_front();
                 continue;
             }
         }
@@ -1542,8 +1610,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
             }
         }
         ScoreList.clear();
-        delete *PeakSet.GetPeaks().begin();
-        PeakSet.GetPeaks().pop_front();
+        delete *(PeakSet->GetPeaks().begin());
+        PeakSet->GetPeaks().pop_front();
     }
     // write bioseqs to output
     WriteBioseqs();

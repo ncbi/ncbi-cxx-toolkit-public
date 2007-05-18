@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Lewis Y. Geer
+ * Authors:  Lewis Y. Geer, Douglas J. Slotta
  *
  * File Description:
  *    code to do the ms/ms search and score matches
@@ -43,6 +43,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbifloat.h>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbithr.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
@@ -111,9 +112,9 @@ typedef multimap <double, CMSHit *> TScoreList;
 //  Performs the ms/ms search
 //
 
-class NCBI_XOMSSA_EXPORT CSearch {
+class NCBI_XOMSSA_EXPORT CSearch : public CThread {
 public:
-    CSearch(void);
+    CSearch(int tNum);
     ~CSearch(void);
 
     
@@ -135,12 +136,29 @@ public:
      * @param Callback callback function for progress meter
      * @param CallbackData data passed back to callback fcn
      */
-    int Search(CRef<CMSRequest> MyRequestIn,
-               CRef<CMSResponse> MyResponseIn,
-               CRef <CMSModSpecSet> Modset,
-               CRef <CMSSearchSettings> SettingsIn,
-               TOMSSACallback Callback = 0,
-               void *CallbackData = 0);
+    void Search(CRef<CMSRequest> MyRequestIn,
+                CRef<CMSResponse> MyResponseIn,
+                CRef <CMSModSpecSet> Modset,
+                CRef <CMSSearchSettings> SettingsIn,
+                TOMSSACallback Callback = 0,
+                void *CallbackData = 0);
+
+    /**
+     *  Setup the ms/ms search
+     *
+     * @param MyRequestIn the user search params and spectra
+     * @param MyResponseIn the results of the search
+     * @param Modset list of modifications
+     * @param SettingsIn the search settings
+     * @param Callback callback function for progress meter
+     * @param CallbackData data passed back to callback fcn
+     */
+    void SetupSearch(CRef<CMSRequest> MyRequestIn,
+                     CRef<CMSResponse> MyResponseIn,
+                     CRef <CMSModSpecSet> Modset,
+                     CRef <CMSSearchSettings> SettingsIn,
+                     TOMSSACallback Callback = 0,
+                     void *CallbackData = 0);
 
 
    /**
@@ -178,10 +196,22 @@ public:
      */
     const bool GetIterative(void) const;
 
+    virtual void* Main(void);
+    virtual void OnExit(void);
+    void CopySettings(CRef <CSearch> fromObj);
+    void TestPersist(void) {
+        cout << "Still availiable!\n";
+    }
+    
+    // take hitlist for a peak and insert it into the response
+    void SetResult(CRef<CMSPeakSet> PeakSet);
+    static CRef <CMSPeakSet> SharedPeakSet;
+
 protected:
 
     // loads spectra into peaks
-    void Spectrum2Peak(CMSPeakSet& PeakSet);
+    //void Spectrum2Peak(CMSPeakSet& PeakSet);
+    void Spectrum2Peak(CRef<CMSPeakSet> PeakSet);
 
     /**
      * set up modifications from both user input and mod file data
@@ -280,9 +310,6 @@ protected:
     ///  Makes a string hashed out of the sequence plus mods
     ///
     static void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
-
-    // take hitlist for a peak and insert it into the response
-    void SetResult(CMSPeakSet& PeakSet);
 
     /**
      * write oidset to result
@@ -519,7 +546,7 @@ private:
      * maximum m/z value of all spectra precursors
      * used to bound non-specific cleavage searches
      */
-    int MaxMZ;
+    static int MaxMZ;
 
     /**
      * boolean to turn on rank scoring
@@ -541,6 +568,26 @@ private:
      */
     bool RestrictedSearch;
 
+    /**
+     * Tracks the iSearch number for all search threads
+     */
+    static int iSearchGlobal;
+    
+    /**
+     * The threadid number
+     */
+    int ThreadNum;
+    
+    /**
+     * These are so CSearch::Main() can call CSearch::Search() in a threaded run,
+     * this requires CSearch::SetupSearch() to be called before CSearch::Run()
+     */
+    CRef <CMSRequest> initRequestIn;
+    CRef <CMSResponse> initResponseIn;
+    CRef <CMSModSpecSet> initModset;
+    CRef <CMSSearchSettings> initSettingsIn;
+    TOMSSACallback initCallback;
+    void *initCallbackData;
 };
 
 ///////////////////  CSearch inline methods
