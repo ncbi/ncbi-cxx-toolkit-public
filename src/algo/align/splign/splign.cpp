@@ -335,7 +335,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
         THitRef& h = *ii;
         if(h->GetQuerySpan() < m_MinPatternHitLength) {
-            h.Reset(NULL);
+            h.Reset(0);
             continue;
         }
 
@@ -354,6 +354,36 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         prev = h->GetSubjStop();
     }
 
+    // keep short terminal hits out of the pattern
+    THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
+    const size_t min_term_len (2 * m_MinPatternHitLength);
+    bool b0 (true), b1 (true);
+    while(b0 && b1 && ii < jj) {
+
+        while(ii->IsNull() && ii < jj) ++ii;
+        while(jj->IsNull() && ii < jj) --jj;
+
+        if(ii < jj) {
+        
+            if((*ii)->GetQuerySpan() < min_term_len) {
+                ii++ -> Reset(0);
+            }
+            else {
+                b0 = false;
+            }
+        }
+
+        if(ii < jj) {
+        
+            if((*jj)->GetQuerySpan() < min_term_len) {
+                jj-- -> Reset(0);
+            }
+            else {
+                b1 = false;
+            }
+        }
+    }
+
     phitrefs->erase(remove_if(phitrefs->begin(), phitrefs->end(),
                               CHitFilter<THit>::s_PNullRef),
                     phitrefs->end());
@@ -364,9 +394,8 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
         const THitRef& h = (*phitrefs)[i];
-        const bool valid_seed ((n > 1) && (i == 0 || i + 1 == n)
-                               && (h->GetQuerySpan() <= 20));
-        if(valid_seed) {
+        const bool valid (true);
+        if(valid) {
 
             pattern0.push_back(h->GetQueryMin());
             pattern0.push_back(h->GetQueryMax());
