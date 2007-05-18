@@ -94,6 +94,16 @@ bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
             return false;
         }
         
+        // Make sure the "N*" RefSeq accessions precede the "X*" accessions.
+        if (c1->IsOther() && c2->IsOther()) {
+            const string& acc1 = c1->GetOther().GetAccession();
+            const string& acc2 = c2->GetOther().GetAccession();
+            if (acc1.find("NP_") == 0 && acc2.find("XP_") == 0)
+                return true;
+            else if (acc1.find("XP_") == 0 && acc2.find("NP_") == 0)
+                return false;
+        }
+
         // Second, use GI numerical ranking (least value first).  I
         // avoid the possibility of circular rankings by ranking GI
         // above non-GI here, although this should not happen unless
