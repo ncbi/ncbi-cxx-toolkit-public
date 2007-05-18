@@ -124,7 +124,7 @@ public:
     DB_ENV* GetEnv() { return m_Env; }
 
     /// Set cache size for the environment.
-    void SetCacheSize(unsigned int cache_size);
+    void SetCacheSize(Uint8 cache_size);
     
     /// Start transaction (DB_ENV->txn_begin)
     /// 

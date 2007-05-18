@@ -326,7 +326,7 @@ public:
     /// @param cache_name  Cache instance name
     /// @param lm           Locking mode, protection against using the
     ///                     cache from multiple applications
-    /// @param cache_size   Berkeley DB memory cache settings
+    /// @param cache_ram_size Berkeley DB memory cache settings
     /// @param log_mem_size Size of in memory transaction log
     ///
     /// @sa OpenReadOnly
@@ -334,7 +334,7 @@ public:
     void Open(const string&  cache_path,
               const string&  cache_name,
               ELockMode    lm = eNoLock,
-              unsigned int cache_ram_size = 0,
+              Uint8        cache_ram_size = 0,
               ETRansact    use_trans = eUseTrans,
               unsigned int log_mem_size = 0);
 
@@ -690,26 +690,6 @@ private:
 private:
     CBDB_Cache(const CBDB_Cache&);
     CBDB_Cache& operator=(const CBDB_Cache);
-private:
-
-    /// Derivative from general purpose transaction
-    /// Connects all cache tables automatically
-    ///
-    /// @internal
-/*
-    class CCacheTransaction : public CBDB_Transaction
-    {
-    public:
-        CCacheTransaction(CBDB_Cache& cache)
-            : CBDB_Transaction(*(cache.m_Env),
-              CBDB_Transaction::eEnvDefault,
-              CBDB_Transaction::eNoAssociation)
-        {
-            cache.m_CacheAttrDB->SetTransaction(this);
-            cache.m_BLOB_SplitStore->SetTransaction(this);
-        }
-    };
-*/
 
 public:
 
@@ -739,7 +719,6 @@ private:
 
     bool                    m_JoinedEnv;    ///< Joined environment
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
-    //SCacheBLOB_DB*          m_CacheBLOB_DB; ///< Cache BLOB storage
     TSplitStore*            m_BLOB_SplitStore;///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     mutable CFastMutex      m_DB_Lock;      ///< Database lock
@@ -750,7 +729,6 @@ private:
     unsigned                m_MaxTimeout;   ///< Maximum time to live
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
-//    EPageSize               m_PageSizeHint; ///< Suggested page size
     EWriteSyncMode          m_WSync;        ///< Write syncronization
     /// Number of records to process in Purge() (with locking)
     unsigned                m_PurgeBatchSize;

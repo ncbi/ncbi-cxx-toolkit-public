@@ -1088,7 +1088,7 @@ void CBDB_Cache::SetOverflowLimit(unsigned limit)
 void CBDB_Cache::Open(const string& cache_path,
                       const string& cache_name,
                       ELockMode     lm,
-                      unsigned int  cache_ram_size,
+                      Uint8         cache_ram_size,
                       ETRansact     use_trans,
                       unsigned int  log_mem_size)
 {
@@ -3659,24 +3659,24 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
         lock = CBDB_Cache::ePidLock;
     }
-    unsigned overflow_limit =
+    unsigned overflow_limit = (unsigned)
         GetParamDataSize(params, kCFParam_overflow_limit, false, 0);
     if (overflow_limit) {
         drv->SetOverflowLimit(overflow_limit);
     }
 
-    unsigned mem_size =
+    Uint8 mem_size =
         GetParamDataSize(params, kCFParam_mem_size, false, 0);
 
-    unsigned log_mem_size =
+    Uint8 log_mem_size =
         GetParamDataSize(params, kCFParam_log_mem_size, false, 0);
 
-    unsigned checkpoint_bytes =
+    unsigned checkpoint_bytes = (unsigned)
         GetParamDataSize(params, kCFParam_checkpoint_bytes,
                          false, 24 * 1024 * 1024);
     drv->SetCheckpoint(checkpoint_bytes);
 
-    unsigned log_file_max =
+    unsigned log_file_max = (unsigned)
         GetParamDataSize(params, kCFParam_log_file_max,
                          false, 200 * 1024 * 1024);
     drv->SetLogFileMax(log_file_max);
@@ -3694,7 +3694,7 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamInt(params, kCFParam_ttl_prolong, false, 0);
     drv->SetTTL_Prolongation(ttl_prolong);
 
-    unsigned max_blob_size =
+    unsigned max_blob_size =(unsigned)
         GetParamDataSize(params, kCFParam_max_blob_size, false, 0);
     drv->SetMaxBlobSize(max_blob_size);
 
@@ -3730,12 +3730,12 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
 
 
     if (ro) {
-        drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
+        drv->OpenReadOnly(path.c_str(), name.c_str(), (unsigned)mem_size);
     } else {
         drv->Open(path, name,
                   lock, mem_size,
                   use_trans ? CBDB_Cache::eUseTrans : CBDB_Cache::eNoTrans,
-                  log_mem_size);
+                  (unsigned)log_mem_size);
     }
 
     if (!drv->IsJoinedEnv()) {

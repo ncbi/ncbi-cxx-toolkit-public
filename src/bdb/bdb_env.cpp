@@ -112,9 +112,15 @@ void CBDB_Env::SetTransactionSync(CBDB_Transaction::ETransSync sync)
 }
 
 
-void CBDB_Env::SetCacheSize(unsigned int cache_size)
+void CBDB_Env::SetCacheSize(Uint8 cache_size)
 {
-    int ret = m_Env->set_cachesize(m_Env, 0, cache_size, 1);
+    unsigned cache_g = cache_size / 1073741824;  // gigabyte
+    if (cache_g) {
+        cache_size = cache_size % 1073741824;
+    }
+    unsigned ncache = 1; // number of caches
+    int ret = 
+        m_Env->set_cachesize(m_Env, cache_g, (unsigned)cache_size, ncache);
     BDB_CHECK(ret, 0);
 }
 

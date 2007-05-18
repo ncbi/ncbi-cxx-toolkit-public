@@ -149,7 +149,7 @@ protected:
     /// Utility function to get an integer of parameter tree
     /// Throws an exception when mandatory parameter is missing
     /// (or returns the deafult value)
-    unsigned int
+    Uint8
     GetParamDataSize(const TPluginManagerParamTree* params,
                 const string&                  param_name,
                 bool                           /* mandatory */,
