@@ -2,7 +2,7 @@
 
 APP = bdb_dump
 SRC = bdb_dumper
-LIB = bdb $(COMPRESS_LIBS) xutil xncbi
-LIBS = $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+LIB = bdb xutil xncbi
+LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
