@@ -112,15 +112,15 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 {
     x_CheckParameters(data);
 
-    const size_t N1 = data->m_len1;
-    const size_t N2 = data->m_len2;
-    const size_t fullrow = 2*m_band + 1;
+    const size_t N1 (data->m_len1);
+    const size_t N2 (data->m_len2);
+    const size_t fullrow (2*m_band + 1);
     vector<TScore> stl_rowV (N2), stl_rowF (N2);
-    TScore  * rowV = &stl_rowV.front();
-    TScore  * rowF = &stl_rowF.front();
-    TScore* pV = rowV - 1;
-    const char* seq1 = m_Seq1 + data->m_offset1;
-    const char* seq2 = m_Seq2 + data->m_offset2;
+    TScore  * rowV (&stl_rowV.front());
+    TScore  * rowF (&stl_rowF.front());
+    TScore* pV (rowV - 1);
+    const char* seq1 (m_Seq1 + data->m_offset1);
+    const char* seq2 (m_Seq2 + data->m_offset2);
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
     
     m_terminate = false;
@@ -133,12 +133,12 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 	}
     }
     
-    vector<unsigned char> stl_bm (N1*fullrow, kVoid);
-    unsigned char* backtrace_matrix = &stl_bm[0];
+    vector<Uint1> stl_bm (N1*fullrow, kVoid);
+    Uint1* backtrace_matrix (&stl_bm[0]);
 
     TScore V = 0;
     TScore E = kInfMinus, V2 = kInfMinus, G, n0;
-    unsigned char tracer = 0;
+    Uint1 tracer = 0;
 
     const int ibeg ((m_Shift >= 0 && m_Shift > int(m_band))? 
 		    (m_Shift - m_band): 0);
@@ -193,7 +193,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                 pV[j] = V;
             }
             else {
-                G = sm[ci][(unsigned char)seq2[j]];
+                G = sm[ci][(Uint1)seq2[j]];
                 if(i > 0) G += V1;                
             }
 
@@ -343,7 +343,7 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
     }
 }
 
-void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
+void CBandAligner::x_DoBackTrace(const Uint1* backtrace,
                                  CNWAligner::SAlignInOut* data)
 {
     const size_t N1 = data->m_len1;
@@ -394,7 +394,7 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
             break;
         }
 
-        unsigned char Key = backtrace[k];
+        Uint1 Key = backtrace[k];
 
         if(Key == kVoid) {
             NCBI_THROW(CAlgoAlignException, eInternal, 
