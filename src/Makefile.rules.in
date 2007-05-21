@@ -24,20 +24,20 @@ requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 
 ###  Header precompilation
-@GCCPCH@pchdir = $(incdir)/ncbi_pch.hpp.gch
-@GCCPCH@pchsrc = $(includedir0)/ncbi_pch.hpp
+@GCCPCH@pchdir = $(incdir)/common/ncbi_pch_impl.hpp.gch
+@GCCPCH@pchsrc = $(includedir0)/common/ncbi_pch_impl.hpp
 @GCCPCH@$(pchdir)/normal: $(pchsrc)
 @GCCPCH@	mkdir -p $(pchdir)
-@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(ORIG_CPPFLAGS) $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 @GCCPCH@$(pchdir)/dll: $(pchsrc)
 @GCCPCH@	mkdir -p $(pchdir)
-@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(ORIG_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 @GCCPCH@$(pchdir)/fast: $(pchsrc)
 @GCCPCH@	mkdir -p $(pchdir)
-@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(ORIG_CPPFLAGS) $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 @GCCPCH@$(pchdir)/fastdll: $(pchsrc)
 @GCCPCH@	mkdir -p $(pchdir)
-@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
+@GCCPCH@	$(CXX_WRAPPER) $(ORIG_CXX) -xc++-header @f_compile@ $(FAST_CXXFLAGS) $(CXXFLAGS_DLL) $(ORIG_CPPFLAGS) -DNCBI_PCH__HPP= $(pchsrc) @f_outobj@$@ $(CXX_FILTER)
 
 ### Header exporting, SSS-style.
 # NB: export-headers explicitly uses cp rather than $(bincopy) because

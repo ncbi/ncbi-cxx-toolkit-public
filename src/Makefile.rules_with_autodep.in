@@ -32,7 +32,7 @@ ifdef GCCPCH
    PCHMODE = normal
   endif
  endif
- FIXPCH = -e 's%\$$(wildcard \$$(includedir)/\(ncbi_pch\.hpp\))%$$(incdir)/\1.gch/$(PCHMODE)%g'
+ FIXPCH = -e 's%\$$(wildcard \$$(includedir)/ncbi_pch\.hpp)%& $$(pchdir)/$(PCHMODE)%g'
 endif
 
 
@@ -45,9 +45,10 @@ D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' $(FIXPCH) > $@_ \
 	  &&  test -s $@_  &&  mv -f $@_ $@
-D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
+	 $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	 | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
-	       -e 's%\$$(wildcard ncbi_pch@obj_ext@) *:%$$(incdir)/ncbi_pch.hpp.gch/$(PCHMODE) $@ :%g' \
+	       -e 's%\$$(wildcard ncbi_pch_impl@obj_ext@) *:%$$(pchdir)/$(PCHMODE) $$(builddir)/corelib/ncbi_pch_impl.d.$(PCHMODE) :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' > $@_ \
@@ -73,7 +74,7 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
 	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
                   "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
-$(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE): $(pchsrc)
+$(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
 
 .d .o:
@@ -100,6 +101,6 @@ ifdef SOURCES
  -include $(SOURCES:=.d)
 endif
 ifdef GCCPCH
- include $(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE)
+ include $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE)
 endif
 endif

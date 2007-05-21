@@ -11,4 +11,4 @@ clean clean_p clean_r:
 
 purge purge_p purge_r:
 	-$(RMDIR) $(pchdir)
-	-$(RM) ncbi_pch.hpp.d.*
+	-$(RM) ncbi_pch_impl.hpp.d.*
