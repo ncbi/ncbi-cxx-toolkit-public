@@ -391,8 +391,11 @@ special  CAJ30479           embl_tpa_prot
 special  CAJ30481-CAJ30484  embl_tpa_prot
 special  CAJ31324           embl_tpa_prot
 special  CAJ33891           embl_tpa_prot
+special  CAJ38499           embl_tpa_prot
+special  CAJ40614           embl_tpa_prot
 special  CAJ43786-CAJ43809  embl_tpa_prot
 special  CAJ43920           embl_tpa_prot
+special  CAJ51090           embl_tpa_prot
 special  CAJ55345           embl_tpa_prot
 special  CAJ55730-CAJ55733  embl_tpa_prot
 special  CAJ55745-CAJ55747  embl_tpa_prot
@@ -415,4 +418,4 @@ special  CAM06633           embl_tpa_prot
 special  CAM12311           embl_tpa_prot
 # Err on the side of caution on as yet unassigned IDs, and hope that
 # there's not *too* much more backfilling.
-special  CAM28538-CZZ99999  unreserved_prot
+special  CAM92334-CZZ99999  unreserved_prot
