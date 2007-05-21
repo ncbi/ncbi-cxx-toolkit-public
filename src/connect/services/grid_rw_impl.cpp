@@ -186,7 +186,7 @@ void CStringOrBlobStorageReader::x_Init(size_t* data_size,
         //        }
     } else if (NStr::CompareCase(m_Data, 0, s_FlagsLen, s_Flags[0]) == 0) {
         m_CurPos = m_Data.begin() + s_FlagsLen;
-        if (data_size) *data_size = m_Data.size();
+        if (data_size) *data_size = m_Data.size() - s_FlagsLen;
     } else {
         if (!m_Data.empty())
             NCBI_THROW(CStringOrBlobStorageRWException, eInvalidFlag,
