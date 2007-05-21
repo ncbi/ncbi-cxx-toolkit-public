@@ -483,6 +483,8 @@ private:
     void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
                                      TTSE_MatchSet& match,
                                      CBioseq_ScopeInfo& binfo);
+    void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
+                                     CBioseq_ScopeInfo& binfo);
 
     void x_LockMatchSet(TTSE_LockMatchSet& lock,
                         const TTSE_MatchSet& match);

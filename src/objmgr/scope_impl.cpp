@@ -73,6 +73,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#define EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1973,6 +1974,11 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
             else {
                 x_LockMatchSet(lock, *binfo->m_BioseqAnnotRef_Info);
             }
+#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+            if ( binfo->x_GetTSE_ScopeInfo().CanBeEdited() ) {
+                x_GetTSESetWithBioseqAnnots(lock, *binfo);
+            }
+#endif
         }
         else {
             CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
@@ -2015,6 +2021,11 @@ CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
         else {
             x_LockMatchSet(lock, *binfo->m_BioseqAnnotRef_Info);
         }
+#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+        if ( binfo->x_GetTSE_ScopeInfo().CanBeEdited() ) {
+            x_GetTSESetWithBioseqAnnots(lock, *binfo);
+        }
+#endif
     }
     return lock;
 }
@@ -2071,12 +2082,33 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
         x_GetTSESetWithOrphanAnnots(lock, match, ids, &ds_info);
     }
 
+#ifdef EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
+    if ( binfo.x_GetTSE_ScopeInfo().CanBeEdited() )
+        return;
+#endif
+
     // datasource annotations on all ids of Bioseq
     // add external annots
     TBioseq_Lock bioseq = binfo.GetLock(null);
     TTSE_LockMatchSet_DS ds_lock =
         ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
                                      bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock);
+    x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
+}
+
+
+void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
+                                              CBioseq_ScopeInfo& binfo)
+{
+    CDataSource_ScopeInfo& ds_info = binfo.x_GetTSE_ScopeInfo().GetDSInfo();
+    CDataSource& ds = ds_info.GetDataSource();
+    // datasource annotations on all ids of Bioseq
+    // add external annots
+    TBioseq_Lock bioseq = binfo.GetLock(null);
+    TTSE_LockMatchSet_DS ds_lock =
+        ds.GetTSESetWithBioseqAnnots(bioseq->GetObjectInfo(),
+                                     bioseq->x_GetTSE_ScopeInfo().m_TSE_Lock);
+    CBioseq_ScopeInfo::TTSE_MatchSet match;
     x_AddTSESetWithAnnots(lock, match, ds_lock, ds_info);
 }
 
