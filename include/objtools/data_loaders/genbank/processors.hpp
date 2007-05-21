@@ -238,7 +238,9 @@ public:
                   CWriter* writer,
                   const CID2_Reply_Data& data) const;
 
-    static void x_FixDataFormat(const CID2_Reply_Data& data);
+    static void x_FixDataFormat(CID2_Reply_Data& data);
+    static void x_FixCompression(CID2_Reply_Data& data);
+
     static CObjectIStream* x_OpenDataStream(const CID2_Reply_Data& data);
     static void x_ReadData(const CID2_Reply_Data& data,
                            const CObjectInfo& object,

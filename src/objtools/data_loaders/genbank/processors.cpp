@@ -83,6 +83,8 @@ NCBI_PARAM_DEF_EX(bool, GENBANK, USE_MEMORY_POOL, true,
                   eParam_NoThread, GENBANK_USE_MEMORY_POOL);
 NCBI_PARAM_DEF_EX(int, GENBANK, READER_STATS, 0,
                   eParam_NoThread, GENBANK_READER_STATS);
+NCBI_PARAM_DEF_EX(bool, GENBANK, CACHE_RECOMPRESS, true,
+                  eParam_NoThread, GENBANK_CACHE_RECOMPRESS);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -164,6 +166,36 @@ namespace {
         TOctetStringSequence::const_iterator m_CurVec;
         size_t m_CurPos;
         size_t m_CurSize;
+    };
+    class COSSWriter : public IWriter
+    {
+    public:
+        typedef vector<char> TOctetString;
+        typedef list<TOctetString*> TOctetStringSequence;
+
+        COSSWriter(TOctetStringSequence& out)
+            : m_Output(out)
+            {
+            }
+        
+        virtual ERW_Result Write(const void* buffer,
+                                 size_t  count,
+                                 size_t* written)
+            {
+                const char* data = static_cast<const char*>(buffer);
+                m_Output.push_back(new TOctetString(data, data+count));
+                if ( written ) {
+                    *written = count;
+                }
+                return eRW_Success;
+            }
+        virtual ERW_Result Flush(void)
+            {
+                return eRW_Success;
+            }
+
+    private:
+        TOctetStringSequence& m_Output;
     };
 }
 
@@ -334,6 +366,13 @@ bool CProcessor::TrySNPTable(void)
 static bool s_UseMemoryPool(void)
 {
     static NCBI_PARAM_TYPE(GENBANK, USE_MEMORY_POOL) s_Value;
+    return s_Value.Get();
+}
+
+
+static bool s_CacheRecompress(void)
+{
+    static NCBI_PARAM_TYPE(GENBANK, CACHE_RECOMPRESS) s_Value;
     return s_Value.Get();
 }
 
@@ -1304,7 +1343,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         CWriter* writer = GetWriter(result);
         if ( writer ) {
             if ( data.GetData_format() == data.eData_format_asn_binary &&
-                 data.GetData_compression() == data.eData_compression_none ) {
+                 data.GetData_compression() == data.eData_compression_none &&
+                 !s_CacheRecompress() ) {
                 // can save as simple Seq-entry
                 const CProcessor_St_SE* prc =
                     dynamic_cast<const CProcessor_St_SE*>
@@ -1416,6 +1456,9 @@ void CProcessor_ID2::SaveData(CReaderRequestResult& result,
     if ( !stream ) {
         return;
     }
+    if ( s_CacheRecompress() ) {
+        x_FixCompression(const_cast<CID2_Reply_Data&>(data));
+    }
     {{
         CObjectOStreamAsnBinary obj_stream(**stream);
         obj_stream << data;
@@ -1424,27 +1467,45 @@ void CProcessor_ID2::SaveData(CReaderRequestResult& result,
 }
 
 
-void CProcessor_ID2::x_FixDataFormat(const CID2_Reply_Data& data)
+void CProcessor_ID2::x_FixDataFormat(CID2_Reply_Data& data)
 {
     // TEMP: TODO: remove this
     if ( data.GetData_format() == CID2_Reply_Data::eData_format_xml &&
          data.GetData_compression()==CID2_Reply_Data::eData_compression_gzip ){
         // FIX old/wrong split fields
-        const_cast<CID2_Reply_Data&>(data)
-            .SetData_format(CID2_Reply_Data::eData_format_asn_binary);
-        const_cast<CID2_Reply_Data&>(data)
-            .SetData_compression(CID2_Reply_Data::eData_compression_nlmzip);
+        data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
+        data.SetData_compression(CID2_Reply_Data::eData_compression_nlmzip);
         if ( data.GetData_type() > CID2_Reply_Data::eData_type_seq_entry ) {
-            const_cast<CID2_Reply_Data&>(data)
-                .SetData_type(data.GetData_type()+1);
+            data.SetData_type(data.GetData_type()+1);
         }
     }
 }
 
 
+void CProcessor_ID2::x_FixCompression(CID2_Reply_Data& data)
+{
+    if (data.GetData_compression() != CID2_Reply_Data::eData_compression_none)
+        return;
+    
+    CID2_Reply_Data new_data;
+    {{
+        COSSWriter writer(new_data.SetData());
+        CWStream wstream(&writer, 0, 0, 0);
+        CCompressionOStream stream(wstream,
+                                   new CZipStreamCompressor,
+                                   CCompressionIStream::fOwnProcessor);
+        ITERATE ( CID2_Reply_Data::TData, it, data.GetData() ) {
+            stream.write(&(**it)[0], (*it)->size());
+        }
+    }}
+    data.SetData().swap(new_data.SetData());
+    data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
+}
+
+
 CObjectIStream* CProcessor_ID2::x_OpenDataStream(const CID2_Reply_Data& data)
 {
-    x_FixDataFormat(data);
+    x_FixDataFormat(const_cast<CID2_Reply_Data&>(data));
     ESerialDataFormat format;
     switch ( data.GetData_format() ) {
     case CID2_Reply_Data::eData_format_asn_binary:
@@ -1615,6 +1676,10 @@ void CProcessor_ID2AndSkel::SaveDataAndSkel(CReaderRequestResult& result,
         (OpenStream(writer, result, blob_id, chunk_id, this));
     if ( !stream ) {
         return;
+    }
+    if ( s_CacheRecompress() ) {
+        x_FixCompression(const_cast<CID2_Reply_Data&>(split));
+        x_FixCompression(const_cast<CID2_Reply_Data&>(skel));
     }
     {{
         CObjectOStreamAsnBinary obj_stream(**stream);
