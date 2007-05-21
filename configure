@@ -4108,7 +4108,7 @@ elif test "$CCC" = "yes" ; then
 else
    case "$host_os" in
     solaris* )
-      compiler_ver="`$real_CC -V 2>&1`"
+      compiler_ver="`$CXX -V 2>&1`"
       case "$compiler_ver" in
         *WorkShop*Compilers*5\.0 )
           compiler="WorkShop5"
@@ -4843,12 +4843,12 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
               DEF_FAST_FLAGS="$DEF_FAST_FLAGS -xtarget=ultra"
               ;;
            *:i?86)
-              case "$compiler_version" in
-                5[0-4]*)
+              case "$compiler_ver" in
+                *5.[0-4]*)
                   # Work around a WorkShop standard library bug.
                   DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
                   ;;
-                5[89]*)
+                *5.8*2006/* | *5.9*)
                   # Work around optimizer bugs (-O = -xO3).
                   subst='s/[ 	]-x*O[1-9]*//g'
                   CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
