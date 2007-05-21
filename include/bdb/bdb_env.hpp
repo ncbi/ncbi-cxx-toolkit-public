@@ -310,6 +310,15 @@ private:
 
 };
 
+
+/// Run Berkeley DB recovery in private environment.
+/// Derived from db_recover.
+///
+NCBI_BDB_EXPORT
+void BDB_RecoverEnv(const string& path,
+                    bool          fatal_recover);
+
+
 /* @} */
 
 END_NCBI_SCOPE

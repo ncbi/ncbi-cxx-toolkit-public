@@ -114,7 +114,7 @@ void CBDB_Env::SetTransactionSync(CBDB_Transaction::ETransSync sync)
 
 void CBDB_Env::SetCacheSize(Uint8 cache_size)
 {
-    unsigned cache_g = cache_size / 1073741824;  // gigabyte
+    unsigned cache_g = cache_size / (Uint8)1073741824;  // gigabyte
     if (cache_g) {
         cache_size = cache_size % 1073741824;
     }
@@ -831,6 +831,39 @@ void CBDB_Env::MpMaxWrite(int maxwrite, int maxwrite_sleep)
     int ret = m_Env->set_mp_max_write(m_Env, maxwrite, maxwrite_sleep);
     BDB_CHECK(ret, "DB_ENV::set_mp_max_write");
 }
+
+
+
+void BDB_RecoverEnv(const string& path,
+                    bool          fatal_recover)
+{
+    DB_ENV  *dbenv;
+    int      ret;
+    if ((ret = db_env_create(&dbenv, 0)) != 0) {
+        string msg = 
+            "Cannot create environment " + string(db_strerror(ret));
+        BDB_THROW(eInvalidOperation, msg);
+    }
+
+    dbenv->set_errfile(dbenv, stderr);
+    //if (verbose)
+    //  (void)dbenv->set_verbose(dbenv, DB_VERB_RECOVERY, 1);
+
+    u_int32_t flags = 0;
+    flags |= DB_CREATE | DB_INIT_LOG |
+           DB_INIT_MPOOL | DB_INIT_TXN | DB_USE_ENVIRON;
+    flags |= fatal_recover ? DB_RECOVER_FATAL : DB_RECOVER;
+    flags |= DB_PRIVATE;
+
+    if ((ret = dbenv->open(dbenv, path.c_str(), flags, 0)) != 0) {
+        dbenv->close(dbenv, 0);
+        string msg = 
+            "Cannot open environment " + string(db_strerror(ret));
+        BDB_THROW(eInvalidOperation, msg);
+    }
+    ret = dbenv->close(dbenv, 0);
+}
+
 
 
 END_NCBI_SCOPE
