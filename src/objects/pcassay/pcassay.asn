@@ -138,7 +138,8 @@ PC-AssayDescription ::= SEQUENCE {
     -- Additional Information
     pub               SEQUENCE OF Pub              OPTIONAL, -- Depositor provided publications for this assay
     revision          INTEGER                      OPTIONAL,  -- Revision identifier for textual description
-    target            SEQUENCE OF PC-AssayTargetInfo   OPTIONAL -- Target information
+    target            SEQUENCE OF PC-AssayTargetInfo   OPTIONAL, -- Target information
+    activity-outcome-method  INTEGER               OPTIONAL -- 0: other; 1: primary; 2: dose response; 3: probe summary 
 }
 
 
