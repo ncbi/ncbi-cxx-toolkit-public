@@ -1788,7 +1788,6 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
             options.chunk_size, options.chunk_overlap, options.report_level );
     TOffsetData offset_data( subject_map, options );
 
-    input.rewind( start );
     TSeqNum i = start;
 
     if( i >= stop ) {
@@ -1823,6 +1822,7 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
                 sizeof( TWord )*offset_data.total();
 
             if( total > MEGABYTE*options.max_index_size ) {
+                input.putback();
                 subject_map.RollBack();
                 offset_data.Update();
                 subject_map.Commit();

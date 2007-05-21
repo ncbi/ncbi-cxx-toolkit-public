@@ -119,14 +119,13 @@ class NCBI_XBLAST_EXPORT CSequenceIStream
         */
         virtual CRef< TSeqData > next() = 0;
 
-        /** Set the stream position.
+        /** Roll back to the start of the previousely read sequence.
             (To be implemented by derived classes.).
             If a derived class does not support this operation it
             should throw CSequenceIStream_Exception with error code
             eOpNotSupported.
-            @param pos new stream position
         */
-        virtual void rewind( TStreamPos pos ) = 0;
+        virtual void putback() = 0;
 };
 
 END_SCOPE( blastdbindex )

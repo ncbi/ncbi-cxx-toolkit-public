@@ -64,10 +64,8 @@ CRef< CSequenceIStream::TSeqData > CSequenceIStreamBlastDB::next()
 }
 
 //------------------------------------------------------------------------------
-void CSequenceIStreamBlastDB::rewind( TStreamPos pos )
-{
-    oid_ = (CSeqDB::TOID)pos;
-}
+void CSequenceIStreamBlastDB::putback()
+{ if( oid_ > 0 ) --oid_; }
 
 END_SCOPE( blastdbindex )
 END_NCBI_SCOPE

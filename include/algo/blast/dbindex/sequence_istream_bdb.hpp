@@ -60,10 +60,8 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamBlastDB : public CSequenceIStream
         */
         virtual CRef< TSeqData > next();
 
-        /** Adjust the sequence counter within the stream.
-            @param pos  [I]     OID of the sequence to read next
-        */
-        virtual void rewind( TStreamPos pos );
+        /** Roll back to the start of the previous sequence. */
+        virtual void putback();
 
     private:
 

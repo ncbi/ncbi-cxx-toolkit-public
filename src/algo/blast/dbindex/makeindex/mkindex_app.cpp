@@ -67,7 +67,7 @@ void CMkIndexApplication::Init()
     auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
     arg_desc->SetUsageContext( 
             GetArguments().GetProgramBasename(), USAGE_LINE );
-    arg_desc->AddKey( 
+    arg_desc->AddOptionalKey( 
             "input", "input_file_name", "input file name",
             CArgDescriptions::eString );
     arg_desc->AddKey(
@@ -134,11 +134,20 @@ int CMkIndexApplication::Run()
     string iformat = GetArgs()["iformat"].AsString();
 
     if( iformat == "fasta" ) {
-        seqstream = new CSequenceIStreamFasta( 
-                ( GetArgs()["input"].AsString() ) );
+        if( GetArgs()["input"] ) {
+            seqstream = new CSequenceIStreamFasta( 
+                    ( GetArgs()["input"].AsString() ) );
+        }
+        else seqstream = new CSequenceIStreamFasta( NcbiCin );
     }else if( iformat == "blastdb" ) {
-        seqstream = new CSequenceIStreamBlastDB(
-                ( GetArgs()["input"].AsString() ) );
+        if( GetArgs()["input"] ) {
+            seqstream = new CSequenceIStreamBlastDB(
+                    ( GetArgs()["input"].AsString() ) );
+        }
+        else {
+            ERR_POST( Error << "input format 'blastdb' requires -input option" );
+            exit( 1 );
+        }
     }else {
         ASSERT( 0 );
     }

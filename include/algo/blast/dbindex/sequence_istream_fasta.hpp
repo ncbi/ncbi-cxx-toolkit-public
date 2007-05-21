@@ -55,7 +55,9 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamFasta : public CSequenceIStream
         /** Starting positions of sequences withing the FASTA stream. */
         std::vector< pos_type > seq_positions_; 
 
-        std::string name_; /**< FASTA file name, if available. */
+        std::string name_;       /**< FASTA file name, if available. */
+        CRef< TSeqData > cache_; /**< Last read sequence. */
+        bool use_cache_;         /**< Next time read from cache. */
 
     public:
 
@@ -85,10 +87,10 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamFasta : public CSequenceIStream
         */
         virtual CRef< TSeqData > next();
 
-        /** Rewind the sequence stream to the start of the given sequence.
-            @sa CSequenceIStream::rewind()
+        /** Roll back to the start of the previous sequence.
+            @sa CSequenceIStream::putback()
         */
-        virtual void rewind( TStreamPos pos );
+        virtual void putback();
 };
 
 END_SCOPE( blastdbindex )

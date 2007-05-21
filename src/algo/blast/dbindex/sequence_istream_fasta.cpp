@@ -54,21 +54,19 @@ static const objects::TReadFastaFlags READ_FASTA_FLAGS =
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
         const std::string & name , size_t pos )
-    : stream_allocated_( false ), istream_( 0 ), curr_seq_( 0 ), name_( name )
+    : stream_allocated_( false ), istream_( 0 ), curr_seq_( 0 ), name_( name ),
+      cache_( null ), use_cache_( false )
 {
     istream_ = new CNcbiIfstream( name.c_str() );
     stream_allocated_ = true;
-    seq_positions_.push_back( 0 );
-    rewind( pos );
 }
 
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
         CNcbiIstream & input_stream, size_t pos )
-    : stream_allocated_( false ), istream_( &input_stream ), curr_seq_( 0 )
+    : stream_allocated_( false ), istream_( &input_stream ), curr_seq_( 0 ),
+      cache_( null ), use_cache_( false )
 {
-    seq_positions_.push_back( 0 );
-    rewind( pos );
 }
 
 //------------------------------------------------------------------------------
@@ -82,45 +80,24 @@ CSequenceIStreamFasta::~CSequenceIStreamFasta()
 //------------------------------------------------------------------------------
 CRef< CSequenceIStream::TSeqData > CSequenceIStreamFasta::next()
 {
+    if( use_cache_ ) {
+        use_cache_ = false;
+        return cache_;
+    }
+
     CRef< TSeqData > result( new TSeqData );
 
     try {
         result->seq_entry_ = ncbi::objects::ReadFasta( *istream_, READ_FASTA_FLAGS, 0, &result->mask_locs_ );
     }catch( ... ) {}
 
-    if( result->seq_entry_.GetPointerOrNull() != 0 ) {
-        ++curr_seq_;
-
-        if( curr_seq_ == seq_positions_.size() ) {
-            pos_type cpos = istream_->tellg();
-            seq_positions_.push_back( cpos );
-        }
-    }
-
+    cache_ = result;
     return result;
 }
 
 //------------------------------------------------------------------------------
-void CSequenceIStreamFasta::rewind( TStreamPos pos )
-{
-    if( !*istream_ && stream_allocated_ ) {
-            delete istream_;
-            istream_ = new CNcbiIfstream( name_.c_str() );
-    }
-
-    if( !*istream_ ) {
-        NCBI_THROW( CSequenceIStream_Exception, 
-                eOpNotSupported, "can not rewind" );
-    }
-
-    if( pos >= seq_positions_.size() ) {
-        while( next() && pos >= seq_positions_.size() );
-    }
-    else {
-        istream_->seekg( seq_positions_[pos] );
-        curr_seq_ = pos;
-    }
-}
+void CSequenceIStreamFasta::putback()
+{ use_cache_ = true; }
 
 END_SCOPE( blastdbindex )
 END_NCBI_SCOPE
