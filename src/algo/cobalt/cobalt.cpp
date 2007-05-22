@@ -194,7 +194,7 @@ CMultiAligner::ComputeTree()
 
     Blast_KarlinBlk karlin_blk;
     if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk, -m_GapOpen,
-                                -m_GapExtend, 32768, m_MatrixName) != 0) {
+                                -m_GapExtend, m_MatrixName) != 0) {
         NCBI_THROW(blast::CBlastException, eInvalidArgument,
                      "Cannot generate Karlin block");
     }
