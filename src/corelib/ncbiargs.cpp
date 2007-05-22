@@ -72,10 +72,11 @@ static const string s_ExtraName("....");
 
 /////////////////////////////////////////////////////////////////////////////
 
+inline
 string s_ArgExptMsg(const string& name, const string& what, const string& attr)
 {
     return string("Argument \"") + (name.empty() ? s_ExtraName : name) +
-        "\". " + what + ":  `" + attr + "'";
+        "\". " + what + (attr.empty() ? attr : ":  `" + attr + "'");
 }
 
 
@@ -2065,7 +2066,8 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     set<string> exclude;
     set<string> require;
     ITERATE(TDependencies, dep, m_Dependencies) {
-        if ( !args.Exist(dep->first) ) {
+        // Skip missing and empty arguments
+        if (!args.Exist(dep->first)  ||  !args[dep->first]) {
             continue;
         }
         switch ( dep->second.m_Dep ) {
@@ -2073,7 +2075,8 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
             require.insert(dep->second.m_Arg);
             break;
         case eExcludes:
-            if ( args.Exist(dep->second.m_Arg) ) {
+            // Excluded exists and is not empty?
+            if (args.Exist(dep->second.m_Arg)  &&  args[dep->second.m_Arg]) {
                 NCBI_THROW(CArgException, eConstraint,
                     s_ArgExptMsg(dep->second.m_Arg,
                     "Conflict with argument", dep->first));
