@@ -231,17 +231,9 @@ public:
     virtual void OnOverflow(void);
     virtual void OnMessage(BUF buffer);
 
-    void WriteMsg(const char*   prefix, 
-                  const char*   msg,
-                  bool          comm_control = false,
-                  bool          msg_size_control = true);
     void WriteMsg(const char*   prefix,
                   const string& msg = kEmptyStr,
-                  bool          comm_control = false,
-                  bool          msg_size_control = true)
-    {
-        WriteMsg(prefix, msg.c_str(), comm_control, msg_size_control);
-    }
+                  bool          comm_control = false);
 
 private:
     // Message processing phases
@@ -1599,7 +1591,7 @@ void CNetScheduleHandler::ProcessStatistics()
         st_str += ": ";
         st_str += NStr::UIntToString(count);
 
-        WriteMsg("OK:", st_str, true, false);
+        WriteMsg("OK:", st_str, true);
 
         TNSBitVector::statistics bv_stat;
         m_Queue->StatusStatistics(st, &bv_stat);
@@ -1649,7 +1641,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg("OK:", stat_str, true, false);
+            WriteMsg("OK:", stat_str, true);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1666,7 +1658,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg("OK:", stat_str, true, false);
+            WriteMsg("OK:", stat_str, true);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1683,7 +1675,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg("OK:", stat_str, true, false);
+            WriteMsg("OK:", stat_str, true);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1725,7 +1717,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg("OK:", stat_str, true, false);
+            WriteMsg("OK:", stat_str, true);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1741,7 +1733,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg("OK:", stat_str, true, false);
+            WriteMsg("OK:", stat_str, true);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1757,7 +1749,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         char* stat_str = ostr.str();
         try {
-            WriteMsg("OK:", stat_str, true, false);
+            WriteMsg("OK:", stat_str, true);
         } catch (...) {
             ostr.freeze(false);
             throw;
@@ -1838,7 +1830,7 @@ void CNetScheduleHandler::ProcessQuery()
     string res = m_Queue->ExecQuery(NStr::ParseEscapes(m_JobReq.param1),
                                     m_JobReq.param2,
                                     NStr::ParseEscapes(m_JobReq.param3));
-    WriteMsg("OK:", res, false, false);
+    WriteMsg("OK:", res);
 }
 
 
@@ -2167,41 +2159,33 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
 }
 
 
-void CNetScheduleHandler::WriteMsg(const char*    prefix, 
-                                   const char*    msg,
-                                   bool           comm_control,
-                                   bool           msg_size_control)
+void CNetScheduleHandler::WriteMsg(const char*   prefix,
+                                   const string& msg,
+                                   bool          comm_control)
 {
     CSocket& socket = GetSocket();
     size_t msg_length = 0;
     const char* buf_ptr;
     string buffer;
-    if (msg_size_control) {
-        char* ptr = m_MsgBuffer;
+    size_t prefix_size = strlen(prefix);
 
-        for (; *prefix; ++prefix) {
-            *ptr++ = *prefix;
-            ++msg_length;
-        }
-        for (; *msg; ++msg) {
-            *ptr++ = *msg;
-            ++msg_length;
-            if (msg_length >= kMaxMessageSize) {
-                LOG_POST(Error << "Message too large:" << msg);
-                _ASSERT(0);
-                return;
-            }
-        }
-        *ptr++ = '\r';
-        *ptr++ = '\n';
-        msg_length = ptr - m_MsgBuffer;
-        buf_ptr = m_MsgBuffer;
-    } else {
+    if (prefix_size + msg.size() + 2 > kMaxMessageSize) {
         buffer = prefix;
         buffer += msg;
         buffer += "\r\n";
         msg_length = buffer.size();
-        buf_ptr = buffer.c_str();
+        buf_ptr = buffer.data();
+    } else {
+        char* ptr = m_MsgBuffer;
+        strcpy(ptr, prefix);
+        ptr += prefix_size;
+        size_t msg_size = msg.size();
+        memcpy(ptr, msg.data(), msg_size);
+        ptr += msg_size;
+        *ptr++ = '\r';
+        *ptr++ = '\n';
+        msg_length = ptr - m_MsgBuffer;
+        buf_ptr = m_MsgBuffer;
     }
 
     if (m_Server->IsLog()) {
