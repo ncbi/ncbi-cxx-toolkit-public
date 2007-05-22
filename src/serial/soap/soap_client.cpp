@@ -77,6 +77,7 @@ void CSoapHttpClient::RegisterObjectType(TTypeInfoGetter type_getter)
 
 void CSoapHttpClient::Invoke(CSoapMessage& response,
                              const CSoapMessage& request,
+                             CConstRef<CSoapFault>* fault /*=0*/,
                              const string& soap_action /*= kEmptyStr*/)
 {
     response.Reset();
@@ -106,6 +107,9 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 
     *os << request;
     *is >> response;
+    if (fault) {
+        *fault = SOAP_GetKnownObject<CSoapFault>(response);
+    }
 }
 
 END_NCBI_SCOPE

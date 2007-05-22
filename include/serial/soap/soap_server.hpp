@@ -101,7 +101,7 @@ private:
     void x_FaultVersionMismatch(CSoapMessage& response) const;
     void x_FaultMustUnderstand(CSoapMessage& response) const;
     void x_FaultServer(CSoapMessage& response, const string& text) const;
-    void x_FaultNoListeners(CSoapMessage& response, const CSoapMessage& request) const;
+    void x_FaultNoListeners(CSoapMessage& response) const;
 
     string m_DefNamespace;
     string m_Wsdl;

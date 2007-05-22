@@ -211,7 +211,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
                     }
                 }
             } else {
-                x_FaultNoListeners(soap_out, soap_in);
+                x_FaultNoListeners(soap_out);
             }
         }
     } else {
@@ -326,35 +326,12 @@ CSoapServerApplication::x_FaultServer(CSoapMessage& response, const string& text
 }
 
 void
-CSoapServerApplication::x_FaultNoListeners(
-    CSoapMessage& response, const CSoapMessage& request) const
+CSoapServerApplication::x_FaultNoListeners(CSoapMessage& response) const
 {
     CRef<CSoapFault> fault(new CSoapFault);
     fault->SetFaultcodeEnum(CSoapFault::eClient);
-    fault->SetFaultstring("Unrecognized message. See detail for incoming message Body summary");
+    fault->SetFaultstring("Unsupported request type");
     response.AddObject( *fault, CSoapMessage::eMsgBody);
-
-    const CSoapMessage::TSoapContent& content =
-        request.GetContent(CSoapMessage::eMsgBody);
-    CSoapMessage::TSoapContent::const_iterator i;
-    for (i = content.begin(); i != content.end(); ++i) {
-
-        CRef<CAnyContentObject> any(new CAnyContentObject);
-        string name, ns_name;
-        const CAnyContentObject* obj =
-            dynamic_cast<const CAnyContentObject*>(i->GetPointer());
-        if (obj) {
-            name = obj->GetName();
-            ns_name = obj->GetNamespaceName();
-        } else {
-            name = (*i)->GetThisTypeInfo()->GetName();
-            ns_name = (*i)->GetNamespaceName();
-        }
-        any->SetName(name);
-        any->SetNamespaceName(ns_name);
-        any->SetValue("...");
-        response.AddObject( *any, CSoapMessage::eFaultDetail);
-    }
 }
 
 

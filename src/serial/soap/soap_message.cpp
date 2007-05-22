@@ -157,9 +157,10 @@ void CSoapMessage::Write(CObjectOStream& out) const
             GetSerialObject("Fault", eMsgBody).GetPointer()));
         if (!flt) {
 // throw exception here (?)
+        } else {
+            CRef<CAnyContentObject> h2(new CAnyContentObject);
+            flt->SetDetail().SetAnyContent().push_back(h2);
         }
-        CRef<CAnyContentObject> h2(new CAnyContentObject);
-        flt->SetDetail().SetAnyContent().push_back(h2);
     }
 
     CObjectTypeInfo typeH = CType<CSoapHeader>();

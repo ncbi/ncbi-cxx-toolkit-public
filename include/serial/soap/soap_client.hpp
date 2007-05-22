@@ -50,6 +50,7 @@ public:
 
     void RegisterObjectType(TTypeInfoGetter type_getter);
     void Invoke(CSoapMessage& response, const CSoapMessage& request,
+                CConstRef<CSoapFault>* fault=0,
                 const string& soap_action = kEmptyStr);
 
 private:
