@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, socket
+import sys, socket, re
 
 class NSException(Exception):
     def __init__(self, errcode, msg=""):
@@ -18,6 +18,7 @@ class Connection:
         self.params = {}
         self.successes = {}
         self.failures = {}
+        self.readbuf = ""
         self.connect()
 
     def connect(self):
@@ -29,7 +30,7 @@ class Connection:
 
     def login(self):
         s = self.socket
-        s.send("netschedule_test\n%s\n" % self.queue)
+        s.send("netschedule_admin\n%s\n" % self.queue)
         # Try GETP
         s.send("GETP\n")
         srv_gen = 0
@@ -55,30 +56,68 @@ class Connection:
                 except: pass
                 self.params[key] = val
         self.params['srv_gen'] = srv_gen
+        
+    def send_cmd(self, *params):
+        self.socket.send(" ".join(params)+"\n")
 
+
+    re_reply_delimiter = re.compile('\r\n|\n|\r')
     def read_reply(self):
-        reply = self.socket.recv(4096)
-        reply = reply.strip()
-        parts = reply.split(':')
+        while 1:
+            reply = self.socket.recv(4096)
+            parts = self.re_reply_delimiter.split(reply, 1)
+            if len(parts) > 1:
+                reply = self.readbuf+parts[0]
+                self.readbuf = parts[1]
+                break
+            else:
+                self.readbuf += reply
+        parts = reply.split(':', 1)
         return parts
     
+    re_get = re.compile("([^ ]+) \"([^\"]*)\" \"\" \"\" (\d+)")
     def test_single_task_life_cycle(self):
-        submitted = []
+        submitted = {}
+        executing = []
         failures = {}
         s = self.socket
-        for l in [0, 1, 4, 16, 63, 64, 65, 2047, 2048, 2049, 2050, 16*1024-8, 64*1024, 1024*1024-4]:
+        self.send_cmd("DROPQ")
+        self.read_reply()
+        for l in [0, 1, 4, 16, 63, 64, 65, 2047, 2048, 2049, 2050, 6505, 16*1024-8, 64*1024, 1024*1024-4]:
             if l > self.params['max_input_size']:
                 continue
-            data = " " * l
-            s.send('SUBMIT "%s"\n' % data)
+            if l == 6505:
+                data = file("sb_job_out_before_ps.txt").read()
+            else:
+                data = " " * l
+            self.send_cmd("SUBMIT",  '"'+data+'"')
+            parts = self.read_reply()
+            if parts[0] == "ERR" or len(parts) < 2:
+                print "At data length %d" % l,
+                print "Error in SUBMIT: %s" % ": ".join(parts[1:])
+                failures.setdefault("SUBMIT", []).append(data)
+                continue
+            submitted[parts[1]] = data
+        while 1:
+            self.send_cmd("GET")
             parts = self.read_reply()
             if parts[0] == "ERR":
                 print "At data length %d" % l,
-                print "Error: %s" % ": ".join(parts[1:])
-                failures.setdefault("SUBMIT", []).append(data)
+                print "Error in GET: %s" % ": ".join(parts[1:])
+                failures.setdefault("GET", []).append(data)
                 continue
-            submitted.append(parts[1])
-        for cmd in ['SUBMIT']:
+            if len(parts) < 2 or not parts[1].strip():
+                break
+            mo = self.re_get.match(parts[1])
+            if not mo:
+                print "Can't parse reply:", parts[1]
+                continue
+            jid, data, job_mask = mo.groups()
+            if submitted[jid] != data:
+                print "At data length %d" % len(submitted[jid]),
+                print "Error in GET: data mismatch"
+            executing.append(parts[1])
+        for cmd in ['SUBMIT', 'GET']:
             if not cmd in failures:
                 self.successes[cmd] = 1
         if failures: return 1
