@@ -2788,11 +2788,6 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     gap_open_extend = gap_open + gap_extend;
     x_dropoff = gap_align->gap_x_dropoff;
   
-    /* The computations below assume that alignment will
-       never be declined */
-
-    ASSERT(score_params->decline_align >= INT2_MAX);
-
     if (x_dropoff < gap_open_extend)
         x_dropoff = gap_open_extend;
   

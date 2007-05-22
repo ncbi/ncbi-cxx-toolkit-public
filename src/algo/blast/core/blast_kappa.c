@@ -1344,8 +1344,6 @@ typedef struct BlastKappa_SavedParameters {
     Int4          gap_open;    /**< a penalty for the existence of a gap */
     Int4          gapExtend;   /**< a penalty for each residue in the
                                     gap */
-    Int4          gapDecline;  /**< a penalty for declining to align a pair
-                                    of residues */
     double        scale_factor;     /**< the original scale factor */
     Int4 **origMatrix;              /**< The original matrix values */
     double original_expect_value;   /**< expect value on entry */
@@ -1455,7 +1453,6 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
 
     searchParams->gap_open     = scoring->gap_open;
     searchParams->gapExtend    = scoring->gap_extend;
-    searchParams->gapDecline   = scoring->decline_align;
     searchParams->scale_factor = scoring->scale_factor;
 
     for (i = 0;  i < searchParams->num_queries;  i++) { 
@@ -1518,9 +1515,6 @@ s_RescaleSearch(BlastScoreBlk* sbp,
     sp->gap_open = BLAST_Nint(sp->gap_open  * scale_factor);
     sp->gap_extend = BLAST_Nint(sp->gap_extend * scale_factor);
     sp->scale_factor = scale_factor;
-    if (sp->decline_align != INT2_MAX) {
-        sp->decline_align = BLAST_Nint(sp->decline_align * scale_factor);
-    }
 }
 
 
@@ -1546,7 +1540,6 @@ s_RestoreSearch(BlastScoreBlk* sbp,
 
     scoring->gap_open = searchParams->gap_open;
     scoring->gap_extend = searchParams->gapExtend;
-    scoring->decline_align = searchParams->gapDecline;
     scoring->scale_factor = searchParams->scale_factor;
 
     for (i = 0;  i < searchParams->num_queries;  i++) {
@@ -1696,7 +1689,6 @@ s_GappingParamsNew(BlastKappa_GappingParamsContext * context,
     if (gapping_params != NULL) {
         gapping_params->gap_open = scoring->gap_open;
         gapping_params->gap_extend = scoring->gap_extend;
-        gapping_params->decline_align = scoring->decline_align;
         gapping_params->context = context;
     }
     

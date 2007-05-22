@@ -294,15 +294,13 @@ Blast_KarlinBlk* Blast_KarlinBlkFree(Blast_KarlinBlk* kbp);
  * @param kbp object to be filled in [in|out]
  * @param gap_open cost of gap existence [in]
  * @param gap_extend cost to extend a gap one letter [in]
- * @param decline_align cost of declining to align a letter [in]
  * @param matrix_name name of the matrix to be used [in]
  * @param error_return filled in with error message if needed [out]
  * @return zero on success
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open, 
-        Int4 gap_extend, Int4 decline_align, const char* matrix_name, 
-        Blast_Message** error_return);
+     Int4 gap_extend, const char* matrix_name, Blast_Message** error_return);
 
 /** Retrieves Karlin-Altschul parameters from precomputed tables, given the
  * substitution and gap scores. Gap cost values greater than any of those 
@@ -344,14 +342,13 @@ Int2 Blast_ScoreBlkKbpIdealCalc(BlastScoreBlk* sbp);
  * @param kbp object to be filled in [in|out]
  * @param gap_open gap existence cost [in]
  * @param gap_extend gap extension cost [in]
- * @param decline_align cost to not align part of a sequence [in]
  * @param matrix_name name of the matrix used [in]
  * @return  -1 if matrix_name is NULL;
  *          1 if matrix not found
  *           2 if matrix found, but open, extend etc. values not supported.
 */
 NCBI_XBLAST_EXPORT
-Int2 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name);
+Int2 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, const char* matrix_name);
 
 /** Prints a messages about the allowed matrices, BlastKarlinBlkGappedFill should return 1 before this is called. 
  * @param matrix the matrix to print a message about [in]
@@ -365,11 +362,10 @@ char* BLAST_PrintMatrixMessage(const char *matrix);
  * @param matrix name of the matrix [in]
  * @param gap_open gap existence cost [in]
  * @param gap_extend cost to extend a gap by one [in]
- * @param decline_align cost of declining to align [in]
  * @return message
  */
 NCBI_XBLAST_EXPORT
-char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
+char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend);
 
 /** Calculates the parameter Lambda given an initial guess for its value */
 NCBI_XBLAST_EXPORT

@@ -101,7 +101,7 @@ The eight different columns specify:
 
 1.) gap existence penalty (INT2_MAX denotes infinite).
 2.) gap extension penalty (INT2_MAX denotes infinite).
-3.) decline to align penalty (INT2_MAX denotes infinite).
+3.) decline to align penalty (this field is ignored)
 4.) Lambda
 5.) K
 6.) H
@@ -2664,7 +2664,6 @@ BlastLoadMatrixValues (void)
  * @param matrix name of the matrix [in]
  * @param open gap existence parameter [in|out]
  * @param extension cost to extend a gap by one letter [in|out]
- * @param decline_align cost to decline to extend an alignment [in|out]
  * @param lambda Karlin-Altschul parameter [in|out]
  * @param K Karlin-Altschul parameter [in|out]
  * @param H Karlin-Altschul parameter [in|out]
@@ -2675,13 +2674,13 @@ BlastLoadMatrixValues (void)
 */
 
 static Int2
-Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
+Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
 
 {
    array_of_8 *values = NULL;
    Boolean found_matrix=FALSE;
    Int4 index, max_number_values=0;
-   Int4* open_array=NULL,* extension_array=NULL,* decline_align_array=NULL,* pref_flags_array=NULL,* prefs=NULL;
+   Int4* open_array=NULL,* extension_array=NULL,* pref_flags_array=NULL,* prefs=NULL;
    double* lambda_array=NULL,* K_array=NULL,* H_array=NULL,* alpha_array=NULL,* beta_array=NULL;
    MatrixInfo* matrix_info;
    ListNode* vnp,* head;
@@ -2712,9 +2711,6 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, Int4** 
       if (extension)
          *extension = extension_array = 
             (Int4 *) calloc(max_number_values, sizeof(Int4));
-      if (decline_align)
-         *decline_align = decline_align_array = 
-            (Int4 *) calloc(max_number_values, sizeof(Int4));
       if (lambda)
          *lambda = lambda_array = 
             (double*) calloc(max_number_values, sizeof(double));
@@ -2736,8 +2732,7 @@ Blast_GetMatrixValues(const char* matrix, Int4** open, Int4** extension, Int4** 
             open_array[index] = (Int4) values[index][0];
          if (extension)
             extension_array[index] = (Int4) values[index][1];
-         if (decline_align)
-            decline_align_array[index] = (Int4) values[index][2];
+         /* decline_align value is skipped */
          if (lambda)
             lambda_array[index] = values[index][3];
          if (K)
@@ -2770,7 +2765,7 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    Int4 i; /*loop index*/
 
    num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
-     &gapExtend_arr, NULL, NULL, NULL, NULL,  &alpha_arr, &beta_arr, 
+     &gapExtend_arr, NULL, NULL, NULL,  &alpha_arr, &beta_arr, 
      &pref_flags);
 
    if (gapped) {
@@ -3047,7 +3042,7 @@ Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
      Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
      Int4 i; /*loop index*/
      Int2 num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
-       &gapExtend_arr, NULL, NULL, NULL, NULL,  NULL, NULL, &pref_flags);
+       &gapExtend_arr, NULL, NULL, NULL,  NULL, NULL, &pref_flags);
 
      if (num_values <= 0)
          return -1;
@@ -3175,13 +3170,13 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
    if kbp is NULL, then a validation is perfomed.
 */
 Int2
-Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name, Blast_Message** error_return)
+Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, const char* matrix_name, Blast_Message** error_return)
 
 {
    char buffer[256];
    Int2 status = 
-      Blast_KarlinBlkGappedLoadFromTables(kbp, gap_open, gap_extend, 
-                                          decline_align, matrix_name);
+      Blast_KarlinBlkGappedLoadFromTables(kbp, gap_open, 
+                                          gap_extend, matrix_name);
 
    if (status && error_return)
    {
@@ -3207,10 +3202,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
       }
       else if (status == 2)
       {
-         if (decline_align == INT2_MAX)
-            sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
-         else
-            sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
+         sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
          BlastKarlinReportAllowedValues(matrix_name, error_return);
       }
@@ -3229,8 +3221,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 */
 Int2
 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, 
-                                    Int4 gap_extend, Int4 decline_align, 
-                                    const char* matrix_name)
+                                    Int4 gap_extend, const char* matrix_name)
 {
    Boolean found_matrix=FALSE;
    array_of_8 *values;
@@ -3266,8 +3257,7 @@ Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open,
       for (index=0; index<max_number_values; index++)
       {
          if (BLAST_Nint(values[index][0]) == gap_open &&
-            BLAST_Nint(values[index][1]) == gap_extend &&
-            (BLAST_Nint(values[index][2]) == INT2_MAX || BLAST_Nint(values[index][2]) == decline_align))
+            BLAST_Nint(values[index][1]) == gap_extend)
          {
             if (kbp)
             {
@@ -3328,7 +3318,8 @@ BLAST_PrintMatrixMessage(const char *matrix_name)
 }
 
 char*
-BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend, Int4 decline_align) 
+BLAST_PrintAllowedValues(const char *matrix_name, 
+                         Int4 gap_open, Int4 gap_extend)
 {
    array_of_8 *values = NULL;
    Boolean found_matrix=FALSE;
@@ -3339,12 +3330,8 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
 
    ptr = buffer = (char *) calloc(2048, sizeof(char));
 
-        if (decline_align == INT2_MAX)
-              sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
+   sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
       (long) gap_open, (long) gap_extend, matrix_name);
-        else
-               sprintf(ptr, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s\n supported values are:\n", 
-      (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
 
    ptr += strlen(ptr);
 
@@ -4138,7 +4125,7 @@ static double
 RPSfindUngappedLambda(const char *matrixName)
 {
     double* lambda_array = NULL;
-    int num_lambdas = Blast_GetMatrixValues(matrixName, NULL, NULL, NULL,
+    int num_lambdas = Blast_GetMatrixValues(matrixName, NULL, NULL,
                                             &lambda_array, NULL, NULL, NULL,
                                             NULL, NULL);
     if (num_lambdas > 0) {

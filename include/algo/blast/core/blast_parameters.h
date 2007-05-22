@@ -187,7 +187,6 @@ typedef struct BlastScoringParameters {
    Int2 penalty;     /**< Penalty for a mismatch */
    Int4 gap_open;    /**< Extra penalty for starting a gap (scaled version) */
    Int4 gap_extend;  /**< Penalty for each gap residue  (scaled version) */
-   Int4 decline_align; /**< Cost for declining alignment  (scaled version) */
    Int4 shift_pen;   /**< Penalty for shifting a frame in out-of-frame 
                         gapping (scaled version) */
    double scale_factor; /**< multiplier for all cutoff scores */

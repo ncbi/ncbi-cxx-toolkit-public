@@ -178,7 +178,6 @@ CBlastNucleotideOptionsHandle::SetScoringOptionsDefaults()
     // set out-of-frame options to invalid? values
     m_Opts->SetOutOfFrameMode(false);
     m_Opts->SetFrameShiftPenalty(INT2_MAX);
-    m_Opts->SetDecline2AlignPenalty(INT2_MAX);
 }
 
 void
@@ -194,7 +193,6 @@ CBlastNucleotideOptionsHandle::SetMBScoringOptionsDefaults()
     // set out-of-frame options to invalid? values
     m_Opts->SetOutOfFrameMode(false);
     m_Opts->SetFrameShiftPenalty(INT2_MAX);
-    m_Opts->SetDecline2AlignPenalty(INT2_MAX);
 }
 void
 CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()

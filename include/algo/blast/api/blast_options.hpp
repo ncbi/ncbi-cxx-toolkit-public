@@ -283,9 +283,6 @@ public:
     int GetFrameShiftPenalty() const;
     void SetFrameShiftPenalty(int p);
 
-    int GetDecline2AlignPenalty() const;
-    void SetDecline2AlignPenalty(int p);
-
     bool GetOutOfFrameMode() const;
     void SetOutOfFrameMode(bool m = true);
 

@@ -80,7 +80,7 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
             retval = 
                 Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[index],
                     scoring_options->gap_open, scoring_options->gap_extend,
-                    scoring_options->decline_align, sbp->name, error_return);
+                    sbp->name, error_return);
         }
         if (retval) {
             return retval;

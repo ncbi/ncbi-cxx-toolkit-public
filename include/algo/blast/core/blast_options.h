@@ -344,7 +344,6 @@ typedef struct BlastScoringOptions {
    Boolean gapped_calculation; /**< gap-free search if FALSE */
    Int4 gap_open;    /**< Extra penalty for starting a gap */
    Int4 gap_extend;  /**< Penalty for each gap residue */
-   Int4 decline_align; /**< Cost for declining alignment (PSI-BLAST) */
 
    /* only blastx and tblastn (When query & subj are diff) */
    Boolean is_ooframe; /**< Should out-of-frame gapping be used in a translated

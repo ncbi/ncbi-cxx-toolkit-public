@@ -660,7 +660,6 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
       (*options)->gap_open = BLAST_GAP_OPEN_NUCL;
       (*options)->gap_extend = BLAST_GAP_EXTN_NUCL;
    }
-   (*options)->decline_align = INT2_MAX;
    if (program_number != eBlastTypeTblastx) {
        (*options)->gapped_calculation = TRUE;
    }
@@ -745,8 +744,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
                 {
                     Int2 status=0;
                     if ((status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open,
-                     options->gap_extend, options->decline_align,
-                     options->matrix)) != 0)
+                     options->gap_extend, options->matrix)) != 0)
                      {
 			if (status == 1)
 			{
@@ -763,8 +761,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 				char* buffer;
 
 				buffer = BLAST_PrintAllowedValues(options->matrix, 
-                        options->gap_open, options->gap_extend, 
-                        options->decline_align); 
+                        options->gap_open, options->gap_extend);
                                 Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, buffer);
 				sfree(buffer);
 				return BLASTERR_OPTION_VALUE_INVALID;

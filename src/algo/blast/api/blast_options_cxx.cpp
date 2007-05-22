@@ -106,7 +106,6 @@ enum EBlastOptIdx {
     eBlastOpt_GapOpeningCost,
     eBlastOpt_GapExtensionCost,
     eBlastOpt_FrameShiftPenalty,
-    eBlastOpt_Decline2AlignPenalty,
     eBlastOpt_OutOfFrameMode,
     eBlastOpt_DbLength,
     eBlastOpt_DbSeqNum,
@@ -1641,25 +1640,6 @@ CBlastOptions::SetFrameShiftPenalty(int p)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_FrameShiftPenalty, p);
-    }
-}
-
-int 
-CBlastOptions::GetDecline2AlignPenalty() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetDecline2AlignPenalty() not available.");
-    }
-    return m_Local->GetDecline2AlignPenalty();
-}
-void 
-CBlastOptions::SetDecline2AlignPenalty(int p)
-{
-    if (m_Local) {
-        m_Local->SetDecline2AlignPenalty(p);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_Decline2AlignPenalty, p);
     }
 }
 

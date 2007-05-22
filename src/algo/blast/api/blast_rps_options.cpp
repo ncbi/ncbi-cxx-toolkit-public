@@ -92,7 +92,6 @@ CBlastRPSOptionsHandle::SetScoringOptionsDefaults()
     // set invalid values for options that are not applicable
     m_Opts->SetOutOfFrameMode(false);
     m_Opts->SetFrameShiftPenalty(INT2_MAX);
-    m_Opts->SetDecline2AlignPenalty(INT2_MAX);
 }
 
 void

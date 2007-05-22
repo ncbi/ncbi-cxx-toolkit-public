@@ -213,7 +213,6 @@ x_BlastScoringOptions_cmp(const BlastScoringOptions* a,
     if (a->gapped_calculation != b->gapped_calculation) return false;
     if (a->gap_open != b->gap_open) return false;
     if (a->gap_extend != b->gap_extend) return false;
-    if (a->decline_align != b->decline_align) return false;
     if (a->is_ooframe != b->is_ooframe) return false;
     if (a->shift_pen != b->shift_pen) return false;
     return true;

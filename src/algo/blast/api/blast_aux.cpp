@@ -322,7 +322,6 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) c
     ddc.Log("gap_open", m_Ptr->gap_open);
     ddc.Log("gap_extend", m_Ptr->gap_extend);
     ddc.Log("shift_pen", m_Ptr->shift_pen);
-    ddc.Log("decline_align", m_Ptr->decline_align);
     ddc.Log("is_ooframe", m_Ptr->is_ooframe);
 }
 
@@ -338,7 +337,6 @@ CBlastScoringParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*d*/)
     ddc.Log("penalty", m_Ptr->penalty);
     ddc.Log("gap_open", m_Ptr->gap_open);
     ddc.Log("gap_extend", m_Ptr->gap_extend);
-    ddc.Log("decline_align", m_Ptr->decline_align);
     ddc.Log("shift_pen", m_Ptr->shift_pen);
     ddc.Log("scale_factor", m_Ptr->scale_factor);
 }

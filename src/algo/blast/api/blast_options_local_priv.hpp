@@ -220,9 +220,6 @@ public:
     int GetFrameShiftPenalty() const;
     void SetFrameShiftPenalty(int p);
 
-    int GetDecline2AlignPenalty() const;
-    void SetDecline2AlignPenalty(int p);
-
     bool GetOutOfFrameMode() const;
     void SetOutOfFrameMode(bool m = true);
 
@@ -1085,18 +1082,6 @@ inline void
 CBlastOptionsLocal::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
-}
-
-inline int 
-CBlastOptionsLocal::GetDecline2AlignPenalty() const
-{
-    return m_ScoringOpts->decline_align;
-}
-
-inline void 
-CBlastOptionsLocal::SetDecline2AlignPenalty(int p)
-{
-    m_ScoringOpts->decline_align = p;
 }
 
 inline bool 
