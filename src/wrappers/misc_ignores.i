@@ -41,6 +41,7 @@
 
 // Default assignment operator can't be used
 %ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
+%ignore *::SNcbiParamDesc_GENBANK_CACHE_RECOMPRESS::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_GENBANK_SNP_PACK_STRINGS::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_TrackingCookieName::sm_ParamDescription;
 %ignore ncbi::SNcbiParamDesc_CGI_DisableTrackingCookie::sm_ParamDescription;
