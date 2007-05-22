@@ -82,7 +82,6 @@ const string kArgProduceHtml("html");
 
 const string kArgGapOpen("gapopen");
 const string kArgGapExtend("gapextend");
-const string kArgDecline2Align("decline2align");
 
 const string kArgMismatch("mismatch_penalty");
 const string kArgMatch("match_reward");

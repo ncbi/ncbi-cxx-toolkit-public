@@ -780,25 +780,6 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
 }
 
 void
-CDecline2AlignArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
-{
-    arg_desc.AddDefaultKey(kArgDecline2Align, "int_value", 
-                           "Cost to decline alignment",
-                           CArgDescriptions::eInteger,
-                           NStr::IntToString(m_DefaultValue));
-}
-
-void
-CDecline2AlignArgs::ExtractAlgorithmOptions(const CArgs& args,
-                                            CBlastOptions& opt)
-{
-    if (args[kArgDecline2Align]) {
-        opt.SetDecline2AlignPenalty(args[kArgDecline2Align].AsInteger());
-    }
-}
-
-
-void
 CGapTriggerArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     const double default_value = m_QueryIsProtein
