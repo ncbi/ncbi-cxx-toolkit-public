@@ -560,7 +560,6 @@ sub handle_blastpgp($)
     $retval .= "-num_alignments $opt_b "    if (defined $opt_b);
     $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
     $retval .= "-comp_based_stats $opt_t "  if (defined $opt_t);
-    $retval .= "-decline2align $opt_L "     if (defined $opt_L);
     $retval .= "-phi_pattern $opt_k "       if (defined $opt_k);
     $retval .= "-out $opt_o "               if (defined $opt_o);
     $retval .= "-outfmt $opt_m "            if (defined $opt_m);
