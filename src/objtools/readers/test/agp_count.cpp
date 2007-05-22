@@ -110,9 +110,10 @@ int main(int argc, char* argv[])
         // cerr << "Code " << code << "\n";
         string msg = reader.GetErrorMessage();
         cerr << msg;
+        return 1;
     }
     else {
         reader.PrintResults(); // object/scaffold/gap/component counts
+        return 0;
     }
-    return 0;
 }
