@@ -117,8 +117,6 @@ extern const string kArgProduceHtml;
 extern const string kArgGapOpen;
 /// Argument to select the gap extending penalty
 extern const string kArgGapExtend;
-/// Argument to select cost to decline alignment
-extern const string kArgDecline2Align;
 
 /// Argument to select the nucleotide mismatch penalty
 extern const string kArgMismatch;

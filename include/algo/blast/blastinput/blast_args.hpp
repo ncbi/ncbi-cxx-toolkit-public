@@ -357,26 +357,6 @@ private:
     ETarget m_Target; ///< Genetic code target
 };
 
-class NCBI_XBLAST_EXPORT CDecline2AlignArgs : public IBlastCmdLineArgs
-{
-public:
-    /** 
-     * @brief Constructor
-     * 
-     * @param default_value for this option
-     */
-    CDecline2AlignArgs(int default_value = 0)
-        : m_DefaultValue(default_value) {}
-    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
-    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
-                                         CBlastOptions& options);
-private:
-    /// Default value specified in constructor
-    int m_DefaultValue;
-};
-
 /// Argument class to retrieve the gap trigger option
 class NCBI_XBLAST_EXPORT CGapTriggerArgs : public IBlastCmdLineArgs
 {
