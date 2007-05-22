@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.3"
+#define NETSCHEDULED_VERSION "2.10.4"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -330,7 +330,7 @@ private:
     static SCommandMap sm_CommandMap[];
     static SArgument sm_BatchArgs[];
 
-    FProcessor ParseRequest(const char* reqstr);
+    FProcessor ParseRequest(const string& reqstr);
 
     // Command processors
     void ProcessFastStatusS();
@@ -377,7 +377,8 @@ private:
     bool x_TokenMatch(const SArgument *arg_descr, ENSTokenType ttype,
                       const char* token, int tsize);
     static
-    ENSTokenType x_GetToken(const char*& s, const char*& tok, int& size);
+    ENSTokenType x_GetToken(const char*& s, const char* end,
+                            const char*& tok, int& size);
     static
     bool x_GetValue(ENSTokenType ttype,
                     const char* token, int tsize,
@@ -386,7 +387,8 @@ private:
     void x_ParseTags(const string& strtags, TNSTagList& tags);
     void x_MonitorRec(const SNS_SubmitRecord& rec);
 
-    bool x_ParseArguments(const char*s, const SArgument* arg_descr);
+    bool x_ParseArguments(const char* s, const char* end,
+                          const SArgument* arg_descr);
 
     bool x_CheckVersion(void);
     void x_CheckAccess(TNSClientRole role);
@@ -394,12 +396,11 @@ private:
     string x_FormatErrorMessage(string header, string what);
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
-    void x_MakeLogMessage(BUF buffer, string& lmsg);
+    void x_MakeLogMessage(string& lmsg);
     void x_MakeGetAnswer(const char* key_buf, unsigned job_mask);
 
     // Data
-    char m_Request[kMaxMessageSize];
-    size_t x_GetRequestBufSize() const { return sizeof(m_Request); }
+    string m_Request;
     string m_Answer;
     char   m_MsgBuffer[kMaxMessageSize];
 
@@ -516,16 +517,19 @@ private:
 };
 
 
-static void s_ReadBufToString(BUF buffer, string& str)
+static void s_BufReadHelper(void* data, void* ptr, size_t size)
 {
-    char buf[1024];
-    size_t size;
+    ((string*) data)->append((const char *) ptr, size);
+}
+
+
+static void s_ReadBufToString(BUF buf, string& str)
+{
     str.erase();
-    for (;;) {
-        size = BUF_Read(buffer, buf, sizeof(buf));
-        if (!size) break;
-        str.append(buf, size);
-    }
+    size_t size = BUF_Size(buf);
+    str.reserve(size);
+    BUF_PeekAtCB(buf, 0, s_BufReadHelper, &str, size);
+    BUF_Read(buf, NULL, size);
 }
 
 
@@ -705,15 +709,14 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
 {
     bool is_log = m_Server->IsLog();
 
-    size_t msg_size = BUF_Read(buffer, m_Request, x_GetRequestBufSize());
-    if (msg_size < x_GetRequestBufSize()) m_Request[msg_size] = '\0';
+    s_ReadBufToString(buffer, m_Request);
 
     m_CommandNumber = m_Server->GetCommandNumber();
 
     // Logging
     if (is_log || IsMonitoring()) {
         string lmsg;
-        x_MakeLogMessage(buffer, lmsg);
+        x_MakeLogMessage(lmsg);
         if (is_log) {
             NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log).GetRef()
                 << lmsg
@@ -946,13 +949,13 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
     // Expecting BTCH size | ENDS
     char cmd[256];
     size_t msg_size = BUF_Read(buffer, cmd, sizeof(cmd)-1);
-    cmd[msg_size] = '\0';
     const char* s = cmd;
+    const char* end = cmd + msg_size;
     const char* token;
     int tsize;
-    ENSTokenType ttype = x_GetToken(s, token, tsize);
+    ENSTokenType ttype = x_GetToken(s, end, token, tsize);
     if (ttype == eNST_Id && tsize == 4 && strncmp(token, "BTCH", tsize) == 0) {
-        ttype = x_GetToken(s, token, tsize);
+        ttype = x_GetToken(s, end, token, tsize);
         if (ttype == eNST_Int) {
             m_BatchPos = 0;
             m_BatchSize = atoi(token);
@@ -991,14 +994,15 @@ CNetScheduleHandler::SArgument CNetScheduleHandler::sm_BatchArgs[] = {
     { eNSA_None }
 };
 
-bool CNetScheduleHandler::x_ParseArguments(const char*s, const SArgument* arg_descr)
+bool CNetScheduleHandler::x_ParseArguments(const char* s, const char* end,
+                                           const SArgument* arg_descr)
 {
     const char* token;
     int tsize;
     ENSTokenType ttype = eNST_None; // if arglist is empty, it should be successful
 
     while (arg_descr->atype != eNSA_None && // extra arguments are just ignored
-           (ttype = x_GetToken(s, token, tsize)) >= 0) // end or error
+           (ttype = x_GetToken(s, end, token, tsize)) >= 0) // end or error
     {
         // token processing here
         bool matched = false;
@@ -1051,12 +1055,14 @@ void CNetScheduleHandler::ProcessMsgBatchItem(BUF buffer)
     // Expecting:
     // "input" [affp|aff="affinity_token"] [msk=1]
     //         [tags="key1\tval1\tkey2\t\tkey3\tval3"]
-    char data[kNetScheduleMaxDBDataSize * 6 + 1];
-    size_t msg_size = BUF_Read(buffer, data, sizeof(data)-1);
-    data[msg_size] = '\0';
+    size_t size = BUF_Size(buffer);
+    string msg;
+    s_ReadBufToString(buffer, msg);
+    const char* data = msg.data();
+
     SNS_SubmitRecord& rec = m_BatchSubmitVector[m_BatchPos];
 
-    if (!x_ParseArguments(data, sm_BatchArgs)) {
+    if (!x_ParseArguments(data, data+size, sm_BatchArgs)) {
         WriteMsg("ERR:", "eProtocolSyntaxError:"
                          "Invalid batch submission, syntax error");
         m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
@@ -1080,11 +1086,10 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
     // Expecting ENDB
     char cmd[256];
     size_t msg_size = BUF_Read(buffer, cmd, sizeof(cmd)-1);
-    cmd[msg_size] = '\0';
     const char* s = cmd;
     const char* token;
     int tsize;
-    ENSTokenType ttype = x_GetToken(s, token, tsize);
+    ENSTokenType ttype = x_GetToken(s, cmd+msg_size, token, tsize);
     if (ttype != eNST_Id || tsize != 4 || strncmp(token, "ENDB", tsize) != 0) {
         BUF_Read(buffer, 0, BUF_Size(buffer));
         WriteMsg("ERR:", "eProtocolSyntaxError:"
@@ -1985,12 +1990,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 
 CNetScheduleHandler::ENSTokenType
 CNetScheduleHandler::x_GetToken(const char*& s,
+                                const char* end,
                                 const char*& tok,
                                 int &size)
 {
     // Skip space
-    while (*s && (*s == ' ' || *s == '\t')) ++s;
-    if (!*s) return eNST_None;
+    while (s < end && (*s == ' ' || *s == '\t')) ++s;
+    if (!(s < end)) return eNST_None;
     ENSTokenType ttype = eNST_None;
     if (*s == '"') {
         s = tok = s + 1;
@@ -2000,7 +2006,7 @@ CNetScheduleHandler::x_GetToken(const char*& s,
         if (isdigit(*s) || *s == '-') ttype = eNST_Int;
         else ttype = eNST_Id;
     }
-    for ( ; *s && ((ttype == eNST_Str || ttype == eNST_KeyStr) ?
+    for ( ; (s < end) && ((ttype == eNST_Str || ttype == eNST_KeyStr) ?
                         !(*s == '"' && *(s-1) != '\\') :
                         !(*s == ' ' || *s == '\t'));
             ++s) {
@@ -2084,7 +2090,7 @@ bool CNetScheduleHandler::x_GetValue(ENSTokenType ttype,
 
 
 CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
-    const char* reqstr)
+    const string& reqstr)
 {
     // Request formats and types:
     //
@@ -2122,12 +2128,13 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     // 30.STSN [aff="Affinity token"]
 
     FProcessor processor = &CNetScheduleHandler::ProcessError;
-    const char* s = reqstr;
+    const char* s = reqstr.data();
+    const char* end = s + reqstr.size();
     const char* token;
     int tsize;
     ENSTokenType ttype;
 
-    ttype = x_GetToken(s, token, tsize);
+    ttype = x_GetToken(s, end, token, tsize);
     if (ttype != eNST_Id) {
         m_JobReq.err_msg = "eProtocolSyntaxError:Command absent";
         return &CNetScheduleHandler::ProcessError;
@@ -2149,7 +2156,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     }
     x_CheckAccess(sm_CommandMap[n_cmd].role);
 
-    if (!x_ParseArguments(s, argsDescr)) {
+    if (!x_ParseArguments(s, end, argsDescr)) {
         m_JobReq.err_msg = "eProtocolSyntaxError:Malformed ";
         m_JobReq.err_msg.append(sm_CommandMap[n_cmd].cmd);
         m_JobReq.err_msg.append(" request");
@@ -2228,7 +2235,7 @@ void CNetScheduleHandler::WriteMsg(const char*    prefix,
 }
 
 
-void CNetScheduleHandler::x_MakeLogMessage(BUF buffer, string& lmsg)
+void CNetScheduleHandler::x_MakeLogMessage(string& lmsg)
 {
     CSocket& socket = GetSocket();
     string peer = socket.GetPeerAddress();
