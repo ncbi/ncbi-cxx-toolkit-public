@@ -55,9 +55,9 @@ public:
     CSampleSoapClient(void);
     ~CSampleSoapClient(void);
 
-    CConstRef<CDescriptionText> GetDescription(void);
-    CConstRef<CVersionResponse> GetVersion(const string& client_id);
-    CConstRef<CMathResponse>    DoMath(CMath& ops);
+    CConstRef<CDescriptionText> GetDescription( CConstRef<CSoapFault>* fault=0);
+    CConstRef<CVersionResponse> GetVersion(const string& client_id, CConstRef<CSoapFault>* fault=0);
+    CConstRef<CMathResponse>    DoMath(CMath& ops, CConstRef<CSoapFault>* fault=0);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -80,7 +80,8 @@ CSampleSoapClient::~CSampleSoapClient(void)
 {
 }
 
-CConstRef<CDescriptionText> CSampleSoapClient::GetDescription(void)
+CConstRef<CDescriptionText>
+CSampleSoapClient::GetDescription(CConstRef<CSoapFault>* fault)
 // Request with no parameters
 // Response is a single string
 {
@@ -97,11 +98,12 @@ CConstRef<CDescriptionText> CSampleSoapClient::GetDescription(void)
 #endif
     request.AddObject( *any, CSoapMessage::eMsgBody);
 
-    Invoke(response,request);
+    Invoke(response,request,fault);
     return SOAP_GetKnownObject<CDescriptionText>(response);
 }
 
-CConstRef<CVersionResponse> CSampleSoapClient::GetVersion(const string& client_id)
+CConstRef<CVersionResponse>
+CSampleSoapClient::GetVersion(const string& client_id, CConstRef<CSoapFault>* fault)
 // Request is a single string: ClientID
 // Response is a sequence of 3 strings: Major, Minor, ClientID
 //      here ClientID is same as the one sent in request
@@ -113,11 +115,12 @@ CConstRef<CVersionResponse> CSampleSoapClient::GetVersion(const string& client_i
 //    req->SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( *req, CSoapMessage::eMsgBody);
 
-    Invoke(response,request);
+    Invoke(response,request,fault);
     return SOAP_GetKnownObject<CVersionResponse>(response);
 }
 
-CConstRef<CMathResponse>  CSampleSoapClient::DoMath(CMath& ops)
+CConstRef<CMathResponse>
+CSampleSoapClient::DoMath(CMath& ops, CConstRef<CSoapFault>* fault)
 // Request is a list of Operand
 //      where each Operand is a sequence of 2 strings + attribute
 // Response is a list of result strings
@@ -128,7 +131,7 @@ CConstRef<CMathResponse>  CSampleSoapClient::DoMath(CMath& ops)
 //    ops.SetNamespaceName(GetDefaultNamespaceName());
     request.AddObject( ops, CSoapMessage::eMsgBody);
 
-    Invoke(response,request);
+    Invoke(response,request,fault);
     return SOAP_GetKnownObject<CMathResponse>(response);
 }
 
@@ -168,16 +171,21 @@ int CSampleSoapClientApplication::Run(void)
     CSampleSoapClient ws;
     try {
 
-        CConstRef<CDescriptionText> v1 = ws.GetDescription();
+        CConstRef<CSoapFault> fault;
+        CConstRef<CDescriptionText> v1 = ws.GetDescription(&fault);
         if (v1) {
             cout << v1->GetText() << endl;
+        } else if (fault) {
+            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring() << endl;
         }
 
-        CConstRef<CVersionResponse> v2 = ws.GetVersion("C++ SOAP client");
+        CConstRef<CVersionResponse> v2 = ws.GetVersion("C++ SOAP client",&fault);
         if (v2) {
             cout << v2->GetVersionStruct().GetMajor() << "." <<
                     v2->GetVersionStruct().GetMinor() << ":  " <<
                     v2->GetVersionStruct().GetClientID() << endl;
+        } else if (fault) {
+            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring();
         }
 
         CMath ops;
@@ -192,14 +200,15 @@ int CSampleSoapClientApplication::Run(void)
         op2->SetAttlist().SetOperation( COperand::C_Attlist::eAttlist_operation_subtract);
         ops.SetOperand().push_back(op2);
 
-        CConstRef<CMathResponse> v3 = ws.DoMath(ops);
+        CConstRef<CMathResponse> v3 = ws.DoMath(ops,&fault);
         if (v3) {
             CMathResponse::TMathResult::const_iterator i;
             for (i = v3->GetMathResult().begin();
                  i != v3->GetMathResult().end(); ++i) {
                 cout << *i << endl;
             }
-                 
+        } else if (fault) {
+            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring();
         }
     } catch (CEofException&) {
         cout << "service unavailable" << endl;
