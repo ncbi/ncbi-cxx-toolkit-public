@@ -849,7 +849,7 @@ CBDB_FieldLString::CBDB_FieldLString()
 CBDB_Field* CBDB_FieldLString::Construct(size_t buf_size) const
 {
     CBDB_FieldLString* fld = new CBDB_FieldLString();
-    fld->SetBufferSize(buf_size ? buf_size : GetBufferSize());
+    fld->SetBufferSize(buf_size ? buf_size + 4 : GetBufferSize());
     return fld;
 }
 
