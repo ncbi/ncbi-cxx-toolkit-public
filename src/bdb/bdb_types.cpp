@@ -1113,7 +1113,7 @@ void CBDB_FieldLString::SetStdString(const string& str)
     }
 
     // check overflow
-    if (str_len > (GetBufferSize() - 4)) {
+    if (str_len > (GetBufferSize())) {
         string message("String field overflow."); 
         // TODO: add info what caused overflow, what length expected
         BDB_THROW(eOverflow, message);
