@@ -111,7 +111,7 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
     else {
         status = Blast_KarlinBlkGappedCalc(m_ScoreBlk->kbp_gap_std[0],
                                            m_GapOpen, m_GapExtend,
-                                           kMax_Int, m_ScoreBlk->name, NULL);
+                                           m_ScoreBlk->name, NULL);
     }
     if (status || m_ScoreBlk->kbp_gap_std[0] == NULL ||
         m_ScoreBlk->kbp_gap_std[0]->Lambda <= 0.0) {
@@ -316,7 +316,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                 for (int i = 0;  i < vec.GetNumRows();  ++i) {
                     data.push_back(string());
                     TSeqPos start = vec.GetStart(i, seg);
-                    if (start == -1) {
+                    if (start == (TSeqPos)(-1)) {
                         /// we compute ungapped identities
                         /// gap on at least one row, so we skip this segment
                         break;
@@ -329,7 +329,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                     vec.GetSeqString(data.back(), i, start, stop);
                 }
 
-                if (data.size() == ds.GetDim()) {
+                if (data.size() == (size_t)ds.GetDim()) {
                     for (size_t a = 0;  a < data[0].size();  ++a) {
                         bool is_mismatch = false;
                         for (size_t b = 1;  b < data.size();  ++b) {
