@@ -58,20 +58,23 @@
 
 BEGIN_NCBI_SCOPE
 
-// define cut-off strategy at the terminii:
+namespace {
 
-// (1) - pre-processing
-// For non-covered ends longer than kNonCoveredEndThreshold use
-// m_max_genomic_ext. For shorter ends use k * query_len^(1/kPower)
-
-static const Uint4 kNonCoveredEndThreshold = 55;
-static const double kPower = 3;
-
-// (2) - post-processing
-// exons shorter than kMinTermExonSize with identity lower than
-// kMinTermExonIdty will be converted to gaps
-static const size_t kMinTermExonSize = 28;
-static const double kMinTermExonIdty = 0.90;
+    // define cut-off strategy at the terminii:
+    
+    // (1) - pre-processing
+    // For non-covered ends longer than kNonCoveredEndThreshold use
+    // m_max_genomic_ext. For shorter ends use k * query_len^(1/kPower)
+    
+    const Uint4 kNonCoveredEndThreshold (55);
+    const double kPower (2.5);
+    
+    // (2) - post-processing
+    // exons shorter than kMinTermExonSize with identity lower than
+    // kMinTermExonIdty will be converted to gaps
+    const size_t kMinTermExonSize (28);
+    const double kMinTermExonIdty (0.9);
+}
 
 CSplign::CSplign( void )
 {
@@ -85,7 +88,7 @@ CSplign::CSplign( void )
     m_cds_start = m_cds_stop = 0;
     m_model_id = 0;
     m_MaxCompsPerQuery = 0;
-    m_MinPatternHitLength = 10;
+    m_MinPatternHitLength = 14;
 }
 
 CSplign::~CSplign()
@@ -158,7 +161,7 @@ void CSplign::SetMinSingletonIdentity(double idty)
 
 size_t CSplign::s_GetDefaultMaxGenomicExtent(void)
 {
-    return 25000;
+    return 35000;
 }
 
 
@@ -356,7 +359,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     // keep short terminal hits out of the pattern
     THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
-    const size_t min_term_len (2 * m_MinPatternHitLength);
+    const size_t min_term_len (20);
     bool b0 (true), b1 (true);
     while(b0 && b1 && ii < jj) {
 
@@ -522,6 +525,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             size_t s1 (pattern0[i+2] + R2);
 
             if(imprf) {
+
                 const size_t hitlen_q (pattern0[i + 1] - pattern0[i] + 1);
                 const size_t sh (hitlen_q / 4);
                 
@@ -534,7 +538,9 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 q1 -= delta;
                 s1 -= delta;
                 
-                if(q0 > q1 || s0 > s1) { // the longest segment too short
+                if(q0 > q1 || s0 > s1) {
+
+                    // the longest segment too short
                     q0 = pattern0[i] + L1;
                     s0 = pattern0[i+2] + L2;
                     q1 = pattern0[i] + R1;
@@ -1126,7 +1132,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         m_aligner->SetCDS(m_cds_start, m_cds_stop);
         m_aligner->Run();
 
-        //#define DBG_DUMP_TYPE2
+//#define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
         {{
             CNWFormatter fmt (*m_aligner);
@@ -1537,17 +1543,20 @@ Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const
         max_ext = m_max_genomic_ext;
     }
 
+    Uint4 rv (0);
+
     if(query_len >= kNonCoveredEndThreshold) {
 
-        return 100; // there is probably no good alignment at the term;
-                    // allow only a nominal amount
+        rv = m_max_genomic_ext;
     }
     else {
 
-        const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext;
-        const double rv = k * pow(query_len, 1. / kPower);
-        return Uint4(rv);
+        const double k (pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext);
+        const double drv (k * pow(query_len, 1. / kPower));
+        rv = Uint4(drv);
     }
+
+    return rv;
 }
 
 
