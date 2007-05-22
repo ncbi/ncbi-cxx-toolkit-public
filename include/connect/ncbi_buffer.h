@@ -42,7 +42,9 @@
  *   BUF_PushBack
  *   BUF_Peek
  *   BUF_PeekAt
+ *   BUF_PeekAtCB
  *   BUF_Read
+ *   BUF_Erase
  *   BUF_Destroy
  *
  */
@@ -162,6 +164,22 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Peek
 extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
 (BUF         buf,
  size_t      pos,
+ void*       data,
+ size_t      size
+ );
+
+
+/*!
+ * Call "callback" on up to "size" bytes stored in "buf" (starting at position
+ * "pos"), each chunk separately. Pass data as opaque parameter to callback.
+ * Return the # of processed bytes (can be less than "size").
+ * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
+ * Do nothing and return min(BUF_Size(buf)-pos, size) if "callback" is NULL.
+ */
+extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAtCB
+(BUF         buf,
+ size_t      pos,
+ void       (*callback)(void*, void*, size_t),
  void*       data,
  size_t      size
  );

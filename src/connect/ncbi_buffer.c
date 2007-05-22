@@ -282,7 +282,7 @@ extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
         pos -= chunk_size;
     }
 
-    /* copy the peeked data to "buf" */
+    /* copy the peeked data to "data" */
     for ( ;  n_todo  &&  pChunk;  pChunk = pChunk->next, n_extra_skip = 0) {
         size_t n_skip = pChunk->n_skip + n_extra_skip;
         size_t n_copy = pChunk->size - n_skip;
@@ -292,6 +292,56 @@ extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
 
         memcpy(data, (char*) pChunk->data + n_skip, n_copy);
         data = (char*) data + n_copy;
+        n_todo -= n_copy;
+    }
+
+    assert(size >= n_todo);
+    return (size - n_todo);
+}
+
+
+extern size_t BUF_PeekAtCB(BUF buf,
+                           size_t pos,
+                           void (*callback)(void*, void*, size_t),
+                           void* data,
+                           size_t size)
+{
+    size_t     n_todo = size;
+    size_t     n_extra_skip = 0;
+    SBufChunk* pChunk;
+
+    if (!size  ||  !buf  ||  !buf->list)
+        return 0;
+
+    /* special treatment for NULL callback */
+    if ( !callback ) {
+        size_t buf_size = BUF_Size(buf);
+        if (buf_size <= pos)
+            return 0;
+        buf_size -= pos;
+        return buf_size < size ? buf_size : size;
+    }
+
+    /* skip "pos" bytes */
+    for (pChunk = buf->list;  pChunk;  pChunk = pChunk->next) {
+        size_t chunk_size = pChunk->size - pChunk->n_skip;
+        assert(pChunk->size > pChunk->n_skip);
+        if (chunk_size > pos) {
+            n_extra_skip = pos;
+            break;
+        }
+        pos -= chunk_size;
+    }
+
+    /* process the peeked data */
+    for ( ;  n_todo  &&  pChunk;  pChunk = pChunk->next, n_extra_skip = 0) {
+        size_t n_skip = pChunk->n_skip + n_extra_skip;
+        size_t n_copy = pChunk->size - n_skip;
+        assert(pChunk->size > n_skip);
+        if (n_copy > n_todo)
+            n_copy = n_todo;
+
+        callback(data, (char*) pChunk->data + n_skip, n_copy);
         n_todo -= n_copy;
     }
 
