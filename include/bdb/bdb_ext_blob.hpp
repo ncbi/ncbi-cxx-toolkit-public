@@ -81,7 +81,7 @@ public:
     ///
     struct SBlobLoc
     {
-        unsigned       blob_id;
+        Uint4          blob_id;
         TBlobChunkVec  blob_location_table;
     };
 
@@ -134,12 +134,40 @@ public:
     const CBDB_ExtBlobMap& GetExtBlobMap() const;
     CBDB_ExtBlobMap& SetExtBlobMap();
 
+
+    /// @name Interface for super BLOB location table access    
+    /// 
+    /// @{
+
+    /// Set super-BLOB location (one chunk)
+    ///
+    void SetSuperLoc(Uint8 offset, Uint8 size);
+
+    /// Get super-BLOB location (throws an exception if more than one chunk)
+    ///
+    void GetSuperLoc(Uint8* offset, Uint8* size);
+
     /// Get location table of a super BLOB
+    /// Location table is used to reassemble BLOB from chunks
+    ///
     const CBDB_ExtBlobMap::TBlobChunkVec& GetSuperLoc() const;
+
+    /// Get Edit access to location table
+    ///
     CBDB_ExtBlobMap::TBlobChunkVec& SetSuperLoc();
+
+    /// @}
+
+
+
+
+    /// @name Serialization
+    /// @{
 
     void Serialize(CBDB_RawFile::TBuffer* buf);
     void Deserialize(const CBDB_RawFile::TBuffer& buf);
+
+    /// @}
 };
 
 
@@ -189,6 +217,30 @@ struct NCBI_BDB_CACHE_EXPORT CExtBlobLocDB : public CBDB_BLobFile
         BindKey("id_from",   &id_from);
         BindKey("id_to",     &id_to);
     }
+
+
+    /// Find the superblob storing our target blob_id
+    /// Function is doing the cursor range scan sequentially reading 
+    /// range-matching BLOB descriptions 
+    ///
+    /// @param blob_id
+    ///    BLOB id to search for
+    /// @param super_blob_map
+    ///    Output: super BLOB meta information (retrieval)
+    /// @param id_from
+    ///    Output: Range from where BLOB has been found
+    /// @param id_to
+    ///    Output: Range to where BLOB has been found
+    ///
+    EBDB_ErrCode FetchMeta(Uint4                 blob_id, 
+                           CBDB_ExtSuperBlobMap* super_blob_map,
+                           Uint4*                id_from = 0,
+                           Uint4*                id_to = 0);
+
+    /// Insert new super BLOB metainfo. Range (id_from, id_to) 
+    /// is determined automatically
+    ///
+    EBDB_ErrCode Insert(const CBDB_ExtSuperBlobMap& super_blob_map);
 
 };
 
