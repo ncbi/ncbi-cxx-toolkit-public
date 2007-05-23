@@ -27,6 +27,9 @@
  *
  * File Description:   Test program for portable exec functions
  *
+ * Note:  On mS-Windows Cygwin should be installed and added to PATH before
+ *        run this test program, because we use 'ls' command.
+ *
  */
 
 #include <ncbi_pch.hpp>
@@ -74,7 +77,7 @@ void CTest::Init(void)
 int CTest::Run(void)
 {
     string app = GetArguments().GetProgramName();
-    cout << "Application path: " << app << endl;
+    LOG_POST("Application path: " << app);
 
     // Initialization of variables and structures
 
@@ -115,6 +118,24 @@ int CTest::Run(void)
     args_p[1] = app_pp;
     args_p[2] = NULL;
 
+
+    // ResolvePath() test
+
+    assert( CExec::IsExecutable(app_c) );
+    string res_path;
+    res_path = CExec::ResolvePath(app_c);
+    LOG_POST("Resolve path: " << app_c << " -> " << res_path);
+    assert( !res_path.empty() );
+    res_path = CExec::ResolvePath(app_p);
+    LOG_POST("Resolve path: " << app_p << " -> " << res_path);
+    assert( !res_path.empty() );
+#if defined(NCBI_OS_MSWIN)
+    res_path = CExec::ResolvePath("winver.exe");
+    LOG_POST("Resolve path: " << "winver.exe" << " -> " << res_path);
+    assert( !res_path.empty() );
+#endif
+
+
     // System
 
 #if !defined(NCBI_OS_CYGWIN)
@@ -132,38 +153,38 @@ int CTest::Run(void)
 
     code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait",
                            NULL).GetExitCode(); 
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
     code = CExec::SpawnLP (CExec::eWait, app_p, app_pp,
                            NULL).GetExitCode();
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_P );
 
     code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait",
                            NULL, my_env).GetExitCode(); 
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
     code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait",
                            NULL, my_env).GetExitCode();
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
     code = CExec::SpawnV  (CExec::eWait, app_c, args_c).GetExitCode();
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
     code = CExec::SpawnVP (CExec::eWait, app_p, args_p).GetExitCode();
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_P );
 
     code = CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env).GetExitCode();
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
     code = CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env).GetExitCode();
-    cout << "Exit code: " << code << endl;
+    LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
     // Spawn with eNoWait, waiting self
@@ -201,7 +222,7 @@ int CTest::Run(void)
     assert( code == TEST_RESULT_C );
 
     // At success code below never been executed
-    cout << endl << "TEST execution fails!" << endl << endl;
+    LOG_POST("\nTEST execution fails!\n");
 
     return 77;
 }
@@ -236,7 +257,7 @@ int main(int argc, const char* argv[], const char* envp[])
         }
         _exit(TEST_RESULT_C);
     }
-    cout << "Start tests:" << endl << endl;
+    LOG_POST("Start tests:\n");
 
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
