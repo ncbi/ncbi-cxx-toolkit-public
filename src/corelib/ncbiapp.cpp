@@ -269,7 +269,9 @@ int CNcbiApplication::AppMain
             appname = "ncbi";
         }
     }
-    SetProgramDisplayName(appname);
+    if ( m_ProgramDisplayName.empty() ) {
+        SetProgramDisplayName(appname);
+    }
 
     // Make sure we have something as our 'real' executable's name.
     // though if it does not contain a full path it won't be much use.
