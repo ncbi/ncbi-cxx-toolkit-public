@@ -115,6 +115,7 @@ namespace bm
 {
 
 /// \internal
+/// \ingroup bvserial 
 enum serialization_header_mask {
     BM_HM_DEFAULT = 1,
     BM_HM_RESIZE  = (1 << 1), // resized vector
@@ -125,6 +126,7 @@ enum serialization_header_mask {
 
 
 /// Bit mask flags for serialization algorithm
+/// \ingroup bvserial 
 enum serialization_flags {
     BM_NO_BYTE_ORDER = 1,       ///< save no byte-order info (save some space)
     BM_NO_GAP_LENGTH = (1 << 1) ///< save no GAP info (save some space)
@@ -151,8 +153,11 @@ enum serialization_flags {
    Flags controlling serilization (bit-mask) 
    (use OR-ed serialization flags)
 
+   \ingroup bvserial 
+
    \return Size of serialization block.
    \sa calc_stat, serialization_flags
+
 */
 /*
  Serialization format:
@@ -433,6 +438,7 @@ unsigned serialize(const BV& bv,
 /*!
    @brief Saves bitvector into memory.
    Allocates temporary memory block for bvector.
+   \ingroup bvserial 
 */
 
 template<class BV>
@@ -449,6 +455,7 @@ unsigned serialize(BV& bv,
     @brief Serialization stream iterator
 
     Iterates blocks and control tokens of serialized bit-stream
+    \ingroup bvserial 
 */
 template<class DEC>
 class serial_stream_iterator
@@ -571,7 +578,12 @@ protected:
     gap_word_t         gap_head_;
 };
 
+/**
+    Class deserializer, can perform logical operation on bit-vector and
+    serialized bit-vector.
 
+    \ingroup bvserial 
+*/
 template<class BV>
 class operation_deserializer
 {
@@ -595,7 +607,12 @@ private:
 
 };
 
+/**
+    Iterator to walk forward the serialized stream.
 
+    \internal
+    \ingroup bvserial 
+*/
 template<class BV, class SerialIterator>
 class iterator_deserializer
 {
@@ -619,6 +636,11 @@ private:
                       bool                  set_clear);
 };
 
+/**
+    Class deserializer
+
+    \ingroup bvserial 
+*/
 template<class BV, class DEC>
 class deserializer
 {
@@ -649,6 +671,8 @@ protected:
     of previous serialization. Function does not remove bits 
     which are currently set. Effectively it means OR logical operation 
     between current bitset and previously serialized one.
+
+    @ingroup bvserial
 */
 template<class BV>
 unsigned deserialize(BV& bv, 
