@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.4"
+#define NETSCHEDULED_VERSION "2.10.5"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -81,6 +81,20 @@ USING_NCBI_SCOPE;
 
 #define NETSCHEDULED_FEATURES \
     "fast_status=1;dyn_queues=1;tags=1;version=" NETSCHEDULED_VERSION
+    
+static int s_TokenToInt(const char*tok, int size)
+{
+    bool neg = size > 0 && tok[0] == '-';
+    if (neg) {
+        tok++; size--;
+    }
+    int res = 0;
+    while (size-- > 0) {
+        res = res*10 + *tok++ - '0';
+    }
+    if (neg) res = -res;
+    return res;
+}
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -119,7 +133,7 @@ struct SJS_Request
     char      progress_msg[kNetScheduleMaxDBDataSize];
     char      affinity_token[kNetScheduleMaxDBDataSize];
     string    job_key;
-    unsigned  job_return_code;
+    int       job_return_code;
     unsigned  port;
     unsigned  timeout;
     unsigned  job_mask;
@@ -167,19 +181,19 @@ struct SJS_Request
             job_key.erase(); job_key.append(val, eff_size);
             break;
         case eNSRF_JobReturnCode:
-            job_return_code = atoi(val);
+            job_return_code = s_TokenToInt(val, size);
             break;
         case eNSRF_Port:
-            port = atoi(val);
+            port = s_TokenToInt(val, size);
             break;
         case eNSRF_Timeout:
-            timeout = atoi(val);
+            timeout = s_TokenToInt(val, size);
             break;
         case eNSRF_JobMask:
-            job_mask = atoi(val);
+            job_mask = s_TokenToInt(val, size);
             break;
         case eNSRF_Flags:
-	    flags = atoi(val);   
+	    flags = s_TokenToInt(val, size);   
             break;
         case eNSRF_ErrMsg:
             err_msg.erase(); err_msg.append(val, eff_size);
@@ -950,7 +964,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
         ttype = x_GetToken(s, end, token, tsize);
         if (ttype == eNST_Int) {
             m_BatchPos = 0;
-            m_BatchSize = atoi(token);
+            m_BatchSize = s_TokenToInt(token, tsize);
             m_BatchStopWatch.Restart();
             m_BatchSubmitVector.resize(m_BatchSize);
             m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchItem;
@@ -1990,13 +2004,16 @@ CNetScheduleHandler::x_GetToken(const char*& s,
     while (s < end && (*s == ' ' || *s == '\t')) ++s;
     if (!(s < end)) return eNST_None;
     ENSTokenType ttype = eNST_None;
+    bool has_digit = false;
     if (*s == '"') {
         s = tok = s + 1;
         ttype = eNST_Str;
     } else {
         tok = s;
-        if (isdigit(*s) || *s == '-') ttype = eNST_Int;
-        else ttype = eNST_Id;
+        if ((has_digit = isdigit(*s)) || (*s == '-' && s++))
+	    ttype = eNST_Int;
+        else
+	    ttype = eNST_Id;
     }
     for ( ; (s < end) && ((ttype == eNST_Str || ttype == eNST_KeyStr) ?
                         !(*s == '"' && *(s-1) != '\\') :
@@ -2005,14 +2022,19 @@ CNetScheduleHandler::x_GetToken(const char*& s,
         switch (ttype) {
         case eNST_Int:
             if (!isdigit(*s)) ttype = eNST_Id;
+	    else has_digit = true;
             break;
         case eNST_KeyNone:
-            if (isdigit(*s) || *s == '-') ttype = eNST_KeyInt;
-            else if (*s == '"') ttype = eNST_KeyStr;
-            else ttype = eNST_KeyId;
+            if ((has_digit = isdigit(*s)) || (*s == '-' && s++))
+	        ttype = eNST_KeyInt;
+            else if (*s == '"')
+	        ttype = eNST_KeyStr;
+            else
+	        ttype = eNST_KeyId;
             break;
         case eNST_KeyInt:
             if (!isdigit(*s)) ttype = eNST_KeyId;
+	    else has_digit = true;
             break;
         case eNST_Id:
             if (*s == '=') ttype = eNST_KeyNone;
@@ -2035,6 +2057,8 @@ CNetScheduleHandler::x_GetToken(const char*& s,
         }
         ++s;
     }
+    if (ttype == eNST_Int && !has_digit) ttype = eNST_Id;
+    if (ttype == eNST_KeyInt && !has_digit) ttype = eNST_KeyId;
     return ttype;
 }
 
