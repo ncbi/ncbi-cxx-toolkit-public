@@ -100,6 +100,7 @@ typedef struct BlastCompo_GappingParams {
     int gap_open;        /**< penalty for opening a gap */
     int gap_extend;      /**< penalty for extending a gapped alignment by
                               one residue */
+    int decline_align;   /**< penalty for declining to align two characters */
     int x_dropoff;       /**< for x-drop algorithms, once a path falls below
                               the best score by this (positive) amount, the
                               path is no longer searched */
