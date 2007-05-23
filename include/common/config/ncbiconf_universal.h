@@ -1,5 +1,5 @@
-#ifndef FORWARDING_NCBICONF_H
-#define FORWARDING_NCBICONF_H
+#ifndef NCBICONF_UNIVERSAL_H
+#define NCBICONF_UNIVERSAL_H
 
 /*  $Id$
  * ===========================================================================
@@ -30,23 +30,38 @@
  *
  */
 
-/** @file ncbiconf.h
- ** Front end for a platform-specific configuration summary.
+/** @file ncbiconf_universal.h
+ ** Architecture-specific settings for universal builds.
  **/
 
-#ifdef _MSC_VER
-#  include <common/config/ncbiconf_msvc.h>
-#elif defined(__MWERKS__)
-#  include <common/config/ncbiconf_mwerks.h>
-#elif defined(NCBI_XCODE_BUILD)
-#  include <common/config/ncbiconf_xcode.h>
+#ifdef NCBI_OS_DARWIN
+#  include <machine/limits.h>
+#  include <sys/cdefs.h>
+#  define NCBI_PLATFORM_BITS   LONG_BIT
+#  define SIZEOF_CHAR          1
+#  define SIZEOF_DOUBLE        8
+#  define SIZEOF_FLOAT         4
+#  define SIZEOF_INT           4
+#  define SIZEOF_LONG          (LONG_BIT / CHAR_BIT)
+#  if __DARWIN_LONG_DOUBLE_IS_DOUBLE
+#    define SIZEOF_LONG_DOUBLE 8
+#  elif defined(__i386__) || defined(__x86_64__)
+#    define SIZEOF_LONG_DOUBLE 12
+#  else
+#    define SIZEOF_LONG_DOUBLE 16
+#  endif
+#  define SIZEOF_LONG_LONG     8
+#  define SIZEOF_SHORT         2
+#  define SIZEOF_SIZE_T        (LONG_BIT / CHAR_BIT)
+#  define SIZEOF_VOIDP         (LONG_BIT / CHAR_BIT)
+#  define SIZEOF___INT64       0 /* no such type */
+#  ifdef __BIG_ENDIAN__
+#    define WORDS_BIGENDIAN 1
+#  endif
+/* __CHAR_UNSIGNED__: N/A -- Darwin uses signed characters regardless
+ * of CPU type, and GCC would define the macro itself if appropriate. */
 #else
-#  include <ncbiconf_unix.h>
+#  error No universal-binary configuration settings defined for your OS.
 #endif
 
-#ifdef NCBI_UNIVERSAL_BUILD
-/* sort out the remaining details */
-#  include <common/config/ncbiconf_universal.h>
-#endif
-
-#endif  /* FORWARDING_NCBICONF_H */
+#endif  /* NCBICONF_UNIVERSAL_H */

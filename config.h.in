@@ -690,6 +690,9 @@
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 #undef NCBI_SQLCOLATTRIBUTE_SQLLEN
 
+/* Define to 1 if building universal (multi-architecture) binaries. */
+#undef NCBI_UNIVERSAL_BUILD
+
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC
 

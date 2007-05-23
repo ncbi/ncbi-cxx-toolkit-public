@@ -24,6 +24,9 @@
 /* Define to 1 if you have the `atoll' function. */
 #define HAVE_ATOLL 1
 
+/* Define to 1 if you have the <atomic.h> header file. */
+/* #undef HAVE_ATOMIC_H */
+
 /* Define to 1 if your C compiler supports __attribute__((destructor)) */
 #define HAVE_ATTRIBUTE_DESTRUCTOR 1
 
@@ -43,8 +46,17 @@
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 /* #undef HAVE_BERKELEY_DB_CXX */
 
+/* Define to 1 if the `Boost.Regex' library is available. */
+/* #undef HAVE_BOOST_REGEX */
+
+/* Define to 1 if the `Boost.Spirit' headers are available. */
+/* #undef HAVE_BOOST_SPIRIT */
+
 /* Define to 1 if the `Boost.Test' libraries are available. */
 /* #undef HAVE_BOOST_TEST */
+
+/* Define to 1 if the `Boost.Threads' library is available. */
+/* #undef HAVE_BOOST_THREAD */
 
 /* Define to 1 if CPPUNIT libraries are available. */
 /* #undef HAVE_CPPUNIT */
@@ -66,6 +78,9 @@
 
 /* Define to 1 if you have the <errno.h> header file. */
 #define HAVE_ERRNO_H 1
+
+/* Define to 1 if you have the `euidaccess' function. */
+/* #undef HAVE_EUIDACCESS */
 
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 /* #undef HAVE_FCGX_ACCEPT_R */
@@ -173,6 +188,9 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #define HAVE_IOS_REGISTER_CALLBACK 1
 
+/* Define to 1 if <algorithm> supplies `std::is_sorted<>'. */
+/* #undef HAVE_IS_SORTED */
+
 /* Define to 1 if you have the `lchown' function. */
 /* #undef HAVE_LCHOWN */
 
@@ -185,6 +203,10 @@
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #define HAVE_LIBCRYPT 1
+
+/* Define to 1 if DEMANGLE is available, either in its own library or as part
+   of the standard libraries. */
+/* #undef HAVE_LIBDEMANGLE */
 
 /* Define to 1 if DL is available, either in its own library or as part of the
    standard libraries. */
@@ -218,6 +240,12 @@
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 /* #undef HAVE_LIBKSTAT */
+
+/* Define to 1 if liblzo is available. */
+/* #undef HAVE_LIBLZO */
+
+/* Define to 1 if liblzo2 is available. */
+/* #undef HAVE_LIBLZO2 */
 
 /* Define to 1 if liboechem is available. */
 /* #undef HAVE_LIBOECHEM */
@@ -367,6 +395,15 @@
 
 /* Define to 1 if Python libraries are available. */
 /* #undef HAVE_PYTHON */
+
+/* Define to 1 if Python 2.3 libraries are available. */
+/* #undef HAVE_PYTHON23 */
+
+/* Define to 1 if Python 2.4 libraries are available. */
+/* #undef HAVE_PYTHON24 */
+
+/* Define to 1 if Python 2.5 libraries are available. */
+/* #undef HAVE_PYTHON25 */
 
 /* If you have the `readdir_r' function, define to the number of arguments it
    takes (normally 2 or 3). */
@@ -650,9 +687,6 @@
 /* Define to 1 on Unix. */
 #define NCBI_OS_UNIX 1
 
-/* Define to the architecture size. */
-#define NCBI_PLATFORM_BITS 32
-
 /* Define to whatever syntax, if any, your C compiler supports for marking
    pointers as restricted in the C99 sense. */
 #define NCBI_RESTRICT_C __restrict__
@@ -663,6 +697,11 @@
 
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 /* #undef NCBI_SQLCOLATTRIBUTE_SQLLEN */
+
+/* Define to 1 if building universal (multi-architecture) binaries. */
+/* (Not necessarily the case, but we shouldn't hardcode anything
+ *  PowerPC-specific either.) */
+#define NCBI_UNIVERSAL_BUILD 1
 
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1
@@ -692,43 +731,6 @@
    by a signal. */
 /* #undef SELECT_UPDATES_TIMEOUT */
 
-/* The size of a `char', as computed by sizeof. */
-#define SIZEOF_CHAR 1
-
-/* The size of a `double', as computed by sizeof. */
-#define SIZEOF_DOUBLE 8
-
-/* The size of a `float', as computed by sizeof. */
-#define SIZEOF_FLOAT 4
-
-/* The size of a `int', as computed by sizeof. */
-#define SIZEOF_INT 4
-
-/* The size of a `long', as computed by sizeof. */
-#define SIZEOF_LONG 4
-
-/* The size of a `long double', as computed by sizeof. */
-#if __LDBL_DIG__ == 31
-#  define SIZEOF_LONG_DOUBLE 16
-#else
-#  define SIZEOF_LONG_DOUBLE 8
-#endif
-
-/* The size of a `long long', as computed by sizeof. */
-#define SIZEOF_LONG_LONG 8
-
-/* The size of a `short', as computed by sizeof. */
-#define SIZEOF_SHORT 2
-
-/* The size of a `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T 4
-
-/* The size of a `void*', as computed by sizeof. */
-#define SIZEOF_VOIDP 4
-
-/* The size of a `__int64', as computed by sizeof. */
-#define SIZEOF___INT64 0
-
 /* Define to 1 if the stack grows down. */
 #define STACK_GROWS_DOWN 1
 
@@ -747,21 +749,12 @@
 /* Define to 1 if using a local copy of PCRE. */
 #define USE_LOCAL_PCRE 1
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#define WORDS_BIGENDIAN 1
-
 /* Define to 1 if the X Window System is missing or not being used. */
 /* #undef X_DISPLAY_MISSING */
 
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE 1
-#endif
-
-/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-/* # undef __CHAR_UNSIGNED__ */
 #endif
 
 /* Define to empty if `const' does not conform to ANSI C. */

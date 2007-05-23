@@ -94,6 +94,10 @@ AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(64,
    [ --with-64               compile to 64-bit code])
+AC_ARG_WITH(universal,
+   [ --with-universal        build universal binaries on Mac OS X])
+AC_ARG_WITH(universal2,
+   [ --with-universal=CPUs   build universal binaries targeting the given CPUs])
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 AC_ARG_WITH(runpath,
@@ -364,10 +368,10 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static runpath mt 64 projects ncbi-public \
+debug optimization profiling dll static runpath mt 64 universal \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
-flat-makefile \
+flat-makefile projects ncbi-public \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
@@ -406,6 +410,7 @@ for x_arg in "$@" ; do
 
       --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
+      | --with-universal=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
@@ -976,8 +981,45 @@ esac
 C_LIBS=$LIBS
 
 
-#### 32/64-bit compilation, and extra C++ LIBS
-if test "$with_64" = "yes" ; then
+#### architecture settings, and extra C++ LIBS
+if test "${with_universal-no}" != "no" ; then
+   bit64_sfx= #"Univ"
+   case "$host" in
+    *-*-darwin[[89]].* | *-*-darwin[[1-9]][[0-9]]* )
+      case "$with_universal" in
+       yes )
+          case "$with_64:$host_os" in
+           yes:darwin8.* )
+             AC_MSG_ERROR([Unable to build 64-bit universal binaries on $host])
+             ;;
+           yes:* )
+             ARCH_CFLAGS="-arch ppc64 -arch x86_64"
+             ;;
+           * )
+             ARCH_CFLAGS="-arch ppc -arch i386"
+             ;;
+          esac
+          ;;
+       * )
+         ARCH_CFLAGS="-arch `echo $with_universal | sed -e 's/,/ -arch /g'`"
+         ;;
+      esac
+      case "$host" in
+       p*pc*-*-darwin8.*)
+         # Must specify -isysroot ..., but only once; anyway, the preprocessor
+         # needs to see it, and naturally can't cope with multiple -arch flags.
+         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk"
+         #ARCH_CFLAGS="$SYSROOT $ARCH_CFLAGS"
+         CC="$CC $SYSROOT"
+         CXX="$CXX $SYSROOT"
+         ;;
+      esac
+      ;;
+    * ) AC_MSG_ERROR([Do not know how to build universal binaries on $host]) ;;
+   esac
+   AC_DEFINE(NCBI_UNIVERSAL_BUILD, 1,
+             [Define to 1 if building universal (multi-architecture) binaries.])
+elif test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
     sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
@@ -1440,7 +1482,8 @@ fi
 
 ### Support for precompiled headers
 GCCPCH="#"
-if test "$compiler" = GCC -a "$with_pch" = "yes"; then
+if test "$compiler" = GCC -a "$with_pch" = "yes" \
+     -a "${with_universal-no}" = "no"; then
    AC_CACHE_CHECK([whether $CXX supports precompiled headers], ncbi_cv_cxx_pch,
       [echo '#include <iostream>' > conftest.hpp
        echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD
@@ -1641,12 +1684,14 @@ AC_GNU_SOURCE
 
 #### Determine whether this is implicitly a 64-bit platform
 AC_TYPE_SIZE_T
-AC_CHECK_SIZEOF(size_t)
-NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
-AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
-                   [Define to the architecture size.])
-if test $NCBI_PLATFORM_BITS -eq 64; then
-   bit64_sfx=64
+if test "${with_universal-no}" = "no"; then
+   AC_CHECK_SIZEOF(size_t)
+   NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+   AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
+                      [Define to the architecture size.])
+   if test $NCBI_PLATFORM_BITS -eq 64; then
+      bit64_sfx=64
+   fi
 fi
 
 
@@ -2441,18 +2486,20 @@ fi
 AC_C_CONST
 
 ### Check for C standard types and sizes
-AC_C_BIGENDIAN
-AC_C_CHAR_UNSIGNED
-AC_CHECK_SIZEOF(void*)
-AC_CHECK_SIZEOF(char)
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(__int64)
-AC_CHECK_SIZEOF(float)
-AC_CHECK_SIZEOF(double)
-AC_CHECK_SIZEOF(long double)
+if test "${with_universal-no}" = "no"; then
+   AC_C_BIGENDIAN
+   AC_C_CHAR_UNSIGNED
+   AC_CHECK_SIZEOF(char)
+   AC_CHECK_SIZEOF(double)
+   AC_CHECK_SIZEOF(float)
+   AC_CHECK_SIZEOF(int)
+   AC_CHECK_SIZEOF(long)
+   AC_CHECK_SIZEOF(long double)
+   AC_CHECK_SIZEOF(long long)
+   AC_CHECK_SIZEOF(short)
+   AC_CHECK_SIZEOF(void*)
+   AC_CHECK_SIZEOF(__int64)
+fi
 AC_CHECK_TYPES([intptr_t, uintptr_t])
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,

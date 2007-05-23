@@ -875,6 +875,8 @@ Optional Packages:
  --with-bin-release      build executables suitable for public release
  --with-mt               compile in a MultiThread-safe manner
  --with-64               compile to 64-bit code
+ --with-universal        build universal binaries on Mac OS X
+ --with-universal=CPUs   build universal binaries targeting the given CPUs
  --without-exe           do not build executables
  --with-runpath=         hard-code the runtime path to DLLs
  --with-lfs              enable large file support to the extent possible
@@ -1576,6 +1578,18 @@ fi;
 # Check whether --with-64 or --without-64 was given.
 if test "${with_64+set}" = set; then
   withval="$with_64"
+
+fi;
+
+# Check whether --with-universal or --without-universal was given.
+if test "${with_universal+set}" = set; then
+  withval="$with_universal"
+
+fi;
+
+# Check whether --with-universal2 or --without-universal2 was given.
+if test "${with_universal2+set}" = set; then
+  withval="$with_universal2"
 
 fi;
 
@@ -2359,10 +2373,10 @@ fi;
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static runpath mt 64 projects ncbi-public \
+debug optimization profiling dll static runpath mt 64 universal \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
-flat-makefile \
+flat-makefile projects ncbi-public \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo lzo2 pcre gnutls openssl sybase sybase-local sybase-new \
@@ -2401,6 +2415,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
 
       --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
+      | --with-universal=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [A-Z]*=* \
@@ -4631,8 +4646,52 @@ esac
 C_LIBS=$LIBS
 
 
-#### 32/64-bit compilation, and extra C++ LIBS
-if test "$with_64" = "yes" ; then
+#### architecture settings, and extra C++ LIBS
+if test "${with_universal-no}" != "no" ; then
+   bit64_sfx= #"Univ"
+   case "$host" in
+    *-*-darwin[89].* | *-*-darwin[1-9][0-9]* )
+      case "$with_universal" in
+       yes )
+          case "$with_64:$host_os" in
+           yes:darwin8.* )
+             { { echo "$as_me:$LINENO: error: Unable to build 64-bit universal binaries on $host" >&5
+echo "$as_me: error: Unable to build 64-bit universal binaries on $host" >&2;}
+   { (exit 1); exit 1; }; }
+             ;;
+           yes:* )
+             ARCH_CFLAGS="-arch ppc64 -arch x86_64"
+             ;;
+           * )
+             ARCH_CFLAGS="-arch ppc -arch i386"
+             ;;
+          esac
+          ;;
+       * )
+         ARCH_CFLAGS="-arch `echo $with_universal | sed -e 's/,/ -arch /g'`"
+         ;;
+      esac
+      case "$host" in
+       p*pc*-*-darwin8.*)
+         # Must specify -isysroot ..., but only once; anyway, the preprocessor
+         # needs to see it, and naturally can't cope with multiple -arch flags.
+         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk"
+         #ARCH_CFLAGS="$SYSROOT $ARCH_CFLAGS"
+         CC="$CC $SYSROOT"
+         CXX="$CXX $SYSROOT"
+         ;;
+      esac
+      ;;
+    * ) { { echo "$as_me:$LINENO: error: Do not know how to build universal binaries on $host" >&5
+echo "$as_me: error: Do not know how to build universal binaries on $host" >&2;}
+   { (exit 1); exit 1; }; } ;;
+   esac
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_UNIVERSAL_BUILD 1
+_ACEOF
+
+elif test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
     sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
@@ -5169,7 +5228,8 @@ fi
 
 ### Support for precompiled headers
 GCCPCH="#"
-if test "$compiler" = GCC -a "$with_pch" = "yes"; then
+if test "$compiler" = GCC -a "$with_pch" = "yes" \
+     -a "${with_universal-no}" = "no"; then
    echo "$as_me:$LINENO: checking whether $CXX supports precompiled headers" >&5
 echo $ECHO_N "checking whether $CXX supports precompiled headers... $ECHO_C" >&6
 if test "${ncbi_cv_cxx_pch+set}" = set; then
@@ -6408,7 +6468,8 @@ _ACEOF
 
 fi
 
-echo "$as_me:$LINENO: checking for size_t" >&5
+if test "${with_universal-no}" = "no"; then
+   echo "$as_me:$LINENO: checking for size_t" >&5
 echo $ECHO_N "checking for size_t... $ECHO_C" >&6
 if test "${ac_cv_type_size_t+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -6822,14 +6883,15 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+   NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
 
 cat >>confdefs.h <<_ACEOF
 #define NCBI_PLATFORM_BITS $NCBI_PLATFORM_BITS
 _ACEOF
 
-if test $NCBI_PLATFORM_BITS -eq 64; then
-   bit64_sfx=64
+   if test $NCBI_PLATFORM_BITS -eq 64; then
+      bit64_sfx=64
+   fi
 fi
 
 
@@ -11067,7 +11129,8 @@ fi
 
 
 ### Check for C standard types and sizes
-echo "$as_me:$LINENO: checking whether byte ordering is bigendian" >&5
+if test "${with_universal-no}" = "no"; then
+   echo "$as_me:$LINENO: checking whether byte ordering is bigendian" >&5
 echo $ECHO_N "checking whether byte ordering is bigendian... $ECHO_C" >&6
 if test "${ac_cv_c_bigendian+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -11360,7 +11423,7 @@ _ACEOF
 
 fi
 
-echo "$as_me:$LINENO: checking for void*" >&5
+   echo "$as_me:$LINENO: checking for void*" >&5
 echo $ECHO_N "checking for void*... $ECHO_C" >&6
 if test "${ac_cv_type_voidp+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -11774,7 +11837,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for char" >&5
+   echo "$as_me:$LINENO: checking for char" >&5
 echo $ECHO_N "checking for char... $ECHO_C" >&6
 if test "${ac_cv_type_char+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -12188,7 +12251,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for short" >&5
+   echo "$as_me:$LINENO: checking for short" >&5
 echo $ECHO_N "checking for short... $ECHO_C" >&6
 if test "${ac_cv_type_short+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -12602,7 +12665,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for int" >&5
+   echo "$as_me:$LINENO: checking for int" >&5
 echo $ECHO_N "checking for int... $ECHO_C" >&6
 if test "${ac_cv_type_int+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -13016,7 +13079,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for long" >&5
+   echo "$as_me:$LINENO: checking for long" >&5
 echo $ECHO_N "checking for long... $ECHO_C" >&6
 if test "${ac_cv_type_long+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -13430,7 +13493,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for long long" >&5
+   echo "$as_me:$LINENO: checking for long long" >&5
 echo $ECHO_N "checking for long long... $ECHO_C" >&6
 if test "${ac_cv_type_long_long+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -13844,7 +13907,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for __int64" >&5
+   echo "$as_me:$LINENO: checking for __int64" >&5
 echo $ECHO_N "checking for __int64... $ECHO_C" >&6
 if test "${ac_cv_type___int64+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -14258,7 +14321,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for float" >&5
+   echo "$as_me:$LINENO: checking for float" >&5
 echo $ECHO_N "checking for float... $ECHO_C" >&6
 if test "${ac_cv_type_float+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -14672,7 +14735,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for double" >&5
+   echo "$as_me:$LINENO: checking for double" >&5
 echo $ECHO_N "checking for double... $ECHO_C" >&6
 if test "${ac_cv_type_double+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -15086,7 +15149,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-echo "$as_me:$LINENO: checking for long double" >&5
+   echo "$as_me:$LINENO: checking for long double" >&5
 echo $ECHO_N "checking for long double... $ECHO_C" >&6
 if test "${ac_cv_type_long_double+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -15500,6 +15563,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+fi
 echo "$as_me:$LINENO: checking for intptr_t" >&5
 echo $ECHO_N "checking for intptr_t... $ECHO_C" >&6
 if test "${ac_cv_type_intptr_t+set}" = set; then
