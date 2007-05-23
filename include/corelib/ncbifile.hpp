@@ -994,7 +994,7 @@ private:
     static TMode  m_DefaultModeGlobal[eUnknown][3/*EWho*/];
 
     /// Backup suffix
-    static char* m_BackupSuffix;
+    static char*  m_BackupSuffix;
 };
 
 
