@@ -42,10 +42,12 @@ BEGIN_NCBI_SCOPE
 //  CTDS_RPCCmd::
 //
 
-CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection* conn, DBPROCESS* cmd,
-                         const string& proc_name, unsigned int nof_params) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CBaseCmd(proc_name, nof_params),
+CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection* conn,
+                         DBPROCESS* cmd,
+                         const string& proc_name,
+                         unsigned int nof_params) :
+    CDBL_Cmd(conn, cmd),
+    impl::CBaseCmd(conn, proc_name, nof_params),
     m_Res(0),
     m_Status(0)
 {
@@ -57,12 +59,12 @@ bool CTDS_RPCCmd::Send()
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     if (!x_AssignOutputParams()) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "cannot assign the output params", 221001 );
     }
 
@@ -70,52 +72,40 @@ bool CTDS_RPCCmd::Send()
     if (Check(dbcmd(GetCmd(), (char*)(cmd.c_str()))) != SUCCEED) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "dbcmd failed", 221002 );
     }
 
     if (!x_AssignParams()) {
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "Cannot assign the params", 221003 );
     }
 
     GetConnection().TDS_SetTimeout();
 
     if (Check(dbsqlsend(GetCmd())) != SUCCEED) {
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "dbsqlsend failed", 221005 );
     }
 
-    m_WasSent = true;
+    SetWasSent();
     m_Status = 0;
     return true;
 }
 
 
-bool CTDS_RPCCmd::WasSent() const
-{
-    return m_WasSent;
-}
-
-
 bool CTDS_RPCCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         if (m_Res) {
             delete m_Res;
             m_Res = 0;
         }
-        m_WasSent = false;
+        SetWasSent(false);
         return Check(dbcancel(GetCmd())) == SUCCEED;
     }
     // GetQuery().erase();
     return true;
-}
-
-
-bool CTDS_RPCCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -129,15 +119,15 @@ CDB_Result* CTDS_RPCCmd::Result()
         m_Res = 0;
     }
 
-    if (!m_WasSent) {
+    if (!WasSent()) {
         DATABASE_DRIVER_ERROR( "you have to send a command first", 221010 );
     }
 
     if (m_Status == 0) {
         m_Status = 1;
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
-            m_WasSent = false;
-            m_HasFailed = true;
+            SetWasSent(false);
+            SetHasFailed();
             DATABASE_DRIVER_ERROR( "dbsqlok failed", 221011 );
         }
     }
@@ -165,7 +155,7 @@ CDB_Result* CTDS_RPCCmd::Result()
             m_Status = 2;
             break;
         default:
-            m_HasFailed = true;
+            SetHasFailed();
             DATABASE_DRIVER_WARNING( "error encountered in command execution", 221016 );
         }
         break;
@@ -192,36 +182,14 @@ CDB_Result* CTDS_RPCCmd::Result()
         }
     }
 
-    m_WasSent = false;
+    SetWasSent(false);
     return 0;
 }
 
 
 bool CTDS_RPCCmd::HasMoreResults() const
 {
-    return m_WasSent;
-}
-
-void CTDS_RPCCmd::DumpResults()
-{
-    CDB_Result* dbres;
-    while(m_WasSent) {
-        dbres= Result();
-        if(dbres) {
-            if(GetConnection().GetResultProcessor()) {
-                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch());
-            }
-            delete dbres;
-        }
-    }
-}
-
-bool CTDS_RPCCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return WasSent();
 }
 
 

@@ -380,10 +380,6 @@ public:
 
 protected:
     inline CS_RETCODE Check(CS_RETCODE rc);
-    CS_RETCODE CheckSF(CS_RETCODE rc, const char* msg, unsigned int msg_num);
-    CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
-    CS_RETCODE CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
-    CS_RETCODE CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
 protected:
     inline CTL_Connection& GetConnection(void);
@@ -423,8 +419,7 @@ protected:
     }
 
 protected:
-    bool            m_HasFailed;
-    bool            m_WasSent;
+//     bool            m_HasFailed;
     int             m_RowCount;
     string          m_ExecCntxInfo;
 
@@ -448,7 +443,6 @@ protected:
     inline CS_COMMAND* x_GetSybaseCmd(void) const;
     inline void SetSybaseCmd(CS_COMMAND* cmd);
 
-    bool Cancel(void);
     bool AssignCmdParam(CDB_Object&   param,
                         const string& param_name,
                         CS_DATAFMT&   param_fmt,
@@ -462,10 +456,10 @@ protected:
 
     inline CTL_RowResult& GetResult(void);
     inline void DeleteResult(void);
+    inline void DeleteResultInternal(void);
 
     inline CDB_Result* CreateResult(void);
     virtual CDB_Result* CreateResult(impl::CResult& result) = 0;
-    CDB_Result* MakeResult(void);
 
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
@@ -481,8 +475,10 @@ protected:
 
     bool ProcessResultInternal(CDB_Result& res);
     inline bool ProcessResultInternal(CS_INT res_type);
-    bool ProcessResults(void);
 
+    CS_RETCODE CheckSFB_Internal(CS_RETCODE rc,
+                                 const char* msg,
+                                 unsigned int msg_num);
 protected:
     void DropSybaseCmd(void);
 
@@ -494,29 +490,32 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  CTL_BCPCmd::
+//  CTL_LangCmd::
 //
-class CTL_BCPCmd : public CTL_CmdBase
+class CTL_LRCmd : public CTL_Cmd, public impl::CBaseCmd
 {
 public:
-    CTL_BCPCmd(CTL_Connection* conn);
-    virtual ~CTL_BCPCmd(void);
+    CTL_LRCmd(CTL_Connection* conn,
+              const string& query,
+              unsigned int nof_params);
+    virtual ~CTL_LRCmd(void);
+
+public:
+    CDB_Result* MakeResult(void);
 
 protected:
-    inline CS_BLKDESC* x_GetSybaseCmd(void) const;
+    CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
-private:
-
-private:
-    CS_BLKDESC* m_Cmd;
+    virtual bool Cancel(void);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTL_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_Cmd, public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_LRCmd
 {
     friend class CTL_Connection;
 
@@ -530,14 +529,9 @@ protected:
 
 protected:
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
-    virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
-    virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
-    virtual void DumpResults(void);
     virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
@@ -551,7 +545,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_Cmd, public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_LRCmd
 {
     friend class CTL_Connection;
 
@@ -564,14 +558,9 @@ protected:
 
 protected:
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
-    virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
-    virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
-    virtual void DumpResults(void);
     virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
@@ -588,7 +577,7 @@ private:
 
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd :
     CTL_Cmd,
-    public impl::CCursorCmd
+    public impl::CBaseCmd
 {
     friend class CTL_Connection;
 
@@ -604,7 +593,7 @@ protected:
     void CloseForever(void);
 
 protected:
-    virtual CDB_Result* Open(void);
+    virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
@@ -612,8 +601,13 @@ protected:
                      bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
-    virtual bool Close(void);
+    virtual bool CloseCursor(void);
     virtual CDB_Result* CreateResult(impl::CResult& result);
+
+    CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+    CS_RETCODE CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+
+    bool ProcessResults(void);
 
 private:
     bool x_AssignParams(bool just_declare = false);
@@ -632,7 +626,7 @@ private:
 //
 
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd :
-    CTL_BCPCmd,
+    CTL_CmdBase,
     public impl::CBaseCmd
 {
     friend class CTL_Connection;
@@ -649,20 +643,25 @@ protected:
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual bool EndBCP(void);
     virtual CDB_Result* CreateResult(impl::CResult& result);
-    virtual bool HasFailed(void) const;
     virtual int RowCount(void) const;
+
+    CS_RETCODE CheckSF(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+    CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
+    CS_RETCODE CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
 private:
     bool x_AssignParams(void);
     bool x_IsUnicodeClientAPI(void) const;
     CS_VOID* x_GetValue(const CDB_Char& value) const;
     CS_VOID* x_GetValue(const CDB_VarChar& value) const;
+    CS_BLKDESC* x_GetSybaseCmd(void) const
+    {
+        return m_Cmd;
+    }
 
 private:
     struct SBcpBind {
@@ -671,6 +670,7 @@ private:
         char        buffer[sizeof(CS_NUMERIC)];
     };
 
+    CS_BLKDESC*         m_Cmd;
     AutoArray<SBcpBind> m_Bind;
     int                 m_RowCount;
 };
@@ -973,13 +973,16 @@ CTL_Cmd::DeleteResult(void)
     m_Res = NULL;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
 inline
-CS_BLKDESC*
-CTL_BCPCmd::x_GetSybaseCmd(void) const
+void
+CTL_Cmd::DeleteResultInternal(void)
 {
-    return m_Cmd;
+    if ( HaveResult() ) {
+        // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
+        m_Res->m_EOR = true;
+
+        DeleteResult();
+    }
 }
 
 

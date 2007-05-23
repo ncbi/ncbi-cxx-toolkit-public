@@ -734,8 +734,6 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 /////////////////////////////////////////////////////////////////////////////
 CStatementBase::CStatementBase(CODBC_Connection& conn) :
     m_RowCount(-1),
-    m_WasSent(false),
-    m_HasFailed(false),
     m_ConnectPtr(&conn),
     m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
 {
@@ -1306,7 +1304,7 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
 
 size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 {
-    if(nof_bytes > m_Bytes2go) nof_bytes= m_Bytes2go;
+    if(nof_bytes > GetBytes2go()) nof_bytes= GetBytes2go();
     if(nof_bytes < 1) return 0;
 
     int rc;
@@ -1349,8 +1347,8 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     case SQL_NEED_DATA:
     case SQL_NO_DATA:
     case SQL_SUCCESS:
-        m_Bytes2go-= nof_bytes;
-        if(m_Bytes2go == 0) break;
+        SetBytes2go(GetBytes2go() - nof_bytes);
+        if(GetBytes2go() == 0) break;
         return nof_bytes;
     case SQL_ERROR:
         ReportErrors();
@@ -1401,9 +1399,9 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
 bool CODBC_SendDataCmd::Cancel(void)
 {
-    if (m_Bytes2go > 0) {
+    if (GetBytes2go() > 0) {
         xCancel();
-        m_Bytes2go = 0;
+        SetBytes2go(0);
         return true;
     }
 

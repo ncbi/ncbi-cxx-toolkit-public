@@ -43,15 +43,14 @@ BEGIN_NCBI_SCOPE
 ///////////////////////////////////////////////////////////////////////////////
 CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection* conn,
                            const string&    lang_query,
-                           unsigned int     nof_params) :
-    impl::CBaseCmd(lang_query, nof_params),
-    m_Connect(conn),
-    m_HasMoreResults(false),
-    m_WasSent(false),
-    m_RowCount(0),
-    m_SQLite3stmt(NULL),
-    m_Res(NULL),
-    m_RC(SQLITE_ERROR)
+                           unsigned int     nof_params)
+: impl::CBaseCmd(conn, lang_query, nof_params)
+, m_Connect(conn)
+, m_HasMoreResults(false)
+, m_RowCount(0)
+, m_SQLite3stmt(NULL)
+, m_Res(NULL)
+, m_RC(SQLITE_ERROR)
 {
 }
 
@@ -100,33 +99,21 @@ bool CSL3_LangCmd::Send()
         DATABASE_DRIVER_ERROR("Invalid return code.", 100000);
     }
 
-    m_WasSent = true;
+    SetWasSent();
 
     return true;
-}
-
-
-bool CSL3_LangCmd::WasSent() const
-{
-    return m_WasSent;
 }
 
 
 bool CSL3_LangCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         // sqlite3_interrupt(m_Connect->m_SQLite3);
-        m_WasSent = false;
+        SetWasSent(false);
         return sqlite3_finalize(m_SQLite3stmt) == SQLITE_OK;
     }
 
     return true;
-}
-
-
-bool CSL3_LangCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -144,23 +131,6 @@ CDB_Result *CSL3_LangCmd::Result()
 bool CSL3_LangCmd::HasMoreResults() const
 {
     return m_HasMoreResults;
-}
-
-void CSL3_LangCmd::DumpResults()
-{
-    CDB_Result* dbres;
-    while(m_HasMoreResults) {
-        dbres= Result();
-        if(dbres) {
-            if(m_Connect->GetResultProcessor()) {
-                m_Connect->GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch());
-            }
-            delete dbres;
-        }
-    }
 }
 
 

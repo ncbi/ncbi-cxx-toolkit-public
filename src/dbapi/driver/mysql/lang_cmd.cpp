@@ -40,9 +40,9 @@ BEGIN_NCBI_SCOPE
 CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
                                const string&      lang_query,
                                unsigned int       nof_params) :
-    impl::CBaseCmd(lang_query, nof_params),
+    impl::CBaseCmd(conn, lang_query, nof_params),
     m_Connect(conn),
-    m_HasResults(false)
+    m_HasMoreResults(false)
 {
 }
 
@@ -56,15 +56,9 @@ bool CMySQL_LangCmd::Send()
 
     my_ulonglong nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
     // There is not too much sence in comparing unsigned value with -1.
-    // m_HasResults = nof_Rows == -1 || nof_Rows > 0;
-    m_HasResults = nof_Rows > 0;
+    // m_HasMoreResults = nof_Rows == -1 || nof_Rows > 0;
+    m_HasMoreResults = nof_Rows > 0;
     return true;
-}
-
-
-bool CMySQL_LangCmd::WasSent() const
-{
-    return false;
 }
 
 
@@ -74,46 +68,24 @@ bool CMySQL_LangCmd::Cancel()
 }
 
 
-bool CMySQL_LangCmd::WasCanceled() const
-{
-    return false;
-}
-
-
 CDB_Result *CMySQL_LangCmd::Result()
 {
-    m_HasResults = false;
+    m_HasMoreResults = false;
     return Create_Result(*new CMySQL_RowResult(m_Connect));
 }
 
 
 bool CMySQL_LangCmd::HasMoreResults() const
 {
-    return m_HasResults;
-}
-
-void CMySQL_LangCmd::DumpResults()
-{
-    CDB_Result* dbres;
-    while(m_HasResults) {
-        dbres= Result();
-        if(dbres) {
-            if(m_Connect->GetResultProcessor()) {
-                m_Connect->GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch());
-            }
-            delete dbres;
-        }
-    }
+    return m_HasMoreResults;
 }
 
 
 bool CMySQL_LangCmd::HasFailed() const
 {
-    if(mysql_errno(&m_Connect->m_MySQL) == 0)
-      return false;
+    if(mysql_errno(&m_Connect->m_MySQL) == 0) {
+        return false;
+    }
     return true;
 }
 

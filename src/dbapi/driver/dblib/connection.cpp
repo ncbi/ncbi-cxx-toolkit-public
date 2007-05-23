@@ -584,20 +584,20 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         "wrong (zero) arguments",
         290000 );
 
-    if (!m_Bytes2go)
+    if (!GetBytes2go())
         return 0;
 
-    if (nof_bytes > m_Bytes2go)
-        nof_bytes = m_Bytes2go;
+    if (nof_bytes > GetBytes2go())
+        nof_bytes = GetBytes2go();
 
     if (Check(dbmoretext(GetCmd(), (DBINT) nof_bytes, (BYTE*) pChunk)) != SUCCEED) {
         Check(dbcancel(GetCmd()));
         DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
     }
 
-    m_Bytes2go -= nof_bytes;
+    SetBytes2go(GetBytes2go() - nof_bytes);
 
-    if (m_Bytes2go <= 0) {
+    if (GetBytes2go() <= 0) {
         //        if (dbsqlok(m_Cmd) != SUCCEED || dbresults(m_Cmd) == FAIL) {
         if (Check(dbsqlok(GetCmd())) != SUCCEED || GetConnection().x_Results(GetCmd()) == FAIL) {
             DATABASE_DRIVER_ERROR( "dbsqlok/results failed", 290002 );
@@ -610,9 +610,9 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
 bool CDBL_SendDataCmd::Cancel(void)
 {
-    if (m_Bytes2go > 0) {
+    if (GetBytes2go() > 0) {
         Check(dbcancel(GetCmd()));
-        m_Bytes2go = 0;
+        SetBytes2go(0);
         return true;
     }
 

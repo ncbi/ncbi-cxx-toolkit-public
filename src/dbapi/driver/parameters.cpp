@@ -194,32 +194,36 @@ CDB_Params::~CDB_Params()
 }
 
 
-void g_SubstituteParam(string& query, const string& name, const string& val)
+string
+g_SubstituteParam(const string& query, const string& name, const string& val)
 {
+    string result = query;
     size_t name_len = name.length();
     size_t val_len = val.length();
-    size_t len = query.length();
+    size_t len = result.length();
     char q = 0;
 
     for (size_t pos = 0;  pos < len;  pos++) {
         if (q) {
-            if (query[pos] == q)
+            if (result[pos] == q)
                 q = 0;
             continue;
         }
-        if (query[pos] == '"' || query[pos] == '\'') {
-            q = query[pos];
+        if (result[pos] == '"' || result[pos] == '\'') {
+            q = result[pos];
             continue;
         }
-        if (NStr::Compare(query, pos, name_len, name) == 0
-            && (pos == 0 || !isalnum((unsigned char) query[pos - 1]))
-            && !isalnum((unsigned char) query[pos + name_len])
-            && query[pos + name_len] != '_') {
-            query.replace(pos, name_len, val);
-            len = query.length();
+        if (NStr::Compare(result, pos, name_len, name) == 0
+            && (pos == 0 || !isalnum((unsigned char) result[pos - 1]))
+            && !isalnum((unsigned char) result[pos + name_len])
+            && result[pos + name_len] != '_') {
+            result.replace(pos, name_len, val);
+            len = result.length();
             pos += val_len;
         }
     }
+
+    return result;
 }
 
 

@@ -475,9 +475,9 @@ public:
     virtual ~CDB_CursorCmd();
 
 private:
-    impl::CCursorCmd* m_CmdImpl;
+    impl::CBaseCmd* m_CmdImpl;
 
-    CDB_CursorCmd(impl::CCursorCmd* cur);
+    CDB_CursorCmd(impl::CBaseCmd* cur);
 
     // Prohibit default- and copy- constructors, and assignment
     CDB_CursorCmd& operator= (const CDB_CursorCmd&);

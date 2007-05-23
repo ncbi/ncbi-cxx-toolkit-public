@@ -78,8 +78,6 @@ namespace impl
 {
     class CResult;
     class CBaseCmd;
-    class CBCPInCmd;
-    class CCursorCmd;
     class CSendDataCmd;
 }
 

@@ -39,8 +39,8 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_DBAPIDRIVER_EXPORT
-void g_SubstituteParam(string& query, const string& name, const string& val);
-
+string
+g_SubstituteParam(const string& query, const string& name, const string& val);
 
 class NCBI_DBAPIDRIVER_EXPORT  CDB_Params
 {

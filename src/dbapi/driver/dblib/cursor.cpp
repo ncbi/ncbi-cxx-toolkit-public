@@ -43,11 +43,13 @@ BEGIN_NCBI_SCOPE
 //  CDBL_CursorCmd::
 //
 
-CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* conn, DBPROCESS* cmd,
-                               const string& cursor_name, const string& query,
+CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* conn,
+                               DBPROCESS* cmd,
+                               const string& cursor_name,
+                               const string& query,
                                unsigned int nof_params) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CCursorCmd(cursor_name, query, nof_params),
+    CDBL_Cmd(conn, cmd),
+    impl::CBaseCmd(conn, cursor_name, query, nof_params),
     m_LCmd(0),
     m_Res(0)
 {
@@ -71,19 +73,19 @@ static bool for_update_of(const string& q)
     return false;
 }
 
-CDB_Result* CDBL_CursorCmd::Open()
+CDB_Result* CDBL_CursorCmd::OpenCursor()
 {
     const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
     // We need to close it first
-    Close();
+    CloseCursor();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     // declare the cursor
-    m_HasFailed = !x_AssignParams();
+    SetHasFailed(!x_AssignParams());
     CHECK_DRIVER_ERROR(
-        m_HasFailed,
+        HasFailed(),
         "cannot assign params",
         222003 );
 
@@ -94,17 +96,17 @@ CDB_Result* CDBL_CursorCmd::Open()
     if ( connected_to_MSSQLServer ) {
         string cur_feat;
 
-        if(for_update_of(GetQuery())) {
+        if(for_update_of(GetCombinedQuery())) {
             cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
         } else {
             cur_feat = " cursor FORWARD_ONLY for ";
         }
 
-        buff = "declare " + m_Name + cur_feat + GetQuery();
+        buff = "declare " + GetCursorName() + cur_feat + GetCombinedQuery();
     } else {
         // Sybase ...
 
-        buff = "declare " + m_Name + " cursor for " + GetQuery();
+        buff = "declare " + GetCursorName() + " cursor for " + GetCombinedQuery();
     }
 
     try {
@@ -116,11 +118,11 @@ CDB_Result* CDBL_CursorCmd::Open()
         DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 222001 );
     }
 
-    m_IsDeclared = true;
+    SetCursorDeclared();
 
     // open the cursor
     m_LCmd = 0;
-    buff = "open " + m_Name;
+    buff = "open " + GetCursorName();
 
     try {
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
@@ -131,10 +133,10 @@ CDB_Result* CDBL_CursorCmd::Open()
         DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 222002 );
     }
 
-    m_IsOpen = true;
+    SetCursorOpen();
 
     m_LCmd = 0;
-    buff = "fetch " + m_Name;
+    buff = "fetch " + GetCursorName();
 
     m_LCmd = GetConnection().LangCmd(buff);
 
@@ -146,7 +148,7 @@ CDB_Result* CDBL_CursorCmd::Open()
 
 bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
@@ -159,7 +161,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 //             }
         }
 
-        string buff = upd_query + " where current of " + m_Name;
+        string buff = upd_query + " where current of " + GetCursorName();
         const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
@@ -181,7 +183,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 
 I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || (GetResultSet() == 0)) {
+    if(!CursorIsOpen() || (GetResultSet() == 0)) {
         return 0;
     }
     while ( static_cast<unsigned int>(GetResultSet()->CurrentItemNo()) < item_num ) {
@@ -241,7 +243,7 @@ CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
 
 bool CDBL_CursorCmd::Delete(const string& table_name)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
@@ -255,7 +257,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
 //             }
         }
 
-        string buff = "delete " + table_name + " where current of " + m_Name;
+        string buff = "delete " + table_name + " where current of " + GetCursorName();
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
@@ -282,9 +284,9 @@ int CDBL_CursorCmd::RowCount() const
 }
 
 
-bool CDBL_CursorCmd::Close()
+bool CDBL_CursorCmd::CloseCursor()
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     ClearResultSet();
@@ -294,8 +296,8 @@ bool CDBL_CursorCmd::Close()
         m_LCmd = NULL;
     }
 
-    if (m_IsOpen) {
-        string buff = "close " + m_Name;
+    if (CursorIsOpen()) {
+        string buff = "close " + GetCursorName();
         try {
             auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
 
@@ -314,17 +316,17 @@ bool CDBL_CursorCmd::Close()
             DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 222003 );
         }
 
-        m_IsOpen = false;
+        SetCursorOpen(false);
     }
 
-    if (m_IsDeclared) {
+    if (CursorIsDeclared()) {
         string buff;
         const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
         if ( connected_to_MSSQLServer ) {
-            buff = "deallocate " + m_Name;
+            buff = "deallocate " + GetCursorName();
         } else {
-            buff = "deallocate cursor " + m_Name;
+            buff = "deallocate cursor " + GetCursorName();
         }
 
         try {
@@ -345,7 +347,7 @@ bool CDBL_CursorCmd::Close()
             DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 222003 );
         }
 
-        m_IsDeclared = false;
+        SetCursorDeclared(false);
     }
 
     return true;
@@ -359,7 +361,7 @@ CDBL_CursorCmd::~CDBL_CursorCmd()
 
         GetConnection().DropCmd(*this);
 
-        Close();
+        CloseCursor();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -368,6 +370,8 @@ CDBL_CursorCmd::~CDBL_CursorCmd()
 bool CDBL_CursorCmd::x_AssignParams()
 {
     static const char s_hexnum[] = "0123456789ABCDEF";
+
+    m_CombinedQuery = GetQuery();
 
     for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
         const string& name = GetParams().GetParamName(n);
@@ -514,7 +518,7 @@ bool CDBL_CursorCmd::x_AssignParams()
             strcpy(val_buffer, "NULL");
 
         // substitute the param
-        g_SubstituteParam(GetQuery(), name, val_buffer);
+        m_CombinedQuery = g_SubstituteParam(m_CombinedQuery, name, val_buffer);
     }
 
     return true;

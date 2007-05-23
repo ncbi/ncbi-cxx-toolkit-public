@@ -758,18 +758,19 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         "wrong (zero) arguments",
         190000 );
 
-    if ( !m_Bytes2go )
+    if ( !GetBytes2go() )
         return 0;
 
-    if (nof_bytes > m_Bytes2go)
-        nof_bytes = m_Bytes2go;
+    if (nof_bytes > GetBytes2go())
+        nof_bytes = GetBytes2go();
 
     if (Check(ct_send_data(x_GetSybaseCmd(), (void*) pChunk, (CS_INT) nof_bytes)) != CS_SUCCEED){
         DATABASE_DRIVER_ERROR( "ct_send_data failed", 190001 );
     }
 
-    m_Bytes2go -= nof_bytes;
-    if ( m_Bytes2go )
+    SetBytes2go(GetBytes2go() - nof_bytes);
+
+    if ( GetBytes2go() )
         return nof_bytes;
 
     if (Check(ct_send(x_GetSybaseCmd())) != CS_SUCCEED) {
@@ -826,9 +827,9 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
 bool CTL_SendDataCmd::Cancel(void)
 {
-    if ( m_Bytes2go ) {
+    if ( GetBytes2go() ) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
-        m_Bytes2go = 0;
+        SetBytes2go(0);
         return true;
     }
 

@@ -363,8 +363,7 @@ public:
     CDBL_Cmd(CDBL_Connection* conn,
              DBPROCESS*       cmd
              ) :
-        m_HasFailed(false),
-        m_WasSent(false),
+//         m_HasFailed(false),
         m_RowCount(-1),
         m_Connect(conn),
         m_Cmd(cmd)
@@ -404,8 +403,7 @@ public:
     }
 
 protected:
-    bool             m_HasFailed;
-    bool             m_WasSent;
+//     bool             m_HasFailed;
     int              m_RowCount;
     string           m_ExecCntxInfo;
 
@@ -426,20 +424,18 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_LangCmd(CDBL_Connection* conn, DBPROCESS* cmd,
-                 const string& lang_query, unsigned int nof_params);
+    CDBL_LangCmd(CDBL_Connection* conn,
+                 DBPROCESS* cmd,
+                 const string& lang_query,
+                 unsigned int nof_params);
     virtual ~CDBL_LangCmd(void);
 
 protected:
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
-    virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
-    virtual void DumpResults(void);
 
 private:
     impl::CResult* GetResultSet(void) const;
@@ -473,14 +469,10 @@ protected:
 
 protected:
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
-    virtual bool HasFailed(void) const ;
     virtual int  RowCount(void) const;
-    virtual void DumpResults(void);
 
 private:
     impl::CResult* GetResultSet(void) const;
@@ -509,7 +501,7 @@ private:
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd :
     CDBL_Cmd,
-    public impl::CCursorCmd
+    public impl::CBaseCmd
 {
     friend class CDBL_Connection;
 
@@ -520,7 +512,7 @@ protected:
     virtual ~CDBL_CursorCmd(void);
 
 protected:
-    virtual CDB_Result* Open(void);
+    virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
@@ -528,12 +520,16 @@ protected:
                      bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
-    virtual bool Close(void);
+    virtual bool CloseCursor(void);
 
 private:
     CDBL_CursorResult* GetResultSet(void) const;
     void SetResultSet(CDBL_CursorResult* res);
     void ClearResultSet(void);
+    const string GetCombinedQuery(void) const
+    {
+        return m_CombinedQuery;
+    }
 
 private:
     bool x_AssignParams(void);
@@ -541,6 +537,7 @@ private:
 
     CDB_LangCmd*       m_LCmd;
     CDBL_CursorResult* m_Res;
+    string             m_CombinedQuery;
 };
 
 
@@ -564,12 +561,9 @@ protected:
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual bool EndBCP(void);
-    virtual bool HasFailed(void) const;
     virtual int RowCount(void) const;
 
 private:

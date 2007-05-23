@@ -400,13 +400,12 @@ protected:
 
 protected:
     SQLLEN  m_RowCount;
-    bool    m_WasSent;
-    bool    m_HasFailed;
+//     bool    m_HasFailed;
 
 private:
-    CODBC_Connection* m_ConnectPtr;
-    SQLHSTMT m_Cmd;
-    CODBC_Reporter m_Reporter;
+    CODBC_Connection*   m_ConnectPtr;
+    SQLHSTMT            m_Cmd;
+    CODBC_Reporter      m_Reporter;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -437,14 +436,10 @@ public:
 
 protected:
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
-    virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
-    virtual void DumpResults(void);
 
 protected:
     void SetCursorName(const string& name) const;
@@ -455,7 +450,7 @@ private:
     bool xCheck4MoreResults(void);
 
     CODBC_RowResult*  m_Res;
-    bool              m_hasResults;
+    bool              m_HasMoreResults;
 };
 
 
@@ -478,14 +473,10 @@ protected:
 
 protected:
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
-    virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
-    virtual void DumpResults(void);
 
 private:
     bool x_AssignParams(string& cmd, string& q_exec, string& q_select,
@@ -493,7 +484,7 @@ private:
     bool xCheck4MoreResults(void);
 
     bool              m_HasStatus;
-    bool              m_hasResults;
+    bool              m_HasMoreResults;
     impl::CResult*    m_Res;
 };
 
@@ -505,7 +496,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdBase :
     public CStatementBase,
-    public impl::CCursorCmd
+    public impl::CBaseCmd
 {
 protected:
     CODBC_CursorCmdBase(CODBC_Connection* conn,
@@ -541,14 +532,14 @@ protected:
     virtual ~CODBC_CursorCmd(void);
 
 protected:
-    virtual CDB_Result* Open(void);
+    virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                      bool log_it = true);
     virtual bool Delete(const string& table_name);
-    virtual bool Close(void);
+    virtual bool CloseCursor(void);
 
 protected:
     CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
@@ -569,14 +560,14 @@ protected:
     virtual ~CODBC_CursorCmdExpl(void);
 
 protected:
-    virtual CDB_Result* Open(void);
+    virtual CDB_Result* OpenCursor(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                  bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                      bool log_it = true);
     virtual bool Delete(const string& table_name);
-    virtual bool Close(void);
+    virtual bool CloseCursor(void);
 
 protected:
     CDB_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
@@ -615,12 +606,9 @@ protected:
 protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
     virtual bool Send(void);
-    virtual bool WasSent(void) const;
     virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
-    virtual bool WasCanceled(void) const;
     virtual bool EndBCP(void);
-    virtual bool HasFailed(void) const;
     virtual int  RowCount(void) const;
 
 private:

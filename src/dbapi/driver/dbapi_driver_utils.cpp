@@ -98,12 +98,13 @@ void CDBExceptionStorage::Handle(CDBHandlerStack& handler)
 
 void CDBExceptionStorage::Handle(CDBHandlerStack& handler, const string& msg)
 {
-    if (msg.empty()) {
+    if (!msg.empty()) {
         handler.SetExtraMsg(msg);
     }
 
     Handle(handler);
 }
+
 
 
 END_NCBI_SCOPE

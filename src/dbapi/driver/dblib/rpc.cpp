@@ -44,10 +44,12 @@ BEGIN_NCBI_SCOPE
 //  CDBL_RPCCmd::
 //
 
-CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn, DBPROCESS* cmd,
-                         const string& proc_name, unsigned int nof_params) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CBaseCmd(proc_name, nof_params),
+CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn,
+                         DBPROCESS* cmd,
+                         const string& proc_name,
+                         unsigned int nof_params) :
+    CDBL_Cmd(conn, cmd),
+    impl::CBaseCmd(conn, proc_name, nof_params),
     m_Res(0),
     m_Status(0)
 {
@@ -57,7 +59,7 @@ CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn, DBPROCESS* cmd,
 
 bool CDBL_RPCCmd::Send()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         Cancel();
     } else {
 #if 1 && defined(FTDS_IN_USE)
@@ -68,39 +70,33 @@ bool CDBL_RPCCmd::Send()
 #endif
     }
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     if (Check(dbrpcinit(GetCmd(), (char*) GetQuery().c_str(),
                   NeedToRecompile() ? DBRPCRECOMPILE : 0)) != SUCCEED) {
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "dbrpcinit failed", 221001 );
     }
 
     char param_buff[2048]; // maximal page size
     if (!x_AssignParams(param_buff)) {
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "Cannot assign the params", 221003 );
     }
     if (Check(dbrpcsend(GetCmd())) != SUCCEED) {
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "dbrpcsend failed", 221005 );
     }
 
-    m_WasSent = true;
+    SetWasSent();
     m_Status = 0;
     return true;
 }
 
 
-bool CDBL_RPCCmd::WasSent() const
-{
-    return m_WasSent;
-}
-
-
 bool CDBL_RPCCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         if (GetResultSet()) {
 #if 1 && defined(FTDS_IN_USE)
             while (GetResultSet()->Fetch())
@@ -109,17 +105,11 @@ bool CDBL_RPCCmd::Cancel()
 
             ClearResultSet();
         }
-        m_WasSent = false;
+        SetWasSent(false);
         return Check(dbcancel(GetCmd())) == SUCCEED;
     }
     // m_Query.erase();
     return true;
-}
-
-
-bool CDBL_RPCCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -138,15 +128,15 @@ CDB_Result* CDBL_RPCCmd::Result()
         ClearResultSet();
     }
 
-    if (!m_WasSent) {
+    if (!WasSent()) {
         DATABASE_DRIVER_ERROR( "you have to send a command first", 221010 );
     }
 
     if (m_Status == 0) {
         m_Status = 0x1;
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
-            m_WasSent = false;
-            m_HasFailed = true;
+            SetWasSent(false);
+            SetHasFailed();
             DATABASE_DRIVER_ERROR( "dbsqlok failed", 221011 );
         }
     }
@@ -184,7 +174,7 @@ CDB_Result* CDBL_RPCCmd::Result()
             m_Status = 2;
             break;
         default:
-            m_HasFailed = true;
+            SetHasFailed();
             DATABASE_DRIVER_WARNING( "error encountered in command execution", 221016 );
         }
         break;
@@ -211,35 +201,14 @@ CDB_Result* CDBL_RPCCmd::Result()
         }
     }
 
-    m_WasSent = false;
+    SetWasSent(false);
     return 0;
 }
 
 
 bool CDBL_RPCCmd::HasMoreResults() const
 {
-    return m_WasSent;
-}
-
-void CDBL_RPCCmd::DumpResults()
-{
-    while(m_WasSent) {
-        auto_ptr<CDB_Result> dbres( Result() );
-        if( dbres.get() ) {
-            if(GetConnection().GetResultProcessor()) {
-                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch())
-                    continue;
-            }
-        }
-    }
-}
-
-bool CDBL_RPCCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return WasSent();
 }
 
 

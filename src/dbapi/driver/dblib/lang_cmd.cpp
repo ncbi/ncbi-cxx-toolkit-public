@@ -42,13 +42,14 @@ BEGIN_NCBI_SCOPE
 //  CDBL_LangCmd::
 //
 
-CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection* conn, DBPROCESS* cmd,
+CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection* conn,
+                           DBPROCESS* cmd,
                            const string& lang_query,
-                           unsigned int nof_params) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CBaseCmd(lang_query, nof_params),
-    m_Res( 0 ),
-    m_Status( 0 )
+                           unsigned int nof_params)
+: CDBL_Cmd(conn, cmd)
+, impl::CBaseCmd(conn, lang_query, nof_params)
+, m_Res(0)
+, m_Status(0)
 {
     SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 }
@@ -58,19 +59,19 @@ bool CDBL_LangCmd::Send()
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     if (!x_AssignParams()) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "cannot assign params", 220003 );
     }
 
     if (Check(dbcmd(GetCmd(), (char*)(GetQuery().c_str()))) != SUCCEED) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "dbcmd failed", 220001 );
     }
 
@@ -78,27 +79,21 @@ bool CDBL_LangCmd::Send()
     // Timeout is already set by CDBLibContext ...
     // GetConnection().x_SetTimeout();
 
-    m_HasFailed = Check(dbsqlsend(GetCmd())) != SUCCEED;
+    SetHasFailed(Check(dbsqlsend(GetCmd())) != SUCCEED);
     CHECK_DRIVER_ERROR(
-        m_HasFailed,
+        HasFailed(),
         "dbsqlsend failed",
         220005 );
 
-    m_WasSent = true;
+    SetWasSent();
     m_Status = 0;
     return true;
 }
 
 
-bool CDBL_LangCmd::WasSent() const
-{
-    return m_WasSent;
-}
-
-
 bool CDBL_LangCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         if ( GetResultSet() ) {
 #if 1 && defined(FTDS_IN_USE)
             while (GetResultSet()->Fetch())
@@ -106,7 +101,7 @@ bool CDBL_LangCmd::Cancel()
 #endif
             ClearResultSet();
         }
-        m_WasSent = false;
+        SetWasSent(false);
 
         dbfreebuf(GetCmd());
         CheckFunctCall();
@@ -115,12 +110,6 @@ bool CDBL_LangCmd::Cancel()
         return (Check(dbcancel(GetCmd())) == SUCCEED);
     }
     return true;
-}
-
-
-bool CDBL_LangCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -141,13 +130,13 @@ CDB_Result* CDBL_LangCmd::Result()
         ClearResultSet();
     }
 
-    CHECK_DRIVER_ERROR( !m_WasSent, "a command has to be sent first", 220010 );
+    CHECK_DRIVER_ERROR( !WasSent(), "a command has to be sent first", 220010 );
 
     if (m_Status == 0) {
         m_Status = 0x1;
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
-            m_WasSent = false;
-            m_HasFailed = true;
+            SetWasSent(false);
+            SetHasFailed();
             DATABASE_DRIVER_ERROR( "dbsqlok failed", 220011 );
         }
     }
@@ -217,8 +206,8 @@ CDB_Result* CDBL_LangCmd::Result()
             m_Status = 2;
             break;
         default:
-            m_HasFailed = true;
-            CHECK_DRIVER_WARNING( m_HasFailed, "an error was encountered by server", 220016 );
+            SetHasFailed();
+            CHECK_DRIVER_WARNING( HasFailed(), "an error was encountered by server", 220016 );
         }
         break;
     }
@@ -249,38 +238,15 @@ CDB_Result* CDBL_LangCmd::Result()
     }
 #endif
 
-    m_WasSent = false;
+    SetWasSent(false);
     return 0;
 }
 
 
 bool CDBL_LangCmd::HasMoreResults() const
 {
-    return m_WasSent;
+    return WasSent();
 }
-
-void CDBL_LangCmd::DumpResults()
-{
-    while(m_WasSent) {
-        auto_ptr<CDB_Result> dbres( Result() );
-
-        if( dbres.get() ) {
-            if(GetConnection().GetResultProcessor()) {
-                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch())
-                    continue;
-            }
-        }
-    }
-}
-
-bool CDBL_LangCmd::HasFailed() const
-{
-    return m_HasFailed;
-}
-
 
 int CDBL_LangCmd::RowCount() const
 {

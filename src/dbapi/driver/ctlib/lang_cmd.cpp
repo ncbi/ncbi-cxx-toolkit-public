@@ -48,9 +48,7 @@ namespace ftds64_ctlib
 //
 
 CTL_CmdBase::CTL_CmdBase(CTL_Connection* conn)
-: m_HasFailed(false)
-, m_WasSent(false)
-, m_RowCount(-1)
+: m_RowCount(-1)
 , m_Connect(conn)
 {
 }
@@ -58,84 +56,6 @@ CTL_CmdBase::CTL_CmdBase(CTL_Connection* conn)
 
 CTL_CmdBase::~CTL_CmdBase(void)
 {
-}
-
-
-CS_RETCODE
-CTL_CmdBase::CheckSF(CS_RETCODE rc, const char* msg, unsigned int msg_num)
-{
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( msg, msg_num );
-    }
-
-    return rc;
-}
-
-
-CS_RETCODE
-CTL_CmdBase::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
-{
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( msg, msg_num );
-#ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-#endif
-    }
-
-    return rc;
-}
-
-
-CS_RETCODE
-CTL_CmdBase::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
-{
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        m_WasSent = false;
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( msg, msg_num );
-#ifdef CS_BUSY
-    case CS_BUSY:
-        m_WasSent = false;
-        // DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-#endif
-    }
-
-    return rc;
-}
-
-
-CS_RETCODE
-CTL_CmdBase::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
-{
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( msg, msg_num );
-#ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-#endif
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
-    case CS_PENDING:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
-    }
-
-    return rc;
 }
 
 
@@ -149,7 +69,7 @@ CTL_Cmd::CTL_Cmd(CTL_Connection* conn)
 , m_Cmd(NULL)
 , m_Res(NULL)
 {
-    CheckSFB(
+    CheckSFB_Internal(
         ct_cmd_alloc(
             GetConnection().GetNativeConnection().GetNativeHandle(),
             &m_Cmd
@@ -170,6 +90,25 @@ CTL_Cmd::~CTL_Cmd(void)
 }
 
 
+CS_RETCODE
+CTL_Cmd::CheckSFB_Internal(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
+
 void CTL_Cmd::DropSybaseCmd(void)
 {
     if (!IsDead()) {
@@ -187,39 +126,6 @@ void CTL_Cmd::DropSybaseCmd(void)
 }
 
 bool
-CTL_Cmd::ProcessResults(void)
-{
-    // process the results
-    for (;;) {
-        CS_INT res_type;
-
-        if (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
-                       "ct_result failed", 122045) == CS_END_RESULTS) {
-            return true;
-        }
-
-        if (ProcessResultInternal(res_type)) {
-            continue;
-        }
-
-        switch ( res_type ) {
-        case CS_CMD_SUCCEED:
-        case CS_CMD_DONE: // done with this command
-            continue;
-        case CS_CMD_FAIL: // the command has failed
-            m_HasFailed = true;
-            while(Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED);
-            DATABASE_DRIVER_WARNING( "The server encountered an error while "
-                               "executing a command", 122049 );
-        default:
-            continue;
-        }
-    }
-
-    return false;
-}
-
-bool
 CTL_Cmd::ProcessResultInternal(CDB_Result& res)
 {
     if(GetConnection().GetResultProcessor()) {
@@ -228,35 +134,6 @@ CTL_Cmd::ProcessResultInternal(CDB_Result& res)
     }
 
     return false;
-}
-
-bool
-CTL_Cmd::Cancel(void)
-{
-    if (m_WasSent) {
-        if ( HaveResult() ) {
-            // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
-            m_Res->m_EOR = true;
-
-            DeleteResult();
-        }
-
-        switch ( Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) ) {
-        case CS_SUCCEED:
-            m_WasSent = false;
-            return true;
-        case CS_FAIL:
-            DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
-#ifdef CS_BUSY
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
-#endif
-        default:
-            return false;
-        }
-    }
-
-    return true;
 }
 
 bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
@@ -558,12 +435,51 @@ void CTL_Cmd::GetRowCount(int* cnt)
 }
 
 
-CDB_Result* CTL_Cmd::MakeResult(void)
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_LRCmd::
+//
+
+CTL_LRCmd::CTL_LRCmd(CTL_Connection* conn,
+                     const string& query,
+                     unsigned int nof_params)
+: CTL_Cmd(conn)
+, impl::CBaseCmd(conn, query, nof_params)
+{
+}
+
+
+CTL_LRCmd::~CTL_LRCmd(void)
+{
+}
+
+
+CS_RETCODE
+CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
+CDB_Result*
+CTL_LRCmd::MakeResult(void)
 {
     DeleteResult();
 
     CHECK_DRIVER_ERROR(
-        !m_WasSent,
+                       !WasSent(),
         "you need to send a command first",
         120010 );
 
@@ -574,10 +490,10 @@ CDB_Result* CTL_Cmd::MakeResult(void)
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
-            m_WasSent = false;
+            SetWasSent(false);
             return 0;
         case CS_FAIL:
-            m_HasFailed = true;
+            SetHasFailed();
             if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
                 // we need to close this connection
                 DATABASE_DRIVER_ERROR(
@@ -585,10 +501,10 @@ CDB_Result* CTL_Cmd::MakeResult(void)
                     "Connection must be closed",
                     120012 );
             }
-            m_WasSent = false;
+            SetWasSent(false);
             DATABASE_DRIVER_ERROR( "ct_result failed", 120013 );
         case CS_CANCELED:
-            m_WasSent = false;
+            SetWasSent(false);
             DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
 #ifdef CS_BUSY
         case CS_BUSY:
@@ -607,7 +523,7 @@ CDB_Result* CTL_Cmd::MakeResult(void)
         case CS_CMD_FAIL: // the command has failed
             // check the number of affected rows
             GetRowCount(&m_RowCount);
-            m_HasFailed = true;
+            SetHasFailed();
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 120016 );
         case CS_ROW_RESULT:
@@ -636,36 +552,30 @@ CDB_Result* CTL_Cmd::MakeResult(void)
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CTL_BCPCmd::
-//
 
-CTL_BCPCmd::CTL_BCPCmd(CTL_Connection* conn)
-: CTL_CmdBase(conn)
-, m_Cmd(NULL)
+bool
+CTL_LRCmd::Cancel(void)
 {
-    CheckSF(
-        blk_alloc(
-            GetConnection().GetNativeConnection().GetNativeHandle(),
-            GetConnection().GetBLKVersion(),
-            &m_Cmd
-            ),
-        "blk_alloc failed", 110004
-        );
-}
+    if (WasSent()) {
+        DeleteResultInternal();
 
-
-CTL_BCPCmd::~CTL_BCPCmd(void)
-{
-    try {
-        if (!IsDead()) {
-            Check(blk_drop(x_GetSybaseCmd()));
+        switch ( Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) ) {
+        case CS_SUCCEED:
+            SetWasSent(false);
+            return true;
+        case CS_FAIL:
+            DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
+#ifdef CS_BUSY
+        case CS_BUSY:
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
+#endif
+        default:
+            return false;
         }
     }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
-}
 
+    return true;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -677,8 +587,7 @@ CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn,
                          const string& lang_query,
                          unsigned int nof_params
                          )
-: CTL_Cmd(conn)
-, impl::CBaseCmd(lang_query, nof_params)
+: CTL_LRCmd(conn, lang_query, nof_params)
 {
     SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 }
@@ -688,7 +597,7 @@ bool CTL_LangCmd::Send()
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
                         const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
@@ -696,14 +605,14 @@ bool CTL_LangCmd::Send()
              "ct_command failed", 120001);
 
 
-    m_HasFailed = !x_AssignParams();
-    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 120003 );
+    SetHasFailed(!x_AssignParams());
+    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params", 120003 );
 
     switch ( Check(ct_send(x_GetSybaseCmd())) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
-        m_HasFailed = true;
+        SetHasFailed();
         if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
             // we need to close this connection
             DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
@@ -718,30 +627,12 @@ bool CTL_LangCmd::Send()
 #endif
     case CS_PENDING:
     default:
-        m_WasSent = true;
+        SetWasSent();
         return false;
     }
 
-    m_WasSent = true;
+    SetWasSent();
     return true;
-}
-
-
-bool CTL_LangCmd::WasSent() const
-{
-    return m_WasSent;
-}
-
-
-bool CTL_LangCmd::Cancel()
-{
-    return CTL_Cmd::Cancel();
-}
-
-
-bool CTL_LangCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -750,31 +641,9 @@ CDB_Result* CTL_LangCmd::Result()
     return MakeResult();
 }
 
-void CTL_LangCmd::DumpResults()
-{
-    auto_ptr<CDB_Result> res(Result());
-
-    while (res.get()) {
-        if (!ProcessResultInternal(*res)) {
-            while(res->Fetch());
-        }
-
-        DeleteResult();
-
-        res.reset(Result());
-    }
-}
-
-
 bool CTL_LangCmd::HasMoreResults() const
 {
-    return m_WasSent;
-}
-
-
-bool CTL_LangCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return WasSent();
 }
 
 

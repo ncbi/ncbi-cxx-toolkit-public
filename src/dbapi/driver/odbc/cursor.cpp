@@ -44,10 +44,10 @@ BEGIN_NCBI_SCOPE
 CODBC_CursorCmdBase::CODBC_CursorCmdBase(CODBC_Connection* conn,
                                          const string& cursor_name,
                                          const string& query,
-                                         unsigned int nof_params) :
-    CStatementBase(*conn),
-    impl::CCursorCmd(cursor_name, query, nof_params),
-    m_CursCmd(conn, query, nof_params)
+                                         unsigned int nof_params)
+: CStatementBase(*conn)
+, impl::CBaseCmd(conn, cursor_name, query, nof_params)
+, m_CursCmd(conn, query, nof_params)
 {
 }
 
@@ -75,30 +75,30 @@ int CODBC_CursorCmdBase::RowCount(void) const
 CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* conn,
                                  const string& cursor_name,
                                  const string& query,
-                                 unsigned int nof_params) :
-    CODBC_CursorCmdBase(conn, cursor_name, query, nof_params)
+                                 unsigned int nof_params)
+: CODBC_CursorCmdBase(conn, cursor_name, query, nof_params)
 {
 }
 
-CDB_Result* CODBC_CursorCmd::Open(void)
+CDB_Result* CODBC_CursorCmd::OpenCursor(void)
 {
     // need to close it first
-    Close();
+    CloseCursor();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     // declare the cursor
     try {
-        m_CursCmd.SetCursorName(m_Name);
+        m_CursCmd.SetCursorName(GetCursorName());
         m_CursCmd.Send();
     } catch (const CDB_Exception& e) {
         string err_message = "failed to declare cursor" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
     }
 
-    m_IsDeclared = true;
+    SetCursorDeclared();
 
-    m_IsOpen = true;
+    SetCursorOpen();
 
     m_Res.reset(new CODBC_CursorResult(&m_CursCmd));
 
@@ -108,11 +108,11 @@ CDB_Result* CODBC_CursorCmd::Open(void)
 
 bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
-        string buff = upd_query + " where current of " + m_Name;
+        string buff = upd_query + " where current of " + GetCursorName();
 
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
@@ -127,11 +127,11 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
 
 CDB_ITDescriptor* CODBC_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || m_Res.get() == 0) {
+    if(!CursorIsOpen() || m_Res.get() == 0) {
         return NULL;
     }
 
-    string cond = "current of " + m_Name;
+    string cond = "current of " + GetCursorName();
 
     return m_CursCmd.m_Res->GetImageOrTextDescriptor(item_num, cond);
 }
@@ -160,11 +160,11 @@ CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size
 
 bool CODBC_CursorCmd::Delete(const string& table_name)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
-        string buff = "delete " + table_name + " where current of " + m_Name;
+        string buff = "delete " + table_name + " where current of " + GetCursorName();
 
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
@@ -178,21 +178,21 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
 }
 
 
-bool CODBC_CursorCmd::Close()
+bool CODBC_CursorCmd::CloseCursor()
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     m_Res.reset();
 
-    if (m_IsOpen) {
-        m_IsOpen = false;
+    if (CursorIsOpen()) {
+        SetCursorOpen(false);
     }
 
-    if (m_IsDeclared) {
+    if (CursorIsDeclared()) {
         m_CursCmd.CloseCursor();
 
-        m_IsDeclared = false;
+        SetCursorDeclared(false);
     }
 
     return true;
@@ -206,7 +206,7 @@ CODBC_CursorCmd::~CODBC_CursorCmd()
 
         GetConnection().DropCmd(*this);
 
-        Close();
+        CloseCursor();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -225,19 +225,22 @@ CODBC_CursorCmdExpl::CODBC_CursorCmdExpl(CODBC_Connection* conn,
 
 CODBC_CursorCmdExpl::~CODBC_CursorCmdExpl(void)
 {
-    DetachInterface();
+    try {
+        DetachInterface();
 
-    GetConnection().DropCmd(*this);
+        GetConnection().DropCmd(*this);
 
-    Close();
+        CloseCursor();
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
-CDB_Result* CODBC_CursorCmdExpl::Open(void)
+CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
 {
     // need to close it first
-    Close();
+    CloseCursor();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     // declare the cursor
     try {
@@ -248,10 +251,10 @@ CDB_Result* CODBC_CursorCmdExpl::Open(void)
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
     }
 
-    m_IsDeclared = true;
+    SetCursorDeclared();
 
     try {
-        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + m_Name));
+        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + GetCursorName()));
 
         stmt->Send();
         stmt->DumpResults();
@@ -260,9 +263,9 @@ CDB_Result* CODBC_CursorCmdExpl::Open(void)
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
     }
 
-    m_IsOpen = true;
+    SetCursorOpen();
 
-    m_LCmd.reset(GetConnection().xLangCmd("fetch " + m_Name));
+    m_LCmd.reset(GetConnection().xLangCmd("fetch " + GetCursorName()));
     m_Res.reset(new CODBC_CursorResultExpl(m_LCmd.get()));
 
     return Create_Result(*m_Res);
@@ -271,13 +274,13 @@ CDB_Result* CODBC_CursorCmdExpl::Open(void)
 
 bool CODBC_CursorCmdExpl::Update(const string&, const string& upd_query)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
         m_LCmd->Cancel();
 
-        string buff = upd_query + " where current of " + m_Name;
+        string buff = upd_query + " where current of " + GetCursorName();
 
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
@@ -292,11 +295,11 @@ bool CODBC_CursorCmdExpl::Update(const string&, const string& upd_query)
 
 CDB_ITDescriptor* CODBC_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || m_Res.get() == 0 || m_LCmd.get() == 0) {
+    if(!CursorIsOpen() || m_Res.get() == 0 || m_LCmd.get() == 0) {
         return NULL;
     }
 
-    string cond = "current of " + m_Name;
+    string cond = "current of " + GetCursorName();
 
     return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
 }
@@ -329,13 +332,13 @@ CDB_SendDataCmd* CODBC_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t 
 
 bool CODBC_CursorCmdExpl::Delete(const string& table_name)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
         m_LCmd->Cancel();
 
-        string buff = "delete " + table_name + " where current of " + m_Name;
+        string buff = "delete " + table_name + " where current of " + GetCursorName();
 
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
@@ -349,16 +352,16 @@ bool CODBC_CursorCmdExpl::Delete(const string& table_name)
 }
 
 
-bool CODBC_CursorCmdExpl::Close()
+bool CODBC_CursorCmdExpl::CloseCursor()
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     m_Res.reset();
     m_LCmd.reset();
 
-    if (m_IsOpen) {
-        string buff = "close " + m_Name;
+    if (CursorIsOpen()) {
+        string buff = "close " + GetCursorName();
         try {
             auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
 
@@ -369,11 +372,11 @@ bool CODBC_CursorCmdExpl::Close()
             DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
         }
 
-        m_IsOpen = false;
+        SetCursorOpen(false);
     }
 
-    if (m_IsDeclared) {
-        string buff = "deallocate " + m_Name;
+    if (CursorIsDeclared()) {
+        string buff = "deallocate " + GetCursorName();
 
         try {
             auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
@@ -385,7 +388,7 @@ bool CODBC_CursorCmdExpl::Close()
             DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
         }
 
-        m_IsDeclared = false;
+        SetCursorDeclared(false);
     }
 
     return true;

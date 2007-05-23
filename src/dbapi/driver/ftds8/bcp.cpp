@@ -47,8 +47,8 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* conn,
                              DBPROCESS*       cmd,
                              const string&    table_name,
                              unsigned int     nof_columns) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CBaseCmd(table_name, nof_columns),
+    CDBL_Cmd(conn, cmd),
+    impl::CBaseCmd(conn, table_name, nof_columns),
     m_HasTextImage(false),
     m_WasBound(false)
 {
@@ -394,17 +394,17 @@ bool CTDS_BCPInCmd::Send(void)
     char param_buff[2048]; // maximal row size, assured of buffer overruns
 
     if (!x_AssignParams(param_buff)) {
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "cannot assign params", 223004 );
     }
 
     if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
         Check(bcp_done(GetCmd()));
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 223005 );
     }
 
-    m_WasSent = true;
+    SetWasSent();
 
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
@@ -427,7 +427,7 @@ bool CTDS_BCPInCmd::Send(void)
                     l = s;
                 if (Check(bcp_moretext(GetCmd(), static_cast<int>(l), (BYTE*) buff))
                     != SUCCEED) {
-                    m_HasFailed = true;
+                    SetHasFailed();
                     string error;
 
                     if (param.GetType() == eDB_Text) {
@@ -450,17 +450,11 @@ bool CTDS_BCPInCmd::Send(void)
 }
 
 
-bool CTDS_BCPInCmd::WasSent(void) const
-{
-    return m_WasSent;
-}
-
-
 bool CTDS_BCPInCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         DBINT outrow = Check(bcp_done(GetCmd()));
-        m_WasSent = false;
+        SetWasSent(false);
         return outrow == 0;
     }
 
@@ -468,18 +462,12 @@ bool CTDS_BCPInCmd::Cancel()
 }
 
 
-bool CTDS_BCPInCmd::WasCanceled(void) const
-{
-    return !m_WasSent;
-}
-
-
 bool CTDS_BCPInCmd::CommitBCPTrans(void)
 {
-    if(m_WasSent) {
+    if(WasSent()) {
         DBINT outrow = Check(bcp_batch(GetCmd()));
         if(outrow < 0) {
-            m_HasFailed= true;
+            SetHasFailed();
             DATABASE_DRIVER_ERROR( "bcp_batch failed", 223020 );
         }
         return outrow > 0;
@@ -490,22 +478,16 @@ bool CTDS_BCPInCmd::CommitBCPTrans(void)
 
 bool CTDS_BCPInCmd::EndBCP(void)
 {
-    if(m_WasSent) {
+    if(WasSent()) {
         DBINT outrow = Check(bcp_done(GetCmd()));
         if(outrow < 0) {
-            m_HasFailed = true;
+            SetHasFailed();
             DATABASE_DRIVER_ERROR( "bcp_done failed", 223020 );
         }
-        m_WasSent= false;
+        SetWasSent(false);
         return outrow > 0;
     }
     return false;
-}
-
-
-bool CTDS_BCPInCmd::HasFailed(void) const
-{
-    return m_HasFailed;
 }
 
 

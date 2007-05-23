@@ -444,18 +444,18 @@ bool CODBC_BCPInCmd::Send(void)
     char param_buff[2048]; // maximal row size, assured of buffer overruns
 
     if (!x_AssignParams(param_buff)) {
-        m_HasFailed = true;
+        SetHasFailed();
         string err_message = "cannot assign params" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423004 );
     }
 
     if (bcp_sendrow(GetHandle()) != SUCCEED) {
-        m_HasFailed = true;
+        SetHasFailed();
         ReportErrors();
         string err_message = "bcp_sendrow failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423005 );
     }
-    m_WasSent = true;
+    SetWasSent();
 
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
@@ -498,7 +498,7 @@ bool CODBC_BCPInCmd::Send(void)
                                  (DBINT) valid_len,
                                  (LPCBYTE)static_cast<const odbc::TChar*>(odbc_str)
                                  ) != SUCCEED) {
-                    m_HasFailed = true;
+                    SetHasFailed();
                     ReportErrors();
 
                     string err_text;
@@ -524,17 +524,11 @@ bool CODBC_BCPInCmd::Send(void)
 }
 
 
-bool CODBC_BCPInCmd::WasSent(void) const
-{
-    return m_WasSent;
-}
-
-
 bool CODBC_BCPInCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         DBINT outrow = bcp_done(GetHandle());
-        m_WasSent = false;
+        SetWasSent(false);
         return outrow == 0;
     }
 
@@ -542,15 +536,9 @@ bool CODBC_BCPInCmd::Cancel()
 }
 
 
-bool CODBC_BCPInCmd::WasCanceled(void) const
-{
-    return !m_WasSent;
-}
-
-
 bool CODBC_BCPInCmd::CommitBCPTrans(void)
 {
-    if(m_WasSent) {
+    if(WasSent()) {
         Int4 outrow = bcp_batch(GetHandle());
         if(outrow == -1) {
             ReportErrors();
@@ -564,9 +552,9 @@ bool CODBC_BCPInCmd::CommitBCPTrans(void)
 
 bool CODBC_BCPInCmd::EndBCP(void)
 {
-    if(m_WasSent) {
+    if(WasSent()) {
         Int4 outrow = bcp_done(GetHandle());
-        m_WasSent= false;
+        SetWasSent(false);
         if(outrow == -1) {
             ReportErrors();
             return false;
@@ -574,12 +562,6 @@ bool CODBC_BCPInCmd::EndBCP(void)
         return true;
     }
     return false;
-}
-
-
-bool CODBC_BCPInCmd::HasFailed(void) const
-{
-    return m_HasFailed;
 }
 
 

@@ -53,7 +53,7 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn,
                              unsigned int fetch_size
                              )
 : CTL_Cmd(conn)
-, impl::CCursorCmd(cursor_name, query, nof_params)
+, impl::CBaseCmd(conn, cursor_name, query, nof_params)
 , m_FetchSize(fetch_size)
 , m_Used(false)
 {
@@ -63,28 +63,105 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn,
 }
 
 
-CDB_Result* CTL_CursorCmd::Open()
+CS_RETCODE
+CTL_CursorCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
+CS_RETCODE
+CTL_CursorCmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    case CS_CANCELED:
+        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
+    case CS_PENDING:
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
+    }
+
+    return rc;
+}
+
+
+bool
+CTL_CursorCmd::ProcessResults(void)
+{
+    // process the results
+    for (;;) {
+        CS_INT res_type;
+
+        if (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
+                       "ct_result failed", 122045) == CS_END_RESULTS) {
+            return true;
+        }
+
+        if (ProcessResultInternal(res_type)) {
+            continue;
+        }
+
+        switch ( res_type ) {
+        case CS_CMD_SUCCEED:
+        case CS_CMD_DONE: // done with this command
+            continue;
+        case CS_CMD_FAIL: // the command has failed
+            SetHasFailed();
+            while(Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED);
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 122049 );
+        default:
+            continue;
+        }
+    }
+
+    return false;
+}
+
+
+CDB_Result*
+CTL_CursorCmd::OpenCursor()
 {
     // need to close it first
-    Close();
+    CloseCursor();
 
-    if ( !m_Used ) {
-        m_HasFailed = false;
+    if (!m_Used) {
+        SetHasFailed(false);
 
         CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
-                           const_cast<char*> (m_Name.c_str()), CS_NULLTERM,
-                           const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
+                           const_cast<char*> (GetCursorName().c_str()), CS_NULLTERM,
+                           const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
                            CS_UNUSED),
                  "ct_cursor(DECLARE) failed", 122001);
 
         if (GetParams().NofParams() > 0) {
             // we do have the parameters
             // check if query is a select statement or a function call
-            if (m_Query.find("select") != string::npos  ||
-                m_Query.find("SELECT") != string::npos) {
+            if (GetQuery().find("select") != string::npos  ||
+                GetQuery().find("SELECT") != string::npos) {
                 // this is a select
-                m_HasFailed = !x_AssignParams(true);
-                CHECK_DRIVER_ERROR( m_HasFailed, "cannot declare the params", 122003 );
+                SetHasFailed(!x_AssignParams(true));
+                CHECK_DRIVER_ERROR( HasFailed(), "cannot declare the params", 122003 );
             }
         }
 
@@ -95,19 +172,19 @@ CDB_Result* CTL_CursorCmd::Open()
         }
     }
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     // open the cursor
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
                        m_Used ? CS_RESTORE_OPEN : CS_UNUSED),
              "ct_cursor(open) failed", 122005);
 
-    m_IsOpen = true;
+    SetCursorOpen();
 
     if (GetParams().NofParams() > 0) {
         // we do have the parameters
-        m_HasFailed = !x_AssignParams(false);
-        CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 122003 );
+        SetHasFailed(!x_AssignParams(false));
+        CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params", 122003 );
     }
 
     // send this command
@@ -133,7 +210,7 @@ CDB_Result* CTL_CursorCmd::Open()
         case CS_CMD_FAIL:
             // the command has failed -- check the number of affected rows
             GetRowCount(&m_RowCount);
-            m_HasFailed = true;
+            SetHasFailed();
             while (Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED) {
                 continue;
             }
@@ -153,7 +230,7 @@ CDB_Result* CTL_CursorCmd::Open()
 
 bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
 {
-    if ( !m_IsOpen ) {
+    if (!CursorIsOpen()) {
         return false;
     }
 
@@ -172,7 +249,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
 
 I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || !HaveResult()) {
+    if(!CursorIsOpen() || !HaveResult()) {
         return 0;
     }
 
@@ -219,7 +296,7 @@ CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
 
 bool CTL_CursorCmd::Delete(const string& table_name)
 {
-    if ( !m_IsOpen ) {
+    if (!CursorIsOpen()) {
         return false;
     }
 
@@ -242,27 +319,27 @@ int CTL_CursorCmd::RowCount() const
 }
 
 
-bool CTL_CursorCmd::Close()
+bool CTL_CursorCmd::CloseCursor()
 {
-    if ( !m_IsOpen ) {
+    if (!CursorIsOpen()) {
         return false;
     }
 
     DeleteResult();
 
     CheckSFB(ct_cursor(x_GetSybaseCmd(),
-                         CS_CURSOR_CLOSE,
-                         0,
-                         CS_UNUSED,
-                         0,
-                         CS_UNUSED,
-                         CS_UNUSED),
+                       CS_CURSOR_CLOSE,
+                       0,
+                       CS_UNUSED,
+                       0,
+                       CS_UNUSED,
+                       CS_UNUSED),
              "ct_cursor(close) failed", 122020);
 
     // send this command
     CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122022);
 
-    m_IsOpen = false;
+    SetCursorOpen(false);
 
     // Process results ...
     return ProcessResults();
@@ -277,7 +354,7 @@ CTL_CursorCmd::CloseForever(void)
         // ????
         DetachInterface();
 
-        Close();
+        CloseCursor();
 
         if ( m_Used ) {
             // deallocate the cursor
@@ -286,7 +363,7 @@ CTL_CursorCmd::CloseForever(void)
             case CS_SUCCEED:
                 break;
             case CS_FAIL:
-                // m_HasFailed = true;
+                // SetHasFailed();
                 //throw CDB_ClientEx(eDiag_Fatal, 122050, "::~CTL_CursorCmd",
                 //                   "ct_cursor(dealloc) failed");
 #ifdef CS_BUSY
@@ -303,7 +380,7 @@ CTL_CursorCmd::CloseForever(void)
             case CS_SUCCEED:
                 break;
             case CS_FAIL:
-                // m_HasFailed = true;
+                // SetHasFailed();
                 // throw CDB_ClientEx(eDiag_Error, 122052, "::~CTL_CursorCmd",
                 //                   "ct_send failed");
             case CS_CANCELED:

@@ -183,14 +183,11 @@ protected:
 
 protected:
     virtual bool        Send(void);
-    virtual bool        WasSent(void) const;
     virtual bool        Cancel(void);
-    virtual bool        WasCanceled(void) const;
     virtual CDB_Result* Result(void);
     virtual bool        HasMoreResults(void) const;
     virtual bool        HasFailed(void) const;
     virtual int         RowCount(void) const;
-    virtual void        DumpResults(void);
     long long int       LastInsertId(void) const;
 
 private:
@@ -201,7 +198,6 @@ private:
 
     CSL3_Connection*    m_Connect;
     bool                m_HasMoreResults;
-    bool                m_WasSent;
     int                 m_RowCount;
 
     sqlite3_stmt*       m_SQLite3stmt;

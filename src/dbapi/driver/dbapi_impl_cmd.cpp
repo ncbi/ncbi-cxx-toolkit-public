@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/impl/dbapi_impl_cmd.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,11 +51,36 @@ CCommand::Create_Result(CResult& result)
 
 
 ///////////////////////////////////////////////////////////////////////////
-CBaseCmd::CBaseCmd(const string& query, unsigned int nof_params) :
-    m_Query(query),
-    m_Params(nof_params),
-    m_Recompile(false)
+CBaseCmd::CBaseCmd(impl::CConnection* conn,
+                   const string& query,
+                   unsigned int nof_params)
+: m_ConnImpl(conn)
+, m_Query(query)
+, m_Params(nof_params)
+, m_Recompile(false)
+, m_WasSent(false)
+, m_HasFailed(false)
+, m_IsOpen(false)
+, m_IsDeclared(false)
 {
+    _ASSERT(m_ConnImpl);
+}
+
+CBaseCmd::CBaseCmd(impl::CConnection* conn,
+                   const string& cursor_name,
+                   const string& query,
+                   unsigned int nof_params)
+: m_ConnImpl(conn)
+, m_Query(query)
+, m_Params(nof_params)
+, m_Recompile(false)
+, m_WasSent(false)
+, m_HasFailed(false)
+, m_IsOpen(false)
+, m_IsDeclared(false)
+, m_CursorName(cursor_name)
+{
+    _ASSERT(m_ConnImpl);
 }
 
 CBaseCmd::~CBaseCmd(void)
@@ -63,131 +89,251 @@ CBaseCmd::~CBaseCmd(void)
 }
 
 
-CDB_Result* CBaseCmd::Result(void)
+bool
+CBaseCmd::Send(void)
+{
+    _ASSERT(false);
+    return false;
+}
+
+
+bool
+CBaseCmd::Cancel(void)
+{
+    _ASSERT(false);
+    return false;
+}
+
+
+bool
+CBaseCmd::HasFailed(void) const
+{
+    return m_HasFailed;
+}
+
+
+CDB_Result*
+CBaseCmd::Result(void)
 {
     return NULL;
 }
 
 
-bool CBaseCmd::HasMoreResults(void) const
+bool
+CBaseCmd::HasMoreResults(void) const
 {
     return false;
 }
 
-void CBaseCmd::DumpResults(void)
+void
+CBaseCmd::DumpResults(void)
 {
-    return;
+    // Experimental ...
+    while(HasMoreResults()) {
+        auto_ptr<CDB_Result> dbres(Result());
+
+        if( dbres.get() ) {
+            CDB_ResultProcessor* res_proc = GetConnImpl().GetResultProcessor();
+            if(res_proc) {
+                res_proc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch()) {
+                    continue;
+                }
+            }
+        }
+    }
 }
 
 
-bool CBaseCmd::Bind(unsigned int column_num, CDB_Object* pVal)
+bool
+CBaseCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
     return m_Params.BindParam(column_num, kEmptyStr, pVal);
 }
 
 
-bool CBaseCmd::BindParam(const string& param_name, CDB_Object* param_ptr,
+bool
+CBaseCmd::BindParam(const string& param_name,
+                         CDB_Object* param_ptr,
                          bool out_param)
 {
-    return m_Params.BindParam(CDB_Params::kNoParamNumber, param_name,
-                              param_ptr, out_param);
+    return m_Params.BindParam(CDB_Params::kNoParamNumber,
+                              param_name,
+                              param_ptr,
+                              out_param);
 }
 
 
-bool CBaseCmd::SetParam(const string& param_name, CDB_Object* param_ptr,
-                        bool out_param)
+bool
+CBaseCmd::SetParam(const string& param_name,
+                   CDB_Object* param_ptr,
+                   bool out_param)
 {
-    return m_Params.SetParam(CDB_Params::kNoParamNumber, param_name,
-                             param_ptr, out_param);
+    return m_Params.SetParam(CDB_Params::kNoParamNumber,
+                             param_name,
+                             param_ptr,
+                             out_param);
 }
 
 
-bool CBaseCmd::More(const string& query_text)
-{
-    m_Query.append(query_text);
-    return true;
-}
-
-
-bool CBaseCmd::CommitBCPTrans(void)
-{
-    return false;
-}
-
-
-bool CBaseCmd::EndBCP(void)
+bool
+CBaseCmd::CommitBCPTrans(void)
 {
     return false;
 }
 
 
-void CBaseCmd::SetRecompile(bool recompile)
+bool
+CBaseCmd::EndBCP(void)
 {
-    m_Recompile = recompile;
+    return false;
 }
 
 
-void CBaseCmd::DetachInterface(void)
+CDB_Result*
+CBaseCmd::OpenCursor(void)
+{
+    _ASSERT(false);
+    return NULL;
+}
+
+bool
+CBaseCmd::Update(const string& table_name, const string& upd_query)
+{
+    _ASSERT(false);
+    return false;
+}
+
+
+bool
+CBaseCmd::UpdateTextImage(unsigned int item_num,
+                          CDB_Stream& data,
+                          bool log_it)
+{
+    _ASSERT(false);
+    return false;
+}
+
+
+CDB_SendDataCmd*
+CBaseCmd::SendDataCmd(unsigned int item_num,
+                      size_t size,
+                      bool log_it)
+{
+    _ASSERT(false);
+    return NULL;
+}
+
+
+bool
+CBaseCmd::Delete(const string& table_name)
+{
+    _ASSERT(false);
+    return false;
+}
+
+
+bool
+CBaseCmd::CloseCursor(void)
+{
+    _ASSERT(false);
+    return false;
+}
+
+
+void
+CBaseCmd::DetachInterface(void)
 {
     m_InterfaceLang.DetachInterface();
     m_InterfaceRPC.DetachInterface();
     m_InterfaceBCPIn.DetachInterface();
+    m_InterfaceCursor.DetachInterface();
 }
 
 
-void CBaseCmd::AttachTo(CDB_LangCmd* interface)
+void
+CBaseCmd::AttachTo(CDB_LangCmd* interface)
 {
     m_InterfaceLang = interface;
 }
 
 
-void CBaseCmd::AttachTo(CDB_RPCCmd* interface)
+void
+CBaseCmd::AttachTo(CDB_RPCCmd* interface)
 {
     m_InterfaceRPC = interface;
 }
 
-void CBaseCmd::AttachTo(CDB_BCPInCmd* interface)
+
+void
+CBaseCmd::AttachTo(CDB_BCPInCmd* interface)
 {
     m_InterfaceBCPIn = interface;
 }
 
+
+void CBaseCmd::AttachTo(CDB_CursorCmd* interface)
+{
+    m_InterfaceCursor = interface;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////
-CCursorCmd::CCursorCmd(const string& cursor_name,
-                       const string& query,
-                       unsigned int nof_params) :
-    m_IsOpen(false),
-    m_IsDeclared(false),
-    // m_HasFailed(false)
-    m_Name(cursor_name),
-    m_Query(query),
-    m_Params(nof_params)
-{
-}
+// CCursorCmd::CCursorCmd(impl::CConnection* conn,
+//                        const string& cursor_name,
+//                        const string& query,
+//                        unsigned int nof_params)
+// : impl::CBaseCmd(conn, query, nof_params)
+// , m_IsOpen(false)
+// , m_IsDeclared(false)
+// , m_Name(cursor_name)
+// // , m_Query(query)
+// // , m_Params(nof_params)
+// {
+// }
+//
+// CCursorCmd::~CCursorCmd(void)
+// {
+//     return;
+// }
+//
+// // bool CCursorCmd::BindParam(const string& param_name,
+// //                            CDB_Object* param_ptr,
+// //                            bool out_param)
+// // {
+// //     return m_Params.BindParam(CDB_Params::kNoParamNumber,
+// //                               param_name,
+// //                               param_ptr,
+// //                               out_param);
+// // }
+//
+//
+// void CCursorCmd::DetachInterface(void)
+// {
+//     m_Interface.DetachInterface();
+// }
+//
+//
+// void CCursorCmd::AttachTo(CDB_CursorCmd* interface)
+// {
+//     m_Interface = interface;
+// }
+//
+//
+// bool CCursorCmd::Send(void)
+// {
+//     _ASSERT(false);
+// }
+//
+//
+// bool CCursorCmd::Cancel(void)
+// {
+//     _ASSERT(false);
+//     return true;
+// }
 
-CCursorCmd::~CCursorCmd(void)
-{
-    return;
-}
-
-bool CCursorCmd::BindParam(const string& param_name,
-                           CDB_Object* param_ptr,
-                           bool out_param)
-{
-    return
-        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr,
-                           out_param);
-}
-
-
-void CCursorCmd::DetachInterface(void)
-{
-    m_Interface.DetachInterface();
-}
-
-void CCursorCmd::AttachTo(CDB_CursorCmd* interface)
-{
-    m_Interface = interface;
-}
 
 ///////////////////////////////////////////////////////////////////////////
 CSendDataCmd::CSendDataCmd(size_t nof_bytes) :

@@ -41,11 +41,12 @@ BEGIN_NCBI_SCOPE
 //  CTDS_LangCmd::
 //
 
-CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn, DBPROCESS* cmd,
+CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn,
+                           DBPROCESS* cmd,
                            const string& lang_query,
                            unsigned int nof_params) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CBaseCmd(lang_query, nof_params)
+    CDBL_Cmd(conn, cmd),
+    impl::CBaseCmd(conn, lang_query, nof_params)
 {
     SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 
@@ -58,51 +59,45 @@ bool CTDS_LangCmd::Send()
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     if (!x_AssignParams()) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "cannot assign params", 220003 );
     }
 
     if (Check(dbcmd(GetCmd(), (char*)(GetQuery().c_str()))) != SUCCEED) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "dbcmd failed", 220001 );
     }
 
 
     GetConnection().TDS_SetTimeout();
 
-    m_HasFailed = Check(dbsqlsend(GetCmd())) != SUCCEED;
+    SetHasFailed(Check(dbsqlsend(GetCmd())) != SUCCEED);
     CHECK_DRIVER_ERROR(
-        m_HasFailed,
+        HasFailed(),
         "dbsqlsend failed",
         220005 );
 
-    m_WasSent = true;
+    SetWasSent();
     m_Status = 0;
     return true;
 }
 
 
-bool CTDS_LangCmd::WasSent() const
-{
-    return m_WasSent;
-}
-
-
 bool CTDS_LangCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         if (m_Res) {
             delete m_Res;
             m_Res = 0;
         }
-        m_WasSent = false;
+        SetWasSent(false);
 
         dbfreebuf(GetCmd());
         CheckFunctCall();
@@ -111,12 +106,6 @@ bool CTDS_LangCmd::Cancel()
         return (Check(dbcancel(GetCmd())) == SUCCEED);
     }
     return true;
-}
-
-
-bool CTDS_LangCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -131,15 +120,15 @@ CDB_Result* CTDS_LangCmd::Result()
     }
 
     CHECK_DRIVER_ERROR(
-        !m_WasSent,
+                       !WasSent(),
         "a command has to be sent first",
         220010 );
 
     if (m_Status == 0) {
         m_Status = 0x1;
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
-            m_WasSent = false;
-            m_HasFailed = true;
+            SetWasSent(false);
+            SetHasFailed();
             DATABASE_DRIVER_ERROR( "dbsqlok failed", 220011 );
         }
     }
@@ -169,7 +158,7 @@ CDB_Result* CTDS_LangCmd::Result()
             m_Status = 2;
             break;
         default:
-            m_HasFailed = true;
+            SetHasFailed();
             DATABASE_DRIVER_WARNING( "error encountered in command execution", 221016 );
         }
         break;
@@ -199,36 +188,14 @@ CDB_Result* CTDS_LangCmd::Result()
         }
     }
 
-    m_WasSent = false;
+    SetWasSent(false);
 
     return NULL;
 }
 
 bool CTDS_LangCmd::HasMoreResults() const
 {
-    return m_WasSent;
-}
-
-void CTDS_LangCmd::DumpResults()
-{
-    CDB_Result* dbres;
-    while(m_WasSent) {
-        dbres= Result();
-        if(dbres) {
-            if(GetConnection().GetResultProcessor()) {
-                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch());
-            }
-            delete dbres;
-        }
-    }
-}
-
-bool CTDS_LangCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return WasSent();
 }
 
 

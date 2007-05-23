@@ -66,7 +66,7 @@ CDB_BCPInCmd* CConnection::Create_BCPInCmd(CBaseCmd& bcpin_cmd)
     return new CDB_BCPInCmd(&bcpin_cmd);
 }
 
-CDB_CursorCmd* CConnection::Create_CursorCmd(CCursorCmd& cursor_cmd)
+CDB_CursorCmd* CConnection::Create_CursorCmd(CBaseCmd& cursor_cmd)
 {
     m_CMDs.push_back(&cursor_cmd);
 

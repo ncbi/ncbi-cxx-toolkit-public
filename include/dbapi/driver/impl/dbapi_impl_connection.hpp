@@ -187,7 +187,8 @@ protected:
     CDB_LangCmd*     Create_LangCmd     (CBaseCmd&     lang_cmd    );
     CDB_RPCCmd*      Create_RPCCmd      (CBaseCmd&     rpc_cmd     );
     CDB_BCPInCmd*    Create_BCPInCmd    (CBaseCmd&     bcpin_cmd   );
-    CDB_CursorCmd*   Create_CursorCmd   (CCursorCmd&   cursor_cmd  );
+//     CDB_CursorCmd*   Create_CursorCmd   (CCursorCmd&   cursor_cmd  );
+    CDB_CursorCmd*   Create_CursorCmd   (CBaseCmd&     cursor_cmd  );
     CDB_SendDataCmd* Create_SendDataCmd (CSendDataCmd& senddata_cmd);
 
     /// abort the connection

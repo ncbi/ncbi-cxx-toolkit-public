@@ -160,14 +160,11 @@ protected:
 
 protected:
     virtual bool        Send();
-    virtual bool        WasSent() const;
     virtual bool        Cancel();
-    virtual bool        WasCanceled() const;
     virtual CDB_Result* Result();
     virtual bool        HasMoreResults() const;
     virtual bool        HasFailed() const;
     virtual int         RowCount() const;
-    virtual void        DumpResults();
     int                 LastInsertId() const;
 
 public:
@@ -181,7 +178,7 @@ private:
     }
 
     CMySQL_Connection* m_Connect;
-    bool               m_HasResults;
+    bool               m_HasMoreResults;
 };
 
 

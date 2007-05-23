@@ -44,7 +44,7 @@ namespace ftds64_ctlib
 #endif
 
 
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 //
 //  CTL_BCPInCmd::
 //
@@ -52,13 +52,80 @@ namespace ftds64_ctlib
 CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
                            const string& table_name,
                            unsigned int nof_columns)
-: CTL_BCPCmd(conn)
-, impl::CBaseCmd(table_name, nof_columns)
+: CTL_CmdBase(conn)
+, impl::CBaseCmd(conn, table_name, nof_columns)
 , m_Bind(nof_columns)
 , m_RowCount(0)
 {
+    CheckSF(
+        blk_alloc(
+            GetConnection().GetNativeConnection().GetNativeHandle(),
+            GetConnection().GetBLKVersion(),
+            &m_Cmd
+            ),
+        "blk_alloc failed", 110004
+        );
+
     SetExecCntxInfo("BCP table name: " + table_name);
 }
+
+
+CS_RETCODE
+CTL_BCPInCmd::CheckSF(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+    }
+
+    return rc;
+}
+
+
+
+CS_RETCODE
+CTL_BCPInCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
+CS_RETCODE
+CTL_BCPInCmd::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        SetWasSent(false);
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        SetWasSent(false);
+        // DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    }
+
+    return rc;
+}
+
+
 
 bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
@@ -356,12 +423,12 @@ bool CTL_BCPInCmd::Send(void)
     size_t       len = 0;
     char         buff[2048];
 
-    if ( !m_WasSent ) {
+    if ( !WasSent() ) {
         // we need to init the bcp
         CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) GetQuery().c_str(), CS_NULLTERM),
                  "blk_init failed", 123001);
 
-        m_WasSent = true;
+        SetWasSent();
 
         // check what needs to be default
         CS_DATAFMT fmt;
@@ -370,31 +437,31 @@ bool CTL_BCPInCmd::Send(void)
                 continue;
             }
 
-            m_HasFailed = (Check(blk_describe(x_GetSybaseCmd(),
-                                              i + 1,
-                                              &fmt)) != CS_SUCCEED);
+            SetHasFailed((Check(blk_describe(x_GetSybaseCmd(),
+                                             i + 1,
+                                             &fmt)) != CS_SUCCEED));
             CHECK_DRIVER_ERROR(
-                m_HasFailed,
+                HasFailed(),
                 "blk_describe failed (check the number of "
                 "columns in a table)",
                 123002 );
 
-            m_HasFailed = (Check(blk_bind(x_GetSybaseCmd(),
-                                          i + 1,
-                                          &fmt,
-                                          (void*) &GetParams(),
-                                          &datalen,
-                                          &indicator)) != CS_SUCCEED);
+            SetHasFailed((Check(blk_bind(x_GetSybaseCmd(),
+                                         i + 1,
+                                         &fmt,
+                                         (void*) &GetParams(),
+                                         &datalen,
+                                         &indicator)) != CS_SUCCEED));
             CHECK_DRIVER_ERROR(
-                m_HasFailed,
+                HasFailed(),
                 "blk_bind failed for default value",
                 123003 );
         }
     }
 
 
-    m_HasFailed = !x_AssignParams();
-    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 123004 );
+    SetHasFailed(!x_AssignParams());
+    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params", 123004 );
 
     switch ( Check(blk_rowxfer(x_GetSybaseCmd())) ) {
     case CS_BLK_HAS_TEXT:
@@ -423,30 +490,30 @@ bool CTL_BCPInCmd::Send(void)
 
                         string wcharle_str = MakeUCS2LE(unicode_str.AsUnicode(eEncoding_UTF8));
 
-                        m_HasFailed = (Check(
+                        SetHasFailed((Check(
                             blk_textxfer(
                                 x_GetSybaseCmd(),
                                 (CS_BYTE*) wcharle_str.c_str(),
                                 (CS_INT) wcharle_str.size(),
                                 0)
-                            ) == CS_FAIL);
+                            ) == CS_FAIL));
                     } else {
-                        m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(),
-                                                          (CS_BYTE*) buff,
-                                                          (CS_INT) valid_len,
-                                                          0)
-                                             ) == CS_FAIL);
+                        SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
+                                                         (CS_BYTE*) buff,
+                                                         (CS_INT) valid_len,
+                                                         0)
+                                             ) == CS_FAIL));
                     }
 #else
-                    m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(),
-                                                      (CS_BYTE*) buff,
-                                                      (CS_INT) valid_len,
-                                                      0)
-                                         ) == CS_FAIL);
+                    SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
+                                                     (CS_BYTE*) buff,
+                                                     (CS_INT) valid_len,
+                                                     0)
+                                         ) == CS_FAIL));
 #endif
 
                     CHECK_DRIVER_ERROR(
-                        m_HasFailed,
+                        HasFailed(),
                         "blk_textxfer failed for the text/image field", 123005
                         );
 
@@ -460,10 +527,10 @@ bool CTL_BCPInCmd::Send(void)
                 for (datalen = (CS_INT) par.Size();  datalen > 0; datalen -= (CS_INT) len) {
                     len = par.Read(buff, sizeof(buff));
 
-                    m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) len, 0)) == CS_FAIL);
+                    SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) len, 0)) == CS_FAIL));
 
                     CHECK_DRIVER_ERROR(
-                        m_HasFailed,
+                        HasFailed(),
                         "blk_textxfer failed for the text/image field", 123005
                         );
                 }
@@ -475,23 +542,17 @@ bool CTL_BCPInCmd::Send(void)
         ++m_RowCount;
         return true;
     default:
-        m_HasFailed = true;
-        CHECK_DRIVER_ERROR( m_HasFailed, "blk_rowxfer failed", 123007 );
+        SetHasFailed();
+        CHECK_DRIVER_ERROR( HasFailed(), "blk_rowxfer failed", 123007 );
     }
 
     return false;
 }
 
 
-bool CTL_BCPInCmd::WasSent(void) const
-{
-    return m_WasSent;
-}
-
-
 bool CTL_BCPInCmd::Cancel()
 {
-    if(m_WasSent) {
+    if(WasSent()) {
         CS_INT outrow = 0;
 
         return (CheckSentSFB(blk_done(x_GetSybaseCmd(), CS_BLK_CANCEL, &outrow),
@@ -501,14 +562,9 @@ bool CTL_BCPInCmd::Cancel()
     return true;
 }
 
-bool CTL_BCPInCmd::WasCanceled(void) const
-{
-    return !m_WasSent;
-}
-
 bool CTL_BCPInCmd::CommitBCPTrans(void)
 {
-    if(!m_WasSent) return false;
+    if(!WasSent()) return false;
 
     CS_INT outrow = 0;
 
@@ -516,7 +572,7 @@ bool CTL_BCPInCmd::CommitBCPTrans(void)
     case CS_SUCCEED:
         return (outrow > 0);
     case CS_FAIL:
-        m_HasFailed = true;
+        SetHasFailed();
         DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
     default:
         return false;
@@ -526,7 +582,7 @@ bool CTL_BCPInCmd::CommitBCPTrans(void)
 
 bool CTL_BCPInCmd::EndBCP(void)
 {
-    if(!m_WasSent) return false;
+    if(!WasSent()) return false;
 
     CS_INT outrow = 0;
 
@@ -546,12 +602,6 @@ CTL_BCPInCmd::CreateResult(impl::CResult& result)
 }
 
 
-bool CTL_BCPInCmd::HasFailed(void) const
-{
-    return m_HasFailed;
-}
-
-
 int CTL_BCPInCmd::RowCount(void) const
 {
     return m_RowCount;
@@ -566,6 +616,10 @@ CTL_BCPInCmd::~CTL_BCPInCmd()
         DropCmd(*this);
 
         Close();
+
+        if (!IsDead()) {
+            Check(blk_drop(x_GetSybaseCmd()));
+        }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }

@@ -574,7 +574,7 @@ CDB_BCPInCmd::~CDB_BCPInCmd()
 //  CDB_CursorCmd::
 //
 
-CDB_CursorCmd::CDB_CursorCmd(impl::CCursorCmd* c)
+CDB_CursorCmd::CDB_CursorCmd(impl::CBaseCmd* c)
 {
     CHECK_DRIVER_ERROR( !c, "No valid command provided", 200006 );
     m_CmdImpl = c;
@@ -592,7 +592,7 @@ bool CDB_CursorCmd::BindParam(const string& param_name, CDB_Object* pVal)
 CDB_Result* CDB_CursorCmd::Open()
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->Open();
+    return m_CmdImpl->OpenCursor();
 }
 
 bool CDB_CursorCmd::Update(const string& table_name, const string& upd_query)
@@ -630,7 +630,7 @@ int CDB_CursorCmd::RowCount() const
 bool CDB_CursorCmd::Close()
 {
     CHECK_COMMAND( m_CmdImpl );
-    return m_CmdImpl->Close();
+    return m_CmdImpl->CloseCursor();
 }
 
 

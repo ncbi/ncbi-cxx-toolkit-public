@@ -49,7 +49,7 @@ CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* conn,
                            const string& proc_name,
                            unsigned int nof_params) :
     CStatementBase(*conn),
-    impl::CBaseCmd(proc_name, nof_params),
+    impl::CBaseCmd(conn, proc_name, nof_params),
     m_Res(0)
 {
     string extra_msg = "Procedure Name: " + proc_name;
@@ -63,7 +63,7 @@ bool CODBC_RPCCmd::Send()
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
     m_HasStatus = false;
 
     // make a language command
@@ -81,7 +81,7 @@ bool CODBC_RPCCmd::Send()
         if (!x_AssignParams(q_str, main_exec_query, param_result_query,
                           bindGuard, indicator)) {
             ResetParams();
-            m_HasFailed = true;
+            SetHasFailed();
 
             string err_message = "cannot assign params" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420003 );
@@ -97,11 +97,11 @@ bool CODBC_RPCCmd::Send()
 
     switch(SQLExecDirect(GetHandle(), CODBCString(q_str, GetClientEncoding()), SQL_NTS)) {
     case SQL_SUCCESS:
-        m_hasResults = true;
+        m_HasMoreResults = true;
         break;
 
     case SQL_NO_DATA:
-        m_hasResults = true; /* this is a bug in SQLExecDirect it returns SQL_NO_DATA if
+        m_HasMoreResults = true; /* this is a bug in SQLExecDirect it returns SQL_NO_DATA if
                                status result is the only result of RPC */
         m_RowCount = 0;
         break;
@@ -109,7 +109,7 @@ bool CODBC_RPCCmd::Send()
     case SQL_ERROR:
         ReportErrors();
         ResetParams();
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "SQLExecDirect failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420001 );
@@ -117,13 +117,13 @@ bool CODBC_RPCCmd::Send()
 
     case SQL_SUCCESS_WITH_INFO:
         ReportErrors();
-        m_hasResults = true;
+        m_HasMoreResults = true;
         break;
 
     case SQL_STILL_EXECUTING:
         ReportErrors();
         ResetParams();
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "Some other query is executing on this connection" +
                 GetDiagnosticInfo();
@@ -131,7 +131,7 @@ bool CODBC_RPCCmd::Send()
         }
 
     case SQL_INVALID_HANDLE:
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "The statement handler is invalid (memory corruption suspected)" +
                 GetDiagnosticInfo();
@@ -141,33 +141,28 @@ bool CODBC_RPCCmd::Send()
     default:
         ReportErrors();
         ResetParams();
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "Unexpected error" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420005 );
         }
 
     }
-    m_WasSent = true;
+
+    SetWasSent();
     return true;
-}
-
-
-bool CODBC_RPCCmd::WasSent() const
-{
-    return m_WasSent;
 }
 
 
 bool CODBC_RPCCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         if (m_Res) {
             delete m_Res;
             m_Res = 0;
         }
 
-        m_WasSent = false;
+        SetWasSent(false);
 
         if ( !Close() ) {
             return false;
@@ -181,12 +176,6 @@ bool CODBC_RPCCmd::Cancel()
 }
 
 
-bool CODBC_RPCCmd::WasCanceled() const
-{
-    return !m_WasSent;
-}
-
-
 CDB_Result* CODBC_RPCCmd::Result()
 {
     enum {eNameStrLen = 64};
@@ -194,23 +183,23 @@ CDB_Result* CODBC_RPCCmd::Result()
     if (m_Res) {
         delete m_Res;
         m_Res = 0;
-        m_hasResults = xCheck4MoreResults();
+        m_HasMoreResults = xCheck4MoreResults();
     }
 
-    if ( !m_WasSent ) {
+    if ( !WasSent() ) {
         string err_message = "a command has to be sent first" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 420010 );
     }
 
-    if(!m_hasResults) {
-        m_WasSent = false;
+    if(!m_HasMoreResults) {
+        SetWasSent(false);
         return 0;
     }
 
     SQLSMALLINT nof_cols = 0;
     odbc::TChar buffer[eNameStrLen];
 
-    while(m_hasResults) {
+    while(m_HasMoreResults) {
         CheckSIE(SQLNumResultCols(GetHandle(), &nof_cols),
                  "SQLNumResultCols failed", 420011);
 
@@ -221,7 +210,7 @@ CDB_Result* CODBC_RPCCmd::Result()
                      "SQLRowCount failed", 420013);
 
             m_RowCount = rc;
-            m_hasResults = xCheck4MoreResults();
+            m_HasMoreResults = xCheck4MoreResults();
             continue;
         }
 
@@ -254,36 +243,14 @@ CDB_Result* CODBC_RPCCmd::Result()
         return Create_Result(*m_Res);
     }
 
-    m_WasSent = false;
+    SetWasSent(false);
     return 0;
 }
 
 
 bool CODBC_RPCCmd::HasMoreResults() const
 {
-    return m_hasResults;
-}
-
-void CODBC_RPCCmd::DumpResults()
-{
-    CDB_Result* dbres;
-    while(m_WasSent) {
-        dbres = Result();
-        if(dbres) {
-            if(GetConnection().GetResultProcessor()) {
-                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch());
-            }
-            delete dbres;
-        }
-    }
-}
-
-bool CODBC_RPCCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return m_HasMoreResults;
 }
 
 

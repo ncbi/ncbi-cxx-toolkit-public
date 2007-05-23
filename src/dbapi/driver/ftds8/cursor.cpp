@@ -41,13 +41,15 @@ BEGIN_NCBI_SCOPE
 //  CTDS_CursorCmd::
 //
 
-CTDS_CursorCmd::CTDS_CursorCmd(CTDS_Connection* conn, DBPROCESS* cmd,
-                               const string& cursor_name, const string& query,
+CTDS_CursorCmd::CTDS_CursorCmd(CTDS_Connection* conn,
+                               DBPROCESS* cmd,
+                               const string& cursor_name,
+                               const string& query,
                                unsigned int nof_params) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CCursorCmd(cursor_name, query, nof_params),
-    m_LCmd(0),
-    m_Res(0)
+    CDBL_Cmd(conn, cmd),
+    impl::CBaseCmd(conn, cursor_name, query, nof_params),
+    m_LCmd(NULL),
+    m_Res(NULL)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
         query + "\"";
@@ -69,19 +71,19 @@ static bool for_update_of(const string& q)
     return false;
 }
 
-CDB_Result* CTDS_CursorCmd::Open()
+CDB_Result* CTDS_CursorCmd::OpenCursor()
 {
     const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
     // need to close it first
-    Close();
+    CloseCursor();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     // declare the cursor
-    m_HasFailed = !x_AssignParams();
+    SetHasFailed(!x_AssignParams());
     CHECK_DRIVER_ERROR(
-        m_HasFailed,
+        HasFailed(),
         "cannot assign params",
         222003 );
 
@@ -98,11 +100,11 @@ CDB_Result* CTDS_CursorCmd::Open()
             cur_feat = " cursor FORWARD_ONLY for ";
         }
 
-        buff = "declare " + m_Name + cur_feat + GetQuery();
+        buff = "declare " + GetCursorName() + cur_feat + GetQuery();
     } else {
         // Sybase ...
 
-        buff = "declare " + m_Name + " cursor for " + GetQuery();
+        buff = "declare " + GetCursorName() + " cursor for " + GetQuery();
     }
 
     try {
@@ -114,11 +116,11 @@ CDB_Result* CTDS_CursorCmd::Open()
         DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 222001 );
     }
 
-    m_IsDeclared = true;
+    SetCursorDeclared();
 
     // open the cursor
     m_LCmd = 0;
-    buff = "open " + m_Name;
+    buff = "open " + GetCursorName();
 
     try {
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
@@ -129,10 +131,10 @@ CDB_Result* CTDS_CursorCmd::Open()
         DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 222002 );
     }
 
-    m_IsOpen = true;
+    SetCursorOpen();
 
     m_LCmd = 0;
-    buff = "fetch " + m_Name;
+    buff = "fetch " + GetCursorName();
 
     m_LCmd = GetConnection().LangCmd(buff);
     m_Res = new CTDS_CursorResult(GetConnection(), m_LCmd);
@@ -143,7 +145,7 @@ CDB_Result* CTDS_CursorCmd::Open()
 
 bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     try {
@@ -151,7 +153,7 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
             auto_ptr<CDB_Result> r(m_LCmd->Result());
         }
 
-        string buff = upd_query + " where current of " + m_Name;
+        string buff = upd_query + " where current of " + GetCursorName();
         const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
@@ -174,7 +176,7 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
 
 I_ITDescriptor* CTDS_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || (m_Res == 0)) {
+    if(!CursorIsOpen() || (m_Res == 0)) {
         return 0;
     }
     while(static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num) {
@@ -224,7 +226,7 @@ CDB_SendDataCmd* CTDS_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
 
 bool CTDS_CursorCmd::Delete(const string& table_name)
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     CDB_LangCmd* cmd = 0;
@@ -235,7 +237,7 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
         if(r) delete r;
     }
 
-        string buff = "delete " + table_name + " where current of " + m_Name;
+        string buff = "delete " + table_name + " where current of " + GetCursorName();
         cmd = GetConnection().LangCmd(buff);
         cmd->Send();
         cmd->DumpResults();
@@ -266,9 +268,9 @@ int CTDS_CursorCmd::RowCount() const
 }
 
 
-bool CTDS_CursorCmd::Close()
+bool CTDS_CursorCmd::CloseCursor()
 {
-    if (!m_IsOpen)
+    if (!CursorIsOpen())
         return false;
 
     if (m_Res) {
@@ -279,8 +281,8 @@ bool CTDS_CursorCmd::Close()
     if (m_LCmd)
         delete m_LCmd;
 
-    if (m_IsOpen) {
-        string buff = "close " + m_Name;
+    if (CursorIsOpen()) {
+        string buff = "close " + GetCursorName();
         m_LCmd = 0;
         try {
             m_LCmd = GetConnection().LangCmd(buff);
@@ -304,12 +306,12 @@ bool CTDS_CursorCmd::Close()
             DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 222003 );
         }
 
-        m_IsOpen = false;
+        SetCursorOpen(false);
         m_LCmd = 0;
     }
 
-    if (m_IsDeclared) {
-        string buff = "deallocate " + m_Name;
+    if (CursorIsDeclared()) {
+        string buff = "deallocate " + GetCursorName();
         m_LCmd = 0;
         try {
             m_LCmd = GetConnection().LangCmd(buff);
@@ -333,7 +335,7 @@ bool CTDS_CursorCmd::Close()
             DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 222003 );
         }
 
-        m_IsDeclared = false;
+        SetCursorDeclared(false);
         m_LCmd = 0;
     }
 
@@ -348,7 +350,7 @@ CTDS_CursorCmd::~CTDS_CursorCmd()
 
         GetConnection().DropCmd(*this);
 
-        Close();
+        CloseCursor();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -357,6 +359,8 @@ CTDS_CursorCmd::~CTDS_CursorCmd()
 bool CTDS_CursorCmd::x_AssignParams()
 {
     static const char s_hexnum[] = "0123456789ABCDEF";
+
+    m_CombinedQuery = GetQuery();
 
     for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
         const string& name = GetParams().GetParamName(n);
@@ -503,7 +507,7 @@ bool CTDS_CursorCmd::x_AssignParams()
             strcpy(val_buffer, "NULL");
 
         // substitute the param
-        g_SubstituteParam(GetQuery(), name, val_buffer);
+        m_CombinedQuery = g_SubstituteParam(m_CombinedQuery, name, val_buffer);
     }
 
     return true;

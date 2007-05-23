@@ -50,8 +50,7 @@ CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn,
                        const string& proc_name,
                        unsigned int nof_params
                        )
-: CTL_Cmd(conn)
-, impl::CBaseCmd(proc_name, nof_params)
+: CTL_LRCmd(conn, proc_name, nof_params)
 {
     SetExecCntxInfo("RPC Command: " + proc_name);
 }
@@ -61,21 +60,21 @@ bool CTL_RPCCmd::Send()
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
                         const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
                               NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED),
              "ct_command failed", 121001);
 
-    m_HasFailed = !x_AssignParams();
-    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 121003 );
+    SetHasFailed(!x_AssignParams());
+    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params", 121003 );
 
     switch ( Check(ct_send(x_GetSybaseCmd())) ) {
     case CS_SUCCEED:
         break;
     case CS_FAIL:
-        m_HasFailed = true;
+        SetHasFailed();
         if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
             // we need to close this connection
             DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
@@ -90,30 +89,12 @@ bool CTL_RPCCmd::Send()
 #endif
     case CS_PENDING:
     default:
-        m_WasSent = true;
+        SetWasSent();
         return false;
     }
 
-    m_WasSent = true;
+    SetWasSent();
     return true;
-}
-
-
-bool CTL_RPCCmd::WasSent() const
-{
-    return m_WasSent;
-}
-
-
-bool CTL_RPCCmd::Cancel()
-{
-    return CTL_Cmd::Cancel();
-}
-
-
-bool CTL_RPCCmd::WasCanceled() const
-{
-    return !m_WasSent;
 }
 
 
@@ -122,30 +103,9 @@ CDB_Result* CTL_RPCCmd::Result()
     return MakeResult();
 }
 
-void CTL_RPCCmd::DumpResults()
-{
-    auto_ptr<CDB_Result> res(Result());
-
-    while (res.get()) {
-        if (!ProcessResultInternal(*res)) {
-            while(res->Fetch());
-        }
-
-        DeleteResult();
-
-        res.reset(Result());
-    }
-}
-
 bool CTL_RPCCmd::HasMoreResults() const
 {
-    return m_WasSent;
-}
-
-
-bool CTL_RPCCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return WasSent();
 }
 
 

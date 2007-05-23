@@ -49,7 +49,7 @@ CODBC_LangCmd::CODBC_LangCmd(
     unsigned int nof_params
     ) :
     CStatementBase(*conn),
-    impl::CBaseCmd(lang_query, nof_params),
+    impl::CBaseCmd(conn, lang_query, nof_params),
     m_Res(NULL)
 {
     _ASSERT( conn );
@@ -69,7 +69,7 @@ bool CODBC_LangCmd::Send(void)
 {
     Cancel();
 
-    m_HasFailed = false;
+    SetHasFailed(false);
 
     CMemPot bindGuard;
     string q_str;
@@ -80,7 +80,7 @@ bool CODBC_LangCmd::Send(void)
 
         if (!x_AssignParams(q_str, bindGuard, indicator)) {
             ResetParams();
-            m_HasFailed = true;
+            SetHasFailed();
 
             string err_message = "cannot assign params" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420003 );
@@ -98,18 +98,18 @@ bool CODBC_LangCmd::Send(void)
 
     switch(SQLExecDirect(GetHandle(), CODBCString(*real_query, GetClientEncoding()), SQL_NTS)) {
     case SQL_SUCCESS:
-        m_hasResults = true;
+        m_HasMoreResults = true;
         break;
 
     case SQL_NO_DATA:
-        m_hasResults = false;
+        m_HasMoreResults = false;
         m_RowCount = 0;
         break;
 
     case SQL_ERROR:
         ReportErrors();
         ResetParams();
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "SQLExecDirect failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420001 );
@@ -117,20 +117,20 @@ bool CODBC_LangCmd::Send(void)
 
     case SQL_SUCCESS_WITH_INFO:
         ReportErrors();
-        m_hasResults = true;
+        m_HasMoreResults = true;
         break;
 
     case SQL_STILL_EXECUTING:
         ReportErrors();
         ResetParams();
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "Some other query is executing on this connection" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420002 );
         }
 
     case SQL_INVALID_HANDLE:
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "The statement handler is invalid (memory corruption suspected)" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420004 );
@@ -139,7 +139,7 @@ bool CODBC_LangCmd::Send(void)
     default:
         ReportErrors();
         ResetParams();
-        m_HasFailed = true;
+        SetHasFailed();
         {
             string err_message = "Unexpected error" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420005 );
@@ -147,26 +147,20 @@ bool CODBC_LangCmd::Send(void)
 
     }
 
-    m_WasSent = true;
+    SetWasSent(true);
     return true;
-}
-
-
-bool CODBC_LangCmd::WasSent() const
-{
-    return m_WasSent;
 }
 
 
 bool CODBC_LangCmd::Cancel()
 {
-    if (m_WasSent) {
+    if (WasSent()) {
         if (m_Res) {
             delete m_Res;
             m_Res = 0;
         }
 
-        m_WasSent = false;
+        SetWasSent(false);
 
         if ( !Close() ) {
             return false;
@@ -180,33 +174,27 @@ bool CODBC_LangCmd::Cancel()
 }
 
 
-bool CODBC_LangCmd::WasCanceled() const
-{
-    return !m_WasSent;
-}
-
-
 CDB_Result* CODBC_LangCmd::Result()
 {
     if (m_Res) {
         delete m_Res;
         m_Res = 0;
-        m_hasResults= xCheck4MoreResults();
+        m_HasMoreResults = xCheck4MoreResults();
     }
 
-    if ( !m_WasSent ) {
+    if ( !WasSent() ) {
         string err_message = "a command has to be sent first" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 420010 );
     }
 
-    if(!m_hasResults) {
-        m_WasSent = false;
+    if(!m_HasMoreResults) {
+        SetWasSent(false);
         return 0;
     }
 
     SQLSMALLINT nof_cols= 0;
 
-    while(m_hasResults) {
+    while(m_HasMoreResults) {
         CheckSIE(SQLNumResultCols(GetHandle(), &nof_cols),
                  "SQLNumResultCols failed", 420011);
 
@@ -217,7 +205,7 @@ CDB_Result* CODBC_LangCmd::Result()
                      "SQLRowCount failed", 420013);
 
             m_RowCount = rc;
-            m_hasResults= xCheck4MoreResults();
+            m_HasMoreResults = xCheck4MoreResults();
             continue;
         }
 
@@ -225,38 +213,14 @@ CDB_Result* CODBC_LangCmd::Result()
         return Create_Result(*m_Res);
     }
 
-    m_WasSent = false;
+    SetWasSent(false);
     return 0;
 }
 
 
 bool CODBC_LangCmd::HasMoreResults() const
 {
-    return m_hasResults;
-}
-
-void CODBC_LangCmd::DumpResults()
-{
-    CDB_Result* dbres;
-    while(m_WasSent) {
-        dbres= Result();
-        if(dbres) {
-            m_RowCount = 0;
-
-            if(GetConnection().GetResultProcessor()) {
-                GetConnection().GetResultProcessor()->ProcessResult(*dbres);
-            }
-            else {
-                while(dbres->Fetch());
-            }
-            delete dbres;
-        }
-    }
-}
-
-bool CODBC_LangCmd::HasFailed() const
-{
-    return m_HasFailed;
+    return m_HasMoreResults;
 }
 
 
