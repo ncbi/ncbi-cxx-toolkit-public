@@ -598,6 +598,80 @@ string CExec::QuoteArg(const string& arg)
     return arg;
 }
 
+bool CExec::IsExecutable(const string& path)
+{
+    CFile f(path);
+    if (f.Exists()  &&
+        f.CheckAccess(CFile::fExecute)) {
+        return true;
+    }
+    return false;
+}
+
+
+string CExec::ResolvePath(const string& filename)
+{
+    string path = kEmptyStr;
+
+    // Absolute path
+    if ( CDirEntry::IsAbsolutePath(filename) ) {
+        if ( IsExecutable(filename) ) {
+            path = filename;
+        }
+    } else {
+
+    // Relative path
+
+        string tmp = filename;
+#  ifdef NCBI_OS_MSWIN
+        // Add default ".exe" extention to the name of executable file
+        // if it running without extension
+        string dir, title, ext;
+        CDirEntry::SplitPath(filename, &dir, &title, &ext);
+        if ( ext.empty() ) {
+            tmp = CDirEntry::MakePath(dir, title, "exe");
+        }
+#  endif
+        if ( CFile(tmp).Exists() ) {
+            // Relative path from the the current directory
+            tmp = CDir::GetCwd() + CDirEntry::GetPathSeparator() + tmp;
+            if ( IsExecutable(tmp) ) {
+                path = tmp;
+            }
+        } else {
+            // Check on relative path with sub-directories,
+            // ignore such filenames.
+            size_t sep = tmp.find_first_of("/\\");
+            if ( sep == NPOS ) {
+                // Try to find filename among the paths of the PATH
+                // environment variable.
+                const char* env = getenv("PATH");
+                if (env  &&  *env) {
+                    list<string> split_path;
+#  ifdef NCBI_OS_MSWIN
+                    NStr::Split(env, ";", split_path);
+#  else
+                    NStr::Split(env, ":", split_path);
+#  endif
+                    ITERATE(list<string>, it, split_path) {
+                        string p = CDirEntry::MakePath(*it, tmp);
+                        if (CFile(p).Exists()  &&  IsExecutable(p)) {
+                            path = p;
+                            break;
+                        }
+                    } /* ITERATE */
+                }     /* env */
+            }         /* sep == NPOS*/
+        }             /* CFile(tmp).Exists() */
+    }
+    // If found - normalize path 
+    if ( !path.empty() ) {
+        path = CDirEntry::NormalizePath(path);
+    }
+    return path;
+}
+
+
 const char* CExecException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

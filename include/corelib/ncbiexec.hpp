@@ -514,6 +514,34 @@ public:
     /// Enclose argument in quotes if necessary.
     /// Used for concatenation arguments into command line.
     static string QuoteArg(const string& arg);
+
+
+    /// Check executable permissions for specified file.
+    ///
+    /// Note, this is no guarantee that the file is executable even if
+    /// the function returns TRUE. If possible, it try to get effective
+    /// user permissions for spefified file, but sometimes this is
+    /// not possible.
+    /// @param path
+    ///   Path to the file to check.
+    /// @return 
+    ///   TRUE if file is executable, FALSE otherwise.
+    /// @sa
+    ///   CFile::CheckAccess
+    static bool IsExecutable(const string& path);
+
+    /// Find executable file.
+    ///
+    /// If necessary, the PATH environment variable is used
+    /// to find the file to execute
+    /// @param filename
+    ///   Name of the file to search.
+    /// @return 
+    ///   Path to the executable file. kEmptyStr if not found,
+    ///   or the file do not have executable permissions.
+    /// @sa
+    ///   IsExecutable
+    static string ResolvePath(const string& filename);
 };
 
 
