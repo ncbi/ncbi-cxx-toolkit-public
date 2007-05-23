@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.5"
+#define NETSCHEDULED_VERSION "2.10.6"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -1588,9 +1588,11 @@ void CNetScheduleHandler::ProcessStatistics()
     WriteMsg("OK:", started);
 
     string load_str = "Load: jobs dispatched: ";
-    load_str.append(NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatGetEvent)));
+    load_str +=
+        NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatGetEvent));
     load_str += "/sec, jobs complete: ";
-    load_str.append(NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatPutEvent)));
+    load_str +=
+        NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatPutEvent));
     load_str += "/sec";
     WriteMsg("OK:", load_str);
 
@@ -1647,80 +1649,84 @@ void CNetScheduleHandler::ProcessStatistics()
     }
     */
 
-    WriteMsg("OK:", "[Berkeley DB Mutexes]:");
-    {{
-        CNcbiOstrstream ostr;
-        m_Queue->GetBDBEnv().PrintMutexStat(ostr);
-        ostr << ends;
+    if (m_JobReq.param1 == "ALL") {
+        WriteMsg("OK:", "[Berkeley DB Mutexes]:");
+        {{
+            CNcbiOstrstream ostr;
+            m_Queue->GetBDBEnv().PrintMutexStat(ostr);
+            ostr << ends;
 
-        char* stat_str = ostr.str();
-        try {
-            WriteMsg("OK:", stat_str, true);
-        } catch (...) {
+            char* stat_str = ostr.str();
+            try {
+                WriteMsg("OK:", stat_str, true);
+            } catch (...) {
+                ostr.freeze(false);
+                throw;
+            }
             ostr.freeze(false);
-            throw;
-        }
-        ostr.freeze(false);
 
-    }}
+        }}
 
-    WriteMsg("OK:", "[Berkeley DB Locks]:");
-    {{
-        CNcbiOstrstream ostr;
-        m_Queue->GetBDBEnv().PrintLockStat(ostr);
-        ostr << ends;
+        WriteMsg("OK:", "[Berkeley DB Locks]:");
+        {{
+            CNcbiOstrstream ostr;
+            m_Queue->GetBDBEnv().PrintLockStat(ostr);
+            ostr << ends;
 
-        char* stat_str = ostr.str();
-        try {
-            WriteMsg("OK:", stat_str, true);
-        } catch (...) {
+            char* stat_str = ostr.str();
+            try {
+                WriteMsg("OK:", stat_str, true);
+            } catch (...) {
+                ostr.freeze(false);
+                throw;
+            }
             ostr.freeze(false);
-            throw;
-        }
-        ostr.freeze(false);
 
-    }}
+        }}
 
-    WriteMsg("OK:", "[Berkeley DB Memory Usage]:");
-    {{
-        CNcbiOstrstream ostr;
-        m_Queue->GetBDBEnv().PrintMemStat(ostr);
-        ostr << ends;
+        WriteMsg("OK:", "[Berkeley DB Memory Usage]:");
+        {{
+            CNcbiOstrstream ostr;
+            m_Queue->GetBDBEnv().PrintMemStat(ostr);
+            ostr << ends;
 
-        char* stat_str = ostr.str();
-        try {
-            WriteMsg("OK:", stat_str, true);
-        } catch (...) {
+            char* stat_str = ostr.str();
+            try {
+                WriteMsg("OK:", stat_str, true);
+            } catch (...) {
+                ostr.freeze(false);
+                throw;
+            }
             ostr.freeze(false);
-            throw;
-        }
-        ostr.freeze(false);
 
-    }}
+        }}
 
-    WriteMsg("OK:", "[BitVector block pool]:");
+        WriteMsg("OK:", "[BitVector block pool]:");
 
-    {{
-        const TBlockAlloc::TBucketPool::TBucketVector& bv = TBlockAlloc::GetPoolVector();
-        size_t pool_vec_size = bv.size();
-        string tmp_str = "Pool vector size: ";
-        tmp_str.append(NStr::UIntToString(pool_vec_size));
-        WriteMsg("OK:", tmp_str);  
-        for (size_t i = 0; i < pool_vec_size; ++i) {
-            const TBlockAlloc::TBucketPool::TResourcePool* rp = TBlockAlloc::GetPool(i);
-            if (rp) {
-                size_t pool_size = rp->GetSize();
-                if (pool_size) {
-                    tmp_str = "Pool [ ";
-                    tmp_str.append(NStr::UIntToString(i));
-                    tmp_str.append("] = ");
-                    tmp_str.append(NStr::UIntToString(pool_size));
+        {{
+            const TBlockAlloc::TBucketPool::TBucketVector& bv =
+                TBlockAlloc::GetPoolVector();
+            size_t pool_vec_size = bv.size();
+            string tmp_str = "Pool vector size: ";
+            tmp_str.append(NStr::UIntToString(pool_vec_size));
+            WriteMsg("OK:", tmp_str);  
+            for (size_t i = 0; i < pool_vec_size; ++i) {
+                const TBlockAlloc::TBucketPool::TResourcePool* rp =
+                    TBlockAlloc::GetPool(i);
+                if (rp) {
+                    size_t pool_size = rp->GetSize();
+                    if (pool_size) {
+                        tmp_str = "Pool [ ";
+                        tmp_str.append(NStr::UIntToString(i));
+                        tmp_str.append("] = ");
+                        tmp_str.append(NStr::UIntToString(pool_size));
 
-                    WriteMsg("OK:", tmp_str);  
+                        WriteMsg("OK:", tmp_str);  
+                    }
                 }
             }
-        }
-    }}
+        }}
+    }
 
     WriteMsg("OK:", "[Worker node statistics]:");
 
