@@ -60,7 +60,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
                                const string&    table_name,
                                unsigned int     nof_columns) :
     CStatementBase(*conn),
-    impl::CBaseCmd(table_name, nof_columns),
+    impl::CBaseCmd(conn, table_name, nof_columns),
     m_Cmd(cmd),
     m_HasTextImage(false),
     m_WasBound(false)
