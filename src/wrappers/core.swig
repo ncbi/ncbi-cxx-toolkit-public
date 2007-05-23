@@ -233,6 +233,7 @@ util/dictionary.hpp
 util/dictionary_util.hpp
 // weakmap.inl won't compile
 //util/weakmap.hpp
+util/tables/raw_scoremat.h
 
 connect/connect_export.h
 connect/ncbi_buffer.h
