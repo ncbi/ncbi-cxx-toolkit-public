@@ -209,6 +209,37 @@ public:
 
 protected:
 
+    /**
+     * 
+     * @param SingleForward singly charged NC ions
+     * @param SingleBackward singly charged CN ions
+     * @param Double double charged product ions
+     */
+    void DoubleCompare(list<CMSMatchedPeakSet *> &SingleForward,
+                       list<CMSMatchedPeakSet *> &SingleBackward,
+                       list<CMSMatchedPeakSet *> &Double);
+
+    /**
+     * Creates match ion match lists
+     * 
+     * @param Peaks peak list
+     * @param iHitList pointer to hit
+     * @param HitList list of hits
+     * @param Which which peak list to use
+     * @param minintensity minimum intensity
+     * @param iPairList
+     * @param SingleForward singly charged NC ions
+     * @param SingleBackward singly charged CN ions
+     */
+    void MatchAndSort(CMSPeak * Peaks,
+                      int iHitList,
+                      TMSHitList &HitList,
+                      EMSPeakListTypes Which, 
+                      int minintensity, 
+                      const TSeriesChargePairList::const_iterator &iPairList,
+                      list<CMSMatchedPeakSet *> &SingleForward,
+                      list<CMSMatchedPeakSet *> &SingleBackward);
+
     // loads spectra into peaks
     //void Spectrum2Peak(CMSPeakSet& PeakSet);
     void Spectrum2Peak(CRef<CMSPeakSet> PeakSet);
@@ -234,8 +265,10 @@ protected:
 
     /**
      * set up the ions to use
+     * 
+     * @param Ions list of ions to be set up
      */
-    void SetIons(int& ForwardIon, int& BackwardIon);
+    void SetIons(list <EMSIonSeries> & Ions);
 
     /**
      *  create the ladders from sequence
@@ -245,9 +278,7 @@ protected:
 		      int *Masses, int iMissed, CAA& AA, 
 		      int iMod,
 		      CMod ModList[],
-		      int NumMod,
-              int ForwardIon,  //!< a,b,c series
-              int BackwardIon  //!< x,y,z series
+		      int NumMod
               );
 
     /**
@@ -368,8 +399,9 @@ protected:
     /**
      * initialize mass ladders
      * 
+     * @param Ions list of ion types
      */
-    void InitLadders(int ForwardIon, int BackwardIon);
+    void InitLadders(std::list <EMSIonSeries> & Ions);
 
     /**
      * makes map of oid from previous search

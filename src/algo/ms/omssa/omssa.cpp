@@ -389,9 +389,7 @@ int CSearch::CreateLadders(const char *Sequence,
                            CAA& AA, 
                            int iMod,
                            CMod ModList[],
-                           int NumMod,
-                           int ForwardIon,
-                           int BackwardIon)
+                           int NumMod)
 {
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter);
@@ -784,17 +782,16 @@ void CSearch::CreateModCombinations(int Missed,
 }
 
 
-// set up the ions to search
-void CSearch::SetIons(int& ForwardIon, int& BackwardIon)
+void CSearch::SetIons(list <EMSIonSeries> & Ions)
 {
-    if (GetSettings()->GetIonstosearch().size() != 2) {
-        ERR_POST(Fatal << "omssa: two search ions need to be specified");
+    if (GetSettings()->GetIonstosearch().size() < 1) {
+        ERR_POST(Fatal << "omssa: at least one ions series to search need to be specified");
     }
     CMSSearchSettings::TIonstosearch::const_iterator i;
     i = GetSettings()->GetIonstosearch().begin();
-    ForwardIon = *i;
-    i++;
-    BackwardIon = *i;
+    for(; i != GetSettings()->GetIonstosearch().end(); ++i) {
+        Ions.push_back(static_cast <EMSIonSeries> (*i));
+    }
 }
 
 
@@ -805,7 +802,7 @@ void CSearch::SetupMods(CRef <CMSModSpecSet> Modset)
 }
 
 
-void CSearch::InitLadders(int ForwardIon, int BackwardIon)
+void CSearch::InitLadders(list <EMSIonSeries> & Ions)
 {
 
     int MaxLadderSize = GetSettings()->GetMaxproductions();
@@ -813,12 +810,13 @@ void CSearch::InitLadders(int ForwardIon, int BackwardIon)
 
     int i;
     SetLadderContainer().SetSeriesChargePairList().clear();
+    list <EMSIonSeries> ::const_iterator iIons;
 
-    for(i = 1; i <= GetSettings()->GetChargehandling().GetMaxproductcharge(); ++i) {
-        SetLadderContainer().SetSeriesChargePairList().
-            push_back(TSeriesChargePairList::value_type(i, (EMSIonSeries)ForwardIon));
-        SetLadderContainer().SetSeriesChargePairList().
-            push_back(TSeriesChargePairList::value_type(i, (EMSIonSeries)BackwardIon));
+    for (iIons = Ions.begin(); iIons != Ions.end(); ++iIons) {
+        for(i = 1; i <= GetSettings()->GetChargehandling().GetMaxproductcharge(); ++i) {
+            SetLadderContainer().SetSeriesChargePairList().
+                push_back(TSeriesChargePairList::value_type(i, *iIons));
+         }
     }
     SetLadderContainer().CreateLadderArrays(MaxModPerPep, MaxLadderSize);
 }
@@ -924,9 +922,9 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
         MaxModPerPep = GetSettings()->GetMaxmods();
         if (MaxModPerPep > MAXMOD2) MaxModPerPep = MAXMOD2;
 
-        int ForwardIon(1), BackwardIon(4);
-        SetIons(ForwardIon, BackwardIon);
-        InitLadders(ForwardIon, BackwardIon);
+        list <EMSIonSeries> Ions;
+        SetIons(Ions);
+        InitLadders(Ions);
 
         LadderCalc.reset(new Int1[MaxModPerPep]);
         CAA AA;
@@ -1155,10 +1153,7 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                                   AA,
                                                   iMod,
                                                   ModList[iMissed],
-                                                  NumMod[iMissed],
-                                                  ForwardIon,
-                                                  BackwardIon
-                                                 ) != 0) continue;
+                                                  NumMod[iMissed]) != 0) continue;
                                 SetLadderCalc(iMod) = true; 
                                 // continue to next sequence if ladders not successfully made
                             }
@@ -1698,6 +1693,53 @@ CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
 }
 
 
+
+
+void CSearch::MatchAndSort(CMSPeak * Peaks,
+                           int iHitList,
+                           TMSHitList &HitList,
+                           EMSPeakListTypes Which,
+                           int minintensity,
+                           const TSeriesChargePairList::const_iterator &iPairList,
+                           list<CMSMatchedPeakSet *> &SingleForward, 
+                           list<CMSMatchedPeakSet *> &SingleBackward)
+{
+    CMSMatchedPeakSet * current;
+    
+    current = PepCharge(HitList[iHitList],
+                        iPairList->first,
+                        iPairList->second,
+                        minintensity,
+                        Which,
+                        Peaks,
+                        GetSettings()->GetMaxproductions());
+
+    if (kIonDirection[iPairList->second] == 1)
+        SingleForward.push_back(current);
+    else if (kIonDirection[iPairList->second] == -1)
+        SingleBackward.push_back(current);
+}       
+
+
+void CSearch::DoubleCompare(list<CMSMatchedPeakSet *> &SingleForward,
+                            list<CMSMatchedPeakSet *> &SingleBackward,
+                            list<CMSMatchedPeakSet *> &Double) 
+{   
+    list<CMSMatchedPeakSet *>::iterator iDouble, iFront, iBack;
+
+    for (iDouble = Double.begin(); iDouble != Double.end(); ++iDouble) {
+        
+        for(iFront = SingleForward.begin(); iFront != SingleForward.end(); ++iFront) {
+            (*iDouble)->Compare(*iFront, true);
+        }
+        
+        for(iBack = SingleBackward.begin(); iBack != SingleBackward.end(); ++iBack) {
+            (*iDouble)->Compare(*iBack, false);
+        }
+    }             
+}
+
+
 void CSearch::CalcNSort(TScoreList& ScoreList,
                         double Threshold,
                         CMSPeak* Peaks,
@@ -1720,71 +1762,42 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 
             // set up new score
 
-            // what ions to use
-            int ForwardIon, BackwardIon;
-            SetIons(ForwardIon, BackwardIon);
-
+ 
             // minimum intensity
             int minintensity = static_cast <int> (Threshold * Peaks->GetMaxI(Which));
 
 
             TSeriesChargePairList::const_iterator iPairList;
 
-            CMSMatchedPeakSet *b1(0), *y1(0), *current;
+            list <CMSMatchedPeakSet *> SingleForward, SingleBackward, DoubleForward, DoubleBackward;
+
             for (iPairList = SetLadderContainer().GetSeriesChargePairList().begin();
                 iPairList != SetLadderContainer().GetSeriesChargePairList().end();
                 ++iPairList) {
-                if (iPairList->first != 1) continue;  // only examine charge 1
-                current = PepCharge(HitList[iHitList],
-                                    iPairList->first,
-                                    iPairList->second,
-                                    minintensity,
-                                    Which,
-                                    Peaks,
-                                    GetSettings()->GetMaxproductions());
-                if (!b1 && 
-                    kIonDirection[iPairList->second] == 1)
-                    b1 = current;
-                else if (!y1 &&
-                         kIonDirection[iPairList->second] == -1)
-                    y1 = current;
 
+                // charge 1
+                if (iPairList->first == 1) {
+                    MatchAndSort(Peaks, iHitList, HitList, Which, minintensity,
+                                 iPairList, SingleForward, SingleBackward);
+                }
+                else if (Charge >= Peaks->GetConsiderMult()) {
+                    MatchAndSort(Peaks, iHitList, HitList, Which, minintensity,
+                                  iPairList, DoubleForward, DoubleBackward);
+                }
             }
+
+            list <CMSMatchedPeakSet *> ::iterator iFront, iBack, iDouble;
 
             if(GetSettings()->GetNocorrelationscore() == 0) {
-                if (b1 && y1) b1->Compare(y1, false);
-            }
-
-            if (Charge >= Peaks->GetConsiderMult()) {
-                for (iPairList = SetLadderContainer().GetSeriesChargePairList().begin();
-                    iPairList != SetLadderContainer().GetSeriesChargePairList().end();
-                    ++iPairList) {
-                    if (iPairList->first == 1) continue;  // examine charges greater than 1
-                    current = PepCharge(HitList[iHitList],
-                                        iPairList->first,
-                                        iPairList->second,
-                                        minintensity,
-                                        Which,
-                                        Peaks,
-                                        GetSettings()->GetMaxproductions());
-                    // compare to forward charge one state
-                    if(GetSettings()->GetNocorrelationscore() == 0) {
-                        if (b1) {
-                            if (kIonDirection[iPairList->second] == 1)
-                                current->Compare(b1, true);
-                            if (kIonDirection[iPairList->second] == -1)
-                                current->Compare(b1, false);
-                        }
-    
-                        // compare to reverse charge one state
-                        if (y1) {
-                            if (kIonDirection[iPairList->second] == -1)
-                                current->Compare(y1, true);
-                            if (kIonDirection[iPairList->second] == 1)
-                                current->Compare(y1, false);
-                        }
+                // do the singly charge comparison
+                for (iFront = SingleForward.begin(); iFront != SingleForward.end(); ++iFront) {
+                    for(iBack = SingleBackward.begin(); iBack != SingleBackward.end(); ++iBack) {
+                    (*iFront)->Compare(*iBack, false);
                     }
                 }
+
+                DoubleCompare(SingleForward, SingleBackward, DoubleForward);
+                DoubleCompare(SingleForward, SingleBackward, DoubleBackward); 
             }
 
             double adjust = HitList[iHitList].GetMaxDelta() / 
