@@ -695,7 +695,7 @@ void SBDB_CacheUnitStatistics::PrintStatistics(CNcbiOstream& out) const
             const SBDB_TimeAccessStatistics& ta_stat = *it;
             out << ta_stat.hour << "\t" 
                 << ta_stat.put_count << "\t"
-                << ta_stat.get_count;
+                << ta_stat.get_count << "\n";
         }
     }
     out << "\n\n";
