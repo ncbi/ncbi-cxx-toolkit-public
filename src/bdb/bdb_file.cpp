@@ -1146,7 +1146,7 @@ void CBDB_File::BindKey(const char* field_name,
     key_field->SetName(field_name);
     m_KeyBuf->Bind(key_field);
     if ( buf_size )
-        key_field->SetBufferSize(buf_size);
+        key_field->SetDataSize(buf_size);
 }
 
 
@@ -1166,7 +1166,7 @@ void CBDB_File::BindData(const char* field_name,
 
     m_DataBuf->Bind(data_field);
     if ( buf_size > 0) {
-        data_field->SetBufferSize(buf_size);
+        data_field->SetDataSize(buf_size);
     }
     if (is_nullable == eNullable && !m_DisabledNull) {
         data_field->SetNullable();

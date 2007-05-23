@@ -459,6 +459,12 @@ CBDB_Field::GetCompareFunction(bool /*byte_swapped*/) const
 }
 
 
+size_t CBDB_Field::GetExtraDataLength()
+{
+    return 0;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_BufferManager::
 //
@@ -870,6 +876,13 @@ CBDB_FieldLString::GetLString(const unsigned char* str,
     return str;
 }
 
+
+size_t CBDB_FieldLString::GetExtraDataLength()
+{
+    return 4;
+}
+
+
 /*
 CBDB_FieldLString::operator const char* () const
 {
@@ -922,12 +935,15 @@ void CBDB_FieldLString::Set(const char* str, size_t size,
     unsigned int new_len = (unsigned)size;
 
     // check overflow
-    if ( new_len > (GetBufferSize() - 4) ) {
+    unsigned eff_buffer_size = GetBufferSize() - 4;
+    if (new_len > eff_buffer_size) {
         if (if_overflow == eTruncateOnOverflow) {
-            new_len = GetBufferSize() - 4;
+            new_len = eff_buffer_size;
         } else {
-            string message("String field overflow."); 
-            // TODO: add info what caused overflow, what length expected
+            string message("String field overflow. Max length is ");
+            message += NStr::IntToString(eff_buffer_size);
+            message += ", requested length is ";
+            message += NStr::IntToString(new_len);
             BDB_THROW(eOverflow, message);
         }
     }
@@ -953,9 +969,7 @@ void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
     if ( !str )
         str = kEmptyCStr;
 
-    size_t new_len = ::strlen(str);
-
-    this->Set(str, new_len, if_overflow);
+    this->Set(str, ::strlen(str), if_overflow);
 }
 
 void CBDB_FieldLString::SetString(const char* str)
@@ -1112,18 +1126,19 @@ void CBDB_FieldLString::SetStdString(const string& str)
         return;
     }
 
+    unsigned eff_buffer_size = GetBufferSize() - 4;
     // check overflow
-    if (str_len > (GetBufferSize())) {
-        string message("String field overflow."); 
-        // TODO: add info what caused overflow, what length expected
+    if (str_len > eff_buffer_size) {
+        string message("String field overflow. Max length is ");
+        message += NStr::IntToString(eff_buffer_size);
+        message += ", requested length is ";
+        message += NStr::IntToString(str_len);
         BDB_THROW(eOverflow, message);
     }
 
     const char* str_data = str.data();
 
-    /* void* buf = */ Unpack();
-
-    unsigned char* str_buf = (unsigned char*) GetBuffer();
+    unsigned char* str_buf = (unsigned char*) Unpack();
 
     int s_len = -(int)str_len;  // always store it negative
     str_buf[0] = (unsigned char) (s_len);
@@ -1135,10 +1150,7 @@ void CBDB_FieldLString::SetStdString(const string& str)
 
     ::memcpy(str_buf, str_data, str_len);
 
-    str_buf[str_len] = 0;
-
     SetNotNull();
-
 }
 
 /////////////////////////////////////////////////////////////////////////////

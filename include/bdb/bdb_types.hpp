@@ -383,6 +383,10 @@ protected:
     void  SetBuffer(void* buf, size_t buf_size = 0);
     /// Set the buffer size.
     void  SetBufferSize(size_t size);
+    /// Set data size, taking into account possible extra data for some fields
+    void SetDataSize(size_t size);
+    /// Hook for defining extra data length
+    virtual size_t GetExtraDataLength();
     /// Set CBDB_BufferManager -- which works as a memory manager for BDB fields.
     void  SetBufferManager(CBDB_BufferManager* owner);
 
@@ -1750,6 +1754,7 @@ protected:
     const unsigned char* GetLString(const unsigned char* str, 
                                     bool                 check_legacy, 
                                     int*                 str_len) const;
+    virtual size_t GetExtraDataLength();
 };
 
 
@@ -2191,6 +2196,12 @@ inline void CBDB_Field::SetBufferSize(size_t buf_size)
 {
     _ASSERT(buf_size != 0);
     m_BufferSize = buf_size;
+}
+
+
+inline void CBDB_Field::SetDataSize(size_t size)
+{
+    m_BufferSize = size + GetExtraDataLength();
 }
 
 
