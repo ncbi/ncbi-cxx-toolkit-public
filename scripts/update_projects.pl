@@ -13,6 +13,7 @@ BEGIN
 
 use lib $ScriptDir;
 
+use NCBI::SVN::Wrapper;
 use NCBI::SVN::Update;
 use NCBI::SVN::SwitchMap;
 use NCBI::SVN::MultiSwitch;
@@ -338,10 +339,12 @@ while (@ProjectQueue)
     ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
+my $HEAD = NCBI::SVN::Wrapper->new()->GetLatestRevision();
+
 if ($RepositoryURL)
 {
-    $Update->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-N',
-        "$RepositoryURL/trunk/c++", $BuildDir)
+    $Update->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-r', $HEAD,
+        '-N', "$RepositoryURL/trunk/c++", $BuildDir)
 }
 
 my $SwitchMap;
@@ -351,7 +354,7 @@ $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $ScriptName,
 
 chdir $BuildDir;
 
-$Update->UpdateDirList(@Paths);
+$Update->UpdateDirList($HEAD, @Paths);
 
 NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->
     SwitchUsingMap($SwitchMap) if $SwitchMap;
