@@ -25,9 +25,9 @@ command. That is, it keeps track of which directories have been checked
 out non-recursively.
 
 Usage:
-    $ScriptName dir/subdir dir/another/
+    $ScriptName [-r REV] dir/subdir dir/another/
 
-    $ScriptName
+    $ScriptName [-r REV]
 
 Description:
     This script supports two modes of operation:
@@ -47,6 +47,14 @@ EOF
 
 my $Update = NCBI::SVN::Update->new(MyName => $ScriptName);
 
-@ARGV ? $Update->UpdateDirList(@ARGV) :$Update->UpdateCWD();
+my $Rev;
+
+if (@ARGV && $ARGV[0] =~ m/^-r(.*)/)
+{
+    shift @ARGV;
+    $Rev = $1 ? $1 : shift @ARGV
+}
+
+@ARGV ? $Update->UpdateDirList($Rev, @ARGV) : $Update->UpdateCWD($Rev);
 
 exit 0

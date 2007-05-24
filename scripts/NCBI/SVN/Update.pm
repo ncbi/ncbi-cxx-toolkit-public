@@ -8,6 +8,8 @@ use strict;
 use warnings;
 use Carp qw(confess);
 
+use NCBI::SVN::Wrapper;
+
 use File::Find;
 
 sub new
@@ -164,29 +166,33 @@ sub CreateNFiles
 
 sub PerformUpdates
 {
-    my ($Self) = @_;
+    my ($Self, $Revision) = @_;
 
     if ($Self->{NonRecursiveUpdates})
     {
         print "Performing non-recursive updates:\n";
 
-        $Self->RunSubversion('update', '-N', @{$Self->{NonRecursiveUpdates}})
+        $Self->RunSubversion('update', '-r', $Revision,
+            '-N', @{$Self->{NonRecursiveUpdates}})
     }
 
     if ($Self->{RecursiveUpdates})
     {
         print "Performing recursive updates:\n";
 
-        $Self->RunSubversion('update', @{$Self->{RecursiveUpdates}})
+        $Self->RunSubversion('update', '-r', $Revision,
+            @{$Self->{RecursiveUpdates}})
     }
 }
 
 sub UpdateDirList
 {
-    my ($Self, @Paths) = @_;
+    my ($Self, $Revision, @Paths) = @_;
 
     confess 'List of directories to update is empty' unless @Paths;
     confess 'Not in a working copy directory' unless -d '.svn';
+
+    $Revision = NCBI::SVN::Wrapper->new()->GetLatestRevision() unless $Revision;
 
     delete @$Self{qw(NonRecursiveUpdates RecursiveUpdates)};
 
@@ -227,7 +233,7 @@ Path:
 
     $Self->IncludeExistingDir('.', \%NewTree, '.');
 
-    $Self->PerformUpdates();
+    $Self->PerformUpdates($Revision);
 
     $Self->CreateNFiles($NewTree{'.'}, '.');
 
@@ -280,13 +286,15 @@ sub CollectUpdates
 
 sub UpdateCWD
 {
-    my ($Self) = @_;
+    my ($Self, $Revision) = @_;
 
     delete @$Self{qw(NonRecursiveUpdates RecursiveUpdates)};
 
+    $Revision = NCBI::SVN::Wrapper->new()->GetLatestRevision() unless $Revision;
+
     $Self->CollectUpdates('.');
 
-    $Self->PerformUpdates()
+    $Self->PerformUpdates($Revision)
 }
 
 1
