@@ -1613,10 +1613,10 @@ inline
 int CTime::Second(void) const { return m_Data.sec; }
 
 inline
-long CTime::MilliSecond(void) const { return (long)m_Data.nanosec/1000; }
+long CTime::MilliSecond(void) const { return (long)m_Data.nanosec/1000000; }
 
 inline
-long CTime::MicroSecond(void) const { return (long)m_Data.nanosec/1000000; }
+long CTime::MicroSecond(void) const { return (long)m_Data.nanosec/1000; }
 
 inline
 long CTime::NanoSecond(void) const { return (long)m_Data.nanosec; }
