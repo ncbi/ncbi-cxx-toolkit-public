@@ -114,7 +114,7 @@ svn_cmd='svn --non-interactive'
 if test "$export" = "yes" ; then
     checkout_cmd="$svn_cmd export -r \"$revision\" $REPOS/\$1 \$1 \$2"
 else
-    checkout_cmd="$svn_cmd update -r \"$revision\" \$*"
+    checkout_cmd="$script_dir/svn_up.pl -r \"$revision\" \$*"
 fi
 
 # This function calls with 2 arguments: <path> [-N]
