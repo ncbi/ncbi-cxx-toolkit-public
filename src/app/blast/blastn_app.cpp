@@ -45,6 +45,7 @@ static char const rcsid[] =
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include "blast_app_util.hpp"
 #include "blast_format.hpp"
+#include "bl2seq_runner.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -110,66 +111,117 @@ int CBlastnApp::Run(void)
                                      query_opts->GetRange());
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
-        /*** Initialize the database ***/
+        /*** Initialize the database/subject and formatting parameters ***/
+
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+
         CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
         CRef<CSearchDatabase> search_db;    /* needed for remote searches */
-        if (m_CmdLineArgs->ExecuteRemotely()) {
-            search_db = db_args->GetSearchDatabase();
-        } else {
-            CRef<CSeqDB> seqdb = GetSeqDB(db_args);
-            db_adapter.Reset(new CLocalDbAdapter(seqdb));
 
-            const string loader_name = RegisterOMDataLoader(m_ObjMgr, seqdb);
-            fasta.GetScope()->AddDataLoader(loader_name); 
+        CBl2Seq_Runner bl2seq_runner(false, false);  /* nucl. vs nucl. Bl2seq */
+
+        string str_dbname;                  /* DB name (if any) passed to formatter */
+        bool is_subject_protein;            /* subject/DB is protein */
+
+        CRef<CScope> scope_formatter
+                (new CScope(*m_ObjMgr));    /* scope object used in formatting */
+        scope_formatter->AddDefaults();
+
+        if (db_args->IsSubjectProvided())   // Blast 2 Sequences search
+        {
+            /*** Initialize the Bl2seq runner with cmd line arguments ***/
+            bl2seq_runner.ProcessDatabaseArgs(db_args, m_ObjMgr);
+            _ASSERT(bl2seq_runner.IsBl2Seq());
+
+            /*** Set formatter parameters for Bl2seq ***/
+            str_dbname = "";
+            is_subject_protein = query_opts->QueryIsProtein();
+        }
+        else                                // Database search
+        {
+            if (m_CmdLineArgs->ExecuteRemotely()) {
+                search_db = db_args->GetSearchDatabase();
+            } else {
+                CRef<CSeqDB> seqdb = GetSeqDB(db_args);
+                db_adapter.Reset(new CLocalDbAdapter(seqdb));
+
+                const string loader_name = RegisterOMDataLoader(m_ObjMgr, seqdb);
+
+                /*** Update the scope ***/
+                scope_formatter->AddDataLoader(loader_name);
+            }
+
+            /*** Set formatter parameters for Database search ***/
+            str_dbname = db_args->GetDatabaseName();
+            is_subject_protein = db_args->IsProtein();
         }
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        CBlastFormat formatter(opt,
-                               db_args->GetDatabaseName(),
-                               fmt_args->GetFormattedOutputChoice(),
-                               db_args->IsProtein(),
-                               query_opts->BelieveQueryDefline(),
-                               m_CmdLineArgs->GetOutputStream(),
-                               fmt_args->GetNumDescriptions(),
-                               opt.GetMatrixName(),
-                               fmt_args->ShowGis(),
-                               fmt_args->DisplayHtmlOutput(),
-                               opt.GetQueryGeneticCode(),
-                               opt.GetDbGeneticCode(),
-                               opt.GetSumStatisticsMode());
-        formatter.PrintProlog();
 
-        /*** Process the input ***/
-        while ( !fasta.End() ) {
+        /*** Initialize the formatter ***/
+        auto_ptr<CBlastFormat> formatter;
+        formatter.reset(new CBlastFormat(opt,
+                    str_dbname,
+                    fmt_args->GetFormattedOutputChoice(),
+                    is_subject_protein,
+                    query_opts->BelieveQueryDefline(),
+                    m_CmdLineArgs->GetOutputStream(),
+                    fmt_args->GetNumDescriptions(),
+                    opt.GetMatrixName(),
+                    fmt_args->ShowGis(),
+                    fmt_args->DisplayHtmlOutput(),
+                    opt.GetQueryGeneticCode(),
+                    opt.GetDbGeneticCode(),
+                    opt.GetSumStatisticsMode()));
 
-            TSeqLocVector query_batch(input.GetNextSeqLocBatch());
-            CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
+        formatter->PrintProlog();
 
-            CRef<CSearchResultSet> results;
+        if (bl2seq_runner.IsBl2Seq())
+        {
+            /*** Process the input, run and format Blast 2 sequences ***/
+            bl2seq_runner.RunAndFormat(&fasta, &input,
+                                        opts_hndl.GetPointer(),
+                                        formatter.get(),
+                                        scope_formatter.GetPointer());
+        }
+        else
+        {
+            /*** Process the input, run Blast, format the results ***/
+            while ( !fasta.End() ) {
 
-            if (m_CmdLineArgs->ExecuteRemotely()) {
-                CRemoteBlast rmt_blast(queries, opts_hndl, *search_db);
-                if (m_CmdLineArgs->ProduceDebugRemoteOutput()) {
-                    rmt_blast.SetVerbose();
+                TSeqLocVector query_batch(input.GetNextSeqLocBatch());
+                CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
+
+                /*** Update the scope ***/
+                scope_formatter->AddScope(fasta.GetScope().GetObject());
+
+                /*** Perform BLAST search/alignment ***/
+                CRef<CSearchResultSet> results;
+
+                if (m_CmdLineArgs->ExecuteRemotely()) {
+                    CRemoteBlast rmt_blast(queries, opts_hndl, *search_db);
+                    if (m_CmdLineArgs->ProduceDebugRemoteOutput()) {
+                        rmt_blast.SetVerbose();
+                    }
+                    results = rmt_blast.GetResultSet();
+                } else {
+                    CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
+                    lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                    results = lcl_blast.Run();
                 }
-                results = rmt_blast.GetResultSet();
-            } else {
-                CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
-                lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
-                results = lcl_blast.Run();
-            }
 
-            // this assertion is only true for database searches
-            _ASSERT(query_batch.size() == results->size());
-            ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneAlignSet(**result, *fasta.GetScope());
-            }
+                // this assertion is only true for database searches
+                _ASSERT(query_batch.size() == results->size());
 
+                /*** Output formatted results ***/
+                ITERATE(CSearchResultSet, result, *results) {
+                        formatter->PrintOneAlignSet(**result, scope_formatter.GetObject());
+                }
+            }
         }
 
-        formatter.PrintEpilog(opt);
+        formatter->PrintEpilog(opt);
 
     } catch (const CBlastException& exptn) {
         cerr << exptn.what() << endl;
