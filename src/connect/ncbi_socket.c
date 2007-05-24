@@ -3637,35 +3637,33 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
             done = 1/*true*/;
         else if ( cr_seen )
             x_size++;
-        for (i = cr_seen; i < x_size; i++) {
-            c = x_buf[i];
+        i = cr_seen;
+        while (i < x_size  &&  len < size) {
+            c = x_buf[i++];
             if (c == '\n') {
                 cr_seen = 0/*false*/;
                 done = 1/*true*/;
-                i++;
                 break;
             }
-            if (c == '\r') {
-                if (!cr_seen) {
-                    cr_seen = 1/*true*/;
-                    continue;
-                }
+            if (c == '\r'  &&  !cr_seen) {
+                cr_seen = 1/*true*/;
+                continue;
             }
             if (cr_seen)
                 line[len++] = '\r';
-            if (c != '\r')
-                cr_seen = 0/*false*/;
-            if (len >= size)
-                break;
-            if (!c) {
-                done = 1/*true*/;
-                i++;
+            cr_seen = 0/*false*/;
+            if (len >= size) {
+                --i; /* have to read it again */
                 break;
             }
-            if (x_buf == w)
-                line[len] = c;
-            if (++len >= size)
+            if (c == '\r') {
+                cr_seen = 1/*true*/;
+                continue;
+            } else if (!c) {
+                done = 1/*true*/;
                 break;
+            }
+            line[len++] = c;
         }
         if (len >= size)
             done = 1/*true*/;
@@ -3679,6 +3677,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
             status = eIO_Unknown;
         }
     } while (!done  &&  status == eIO_Success);
+
     if (len < size)
         line[len] = '\0';
     if ( n_read )
