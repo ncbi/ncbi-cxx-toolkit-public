@@ -132,6 +132,8 @@ void CAgpconvertApplication::Init(void)
                              "(default is \".ent\" for Seq-entry "
                              "or \".sqn\" for Seq-submit",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("gap-info",
+                      "Set Seq-gap (gap type and linkage) in delta sequence");
 
 
     arg_desc->AddOptionalKey("dl", "definition_line",
@@ -209,6 +211,9 @@ int CAgpconvertApplication::Run(void)
     CRef<CSeq_submit> submit_templ;  // may not be used
     bool output_seq_submit = false;  // whether the output should be a
                                      // Seq-submit (rather than a Seq-entry)
+    bool use_gap_info;               // Whether to incorporate some info
+                                     // from the AGP file as Seq-gap's
+
     try {
         // a Seq-entry?
         args["template"].AsInputFile() >> MSerial_AsnText >> ent_templ;
@@ -534,11 +539,15 @@ int CAgpconvertApplication::Run(void)
         ent_templ.SetSeq().SetDescr().Set().push_back(source_desc);
     }
 
+    // Should we make Seq-gap's?
+    use_gap_info = args["gap-info"];
+
     // Iterate over AGP files
     for (unsigned int i = 1; i <= args.GetNExtra(); ++i) {
 
         CNcbiIstream& istr = args[i].AsInputFile();
-        CRef<CBioseq_set> big_set = AgpRead(istr);
+        CRef<CBioseq_set> big_set = AgpRead(istr, eAgpRead_ParseId,
+                                            use_gap_info);
 
         ITERATE (CBioseq_set::TSeq_set, ent, big_set->GetSeq_set()) {
 
