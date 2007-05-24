@@ -37,6 +37,13 @@
 #ifdef NCBI_OS_DARWIN
 #  include <machine/limits.h>
 #  include <sys/cdefs.h>
+#  ifndef LONG_BIT /* <machine/limits.h>'s definition is conditional */
+#    ifdef __LP64__
+#      define LONG_BIT         64
+#    else
+#      define LONG_BIT         32
+#    endif
+#  endif
 #  define NCBI_PLATFORM_BITS   LONG_BIT
 #  define SIZEOF_CHAR          1
 #  define SIZEOF_DOUBLE        8
