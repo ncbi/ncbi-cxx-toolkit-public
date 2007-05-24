@@ -4,6 +4,6 @@
 
 APP = test_basic_cleanup
 SRC = test_basic_cleanup
-LIB = xcleanup seq submit seqset seqblock seqfeat pub biblio 
+LIB = xcleanup xobjutil submit $(OBJMGR_LIBS)
 
-LIBS = $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
