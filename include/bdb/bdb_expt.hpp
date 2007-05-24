@@ -135,7 +135,9 @@ public:
         eOverflowFileIO,
         eQuotaLimit,
         eForeignTransaction,
-        eCompressorError
+        eCompressorError,
+        eIdConflict,
+        eTooManyChunks
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -157,6 +159,8 @@ public:
         case eQuotaLimit:              return "eQuotaLimit";
         case eForeignTransaction:      return "eForeignTransaction";
         case eCompressorError:         return "eCompressorError";
+        case eIdConflict:              return "eIdConflict";
+        case eTooManyChunks:           return "eTooManyChunks";
 
         default: return CException::GetErrCodeString();
         }

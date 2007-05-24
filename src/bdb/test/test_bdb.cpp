@@ -49,6 +49,7 @@
 #include <bdb/bdb_trans.hpp>
 #include <bdb/bdb_query.hpp>
 #include <bdb/bdb_util.hpp>
+#include <bdb/bdb_ext_blob.hpp>
 
 #include <bdb/bdb_query_parser.hpp>
 
@@ -2190,6 +2191,68 @@ static void s_TEST_ICache(void)
     assert(sz == 0);
 }
 
+static void s_TEST_ExtBlob(void)
+{
+    cout << "======== Ext BLOB attributes test." << endl;
+
+    CBDB_ExtBlobMap ext_attr;
+
+    assert(ext_attr.Size() == 0);
+    
+    ext_attr.Add(10, 123, 10);
+    ext_attr.Add(11, 149, 101);
+    ext_attr.Add(13, 1,  20);
+    ext_attr.Add(20, 0,   15);
+
+    assert(ext_attr.Size() == 4);
+
+    bool b;
+    b = ext_attr.HasBlob(13);
+    assert(b);
+    b = ext_attr.HasBlob(14);
+    assert(!b);
+
+    Uint8 offset, size;
+    b = ext_attr.GetBlobLoc(13, &offset, &size);
+    assert(b);
+    assert(offset == 1 && size == 20);
+    b = ext_attr.GetBlobLoc(20, &offset, &size);
+    assert(b);
+    assert(offset == 0 && size == 15);
+
+
+    Uint4 min_id, max_id;
+    ext_attr.GetBlobIdRange(&min_id, &max_id);
+    assert(min_id == 10 && max_id == 20);
+    
+
+    CBDB_RawFile::TBuffer buf;
+    ext_attr.Serialize(&buf);
+    
+    CBDB_ExtBlobMap ext_attr2;
+    ext_attr2.Deserialize(buf);
+
+    assert(ext_attr2.Size() == 4);
+
+    b = ext_attr2.HasBlob(13);
+    assert(b);
+    b = ext_attr2.HasBlob(14);
+    assert(!b);
+
+    b = ext_attr2.GetBlobLoc(13, &offset, &size);
+    assert(b);
+    assert(offset == 1 && size == 20);
+    b = ext_attr2.GetBlobLoc(20, &offset, &size);
+    assert(b);
+    assert(offset == 0 && size == 15);
+
+
+    ext_attr2.GetBlobIdRange(&min_id, &max_id);
+    assert(min_id == 10 && max_id == 20);
+
+    cout << "======== Ext BLOB attributes test. OK." << endl;
+
+}
 
 
 ////////////////////////////////
@@ -2250,6 +2313,8 @@ int CBDB_Test::Run(void)
         s_TEST_BDB_Duplicates();
 
         s_TEST_BDB_Transaction();
+
+        s_TEST_ExtBlob();
 /*
         s_TEST_db_map();
 

@@ -39,7 +39,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbitype.hpp>
+//#include <corelib/ncbitypes.hpp>
 
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_cursor.hpp>
@@ -72,6 +72,13 @@ public:
     {
         Uint8  offset;   ///< chunk offset
         Uint8  size;     ///< chunk size
+
+        SBlobChunkLoc() { offset = size = 0; }
+
+        SBlobChunkLoc(Uint8  off, Uint8  s) 
+            : offset(off), size(s) 
+        {}
+
     };
 
     /// BLOB location table (list of chunks and sizes)
@@ -83,6 +90,16 @@ public:
     {
         Uint4          blob_id;
         TBlobChunkVec  blob_location_table;
+
+        SBlobLoc() : blob_id(0) {}
+
+        /// Construct one-chunk blob locator
+        SBlobLoc(Uint4 id, Uint8 offset, Uint8 size)
+            : blob_id(id), blob_location_table(1)
+        {
+            blob_location_table[0].offset = offset;
+            blob_location_table[0].size = size;
+        }
     };
 
     /// Collection of BLOBs (id + allocation table)
@@ -90,21 +107,23 @@ public:
 
 
     CBDB_ExtBlobMap();
-    CBDB_ExtBlobMap(const CBDB_ExtBlobMap& ext_blob_map);
-    CBDB_ExtBlobMap& operator=(const CBDB_ExtBlobMap& ext_blob_map);
 
 
     /// Add BLOB. BLOB consists of one single chunk.
-    void Add(unsigned blob_id, Uint8 offset, Uint8 size);
+    void Add(Uint4 blob_id, Uint8 offset, Uint8 size);
+
+    /// Returns TRUE if blob exists in the map
+    bool HasBlob(Uint4 blob_id) const;
 
     /// Get BLOB location 
-    bool GetBlobLoc(unsigned blob_id, Uint8* offset, Uint8* size);
+    bool GetBlobLoc(Uint4 blob_id, Uint8* offset, Uint8* size) const;
 
-    /// Get min BLOB id covered by the map
-    unsigned GetMinBlobId() const;
+    /// Number of BLOBs registered in the map
+    size_t Size() const { return m_BlobMap.size(); }
 
-    /// Get max BLOB id covered by the map
-    unsigned GetMaxBlobId() const;
+    /// Get BLOB id min and max range (closed interval)
+    void GetBlobIdRange(Uint4* min_id, Uint4* max_id) const;
+
 
     /// Serialize map for storage
     /// @param buf       
@@ -117,7 +136,12 @@ public:
 
     /// DeSerialize map 
     void Deserialize(const CBDB_RawFile::TBuffer& buf, 
-                     Uint8 buf_offset = 0);
+                     Uint8                        buf_offset = 0);
+
+    /// Compute maximum serialization size
+    size_t ComputeSerializationSize() const;    
+private:
+    TBlobMap    m_BlobMap;
 };
 
 /// Super BLOB 
@@ -210,14 +234,7 @@ struct NCBI_BDB_CACHE_EXPORT CExtBlobLocDB : public CBDB_BLobFile
     CBDB_FieldUint4        id_from;  ///< Id range from
     CBDB_FieldUint4        id_to;    ///< Id range to
 
-    CExtBlobLocDB()
-    {
-        DisableNull();
-
-        BindKey("id_from",   &id_from);
-        BindKey("id_to",     &id_to);
-    }
-
+    CExtBlobLocDB();
 
     /// Find the superblob storing our target blob_id
     /// Function is doing the cursor range scan sequentially reading 
@@ -242,6 +259,9 @@ struct NCBI_BDB_CACHE_EXPORT CExtBlobLocDB : public CBDB_BLobFile
     ///
     EBDB_ErrCode Insert(const CBDB_ExtSuperBlobMap& super_blob_map);
 
+private:
+    CExtBlobLocDB(const CExtBlobLocDB&);
+    CExtBlobLocDB& operator=(const CExtBlobLocDB&);
 };
 
 
