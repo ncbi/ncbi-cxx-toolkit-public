@@ -1,14 +1,60 @@
 # $Id$
 
-package NCBI::SVN::Wrapper;
-
-use base qw(NCBI::SVN::Base);
-
 use strict;
 use warnings;
 use Carp qw(confess);
 
+package NCBI::SVN::Wrapper::Stream;
+
+use base qw(NCBI::SVN::Base);
+
 use IPC::Open3;
+use File::Temp qw/tempfile/;
+
+sub Run
+{
+    my ($Self, @Args) = @_;
+
+    my $WriteFH;
+
+    $Self->{PID} = open3($WriteFH, $Self->{ReadFH},
+        $Self->{ErrorFH} = tempfile(),
+        $Self->GetSvnPath(), '--non-interactive', @Args);
+
+    close $WriteFH
+}
+
+sub ReadLine
+{
+    my ($Self) = @_;
+
+    my $Line = readline $Self->{ReadFH};
+
+    chomp $Line if $Line;
+
+    return $Line
+}
+
+sub Close
+{
+    my ($Self) = @_;
+
+    return unless exists $Self->{PID};
+
+    local $/ = undef;
+    my $ErrorText = readline $Self->{ErrorFH};
+
+    close($Self->{ReadFH});
+    close($Self->{ErrorFH});
+
+    waitpid(delete $Self->{PID}, 0);
+
+    die $ErrorText if $?
+}
+
+package NCBI::SVN::Wrapper;
+
+use base qw(NCBI::SVN::Base);
 
 sub new
 {
@@ -18,19 +64,41 @@ sub new
     {
         $Self->{Repos} =~ s/\/+$//;
     }
+    elsif (-d '.svn')
+    {
+        $Self->{Repos} = $Self->ReadInfo('.')->{'.'}->{Root}
+    }
     else
     {
-        $Self->{Repos} = 'file:///home/kazimird/repos'
+        $Self->{Repos} = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit'
     }
 
     return $Self
 }
 
-sub GetRepos
+sub SetRepository
+{
+    my ($Self, $Repository) = @_;
+
+    $Self->{Repos} = $Repository
+}
+
+sub GetRepository
 {
     my ($Self) = @_;
 
     return $Self->{Repos}
+}
+
+sub Run
+{
+    my ($Self, @Args) = @_;
+
+    my $Stream = NCBI::SVN::Wrapper::Stream->new();
+
+    $Stream->Run(@Args);
+
+    return $Stream
 }
 
 sub ReadFile
@@ -47,56 +115,101 @@ sub ReadFileLines
     return $Self->ReadSubversionLines('cat', "$Self->{Repos}/$FileName")
 }
 
+sub ReadInfo
+{
+    my ($Self, @Dirs) = @_;
+
+    my $Stream = $Self->Run('info', @Dirs);
+
+    my %Info;
+    my $Path;
+    my $Line;
+
+    while (defined($Line = $Stream->ReadLine()))
+    {
+        if ($Line =~ m/^Path: (.*?)$/os)
+        {
+            $Path = $1
+        }
+        elsif ($Line =~ m/^URL: (.*?)$/os)
+        {
+            $Info{$Path}->{Path} = $1
+        }
+        elsif ($Line =~ m/^Repository Root: (.*?)$/os)
+        {
+            $Info{$Path}->{Root} = $1
+        }
+    }
+
+    for my $DirInfo (values %Info)
+    {
+        my $Root = $DirInfo->{Root};
+
+        substr($DirInfo->{Path}, 0, length($Root) + 1, '') eq $Root . '/' or die
+    }
+
+    $Stream->Close();
+
+    return \%Info
+}
+
+sub GetLatestRevision
+{
+    my ($Self) = @_;
+
+    my $Stream = $Self->Run('info', $Self->GetRepository());
+
+    my $Line;
+    my $Revision;
+
+    while (defined($Line = $Stream->ReadLine()))
+    {
+        if ($Line =~ m/^Revision: (.*)$/os)
+        {
+            $Revision = $1;
+            last
+        }
+    }
+
+    while (defined($Stream->ReadLine()))
+    {
+    }
+
+    $Stream->Close();
+
+    return $Revision
+}
+
 sub ReadSubversionStream
 {
     my ($Self, @CommandAndParams) = @_;
 
-    my ($ReadFH, $WriteFH);
+    my $Stream = $Self->Run(@CommandAndParams);
 
-    my $PID = open3($WriteFH, $ReadFH, undef, $Self->GetSvnPath(),
-        '--non-interactive', @CommandAndParams);
+    local($/) = undef;
 
-    close $WriteFH;
+    my $Contents = $Stream->ReadLine();
 
-    my $Buffer = '';
+    $Stream->Close();
 
-    while (read $ReadFH, $Buffer, 16, length($Buffer))
-    {
-    }
-
-    close $ReadFH;
-
-    waitpid $PID, 0;
-
-    die $Buffer if $?;
-
-    return $Buffer
+    return $Contents
 }
 
 sub ReadSubversionLines
 {
     my ($Self, @CommandAndParams) = @_;
 
-    my ($ReadFH, $WriteFH);
-
-    my $PID = open3($WriteFH, $ReadFH, undef, $Self->GetSvnPath(),
-        '--non-interactive', @CommandAndParams);
-
-    close $WriteFH;
+    my $Stream = $Self->Run(@CommandAndParams);
 
     my @Lines;
+    my $Line;
 
-    while (<$ReadFH>)
+    while (defined($Line = $Stream->ReadLine()))
     {
-        chomp;
-        push @Lines, $_
+        push @Lines, $Line
     }
 
-    close $ReadFH;
-
-    waitpid $PID, 0;
-
-    die join("\n", @Lines) . "\n" if $?;
+    $Stream->Close();
 
     return @Lines
 }
