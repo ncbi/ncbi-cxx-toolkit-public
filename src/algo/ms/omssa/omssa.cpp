@@ -1663,7 +1663,6 @@ CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
                 TerminalBias = eMSBothTerminalBias;
         }
     }
-
     Hit.FillMatchedPeaks(SeriesCharge, Ion, Size, minintensity, false, TerminalBias, SeriesCharge*Maxproductions);
     CMSMatchedPeakSet *MatchPeakSet = Hit.SetIonSeriesMatchMap().SetSeries(SeriesCharge, Ion);
     TMatchedPeakSet::iterator bin, prev, next;
@@ -1695,18 +1694,17 @@ CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
 
 
 
-void CSearch::MatchAndSort(CMSPeak * Peaks,
-                           int iHitList,
-                           TMSHitList &HitList,
+void CSearch::MatchAndSort(CMSPeak * Peaks, 
+                           CMSHit& Hit, 
                            EMSPeakListTypes Which,
                            int minintensity,
                            const TSeriesChargePairList::const_iterator &iPairList,
-                           list<CMSMatchedPeakSet *> &SingleForward, 
-                           list<CMSMatchedPeakSet *> &SingleBackward)
+                           list<CMSMatchedPeakSet *> &Forward, 
+                           list<CMSMatchedPeakSet *> &Backward)
 {
     CMSMatchedPeakSet * current;
     
-    current = PepCharge(HitList[iHitList],
+    current = PepCharge(Hit,
                         iPairList->first,
                         iPairList->second,
                         minintensity,
@@ -1715,26 +1713,27 @@ void CSearch::MatchAndSort(CMSPeak * Peaks,
                         GetSettings()->GetMaxproductions());
 
     if (kIonDirection[iPairList->second] == 1)
-        SingleForward.push_back(current);
+        Forward.push_back(current);
     else if (kIonDirection[iPairList->second] == -1)
-        SingleBackward.push_back(current);
+        Backward.push_back(current);
 }       
 
 
 void CSearch::DoubleCompare(list<CMSMatchedPeakSet *> &SingleForward,
                             list<CMSMatchedPeakSet *> &SingleBackward,
-                            list<CMSMatchedPeakSet *> &Double) 
+                            list<CMSMatchedPeakSet *> &Double,
+                            bool DoubleForward) 
 {   
     list<CMSMatchedPeakSet *>::iterator iDouble, iFront, iBack;
 
     for (iDouble = Double.begin(); iDouble != Double.end(); ++iDouble) {
         
         for(iFront = SingleForward.begin(); iFront != SingleForward.end(); ++iFront) {
-            (*iDouble)->Compare(*iFront, true);
+            (*iDouble)->Compare(*iFront, DoubleForward);
         }
         
         for(iBack = SingleBackward.begin(); iBack != SingleBackward.end(); ++iBack) {
-            (*iDouble)->Compare(*iBack, false);
+            (*iDouble)->Compare(*iBack, !DoubleForward);
         }
     }             
 }
@@ -1768,7 +1767,6 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 
 
             TSeriesChargePairList::const_iterator iPairList;
-
             list <CMSMatchedPeakSet *> SingleForward, SingleBackward, DoubleForward, DoubleBackward;
 
             for (iPairList = SetLadderContainer().GetSeriesChargePairList().begin();
@@ -1777,11 +1775,11 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 
                 // charge 1
                 if (iPairList->first == 1) {
-                    MatchAndSort(Peaks, iHitList, HitList, Which, minintensity,
+                    MatchAndSort(Peaks, HitList[iHitList], Which, minintensity,
                                  iPairList, SingleForward, SingleBackward);
                 }
                 else if (Charge >= Peaks->GetConsiderMult()) {
-                    MatchAndSort(Peaks, iHitList, HitList, Which, minintensity,
+                    MatchAndSort(Peaks, HitList[iHitList], Which, minintensity,
                                   iPairList, DoubleForward, DoubleBackward);
                 }
             }
@@ -1795,10 +1793,12 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                     (*iFront)->Compare(*iBack, false);
                     }
                 }
-
-                DoubleCompare(SingleForward, SingleBackward, DoubleForward);
-                DoubleCompare(SingleForward, SingleBackward, DoubleBackward); 
+                if (Charge >= Peaks->GetConsiderMult()) {
+                    DoubleCompare(SingleForward, SingleBackward, DoubleForward, true);
+                    DoubleCompare(SingleForward, SingleBackward, DoubleBackward, false); 
+                }
             }
+
 
             double adjust = HitList[iHitList].GetMaxDelta() / 
                 MSSCALE2INT(GetSettings()->GetMsmstol());

@@ -214,26 +214,26 @@ protected:
      * @param SingleForward singly charged NC ions
      * @param SingleBackward singly charged CN ions
      * @param Double double charged product ions
+     * @param DoubleForward is the double series a forward series?
      */
     void DoubleCompare(list<CMSMatchedPeakSet *> &SingleForward,
                        list<CMSMatchedPeakSet *> &SingleBackward,
-                       list<CMSMatchedPeakSet *> &Double);
+                       list<CMSMatchedPeakSet *> &Double,
+                       bool DoubleForward);
 
     /**
      * Creates match ion match lists
      * 
      * @param Peaks peak list
-     * @param iHitList pointer to hit
-     * @param HitList list of hits
+     * @param Hit the hit
      * @param Which which peak list to use
      * @param minintensity minimum intensity
      * @param iPairList
-     * @param SingleForward singly charged NC ions
-     * @param SingleBackward singly charged CN ions
+     * @param Forward NC ions
+     * @param Backward CN ions
      */
     void MatchAndSort(CMSPeak * Peaks,
-                      int iHitList,
-                      TMSHitList &HitList,
+                      CMSHit& Hit,
                       EMSPeakListTypes Which, 
                       int minintensity, 
                       const TSeriesChargePairList::const_iterator &iPairList,
