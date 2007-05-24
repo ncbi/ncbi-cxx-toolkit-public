@@ -463,6 +463,8 @@ namespace std {
 
     ncbi_specialize_std_vector(char,
                                PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(signed char,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
     ncbi_specialize_std_vector(unsigned char,
                                PyInt_Check, PyInt_AsLong, PyInt_FromLong);
 

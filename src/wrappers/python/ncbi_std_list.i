@@ -351,6 +351,8 @@ namespace std {
 
     ncbi_specialize_std_list(char,
                              PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(signed char,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
     ncbi_specialize_std_list(unsigned char,
                              PyInt_Check, PyInt_AsLong, PyInt_FromLong);
 
