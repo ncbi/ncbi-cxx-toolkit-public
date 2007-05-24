@@ -35,11 +35,7 @@
 
 #include <windows.h>
 
-// imagehlp.h must be compiled with packing to eight-byte-boundaries,
-// but does nothing to enforce that.
-#pragma pack(push, before_imagehlp, 8)
-#include <imagehlp.h>
-#pragma pack(pop, before_imagehlp)
+#include <dbghelp.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -388,10 +384,8 @@ static bool s_SymbolInit()
         return true;
     }
 
-    // we load imagehlp.dll dynamically because the NT4-version does not
-    // offer all the functions that are in the NT5 lib
     try {
-        CDll dll("imagehlp.dll", CDll::eLoadNow, CDll::eNoAutoUnload);
+        CDll dll("dbghelp.dll", CDll::eLoadNow, CDll::eNoAutoUnload);
 
         SymCleanup =
             dll.GetEntryPoint_Func("SymCleanup",
@@ -433,11 +427,11 @@ static bool s_SymbolInit()
         return true;
     }
     catch (CException& e) {
-        ERR_POST(Error << "Error opening imagehlp.dll: " << e.what());
+        ERR_POST(Error << "Error opening dbghelp.dll: " << e.what());
         return false;
     }
     catch (...) {
-        ERR_POST(Error << "Unknown error opening imagehlp.dll");
+        ERR_POST(Error << "Unknown error opening dbghelp.dll");
         return false;
     }
 }
@@ -540,7 +534,7 @@ void CSymbolGuard::UpdateSymbols(void)
     HANDLE proc = GetCurrentProcess();
     DWORD pid = GetCurrentProcessId();
 
-    // Enumerate modules and tell imagehlp.dll about them.
+    // Enumerate modules and tell dbghelp.dll about them.
     // On NT, this is not necessary, but it won't hurt.
     TModules modules;
 
