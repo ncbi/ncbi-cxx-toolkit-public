@@ -128,8 +128,8 @@ struct SQueueDB : public CBDB_File
 
         BindData("input_overflow", &input_overflow);
         BindData("output_overflow", &output_overflow);
-        BindData("input",  &input,  kNetScheduleSplitSize+4); // workaround
-        BindData("output", &output, kNetScheduleSplitSize+4);
+        BindData("input",  &input,  kNetScheduleSplitSize);
+        BindData("output", &output, kNetScheduleSplitSize);
 
         BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
