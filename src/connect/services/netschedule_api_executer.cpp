@@ -240,9 +240,14 @@ void CNetScheduleExecuter::x_ParseGetJobResponse(string*        job_key,
     } else {
         goto throw_err;
     }
+    /*
+    ofstream o1("/tmp/ex_job_out_before_pe.txt", ios_base::binary);
+    o1.write(&input->operator[](0),input->size());
 
     *input = NStr::ParseEscapes(*input);
-
+    ofstream o2("/tmp/ex_job_out_after_pe.txt", ios_base::binary);
+    o2.write(&input->operator[](0),input->size());
+    */
     // parse "out"
     while (*str && isspace((unsigned char)(*str)))
         ++str;
@@ -286,14 +291,21 @@ void CNetScheduleExecuter::x_ParseGetJobResponse(string*        job_key,
     *job_mask = atoi(str);
 }
 
+inline
+void static s_ChechOutputSize(const string& output, size_t max_output_size)
+{
+    if (output.length() > max_output_size) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+                   "Output data too long.");
+    }
+}
+
 
 void CNetScheduleExecuter::PutResult(const CNetScheduleJob& job) const
 {
-    if (job.output.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
-            "Output data too long.");
-    }
-
+    size_t max_output_size = m_API->GetServerParams().max_output_size;
+    s_ChechOutputSize(job.output, max_output_size);
+    
     m_API->x_SendJobCmdWaitResponse("PUT" , job.job_id, job.ret_code, job.output); 
 
 }
@@ -305,10 +317,8 @@ bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
     if (done_job.job_id.empty()) 
         return GetJob(new_job, 0);
 
-    if (done_job.output.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
-            "Output data too long.");
-    }
+    size_t max_output_size = m_API->GetServerParams().max_output_size;
+    s_ChechOutputSize(done_job.output, max_output_size);
 
     string resp = m_API->x_SendJobCmdWaitResponse("JXCG" , done_job.job_id, done_job.ret_code, done_job.output); 
 
@@ -335,10 +345,8 @@ void CNetScheduleExecuter::PutProgressMsg(const CNetScheduleJob& job) const
 
 void CNetScheduleExecuter::PutFailure(const CNetScheduleJob& job) const
 {
-    if (job.output.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
-            "Output data too long.");
-    }
+    size_t max_output_size = m_API->GetServerParams().max_output_size;
+    s_ChechOutputSize(job.output, max_output_size);
 
     if (job.error_msg.length() >= kNetScheduleMaxErrSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 

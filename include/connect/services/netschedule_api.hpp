@@ -204,11 +204,19 @@ public:
     CNetScheduleExecuter  GetExecuter();
     CNetScheduleAdmin     GetAdmin();
 
+    struct SServerParams {
+        size_t max_input_size;
+        size_t max_output_size;
+        bool   fast_status;
+    };
+
+    const SServerParams& GetServerParams() const;
+
     /// Get job's details
     /// @param job
     ///   
-    CNetScheduleAPI::EJobStatus GetJobDetails(CNetScheduleJob& job) const;
-
+    EJobStatus GetJobDetails(CNetScheduleJob& job) const;
+    
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
 
 private:
@@ -258,7 +266,7 @@ private:
 
     virtual void x_SendAuthetication(CNetSrvConnector& conn) const;
 
-    CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key) const;
+    EJobStatus x_GetJobStatus(const string& job_key, bool submitter) const;
 
     void GetProgressMsg(CNetScheduleJob& job) const;
 
@@ -266,6 +274,9 @@ private:
     static CNetScheduleExceptionMap sm_ExceptionMap;
     string            m_Queue;
     string            m_ProgramVersion;
+
+    mutable auto_ptr<SServerParams> m_ServerParams;
+    mutable long m_ServerParamsAskCount;
 };
 
 
@@ -379,6 +390,9 @@ public:
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key) const;
 
     CNetScheduleAPI::EJobStatus GetJobDetails(CNetScheduleJob& job) const;
+
+    const CNetScheduleAPI::SServerParams& GetServerParams() const;
+
 
 private:
     friend class CNetScheduleAPI;
@@ -562,6 +576,8 @@ public:
     /// Register client-listener
     void RegisterClient(unsigned short udp_port) const;
 
+    const CNetScheduleAPI::SServerParams& GetServerParams() const;
+
 
     /// Unregister client-listener. After this call
     /// server will not try to send any notification messages or maintain
@@ -736,7 +752,7 @@ CNetSrvConnectorHolder CNetScheduleAPI::x_GetConnector(const string& job_key) co
 inline CNetScheduleAPI::EJobStatus 
 CNetScheduleSubmitter::GetJobStatus(const string& job_key) const
 {
-    return m_API->GetJobStatus(job_key);
+    return m_API->x_GetJobStatus(job_key, true);
 }
 
 inline CNetScheduleAPI::EJobStatus 
@@ -748,6 +764,11 @@ CNetScheduleSubmitter::GetJobDetails(CNetScheduleJob& job) const
 inline void CNetScheduleSubmitter::GetProgressMsg(CNetScheduleJob& job) const 
 { 
     m_API->GetProgressMsg(job); 
+}
+inline
+const CNetScheduleAPI::SServerParams& CNetScheduleSubmitter::GetServerParams() const
+{
+    return m_API->GetServerParams();
 }
 
 
@@ -761,7 +782,7 @@ void CNetScheduleExecuter::WaitQueueNotification(unsigned       wait_time,
 inline CNetScheduleAPI::EJobStatus 
 CNetScheduleExecuter::GetJobStatus(const string& job_key) const
 {
-    return m_API->GetJobStatus(job_key);
+    return m_API->x_GetJobStatus(job_key, false);
 }
 inline void CNetScheduleExecuter::GetProgressMsg(CNetScheduleJob& job) const 
 { 
@@ -780,6 +801,14 @@ inline const string& CNetScheduleExecuter::GetServiceName() const
 { 
     return m_API->GetServiceName(); 
 }
+
+inline
+const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() const
+{
+    return m_API->GetServerParams();
+}
+
+///////////////////////////////////////////////////////////////////////
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleAPI,  "xnetschedule_api", 1,0, 0);
 

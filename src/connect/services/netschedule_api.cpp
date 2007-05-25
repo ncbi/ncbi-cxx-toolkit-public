@@ -145,7 +145,7 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
 }
 
 
-
+#define SERVER_PARAMS_ASK_MAX_COUNT 100
 /**********************************************************************/
 
 CNetScheduleExceptionMap CNetScheduleAPI::sm_ExceptionMap;
@@ -154,7 +154,8 @@ CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
                                  const string& client_name,
                                  const string& queue_name)
     : INetServiceAPI(service_name,client_name),
-      m_Queue(queue_name)
+      m_Queue(queue_name),
+      m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
 {
 }
 
@@ -324,13 +325,76 @@ CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job) const
 }
 
 CNetScheduleAPI::EJobStatus 
-CNetScheduleAPI::GetJobStatus(const string& job_key) const
+CNetScheduleAPI::x_GetJobStatus(const string& job_key, bool submitter) const
 {
-    string resp = x_SendJobCmdWaitResponse("STATUS" , job_key); 
+    string cmd = "STATUS";
+    if (GetServerParams().fast_status) {
+        if (submitter)  cmd = "SST";
+        else cmd = "WST";
+    }
+    string resp = x_SendJobCmdWaitResponse(cmd, job_key); 
     const char* str = resp.c_str();
     int st = atoi(str);
     return (EJobStatus) st;
 }
+
+const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams() const
+{
+    if (m_ServerParams.get() && m_ServerParamsAskCount > 0) {
+        --m_ServerParamsAskCount;
+        return *m_ServerParams;
+    }
+    if (!m_ServerParams.get())
+        m_ServerParams.reset(new SServerParams);
+    m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
+    
+    string cmd = "GETP";
+    m_ServerParams->max_input_size = kMax_UInt;
+    m_ServerParams->max_output_size = kMax_UInt;
+    m_ServerParams->fast_status = false;
+
+    int fscount = 0;
+    int concount = 0;
+    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); 
+         it != GetPoll().end(); ++it) {
+        CNetSrvConnectorHolder ch = *it;
+        ++concount;
+        string resp;
+        try {
+            resp = SendCmdWaitResponse(ch, cmd); 
+        } catch (CNetScheduleException& ex) {
+            if (ex.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
+                throw;
+        } catch (...) {
+        }
+        list<string> spars;
+        NStr::Split(resp, ";", spars);
+        ITERATE(list<string>, it, spars) {
+            string n,v;
+            NStr::SplitInTwo(*it,"=",n,v);
+            if (n == "max_input_size") {
+                size_t val = NStr::StringToInt(v) / 4;
+                if (m_ServerParams->max_input_size > val)
+                    m_ServerParams->max_input_size = val ;
+            } else if (n == "max_output_size") {
+                size_t val = NStr::StringToInt(v) / 4;
+                if (m_ServerParams->max_output_size > val)
+                    m_ServerParams->max_output_size = val;
+            } else if (n == "fast_status" && v == "1") {
+                ++fscount;
+            }
+        }
+    }
+    if (m_ServerParams->max_input_size == kMax_UInt)
+        m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
+    if (m_ServerParams->max_output_size == kMax_UInt)
+        m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
+    if (fscount == concount && fscount != 0)
+        m_ServerParams->fast_status = true;
+        
+    return *m_ServerParams;
+}
+
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job) const
 {
@@ -428,12 +492,12 @@ public:
                                                             rebalance_time),
                                eTakeOwnership);
 
-                bool permanent_conntction =
-                    conf.GetBool(m_DriverName, "use_permanent_connection",  
-                                 CConfig::eErr_NoThrow, true);
+                //bool permanent_conntction =
+                //   conf.GetBool(m_DriverName, "use_permanent_connection",  
+                //                 CConfig::eErr_NoThrow, true);
 
-                if( permanent_conntction )
-                    drv->SetConnMode(INetServiceAPI::eKeepConnection);
+                //if( permanent_conntction )
+                drv->SetConnMode(INetServiceAPI::eKeepConnection);
 
 
                 //                                                rebalance_time, 

@@ -44,8 +44,15 @@ BEGIN_NCBI_SCOPE
 //////////////////////////////////////////////////////////////////////////////
 static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_prev)
 {
+    
+    //ofstream o1("/tmp/sb_job_out_before_ps.txt", ios_base::binary);
+    //o1.write(&job.input[0],job.input.size());
+    
     cmd.append("\"");
-    cmd.append(NStr::PrintableString(job.input));
+    string ps_input = NStr::PrintableString(job.input);
+    //ofstream o2("/tmp/sb_job_out_after_ps.txt", ios_base::binary);
+    //o2.write(&ps_input[0],ps_input.size());
+    cmd.append(ps_input);
     cmd.append("\"");
 
     if (!job.progress_msg.empty()) {
@@ -86,13 +93,19 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_
     
 }
 
+inline
+void static s_CheckInputSize(const string& input, size_t max_input_size)
+{
+    if (input.length() >  max_input_size) {
+        NCBI_THROW(CNetScheduleException, eDataTooLong, 
+                   "Input data too long.");
+    }
+}
+
 string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
 {
-    if (job.input.length() > kNetScheduleMaxDataSize) {
-        NCBI_THROW(CNetScheduleException, eDataTooLong, 
-            "Input data too long.");
-    }
-
+    size_t max_input_size = m_API->GetServerParams().max_input_size;
+    s_CheckInputSize(job.input, max_input_size);
 
     //cerr << "Input: " << input << endl;
     string cmd = "SUBMIT ";
@@ -113,13 +126,10 @@ string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
 void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 {
     // veryfy the input data
+    size_t max_input_size = m_API->GetServerParams().max_input_size;
     ITERATE(vector<CNetScheduleJob>, it, jobs) {
         const string& input = it->input;
-
-        if (input.length() > kNetScheduleMaxDataSize) {
-            NCBI_THROW(CNetScheduleException, eDataTooLong, 
-                "Input data too long.");
-        }
+        s_CheckInputSize(input, max_input_size);
     }
 
     CNetSrvConnector& conn = m_API->x_GetConnector();
@@ -133,7 +143,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
     //m_Sock->DisableOSSendDelay(false);
 
     string cmd;
-    cmd.reserve(kNetScheduleMaxDataSize * 6);
+    cmd.reserve(max_input_size * 6);
     string host;
     unsigned short port = 0;
     for (unsigned i = 0; i < jobs.size(); ) {
