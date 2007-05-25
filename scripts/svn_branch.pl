@@ -27,7 +27,7 @@ Usage:
 
     $ScriptName merge <branch_path> [<trunk_rev>]
 
-    $ScriptName commit_merge
+    $ScriptName commit_merge <branch_path>
 
     $ScriptName commit <branch_path> [<log_message>]
 

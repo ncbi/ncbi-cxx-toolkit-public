@@ -9,6 +9,7 @@ use warnings;
 use Carp qw(confess);
 
 use File::Temp qw/tempfile/;
+use File::Find;
 
 use NCBI::SVN::Wrapper;
 use NCBI::SVN::SwitchMap;
@@ -55,7 +56,8 @@ print "Calc rm commands for path '$Path'...\n";
 
             while (my ($SubdirName, $Subdir) = each %$TreeToRemove)
             {
-                GetRmCommandsR(\@RmCommands, $ThisDirStructure, $SubdirName, $Subdir, "$Path/$SubdirName")
+                GetRmCommandsR(\@RmCommands, $ThisDirStructure,
+                    $SubdirName, $Subdir, "$Path/$SubdirName")
             }
 
             if (keys %$ThisDirStructure)
@@ -76,7 +78,8 @@ sub GetRmCommands
 print "Calc rm commands for root...\n";
     while (my ($DirName, $Subdir) = each %$TreeToRemove)
     {
-        GetRmCommandsR($RmCommands, $ExistingStructure, $DirName, $Subdir, $DirName)
+        GetRmCommandsR($RmCommands, $ExistingStructure,
+            $DirName, $Subdir, $DirName)
     }
 }
 
@@ -99,11 +102,13 @@ sub GetMkdirCommandsR
     my ($MkdirCommands, $ExistingStructure, $TreeToCreate, $Path) = @_;
 print "Calc mkdir commands for path '$Path'...\n";
 print "'$Path' does not exist...\n" unless $ExistingStructure;
-    return CreateEntireTree($MkdirCommands, $TreeToCreate, $Path) unless $ExistingStructure;
+    return CreateEntireTree($MkdirCommands, $TreeToCreate, $Path)
+        unless $ExistingStructure;
 
     while (my ($DirName, $Subdir) = each %$TreeToCreate)
     {
-        GetMkdirCommandsR($MkdirCommands, $ExistingStructure->{$DirName}, $Subdir, "$Path/$DirName")
+        GetMkdirCommandsR($MkdirCommands,
+            $ExistingStructure->{$DirName}, $Subdir, "$Path/$DirName")
     }
 }
 
@@ -113,7 +118,8 @@ sub GetMkdirCommands
 print "Calc mkdir commands for root...\n";
     while (my ($DirName, $Subdir) = each %$TreeToCreate)
     {
-        GetMkdirCommandsR($MkdirCommands, $ExistingStructure->{$DirName}, $Subdir, $DirName)
+        GetMkdirCommandsR($MkdirCommands,
+            $ExistingStructure->{$DirName}, $Subdir, $DirName)
     }
 }
 
@@ -200,8 +206,10 @@ print "Reading $BranchMapRepoPath\n";
                 if ($DiffLine->[1])
                 {
                     print "Will remove $DiffLine->[0]\n";
-                    LayPath($DiffLine->[0], \%RmDirTree, \%MkDirTree, \%CommonTree);
-                    push @CopyCommands, 'cp', 'HEAD', "$TrunkDir/$DiffLine->[1]", $DiffLine->[0]
+                    LayPath($DiffLine->[0], \%RmDirTree,
+                        \%MkDirTree, \%CommonTree);
+                    push @CopyCommands, 'cp', 'HEAD',
+                        "$TrunkDir/$DiffLine->[1]", $DiffLine->[0]
                 }
                 else
                 {
@@ -223,7 +231,10 @@ print "Reading $BranchMapRepoPath\n";
         push @PutCommands, 'put', $BranchMapFile, $BranchMapRepoPath
     }
 
-    my $ExistingStructure = $Self->RetrieveRepositoryStructureContainingSubtree($SVN, $SVN->GetRepos(), \%CommonTree);
+    my $ExistingStructure =
+        $Self->RetrieveRepositoryStructureContainingSubtree($SVN,
+            $SVN->GetRepos(), \%CommonTree);
+
     GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
     GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
 
@@ -240,8 +251,10 @@ print "Reading $BranchMapRepoPath\n";
             print "[$Command]\n"
         }
 
-        system('mucc', '--message', ($ExistingBranch ? 'Updated' : 'Created') .
-            " branch '$BranchPath'.", '--root-url', $SVN->{Repos}, @Commands)
+        system('mucc', '--message',
+            ($ExistingBranch ? 'Modified' : 'Created') .
+            " the '$BranchPath' branch structure.",
+            '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
@@ -255,7 +268,8 @@ sub Remove
 {
     my ($Self, $BranchPath) = @_;
 
-    die "$Self->{MyName}: <branch_path> parameter is missing\n" unless $BranchPath;
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
@@ -288,7 +302,8 @@ sub Remove
         }
         else
         {
-            warn "Warning: Branch '$BranchPath' was not found in branch_list.\n";
+            warn 'Warning: branch ' .
+                "'$BranchPath' was not found in branch_list.\n";
         }
     }
 
@@ -316,7 +331,9 @@ sub Remove
         warn "Warning: unable to retrieve '$BranchMapRepoPath'\n"
     }
 
-    GetRmCommands(\@Commands, $Self->RetrieveRepositoryStructureContainingSubtree($SVN, $SVN->GetRepos(), \%RmDirTree), \%RmDirTree);
+    GetRmCommands(\@Commands,
+        $Self->RetrieveRepositoryStructureContainingSubtree($SVN,
+            $SVN->GetRepos(), \%RmDirTree), \%RmDirTree);
 
     # Unless there are no changes, commit a revision using mucc.
     if (@Commands)
@@ -339,11 +356,182 @@ sub Remove
     unlink $BranchListFN if $BranchListFN;
 }
 
+sub DetectLastMergeRevision
+{
+    my ($Self, $SVN, @BranchDirs) = @_;
+
+    print "Detecting previous merge revision...\n";
+
+    my $Info = $SVN->ReadInfo('info', @BranchDirs);
+
+    my @Info = values %$Info;
+
+    my $Stream = $SVN->Run('log', '--stop-on-copy',
+        $Info[0]->{Root}, map {$_->{Path}} @Info);
+
+    my $LogLine;
+    my $Revision;
+
+    while (defined($LogLine = $Stream->ReadLine()))
+    {
+        if ($LogLine =~ m/^r(\d+)/o)
+        {
+            $Revision = $1
+        }
+        elsif ($LogLine =~ m/trunk revision (\d+)/o)
+        {
+            my $MergeRevision = $1;
+
+            local $/ = undef;
+            $Stream->ReadLine();
+            $Stream->Close();
+
+            return ($MergeRevision, $Revision)
+        }
+    }
+
+    return ($Revision, $Revision)
+}
+
+sub Merge
+{
+    my ($Self, $BranchPath, $TargetRev) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    if (!$TargetRev || $TargetRev eq 'HEAD')
+    {
+        $TargetRev = $SVN->GetLatestRevision();
+    }
+
+    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+
+    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
+
+    if ($@)
+    {
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n"
+    }
+
+    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
+        MapFileLines => \@BranchMapLines);
+
+    my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
+
+    print "Running svn status on branch...\n";
+
+    for ($SVN->ReadSubversionLines('status', @BranchDirs))
+    {
+        die "$Self->{MyName}: local modifications detected.\n"
+            unless m/^[\?~X]/
+    }
+
+    print "Performing updates...\n";
+
+    system($SVN->GetSvnPath(), 'update', @BranchDirs);
+
+    my ($LastMergeRev, $Revision) =
+        $Self->DetectLastMergeRevision($SVN, @BranchDirs);
+
+    unless ($TargetRev)
+    {
+        die "$Self->{MyName}: unable to detect last merge rev.\n"
+    }
+    elsif ($TargetRev == $LastMergeRev)
+    {
+        print "Already merged with trunk revision $TargetRev in r$Revision.\n";
+        return
+    }
+    elsif ($TargetRev < $LastMergeRev)
+    {
+        die "$Self->{MyName}: target revision number must be > $LastMergeRev\n"
+    }
+
+    printf "Merging with r$TargetRev...\n";
+
+    for my $LocalDir (@BranchDirs)
+    {
+        system($SVN->GetSvnPath(), 'merge', '-r', "$LastMergeRev:$TargetRev",
+            "$SVN->{Repos}/$TrunkDir/$LocalDir", $LocalDir)
+    }
+
+    my @RootDirs;
+    my @SubDirs;
+
+    find(sub
+        {
+            if ($_ eq '.')
+            {
+                push @RootDirs, $File::Find::name
+            }
+            elsif (-d $_ && -d $_ . '/.svn')
+            {
+                push @SubDirs, $File::Find::name
+            }
+        }, @BranchDirs);
+
+    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', 'Please execute "' .
+        $Self->{MyName} . ' commit_merge" to commit this merge of branch ' .
+            "'$BranchPath' with trunk revision $TargetRev.", @RootDirs);
+
+    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw',
+        'See the ncbi:raw property of the parent directory.', @SubDirs)
+            if @SubDirs
+}
+
+sub CommitMerge
+{
+    my ($Self, $BranchPath) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+
+    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
+
+    if ($@)
+    {
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n"
+    }
+
+    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
+        MapFileLines => \@BranchMapLines);
+
+    my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
+
+    my ($TrunkRev) = $SVN->ReadSubversionStream('propget', 'ncbi:raw',
+        $BranchDirs[0]) =~ m/trunk revision (\d+)/o;
+
+    die "$Self->{MyName}: unable to detect trunk revision.\n" unless $TrunkRev;
+
+    my @SubDirs;
+
+    find(sub
+        {
+            if (-d $_ && -d $_ . '/.svn')
+            {
+                push @SubDirs, $File::Find::name
+            }
+        }, @BranchDirs);
+
+    system($SVN->GetSvnPath(), 'propdel', 'ncbi:raw', @SubDirs) if @SubDirs;
+
+    system($SVN->GetSvnPath(), 'commit', '-m', "Merged branch '$BranchPath' " .
+        "with trunk revision $TrunkRev.", @BranchDirs)
+}
+
 sub Commit
 {
     my ($Self, $BranchPath, $LogMessage) = @_;
 
-    die "$Self->{MyName}: <branch_path> parameter is missing\n" unless $BranchPath;
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
 
     unless ($LogMessage)
     {
