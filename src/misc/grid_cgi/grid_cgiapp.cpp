@@ -283,15 +283,15 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                     string job_key = job_submiter.Submit();
                     grid_ctx.SetJobKey(job_key);
 
-                    unsigned long sleep_time = m_FirstDelay*1000;
-                    const unsigned long interval = 500;
-                    long count = sleep_time / interval;
-                    finished = x_CheckJobStatus(grid_ctx);
-                    for(; count > 0; --count) {
-                        if (finished)
-                            break;
-                        SleepMilliSec(interval);
+                    unsigned long wait_time = m_FirstDelay*1000;
+                    unsigned long sleep_time = 6;
+                    unsigned long total_sleep_time = 0;
+                    while ( total_sleep_time < wait_time) {
+                        SleepMilliSec(sleep_time);
                         finished = x_CheckJobStatus(grid_ctx);
+                        if (finished) break;
+                        total_sleep_time += sleep_time;
+                        sleep_time += sleep_time/3;
                     }
                     if( !finished ) {
                         OnJobSubmitted(grid_ctx);
