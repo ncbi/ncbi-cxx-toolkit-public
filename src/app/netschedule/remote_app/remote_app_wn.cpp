@@ -95,8 +95,21 @@ public:
 
         request->Receive(context.GetIStream());
 
-        if (!is_sb) 
+        if (!is_sb) {
             s_SetParam(m_RequestMB, m_ResultMB);
+            size_t output_size = context.GetMaxServerOutputSize();
+            if (output_size == 0) {
+                // this means that NS internal storage is not supported and 
+                // we all input params will be save into NC anyway. So we are 
+                // putting all input into one blob.
+                output_size = kMax_UInt;
+            } else {
+                // here we need some empiric to calculate this size
+                // for now just reduce it by 10%
+                output_size = output_size - output_size / 10;
+            }
+            m_ResultMB.SetMaxOutputSize(output_size);
+        }
 
         if (context.IsLogRequested()) {
             request->Log(context.GetJobKey());
