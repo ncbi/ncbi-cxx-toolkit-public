@@ -179,6 +179,7 @@ void CNetScheduleControl::Init(void)
                              "query",
                              "Count all jobs with tags set by query string",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("showparams", "Show service paramters");
 
     /*
     arg_desc->AddOptionalKey("retry",
@@ -281,6 +282,17 @@ int CNetScheduleControl::Run(void)
         os << "All jobs from the queue \"" << ctl->GetQueueName() 
            << "\" has been dropped." << endl;
     }
+    else if (args["showparams"]) {
+        ctl.reset(x_CreateNewClient(true));
+        CNetScheduleAPI::SServerParams params = ctl->GetServerParams();
+        os << "Server parameters for the queue \"" << ctl->GetQueueName() 
+           << "\":" << endl 
+           << "max_input_size = " << params.max_input_size << endl
+           << "max_output_size = " << params.max_output_size << endl
+           << "fast status is " 
+           << (params.fast_status? "supported" : "not supported") << endl;
+    }
+
     else if (args["dump"]) {
         ctl.reset(x_CreateNewClient(true));
         string jid;
