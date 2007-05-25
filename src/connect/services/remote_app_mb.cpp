@@ -62,12 +62,13 @@ public:
     }
 
     CNcbiOstream& GetOStream(const string& fname = "", 
-                             EStdOutErrStorageType type = eBlobStorage)
+                             EStdOutErrStorageType type = eBlobStorage,
+                             size_t max_inline_size = kMaxBlobInlineSize)
     {
         if (!m_OStream.get()) {
             _ASSERT(!m_IStream.get());
             auto_ptr<IWriter> writer( 
-                        new CStringOrBlobStorageWriter(kMaxBlobInlineSize,
+                        new CStringOrBlobStorageWriter(max_inline_size,
                                                        *m_Storage,
                                                        *m_Data)
                         );
@@ -155,11 +156,12 @@ private:
 class CRemoteAppRequestMB_Impl : public IRemoteAppRequest_Impl
 {
 public:
-    explicit CRemoteAppRequestMB_Impl(IBlobStorage* storage) 
+    explicit CRemoteAppRequestMB_Impl(IBlobStorage* storage, size_t max_inline_size) 
         : IRemoteAppRequest_Impl(storage),
           m_StdInDataSize(0),
           m_StorageType(eBlobStorage),
-          m_ExlusiveMode(false)
+          m_ExlusiveMode(false),
+          m_MaxInlineSize(max_inline_size)
     {
         m_StdIn.reset(new CBlobStreamHelper(GetInBlob(), 
                                             m_InBlobIdOrData,
@@ -176,7 +178,7 @@ public:
 
     CNcbiOstream& GetStdInForWrite() 
     { 
-        return m_StdIn->GetOStream();
+        return m_StdIn->GetOStream("", eBlobStorage, m_MaxInlineSize);
     }
     CNcbiIstream& GetStdInForRead() 
     { 
@@ -204,6 +206,8 @@ public:
 
     const string& GetInBlobIdOrData() const { return m_InBlobIdOrData; }
 
+    void SetMaxInlineSize(size_t max_inline_size) { m_MaxInlineSize = max_inline_size; }
+
     void Serialize(CNcbiOstream& os);
     void Deserialize(CNcbiIstream& is);
 
@@ -222,6 +226,7 @@ private:
     string m_StdOutFileName;
     EStdOutErrStorageType m_StorageType;
     bool m_ExlusiveMode;
+    size_t m_MaxInlineSize;
 
     bool x_CopyLocalFile(const string& old_fname, string& new_fname);
 
@@ -367,7 +372,7 @@ void CRemoteAppRequestMB_Impl::Reset()
 
 CRemoteAppRequestMB::
 CRemoteAppRequestMB(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteAppRequestMB_Impl(factory.CreateInstance()))
+    : m_Impl(new CRemoteAppRequestMB_Impl(factory.CreateInstance(),kMaxBlobInlineSize))
 {
 }
 
@@ -405,15 +410,20 @@ void CRemoteAppRequestMB::SetAppRunTimeout(unsigned int sec)
 }
 
 void CRemoteAppRequestMB::SetStdOutErrFileNames(const string& stdout_fname,
-                                              const string& stderr_fname,
-                                              EStdOutErrStorageType storage_type)
+                                                const string& stderr_fname,
+                                                EStdOutErrStorageType storage_type)
 {
     m_Impl->SetStdOutErrFileNames(stdout_fname,stderr_fname,storage_type);
 }
 
+void CRemoteAppRequestMB::SetMaxInputSize(size_t max_input_size)
+{
+    m_Impl->SetMaxInlineSize(max_input_size);
+}
+
 CRemoteAppRequestMB_Executer::
 CRemoteAppRequestMB_Executer(IBlobStorageFactory& factory)
-    : m_Impl(new CRemoteAppRequestMB_Impl(factory.CreateInstance()))
+    : m_Impl(new CRemoteAppRequestMB_Impl(factory.CreateInstance(),kMaxBlobInlineSize))
 {
 }
 CRemoteAppRequestMB_Executer::~CRemoteAppRequestMB_Executer()
@@ -495,10 +505,11 @@ void CRemoteAppRequestMB_Executer::Log(const string& prefix)
 class CRemoteAppResultMB_Impl : public IRemoteAppResult_Impl
 {
 public:
-    CRemoteAppResultMB_Impl(IBlobStorage* out, IBlobStorage* err)
+    CRemoteAppResultMB_Impl(IBlobStorage* out, IBlobStorage* err, size_t max_inline_size)
         : IRemoteAppResult_Impl(out, err),
           m_OutBlobSize(0), m_ErrBlobSize(0),
-          m_StorageType(eBlobStorage)
+          m_StorageType(eBlobStorage),
+          m_MaxInlineSize(max_inline_size)
     {
         m_StdOut.reset(new CBlobStreamHelper(GetOutBlob(),
                                              m_OutBlobIdOrData,
@@ -516,7 +527,7 @@ public:
 
     CNcbiOstream& GetStdOutForWrite() 
     { 
-        return m_StdOut->GetOStream(m_StdOutFileName,m_StorageType);
+        return m_StdOut->GetOStream(m_StdOutFileName,m_StorageType, m_MaxInlineSize);
     }
     CNcbiIstream& GetStdOutForRead() 
     { 
@@ -525,7 +536,7 @@ public:
 
     CNcbiOstream& GetStdErrForWrite() 
     { 
-        return m_StdErr->GetOStream(m_StdErrFileName,m_StorageType);
+        return m_StdErr->GetOStream(m_StdErrFileName,m_StorageType, m_MaxInlineSize);
     }
     CNcbiIstream& GetStdErrForRead() 
     { 
@@ -553,6 +564,8 @@ public:
     const string& GetOutBlobIdOrData() const { return m_OutBlobIdOrData; }
     const string& GetErrBlobIdOrData() const { return m_ErrBlobIdOrData; }
 
+    void SetMaxInlineSize(size_t max_inline_size) { m_MaxInlineSize = max_inline_size; }
+
 private:
     string m_OutBlobIdOrData;
     size_t m_OutBlobSize;
@@ -563,7 +576,8 @@ private:
     size_t m_ErrBlobSize;
     mutable auto_ptr<CBlobStreamHelper> m_StdErr;
     string m_StdErrFileName;
-    EStdOutErrStorageType m_StorageType;    
+    EStdOutErrStorageType m_StorageType;
+    size_t m_MaxInlineSize;
 
 };
 
@@ -604,7 +618,8 @@ void CRemoteAppResultMB_Impl::Reset()
 CRemoteAppResultMB_Executer::
 CRemoteAppResultMB_Executer(IBlobStorageFactory& factory)
     : m_Impl(new CRemoteAppResultMB_Impl(factory.CreateInstance(), 
-                                       factory.CreateInstance()))
+                                         factory.CreateInstance(),
+                                         kMaxBlobInlineSize))
 {
 }
 CRemoteAppResultMB_Executer::~CRemoteAppResultMB_Executer()
@@ -659,11 +674,17 @@ void CRemoteAppResultMB_Executer::Log(const string& prefix)
                  << " Err data: " << m_Impl->GetErrBlobIdOrData());
 }
 
+void CRemoteAppResultMB_Executer::SetMaxOutputSize(size_t max_output_size)
+{
+    m_Impl->SetMaxInlineSize(max_output_size);
+}
+
 
 CRemoteAppResultMB::
 CRemoteAppResultMB(IBlobStorageFactory& factory)
     : m_Impl(new CRemoteAppResultMB_Impl(factory.CreateInstance(), 
-                                       factory.CreateInstance()))
+                                         factory.CreateInstance(),
+                                         kMaxBlobInlineSize))
 {
 }
 CRemoteAppResultMB::~CRemoteAppResultMB()
@@ -700,5 +721,6 @@ void CRemoteAppResultMB::Receive(CNcbiIstream& is)
 {
     m_Impl->Deserialize(is);
 }
+
 
 END_NCBI_SCOPE

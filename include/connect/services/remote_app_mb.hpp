@@ -85,6 +85,9 @@ public:
                                const string& stderr_fname,
                                EStdOutErrStorageType storage_type = eLocalFile);
 
+    void SetMaxInputSize(size_t max_input_size);
+
+
     /// Serialize a request to a given stream. After call to this method the instance
     /// cleans itself an it can be reused.
     void Send(CNcbiOstream& os);
@@ -196,6 +199,8 @@ public:
     void SetStdOutErrFileNames(const string& stdout_fname,
                                const string& stderr_fname,
                                EStdOutErrStorageType type);
+
+    void SetMaxOutputSize(size_t max_output_size);
 
 
     /// Serialize a result to a given stream. After call to this method the instance
