@@ -424,10 +424,22 @@ int CGridWorkerApp_Impl::Run()
     unsigned int max_threads = 1;
     unsigned int init_threads = 1;
     if (!m_SingleThreadForced) {
-        max_threads = 
-            reg.GetInt(kServerSec,"max_threads",4,0,IRegistry::eReturn);
+        string s_max_threads = 
+            reg.GetString(kServerSec,"max_threads","auto");
+        if (NStr::CompareNocase(s_max_threads, "auto") == 0 )
+            max_threads = GetCpuCount();
+        else {
+            try {
+                max_threads = NStr::StringToUInt(s_max_threads);
+            } catch (...) {
+                max_threads = GetCpuCount();
+                ERR_POST("Could not convert [" << kServerSec 
+                         << "] max_threads parameter to number.\n" 
+                         << "Using \'auto\' option (" << max_threads << ").");
+            }
+        }
         init_threads = 
-            reg.GetInt(kServerSec,"init_threads",2,0,IRegistry::eReturn);
+            reg.GetInt(kServerSec,"init_threads",1,0,IRegistry::eReturn);
     }
     if (init_threads > max_threads) 
         init_threads = max_threads;
