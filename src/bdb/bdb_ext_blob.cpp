@@ -45,6 +45,117 @@ CExtBlobLocDB::CExtBlobLocDB()
     BindKey("id_to",   &id_to);
 }
 
+EBDB_ErrCode 
+CExtBlobLocDB::Insert(const CBDB_BlobMetaContainer& meta_container)
+{
+    EBDB_ErrCode ret;
+    return ret;
+}
+
+
+
+CBDB_BlobMetaContainer::CBDB_BlobMetaContainer()
+{}
+
+void CBDB_BlobMetaContainer::SetLoc(Uint8 offset, Uint8 size)
+{
+    m_Loc.resize(1);
+    m_Loc[0].offset = offset;
+    m_Loc[0].size = size;
+}
+
+void CBDB_BlobMetaContainer::GetLoc(Uint8* offset, Uint8* size)
+{
+    if (m_Loc.size() == 0) {
+        _ASSERT(0);
+    }
+    if (m_Loc.size() != 1) {
+        string msg = "Not a single chunk BLOB";
+        BDB_THROW(eTooManyChunks, msg);
+    }
+    if (offset) {
+        *offset = m_Loc[0].offset;
+    }
+    if (size) {
+        *size = m_Loc[0].size;
+    }
+}
+
+size_t CBDB_BlobMetaContainer::ComputeSerializationSize() const
+{
+    size_t ssize = 4; // Magic header
+
+    ssize += 4 // chunk map size
+          + m_Loc.size() * sizeof(CBDB_ExtBlobMap::TBlobChunkVec::value_type);
+
+    ssize += m_BlobMap.ComputeSerializationSize();
+    return ssize;
+}
+
+void CBDB_BlobMetaContainer::Serialize(CBDB_RawFile::TBuffer* buf,
+                                       Uint8                  buf_offset)
+{
+    _ASSERT(buf);
+
+    size_t ser_size = ComputeSerializationSize();
+    buf->resize(ser_size + (size_t)buf_offset);
+
+    unsigned char* ptr = &((*buf)[0]);
+    ptr += buf_offset;
+
+    unsigned magic = 0;
+    ::memcpy(ptr, &magic, sizeof(magic));
+    ptr += sizeof(magic);
+
+    unsigned sz = m_Loc.size();
+    ::memcpy(ptr, &sz, sizeof(sz));
+    ptr += sizeof(sz);
+
+    for (size_t i = 0; i < m_Loc.size(); ++i) {
+        const CBDB_ExtBlobMap::SBlobChunkLoc& loc = m_Loc[i];
+        ::memcpy(ptr, &loc.offset, sizeof(loc.offset));
+        ptr += sizeof(loc.offset);
+        ::memcpy(ptr, &loc.size, sizeof(loc.size));
+        ptr += sizeof(loc.size);
+    } // for
+
+    size_t buffer_offset = ptr - &((*buf)[0]);
+    m_BlobMap.Serialize(buf, buffer_offset);
+}
+
+
+void 
+CBDB_BlobMetaContainer::Deserialize(const CBDB_RawFile::TBuffer& buf,
+                                    Uint8                        buf_offset)
+{
+    const unsigned char* ptr = &buf[0];
+    ptr += buf_offset;
+
+    unsigned magic;
+    ::memcpy(&magic, ptr, sizeof(magic));
+    ptr += sizeof(magic);
+
+    unsigned sz;
+    ::memcpy(&sz, ptr, sizeof(sz));
+    ptr += sizeof(sz);
+    m_Loc.resize(sz);
+
+    for (size_t i = 0; i < m_Loc.size(); ++i) {
+        CBDB_ExtBlobMap::SBlobChunkLoc& loc = m_Loc[i];
+        ::memcpy(&loc.offset, ptr, sizeof(loc.offset));
+        ptr += sizeof(loc.offset);
+        ::memcpy(&loc.size, ptr, sizeof(loc.size));
+        ptr += sizeof(loc.size);
+    } // for
+
+    size_t buffer_offset = ptr - &((buf)[0]);
+    m_BlobMap.Deserialize(buf, buffer_offset);
+}
+
+
+
+
+
 
 
 
