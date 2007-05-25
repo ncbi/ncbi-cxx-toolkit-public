@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 /// It is intentional that this file supports multi-chunk BLOBs even
 /// if neat term use is just single chunk.
 ///
-class NCBI_BDB_CACHE_EXPORT CBDB_ExtBlobMap
+class NCBI_BDB_EXPORT CBDB_ExtBlobMap
 {
 public:
     /// BLOB chunk location: offset in file + chunk size
@@ -134,7 +134,7 @@ public:
     ///     start offset in the destination buffer
     ///
     void Serialize(CBDB_RawFile::TBuffer* buf,
-                   Uint8 buf_offset = 0);
+                   Uint8 buf_offset = 0) const;
 
     /// DeSerialize map 
     void Deserialize(const CBDB_RawFile::TBuffer& buf, 
@@ -156,7 +156,7 @@ private:
 /// Super BLOB can be put to external file in chunks and then reassembled
 /// BLOB map itself allows to read and reassemble BLOBs in the super-blob
 ///
-class NCBI_BDB_CACHE_EXPORT CBDB_BlobMetaContainer
+class NCBI_BDB_EXPORT CBDB_BlobMetaContainer
 {
 public:
     CBDB_BlobMetaContainer();
@@ -195,7 +195,7 @@ public:
     /// @{
 
     void Serialize(CBDB_RawFile::TBuffer* buf,
-                   Uint8                  buf_offset = 0);
+                   Uint8                  buf_offset = 0) const;
 
     void Deserialize(const CBDB_RawFile::TBuffer& buf,
                      Uint8                        buf_offset = 0);
@@ -246,8 +246,9 @@ private:
 ///   - find blob id and location in the meta-information
 ///   - read BLOB from super BLOB (reassemble using location table)
 ///
-struct NCBI_BDB_CACHE_EXPORT CExtBlobLocDB : public CBDB_BLobFile
+struct NCBI_BDB_EXPORT CExtBlobLocDB : public CBDB_BLobFile
 {
+    typedef CBDB_BLobFile TParent;
 
     CBDB_FieldUint4        id_from;  ///< Id range from
     CBDB_FieldUint4        id_to;    ///< Id range to
@@ -275,7 +276,7 @@ struct NCBI_BDB_CACHE_EXPORT CExtBlobLocDB : public CBDB_BLobFile
     /// Insert new super BLOB metainfo. Range (id_from, id_to) 
     /// is determined automatically
     ///
-    EBDB_ErrCode Insert(const CBDB_BlobMetaContainer& meta_container);
+    EBDB_ErrCode UpdateInsert(const CBDB_BlobMetaContainer& meta_container);
 
 private:
     CExtBlobLocDB(const CExtBlobLocDB&);
