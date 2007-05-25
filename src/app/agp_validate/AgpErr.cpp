@@ -71,8 +71,8 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   kEmptyCStr,
 
   // Content Warnings
-  "gap at the end of an object",
-  "object begins with a gap",
+  "gap at the end of object ",
+  "gap at the beginning of object ",
   "two consequtive gap lines (e.g. a gap at the end of "
     "a scaffold, two non scaffold-breaking gaps, ...)",
   "no components in object",
@@ -290,7 +290,7 @@ void CAgpErr::Msg(TCode code, const string& details,
     PrintMessage(cerr, code, details, substX);
   }
 
-  if( appliesTo == (AT_PrevLine|AT_ThisLine) ) m_two_lines_involved=true;
+  if( (appliesTo&AT_PrevLine) && (appliesTo&AT_ThisLine) ) m_two_lines_involved=true;
 }
 
 void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)

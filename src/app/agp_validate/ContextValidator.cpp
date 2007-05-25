@@ -77,7 +77,7 @@ void CAgpContextValidator::EndOfObject(bool afterLastLine)
     gap.type=prev_line_gap_type;
 
     if(! gap.validAtObjectEnd() ) {
-      agpErr.Msg( CAgpErr::W_GapObjEnd, string(" ")+prev_object,
+      agpErr.Msg( CAgpErr::W_GapObjEnd, prev_object,
         AT_PrevLine);
     }
     if(componentsInLastScaffold==0) m_ScaffoldCount--;
@@ -173,7 +173,7 @@ void CAgpContextValidator::x_OnGapLine(
   if(new_obj) {
     if(! gap.validAtObjectEnd() ) {
       agpErr.Msg(CAgpErr::W_GapObjBegin,
-        NcbiEmptyString, AT_ThisLine|AT_SkipAfterBad);
+        dl.object, AT_ThisLine|AT_SkipAfterBad);
     }
   }
   else if( prev_line_gap_type>=0 ) {
