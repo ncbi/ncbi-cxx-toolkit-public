@@ -11,8 +11,8 @@ SRC = cgi_session_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = xgridcgi ncbi_xblobstorage_netcache xcgi xhtml xconnserv \
-      xthrserv xconnect xutil xncbi 
+LIB = ncbi_xblobstorage_netcache xcgi xhtml xconnserv xconnect xutil xncbi
+
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 ### END COPIED SETTINGS
