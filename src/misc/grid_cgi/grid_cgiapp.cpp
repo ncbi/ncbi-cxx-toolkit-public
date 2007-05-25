@@ -186,7 +186,7 @@ void CGridCgiApplication::InitGridClient()
         GetConfig().GetInt("grid_cgi", "refresh_delay", 5, IRegistry::eReturn);
     m_FirstDelay = 
         GetConfig().GetInt("grid_cgi", "expect_complete", 5, IRegistry::eReturn);
-    if (m_FirstDelay > 10 ) m_FirstDelay = 10;
+    if (m_FirstDelay > 20 ) m_FirstDelay = 20;
     if (m_FirstDelay < 0) m_FirstDelay = 0;
 
     bool automatic_cleanup = 
