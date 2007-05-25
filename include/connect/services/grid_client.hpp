@@ -94,12 +94,11 @@ public:
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobSubmitter(CGridClient&, bool use_progress, bool use_embedded_storage);
+    CGridJobSubmitter(CGridClient&, bool use_progress);
 
     CGridClient& m_GridClient;
     CNetScheduleJob m_Job;
     bool         m_UseProgress;
-    bool         m_UseEmbeddedStorage;
     auto_ptr<CNcbiOstream> m_WStream;
 
     /// The copy constructor and the assignment operator
@@ -155,12 +154,11 @@ public:
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
-    CGridJobBatchSubmitter(CGridClient&, bool use_embedded_storage);
+    explicit CGridJobBatchSubmitter(CGridClient&);
 
     CGridClient& m_GridClient;
     vector<CNetScheduleJob> m_Jobs;
     size_t       m_JobIndex;
-    bool         m_UseEmbeddedStorage;
     bool         m_HasBeenSubmitted;
     auto_ptr<CNcbiOstream> m_WStream;
 
@@ -187,19 +185,19 @@ public:
     ///    (NetCache)  In this case use GetIStream method to get a stream with 
     ///    a job's result. 
     ///
-    const string& GetJobOutput() const    { return m_Job.output; }
+    const string& GetJobOutput() const;
     
     /// Get a job's input sting
-    const string& GetJobInput() const    { return m_Job.input; }
+    const string& GetJobInput() const;
 
     /// Get a job's return code
     //
-    int           GetReturnCode() const   { return m_Job.ret_code; }
+    int           GetReturnCode() const;
 
     /// If something bad has happend this method will return an
     /// explanation
     ///
-    const string& GetErrorMessage() const { return m_Job.error_msg; }
+    const string& GetErrorMessage() const;
 
     /// Get a job status
     ///
@@ -221,20 +219,22 @@ public:
     /// @param data_key
     ///     Blob key
     ///
-    string GetProgressMessage();
+    string GetProgressMessage() const;
 
 private:
     /// Only CGridClient can create an instnce of this class
     friend class CGridClient;
     CGridJobStatus(CGridClient&, bool auto_cleanup, bool use_progress);
     void x_SetJobKey(const string& job_key);
+    void x_GetJobDetails() const;
 
     CGridClient& m_GridClient;
-    CNetScheduleJob m_Job;
+    mutable CNetScheduleJob m_Job;
     size_t       m_BlobSize;
     bool         m_AutoCleanUp;
     bool         m_UseProgress;
     auto_ptr<CNcbiIstream> m_RStream;
+    mutable bool         m_JobDetailsRead;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -311,6 +311,8 @@ public:
     CNetScheduleSubmitter&  GetNSClient() { return m_NSClient; }
     IBlobStorage& GetStorage()  { return m_NSStorage; }
 
+    size_t GetMaxServerInputSize();
+
 private:
     CNetScheduleSubmitter  m_NSClient;
     IBlobStorage& m_NSStorage;
@@ -318,6 +320,8 @@ private:
     auto_ptr<CGridJobSubmitter> m_JobSubmitter;
     auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
     auto_ptr<CGridJobStatus>   m_JobStatus;
+
+    bool         m_UseEmbeddedStorage;
 
     /// The copy constructor and the assignment operator
     /// are prohibited

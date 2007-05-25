@@ -44,13 +44,12 @@ CGridClient::CGridClient(const CNetScheduleSubmitter& ns_client,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg,
                          bool use_embedded_storage)
-: m_NSClient(ns_client), m_NSStorage(storage)
+    : m_NSClient(ns_client), m_NSStorage(storage),
+      m_UseEmbeddedStorage(use_embedded_storage)
 {
     m_JobSubmitter.reset(new CGridJobSubmitter(*this,
-                                             progress_msg == eProgressMsgOn,
-                                             use_embedded_storage));
-    m_JobBatchSubmitter.reset(new CGridJobBatchSubmitter(*this,
-                                                         use_embedded_storage));
+                                             progress_msg == eProgressMsgOn));
+    m_JobBatchSubmitter.reset(new CGridJobBatchSubmitter(*this));
     m_JobStatus.reset(new CGridJobStatus(*this, 
                                          cleanup == eAutomaticCleanup,
                                          progress_msg == eProgressMsgOn));
@@ -85,13 +84,16 @@ void CGridClient::RemoveDataBlob(const string& data_key)
         m_NSStorage.DeleteBlob(data_key);
 }
 
+size_t CGridClient::GetMaxServerInputSize()
+{
+    return m_UseEmbeddedStorage ? m_NSClient.GetServerParams().max_input_size : 0;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client, 
-                                   bool use_progress,
-                                   bool use_embedded_storage)
-    : m_GridClient(grid_client), m_UseProgress(use_progress), 
-      m_UseEmbeddedStorage(use_embedded_storage)    
+                                     bool use_progress)
+    : m_GridClient(grid_client), m_UseProgress(use_progress)
 {
 }
 
@@ -117,12 +119,11 @@ void CGridJobSubmitter::SetJobAffinity(const string& affinity)
 
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
-    size_t max_data_size = m_UseEmbeddedStorage ? kNetScheduleMaxDataSize : 0;
     IWriter* writer = 
-        new CStringOrBlobStorageWriter(max_data_size,
+        new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
                                        m_GridClient.GetStorage(),
                                        m_Job.input);
-
+ 
     m_WStream.reset(new CWStream(writer, 0, 0, CRWStreambuf::fOwnWriter 
                                              | CRWStreambuf::fLogExceptions ));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
@@ -163,11 +164,10 @@ CNcbiOstream& CGridJobBatchSubmitter::GetOStream()
         NCBI_THROW(CGridClientException, eBatchHasAlreadyBeenSubmitted, 
                    "The Batch has already been submitted. Use Reset() method to start the a one");
 
-    if( m_Jobs.empty() )
+    if ( m_Jobs.empty() )
         PrepareNextJob();
-    size_t max_data_size = m_UseEmbeddedStorage ? kNetScheduleMaxDataSize : 0;
     IWriter* writer = 
-        new CStringOrBlobStorageWriter(max_data_size,
+        new CStringOrBlobStorageWriter(m_GridClient.GetMaxServerInputSize(),
                                        m_GridClient.GetStorage(),
                                        m_Jobs[m_JobIndex].input);
 
@@ -239,9 +239,8 @@ void CGridJobBatchSubmitter::Reset()
     m_Jobs.clear();
 }
 
-CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client, bool use_embedded_storage)
+CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
     : m_GridClient(grid_client), m_JobIndex(0),
-      m_UseEmbeddedStorage(use_embedded_storage),
       m_HasBeenSubmitted(false)
 {
 }
@@ -253,7 +252,8 @@ CGridJobStatus::CGridJobStatus(CGridClient& grid_client,
                                bool auto_cleanup, 
                                bool use_progress)
     : m_GridClient(grid_client), m_BlobSize(0), 
-      m_AutoCleanUp(auto_cleanup), m_UseProgress(use_progress)
+      m_AutoCleanUp(auto_cleanup), m_UseProgress(use_progress),
+      m_JobDetailsRead(false)
 {
 }
 
@@ -263,10 +263,12 @@ CGridJobStatus::~CGridJobStatus()
 
 CNetScheduleAPI::EJobStatus CGridJobStatus::GetStatus()
 {
-    CNetScheduleAPI::EJobStatus status = m_GridClient.GetNSClient(). GetJobDetails(m_Job);
+    CNetScheduleAPI::EJobStatus status = 
+        m_GridClient.GetNSClient().GetJobStatus(m_Job.job_id);
     if ( m_AutoCleanUp && (
               status == CNetScheduleAPI::eDone || 
               status == CNetScheduleAPI::eCanceled) ) {
+        x_GetJobDetails();
         m_GridClient.RemoveDataBlob(m_Job.input);
         if (m_UseProgress) {
             m_GridClient.GetNSClient().GetProgressMsg(m_Job);
@@ -279,6 +281,7 @@ CNetScheduleAPI::EJobStatus CGridJobStatus::GetStatus()
 
 CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
 {
+    x_GetJobDetails();
     IReader* reader = new CStringOrBlobStorageReader(m_Job.output,
                                                      m_GridClient.GetStorage(),
                                                      &m_BlobSize, mode);
@@ -288,7 +291,7 @@ CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
     return *m_RStream;
 }
 
-string CGridJobStatus::GetProgressMessage()
+string CGridJobStatus::GetProgressMessage() const
 {    
     if (m_UseProgress) {
         m_GridClient.GetNSClient().GetProgressMsg(m_Job);
@@ -304,6 +307,38 @@ void CGridJobStatus::x_SetJobKey(const string& job_key)
     m_Job.job_id = job_key;
     m_RStream.reset();
     m_BlobSize = 0;
+    m_JobDetailsRead = false;
+}
+
+void CGridJobStatus::x_GetJobDetails() const
+{
+    if (m_JobDetailsRead)
+        return;
+    m_GridClient.GetNSClient().GetJobDetails(m_Job);
+    m_JobDetailsRead = true;
+}
+
+const string& CGridJobStatus::GetJobOutput() const  
+{
+    x_GetJobDetails();
+    return m_Job.output; 
+}
+    
+const string& CGridJobStatus::GetJobInput() const    
+{ 
+    x_GetJobDetails();
+    return m_Job.input; 
+}
+int CGridJobStatus::GetReturnCode() const   
+{ 
+    x_GetJobDetails();
+    return m_Job.ret_code; 
+}
+
+const string& CGridJobStatus::GetErrorMessage() const 
+{ 
+    x_GetJobDetails();
+    return m_Job.error_msg; 
 }
 
 

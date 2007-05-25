@@ -163,6 +163,12 @@ void CWorkerNodeJobContext::RequestExclusiveMode()
     m_ExclusiveJob = true;
 }
 
+size_t CWorkerNodeJobContext::GetMaxServerOutputSize() const
+{
+    return m_WorkerNode.GetServerOutputSize();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // 
 ///@internal
@@ -613,6 +619,7 @@ bool CGridWorkerNode::x_CreateNSReadClient()
                 return true;
             else throw;
         }
+        
     } catch (exception& ex) {
         ERR_POST(CTime(CTime::eCurrent).AsString() << " " << ex.what());
         CGridGlobals::GetInstance().
@@ -642,6 +649,12 @@ void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
             m_Masters.insert(SHost(NStr::ToLower(host),port));
         } catch(...) {}
     }
+}
+
+size_t CGridWorkerNode::GetServerOutputSize() const
+{
+    return IsEmeddedStorageUsed() ?  
+        m_SharedNSClient->GetServerParams().max_output_size : 0;
 }
 
 void CGridWorkerNode::SetAdminHosts(const string& hosts)

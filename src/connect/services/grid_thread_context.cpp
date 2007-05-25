@@ -122,8 +122,7 @@ CNcbiOstream& CGridThreadContext::GetOStream()
     _ASSERT(m_JobContext);
     if (m_Writer.get()) {
         size_t max_data_size = 
-            m_JobContext->GetWorkerNode().IsEmeddedStorageUsed() ?
-                                         kNetScheduleMaxDataSize : 0;
+            m_JobContext->GetWorkerNode().GetServerOutputSize();
         IWriter* writer = 
             new CStringOrBlobStorageWriter(max_data_size,
                                            *m_Writer,
@@ -244,6 +243,7 @@ void CGridThreadContext::ReturnJob()
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
         if (m_Reporter.get()) {
+
             CNetScheduleAPI::EJobStatus status = 
                 m_Reporter->GetJobStatus(m_JobContext->GetJobKey());
             IWorkerNodeJobWatcher::EEvent event = IWorkerNodeJobWatcher::eJobReturned;

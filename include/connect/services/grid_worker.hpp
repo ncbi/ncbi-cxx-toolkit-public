@@ -270,6 +270,8 @@ public:
     
     CNetScheduleAPI::TJobMask GetJobMask() const { return m_Job.mask; }
 
+    size_t GetMaxServerOutputSize() const;
+
 
 private:    
     enum ECommitStatus {
@@ -533,6 +535,7 @@ public:
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
     void SetCheckStatusPeriod(unsigned int sec) { m_CheckStatusPeriod = sec; }
     void SetWaitServerTimeout(unsigned int sec) { m_WaitServerTimeout = sec; }
+    size_t GetServerOutputSize() const;
     /// Start jobs execution.
     ///
     void Run();
