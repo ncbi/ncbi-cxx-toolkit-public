@@ -95,6 +95,8 @@ void CNSSubmitRemoveJobApp::Init(void)
                              "File with job descriptions",
                              CArgDescriptions::eInputFile);
 
+    arg_desc->AddFlag("batch", "Use batch submit mode");
+
     arg_desc->AddOptionalKey("args", 
                              "cmd_args",
                              "Cmd args for the remote application",
@@ -199,8 +201,21 @@ int CNSSubmitRemoveJobApp::Run(void)
         out = &args["of"].AsOutputFile();
     }
 
+    size_t input_size = GetGridClient().GetMaxServerInputSize();
+    if (input_size == 0) {
+        // this means that NS internal storage is not supported and 
+        // we all input params will be save into NC anyway. So we are 
+        // putting all input into one blob.
+        input_size = kMax_UInt;
+    } else {
+        // here we need some empiric to calculate this size
+        // for now just reduce it by 10%
+        input_size = input_size - input_size / 10;
+    }
+
     CBlobStorageFactory factory(reg);
     CRemoteAppRequest request(factory);
+    request.SetMaxInputSize(input_size);
     CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
     CNetScheduleAPI::TJobTags jtags;
 
@@ -265,6 +280,10 @@ int CNSSubmitRemoveJobApp::Run(void)
             *out << job_key << NcbiEndl;
         return 0;
     } if (args["jf"]) {
+        CGridJobBatchSubmitter* job_batch_submitter = NULL;
+        if ( args["batch"] )
+            job_batch_submitter = &GetGridClient().GetJobBatchSubmitter();
+
         CNcbiIstream& is = args["jf"].AsInputFile();
 
         while ( !is.eof() && is.good() ) {
@@ -319,15 +338,34 @@ int CNSSubmitRemoveJobApp::Run(void)
                 }
             }
             
-            CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
-            request.Send(job_submitter.GetOStream());
-            job_submitter.SetJobAffinity(affinity);
-            job_submitter.SetJobMask(jmask);
-            if (!jtags.empty())
-                job_submitter.SetJobTags(jtags);
-            string job_key = job_submitter.Submit();
-            if (out)
-                *out << job_key << NcbiEndl;
+            if (!job_batch_submitter ) {
+                CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+                request.Send(job_submitter.GetOStream());
+                job_submitter.SetJobAffinity(affinity);
+                job_submitter.SetJobMask(jmask);
+                if (!jtags.empty())
+                    job_submitter.SetJobTags(jtags);
+                string job_key = job_submitter.Submit();
+                if (out)
+                    *out << job_key << NcbiEndl;
+            } else {
+                job_batch_submitter->PrepareNextJob();
+                request.Send(job_batch_submitter->GetOStream());
+                job_batch_submitter->SetJobAffinity(affinity);
+                job_batch_submitter->SetJobMask(jmask);
+                if (!jtags.empty())
+                    job_batch_submitter->SetJobTags(jtags);
+            }
+        }
+        if (job_batch_submitter) {
+            job_batch_submitter->Submit();
+            if (out) {
+                const vector<CNetScheduleJob>& jobs = job_batch_submitter->GetBatch();
+                ITERATE(vector<CNetScheduleJob>, it, jobs)
+                    *out << it->job_id << NcbiEndl;
+            }
+            job_batch_submitter->Reset();
+            job_batch_submitter = NULL;
         }
             
         return 0;
