@@ -9,6 +9,28 @@ class NSException(Exception):
     def __str__(self):
         return "Error %d: %s" % (self.errcode, self.msg)
 
+NSJS_NOTFOUND = -1
+NSJS_PENDING  = 0
+NSJS_RUNNING  = 1
+NSJS_RETURNED = 2
+NSJS_CANCELED = 3
+NSJS_FAILED   = 4
+NSJS_DONE     = 5
+        
+class Job:
+    def __init__(self, jid, status=NSJS_PENDING, **kw):
+        self.jid = jid
+        self.status = status
+        self.input = ''
+        self.output = ''
+        self.error = ''
+        self.retcode = 0
+        self.mask = 0
+        self.affinity = None
+        self.tags = []
+        self.__dict__.update(kw)
+        
+
 class Connection:
     def __init__(self, host, port, queue):
         self.socket = None
@@ -74,50 +96,131 @@ class Connection:
                 self.readbuf += reply
         parts = reply.split(':', 1)
         return parts
-    
-    re_get = re.compile("([^ ]+) \"([^\"]*)\" \"\" \"\" (\d+)")
-    def test_single_task_life_cycle(self):
-        submitted = {}
-        executing = []
-        failures = {}
-        s = self.socket
+
+    def drop_queue(self):
         self.send_cmd("DROPQ")
         self.read_reply()
-        for l in [0, 1, 4, 16, 63, 64, 65, 2047, 2048, 2049, 2050, 6505, 16*1024-8, 64*1024, 1024*1024-4]:
+        
+    def submit(self, input='', affinity=None, tags=None, mask=0):
+        self.send_cmd("SUBMIT",  '"'+input+'"')
+        parts = self.read_reply()
+        if parts[0] != "OK" or len(parts) < 2:
+            return 1, parts
+        job = Job(parts[1], NSJS_PENDING, input=input)
+        return 0, job
+	
+    re_get = re.compile("([^ ]+) \"([^\"]*)\" \"\" \"\" (\d+)")
+    def get(self):
+        self.send_cmd("GET")
+        parts = self.read_reply()
+        if parts[0] != "OK":
+            return 1, parts
+        if len(parts) < 2 or not parts[1].strip():
+            return -1, parts
+        mo = self.re_get.match(parts[1])
+        if not mo: return 2, parts
+        jid, input, job_mask = mo.groups()
+        job = Job(jid, NSJS_RUNNING, input=input, mask=job_mask)
+        return 0, job
+	
+    def put(self, jid, retcode, output):
+        pass
+
+    def exchange(self, jid, retcode, output):
+        pass
+	
+    def fail(self, jid, retcode, error):
+        pass
+
+    def cancel(self, jid):
+        pass
+	
+	re_status = re.compile("(\d+) (-?\d+) \"([^\"]*)\" \"([^\"]*)\" \"([^\"]*)\"") 
+    def check_status(self, jid, fast=1):
+        fast = fast and self.params.get('fast_status', 0)
+        if fast: self.send_cmd("SST", jid)
+        else: self.send_cmd("STATUS", jid)
+        parts = self.read_reply()
+        if parts[0] != "OK":
+            return 1, -1, parts
+        status = int(parts[1])
+        if status == -1 or fast:
+            return 0, status, None
+        mo = self.re_status.match(parts[1])
+        if not mo: return 2, -1, parts
+        status, retcode, output, error, input = mo.groups()
+        status = int(status)
+        retcode = int(retcode)
+        job = Job(jid, status, input=input, output=output, retcode=retcode, error=error)
+        return 0, status, job
+        
+
+    def check_status_for_jobs(self, jobs):
+        for jid, job in jobs.iteritems():
+            res, status, job_reply = self.check_status(jid)
+            if res:
+                print "Error %d in check_status" % res
+                failures.setdefault("STATUS", []).append(None) # TODO: command may vary
+                continue
+            if status != job.status:
+                print "Status mismatch for job %s: required %d, actual %d" % (jid, job.status, status)
+
+    def test_single_task_life_cycle(self):
+        jobs = {}
+        failures = {}
+        self.drop_queue()
+        # Submit jobs
+        for l in [0, 1, 4, 16, 63, 64, 65, 2047, 2048, 2049, 2050, 6505,
+	          16*1024-8, 64*1024, 1024*1024]:
             if l > self.params['max_input_size']:
                 continue
-            if l == 6505:
-                data = file("sb_job_out_before_ps.txt").read()
-            else:
+            try:
+                data = file("SUBMIT_"+str(l)).read()
+            except:
                 data = " " * l
-            self.send_cmd("SUBMIT",  '"'+data+'"')
-            parts = self.read_reply()
-            if parts[0] == "ERR" or len(parts) < 2:
-                print "At data length %d" % l,
+            res, job = self.submit(data)
+            if res:
+                print "At jdata length %d" % l,
                 print "Error in SUBMIT: %s" % ": ".join(parts[1:])
                 failures.setdefault("SUBMIT", []).append(data)
                 continue
-            submitted[parts[1]] = data
+            jobs[job.jid] = job
+        # Check their status
+        self.check_status_for_jobs(jobs)
+        # Get them and put results back
         while 1:
-            self.send_cmd("GET")
-            parts = self.read_reply()
-            if parts[0] == "ERR":
-                print "At data length %d" % l,
-                print "Error in GET: %s" % ": ".join(parts[1:])
-                failures.setdefault("GET", []).append(data)
-                continue
-            if len(parts) < 2 or not parts[1].strip():
+	    res, job = self.get()
+            if res < 0:
                 break
-            mo = self.re_get.match(parts[1])
-            if not mo:
-                print "Can't parse reply:", parts[1]
+	    if res == 1:
+                print "Error in GET"
+                failures.setdefault("GET", []).append(job)
                 continue
-            jid, data, job_mask = mo.groups()
-            if submitted[jid] != data:
-                print "At data length %d" % len(submitted[jid]),
-                print "Error in GET: data mismatch"
-            executing.append(parts[1])
-        for cmd in ['SUBMIT', 'GET']:
+            if res == 2:
+                print "Can't parse reply:", job
+                failures.setdefault("GET", []).append(job)
+                continue
+            subm_job = jobs.get(job.jid)
+            if not subm_job:
+                print "I did not submit job %s!" % job.jid
+                continue
+            if subm_job.input != job.input:
+                print "At data length %d" % len(subm_job.input),
+                print "Error in GET: data mismatch src len: %d, ret len: %d" % (len(subm_job.input), len(job.input))
+                print "Tails: src %s, ret %s" % (map(lambda x:hex(ord(x)), subm_job.input[-10:]), map(lambda x:hex(ord(x)), job.input[-10:]))
+	    jobs[job.jid] = job
+        # Check status
+        self.check_status_for_jobs(jobs)
+        # Put result/exchange
+        # Check status
+        # Fail jobs
+        # Check status
+        # Reschedule jobs
+        # Check status
+        # Get jobs
+        # Return jobs
+        # Cancel jobs
+        for cmd in ['SUBMIT', 'GET', 'STATUS']:
             if not cmd in failures:
                 self.successes[cmd] = 1
         if failures: return 1
