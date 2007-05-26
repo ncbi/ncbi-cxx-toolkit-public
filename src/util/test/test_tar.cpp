@@ -89,8 +89,9 @@ void CTest::Init(void)
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
     args->AddFlag("T", "Test archive [non-standard]");
-    args->AddOptionalKey("f", "filename",
-                         "Default = cin/cout", CArgDescriptions::eString);
+    args->AddKey("f", "archive_file_name",
+                 "Archive file name;  use '-' for stdin/stdout",
+                 CArgDescriptions::eString);
     args->AddOptionalKey("C", "directory",
                          "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey("b", "blocking_factor",
@@ -137,15 +138,13 @@ int CTest::Run(void)
                    "c, r, u, U, t, x, or T");
     }
 
-    size_t blocking_factor = args["b"].AsInteger();
-
-    string file;
-    if (args["f"].HasValue()) {
-        file = args["f"].AsString();
-        if (file == "-") {
-            file.erase();
-        }
+    _ASSERT(args["f"].HasValue());
+    string file = args["f"].AsString();
+    if (file == "-") {
+        file.erase();
     }
+
+    size_t blocking_factor = args["b"].AsInteger();
 
     auto_ptr<CTar> tar;
 
