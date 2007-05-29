@@ -66,7 +66,8 @@ CNWAligner::CNWAligner()
       m_PositivesAsMatches(false),
       m_score(kInfMinus),
       m_mt(false),
-      m_maxthreads(1)
+      m_maxthreads(1),
+      m_MaxMem(GetDefaultSpaceLimit())
 {
     SetScoreMatrix(0);
 }
@@ -90,7 +91,8 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_PositivesAsMatches(false),
       m_score(kInfMinus),
       m_mt(false),
-      m_maxthreads(1)
+      m_maxthreads(1),
+      m_MaxMem(GetDefaultSpaceLimit())
 {
     SetScoreMatrix(scoremat);
     SetSequences(seq1, len1, seq2, len2);
@@ -113,7 +115,8 @@ CNWAligner::CNWAligner(const string& seq1,
       m_Seq2(seq2.data()), m_SeqLen2(seq2.size()),
       m_score(kInfMinus),
       m_mt(false),
-      m_maxthreads(1)
+      m_maxthreads(1),
+      m_MaxMem(GetDefaultSpaceLimit())
 {
     SetScoreMatrix(scoremat);
     SetSequences(seq1, seq2);
@@ -356,7 +359,7 @@ CNWAligner::TScore CNWAligner::Run()
     }
 
     if(!x_CheckMemoryLimit()) {
-        NCBI_THROW(CAlgoAlignException, eMemoryLimit, g_msg_OutOfSpace);
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit, g_msg_HitSpaceLimit);
     }
 
     m_score = x_Run();
@@ -529,10 +532,8 @@ CNWAligner::TScore CNWAligner::x_Run()
         }
     }
     
-    catch( bad_alloc& ) {
-        
-        NCBI_THROW(CAlgoAlignException, eMemoryLimit,
-                   g_msg_OutOfSpace);
+    catch(std::bad_alloc&) {
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit, g_msg_OutOfSpace);
     }
     
     return m_score;
@@ -841,35 +842,36 @@ CNWAligner::TScore CNWAligner::GetScore() const
 
 bool CNWAligner::x_CheckMemoryLimit()
 {
-    const size_t elem_size = GetElemSize();
-    const size_t gdim = m_guides.size();
-    const size_t max_mem = kMax_UInt / 2;
+    const size_t elem_size (GetElemSize());
+    const size_t gdim (m_guides.size());
+
     if(gdim) {
+
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
         double mem = double(dim1)*dim2*elem_size;
-        if(mem >= max_mem) {
+        if(mem >= m_MaxMem) {
             return false;
         }
         for(size_t i = 4; i < gdim; i += 4) {
             dim1 = m_guides[i] - m_guides[i-3] + 1;
             dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
             mem = double(dim1)*dim2*elem_size;
-            if(mem >= max_mem) {
+            if(mem >= m_MaxMem) {
                 return false;
             }
         }
         dim1 = m_SeqLen1 - m_guides[gdim-3];
         dim2 = m_SeqLen2 - m_guides[gdim-1];
         mem = double(dim1)*dim2*elem_size;
-        if(mem >= max_mem) {
+        if(mem >= m_MaxMem) {
             return false;
         }
 
         return true;
     }
     else {
-        double mem = double(m_SeqLen1 + 1)*(m_SeqLen2 + 1)*elem_size;
-        return mem < max_mem;
+        double mem (double(m_SeqLen1 + 1)*(m_SeqLen2 + 1)*elem_size);
+        return mem < m_MaxMem;
     }
 }
 

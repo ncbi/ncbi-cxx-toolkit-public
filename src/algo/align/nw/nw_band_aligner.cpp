@@ -298,12 +298,12 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
                    "Input sequence interval too small.");        
     }
 
-    if(m_Shift > 0 && m_Shift > data->m_len1 + m_band) {
+    if(m_Shift > 0 && m_Shift > int(data->m_len1 + m_band)) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "Shift is greater than the first sequence's length.");
     }
 
-    if(m_Shift < 0 && -m_Shift > data->m_len2 + m_band) {
+    if(m_Shift < 0 && -m_Shift > int(data->m_len2 + m_band)) {
         NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "Shift is greater than the second sequence's length.");
     }
@@ -433,28 +433,28 @@ void CBandAligner::x_DoBackTrace(const Uint1* backtrace,
 
 bool CBandAligner::x_CheckMemoryLimit()
 {
-    const size_t elem_size = GetElemSize();
-    const size_t gdim = m_guides.size();
-    const size_t max_mem = 1024u * 1024u * (512u + 2u * 1024u);
+    const size_t elem_size (GetElemSize());
+    const size_t gdim (m_guides.size());
+
     if(gdim) {
 
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
         double mem = double(max(dim1, dim2))*m_band*elem_size;
-        if(mem >= max_mem) {
+        if(mem >= m_MaxMem) {
             return false;
         }
         for(size_t i = 4; i < gdim; i += 4) {
             dim1 = m_guides[i] - m_guides[i-3] + 1;
             dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
             mem = double(max(dim1, dim2))*m_band*elem_size;
-            if(mem >= max_mem) {
+            if(mem >= m_MaxMem) {
                 return false;
             }
         }
         dim1 = m_SeqLen1 - m_guides[gdim-3];
         dim2 = m_SeqLen2 - m_guides[gdim-1];
         mem = double(max(dim1, dim2))*m_band*elem_size;
-        if(mem >= max_mem) {
+        if(mem >= m_MaxMem) {
             return false;
         }
 
@@ -464,7 +464,7 @@ bool CBandAligner::x_CheckMemoryLimit()
 
         size_t max_len = max(m_SeqLen1, m_SeqLen2);
         double mem = double(max_len)*m_band*elem_size;
-        return mem < max_mem;
+        return mem < m_MaxMem;
     }
 }
 

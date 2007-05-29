@@ -31,6 +31,8 @@ const char g_msg_DataNotAvailable[] =
 
 const char g_msg_OutOfSpace[] = "Out of space";
 
+const char g_msg_HitSpaceLimit[] = "Space limit exceeded";
+
 const char g_msg_IntronTooLong[] = "Cannot handle introns longer than 1MB";
 
 const char g_msg_NoAlignment[] = "Sequence not aligned yet";

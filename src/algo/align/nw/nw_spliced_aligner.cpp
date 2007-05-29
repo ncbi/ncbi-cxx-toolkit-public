@@ -92,4 +92,11 @@ CSplicedAligner::TScore CSplicedAligner::GetWi  (unsigned char splice_type)
     }
 }
 
+
+bool CSplicedAligner::x_CheckMemoryLimit()
+{
+    return CNWAligner::x_CheckMemoryLimit();
+}
+
+
 END_NCBI_SCOPE

@@ -175,8 +175,7 @@ void CPSSMAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix *scoremat)
 CPSSMAligner::TScore CPSSMAligner::Run()
 {
     if(!x_CheckMemoryLimit()) {
-        NCBI_THROW(CAlgoAlignException, eMemoryLimit,
-                   g_msg_OutOfSpace);
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit, g_msg_HitSpaceLimit);
     }
 
     m_score = CNWAligner::x_Run();
