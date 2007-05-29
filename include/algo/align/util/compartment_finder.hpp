@@ -612,6 +612,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
                     if(box2[0] <= box1[0] + kMinCompartmentHitLength) {
 
+#ifdef ALGOALIGNUTIL_COMPARTMENT_FINDER_KEEP_TERMINII
                         if(i + 1 == in) {
                             TCoord new_coord (box1[0] + (box1[1] - box1[0])/2);
                             if(box1[0] + 1 <= new_coord) {
@@ -622,7 +623,9 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                             }
                             h1->Modify(1, new_coord);
                         }
-                        else {
+                        else 
+#endif
+                        {
                             h1.Reset(0);
                             ++nullified;
                         }
@@ -633,6 +636,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                     
                     if(box2[1] <= box1[1] + kMinCompartmentHitLength) {
 
+#ifdef ALGOALIGNUTIL_COMPARTMENT_FINDER_KEEP_TERMINII
                         if(i == 1) {
                             TCoord new_coord (box2[0] + (box2[1] - box2[0])/2);
                             if(box2[1] >= new_coord + 1) {
@@ -643,7 +647,9 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                             }
                             h2->Modify(0, new_coord);
                         }
-                        else {
+                        else
+#endif
+                        {
                             h2.Reset(0);
                             ++nullified;
                         }
@@ -944,22 +950,24 @@ void CCompartmentAccessor<THit>::x_Copy2Pending(
     for(typename CCompartmentFinder<THit>::CCompartment* compartment =
             finder.GetFirst();  compartment; compartment = finder.GetNext()) {
         
-        m_pending.push_back(THitRefs(0));
-        THitRefs& vh = m_pending.back();
+        if(compartment->GetMembers().size() > 0) {
+
+            m_pending.push_back(THitRefs(0));
+            THitRefs& vh = m_pending.back();
         
-        for(THitRef ph = compartment->GetFirst(); ph; 
-            ph = compartment->GetNext()) {
-            
-            vh.push_back(ph);
+            for(THitRef ph = compartment->GetFirst(); ph; ph = compartment->GetNext())
+            {
+                vh.push_back(ph);
+            }
+        
+            const TCoord* box = compartment->GetBox();
+            m_ranges.push_back(box[0] - 1);
+            m_ranges.push_back(box[1] - 1);
+            m_ranges.push_back(box[2] - 1);
+            m_ranges.push_back(box[3] - 1);
+        
+            m_strands.push_back(compartment->GetStrand());
         }
-        
-        const TCoord* box = compartment->GetBox();
-        m_ranges.push_back(box[0] - 1);
-        m_ranges.push_back(box[1] - 1);
-        m_ranges.push_back(box[2] - 1);
-        m_ranges.push_back(box[3] - 1);
-        
-        m_strands.push_back(compartment->GetStrand());
     }
 }
 
