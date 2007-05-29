@@ -872,7 +872,8 @@ CRef<CSeq_loc> MakeFullLengthLocation(CBioseq_Handle bh, CScope* scope, CRef<CSe
     if (!is_master_seq) {
         CRef <CSeq_loc> loc_part(new CSeq_loc);
 
-        CConstRef <CSeq_id> id = sequence::GetId (bh, sequence::eGetId_Default).GetSeqId();
+        // Get best ID for location
+        const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
         CRef <CSeq_id> new_id(new CSeq_id);
         new_id->Assign(*id);
         loc_part->SetInt().SetId(*new_id);
