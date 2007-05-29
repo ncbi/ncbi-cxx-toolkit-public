@@ -120,6 +120,11 @@ public:
 
     bool IsBCPAvailable(void) const;
 
+    bool UseGateway(void) const
+    {
+        return !m_GatewayHost.empty();
+    }
+
 
 private:
     void SetDatabaseParameters(void);
@@ -132,6 +137,8 @@ private:
     string m_UserPassword;
     string m_DatabaseName;
     string m_TDSVersion;
+    string m_GatewayHost;
+    string m_GatewayPort;
     TDatabaseParameters m_DatabaseParameters;
 };
 
