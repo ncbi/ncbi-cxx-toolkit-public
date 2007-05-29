@@ -48,6 +48,8 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
@@ -316,8 +318,35 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
 //
 // REFERENCES
 
+bool s_IsJustUids( const CPubdesc& pubdesc ) 
+{
+    const CPubdesc::TPub& pub = pubdesc.GetPub();
+    ITERATE ( CPub_equiv::Tdata, it, pub.Get() ) {
+        
+        switch( (*it)->Which() ) {
+
+        case CPub::e_Gen:
+        case CPub::e_Sub:
+        case CPub::e_Article:
+        case CPub::e_Journal:
+        case CPub::e_Book:
+        case CPub::e_Proc:
+        case CPub::e_Patent:
+        case CPub::e_Man:
+            return false;
+        default:
+            /* placate gcc */
+            break;
+        }
+    }
+    return true;
+}
+
 bool s_FilterPubdesc(const CPubdesc& pubdesc, CBioseqContext& ctx)
 {
+    if ( s_IsJustUids(pubdesc) ) {
+        return true;
+    }
     if ( pubdesc.CanGetComment() ) {
         const string& comment = pubdesc.GetComment();
         bool is_gene_rif = NStr::StartsWith(comment, "GeneRIF", NStr::eNocase);
@@ -331,7 +360,6 @@ bool s_FilterPubdesc(const CPubdesc& pubdesc, CBioseqContext& ctx)
 
     return false;
 }
-
 
 void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) const
 {
@@ -348,7 +376,6 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
             continue;
         }
-
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
     }
 
