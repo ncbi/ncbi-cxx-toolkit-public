@@ -24732,8 +24732,21 @@ if test "$with_wxwidgets" != "no" ; then
       gtkconf=:
    fi
    case "$host_os" in
-      darwin* ) baseflags=""                  ;;
-      *       ) baseflags=`$gtkconf --cflags` ;;
+      darwin* )
+         baseflags=""
+         basesed='s/-isysroot [^ ]*//g; s/-arch [^ ]*//g'
+         if test -n "$SYSROOT"; then
+            deps=`$wxconf --libs --static | sed -e 's/.*\.a//'`
+            libsed="$basesed; s/\$/ $deps/"
+         else
+            libsed=$basesed
+         fi
+         ;;
+      * )
+         baseflags=`$gtkconf --cflags`
+         basesed=''
+         libsed=''
+         ;;
    esac
    echo "$as_me:$LINENO: checking for wxWidgets in $WXWIDGETS_ARCH_PATH" >&5
 echo $ECHO_N "checking for wxWidgets in $WXWIDGETS_ARCH_PATH... $ECHO_C" >&6
@@ -24743,7 +24756,7 @@ else
   if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
           WXWIDGETS_LIBS=`$wxconf --libs |\
-             sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+             sed -e "$libsed; s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -24814,15 +24827,18 @@ if test "$with_wxwidgets" = "no" ; then
    WXWIDGETS_POST_LINK=:
 else
    	  WithPackages="$WithPackages${WithPackagesSep}wxWidgets"; WithPackagesSep=" "
+   case "`$wxconf --version`" in
+     2.[89].* | 2.[0-9][0-9]* ) 	  WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" " ;;
+   esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
       WXWIDGETS_LIBS=`$wxconf --libs |\
-         sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+         sed -e "$libsed; s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
    fi
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static`
-   WXWIDGETS_GL_LIBS=`$wxconf --gl-libs`
-   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static`
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
+   WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
+   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
    WXWIDGETS_POST_LINK=`$wxconf --rezflags`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
 
@@ -28007,7 +28023,7 @@ for x in MT DLL MSWin unix AIX BSD Cygwin CygwinMT Darwin IRIX Linux OSF Solaris
           ;;
       esac
    done
-  for x in Z LocalZ BZ2 LocalBZ2 LZO2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets Fast-CGI SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 OECHEM JPEG PNG TIFF UNGIF GIF XPM FreeType; do
+  for x in Z LocalZ BZ2 LocalBZ2 LZO2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 CPPUNIT Boost.Regex Boost.Spirit Boost.Test Boost.Threads C-Toolkit OpenGL MESA GLUT FLTK wxWindows wxWidgets wx2.8 Fast-CGI SSSUTILS SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE SQLITE3 OECHEM JPEG PNG TIFF UNGIF GIF XPM FreeType; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"

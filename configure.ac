@@ -4291,15 +4291,28 @@ if test "$with_wxwidgets" != "no" ; then
       gtkconf=:
    fi
    case "$host_os" in
-      darwin* ) baseflags=""                  ;;
-      *       ) baseflags=`$gtkconf --cflags` ;;
+      darwin* )
+         baseflags=""
+         basesed='s/-isysroot [[^ ]]*//g; s/-arch [[^ ]]*//g'
+         if test -n "$SYSROOT"; then
+            deps=`$wxconf --libs --static | sed -e 's/.*\.a//'`
+            libsed="$basesed; s/\$/ $deps/"
+         else
+            libsed=$basesed
+         fi
+         ;;
+      * )
+         baseflags=`$gtkconf --cflags`
+         basesed=''
+         libsed=''
+         ;;
    esac
    AC_CACHE_CHECK([for wxWidgets in $WXWIDGETS_ARCH_PATH],
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
           WXWIDGETS_LIBS=`$wxconf --libs |\
-             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+             sed -e "$libsed; s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -4325,15 +4338,18 @@ if test "$with_wxwidgets" = "no" ; then
    WXWIDGETS_POST_LINK=:
 else
    NCBI_PACKAGE(wxWidgets)
+   case "`$wxconf --version`" in
+     2.[[89]].* | 2.[[0-9]][[0-9]]* ) NCBI_PACKAGE(wx2.8) ;;
+   esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
       WXWIDGETS_LIBS=`$wxconf --libs |\
-         sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+         sed -e "$libsed; s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
    fi
-   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static`
-   WXWIDGETS_GL_LIBS=`$wxconf --gl-libs`
-   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static`
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
+   WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
+   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
    WXWIDGETS_POST_LINK=`$wxconf --rezflags`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
    AC_DEFINE(HAVE_WXWIDGETS, 1, [Define to 1 if wxWidgets is available.])
