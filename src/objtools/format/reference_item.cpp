@@ -351,8 +351,14 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
     
     // assign final serial numbers
     size_t size = refs.size();
+    int current_serial = 1;
     for ( size_t i = 0;  i < size; ++i ) {
-        refs[i]->m_Serial = i + 1;
+        if (refs[i]->m_Serial != kMax_Int) {
+            current_serial = refs[i]->m_Serial + 1;
+        }
+        else {
+            refs[i]->m_Serial = current_serial++;
+        }
     }
 }
 
