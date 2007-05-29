@@ -357,39 +357,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         prev = h->GetSubjStop();
     }
 
-    // keep short terminal hits out of the pattern
-    THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
-    const size_t min_term_len (20);
-    bool b0 (true), b1 (true);
-    while(b0 && b1 && ii < jj) {
-
-        while(ii->IsNull() && ii < jj) ++ii;
-        while(jj->IsNull() && ii < jj) --jj;
-
-        if(ii < jj) {
-        
-            if((*ii)->GetQuerySpan() < min_term_len) {
-                ii++ -> Reset(0);
-            }
-            else {
-                b0 = false;
-            }
-        }
-
-        if(ii < jj) {
-        
-            if((*jj)->GetQuerySpan() < min_term_len) {
-                jj-- -> Reset(0);
-            }
-            else {
-                b1 = false;
-            }
-        }
-    }
-
     phitrefs->erase(remove_if(phitrefs->begin(), phitrefs->end(),
                               CHitFilter<THit>::s_PNullRef),
                     phitrefs->end());
+
 
     // save each hit longer than the minimum and test whether the hit is perfect
     vector<size_t> pattern0;
@@ -823,9 +794,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             // adjust the hits
             for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
-                THitRef& h = (*phitrefs)[i];
-                THit::TCoord a0 = mrna_size - h->GetQueryMin() - 1;
-                THit::TCoord a1 = mrna_size - h->GetQueryMax() - 1;
+                THitRef& h ((*phitrefs)[i]);
+                THit::TCoord a0 (mrna_size - h->GetQueryMin() - 1);
+                THit::TCoord a1 (mrna_size - h->GetQueryMax() - 1);
                 const bool new_strand (!(h->GetSubjStrand()));
                 h->SetQueryStart(a1);
                 h->SetQueryStop(a0);
@@ -839,18 +810,52 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
 
             // cleave off hits beyond cds
             CleaveOffByTail(phitrefs, m_polya_start); 
-            if(phitrefs->size() == 0) {
-                NCBI_THROW(CAlgoAlignException, eNoAlignment,
-                           g_msg_NoHitsBeyondPolya);
-            }
         }
     
-        // find regions of interest on mRna (query)
-        // and contig (subj)
+        // keep short terminal hits out of the pattern
+        THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
+        const size_t min_term_len (20);
+        bool b0 (true), b1 (true);
+        while(b0 && b1 && ii < jj) {
+            
+            while(ii->IsNull() && ii < jj) ++ii;
+            while(jj->IsNull() && ii < jj) --jj;
+            
+            if(ii < jj) {
+                
+                if((*ii)->GetQuerySpan() < min_term_len) {
+                    ii++ -> Reset(0);
+                }
+                else {
+                    b0 = false;
+                }
+            }
+            
+            if(ii < jj) {
+                
+                if((*jj)->GetQuerySpan() < min_term_len) {
+                    jj-- -> Reset(0);
+                }
+                else {
+                    b1 = false;
+                }
+            }
+        }
+        
+        phitrefs->erase(remove_if(phitrefs->begin(), phitrefs->end(),
+                                  CHitFilter<THit>::s_PNullRef),
+                        phitrefs->end());
+
+
+        if(phitrefs->size() == 0) {
+            NCBI_THROW(CAlgoAlignException, eNoAlignment,
+                       g_msg_NoHitsAfterFiltering);
+        }
+
+        // find regions of interest on mRna (query) and contig (subj)
         THit::TCoord span [4];
         CHitFilter<THit>::s_GetSpan(*phitrefs, span);
-        THit::TCoord qmin = span[0], qmax = span[1], 
-                     smin = span[2], smax = span[3];    
+        THit::TCoord qmin (span[0]), qmax (span[1]), smin (span[2]), smax (span[3]);
 
         // select terminal genomic extents based on uncovered end sizes
         const THit::TCoord extent_left (x_GetGenomicExtent(qmin));
@@ -915,7 +920,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
             (*ii)->Shift(-qmin, -smin);
         }
-        
+
         x_SetPattern(phitrefs);
         x_Run(&m_mrna.front(), &m_genomic.front());
 
@@ -1092,6 +1097,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         // setup sequences
         const size_t len1 (zone.m_box[1] - zone.m_box[0] + 1);
         const size_t len2 (zone.m_box[3] - zone.m_box[2] + 1);
+        
         m_aligner->SetSequences(
             Seq1 + zone.m_box[0], len1,
             Seq2 + zone.m_box[2], len2,
@@ -1119,7 +1125,9 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                  << pattern[j+2] << '\t' << pattern[j+3] 
                  << "(len = " << (pattern[j+3] - pattern[j+2] + 1) << ")\t"
                  << endl;
+#undef DBG_DUMP_PATTERN
 #endif
+
             pattern[j]   -= zone.m_box[0];
             pattern[j+1] -= zone.m_box[0];
             pattern[j+2] -= zone.m_box[2];
@@ -1140,6 +1148,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             fmt.AsText(&txt, CNWFormatter::eFormatType2);
             cerr << txt;
         }}  
+#undef DBG_DUMP_TYPE2
 #endif
 
         CNWFormatter formatter (*m_aligner);
