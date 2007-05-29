@@ -1915,7 +1915,7 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags,
     if (dbc) {
         ret = x_DB_CPut(dbc, m_DBT_Key, m_DBT_Data, flags);        
     } else {
-        x_DB_Put(m_DBT_Key, m_DBT_Data, flags);
+        ret = x_DB_Put(m_DBT_Key, m_DBT_Data, flags);
     }    
     if (ret == DB_KEYEXIST)
         return eBDB_KeyDup;
