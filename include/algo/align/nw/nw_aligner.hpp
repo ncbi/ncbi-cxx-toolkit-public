@@ -106,6 +106,9 @@ public:
     // alignment pattern (guides)
     void SetPattern(const vector<size_t>& pattern);
 
+    // max memory to use
+    void SetSpaceLimit(const size_t& maxmem);
+
     // progress reporting
     struct SProgressInfo
     {
@@ -140,6 +143,9 @@ public:
                       const;
 
     TScore        GetScore(void) const;
+
+    size_t        GetSpaceLimit(void) const {  return m_MaxMem; }
+    static size_t GetDefaultSpaceLimit(void) { return 2u * 1024 * 1024 * 1024; }
     
     // alignment transcript
     enum ETranscriptSymbol {
@@ -266,6 +272,9 @@ protected:
     // multiple threads flag
     bool                      m_mt;
     size_t                    m_maxthreads;
+
+    // approximate max space to use
+    size_t                   m_MaxMem;
  
     // facilitate guide pre- and  post-processing, if applicable
     virtual TScore x_Run   (void);

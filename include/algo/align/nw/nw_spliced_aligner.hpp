@@ -81,8 +81,11 @@ protected:
 
     size_t  m_IntronMinSize;
     size_t  m_cds_start, m_cds_stop;
+
+    virtual bool    x_CheckMemoryLimit(void);
+
     virtual TScore* x_GetSpliceScores() = 0;
-  
+ 
 };
 
 
