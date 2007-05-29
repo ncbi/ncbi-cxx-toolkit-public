@@ -14,7 +14,7 @@
             <MSIonType value="c">2</MSIonType>
             <MSIonType value="z">5</MSIonType>
           </MSSearchSettings_ionstosearch>
-          <MSSearchSettings_peptol>4</MSSearchSettings_peptol>
+          <MSSearchSettings_peptol>2</MSSearchSettings_peptol>
           <MSSearchSettings_msmstol>0.8</MSSearchSettings_msmstol>
           <MSSearchSettings_zdep>
             <MSZdependence value="linearwithz">1</MSZdependence>
