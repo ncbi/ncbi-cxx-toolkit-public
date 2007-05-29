@@ -999,6 +999,7 @@ static const char * kBuiltInGuide[] = {
     "special  CAD67985           embl_tpa_prot",
     "special  CAD68170-CAD68171  embl_tpa_prot",
     "special  CAD71139           embl_tpa_prot",
+    "special  CAD79708           embl_tpa_prot",
     "special  CAD80155-CAD80157  embl_tpa_prot",
     "special  CAD80167-CAD80169  embl_tpa_prot # '68 unassigned",
     "special  CAD80243           embl_tpa_prot",
