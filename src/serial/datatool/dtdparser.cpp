@@ -904,6 +904,46 @@ CDataType* DTDParser::x_Type(
     return type;
 }
 
+AutoPtr<CDataValue> DTDParser::Value(const DTDElement& node)
+{
+    AutoPtr<CDataValue> value(x_Value(node));
+    value->SetSourceLine(node.GetSourceLine());
+    return value;
+}
+
+AutoPtr<CDataValue> DTDParser::x_Value(const DTDElement& node)
+{
+    switch (node.GetType()) {
+    default:
+        break;;
+    case DTDElement::eString:
+        return AutoPtr<CDataValue>(new CStringDataValue(node.GetDefault()));
+    case DTDElement::eOctetString:
+        return AutoPtr<CDataValue>(new CBitStringDataValue(node.GetDefault()));
+    case DTDElement::eEmpty:
+        return AutoPtr<CDataValue>(new CNullDataValue());
+    case DTDElement::eBoolean:
+        {
+            bool b;
+            if (node.GetDefault() == "0") {
+                b = false;
+            } else if (node.GetDefault() == "1") {
+                b = true;
+            } else {
+                b = NStr::StringToBool(node.GetDefault());
+            }
+            return AutoPtr<CDataValue>(new CBoolDataValue(b));
+        }
+    case DTDElement::eInteger:
+    case DTDElement::eBigInt:
+        return AutoPtr<CDataValue>(new CIntDataValue(NStr::StringToInt(node.GetDefault())));
+    case DTDElement::eDouble:
+        return AutoPtr<CDataValue>(new CDoubleDataValue(NStr::StringToDouble(node.GetDefault())));
+    }
+    ParseError("value");
+    return AutoPtr<CDataValue>(0);
+}
+
 CDataType* DTDParser::TypesBlock(
     CDataMemberContainerType* containerType,const DTDElement& node,
     bool ignoreAttrib)
@@ -982,6 +1022,9 @@ CDataType* DTDParser::TypesBlock(
         }
         if (refNode.IsEmbedded() && !refNode.IsNamed()) {
             member->SetNotag();
+        }
+        if (!refNode.GetDefault().empty()) {
+            member->SetDefault(Value(refNode));
         }
         member->SetNoPrefix();
         if (m_SrcType == eDTD || refNode.IsEmbedded()) {
@@ -1212,6 +1255,10 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eOneOrMore:   cout << "(1..*)"; break;
     case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
     case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
+    }
+    if (!node.GetDefault().empty()) {
+        cout << ", default=";
+        cout << "\"" << node.GetDefault() << "\"";
     }
     cout << endl;
     if (!node.GetComments().Empty()) {

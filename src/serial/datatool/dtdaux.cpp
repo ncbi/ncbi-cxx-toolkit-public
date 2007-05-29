@@ -229,6 +229,7 @@ DTDElement::DTDElement(const DTDElement& other)
     m_Name     = other.m_Name;
     m_TypeName = other.m_TypeName;
     m_NamespaceName = other.m_NamespaceName;
+    m_Default  = other.m_Default;
     m_Type     = other.eUnknown;
     m_Occ      = other.m_Occ;
     m_Refd     = other.m_Refd;
@@ -390,6 +391,16 @@ void DTDElement::SetNamespaceName(const string& name)
 const string& DTDElement::GetNamespaceName(void) const
 {
     return m_NamespaceName;
+}
+
+void DTDElement::SetDefault(const string& value)
+{
+    m_Default = value;
+}
+
+const string& DTDElement::GetDefault(void) const
+{
+    return m_Default;
 }
 
 

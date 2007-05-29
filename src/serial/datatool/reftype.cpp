@@ -73,6 +73,9 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
             "<xs:element ref=\"" << userType << "\"";
         if (GetDataMember() && GetDataMember()->Optional()) {
             out << " minOccurs=\"0\"";
+            if (GetDataMember()->GetDefault()) {
+                out << " default=\"" << GetDataMember()->GetDefault()->GetXmlString() << "\"";
+            }
         }
         out << "/>";
     } else {

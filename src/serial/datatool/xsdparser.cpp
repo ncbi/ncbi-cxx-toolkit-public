@@ -388,6 +388,9 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
             named_type = true;
         }
     }
+    if (GetAttribute("default")) {
+        m_MapElement[name].SetDefault(m_Value);
+    }
     if (GetAttribute("minOccurs")) {
         if (!owner || name.empty()) {
             ParseError("Unexpected attribute");

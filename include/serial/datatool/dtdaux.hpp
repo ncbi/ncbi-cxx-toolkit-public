@@ -233,6 +233,9 @@ public:
     void SetNamespaceName(const string& name);
     const string& GetNamespaceName(void) const;
 
+    void SetDefault(const string& value);
+    const string& GetDefault(void) const;
+
     CComments& Comments(void)
     {
         return m_Comments;
@@ -254,6 +257,7 @@ private:
     string m_Name;
     string m_TypeName;
     string m_NamespaceName;
+    string m_Default;
     EType m_Type;
     EOccurrence m_Occ;
     list<string> m_Refs;
