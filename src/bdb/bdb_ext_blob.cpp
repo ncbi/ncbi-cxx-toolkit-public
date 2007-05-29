@@ -37,20 +37,77 @@
 BEGIN_NCBI_SCOPE
 
 
-CExtBlobLocDB::CExtBlobLocDB()
+CBlobMetaDB::CBlobMetaDB()
+: CBDB_BLobFile()
 {
-    DisableNull();
-
     BindKey("id_from", &id_from);
     BindKey("id_to",   &id_to);
 }
 
 EBDB_ErrCode 
-CExtBlobLocDB::Insert(const CBDB_BlobMetaContainer& meta_container)
+CBlobMetaDB::UpdateInsert(const CBDB_BlobMetaContainer& meta_container)
 {
     EBDB_ErrCode ret;
+
+    const CBDB_ExtBlobMap& blob_map = meta_container.GetBlobMap();
+
+    Uint4 min_id, max_id;
+    blob_map.GetBlobIdRange(&min_id, &max_id);
+
+    CBDB_RawFile::TBuffer buf;
+    meta_container.Serialize(&buf);
+
+    this->id_from = min_id;
+    this->id_to = max_id;
+    ret = TParent::UpdateInsert(buf);
+
     return ret;
 }
+
+
+EBDB_ErrCode 
+CBlobMetaDB::FetchMeta(Uint4                   blob_id, 
+                       CBDB_BlobMetaContainer* meta_container,
+                       Uint4*                  id_from,
+                       Uint4*                  id_to)
+{
+    _ASSERT(meta_container);
+
+    CBDB_RawFile::TBuffer buf;
+    buf.reserve(2048);
+
+    // Scan backward
+    {{
+        CBDB_FileCursor cur(*this);
+        cur.SetCondition(CBDB_FileCursor::eLE);
+        cur.From << blob_id;
+
+        while (cur.Fetch(&buf) == eBDB_Ok) {
+            if (buf.size() == 0) {
+                continue;
+            }
+            unsigned from = this->id_from;
+            unsigned to   = this->id_to;
+
+            if (blob_id > to || blob_id < from)
+                continue;
+
+            meta_container->Deserialize(buf);
+            const CBDB_ExtBlobMap& bmap = meta_container->GetBlobMap();
+            if (bmap.HasBlob(blob_id)) {
+                if (id_from)
+                    *id_from = from;
+                if (id_to)
+                    *id_to = to;
+
+                return eBDB_Ok;
+            }
+        }
+    }} // cur
+
+    return eBDB_NotFound;
+}
+
 
 
 
@@ -93,7 +150,7 @@ size_t CBDB_BlobMetaContainer::ComputeSerializationSize() const
 }
 
 void CBDB_BlobMetaContainer::Serialize(CBDB_RawFile::TBuffer* buf,
-                                       Uint8                  buf_offset)
+                                       Uint8                  buf_offset) const
 {
     _ASSERT(buf);
 
@@ -257,7 +314,7 @@ size_t CBDB_ExtBlobMap::ComputeSerializationSize() const
 }
 
 void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
-                                Uint8                  buf_offset)
+                                Uint8                  buf_offset) const
 {
     _ASSERT(buf);
 

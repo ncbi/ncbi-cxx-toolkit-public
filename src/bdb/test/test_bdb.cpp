@@ -1312,7 +1312,7 @@ static void s_TEST_BDB_LOB_File(void)
     CBDB_LobFile lob;
 
     lob.SetCacheSize(25 * 1024 * 1024);
-    lob.Open("big_lobtest_.db", "lob", CBDB_LobFile::eCreate);
+    lob.Open("big_lobtest_.db", CBDB_LobFile::eCreate);
 
     size_t bsize = 50 * 1024 * 1024;
     char* buf = new char[bsize];
@@ -2195,6 +2195,7 @@ static void s_TEST_ExtBlob(void)
 {
     cout << "======== Ext BLOB attributes test." << endl;
 
+    {{
     CBDB_ExtBlobMap ext_attr;
 
     assert(ext_attr.Size() == 0);
@@ -2249,7 +2250,172 @@ static void s_TEST_ExtBlob(void)
 
     ext_attr2.GetBlobIdRange(&min_id, &max_id);
     assert(min_id == 10 && max_id == 20);
+    }}
 
+    // test meta container
+
+    {{
+    CBDB_BlobMetaContainer mcont;
+
+    mcont.SetLoc(10, 200);
+    Uint8 offset, size;
+    mcont.GetLoc(&offset, &size);
+    assert(offset == 10 && size == 200);
+
+    CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+
+    ext_attr.Add(10, 123, 10);
+    ext_attr.Add(11, 149, 101);
+    ext_attr.Add(13, 1,  20);
+    ext_attr.Add(20, 0,  15);
+
+    assert(ext_attr.Size() == 4);
+
+    CBDB_RawFile::TBuffer buf;
+    mcont.Serialize(&buf);
+
+
+    CBDB_BlobMetaContainer mcont2;
+    mcont2.Deserialize(buf);
+    mcont2.GetLoc(&offset, &size);
+    assert(offset == 10 && size == 200);
+
+    CBDB_ExtBlobMap& ext_attr2 = mcont2.SetBlobMap();
+    assert(ext_attr2.Size() == 4);
+
+    bool b;
+    b = ext_attr2.HasBlob(13);
+    assert(b);
+    b = ext_attr2.HasBlob(14);
+    assert(!b);
+
+    b = ext_attr2.GetBlobLoc(13, &offset, &size);
+    assert(b);
+    assert(offset == 1 && size == 20);
+    b = ext_attr2.GetBlobLoc(20, &offset, &size);
+    assert(b);
+    assert(offset == 0 && size == 15);
+
+
+    Uint4 min_id, max_id;
+    ext_attr2.GetBlobIdRange(&min_id, &max_id);
+    assert(min_id == 10 && max_id == 20);
+
+    }}
+
+    // test meta container store
+    {{
+    CBlobMetaDB meta_db;
+    meta_db.Open("meta.db", CBDB_RawFile::eCreate);
+
+    // 5-15 range
+    {{
+        CBDB_BlobMetaContainer mcont;
+
+        mcont.SetLoc(11, 210);
+        CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+        ext_attr.Add(5, 123, 10);
+        ext_attr.Add(8, 149, 101);
+        ext_attr.Add(15, 1,  20);
+
+        meta_db.UpdateInsert(mcont);
+    }}
+    // 3-400 range
+    {{
+        CBDB_BlobMetaContainer mcont;
+
+        mcont.SetLoc(11, 210);
+        CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+        ext_attr.Add(3, 123, 10);
+        ext_attr.Add(7, 149, 101);
+        ext_attr.Add(400, 1,  20);
+
+        meta_db.UpdateInsert(mcont);
+    }}
+
+
+    // 10-20 range
+    {{
+        CBDB_BlobMetaContainer mcont;
+
+        mcont.SetLoc(10, 200);
+        CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+        ext_attr.Add(10, 123, 10);
+        ext_attr.Add(11, 149, 101);
+        ext_attr.Add(13, 1,  20);
+        ext_attr.Add(20, 0,  15);
+
+        meta_db.UpdateInsert(mcont);
+    }}
+
+    // 14-21 range
+    {{
+        CBDB_BlobMetaContainer mcont;
+
+        mcont.SetLoc(10, 200);
+        CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+        ext_attr.Add(14, 123, 10);
+        ext_attr.Add(19, 12, 100);
+        ext_attr.Add(21, 0,  15);
+
+        meta_db.UpdateInsert(mcont);
+    }}
+    // 100-210 range
+    {{
+        CBDB_BlobMetaContainer mcont;
+
+        mcont.SetLoc(10, 200);
+        CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+        ext_attr.Add(100, 123, 10);
+        ext_attr.Add(101, 12, 100);
+        ext_attr.Add(210, 0,  15);
+
+        meta_db.UpdateInsert(mcont);
+    }}
+    // 300-310 range
+    {{
+        CBDB_BlobMetaContainer mcont;
+
+        mcont.SetLoc(10, 200);
+        CBDB_ExtBlobMap& ext_attr = mcont.SetBlobMap();
+        ext_attr.Add(300, 123, 10);
+        ext_attr.Add(301, 12, 100);
+        ext_attr.Add(310, 0,  15);
+
+        meta_db.UpdateInsert(mcont);
+    }}
+
+    {{
+        CBDB_FileCursor cur(meta_db);
+        cur.SetCondition(CBDB_FileCursor::eGE);
+        cur.From << 0;
+        while (cur.Fetch() == eBDB_Ok) {
+            unsigned from = meta_db.id_from;
+            unsigned to   = meta_db.id_to;
+            cout << from << " - " << to << endl;
+        }
+    }}
+
+
+    unsigned from, to;
+    CBDB_BlobMetaContainer mcont;
+    EBDB_ErrCode ret = meta_db.FetchMeta(15, &mcont, &from, &to);
+    
+    assert(ret == eBDB_Ok);
+    assert(from == 5);
+    assert(to == 15);
+
+    const CBDB_ExtBlobMap& ext_attr = mcont.GetBlobMap();
+    Uint8 offset, size;
+    mcont.GetLoc(&offset, &size);
+    assert(offset == 11 && size == 210);
+
+    bool b = ext_attr.GetBlobLoc(15, &offset, &size);
+    assert(b);
+    assert(offset == 1 && size == 20);
+
+
+    }}
     cout << "======== Ext BLOB attributes test. OK." << endl;
 
 }
@@ -2289,7 +2455,7 @@ int CBDB_Test::Run(void)
     cout << "Run BDB test" << endl << endl;
 
     try
-    {        
+    { 
         s_TEST_BDB_Types();
 
         s_TEST_BDB_Queue();
@@ -2315,6 +2481,7 @@ int CBDB_Test::Run(void)
         s_TEST_BDB_Transaction();
 
         s_TEST_ExtBlob();
+
 /*
         s_TEST_db_map();
 

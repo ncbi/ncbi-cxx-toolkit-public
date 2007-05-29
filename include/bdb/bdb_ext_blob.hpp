@@ -246,14 +246,14 @@ private:
 ///   - find blob id and location in the meta-information
 ///   - read BLOB from super BLOB (reassemble using location table)
 ///
-struct NCBI_BDB_EXPORT CExtBlobLocDB : public CBDB_BLobFile
+struct NCBI_BDB_EXPORT CBlobMetaDB : public CBDB_BLobFile
 {
     typedef CBDB_BLobFile TParent;
 
     CBDB_FieldUint4        id_from;  ///< Id range from
     CBDB_FieldUint4        id_to;    ///< Id range to
 
-    CExtBlobLocDB();
+    CBlobMetaDB();
 
     /// Find the meta container storing our target blob_id
     /// Function is doing the cursor range scan sequentially reading 
@@ -279,8 +279,8 @@ struct NCBI_BDB_EXPORT CExtBlobLocDB : public CBDB_BLobFile
     EBDB_ErrCode UpdateInsert(const CBDB_BlobMetaContainer& meta_container);
 
 private:
-    CExtBlobLocDB(const CExtBlobLocDB&);
-    CExtBlobLocDB& operator=(const CExtBlobLocDB&);
+    CBlobMetaDB(const CBlobMetaDB&);
+    CBlobMetaDB& operator=(const CBlobMetaDB&);
 };
 
 
