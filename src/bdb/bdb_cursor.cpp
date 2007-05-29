@@ -375,19 +375,33 @@ void CBDB_FileCursor::x_FetchFirst_Prolog(unsigned int& flag)
 
         // If cursor from buffer contains not all key fields
         // (prefix search) we set all remaining fields to max.
-        // possible value for GT condition
-        From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
-                                     CBDB_FC_Condition::eAssignMaxVal
-                                     :
-                                     CBDB_FC_Condition::eAssignMinVal);
+        // possible value for GT/LT condition
+        if (m_FetchDirection == eBackward) {
+            From.m_Condition.InitUnassignedFields(m_CondFrom == eLT ?
+                                        CBDB_FC_Condition::eAssignMinVal
+                                        :
+                                        CBDB_FC_Condition::eAssignMaxVal);
+        } else {
+            From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
+                                        CBDB_FC_Condition::eAssignMaxVal
+                                        :
+                                        CBDB_FC_Condition::eAssignMinVal);
+        }
 
         m_Dbf.m_KeyBuf->CopyFieldsFrom(From.m_Condition.GetBuffer());
 
 
-        To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
-                                   CBDB_FC_Condition::eAssignMaxVal
-                                   :
-                                   CBDB_FC_Condition::eAssignMinVal);
+        if (m_FetchDirection == eBackward) {
+            To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
+                                    CBDB_FC_Condition::eAssignMinVal
+                                    :
+                                    CBDB_FC_Condition::eAssignMaxVal);
+        } else {
+            To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
+                                    CBDB_FC_Condition::eAssignMaxVal
+                                    :
+                                    CBDB_FC_Condition::eAssignMinVal);
+        }
 
         // Incomplete == search transformed into >= search with incomplete
         // fields set to min
@@ -468,6 +482,16 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
                 return ret;
         }
     }
+    else 
+    if (m_CondFrom == eLE) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) > 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, 
+                                   DB_PREV | m_FetchFlags, m_MultiRowBuf,
+                                   false);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
     else
     if (m_CondFrom == eEQ && !From.m_Condition.IsComplete()) {
         int cmp =
@@ -484,6 +508,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
 
     return ret;
 }
+
 
 EBDB_ErrCode 
 CBDB_FileCursor::FetchFirst(void**       buf, 
@@ -513,6 +538,15 @@ CBDB_FileCursor::FetchFirst(void**       buf,
     else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags,
+                                   buf, buf_size, allow_realloc);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
+    else 
+    if (m_CondFrom == eLE) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) > 0) {
             ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags,
                                    buf, buf_size, allow_realloc);
             if (ret != eBDB_Ok)
@@ -562,6 +596,14 @@ CBDB_FileCursor::FetchFirst(CBDB_RawFile::TBuffer*  buf)
     else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
+    else 
+    if (m_CondFrom == eLE) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) > 0) {
             ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
             if (ret != eBDB_Ok)
                 return ret;
