@@ -296,35 +296,89 @@ void CBDB_ExtBlobMap::GetBlobIdRange(Uint4* min_id, Uint4* max_id) const
 
 size_t CBDB_ExtBlobMap::ComputeSerializationSize() const
 {
-    size_t ssize = 4; // Magic header
+    unsigned bits;
+    return x_ComputeSerializationSize(&bits);
+}
 
+size_t 
+CBDB_ExtBlobMap::x_ComputeSerializationSize(unsigned* bits_used) const
+{
+    bool b16, b32;
+    b16 = b32 = true;
+
+    size_t ssize = 4; // Magic header
     ssize += 4; // map size
+
+    size_t ssize32 = ssize;
+    size_t ssize16 = ssize;
 
     for (size_t i = 0; i < m_BlobMap.size(); ++i) {
         const SBlobLoc& bl = m_BlobMap[i];
         ssize += sizeof(bl.blob_id);
-
         ssize += 4; // size of blob_location_table
+
+        ssize32 += sizeof(bl.blob_id) + 4;
+        ssize16 += sizeof(bl.blob_id) + 4;
+
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
             ssize += sizeof(SBlobChunkLoc);
+            ssize16 += sizeof(unsigned short) + sizeof(unsigned short);
+            ssize32 += sizeof(unsigned) + sizeof(unsigned);
+
+            if (bl.blob_location_table[j].offset > kMax_UShort) {
+                b16 = false;
+            }
+            if (bl.blob_location_table[j].offset > kMax_UInt) {
+                b32 = false;
+            }
+            if (bl.blob_location_table[j].size > kMax_UShort) {
+                b16 = false;
+            }
+            if (bl.blob_location_table[j].size > kMax_UInt) {
+                b32 = false;
+            }
         } // for j
 
     } // for i
+
+    if (b16) {
+        *bits_used = 16;
+        return ssize16;
+    }
+    if (b32) {
+        *bits_used = 32;
+        return ssize16;
+    }
+    *bits_used = 64;
     return ssize;
 }
+
+static const unsigned s_ExtBlob_Mask_16bit = 1;
+static const unsigned s_ExtBlob_Mask_32bit = (1 << 1);
 
 void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
                                 Uint8                  buf_offset) const
 {
     _ASSERT(buf);
 
-    size_t ser_size = ComputeSerializationSize();
+    unsigned bits_used;
+
+    size_t ser_size = x_ComputeSerializationSize(&bits_used);
     buf->resize(ser_size + (size_t)buf_offset);
 
     unsigned char* ptr = &((*buf)[0]);
+    unsigned char* ptr0 = ptr;
     ptr += buf_offset;
 
     unsigned magic = 0;
+
+    if (bits_used == 16) {
+        magic |= s_ExtBlob_Mask_16bit;
+    } else
+    if (bits_used == 32) {
+        magic |= s_ExtBlob_Mask_32bit;
+    }
+
     ::memcpy(ptr, &magic, sizeof(magic));
     ptr += sizeof(magic);
 
@@ -343,13 +397,36 @@ void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
         ptr += sizeof(sz);
 
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
-            ::memcpy(ptr, &bl.blob_location_table[j].offset, sizeof(Uint8));
-            ptr += sizeof(Uint8);
-            ::memcpy(ptr, &bl.blob_location_table[j].size, sizeof(Uint8));
-            ptr += sizeof(Uint8);            
+            if (bits_used == 16) {
+                unsigned short s;
+                s = (unsigned short)bl.blob_location_table[j].offset;
+                ::memcpy(ptr, &s, sizeof(s));
+                ptr += sizeof(s);
+                s = (unsigned short)bl.blob_location_table[j].size;
+                ::memcpy(ptr, &s, sizeof(s));
+                ptr += sizeof(s);
+            } else
+            if (bits_used == 32) {
+                unsigned  s;
+                s = (unsigned)bl.blob_location_table[j].offset;
+                ::memcpy(ptr, &s, sizeof(s));
+                ptr += sizeof(s);
+                s = (unsigned)bl.blob_location_table[j].size;
+                ::memcpy(ptr, &s, sizeof(s));
+                ptr += sizeof(s);
+            } else {
+                ::memcpy(ptr, 
+                         &bl.blob_location_table[j].offset, sizeof(Uint8));
+                ptr += sizeof(Uint8);
+                ::memcpy(ptr, 
+                         &bl.blob_location_table[j].size, sizeof(Uint8));
+                ptr += sizeof(Uint8);
+            }
         } // for j
 
     } // for i
+
+    buf->resize(ptr - ptr0);
 }
 
 void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf, 
@@ -361,6 +438,14 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
     unsigned magic;
     ::memcpy(&magic, ptr, sizeof(magic));
     ptr += sizeof(magic);
+    
+    unsigned bits_used;
+    if (magic & s_ExtBlob_Mask_16bit) {
+        bits_used = 16;
+    } else
+    if (magic & s_ExtBlob_Mask_32bit) {
+        bits_used = 32;
+    } 
 
     unsigned sz;
     ::memcpy(&sz, ptr, sizeof(sz));
@@ -378,10 +463,31 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
         bl.blob_location_table.resize(sz);
 
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
-            ::memcpy(&bl.blob_location_table[j].offset, ptr, sizeof(Uint8));
-            ptr += sizeof(Uint8);
-            ::memcpy(&bl.blob_location_table[j].size, ptr, sizeof(Uint8));
-            ptr += sizeof(Uint8);            
+            if (bits_used == 16) {
+                unsigned short s;
+                ::memcpy(&s, ptr, sizeof(s));
+                ptr += sizeof(s);
+                bl.blob_location_table[j].offset = s;
+                ::memcpy(&s, ptr, sizeof(s));
+                ptr += sizeof(s);
+                bl.blob_location_table[j].size = s;
+            } else
+            if (bits_used == 32) {
+                unsigned s;
+                ::memcpy(&s, ptr, sizeof(s));
+                ptr += sizeof(s);
+                bl.blob_location_table[j].offset = s;
+                ::memcpy(&s, ptr, sizeof(s));
+                ptr += sizeof(s);
+                bl.blob_location_table[j].size = s;
+            } else {
+                ::memcpy(&bl.blob_location_table[j].offset, 
+                         ptr, sizeof(Uint8));
+                ptr += sizeof(Uint8);
+                ::memcpy(&bl.blob_location_table[j].size, 
+                         ptr, sizeof(Uint8));
+                ptr += sizeof(Uint8);
+            }
         } // for j
 
     } // for i

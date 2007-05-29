@@ -141,9 +141,13 @@ public:
                      Uint8                        buf_offset = 0);
 
     /// Compute maximum serialization size
-    size_t ComputeSerializationSize() const;  
+    size_t ComputeSerializationSize() const; 
 
     ///@}
+private:
+    /// Compute serialization size and effective number of bits used 
+    /// for offset/size storage (16, 32, 64)
+    size_t x_ComputeSerializationSize(unsigned* bits_used) const; 
 private:
     TBlobMap    m_BlobMap;
 };
@@ -204,6 +208,7 @@ public:
     size_t ComputeSerializationSize() const;  
 
     /// @}
+
 private:
     /// Super BLOB location vector
     CBDB_ExtBlobMap::TBlobChunkVec  m_Loc;
