@@ -114,6 +114,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     q_notif("NCBI_JSQ_"),
     run_time_line(NULL),
     delete_database(false),
+    m_AffWrapped(false),
     m_CurrAffId(0),
     m_LastAffId(0),
 
@@ -369,6 +370,7 @@ void SLockedQueue::Erase(unsigned job_id)
         m_AffJobsToDelete.set_bit(job_id);
 
         // start affinity erase process
+        m_AffWrapped = false;
         m_LastAffId = m_CurrAffId;
 
         FlushDeletedVectors();
@@ -394,6 +396,7 @@ void SLockedQueue::Clear()
         m_AffJobsToDelete |= bv;
 
         // start affinity erase process
+        m_AffWrapped = false;
         m_LastAffId = m_CurrAffId;
 
         FlushDeletedVectors();
@@ -436,35 +439,19 @@ void SLockedQueue::ClearAffinityIdx()
     {{
         // Ensure that we have some job to do
         CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        // TODO: calculate job_to_delete_count * maturity instead
+        // of just job count. Provides more safe version - even a
+        // single deleted job will be eventually cleaned up.
         if (m_AffJobsToDelete.count() < kDeletedJobsThreshold)
             return;
         curr_aff_id = m_CurrAffId;
         last_aff_id = m_LastAffId;
     }}
 
-    // Safeguard against runaway job id in affinity index
-    // Should not fire (see warning below)
-    m_FirstSafeJobIdToErase = 0;
-    {{
-        CFastMutexGuard guard(lock);
-        db.SetTransaction(0);
-
-        // get the first phisically available record in the queue database
-        CBDB_FileCursor cur(db);
-        cur.SetCondition(CBDB_FileCursor::eFirst);
-
-        if (cur.Fetch() == eBDB_Ok) {
-            m_FirstSafeJobIdToErase = db.id;
-            _ASSERT(m_FirstSafeJobIdToErase > 0);
-            if (m_FirstSafeJobIdToErase > 0)
-                --m_FirstSafeJobIdToErase;
-        }
-    }}
-
     TNSBitVector bv(bm::BM_GAP);
 
     // mark if we are wrapped and chasing the "tail"
-    bool on_left = curr_aff_id < last_aff_id; 
+    bool wrapped = curr_aff_id < last_aff_id; 
 
     // get batch of affinity tokens in the index
     {{
@@ -474,24 +461,40 @@ void SLockedQueue::ClearAffinityIdx()
         cur.SetCondition(CBDB_FileCursor::eGE);
         cur.From << curr_aff_id;
 
-        // We can not find that we are EXACTLY at the end of db index,
-        // so it can come to next cycle and fail to read even a single
-        // index. This will lead to skipped cleaning cycle.
         unsigned n = 0;
-        for (; cur.Fetch() == eBDB_Ok && n < kAffBatchSize; ++n) {
+        EBDB_ErrCode ret;
+        for (; (ret = cur.Fetch()) == eBDB_Ok && n < kAffBatchSize; ++n) {
             curr_aff_id = aff_idx.aff_id;
-            if (on_left && curr_aff_id >= last_aff_id) // runned over the tail
+            if (wrapped && curr_aff_id >= last_aff_id) // run over the tail
                 break;
             bv.set(curr_aff_id);
-        } 
-        if (n < kAffBatchSize) {
-            // wrap-around
-            curr_aff_id = 0;
+        }
+        if (ret != eBDB_Ok) {
+            if (ret != eBDB_NotFound)
+                LOG_POST(Error << "Error reading affinity index");
+            if (wrapped) {
+                curr_aff_id = last_aff_id;
+            } else {
+                // wrap-around
+                curr_aff_id = 0;
+                wrapped = true;
+                cur.SetCondition(CBDB_FileCursor::eGE);
+                cur.From << curr_aff_id;
+                for (; n < kAffBatchSize && (ret = cur.Fetch()) == eBDB_Ok; ++n) {
+                    curr_aff_id = aff_idx.aff_id;
+                    if (curr_aff_id >= last_aff_id) // run over the tail
+                        break;
+                    bv.set(curr_aff_id);
+                }
+                if (ret != eBDB_NotFound)
+                    LOG_POST(Error << "Error reading affinity index");
+            }
         }
     }}
 
     {{
         CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+        m_AffWrapped = wrapped;
         m_CurrAffId = curr_aff_id;
     }}
 
@@ -508,16 +511,13 @@ void SLockedQueue::ClearAffinityIdx()
         aff_idx.aff_id = aff_id;
         EBDB_ErrCode ret =
             aff_idx.ReadVector(&bvect, bm::set_OR, NULL);
-        if (ret != eBDB_Ok) continue;
+        if (ret != eBDB_Ok) {
+            if (ret != eBDB_NotFound)
+                LOG_POST(Error << "Error reading affinity index");
+            continue;
+        }
         unsigned old_count = bvect.count();
         bvect -= m_AffJobsToDelete;
-        unsigned clean_count = bvect.count();
-        if (m_FirstSafeJobIdToErase) {
-            bvect.set_range(0, m_FirstSafeJobIdToErase, false);
-            if (bvect.count() != clean_count) {
-                LOG_POST(Warning << "Affinity cleaning safeguard triggered");
-            }
-        }
         unsigned new_count = bvect.count();
         if (new_count == old_count) {
             continue;
@@ -542,7 +542,7 @@ void SLockedQueue::ClearAffinityIdx()
 
     {{
         CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
-        if (on_left && m_CurrAffId >= m_LastAffId) {
+        if (m_AffWrapped && m_CurrAffId >= m_LastAffId) {
             m_AffJobsToDelete.clear(true);
             FlushDeletedVectors(); // TODO: hint - only one vector changed
         }

@@ -261,7 +261,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CJobTimeLine*                run_time_line;
     CRWLock                      rtl_lock;      ///< run_time_line locker
 
-    // datagram notification socket 
+    // Datagram notification socket 
     // (used to notify worker nodes and waiting clients)
     CDatagramSocket              udp_socket;    ///< UDP notification socket
     CFastMutex                   us_lock;       ///< UDP socket lock
@@ -272,31 +272,31 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     SQueueStatictics             qstat;
     CFastMutex                   qstat_lock;
 
-    /// should we delete db upon close?
+    /// Should we delete db upon close?
     bool                         delete_database;
     vector<string>               files; ///< list of files (paths) for queue
 
-    /// last valid id for queue
+    /// Last valid id for queue
     CAtomicCounter               m_LastId;
 
     /// Lock for deleted jobs vectors
     CFastMutex                   m_JobsToDeleteLock;
     /// Database for vectors of deleted jobs
     SDeletedJobsDB               m_DeletedJobsDB;
-    /// vector of jobs to be deleted from db unconditionally
+    /// Vector of jobs to be deleted from db unconditionally
     /// keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;
-    /// vector to mask queries against; keeps jobs not yet deleted
+    /// Vector to mask queries against; keeps jobs not yet deleted
     /// from tags DB
     TNSBitVector                 m_DeletedJobs;
-    /// vector to keep ids to be cleaned from affinity
+    /// Vector to keep ids to be cleaned from affinity
     TNSBitVector                 m_AffJobsToDelete;
+    /// Is m_CurrAffId wrapped around 0?
+    bool                         m_AffWrapped;
     /// Current aff id to start cleaning from
     unsigned                     m_CurrAffId;
     /// Last aff id cleaning started from
     unsigned                     m_LastAffId;
-    // Safeguard
-    unsigned                     m_FirstSafeJobIdToErase;
 
 public:
     // Constructor/destructor
