@@ -37,6 +37,17 @@
 BEGIN_NCBI_SCOPE
 
 
+/// @name Serialization masks
+/// @{
+
+static const unsigned s_ExtBlob_Mask_16bit = 1;
+static const unsigned s_ExtBlob_Mask_32bit = (1 << 1);
+static const unsigned s_ExtBlob_Mask_SingleChunk = (1 << 2);
+
+///@}
+
+
+
 CBlobMetaDB::CBlobMetaDB()
 : CBDB_BLobFile()
 {
@@ -142,9 +153,12 @@ size_t CBDB_BlobMetaContainer::ComputeSerializationSize() const
 {
     size_t ssize = 4; // Magic header
 
-    ssize += 4 // chunk map size
-          + m_Loc.size() * sizeof(CBDB_ExtBlobMap::TBlobChunkVec::value_type);
-
+    if (m_Loc.size() == 1) {
+        ssize += sizeof(CBDB_ExtBlobMap::TBlobChunkVec::value_type);
+    } else {
+        ssize += 4; // chunk map size
+        ssize += m_Loc.size() * sizeof(CBDB_ExtBlobMap::TBlobChunkVec::value_type);
+    }
     ssize += m_BlobMap.ComputeSerializationSize();
     return ssize;
 }
@@ -161,12 +175,19 @@ void CBDB_BlobMetaContainer::Serialize(CBDB_RawFile::TBuffer* buf,
     ptr += buf_offset;
 
     unsigned magic = 0;
+
+    if (m_Loc.size() == 1) {
+        magic |= s_ExtBlob_Mask_SingleChunk;
+    }
     ::memcpy(ptr, &magic, sizeof(magic));
     ptr += sizeof(magic);
 
     unsigned sz = m_Loc.size();
-    ::memcpy(ptr, &sz, sizeof(sz));
-    ptr += sizeof(sz);
+    _ASSERT(sz);
+    if (sz != 1) {
+        ::memcpy(ptr, &sz, sizeof(sz));
+        ptr += sizeof(sz);
+    }
 
     for (size_t i = 0; i < m_Loc.size(); ++i) {
         const CBDB_ExtBlobMap::SBlobChunkLoc& loc = m_Loc[i];
@@ -193,8 +214,13 @@ CBDB_BlobMetaContainer::Deserialize(const CBDB_RawFile::TBuffer& buf,
     ptr += sizeof(magic);
 
     unsigned sz;
-    ::memcpy(&sz, ptr, sizeof(sz));
-    ptr += sizeof(sz);
+
+    if (magic & s_ExtBlob_Mask_SingleChunk) {
+        sz = 1; 
+    } else {
+        ::memcpy(&sz, ptr, sizeof(sz));
+        ptr += sizeof(sz);
+    }
     m_Loc.resize(sz);
 
     for (size_t i = 0; i < m_Loc.size(); ++i) {
@@ -367,15 +393,6 @@ CBDB_ExtBlobMap::x_ComputeSerializationSize(unsigned* bits_used,
     return ssize;
 }
 
-/// @name Serialization masks
-/// @{
-
-static const unsigned s_ExtBlob_Mask_16bit = 1;
-static const unsigned s_ExtBlob_Mask_32bit = (1 << 1);
-static const unsigned s_ExtBlob_Mask_SingleChunk = (1 << 2);
-
-///@}
-
 void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
                                 Uint8                  buf_offset) const
 {
@@ -488,12 +505,12 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
         ptr += sizeof(bl.blob_id);
 
         if (is_single_chunk) {
-            bl.blob_location_table.resize(1);
+            sz = 1;
         } else {
             ::memcpy(&sz, ptr, sizeof(sz));
             ptr += sizeof(sz);
-            bl.blob_location_table.resize(sz);
         }
+        bl.blob_location_table.resize(sz);
 
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
             if (bits_used == 16) {
