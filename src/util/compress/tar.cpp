@@ -1995,11 +1995,14 @@ string CTar::x_ToArchiveName(const string& path) const
 #ifdef NCBI_OS_MSWIN
     // Convert to Unix format with forward slashes
     NStr::ReplaceInPlace(retval, "\\", "/");
+    const NStr::ECase how = NStr::eNocase;
+#else
+    const NStr::ECase how = NStr::eCase;
 #endif // NCBI_OS_MSWIN
 
     bool absolute;
     // Remove leading base dir from the path
-    if (!m_BaseDir.empty()  &&  NStr::StartsWith(retval, m_BaseDir)) {
+    if (!m_BaseDir.empty()  &&  NStr::StartsWith(retval, m_BaseDir, how)) {
         if (retval.length() > m_BaseDir.length()) {
             retval.erase(0, m_BaseDir.length()/*separator too*/);
         } else {
