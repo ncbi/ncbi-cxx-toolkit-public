@@ -147,7 +147,13 @@ public:
 private:
     /// Compute serialization size and effective number of bits used 
     /// for offset/size storage (16, 32, 64)
-    size_t x_ComputeSerializationSize(unsigned* bits_used) const; 
+    /// @param bits_used
+    ///     Number of bits used to represent offses & sizes
+    ///     Valid values: 16, 32, 64
+    /// @param is_single_chunk
+    ///     returned TRUE if there is no blob fragmentation
+    size_t x_ComputeSerializationSize(unsigned* bits_used,
+                                      bool* is_single_chunk) const; 
 private:
     TBlobMap    m_BlobMap;
 };

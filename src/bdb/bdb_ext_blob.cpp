@@ -297,14 +297,18 @@ void CBDB_ExtBlobMap::GetBlobIdRange(Uint4* min_id, Uint4* max_id) const
 size_t CBDB_ExtBlobMap::ComputeSerializationSize() const
 {
     unsigned bits;
-    return x_ComputeSerializationSize(&bits);
+    bool is_single_chunk;
+    return x_ComputeSerializationSize(&bits, &is_single_chunk);
 }
 
 size_t 
-CBDB_ExtBlobMap::x_ComputeSerializationSize(unsigned* bits_used) const
+CBDB_ExtBlobMap::x_ComputeSerializationSize(unsigned* bits_used,
+                                            bool* is_single_chunk) const
 {
     bool b16, b32;
     b16 = b32 = true;
+
+    *is_single_chunk = true;
 
     size_t ssize = 4; // Magic header
     ssize += 4; // map size
@@ -319,6 +323,10 @@ CBDB_ExtBlobMap::x_ComputeSerializationSize(unsigned* bits_used) const
 
         ssize32 += sizeof(bl.blob_id) + 4;
         ssize16 += sizeof(bl.blob_id) + 4;
+
+        if (bl.blob_location_table.size() != 1) {
+            *is_single_chunk = false;
+        }
 
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
             ssize += sizeof(SBlobChunkLoc);
@@ -341,20 +349,32 @@ CBDB_ExtBlobMap::x_ComputeSerializationSize(unsigned* bits_used) const
 
     } // for i
 
+    if (*is_single_chunk) {
+        ssize   -= m_BlobMap.size() * 4;
+        ssize16 -= m_BlobMap.size() * 4;
+        ssize32 -= m_BlobMap.size() * 4;
+    }
+
     if (b16) {
         *bits_used = 16;
         return ssize16;
     }
     if (b32) {
         *bits_used = 32;
-        return ssize16;
+        return ssize32;
     }
     *bits_used = 64;
     return ssize;
 }
 
+/// @name Serialization masks
+/// @{
+
 static const unsigned s_ExtBlob_Mask_16bit = 1;
 static const unsigned s_ExtBlob_Mask_32bit = (1 << 1);
+static const unsigned s_ExtBlob_Mask_SingleChunk = (1 << 2);
+
+///@}
 
 void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
                                 Uint8                  buf_offset) const
@@ -362,8 +382,10 @@ void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
     _ASSERT(buf);
 
     unsigned bits_used;
+    bool is_single_chunk;
 
-    size_t ser_size = x_ComputeSerializationSize(&bits_used);
+    size_t ser_size = 
+        x_ComputeSerializationSize(&bits_used, &is_single_chunk);
     buf->resize(ser_size + (size_t)buf_offset);
 
     unsigned char* ptr = &((*buf)[0]);
@@ -379,6 +401,10 @@ void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
         magic |= s_ExtBlob_Mask_32bit;
     }
 
+    if (is_single_chunk) {
+        magic |= s_ExtBlob_Mask_SingleChunk;
+    }
+
     ::memcpy(ptr, &magic, sizeof(magic));
     ptr += sizeof(magic);
 
@@ -392,9 +418,11 @@ void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
         ::memcpy(ptr, &bl.blob_id, sizeof(bl.blob_id));
         ptr += sizeof(bl.blob_id);
 
-        sz = bl.blob_location_table.size();
-        ::memcpy(ptr, &sz, sizeof(sz));
-        ptr += sizeof(sz);
+        if (!is_single_chunk) {
+            sz = bl.blob_location_table.size();
+            ::memcpy(ptr, &sz, sizeof(sz));
+            ptr += sizeof(sz);
+        }
 
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
             if (bits_used == 16) {
@@ -446,6 +474,7 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
     if (magic & s_ExtBlob_Mask_32bit) {
         bits_used = 32;
     } 
+    bool is_single_chunk = (magic & s_ExtBlob_Mask_SingleChunk) != 0;
 
     unsigned sz;
     ::memcpy(&sz, ptr, sizeof(sz));
@@ -458,9 +487,13 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
         ::memcpy(&bl.blob_id, ptr, sizeof(bl.blob_id));        
         ptr += sizeof(bl.blob_id);
 
-        ::memcpy(&sz, ptr, sizeof(sz));
-        ptr += sizeof(sz);
-        bl.blob_location_table.resize(sz);
+        if (is_single_chunk) {
+            bl.blob_location_table.resize(1);
+        } else {
+            ::memcpy(&sz, ptr, sizeof(sz));
+            ptr += sizeof(sz);
+            bl.blob_location_table.resize(sz);
+        }
 
         for (size_t j = 0; j < bl.blob_location_table.size(); ++j) {
             if (bits_used == 16) {
