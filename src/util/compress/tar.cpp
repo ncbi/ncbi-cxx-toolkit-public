@@ -1034,7 +1034,7 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files)
 void CTar::SetBaseDir(const string& dirname)
 {
     m_BaseDir = CDirEntry::AddTrailingPathSeparator(dirname);
-#ifdef NCBI_OS_MWSIN
+#ifdef NCBI_OS_MSWIN
     // Replace backslashes with forward slashes
     NStr::ReplaceInPlace(m_BaseDir, "\\", "/");
 #endif // NCBI_OS_MSWIN
