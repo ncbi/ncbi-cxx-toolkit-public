@@ -489,8 +489,10 @@ public:
     virtual CDiagHandler* New(const string&) {
         CCgiResponse& response = m_App->GetContext().GetResponse();
         CDiagHandler* result   = new CStreamDiagHandler(&response.out());
-        response.SetContentType("text/plain");
-        response.WriteHeader();
+        if (!response.IsHeaderWritten()) {
+            response.SetContentType("text/plain");
+            response.WriteHeader();
+        }
         response.SetOutput(0); // suppress normal output
         return result;
     }
