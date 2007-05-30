@@ -163,9 +163,9 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eValue:    return "Bad cookie value";
-        case eString:   return "Bad cookie string format";
-        default:        return CException::GetErrCodeString();
+        case eValue:   return "Bad cookie value";
+        case eString:  return "Bad cookie string format";
+        default:       return CException::GetErrCodeString();
         }
     }
 
@@ -231,11 +231,11 @@ class CCgiParseException : public CParseTemplException<CCgiRequestException>
 public:
     /// @sa CCgiRequestException
     enum EErrCode {
-        eIndex      = CCgiRequestException::eIndex,
-        eEntry      = CCgiRequestException::eEntry,
-        eAttribute  = CCgiRequestException::eAttribute,
-        eRead       = CCgiRequestException::eRead,
-        eFormat     = CCgiRequestException::eFormat
+        eIndex     = CCgiRequestException::eIndex,
+        eEntry     = CCgiRequestException::eEntry,
+        eAttribute = CCgiRequestException::eAttribute,
+        eRead      = CCgiRequestException::eRead,
+        eFormat    = CCgiRequestException::eFormat
         // WARNING:  no enums not listed in "CCgiRequestException::EErrCode"
         //           can be here -- unless you re-implement GetErrCodeString()
     };
@@ -263,9 +263,9 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eErrno:   return "System error";
-        case eModTime: return "File system error";
-        default:       return CException::GetErrCodeString();
+        case eErrno:    return "System error";
+        case eModTime:  return "File system error";
+        default:        return CException::GetErrCodeString();
         }
     }
 
@@ -294,11 +294,11 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch ( GetErrCode() ) {
-        case eFormat:    return "Misformatted CGI query string";
-        case eValue:     return "Invalid argument value";
-        case eName:      return "Unknown argument name";
-        case eNoArgs:    return "Arguments list is empty";
-        default:         return CException::GetErrCodeString();
+        case eFormat:  return "Misformatted CGI query string";
+        case eValue:   return "Invalid argument value";
+        case eName:    return "Unknown argument name";
+        case eNoArgs:  return "Arguments list is empty";
+        default:       return CException::GetErrCodeString();
         }
     }
 
@@ -310,8 +310,8 @@ public:
 ///
 /// CCgiArgsParserException --
 ///
-///   Exceptions used by CGI arguments parser when the error has occured while
-///   parsing the arguments.
+///   Exceptions used by CGI arguments parser when the error has occurred
+///   while parsing the arguments.
 ///
 
 class CCgiArgsParserException : public CParseTemplException<CCgiArgsException>
@@ -319,8 +319,8 @@ class CCgiArgsParserException : public CParseTemplException<CCgiArgsException>
 public:
     /// @sa CCgiArgsException
     enum EErrCode {
-        eFormat     = CCgiArgsException::eFormat,
-        eValue      = CCgiArgsException::eValue
+        eFormat = CCgiArgsException::eFormat,
+        eValue  = CCgiArgsException::eValue
         // WARNING:  no enums not listed in "CCgiArgsException::EErrCode"
         //           can be here -- unless you re-implement GetErrCodeString()
     };
@@ -328,6 +328,30 @@ public:
     NCBI_EXCEPTION_DEFAULT2
     (CCgiArgsParserException, CParseTemplException<CCgiArgsException>,
      std::string::size_type);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiResponseException --
+///
+///   Exceptions used by CGI response
+
+class CCgiResponseException : public CCgiException
+{
+public:
+    enum EErrCode {
+        eDoubleHeader,         ///< Header has already been written
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eDoubleHeader:  return "Header has already been written";
+        default:             return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CCgiResponseException, CCgiException);
 };
 
 
@@ -341,25 +365,25 @@ class CCgiSessionException : public CCgiException
 {
 public:
     enum EErrCode {
-        eSessionId,     ///< SessionId is not specified
-        eImplNotSet,    ///< Session implementaion is not set
-        eDeleted,       ///< Session has been deleted
-        eSessionDoesnotExist, ///< Session does not exsit;
-        eImplException, ///< Implementation exception
-        eAttrNotFound,  ///< Attribute not found
-        eNotLoaded      ///< Session is not loaded
+        eSessionId,            ///< SessionId not specified
+        eImplNotSet,           ///< Session implementation not set
+        eDeleted,              ///< Session has been deleted
+        eSessionDoesnotExist,  ///< Session does not exist
+        eImplException,        ///< Implementation exception
+        eAttrNotFound,         ///< Attribute not found
+        eNotLoaded             ///< Session not loaded
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch ( GetErrCode() ) {
-        case eSessionId:      return "SessionId is not specified";
-        case eImplNotSet:     return "Session implementaion is not set";
-        case eDeleted:        return "Session has been deleted";
-        case eSessionDoesnotExist: return "Session does not exsit";
-        case eImplException:  return "Implementaion exception";
-        case eAttrNotFound:   return "Attribute not found";
-        case eNotLoaded:      return "Session is not loaded";
-        default:         return CException::GetErrCodeString();
+        case eSessionId:            return "SessionId not specified";
+        case eImplNotSet:           return "Session implementation not set";
+        case eDeleted:              return "Session has been deleted";
+        case eSessionDoesnotExist:  return "Session does not exist";
+        case eImplException:        return "Implementation exception";
+        case eAttrNotFound:         return "Attribute not found";
+        case eNotLoaded:            return "Session not loaded";
+        default:                    return CException::GetErrCodeString();
         }
     }
 

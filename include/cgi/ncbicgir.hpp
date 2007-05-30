@@ -79,7 +79,7 @@ public:
     bool   HaveHeaderValue(const string& name) const;
 
     /// Set content type (text/html by default if not provided)
-    void SetContentType(const string& type);
+    void   SetContentType(const string& type);
 
     /// Get content type
     string GetContentType(void) const;
@@ -138,8 +138,9 @@ public:
     void Flush(void) const;
 
     /// Write HTTP response header to the output stream
-    CNcbiOstream& WriteHeader(void) const;
-    CNcbiOstream& WriteHeader(CNcbiOstream& os) const;
+    CNcbiOstream& WriteHeader(void);
+    CNcbiOstream& WriteHeader(CNcbiOstream& os);
+    bool          IsHeaderWritten() const;
 
     void SetTrackingCookie(const string& name,   const string& value,
                            const string& domain, const string& path,
@@ -168,14 +169,15 @@ protected:
     
     typedef map<string, string, PNocase> TMap;
 
-    bool           m_IsRawCgi;      // The "raw CGI" flag
-    EMultipartMode m_IsMultipart;   // (Three-way) multipart flag
-    bool           m_BetweenParts;  // Did we already print the boundary?
-    string         m_Boundary;      // Multipart boundary
-    TMap           m_HeaderValues;  // Header lines in alphabetical order
-    CCgiCookies    m_Cookies;       // Cookies
-    CNcbiOstream*  m_Output;        // Default output stream
-    int            m_OutputFD;      // Output file descriptor, if available.
+    bool           m_IsRawCgi;          // The "raw CGI" flag
+    EMultipartMode m_IsMultipart;       // (Three-way) multipart flag
+    bool           m_BetweenParts;      // Did we already print the boundary?
+    string         m_Boundary;          // Multipart boundary
+    TMap           m_HeaderValues;      // Header lines in alphabetical order
+    CCgiCookies    m_Cookies;           // Cookies
+    CNcbiOstream*  m_Output;            // Default output stream
+    int            m_OutputFD;          // Output file descriptor, if available
+    bool           m_HeaderWritten;     // Did we already complete the header?
     CNcbiOstream::iostate m_OutputExpt; // Original output exceptions
 
     // Prohibit copy constructor and assignment operator
@@ -280,9 +282,14 @@ inline int CCgiResponse::GetOutputFD(void) const
     return m_OutputFD;
 }
 
-inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
+inline CNcbiOstream& CCgiResponse::WriteHeader(void)
 {
     return WriteHeader(out());
+}
+
+inline bool CCgiResponse::IsHeaderWritten(void) const
+{
+    return m_HeaderWritten;
 }
 
 inline void CCgiResponse::x_SetSession(const CCgiSession& session)

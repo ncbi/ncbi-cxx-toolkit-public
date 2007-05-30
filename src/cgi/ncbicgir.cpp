@@ -80,6 +80,7 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
       m_BetweenParts(false),
       m_Output(NULL),
       m_OutputFD(0),
+      m_HeaderWritten(false),
       m_Session(NULL)
 {
     SetOutput(os ? os  : &NcbiCout,
@@ -182,8 +183,9 @@ void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
 {
     x_RestoreOutputExceptions();
 
-    m_Output   = out;
-    m_OutputFD = fd;
+    m_HeaderWritten = false;
+    m_Output        = out;
+    m_OutputFD      = fd;
 
     // Make the output stream to throw on write if it's in a bad state
     if (m_Output  &&  m_ThrowOnBadOutput.Get()) {
@@ -191,6 +193,7 @@ void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
         m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     }
 }
+
 
 CNcbiOstream* CCgiResponse::GetOutput(void) const
 {
@@ -215,8 +218,16 @@ CNcbiOstream& CCgiResponse::out(void) const
 }
 
 
-CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
+CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os)
 {
+    if (&os == m_Output) {
+        if (m_HeaderWritten) {
+            NCBI_THROW(CCgiResponseException, eDoubleHeader,
+                       "CCgiResponse::WriteHeader() -- called more than once");
+        } else
+            m_HeaderWritten = true;
+    }
+
     // HTTP status line (if "raw CGI" response)
     bool skip_status = false;
     if ( IsRawCgi() ) {
@@ -305,6 +316,7 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     return os << HTTP_EOL;
 }
 
+
 void CCgiResponse::BeginPart(const string& name, const string& type_in,
                              CNcbiOstream& os)
 {
@@ -330,6 +342,7 @@ void CCgiResponse::BeginPart(const string& name, const string& type_in,
     os << HTTP_EOL;
 }
 
+
 void CCgiResponse::EndPart(CNcbiOstream& os)
 {
     _ASSERT(m_IsMultipart != eMultipart_none);
@@ -338,6 +351,7 @@ void CCgiResponse::EndPart(CNcbiOstream& os)
     }
     m_BetweenParts = true;
 }
+
 
 void CCgiResponse::EndLastPart(CNcbiOstream& os)
 {
