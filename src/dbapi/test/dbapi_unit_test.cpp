@@ -7151,6 +7151,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if ( // args.GetDriverName() != "ftds" &&
         args.GetDriverName() != "msdblib"
         && !(args.GetDriverName() == "ftds64" && Solaris)
+        && !(args.GetDriverName() == "ftds"
+             && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == "ftds64"
              && args.GetServerType() == CTestArguments::eSybase)
         ) {
