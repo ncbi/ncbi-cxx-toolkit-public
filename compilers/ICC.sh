@@ -34,13 +34,13 @@ HINT:  if you are at NCBI, try to specify the following:
       export PATH LD_LIBRARY_PATH
       IA32ROOT="/opt/intel/compiler80"
       export IA32ROOT
-      INTEL_FLEXLM_LICENSE="/opt/intel/licenses"
-      export INTEL_FLEXLM_LICENSE
+      INTEL_LICENSE_FILE="/opt/intel/licenses/icc.lic"
+      export INTEL_LICENSE_FILE
    tcsh:
       setenv PATH            /opt/intel/compiler80/bin:\$PATH
       setenv LD_LIBRARY_PATH /opt/intel/compiler80/lib:\$LD_LIBRARY_PATH
       setenv IA32ROOT        /opt/intel/compiler80
-      setenv INTEL_FLEXLM_LICENSE /opt/intel/licenses
+      setenv INTEL_LICENSE_FILE /opt/intel/licenses/icc.lic
 
 EOF
     exit 1
