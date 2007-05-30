@@ -850,7 +850,8 @@ void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
         return;
     }
     
-    // also populate the consortium (if available)
+    // also populate the consortium (if available).
+    // note: there may be more than one, and they all want to be listed.
     if (!NStr::IsBlank(m_Consortium)) {
         return;
     }
@@ -861,8 +862,12 @@ void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
         ITERATE (CAuth_list::TNames::TStd, it, names.GetStd()) {
             const CAuthor& auth = **it;
             if (auth.CanGetName()  &&  auth.GetName().IsConsortium()) {
-                m_Consortium = auth.GetName().GetConsortium();
-                break;
+                if (NStr::IsBlank(m_Consortium)) {
+                    m_Consortium = auth.GetName().GetConsortium();
+                }
+                else {
+                    m_Consortium += "; " + auth.GetName().GetConsortium();
+                }
             }
         }
     }
