@@ -107,7 +107,7 @@ public:
     void SetPattern(const vector<size_t>& pattern);
 
     // max memory to use
-    void SetSpaceLimit(const size_t& maxmem);
+    void SetSpaceLimit(const size_t& maxmem) { m_MaxMem = maxmem; }
 
     // progress reporting
     struct SProgressInfo
