@@ -38,6 +38,7 @@
 #include <cgi/ncbires.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_util.hpp>
+#include <cgi/cgi_exception.hpp>
 
 #include <algorithm>
 #include <time.h>
@@ -577,36 +578,53 @@ static void TestCgiResponse(const CNcbiArguments& args)
 {
     NcbiCout << "Starting CCgiResponse test" << NcbiEndl;
 
-    CCgiResponse response;
-    
-    response.SetOutput(&NcbiCout);
+    CCgiResponse response1;
+    // Optional (since it's the default)
+    response1.SetOutput(&NcbiCout);
 
     if (args.Size() > 2) {
         CCgiCookies cookies(args[2]);
-        response.Cookies().Add(cookies);
+        response1.Cookies().Add(cookies);
     }
-    response.Cookies().Remove(response.Cookies().Find("to-Remove"));
-    NcbiCout << "Cookies: " << response.Cookies() << NcbiEndl;
+    response1.Cookies().Remove(response1.Cookies().Find("to-Remove"));
+    NcbiCout << "Cookies: " << response1.Cookies() << NcbiEndl;
+
+    CCgiResponse response2;
 
     NcbiCout << "Generated simple HTTP response:" << NcbiEndl;
-    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
-    response.out() << "Data2" << NcbiEndl << NcbiFlush;
+    response2.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    response2.out() << "Data2" << NcbiEndl << NcbiFlush;
     NcbiCout << "End of simple HTTP response" << NcbiEndl << NcbiEndl;
 
-    response.SetHeaderValue("Some-Header-Name", "Some Header Value");
-    response.SetHeaderValue("status", "399 Something is BAAAAD!!!!!");
-    response.SetStatus(301, "Moved");
+    CCgiResponse response3;
+
+    response3.SetHeaderValue("Some-Header-Name", "Some Header Value");
+    response3.SetHeaderValue("status", "399 Something is BAAAAD!!!!!");
+    response3.SetStatus(301, "Moved");
 
     NcbiCout << "Generated HTTP response:" << NcbiEndl;
-    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
-    response.out() << "Data2" << NcbiEndl << NcbiFlush;
+    response3.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    response3.out() << "Data2" << NcbiEndl << NcbiFlush;
     NcbiCout << "End of HTTP response" << NcbiEndl << NcbiEndl;
 
-    response.SetRawCgi(true);
+    CCgiResponse response4;
+
+    response4.SetRawCgi(true);
     NcbiCout << "Generated HTTP \"raw CGI\" response:" << NcbiEndl;
-    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
-    response.out() << "Data2" << NcbiEndl << NcbiFlush;
+    response4.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    response4.out() << "Data2" << NcbiEndl << NcbiFlush;
     NcbiCout << "End of HTTP \"raw CGI\" response" << NcbiEndl << NcbiEndl;
+
+    try {
+        NcbiCout << "Checking double headed HTTP response:" << NcbiEndl;
+        response4.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    } catch (CCgiResponseException& e) {
+        _ASSERT(e.GetErrCode() == CCgiResponseException::eDoubleHeader);
+        NCBI_REPORT_EXCEPTION("Caught", e);
+    }
+    NcbiCout << "Checking double headed HTTP response into a different stream:"
+             << NcbiEndl;
+    response4.WriteHeader(NcbiCerr);
 }
 
 
