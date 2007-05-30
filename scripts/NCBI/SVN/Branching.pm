@@ -393,7 +393,7 @@ sub DetectLastMergeRevision
     return ($Revision, $Revision)
 }
 
-sub Merge
+sub MergeDown
 {
     my ($Self, $BranchPath, $TargetRev) = @_;
 
@@ -482,7 +482,7 @@ sub Merge
             if @SubDirs
 }
 
-sub CommitMerge
+sub MergeDownCommit
 {
     my ($Self, $BranchPath) = @_;
 

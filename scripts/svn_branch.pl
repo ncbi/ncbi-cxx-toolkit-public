@@ -25,9 +25,9 @@ Usage:
 
     $ScriptName remove <branch_path>
 
-    $ScriptName merge <branch_path> [<trunk_rev>]
+    $ScriptName merge_down <branch_path> [<trunk_rev>]
 
-    $ScriptName commit_merge <branch_path>
+    $ScriptName merge_down_commit <branch_path>
 
     $ScriptName commit <branch_path> [<log_message>]
 
@@ -50,12 +50,12 @@ Commands:
     remove              Removes branch identified by the path <branch_path>
                         from the repository.
 
-    merge               Merges the latest changes from the trunk into the
+    merge_down          Merges the latest changes from the trunk into the
                         branch identified by <branch_path>. The branch must
                         be checked out to the current working directory and
                         there must be no local changes in it.
 
-    commit_merge        Commits the results of merge to the branch. A special
+    merge_down_commit   Commits the results of merge to the branch. A special
                         format of the commit log message will be used.
 
     commit              Commits the local changes to the branch. If the log
@@ -89,13 +89,13 @@ elsif ($Command eq 'remove')
 {
     $Module->Remove(@Params)
 }
-elsif ($Command eq 'merge')
+elsif ($Command eq 'merge_down')
 {
-    $Module->Merge(@Params)
+    $Module->MergeDown(@Params)
 }
-elsif ($Command eq 'commit_merge')
+elsif ($Command eq 'merge_down_commit')
 {
-    $Module->CommitMerge(@Params)
+    $Module->MergeDownCommit(@Params)
 }
 elsif ($Command eq 'commit')
 {
