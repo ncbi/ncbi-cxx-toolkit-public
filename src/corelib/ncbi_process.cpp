@@ -44,6 +44,7 @@
 #  include <errno.h>
 #  include <unistd.h>
 #elif defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbitime.hpp>  // for CStopWatch
 #  include <process.h>
 #  include <tlhelp32.h>
 #endif
@@ -166,7 +167,6 @@ int CProcess::CExitInfo::GetSignal(void)
 // Predefined timeouts (in milliseconds)
 const unsigned long           kWaitPrecision        = 100;
 const unsigned long CProcess::kDefaultKillTimeout   = 1000;
-const unsigned long CProcess::kDefaultLingerTimeout = 1000;
 
 
 CProcess::CProcess(TPid process, EProcessType type)
@@ -319,8 +319,7 @@ bool CProcess::IsAlive(void) const
 }
 
 
-bool CProcess::Kill(unsigned long kill_timeout,
-                    unsigned long linger_timeout) const
+bool CProcess::Kill(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
 
@@ -338,14 +337,14 @@ bool CProcess::Kill(unsigned long kill_timeout,
             return true;
         }
         unsigned long x_sleep = kWaitPrecision;
-        if (x_sleep > kill_timeout) {
-            x_sleep = kill_timeout;
+        if (x_sleep > timeout) {
+            x_sleep = timeout;
         }
         if ( !x_sleep ) {
              break;
         }
         SleepMilliSec(x_sleep);
-        kill_timeout -= x_sleep;
+        timeout -= x_sleep;
     }
 
     // Try harder to kill the stubborn process -- SIGKILL may not be caught!
@@ -396,20 +395,21 @@ bool CProcess::Kill(unsigned long kill_timeout,
     bool terminated = false;
 
     // Safe process termination
-    if ( kill_timeout ) {
-        // (kernel32.dll loaded at same address in each process)
-        FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
-                                        "ExitProcess");
-        if ( exitproc ) {
-            hThread = CreateRemoteThread(hProcess, NULL, 0,
-                                        (LPTHREAD_START_ROUTINE)exitproc,
-                                        0, 0, 0);
-        }
-        // Wait until process terminated, or timeout expired
-        if ( enable_sync ) {
-            if (WaitForSingleObject(hProcess, kill_timeout) == WAIT_OBJECT_0){
-                terminated = true;
-            }
+    CStopWatch timer;
+    timer.Start();
+
+    // (kernel32.dll loaded at same address in each process)
+    FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
+                                    "ExitProcess");
+    if ( exitproc ) {
+        hThread = CreateRemoteThread(hProcess, NULL, 0,
+                                    (LPTHREAD_START_ROUTINE)exitproc,
+                                    0, 0, 0);
+    }
+    // Wait until process terminated, or timeout expired
+    if ( enable_sync ) {
+        if (WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0){
+            terminated = true;
         }
     }
     // Try harder to kill stubborn process
@@ -421,10 +421,15 @@ bool CProcess::Kill(unsigned long kill_timeout,
             terminated = true;
         }
     }
-    if ( terminated  &&  linger_timeout ) {
+    if ( terminated ) {
         // The process terminating now.
         // Reset flag, and wait for real process termination.
+
         terminated = false;
+        double elapsed = timer.Elapsed();
+        unsigned long linger_timeout = (elapsed < timeout) ? 
+            (unsigned long)((double)timeout - elapsed) : 0;
+
         for (;;) {
             if ( !IsAlive() ) {
                 terminated = true;
@@ -441,7 +446,7 @@ bool CProcess::Kill(unsigned long kill_timeout,
             linger_timeout -= x_sleep;
         }
     }
-    // Close opened temporary process handle
+    // Close temporary process handle
     if ( hThread ) {
         CloseHandle(hThread);
     }
@@ -454,7 +459,6 @@ bool CProcess::Kill(unsigned long kill_timeout,
 #  error "Not implemented on this platform"
 #endif
 }
-
 
 
 int CProcess::Wait(unsigned long timeout, CExitInfo* info) const

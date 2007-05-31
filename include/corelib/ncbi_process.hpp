@@ -102,9 +102,6 @@ public:
     /// Default wait time between "soft" and "hard" attempts to terminate
     // the process.
     static const unsigned long kDefaultKillTimeout;
-    /// Default really process termination timeout after successful 
-    /// "soft" or "hard" attempt.
-    static const unsigned long kDefaultLingerTimeout;
 
     /// Constructor.
     CProcess(TPid process, EProcessType type = eHandle);
@@ -139,23 +136,17 @@ public:
     /// terminated. Process termination can take some time, and process can
     /// be "alive" after "hard" attempt of termination.
     ///
-    /// @kill_timeout
+    /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process. 
     ///   Note, that on UNIX in case of zero or very small timeout
     ///   the killing process can be not released and continue to persists
     ///   as zombie process even after call of this function.
-    /// @linger_timeout
-    ///   MS Windows only: Wait time in milliseconds of really process
-    ///   termination. Previous "soft" or "hard" attemps where successful.
     /// @return
     ///   TRUE  - if the process did not exist or was successfully terminated.
     ///   FALSE - if the process is still running, cannot be terminated, or
     ///           it is terminating right now (but still not terminated).
-    ///   Return TRUE also if the process is in terminating state and
-    ///   'linger_timeout' specified as zero.
-    bool Kill(unsigned long kill_timeout   = kDefaultKillTimeout,
-              unsigned long linger_timeout = kDefaultLingerTimeout) const;
+    bool Kill(unsigned long timeout = kDefaultKillTimeout) const;
 
 
     /// The extended exit information for waited process.
