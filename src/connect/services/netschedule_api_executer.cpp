@@ -243,8 +243,9 @@ void CNetScheduleExecuter::x_ParseGetJobResponse(string*        job_key,
     /*
     ofstream o1("/tmp/ex_job_out_before_pe.txt", ios_base::binary);
     o1.write(&input->operator[](0),input->size());
-
+    */
     *input = NStr::ParseEscapes(*input);
+    /*
     ofstream o2("/tmp/ex_job_out_after_pe.txt", ios_base::binary);
     o2.write(&input->operator[](0),input->size());
     */
