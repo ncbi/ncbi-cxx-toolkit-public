@@ -100,6 +100,8 @@ void CTest::Init(void)
                         CArgDescriptions::eInteger, "20");
     args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
+    args->AddFlag("S", "Maintain equal types of files and archive entries");
+    args->AddFlag("B", "Create backup copies of files");
     args->AddFlag("v", "Turn on debugging information");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of files to process", CArgDescriptions::eString);
@@ -176,6 +178,12 @@ int CTest::Run(void)
     }
     if (args["v"].HasValue()) {
         flags |= CTar::fDumpBlockHeaders;
+    }
+    if (args["S"].HasValue()) {
+        flags |= CTar::fEqualTypes;
+    }
+    if (args["B"].HasValue()) {
+        flags |= CTar::fBackup;
     }
     if (flags) {
         tar->SetFlags(tar->GetFlags() | flags);
