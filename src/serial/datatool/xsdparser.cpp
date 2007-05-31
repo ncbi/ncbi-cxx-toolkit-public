@@ -448,10 +448,18 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
 void XSDParser::ParseContent(DTDElement& node)
 {
     int emb=0;
+    bool eatEOT= false;
     TToken tok;
-    for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
+    for ( tok=GetNextToken(); ; tok=GetNextToken()) {
         switch (tok) {
         case T_EOF:
+            return;
+        case K_ENDOFTAG:
+            if (eatEOT) {
+                eatEOT= false;
+                break;
+            }
+            FixEmbeddedNames(node);
             return;
         case K_COMPLEXTYPE:
             ParseComplexType(node);
@@ -484,6 +492,15 @@ void XSDParser::ParseContent(DTDElement& node)
             }
             break;
         case K_SEQUENCE:
+            emb= node.GetContent().size();
+            if (emb != 0) {
+                if (node.GetType() != DTDElement::eSequence) {
+                    ParseError("Unexpected element type");
+                }
+                tok = GetRawAttributeSet();
+                eatEOT = true;
+                break;
+            }
             if (node.GetType() == DTDElement::eUnknown) {
                 node.SetType(DTDElement::eSequence);
                 ParseContainer(node);
@@ -623,6 +640,11 @@ void XSDParser::ParseExtension(DTDElement& node)
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("base")) {
         if (!DefineElementType(node)) {
+            if (m_MapEntity.find(m_Value) != m_MapEntity.end()) {
+                PushEntityLexer(m_Value);
+                ParseContent(node);
+                return;
+            }
             node.SetTypeName(m_Value);
         }
     }
