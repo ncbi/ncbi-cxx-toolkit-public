@@ -745,8 +745,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
             CResidue_pntrs::TInterval::const_iterator i, ie =
                 annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
                     GetSubgraph().GetResidues().GetInterval().end();
-            for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                    GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; ++i)
+            for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; ++i)
             {
                 // for each object
                 for (o=annotObjects.begin(); o!=oe; ++o) {
@@ -757,38 +756,39 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                     if (m == o->first->graph->molecules.end())
                         throw "molecule with annotation's specified molecule ID not found in object";
 
-                        // make sure this stuff is visible in global style
-                        if (m->second->IsProtein()) {
-                            if (globalStyleSettings.GetProtein_backbone().GetType() == eCn3d_backbone_type_off &&
-                                !globalStyleSettings.GetProtein_sidechains().GetIs_on())
-                            {
-                                globalStyleSettings.SetProtein_backbone().SetType(eCn3d_backbone_type_trace);
-                            }
-                        } else if (m->second->IsNucleotide()) {
-                            if (globalStyleSettings.GetNucleotide_backbone().GetType() == eCn3d_backbone_type_off &&
-                                !globalStyleSettings.GetNucleotide_sidechains().GetIs_on())
-                            {
-                                globalStyleSettings.SetNucleotide_backbone().SetType(eCn3d_backbone_type_trace);
-                            }
-                        } else if (m->second->IsSolvent()) {
-                            globalStyleSettings.SetSolvents().SetIs_on(true);
-                        } else if (m->second->IsHeterogen()) {
-                            globalStyleSettings.SetHeterogens().SetIs_on(true);
+                    // make sure this stuff is visible in global style
+                    if (m->second->IsProtein()) {
+                        if (globalStyleSettings.GetProtein_backbone().GetType() == eCn3d_backbone_type_off &&
+                            !globalStyleSettings.GetProtein_sidechains().GetIs_on())
+                        {
+                            globalStyleSettings.SetProtein_backbone().SetType(eCn3d_backbone_type_trace);
                         }
-
-                        for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); ++r) {
-                        // highlight residues in interval
-                        if (o == annotObjects.begin()) {
-                            if (r >= 1 && r <= (int)m->second->NResidues())
-                                GlobalMessenger()->ToggleHighlight(m->second, r);
-                            else
-                                throw "annotation's residue ID out of molecule's residue range";
+                    } else if (m->second->IsNucleotide()) {
+                        if (globalStyleSettings.GetNucleotide_backbone().GetType() == eCn3d_backbone_type_off &&
+                            !globalStyleSettings.GetNucleotide_sidechains().GetIs_on())
+                        {
+                            globalStyleSettings.SetNucleotide_backbone().SetType(eCn3d_backbone_type_trace);
                         }
+                    } else if (m->second->IsSolvent()) {
+                        globalStyleSettings.SetSolvents().SetIs_on(true);
+                    } else if (m->second->IsHeterogen()) {
+                        globalStyleSettings.SetHeterogens().SetIs_on(true);
+                    }
 
+                    // highlight residues in interval
+                    if (o == annotObjects.begin()) {
+                        if ((*i)->GetFrom().Get() >= 1 && (*i)->GetFrom().Get() <= (int)m->second->NResidues() &&
+                                (*i)->GetTo().Get() >= 1 && (*i)->GetTo().Get() <= (int)m->second->NResidues() &&
+                                (*i)->GetFrom().Get() <= (*i)->GetTo().Get())
+                            GlobalMessenger()->AddHighlights(m->second, (*i)->GetFrom().Get(), (*i)->GetTo().Get());
+                        else
+                            throw "annotation's residue ID out of molecule's residue range";
+                    }
+
+                    for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); ++r) {
                         // count hits of annotated residues in aligned chain+interval
-                        if (o->second.alignedMoleculeID == m->second->id &&
-                                r >= o->second.from && r <= o->second.to)
-                            (o->second.hits)++;
+                        if (o->second.alignedMoleculeID == m->second->id && r >= o->second.from && r <= o->second.to)
+                            ++(o->second.hits);
                     }
                 }
             }

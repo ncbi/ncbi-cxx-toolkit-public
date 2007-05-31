@@ -352,6 +352,31 @@ void Messenger::ToggleHighlights(const Sequence *sequence, unsigned int seqIndex
     ToggleHighlights(sequence->identifier, seqIndexFrom, seqIndexTo, sequence->parentSet);
 }
 
+void Messenger::AddHighlights(const Molecule *molecule, int residueIDFrom, int residueIDTo, bool scrollViewersTo)
+{
+    if (residueIDFrom > residueIDTo || residueIDFrom < 1 || residueIDTo < 1 ||
+            residueIDFrom > (int)molecule->NResidues() || residueIDTo > (int)molecule->NResidues()) {
+        ERRORMSG("Messenger::AddHighlights() - residueID out of range");
+        return;
+    }
+
+    MoleculeHighlightMap::iterator h = highlights.find(molecule->identifier);
+    if (h == highlights.end()) {
+        highlights[molecule->identifier].resize(molecule->NResidues(), false);
+        h = highlights.find(molecule->identifier);
+    }
+
+    // assume index = id - 1
+    for (int i=residueIDFrom-1; i<=residueIDTo-1; ++i) h->second[i] = true;
+
+    if (scrollViewersTo) {
+        // make selected residue visible in sequence viewers if residue is in displayed sequence
+        SequenceViewerList::iterator t, te = sequenceViewers.end();
+        for (t=sequenceViewers.begin(); t!=te; ++t)
+            (*t)->MakeResidueVisible(molecule, residueIDFrom - 1);
+    }
+}
+
 void Messenger::ToggleHighlight(const Molecule *molecule, int residueID, bool scrollViewersTo)
 {
     // assume index = id - 1

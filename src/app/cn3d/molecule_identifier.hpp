@@ -107,6 +107,9 @@ private:
     // get identifier based on Seq-id match
     static MoleculeIdentifier * GetIdentifier(const SeqIdList& ids);
 
+    // get identifier based on MMDB ID + molecule, for stuff like ligands that don't have Seq-id
+    static MoleculeIdentifier * GetIdentifier(int mmdbID, int moleculeID);
+
     // save and fill out special id fields from Seq-ids
     void AddFields(const SeqIdList& ids);
 };

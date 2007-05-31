@@ -65,14 +65,15 @@ const int MoleculeIdentifier::VALUE_NOT_SET = -1;
 
 const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *molecule, const SeqIdList& ids)
 {
+    const StructureObject *object;
+    if (!molecule->GetParentOfType(&object)) return NULL;
+
     // get or create identifer
-    MoleculeIdentifier *identifier = GetIdentifier(ids);
+    MoleculeIdentifier *identifier = ((ids.size() > 0) ? GetIdentifier(ids) : GetIdentifier(object->mmdbID, molecule->id));
     if (!identifier)
         return NULL;
 
     // check/assign mmdb id
-    const StructureObject *object;
-    if (!molecule->GetParentOfType(&object)) return NULL;
     if (object->mmdbID != StructureObject::NO_MMDB_ID) {
         if ((identifier->mmdbID != VALUE_NOT_SET && identifier->mmdbID != object->mmdbID) ||
                 (identifier->moleculeID != VALUE_NOT_SET && identifier->moleculeID != molecule->id)) {
@@ -202,6 +203,23 @@ MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const SeqIdList& ids)
     knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
     MoleculeIdentifier *identifier = &(knownIdentifiers.back());
     identifier->AddFields(ids);
+    return identifier;
+}
+
+MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(int mmdbID, int moleculeID)
+{
+    // first check known identifiers to see if there's a match, and posibly merge in new ids
+    MoleculeIdentifierList::iterator k, ke = knownIdentifiers.end();
+    for (k=knownIdentifiers.begin(); k!=ke; ++k) {
+        if (k->mmdbID == mmdbID && k->moleculeID == moleculeID)
+            return &(*k);
+    }
+
+    // if we get here, then this is a new sequence
+    knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
+    MoleculeIdentifier *identifier = &(knownIdentifiers.back());
+    identifier->mmdbID = mmdbID;
+    identifier->moleculeID = moleculeID;
     return identifier;
 }
 

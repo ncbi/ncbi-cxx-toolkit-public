@@ -115,6 +115,7 @@ public:
     void ToggleHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo);
 
     // highlight any 'ole residue, regardless of molecule type
+    void AddHighlights(const Molecule *molecule, int residueIDFrom, int residueIDTo, bool scrollViewersTo = false);
     void ToggleHighlight(const Molecule *molecule, int residueID, bool scrollViewersTo = false);
 
     // get/set a bunch of highlights all at once - copies highlight list from given set
