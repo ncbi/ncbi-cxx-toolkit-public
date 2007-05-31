@@ -1088,7 +1088,7 @@ static bool s_CheckAccessPath(const char* path, int amode)
 #endif  // defined(NCBI_OS_UNIX)
 
 
-bool CDirEntry::CheckAccess(TMode access_mode)
+bool CDirEntry::CheckAccess(TMode access_mode) const
 {
 #if defined(NCBI_OS_MSWIN)
     // Try to get effective access rights on this file object for
@@ -1570,7 +1570,7 @@ CDirEntry::EType CDirEntry::GetType(const struct stat& st)
 }
 
 
-string CDirEntry::LookupLink(void)
+string CDirEntry::LookupLink(void) const
 {
 #ifdef NCBI_OS_UNIX
     char buf[PATH_MAX];
@@ -1602,7 +1602,7 @@ void CDirEntry::DereferenceLink(void)
     }
 }
 
-bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size)
+bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size) const
 {
     EType type = GetType();
     switch (type) {
@@ -2182,7 +2182,7 @@ bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
 #endif
 
 
-bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
+bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 {
     CFile src(*this);
     CFile dst(newname);
@@ -2269,7 +2269,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
 }
 
 
- bool CFile::Compare(const string& file, size_t buf_size)
+ bool CFile::Compare(const string& file, size_t buf_size) const
 {
     if ( CFile(GetPath()).GetLength() != CFile(file).GetLength() ) {
         return false;
@@ -2929,7 +2929,7 @@ bool CDir::CreatePath(void) const
 }
 
 
-bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
+bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 {
     CDir src(*this);
     CDir dst(newname);
@@ -3076,7 +3076,7 @@ CSymLink::~CSymLink(void)
 }
 
 
-bool CSymLink::Create(const string& path)
+bool CSymLink::Create(const string& path) const
 {
 #if defined(NCBI_OS_UNIX)
     char buf[PATH_MAX];
@@ -3094,7 +3094,7 @@ bool CSymLink::Create(const string& path)
 }
 
 
-bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
+bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size) const
 {
 #if defined(NCBI_OS_UNIX)
 

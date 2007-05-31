@@ -397,7 +397,7 @@ public:
     /// @sa
     ///   CFile::Copy, CDir::Copy, CLink::Copy, CopyToDir
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
-                      size_t buf_size = 0);
+                      size_t buf_size = 0) const;
 
     /// Copy the entry to a specified directory.
     ///
@@ -414,7 +414,7 @@ public:
     /// @sa
     ///   Copy
     bool CopyToDir(const string& dir, TCopyFlags flags = fCF_Default,
-                   size_t buf_size = 0);
+                   size_t buf_size = 0) const;
 
     /// Rename flags
     enum ERenameFlags {
@@ -616,7 +616,7 @@ public:
     ///   The dereferenced name can be another symbolic link.
     /// @sa 
     ///   GetType, IsLink, DereferenceLink
-    string LookupLink(void);
+    string LookupLink(void) const;
 
     /// Dereference a link.
     ///
@@ -956,7 +956,7 @@ public:
     ///   (also returns FALSE if the file doesn't exists or an error occurs).
     /// @sa
     ///   GetMode
-    bool CheckAccess(TMode access_mode);
+    bool CheckAccess(TMode access_mode) const;
 
 protected:
     /// Get the default global mode.
@@ -1052,7 +1052,7 @@ public:
     /// @sa
     ///   TCopyFlags
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
-                      size_t buf_size = 0);
+                      size_t buf_size = 0) const;
 
     /// Compare files by content.
     ///
@@ -1063,7 +1063,7 @@ public:
     ///   Zero value means using default buffer size.
     /// @return
     ///   TRUE if files content is equal; FALSE otherwise.
-    bool Compare(const string& file, size_t buf_size = 0);
+    bool Compare(const string& file, size_t buf_size = 0) const;
 
 
     //
@@ -1356,7 +1356,7 @@ public:
     /// @sa
     ///   CDirEntry::TCopyFlags, CDirEntry::Copy, CFile::Copy
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
-                      size_t buf_size = 0);
+                      size_t buf_size = 0) const;
 
     /// Delete existing directory.
     ///
@@ -1415,7 +1415,7 @@ public:
     /// @return
     ///   TRUE if operation successful; FALSE, otherwise.
     ///   Return FALSE also if link already exists.
-    bool Create(const string& path);
+    bool Create(const string& path) const;
 
     /// Copy link.
     ///
@@ -1431,7 +1431,7 @@ public:
     /// @sa
     ///   CDirEntry::TCopyFlags, CDirEntry::Copy, Create
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
-                      size_t buf_size = 0);
+                      size_t buf_size = 0) const;
 };
 
 
@@ -2261,7 +2261,7 @@ bool CDirEntry::MatchesMask(const string& name, const CMask& mask,
 
 inline 
 bool CDirEntry::CopyToDir(const string& dir, TCopyFlags flags,
-                          size_t buf_size)
+                          size_t buf_size) const
 {
     string path = MakePath(dir, GetName());
     return Copy(path, flags, buf_size);
