@@ -428,10 +428,10 @@ ostream& operator << (ostream& os, const CTarEntryInfo& info)
 {
     CTime mtime(info.GetModificationTime());
     os << s_TypeAsChar(info.GetType())
-       << s_ModeAsString(info.GetMode())                  << ' '
-       << setw(17) << s_UserGroupAsString(info)           << ' '
-       << setw(10) << NStr::UInt8ToString(info.GetSize()) << ' '
-       << mtime.ToLocalTime().AsString("Y-M-D h:m:s")     << ' '
+       << s_ModeAsString(info.GetMode())        << ' '
+       << setw(17) << s_UserGroupAsString(info) << ' '
+       << setw(10) << NStr::UInt8ToString(info.GetSize())
+       << mtime.ToLocalTime().AsString(" Y-M-D h:m:s ")
        << info.GetName();
     if (info.GetType() == CTarEntryInfo::eSymLink  ||
         info.GetType() == CTarEntryInfo::eHardLink) {
@@ -552,7 +552,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += TAR_PRINTABLE(mtime, !ok);
     if (ok  &&  val) {
         CTime mtime((time_t) val);
-        dump += " [" + mtime.ToLocalTime().AsString("Y-M-D h:m:s") + ']';
+        dump += (" [" + NStr::UIntToString(val)
+                 + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
     }
     dump += '\n';
 
@@ -722,7 +723,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += TAR_PRINTABLE(gt.atime, !ok);
             if (ok  &&  val) {
                 CTime mtime((time_t) val);
-                dump += " [" +mtime.ToLocalTime().AsString("Y-M-D h:m:s")+ ']';
+                dump += (" [" + NStr::UIntToString(val)
+                         + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
             }
             dump += '\n';
 
@@ -730,7 +732,8 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             dump += TAR_PRINTABLE(gt.ctime, !ok);
             if (ok  &&  val) {
                 CTime mtime((time_t) val);
-                dump += " [" +mtime.ToLocalTime().AsString("Y-M-D h:m:s")+ ']';
+                dump += (" [" + NStr::UIntToString(val)
+                         + mtime.ToLocalTime().AsString(", Y-M-D h:m:s]"));
             }
             dump += '\n';
             tname = h->gt.ctime + sizeof(h->gt.ctime);
@@ -966,8 +969,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
                 // if Append() follows Update() that caused no modifications;
                 // but there is no way to distinguish this, currently :-/
                 // Also, this sequence should be a real rarity in practice.
-                // Position at logical EOF
-                x_ReadAndProcess(action);
+                x_ReadAndProcess(eAppend);  // positions at logical EOF
             }
             m_OpenMode = mode;
         }
@@ -975,8 +977,8 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     _ASSERT(m_Stream);
     _ASSERT(m_Stream->rdbuf());
 
-    if (action == eList  ||  action == eUpdate  ||  action == eTest) {
-        return x_ReadAndProcess(action, action != eUpdate);
+    if (((int) action & (eList & ~eRW)) | ((int) action & (eExtract & ~eRW))) {
+        return x_ReadAndProcess(action);
     } else {
         return auto_ptr<TEntries>(0);
     }
@@ -985,10 +987,8 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 
 auto_ptr<CTar::TEntries> CTar::Extract(void)
 {
-    x_Open(eExtract);
-
     // Extract
-    auto_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
+    auto_ptr<TEntries> entries = x_Open(eExtract);
 
     // Restore attributes of "postponed" directory entries
     if (m_Flags & fPreserveAll) {
@@ -1003,7 +1003,7 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
 }
 
 
-Uint8 CTar::EstimateArchiveSize(const TFiles& files)
+Uint8 CTar::EstimateArchiveSize(const TFiles& files) const
 {
     Uint8 result = 0;
 
@@ -1591,7 +1591,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 }
 
 
-auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
+auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 {
     auto_ptr<TEntries> entries(new TEntries);
     string nextLongName, nextLongLink;
@@ -1648,7 +1648,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
             break;
         }
 
-        // Correct 'info' if long names have been previously defined
+        // Fixup 'info' if long names have been previously defined
         if (!nextLongName.empty()) {
             info.m_Name.swap(nextLongName);
             nextLongName.erase();
@@ -1662,37 +1662,87 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action, bool use_mask)
         }
 
         // Match file name by set of masks
-        bool match = true;
-        if (action != eTest  &&  action != eAppend) {
-            if (use_mask  &&  m_Mask) {
-                match = m_Mask->Match(info.GetName(), m_MaskUseCase);
-            }
-            if (match) {
-                entries->push_back(info);
-            }
-        }
+        bool match = (action != eList  &&  action != eExtract ? true : m_Mask
+                      ? m_Mask->Match(info.GetName(), m_MaskUseCase) : true);
 
-        if (action == eExtract) {
-            // Extract entry (if)
-            x_ProcessEntry(info, match);
-        } else {
-            // Skip entry
-            x_ProcessEntry(info);
+        if (x_ProcessEntry(info, match  &&  action == eExtract)
+            ||  (match  &&  !((int) action & (eExtract & ~eRW)))) {
+            entries->push_back(info);
         }
     }
     /*NOTREACHED*/
 }
 
 
-void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
+bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
 {
-    // Remaining entry size in the archive
-    Uint8 size;
-    
+    Uint8                size = info.GetSize();
+    CTarEntryInfo::EType type = info.GetType();
+
     if (extract) {
-        size = x_ExtractEntry(info);
-    } else {
-        size = info.GetSize();
+        // Destination for extraction
+        auto_ptr<CDirEntry> dst
+            (CDirEntry::CreateObject(CDirEntry::EType(type),
+                                     CDirEntry::NormalizePath
+                                     (CDirEntry::ConcatPath
+                                      (m_BaseDir, info.GetName()))));
+        // Source for extraction
+        auto_ptr<CDirEntry> src;
+
+        // Dereference sym.link if requested
+        if (type != CTarEntryInfo::eSymLink  &&
+            type != CTarEntryInfo::eHardLink  &&  (m_Flags & fFollowLinks)) {
+            dst->DereferenceLink();
+        }
+
+        // Look if extract is allowed (when the desttination exists)
+        if (dst->Exists()) {
+            // Can overwrite it?
+            if (!(m_Flags & fOverwrite)) {
+                // Entry already exists, and cannot be changed
+                extract = false;
+            } else { // The fOverwrite flag is set
+                // Can update?
+                if ((m_Flags & fUpdate) == fUpdate  &&
+                    type != CTarEntryInfo::eDir) {
+                    // Update directories always, because archive can contain
+                    // other subtree of existing destination directory.
+                    time_t dst_time;
+                    // Make sure that dst is not older than the archive entry
+                    if (dst->GetTimeT(&dst_time)  &&
+                        dst_time >= info.GetModificationTime()) {
+                        extract = false;
+                    }
+                }
+                // Have equal types?
+                if (extract  &&  (m_Flags & fEqualTypes)) {
+                    if (type == CTarEntryInfo::eHardLink) {
+                        src.reset(new CDirEntry(CDirEntry::NormalizePath
+                                                (CDirEntry::ConcatPath
+                                                 (m_BaseDir,
+                                                  info.GetLinkName()))));
+                        if (dst->GetType() != src->GetType())
+                            extract = false;
+                    } else if (dst->GetType() != CDirEntry::EType(type)) {
+                        extract = false;
+                    }
+                }
+                // Need to backup destination entry?
+                if (extract  &&  ((m_Flags & fBackup) == fBackup)) {
+                    CDirEntry dst_tmp(*dst);
+                    if (!dst_tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)){
+                        TAR_THROW(eBackup,
+                                  "Failed to backup '" + dst->GetPath() +'\'');
+                    } else {
+                        // fOverwrite flag is set
+                        dst->Remove();
+                    }
+                }
+            } // check on fOverwrite
+        }
+        if (extract) {
+            extract = x_ExtractEntry(info, size, dst.get(), src.get());
+        }
     }
 
     while (size) {
@@ -1704,84 +1754,18 @@ void CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
         m_StreamPos += ALIGN_SIZE(nskip);
         size -= nskip;
     }
+
+    return extract;
 }
 
 
-Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
+bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
+                          const CDirEntry*     dst,  const CDirEntry* src)
 {
-    bool extract = true;
+    auto_ptr<CDirEntry> src_ptr;  // deleter
+    bool result = true;  // assume best
 
-    CTarEntryInfo::EType type = info.GetType();
-    Uint8                size = info.GetSize();
-
-    // Source for extraction
-    auto_ptr<CDirEntry> src
-        (type == CTarEntryInfo::eHardLink
-         ? new CDirEntry(CDirEntry::NormalizePath
-                         (CDir::ConcatPath(m_BaseDir, info.GetLinkName())))
-         : 0);
-
-    // Destination for extraction
-    auto_ptr<CDirEntry> dst
-        (CDirEntry::CreateObject(CDirEntry::EType(type),
-                                 CDirEntry::NormalizePath
-                                 (CDir::ConcatPath(m_BaseDir,
-                                                   info.GetName()))));
-
-    // Dereference sym.link if requested
-    if (type != CTarEntryInfo::eSymLink  &&
-        type != CTarEntryInfo::eHardLink  &&  (m_Flags & fFollowLinks)) {
-        dst->DereferenceLink();
-    }
-
-    // Look if extract is necessary
-    if (dst->Exists()) {
-        // Can overwrite it?
-        if (!(m_Flags & fOverwrite)) {
-            // Entry already exists, and cannot be changed
-            extract = false;
-        } else { // The fOverwrite flag is set
-            // Can update?
-            if ((m_Flags & fUpdate) == fUpdate  &&
-                type != CTarEntryInfo::eDir) {
-                // Update directories always, because archive can contain
-                // other subtree of existing destination directory.
-                time_t dst_time;
-                // Check that destination is not older than the archive entry
-                if (dst->GetTimeT(&dst_time)  &&
-                    dst_time >= info.GetModificationTime()) {
-                    extract = false;
-                }
-            }
-            // Have equal types?
-            if (extract  &&  (m_Flags & fEqualTypes)
-                &&  ((type == CTarEntryInfo::eHardLink  &&
-                      dst->GetType() != src->GetType())  ||
-                     (type != CTarEntryInfo::eHardLink  &&
-                      dst->GetType() != CDirEntry::EType(type)))) {
-                extract = false;
-            }
-            // Need to backup destination entry?
-            if (extract  &&  ((m_Flags & fBackup) == fBackup)) {
-                CDirEntry dst_tmp(*dst);
-                if (!dst_tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)) {
-                    TAR_THROW(eBackup,
-                              "Failed to backup '" + dst->GetPath() + '\'');
-                } else {
-                    // fOverwrite flag is set
-                    dst->Remove();
-                }
-            }
-        } // check on fOverwrite
-    }
-
-    if (!extract) {
-        // Full size of the entry to skip
-        return size;
-    }
-
-    // Really extract the entry
-    switch (type) {
+    switch (info.GetType()) {
     case CTarEntryInfo::eHardLink:
     case CTarEntryInfo::eFile:
         {{
@@ -1794,7 +1778,7 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
                           + s_OSReason(x_errno));
             }
 
-            if (type == CTarEntryInfo::eFile) {
+            if (info.GetType() == CTarEntryInfo::eFile) {
                 // Create file
                 ofstream ofs(dst->GetPath().c_str(),
                              IOS_BASE::out    |
@@ -1831,11 +1815,18 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
                 ofs.close();
             } else {
                 _ASSERT(size == 0);
+                if (!src) {
+                    src_ptr.reset(new CDirEntry(CDirEntry::NormalizePath
+                                                (CDirEntry::ConcatPath
+                                                 (m_BaseDir,
+                                                  info.GetLinkName()))));
+                    src = src_ptr.get();
+                }
 #ifdef NCBI_OS_UNIX
                 if (link(src->GetPath().c_str(),
                          dst->GetPath().c_str()) == 0) {
                     if (m_Flags & fPreserveAll) {
-                        x_RestoreAttrs(info, dst.get());
+                        x_RestoreAttrs(info, dst);
                     }
                     break;
                 }
@@ -1850,13 +1841,14 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
                     ERR_POST(Error << "Cannot hard-link '"
                              + src->GetPath() + "' and '" + dst->GetPath()
                              + "\' via copy");
+                    result = false;
                     break;
                 }
             }
 
             // Restore attributes
             if (m_Flags & fPreserveAll) {
-                x_RestoreAttrs(info, dst.get());
+                x_RestoreAttrs(info, dst);
             }
         }}
         break;
@@ -1881,6 +1873,7 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
                 ERR_POST(Error << "Cannot create symlink '" + dst->GetPath()
                          + "' -> '" + info.GetLinkName() + '\''
                          + s_OSReason(x_errno));
+                result = false;
             }
             _ASSERT(size == 0);
         }}
@@ -1888,29 +1881,32 @@ Uint8 CTar::x_ExtractEntry(const CTarEntryInfo& info)
 
     case CTarEntryInfo::eGNULongName:
     case CTarEntryInfo::eGNULongLink:
-        // Long name/link -- already processed and should not be here
-        _ASSERT(0);
+        // Long name/link should have already been processed and not be here
+        _TROUBLE;
         break;
 
     default:
-        ERR_POST(Warning << "Skipping unsupported entry '" +
-                 info.GetName() + "' of type " + NStr::IntToString(int(type)));
+        ERR_POST(Warning << "Skipping unsupported entry '" + info.GetName() +
+                 "' of type #" + NStr::IntToString(int(info.GetType())));
+        result = false;
         break;
     }
 
-    return size;
+    return result;
 }
 
 
-void CTar::x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst)
+void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
+                          const CDirEntry*     dst) const
 {
-    auto_ptr<CDirEntry> dst_ptr;
+    auto_ptr<CDirEntry> dst_ptr;  // deleter
     if (!dst) {
-        dst = CDirEntry::CreateObject(CDirEntry::EType(info.GetType()),
-                                      CDirEntry::NormalizePath
-                                      (CDir::ConcatPath(m_BaseDir,
-                                                        info.GetName())));
-        dst_ptr.reset(dst); // deleter
+        dst_ptr.reset(CDirEntry::CreateObject
+                      (CDirEntry::EType(info.GetType()),
+                       CDirEntry::NormalizePath
+                       (CDirEntry::ConcatPath
+                        (m_BaseDir, info.GetName()))));
+        dst = dst_ptr.get();
     }
 
     // Date/time.
@@ -2042,7 +2038,7 @@ string CTar::x_ToArchiveName(const string& path) const
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
         TAR_THROW(eBadName,
-                  "Name may not contain parent ('..') directory:\n" + retval);
+                  "Name may not embed parent ('..') directory:\n" + retval);
     }
 
     if (absolute) {
@@ -2056,7 +2052,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                                         const TEntries* toc)
 {
     auto_ptr<TEntries> entries(new TEntries);
-    
+
     const EFollowLinks follow_links = (m_Flags & fFollowLinks ?
                                        eFollowLinks : eIgnoreLinks);
 
@@ -2104,16 +2100,17 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         // Start searching from the end of the list, to find
         // the most recently updated entry (if any) first
         REVERSE_ITERATE(CTar::TEntries, i, *toc) {
-            if (info.GetName() == i->GetName()  &&
-                (info.GetType() == i->GetType() || (m_Flags & fEqualTypes))) {
+            string temp = x_ToFilesystemPath(i->GetName());
+            if (path == temp  &&  (info.GetType() == i->GetType()
+                                   ||  !(m_Flags & fEqualTypes))) {
                 found = true;
                 if (!entry.IsNewer(i->GetModificationTime(),
                                    CDirEntry::eIfAbsent_Throw)) {
                     if (type != CDirEntry::eDir) {
-                        /* same(or older) file, no update */
+                        // same(or older) file, no update
                         goto out;
                     }
-                    /* same(or older) dir gets recursive treatment later */
+                    // same(or older) dir gets recursive treatment later
                     update = false;
                 }
                 break;

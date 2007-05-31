@@ -303,11 +303,18 @@ public:
     /// Append an entry at the end of the archive that already exists.
     ///
     /// Appended entry can be either a file, a directory, or a symbolic link.
-    /// The name of the entry may not contain leading '..'.
-    /// Leading slash in the absolute path will be retained.
-    /// The names of all appended entries will be converted to Unix format
-    /// (that is, to have forward slashes in the paths).
-    /// All entries will be added at the end of the archive.
+    /// The name is taken with respect to the base directory, if any set.
+    /// Adding a directory results in all its files and subdirectories to
+    /// get added (examine the return value to find out what has been added).
+    /// Note that the final name of an entry may not contain embedded '..'.
+    /// Leading slash in the absolute paths will be retained.  The names of
+    /// all appended entries will be converted to Unix format (that is, to
+    /// have forward slashes in the paths, and drive letter, if any on
+    /// MS-Windows, stripped).  All entries will be added at the logical end
+    /// (not always EOF) of the archive, when appending to an existing one.
+    ///
+    /// @return
+    ///   A list of the appended entries.
     /// @sa
     ///   Create, Update, SetBaseDir
     auto_ptr<TEntries> Append(const string& name);
@@ -328,6 +335,8 @@ public:
     /// and add new entries for any files/directories, which are
     /// currently not in the archive.
     ///
+    /// @return
+    ///   A list of entries that have been updated.
     /// @sa
     ///   Append, SetBaseDir, SetFlags
     auto_ptr<TEntries> Update(const string& name);
@@ -345,7 +354,8 @@ public:
     /// a directory otherwise specified by SetBaseDir()).
     ///
     /// Extract all archive entries, which names match pre-set mask.
-    /// @sa SetMask, SetBaseDir
+    /// @sa
+    ///   SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
 
     /// Get information about all matching archive entries.
@@ -353,7 +363,8 @@ public:
     /// @return
     ///   An array containing information on those archive entries
     ///   which names match pre-set mask.
-    /// @sa SetMask
+    /// @sa
+    ///   SetMask
     auto_ptr<TEntries> List(void);
 
     /// Verify archive integrity.
@@ -362,14 +373,17 @@ public:
     /// creating them on disk.
     void Test(void);
 
-    /// Return archive size as if input entries were put in it.
-    /// Note that the return value is not exact but upper bound of
+    /// Return archive size as if all specified input entries were put in it.
+    /// Note that the return value is not exact but the upper bound of
     /// what the archive size can be expected.  This call does not recurse
-    /// in any subdirectries but relies solely upon the information as
-    /// passed via parameter.
+    /// into any subdirectries but relies solely upon the information as
+    /// passed via the parameter.
     ///
     /// The returned size includes all necessary alignments and padding.
-    Uint8 EstimateArchiveSize(const TFiles& files);
+    /// @return
+    ///   An upper estimate of archive size given that all specified files
+    ///   were stored in it (the actual size may turn out to be smaller).
+    Uint8 EstimateArchiveSize(const TFiles& files) const;
 
 
     //------------------------------------------------------------------------
@@ -384,8 +398,8 @@ public:
 
     /// Set name mask.
     ///
-    /// Use this set of masks to process entries in archive.
-    /// The masks apply to list/test/extract entries from the archive.
+    /// The set of masks is used to process existing entries in archive,
+    /// and apply to list and extract operations only.
     /// If masks are not defined then all archive entries will be processed.
     /// @param mask
     ///   Set of masks.
@@ -394,25 +408,29 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive (eCase = default),
     ///   or a case-insensitive (eNocase) match.
-    /// @sa UnsetMask
+    /// @sa
+    //    UnsetMask
     void SetMask(CMask* mask, EOwnership if_to_own = eNoOwnership,
                  NStr::ECase use_case = NStr::eCase);
 
     /// Unset name mask.
     ///
     /// Upon mask reset, all entries become subject to archive processing in
-    /// list/test/extract operations.
-    /// @sa SetMask
+    /// list and extract operations.
+    /// @sa
+    ///   SetMask
     void UnsetMask(void);
 
     /// Get base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
-    /// @sa SetBaseDir
+    /// @sa
+    ///   SetBaseDir
     const string& GetBaseDir(void) const;
 
     /// Set base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
-    /// @sa GetBaseDir
+    /// @sa
+    ///   GetBaseDir
     void SetBaseDir(const string& dirname);
 
 protected:
@@ -462,22 +480,24 @@ protected:
     // Write information about entry into the archive.
     void x_WriteEntryInfo(const string& name, const CTarEntryInfo& info);
 
-    // Read the archive and do some "action".
-    auto_ptr<TEntries> x_ReadAndProcess(EAction action, bool use_mask = true);
+    // Read the archive and do the requested "action".
+    auto_ptr<TEntries> x_ReadAndProcess(EAction action);
 
     // Process next entry from the archive.
     // If extract == FALSE, then just skip the entry without any processing.
-    void x_ProcessEntry(const CTarEntryInfo& info, bool extract = false);
+    bool x_ProcessEntry(const CTarEntryInfo& info, bool extract = false);
 
     // Extract an entry from the archive into the file system,
     // and return the entry size (if any) still remaining in the archive.
-    Uint8 x_ExtractEntry(const CTarEntryInfo& info);
+    bool x_ExtractEntry(const CTarEntryInfo& info, Uint8& size,
+                        const CDirEntry* dst, const CDirEntry* src = 0);
 
-    // Restore attributes of a specified entry.
-    // If 'target' not specified, then CDirEntry will be constructed
-    // from 'info'. In this case, 'info' should have correct name for
-    // the destination dir entry.
-    void x_RestoreAttrs(const CTarEntryInfo& info, CDirEntry* dst = 0);
+    // Restore attributes of an entry in the file system.
+    // If 'dst' not specified, then the destination path will be constructed
+    // from 'info', and the base directory (if any).  Otherwise, 'dst' will
+    // be used "as is", assuming it corresponds to the specified 'info'.
+    void x_RestoreAttrs(const CTarEntryInfo& info,
+                        const CDirEntry* dst = 0) const;
 
     // Read/write specified number of bytes from/to the archive.
     const char* x_ReadArchive(size_t& n);
@@ -486,7 +506,7 @@ protected:
     // Check path and convert it to an archive name.
     string x_ToArchiveName(const string& path) const;
 
-    // Convert from entry name to path in filesystem
+    // Convert from entry name to path in filesystem.
     string x_ToFilesystemPath(const string& name) const;
 
     // Append an entry to the archive.
@@ -581,7 +601,7 @@ void CTar::SetMask(CMask *mask, EOwnership if_to_own, NStr::ECase use_case)
 }
 
 inline
-void CTar::UnsetMask()
+void CTar::UnsetMask(void)
 {
     if ( m_MaskOwned ) {
         delete m_Mask;
