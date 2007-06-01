@@ -1696,9 +1696,12 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
             dst->DereferenceLink();
         }
 
+        // Actual type in file system (if exists)
+        CDirEntry::EType dst_type = dst->GetType();
+
         // Look if extraction is allowed (when the destination exists)
-        if (dst->Exists()) {
-            bool found = false;
+        if (dst_type != CDirEntry::eUnknown) {
+            bool found = false;  // check if ours (prev. revision extracted)
             if (done) {
                 ITERATE(TEntries, i, *done) {
                     if (i->GetName() == info.GetName()  &&
@@ -1733,9 +1736,9 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
                                                     (CDirEntry::ConcatPath
                                                      (m_BaseDir,
                                                       info.GetLinkName()))));
-                            if (dst->GetType() != src->GetType())
+                            if (dst_type != src->GetType())
                                 extract = false;
-                        } else if (dst->GetType() != CDirEntry::EType(type)) {
+                        } else if (dst_type != CDirEntry::EType(type)) {
                             extract = false;
                         }
                     }
@@ -2113,7 +2116,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     if (toc) {
         bool found = false;
 
-        if (entry.Exists()) {
+        if (type != CDirEntry::eUnknown) {
             // Start searching from the end of the list, to find
             // the most recent entry (if any) first
             REVERSE_ITERATE(TEntries, i, *toc) {
@@ -2125,10 +2128,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                         goto out;
                     }
                     found = true;
-                    if (!entry.IsNewer(i->GetModificationTime(),
-                                       CDirEntry::eIfAbsent_Throw)) {
+                    if (info.GetModificationTime() <= i->GetModificationTime())
                         update = false; // same(or older), no update
-                    }
                     break;
                 }
             }
