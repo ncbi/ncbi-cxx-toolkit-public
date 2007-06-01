@@ -115,6 +115,7 @@ void CTest::Init(void)
     SetupArgDescriptions(args.release());
 
     SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostAllFlags(eDPF_DateTime | eDPF_Severity);
 }
 
 
@@ -124,23 +125,28 @@ int CTest::Run(void)
 
     const CArgs& args = GetArgs();
 
-    if (args["c"].HasValue())
+    if (args["c"].HasValue()) {
         action |= fCreate;
-    if (args["r"].HasValue())
+    }
+    if (args["r"].HasValue()) {
         action |= fAppend;
-    if (args["u"].HasValue())
+    }
+    if (args["u"].HasValue()) {
         action |= fUpdate;
-    if (args["t"].HasValue())
+    }
+    if (args["t"].HasValue()) {
         action |= fList;
-    if (args["x"].HasValue())
+    }
+    if (args["x"].HasValue()) {
         action |= fExtract;
-    if (args["T"].HasValue())
+    }
+    if (args["T"].HasValue()) {
         action |= fTest;
-
+    }
     if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
                    "You have to specify exactly one of "
-                   "c, r, u, U, t, x, or T");
+                   "c, r, u, t, x, or T");
     }
 
     _ASSERT(args["f"].HasValue());
@@ -206,7 +212,6 @@ int CTest::Run(void)
     if (args["v"].HasValue()) {
         flags |= CTar::fDumpBlockHeaders;
     }
-
     tar->SetFlags(flags);
 
     if (action == fCreate) {

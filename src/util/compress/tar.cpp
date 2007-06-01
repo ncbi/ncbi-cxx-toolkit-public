@@ -940,7 +940,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             case eRW:
                 /// RW access
                 m_FileStream->open(m_FileName.c_str(),
-                                   IOS_BASE::in     |  IOS_BASE::out  |
+                                   IOS_BASE::in     | IOS_BASE::out |
                                    IOS_BASE::binary);
                 break;
             default:
@@ -1662,7 +1662,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             nextLongLink.erase();
         }
 
-        // Match file name by set of masks
+        // Match file name with the set of masks
         bool match = (action != eList  &&  action != eExtract ? true : m_Mask
                       ? m_Mask->Match(info.GetName(), m_MaskUseCase) : true);
 
