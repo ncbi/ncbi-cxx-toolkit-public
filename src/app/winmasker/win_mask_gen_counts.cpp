@@ -382,6 +382,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
     Uint4 unit_mask( (1<<(2*unit_size)) - 1 );
     Uint4 prefix_mask( ((1<<(2*prefix_size)) - 1)<<(2*suffix_size) );
     Uint4 suffix_mask( (1<<2*suffix_size) - 1 );
+    if( unit_size == 16 ) unit_mask = 0xFFFFFFFF;
     prefix <<= (2*suffix_size);
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
