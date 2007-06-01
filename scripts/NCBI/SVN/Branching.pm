@@ -16,7 +16,7 @@ use NCBI::SVN::SwitchMap;
 
 my $TrunkDir = 'trunk/c++';
 
-sub RetrieveRepositoryStructureContainingSubtree
+sub GetTreeContainingSubtree
 {
     my ($Self, $SVN, $Path, $Subtree) = @_;
 
@@ -24,7 +24,6 @@ sub RetrieveRepositoryStructureContainingSubtree
 
     my $Subdir;
 
-print "ls $Path\:\n";
     for my $Entry ($SVN->ReadSubversionLines('list', $Path))
     {
         $Entry =~ s/\/$//o;
@@ -32,7 +31,7 @@ print "ls $Path\:\n";
         if (ref($Subdir = $Subtree->{$Entry}))
         {
             $Result{$Entry} = keys %$Subdir ?
-                $Self->RetrieveRepositoryStructureContainingSubtree($SVN,
+                $Self->GetTreeContainingSubtree($SVN,
                     "$Path/$Entry", $Subdir) : {}
         }
         else
@@ -47,7 +46,7 @@ print "ls $Path\:\n";
 sub GetRmCommandsR
 {
     my ($RmCommands, $ExistingStructure, $DirName, $TreeToRemove, $Path) = @_;
-print "Calc rm commands for path '$Path'...\n";
+
     if (my $ThisDirStructure = $ExistingStructure->{$DirName})
     {
         if (%$TreeToRemove)
@@ -75,7 +74,7 @@ print "Calc rm commands for path '$Path'...\n";
 sub GetRmCommands
 {
     my ($RmCommands, $ExistingStructure, $TreeToRemove) = @_;
-print "Calc rm commands for root...\n";
+
     while (my ($DirName, $Subdir) = each %$TreeToRemove)
     {
         GetRmCommandsR($RmCommands, $ExistingStructure,
@@ -86,7 +85,7 @@ print "Calc rm commands for root...\n";
 sub CreateEntireTree
 {
     my ($MkdirCommands, $TreeToCreate, $Path) = @_;
-print "Creating entire tree under '$Path'...\n";
+
     return unless %$TreeToCreate;
 
     push @$MkdirCommands, 'mkdir', $Path;
@@ -100,8 +99,7 @@ print "Creating entire tree under '$Path'...\n";
 sub GetMkdirCommandsR
 {
     my ($MkdirCommands, $ExistingStructure, $TreeToCreate, $Path) = @_;
-print "Calc mkdir commands for path '$Path'...\n";
-print "'$Path' does not exist...\n" unless $ExistingStructure;
+
     return CreateEntireTree($MkdirCommands, $TreeToCreate, $Path)
         unless $ExistingStructure;
 
@@ -115,7 +113,7 @@ print "'$Path' does not exist...\n" unless $ExistingStructure;
 sub GetMkdirCommands
 {
     my ($MkdirCommands, $ExistingStructure, $TreeToCreate) = @_;
-print "Calc mkdir commands for root...\n";
+
     while (my ($DirName, $Subdir) = each %$TreeToCreate)
     {
         GetMkdirCommandsR($MkdirCommands,
@@ -127,7 +125,6 @@ sub LayPath
 {
     my ($Path, @Subdirs) = @_;
 
-print "Laying path '$Path'...\n";
     for my $DirName (split('/', $Path))
     {
         for my $Subdir (@Subdirs)
@@ -185,7 +182,7 @@ sub Create
     my $ExistingBranch;
     # Read the old branch_map, if it exists.
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
-print "Reading $BranchMapRepoPath\n";
+
     my @OldBranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
 
     unless ($@)
@@ -205,7 +202,6 @@ print "Reading $BranchMapRepoPath\n";
             {
                 if ($DiffLine->[1])
                 {
-                    print "Will remove $DiffLine->[0]\n";
                     LayPath($DiffLine->[0], \%RmDirTree,
                         \%MkDirTree, \%CommonTree);
                     push @CopyCommands, 'cp', 'HEAD',
@@ -213,7 +209,6 @@ print "Reading $BranchMapRepoPath\n";
                 }
                 else
                 {
-                    print "Will remove $DiffLine->[0]\n";
                     LayPath($DiffLine->[0], \%RmDirTree, \%CommonTree)
                 }
             }
@@ -232,8 +227,7 @@ print "Reading $BranchMapRepoPath\n";
     }
 
     my $ExistingStructure =
-        $Self->RetrieveRepositoryStructureContainingSubtree($SVN,
-            $SVN->GetRepos(), \%CommonTree);
+        $Self->GetTreeContainingSubtree($SVN, $SVN->GetRepos(), \%CommonTree);
 
     GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
     GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
@@ -245,11 +239,6 @@ print "Reading $BranchMapRepoPath\n";
     {
         print(($ExistingBranch ? 'Updating' : 'Creating') .
             " branch '$BranchPath'...\n");
-
-        for my $Command (@Commands)
-        {
-            print "[$Command]\n"
-        }
 
         system('mucc', '--message',
             ($ExistingBranch ? 'Modified' : 'Created') .
@@ -331,19 +320,13 @@ sub Remove
         warn "Warning: unable to retrieve '$BranchMapRepoPath'\n"
     }
 
-    GetRmCommands(\@Commands,
-        $Self->RetrieveRepositoryStructureContainingSubtree($SVN,
+    GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
             $SVN->GetRepos(), \%RmDirTree), \%RmDirTree);
 
     # Unless there are no changes, commit a revision using mucc.
     if (@Commands)
     {
         print("Removing branch '$BranchPath'...\n");
-
-        for my $Command (@Commands)
-        {
-            print "[$Command]\n"
-        }
 
         system('mucc', '--message', "Removed branch '$BranchPath'.",
             '--root-url', $SVN->{Repos}, @Commands)
@@ -450,7 +433,7 @@ sub MergeDown
         die "$Self->{MyName}: target revision number must be > $LastMergeRev\n"
     }
 
-    printf "Merging with r$TargetRev...\n";
+    print "Merging with r$TargetRev...\n";
 
     for my $LocalDir (@BranchDirs)
     {
