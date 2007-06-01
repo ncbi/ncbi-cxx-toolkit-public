@@ -54,7 +54,8 @@ bool ExecRemoteApp(const string& cmd,
                    const char* const env[] = 0,
                    const string& monitor_app = kEmptyStr,
                    int max_monitor_running_time = 5,
-                   int monitor_period = 5);
+                   int monitor_period = 5,
+                   int kill_timeout = 1);
 
 
 
@@ -84,6 +85,8 @@ public:
     int GetMaxMonitorRunningTime() const { return m_MaxMonitorRunningTime; }
     int GetMonitorPeriod() const { return m_MonitorPeriod; }
 
+    int GetKillTimeout() const { return m_KillTimeout; }
+
     const CNcbiEnvironment& GetLocalEnv() const { return m_LocalEnv; }
     const map<string,string>& GetAddedEnv() const { return m_AddedEnv; }
     const list<string>& GetExcludedEnv() const { return m_ExcludeEnv; }
@@ -100,6 +103,7 @@ private:
     string m_MonitorAppPath;
     int m_MaxMonitorRunningTime;
     int m_MonitorPeriod;
+    int m_KillTimeout;
 
     CNcbiEnvironment m_LocalEnv;
     map<string,string> m_AddedEnv;

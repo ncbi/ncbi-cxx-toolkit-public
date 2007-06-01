@@ -99,11 +99,13 @@ public:
         fCloseOnClose  =    0,  ///< Close(): always close all pipe handles
                                 ///< but do not send any signal to running
                                 ///< process if Close()'s timeout expired.
-        fKillOnClose   = 0x10   ///< Close(): kill child process if it hasn't
+        fKillOnClose   = 0x10,  ///< Close(): kill child process if it hasn't
                                 ///< terminated within the allotted time.
                                 ///< NOTE:  If both fKeepOnClose and
                                 ///< fKillOnClose are set, the safer
                                 ///< fKeepOnClose takes the effect.
+        fResetPipeSignal =  0,
+        fKeepPipeSignal  = 0x20
     };
     typedef unsigned int TCreateFlags;    ///< bit-wise OR of "ECreateFlags"
 
@@ -414,6 +416,12 @@ public:
     ///   instead of current environment. Last value in an array must be NULL.
     /// @param watcher
     ///   Call back object to monitor the child process execution status
+    /// @kill_timeout
+    ///   Wait time  between first "soft" and second "hard"
+    ///   attempts to terminate the process. 
+    ///   Note, that on UNIX in case of zero or very small timeout
+    ///   the killing process can be not released and continue to persists
+    ///   as zombie process even after call of this function.
     /// @return 
     ///   eDone if process has finished normally and eCanceled if a watcher 
     ///   decided to stop it.
@@ -425,9 +433,10 @@ public:
                             CNcbiOstream&         out,
                             CNcbiOstream&         err,
                             int&                  exit_code,
-                            const string&         current_dir = kEmptyStr,
-                            const char* const     env[]       = 0,
-                            IProcessWatcher*      watcher     = 0);
+                            const string&         current_dir  = kEmptyStr,
+                            const char* const     env[]        = 0,
+                            IProcessWatcher*      watcher      = 0,
+                            const STimeout*       kill_timeout = 0);
 
 protected:
     CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles

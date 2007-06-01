@@ -30,6 +30,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe.hpp>
+#include <connect/ncbi_socket.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
 #include <assert.h>
@@ -402,8 +403,10 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
     // Is the process still running?
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
+        unsigned long x_timeout = !timeout ? CProcess::kDefaultKillTimeout :
+                                             timeout->sec * 1000 + (timeout->usec + 500) / 1000;
         status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
-                  CProcess(m_Pid, CProcess::ePid).Kill()
+                  CProcess(m_Pid, CProcess::ePid).Kill(x_timeout)
                   ? eIO_Success : eIO_Unknown);
     }
     if (status != eIO_Timeout) {
@@ -780,7 +783,7 @@ CPipeHandle::CPipeHandle()
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
       m_Pid((pid_t)(-1)), m_Flags(0)
 {
-    return;
+    SOCK_AllowSigPipeAPI();
 }
 
 
@@ -1026,6 +1029,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             } else {
                 freopen("/dev/null", "a", stderr);
             }
+            if (m_Flags & CPipe::fKeepPipeSignal) 
+                signal(SIGPIPE, SIG_DFL);
 
             // Prepare program arguments
             size_t cnt = args.size();
@@ -1177,8 +1182,10 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 
     // Is the process still running?
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
+        unsigned long x_timeout = !timeout ? CProcess::kDefaultKillTimeout :
+                                             timeout->sec * 1000 + (timeout->usec + 500) / 1000;
         status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
-                  CProcess(m_Pid, CProcess::ePid).Kill()
+                  CProcess(m_Pid, CProcess::ePid).Kill(x_timeout)
                   ? eIO_Success : eIO_Unknown);
     }
     if (status != eIO_Timeout) {
@@ -1720,10 +1727,17 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                int&                    exit_value,
                                const string&           current_dir,
                                const char* const       env[],
-                               CPipe::IProcessWatcher* watcher)
+                               CPipe::IProcessWatcher* watcher,
+                               const STimeout* kill_timeout)
 {
+    STimeout ktm = {CProcess::kDefaultKillTimeout,0};
+    if (kill_timeout)
+        ktm = *kill_timeout;
+
     CPipe pipe;
-    EIO_Status st = pipe.Open(cmd, args, fStdErr_Open, current_dir, env);
+    EIO_Status st = pipe.Open(cmd, args, 
+                              fStdErr_Open | fKeepPipeSignal | fKillOnClose,
+                              current_dir, env);
     if (st != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "Cannot execute \"" + cmd + "\"");
     }
@@ -1799,14 +1813,18 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
             if (watcher) {
                 if (watcher->Watch(pipe.GetProcessHandle()) != 
                     IProcessWatcher::eContinue) {
-                    CProcess(pipe.GetProcessHandle()).Kill();
+                    CProcess proc(pipe.GetProcessHandle());
+                    pipe.SetTimeout(eIO_Close, &ktm);
+                    pipe.Close(&exit_value);
                     finish = eCanceled;
                     break;
                 }
             }
         }
     } catch (...) {
-        CProcess(pipe.GetProcessHandle()).Kill();
+        CProcess proc(pipe.GetProcessHandle());
+        pipe.SetTimeout(eIO_Close, &ktm);
+        pipe.Close(&exit_value);
         throw;
     }
     pipe.Close(&exit_value);

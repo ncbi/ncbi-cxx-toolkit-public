@@ -129,6 +129,9 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
 
     m_MonitorPeriod = 
         reg.GetInt(sec_name,"monitor_period",5,0,IRegistry::eReturn);
+
+    m_KillTimeout = 
+        reg.GetInt(sec_name,"kill_timeout",1,0,IRegistry::eReturn);
     
     m_ExcludeEnv.clear();
     m_IncludeEnv.clear();
@@ -440,7 +443,8 @@ bool ExecRemoteApp(const string& cmd,
                    const char* const env[],
                    const string& monitor_app,
                    int max_monitor_running_time,
-                   int monitor_period)
+                   int monitor_period,
+                   int kill_timeout)
 {
     STmpDirGuard guard(tmp_path);
     {
@@ -457,12 +461,13 @@ bool ExecRemoteApp(const string& cmd,
             ra_monitor.reset(new CRAMonitor(monitor_app, max_monitor_running_time));
             callback.SetMonitor(*ra_monitor, monitor_period);
         }
-        
+        STimeout kill_tm = { kill_timeout, 0 };
         return CPipe::ExecWait(cmd, args, in, 
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
                                exit_value, 
-                               tmp_path, env, &callback) == CPipe::eDone;
+                               tmp_path, env, &callback, 
+                               &kill_tm) == CPipe::eDone;
     }
 }
 

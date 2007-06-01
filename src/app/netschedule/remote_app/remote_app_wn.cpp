@@ -136,7 +136,8 @@ public:
                                         x_GetEnv(),
                                         m_Params.GetMonitorAppPath(),
                                         m_Params.GetMaxMonitorRunningTime(),
-                                        m_Params.GetMonitorPeriod());
+                                        m_Params.GetMonitorPeriod(),
+                                        m_Params.GetKillTimeout());
         } catch (...) {
             request->Reset();
             result->Reset();
