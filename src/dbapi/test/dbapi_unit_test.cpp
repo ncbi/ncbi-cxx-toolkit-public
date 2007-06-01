@@ -7149,6 +7149,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // There is a problem with ftds64 driver
     // on orkShop55_550-ReleaseMT
     if (args.GetDriverName() != "ftds"
+        && args.GetDriverName() != "ftds64"
         && args.GetDriverName() != "msdblib"
         && !(args.GetDriverName() == "ftds" && Solaris)
         && !(args.GetDriverName() == "ftds64" && Solaris)
