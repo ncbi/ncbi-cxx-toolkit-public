@@ -151,6 +151,7 @@ public:
 	CRef<CSeq_align> toSeqAlign() const;
 //	int mapToMaster(int slavePos);
 	int mapToMaster(int slavePos) const;
+	int mapToSlave(int masterPos) const;
 	bool isValid()const;
 	//assume this.master is the same as guide.master
 	//change this.master to guide.slave

@@ -924,6 +924,14 @@ int BlockModelPair::mapToMaster(int slavePos) const
 	return m_master->getBlock(bn).getStart() + (slavePos - m_slave->getBlock(bn).getStart());
 }
 
+int BlockModelPair::mapToSlave(int masterPos) const
+{
+	int bn = m_master->getBlockNumber(masterPos);
+	if (bn < 0)
+		return -1;
+	return m_slave->getBlock(bn).getStart() + (masterPos - m_master->getBlock(bn).getStart());
+}
+
 bool BlockModelPair::isValid()const
 {
 	return m_master->blockMatch(*m_slave);
