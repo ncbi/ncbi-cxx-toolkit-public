@@ -350,14 +350,11 @@ bool CProcess::Kill(unsigned long timeout) const
     // Try harder to kill the stubborn process -- SIGKILL may not be caught!
     kill(pid, SIGKILL);
     SleepMilliSec(kWaitPrecision);
-    if ( !kill(pid, 0) ) {
-        // The process cannot be killed (most likely due to a kernel problem)
-        return false;
-    }
-
     // Rip the zombie (if child) up from the system
     waitpid(pid, 0, WNOHANG);
-    return true;
+
+    // Check whether the process cannot be killed (most likely due to a kernel problem)
+    return kill(pid, 0) == 0 ? false : true;
 
 #elif defined(NCBI_OS_MSWIN)
 
