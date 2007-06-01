@@ -129,7 +129,14 @@ void CIStreamBuffer::StartSubSource(void)
             m_Collector->AddChunk(m_CollectPos, count);
     }
     m_CollectPos = m_CurrentPos;
-    m_Collector = m_Input->SubSource(m_DataEndPos - m_CurrentPos, m_Collector);
+    if ( m_Input ) {
+        m_Collector =
+            m_Input->SubSource(m_DataEndPos - m_CurrentPos, m_Collector);
+    }
+    else {
+        m_Collector =
+            new CMemorySourceCollector(m_Collector);
+    }
 }
 
 CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
@@ -311,6 +318,13 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     }
     size_t load = m_BufferSize - dataSize;
     while ( load > 0  &&  pos >= m_DataEndPos ) {
+        if ( !m_Input ) {
+            if ( noEOF ) {
+                return pos;
+            }
+            m_Error = "end of file";
+            NCBI_THROW(CEofException,eEof,m_Error);
+        }
         size_t count = m_Input->Read(const_cast<char*>(m_DataEndPos), load);
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
@@ -491,11 +505,21 @@ void CIStreamBuffer::SetStreamOffset(CNcbiStreampos pos)
 
 void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
 {
-    m_Input->Seekg(pos);
-    m_BufferPos = pos;
-    m_DataEndPos = m_Buffer;
-    m_CurrentPos = m_Buffer;
-    m_Line = 1;
+    if ( m_Input ) {
+        m_Input->Seekg(pos);
+        m_BufferPos = pos;
+        m_DataEndPos = m_Buffer;
+        m_CurrentPos = m_Buffer;
+        m_Line = 1;
+    }
+    else {
+        if ( pos < 0 || pos > m_DataEndPos - m_Buffer ) {
+            NCBI_THROW(CIOException,eRead,"stream position is out of buffer");
+        }
+        m_BufferPos = pos;
+        m_CurrentPos = m_Buffer + pos;
+        m_Line = 1;
+    }
 }
 
 Int4 CIStreamBuffer::GetInt4(void)
