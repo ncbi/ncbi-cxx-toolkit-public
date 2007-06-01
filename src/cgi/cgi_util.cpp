@@ -325,6 +325,7 @@ CUrl& CUrl::operator=(const CUrl& url)
         m_Host = url.m_Host;
         m_Port = url.m_Port;
         m_Path = url.m_Path;
+        m_Fragment = url.m_Fragment;
         m_OrigArgs = url.m_OrigArgs;
         if ( url.m_ArgsList.get() ) {
             m_ArgsList.reset(new CCgiArgs(*url.m_ArgsList));
@@ -334,7 +335,7 @@ CUrl& CUrl::operator=(const CUrl& url)
 }
 
 
-void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
+void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
 {
     m_Scheme = kEmptyStr;
     m_IsGeneric = false;
@@ -343,11 +344,23 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
     m_Host = kEmptyStr;
     m_Port = kEmptyStr;
     m_Path = kEmptyStr;
+    m_Fragment = kEmptyStr;
     m_OrigArgs = kEmptyStr;
     m_ArgsList.reset();
 
+    string url;
+
     if ( !encoder ) {
         encoder = GetDefaultEncoder();
+    }
+
+    SIZE_TYPE frag_pos = orig_url.find_last_of("#");
+    if (frag_pos != NPOS) {
+        x_SetFragment(orig_url.substr(frag_pos + 1, orig_url.size()), *encoder);
+        url = orig_url.substr(0, frag_pos);
+    }
+    else {
+        url = orig_url;
     }
 
     bool skip_host = false;
@@ -373,7 +386,7 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
             {
                 if (url.substr(pos, 3) == "://") {
                     // scheme://
-                    x_SetScheme(url.substr(beg, pos), *encoder);
+                    x_SetScheme(url.substr(beg, pos - beg), *encoder);
                     beg = pos + 3;
                     pos = url.find_first_of(":@/?", beg);
                     m_IsGeneric = true;
@@ -484,6 +497,9 @@ string CUrl::ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
     url += encoder->EncodePath(m_Path);
     if ( m_ArgsList.get() ) {
         url += "?" + m_ArgsList->GetQueryString(amp_enc, encoder);
+    }
+    if ( !m_Fragment.empty() ) {
+        url += "#" + encoder->EncodePath(m_Fragment);
     }
     return url;
 }

@@ -388,6 +388,9 @@ public:
     string GetPath(void) const              { return m_Path; }
     void   SetPath(const string& value)     { m_Path = value; }
 
+    string GetFragment(void) const          { return m_Fragment; }
+    void   SetFragment(const string& value) { m_Fragment = value; }
+
     /// Get the original (unparsed and undecoded) CGI query string
     string GetOriginalArgsString(void) const
         { return m_OrigArgs; }
@@ -419,6 +422,7 @@ private:
     void x_SetPort(const string& port, const IUrlEncoder& encoder);
     void x_SetPath(const string& path, const IUrlEncoder& encoder);
     void x_SetArgs(const string& args, const IUrlEncoder& encoder);
+    void x_SetFragment(const string& fragment, const IUrlEncoder& encoder);
 
     string  m_Scheme;
     bool    m_IsGeneric;  // generic schemes include '//' delimiter
@@ -427,6 +431,7 @@ private:
     string  m_Host;
     string  m_Port;
     string  m_Path;
+    string  m_Fragment;
     string  m_OrigArgs;
     auto_ptr<CCgiArgs> m_ArgsList;
 };
@@ -660,6 +665,13 @@ void CUrl::x_SetPath(const string& path,
                      const IUrlEncoder& encoder)
 {
     m_Path = encoder.DecodePath(path);
+}
+
+inline
+void CUrl::x_SetFragment(const string& fragment,
+                         const IUrlEncoder& encoder)
+{
+    m_Fragment = encoder.DecodePath(fragment);
 }
 
 inline
