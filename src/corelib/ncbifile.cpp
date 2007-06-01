@@ -3079,15 +3079,16 @@ CSymLink::~CSymLink(void)
 bool CSymLink::Create(const string& path) const
 {
 #if defined(NCBI_OS_UNIX)
-    char buf[PATH_MAX];
-    int  len = (int)readlink(GetPath().c_str(), buf, sizeof(buf));
-    if ( len != -1 ) {
-        return false;
+    char buf[PATH_MAX + 1];
+    int len = (int) readlink(GetPath().c_str(), buf, sizeof(buf) - 1);
+    if (len >= 0) {
+        buf[len] = '\0';
+        if (strcmp(buf, path.c_str()) == 0) {
+            return true;
+        }
     }
-    if ( symlink(path.c_str(), GetPath().c_str()) ) {
-        return false;
-    }
-    return true;
+    // Leave it to the kernel to decide whether the symlink can be recreated
+    return symlink(path.c_str(), GetPath().c_str()) != 0 ? false : true;
 #else
     return false;
 #endif
