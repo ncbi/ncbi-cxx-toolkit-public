@@ -1665,7 +1665,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         bool match = (action != eList  &&  action != eExtract ? true : m_Mask
                       ? m_Mask->Match(info.GetName(), m_MaskUseCase) : true);
 
-        if (x_ProcessEntry(info, match  &&  action == eExtract)
+        if (x_ProcessEntry(info, match  &&  action == eExtract, entries.get())
             ||  (match  &&  !((int) action & (eExtract & ~eRW)))) {
             entries->push_back(info);
         }
@@ -1674,7 +1674,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 }
 
 
-bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
+bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
+                          const CTar::TEntries* done)
 {
     Uint8                size = info.GetSize();
     CTarEntryInfo::EType type = info.GetType();
@@ -1695,50 +1696,65 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract)
             dst->DereferenceLink();
         }
 
-        // Look if extract is allowed (when the desttination exists)
+        // Look if extraction is allowed (when the destination exists)
         if (dst->Exists()) {
-            // Can overwrite it?
-            if (!(m_Flags & fOverwrite)) {
-                // Entry already exists, and cannot be changed
-                extract = false;
-            } else { // The fOverwrite flag is set
-                // Can update?
-                if ((m_Flags & fUpdate) == fUpdate  &&
-                    type != CTarEntryInfo::eDir) {
-                    // Update directories always, because archive can contain
-                    // other subtree of existing destination directory.
-                    time_t dst_time;
-                    // Make sure that dst is not older than the archive entry
-                    if (dst->GetTimeT(&dst_time)  &&
-                        dst_time >= info.GetModificationTime()) {
-                        extract = false;
+            bool found = false;
+            if (done) {
+                ITERATE(TEntries, i, *done) {
+                    if (i->GetName() == info.GetName()  &&
+                        i->GetType() == info.GetType()) {
+                        found = true;
+                        break;
                     }
                 }
-                // Have equal types?
-                if (extract  &&  (m_Flags & fEqualTypes)) {
-                    if (type == CTarEntryInfo::eHardLink) {
-                        src.reset(new CDirEntry(CDirEntry::NormalizePath
-                                                (CDirEntry::ConcatPath
-                                                 (m_BaseDir,
-                                                  info.GetLinkName()))));
-                        if (dst->GetType() != src->GetType())
+            }
+            if (!found) {
+                // Can overwrite it?
+                if (!(m_Flags & fOverwrite)) {
+                    // File already exists, and cannot be changed
+                    extract = false;
+                } else { // The fOverwrite flag is set
+                    // Can update?
+                    if ((m_Flags & fUpdate) == fUpdate
+                        &&  type != CTarEntryInfo::eDir) {
+                        // Update directories always, because the archive can
+                        // contain other subtree of this existing directory.
+                        time_t dst_time;
+                        // Make sure that dst is not older than the entry
+                        if (dst->GetTimeT(&dst_time)
+                            &&  dst_time >= info.GetModificationTime()) {
                             extract = false;
-                    } else if (dst->GetType() != CDirEntry::EType(type)) {
-                        extract = false;
+                        }
+                    }
+                    // Have equal types?
+                    if (extract  &&  (m_Flags & fEqualTypes)) {
+                        if (type == CTarEntryInfo::eHardLink) {
+                            src.reset(new CDirEntry(CDirEntry::NormalizePath
+                                                    (CDirEntry::ConcatPath
+                                                     (m_BaseDir,
+                                                      info.GetLinkName()))));
+                            if (dst->GetType() != src->GetType())
+                                extract = false;
+                        } else if (dst->GetType() != CDirEntry::EType(type)) {
+                            extract = false;
+                        }
                     }
                 }
-                // Need to backup destination entry?
-                if (extract  &&  ((m_Flags & fBackup) == fBackup)) {
+            }
+            if (extract) {
+                // Need to backup the existing destination?
+                if ((m_Flags & fBackup) == fBackup  &&  !found) {
                     CDirEntry dst_tmp(*dst);
-                    if (!dst_tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)){
+                    if (!dst_tmp.Backup(kEmptyStr,
+                                        CDirEntry::eBackup_Rename)) {
                         TAR_THROW(eBackup,
                                   "Failed to backup '" + dst->GetPath() +'\'');
-                    } else {
-                        // fOverwrite flag is set
-                        dst->Remove();
                     }
+                } else if (type != CTarEntryInfo::eDir
+                           ||  (!found  &&  (m_Flags & fUpdate) != fUpdate)) {
+                    dst->Remove();
                 }
-            } // check on fOverwrite
+            }
         }
         if (extract) {
             extract = x_ExtractEntry(info, size, dst.get(), src.get());
@@ -2060,7 +2076,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     string path = x_ToFilesystemPath(name);
 
     // Get direntry information
-    CDir entry(path);
+    CDirEntry entry(path);
     CDirEntry::SStat st;
     if (!entry.Stat(&st, follow_links)) {
         int x_errno = errno;
@@ -2097,33 +2113,34 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     if (toc) {
         bool found = false;
 
-        // Start searching from the end of the list, to find
-        // the most recently updated entry (if any) first
-        REVERSE_ITERATE(CTar::TEntries, i, *toc) {
-            string temp = x_ToFilesystemPath(i->GetName());
-            if (path == temp  &&  (info.GetType() == i->GetType()
-                                   ||  !(m_Flags & fEqualTypes))) {
-                found = true;
-                if (!entry.IsNewer(i->GetModificationTime(),
-                                   CDirEntry::eIfAbsent_Throw)) {
-                    if (type != CDirEntry::eDir) {
-                        // same(or older) file, no update
+        if (entry.Exists()) {
+            // Start searching from the end of the list, to find
+            // the most recent entry (if any) first
+            REVERSE_ITERATE(TEntries, i, *toc) {
+                string temp = x_ToFilesystemPath(i->GetName());
+                if (path == temp  &&  (info.GetType() == i->GetType()
+                                       ||  !(m_Flags & fEqualTypes))) {
+                    if (info.GetType() == CTarEntryInfo::eSymLink
+                        &&  info.GetLinkName() == i->GetLinkName()) {
                         goto out;
                     }
-                    // same(or older) dir gets recursive treatment later
-                    update = false;
+                    found = true;
+                    if (!entry.IsNewer(i->GetModificationTime(),
+                                       CDirEntry::eIfAbsent_Throw)) {
+                        update = false; // same(or older), no update
+                    }
+                    break;
                 }
-                break;
             }
         }
 
-        if (!found) {
-            if (m_Flags & fUpdateExistingOnly) {
+        if (!update  ||  (!found  &&  (m_Flags & fUpdateExistingOnly))) {
+            if (type != CDirEntry::eDir) {
+                // Same(or older, or inexistent) file, no update
                 goto out;
             }
-            if (type == CDirEntry::eDir) {
-                update = false;
-            }
+            // Directories always get recursive treatment later
+            update = false;
         }
     }
 
@@ -2146,7 +2163,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                 m_Name = 0;
             }
             // Append/Update all files from that directory
-            CDir::TEntries dir = entry.GetEntries("*", CDir::eIgnoreRecursive);
+            CDir::TEntries dir = CDir(path).GetEntries("*",
+                                                       CDir::eIgnoreRecursive);
             ITERATE(CDir::TEntries, i, dir) {
                 auto_ptr<TEntries> e = x_Append((*i)->GetPath(), toc);
                 entries->splice(entries->end(), *e.get());

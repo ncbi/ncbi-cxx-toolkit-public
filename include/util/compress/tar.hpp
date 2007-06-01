@@ -485,7 +485,8 @@ protected:
 
     // Process next entry from the archive.
     // If extract == FALSE, then just skip the entry without any processing.
-    bool x_ProcessEntry(const CTarEntryInfo& info, bool extract = false);
+    bool x_ProcessEntry(const CTarEntryInfo& info, bool extract = false,
+                        const TEntries* done = 0);
 
     // Extract an entry from the archive into the file system,
     // and return the entry size (if any) still remaining in the archive.
