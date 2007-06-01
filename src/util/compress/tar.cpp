@@ -914,10 +914,10 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             m_OpenMode = eNone;
             TAR_THROW(eOpen, "Bad IO stream provided for archive");
         } else {
-            m_OpenMode = EOpenMode((int) action & eRW);
+            m_OpenMode = EOpenMode(int(action) & eRW);
         }
     } else {
-        EOpenMode mode = EOpenMode((int) action & eRW);
+        EOpenMode mode = EOpenMode(int(action) & eRW);
         _ASSERT(mode != eNone);
         if (mode != eWO  &&  action != eAppend) {
             x_Flush();
@@ -977,7 +977,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     _ASSERT(m_Stream);
     _ASSERT(m_Stream->rdbuf());
 
-    if (((int) action & (eList & ~eRW)) | ((int) action & (eExtract & ~eRW))) {
+    if (int(action) & ((eList | eExtract) & ~eRW)) {
         return x_ReadAndProcess(action);
     } else {
         return auto_ptr<TEntries>(0);
@@ -1177,7 +1177,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         }
         return eZeroBlock;
     }
-    int checksum = (int) value;
+    int checksum = int(value);
 
     // Compute both signed and unsigned checksums (for compatibility)
     int ssum = 0;
@@ -1442,7 +1442,8 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     default:
         TAR_THROW(eUnsupportedEntryType,
                   "Don't know how to store entry '" + name + "' w/type #" +
-                  NStr::IntToString(int(type)) + " into archive");
+                  NStr::IntToString(int(type)) + " into archive -- internal"
+                  " error, please report!");
     }
 
     // User and group
@@ -1666,7 +1667,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                       ? m_Mask->Match(info.GetName(), m_MaskUseCase) : true);
 
         if (x_ProcessEntry(info, match  &&  action == eExtract, entries.get())
-            ||  (match  &&  !((int) action & (eExtract & ~eRW)))) {
+            ||  (match  &&  !(int(action) & (eExtract & ~eRW)))) {
             entries->push_back(info);
         }
     }
@@ -1746,7 +1747,7 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
             }
             if (extract) {
                 // Need to backup the existing destination?
-                if ((m_Flags & fBackup) == fBackup  &&  !found) {
+                if (!found  &&  (m_Flags & fBackup) == fBackup) {
                     CDirEntry dst_tmp(*dst);
                     if (!dst_tmp.Backup(kEmptyStr,
                                         CDirEntry::eBackup_Rename)) {
@@ -1902,11 +1903,11 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
     case CTarEntryInfo::eGNULongLink:
         // Long name/link should have already been processed and not be here
         _TROUBLE;
-        break;
+        /*FALLTHRU*/
 
     default:
-        ERR_POST(Warning << "Skipping unsupported entry '" + info.GetName() +
-                 "' of type #" + NStr::IntToString(int(info.GetType())));
+        ERR_POST(Warning << "Skipping unsupported entry '" + info.GetName()
+                 + "' w/type #" + NStr::IntToString(int(info.GetType())));
         result = false;
         break;
     }
@@ -2086,7 +2087,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         TAR_THROW(eOpen,
                   "Cannot get status of '" + path + '\''+ s_OSReason(x_errno));
     }
-    CDirEntry::EType type = entry.GetType();
+    CDirEntry::EType type = CDirEntry::GetType(st.orig);
 
     // Create the entry info
     CTarEntryInfo info;
@@ -2119,25 +2120,37 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         if (type != CDirEntry::eUnknown) {
             // Start searching from the end of the list, to find
             // the most recent entry (if any) first
+            string temp;
             REVERSE_ITERATE(TEntries, i, *toc) {
-                string temp = x_ToFilesystemPath(i->GetName());
-                if (path == temp  &&  (info.GetType() == i->GetType()
-                                       ||  !(m_Flags & fEqualTypes))) {
-                    if (info.GetType() == CTarEntryInfo::eSymLink
-                        &&  info.GetLinkName() == i->GetLinkName()) {
-                        goto out;
+                if (!temp.empty()) {
+                    if (i->GetType() == CTarEntryInfo::eHardLink
+                        ||  temp != x_ToFilesystemPath(i->GetName())) {
+                        continue;
                     }
+                } else if (path == x_ToFilesystemPath(i->GetName())) {
                     found = true;
-                    if (info.GetModificationTime() <= i->GetModificationTime())
-                        update = false; // same(or older), no update
-                    break;
+                    if (i->GetType() == CTarEntryInfo::eHardLink) {
+                        temp = x_ToFilesystemPath(i->GetLinkName());
+                        continue;
+                    }
+                } else
+                    continue;
+                if (info.GetType() != i->GetType()) {
+                    if (m_Flags & fEqualTypes)
+                        goto out;
+                } else if (info.GetType() == CTarEntryInfo::eSymLink
+                           &&  info.GetLinkName() == i->GetLinkName()) {
+                    goto out;
                 }
+                if (info.GetModificationTime() <= i->GetModificationTime()) {
+                    update = false; // same(or older), no update
+                }
+                break;
             }
         }
 
-        if (!update  ||  (!found  &&  (m_Flags & fUpdateExistingOnly))) {
-            if (type != CDirEntry::eDir) {
-                // Same(or older, or inexistent) file, no update
+        if (!update  ||  (!found  &&  (m_Flags & (fUpdate & ~fOverwrite)))) {
+            if (type != CDirEntry::eDir  &&  type != CDirEntry::eUnknown) {
                 goto out;
             }
             // Directories always get recursive treatment later
@@ -2157,12 +2170,12 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         break;
 
     case CDirEntry::eDir:
+        if (update) {
+            x_WriteEntryInfo(path, info);
+            entries->push_back(info);
+            m_Name = 0;
+        }
         {{
-            if (update) {
-                x_WriteEntryInfo(path, info);
-                entries->push_back(info);
-                m_Name = 0;
-            }
             // Append/Update all files from that directory
             CDir::TEntries dir = CDir(path).GetEntries("*",
                                                        CDir::eIgnoreRecursive);
@@ -2174,16 +2187,12 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         break;
 
     case CDirEntry::eUnknown:
-        {{
-            int x_errno = errno;
-            TAR_THROW(eBadName,
-                      "Cannot find '" + path + '\'' + s_OSReason(x_errno));
-        }}
-        /*NOTREACHED*/
-        break;
+        TAR_THROW(eBadName, "Unable to handle '" + path + '\'');
+        /*FALLTHRU*/
 
     default:
-        ERR_POST(Warning << "Skipping unsupported source '" + path + '\'');
+        ERR_POST(Warning << "Skipping unsupported source '" + path
+                 + "' w/type #" + NStr::IntToString(int(type)));
         break;
     }
 

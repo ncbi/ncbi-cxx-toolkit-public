@@ -56,10 +56,9 @@ protected:
         fCreate             = (1 << 0),
         fAppend             = (1 << 1),
         fUpdate             = (1 << 2),
-        fUpdateExistingOnly = (1 << 3),
-        fList               = (1 << 4),
-        fExtract            = (1 << 5),
-        fTest               = (1 << 6)
+        fList               = (1 << 3),
+        fExtract            = (1 << 4),
+        fTest               = (1 << 5)
     };
     typedef unsigned int TAction;
 
@@ -85,7 +84,6 @@ void CTest::Init(void)
     args->AddFlag("c", "Create archive");
     args->AddFlag("r", "Append archive");
     args->AddFlag("u", "Update archive");
-    args->AddFlag("U", "Update archive: existing entries only [non-standard]");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
     args->AddFlag("T", "Test archive [non-standard]");
@@ -100,8 +98,15 @@ void CTest::Init(void)
                         CArgDescriptions::eInteger, "20");
     args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddFlag("S", "Maintain equal types of files and archive entries");
-    args->AddFlag("B", "Create backup copies of files");
+    args->AddFlag("h", "Follow links");
+    args->AddFlag("p", "Preserve all permissions");
+    args->AddFlag("m", "Don't extract modification times");
+    args->AddFlag("O", "Don't extract file ownerships");
+    args->AddFlag("M", "Don't extract permission masks");
+    args->AddFlag("U", "Existing files/entries only in update/extract");
+    args->AddFlag("B", "Create backup copies of destinations when extracting");
+    args->AddFlag("E", "Maintain equal types of files and archive entries");
+    args->AddFlag("k", "Keep old files when extracting");
     args->AddFlag("v", "Turn on debugging information");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of files to process", CArgDescriptions::eString);
@@ -125,8 +130,6 @@ int CTest::Run(void)
         action |= fAppend;
     if (args["u"].HasValue())
         action |= fUpdate;
-    if (args["U"].HasValue())
-        action |= fUpdateExistingOnly;
     if (args["t"].HasValue())
         action |= fList;
     if (args["x"].HasValue())
@@ -169,46 +172,58 @@ int CTest::Run(void)
         tar->SetBaseDir(args["C"].AsString());
     }
 
-    CTar::TFlags flags = 0;
+    CTar::TFlags flags = tar->GetFlags();
     if (args["i"].HasValue()) {
         flags |= CTar::fIgnoreZeroBlocks;
     }
+    if (args["h"].HasValue()) {
+        flags |= CTar::fFollowLinks;
+    }
+    if (args["p"].HasValue()) {
+        flags |= CTar::fPreserveAll;
+    }
+    if (args["m"].HasValue()) {
+        flags &= ~CTar::fPreserveTime;
+    }
+    if (args["O"].HasValue()) {
+        flags &= ~CTar::fPreserveOwner;
+    }
+    if (args["M"].HasValue()) {
+        flags &= ~CTar::fPreserveMode;
+    }
     if (args["U"].HasValue()) {
-        flags |= CTar::fUpdateExistingOnly;
-    }
-    if (args["v"].HasValue()) {
-        flags |= CTar::fDumpBlockHeaders;
-    }
-    if (args["S"].HasValue()) {
-        flags |= CTar::fEqualTypes;
+        flags |= CTar::fUpdate;
     }
     if (args["B"].HasValue()) {
         flags |= CTar::fBackup;
     }
-    if (flags) {
-        tar->SetFlags(tar->GetFlags() | flags);
+    if (args["E"].HasValue()) {
+        flags |= CTar::fEqualTypes;
     }
+    if (args["k"].HasValue()) {
+        flags &= ~CTar::fOverwrite;
+    }
+    if (args["v"].HasValue()) {
+        flags |= CTar::fDumpBlockHeaders;
+    }
+
+    tar->SetFlags(flags);
 
     if (action == fCreate) {
         tar->Create();
     }
     auto_ptr<CTar::TEntries> entries;
-    if (action == fCreate  ||  action == fAppend  ||
-        action == fUpdate  ||  action == fUpdateExistingOnly) {
+    if (action == fCreate  ||  action == fAppend  ||  action == fUpdate) {
         size_t n = args.GetNExtra();
         if (n == 0) {
             NCBI_THROW(CArgException, eInvalidArg, "Must specify file(s)");
         }
         for (size_t i = 1;  i <= n;  i++) {
             const string& name   = args[i].AsString();
-            const string& what   =
-                action == fUpdate  ||  action == fUpdateExistingOnly
-                ? "Updating " : "Adding ";
-            const string& prefix =
-                action == fUpdate  ||  action == fUpdateExistingOnly
-                ? "u "        : "a ";
+            const string& what   = action == fUpdate ? "Updating " : "Adding ";
+            const string& prefix = action == fUpdate ? "u "        : "a ";
             LOG_POST(what << name);
-            if (action == fUpdate  ||  action == fUpdateExistingOnly) {
+            if (action == fUpdate) {
                 entries.reset(tar->Update(name).release());
             } else {
                 entries.reset(tar->Append(name).release());

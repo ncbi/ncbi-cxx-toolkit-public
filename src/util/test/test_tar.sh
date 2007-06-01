@@ -51,7 +51,7 @@ mkdir /tmp/test_tar.$$.1/datefile 2>/dev/null
 sleep 1
 date >>/tmp/test_tar.$$.1/newdir/datefile 2>/dev/null
 
-test_tar -C /tmp/test_tar.$$.1 -U -v -S -f /tmp/test_tar.$$.tar ./newdir ./datefile ./phonyfile  ||  exit 1
+test_tar -C /tmp/test_tar.$$.1 -u -U -v -E -f /tmp/test_tar.$$.tar ./newdir ./datefile ./phonyfile  ||  exit 1
 
 rmdir /tmp/test_tar.$$.1/datefile 2>/dev/null
 mv -f /tmp/test_tar.$$.1/phonyfile /tmp/test_tar.$$.1/datefile 2>/dev/null

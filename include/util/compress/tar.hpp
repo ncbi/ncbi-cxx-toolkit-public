@@ -225,14 +225,14 @@ public:
         /// Generally, 2 or more consecutive zero blocks indicate EOF.
         fIgnoreZeroBlocks   = (1<<1),
 
-        // --- Extract/Append ---
-        /// Follow symbolic links (instead of overwriting them)
+        // --- Extract/Append/Update ---
+        /// Follow symbolic links (instead of storing/extracting them)
         fFollowLinks        = (1<<2),
 
-        // --- Extract ---
-        /// Allow to overwrite existing entries with entries from the archive
+        // --- Extract --- (NB: fUpdate also applies to Update)
+        /// Allow to overwrite destinations with entries from the archive
         fOverwrite          = (1<<3),
-        /// Update entries that are older than those already in the archive
+        /// Only update entries that are older than those already existing
         fUpdate             = (1<<4) | fOverwrite,
         /// Backup destinations if they exist (all entries including dirs)
         fBackup             = (1<<5) | fOverwrite,
@@ -246,9 +246,6 @@ public:
         fPreserveTime       = (1<<9),
         /// Preserve all attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
-
-        // --- Update ---
-        fUpdateExistingOnly = (1<<10),
 
         // -- Debugging --
         fDumpBlockHeaders   = (1<<20),
