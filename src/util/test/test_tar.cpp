@@ -103,7 +103,7 @@ void CTest::Init(void)
     args->AddFlag("m", "Don't extract modification times");
     args->AddFlag("O", "Don't extract file ownerships");
     args->AddFlag("M", "Don't extract permission masks");
-    args->AddFlag("U", "Existing files/entries only in update/extract");
+    args->AddFlag("U", "Only existing files/entries in update/extract");
     args->AddFlag("B", "Create backup copies of destinations when extracting");
     args->AddFlag("E", "Maintain equal types of files and archive entries");
     args->AddFlag("k", "Keep old files when extracting");
