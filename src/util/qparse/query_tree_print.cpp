@@ -151,6 +151,9 @@ public:
         case CQueryParseNode::eWhere:
             PrintElement("WHERE", qnode);
             break;
+        case CQueryParseNode::eList:
+            PrintElement("LIST", qnode);
+            break;            
         case CQueryParseNode::eEQ:
             if (qnode.IsNot()) {
                 PrintElement("!=", qnode);

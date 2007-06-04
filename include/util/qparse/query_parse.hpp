@@ -111,6 +111,8 @@ public:
         eFrom,
         eWhere,
         
+        eList,
+        
         eMaxType
     };
     

@@ -197,51 +197,51 @@ Grammar
     1 112 input -> exp
     2 114 input -> select_clause
     3 119 select_clause -> SELECT obj_list FROM obj_list opt_where
-    4 151 opt_where -> /* empty */
-    5 156 opt_where -> WHERE exp
-    6 166 obj_list -> scalar_value
-    7 171 obj_list -> obj_list ',' scalar_value
-    8 181 scalar_value -> NUM_INT
-    9 188 scalar_value -> STRING
-   10 193 scalar_value -> IDENT
-   11 199 scalar_list -> scalar_value
-   12 204 scalar_list -> scalar_list ',' scalar_value
-   13 212 in_sub_expr -> scalar_list
-   14 214 in_sub_expr -> select_clause
-   15 218 exp -> scalar_value
-   16 223 exp -> STRING IDENT
-   17 232 exp -> exp exp
-   18 243 exp -> '(' exp ')'
-   19 253 exp -> exp AND exp
-   20 258 exp -> exp SUB exp
-   21 263 exp -> exp OR exp
-   22 268 exp -> exp XOR exp
-   23 273 exp -> scalar_value BETWEEN scalar_value AND scalar_value
-   24 286 exp -> scalar_value NOT_BETWEEN scalar_value AND scalar_value
-   25 300 exp -> exp RANGE exp
-   26 305 exp -> scalar_value LIKE scalar_value
-   27 310 exp -> scalar_value NOT_LIKE scalar_value
-   28 315 exp -> scalar_value IN '(' in_sub_expr ')'
-   29 326 exp -> scalar_value NOT_IN '(' in_sub_expr ')'
-   30 337 exp -> exp EQ exp
-   31 342 exp -> exp NOTEQ exp
-   32 346 exp -> exp GT exp
-   33 350 exp -> exp GE exp
-   34 354 exp -> exp LT exp
-   35 358 exp -> exp LE exp
-   36 362 exp -> '(' exp ')'
-   37 367 exp -> exp NOT exp
-   38 372 exp -> NOT exp
-   39 381 exp -> error STRING
-   40 390 exp -> error IDENT
-   41 399 exp -> error NUM_INT
-   42 408 exp -> exp error
-   43 420 exp -> '(' exp error
-   44 430 exp -> exp OR error
-   45 440 exp -> exp XOR error
-   46 450 exp -> exp NOT error
-   47 460 exp -> exp AND error
-   48 470 exp -> exp SUB error
+    4 155 opt_where -> /* empty */
+    5 160 opt_where -> WHERE exp
+    6 170 obj_list -> scalar_value
+    7 175 obj_list -> obj_list ',' scalar_value
+    8 185 scalar_value -> NUM_INT
+    9 192 scalar_value -> STRING
+   10 197 scalar_value -> IDENT
+   11 203 scalar_list -> scalar_value
+   12 208 scalar_list -> scalar_list ',' scalar_value
+   13 216 in_sub_expr -> scalar_list
+   14 218 in_sub_expr -> select_clause
+   15 222 exp -> scalar_value
+   16 227 exp -> STRING IDENT
+   17 236 exp -> exp exp
+   18 247 exp -> '(' exp ')'
+   19 257 exp -> exp AND exp
+   20 262 exp -> exp SUB exp
+   21 267 exp -> exp OR exp
+   22 272 exp -> exp XOR exp
+   23 277 exp -> scalar_value BETWEEN scalar_value AND scalar_value
+   24 290 exp -> scalar_value NOT_BETWEEN scalar_value AND scalar_value
+   25 304 exp -> exp RANGE exp
+   26 309 exp -> scalar_value LIKE scalar_value
+   27 314 exp -> scalar_value NOT_LIKE scalar_value
+   28 319 exp -> scalar_value IN '(' in_sub_expr ')'
+   29 330 exp -> scalar_value NOT_IN '(' in_sub_expr ')'
+   30 341 exp -> exp EQ exp
+   31 346 exp -> exp NOTEQ exp
+   32 350 exp -> exp GT exp
+   33 354 exp -> exp GE exp
+   34 358 exp -> exp LT exp
+   35 362 exp -> exp LE exp
+   36 366 exp -> '(' exp ')'
+   37 371 exp -> exp NOT exp
+   38 376 exp -> NOT exp
+   39 385 exp -> error STRING
+   40 394 exp -> error IDENT
+   41 403 exp -> error NUM_INT
+   42 412 exp -> exp error
+   43 424 exp -> '(' exp error
+   44 434 exp -> exp OR error
+   45 444 exp -> exp XOR error
+   46 454 exp -> exp NOT error
+   47 464 exp -> exp AND error
+   48 474 exp -> exp SUB error
 
 
 Terminals, with rules where they appear

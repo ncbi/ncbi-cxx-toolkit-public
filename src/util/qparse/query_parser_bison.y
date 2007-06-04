@@ -121,10 +121,14 @@ select_clause :
     SELECT obj_list FROM obj_list opt_where
     {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
-        
-    $1->MoveSubnodes($2);    
-    $1->InsertNode($1->SubNodeBegin(), $2);    
-        
+
+    /* create a pseudo node to isolate select list in a dedicated subtree */
+    CQueryParseTree::TNode* qnode = 0;
+    qnode = env->QTree().CreateNode(CQueryParseNode::eList, 0, 0, "LIST");    
+    qnode->MoveSubnodes($2);
+    qnode->InsertNode(qnode->SubNodeBegin(), $2);
+
+    $1->InsertNode($1->SubNodeBegin(),qnode);                
     
     $1->AddNode($3);
     $3->MoveSubnodes($4);

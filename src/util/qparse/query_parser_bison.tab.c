@@ -170,11 +170,11 @@ static const short yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined. */
 static const short yyrline[] =
 {
-       0,   112,   114,   119,   151,   156,   166,   171,   181,   188,
-     193,   199,   204,   212,   214,   218,   223,   232,   243,   253,
-     258,   263,   268,   273,   286,   300,   305,   310,   315,   326,
-     337,   342,   346,   350,   354,   358,   362,   367,   372,   381,
-     390,   399,   408,   420,   430,   440,   450,   460,   470
+       0,   112,   114,   119,   155,   160,   170,   175,   185,   192,
+     197,   203,   208,   216,   218,   222,   227,   236,   247,   257,
+     262,   267,   272,   277,   290,   304,   309,   314,   319,   330,
+     341,   346,   350,   354,   358,   362,   366,   371,   376,   385,
+     394,   403,   412,   424,   434,   444,   454,   464,   474
 };
 #endif
 
@@ -1078,10 +1078,14 @@ case 3:
 #line 122 "query_parser_bison.y"
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
-        
-    yyvsp[-4]->MoveSubnodes(yyvsp[-3]);    
-    yyvsp[-4]->InsertNode(yyvsp[-4]->SubNodeBegin(), yyvsp[-3]);    
-        
+
+    /* create a pseudo node to isolate select list in a dedicated subtree */
+    CQueryParseTree::TNode* qnode = 0;
+    qnode = env->QTree().CreateNode(CQueryParseNode::eList, 0, 0, "LIST");    
+    qnode->MoveSubnodes(yyvsp[-3]);
+    qnode->InsertNode(qnode->SubNodeBegin(), yyvsp[-3]);
+
+    yyvsp[-4]->InsertNode(yyvsp[-4]->SubNodeBegin(),qnode);                
     
     yyvsp[-4]->AddNode(yyvsp[-2]);
     yyvsp[-2]->MoveSubnodes(yyvsp[-1]);
@@ -1105,13 +1109,13 @@ case 3:
     ;
     break;}
 case 4:
-#line 153 "query_parser_bison.y"
+#line 157 "query_parser_bison.y"
 {
     yyval=0;
     ;
     break;}
 case 5:
-#line 158 "query_parser_bison.y"
+#line 162 "query_parser_bison.y"
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
     yyvsp[-1]->AddNode(yyvsp[0]);
@@ -1120,13 +1124,13 @@ case 5:
     ;
     break;}
 case 6:
-#line 168 "query_parser_bison.y"
+#line 172 "query_parser_bison.y"
 {
         yyval = yyvsp[0];
     ;
     break;}
 case 7:
-#line 172 "query_parser_bison.y"
+#line 176 "query_parser_bison.y"
 {
         yyval = yyvsp[-2];
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);        
@@ -1135,43 +1139,43 @@ case 7:
     ;
     break;}
 case 8:
-#line 184 "query_parser_bison.y"
+#line 188 "query_parser_bison.y"
 {
         yyval = yyvsp[0];         
     ;
     break;}
 case 9:
-#line 189 "query_parser_bison.y"
+#line 193 "query_parser_bison.y"
 {
         yyval = yyvsp[0];         
     ;
     break;}
 case 10:
-#line 194 "query_parser_bison.y"
+#line 198 "query_parser_bison.y"
 {
         yyval = yyvsp[0];         
     ;
     break;}
 case 11:
-#line 201 "query_parser_bison.y"
+#line 205 "query_parser_bison.y"
 {
         yyval = yyvsp[0];
     ;
     break;}
 case 12:
-#line 205 "query_parser_bison.y"
+#line 209 "query_parser_bison.y"
 {
         yyval = yyvsp[-2];    
         AddFunc_Arg(parm, yyvsp[0]);
     ;
     break;}
 case 15:
-#line 220 "query_parser_bison.y"
+#line 224 "query_parser_bison.y"
 {
     ;
     break;}
 case 16:
-#line 224 "query_parser_bison.y"
+#line 228 "query_parser_bison.y"
 {
     
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -1181,7 +1185,7 @@ case 16:
     ;
     break;}
 case 17:
-#line 233 "query_parser_bison.y"
+#line 237 "query_parser_bison.y"
 {
         yyerrok;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -1192,37 +1196,37 @@ case 17:
     ;
     break;}
 case 18:
-#line 244 "query_parser_bison.y"
+#line 248 "query_parser_bison.y"
 {
         yyval = yyvsp[-1];
     ;
     break;}
 case 19:
-#line 254 "query_parser_bison.y"
+#line 258 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 20:
-#line 259 "query_parser_bison.y"
+#line 263 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 21:
-#line 264 "query_parser_bison.y"
+#line 268 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 22:
-#line 269 "query_parser_bison.y"
+#line 273 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 23:
-#line 274 "query_parser_bison.y"
+#line 278 "query_parser_bison.y"
 {
         yyval = yyvsp[-3];
         yyval->AddNode(yyvsp[-4]);
@@ -1236,7 +1240,7 @@ case 23:
     ;
     break;}
 case 24:
-#line 287 "query_parser_bison.y"
+#line 291 "query_parser_bison.y"
 {
         yyval = yyvsp[-3];
         yyval->AddNode(yyvsp[-4]);
@@ -1250,25 +1254,25 @@ case 24:
     ;
     break;}
 case 25:
-#line 301 "query_parser_bison.y"
+#line 305 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 26:
-#line 306 "query_parser_bison.y"
+#line 310 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 27:
-#line 311 "query_parser_bison.y"
+#line 315 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 28:
-#line 316 "query_parser_bison.y"
+#line 320 "query_parser_bison.y"
 {
         yyval = yyvsp[-3];
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -1280,7 +1284,7 @@ case 28:
     ;
     break;}
 case 29:
-#line 327 "query_parser_bison.y"
+#line 331 "query_parser_bison.y"
 {
         yyval = yyvsp[-3];
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -1292,61 +1296,61 @@ case 29:
     ;
     break;}
 case 30:
-#line 338 "query_parser_bison.y"
+#line 342 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 31:
-#line 343 "query_parser_bison.y"
-{
-        QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
-    ;
-    break;}
-case 32:
 #line 347 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
-case 33:
+case 32:
 #line 351 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
-case 34:
+case 33:
 #line 355 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
-case 35:
+case 34:
 #line 359 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
-case 36:
+case 35:
 #line 363 "query_parser_bison.y"
+{
+        QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
+    ;
+    break;}
+case 36:
+#line 367 "query_parser_bison.y"
 { 
         yyval = yyvsp[-1];
     ;
     break;}
 case 37:
-#line 368 "query_parser_bison.y"
+#line 372 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[-2], yyvsp[0]);
     ;
     break;}
 case 38:
-#line 373 "query_parser_bison.y"
+#line 377 "query_parser_bison.y"
 {
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[0], 0);
     ;
     break;}
 case 39:
-#line 382 "query_parser_bison.y"
+#line 386 "query_parser_bison.y"
 {
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1357,7 +1361,7 @@ case 39:
     ;
     break;}
 case 40:
-#line 391 "query_parser_bison.y"
+#line 395 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1368,7 +1372,7 @@ case 40:
     ;
     break;}
 case 41:
-#line 400 "query_parser_bison.y"
+#line 404 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1379,7 +1383,7 @@ case 41:
     ;
     break;}
 case 42:
-#line 409 "query_parser_bison.y"
+#line 413 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1390,7 +1394,7 @@ case 42:
     ;
     break;}
 case 43:
-#line 421 "query_parser_bison.y"
+#line 425 "query_parser_bison.y"
 { 
         yyerrok;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -1402,7 +1406,7 @@ case 43:
     ;
     break;}
 case 44:
-#line 431 "query_parser_bison.y"
+#line 435 "query_parser_bison.y"
 { 
         yyerrok; 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
@@ -1414,7 +1418,7 @@ case 44:
     ;
     break;}
 case 45:
-#line 441 "query_parser_bison.y"
+#line 445 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1426,7 +1430,7 @@ case 45:
     ;
     break;}
 case 46:
-#line 451 "query_parser_bison.y"
+#line 455 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1438,7 +1442,7 @@ case 46:
     ;
     break;}
 case 47:
-#line 461 "query_parser_bison.y"
+#line 465 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1450,7 +1454,7 @@ case 47:
     ;
     break;}
 case 48:
-#line 471 "query_parser_bison.y"
+#line 475 "query_parser_bison.y"
 { 
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
@@ -1694,6 +1698,6 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 493 "query_parser_bison.y"
+#line 497 "query_parser_bison.y"
 
 
