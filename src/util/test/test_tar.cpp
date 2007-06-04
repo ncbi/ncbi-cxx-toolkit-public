@@ -40,42 +40,52 @@
 USING_NCBI_SCOPE;
 
 
+const unsigned int fVerbose = CTar::fDumpBlockHeaders;
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Test application
 //
 
-class CTest : public CNcbiApplication
+class CTarTest : public CNcbiApplication
 {
 public:
-    CTest();
-
-protected:
-    enum EAction {
-        fNone               =  0,
-        fCreate             = (1 << 0),
-        fAppend             = (1 << 1),
-        fUpdate             = (1 << 2),
-        fList               = (1 << 3),
-        fExtract            = (1 << 4),
-        fTest               = (1 << 5)
-    };
-    typedef unsigned int TAction;
+    CTarTest();
 
 protected:
     virtual void Init(void);
     virtual int  Run(void);
+
+    string x_Pos(const CTarEntryInfo& info);
+
+protected:
+    CTar::TFlags m_Flags;
+
+    enum EAction {
+        eNone    =  0,
+        eCreate  = (1 << 0),
+        eAppend  = (1 << 1),
+        eUpdate  = (1 << 2),
+        eList    = (1 << 3),
+        eExtract = (1 << 4),
+        eTest    = (1 << 5)
+    };
+    typedef unsigned int TAction;
 };
 
 
-CTest::CTest()
+CTarTest::CTarTest()
+    : m_Flags(0)
 {
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostAllFlags(eDPF_DateTime | eDPF_Severity | eDPF_ErrorID);
     DisableArgDescriptions(fDisableStdArgs);
     HideStdArgs(-1/*everything*/);
 }
 
 
-void CTest::Init(void)
+void CTarTest::Init(void)
 {
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist("h")) {
@@ -113,40 +123,47 @@ void CTest::Init(void)
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Tar test suite: VERY simplified tar utility");
     SetupArgDescriptions(args.release());
-
-    SetDiagPostLevel(eDiag_Warning);
-    SetDiagPostAllFlags(eDPF_DateTime | eDPF_Severity);
 }
 
 
-int CTest::Run(void)
+string CTarTest::x_Pos(const CTarEntryInfo& info)
 {
-    TAction action = fNone;
+    Uint8 pos = info.GetPosition();
+    _ASSERT((pos & 0777) == 0);
+    if (!(m_Flags & fVerbose))
+        return kEmptyStr;
+    return " at block " + NStr::UInt8ToString(pos >> 9, NStr::fWithCommas);
+}
+
+
+int CTarTest::Run(void)
+{
+
+    TAction action = eNone;
 
     const CArgs& args = GetArgs();
 
     if (args["c"].HasValue()) {
-        action |= fCreate;
+        action |= eCreate;
     }
     if (args["r"].HasValue()) {
-        action |= fAppend;
+        action |= eAppend;
     }
     if (args["u"].HasValue()) {
-        action |= fUpdate;
+        action |= eUpdate;
     }
     if (args["t"].HasValue()) {
-        action |= fList;
+        action |= eList;
     }
     if (args["x"].HasValue()) {
-        action |= fExtract;
+        action |= eExtract;
     }
     if (args["T"].HasValue()) {
-        action |= fTest;
+        action |= eTest;
     }
     if (!action  ||  (action & (action - 1))) {
         NCBI_THROW(CArgException, eInvalidArg,
-                   "You have to specify exactly one of "
-                   "c, r, u, t, x, or T");
+                   "You have to specify exactly one of c, r, u, t, x, or T");
     }
 
     _ASSERT(args["f"].HasValue());
@@ -161,9 +178,9 @@ int CTest::Run(void)
 
     if (file.empty()) {
         CNcbiIos* io = 0;
-        if (action == fList  ||  action == fExtract  ||  action == fTest) {
+        if (action == eList  ||  action == eExtract  ||  action == eTest) {
             io = &cin;
-        } else if (action == fCreate  ||  action == fAppend) {
+        } else if (action == eCreate  ||  action == eAppend) {
             io = &cout;
         } else {
             NCBI_THROW(CArgException, eInvalidArg, "Cannot update in a pipe");
@@ -178,68 +195,68 @@ int CTest::Run(void)
         tar->SetBaseDir(args["C"].AsString());
     }
 
-    CTar::TFlags flags = tar->GetFlags();
+    m_Flags = tar->GetFlags();
     if (args["i"].HasValue()) {
-        flags |= CTar::fIgnoreZeroBlocks;
+        m_Flags |= CTar::fIgnoreZeroBlocks;
     }
     if (args["h"].HasValue()) {
-        flags |= CTar::fFollowLinks;
+        m_Flags |= CTar::fFollowLinks;
     }
     if (args["p"].HasValue()) {
-        flags |= CTar::fPreserveAll;
+        m_Flags |= CTar::fPreserveAll;
     }
     if (args["m"].HasValue()) {
-        flags &= ~CTar::fPreserveTime;
+        m_Flags &= ~CTar::fPreserveTime;
     }
     if (args["O"].HasValue()) {
-        flags &= ~CTar::fPreserveOwner;
+        m_Flags &= ~CTar::fPreserveOwner;
     }
     if (args["M"].HasValue()) {
-        flags &= ~CTar::fPreserveMode;
+        m_Flags &= ~CTar::fPreserveMode;
     }
     if (args["U"].HasValue()) {
-        flags |= CTar::fUpdate;
+        m_Flags |= CTar::fUpdate;
     }
     if (args["B"].HasValue()) {
-        flags |= CTar::fBackup;
+        m_Flags |= CTar::fBackup;
     }
     if (args["E"].HasValue()) {
-        flags |= CTar::fEqualTypes;
+        m_Flags |= CTar::fEqualTypes;
     }
     if (args["k"].HasValue()) {
-        flags &= ~CTar::fOverwrite;
+        m_Flags &= ~CTar::fOverwrite;
     }
     if (args["v"].HasValue()) {
-        flags |= CTar::fDumpBlockHeaders;
+        m_Flags |= fVerbose;
     }
-    tar->SetFlags(flags);
+    tar->SetFlags(m_Flags);
 
-    if (action == fCreate) {
+    if (action == eCreate) {
         tar->Create();
     }
     auto_ptr<CTar::TEntries> entries;
-    if (action == fCreate  ||  action == fAppend  ||  action == fUpdate) {
+    if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
         size_t n = args.GetNExtra();
         if (n == 0) {
             NCBI_THROW(CArgException, eInvalidArg, "Must specify file(s)");
         }
         for (size_t i = 1;  i <= n;  i++) {
             const string& name   = args[i].AsString();
-            const string& what   = action == fUpdate ? "Updating " : "Adding ";
-            const string& prefix = action == fUpdate ? "u "        : "a ";
+            const string& what   = action == eUpdate ? "Updating " : "Adding ";
+            const string& prefix = action == eUpdate ? "u "        : "a ";
             LOG_POST(what << name);
-            if (action == fUpdate) {
+            if (action == eUpdate) {
                 entries.reset(tar->Update(name).release());
             } else {
                 entries.reset(tar->Append(name).release());
             }
-            if (flags & CTar::fDumpBlockHeaders) {
+            if (m_Flags & fVerbose) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
-                    LOG_POST(prefix << it->GetName());
+                    LOG_POST(prefix << it->GetName() + x_Pos(*it));
                 }
             }
         }
-    } else if (action == fTest) {
+    } else if (action == eTest) {
         if (args.GetNExtra()) {
             NCBI_THROW(CArgException, eInvalidArg, "Extra args not allowed");
         }
@@ -256,16 +273,16 @@ int CTest::Run(void)
             }
             tar->SetMask(mask.release(), eTakeOwnership);
         }
-        if (action == fList) {
+        if (action == eList) {
             entries.reset(tar->List().release());
             ITERATE(CTar::TEntries, it, *entries.get()) {
-                LOG_POST(*it);
+                LOG_POST(*it << x_Pos(*it));
             }
         } else {
             entries.reset(tar->Extract().release());
-            if (flags & CTar::fDumpBlockHeaders) {
+            if (m_Flags & fVerbose) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
-                    LOG_POST("x " << it->GetName());
+                    LOG_POST("x " << it->GetName() + x_Pos(*it));
                 }
             }
         }
@@ -283,5 +300,5 @@ int CTest::Run(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTarTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
