@@ -68,21 +68,42 @@ BEGIN_NCBI_SCOPE
 
 static const int sc_JpegBufLen = 4096;
 
+struct SJpegErrorInfo
+{
+    SJpegErrorInfo()
+        : has_error(false)
+        {
+        }
+
+    string message;
+    bool has_error;
+};
+
 
 
 static void s_JpegErrorHandler(j_common_ptr ptr)
 {
-    string msg("Error processing JPEG image: ");
+    try {
+        string msg("Error processing JPEG image: ");
 
-    /// format the message
-    char buffer[JMSG_LENGTH_MAX];
-    (*ptr->err->format_message)(ptr, buffer);
+        /// format the message
+        char buffer[JMSG_LENGTH_MAX];
+        (*ptr->err->format_message)(ptr, buffer);
 
-    msg += buffer;
-    if (ptr->is_decompressor) {
-        NCBI_THROW(CImageException, eReadError, msg);
-    } else {
-        NCBI_THROW(CImageException, eWriteError, msg);
+        msg += buffer;
+
+        LOG_POST(Error << msg);
+        if (ptr->client_data) {
+            SJpegErrorInfo* err_info = (SJpegErrorInfo*)ptr->client_data;
+            if ( !err_info->message.empty() ) {
+                err_info->message += "\n";
+            }
+            err_info->message += msg;
+            err_info->has_error = true;
+        }
+    }
+    catch (...) {
+        LOG_POST(Error << "error processing error info");
     }
 }
 
@@ -153,6 +174,9 @@ static boolean s_JpegReadBuffer(j_decompress_ptr cinfo)
     sptr->pub.bytes_in_buffer = sptr->stream->gcount();
     sptr->pub.next_input_byte = sptr->buffer;
 
+    if ( !*(sptr->stream) ) {
+        return FALSE;
+    }
     return TRUE;
 }
 
@@ -163,7 +187,8 @@ static void s_JpegReadSkipData(j_decompress_ptr cinfo, long bytes)
     struct SJpegInput* sptr = (SJpegInput*)cinfo->src;
 
     if (bytes > 0) {
-        while (bytes > (long)sptr->pub.bytes_in_buffer) {
+        while (*(sptr->stream)  &&
+               bytes > (long)sptr->pub.bytes_in_buffer) {
             bytes -= sptr->pub.bytes_in_buffer;
             s_JpegReadBuffer(cinfo);
         }
@@ -307,36 +332,46 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
 
+    SJpegErrorInfo jpeg_err_info;
+
     try {
         // open our file for reading
         // set up the standard error handler
         cinfo.err = jpeg_std_error(&jerr);
         cinfo.err->error_exit = s_JpegErrorHandler;
         cinfo.err->output_message = s_JpegOutputHandler;
+        cinfo.client_data = &jpeg_err_info;
 
         jpeg_create_decompress(&cinfo);
+        if (jpeg_err_info.has_error) {
+            throw runtime_error("error creating decompress info");
+        }
 
         // set up our standard stream processor
         s_JpegReadSetup(&cinfo, istr, buf_ptr);
+        if (jpeg_err_info.has_error) {
+            throw runtime_error("error setting up input stream");
+        }
 
         //jpeg_stdio_src(&cinfo, fp);
         jpeg_read_header(&cinfo, TRUE);
+        if (jpeg_err_info.has_error) {
+            throw runtime_error("error reading header");
+        }
 
         // decompression parameters
         cinfo.dct_method = JDCT_FLOAT;
         jpeg_start_decompress(&cinfo);
-
-        /**
-        LOG_POST(Error << "image width: " << cinfo.image_width);
-        LOG_POST(Error << "image height: " << cinfo.image_height);
-        LOG_POST(Error << "input color space: " << cinfo.in_color_space);
-        LOG_POST(Error << "number of components: " << cinfo.num_components);
-        LOG_POST(Error << "output width: " << cinfo.output_width);
-        LOG_POST(Error << "output height: " << cinfo.output_height);
-        **/
+        if (jpeg_err_info.has_error) {
+            throw runtime_error("error starting decompression");
+        }
 
         // allocate an image to hold our data
         image.Reset(new CImage(cinfo.output_width, cinfo.output_height, 3));
+        _TRACE("JPEG image: "
+               << cinfo.output_width << "x"
+               << cinfo.output_height << "x"
+               << cinfo.out_color_components);
 
         // we process the image 1 scanline at a time
         unsigned char *scanline[1];
@@ -349,6 +384,10 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
                  scanline[0] = &scan_buf[0];
                  for (size_t i = 0;  i < image->GetHeight();  ++i) {
                      jpeg_read_scanlines(&cinfo, scanline, 1);
+                     if (jpeg_err_info.has_error) {
+                         throw runtime_error("error reading scanline " +
+                                             NStr::IntToString(i));
+                     }
 
                      for (size_t j = 0;  j < stride;  ++j) {
                          *data++ = scanline[0][j];
@@ -363,6 +402,10 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
             scanline[0] = image->SetData();
             for (size_t i = 0;  i < image->GetHeight();  ++i) {
                 jpeg_read_scanlines(&cinfo, scanline, 1);
+                if (jpeg_err_info.has_error) {
+                    throw runtime_error("error reading scanline " +
+                                        NStr::IntToString(i));
+                }
                 scanline[0] += stride;
             }
             break;
@@ -372,15 +415,50 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
                        "CImageIOJpeg::ReadImage(): Unhandled color components");
         }
 
-        // standard clean-up
-        jpeg_finish_decompress(&cinfo);
-        jpeg_destroy_decompress(&cinfo);
-    }
-    catch (...) {
+        ///
+        /// sanity check:
+        /// make sure we've processed enough scan lines
+        ///
+        if (cinfo.output_scanline != image->GetHeight()) {
+            LOG_POST(Error << "Error: image is truncated: processed "
+                     << cinfo.output_scanline << "/" << image->GetHeight()
+                     << " scanlines");
+        }
 
+        //
+        // standard clean-up
+        // if we've gotten this far, the image is at least usable
+        //
+        jpeg_finish_decompress(&cinfo);
+        if (jpeg_err_info.has_error) {
+            LOG_POST(Error << "Error in finalizing image decompression: "
+                     << jpeg_err_info.message);
+            jpeg_err_info.has_error = false;
+            jpeg_err_info.message.erase();
+        }
+
+        jpeg_destroy_decompress(&cinfo);
+        if (jpeg_err_info.has_error) {
+            LOG_POST(Error << "Error in finalizing image decompression: "
+                     << jpeg_err_info.message);
+            jpeg_err_info.message.erase();
+        }
+    }
+    catch (CException& e) {
         // clean up our mess
         jpeg_destroy_decompress(&cinfo);
-
+        throw;
+    }
+    catch (std::exception& e) {
+        // clean up our mess
+        jpeg_destroy_decompress(&cinfo);
+        LOG_POST(Error << "error reading JPEG image: " << e.what());
+        NCBI_THROW(CImageException, eReadError,
+                   "Error reading JPEG image");
+    }
+    catch (...) {
+        // clean up our mess
+        jpeg_destroy_decompress(&cinfo);
         throw;
     }
     return image.Release();
