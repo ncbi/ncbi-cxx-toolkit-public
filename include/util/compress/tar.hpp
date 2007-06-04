@@ -44,6 +44,7 @@
  */
 
 #include <corelib/ncbifile.hpp>
+#include <corelib/reader_writer.hpp>
 #include <list>
 #include <utility>
 
@@ -145,7 +146,7 @@ public:
 class NCBI_XUTIL_EXPORT CTarEntryInfo
 {
 public:
-    /// Which entry type.
+    /// Archive entry type.
     enum EType {
         eFile        = CDirEntry::eFile,        ///< Regular file
         eDir         = CDirEntry::eDir,         ///< Directory
@@ -157,8 +158,8 @@ public:
     };
 
     // Constructor
-    CTarEntryInfo()
-        : m_Type(eUnknown)
+    CTarEntryInfo(Uint8 pos = 0)
+        : m_Type(eUnknown), m_Pos(pos)
     {
         memset(&m_Stat, 0, sizeof(m_Stat));
     }
@@ -183,6 +184,7 @@ public:
     time_t        GetModificationTime(void) const { return m_Stat.st_mtime; }
     time_t        GetLastAccessTime(void)   const { return m_Stat.st_atime; }
     time_t        GetCreationTime(void)     const { return m_Stat.st_ctime; }
+    Uint8         GetPosition(void)         const { return m_Pos;           }
 
 private:
     string       m_Name;       ///< Entry name
@@ -191,6 +193,7 @@ private:
     string       m_GroupName;  ///< Group name (empty string for MSWin)
     string       m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
     struct stat  m_Stat;       ///< Dir-entry compatible info
+    Uint8        m_Pos;        ///< Position within archive
 
     friend class CTar;
 };
@@ -246,6 +249,8 @@ public:
         fPreserveTime       = (1<<9),
         /// Preserve all attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
+        /// Extract first matching entry only, then stop
+        fFirstOnly          = (1<<10),
 
         // -- Debugging --
         fDumpBlockHeaders   = (1<<20),
@@ -319,18 +324,16 @@ public:
     /// Look for more recent copies, if available, of archive members,
     /// and place them at the end of the archive:
     ///
-    /// if fUpdateExistingOnly is set in processing flags, only the
-    /// existing archive entries (including directories) will be updated;
-    /// that is, Update(".") won't recursively add "." if "." is not
-    /// the archive member;  it will, however, do the recursive update
-    /// should "." be found in the archive.
+    /// if fUpdate is set in processing flags, only the existing archive
+    /// entries (including directories) will be updated;  that is, Update(".")
+    /// won't recursively add "." if "." is not the archive member;  it will,
+    /// however, do the recursive update should "." be found in the archive.
     ///
-    /// if fUpdateExistingOnly is unset, the existing entries will be
-    /// updated (if newer), and inexistent entries will be added to
-    /// the archive; that is, Update(".") will recursively scan "."
-    /// to update both existing entries (if newer files found),
-    /// and add new entries for any files/directories, which are
-    /// currently not in the archive.
+    /// if fUpdate is unset, the existing entries will be updated (if their
+    /// filesystem counterparts are newer), and inexistent entries will be
+    /// added to the archive;  that is, Update(".") will recursively scan "."
+    /// to update both existing entries (if newer files found), and also add
+    /// new entries for any files/directories, which are currently not in.
     ///
     /// @return
     ///   A list of entries that have been updated.
@@ -430,6 +433,18 @@ public:
     ///   GetBaseDir
     void SetBaseDir(const string& dirname);
 
+    /// Create an IReader, which can extract contents of one named file.
+    ///
+    /// Tar archive is deemed to be in the specified stream "is", properly
+    /// positioned.  The extraction is done as if fFirstOnly flag was set.
+    /// @return
+    ///   IReader interface to read the file contents with;  0 on error.
+    /// @sa
+    ///   Extract, SetFlags
+    static IReader* Extract(istream& is, const string& name,
+                            TFlags flags = fFirstOnly,
+                            size_t blocking_factor = 1);
+
 protected:
     /// Archive action
     enum EOpenMode {
@@ -441,11 +456,12 @@ protected:
     enum EAction {
         eUndefined =  eNone,
         eList      = (1 << 2) | eRO,
-        eAppend    = (2 << 2) | eRW,
+        eAppend    = (1 << 3) | eRW,
         eUpdate    = eList | eAppend,
-        eExtract   = (4 << 2) | eRO,
+        eExtract   = (1 << 4) | eRO,
         eTest      = eList | eExtract,
-        eCreate    = (8 << 2) | eWO
+        eCreate    = (1 << 5) | eWO,
+        eInternal  = (1 << 6)
     };
     /// IO completion code
     enum EStatus {
@@ -460,7 +476,7 @@ protected:
 
     // Open/close the archive.
     auto_ptr<TEntries> x_Open(EAction action);
-    void x_Close(void);
+    virtual void x_Close(void);
 
     // Flush the archive (writing an appropriate EOT if necessary).
     void x_Flush(void);
@@ -529,7 +545,12 @@ protected:
     NStr::ECase    m_MaskUseCase;  ///< Flag for mask matching.
     bool           m_IsModified;   ///< True after at least one write.
     string         m_BaseDir;      ///< Base directory for relative paths.
-    const string*  m_Name;         ///< Current entry name being processed.
+    const string*  m_Current;      ///< Current entry name being processed.
+
+private:
+    // Prohibit assignment and copy
+    CTar& operator=(const CTar&);
+    CTar(const CTar&);
 };
 
 

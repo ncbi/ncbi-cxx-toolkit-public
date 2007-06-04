@@ -36,9 +36,11 @@
  *   Can handle no exotics like sparse / contiguous files, special
  *   files (devices, FIFOs), multivolume / incremental archives, etc,
  *   but just regular files, directories, and links:  can extract
- *   both hard- and symlinks, but can store only symlinks.
+ *   both hard- and symlinks, but can store symlinks only.
  *
  */
+
+#define NCBI_MODULE NCBITAR
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
@@ -227,15 +229,19 @@ static size_t s_Length(const char* ptr, size_t maxsize)
 // Constants / macros / typedefs
 //
 
-/// Tar block size
-static const size_t kBlockSize = 512;
-
 /// Round up to the nearest multiple of kBlockSize
-#define ALIGN_SIZE(size) ((((size) + kBlockSize-1) / kBlockSize) * kBlockSize)
+#define ALIGN_SIZE(size) (((size) + (kBlockSize-1)) & ~(kBlockSize-1))
+#define OFFSET_OF(size)  ( (size)                   &  (kBlockSize-1))
+#define BLOCK_OF(pos)    ((pos) >> 9)
+#define SIZE_OF(blk)     ((blk) << 9)
+
+/// Tar block size (512 bytes)
+static const size_t kBlockSize = SIZE_OF(1);
 
 
+/// Recognized TAR formats
 enum ETar_Format {
-    eTar_Unknown,
+    eTar_Unknown = 0,
     eTar_Legacy,
     eTar_OldGNU,
     eTar_Ustar
@@ -454,18 +460,24 @@ static string s_OSReason(int x_errno)
 }
 
 
-static string s_PositionAsString(Uint8 pos, size_t recsize,
-                                 const string* name = 0)
+static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
+                                 const string* entry)
 {
-    string result =
-        "At record " + NStr::UInt8ToString( pos / recsize)
-        + ", block " + NStr::UInt8ToString((pos % recsize) / kBlockSize)
-        + " [thru #" + NStr::UInt8ToString( pos            / kBlockSize,
-                                            NStr::fWithCommas) + ']';
-    if (name  &&  !name->empty()) {
-        result += ", while in '" + *name + '\'';
+    _ASSERT(!OFFSET_OF(pos));
+    string result;
+    if (!file.empty()) {
+        CDirEntry temp(file);
+        result = temp.GetName() + ": ";
     }
-    return result;
+    result +=
+        "At record " + NStr::UInt8ToString(         pos / recsize)
+        + ", block " + NStr::UInt8ToString(BLOCK_OF(pos % recsize))
+        + " [thru #" + NStr::UInt8ToString(BLOCK_OF(pos),
+                                           NStr::fWithCommas) + ']';
+    if (entry  &&  !entry->empty()) {
+        result += ", while in '" + *entry + '\'';
+    }
+    return result + ":\n";
 }
 
 
@@ -773,7 +785,7 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_FileStream(new CNcbiFstream),
       m_OpenMode(eNone),
       m_Stream(0),
-      m_BufferSize(blocking_factor * kBlockSize),
+      m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
       m_StreamPos(0),
       m_BufPtr(0),
@@ -793,7 +805,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_FileStream(0),
       m_OpenMode(eNone),
       m_Stream(&stream),
-      m_BufferSize(blocking_factor * kBlockSize),
+      m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
       m_StreamPos(0),
       m_BufPtr(0),
@@ -824,14 +836,19 @@ CTar::~CTar()
 
 #define TAR_THROW(errcode, message)                                     \
     NCBI_THROW(CTarException, errcode,                                  \
-               s_PositionAsString(m_StreamPos, m_BufferSize, m_Name) +  \
-               ":\n" + (message))
+               s_PositionAsString(m_FileName, m_StreamPos,              \
+                                  m_BufferSize, m_Current) + (message))
 
 #define TAR_THROW_EX(errcode, message, h, fmt)                          \
     TAR_THROW(errcode,                                                  \
               m_Flags & fDumpBlockHeaders                               \
               ? string(message) + ":\n" + s_DumpHeader(h, fmt, true)    \
               : string(message))
+
+#define TAR_POST(severity, message)                                     \
+    ERR_POST(severity <<                                                \
+             s_PositionAsString(m_FileName, m_StreamPos,                \
+                                m_BufferSize, m_Current) + (message))
 
 
 void CTar::x_Init(void)
@@ -852,7 +869,7 @@ void CTar::x_Init(void)
 
 void CTar::x_Flush(void)
 {
-    m_Name = 0;
+    m_Current = 0;
     if (!m_Stream  ||  !m_OpenMode  ||  !m_IsModified) {
         return;
     }
@@ -863,7 +880,7 @@ void CTar::x_Flush(void)
     memset(m_Buffer + m_BufferPos, 0, pad);
     x_WriteArchive(pad);
     _ASSERT(m_BufferPos == 0);
-    if (pad < kBlockSize  ||  pad - (pad % kBlockSize) < (kBlockSize << 1)) {
+    if (pad < kBlockSize  ||  pad - OFFSET_OF(pad) < (kBlockSize << 1)) {
         // Write EOT (two zero blocks), if have not already done so by padding
         memset(m_Buffer, 0, m_BufferSize);
         x_WriteArchive(m_BufferSize);
@@ -897,15 +914,15 @@ void CTar::x_Close(void)
 
 auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 {
-    m_Name = 0;
+    m_Current = 0;
     _ASSERT(action);
     // We can only open a named file here, and if an external stream
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
         if (m_IsModified  &&  action != eAppend) {
-            ERR_POST(Warning << string("Pending changes may be discarded"
-                                       " upon in-stream archive reopen"));
+            TAR_POST(Warning, "Pending changes may be discarded"
+                     " upon reopen of in-stream archive");
             m_IsModified = false;
             m_BufferPos = 0;
             m_StreamPos = 0;
@@ -988,18 +1005,18 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
 auto_ptr<CTar::TEntries> CTar::Extract(void)
 {
     // Extract
-    auto_ptr<TEntries> entries = x_Open(eExtract);
+    auto_ptr<TEntries> done = x_Open(eExtract);
 
     // Restore attributes of "postponed" directory entries
     if (m_Flags & fPreserveAll) {
-        ITERATE(TEntries, i, *entries.get()) {
+        ITERATE(TEntries, i, *done.get()) {
             if (i->GetType() == CTarEntryInfo::eDir) {
                 x_RestoreAttrs(*i);
             }
         }
     }
 
-    return entries;
+    return done;
 }
 
 
@@ -1045,8 +1062,8 @@ void CTar::SetBaseDir(const string& dirname)
 // and reflect the number of bytes available via the parameter.
 const char* CTar::x_ReadArchive(size_t& n)
 {
+    _ASSERT(!OFFSET_OF(m_BufferPos));
     _ASSERT(n != 0);
-    _ASSERT(m_BufferPos % kBlockSize == 0);
     size_t nread;
     if (!m_BufferPos) {
         nread = 0;
@@ -1129,13 +1146,16 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 }
 
 
-static void s_Dump(const SHeader* h, ETar_Format fmt,
-                   Uint8 pos, size_t recsize, Uint8 datasize)
+static void s_Dump(const string& file, Uint8 pos, size_t recsize,
+                   const string* entry, const SHeader* h, ETar_Format fmt,
+                   Uint8 datasize)
 {
-    unsigned long blocks = (unsigned long)(ALIGN_SIZE(datasize) / kBlockSize);
-    LOG_POST(s_PositionAsString(pos, recsize) + ":\n"
+    unsigned long blocks = (unsigned long) BLOCK_OF(datasize + (kBlockSize-1));
+    LOG_POST(s_PositionAsString(file, pos, recsize, entry)
              + s_DumpHeader(h, fmt)
-             + "Blocks of data: " + NStr::UIntToString(blocks) + '\n');
+             + (blocks
+                ? "Blocks of data: " + NStr::UIntToString(blocks) + '\n'
+                : kEmptyStr));
 }
 
 
@@ -1143,8 +1163,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
 {
     // Read block
     const TBlock* block;
-    size_t nread = kBlockSize;
-    _ASSERT(sizeof(block->buffer) == nread);
+    size_t nread = sizeof(block->buffer);
     if (!(block = (const TBlock*) x_ReadArchive(nread))) {
         return eEOF;
     }
@@ -1226,8 +1245,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     } else {
         info.m_Name.assign(h->name, s_Length(h->name, sizeof(h->name)));
     }
-    if (!m_Name) {
-        m_Name = &info.GetName();
+    if (!m_Current) {
+        m_Current = &info.GetName();
     }
 
     // Mode
@@ -1292,7 +1311,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
         if (fmt == eTar_OldGNU) {
             size_t size = (size_t) info.GetSize();
             if (dump) {
-                s_Dump(h, fmt, m_StreamPos, m_BufferSize, size);
+                s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
+                       h, fmt, size);
             }
             m_StreamPos += ALIGN_SIZE(nread);
             info.m_Type = (h->typeflag[0] == 'K'
@@ -1304,7 +1324,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
                 nread = size;
                 const char* xbuf = x_ReadArchive(nread);
                 if (!xbuf) {
-                    m_Name = &info.GetName();
+                    m_Current = &info.GetName();
                     TAR_THROW(eRead, string("Unexpected EOF in reading long ")
                               + (info.GetType() == CTarEntryInfo::eGNULongName
                                  ? "name" : "link"));
@@ -1359,7 +1379,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
     }
 
     if (dump) {
-        s_Dump(h, fmt, m_StreamPos, m_BufferSize, info.GetSize());
+        s_Dump(m_FileName, m_StreamPos, m_BufferSize, m_Current,
+               h, fmt, info.GetSize());
     }
     m_StreamPos += ALIGN_SIZE(nread);
 
@@ -1371,7 +1392,6 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
 {
     // Prepare block info
     TBlock block;
-    _ASSERT(sizeof(block.buffer) == kBlockSize);
     memset(block.buffer, 0, sizeof(block.buffer));
     SHeader* h = &block.header;
 
@@ -1392,7 +1412,7 @@ void CTar::x_WriteEntryInfo(const string& name, const CTarEntryInfo& info)
     /* NOTE:  Although some sources on the Internet indicate that
      * all but size, mtime and version numeric fields are '\0'-terminated,
      * we could not confirm that with existing tar programs, all of
-     * which used either '\0' or ' '-terminated values in both size
+     * which we saw using either '\0' or ' '-terminated values in both size
      * and mtime fields.  For ustar archive we have found a document
      * that definitively tells that _all_ numeric fields are '\0'-terminated,
      * and can keep maximum sizeof(field)-1 octal digits.  We follow it here.
@@ -1504,9 +1524,8 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     memcpy(storage, src, size);
 
     // Prepare extended block header with the long name info (old GNU style)
-    _ASSERT(m_BufferPos % kBlockSize == 0  &&  m_BufferPos < m_BufferSize);
+    _ASSERT(!OFFSET_OF(m_BufferPos)  &&  m_BufferPos < m_BufferSize);
     TBlock* block = (TBlock*)(m_Buffer + m_BufferPos);
-    _ASSERT(sizeof(block->buffer) == kBlockSize);
     memset(block->buffer, 0, sizeof(block->buffer));
     h = &block->header;
 
@@ -1544,12 +1563,12 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 
 void CTar::x_Backspace(EAction action, size_t blocks)
 {
-    m_Name = 0;
+    m_Current = 0;
     if (!blocks  ||  (action != eAppend  &&  action != eUpdate)) {
         return;
     }
     if (!m_FileStream) {
-        ERR_POST(Warning << "In-stream update results in gapped tar archive");
+        TAR_POST(Warning, "In-stream update may result in gapped tar archive");
         return;
     }
 
@@ -1558,7 +1577,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         int x_errno = errno;
         TAR_THROW(eRead, "Archive backspace failed" + s_OSReason(x_errno));
     }
-    size_t      gap = blocks * kBlockSize;    // Size of zero-filled area read
+    size_t      gap = SIZE_OF(blocks);        // Size of zero-filled area read
     CT_POS_TYPE rec = 0;                      // Record number (0-based)
 
     if (pos > (CT_POS_TYPE) gap) {
@@ -1594,39 +1613,46 @@ void CTar::x_Backspace(EAction action, size_t blocks)
 
 auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 {
-    auto_ptr<TEntries> entries(new TEntries);
+    auto_ptr<TEntries> done(new TEntries);
     string nextLongName, nextLongLink;
     size_t zeroblock_count = 0;
+    Uint8 pos = m_StreamPos;
 
     for (;;) {
         // Next block is supposed to be a header
-        CTarEntryInfo info;
-        m_Name = nextLongName.empty() ? 0 : &nextLongName;
+        CTarEntryInfo info(pos);
+        m_Current = nextLongName.empty() ? 0 : &nextLongName;
         EStatus status = x_ReadEntryInfo(info, action == eTest
                                          &&  (m_Flags & fDumpBlockHeaders));
         switch (status) {
         case eSuccess:
+            if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
+                TAR_POST(Error, "Interspersing single zero block ignored");
+            }
             // processed below
             break;
+
         case eZeroBlock:
-            m_Name = 0;
+            m_Current = 0;
             zeroblock_count++;
             if ((m_Flags & fIgnoreZeroBlocks)  ||  zeroblock_count < 2) {
                 continue;
             }
             // Two zero blocks -> eEOF
             /*FALLTHRU*/
+
         case eEOF:
             if (!nextLongName.empty()) {
-                ERR_POST(Error <<
+                TAR_POST(Error,
                          "Orphaned long name '" + nextLongName + "' ignored");
             }
             if (!nextLongLink.empty()) {
-                ERR_POST(Error <<
+                TAR_POST(Error,
                          "Orphaned long link '" + nextLongLink + "' ignored");
             }
             x_Backspace(action, zeroblock_count);
-            return entries;
+            return done;
+
         default:
             NCBI_THROW(CCoreException, eCore, "Unknown error");
         }
@@ -1637,10 +1663,18 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         //
         switch (info.GetType()) {
         case CTarEntryInfo::eGNULongName:
+            if (!nextLongName.empty()) {
+                TAR_POST(Error,
+                         "Unused long name '" + nextLongName + "' replaced");
+            }
             // Latch next long name here then just skip
             info.m_Name.swap(nextLongName);
             continue;
         case CTarEntryInfo::eGNULongLink:
+            if (!nextLongLink.empty()) {
+                TAR_POST(Error,
+                         "Unused long link '" + nextLongLink + "' replaced");
+            }
             // Latch next long link here then just skip
             info.m_Name.swap(nextLongLink);
             continue;
@@ -1663,15 +1697,26 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         }
 
         // Match file name with the set of masks
-        bool match = (action != eList  &&  action != eExtract ? true : m_Mask
+        bool match = (m_Mask  &&  (action == eList     ||
+                                   action == eExtract  ||
+                                   action == eInternal)
                       ? m_Mask->Match(info.GetName(), m_MaskUseCase) : true);
 
-        if (x_ProcessEntry(info, match  &&  action == eExtract, entries.get())
-            ||  (match  &&  !(int(action) & (eExtract & ~eRW)))) {
-            entries->push_back(info);
+        if ((match  &&  action == eInternal)  ||
+            x_ProcessEntry(info, match  &&  action == eExtract, done.get())  ||
+            (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))) {
+            done->push_back(info);
+            if ((action == eExtract  &&  (m_Flags & fFirstOnly))  ||
+                action == eInternal) {
+                break;
+            }
         }
+
+        pos = m_StreamPos;
     }
-    /*NOTREACHED*/
+
+    m_Current = 0;
+    return done;
 }
 
 
@@ -1851,16 +1896,17 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                     break;
                 }
                 int x_errno = errno;
-                ERR_POST(Warning << "Cannot hard-link '"
-                         + src->GetPath() + "' and '" + dst->GetPath() + '\''
+                TAR_POST(Warning,
+                         "Cannot hard-link '" + src->GetPath()
+                         + "' and '" + dst->GetPath() + '\''
                          + s_OSReason(x_errno) + ", trying to copy");
 #endif // NCBI_OS_UNIX
                 if (!src->Copy(dst->GetPath(),
                                CDirEntry::fCF_Overwrite |
                                CDirEntry::fCF_PreserveAll)) {
-                    ERR_POST(Error << "Cannot hard-link '"
-                             + src->GetPath() + "' and '" + dst->GetPath()
-                             + "\' via copy");
+                    TAR_POST(Error,
+                             "Cannot hard-link '" + src->GetPath()
+                             + "' and '" + dst->GetPath() + "\' via copy");
                     result = false;
                     break;
                 }
@@ -1890,7 +1936,8 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
             CSymLink symlink(dst->GetPath());
             if (!symlink.Create(info.GetLinkName())) {
                 int x_errno = errno;
-                ERR_POST(Error << "Cannot create symlink '" + dst->GetPath()
+                TAR_POST(Error,
+                         "Cannot create symlink '" + dst->GetPath()
                          + "' -> '" + info.GetLinkName() + '\''
                          + s_OSReason(x_errno));
                 result = false;
@@ -1906,7 +1953,8 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
         /*FALLTHRU*/
 
     default:
-        ERR_POST(Warning << "Skipping unsupported entry '" + info.GetName()
+        TAR_POST(Warning,
+                 "Skipping unsupported entry '" + info.GetName()
                  + "' w/type #" + NStr::IntToString(int(info.GetType())));
         result = false;
         break;
@@ -2005,7 +2053,7 @@ string CTar::x_ToFilesystemPath(const string& name) const
 
 string CTar::x_ToArchiveName(const string& path) const
 {
-    // NB: Path assumed to be normalized
+    // NB: Path assumed to have been normalized
     string retval = CDirEntry::AddTrailingPathSeparator(path);
 
 #ifdef NCBI_OS_MSWIN
@@ -2058,7 +2106,7 @@ string CTar::x_ToArchiveName(const string& path) const
     if (retval == ".."  ||  NStr::StartsWith(retval, "../")  ||
         NStr::EndsWith(retval, "/..")  ||  retval.find("/../") != NPOS) {
         TAR_THROW(eBadName,
-                  "Name may not embed parent ('..') directory:\n" + retval);
+                  "Name '" + retval + "' embeds parent directory ('..')");
     }
 
     if (absolute) {
@@ -2090,7 +2138,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     CDirEntry::EType type = CDirEntry::GetType(st.orig);
 
     // Create the entry info
-    CTarEntryInfo info;
+    CTarEntryInfo info(m_StreamPos);
     info.m_Name = x_ToArchiveName(path);
     if (type == CDirEntry::eDir  &&  info.m_Name != "/") {
         info.m_Name += '/';
@@ -2098,7 +2146,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     if (info.GetName().empty()) {
         TAR_THROW(eBadName, "Empty entry name not allowed");
     }
-    m_Name = &info.GetName();
+    m_Current = &info.GetName();
     info.m_Type = CTarEntryInfo::EType(type);
     if (info.GetType() == CTarEntryInfo::eSymLink) {
         _ASSERT(!follow_links);
@@ -2173,7 +2221,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         if (update) {
             x_WriteEntryInfo(path, info);
             entries->push_back(info);
-            m_Name = 0;
+            m_Current = 0;
         }
         {{
             // Append/Update all files from that directory
@@ -2191,13 +2239,14 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         /*FALLTHRU*/
 
     default:
-        ERR_POST(Warning << "Skipping unsupported source '" + path
+        TAR_POST(Warning,
+                 "Skipping unsupported source '" + path
                  + "' w/type #" + NStr::IntToString(int(type)));
         break;
     }
 
  out:
-    m_Name = 0;
+    m_Current = 0;
     return entries;
 }
 
@@ -2243,7 +2292,91 @@ void CTar::x_AppendFile(const string& file, const CTarEntryInfo& info)
     size_t zero = ALIGN_SIZE(m_BufferPos) - m_BufferPos;
     memset(m_Buffer + m_BufferPos, 0, zero);
     x_WriteArchive(zero);
-    _ASSERT(m_BufferPos % kBlockSize == 0);
+    _ASSERT(!OFFSET_OF(m_BufferPos));
+}
+
+
+class CTarReader : public IReader,
+                   protected CTar
+{
+    friend class CTar;
+
+protected:
+    CTarReader(istream& is, size_t blocking_factor);
+
+public:
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    virtual ERW_Result PendingCount(size_t* count);
+
+protected:
+    CTarEntryInfo m_Info;
+    Uint8         m_Read;
+    bool          m_Eof;
+    bool          m_Bad;
+};
+
+
+CTarReader::CTarReader(istream&is, size_t blocking_factor)
+    : CTar(is, blocking_factor), m_Read(0), m_Eof(false), m_Bad(false)
+{
+}
+
+
+ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
+{
+    if (m_Bad  ||  !count) {
+        if (*bytes_read)
+            *bytes_read = 0;
+        return m_Bad ? eRW_Error :
+            (m_Read < m_Info.GetSize()  ||  !m_Eof) ? eRW_Success : eRW_Eof;
+    }
+
+    // FIXME:: This is NOT yet fully implemented!!
+    m_Eof = true;
+    if (bytes_read)
+        *bytes_read = 0;
+    return eRW_NotImplemented;
+}
+
+
+ERW_Result CTarReader::PendingCount(size_t* count)
+{
+    if (m_Bad)
+        return eRW_Error;
+    Uint8 left = m_Info.GetSize() - m_Read;
+    if (!left  &&  m_Eof) {
+        return eRW_Eof;
+    }
+    *count = (size_t) left;
+    return eRW_Success;
+}
+
+
+IReader* CTar::Extract(istream& is, const string& name,
+                       CTar::TFlags flags, size_t blocking_factor)
+{
+    auto_ptr<CTarReader> retval(new CTarReader(is, blocking_factor));
+
+    retval->SetFlags(flags | fFirstOnly);
+
+    auto_ptr<CMaskFileName> mask(new CMaskFileName);
+    mask->Add(name);
+    retval->SetMask(mask.release(), eTakeOwnership);
+
+    auto_ptr<TEntries> toc = retval->x_Open(eInternal);
+    _ASSERT(toc->size() < 2);
+    if (toc->size() < 1) {
+        return 0;
+    }
+
+    const CTarEntryInfo& info = *toc->begin();
+    if (info.GetType() != CTarEntryInfo::eFile) {
+        return 0;
+    }
+    retval->m_Info    = info;
+    retval->m_Current = &retval->m_Info.GetName();
+
+    return retval.release();
 }
 
 
