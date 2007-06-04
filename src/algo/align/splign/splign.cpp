@@ -468,10 +468,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         }
         else {
 
-            L1 = 0;
-            R1 = pattern0[i+1] - pattern0[i];
-            L2 = 0;
-            R2 = pattern0[i+3] - pattern0[i+2];
+            L1 = 1;
+            R1 = pattern0[i+1] - pattern0[i] - 1;
+            L2 = 1;
+            R2 = pattern0[i+3] - pattern0[i+2] - 1;
             max_seg_size = R1 - L1 + 1;
         }
 
@@ -775,7 +775,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                                                          size_t range_right)
 {    
     SAlignedCompartment rv;
-
+ 
     try {
         m_segments.clear();
     
@@ -814,7 +814,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
     
         // keep short terminal hits out of the pattern
         THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
-        const size_t min_term_len (20);
+        const size_t min_termhitlen (20);
         bool b0 (true), b1 (true);
         while(b0 && b1 && ii < jj) {
             
@@ -823,7 +823,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             
             if(ii < jj) {
                 
-                if((*ii)->GetQuerySpan() < min_term_len) {
+                if((*ii)->GetQuerySpan() < min_termhitlen) {
                     ii++ -> Reset(0);
                 }
                 else {
@@ -833,7 +833,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             
             if(ii < jj) {
                 
-                if((*jj)->GetQuerySpan() < min_term_len) {
+                if((*jj)->GetQuerySpan() < min_termhitlen) {
                     jj-- -> Reset(0);
                 }
                 else {

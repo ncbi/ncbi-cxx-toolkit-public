@@ -21,9 +21,6 @@ const char g_msg_InvalidRange [] = "Invalid range data";
 const char g_msg_NoHitsAfterFiltering [] =
     "No hits left after filtering";
 
-const char g_msg_NoHitsBeyondPolya [] =
-    "No hits found beyond Poly(A), if any";
-
 const char g_msg_NoAlignment [] = "No alignment found";
 
 const char g_msg_NoExonsAboveIdtyLimit [] =
