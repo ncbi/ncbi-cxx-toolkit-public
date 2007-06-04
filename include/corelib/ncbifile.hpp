@@ -2896,6 +2896,18 @@ void FindFiles(TContainer&    out,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Utility function working like glob(): takes a pattern and fills the
+/// result list with files/directories matching the pattern.
+///
+
+
+void NCBI_XNCBI_EXPORT FindFiles(const string& pattern,
+                                 list<string>& result,
+                                 TFindFiles flags);
+
+
 END_NCBI_SCOPE
 
 #endif  /* CORELIB__NCBIFILE__HPP */

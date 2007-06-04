@@ -4263,4 +4263,96 @@ const char* CFileErrnoException::GetErrCodeString(void) const
     }
 }
 
+
+void x_Glob(const string& path,
+            const list<string>& parts,
+            list<string>::const_iterator next,
+            list<string>& result,
+            TFindFiles flags)
+{
+    vector<string> paths;
+    paths.push_back(path);
+    vector<string> masks;
+    masks.push_back(*next);
+    bool last = ++next == parts.end();
+    TFindFiles ff = flags;
+    if ( !last ) {
+        ff &= ~fFF_File;
+        ff |= fFF_Dir;
+    }
+    list<string> found;
+    FindFiles(found, paths.begin(), paths.end(), masks, ff);
+    if ( last ) {
+        result.insert(result.end(), found.begin(), found.end());
+    }
+    else {
+        if ( !found.empty() ) {
+            ITERATE(list<string>, it, found) {
+                x_Glob(CDirEntry::AddTrailingPathSeparator(*it),
+                    parts, next, result, flags);
+            }
+        }
+        else {
+            x_Glob(CDirEntry::AddTrailingPathSeparator(path + masks.front()),
+                parts, next, result, flags);
+        }
+    }
+}
+
+
+void FindFiles(const string& pattern,
+               list<string>& result,
+               TFindFiles flags)
+{
+    static string kDirSep(1, CDirEntry::GetPathSeparator());
+
+    string abs_path = CDirEntry::CreateAbsolutePath(pattern);
+    string search_path = kDirSep;
+
+    list<string> parts;
+    NStr::Split(abs_path, kDirSep, parts);
+    if ( parts.empty() ) {
+        return;
+    }
+
+#if defined(DISK_SEPARATOR)
+    // Network paths on Windows start with double back-slash and
+    // need special processing.
+    static string kNetSep(2, CDirEntry::GetPathSeparator());
+    bool is_network = pattern.find(kNetSep) == 0;
+    if ( is_network ) {
+        search_path = kNetSep + parts.front() + kDirSep;
+        parts.erase(parts.begin());
+    }
+    else {
+        string disk;
+        CDirEntry::SplitPathEx(abs_path, &disk);
+        if ( disk.empty() ) {
+            // Disk is missing in the absolute path, add it.
+            CDirEntry::SplitPathEx(CDir::GetCwd(), &disk);
+            if ( !disk.empty() ) {
+                search_path = disk + kDirSep;
+            }
+        }
+        else {
+            search_path = disk;
+            // Disk is present but may be missing dir separator
+            if (abs_path[disk.size()] == DIR_SEPARATOR) {
+                parts.erase(parts.begin()); // Remove disk from parts
+                search_path += kDirSep;
+            }
+            else {
+                // Disk is included in the first part, remove it.
+                string temp = parts.front().substr(disk.size());
+                parts.erase(parts.begin());
+                parts.insert(parts.begin(), temp);
+            }
+        }
+    }
+#endif
+
+    x_Glob(search_path, parts, parts.begin(), result, flags);
+}
+
+
 END_NCBI_SCOPE
