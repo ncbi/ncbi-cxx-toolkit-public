@@ -1604,7 +1604,9 @@ void CDirEntry::DereferenceLink(void)
 
 bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size) const
 {
-    EType type = GetType();
+    // Dereference link if specified
+    bool follow = F_ISSET(flags, fCF_FollowLinks);
+    EType type = GetType(follow ? eFollowLinks : eIgnoreLinks);
     switch (type) {
         case eFile:
             {
@@ -1620,6 +1622,10 @@ bool CDirEntry::Copy(const string& path, TCopyFlags flags, size_t buf_size) cons
             {
                 CSymLink entry(GetPath());
                 return entry.Copy(path, flags, buf_size);
+            }
+        case eUnknown:
+            {
+                return false;
             }
         default:
             break;
