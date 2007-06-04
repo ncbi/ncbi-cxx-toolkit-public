@@ -48,7 +48,9 @@ public:
     // sorting criteria
     enum ESortCriterion {
         eQueryMin,
+        eQueryMinQueryMax,
         eSubjMin,
+        eSubjMinSubjMax,
         eQueryMinScore,
         eSubjMinScore,
         eSubjMaxQueryMax,
@@ -86,9 +88,35 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         rv = lhs->GetQueryMin() <= rhs->GetQueryMin();
         break;
 
+    case eQueryMinQueryMax:
+        {
+            const typename THit::TCoord qmin_lhs = lhs->GetQueryMin();
+            const typename THit::TCoord qmin_rhs = rhs->GetQueryMin();
+            if(qmin_lhs != qmin_rhs) {
+                return qmin_lhs < qmin_rhs;
+            }
+            else {
+                return lhs->GetQueryMax() < rhs->GetQueryMax();
+            }
+        }
+        break;
+
     case eSubjMin:
 
         rv = lhs->GetSubjMin() <= rhs->GetSubjMin();
+        break;
+
+    case eSubjMinSubjMax:
+        {
+            const typename THit::TCoord smin_lhs = lhs->GetSubjMin();
+            const typename THit::TCoord smin_rhs = rhs->GetSubjMin();
+            if(smin_lhs != smin_rhs) {
+                return smin_lhs < smin_rhs;
+            }
+            else {
+                return lhs->GetSubjMax() < rhs->GetSubjMax();
+            }
+        }
         break;
         
     case eQueryMinScore:
