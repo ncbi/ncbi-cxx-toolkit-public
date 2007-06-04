@@ -228,24 +228,23 @@ void CSplignApp::Init()
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
     
-#ifdef GENOME_PIPELINE
-
-    argdescr->AddDefaultKey
-        ("quality", "quality", "Genomic sequence quality.",
-         CArgDescriptions::eString, kQuality_high);
-
-#endif
-    
     argdescr->AddFlag ("noendgaps",
                        "Skip detection of unaligning regions at the ends.",
                        true);
     
     argdescr->AddFlag ("nopolya", "Assume no Poly(A) tail.",  true);
     
-    // restrictions
+#ifdef GENOME_PIPELINE
+
+    argdescr->AddDefaultKey
+        ("quality", "quality", "Genomic sequence quality.",
+         CArgDescriptions::eString, kQuality_high);
+
     CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
     constrain_errlevel->Allow(kQuality_low)->Allow(kQuality_high);
     argdescr->SetConstraint("quality", constrain_errlevel);
+
+#endif
 
     argdescr->AddDefaultKey
         ("Wm", "match", "match score",
@@ -1051,7 +1050,7 @@ int CSplignApp::Run()
         static_cast<CSplicedAligner*> (new CSplicedAligner16):
         static_cast<CSplicedAligner*> (new CSplicedAligner32)  );
 
-    for(size_t m = 0; m < aligner->GetSpliceTypeCount(); ++m) {
+    for(size_t m (0); m < aligner->GetSpliceTypeCount(); ++m) {
         const string param_name ("Wi" + NStr::IntToString(m));
         aligner->SetWi(m, args[param_name].AsInteger());
     }
