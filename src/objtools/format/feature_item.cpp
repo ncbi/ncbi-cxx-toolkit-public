@@ -1730,7 +1730,7 @@ void CFeatureItem::x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) co
 
 static const string& s_GetSiteName(CSeqFeatData::TSite site)
 {
-    static const string kOther = "unclassified";
+    static const string kOther = "other";
     static const string kDnaBinding = "DNA binding";
 
     if (site == CSeqFeatData::eSite_other) {
