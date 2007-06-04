@@ -81,7 +81,7 @@ void CSplignApp::Init()
     SetVersion(CVersionInfo(1, 23, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.22");
+    string program_name ("Splign v.1.23");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';
@@ -97,8 +97,7 @@ void CSplignApp::Init()
          "The file must be collated by subject and query "
          "(e.g. sort -k 2,2 -k 1,1).",
          CArgDescriptions::eInputFile);
-
-    
+   
 #ifdef GENOME_PIPELINE
     argdescr->AddOptionalKey
         ("comps", "comps",
@@ -179,7 +178,10 @@ void CSplignApp::Init()
         ("aln", "aln", "Pairwise alignment output file name", 
          CArgDescriptions::eOutputFile);
     
-    argdescr->AddFlag("cross", "Cross-species mode");
+    argdescr->AddFlag("cross",
+                      "[Pairwise mode] Use discontiguous megablast to facilitate "
+                      "alignment of more divergent sequences such as those "
+                      "from different organisms (cross-species alignment).");
 
     argdescr->AddDefaultKey
         ("direction", 
@@ -187,14 +189,9 @@ void CSplignApp::Init()
          "Query direction", 
          CArgDescriptions::eString, kDirSense);
     
-    argdescr->AddFlag ("noendgaps",
-                       "Skip detection of unaligning regions at the ends.",
-                       true);
-    
-    argdescr->AddFlag ("nopolya", "Assume no Poly(A) tail.",  true);
-    
     argdescr->AddDefaultKey
-        ("compartment_penalty", "compartment_penalty",
+        ("compartment_penalty",
+         "compartment_penalty",
          "Penalty to open a new compartment "
          "(compartment identification parameter). "
          "Multiple compartments will only be identified if "
@@ -203,35 +200,47 @@ void CSplignApp::Init()
          NStr::DoubleToString(CSplign::s_GetDefaultCompartmentPenalty()));
     
     argdescr->AddDefaultKey
-        ("min_compartment_idty", "min_compartment_identity",
+        ("min_compartment_idty",
+         "min_compartment_identity",
          "Minimal compartment identity to align.",
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
     
     argdescr->AddOptionalKey
-        ("min_singleton_idty", "min_singleton_identity",
+        ("min_singleton_idty",
+         "min_singleton_identity",
          "Minimal singleton compartment identity to align. Singletons are "
          "per subject and strand",
          CArgDescriptions::eDouble);
     
     argdescr->AddDefaultKey
-        ("max_extent", "max_extent",
-         "Max genomic extent to look for exons beyond compartment boundaries "
-         "as determined with Blast hits.",
+        ("max_extent",
+         "max_extent",
+         "Max genomic extent to look for exons beyond compartment ends.",
          CArgDescriptions::eInteger,
          NStr::IntToString(CSplign::s_GetDefaultMaxGenomicExtent()) );
     
     argdescr->AddDefaultKey
-        ("min_exon_idty", "identity",
-         "Minimal exon identity. Lower identity segments "
-         "will be marked as gaps.",
+        ("min_exon_idty",
+         "identity",
+         "Minimal exon identity. "
+         "Segments with lower identity will be marked as gaps.",
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
     
+#ifdef GENOME_PIPELINE
 
     argdescr->AddDefaultKey
         ("quality", "quality", "Genomic sequence quality.",
          CArgDescriptions::eString, kQuality_high);
+
+#endif
+    
+    argdescr->AddFlag ("noendgaps",
+                       "Skip detection of unaligning regions at the ends.",
+                       true);
+    
+    argdescr->AddFlag ("nopolya", "Assume no Poly(A) tail.",  true);
     
     // restrictions
     CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
