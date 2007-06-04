@@ -53,14 +53,15 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              bool           protein,
                              const string & title,
                              EIndexType     indices)
-    : m_Dbname      (dbname),
-      m_Protein     (protein),
-      m_Title       (title),
-      m_MaxFileSize (0),
-      m_Indices     (indices),
-      m_Closed      (false),
-      m_Pig         (0),
-      m_HaveSequence(false)
+    : m_Dbname           (dbname),
+      m_Protein          (protein),
+      m_Title            (title),
+      m_MaxFileSize      (0),
+      m_MaxVolumeLetters (0),
+      m_Indices          (indices),
+      m_Closed           (false),
+      m_Pig              (0),
+      m_HaveSequence     (false)
 {
     CTime now(CTime::eCurrent);
     
