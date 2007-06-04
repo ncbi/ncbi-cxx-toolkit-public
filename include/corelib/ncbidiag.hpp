@@ -1658,6 +1658,11 @@ extern bool SetLogFile(const string& file_name,
 NCBI_XNCBI_EXPORT
 extern string GetLogFile(EDiagFileType file_type);
 
+/// Get log file name or diag handler name.
+NCBI_XNCBI_EXPORT
+extern string GetLogFile(void);
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CDiagFactory --

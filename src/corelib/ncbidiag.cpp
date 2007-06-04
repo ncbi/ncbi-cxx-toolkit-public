@@ -724,6 +724,9 @@ void CDiagContext::PrintRequestStop(void)
 
 void CDiagContext::SetAppState(EAppState state, EPropertyMode mode)
 {
+    // Always reset thread-local property to allow global one to
+    // become visible.
+    DeleteProperty(kProperty_AppState, eProp_Thread);
     switch ( state ) {
     case eState_AppBegin:
         SetProperty(kProperty_AppState, "AB",
@@ -3147,9 +3150,16 @@ extern bool SetLogFile(const string& file_name,
 
 extern string GetLogFile(EDiagFileType file_type)
 {
-    CFileDiagHandler* handler =
+    CFileDiagHandler* fhandler =
         dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
-    return handler ? handler->GetLogFile(file_type) : kEmptyStr;
+    return fhandler ? fhandler->GetLogFile(file_type) : GetLogFile();
+}
+
+
+extern string GetLogFile(void)
+{
+    CDiagHandler* handler = GetDiagHandler();
+    return handler ? handler->GetLogName() : kEmptyStr;
 }
 
 
