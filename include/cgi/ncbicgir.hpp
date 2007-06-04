@@ -138,9 +138,9 @@ public:
     void Flush(void) const;
 
     /// Write HTTP response header to the output stream
-    CNcbiOstream& WriteHeader(void);
-    CNcbiOstream& WriteHeader(CNcbiOstream& os);
-    bool          IsHeaderWritten() const;
+    CNcbiOstream& WriteHeader(void)             const;
+    CNcbiOstream& WriteHeader(CNcbiOstream& os) const;
+    bool          IsHeaderWritten()             const;
 
     void SetTrackingCookie(const string& name,   const string& value,
                            const string& domain, const string& path,
@@ -177,7 +177,7 @@ protected:
     CCgiCookies    m_Cookies;           // Cookies
     CNcbiOstream*  m_Output;            // Default output stream
     int            m_OutputFD;          // Output file descriptor, if available
-    bool           m_HeaderWritten;     // Did we already complete the header?
+    mutable bool   m_HeaderWritten;     // Did we already complete the header?
     CNcbiOstream::iostate m_OutputExpt; // Original output exceptions
 
     // Prohibit copy constructor and assignment operator
@@ -282,7 +282,7 @@ inline int CCgiResponse::GetOutputFD(void) const
     return m_OutputFD;
 }
 
-inline CNcbiOstream& CCgiResponse::WriteHeader(void)
+inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
 {
     return WriteHeader(out());
 }

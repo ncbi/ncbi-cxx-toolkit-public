@@ -218,7 +218,7 @@ CNcbiOstream& CCgiResponse::out(void) const
 }
 
 
-CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os)
+CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 {
     if (&os == m_Output) {
         if (m_HeaderWritten) {
