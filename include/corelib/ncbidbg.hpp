@@ -55,8 +55,9 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /// Define macros to support debugging.
-#if defined(_DEBUG)
+#ifdef _DEBUG
 
 #  define _TRACE(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Trace) \
@@ -65,7 +66,7 @@ BEGIN_NCBI_SCOPE
 #  define NCBI_TROUBLE(mess) \
     NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
 
-#  if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
+#  ifdef NCBI_COMPILER_MSVC
     // Use standard _ASSERT macro on MSVC in Debug modes
 #    define NCBI_ASSERT(expr, mess) \
       if ( !(expr) ) { \
@@ -75,13 +76,12 @@ BEGIN_NCBI_SCOPE
               (mess ? mess : "") << NCBI_NS_NCBI::Endm; \
           _ASSERT_BASE((expr), NULL); \
       }
-#  else
+#  else  /* NCBI_COMPILER_MSVC */
 #    define NCBI_ASSERT(expr, mess) \
       do { if ( !(expr) ) \
           NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
       } while ( 0 )
 #  endif
-
 
 #  define NCBI_VERIFY(expr, mess) NCBI_ASSERT(expr, mess)
 
@@ -103,8 +103,8 @@ BEGIN_NCBI_SCOPE
 #endif  /* else!_DEBUG */
 
 
-#ifdef _ASSERT
-#   undef _ASSERT
+#ifdef   _ASSERT
+#  undef _ASSERT
 #endif
 #define _ASSERT(expr)   NCBI_ASSERT(expr, NULL)
 #define _VERIFY(expr)   NCBI_VERIFY(expr, NULL)
