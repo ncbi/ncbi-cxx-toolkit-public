@@ -199,6 +199,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             if(NStr::CompareCase(asnk,"CHOICE")==0) {
                 xsdk = "choice";
             }
+            if(NStr::CompareCase(asnk,"SET")==0) {
+                xsdk = "all";
+            }
             string tmp = "<xs:element name=\"" + tag + "\"";
             if (GetDataMember()) {
                 if (GetDataMember()->Optional()) {

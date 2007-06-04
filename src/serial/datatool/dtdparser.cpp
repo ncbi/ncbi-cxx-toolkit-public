@@ -411,7 +411,8 @@ void DTDParser::AddElementContent(DTDElement& node, string& id_name,
     DTDElement::EType type = node.GetType();
     if (type != DTDElement::eUnknown &&
         type != DTDElement::eSequence &&
-        type != DTDElement::eChoice) {
+        type != DTDElement::eChoice &&
+        type != DTDElement::eSet) {
         ParseError("Unexpected element contents", "");
     }
     if (id_name == s_SpecialName) {
@@ -755,8 +756,9 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
 
         bool generate = type != DTDElement::eUnknown;
         if (m_SrcType == eDTD) {
-            generate = ( (type == DTDElement::eSequence) ||
-                         (type == DTDElement::eChoice) ||
+            generate = ( type == DTDElement::eSequence ||
+                         type == DTDElement::eChoice ||
+                         type == DTDElement::eSet ||
                          i->second.HasAttributes());
         }
         if (generate && !i->second.IsEmbedded())
@@ -819,7 +821,8 @@ CDataType* DTDParser::x_Type(
     bool uniseq = (occ == DTDElement::eOneOrMore ||
                    occ == DTDElement::eZeroOrMore);
     bool cont = (node.GetType() == DTDElement::eSequence ||
-                 node.GetType() == DTDElement::eChoice);
+                 node.GetType() == DTDElement::eChoice ||
+                 node.GetType() == DTDElement::eSet);
     bool attrib = !ignoreAttrib && node.HasAttributes();
     bool ref = fromInside && !node.IsEmbedded();
     bool keep_global;
@@ -858,6 +861,13 @@ CDataType* DTDParser::x_Type(
                 type = new CReferenceDataType(node.GetName());
             } else {
                 type = TypesBlock(new CChoiceDataType(),node,ignoreAttrib);
+            }
+            break;
+        case DTDElement::eSet:
+            if (ref) {
+                type = new CReferenceDataType(node.GetName());
+            } else {
+                type = TypesBlock(new CDataSetType(),node,ignoreAttrib);
             }
             break;
         case DTDElement::eString:
@@ -985,7 +995,8 @@ CDataType* DTDParser::TypesBlock(
             uniseq = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
             optional = (occ == DTDElement::eZeroOrOne || occ == DTDElement::eZeroOrMore);
             refseq = refNode.GetType() == DTDElement::eSequence ||
-                     refNode.GetType() == DTDElement::eChoice;
+                     refNode.GetType() == DTDElement::eChoice ||
+                     refNode.GetType() == DTDElement::eSet;
             occ = node.GetOccurrence(*i);
             uniseq2 = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
 
@@ -1173,8 +1184,9 @@ void DTDParser::PrintDocumentTree(void)
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
         DTDElement& node = i->second;
         DTDElement::EType type = node.GetType();
-        if (((type == DTDElement::eSequence) ||
-            (type == DTDElement::eChoice) ||
+        if ((type == DTDElement::eSequence ||
+             type == DTDElement::eChoice ||
+             type == DTDElement::eSet ||
             node.HasAttributes()) && !node.IsEmbedded()) {
             PrintDocumentNode(i->first,i->second);
         }
@@ -1194,8 +1206,9 @@ void DTDParser::PrintDocumentTree(void)
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
         DTDElement& node = i->second;
         DTDElement::EType type = node.GetType();
-        if (((type != DTDElement::eSequence) &&
-            (type != DTDElement::eChoice) &&
+        if ((type != DTDElement::eSequence &&
+             type != DTDElement::eChoice &&
+             type != DTDElement::eSet &&
             !node.HasAttributes()) && node.IsReferenced()) {
             if (!started) {
                 cout << " === REFERENCED simpletype elements ===" << endl;
@@ -1208,8 +1221,9 @@ void DTDParser::PrintDocumentTree(void)
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
         DTDElement& node = i->second;
         DTDElement::EType type = node.GetType();
-        if (((type != DTDElement::eSequence) &&
-            (type != DTDElement::eChoice)) && !node.IsReferenced()) {
+        if ((type != DTDElement::eSequence &&
+             type != DTDElement::eChoice && type != DTDElement::eSet) &&
+             !node.IsReferenced()) {
             if (!started) {
                 cout << " === UNREFERENCED simpletype elements ===" << endl;
                 started = true;
@@ -1242,6 +1256,7 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     case DTDElement::eEmpty:    cout << "empty";   break;
     case DTDElement::eSequence: cout << "sequence";break;
     case DTDElement::eChoice:   cout << "choice";  break;
+    case DTDElement::eSet:      cout << "set";     break;
 
     case DTDElement::eBoolean:     cout << "boolean";   break;
     case DTDElement::eInteger:     cout << "integer";   break;

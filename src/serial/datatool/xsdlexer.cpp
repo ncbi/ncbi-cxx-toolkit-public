@@ -154,6 +154,7 @@ TToken XSDLexer::LookupKeyword(void)
     case 3:
         CHECK("xml", K_XML, 3);
         CHECK("any", K_ANY, 3);
+        CHECK("all", K_SET, 3);
         break;
     case 6:
         CHECK("choice", K_CHOICE, 6);

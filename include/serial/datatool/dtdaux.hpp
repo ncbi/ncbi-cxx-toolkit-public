@@ -178,6 +178,7 @@ public:
         eEmpty,    // EMPTY
         eSequence, // (a,b,c)
         eChoice,   // (a|b|c)
+        eSet,      // (a,b,c)
 
         eBoolean,
         eInteger,

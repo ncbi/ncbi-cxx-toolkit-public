@@ -532,6 +532,22 @@ void XSDParser::ParseContent(DTDElement& node)
                 AddElementContent(node,name);
             }
             break;
+        case K_SET:
+            if (node.GetType() == DTDElement::eUnknown) {
+                node.SetType(DTDElement::eSet);
+                ParseContainer(node);
+            } else {
+                string name = node.GetName();
+                name += "__emb#__";
+                name += NStr::IntToString(emb++);
+                m_MapElement[name].SetName(name);
+                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
+                m_MapElement[name].SetEmbedded();
+                m_MapElement[name].SetType(DTDElement::eSet);
+                ParseContainer(m_MapElement[name]);
+                AddElementContent(node,name);
+            }
+            break;
         case K_ELEMENT:
             {
 	            string name = ParseElementContent(&node,emb);
