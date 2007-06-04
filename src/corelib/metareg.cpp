@@ -288,7 +288,10 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 
     if (getenv("NCBI_DONT_USE_LOCAL_CONFIG") == NULL) {
         path.push_back(".");
-        path.push_back(CDir::GetHome());
+        string home = CDir::GetHome();
+        if ( !home.empty() ) {
+            path.push_back(home);
+        }
     }
 
     {{
