@@ -74,6 +74,15 @@ struct SNS_SubmitRecord
     }
 };
 
+
+struct SFieldsDescription
+{
+    vector<int>    field_nums;
+    bool           has_tags;
+    vector<string> pos_to_tag;
+};
+
+
 class CQueueDataBase;
 
 /// Main queue entry point
@@ -261,18 +270,13 @@ public:
                     const string& host,
                     unsigned      port);
 
-    string ExecQuery(const string& query, const string& action,
-                     const string& fields);
+    TNSBitVector* ExecSelect(const string& query);
     typedef vector<vector<string> > TRecordSet;
-    void x_ExecSelect(TRecordSet&         record_set,
-                      SLockedQueue&       q,
-                      const TNSBitVector* ids,
-                      const string&       str_fields);
-    void x_ExecSelectChunk(TRecordSet&           record_set,
-                           SLockedQueue&         q,
-                           const TNSBitVector*   ids,
-                           const vector<int>&    field_nums,
-                           const vector<string>* pos_to_tag);
+    void ParseFields(SFieldsDescription& field_descr,
+                     const string&       str_fields);
+    void ExecProject(TRecordSet&               record_set,
+                     const TNSBitVector&       ids,
+                     const SFieldsDescription& field_descr);
     /// Queue dump
     void PrintJobDbStat(unsigned job_id, 
                         CNcbiOstream & out,

@@ -1379,13 +1379,8 @@ static bool Less(const vector<string>& elem1, const vector<string>& elem2)
 }
 
 
-string CQueue::ExecQuery(const string& query, const string& action,
-                         const string& fields)
+TNSBitVector* CQueue::ExecSelect(const string& query)
 {
-    //NcbiCout << "Query: \"" << query <<
-    //            "\" Action: \"" << action <<
-    //            "\" Fields: \"" << fields << "\"" << NcbiEndl;
-
     CRef<SLockedQueue> q(x_GetLQueue());
     CQueryParseTree qtree;
     try {
@@ -1398,6 +1393,7 @@ string CQueue::ExecQuery(const string& query, const string& action,
         NCBI_THROW(CNetScheduleException,
             eQuerySyntaxError, "Query syntax error");
 
+    // Execute 'select' phase.
     CQueryExec qexec;
     qexec.AddFunc(CQueryParseNode::eAnd,
         new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_AND));
@@ -1443,121 +1439,69 @@ string CQueue::ExecQuery(const string& query, const string& action,
     // Filter against deleted jobs
     q->FilterJobs(*(bv.get()));
 
-    string result_str;
-    if (action == "COUNT") {
-        result_str = NStr::IntToString(bv->count());
-    } else if (action == "DROP") {
-    } else if (action == "FRES") {
-    } else if (action == "SLCT") {
-        // Form result
-        TRecordSet record_set;
-        x_ExecSelect(record_set, q.GetObject(), bv.get(), fields);
-
-        sort(record_set.begin(), record_set.end(), Less);
-
-        list<string> string_set;
-        ITERATE(TRecordSet, it, record_set) {
-            string_set.push_back(NStr::Join(*it, "\t"));
-        }
-        list<string> out_set;
-        unique_copy(string_set.begin(), string_set.end(),
-            back_insert_iterator<list<string> > (out_set));
-        out_set.push_front(NStr::IntToString(out_set.size()));
-        result_str = NStr::Join(out_set, "\n");
-    } else if (action == "CNCL") {
-    }
-
-    return result_str;
+    return bv.release();
 }
 
 
-void CQueue::x_ExecSelect(TRecordSet&         record_set,
-                          SLockedQueue&       q,
-                          const TNSBitVector* ids,
-                          const string&       str_fields)
+void CQueue::ParseFields(SFieldsDescription& field_descr,
+                         const string&       str_fields)
 {
+    CRef<SLockedQueue> q(x_GetLQueue());
+    field_descr.field_nums.clear();
+    field_descr.pos_to_tag.clear();
     // Split fields
     list<string> fields;
     NStr::Split(str_fields, "\t", fields, NStr::eNoMergeDelims);
 
     // Verify the fields, and convert them into field numbers
-    vector<int> field_nums;
-    vector<string> pos_to_tag;
-    bool has_tags = false;
+    field_descr.has_tags = false;
     ITERATE(list<string>, it, fields) {
-        int i = q.GetFieldIndex(*it);
+        int i = q->GetFieldIndex(*it);
         string tag_name;
         if (i < 0) {
             if (NStr::StartsWith(*it, "tag.")) {
                 tag_name = (*it).substr(4);
-                has_tags = true;
+                field_descr.has_tags = true;
             } else {
                 NCBI_THROW(CNetScheduleException, eQuerySyntaxError,
                     string("Unknown field: ") + (*it));
             }
         }
-        field_nums.push_back(i);
-        pos_to_tag.push_back(tag_name);
+        field_descr.field_nums.push_back(i);
+        field_descr.pos_to_tag.push_back(tag_name);
     }
-
-    vector<string>* p_pos_to_tag = has_tags ? &pos_to_tag : NULL;
-    unsigned chunk_size = 100000;
-
-    unsigned job_id = 0;
-    unsigned n;
-    TNSBitVector chunk;
-    unsigned n_chunk = 0;
-    do {
-        chunk.clear();
-        for (n = 0; n < chunk_size &&
-                                (job_id = ids->get_next(job_id));
-             ++n)
-        {
-            chunk.set(job_id);
-        }
-        if (n > 0) {
-            x_ExecSelectChunk(record_set, q, &chunk, field_nums, p_pos_to_tag);
-            if (IsMonitoring()) {
-                CTime tmp_t(CTime::eCurrent);
-                string msg = tmp_t.AsString();
-                msg += " CQueue::ExecSelect() chunk " +
-                       NStr::IntToString(n_chunk) + " processed\n";
-                MonitorPost(msg);
-            }
-        }
-        n_chunk++;
-    } while (n == chunk_size);
 }
 
 
-void CQueue::x_ExecSelectChunk(TRecordSet&           record_set,
-                               SLockedQueue&         q,
-                               const TNSBitVector*   ids,
-                               const vector<int>&    field_nums,
-                               const vector<string>* pos_to_tag)
+void CQueue::ExecProject(TRecordSet&               record_set,
+                         const TNSBitVector&       ids,
+                         const SFieldsDescription& field_descr)
 {
-    int record_size = field_nums.size();
+    CRef<SLockedQueue> q(x_GetLQueue());
+    SLockedQueue& queue(*q);
+
+    int record_size = field_descr.field_nums.size();
 
     // Retrieve fields
     unsigned first_id, last_id;
     first_id = 0;
-    TNSBitVector::enumerator en(ids->first());
+    TNSBitVector::enumerator en(ids.first());
     {{
-        CFastMutexGuard guard(q.lock);
-        q.db.SetTransaction(NULL);
-        q.m_JobInfoDB.SetTransaction(NULL);
+        CFastMutexGuard guard(queue.lock);
+        queue.db.SetTransaction(NULL);
+        queue.m_JobInfoDB.SetTransaction(NULL);
         for ( ; en.valid(); ++en) {
             map<string, string> tags;
             unsigned id = *en;
-            q.db.id = id;
-            if (q.db.Fetch() != eBDB_Ok)
+            queue.db.id = id;
+            if (queue.db.Fetch() != eBDB_Ok)
                 continue;
-            if (pos_to_tag) {
-                q.m_JobInfoDB.id = id;
-                if (q.m_JobInfoDB.Fetch() != eBDB_Ok)
+            if (field_descr.has_tags) {
+                queue.m_JobInfoDB.id = id;
+                if (queue.m_JobInfoDB.Fetch() != eBDB_Ok)
                     continue;
                 // Parse tags record
-                const char* strtags = q.m_JobInfoDB.tags;
+                const char* strtags = queue.m_JobInfoDB.tags;
                 list<string> tokens;
                 NStr::Split(strtags, "\t", tokens, NStr::eNoMergeDelims);
                 for (list<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
@@ -1576,17 +1520,17 @@ void CQueue::x_ExecSelectChunk(TRecordSet&           record_set,
             vector<string> record(record_size);
             bool complete = true;
             for (int i = 0; i < record_size; ++i) {
-                int fnum = field_nums[i];
+                int fnum = field_descr.field_nums[i];
                 if (fnum < 0) {
                     map<string, string>::iterator it =
-                        tags.find((*pos_to_tag)[i]);
+                        tags.find((field_descr.pos_to_tag)[i]);
                     if (it == tags.end()) {
                         complete = false;
                         break;
                     }
                     record[i] = string(it->second);
                 } else {
-                    record[i] = q.GetField(fnum);
+                    record[i] = queue.GetField(fnum);
                 }
             }
             if (complete)

@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.8"
+#define NETSCHEDULED_VERSION "2.10.9"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -238,8 +238,9 @@ class CNetScheduleHandler : public IServer_LineMessageHandler
 public:
     CNetScheduleHandler(CNetScheduleServer* server);
     // MessageHandler protocol
+    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void OnOpen(void);
-    virtual void OnWrite(void) { }
+    virtual void OnWrite(void);
     virtual void OnClose(void) { }
     virtual void OnTimeout(void);
     virtual void OnOverflow(void);
@@ -378,6 +379,9 @@ private:
     void ProcessQuery();
     void ProcessGetParam();
 
+    // Delayed output handlers
+    void WriteProjection();
+
 private:
     static
     bool x_TokenMatch(const SArgument *arg_descr, ENSTokenType ttype,
@@ -421,14 +425,22 @@ private:
     unsigned                    m_Uncaps;
     unsigned                    m_Unreported;
     bool                        m_VersionControl;
+    // Unique command number for relating command and reply
     unsigned                    m_CommandNumber;
+    // Phase of connection - login, queue, command, batch submit etc.
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
+    // Delayed output processor
+    void (CNetScheduleHandler::*m_DelayedOutput)();
 
     // Batch submit data
     unsigned                    m_BatchSize;
     unsigned                    m_BatchPos;
     CStopWatch                  m_BatchStopWatch;
     vector<SNS_SubmitRecord>    m_BatchSubmitVector;
+
+    // For projection writer
+    auto_ptr<TNSBitVector>      m_SelectedIds;
+    SFieldsDescription          m_FieldDescr;
 
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
@@ -549,6 +561,13 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
 }
 
 
+EIO_Event CNetScheduleHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) const
+{
+    if (m_DelayedOutput) return eIO_Write;
+    return eIO_Read;
+}
+
+
 void CNetScheduleHandler::OnOpen(void)
 {
     CSocket& socket = GetSocket();
@@ -566,6 +585,14 @@ void CNetScheduleHandler::OnOpen(void)
     m_AuthString.erase();
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
+    m_DelayedOutput = NULL;
+}
+
+
+void CNetScheduleHandler::OnWrite()
+{
+    if (m_DelayedOutput)
+        (this->*m_DelayedOutput)();
 }
 
 
@@ -938,7 +965,6 @@ void CNetScheduleHandler::ProcessSubmit()
         MonitorPost(msg);
         x_MonitorRec(rec);
     }
-
 }
 
 
@@ -1609,15 +1635,17 @@ void CNetScheduleHandler::ProcessStatistics()
 
         WriteMsg("OK:", st_str, true);
 
-        TNSBitVector::statistics bv_stat;
-        m_Queue->StatusStatistics(st, &bv_stat);
-        st_str = "   bit_blk="; 
-        st_str.append(NStr::UIntToString(bv_stat.bit_blocks));
-        st_str += "; gap_blk=";
-        st_str.append(NStr::UIntToString(bv_stat.gap_blocks));
-        st_str += "; mem_used=";
-        st_str.append(NStr::UIntToString(bv_stat.memory_used));
-        WriteMsg("OK:", st_str);
+        if (m_JobReq.param1 == "ALL") {
+            TNSBitVector::statistics bv_stat;
+            m_Queue->StatusStatistics(st, &bv_stat);
+            st_str = "   bit_blk="; 
+            st_str.append(NStr::UIntToString(bv_stat.bit_blocks));
+            st_str += "; gap_blk=";
+            st_str.append(NStr::UIntToString(bv_stat.gap_blocks));
+            st_str += "; mem_used=";
+            st_str.append(NStr::UIntToString(bv_stat.memory_used));
+            WriteMsg("OK:", st_str);
+        }
     } // for
 
     /*
@@ -1847,10 +1875,70 @@ void CNetScheduleHandler::ProcessQueueInfo()
 
 void CNetScheduleHandler::ProcessQuery()
 {
-    string res = m_Queue->ExecQuery(NStr::ParseEscapes(m_JobReq.param1),
-                                    m_JobReq.param2,
-                                    NStr::ParseEscapes(m_JobReq.param3));
-    WriteMsg("OK:", res);
+    string result_str;
+
+    m_SelectedIds.reset(m_Queue->ExecSelect(NStr::ParseEscapes(m_JobReq.param1)));
+
+    string& action = m_JobReq.param2;
+
+    if (action == "COUNT") {
+        result_str = NStr::IntToString(m_SelectedIds->count());
+        m_SelectedIds.release();
+    } else if (action == "DROP") {
+    } else if (action == "FRES") {
+    } else if (action == "SLCT") {
+        // Execute 'projection' phase
+        string fields(NStr::ParseEscapes(m_JobReq.param3));
+        m_Queue->ParseFields(m_FieldDescr, fields);
+        /*
+        x_ExecSelect(record_set, q.GetObject(), bv.get(), fields);
+
+        sort(record_set.begin(), record_set.end(), Less);
+
+        list<string> string_set;
+        ITERATE(TRecordSet, it, record_set) {
+            string_set.push_back(NStr::Join(*it, "\t"));
+        }
+        list<string> out_set;
+        unique_copy(string_set.begin(), string_set.end(),
+            back_insert_iterator<list<string> > (out_set));
+        out_set.push_front(NStr::IntToString(out_set.size()));
+        result_str = NStr::Join(out_set, "\n");
+        */
+        m_DelayedOutput = &CNetScheduleHandler::WriteProjection;
+        return;
+    } else if (action == "CNCL") {
+    }
+
+    WriteMsg("OK:", result_str);
+}
+
+
+void CNetScheduleHandler::WriteProjection()
+{
+    unsigned chunk_size = 10000;
+
+    unsigned n;
+    TNSBitVector chunk;
+    unsigned job_id = 0;
+    for (n = 0; n < chunk_size &&
+                (job_id = m_SelectedIds->extract_next(job_id));
+         ++n)
+    {
+        chunk.set(job_id);
+    }
+    if (n > 0) {
+        CQueue::TRecordSet record_set;
+        m_Queue->ExecProject(record_set, chunk, m_FieldDescr);
+        ITERATE(CQueue::TRecordSet, it, record_set) {
+            WriteMsg("OK:", NStr::Join(*it, "\t"));
+        }
+    }
+    if (n < chunk_size) {
+        WriteMsg("OK:", "END");
+        m_SelectedIds.release();
+        m_DelayedOutput = NULL;
+    }
 }
 
 
