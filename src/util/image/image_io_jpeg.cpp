@@ -90,7 +90,12 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
 static void s_JpegOutputHandler(j_common_ptr ptr)
 {
     string msg("JPEG message: ");
-    msg += ptr->err->jpeg_message_table[ptr->err->msg_code];
+
+    /// format the message
+    char buffer[JMSG_LENGTH_MAX];
+    (*ptr->err->format_message)(ptr, buffer);
+
+    msg += buffer;
     LOG_POST(Warning << msg);
 }
 
@@ -320,6 +325,15 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
         // decompression parameters
         cinfo.dct_method = JDCT_FLOAT;
         jpeg_start_decompress(&cinfo);
+
+        /**
+        LOG_POST(Error << "image width: " << cinfo.image_width);
+        LOG_POST(Error << "image height: " << cinfo.image_height);
+        LOG_POST(Error << "input color space: " << cinfo.in_color_space);
+        LOG_POST(Error << "number of components: " << cinfo.num_components);
+        LOG_POST(Error << "output width: " << cinfo.output_width);
+        LOG_POST(Error << "output height: " << cinfo.output_height);
+        **/
 
         // allocate an image to hold our data
         image.Reset(new CImage(cinfo.output_width, cinfo.output_height, 3));
