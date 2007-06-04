@@ -186,6 +186,12 @@ private:
     };    
 
 
+    static size_t sx_XFilter(THitRefs& hitrefs,
+                             typename THitRefs::iterator ihr,
+                             typename THitRefs::iterator ihr_e,
+                             Uint1 w,
+                             size_t min_compartment_hit_len);
+
     // helper predicate
     static bool s_PNullRef(const THitRef& hr) {
         return hr.IsNull();
@@ -354,8 +360,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
     // - hits from which to open a new compartment
 
     typedef CHitComparator<THit> THitComparator;
-    THitComparator sorter (THitComparator::eSubjMaxQueryMax);
-    stable_sort(m_hitrefs.begin(), m_hitrefs.end(), sorter);
+    stable_sort(m_hitrefs.begin(), m_hitrefs.end(),
+                THitComparator(THitComparator::eSubjMaxQueryMax));
 
     // For every hit:
     // - evaluate its best extension potential
@@ -712,7 +718,13 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             }
         }
 
+//#define ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
 #ifdef ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
+
+        typename THitRefs::iterator ihr_b (m_hitrefs.begin()),
+            ihr_e(m_hitrefs.end()), ihr (ihr_b);
+
+        stable_sort(ihr_b, ihr_e, THitComparator(THitComparator::eSubjMinSubjMax));
 
         // complete x-filtering using the full set of hits
         for(int icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
@@ -725,82 +737,50 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             }
             else {
                 NON_CONST_ITERATE(typename THitRefs, ii, hitrefs) {
-                    (*ii)->SetScore( - (*ii)->GetScore());
+                    (*ii)->SetScore(- (*ii)->GetScore());
                 }
             }
             
-            typename THitRefs::iterator ihr_b (m_hitrefs.begin()),
-                ihr_e(m_hitrefs.end()), ihr (ihr_b);
-
             const TCoord comp_subj_min (hitrefs.back()->GetSubjStart());
-            while(ihr != ihr_e && (*ihr)->GetSubjStart() < comp_subj_min) ++ihr;
-            typename THitRefs::const_iterator ihrc_b (ihr);
-
-            size_t nullified (0);
-            for(int in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
-
-                THitRef& h1 (hitrefs[i]);
-                if(h1.IsNull()) continue;
-                
-                const TCoord * box1o (h1->GetBox());
-                TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
-
-                while(ihr != ihr_e && ((*ihr)->GetSubjStop() < box1[2] 
-                      || (*ihr)->GetScore() < 0))
-                {
-                    ++ihr;
-                }
-
-                if(ihr == ihr_e) break;
-                
-                const TCoord ihr_subj_start ((*ihr)->GetSubjStart());
-                if(ihr_subj_start <= box1[3]) {
-                    if(ihr_subj_start <= box1[2] + kMinCompartmentHitLength) {
-                        h1.Reset(0);
-                        ++nullified;
-                    }
-                    else {
-                        h1->Modify(3, ihr_subj_start - 1);
-                    }
-                }
+            const TCoord comp_subj_max (hitrefs.front()->GetSubjStop());
+            while(ihr != ihr_e && ((*ihr)->GetSubjStart() < comp_subj_min
+                                   || (*ihr)->GetScore() < 0))
+            {
+                ++ihr;
             }
 
-            stable_sort(ihr_b, ihr, THitComparator (THitComparator::eQueryMin));
-            ihr = ihr_b;
-            for(int in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
+            if(ihr == ihr_e) break;
+            if((*ihr)->GetSubjStart() > comp_subj_max) continue;
+            typename THitRefs::iterator ihrc_b (ihr);
 
-                THitRef& h1 (hitrefs[i]);
-                if(h1.IsNull()) continue;
-
-                const TCoord * box1o (h1->GetBox());
-                TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
-
-                while(ihr != ihr_e && ((*ihr)->GetQueryStop() < box1[0] 
-                      || (*ihr)->GetScore() < 0))
-                {
-                    ++ihr;
-                }
-
-                if(ihr == ihr_e) break;
-                
-                const TCoord ihr_query_start ((*ihr)->GetQueryStart());
-                if(ihr_query_start <= box1[1]) {
-                    if(ihr_query_start <= box1[0] + kMinCompartmentHitLength) {
-                        h1.Reset(0);
-                        ++nullified;
-                    }
-                    else {
-                        h1->Modify(1, ihr_query_start - 1);
-                    }
-                }
+            typename THitRefs::iterator ihrc_e (ihr);
+            while(ihrc_e != ihr_e && ((*ihrc_e)->GetSubjStart() < comp_subj_max
+                                      || (*ihrc_e)->GetScore() < 0))
+            {
+                ++ihrc_e;
             }
+
+            size_t nullified (sx_XFilter(hitrefs, ihrc_b, ihrc_e, 1, 
+                                         kMinCompartmentHitLength));
+            stable_sort(ihrc_b, ihrc_e,
+                        THitComparator (THitComparator::eQueryMinQueryMax));
+
+            nullified += sx_XFilter(hitrefs, ihrc_b, ihrc_e, 0,
+                                    kMinCompartmentHitLength);
+
+            ihr = ihrc_e;
 
             if(nullified > 0) {
                 hitrefs.erase(remove_if(hitrefs.begin(), hitrefs.end(),
                                         CCompartmentFinder<THit>::s_PNullRef),
                               hitrefs.end());
             }
+        }
 
+        for(int icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
+
+            CCompartment & comp (m_compartments[ic]);
+            THitRefs& hitrefs (comp.SetMembers());
             NON_CONST_ITERATE(typename THitRefs, ii, hitrefs) {
                 const double score ((*ii)->GetScore());
                 if(score < 0) {
@@ -808,11 +788,153 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 }
             }
         }
+
 #endif
 
     }
 
     return m_compartments.size();
+}
+
+
+template<class THit>
+size_t CCompartmentFinder<THit>::sx_XFilter(
+    THitRefs& hitrefs,
+    typename THitRefs::iterator ihr,
+    typename THitRefs::iterator ihr_e,
+    Uint1 w,
+    size_t min_compartment_hit_len)
+{
+    size_t nullified (0);
+    for(int in (hitrefs.size()), i (in - 1); i >= 0 && ihr != ihr_e; --i) {
+
+        THitRef& h1 (hitrefs[i]);
+        if(h1.IsNull()) continue;
+                      
+        const TCoord * box1o (h1->GetBox());
+        TCoord box1 [4] = {box1o[0], box1o[1], box1o[2], box1o[3]};
+
+        // locate the first overlap
+        for(; ihr != ihr_e; ++ihr) {
+
+            THitRef hr (*ihr);
+            if(hr.IsNull()) continue;
+            if(hr->GetScore() > 0 && hr->GetStop(w) >= box1[2*w]) {
+                break;
+            }
+        }
+
+        if(ihr == ihr_e) {
+            break;
+        }
+
+        // find the smallest not overlapped hit coord and its interval
+        TCoord ls0 (box1[2*w+1] + 1), cursegmax (0);
+        TCoord segmax_start(box1[2*w]), segmax_stop(box1[2*w+1]);
+
+        if(box1[2*w] < (*ihr)->GetStart(w)) {
+
+            segmax_start = ls0 = box1[2*w];
+            segmax_stop = (*ihr)->GetStart(w) - 1;
+            cursegmax = segmax_stop - segmax_start + 1;
+        }
+        else {
+
+            TCoord shrsmax ((*ihr)->GetStop(w));
+            for(++ihr; ihr != ihr_e; ++ihr) {
+
+                THitRef hr (*ihr);
+                if(hr.IsNull() || hr->GetScore() < 0) {
+                    continue;
+                }
+
+                const TCoord hrs0 (hr->GetStart(w));
+                if(hrs0 > box1[2*w+1]) {
+                    segmax_stop = box1[2*w+1];
+                    break;
+                }
+
+                if(hrs0 > shrsmax) {
+                    segmax_stop = hrs0 - 1;
+                    break;
+                }
+
+                const TCoord hrs1 (hr->GetStop(w));
+                if(hrs1 > shrsmax) {
+                    shrsmax = hrs1;
+                }
+            }
+
+            if(shrsmax < box1[2*w+1]) {
+                segmax_start = ls0 = shrsmax + 1;
+                cursegmax = segmax_stop - segmax_start + 1;
+            }
+        }
+                
+        if(ls0 > box1[2*w+1]) {
+            h1.Reset(0);
+            ++nullified;
+            continue;
+        }
+
+        // find the longest surviving segment       
+        for(; ihr != ihr_e; ++ihr) {
+
+            THitRef hr (*ihr);
+            if(hr.IsNull() || hr->GetScore() < 0) {
+                continue;
+            }
+
+            const TCoord hrs0 (hr->GetStart(w));
+            if(hrs0 > box1[2*w+1]) {
+                if(ls0 <= box1[2*w+1] && box1[2*w+1] + 1 - ls0 > cursegmax) {
+                    segmax_start = ls0;
+                    segmax_stop = box1[2*w+1];
+                    cursegmax = segmax_stop - segmax_start + 1;
+                }
+                break;
+            }
+
+            if(hrs0 > ls0) {
+                if(hrs0 - ls0 > cursegmax) {
+                    segmax_start = ls0;
+                    segmax_stop = hrs0 - 1;
+                    cursegmax = segmax_stop - segmax_start + 1;
+                }
+                
+                ls0 = hr->GetStop(w) + 1;
+            }
+            else if(hr->GetStop(w) + 1 > ls0) {
+                ls0 = hr->GetStop(w) + 1;
+            }
+        }
+
+        if(box1[2*w+1] > ls0 + cursegmax) {
+            segmax_start = ls0;
+            segmax_stop  = box1[2*w+1];
+            cursegmax    = segmax_stop - segmax_start + 1;
+        }
+                
+        if(cursegmax < min_compartment_hit_len) {
+            h1.Reset(0);
+            ++nullified;
+            continue;
+        }
+        else {
+
+            if(box1[2*w] < segmax_start) {
+                h1->Modify(2*w, segmax_start);
+            }
+            
+            if(segmax_stop < box1[2*w+1]) {
+                h1->Modify(2*w + 1, segmax_stop);
+            }
+        }
+        
+        if(ihr == ihr_e) break;
+    }
+
+    return nullified;
 }
 
 
