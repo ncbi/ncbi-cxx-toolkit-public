@@ -1098,6 +1098,7 @@ static const char * kBuiltInGuide[] = {
     "special  CAL64054-CAL64058  embl_tpa_prot",
     "special  CAM06633           embl_tpa_prot",
     "special  CAM12311           embl_tpa_prot",
+    "special  CAM31891-CAM31896  embl_tpa_prot",
     "# Err on the side of caution on as yet unassigned IDs, and hope that",
     "# there's not *too* much more backfilling.",
     "special  CAM92334-CZZ99999  unreserved_prot"
