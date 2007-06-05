@@ -47,9 +47,9 @@ namespace ftds64_ctlib
 //  CTL_Cmd::
 //
 
-CTL_CmdBase::CTL_CmdBase(CTL_Connection* conn)
+CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn)
 : m_RowCount(-1)
-, m_Connect(conn)
+, m_Connect(&conn)
 {
 }
 
@@ -64,7 +64,7 @@ CTL_CmdBase::~CTL_CmdBase(void)
 //  CTL_Cmd::
 //
 
-CTL_Cmd::CTL_Cmd(CTL_Connection* conn)
+CTL_Cmd::CTL_Cmd(CTL_Connection& conn)
 : CTL_CmdBase(conn)
 , m_Cmd(NULL)
 , m_Res(NULL)
@@ -440,7 +440,7 @@ void CTL_Cmd::GetRowCount(int* cnt)
 //  CTL_LRCmd::
 //
 
-CTL_LRCmd::CTL_LRCmd(CTL_Connection* conn,
+CTL_LRCmd::CTL_LRCmd(CTL_Connection& conn,
                      const string& query,
                      unsigned int nof_params)
 : CTL_Cmd(conn)
@@ -548,7 +548,7 @@ CTL_LRCmd::MakeResult(void)
             DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
         }
 
-        return CTL_Cmd::CreateResult();
+        return Create_Result(static_cast<impl::CResult&>(GetResult()));
     }
 }
 
@@ -583,7 +583,7 @@ CTL_LRCmd::Cancel(void)
 //  CTL_LangCmd::
 //
 
-CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn,
+CTL_LangCmd::CTL_LangCmd(CTL_Connection& conn,
                          const string& lang_query,
                          unsigned int nof_params
                          )
@@ -652,12 +652,6 @@ int CTL_LangCmd::RowCount() const
     return m_RowCount;
 }
 
-
-CDB_Result*
-CTL_LangCmd::CreateResult(impl::CResult& result)
-{
-    return Create_Result(result);
-}
 
 CTL_LangCmd::~CTL_LangCmd()
 {

@@ -153,7 +153,7 @@ class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public impl::CBaseCmd
     friend class CMySQL_Connection;
 
 protected:
-    CMySQL_LangCmd(CMySQL_Connection* conn,
+    CMySQL_LangCmd(CMySQL_Connection& conn,
                    const string&      lang_query,
                    unsigned int       nof_params);
     virtual ~CMySQL_LangCmd();
@@ -207,7 +207,7 @@ class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_RowResult : public impl::CResult
     friend class CMySQL_LangCmd;
 
 protected:
-    CMySQL_RowResult(CMySQL_Connection* conn);
+    CMySQL_RowResult(CMySQL_Connection& conn);
     virtual ~CMySQL_RowResult();
 
 protected:

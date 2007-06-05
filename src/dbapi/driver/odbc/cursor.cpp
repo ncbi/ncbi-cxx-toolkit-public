@@ -41,11 +41,11 @@ BEGIN_NCBI_SCOPE
 //  CODBC_CursorCmdBase
 //
 
-CODBC_CursorCmdBase::CODBC_CursorCmdBase(CODBC_Connection* conn,
+CODBC_CursorCmdBase::CODBC_CursorCmdBase(CODBC_Connection& conn,
                                          const string& cursor_name,
                                          const string& query,
                                          unsigned int nof_params)
-: CStatementBase(*conn)
+: CStatementBase(conn)
 , impl::CBaseCmd(conn, cursor_name, query, nof_params)
 , m_CursCmd(conn, query, nof_params)
 {
@@ -72,7 +72,7 @@ int CODBC_CursorCmdBase::RowCount(void) const
 //  CODBC_CursorCmd::
 //
 
-CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* conn,
+CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection& conn,
                                  const string& cursor_name,
                                  const string& query,
                                  unsigned int nof_params)
@@ -89,7 +89,7 @@ CDB_Result* CODBC_CursorCmd::OpenCursor(void)
 
     // declare the cursor
     try {
-        m_CursCmd.SetCursorName(GetCursorName());
+        m_CursCmd.SetCursorName(GetCmdName());
         m_CursCmd.Send();
     } catch (const CDB_Exception& e) {
         string err_message = "failed to declare cursor" + GetDiagnosticInfo();
@@ -112,7 +112,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
         return false;
 
     try {
-        string buff = upd_query + " where current of " + GetCursorName();
+        string buff = upd_query + " where current of " + GetCmdName();
 
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
@@ -131,7 +131,7 @@ CDB_ITDescriptor* CODBC_CursorCmd::x_GetITDescriptor(unsigned int item_num)
         return NULL;
     }
 
-    string cond = "current of " + GetCursorName();
+    string cond = "current of " + GetCmdName();
 
     return m_CursCmd.m_Res->GetImageOrTextDescriptor(item_num, cond);
 }
@@ -164,7 +164,7 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
         return false;
 
     try {
-        string buff = "delete " + table_name + " where current of " + GetCursorName();
+        string buff = "delete " + table_name + " where current of " + GetCmdName();
 
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
@@ -212,7 +212,7 @@ CODBC_CursorCmd::~CODBC_CursorCmd()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CODBC_CursorCmdExpl::CODBC_CursorCmdExpl(CODBC_Connection* conn,
+CODBC_CursorCmdExpl::CODBC_CursorCmdExpl(CODBC_Connection& conn,
                                          const string& cursor_name,
                                          const string& query,
                                          unsigned int nof_params) :
@@ -254,7 +254,7 @@ CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
     SetCursorDeclared();
 
     try {
-        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + GetCursorName()));
+        auto_ptr<impl::CBaseCmd> stmt(GetConnection().xLangCmd("open " + GetCmdName()));
 
         stmt->Send();
         stmt->DumpResults();
@@ -265,7 +265,7 @@ CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
 
     SetCursorOpen();
 
-    m_LCmd.reset(GetConnection().xLangCmd("fetch " + GetCursorName()));
+    m_LCmd.reset(GetConnection().xLangCmd("fetch " + GetCmdName()));
     m_Res.reset(new CODBC_CursorResultExpl(m_LCmd.get()));
 
     return Create_Result(*m_Res);
@@ -280,7 +280,7 @@ bool CODBC_CursorCmdExpl::Update(const string&, const string& upd_query)
     try {
         m_LCmd->Cancel();
 
-        string buff = upd_query + " where current of " + GetCursorName();
+        string buff = upd_query + " where current of " + GetCmdName();
 
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
@@ -299,7 +299,7 @@ CDB_ITDescriptor* CODBC_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
         return NULL;
     }
 
-    string cond = "current of " + GetCursorName();
+    string cond = "current of " + GetCmdName();
 
     return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
 }
@@ -338,7 +338,7 @@ bool CODBC_CursorCmdExpl::Delete(const string& table_name)
     try {
         m_LCmd->Cancel();
 
-        string buff = "delete " + table_name + " where current of " + GetCursorName();
+        string buff = "delete " + table_name + " where current of " + GetCmdName();
 
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
@@ -361,7 +361,7 @@ bool CODBC_CursorCmdExpl::CloseCursor()
     m_LCmd.reset();
 
     if (CursorIsOpen()) {
-        string buff = "close " + GetCursorName();
+        string buff = "close " + GetCmdName();
         try {
             auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));
 
@@ -376,7 +376,7 @@ bool CODBC_CursorCmdExpl::CloseCursor()
     }
 
     if (CursorIsDeclared()) {
-        string buff = "deallocate " + GetCursorName();
+        string buff = "deallocate " + GetCmdName();
 
         try {
             auto_ptr<CODBC_LangCmd> cmd(GetConnection().xLangCmd(buff));

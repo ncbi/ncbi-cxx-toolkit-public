@@ -360,12 +360,12 @@ private:
 class CDBL_Cmd
 {
 public:
-    CDBL_Cmd(CDBL_Connection* conn,
+    CDBL_Cmd(CDBL_Connection& conn,
              DBPROCESS*       cmd
              ) :
 //         m_HasFailed(false),
         m_RowCount(-1),
-        m_Connect(conn),
+        m_Connect(&conn),
         m_Cmd(cmd)
     {
     }
@@ -424,7 +424,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_LangCmd(CDBL_Connection* conn,
+    CDBL_LangCmd(CDBL_Connection& conn,
                  DBPROCESS* cmd,
                  const string& lang_query,
                  unsigned int nof_params);
@@ -463,7 +463,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_RPCCmd(CDBL_Connection* con, DBPROCESS* cmd,
+    CDBL_RPCCmd(CDBL_Connection& con, DBPROCESS* cmd,
                 const string& proc_name, unsigned int nof_params);
     ~CDBL_RPCCmd(void);
 
@@ -506,7 +506,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_CursorCmd(CDBL_Connection* con, DBPROCESS* cmd,
+    CDBL_CursorCmd(CDBL_Connection& con, DBPROCESS* cmd,
                    const string& cursor_name, const string& query,
                    unsigned int nof_params);
     virtual ~CDBL_CursorCmd(void);
@@ -554,7 +554,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_BCPInCmd(CDBL_Connection* con, DBPROCESS* cmd,
+    CDBL_BCPInCmd(CDBL_Connection& con, DBPROCESS* cmd,
                   const string& table_name, unsigned int nof_columns);
     ~CDBL_BCPInCmd(void);
 
@@ -587,7 +587,7 @@ class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd :
     friend class CDBL_Connection;
 
 protected:
-    CDBL_SendDataCmd(CDBL_Connection* con, DBPROCESS* cmd, size_t nof_bytes);
+    CDBL_SendDataCmd(CDBL_Connection& con, DBPROCESS* cmd, size_t nof_bytes);
     ~CDBL_SendDataCmd(void);
 
 protected:

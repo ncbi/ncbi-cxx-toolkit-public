@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 //  CTDS_RPCCmd::
 //
 
-CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection* conn,
+CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection& conn,
                          DBPROCESS* cmd,
                          const string& proc_name,
                          unsigned int nof_params) :

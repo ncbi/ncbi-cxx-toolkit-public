@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 //  CDBL_LangCmd::
 //
 
-CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection* conn,
+CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection& conn,
                            DBPROCESS* cmd,
                            const string& lang_query,
                            unsigned int nof_params)

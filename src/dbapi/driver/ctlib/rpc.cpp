@@ -46,7 +46,7 @@ namespace ftds64_ctlib
 //  CTL_RPCCmd::
 //
 
-CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn,
+CTL_RPCCmd::CTL_RPCCmd(CTL_Connection& conn,
                        const string& proc_name,
                        unsigned int nof_params
                        )
@@ -112,13 +112,6 @@ bool CTL_RPCCmd::HasMoreResults() const
 int CTL_RPCCmd::RowCount() const
 {
     return m_RowCount;
-}
-
-
-CDB_Result*
-CTL_RPCCmd::CreateResult(impl::CResult& result)
-{
-    return Create_Result(result);
 }
 
 

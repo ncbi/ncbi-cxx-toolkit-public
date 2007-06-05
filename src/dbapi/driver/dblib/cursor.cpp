@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 //  CDBL_CursorCmd::
 //
 
-CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection* conn,
+CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection& conn,
                                DBPROCESS* cmd,
                                const string& cursor_name,
                                const string& query,
@@ -102,11 +102,11 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
             cur_feat = " cursor FORWARD_ONLY for ";
         }
 
-        buff = "declare " + GetCursorName() + cur_feat + GetCombinedQuery();
+        buff = "declare " + GetCmdName() + cur_feat + GetCombinedQuery();
     } else {
         // Sybase ...
 
-        buff = "declare " + GetCursorName() + " cursor for " + GetCombinedQuery();
+        buff = "declare " + GetCmdName() + " cursor for " + GetCombinedQuery();
     }
 
     try {
@@ -122,7 +122,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
 
     // open the cursor
     m_LCmd = 0;
-    buff = "open " + GetCursorName();
+    buff = "open " + GetCmdName();
 
     try {
         auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
@@ -136,7 +136,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
     SetCursorOpen();
 
     m_LCmd = 0;
-    buff = "fetch " + GetCursorName();
+    buff = "fetch " + GetCmdName();
 
     m_LCmd = GetConnection().LangCmd(buff);
 
@@ -161,7 +161,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 //             }
         }
 
-        string buff = upd_query + " where current of " + GetCursorName();
+        string buff = upd_query + " where current of " + GetCmdName();
         const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
@@ -257,7 +257,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
 //             }
         }
 
-        string buff = "delete " + table_name + " where current of " + GetCursorName();
+        string buff = "delete " + table_name + " where current of " + GetCmdName();
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
@@ -297,7 +297,7 @@ bool CDBL_CursorCmd::CloseCursor()
     }
 
     if (CursorIsOpen()) {
-        string buff = "close " + GetCursorName();
+        string buff = "close " + GetCmdName();
         try {
             auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
 
@@ -324,9 +324,9 @@ bool CDBL_CursorCmd::CloseCursor()
         const bool connected_to_MSSQLServer = GetConnection().GetCDriverContext().ConnectedToMSSQLServer();
 
         if ( connected_to_MSSQLServer ) {
-            buff = "deallocate " + GetCursorName();
+            buff = "deallocate " + GetCmdName();
         } else {
-            buff = "deallocate cursor " + GetCursorName();
+            buff = "deallocate cursor " + GetCmdName();
         }
 
         try {

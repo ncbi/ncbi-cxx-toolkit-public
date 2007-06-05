@@ -74,7 +74,7 @@ CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query,
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     SetExtraMsg(extra_msg);
 
-    CTDS_LangCmd* lcmd = new CTDS_LangCmd(this, GetDBLibConnection(), lang_query, nof_parms);
+    CTDS_LangCmd* lcmd = new CTDS_LangCmd(*this, GetDBLibConnection(), lang_query, nof_parms);
     return Create_LangCmd(*lcmd);
 }
 
@@ -84,7 +84,7 @@ CDB_RPCCmd* CTDS_Connection::RPC(const string& rpc_name, unsigned int nof_args)
     string extra_msg = "RPC Command: " + rpc_name;
     SetExtraMsg(extra_msg);
 
-    CTDS_RPCCmd* rcmd = new CTDS_RPCCmd(this, GetDBLibConnection(), rpc_name, nof_args);
+    CTDS_RPCCmd* rcmd = new CTDS_RPCCmd(*this, GetDBLibConnection(), rpc_name, nof_args);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -99,7 +99,7 @@ CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& table_name,
     string extra_msg = "BCP Table: " + table_name;
     SetExtraMsg(extra_msg);
 
-    CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(this, GetDBLibConnection(), table_name, nof_cols);
+    CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(*this, GetDBLibConnection(), table_name, nof_cols);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -113,7 +113,7 @@ CDB_CursorCmd* CTDS_Connection::Cursor(const string& cursor_name,
         query + "\"";
     SetExtraMsg(extra_msg);
 
-    CTDS_CursorCmd* ccmd = new CTDS_CursorCmd(this, GetDBLibConnection(), cursor_name,
+    CTDS_CursorCmd* ccmd = new CTDS_CursorCmd(*this, GetDBLibConnection(), cursor_name,
                                               query, nof_params);
     return Create_CursorCmd(*ccmd);
 }
@@ -154,7 +154,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210093 );
     }
 
-    CTDS_SendDataCmd* sd_cmd = new CTDS_SendDataCmd(this, GetDBLibConnection(), data_size);
+    CTDS_SendDataCmd* sd_cmd = new CTDS_SendDataCmd(*this, GetDBLibConnection(), data_size);
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -489,11 +489,11 @@ void CTDS_Connection::CheckFunctCall(const string& extra_msg)
 //
 
 
-CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection* conn,
+CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection& conn,
                                    DBPROCESS* cmd,
                                    size_t nof_bytes) :
-    CDBL_Cmd( conn, cmd ),
-    impl::CSendDataCmd(nof_bytes)
+    CDBL_Cmd(conn, cmd),
+    impl::CSendDataCmd(conn, nof_bytes)
 {
 }
 
@@ -503,11 +503,11 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (!pChunk  ||  !nof_bytes) {
         DATABASE_DRIVER_ERROR( "wrong (zero) arguments", 290000 );
     }
-    if (!GetBytes2go())
+    if (!GetBytes2Go())
         return 0;
 
-    if (nof_bytes > GetBytes2go())
-        nof_bytes = GetBytes2go();
+    if (nof_bytes > GetBytes2Go())
+        nof_bytes = GetBytes2Go();
 
     if (Check(dbmoretext(GetCmd(), static_cast<DBINT>(nof_bytes), (BYTE*) pChunk))
         != SUCCEED) {
@@ -515,9 +515,9 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
     }
 
-    SetBytes2go(GetBytes2go() - nof_bytes);
+    SetBytes2Go(GetBytes2Go() - nof_bytes);
 
-    if (GetBytes2go() <= 0) {
+    if (GetBytes2Go() <= 0) {
         if (Check(dbsqlok(GetCmd())) != SUCCEED || GetConnection().x_Results(GetCmd()) == FAIL) {
             DATABASE_DRIVER_ERROR( "dbsqlok/results failed", 290002 );
         }
@@ -529,9 +529,9 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
 bool CTDS_SendDataCmd::Cancel(void)
 {
-    if (GetBytes2go() > 0) {
+    if (GetBytes2Go() > 0) {
         Check(dbcancel(GetCmd()));
-        SetBytes2go(0);
+        SetBytes2Go(0);
         return true;
     }
 

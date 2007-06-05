@@ -537,15 +537,10 @@ public:
     CDB_ITDescriptor(const string& table_name,
                      const string& column_name,
                      const string& search_conditions,
-                     ETDescriptorType column_type = eUnknown)
-        : m_TableName(table_name),
-          m_ColumnName(column_name),
-          m_SearchConditions(search_conditions),
-          m_ColumnType(column_type)
-    {}
+                     ETDescriptorType column_type = eUnknown);
+    virtual ~CDB_ITDescriptor(void);
 
     virtual int DescriptorType(void) const;
-    virtual ~CDB_ITDescriptor(void);
 
     const string& TableName()        const { return m_TableName;        }
     void SetTableName(const string& name)  { m_TableName = name;        }

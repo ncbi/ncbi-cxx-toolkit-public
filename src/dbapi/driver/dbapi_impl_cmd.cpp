@@ -51,36 +51,46 @@ CCommand::Create_Result(CResult& result)
 
 
 ///////////////////////////////////////////////////////////////////////////
-CBaseCmd::CBaseCmd(impl::CConnection* conn,
-                   const string& query,
-                   unsigned int nof_params)
-: m_ConnImpl(conn)
-, m_Query(query)
-, m_Params(nof_params)
-, m_Recompile(false)
+CCmdBase::CCmdBase(impl::CConnection& conn)
+: m_ConnImpl(&conn)
 , m_WasSent(false)
-, m_HasFailed(false)
-, m_IsOpen(false)
-, m_IsDeclared(false)
 {
     _ASSERT(m_ConnImpl);
 }
 
-CBaseCmd::CBaseCmd(impl::CConnection* conn,
-                   const string& cursor_name,
+
+CCmdBase::~CCmdBase()
+{
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+CBaseCmd::CBaseCmd(impl::CConnection& conn,
                    const string& query,
                    unsigned int nof_params)
-: m_ConnImpl(conn)
+: CCmdBase(conn)
 , m_Query(query)
 , m_Params(nof_params)
 , m_Recompile(false)
-, m_WasSent(false)
 , m_HasFailed(false)
 , m_IsOpen(false)
 , m_IsDeclared(false)
-, m_CursorName(cursor_name)
 {
-    _ASSERT(m_ConnImpl);
+}
+
+CBaseCmd::CBaseCmd(impl::CConnection& conn,
+                   const string& cursor_name,
+                   const string& query,
+                   unsigned int nof_params)
+: CCmdBase(conn)
+, m_Query(query)
+, m_Params(nof_params)
+, m_Recompile(false)
+, m_HasFailed(false)
+, m_IsOpen(false)
+, m_IsDeclared(false)
+, m_CmdName(cursor_name)
+{
 }
 
 CBaseCmd::~CBaseCmd(void)
@@ -281,63 +291,10 @@ void CBaseCmd::AttachTo(CDB_CursorCmd* interface)
 
 
 ///////////////////////////////////////////////////////////////////////////
-// CCursorCmd::CCursorCmd(impl::CConnection* conn,
-//                        const string& cursor_name,
-//                        const string& query,
-//                        unsigned int nof_params)
-// : impl::CBaseCmd(conn, query, nof_params)
-// , m_IsOpen(false)
-// , m_IsDeclared(false)
-// , m_Name(cursor_name)
-// // , m_Query(query)
-// // , m_Params(nof_params)
-// {
-// }
-//
-// CCursorCmd::~CCursorCmd(void)
-// {
-//     return;
-// }
-//
-// // bool CCursorCmd::BindParam(const string& param_name,
-// //                            CDB_Object* param_ptr,
-// //                            bool out_param)
-// // {
-// //     return m_Params.BindParam(CDB_Params::kNoParamNumber,
-// //                               param_name,
-// //                               param_ptr,
-// //                               out_param);
-// // }
-//
-//
-// void CCursorCmd::DetachInterface(void)
-// {
-//     m_Interface.DetachInterface();
-// }
-//
-//
-// void CCursorCmd::AttachTo(CDB_CursorCmd* interface)
-// {
-//     m_Interface = interface;
-// }
-//
-//
-// bool CCursorCmd::Send(void)
-// {
-//     _ASSERT(false);
-// }
-//
-//
-// bool CCursorCmd::Cancel(void)
-// {
-//     _ASSERT(false);
-//     return true;
-// }
-
-
-///////////////////////////////////////////////////////////////////////////
-CSendDataCmd::CSendDataCmd(size_t nof_bytes) :
-m_Bytes2go(nof_bytes)
+CSendDataCmd::CSendDataCmd(impl::CConnection& conn,
+                           size_t             nof_bytes)
+: CCmdBase(conn)
+, m_Bytes2Go(nof_bytes)
 {
 }
 
@@ -355,6 +312,8 @@ void CSendDataCmd::AttachTo(CDB_SendDataCmd* interface)
 {
     m_Interface = interface;
 }
+
+
 
 } // namespace impl
 

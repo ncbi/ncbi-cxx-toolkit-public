@@ -183,9 +183,9 @@ namespace ctlib
 {
 
 Connection::Connection(CTLibContext& context,
-                       CTL_Connection* ctl_conn)
+                       CTL_Connection& ctl_conn)
 : m_CTL_Context(&context)
-, m_CTL_Conn(ctl_conn)
+, m_CTL_Conn(&ctl_conn)
 , m_Handle(NULL)
 , m_IsAllocated(false)
 , m_IsOpen(false)

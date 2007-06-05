@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 //  CTDS_BCPInCmd::
 //
 
-CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* conn,
+CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection& conn,
                              DBPROCESS*       cmd,
                              const string&    table_name,
                              unsigned int     nof_columns) :

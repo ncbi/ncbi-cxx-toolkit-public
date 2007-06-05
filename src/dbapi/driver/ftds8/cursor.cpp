@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //  CTDS_CursorCmd::
 //
 
-CTDS_CursorCmd::CTDS_CursorCmd(CTDS_Connection* conn,
+CTDS_CursorCmd::CTDS_CursorCmd(CTDS_Connection& conn,
                                DBPROCESS* cmd,
                                const string& cursor_name,
                                const string& query,
@@ -100,11 +100,11 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
             cur_feat = " cursor FORWARD_ONLY for ";
         }
 
-        buff = "declare " + GetCursorName() + cur_feat + GetQuery();
+        buff = "declare " + GetCmdName() + cur_feat + GetQuery();
     } else {
         // Sybase ...
 
-        buff = "declare " + GetCursorName() + " cursor for " + GetQuery();
+        buff = "declare " + GetCmdName() + " cursor for " + GetQuery();
     }
 
     try {
@@ -120,7 +120,7 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
 
     // open the cursor
     m_LCmd = 0;
-    buff = "open " + GetCursorName();
+    buff = "open " + GetCmdName();
 
     try {
         auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
@@ -134,7 +134,7 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
     SetCursorOpen();
 
     m_LCmd = 0;
-    buff = "fetch " + GetCursorName();
+    buff = "fetch " + GetCmdName();
 
     m_LCmd = GetConnection().LangCmd(buff);
     m_Res = new CTDS_CursorResult(GetConnection(), m_LCmd);
@@ -153,7 +153,7 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
             auto_ptr<CDB_Result> r(m_LCmd->Result());
         }
 
-        string buff = upd_query + " where current of " + GetCursorName();
+        string buff = upd_query + " where current of " + GetCmdName();
         const auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
@@ -237,7 +237,7 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
         if(r) delete r;
     }
 
-        string buff = "delete " + table_name + " where current of " + GetCursorName();
+        string buff = "delete " + table_name + " where current of " + GetCmdName();
         cmd = GetConnection().LangCmd(buff);
         cmd->Send();
         cmd->DumpResults();
@@ -282,7 +282,7 @@ bool CTDS_CursorCmd::CloseCursor()
         delete m_LCmd;
 
     if (CursorIsOpen()) {
-        string buff = "close " + GetCursorName();
+        string buff = "close " + GetCmdName();
         m_LCmd = 0;
         try {
             m_LCmd = GetConnection().LangCmd(buff);
@@ -311,7 +311,7 @@ bool CTDS_CursorCmd::CloseCursor()
     }
 
     if (CursorIsDeclared()) {
-        string buff = "deallocate " + GetCursorName();
+        string buff = "deallocate " + GetCmdName();
         m_LCmd = 0;
         try {
             m_LCmd = GetConnection().LangCmd(buff);

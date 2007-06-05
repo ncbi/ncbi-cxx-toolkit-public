@@ -70,7 +70,39 @@ public:
 
 class CConnection;
 
-class NCBI_DBAPIDRIVER_EXPORT CBaseCmd : public CCommand
+class NCBI_DBAPIDRIVER_EXPORT CCmdBase : public CCommand
+{
+public:
+    CCmdBase(impl::CConnection& conn);
+    virtual ~CCmdBase();
+
+public:
+    bool WasSent(void) const
+    {
+        return m_WasSent;
+    }
+
+protected:
+    void SetWasSent(bool flag = true)
+    {
+        m_WasSent = flag;
+    }
+
+    //
+    CConnection& GetConnImpl(void) const
+    {
+        _ASSERT(m_ConnImpl);
+        return *m_ConnImpl;
+    }
+
+private:
+    impl::CConnection*  m_ConnImpl;
+    bool                m_WasSent;
+};
+
+
+class NCBI_DBAPIDRIVER_EXPORT CBaseCmd :
+    public CCmdBase
 {
     friend class ncbi::CDB_LangCmd;   // Because of AttachTo
     friend class ncbi::CDB_RPCCmd;    // Because of AttachTo
@@ -78,10 +110,10 @@ class NCBI_DBAPIDRIVER_EXPORT CBaseCmd : public CCommand
     friend class ncbi::CDB_CursorCmd; // Because of AttachTo
 
 public:
-    CBaseCmd(impl::CConnection* conn,
+    CBaseCmd(impl::CConnection& conn,
              const string& query,
              unsigned int nof_params);
-    CBaseCmd(impl::CConnection* conn,
+    CBaseCmd(impl::CConnection& conn,
              const string& cursor_name,
              const string& query,
              unsigned int nof_params);
@@ -91,10 +123,6 @@ public:
 public:
     /// Send command to the server
     virtual bool Send(void);
-    bool WasSent(void) const
-    {
-        return m_WasSent;
-    }
 
     /// Cancel the command execution
     virtual bool Cancel(void);
@@ -155,6 +183,12 @@ public:
         return m_Params;
     }
 
+    //
+    string GetCmdName(void) const
+    {
+        return m_CmdName;
+    }
+
 public:
     // BCP-related ...
 
@@ -179,20 +213,9 @@ protected:
         return m_Recompile;
     }
 
-    void SetWasSent(bool flag = true)
-    {
-        m_WasSent = flag;
-    }
     void SetHasFailed(bool flag = true)
     {
         m_HasFailed = flag;
-    }
-
-    //
-    CConnection& GetConnImpl(void) const
-    {
-        _ASSERT(m_ConnImpl);
-        return *m_ConnImpl;
     }
 
 protected:
@@ -243,11 +266,6 @@ protected:
         m_IsDeclared = flag;
     }
 
-    //
-    string GetCursorName(void) const
-    {
-        return m_CursorName;
-    }
 
 private:
     void AttachTo(CDB_LangCmd*      interface);
@@ -260,29 +278,34 @@ private:
     CInterfaceHook<CDB_BCPInCmd>    m_InterfaceBCPIn;
     CInterfaceHook<CDB_CursorCmd>   m_InterfaceCursor;
 
-    impl::CConnection*  m_ConnImpl;
     string              m_Query;
     CDB_Params          m_Params;
     bool                m_Recompile; // Temporary. Should be deleted.
-    bool                m_WasSent;
     bool                m_HasFailed;
 
 private:
     // Cursor-related data ...
     bool            m_IsOpen;
     bool            m_IsDeclared;
-    const string    m_CursorName;
+    const string    m_CmdName;
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class NCBI_DBAPIDRIVER_EXPORT CSendDataCmd : public CCommand
+class NCBI_DBAPIDRIVER_EXPORT CSendDataCmd : public CCmdBase
 {
     friend class ncbi::CDB_SendDataCmd; // Because of AttachTo
 
 public:
-    CSendDataCmd(size_t nof_bytes);
+    CSendDataCmd(impl::CConnection& conn,
+                 size_t             nof_bytes);
     virtual ~CSendDataCmd(void);
+
+public:
+    size_t GetBytes2Go(void) const
+    {
+        return m_Bytes2Go;
+    }
 
 protected:
     /// Send chunk of data to the server.
@@ -293,22 +316,18 @@ protected:
     void DetachInterface(void);
 
     //
-    size_t GetBytes2go(void) const
+    void SetBytes2Go(size_t value)
     {
-        return m_Bytes2go;
+        m_Bytes2Go = value;
     }
-    void SetBytes2go(size_t value)
-    {
-        m_Bytes2go = value;
-    }
-
-private:
-    size_t  m_Bytes2go;
 
 private:
     void AttachTo(CDB_SendDataCmd* interface);
 
     CInterfaceHook<CDB_SendDataCmd> m_Interface;
+
+private:
+    size_t  m_Bytes2Go;
 };
 
 } // namespace impl

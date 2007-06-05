@@ -62,7 +62,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                const I_DriverContext::SConnAttr& conn_attr)
 : impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name)
 , m_Cntx(&cntx)
-, m_Handle(cntx, this)
+, m_Handle(cntx, *this)
 {
     string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
     SetExtraMsg(extra_msg);
@@ -303,7 +303,7 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
     SetExtraMsg(extra_msg);
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(
-        this,
+        *this,
         lang_query,
         nof_params
         );
@@ -319,7 +319,7 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
     SetExtraMsg(extra_msg);
 
     CTL_RPCCmd* rcmd = new CTL_RPCCmd(
-        this,
+        *this,
         rpc_name,
         nof_args
         );
@@ -337,7 +337,7 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
     SetExtraMsg(extra_msg);
 
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(
-        this,
+        *this,
         table_name,
         nof_columns
         );
@@ -356,7 +356,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
     SetExtraMsg(extra_msg);
 
     CTL_CursorCmd* ccmd = new CTL_CursorCmd(
-        this,
+        *this,
         cursor_name,
         query,
         nof_params,
@@ -372,7 +372,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                              bool log_it)
 {
 
-    CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(this,
+    CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(*this,
                                                   descr_in,
                                                   data_size,
                                                   log_it
@@ -696,14 +696,12 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 //  CTL_SendDataCmd::
 //
 
-
-CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* conn,
+CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
                                  I_ITDescriptor& descr_in,
                                  size_t nof_bytes,
-                                 bool log_it
-                                 )
+                                 bool log_it)
 : CTL_Cmd(conn)
-, impl::CSendDataCmd(nof_bytes)
+, impl::CSendDataCmd(conn, nof_bytes)
 {
     CHECK_DRIVER_ERROR(!nof_bytes, "wrong (zero) data size", 110092);
 
@@ -758,19 +756,19 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         "wrong (zero) arguments",
         190000 );
 
-    if ( !GetBytes2go() )
+    if ( !GetBytes2Go() )
         return 0;
 
-    if (nof_bytes > GetBytes2go())
-        nof_bytes = GetBytes2go();
+    if (nof_bytes > GetBytes2Go())
+        nof_bytes = GetBytes2Go();
 
     if (Check(ct_send_data(x_GetSybaseCmd(), (void*) pChunk, (CS_INT) nof_bytes)) != CS_SUCCEED){
         DATABASE_DRIVER_ERROR( "ct_send_data failed", 190001 );
     }
 
-    SetBytes2go(GetBytes2go() - nof_bytes);
+    SetBytes2Go(GetBytes2Go() - nof_bytes);
 
-    if ( GetBytes2go() )
+    if ( GetBytes2Go() )
         return nof_bytes;
 
     if (Check(ct_send(x_GetSybaseCmd())) != CS_SUCCEED) {
@@ -827,20 +825,13 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
 bool CTL_SendDataCmd::Cancel(void)
 {
-    if ( GetBytes2go() ) {
+    if ( GetBytes2Go() ) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
-        SetBytes2go(0);
+        SetBytes2Go(0);
         return true;
     }
 
     return false;
-}
-
-
-CDB_Result*
-CTL_SendDataCmd::CreateResult(impl::CResult& result)
-{
-    return Create_Result(result);
 }
 
 

@@ -106,7 +106,7 @@ namespace ctlib
 class Connection
 {
 public:
-    Connection(CTLibContext& context, CTL_Connection* ctl_conn);
+    Connection(CTLibContext& context, CTL_Connection& ctl_conn);
     ~Connection(void) throw();
     /// Drop allocated connection.
     bool Drop(void);
@@ -375,7 +375,7 @@ private:
 class CTL_CmdBase
 {
 public:
-    CTL_CmdBase(CTL_Connection* conn);
+    CTL_CmdBase(CTL_Connection& conn);
     virtual ~CTL_CmdBase(void);
 
 protected:
@@ -419,7 +419,6 @@ protected:
     }
 
 protected:
-//     bool            m_HasFailed;
     int             m_RowCount;
     string          m_ExecCntxInfo;
 
@@ -436,7 +435,7 @@ private:
 class CTL_Cmd : public CTL_CmdBase
 {
 public:
-    CTL_Cmd(CTL_Connection* conn);
+    CTL_Cmd(CTL_Connection& conn);
     virtual ~CTL_Cmd(void);
 
 protected:
@@ -457,9 +456,6 @@ protected:
     inline CTL_RowResult& GetResult(void);
     inline void DeleteResult(void);
     inline void DeleteResultInternal(void);
-
-    inline CDB_Result* CreateResult(void);
-    virtual CDB_Result* CreateResult(impl::CResult& result) = 0;
 
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
@@ -495,7 +491,7 @@ private:
 class CTL_LRCmd : public CTL_Cmd, public impl::CBaseCmd
 {
 public:
-    CTL_LRCmd(CTL_Connection* conn,
+    CTL_LRCmd(CTL_Connection& conn,
               const string& query,
               unsigned int nof_params);
     virtual ~CTL_LRCmd(void);
@@ -520,7 +516,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_LRCmd
     friend class CTL_Connection;
 
 protected:
-    CTL_LangCmd(CTL_Connection* conn,
+    CTL_LangCmd(CTL_Connection& conn,
                 const string& lang_query,
                 unsigned int nof_params);
     virtual ~CTL_LangCmd(void);
@@ -532,7 +528,6 @@ protected:
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
     virtual int  RowCount(void) const;
-    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
@@ -550,7 +545,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : CTL_LRCmd
     friend class CTL_Connection;
 
 protected:
-    CTL_RPCCmd(CTL_Connection* con,
+    CTL_RPCCmd(CTL_Connection& con,
                const string& proc_name,
                unsigned int nof_params
                );
@@ -561,7 +556,6 @@ protected:
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
     virtual int  RowCount(void) const;
-    virtual CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);
@@ -582,7 +576,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd :
     friend class CTL_Connection;
 
 protected:
-    CTL_CursorCmd(CTL_Connection* conn,
+    CTL_CursorCmd(CTL_Connection& conn,
                   const string& cursor_name,
                   const string& query,
                   unsigned int nof_params,
@@ -602,7 +596,6 @@ protected:
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool CloseCursor(void);
-    virtual CDB_Result* CreateResult(impl::CResult& result);
 
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
     CS_RETCODE CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num);
@@ -632,7 +625,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd :
     friend class CTL_Connection;
 
 protected:
-    CTL_BCPInCmd(CTL_Connection* con,
+    CTL_BCPInCmd(CTL_Connection& con,
                  const string& table_name,
                  unsigned int nof_columns
                  );
@@ -646,7 +639,6 @@ protected:
     virtual bool CommitBCPTrans(void);
     virtual bool Cancel(void);
     virtual bool EndBCP(void);
-    virtual CDB_Result* CreateResult(impl::CResult& result);
     virtual int RowCount(void) const;
 
     CS_RETCODE CheckSF(CS_RETCODE rc, const char* msg, unsigned int msg_num);
@@ -687,7 +679,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : CTL_Cmd, public impl::CSen
     friend class CTL_Connection;
 
 protected:
-    CTL_SendDataCmd(CTL_Connection* conn,
+    CTL_SendDataCmd(CTL_Connection& conn,
                     I_ITDescriptor& descr_in,
                     size_t nof_bytes,
                     bool log_it);
@@ -698,7 +690,6 @@ protected:
 
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    virtual CDB_Result* CreateResult(impl::CResult& result);
 };
 
 
@@ -879,8 +870,8 @@ CTL_CmdBase::x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it)
 inline
 CDB_SendDataCmd*
 CTL_CmdBase::ConnSendDataCmd (I_ITDescriptor& desc,
-                                           size_t          data_size,
-                                           bool            log_it)
+                              size_t          data_size,
+                              bool            log_it)
 {
     return GetConnection().SendDataCmd(desc, data_size, log_it);
 }
@@ -913,13 +904,6 @@ bool
 CTL_Cmd::HaveResult(void) const
 {
     return (m_Res != NULL);
-}
-
-inline
-CDB_Result*
-CTL_Cmd::CreateResult(void)
-{
-    return CreateResult(static_cast<impl::CResult&>(GetResult()));
 }
 
 inline

@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 //  CDBL_RPCCmd::
 //
 
-CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* conn,
+CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection& conn,
                          DBPROCESS* cmd,
                          const string& proc_name,
                          unsigned int nof_params) :

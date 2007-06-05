@@ -426,7 +426,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd :
 
 protected:
     CODBC_LangCmd(
-        CODBC_Connection* conn,
+        CODBC_Connection& conn,
         const string& lang_query,
         unsigned int nof_params
         );
@@ -466,7 +466,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd :
     friend class CODBC_Connection;
 
 protected:
-    CODBC_RPCCmd(CODBC_Connection* conn,
+    CODBC_RPCCmd(CODBC_Connection& conn,
                  const string& proc_name,
                  unsigned int nof_params);
     virtual ~CODBC_RPCCmd(void);
@@ -499,7 +499,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdBase :
     public impl::CBaseCmd
 {
 protected:
-    CODBC_CursorCmdBase(CODBC_Connection* conn,
+    CODBC_CursorCmdBase(CODBC_Connection& conn,
                         const string& cursor_name,
                         const string& query,
                         unsigned int nof_params);
@@ -525,7 +525,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd :
     friend class CODBC_Connection;
 
 protected:
-    CODBC_CursorCmd(CODBC_Connection* conn,
+    CODBC_CursorCmd(CODBC_Connection& conn,
                     const string& cursor_name,
                     const string& query,
                     unsigned int nof_params);
@@ -553,7 +553,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmdExpl :
     friend class CODBC_Connection;
 
 protected:
-    CODBC_CursorCmdExpl(CODBC_Connection* conn,
+    CODBC_CursorCmdExpl(CODBC_Connection& conn,
                         const string& cursor_name,
                         const string& query,
                         unsigned int nof_params);
@@ -597,7 +597,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
     friend class CODBC_Connection;
 
 protected:
-    CODBC_BCPInCmd(CODBC_Connection* conn,
+    CODBC_BCPInCmd(CODBC_Connection& conn,
                    SQLHDBC cmd,
                    const string& table_name,
                    unsigned int nof_columns);
@@ -640,7 +640,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd :
     friend class CODBC_Connection;
 
 protected:
-    CODBC_SendDataCmd(CODBC_Connection* conn,
+    CODBC_SendDataCmd(CODBC_Connection& conn,
                       CDB_ITDescriptor& descr,
                       size_t nof_bytes,
                       bool logit);

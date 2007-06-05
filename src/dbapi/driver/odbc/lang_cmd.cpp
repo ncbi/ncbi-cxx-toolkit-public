@@ -30,10 +30,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <stdio.h>
 #include <dbapi/driver/odbc/interfaces.hpp>
 
 #include "odbc_utils.hpp"
+
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -44,16 +45,14 @@ BEGIN_NCBI_SCOPE
 //
 
 CODBC_LangCmd::CODBC_LangCmd(
-    CODBC_Connection* conn,
+    CODBC_Connection& conn,
     const string& lang_query,
     unsigned int nof_params
     ) :
-    CStatementBase(*conn),
+    CStatementBase(conn),
     impl::CBaseCmd(conn, lang_query, nof_params),
     m_Res(NULL)
 {
-    _ASSERT( conn );
-
 /* This logic is not working for some reason
     if ( SQLSetStmtAttr(m_Cmd, SQL_ATTR_ROWS_FETCHED_PTR, &m_RowCount, sizeof(m_RowCount)) != SQL_SUCCESS ) {
         DATABASE_DRIVER_ERROR( "SQLSetStmtAttr failed (memory corruption suspected)", 420014 );

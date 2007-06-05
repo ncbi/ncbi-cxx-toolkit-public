@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 //  CDBL_BCPInCmd::
 //
 
-CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* conn,
+CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection& conn,
                              DBPROCESS*       cmd,
                              const string&    table_name,
                              unsigned int     nof_columns) :

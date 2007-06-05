@@ -45,10 +45,10 @@ BEGIN_NCBI_SCOPE
 //  CODBC_RPCCmd::
 //
 
-CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* conn,
+CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection& conn,
                            const string& proc_name,
                            unsigned int nof_params) :
-    CStatementBase(*conn),
+    CStatementBase(conn),
     impl::CBaseCmd(conn, proc_name, nof_params),
     m_Res(0)
 {

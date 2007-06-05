@@ -41,11 +41,11 @@ BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
-CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection* conn,
+CSL3_LangCmd::CSL3_LangCmd(CSL3_Connection& conn,
                            const string&    lang_query,
                            unsigned int     nof_params)
 : impl::CBaseCmd(conn, lang_query, nof_params)
-, m_Connect(conn)
+, m_Connect(&conn)
 , m_HasMoreResults(false)
 , m_RowCount(0)
 , m_SQLite3stmt(NULL)

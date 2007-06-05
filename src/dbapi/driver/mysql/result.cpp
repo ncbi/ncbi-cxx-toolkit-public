@@ -65,8 +65,8 @@ static EDB_Type s_GetDataType(enum_field_types type)
 }
 
 
-CMySQL_RowResult::CMySQL_RowResult(CMySQL_Connection* conn)
-    : m_Connect(conn),
+CMySQL_RowResult::CMySQL_RowResult(CMySQL_Connection& conn)
+    : m_Connect(&conn),
       m_CurrItem(-1)
 {
     m_Result = mysql_use_result(&m_Connect->m_MySQL);

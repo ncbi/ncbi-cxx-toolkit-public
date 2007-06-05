@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //  CTDS_LangCmd::
 //
 
-CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn,
+CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection& conn,
                            DBPROCESS* cmd,
                            const string& lang_query,
                            unsigned int nof_params) :

@@ -176,7 +176,7 @@ public:
 
 
 protected:
-    CSL3_LangCmd(CSL3_Connection* conn,
+    CSL3_LangCmd(CSL3_Connection& conn,
                  const string&    lang_query,
                  unsigned int     nof_params);
     virtual ~CSL3_LangCmd(void);
@@ -212,7 +212,7 @@ class NCBI_DBAPIDRIVER_SQLITE3_EXPORT CSL3_BCPInCmd : public CSL3_LangCmd
     friend class CSL3_Connection;
 
 protected:
-    CSL3_BCPInCmd(CSL3_Connection* conn,
+    CSL3_BCPInCmd(CSL3_Connection& conn,
                   const string&    table_name,
                   unsigned int     nof_params);
     virtual ~CSL3_BCPInCmd(void);

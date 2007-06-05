@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
-CSL3_BCPInCmd::CSL3_BCPInCmd(CSL3_Connection* conn,
+CSL3_BCPInCmd::CSL3_BCPInCmd(CSL3_Connection& conn,
                              const string&    table_name,
                              unsigned int     nof_params) :
     CSL3_LangCmd(conn, "INSERT INTO " + table_name, nof_params)

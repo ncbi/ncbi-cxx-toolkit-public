@@ -37,11 +37,11 @@
 BEGIN_NCBI_SCOPE
 
 
-CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
+CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection& conn,
                                const string&      lang_query,
                                unsigned int       nof_params) :
     impl::CBaseCmd(conn, lang_query, nof_params),
-    m_Connect(conn),
+    m_Connect(&conn),
     m_HasMoreResults(false)
 {
 }
@@ -71,7 +71,8 @@ bool CMySQL_LangCmd::Cancel()
 CDB_Result *CMySQL_LangCmd::Result()
 {
     m_HasMoreResults = false;
-    return Create_Result(*new CMySQL_RowResult(m_Connect));
+    _ASSERT(m_Connect);
+    return Create_Result(*new CMySQL_RowResult(*m_Connect));
 }
 
 

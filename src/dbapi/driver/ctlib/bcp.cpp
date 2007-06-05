@@ -49,7 +49,7 @@ namespace ftds64_ctlib
 //  CTL_BCPInCmd::
 //
 
-CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
+CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection& conn,
                            const string& table_name,
                            unsigned int nof_columns)
 : CTL_CmdBase(conn)
@@ -592,13 +592,6 @@ bool CTL_BCPInCmd::EndBCP(void)
     }
 
     return false;
-}
-
-
-CDB_Result*
-CTL_BCPInCmd::CreateResult(impl::CResult& result)
-{
-    return Create_Result(result);
 }
 
 

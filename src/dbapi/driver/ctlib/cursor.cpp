@@ -46,7 +46,7 @@ namespace ftds64_ctlib
 //  CTL_CursorCmd::
 //
 
-CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn,
+CTL_CursorCmd::CTL_CursorCmd(CTL_Connection& conn,
                              const string& cursor_name,
                              const string& query,
                              unsigned int nof_params,
@@ -149,7 +149,7 @@ CTL_CursorCmd::OpenCursor()
         SetHasFailed(false);
 
         CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
-                           const_cast<char*> (GetCursorName().c_str()), CS_NULLTERM,
+                           const_cast<char*> (GetCmdName().c_str()), CS_NULLTERM,
                            const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
                            CS_UNUSED),
                  "ct_cursor(DECLARE) failed", 122001);
@@ -223,7 +223,7 @@ CTL_CursorCmd::OpenCursor()
             continue;
         }
 
-        return CTL_Cmd::CreateResult();
+        return Create_Result(static_cast<impl::CResult&>(GetResult()));
     }
 }
 
@@ -409,13 +409,6 @@ CTL_CursorCmd::CloseForever(void)
 
         DropSybaseCmd();
     }
-}
-
-
-CDB_Result*
-CTL_CursorCmd::CreateResult(impl::CResult& result)
-{
-    return Create_Result(result);
 }
 
 

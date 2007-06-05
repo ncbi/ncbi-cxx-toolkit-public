@@ -323,7 +323,7 @@ CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_LangCmd* lcmd = new CODBC_LangCmd(this, lang_query, nof_params);
+    CODBC_LangCmd* lcmd = new CODBC_LangCmd(*this, lang_query, nof_params);
     return lcmd;
 }
 
@@ -340,7 +340,7 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
     string extra_msg = "RPC Command: " + rpc_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(this, rpc_name, nof_args);
+    CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(*this, rpc_name, nof_args);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -359,7 +359,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     string extra_msg = "BCP Table: " + table_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
-    CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(this, m_Link, table_name, nof_columns);
+    CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(*this, m_Link, table_name, nof_columns);
     return Create_BCPInCmd(*bcmd);
 #endif
 }
@@ -375,12 +375,12 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
     m_Reporter.SetExtraMsg( extra_msg );
 
 #if 1 // defined(FTDS_IN_USE)
-    CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(this,
-                                                cursor_name,
-                                                query,
-                                                nof_params);
+    CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(*this,
+                                                        cursor_name,
+                                                        query,
+                                                        nof_params);
 #else
-    CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this,
+    CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(*this,
                                                 cursor_name,
                                                 query,
                                                 nof_params);
@@ -394,7 +394,7 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                                size_t data_size, bool log_it)
 {
     CODBC_SendDataCmd* sd_cmd =
-        new CODBC_SendDataCmd(this,
+        new CODBC_SendDataCmd(*this,
                               (CDB_ITDescriptor&)descr_in,
                               data_size,
                               log_it);
@@ -1283,12 +1283,12 @@ CStatementBase::x_GetData(const CDB_Object& param,
 //  CODBC_SendDataCmd::
 //
 
-CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
+CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection& conn,
                                      CDB_ITDescriptor& descr,
                                      size_t nof_bytes,
                                      bool logit) :
-    CStatementBase(*conn),
-    impl::CSendDataCmd(nof_bytes),
+    CStatementBase(conn),
+    impl::CSendDataCmd(conn, nof_bytes),
     m_DescrType(descr.GetColumnType() == CDB_ITDescriptor::eText ?
                 CDB_ITDescriptor::eText : CDB_ITDescriptor::eBinary)
 {
@@ -1304,7 +1304,7 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
 
 size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 {
-    if(nof_bytes > GetBytes2go()) nof_bytes= GetBytes2go();
+    if(nof_bytes > GetBytes2Go()) nof_bytes= GetBytes2Go();
     if(nof_bytes < 1) return 0;
 
     int rc;
@@ -1347,8 +1347,8 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     case SQL_NEED_DATA:
     case SQL_NO_DATA:
     case SQL_SUCCESS:
-        SetBytes2go(GetBytes2go() - nof_bytes);
-        if(GetBytes2go() == 0) break;
+        SetBytes2Go(GetBytes2Go() - nof_bytes);
+        if(GetBytes2Go() == 0) break;
         return nof_bytes;
     case SQL_ERROR:
         ReportErrors();
@@ -1399,9 +1399,9 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
 bool CODBC_SendDataCmd::Cancel(void)
 {
-    if (GetBytes2go() > 0) {
+    if (GetBytes2Go() > 0) {
         xCancel();
-        SetBytes2go(0);
+        SetBytes2Go(0);
         return true;
     }
 

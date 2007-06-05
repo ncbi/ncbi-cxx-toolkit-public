@@ -157,28 +157,28 @@ protected:
     virtual bool Refresh(void) = 0;
 
     /// Get the server name, user login name, and password
-    virtual const string& ServerName(void) const;
-    virtual const string& UserName(void) const;
-    virtual const string& Password(void) const;
+    const string& ServerName(void) const;
+    const string& UserName(void) const;
+    const string& Password(void) const;
 
     /// Get the bitmask for the connection mode (BCP, secure login, ...)
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const = 0;
 
     /// Check if this connection is a reusable one
-    virtual bool IsReusable(void) const;
+    bool IsReusable(void) const;
 
     /// Find out which connection pool this connection belongs to
-    virtual const string& PoolName(void) const;
+    const string& PoolName(void) const;
 
     /// Get pointer to the driver context
     I_DriverContext* Context(void) const;
 
     /// Put the message handler into message handler stack
-    virtual void PushMsgHandler(CDB_UserHandler* h,
+    void PushMsgHandler(CDB_UserHandler* h,
                                 EOwnership ownership = eNoOwnership);
 
     /// Remove the message handler (and all above it) from the stack
-    virtual void PopMsgHandler(CDB_UserHandler* h);
+    void PopMsgHandler(CDB_UserHandler* h);
 
     CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
 
