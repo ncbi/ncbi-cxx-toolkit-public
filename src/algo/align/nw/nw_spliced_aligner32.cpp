@@ -182,8 +182,8 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
     TScore* rowF    = &stl_rowF[0];
 
     // index calculation: [i,j] = i*n2 + j
-    vector<Uint4> stl_bm (N1*N2);
-    Uint4* backtrace_matrix = &stl_bm[0];
+    SAllocator<Uint4> alloc_bm (N1*N2);
+    Uint4* backtrace_matrix (alloc_bm.GetPointer());
 
     TScore* pV = rowV - 1;
 

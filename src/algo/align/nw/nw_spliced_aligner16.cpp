@@ -148,7 +148,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     typedef double TScore;
     const TScore cds_penalty_extra = -2e-6;
 
-    TScore V = 0;
+    TScore V (0);
 
     const size_t N1 = data->m_len1 + 1;
     const size_t N2 = data->m_len2 + 1;
@@ -157,10 +157,11 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     TScore* rowF    = &stl_rowF[0];
 
     // index calculation: [i,j] = i*n2 + j
-    vector<Uint2> stl_bm (N1*N2);
-    vector<Uint1> stl_bm_ext (N1*N2, 0);
-    Uint2* NCBI_RESTRICT backtrace_matrix = &stl_bm[0];
-    Uint1* NCBI_RESTRICT backtrace_matrix_ext = &stl_bm_ext[0];
+    SAllocator<Uint2> alloc_bm (N1*N2);
+    Uint2* NCBI_RESTRICT backtrace_matrix (alloc_bm.GetPointer());
+
+    SAllocator<Uint1> alloc_bm_ext (N1*N2);
+    Uint1* NCBI_RESTRICT backtrace_matrix_ext (alloc_bm_ext.GetPointer());
 
     const char* NCBI_RESTRICT seq1 = m_Seq1 + data->m_offset1 - 1;
     const char* NCBI_RESTRICT seq2 = m_Seq2 + data->m_offset2 - 1;
@@ -350,7 +351,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             }}
                 
             // check splice signal
-            //                       (loop unrolling)
+            //                       (loop unroll)
             size_t intron_length = kMax_UInt;
             {{
                 TScore v_best_d;
@@ -398,7 +399,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             backtrace_matrix[k] = tracer;
 
             // detect donor candidate
-            if(j < N2 - 2) {
+            if(j + 2 + m_IntronMinSize < N2) {
                 unsigned short v1 = (seq2[j+1] << 8) | seq2[j+2];
 #define NW_DON_EVAL(st_idx) \
                     if( (v1 == g_nwspl_donor_16[st_idx]) &&  \
