@@ -86,6 +86,8 @@ static MyTZDLS sTZDLS = MyReadLocation();
 BEGIN_NCBI_SCOPE
 
 
+const char *const kISO8601DateTime = "Y-M-DTh:m:s";
+
 // Protective mutex
 DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
 DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);

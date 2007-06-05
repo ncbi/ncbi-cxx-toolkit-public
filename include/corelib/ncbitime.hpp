@@ -102,6 +102,9 @@ typedef struct {
     Int4  time;   ///< x/300 seconds from the beginning of current day
 } TDBTimeI, *TDBTimeIPtr;
 
+// ISO 8601 extended format strings
+NCBI_XNCBI_EXPORT extern const char *const kISO8601DateTime;
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
