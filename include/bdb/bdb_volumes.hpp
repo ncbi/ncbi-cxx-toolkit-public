@@ -172,7 +172,7 @@ public:
 
     /// Merge volumes into one
     void Merge(unsigned volume_id_new,
-               vector<unsigned> merge_list,
+               const vector<unsigned>& merge_list,
                EVolumeStatus new_status = eOnlineActive);
 
 

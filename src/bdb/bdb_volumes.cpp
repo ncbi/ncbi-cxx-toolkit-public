@@ -256,7 +256,7 @@ void CBDB_Volumes::Split(unsigned volume_id_old,
 }
 
 void CBDB_Volumes::Merge(unsigned volume_id_new,
-                         vector<unsigned> merge_list,
+                         const vector<unsigned>& merge_list,
                          EVolumeStatus new_status)
 {
     CBDB_VolumesTransaction trans(*this);
