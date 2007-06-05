@@ -81,7 +81,7 @@ public:
         }
     };
 
-    CBDB_BlobDictionary();
+    CBDB_BlobDictionary(Uint4 last_uid = 0);
 
     /// @name Required CBDB_BlobDictionary<> interface
     /// @{
@@ -94,6 +94,7 @@ public:
     /// retrieve the current key
     Key    GetCurrentKey() const;
     TKeyId GetCurrentUid() const;
+    TKeyId GetLastUid() const;
 
     /// read a particular key's value
     EBDB_ErrCode Read (const TKey& key, TKeyId* val);
@@ -110,7 +111,7 @@ private:
     /// data
     typename SBDB_TypeTraits<Uint4>::TFieldType m_Uid;
 
-    auto_ptr<SReverseDictionary> m_RevDict;
+    TKeyId m_LastUid;
 };
 
 
@@ -235,7 +236,8 @@ private:
 
 template <typename Key>
 inline
-CBDB_BlobDictionary<Key>::CBDB_BlobDictionary()
+CBDB_BlobDictionary<Key>::CBDB_BlobDictionary(Uint4 last_uid)
+    : m_LastUid(last_uid)
 {
     BindKey ("key", &m_Key);
     BindData("uid", &m_Uid);
@@ -282,9 +284,18 @@ Key CBDB_BlobDictionary<Key>::GetCurrentKey() const
 
 template <typename Key>
 inline
-Uint4 CBDB_BlobDictionary<Key>::GetCurrentUid() const
+typename CBDB_BlobDictionary<Key>::TKeyId
+CBDB_BlobDictionary<Key>::GetCurrentUid() const
 {
-    return (Uint4)m_Uid;
+    return (TKeyId)m_Uid;
+}
+
+template <typename Key>
+inline
+typename CBDB_BlobDictionary<Key>::TKeyId
+CBDB_BlobDictionary<Key>::GetLastUid() const
+{
+    return m_LastUid;
 }
 
 
@@ -307,18 +318,8 @@ Uint4 CBDB_BlobDictionary<Key>::PutKey(const Key& key)
         return uid;
     }
 
-    if ( !m_RevDict.get() ) {
-        m_RevDict.reset(new SReverseDictionary);
-        if (GetEnv()) {
-            m_RevDict->SetEnv(*GetEnv());
-        } else {
-            m_RevDict->SetCacheSize(128 * 1024 * 1024);
-        }
-        m_RevDict->Open(GetFileName() + ".inv", GetOpenMode());
-    }
-
-    m_RevDict->key = key;
-    uid = m_RevDict->Append();
+    ++m_LastUid;
+    uid = m_LastUid;
     if (uid) {
         if (Write(key, uid) != eBDB_Ok) {
             uid = 0;

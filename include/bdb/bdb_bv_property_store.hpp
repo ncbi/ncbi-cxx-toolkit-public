@@ -76,7 +76,7 @@ public:
         }
     };
 
-    CBDB_PropertyDictionary();
+    CBDB_PropertyDictionary(Uint4 last_uid = 0);
 
     /// @name Interface required for split dictionary store
     /// @{
@@ -88,6 +88,7 @@ public:
 
     TKey   GetCurrentKey() const;
     TKeyId GetCurrentUid() const;
+    TKeyId GetLastUid() const;
 
     EBDB_ErrCode Read(TKeyId* key_idx);
     EBDB_ErrCode Read(const TKey& key, TKeyId* key_idx);
@@ -103,7 +104,7 @@ private:
     typename SBDB_TypeTraits<PropValue>::TFieldType m_PropVal;
     typename SBDB_TypeTraits<TKeyId>::TFieldType    m_Uid;
 
-    auto_ptr<SReverseDictionary> m_RevDict;
+    TKeyId m_LastUid;
 };
 
 
@@ -139,7 +140,8 @@ public:
 
 template <class PropKey, class PropValue>
 inline
-CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary()
+CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary(Uint4 last_uid)
+    : m_LastUid(last_uid)
 {
     BindKey ("key", &m_PropKey);
     BindKey ("val", &m_PropVal);
@@ -168,6 +170,15 @@ CBDB_PropertyDictionary<PropKey, PropValue>::GetCurrentUid() const
 
 template <class PropKey, class PropValue>
 inline
+typename CBDB_PropertyDictionary<PropKey, PropValue>::TKeyId
+CBDB_PropertyDictionary<PropKey, PropValue>::GetLastUid() const
+{
+    return m_LastUid;
+}
+
+
+template <class PropKey, class PropValue>
+inline
 Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::GetKey(const TKey& key)
 {
     TKeyId uid = 0;
@@ -185,19 +196,8 @@ Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::PutKey(const TKey& key)
         return uid;
     }
 
-    if ( !m_RevDict.get() ) {
-        m_RevDict.reset(new SReverseDictionary);
-        if (GetEnv()) {
-            m_RevDict->SetEnv(*GetEnv());
-        } else {
-            m_RevDict->SetCacheSize(128 * 1024 * 1024);
-        }
-        m_RevDict->Open(GetFileName() + ".inv", GetOpenMode());
-    }
-
-    m_RevDict->prop_key = key.first;
-    m_RevDict->prop_val = key.second;
-    uid = m_RevDict->Append();
+    ++m_LastUid;
+    uid = m_LastUid;
     if (uid) {
         if (Write(key, uid) != eBDB_Ok) {
             uid = 0;
