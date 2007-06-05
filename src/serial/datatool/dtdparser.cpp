@@ -910,6 +910,18 @@ CDataType* DTDParser::x_Type(
         uniType->SetNoPrefix(true);
         type = uniType;
     }
+    else if (!fromInside && cont && occ == DTDElement::eZeroOrOne) {
+        string refname(node.GetName());
+        refname.insert(0,"E");
+        AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+        AutoPtr<CDataMember> member(new CDataMember(refname, type));
+        container->SetSourceLine(type->GetSourceLine());
+        member->SetOptional();
+        member->SetNotag();
+        member->SetNoPrefix();
+        container->AddMember(member);
+        type = container.release();
+    }
     type->SetNamespaceName( node.GetNamespaceName());
     return type;
 }
