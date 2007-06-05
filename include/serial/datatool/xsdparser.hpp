@@ -70,7 +70,7 @@ protected:
     void SkipContent();
 
     string ParseElementContent(DTDElement* owner, int& emb);
-    void ParseContent(DTDElement& node);
+    void ParseContent(DTDElement& node, bool extended=false);
     void ParseDocumentation(void);
     void ParseContainer(DTDElement& node);
 
