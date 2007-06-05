@@ -226,8 +226,8 @@ sub Create
         push @PutCommands, 'put', $BranchMapFile, $BranchMapRepoPath
     }
 
-    my $ExistingStructure =
-        $Self->GetTreeContainingSubtree($SVN, $SVN->GetRepos(), \%CommonTree);
+    my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
+        $SVN->GetRepository(), \%CommonTree);
 
     GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
     GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
@@ -321,7 +321,7 @@ sub Remove
     }
 
     GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
-            $SVN->GetRepos(), \%RmDirTree), \%RmDirTree);
+            $SVN->GetRepository(), \%RmDirTree), \%RmDirTree);
 
     # Unless there are no changes, commit a revision using mucc.
     if (@Commands)
@@ -456,13 +456,14 @@ sub MergeDown
             }
         }, @BranchDirs);
 
-    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', 'Please execute "' .
-        $Self->{MyName} . ' commit_merge" to commit this merge of branch ' .
-            "'$BranchPath' with trunk revision $TargetRev.", @RootDirs);
+    my $PropValue = 'Please execute "' . $Self->{MyName} .
+            ' commit_merge" to commit this merge of branch ' .
+            "'$BranchPath' with trunk revision $TargetRev.";
 
-    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw',
-        'See the ncbi:raw property of the parent directory.', @SubDirs)
-            if @SubDirs
+    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue, @RootDirs);
+
+    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue . ' [subdir]',
+        @SubDirs) if @SubDirs
 }
 
 sub MergeDownCommit
