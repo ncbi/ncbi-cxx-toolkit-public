@@ -436,17 +436,17 @@ CBlobStoreBase::~CBlobStoreBase()
 void
 CBlobStoreBase::ReadTableDescr()
 {
-    if(m_BlobColumn)
-    {
+    if(m_BlobColumn) {
         delete[] m_BlobColumn;
         m_BlobColumn = NULL;
     }
 
-    auto_ptr<CDB_Connection> con(GetConn());
+    CDB_Connection* con = GetConn();
 
     /* derive information regarding the table */
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from "+m_Table+" where 1=0"));
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from " + m_Table + " where 1=0"));
     if(!lcmd->Send()) {
+        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
@@ -490,6 +490,9 @@ CBlobStoreBase::ReadTableDescr()
         }
         delete r;
     }
+
+    lcmd.reset();
+    ReleaseConn(con);
 
     if((m_NofBC < 1) || m_KeyColName.empty()) {
         DATABASE_DRIVER_ERROR( "Table "+m_Table+" cannot be used for BlobStore", 1000040 );
@@ -584,12 +587,14 @@ void CBlobStoreBase::GenReadQuery()
 
 bool CBlobStoreBase::Exists(const string& blob_id)
 {
-    auto_ptr<CDB_Connection> con(GetConn());
+    CDB_Connection* con = GetConn();
 
     /* check the key */
     auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("if EXISTS(select * from "+m_Table+" where "+
                                m_KeyColName+"='"+blob_id+"') select 1"));
     if(!lcmd->Send()) {
+        lcmd.reset();
+        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
@@ -604,53 +609,67 @@ bool CBlobStoreBase::Exists(const string& blob_id)
         }
     }
 
+    lcmd.reset();
+    ReleaseConn(con);
+
     return re;
 }
 
 void CBlobStoreBase::Delete(const string& blob_id)
 {
-    auto_ptr<CDB_Connection> con(GetConn());
+    CDB_Connection* con = GetConn();
 
     /* check the key */
     auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("delete "+m_Table+" where "+
                                m_KeyColName+"='"+blob_id+"'"));
     if(!lcmd->Send()) {
+        lcmd.reset();
+        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
     lcmd->DumpResults();
+
+    lcmd.reset();
+    ReleaseConn(con);
 }
 
 istream* CBlobStoreBase::OpenForRead(const string& blob_id)
 {
-    auto_ptr<CDB_Connection> con(GetConn());
+    CDB_Connection* con = GetConn();
 
-    if(m_ReadQuery.empty())
+    if(m_ReadQuery.empty()) {
         GenReadQuery();
+    }
 
     auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(m_ReadQuery, 1));
     CDB_VarChar blob_key(blob_id);
     lcmd->BindParam("@blob_id", &blob_key);
 
     if(!lcmd->Send()) {
+        lcmd.reset();
+        ReleaseConn(con);
         DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
     }
 
     while(lcmd->HasMoreResults()) {
-        CDB_Result* r= lcmd->Result();
-        if(!r) continue;
-        if(r->ResultType() != eDB_RowResult) {
-            delete r;
+        auto_ptr<CDB_Result> r(lcmd->Result());
+
+        if(!r.get()) {
             continue;
         }
+
+        if(r->ResultType() != eDB_RowResult) {
+            continue;
+        }
+
         if(r->Fetch()) {
             // creating a stream
-            CBlobReader* bReader = new CBlobReader(r, lcmd.get(), ReleaseConn(0) ? con.get() : 0);
+            CBlobReader* bReader = new CBlobReader(r.release(), lcmd.get(), ReleaseConn(0) ? con : 0);
             auto_ptr<CRStream> iStream(new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader));
             auto_ptr<CCompressionStreamProcessor> zProc;
 
             switch(m_Cm) {
-
             case eZLib:
                 zProc.reset(new CCompressionStreamProcessor((CZipDecompressor*)(new CZipDecompressor),
                                                              CCompressionStreamProcessor::eDelete));
@@ -663,30 +682,34 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
                 return iStream.release();
             }
 
-            CCompressionIStream* zStream= new CCompressionIStream(*iStream.release(), zProc.release(),
-                                                                  CCompressionStream::fOwnAll);
-
-            return zStream;
+            return new CCompressionIStream(*iStream.release(),
+                                           zProc.release(),
+                                           CCompressionStream::fOwnAll);
         }
     }
+
+    lcmd.reset();
+    ReleaseConn(con);
 
     return 0;
 }
 
 ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
 {
-    auto_ptr<CDB_Connection> con(GetConn());
+    CDB_Connection* con = GetConn();
 
-    CSimpleBlobStore* sbs= new CSimpleBlobStore(m_Table, m_KeyColName, m_NumColName, m_BlobColumn,
-                                                m_IsText);
+    CSimpleBlobStore* sbs = new CSimpleBlobStore(m_Table,
+                                                 m_KeyColName,
+                                                 m_NumColName,
+                                                 m_BlobColumn,
+                                                 m_IsText);
     sbs->SetKey(blob_id);
     // CBlobLoader* bload= new CBlobLoader(my_context, server_name, user_name, passwd, &sbs);
-    if(sbs->Init(con.get())) {
-        con.release();
-        CBlobWriter* bWriter= new CBlobWriter(con.get(), sbs, m_Limit,
-                                              CBlobWriter::fOwnDescr |
-                                              (m_LogIt? CBlobWriter::fLogBlobs : 0) |
-                                              (ReleaseConn(0) ? CBlobWriter::fOwnCon : 0));
+    if(sbs->Init(con)) {
+        CBlobWriter* bWriter = new CBlobWriter(con, sbs, m_Limit,
+                                               CBlobWriter::fOwnDescr |
+                                               (m_LogIt? CBlobWriter::fLogBlobs : 0) |
+                                              ( ReleaseConn(0) ? CBlobWriter::fOwnCon : 0));
         auto_ptr<CWStream> oStream(new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter));
         auto_ptr<CCompressionStreamProcessor> zProc;
 
@@ -703,9 +726,12 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
             return oStream.release();
         }
 
-        CCompressionOStream* zStream= new CCompressionOStream(*oStream.release(), zProc.release(), CCompressionStream::fOwnAll);
-        return zStream;
+        return new CCompressionOStream(*oStream.release(),
+                                       zProc.release(),
+                                       CCompressionStream::fOwnAll);
     }
+
+    ReleaseConn(con);
 
     return 0;
 }
