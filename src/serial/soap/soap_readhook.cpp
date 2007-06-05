@@ -62,7 +62,8 @@ void CSoapReadHook::ReadObject(CObjectIStream& in,
 
         CObjectInfo info(typeInfo->Create(), typeInfo);
         in.Read(info, CObjectIStream::eNoFileHeader);
-        if (typeInfo->IsCObject()) {
+// for aliases IsCObject returns false
+        /*if (typeInfo->IsCObject())*/ {
             CSerialObject* obj =
                 reinterpret_cast<CSerialObject*>(info.GetObjectPtr());
             CConstRef<CSerialObject> ref(obj);
