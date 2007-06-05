@@ -85,7 +85,25 @@ protected:
     virtual bool    x_CheckMemoryLimit(void);
 
     virtual TScore* x_GetSpliceScores() = 0;
- 
+
+    // a trivial but helpful memory allocator for core dynprog
+    // that promptly throws std::bad_alloc on failure
+    template<class T>
+    struct SAllocator {
+
+        SAllocator (size_t N) {
+            m_Buf = new T [N];
+            memset((void*)m_Buf, 0, N * sizeof(T));
+        }
+
+        ~SAllocator() { delete[] m_Buf; }
+
+        T * GetPointer(void) {
+            return m_Buf;
+        }
+
+        T * m_Buf;
+    };
 };
 
 
