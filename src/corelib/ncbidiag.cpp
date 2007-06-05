@@ -2171,15 +2171,12 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
 
     // (<err_code>.<err_subcode>) or (err_text)
     if ((m_ErrCode  ||  m_ErrSubCode || m_ErrText)  &&
-        IsSetDiagPostFlag(eDPF_ErrCode, m_Flags)) {
+        IsSetDiagPostFlag(eDPF_ErrorID, m_Flags)) {
         os << '(';
         if (m_ErrText) {
             os << m_ErrText;
         } else {
-            os << m_ErrCode;
-            if ( IsSetDiagPostFlag(eDPF_ErrSubCode, m_Flags)) {
-                os << '.' << m_ErrSubCode;
-            }
+            os << m_ErrCode << '.' << m_ErrSubCode;
         }
         os << ") ";
     }
