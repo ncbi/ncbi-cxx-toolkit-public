@@ -40,88 +40,6 @@
 
 BEGIN_NCBI_SCOPE
 
-//
-// statics
-//
-// these are function local, and specific to Win32
-//
-
-// SymCleanup()
-typedef BOOL (__stdcall *FSymCleanup)(IN HANDLE hProcess);
-FSymCleanup SymCleanup = NULL;
-
-// SymFunctionTableAccess()
-typedef PVOID (__stdcall *FSymFunctionTableAccess)(HANDLE hProcess,
-                                                   DWORD AddrBase);
-FSymFunctionTableAccess SymFunctionTableAccess = NULL;
-
-// SymGetLineFromAddr()
-typedef BOOL (__stdcall *FSymGetLineFromAddr)(IN HANDLE hProcess,
-                                              IN DWORD dwAddr,
-                                              OUT PDWORD pdwDisplacement,
-                                              OUT PIMAGEHLP_LINE Line);
-FSymGetLineFromAddr SymGetLineFromAddr = NULL;
-
-// SymGetModuleBase()
-typedef DWORD (__stdcall *FSymGetModuleBase)(IN HANDLE hProcess,
-                                             IN DWORD dwAddr);
-FSymGetModuleBase SymGetModuleBase = NULL;
-
-// SymGetModuleInfo()
-typedef BOOL (__stdcall *FSymGetModuleInfo)(IN HANDLE hProcess,
-                                            IN DWORD dwAddr,
-                                            OUT PIMAGEHLP_MODULE ModuleInfo);
-FSymGetModuleInfo SymGetModuleInfo = NULL;
-
-// SymGetOptions()
-typedef DWORD (__stdcall *FSymGetOptions)(VOID);
-FSymGetOptions SymGetOptions = NULL;
-
-// SymGetSymFromAddr()
-typedef BOOL (__stdcall *FSymGetSymFromAddr)(IN HANDLE hProcess,
-                                             IN DWORD dwAddr,
-                                             OUT PDWORD pdwDisplacement,
-                                             OUT PIMAGEHLP_SYMBOL Symbol);
-FSymGetSymFromAddr SymGetSymFromAddr = NULL;
-
-// SymInitialize()
-typedef BOOL (__stdcall *FSymInitialize)(IN HANDLE hProcess,
-                                         IN PSTR UserSearchPath,
-                                         IN BOOL fInvadeProcess);
-FSymInitialize SymInitialize = NULL;
-
-// SymLoadModule()
-typedef DWORD (__stdcall *FSymLoadModule)(IN HANDLE hProcess,
-                                          IN HANDLE hFile,
-                                          IN PSTR ImageName,
-                                          IN PSTR ModuleName,
-                                          IN DWORD BaseOfDll,
-                                          IN DWORD SizeOfDll);
-FSymLoadModule SymLoadModule = NULL;
-
-// SymSetOptions()
-typedef DWORD (__stdcall *FSymSetOptions)(IN DWORD SymOptions);
-FSymSetOptions SymSetOptions = NULL;
-
-// StackWalk()
-typedef BOOL (__stdcall *FStackWalk)(DWORD MachineType,
-                                     HANDLE hProcess,
-                                     HANDLE thread,
-                                     LPSTACKFRAME StackFrame,
-                                     PVOID ContextRecord,
-                                     PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine,
-                                     PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine,
-                                     PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine,
-                                     PTRANSLATE_ADDRESS_ROUTINE TranslateAddress);
-FStackWalk StackWalk = NULL;
-
-// UnDecorateSymbolName()
-typedef DWORD (__stdcall WINAPI *FUnDecorateSymbolName)(PCSTR DecoratedName,
-                                                        PSTR UnDecoratedName,
-                                                        DWORD UndecoratedLength,
-                                                        DWORD Flags);
-FUnDecorateSymbolName UnDecorateSymbolName = NULL;
-
 
 #define lenof(a) (sizeof(a) / sizeof((a)[0]))
 #define MAXNAMELEN 1024 // max name length for found symbols
@@ -378,65 +296,6 @@ static bool s_FillModuleList(TModules& modules, DWORD pid, HANDLE hProcess)
 }
 
 
-static bool s_SymbolInit()
-{
-    if (StackWalk) {
-        return true;
-    }
-
-    try {
-        CDll dll("dbghelp.dll", CDll::eLoadNow, CDll::eNoAutoUnload);
-
-        SymCleanup =
-            dll.GetEntryPoint_Func("SymCleanup",
-                                   &SymCleanup);
-        SymFunctionTableAccess =
-            dll.GetEntryPoint_Func("SymFunctionTableAccess",
-                                   &SymFunctionTableAccess);
-        SymGetLineFromAddr =
-            dll.GetEntryPoint_Func("SymGetLineFromAddr",
-                                   &SymGetLineFromAddr);
-        SymGetModuleBase =
-            dll.GetEntryPoint_Func("SymGetModuleBase",
-                                   &SymGetModuleBase);
-        SymGetModuleInfo =
-            dll.GetEntryPoint_Func("SymGetModuleInfo",
-                                   &SymGetModuleInfo);
-        SymGetOptions =
-            dll.GetEntryPoint_Func("SymGetOptions",
-                                   &SymGetOptions);
-        SymGetSymFromAddr =
-            dll.GetEntryPoint_Func("SymGetSymFromAddr",
-                                   &SymGetSymFromAddr);
-        SymInitialize =
-            dll.GetEntryPoint_Func("SymInitialize",
-                                   &SymInitialize);
-        SymSetOptions =
-            dll.GetEntryPoint_Func("SymSetOptions",
-                                   &SymSetOptions);
-        StackWalk =
-            dll.GetEntryPoint_Func("StackWalk",
-                                   &StackWalk);
-        UnDecorateSymbolName =
-            dll.GetEntryPoint_Func("UnDecorateSymbolName",
-                                   &UnDecorateSymbolName);
-        SymLoadModule =
-            dll.GetEntryPoint_Func("SymLoadModule",
-                                   &SymLoadModule);
-
-        return true;
-    }
-    catch (CException& e) {
-        ERR_POST(Error << "Error opening dbghelp.dll: " << e.what());
-        return false;
-    }
-    catch (...) {
-        ERR_POST(Error << "Unknown error opening dbghelp.dll");
-        return false;
-    }
-}
-
-
 class CSymbolGuard
 {
 public:
@@ -454,16 +313,6 @@ private:
 
 CSymbolGuard::CSymbolGuard(void)
 {
-    if ( !s_SymbolInit() ) {
-        ERR_POST(Error << "Error initializing symbols for stack trace.");
-        return;
-    }
-
-    if ( !SymInitialize  ||  !StackWalk ) {
-        ERR_POST(Error << "Error initializing stack trace functions.");
-        return;
-    }
-
     // our current process and thread within that process
     HANDLE curr_proc = GetCurrentProcess();
 
@@ -656,10 +505,6 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         return;
     }
 
-    if ( !SymGetSymFromAddr ) {
-        return;
-    }
-
     s_SymbolGuard.UpdateSymbols();
 
     HANDLE curr_proc = GetCurrentProcess();
@@ -699,43 +544,37 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
             sf_info.offs = offs;
 
             // retrieve function names, if we can
-            if ( UnDecorateSymbolName ) {
-                //char undName[MAXNAMELEN];
-                char undFullName[MAXNAMELEN];
-                //UnDecorateSymbolName(pSym->Name, undName,
-                //                     MAXNAMELEN, UNDNAME_NAME_ONLY);
-                UnDecorateSymbolName(pSym->Name, undFullName,
-                                     MAXNAMELEN, UNDNAME_COMPLETE);
+            //char undName[MAXNAMELEN];
+            char undFullName[MAXNAMELEN];
+            //UnDecorateSymbolName(pSym->Name, undName,
+            //                     MAXNAMELEN, UNDNAME_NAME_ONLY);
+            UnDecorateSymbolName(pSym->Name, undFullName,
+                                    MAXNAMELEN, UNDNAME_COMPLETE);
 
-                sf_info.func = undFullName;
-            }
+            sf_info.func = undFullName;
 
             // retrieve file and line number info
-            if ( SymGetLineFromAddr ) {
-                if (SymGetLineFromAddr(curr_proc,
-                                       it->AddrPC.Offset,
-                                       &offs,
-                                       &Line)) {
-                    sf_info.file = Line.FileName;
-                    sf_info.line = Line.LineNumber;
-                } else {
-                    _TRACE("failed to get line number for " << sf_info.func);
-                }
+            if (SymGetLineFromAddr(curr_proc,
+                                    it->AddrPC.Offset,
+                                    &offs,
+                                    &Line)) {
+                sf_info.file = Line.FileName;
+                sf_info.line = Line.LineNumber;
+            } else {
+                _TRACE("failed to get line number for " << sf_info.func);
             }
 
             // get library info, if it is available
-            if ( SymGetModuleInfo ) {
-                if ( !SymGetModuleInfo(curr_proc,
-                                       it->AddrPC.Offset,
-                                       &Module) ) {
-                    ERR_POST(Error << "failed to get module info for "
-                        << sf_info.func);
-                } else {
-                    sf_info.module = Module.ModuleName;
-                    sf_info.module += "[";
-                    sf_info.module += Module.ImageName;
-                    sf_info.module += "]";
-                }
+            if ( !SymGetModuleInfo(curr_proc,
+                                    it->AddrPC.Offset,
+                                    &Module) ) {
+                ERR_POST(Error << "failed to get module info for "
+                    << sf_info.func);
+            } else {
+                sf_info.module = Module.ModuleName;
+                sf_info.module += "[";
+                sf_info.module += Module.ImageName;
+                sf_info.module += "]";
             }
 
             stack.push_back(sf_info);
