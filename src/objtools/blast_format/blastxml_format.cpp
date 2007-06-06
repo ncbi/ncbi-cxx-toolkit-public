@@ -561,7 +561,8 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CBlastFormattingMatrix* matrix, 
                        const list<CRef<blast::CSeqLocInfo> >* mask_info,
                        int index, CStatistics& stat, bool is_ungapped,
-                       int master_gentice_code, int slave_genetic_code)
+                       int master_gentice_code, int slave_genetic_code,
+                       const vector<string>& messages)
 {
     list<CRef<CIteration> >& iterations = bxmlout.SetIterations();
 
@@ -598,6 +599,9 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                                master_gentice_code, slave_genetic_code);
     }
     one_query_iter->SetStat(stat);
+  
+    if (messages.size() > 0)
+       one_query_iter->SetMessage(messages[0]);
 
     iterations.push_back(one_query_iter);
 }
@@ -739,7 +743,8 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data)
                                data->GetScope(index), matrix.get(), 
                                data->GetMaskLocations(index), index, 
                                *stat_vec[index], !data->GetGappedMode(),
-                               data->GetMasterGeneticCode(),  data->GetSlaveGeneticCode());
+                               data->GetMasterGeneticCode(),  data->GetSlaveGeneticCode(),
+                               data->GetMessages());
     }
 }
 
