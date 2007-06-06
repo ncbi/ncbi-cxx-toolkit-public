@@ -439,6 +439,12 @@ public:
     /// Set number of rotated round-robin volumes
     void SetRR_Volumes(unsigned rrv) { m_RoundRobinVolumes = rrv; }
 
+    /// Set dirty page write percent
+    void SetMempTrickle(unsigned memp_trickle) 
+    {
+        m_MempTrickle = memp_trickle;
+    }
+
     /// Get cache operations statistics
     const SBDB_CacheStatistics& GetStatistics() const
     {
@@ -774,6 +780,8 @@ private:
 
     /// Number of rotated volumes
     unsigned                   m_RoundRobinVolumes;
+    /// memp_trickle parameter (percent)
+    unsigned                   m_MempTrickle;
 };
 
 

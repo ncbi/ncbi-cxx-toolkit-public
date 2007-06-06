@@ -1041,7 +1041,8 @@ CBDB_Cache::CBDB_Cache()
   m_OverflowLimit(512 * 1024),
   m_MaxTTL_prolong(0),
   m_MaxBlobSize(0),
-  m_RoundRobinVolumes(0)
+  m_RoundRobinVolumes(0),
+  m_MempTrickle(10)
 {
     m_TimeStampFlag = fTimeStampOnRead |
                       fExpireLeastFrequentlyUsed |
@@ -2789,9 +2790,11 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         return;
     }
 
-    // Make sure 40% of pages are free and read-ready
-    int nwrotep;
-    m_Env->MempTrickle(40, &nwrotep);
+    // Make sure m_MempTrickle% of pages are free and read-ready
+    if (m_MempTrickle) {
+        int nwrote;
+        m_Env->MempTrickle(m_MempTrickle, &nwrote);
+    }
 
     unsigned delay = 0;
     unsigned bytes_written = 0;
@@ -2806,12 +2809,15 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         unsigned batch_size = GetPurgeBatchSize();
         {{
             CFastMutexGuard guard(m_DB_Lock);
-            delay = m_BatchSleep;
+            // get to nanoseconds as CSemaphore::TryWait() needs
+            delay = m_BatchSleep * 1000000;
 
             m_CacheAttrDB->SetTransaction(0);
 
             CBDB_FileCursor cur(*m_CacheAttrDB);
-            cur.InitMultiFetch(1024 * 1024);
+            if (batch_size > 500) {
+                cur.InitMultiFetch(8 * 1024);
+            }
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
 
@@ -3599,6 +3605,7 @@ static const string kCFParam_overflow_limit     = "overflow_limit";
 static const string kCFParam_ttl_prolong        = "ttl_prolong";
 static const string kCFParam_max_blob_size      = "max_blob_size";
 static const string kCFParam_rr_volumes         = "rr_volumes";
+static const string kCFParam_memp_trickle       = "memp_trickle";
 
 
 
@@ -3701,6 +3708,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     unsigned rr_volumes =
         GetParamInt(params, kCFParam_rr_volumes, false, 3);
     drv->SetRR_Volumes(rr_volumes);
+
+    unsigned memp_trickle =
+        GetParamInt(params, kCFParam_memp_trickle, false, 10);
+    drv->SetMempTrickle(memp_trickle);
 
     ConfigureICache(drv.get(), params);
 
