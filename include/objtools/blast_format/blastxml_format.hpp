@@ -112,6 +112,8 @@ public:
     virtual int GetMasterGeneticCode() const = 0;
     ///slave genetic code
     virtual int GetSlaveGeneticCode() const = 0;
+    /// Get error messages
+    virtual vector<string> GetMessages() const = 0;
 
 };
 
