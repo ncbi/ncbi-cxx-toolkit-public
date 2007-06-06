@@ -83,7 +83,9 @@ struct SJpegErrorInfo
 
 static void s_JpegErrorHandler(j_common_ptr ptr)
 {
+#if JPEG_LIB_VERSION >= 62
     try {
+#endif
         string msg("Error processing JPEG image: ");
 
         /// format the message
@@ -92,6 +94,7 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
 
         msg += buffer;
 
+#if JPEG_LIB_VERSION >= 62
         LOG_POST(Error << msg);
         if (ptr->client_data) {
             SJpegErrorInfo* err_info = (SJpegErrorInfo*)ptr->client_data;
@@ -105,6 +108,13 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
     catch (...) {
         LOG_POST(Error << "error processing error info");
     }
+#else
+    if (ptr->is_decompressor) {
+        NCBI_THROW(CImageException, eReadError, msg);
+    } else {
+        NCBI_THROW(CImageException, eWriteError, msg);
+    }
+#endif
 }
 
 
@@ -340,7 +350,9 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
         cinfo.err = jpeg_std_error(&jerr);
         cinfo.err->error_exit = s_JpegErrorHandler;
         cinfo.err->output_message = s_JpegOutputHandler;
+#if JPEG_LIB_VERSION >= 62
         cinfo.client_data = &jpeg_err_info;
+#endif
 
         jpeg_create_decompress(&cinfo);
         if (jpeg_err_info.has_error) {
