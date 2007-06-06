@@ -163,6 +163,9 @@ public:
     /// Run query tree evaluation
     ///
     void Evaluate(CQueryParseTree& qtree);
+
+    // Evaluate subtree of 'qtree' beginning from 'node'
+    void Evaluate(CQueryParseTree& qtree, CQueryParseTree::TNode& node);
     
 protected:
     friend class CQueryFunctionBase;

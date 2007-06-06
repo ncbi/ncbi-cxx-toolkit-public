@@ -64,10 +64,12 @@ CQueryFunctionBase::GetArg0(CQueryParseTree::TNode& qnode)
     return *it;
 }
 
+
 CQueryParseTree& CQueryFunctionBase::GetQueryTree() 
 { 
     return *(GetExec().GetQTree()); 
 }
+
 
 
 
@@ -180,7 +182,13 @@ void CQueryExec::Evaluate(CQueryParseTree& qtree)
 }
 
 
+void CQueryExec::Evaluate(CQueryParseTree& qtree, CQueryParseTree::TNode& node)
+{
+    m_QTree = &qtree;
+    CQueryExecEvalFunc visitor(*this);
+    TreeDepthFirstTraverse(node, visitor);
+    m_QTree = 0;
+}
 
 
 END_NCBI_SCOPE
-
