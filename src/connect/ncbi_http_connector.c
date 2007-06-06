@@ -351,11 +351,16 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
         if (status != eIO_Success) {
-            const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
-            if (tmo && (tmo->sec || tmo->usec)) {
-                CORE_LOGF(eLOG_Error, ("[HTTP]  Error reading header (%s)",
-                                       IO_StatusStr(status)));
-            }
+            ELOG_Level level;
+            if (status == eIO_Timeout) {
+                const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
+                if (tmo  &&  !(tmo->sec | tmo->usec))
+                    return eIO_Timeout;
+                level = eLOG_Warning;
+            } else
+                level = eLOG_Error;
+            CORE_LOGF(level, ("[HTTP]  Error reading header (%s)",
+                              IO_StatusStr(status)));
             return status;
         }
     }
