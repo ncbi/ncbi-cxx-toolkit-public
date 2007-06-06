@@ -203,7 +203,7 @@ public:
     // simplify client state management.
     virtual int CheckMessage(BUF* buffer, const void *data, size_t size) = 0;
     // Process incoming message in the buffer, by using
-    // BUF_Read(buffer, your_data_buffer, Buf_Size(buffer)).
+    // BUF_Read(buffer, your_data_buffer, BUF_Size(buffer)).
     virtual void OnMessage(BUF buffer) = 0;
 private:
     BUF m_Buffer;
