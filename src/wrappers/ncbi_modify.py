@@ -86,5 +86,14 @@ def Modify(s):
     # Hide the inheritance from SWIG.
     s = re.sub(re.escape('class CBioNode : public CTreeNode<TBioNode>'),
                'class CBioNode', s)
+
+    # CSplicedAligner contains a nested templace struct, SAllocator
+    begin_trouble = \
+        '    // a trivial but helpful memory allocator for core dynprog'
+    end_trouble = '\n    };\n'
+    begin_index = s.index(begin_trouble)
+    end_index   = s.index(end_trouble, begin_index) + len(end_trouble)
+    s = s[:begin_index] + '// template struct SAllocator deleted\n' \
+                        + s[end_index:]
     
     return s
