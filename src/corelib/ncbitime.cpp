@@ -93,12 +93,23 @@ DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
 DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
 DEFINE_STATIC_FAST_MUTEX(s_FastLocalTimeMutex);
 
+// Format structure to store in TLS
+struct STlsFormat {
+    STlsFormat(const string& fmt, CTime::EFormat fmt_type) 
+        {
+            str  = fmt;
+            type = fmt_type;
+        }
+public:
+    string         str;
+    CTime::EFormat type;
+};
 // Store global time/timespan formats in TLS
-static CSafeStaticRef< CTls<string> > s_TlsFormatTime;
-static CSafeStaticRef< CTls<string> > s_TlsFormatSpan;
-static CSafeStaticRef< CTls<string> > s_TlsFormatStopWatch;
+static CSafeStaticRef< CTls<STlsFormat> > s_TlsFormatTime;
+static CSafeStaticRef< CTls<STlsFormat> > s_TlsFormatSpan;
+static CSafeStaticRef< CTls<STlsFormat> > s_TlsFormatStopWatch;
 
-static void s_TlsFormatCleanup(string* fmt, void* /* data */)
+static void s_TlsFormatCleanup(STlsFormat* fmt, void* /* data */)
 {
     delete fmt;
 }
@@ -143,6 +154,9 @@ static const char* kDefaultFormatStopWatch = "-S.n";
 // to kFormatSymbolsSpan also.
 static const char* kFormatSymbolsTime = "yYMbBDdhHmsSzZwWlrpP";
 static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
+
+// Character used to escape formatted symbols.
+const char kFormatEscapeSymbol = '$';
 
 // Error messages
 static const string kMsgInvalidTime = "CTime:  invalid";
@@ -581,7 +595,6 @@ CTime::CTime(const string& str, const string& fmt,
     if (fmt.empty()) {
         x_Init(str, GetFormat());
     } else {
-        x_VerifyFormat(fmt);
         x_Init(str, fmt);
     }
 }
@@ -814,54 +827,41 @@ static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
 }
 
 
-void CTime::x_VerifyFormat(const string& fmt)
+void CTime::SetFormat(const string& fmt, EFormat fmt_type)
 {
-    // Check for duplicated format symbols...
-    const int kSize = 256;
-    int count[kSize];
-    for (int i = 0;  i < kSize;  i++) {
-        count[i] = 0;
-    }
-    ITERATE(string, it, fmt) {
-        if (strchr(kFormatSymbolsTime, *it) != 0  &&
-            ++count[(unsigned int) *it] > 1) {
-            NCBI_THROW(CTimeException, eFormat, "CTime's format is incorrect");
-        }
-    }
-}
-
-
-void CTime::SetFormat(const string& fmt)
-{
-    x_VerifyFormat(fmt);
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    string* format = new string(fmt);
+    STlsFormat* format = new STlsFormat(fmt, fmt_type);
     s_TlsFormatTime->SetValue(format, s_TlsFormatCleanup);
 }
 
 
-string CTime::GetFormat(void)
+string CTime::GetFormat(EFormat *fmt_type)
 {
-    string* format = s_TlsFormatTime->GetValue();
+    STlsFormat* format = s_TlsFormatTime->GetValue();
     if ( !format ) {
+        if ( fmt_type ) {
+            *fmt_type = eFmt_Default;
+        }
         return kDefaultFormatTime;
     }
-    return *format;
+    if ( fmt_type ) {
+        *fmt_type = format->type;
+    }
+    return format->str;
 }
 
-string CTime::AsString(const string& fmt, TSeconds out_tz) const
+string CTime::AsString(const string& fmt, EFormat fmt_type,
+                       TSeconds out_tz) const
 {
     if ( fmt.empty() ) {
-        return AsString(GetFormat());
+        EFormat fmt_type;
+        string fmt = GetFormat(&fmt_type);
+        return AsString(fmt, fmt_type);
     }
-
-    x_VerifyFormat(fmt);
-
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
-
     if ( IsEmpty() ) {
         return kEmptyStr;
     }
@@ -881,7 +881,19 @@ string CTime::AsString(const string& fmt, TSeconds out_tz) const
 #endif
     }
     string str;
+    bool is_escaped = (fmt_type != CTime::eFmt_NcbiSimple);
+    bool is_format_symbol = !is_escaped;
+
     ITERATE(string, it, fmt) {
+
+        if ( !is_format_symbol ) {
+            if ( *it == kFormatEscapeSymbol )  {
+                is_format_symbol = true;
+            } else {
+                str += *it;
+            }
+            continue;
+        }
         switch ( *it ) {
         case 'y': s_AddZeroPadInt(str, t->Year() % 100);    break;
         case 'Y': s_AddZeroPadInt(str, t->Year(), 4);       break;
@@ -904,27 +916,30 @@ string CTime::AsString(const string& fmt, TSeconds out_tz) const
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-                      ERR_POST("Format symbol 'z' is not supported on "
-                               "this platform");
+                  ERR_POST("Format symbol 'z' is not supported on "
+                           "this platform");
 #else
-                      str += "GMT";
-                      if (IsGmtTime()) {
-                          break;
-                      }
-                      TSeconds tz = (out_tz == eCurrentTimeZone) ?
-                          TimeZone() : out_tz;
-                      str += (tz > 0) ? '-' : '+';
-                      if (tz < 0) tz = -tz;
-                      int tzh = int(tz / 3600);
-                      s_AddZeroPadInt(str, tzh);
-                      s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
+                  str += "GMT";
+                    if (IsGmtTime()) {
+                        break;
+                    }
+                    TSeconds tz = (out_tz == eCurrentTimeZone) ?
+                        TimeZone() : out_tz;
+                    str += (tz > 0) ? '-' : '+';
+                    if (tz < 0) tz = -tz;
+                    int tzh = int(tz / 3600);
+                    s_AddZeroPadInt(str, tzh);
+                    s_AddZeroPadInt(str, (int)(tz - tzh * 3600) / 60);
 #endif
-                      break;
+                  break;
                   }
         case 'Z': if (IsGmtTime()) str += "GMT";            break;
         case 'w': str += kWeekdayAbbr[t->DayOfWeek()];      break;
         case 'W': str += kWeekdayFull[t->DayOfWeek()];      break;
         default : str += *it;                               break;
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
         }
     }
     // Free used memory
@@ -1709,7 +1724,6 @@ CTimeSpan::CTimeSpan(const string& str, const string& fmt)
     if (fmt.empty()) {
         x_Init(str, GetFormat());
     } else {
-        x_VerifyFormat(fmt);
         x_Init(str, fmt);
     }
 }
@@ -1812,53 +1826,53 @@ void CTimeSpan::x_Normalize(void)
 }
 
 
-void CTimeSpan::x_VerifyFormat(const string& fmt)
+void CTimeSpan::SetFormat(const string& fmt, EFormat fmt_type)
 {
-    // Check for duplicated format symbols...
-    const int kSize = 256;
-    int count[kSize];
-    for (int i = 0;  i < kSize;  i++) {
-        count[i] = 0;
-    }
-    ITERATE(string, it, fmt) {
-        if (strchr(kFormatSymbolsSpan, *it) != 0  &&
-            ++count[(unsigned int) *it] > 1) {
-            NCBI_THROW(CTimeException, eFormat,
-                       "CTimeSpan's format is incorrect");
-        }
-    }
-}
-
-
-void CTimeSpan::SetFormat(const string& fmt)
-{
-    x_VerifyFormat(fmt);
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    string* format = new string(fmt);
+    STlsFormat* format = new STlsFormat(fmt, fmt_type);
     s_TlsFormatSpan->SetValue(format, s_TlsFormatCleanup);
 }
 
 
-string CTimeSpan::GetFormat(void)
+string CTimeSpan::GetFormat(EFormat *fmt_type)
 {
-    string* format = s_TlsFormatSpan->GetValue();
+    STlsFormat* format = s_TlsFormatSpan->GetValue();
     if ( !format ) {
+        if ( fmt_type ) {
+            *fmt_type = eFmt_Default;
+        }
         return kDefaultFormatSpan;
     }
-    return *format;
+    if ( fmt_type ) {
+        *fmt_type = format->type;
+    }
+    return format->str;
 }
 
 
-string CTimeSpan::AsString(const string& fmt) const
+string CTimeSpan::AsString(const string& fmt, EFormat fmt_type) const
 {
     if ( fmt.empty() ) {
-        return AsString(GetFormat());
+        EFormat fmt_type;
+        string fmt = GetFormat(&fmt_type);
+        return AsString(fmt, fmt_type);
     }
-    x_VerifyFormat(fmt);
 
     string str;
+    bool is_escaped = (fmt_type != CTime::eFmt_NcbiSimple);
+    bool is_format_symbol = !is_escaped;
+
     ITERATE(string, it, fmt) {
+
+        if ( !is_format_symbol ) {
+            if ( *it == kFormatEscapeSymbol )  {
+                is_format_symbol = true;
+            } else {
+                str += *it;
+            }
+            continue;
+        }
         switch ( *it ) {
         case '-': if (GetSign() == eNegative) {
                       str += "-";
@@ -1882,6 +1896,9 @@ string CTimeSpan::AsString(const string& fmt) const
                   break;
         default : str += *it;
                   break;
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
         }
     }
     return str;
@@ -2248,32 +2265,40 @@ double CStopWatch::GetTimeMark()
 }
 
 
-void CStopWatch::SetFormat(const string& fmt)
+void CStopWatch::SetFormat(const string& fmt, EFormat fmt_type)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    string* format = new string(fmt);
+    STlsFormat* format = new STlsFormat(fmt, fmt_type);
     s_TlsFormatStopWatch->SetValue(format, s_TlsFormatCleanup);
 }
 
 
-string CStopWatch::GetFormat(void)
+string CStopWatch::GetFormat(EFormat *fmt_type)
 {
-    string* format = s_TlsFormatStopWatch->GetValue();
+    STlsFormat* format = s_TlsFormatStopWatch->GetValue();
     if ( !format ) {
+        if ( fmt_type ) {
+            *fmt_type = eFmt_Default;
+        }
         return kDefaultFormatStopWatch;
     }
-    return *format;
+    if ( fmt_type ) {
+        *fmt_type = format->type;
+    }
+    return format->str;
 }
 
 
-string CStopWatch::AsString(const string& fmt) const
+string CStopWatch::AsString(const string& fmt, EFormat fmt_type) const
 {
     if ( fmt.empty() ) {
-        return AsString(GetFormat());
+        EFormat fmt_type;
+        string fmt = GetFormat(&fmt_type);
+        return AsString(fmt, fmt_type);
     }
     CTimeSpan ts(Elapsed());
-    return ts.AsString(fmt);
+    return ts.AsString(fmt, fmt_type);
 }
 
 

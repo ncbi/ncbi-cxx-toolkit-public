@@ -600,6 +600,26 @@ static void s_TestFormats(void)
             assert(s.compare("12/13/2002 12:34:56 PM GMT Friday") == 0);
         }}
     }}
+
+    // SetFormat/AsString with flag parameter test
+    {{
+        CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+        {{
+            t.SetFormat("M/D/Y h:m:s");
+            string s = t.AsString();
+            assert(s.compare("02/10/2003 20:40:30") == 0);
+        }}
+        {{
+            t.SetFormat("MDY $M/$D/$Y $h:$m:$s hms");
+            string s = t.AsString();
+            assert(s.compare("02102003 $02/$10/$2003 $20:$40:$30 204030") == 0);
+        }}
+        {{
+            t.SetFormat("MDY $M/$D/$Y $h:$m:$s hms", CTime::eFmt_Ncbi);
+            string s = t.AsString();
+            assert(s.compare("MDY 02/10/2003 20:40:30 hms") == 0);
+        }}
+    }}
 }
 
 
@@ -1059,6 +1079,26 @@ static void s_TestTimeSpan(void)
     }}
     LOG_POST("");
 
+    // SetFormat/AsString with flag parameter test
+    {{
+        CTimeSpan t(123.456);
+        {{
+            t.SetFormat("S.n");
+            string s = t.AsString();
+            assert(s.compare("123.456000000") == 0);
+        }}
+        {{
+            t.SetFormat("$S.$n");
+            string s = t.AsString();
+            assert(s.compare("$123.$456000000") == 0);
+        }}
+        {{
+            t.SetFormat("$S.$n", CTimeSpan::eFmt_Ncbi);
+            string s = t.AsString();
+            assert(s.compare("123.456000000") == 0);
+        }}
+    }}
+
     // Smart string
     {{
         for (int prec = CTimeSpan::eSSP_Year;
@@ -1067,9 +1107,11 @@ static void s_TestTimeSpan(void)
         {
             CTimeSpan diff(559, 29, 59, 41, 17000000);
             string str;
-            str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eTrunc);
+            str = diff.AsSmartString(
+                CTimeSpan::ESmartStringPrecision(prec), eTrunc);
             LOG_POST(str.c_str());
-            str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eRound);
+            str = diff.AsSmartString(
+                CTimeSpan::ESmartStringPrecision(prec), eRound);
             LOG_POST(str.c_str());
         }
     }}

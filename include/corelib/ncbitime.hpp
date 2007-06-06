@@ -108,6 +108,32 @@ NCBI_XNCBI_EXPORT extern const char *const kISO8601DateTime;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CTimeBase --
+///
+/// Defines a base class for CTime, CTimeSpan, CStopWatch.
+
+class NCBI_XNCBI_EXPORT CTimeBase
+{
+public:
+    /// Format sting type.
+    ///
+    /// @sa SetFormat, AsString
+    enum EFormat {
+        /// Use single characters as format symbols.
+        eFmt_NcbiSimple = 0,
+        /// Specify that each format symbol have a preceding symbol '$'.
+        /// This can be useful if you want to include to format string
+        /// a characters that are a format symbols. 
+        /// To include symbol '$' use '$$'.
+        eFmt_Ncbi = 1,
+        ///< Default format 
+        eFmt_Default = eFmt_NcbiSimple
+    };
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CTime --
 ///
 /// Defines a standard Date/Time class.
@@ -121,7 +147,7 @@ NCBI_XNCBI_EXPORT extern const char *const kISO8601DateTime;
 /// NOTE: Do not use local time with time span and dates < "1/1/1900"
 /// (use GMT time only!!!).
 
-class NCBI_XNCBI_EXPORT CTime
+class NCBI_XNCBI_EXPORT CTime : public CTimeBase
 {
 public:
     /// Which initial value to use for time.
@@ -387,18 +413,23 @@ public:
     ///   - z = timezone shift                 (GMT[+/-HHMM])
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
+    /// @param fmt_type
+    ///   Specify type of the format string.
     /// @sa
-    ///   GetFormat
-    static void SetFormat(const string& fmt);
+    ///   GetFormat, EFormat
+    static void SetFormat(const string& fmt,
+                          EFormat       fmt_type = eFmt_Default);
 
     /// Get the current time format.
     ///
     /// The default format is: "M/D/Y h:m:s".
+    /// @param fmt_type
+    ///   Return format type here if pointer is not NULL.
     /// @return
     ///   A string of letters describing the time format.
     /// @sa
     ///   SetFormat
-    static string GetFormat(void);
+    static string GetFormat(EFormat *fmt_type = 0);
 
     /// Get numerical value of the month by name.
     ///
@@ -449,6 +480,8 @@ public:
     /// @param fmt
     ///   Format specifier used to convert time span to string.
     ///   If "fmt" is not defined, then GetFormat() will be used.
+    /// @param fmt_type
+    ///   Specify type of the format string.
     /// @param out_tz
     ///   Output timezone. This is a difference in seconds between GMT time
     ///   and local time for some place (for example, for EST5 timezone
@@ -459,9 +492,16 @@ public:
     ///   format symbol 'z'. By default current timezone is used.
     /// @sa
     ///   GetFormat, SetFormat
-    string AsString(const string& fmt = kEmptyStr,
-                    TSeconds out_tz   = eCurrentTimeZone) const;
+    string AsString(const string& fmt      = kEmptyStr,
+                    EFormat       fmt_type = eFmt_Default,
+                    TSeconds      out_tz   = eCurrentTimeZone) const;
 
+    /// @deprecated Use AsString(fmt, CTime::eFmt_Default, out_tz) instead.
+    NCBI_DEPRECATED
+    string AsString(const string& fmt, TSeconds out_tz) const
+        {
+            AsString(fmt, eFmt_Default, out_tz);
+        }
 
     /// Return time as string using the format returned by GetFormat().
     operator string(void) const;
@@ -912,9 +952,6 @@ private:
     /// Helper method to set time value from string "str" using format "fmt".
     void x_Init(const string& str, const string& fmt);
 
-    /// Helper method to check if time format "fmt" is valid.
-    static void x_VerifyFormat(const string& fmt);
-
     /// Helper method to set time from 'time_t' -- If "t" not specified,
     /// then set to current time.
     CTime& x_SetTime(const time_t* t = 0);
@@ -999,7 +1036,7 @@ private:
 ///
 /// Throw exception of type CTimeException on errors.
 
-class NCBI_XNCBI_EXPORT CTimeSpan
+class NCBI_XNCBI_EXPORT CTimeSpan : public CTimeBase
 {
 public:
     /// Default constructor.
@@ -1084,29 +1121,37 @@ public:
     ///   - s = seconds, "S" modulo 60 (-59 - 59)
     ///   - N = total whole number of nanoseconds stored in the time span
     ///   - n = nanoseconds (-999999999 - 999999999)
+    /// @param fmt_type
+    ///   Specify type of the format string.
     /// @sa
-    ///   GetFormat
-    static void SetFormat(const string& fmt);
+    ///   GetFormat, EFormat
+    static void SetFormat(const string& fmt,
+                          EFormat       fmt_type = eFmt_Default);
 
     /// Get the current time span format.
     ///
     /// The default format is: "-S.n".
+    /// @param fmt_type
+    ///   Return format type here if pointer is not NULL.
     /// @return
     ///   A string of letters describing the time span format.
     /// @sa
-    ///   SetFormat
-    static string GetFormat(void);
+    ///   SetFormat, EFormat
+    static string GetFormat(EFormat *fmt_type = 0);
 
     /// Transform time span to string.
     ///
     /// @param fmt
     ///   Format specifier used to convert time span to string.
     ///   If "fmt" is not defined, then GetFormat() will be used.
+    /// @param fmt_type
+    ///   Specify type of the format string.
     /// @return
     ///   A string representation of time span in specified format.
     /// @sa
     ///   GetFormat, SetFormat
-    string AsString(const string& fmt = kEmptyStr) const;
+    string AsString(const string& fmt      = kEmptyStr,
+                    EFormat       fmt_type = eFmt_Default) const;
 
     /// Return span time as string using the format returned by GetFormat().
     operator string(void) const;
@@ -1265,9 +1310,6 @@ private:
     /// Helper method to normalize stored time value.
     void x_Normalize(void);
 
-    /// Helper method to check if time format "fmt" is valid.
-    static void x_VerifyFormat(const string& fmt);
-
 private:
     long  m_Sec;      ///< Seconds part of the time span
     long  m_NanoSec;  ///< Nanoseconds after the second
@@ -1327,7 +1369,7 @@ private:
 ///
 /// Define a stop watch class to measure elasped time.
 
-class NCBI_XNCBI_EXPORT CStopWatch
+class NCBI_XNCBI_EXPORT CStopWatch : public CTimeBase
 {
 public:
     /// Defines how to create new timer.
@@ -1365,19 +1407,28 @@ public:
     /// Set the current stopwatch time format.
     ///
     /// The default format is: "-S.n".
+    /// @param fmt
+    ///   Format specifier used to convert time span to string.
+    ///   If "fmt" is not defined, then GetFormat() will be used.
+    ///   Uses the same time format as CTimeSpan class.
+    /// @param fmt_type
+    ///   Specify type of the format string.
     /// @sa
-    ///   CTimeSpan::GetFormat, GetFormat
-    static void SetFormat(const string& fmt);
+    ///   CTimeSpan::SetFormat, GetFormat
+    static void SetFormat(const string& fmt,
+                          EFormat       fmt_type = eFmt_Default);
 
     /// Get the current stopwatch time format.
     ///
     /// The default format is: "-S.n".
+    /// @param fmt_type
+    ///   Return format type here if pointer is not NULL.
     /// @return
     ///   A string of letters describing the time span format.
     ///   The letters having the same means that for CTimeSpan.
     /// @sa
     ///   CTimeSpan::GetFormat, SetFormat
-    static string GetFormat(void);
+    static string GetFormat(EFormat *fmt_type = 0);
 
     /// Transform stopwatch time to string.
     ///
@@ -1388,9 +1439,12 @@ public:
     ///   If "fmt" is not defined, then GetFormat() will be used.
     ///   Format specifier used to convert value returned by Elapsed()
     ///   to string.
+    /// @param fmt_type
+    ///   Specify type of the format string.
     /// @sa
     ///   CTimeSpan::AsString, Elapsed, GetFormat, SetFormat
-    string AsString(const string& fmt = kEmptyStr) const;
+    string AsString(const string& fmt      = kEmptyStr,
+                    EFormat       fmt_type = eFmt_Default) const;
 
     /// Return stopwatch time as string using the format returned
     /// by GetFormat().
