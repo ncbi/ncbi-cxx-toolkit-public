@@ -1313,6 +1313,10 @@ void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
                 eQuerySyntaxError, string("Unknown status: ") + val);
         bv.reset(new TNSBitVector);
         m_Queue->status_tracker.StatusSnapshot(status, bv.get());
+    } else if (key == "id") {
+        unsigned job_id = CNetScheduleKey(val).id;
+        bv.reset(new TNSBitVector);
+        bv->set(job_id);
     } else {
         if (val == "*") {
             // wildcard
@@ -1330,7 +1334,7 @@ void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
     if (qnode.GetValue().IsNot()) {
         // Apply NOT here
         if (bv.get()) {
-            bv.get()->invert();
+            bv->invert();
         } else if (buf.get()) {
             bv.reset(new TNSBitVector());
             bm::operation_deserializer<TNSBitVector>::deserialize(*bv,
@@ -1357,29 +1361,7 @@ void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
 }
 
 
-static bool Less(const vector<string>& elem1, const vector<string>& elem2)
-{
-    int size = min(elem1.size(), elem2.size());
-    for (int i = 0; i < size; ++i) {
-        // try to convert both elements to integer
-        const string& p1 = elem1[i];
-        const string& p2 = elem2[i];
-        try {
-            int i1 = NStr::StringToInt(p1);
-            int i2 = NStr::StringToInt(p2);
-            if (i1 < i2) return true;
-            if (i1 > i2) return false;
-        } catch (CStringException&) {
-            if (p1 < p2) return true;
-            if (p1 > p2) return false;
-        }
-    }
-    if (elem1.size() < elem2.size()) return true;
-    return false;
-}
-
-
-TNSBitVector* CQueue::ExecSelect(const string& query)
+TNSBitVector* CQueue::ExecSelect(const string& query, list<string>& fields)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     CQueryParseTree qtree;
@@ -1391,7 +1373,32 @@ TNSBitVector* CQueue::ExecSelect(const string& query)
     CQueryParseTree::TNode* top = qtree.GetQueryTree();
     if (!top)
         NCBI_THROW(CNetScheduleException,
-            eQuerySyntaxError, "Query syntax error");
+            eQuerySyntaxError, "Query syntax error in parse");
+
+    if (top->GetValue().GetType() == CQueryParseNode::eSelect) {
+        // Find where clause here
+        typedef CQueryParseTree::TNode::TNodeList_I TNodeIterator;
+        for (TNodeIterator it = top->SubNodeBegin();
+             it != top->SubNodeEnd(); ++it) {
+            CQueryParseTree::TNode* node = *it;
+            CQueryParseNode::EType node_type = node->GetValue().GetType();
+            if (node_type == CQueryParseNode::eList) {
+                for (TNodeIterator it2 = node->SubNodeBegin();
+                     it2 != node->SubNodeEnd(); ++it2) {
+                    fields.push_back((*it2)->GetValue().GetStrValue());
+                }
+            }
+            if (node_type == CQueryParseNode::eWhere) {
+                TNodeIterator it2 = node->SubNodeBegin();
+                if (it2 == node->SubNodeEnd())
+                    NCBI_THROW(CNetScheduleException,
+                        eQuerySyntaxError,
+                        "Query syntax error in WHERE clause");
+                top = (*it2);
+                break;
+            }
+        }
+    }
 
     // Execute 'select' phase.
     CQueryExec qexec;
@@ -1414,13 +1421,13 @@ TNSBitVector* CQueue::ExecSelect(const string& query)
     {{
         CFastMutexGuard guard(q->GetTagLock());
         q->SetTagDbTransaction(NULL);
-        qexec.Evaluate(qtree);
+        qexec.Evaluate(qtree, *top);
     }}
 
     IQueryParseUserObject* uo = top->GetValue().GetUserObject();
     if (!uo)
         NCBI_THROW(CNetScheduleException,
-            eQuerySyntaxError, "Query syntax error");
+            eQuerySyntaxError, "Query syntax error in eval");
     typedef CQueryEval_BV_Value<TNSBitVector> BV_UserObject;
     BV_UserObject* result =
         dynamic_cast<BV_UserObject*>(uo);
@@ -1443,31 +1450,77 @@ TNSBitVector* CQueue::ExecSelect(const string& query)
 }
 
 
-void CQueue::ParseFields(SFieldsDescription& field_descr,
-                         const string&       str_fields)
+static string FormatNSId(const string& val, SQueueDescription* qdesc)
+{
+    string res("JSID_01_");
+    res += val;
+    res += '_';
+    res += qdesc->host;
+    res += '_';
+    res += NStr::IntToString(qdesc->port);
+    return res;
+}
+
+
+static string FormatTime(const string& val, SQueueDescription*)
+{
+    time_t t = NStr::StringToInt(val);
+    if (!t) return "NULL";
+    return CTime(t).ToLocalTime().AsString(kISO8601DateTime);
+}
+
+
+static string FormatWorkerNode(const string& val, SQueueDescription*)
+{
+    unsigned host = NStr::StringToInt(val);
+    return NStr::IntToString((host >>  0) & 0xff) + '.'
+         + NStr::IntToString((host >>  8) & 0xff) + '.'
+         + NStr::IntToString((host >> 16) & 0xff) + '.'
+         + NStr::IntToString((host >> 24) & 0xff);
+}
+
+
+#define FIELD_INPUT  10000
+#define FIELD_OUTPUT 10001
+void CQueue::PrepareFields(SFieldsDescription& field_descr,
+                           const list<string>& fields)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     field_descr.field_nums.clear();
+    field_descr.formatters.clear();
     field_descr.pos_to_tag.clear();
-    // Split fields
-    list<string> fields;
-    NStr::Split(str_fields, "\t", fields, NStr::eNoMergeDelims);
 
     // Verify the fields, and convert them into field numbers
     field_descr.has_tags = false;
     ITERATE(list<string>, it, fields) {
-        int i = q->GetFieldIndex(*it);
+        const string& field_name = *it;
+        int i = q->GetFieldIndex(field_name);
         string tag_name;
+        SFieldsDescription::FFormatter formatter = NULL;
         if (i < 0) {
-            if (NStr::StartsWith(*it, "tag.")) {
-                tag_name = (*it).substr(4);
+            if (NStr::StartsWith(field_name, "tag.")) {
+                tag_name = field_name.substr(4);
                 field_descr.has_tags = true;
             } else {
                 NCBI_THROW(CNetScheduleException, eQuerySyntaxError,
                     string("Unknown field: ") + (*it));
             }
+        } else {
+            if (field_name == "id") {
+                formatter = FormatNSId;
+            } else if (NStr::StartsWith(field_name, "time") &&
+                       field_name != "timeout") {
+                formatter = FormatTime;
+            } else if (NStr::StartsWith(field_name, "worker_node")) {
+                formatter = FormatWorkerNode;
+            } else if (field_name == "input") {
+                i = FIELD_INPUT;
+            } else if (field_name == "output") {
+                i = FIELD_OUTPUT;
+            }
         }
         field_descr.field_nums.push_back(i);
+        field_descr.formatters.push_back(formatter);
         field_descr.pos_to_tag.push_back(tag_name);
     }
 }
@@ -1478,7 +1531,8 @@ void CQueue::ExecProject(TRecordSet&               record_set,
                          const SFieldsDescription& field_descr)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    SLockedQueue& queue(*q);
+    SQueueDB& job_db = q->db;
+    SJobInfoDB& job_info_db = q->m_JobInfoDB;
 
     int record_size = field_descr.field_nums.size();
 
@@ -1487,21 +1541,31 @@ void CQueue::ExecProject(TRecordSet&               record_set,
     first_id = 0;
     TNSBitVector::enumerator en(ids.first());
     {{
-        CFastMutexGuard guard(queue.lock);
-        queue.db.SetTransaction(NULL);
-        queue.m_JobInfoDB.SetTransaction(NULL);
+        CFastMutexGuard guard(q->lock);
+        job_db.SetTransaction(NULL);
+        job_info_db.SetTransaction(NULL);
         for ( ; en.valid(); ++en) {
             map<string, string> tags;
             unsigned id = *en;
-            queue.db.id = id;
-            if (queue.db.Fetch() != eBDB_Ok)
+            job_db.id = id;
+
+            EBDB_ErrCode res;
+            if ((res = job_db.Fetch()) != eBDB_Ok) {
+                if (res != eBDB_NotFound)
+                    LOG_POST(Error << "Error reading queue job db");
                 continue;
+            }
+            bool job_info_fetched = false;
             if (field_descr.has_tags) {
-                queue.m_JobInfoDB.id = id;
-                if (queue.m_JobInfoDB.Fetch() != eBDB_Ok)
+                job_info_db.id = id;
+                if ((res = job_info_db.Fetch()) != eBDB_Ok) {
+                    if (res != eBDB_NotFound)
+                        LOG_POST(Error << "Error reading queue jobinfo db");
                     continue;
+                }
+                job_info_fetched = true;
                 // Parse tags record
-                const char* strtags = queue.m_JobInfoDB.tags;
+                const char* strtags = job_info_db.tags;
                 list<string> tokens;
                 NStr::Split(strtags, "\t", tokens, NStr::eNoMergeDelims);
                 for (list<string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
@@ -1529,8 +1593,14 @@ void CQueue::ExecProject(TRecordSet&               record_set,
                         break;
                     }
                     record[i] = string(it->second);
+                } else if (fnum == FIELD_INPUT) {
+                    job_info_fetched = x_GetInput(job_db, job_info_db,
+                        job_info_fetched, record[i]);
+                } else if (fnum == FIELD_OUTPUT) {
+                    job_info_fetched = x_GetOutput(job_db, job_info_db,
+                        job_info_fetched, record[i]);
                 } else {
-                    record[i] = queue.GetField(fnum);
+                    record[i] = q->GetField(fnum);
                 }
             }
             if (complete)

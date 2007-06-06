@@ -764,14 +764,7 @@ CBDB_FileCursor* SLockedQueue::GetCursor(CBDB_Transaction& trans)
 
 void SLockedQueue::SetMonitorSocket(CSocket& socket)
 {
-    SOCK sock = socket.GetSOCK();
-    socket.SetOwnership(eNoOwnership);
-    socket.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
-
-    auto_ptr<CSocket> s(new CSocket());
-    s->Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
-    m_Monitor.SetSocket(s.get());
-    s.release();
+    m_Monitor.SetSocket(socket);
 }
 
 
@@ -783,7 +776,7 @@ bool SLockedQueue::IsMonitoring()
 
 void SLockedQueue::MonitorPost(const string& msg)
 {
-    m_Monitor.SendString(msg);
+    m_Monitor.SendString(msg+'\n');
 }
 
 

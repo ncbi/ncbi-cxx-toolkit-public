@@ -40,12 +40,13 @@
 #include <util/thread_nonstop.hpp>
 #include <util/time_line.hpp>
 
+#include <connect/server_monitor.hpp>
+
 #include "ns_types.hpp"
 #include "ns_db.hpp"
 #include "job_status.hpp"
 #include "queue_vc.hpp"
 #include "access_list.hpp"
-#include "queue_monitor.hpp"
 #include "ns_affinity.hpp"
 
 #include "weak_ref.hpp"
@@ -267,7 +268,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CFastMutex                   us_lock;       ///< UDP socket lock
 
     /// Queue monitor
-    CNetScheduleMonitor          m_Monitor;
+    CServer_Monitor              m_Monitor;
 
     SQueueStatictics             qstat;
     CFastMutex                   qstat_lock;

@@ -75,9 +75,20 @@ struct SNS_SubmitRecord
 };
 
 
+struct SQueueDescription
+{
+    const char* host;
+    unsigned    port;
+    const char* queue;
+};
+
+
 struct SFieldsDescription
 {
+    typedef string (*FFormatter)(const string&, SQueueDescription*);
+
     vector<int>    field_nums;
+    vector<FFormatter> formatters;
     bool           has_tags;
     vector<string> pos_to_tag;
 };
@@ -270,10 +281,11 @@ public:
                     const string& host,
                     unsigned      port);
 
-    TNSBitVector* ExecSelect(const string& query);
-    typedef vector<vector<string> > TRecordSet;
-    void ParseFields(SFieldsDescription& field_descr,
-                     const string&       str_fields);
+    TNSBitVector* ExecSelect(const string& query, list<string>& fields);
+    typedef vector<string>  TRecord;
+    typedef vector<TRecord> TRecordSet;
+    void PrepareFields(SFieldsDescription& field_descr,
+                       const list<string>& fields);
     void ExecProject(TRecordSet&               record_set,
                      const TNSBitVector&       ids,
                      const SFieldsDescription& field_descr);

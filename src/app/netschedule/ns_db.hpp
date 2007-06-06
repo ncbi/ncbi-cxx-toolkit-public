@@ -40,7 +40,6 @@
 ///
 /// @internal
 
-#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>

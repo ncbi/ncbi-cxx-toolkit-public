@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.9"
+#define NETSCHEDULED_VERSION "2.10.10"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -1877,41 +1877,69 @@ void CNetScheduleHandler::ProcessQuery()
 {
     string result_str;
 
-    m_SelectedIds.reset(m_Queue->ExecSelect(NStr::ParseEscapes(m_JobReq.param1)));
+    string query = NStr::ParseEscapes(m_JobReq.param1);
+
+    list<string> fields;
+    m_SelectedIds.reset(m_Queue->ExecSelect(query, fields));
 
     string& action = m_JobReq.param2;
 
-    if (action == "COUNT") {
-        result_str = NStr::IntToString(m_SelectedIds->count());
-        m_SelectedIds.release();
-    } else if (action == "DROP") {
-    } else if (action == "FRES") {
-    } else if (action == "SLCT") {
+    if (action == "SLCT" || !fields.empty()) {
         // Execute 'projection' phase
-        string fields(NStr::ParseEscapes(m_JobReq.param3));
-        m_Queue->ParseFields(m_FieldDescr, fields);
-        /*
-        x_ExecSelect(record_set, q.GetObject(), bv.get(), fields);
-
-        sort(record_set.begin(), record_set.end(), Less);
-
-        list<string> string_set;
-        ITERATE(TRecordSet, it, record_set) {
-            string_set.push_back(NStr::Join(*it, "\t"));
+        if (fields.empty()) {
+            string str_fields(NStr::ParseEscapes(m_JobReq.param3));
+            // Split fields
+            NStr::Split(str_fields, "\t,", fields, NStr::eNoMergeDelims);
         }
-        list<string> out_set;
-        unique_copy(string_set.begin(), string_set.end(),
-            back_insert_iterator<list<string> > (out_set));
-        out_set.push_front(NStr::IntToString(out_set.size()));
-        result_str = NStr::Join(out_set, "\n");
-        */
+        m_Queue->PrepareFields(m_FieldDescr, fields);
         m_DelayedOutput = &CNetScheduleHandler::WriteProjection;
         return;
+    } else if (action == "COUNT") {
+        result_str = NStr::IntToString(m_SelectedIds->count());
+    } else if (action == "IDS") {
+        TNSBitVector::statistics st;
+        m_SelectedIds->optimize(0, TNSBitVector::opt_compress, &st);
+        size_t dst_size = st.max_serialize_mem * 4 / 3 + 1;
+        size_t src_size = st.max_serialize_mem;
+        unsigned char* buf = new unsigned char[src_size + dst_size];
+        size_t size = bm::serialize(*m_SelectedIds, buf);
+        size_t src_read, dst_written, line_len;
+        line_len = 0; // no line feeds in encoded value
+        unsigned char* encode_buf = buf+src_size;
+        BASE64_Encode(buf, size, &src_read, encode_buf, dst_size, &dst_written, &line_len);
+        result_str = string((const char*) encode_buf, dst_written);
+        delete [] buf;
+    } else if (action == "DROP") {
+    } else if (action == "FRES") {
     } else if (action == "CNCL") {
     }
-
     WriteMsg("OK:", result_str);
+    m_SelectedIds.release();
 }
+
+
+/*
+static bool Less(const CQueue::TRecord& elem1, const CQueue::TRecord& elem2)
+{
+    int size = min(elem1.size(), elem2.size());
+    for (int i = 0; i < size; ++i) {
+        // try to convert both elements to integer
+        const string& p1 = elem1[i];
+        const string& p2 = elem2[i];
+        try {
+            int i1 = NStr::StringToInt(p1);
+            int i2 = NStr::StringToInt(p2);
+            if (i1 < i2) return true;
+            if (i1 > i2) return false;
+        } catch (CStringException&) {
+            if (p1 < p2) return true;
+            if (p1 > p2) return false;
+        }
+    }
+    if (elem1.size() < elem2.size()) return true;
+    return false;
+}
+*/
 
 
 void CNetScheduleHandler::WriteProjection()
@@ -1928,13 +1956,39 @@ void CNetScheduleHandler::WriteProjection()
         chunk.set(job_id);
     }
     if (n > 0) {
+        SQueueDescription qdesc;
+        qdesc.host = m_Server->GetHost().c_str();
+        qdesc.port = m_Server->GetPort();
         CQueue::TRecordSet record_set;
         m_Queue->ExecProject(record_set, chunk, m_FieldDescr);
+        /*
+        sort(record_set.begin(), record_set.end(), Less);
+
+        list<string> string_set;
+        ITERATE(TRecordSet, it, record_set) {
+            string_set.push_back(NStr::Join(*it, "\t"));
+        }
+        list<string> out_set;
+        unique_copy(string_set.begin(), string_set.end(),
+            back_insert_iterator<list<string> > (out_set));
+        out_set.push_front(NStr::IntToString(out_set.size()));
+        result_str = NStr::Join(out_set, "\n");
+        */
         ITERATE(CQueue::TRecordSet, it, record_set) {
-            WriteMsg("OK:", NStr::Join(*it, "\t"));
+            const CQueue::TRecord& rec = *it;
+            string str_rec;
+            for (unsigned i = 0; i < rec.size(); ++i) {
+                if (i) str_rec += '\t';
+                const string& field = rec[i];
+                if (m_FieldDescr.formatters[i])
+                    str_rec += m_FieldDescr.formatters[i](field, &qdesc);
+                else
+                    str_rec += field;
+            }
+            WriteMsg("OK:", str_rec);
         }
     }
-    if (n < chunk_size) {
+    if (!m_SelectedIds->any()) {
         WriteMsg("OK:", "END");
         m_SelectedIds.release();
         m_DelayedOutput = NULL;
