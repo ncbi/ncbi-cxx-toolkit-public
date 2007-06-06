@@ -1,6 +1,6 @@
 # $Id$
 
-SRC     = threaded_server server connection_pool
+SRC     = threaded_server server server_monitor connection_pool
 LIB     = xthrserv
 LIBS    = $(NETWORK_LIBS)
 DLL_LIB = xutil xconnect
