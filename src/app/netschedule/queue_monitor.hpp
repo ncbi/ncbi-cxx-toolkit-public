@@ -64,6 +64,7 @@ public:
 
     bool IsMonitorActive()
     {
+        if (!m_Sock) return false;
         CFastMutexGuard guard(m_Lock);
         if (!m_Sock) return false;
 
@@ -71,7 +72,7 @@ public:
         if (st == eIO_Success) {
             return true;
         }
-
+        delete m_Sock;
         m_Sock = 0; // socket closed, forget it
         return false;
     }
@@ -82,15 +83,15 @@ public:
         if (!m_Sock) return;
         EIO_Status st = m_Sock->Write(msg, length);
         if (st != eIO_Success) {
-            delete m_Sock; m_Sock = 0;
-            return;
+            delete m_Sock;
+            m_Sock = 0;
         }
     }
+
     void SendString(const string& str)
     {
         SendMessage(str.c_str(), str.length()+1);
     }
-
 
 private:
     CFastMutex m_Lock; 
