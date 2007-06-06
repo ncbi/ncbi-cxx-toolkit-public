@@ -4,6 +4,8 @@
 // global settings
 var g_verbose = false;
 var g_usesvn = true;
+var g_usefilecopy = true;
+var g_branch = "trunk/c++";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -160,7 +162,7 @@ function FillTreeStructure(oShell, oTree)
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/dll_main.cpp",         oTree.CompilersBranchDll);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/Makefile.mk",          oTree.CompilersBranchDll);
 
-    GetFileFromTree(oShell, oTree, oTask, "/include/corelib/config/ncbiconf_msvc_site.*",    oTree.IncludeConfig);
+    GetFileFromTree(oShell, oTree, oTask, "/include/common/config/ncbiconf_msvc_site.*",    oTree.IncludeConfig);
 }
 
 // check-out a subdir from CVS/SVN - oTree is supposed to have TreeRoot property
@@ -449,11 +451,43 @@ function GetUseSvn()
     return g_usesvn;
 }
 
+function SetBranch(oArgs, flag)
+{
+	var branch = GetFlaggedValue(oArgs, flag, "");
+	if (branch.length == 0)
+		return;
+	g_branch = branch;
+	g_usefilecopy = false;
+}
+
+function GetBranch()
+{
+	return g_branch;
+}
+
+function IsFileCopyAllowed()
+{
+	return g_usefilecopy;
+}
+
 function VerboseEcho(message)
 {
     if (GetVerbose()) {
         WScript.Echo(message);
     }
+}
+
+function GetFlaggedValue(oArgs, flag, default_val)
+{
+    for(var arg_i = 0; arg_i < oArgs.length; arg_i++) {
+        if (oArgs.item(arg_i) == flag) {
+			arg_i++;
+			if (arg_i < oArgs.length) {
+	            return oArgs.item(arg_i);
+			}
+        }
+    }
+    return default_val;
 }
 
 // Get value of boolean argument set by command line flag
@@ -488,6 +522,11 @@ function GetOptionalPositionalValue(oArgs, position, default_value)
                 return arg;
             }
             pos_count++;
+        }
+        else
+        {
+// flag values go last; if we see one, we know there is no more positional args
+			break;
         }
     }
     return default_value;
@@ -546,10 +585,15 @@ function CopyRes(oShell, oTree, oTask)
     }
 }
 // CVS/SVN tree root
+function GetSvnRepositoryRoot()
+{
+	return "https://svn.ncbi.nlm.nih.gov/repos/toolkit/";
+}
+
 function GetCvsTreeRoot()
 {
     if ( GetUseSvn() ) {
-		return "https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++";
+		return GetSvnRepositoryRoot() + GetBranch();
     } else {
 	    return "internal/c++";
     }
@@ -560,15 +604,17 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
     // Try to get the file from the pre-built toolkit
-    var toolkit_file_path = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
-    var folder = oFso.GetParentFolderName(toolkit_file_path);
-    if ( oFso.FolderExists(folder) ) {
-        var dir = oFso.GetFolder(folder);
-        var dir_files = new Enumerator(dir.files);
-        if (!dir_files.atEnd()) {
-            execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
-            return;
-        }
+    if (IsFileCopyAllowed()) {
+		var toolkit_file_path = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
+		var folder = oFso.GetParentFolderName(toolkit_file_path);
+		if ( oFso.FolderExists(folder) ) {
+			var dir = oFso.GetFolder(folder);
+			var dir_files = new Enumerator(dir.files);
+			if (!dir_files.atEnd()) {
+				execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
+				return;
+			}
+		}
     }
 
     // Get it from CVS

@@ -13,7 +13,7 @@ function Usage()
     var usage_str;
     //usage_str  = "Usage:\n";
     //usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-dll [-b] [-r] [-v]\n";
+    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-t branch] [-dll [-b] [-r] [-v]\n";
     usage_str += "SYNOPSIS:\n";
     usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
     if ( GetUseSvn() ) {
@@ -21,16 +21,23 @@ function Usage()
     } else {
 	    usage_str += "    CVS tree at:\n";
     }
-    usage_str += "      " + GetCvsTreeRoot()+"/src/<tree_path>\n";
-    usage_str += "      " + GetCvsTreeRoot()+"/include/<tree_path>\n";
+    usage_str += "        " + GetCvsTreeRoot()+"/src/<tree_path>\n";
+    usage_str += "        " + GetCvsTreeRoot()+"/include/<tree_path>\n";
     usage_str += "    Create local build tree structure. Fill-in local tree.\n";
     usage_str += "    Run project tree builder on local build tree.\n";
     usage_str += "    Open created solution in MSVC7.1 IDE.\n";
     usage_str += "ARGUMENTS:\n";
     usage_str += "    <tree_path>      -- starting path for import\n";
     usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
-    usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
-    usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
+    usage_str += "        default path is:\n";
+    usage_str += "            " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
+    usage_str += "        you can only specify a subfolder of\n";
+    usage_str += "            " + GetDefaultCXX_ToolkitFolder() + "\n";
+    usage_str += "    [-t branch]      -- SVN repository branch:\n";
+    usage_str += "        repository root is always:\n";
+    usage_str += "            " + GetSvnRepositoryRoot() + "\n";
+    usage_str += "        default branch is:\n";
+    usage_str += "            " + GetBranch() + "\n";
     usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
     usage_str += "    [-b]             -- copy NCBI C++ toolkit DLLs' to local binary directories\n";
     usage_str += "    [-r]             -- copy NCBI C++ gui resources\n";
@@ -39,7 +46,7 @@ function Usage()
     usage_str += "    cscript import_project.wsf objmgr/test\n";
     usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
     usage_str += "    cscript import_project.wsf objmgr/test cxx.potluck -dll\n";
-    usage_str += "    cscript import_project.wsf objmgr/test \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
+    usage_str += "    cscript import_project.wsf objmgr/test " + GetDefaultCXX_ToolkitFolder() + "\\cxx.current -dll\n";
 
     return usage_str;
 }
@@ -49,7 +56,7 @@ function VerifyArguments(oArgs)
     if (oArgs.Length < 1) {
         return false;
     }
-    if (oArgs.Length > 6) {
+    if (oArgs.Length > 8) {
         return false;
     }
 
@@ -104,6 +111,8 @@ function Task()
         WScript.Quit(1);
     }
     SetVerbose(oArgs, "-v", false);
+    SetBranch(oArgs, "-t")
+
 
     this.ProjectName = GetPositionalValue(oArgs, 0);
     this.ProjectFolder = "imported_projects";
@@ -148,6 +157,7 @@ function DumpTask(oTask)
     VerboseEcho("DllBuild       = " + oTask.DllBuild.toString());
     VerboseEcho("CopyDlls       = " + oTask.CopyDlls.toString());
     VerboseEcho("CopyRes        = " + oTask.CopyRes.toString());
+    VerboseEcho("CvsTreeRoot    = " + GetCvsTreeRoot());
 }
 
 // Fill local tree

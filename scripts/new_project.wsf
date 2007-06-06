@@ -158,7 +158,7 @@
             usage_str += "    cscript new_project.wsf my_app app/basic\n";
             usage_str += "    cscript new_project.wsf my_app app/basic -dll -v\n";
             usage_str += "    cscript new_project.wsf my_app app/basic cxx.potluck -dll\n";
-            usage_str += "    cscript new_project.wsf my_app app/basic \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
+            usage_str += "    cscript new_project.wsf my_app app/basic " + GetDefaultCXX_ToolkitFolder() + "\\cxx.current -dll\n";
             
             return usage_str;
         }
