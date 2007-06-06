@@ -482,6 +482,19 @@ void CObjectIStreamXml::SkipQDecl(void)
 
 string CObjectIStreamXml::ReadFileHeader(void)
 {
+// check for UTF8 Byte Order Mark (EF BB BF)
+// http://unicode.org/faq/utf_bom.html#BOM
+    {
+        char c = m_Input.PeekChar();
+        if ((unsigned char)c == 0xEF) {
+            if ((unsigned char)m_Input.PeekChar(1) == 0xBB &&
+                (unsigned char)m_Input.PeekChar(2) == 0xBF) {
+                m_Input.SkipChars(3);
+                m_Encoding = eEncoding_UTF8;
+            }
+        }
+    }
+    
     for ( ;; ) {
         switch ( BeginOpeningTag() ) {
         case '?':
