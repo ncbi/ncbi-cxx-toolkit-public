@@ -98,15 +98,21 @@ sub CreateEntireTree
 
 sub GetMkdirCommandsR
 {
-    my ($MkdirCommands, $ExistingStructure, $TreeToCreate, $Path) = @_;
+    my ($MkdirCommands, $ExistingStructure,
+        $DirName, $TreeToCreate, $Path) = @_;
 
-    return CreateEntireTree($MkdirCommands, $TreeToCreate, $Path)
-        unless $ExistingStructure;
+    unless ($ExistingStructure->{$DirName})
+    {
+        $ExistingStructure->{$DirName} = $TreeToCreate;
+        return CreateEntireTree($MkdirCommands, $TreeToCreate, $Path)
+    }
+
+    $ExistingStructure = $ExistingStructure->{$DirName};
 
     while (my ($DirName, $Subdir) = each %$TreeToCreate)
     {
         GetMkdirCommandsR($MkdirCommands,
-            $ExistingStructure->{$DirName}, $Subdir, "$Path/$DirName")
+            $ExistingStructure, $DirName, $Subdir, "$Path/$DirName")
     }
 }
 
@@ -117,7 +123,7 @@ sub GetMkdirCommands
     while (my ($DirName, $Subdir) = each %$TreeToCreate)
     {
         GetMkdirCommandsR($MkdirCommands,
-            $ExistingStructure->{$DirName}, $Subdir, $DirName)
+            $ExistingStructure, $DirName, $Subdir, $DirName)
     }
 }
 
@@ -132,6 +138,18 @@ sub LayPath
             $Subdir = ($Subdir->{$DirName} ||= {})
         }
     }
+}
+
+sub ReadBranchMap
+{
+    my ($Self, $SVN, $BranchMapRepoPath) = @_;
+
+    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
+
+    return undef if $@;
+
+    return NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
+            MapFileLines => \@BranchMapLines)
 }
 
 sub Create
@@ -183,14 +201,11 @@ sub Create
     # Read the old branch_map, if it exists.
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my @OldBranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
+    my $OldSwitchMap;
 
-    unless ($@)
+    if ($OldSwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath))
     {
         $ExistingBranch = 1;
-
-        my $OldSwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-            MapFileLines => \@OldBranchMapLines);
 
         # Compare the old and the new branch maps, find which dirs to remove
         # and which to copy from trunk.
@@ -222,8 +237,6 @@ sub Create
             LayPath($_->[1], \%RmDirTree, \%MkDirTree, \%CommonTree);
             push @CopyCommands, 'cp', 'HEAD', "$TrunkDir/$_->[0]", $_->[1]
         }
-        LayPath($BranchMapRepoPath, \%MkDirTree, \%CommonTree);
-        push @PutCommands, 'put', $BranchMapFile, $BranchMapRepoPath
     }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
@@ -231,6 +244,13 @@ sub Create
 
     GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
     GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
+
+    unless ($OldSwitchMap)
+    {
+        LayPath($BranchMapRepoPath, \%MkDirTree, \%CommonTree);
+        push @PutCommands, 'put', $BranchMapFile, $BranchMapRepoPath;
+        GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree)
+    }
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
@@ -277,7 +297,7 @@ sub Remove
     {
         my @NewBranches = grep {$_ ne $BranchPath} @Branches;
 
-        if (int(@NewBranches) != int(@Branches))
+        if (scalar(@NewBranches) != scalar(@Branches))
         {
             my $BranchListFH;
 
@@ -296,32 +316,33 @@ sub Remove
         }
     }
 
-    my %RmDirTree;
-
     # Read the branch map, if it exists.
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
-
-    unless ($@)
+    if (my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath))
     {
-        LayPath($BranchMapRepoPath, \%RmDirTree);
+        my %BranchMapRmPathTree;
+        my %RmDirTree;
+        my %CommonTree;
 
-        my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-            MapFileLines => \@BranchMapLines);
+        LayPath($BranchMapRepoPath, \%BranchMapRmPathTree, \%CommonTree);
 
         for (@{$SwitchMap->GetSwitchPlan()})
         {
-            LayPath($_->[1], \%RmDirTree)
+            LayPath($_->[1], \%RmDirTree, \%CommonTree)
         }
+
+        my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
+            $SVN->GetRepository(), \%CommonTree);
+
+        GetRmCommands(\@Commands, $ExistingStructure, \%RmDirTree);
+
+        GetRmCommands(\@Commands, $ExistingStructure, \%BranchMapRmPathTree)
     }
     else
     {
         warn "Warning: unable to retrieve '$BranchMapRepoPath'\n"
     }
-
-    GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
-            $SVN->GetRepository(), \%RmDirTree), \%RmDirTree);
 
     # Unless there are no changes, commit a revision using mucc.
     if (@Commands)
@@ -392,15 +413,8 @@ sub MergeDown
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
-
-    if ($@)
-    {
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n"
-    }
-
-    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-        MapFileLines => \@BranchMapLines);
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
 
     my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
 
@@ -477,15 +491,8 @@ sub MergeDownCommit
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
-
-    if ($@)
-    {
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n"
-    }
-
-    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-        MapFileLines => \@BranchMapLines);
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
 
     my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
 
@@ -536,15 +543,8 @@ sub Commit
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
-
-    if ($@)
-    {
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n"
-    }
-
-    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-        MapFileLines => \@BranchMapLines);
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
 
     system($SVN->GetSvnPath(), 'commit', '-m', $LogMessage,
         map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
