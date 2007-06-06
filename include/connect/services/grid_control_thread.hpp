@@ -34,18 +34,17 @@
  */
 
 #include <corelib/ncbimisc.hpp>
-#include <connect/threaded_server.hpp>
+#include <connect/server.hpp>
 
 #include <map>
 
 BEGIN_NCBI_SCOPE
 
 class CGridWorkerNode;
-class CWorkerNodeStatistics;
 /////////////////////////////////////////////////////////////////////////////
 // 
 /// @internal
-class NCBI_XCONNECT_EXPORT CWorkerNodeControlThread : public CThreadedServer
+class NCBI_XCONNECT_EXPORT CWorkerNodeControlThread : public CServer
 {
 public:
 
@@ -71,24 +70,52 @@ public:
 
     virtual ~CWorkerNodeControlThread();
 
-    virtual void Process(SOCK sock);
-
     virtual bool ShutdownRequested(void);
 
     void RequestShutdown() { m_ShutdownRequested = true; }
+
+    static IRequestProcessor* MakeProcessor(const string& cmd);
 
 protected:
     virtual void ProcessTimeout(void);
 
 private:
     CGridWorkerNode& m_WorkerNode;
-    STimeout         m_ThrdSrvAcceptTimeout;
     volatile bool    m_ShutdownRequested;
-
-    static IRequestProcessor* x_MakeProcessor(const string& cmd);
 
     CWorkerNodeControlThread(const CWorkerNodeControlThread&);
     CWorkerNodeControlThread& operator=(const CWorkerNodeControlThread&);
+};
+
+
+//////////////////////////////////////////////////////////////
+class NCBI_XCONNECT_EXPORT CWNCTConnectionHandler 
+    : public IServer_LineMessageHandler
+{
+public:
+    CWNCTConnectionHandler(CWorkerNodeControlThread& server);
+    virtual ~CWNCTConnectionHandler();
+
+    virtual void OnOpen(void);
+    virtual void OnMessage(BUF buffer);
+
+    virtual void OnWrite() {}
+    virtual void OnClose() {}
+    
+private:
+    
+    CWorkerNodeControlThread& m_Server;
+    string m_Auth;
+    string m_Queue;
+
+    void (CWNCTConnectionHandler::*m_ProcessMessage)(BUF buffer);
+
+    void x_ProcessAuth(BUF buffer);
+    void x_ProcessQueue(BUF buffer);
+    void x_ProcessRequest(BUF buffer);
+
+    CWNCTConnectionHandler(const CWNCTConnectionHandler&);
+    CWNCTConnectionHandler& operator=(const CWNCTConnectionHandler&);
 };
 
 END_NCBI_SCOPE

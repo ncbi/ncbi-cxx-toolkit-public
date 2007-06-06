@@ -157,8 +157,10 @@ public:
                               CNcbiOstream& os,
                               const CGridWorkerNode& node) 
     {
-        if (auth != node.GetJobVersion()) {
-            os <<"ERR:Wrong Program. Required: " << node.GetJobVersion();
+        string cmp = node.GetClientName() + " prog='" + node.GetJobVersion() + '\'';
+        if (auth != cmp) {
+            os <<"ERR:Wrong Program. Required: " << node.GetJobVersion() 
+               << endl << auth << endl << cmp;
             return false;
         } 
         string qname, connection_info;
@@ -211,7 +213,7 @@ const string GETLOAD_CMD = "GETLOAD";
 
 /* static */
 CWorkerNodeControlThread::IRequestProcessor* 
-CWorkerNodeControlThread::x_MakeProcessor(const string& cmd)
+CWorkerNodeControlThread::MakeProcessor(const string& cmd)
 {
     if (NStr::StartsWith(cmd, SHUTDOWN_CMD))
         return new CShutdownProcessor;
@@ -224,77 +226,36 @@ CWorkerNodeControlThread::x_MakeProcessor(const string& cmd)
     return new CUnknownProcessor;
 }
 
+class CWNCTConnectionFactory : public IServer_ConnectionFactory
+{
+public:
+    CWNCTConnectionFactory(CWorkerNodeControlThread& server)
+        : m_Server(server) 
+    {}
+    virtual IServer_ConnectionHandler* Create(void) {
+        return new CWNCTConnectionHandler(m_Server);
+    }
+private:
+    CWorkerNodeControlThread& m_Server;
+};
+
+static STimeout kAcceptTimeout = {1,0};
 CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port, 
                                                    CGridWorkerNode& worker_node)
-    : CThreadedServer(port), m_WorkerNode(worker_node), m_ShutdownRequested(false)
-      //      m_ShutdownRequested(false)
+    : m_WorkerNode(worker_node), m_ShutdownRequested(false)
 {
-    m_InitThreads = 1;
-    m_MaxThreads = 3;
-    m_ThrdSrvAcceptTimeout.sec = 1;
-    m_ThrdSrvAcceptTimeout.usec = 0;
-    m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
+    SServer_Parameters params;
+    params.init_threads = 1;
+    params.max_threads = 3;
+    params.accept_timeout = &kAcceptTimeout;
+    SetParameters(params);
+    AddListener(new CWNCTConnectionFactory(*this),port);
 }
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
 {
     LOG_POST(CTime(CTime::eCurrent).AsString() << " Control server stopped.");
 }
-
-#define JS_CHECK_IO_STATUS(x) \
-        switch (x)  { \
-        case eIO_Success: \
-            break; \
-        default: \
-            return; \
-        } 
-
-void CWorkerNodeControlThread::Process(SOCK sock)
-{
-    EIO_Status io_st;
-    CSocket socket;
-    try {
-        socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
-        socket.DisableOSSendDelay();
-        
-        string auth;
-        io_st = socket.ReadLine(auth);
-        JS_CHECK_IO_STATUS(io_st);
-        
-        string queue;
-        io_st = socket.ReadLine(queue);
-        JS_CHECK_IO_STATUS(io_st);
-
-        string request;
-        io_st = socket.ReadLine(request);
-        JS_CHECK_IO_STATUS(io_st);
-
-        string host = socket.GetPeerAddress();
-        
-        CNcbiOstrstream os;
-        auto_ptr<IRequestProcessor> processor(x_MakeProcessor(request));
-        processor->Authenticate(host, auth, queue, os, m_WorkerNode);
-        processor->Process(request, os, m_WorkerNode);
-            
-        os << ends;
-        try {
-            socket.Write(os.str(), os.pcount());
-        }  catch (...) {
-            os.freeze(false);
-            throw;
-        }
-        os.freeze(false);
-
-    }
-    catch (exception& ex)
-    {
-        ERR_POST(CTime(CTime::eCurrent).AsString() 
-                 << " Exception in the control server : " << ex.what());
-        string err = "ERR:" + NStr::PrintableString(ex.what());
-        socket.Write(err.c_str(), err.length() + 1 );     
-    }
-}
-
 bool CWorkerNodeControlThread::ShutdownRequested(void) 
 {
     //    return CGridGlobals::GetInstance().
@@ -305,6 +266,86 @@ bool CWorkerNodeControlThread::ShutdownRequested(void)
 void CWorkerNodeControlThread::ProcessTimeout(void)
 {
     CGridGlobals::GetInstance().GetJobsWatcher().CheckInfinitLoop();
+}
+
+
+
+////////////////////////////////////////////////
+static string s_ReadStrFromBUF(BUF buf)
+{
+    size_t size = BUF_Size(buf);
+    string ret(size, '\0');
+    BUF_Read(buf, &ret[0], size);
+    return ret;
+}
+
+CWNCTConnectionHandler::CWNCTConnectionHandler(CWorkerNodeControlThread& server) 
+    : m_Server(server)
+{}
+
+CWNCTConnectionHandler::~CWNCTConnectionHandler()
+{}
+
+void CWNCTConnectionHandler::OnOpen(void)
+{
+    CSocket& socket = GetSocket();
+    socket.DisableOSSendDelay();
+    m_ProcessMessage = &CWNCTConnectionHandler::x_ProcessAuth;
+
+}
+
+static void s_HandleError(CSocket& socket, const string& msg)
+{
+    ERR_POST(CTime(CTime::eCurrent).AsString() 
+             << " Exception in the control server : " << msg);
+    string err = "ERR:" + NStr::PrintableString(msg);
+    socket.Write(&msg[0], msg.size() + 1 );     
+    socket.Close();
+}
+void CWNCTConnectionHandler::OnMessage(BUF buffer)
+{
+    try {
+        (this->*m_ProcessMessage)(buffer);
+    } catch(exception& ex) {
+        s_HandleError(GetSocket(), ex.what());
+    } catch(...) {
+        s_HandleError(GetSocket(), "Unknown Error");
+    }
+}
+    
+void CWNCTConnectionHandler::x_ProcessAuth(BUF buffer)
+{
+    m_Auth = s_ReadStrFromBUF(buffer);
+    m_ProcessMessage = &CWNCTConnectionHandler::x_ProcessQueue;
+}
+void CWNCTConnectionHandler::x_ProcessQueue(BUF buffer)
+{
+    m_Queue = s_ReadStrFromBUF(buffer);
+    m_ProcessMessage = &CWNCTConnectionHandler::x_ProcessRequest;
+}
+void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
+{
+    string request = s_ReadStrFromBUF(buffer);
+
+    CSocket& socket = GetSocket();
+    string host = socket.GetPeerAddress();
+        
+    CNcbiOstrstream os;
+    auto_ptr<CWorkerNodeControlThread::IRequestProcessor> 
+        processor(m_Server.MakeProcessor(request));
+    if (processor->Authenticate(host, m_Auth, m_Queue, os, 
+                                m_Server.GetWorkerNode()))
+        processor->Process(request, os, m_Server.GetWorkerNode());
+
+    os << ends;
+    try {
+        socket.Write(os.str(), os.pcount());
+    }  catch (...) {
+        os.freeze(false);
+        throw;
+    }
+    os.freeze(false);
+    socket.Close();
 }
 
 END_NCBI_SCOPE
