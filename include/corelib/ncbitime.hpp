@@ -500,7 +500,7 @@ public:
     NCBI_DEPRECATED
     string AsString(const string& fmt, TSeconds out_tz) const
         {
-            AsString(fmt, eFmt_Default, out_tz);
+            return AsString(fmt, eFmt_Default, out_tz);
         }
 
     /// Return time as string using the format returned by GetFormat().
