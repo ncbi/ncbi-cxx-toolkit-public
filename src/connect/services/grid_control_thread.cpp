@@ -299,7 +299,7 @@ static void s_HandleError(CSocket& socket, const string& msg)
     ERR_POST(CTime(CTime::eCurrent).AsString() 
              << " Exception in the control server : " << msg);
     string err = "ERR:" + NStr::PrintableString(msg);
-    socket.Write(msg.data(), msg.size());
+    socket.Write(&err[0], err.size());
     socket.Close();
 }
 void CWNCTConnectionHandler::OnMessage(BUF buffer)
