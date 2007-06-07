@@ -201,6 +201,7 @@ public:
     void Test_Create_Destroy(void);
     void Test_Multiple_Close(void);
     void Test_Unicode(void);
+    void Test_NVARCHAR(void);
     void Test_Iskhakov(void);
     void Test_NCBI_LS(void);
     void Test_Authentication(void);
@@ -211,6 +212,7 @@ public:
     void Test_Timeout(void);
     void Test_SetLogStream(void);
     void Test_Identity(void);
+    void Test_BlobStore(void);
 
 public:
     void Test_Exception_Safety(void);

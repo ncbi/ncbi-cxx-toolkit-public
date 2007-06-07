@@ -5,7 +5,7 @@ SRC = dbapi_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = dbapi dbapi_driver $(XCONNEXT) xconnect xncbi
+LIB  = dbapi dbapi_driver dbapi_util_blobstore$(STATIC) $(XCONNEXT) xconnect xncbi
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS)  $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = DLL

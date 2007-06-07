@@ -37,6 +37,7 @@
 #include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <dbapi/driver/util/blobstore.hpp>
 
 #include "dbapi_unit_test.hpp"
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
@@ -583,6 +584,43 @@ void CDBAPIUnitTest::Test_Unicode(void)
                 CStringUTF8 utf8_utf8(nvc255_value, eEncoding_UTF8);
 
                 DumpResults(auto_stmt.get());
+            }
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_NVARCHAR(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+    try {
+        if (false) {
+            string Title69;
+            auto_ptr<IConnection> conn(
+                m_DS->CreateConnection(CONN_OWNERSHIP)
+                );
+            conn->Connect("anyone","allowed","MSSQL69", "PMC3");
+//             conn->Connect("anyone","allowed","MSSQL42", "PMC3");
+            auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+
+            sql = "SELECT Title from Subject where SubjectId=7";
+            auto_stmt->Execute(sql);
+            while (auto_stmt->HasMoreResults()) {
+                if (auto_stmt->HasRows()) {
+                    auto_ptr<IResultSet> rs69(auto_stmt->GetResultSet());
+                    while (rs69->Next()) {
+                        Title69 = rs69->GetVariant("Title").GetString();
+                    }
+                }
             }
         }
     }
@@ -4815,6 +4853,88 @@ CDBAPIUnitTest::CheckGetRowCount2(
 
 
 ////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_BlobStore(void)
+{
+    string sql;
+    string table_name = "#TestBlobStore";
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Create a table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "  id   INT, \n"
+                "  cr_date   DATETIME DEFAULT getdate(), \n"
+                " \n"
+                "  -- columns needed to satisy blobstore.cpp classes \n"
+                "  blob_num INT DEFAULT 0, -- always 0 (we need not accept data that does not fit into 1 row) \n"
+                "  data0 IMAGE NULL, \n"
+                "  data1 IMAGE NULL, \n"
+                "  data2 IMAGE NULL, \n"
+                "  data3 IMAGE NULL, \n"
+                "  data4 IMAGE NULL \n"
+                ") "
+                ;
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert a row
+        {
+            auto_stmt->ExecuteUpdate("INSERT INTO " + table_name + " (id) values (66)");
+        }
+
+        // Write blob to the row
+        {
+            enum {
+                IMAGE_BUFFER_SIZE = (64*1024*1024),
+                // The number of dataN fields in the table
+                BLOB_COL_COUNT = 5,
+                // If you need to increase MAX_FILE_SIZE,
+                // try increasing IMAGE_BUFFER_SIZE,
+                // or alter table AgpFiles and BLOB_COL_COUNT.
+                MAX_FILE_SIZE = (BLOB_COL_COUNT*IMAGE_BUFFER_SIZE)
+                };
+
+            string blob_cols[BLOB_COL_COUNT];
+
+            for(int i=0; i<BLOB_COL_COUNT; i++) {
+                blob_cols[i] = string("data") + NStr::IntToString(i);
+            }
+
+            CBlobStoreStatic blobrw(
+                m_Conn->GetCDB_Connection(),
+                table_name,     // tableName
+                "id",           // keyColName
+                "blob_num",     // numColName
+                blob_cols,      // blobColNames
+                BLOB_COL_COUNT, // nofBC - number of blob columns
+                false,          // bool isText
+                eNone, //eZLib, // ECompressMethod cm
+                IMAGE_BUFFER_SIZE,
+                false
+            );
+
+            auto_ptr<ostream> pStream(blobrw.OpenForWrite( "66" ));
+            BOOST_CHECK(pStream.get());
+
+            for(int i = 0; i < 10000; ++i) {
+                *pStream <<
+                    "A quick brown fox jumps over the lazy dog, message #" <<
+                    i << "\n";
+            }
+
+            pStream->flush();
+            pStream.reset();
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Object(void)
 {
     try {
@@ -7278,6 +7398,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             }
         }
 
+        // Not completed yet ...
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NVARCHAR,
+//                                    DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         tc->depends_on(tc_parameters);
+//         add(tc);
+
         if (args.GetDriverName() == "odbcw"
     //         args.GetDriverName() == "ftds63" ||
     //         args.GetDriverName() == "ftds64_odbc" ||
@@ -7471,6 +7598,18 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Identity,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    if ((args.GetDriverName() == "ftds"
+         && args.GetServerType() == CTestArguments::eMsSql)
+        || (args.GetDriverName() == "ftds64"
+         && args.GetServerType() == CTestArguments::eMsSql)
+        || args.GetDriverName() == "ftds64_odbc")
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
