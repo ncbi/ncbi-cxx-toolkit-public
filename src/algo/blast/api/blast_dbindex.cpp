@@ -584,9 +584,11 @@ void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src )
     _BlastSeqSrcImpl_SetCopyFnPtr          ( dst, _BlastSeqSrcImpl_GetCopyFnPtr( src ) );
     _BlastSeqSrcImpl_SetDataStructure      ( dst, _BlastSeqSrcImpl_GetDataStructure( src ) );
     _BlastSeqSrcImpl_SetGetNumSeqs         ( dst, _BlastSeqSrcImpl_GetGetNumSeqs( src ) );
+    _BlastSeqSrcImpl_SetGetNumSeqsStats    ( dst, _BlastSeqSrcImpl_GetGetNumSeqsStats( src ) );
     _BlastSeqSrcImpl_SetGetMaxSeqLen       ( dst, _BlastSeqSrcImpl_GetGetMaxSeqLen( src ) );
     _BlastSeqSrcImpl_SetGetAvgSeqLen       ( dst, _BlastSeqSrcImpl_GetGetAvgSeqLen( src ) );
     _BlastSeqSrcImpl_SetGetTotLen          ( dst, _BlastSeqSrcImpl_GetGetTotLen( src ) );
+    _BlastSeqSrcImpl_SetGetTotLenStats     ( dst, _BlastSeqSrcImpl_GetGetTotLenStats( src ) );
     _BlastSeqSrcImpl_SetGetName            ( dst, _BlastSeqSrcImpl_GetGetName( src ) );
     _BlastSeqSrcImpl_SetGetIsProt          ( dst, _BlastSeqSrcImpl_GetGetIsProt( src ) );
     _BlastSeqSrcImpl_SetGetSequence        ( dst, _BlastSeqSrcImpl_GetGetSequence( src ) );
@@ -634,6 +636,15 @@ static Int4 s_IDbGetNumSeqs( void * handle, void * x )
 
 //------------------------------------------------------------------------------
 /** Forwards the call to CIndexedDb::db_. */
+static Int4 s_IDbGetNumSeqsStats( void * handle, void * x )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    return _BlastSeqSrcImpl_GetGetNumSeqsStats( fw_seqsrc )( fw_handle, x );
+}
+
+//------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int4 s_IDbGetMaxLength( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -657,6 +668,15 @@ static Int8 s_IDbGetTotLen( void * handle, void * x )
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
     void * fw_handle = s_GetForwardSeqDb( handle );
     return _BlastSeqSrcImpl_GetGetTotLen( fw_seqsrc )( fw_handle, x );
+}
+
+//------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
+static Int8 s_IDbGetTotLenStats( void * handle, void * x )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    return _BlastSeqSrcImpl_GetGetTotLenStats( fw_seqsrc )( fw_handle, x );
 }
 
 //------------------------------------------------------------------------------
@@ -779,7 +799,6 @@ static BlastSeqSrc * s_IDbSrcFree( BlastSeqSrc * seq_src )
         }
 
         delete idb;
-        sfree( seq_src );
     }
 
     return 0;
@@ -818,19 +837,21 @@ static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
     ASSERT( retval );
     ASSERT( idb );
 
-    _BlastSeqSrcImpl_SetDeleteFnPtr   (retval, & s_IDbSrcFree);
-    _BlastSeqSrcImpl_SetCopyFnPtr     (retval, & s_IDbSrcCopy);
-    _BlastSeqSrcImpl_SetDataStructure (retval, (void*) idb);
-    _BlastSeqSrcImpl_SetGetNumSeqs    (retval, & s_IDbGetNumSeqs);
-    _BlastSeqSrcImpl_SetGetMaxSeqLen  (retval, & s_IDbGetMaxLength);
-    _BlastSeqSrcImpl_SetGetAvgSeqLen  (retval, & s_IDbGetAvgLength);
-    _BlastSeqSrcImpl_SetGetTotLen     (retval, & s_IDbGetTotLen);
-    _BlastSeqSrcImpl_SetGetName       (retval, & s_IDbGetName);
-    _BlastSeqSrcImpl_SetGetIsProt     (retval, & s_IDbGetIsProt);
-    _BlastSeqSrcImpl_SetGetSequence   (retval, & s_IDbGetSequence);
-    _BlastSeqSrcImpl_SetGetSeqLen     (retval, & s_IDbGetSeqLen);
-    _BlastSeqSrcImpl_SetIterNext      (retval, & s_IDbIteratorNext);
-    _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_IDbReleaseSequence);
+    _BlastSeqSrcImpl_SetDeleteFnPtr        (retval, & s_IDbSrcFree);
+    _BlastSeqSrcImpl_SetCopyFnPtr          (retval, & s_IDbSrcCopy);
+    _BlastSeqSrcImpl_SetDataStructure      (retval, (void*) idb);
+    _BlastSeqSrcImpl_SetGetNumSeqs         (retval, & s_IDbGetNumSeqs);
+    _BlastSeqSrcImpl_SetGetNumSeqsStats    (retval, & s_IDbGetNumSeqsStats);
+    _BlastSeqSrcImpl_SetGetMaxSeqLen       (retval, & s_IDbGetMaxLength);
+    _BlastSeqSrcImpl_SetGetAvgSeqLen       (retval, & s_IDbGetAvgLength);
+    _BlastSeqSrcImpl_SetGetTotLen          (retval, & s_IDbGetTotLen);
+    _BlastSeqSrcImpl_SetGetTotLenStats     (retval, & s_IDbGetTotLenStats);
+    _BlastSeqSrcImpl_SetGetName            (retval, & s_IDbGetName);
+    _BlastSeqSrcImpl_SetGetIsProt          (retval, & s_IDbGetIsProt);
+    _BlastSeqSrcImpl_SetGetSequence        (retval, & s_IDbGetSequence);
+    _BlastSeqSrcImpl_SetGetSeqLen          (retval, & s_IDbGetSeqLen);
+    _BlastSeqSrcImpl_SetIterNext           (retval, & s_IDbIteratorNext);
+    _BlastSeqSrcImpl_SetReleaseSequence    (retval, & s_IDbReleaseSequence);
     _BlastSeqSrcImpl_SetResetChunkIterator (retval, & s_IDbResetChunkIterator);
 }
 
