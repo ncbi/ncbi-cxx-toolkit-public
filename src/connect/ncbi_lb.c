@@ -76,6 +76,16 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
         }
         total       += status;
         cand->status = total;
+#ifdef NCBI_LB_DEBUG
+        {{
+            char addr[80];
+            const char* name = SERV_NameOfInfo(info);
+            SOCK_HostPortToString(info->host, info->port, addr, sizeof(addr));
+            CORE_LOGF(eLOG_Note,
+                      ("%d: %s %s\tR=%lf\tS=%lf\tT=%lf\tA=%lf\tP=%lf", (int) n,
+                       name, addr, info->rate, status, total, access, point));
+        }}
+#endif /*NCBI_LB_DEBUG*/
     }
     assert(n > 0);
 
@@ -89,9 +99,8 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
                 p = SERV_Preference(iter->pref, access/total, n);
 #ifdef NCBI_LB_DEBUG
                 CORE_LOGF(eLOG_Note,
-                          ("(P = %lf, A = %lf, T = %lf, A/T = %lf, N = %d)"
-                           " -> Pref = %lf", iter->pref, access, total,
-                           access/total, (int) n, p));
+                          ("(P=%lf,\tA=%lf,\tT=%lf,\tA/T=%lf,\tN=%d) -> P=%lf",
+                           iter->pref, access, total, access/total,(int)n, p));
 #endif /*NCBI_LB_DEBUG*/
                 status = total * p;
                 p = total * (1.0 - p) / (total - access);
@@ -104,15 +113,17 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
                 }
 #ifdef NCBI_LB_DEBUG
                 status = 0.0;
-                for (i = 0; i < n; i++) {
-                    char addr[16];
-                    cand = get_candidate(data, i);
-                    info = cand->info;
-                    p    = cand->status - status;
+                for (i = 0;  i < n;  i++) {
+                    char addr[80];
+                    cand   = get_candidate(data, i);
+                    info   = cand->info;
+                    p      = cand->status - status;
                     status = cand->status;
-                    SOCK_ntoa(info->host, addr, sizeof(addr));
-                    CORE_LOGF(eLOG_Note, ("%s %lf %.2lf%%",
-                                          addr, p, p / total * 100.0));
+                    SOCK_HostPortToString(info->host, info->port,
+                                          addr, sizeof(addr));
+                    CORE_LOGF(eLOG_Note, ("%d: %s %s\tS=%lf\t%.2lf%%",
+                                          (int) i, SERV_NameOfInfo(info), addr,
+                                          p, p / total * 100.0));
                 }
 #endif /*NCBI_LB_DEBUG*/
             }
@@ -124,6 +135,9 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
            the server, and apply the generic procedure by random seeding.*/
         if (point <= 0.0  ||  access * (n - 1) < p * 0.01 * (total - access)) {
             point = (total * rand()) / (double) RAND_MAX;
+#ifdef NCBI_LB_DEBUG
+            CORE_LOGF(eLOG_Note, ("P = %lf", point));
+#endif /*NCBI_LB_DEBUG*/
         }
 
         total = 0.0;
