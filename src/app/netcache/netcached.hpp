@@ -35,6 +35,7 @@
 #include <util/logrotate.hpp>
 
 #include <connect/threaded_server.hpp>
+#include <connect/server_monitor.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
@@ -534,6 +535,9 @@ private:
 
     /// Session management
     CRef<CSessionManagementThread>  m_SessionMngThread;
+
+    /// Monitor
+    CServer_Monitor                 m_Monitor;
 };
 
 

@@ -693,6 +693,12 @@ void CNetCacheServer::Process(SOCK sock)
                 } else 
                 if (rq[0] == 'O' && rq[1] == 'K') {
                     continue;
+                } else
+                if (rq == "MONI") {
+                    m_Monitor.SetSocket(socket);
+                    m_Monitor.SendString("Monitor for " NETCACHED_VERSION "\n");
+                    // Avoid handling closing connection
+                    return;
                 } else {
                     tdata->req.Init();
                     ProcessNC(socket, 
