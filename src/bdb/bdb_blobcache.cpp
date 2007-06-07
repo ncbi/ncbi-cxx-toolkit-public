@@ -2803,6 +2803,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
     unsigned db_recs = 0;
 
+    time_t last_check = time(0); // time when we started GC scan
+
     // Search the database for obsolete cache entries
     string first_key, last_key;
     for (bool flag = true; flag;) {
@@ -2873,12 +2875,33 @@ void CBDB_Cache::Purge(time_t           access_timeout,
             return;
         }
 
+        // While scanning we need to periodically run 
+        // checkpoints and background writes
+        // TODO: move checkpoints to a dedicated thread
+        //
+        time_t curr = time(0);
+        if (curr - last_check >= 30) {
+            m_Env->TransactionCheckpoint();
+            bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
+            if (purge_stop) {
+                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+                return;
+            }
+
+            if (m_MempTrickle) {
+                int nwrote;
+                m_Env->MempTrickle(m_MempTrickle, &nwrote);
+            }    
+            last_check = time(0);
+        }
+
 
     } // for flag
 
 
     // Delete BLOBs
 
+    last_check = time(0);
 
     for (unsigned i = 0; i < cache_entries.size(); ) {
         unsigned batch_size = GetPurgeBatchSize();
@@ -2913,10 +2936,28 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
         } // for j
         bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
-
         if (purge_stop) {
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
             return;
+        }
+        // While scanning we need to periodically run 
+        // checkpoints and background writes
+        // TODO: move checkpoints to a dedicated thread
+        //
+        time_t curr = time(0);
+        if (curr - last_check >= 30) {
+            m_Env->TransactionCheckpoint();
+            bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
+            if (purge_stop) {
+                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+                return;
+            }
+
+            if (m_MempTrickle) {
+                int nwrote;
+                m_Env->MempTrickle(m_MempTrickle, &nwrote);
+            }    
+            last_check = time(0);
         }
 
     } // for i
