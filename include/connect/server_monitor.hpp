@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 /// Server monitor
 ///
-class CServer_Monitor
+class NCBI_XCONNECT_EXPORT CServer_Monitor
 {
 public:
     CServer_Monitor();
