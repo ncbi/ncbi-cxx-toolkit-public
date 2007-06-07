@@ -2867,7 +2867,6 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
             } // for i
         }}
-
         bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
         if (purge_stop) {
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
@@ -2898,13 +2897,12 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                     
                     {{
                         CFastMutexGuard guard(m_DB_Lock);
-//                        m_CacheAttrDB->SetTransaction(&trans);
                         m_BLOB_SplitStore->SetTransaction(&trans);
 
                         const SCacheDescr& it = cache_entries[i];
-                        x_DropBlob(it.key.c_str(),
+                        x_DropBlob(it.key,
                                     it.version,
-                                    it.subkey.c_str(),
+                                    it.subkey,
                                     it.overflow,
                                     it.blob_id,
                                     trans);
@@ -2914,8 +2912,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                 }}
 
         } // for j
-
         bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
+
         if (purge_stop) {
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
             return;
@@ -2930,12 +2928,12 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     m_Statistics.GlobalStatistics().blobs_db = db_recs;
     }}
 
-    if ((m_PurgeCount % 100) == 0) {
+    if ((m_PurgeCount % 200) == 0) {
         m_BLOB_SplitStore->Save();
         m_Env->ForceTransactionCheckpoint();
     }  
     else
-    if ((m_PurgeCount % 10) == 0) {
+    if ((m_PurgeCount % 50) == 0) {
         m_BLOB_SplitStore->FreeUnusedMem();
     }
     m_Env->TransactionCheckpoint();
@@ -2960,6 +2958,7 @@ void CBDB_Cache::Purge(const string&    key,
     // Search the database for obsolete cache entries
     vector<SCacheDescr> cache_entries;
 
+    unsigned recs_scanned = 0;
 
     {{
     CFastMutexGuard guard(m_DB_Lock);
@@ -2980,6 +2979,8 @@ void CBDB_Cache::Purge(const string&    key,
     }
 
     while (cur.Fetch() == eBDB_Ok) {
+        ++recs_scanned;
+
         unsigned    db_time_stamp = m_CacheAttrDB->time_stamp;
         int         version       = m_CacheAttrDB->version;
         const char* x_key         = m_CacheAttrDB->key;
@@ -3027,12 +3028,16 @@ void CBDB_Cache::Purge(const string&    key,
 
     }} // m_DB_Lock
 
-
+/*
     CBDB_Transaction trans(*m_Env, 
                         CBDB_Transaction::eEnvDefault,
                         CBDB_Transaction::eNoAssociation);
-   
+*/
+
     ITERATE(vector<SCacheDescr>, it, cache_entries) {
+        CBDB_Transaction trans(*m_Env, 
+                            CBDB_Transaction::eEnvDefault,
+                            CBDB_Transaction::eNoAssociation);
         {{
             CFastMutexGuard guard(m_DB_Lock);
 //            m_CacheAttrDB->SetTransaction(&trans);
@@ -3043,13 +3048,16 @@ void CBDB_Cache::Purge(const string&    key,
                     it->overflow,
                     it->blob_id,
                     trans);
-        }}
+        }} // m_DB_Lock
+
+        trans.Commit();
+
     }
 
     
-
+/*
     trans.Commit();
-
+*/
 }
 
 void CBDB_Cache::Verify(const string&  cache_path,
@@ -3305,9 +3313,9 @@ bool CBDB_Cache::x_FetchBlobAttributes(const string&  key,
 
 
 
-void CBDB_Cache::x_DropOverflow(const char*    key,
+void CBDB_Cache::x_DropOverflow(const string&  key,
                                 int            version,
-                                const char*    subkey)
+                                const string&  subkey)
 {
     string path;
     try {
@@ -3332,16 +3340,13 @@ void CBDB_Cache::x_DropOverflow(const string&  file_path)
     }
 }
 
-void CBDB_Cache::x_DropBlob(const char*        key,
+void CBDB_Cache::x_DropBlob(const string&      key,
                             int                version,
-                            const char*        subkey,
+                            const string&      subkey,
                             int                overflow,
                             unsigned           blob_id,
                             CBDB_Transaction&  trans)
 {
-    _ASSERT(key);
-    _ASSERT(subkey);
-
     if (IsReadOnly()) {
         return;
     }

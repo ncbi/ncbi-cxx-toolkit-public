@@ -657,17 +657,18 @@ private:
                                int            version,
                                const string&  subkey);
 
-    void x_DropBlob(const char*        key,
+    void x_DropBlob(const string&      key,
                     int                version,
-                    const char*        subkey,
+                    const string&      subkey,
                     int                overflow,
                     unsigned           blob_id,
                     CBDB_Transaction&  trans);
 
-    void x_DropOverflow(const char*    key,
-                        int            version,
-                        const char*    subkey);
-    void x_DropOverflow(const string&  file_path);
+    void x_DropOverflow(const string&    key,
+                        int              version,
+                        const string&    subkey);
+
+    void x_DropOverflow(const string&    file_path);
 
     void x_TruncateDB();
 
