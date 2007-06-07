@@ -61,7 +61,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     string s = reg.GetString(sname, "max_input_size", kEmptyStr);
     max_input_size = kNetScheduleMaxDBDataSize;
     try {
-        max_input_size = NStr::StringToUInt8_DataSize(s);
+        max_input_size = (unsigned) NStr::StringToUInt8_DataSize(s);
     }
     catch (CStringException&) {}
     max_input_size = min(kNetScheduleMaxOverflowSize, max_input_size);
@@ -69,7 +69,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     s =  reg.GetString(sname, "max_output_size", kEmptyStr);
     max_output_size = kNetScheduleMaxDBDataSize;
     try {
-        max_output_size = NStr::StringToUInt8_DataSize(s);
+        max_output_size = (unsigned) NStr::StringToUInt8_DataSize(s);
     }
     catch (CStringException&) {}
     max_output_size = min(kNetScheduleMaxOverflowSize, max_output_size);

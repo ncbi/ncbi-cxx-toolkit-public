@@ -1568,7 +1568,7 @@ void CNetScheduleHandler::ProcessDump()
             ios << "OK:[Job DB]:" << endl;
             m_Queue->PrintJobDbStat(job_id, ios);
         } 
-        catch (CException& ex)
+        catch (CException&)
         {
             // dump by status
             CNetScheduleAPI::EJobStatus 
