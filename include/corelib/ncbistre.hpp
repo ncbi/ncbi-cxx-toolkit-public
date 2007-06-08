@@ -632,6 +632,13 @@ NCBI_XNCBI_EXPORT
 bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
                   EEncodingForm ef = eEncodingForm_Unknown);
 
+// This function reads first 4 bytes from the stream.
+// If BOM is found, it is analyzed and skipped; remaining data
+// is pushed back using CStreamUtils::Pushback
+// (see comments for CStreamUtils::Pushback)
+NCBI_XNCBI_EXPORT
+EEncodingForm GetStreamByteOrderMark(CNcbiIstream& input);
+
 
 END_NCBI_SCOPE
 

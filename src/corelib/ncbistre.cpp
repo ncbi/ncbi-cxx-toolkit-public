@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/stream_utils.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -484,6 +485,38 @@ bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
         n = 0;
     }
     return !result.empty();
+}
+
+NCBI_XNCBI_EXPORT
+EEncodingForm GetStreamByteOrderMark(CNcbiIstream& input)
+{
+    EEncodingForm ef = eEncodingForm_Unknown;
+    if (input.good()) {
+        char tmp[4];
+        Uint2* us = reinterpret_cast<Uint2*>(tmp);
+
+        const int bom_max = 4;
+        memset(tmp,0,bom_max);
+        input.read(tmp,bom_max);
+        int n = input.gcount();
+        Uchar* uc = reinterpret_cast<Uchar*>(tmp);
+        if (n >= 3 && uc[0] == 0xEF && uc[1] == 0xBB && uc[2] == 0xBF) {
+            ef = eEncodingForm_Utf8;
+            uc[0] = uc[3];
+            n -= 3;
+        }
+        else if (n >= 2 && (us[0] == 0xFEFF || us[0] == 0xFFFE)) {
+            if (us[0] == 0xFEFF) {
+                ef = eEncodingForm_Utf16Native;
+            } else {
+                ef = eEncodingForm_Utf16Foreign;
+            }
+            us[0] = us[1];
+            n -= 2;
+        }
+        CStreamUtils::Pushback(input,tmp,n);
+    }
+    return ef;
 }
 
 
