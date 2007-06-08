@@ -2868,7 +2868,36 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                 }
 
             } // for i
-        }}
+        }} // m_DB_Lock
+
+        // Delete BLOBs if there are deletion candidates
+        if (cache_entries.size() > 0) {
+            for (size_t i = 0; i < cache_entries.size(); ++i) {
+                {{
+                    CBDB_Transaction trans(*m_Env,
+                                            CBDB_Transaction::eEnvDefault,
+                                            CBDB_Transaction::eNoAssociation);
+                    
+                    {{
+                        CFastMutexGuard guard(m_DB_Lock);
+                        m_BLOB_SplitStore->SetTransaction(&trans);
+
+                        const SCacheDescr& it = cache_entries[i];
+                        x_DropBlob(it.key,
+                                   it.version,
+                                   it.subkey,
+                                   it.overflow,
+                                   it.blob_id,
+                                   trans);
+                    }} // m_DB_Lock
+                    trans.Commit();
+                    delay = m_BatchSleep;
+                }}
+
+            } // for i
+            cache_entries.resize(0);
+        }
+
         bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
         if (purge_stop) {
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
@@ -2900,7 +2929,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
 
     // Delete BLOBs
-
+/*
     last_check = time(0);
 
     for (unsigned i = 0; i < cache_entries.size(); ) {
@@ -2961,7 +2990,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         }
 
     } // for i
-
+*/
     ++m_PurgeCount;
 
     {{
