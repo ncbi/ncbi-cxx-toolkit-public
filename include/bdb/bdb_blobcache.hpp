@@ -619,7 +619,7 @@ private:
     /// prerequisite: attributes record fetched to memory
     bool x_CheckTimestampExpired();
 
-    bool x_CheckTimestampExpired(time_t         curr);
+    bool x_CheckTimestampExpired(time_t  curr, time_t* exp_time=0);
 
 
     /// access type for "UpdateAccessTime" methods
@@ -790,7 +790,12 @@ private:
     /// Number of rotated volumes
     unsigned                   m_RoundRobinVolumes;
     /// memp_trickle parameter (percent)
-    unsigned                   m_MempTrickle;
+    unsigned                   m_MempTrickle;    
+
+    /// Time of the next blob expiration
+    time_t                     m_NextExpTime;
+    /// Number of times Purge skipped
+    unsigned                   m_PurgeSkipCnt;
 };
 
 

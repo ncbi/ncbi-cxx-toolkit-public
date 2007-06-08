@@ -1094,6 +1094,8 @@ void CBDB_Cache::Open(const string& cache_path,
                       unsigned int  log_mem_size)
 {
     {{
+    m_NextExpTime = 0;
+    m_PurgeSkipCnt = 0;
 
     Close();
 
@@ -1264,6 +1266,7 @@ void CBDB_Cache::Open(const string& cache_path,
     if (m_TimeStampFlag & fPurgeOnStartup) {
         unsigned batch_sleep = m_BatchSleep;
         unsigned batch_size = m_PurgeBatchSize;
+        unsigned purge_thread_delay = m_PurgeThreadDelay;
 
         // setup parameters which favor fast Purge execution
         // (Open purge needs to be fast because all waiting for it)
@@ -1272,6 +1275,7 @@ void CBDB_Cache::Open(const string& cache_path,
             m_PurgeBatchSize = 2500;
         }
         m_BatchSleep = 0;
+        m_PurgeThreadDelay = 0;
 
         Purge(GetTimeout());
 
@@ -1279,6 +1283,7 @@ void CBDB_Cache::Open(const string& cache_path,
 
         m_BatchSleep = batch_sleep;
         m_PurgeBatchSize = batch_size;
+        m_PurgeThreadDelay = purge_thread_delay;
     }
 
 
@@ -2794,11 +2799,30 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         return;
     }
 
+purge_start:
     // Make sure m_MempTrickle% of pages are free and read-ready
     if (m_MempTrickle) {
         int nwrote;
         m_Env->MempTrickle(m_MempTrickle, &nwrote);
     }
+
+
+    time_t gc_start = time(0); // time when we started GC scan
+
+    if (m_NextExpTime) {
+        if (m_PurgeSkipCnt >= 10) { // do not yeild Purge more than 10 times
+            m_PurgeSkipCnt = 0;
+        } else {
+            // Check if we nothing to purge
+            if (!(m_NextExpTime <= gc_start)) {
+                m_Env->TransactionCheckpoint();
+                ++m_PurgeSkipCnt;
+                return;
+            }
+        }
+    }
+    m_NextExpTime = 0;
+
 
     unsigned delay = 0;
     unsigned bytes_written = 0;
@@ -2807,7 +2831,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
     unsigned db_recs = 0;
 
-    time_t last_check = time(0); // time when we started GC scan
+    time_t last_check = time(0); // time of the last memp_tricle
 
     // Search the database for obsolete cache entries
     string first_key, last_key;
@@ -2842,7 +2866,8 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                 const char* subkey = m_CacheAttrDB->subkey;
                 unsigned blob_id = m_CacheAttrDB->blob_id;
 
-                if (x_CheckTimestampExpired(curr)) {
+                time_t exp_time;
+                if (x_CheckTimestampExpired(curr, &exp_time)) {
 
                     unsigned read_count = m_CacheAttrDB->read_count;
                     m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
@@ -2857,6 +2882,13 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                          SCacheDescr(key, version, subkey, overflow, blob_id));
                 } else {
                     ++db_recs;
+
+                    if (m_NextExpTime) {
+                        m_NextExpTime = min(m_NextExpTime, exp_time);
+                    } else {
+                        m_NextExpTime = exp_time;
+                    }
+
                 }
                 if (i == 0) { // first record in the batch
                     first_key = last_key;
@@ -3011,6 +3043,18 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         m_BLOB_SplitStore->FreeUnusedMem();
     }
     m_Env->TransactionCheckpoint();
+
+    // check if we want to rescan the database right away
+    if (m_PurgeThreadDelay) {
+        time_t curr = time(0); 
+        // we spent more time in Purge than we planned to sleep
+        // it means we have a lot of records and need to run GC
+        // continuosly
+        if ((curr - gc_start) >= m_PurgeThreadDelay) {
+            goto purge_start;
+        }
+    }
+
 }
 
 
@@ -3193,7 +3237,7 @@ void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
     }
 }
 
-bool CBDB_Cache::x_CheckTimestampExpired(time_t  curr)
+bool CBDB_Cache::x_CheckTimestampExpired(time_t curr, time_t* exp_time)
 {
     int timeout = GetTimeout();
 
@@ -3210,6 +3254,11 @@ bool CBDB_Cache::x_CheckTimestampExpired(time_t  curr)
             } else {
                 timeout = ttl;
             }
+        }
+
+        // predicted job expiration time
+        if (exp_time) {
+            *exp_time = db_time_stamp + timeout;
         }
 
         if (curr - timeout > db_time_stamp) {
