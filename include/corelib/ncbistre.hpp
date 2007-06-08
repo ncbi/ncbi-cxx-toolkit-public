@@ -626,18 +626,20 @@ enum EEncodingForm {
 ///   UTF8 string
 /// @param ef
 ///   Encoding form. BOM, if present, will always override it.
-/// @return
-///   TRUE if result is not empty
+
 NCBI_XNCBI_EXPORT
-bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
+void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
                   EEncodingForm ef = eEncodingForm_Unknown);
 
-// This function reads first 4 bytes from the stream.
-// If BOM is found, it is analyzed and skipped; remaining data
-// is pushed back using CStreamUtils::Pushback
-// (see comments for CStreamUtils::Pushback)
+/// Read first 4 bytes from the stream.
+/// If BOM is found it is analyzed and skipped.
+///
+/// NOTE: non-BOM data of these 4 bytes
+/// is pushed back to the stream using CStreamUtils::Pushback.
+///
+/// @sa CStreamUtils::Pushback
 NCBI_XNCBI_EXPORT
-EEncodingForm GetStreamByteOrderMark(CNcbiIstream& input);
+EEncodingForm GetTextEncodingForm(CNcbiIstream& input);
 
 
 END_NCBI_SCOPE

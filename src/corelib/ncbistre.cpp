@@ -35,6 +35,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/stream_utils.hpp>
+#if defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -385,12 +388,12 @@ istream& istream::read(char *s, streamsize n)
 #endif  /* NCBI_COMPILER_WORKSHOP */
 
 NCBI_XNCBI_EXPORT
-bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
+void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
                   EEncodingForm ef /* = eEncodingForm_Unknown*/)
 {
     result.erase();
     if (!input.good()) {
-        return false;
+        return;
     }
 
     const int buf_size = 256;
@@ -484,11 +487,11 @@ bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
         }
         n = 0;
     }
-    return !result.empty();
 }
 
+
 NCBI_XNCBI_EXPORT
-EEncodingForm GetStreamByteOrderMark(CNcbiIstream& input)
+EEncodingForm GetTextEncodingForm(CNcbiIstream& input)
 {
     EEncodingForm ef = eEncodingForm_Unknown;
     if (input.good()) {
