@@ -13,6 +13,7 @@ use File::Find;
 
 use NCBI::SVN::Wrapper;
 use NCBI::SVN::SwitchMap;
+use NCBI::SVN::MultiSwitch;
 
 my $TrunkDir = 'trunk/c++';
 
@@ -548,6 +549,24 @@ sub Commit
 
     system($SVN->GetSvnPath(), 'commit', '-m', $LogMessage,
         map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
+}
+
+sub Switch
+{
+    my ($Self, $BranchPath) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
+        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
+
+    NCBI::SVN::MultiSwitch->new(MyName => $Self->{MyName})->
+        SwitchUsingMap($SwitchMap)
 }
 
 1

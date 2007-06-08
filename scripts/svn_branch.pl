@@ -31,6 +31,8 @@ Usage:
 
     $ScriptName commit <branch_path> [<log_message>]
 
+    $ScriptName switch <branch_path>
+
 Where:
     branch_map_file     Pathname of the file containing branch directory
                         mappings.
@@ -60,6 +62,9 @@ Commands:
 
     commit              Commits the local changes to the branch. If the log
                         message is omitted, it is read from the standard input.
+
+    switch              Switch working copy directories to the branch
+                        identified by <branch_path>.
 
 Description:
     This script facilitates branch handling using Subversion.
