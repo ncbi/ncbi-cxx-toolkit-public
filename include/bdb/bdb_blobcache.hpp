@@ -392,6 +392,12 @@ public:
         m_LogSizeMax = fl_size;
     }
 
+    /// Transaction log directory
+    void SetLogDir(const string& log_dir) 
+    {
+        m_LogDir = log_dir;
+    }
+
     /// Number of records in scanned at once by Purge
     /// Cache is exclusively locks an internal mutex while
     /// scanning the batch and all other threads is getting locked.
@@ -752,6 +758,8 @@ private:
     unsigned                m_PurgeCount;
     /// transaction log size
     unsigned                m_LogSizeMax;
+    /// Transaction log location
+    string                  m_LogDir;
     /// Purge thread
     CRef<CCacheCleanerThread>  m_PurgeThread;
     /// Flag that Purge is already running

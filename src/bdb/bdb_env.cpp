@@ -391,6 +391,28 @@ bool CBDB_Env::CheckRemove()
     return false;
 }
 
+void CBDB_Env::SetLogDir(const string& log_dir)
+{
+    if (log_dir.empty()) {
+        return;
+    }
+    try {
+        CDir dir(log_dir);
+        if (!dir.Exists()) {
+            if (!dir.Create()) {
+                ERR_POST("Cannot create transaction log directory:" << log_dir);
+                return;
+            }
+        }
+        int ret = m_Env->set_lg_dir(m_Env, log_dir.c_str());
+        BDB_CHECK(ret, "DB_ENV::set_lg_dir");
+    }
+    catch(exception& ex)
+    {
+        ERR_POST("Cannot set transaction log directory:" << ex.what());
+    }
+}
+
 DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
 {
     DB_TXN* txn = 0;

@@ -164,6 +164,10 @@ public:
     /// Configure environment for non-durable in-memory logging
     void SetLogInMemory(bool on_off);
 
+    /// Path to directory where transaction logs are to be stored
+    /// By default it is the same directory as environment
+    void SetLogDir(const string& log_dir);
+
     bool IsLogInMemory() const { return m_LogInMemory; }
 
     /// Set max number of locks in the database
@@ -307,7 +311,6 @@ private:
     bool                         m_CheckPointEnable; ///< Checkpoint enabled
     unsigned                     m_CheckPointKB;     ///< Checkpoint KBytes
     unsigned                     m_CheckPointMin;    ///< Checkpoint minutes
-
 };
 
 

@@ -1164,6 +1164,10 @@ void CBDB_Cache::Open(const string& cache_path,
             m_Env->SetLogInMemory(true);
             m_Env->SetLogBSize(log_mem_size);        
         }
+        if (!m_LogDir.empty()) {
+            m_Env->SetLogDir(m_LogDir);
+        }
+
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
@@ -3668,6 +3672,8 @@ static const string kCFParam_write_sync        = "write_sync";
 static const string kCFParam_use_transactions  = "use_transactions";
 static const string kCFParam_direct_db         = "direct_db";
 static const string kCFParam_direct_log        = "direct_log";
+static const string kCFParam_transaction_log_path = "transaction_log_path";
+
 
 static const string kCFParam_purge_batch_size  = "purge_batch_size";
 static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
@@ -3762,6 +3768,12 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamDataSize(params, kCFParam_log_file_max,
                          false, 200 * 1024 * 1024);
     drv->SetLogFileMax(log_file_max);
+
+    string transaction_log_path =
+        GetParam(params, kCFParam_transaction_log_path, false, path);
+    if (transaction_log_path != path) {
+        drv->SetLogDir(transaction_log_path);
+    }
 
 
     bool ro =
