@@ -106,6 +106,10 @@ elsif ($Command eq 'commit')
 {
     $Module->Commit(@Params)
 }
+elsif ($Command eq 'switch')
+{
+    $Module->Switch(@Params)
+}
 else
 {
     die "$ScriptName\: unknown command '$Command'\n"
