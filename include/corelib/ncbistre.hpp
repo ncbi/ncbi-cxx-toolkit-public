@@ -587,6 +587,51 @@ CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
 #  endif
 #endif
 
+class CStringUTF8;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Helper function to read plain text data streams.
+/// It understands Byte Order Mark and converts the input if needed.
+///
+/// See clause 13.6 in
+/// http://www.unicode.org/unicode/uni2book/ch13.pdf
+/// and also
+/// http://unicode.org/faq/utf_bom.html#BOM
+
+enum EEncodingForm {
+    /// Stream has no BOM.
+    eEncodingForm_Unknown,
+    /// Stream has no BOM.
+    eEncodingForm_ISO8859_1,
+    /// Stream has no BOM.
+    eEncodingForm_Windows_1252,
+    /// Stream has UTF8 BOM.
+    eEncodingForm_Utf8,
+    /// Stream has UTF16 BOM. Byte order is native for this OS
+    eEncodingForm_Utf16Native,
+    /// Stream has UTF16 BOM. Byte order is nonnative for this OS
+    eEncodingForm_Utf16Foreign
+};
+
+/// Read all input data from stream and convert it into UTF8 string.
+///
+/// If the stream has no BOM, the result can be incorrect:
+/// conversion is based on guesses, which are not necessarily correct.
+/// In this case using CStringUTF8::IsValid() might be a good idea.
+///
+/// @param input
+///   Input stream
+/// @param result
+///   UTF8 string
+/// @param ef
+///   Encoding form. BOM, if present, will always override it.
+/// @return
+///   TRUE if result is not empty
+NCBI_XNCBI_EXPORT
+bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
+                  EEncodingForm ef = eEncodingForm_Unknown);
+
 
 END_NCBI_SCOPE
 

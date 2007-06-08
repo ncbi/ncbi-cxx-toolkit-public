@@ -383,6 +383,109 @@ istream& istream::read(char *s, streamsize n)
 #  endif  /* NCBI_COMPILER_VERSION == 530 */
 #endif  /* NCBI_COMPILER_WORKSHOP */
 
+NCBI_XNCBI_EXPORT
+bool ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
+                  EEncodingForm ef /* = eEncodingForm_Unknown*/)
+{
+    result.erase();
+    if (!input.good()) {
+        return false;
+    }
+
+    const int buf_size = 256;
+    char tmp[buf_size+2];
+    Uint2* us = reinterpret_cast<Uint2*>(tmp);
+
+// check for Byte Order Mark
+    const int bom_max = 4;
+    memset(tmp,0,bom_max);
+    input.read(tmp,bom_max);
+    int n = input.gcount();
+    {
+        Uchar* uc = reinterpret_cast<Uchar*>(tmp);
+        if (n >= 3 && uc[0] == 0xEF && uc[1] == 0xBB && uc[2] == 0xBF) {
+            ef = eEncodingForm_Utf8;
+            uc[0] = uc[3];
+            n -= 3;
+        }
+        else if (n >= 2 && (us[0] == 0xFEFF || us[0] == 0xFFFE)) {
+            if (us[0] == 0xFEFF) {
+                ef = eEncodingForm_Utf16Native;
+            } else {
+                ef = eEncodingForm_Utf16Foreign;
+            }
+            us[0] = us[1];
+            n -= 2;
+        }
+    }
+
+// keep reading
+    while ( input || n ) {
+
+        if (n == 0) {
+            input.read(tmp, buf_size);
+            n = input.gcount();
+            result.reserve( result.size() + n);
+        }
+        tmp[n] = '\0';
+
+        switch (ef) {
+        case eEncodingForm_Utf16Foreign:
+            {
+                char buf[buf_size];
+                swab(tmp,buf,n);
+                memcpy(tmp, buf, n);
+            }
+            // no break here
+        case eEncodingForm_Utf16Native:
+            {
+                Uint2* u = us;
+                for (n = n/2; n--; ++u) {
+                    result.Append(*u);
+                }
+            }
+            break;
+        case eEncodingForm_ISO8859_1:
+            result.Append(tmp,eEncoding_ISO8859_1);
+            break;
+        case eEncodingForm_Windows_1252:
+            result.Append(tmp,eEncoding_Windows_1252);
+            break;
+        case eEncodingForm_Utf8:
+            result.Append(tmp,eEncoding_UTF8);
+            break;
+        default:
+            {
+                EEncoding enc = CStringUTF8::GuessEncoding(tmp);
+                switch (enc) {
+                default:
+                case eEncoding_Unknown:
+                    if (CStringUTF8::GetValidBytesCount(tmp, n) != 0) {
+                        ef = eEncodingForm_Utf8;
+                        result.Append(tmp,enc);
+                    }
+                    else {
+                        NCBI_THROW(CCoreException, eCore,
+                                "CTextReader::Read: cannot guess text encoding");
+                    }
+                    break;
+                case eEncoding_UTF8:
+                    ef = eEncodingForm_Utf8;
+                    // no break here
+                case eEncoding_Ascii:
+                case eEncoding_ISO8859_1:
+                case eEncoding_Windows_1252:
+                    result.Append(tmp,enc);
+                    break;
+                }
+            }
+            break;
+        }
+        n = 0;
+    }
+    return !result.empty();
+}
+
 
 END_NCBI_SCOPE
 
