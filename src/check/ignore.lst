@@ -22,6 +22,7 @@ connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release--sparc-sun-sol
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT--sparc-sun-solaris2.10
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release64--sparc-sun-solaris2.10
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT64--sparc-sun-solaris2.10
+app/netcache/netcache_check WorkShop53_530-DebugMTDLL--i386-pc-solaris2.9
 
 ; No run on Cygwin
 connect/test/test_ncbi_socket GCC_344-Debug--i686-pc-cygwin
