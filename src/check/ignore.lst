@@ -23,6 +23,7 @@ connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT--sparc-sun-s
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release64--sparc-sun-solaris2.10
 connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT64--sparc-sun-solaris2.10
 app/netcache/netcache_check WorkShop53_530-DebugMTDLL--i386-pc-solaris2.9
+dbapi/lang_bind/python/tests/python_ncbi_dbapi_test GCC_412-DebugMT64--x86_64-unknown-linux2.6.5-gnu2.3.5
 
 ; No run on Cygwin
 connect/test/test_ncbi_socket GCC_344-Debug--i686-pc-cygwin
