@@ -96,8 +96,8 @@ public:
         vector<IServer_ConnectionBase*>& timer_requests,
         STimeout* timer_timeout) const;
 
+    void StartListening(void);
     void StopListening(void);
-    void ResumeListening(void);
 
     struct SPerConnInfo {
         void UpdateExpiration(const TConnBase* conn);

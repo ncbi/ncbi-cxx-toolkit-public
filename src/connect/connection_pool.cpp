@@ -261,22 +261,22 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
 }
 
 
+void CServer_ConnectionPool::StartListening(void)
+{
+    CMutexGuard guard(m_Mutex);
+    const TData& data = const_cast<const TData&>(m_Data);
+    ITERATE (TData, it, data) {
+        it->first->Activate();
+    }
+}
+
+
 void CServer_ConnectionPool::StopListening(void)
 {
     CMutexGuard guard(m_Mutex);
     const TData& data = const_cast<const TData&>(m_Data);
     ITERATE (TData, it, data) {
         it->first->Passivate();
-    }
-}
-
-
-void CServer_ConnectionPool::ResumeListening(void)
-{
-    CMutexGuard guard(m_Mutex);
-    const TData& data = const_cast<const TData&>(m_Data);
-    ITERATE (TData, it, data) {
-        it->first->Activate();
     }
 }
 

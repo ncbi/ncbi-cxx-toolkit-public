@@ -308,7 +308,7 @@ void CServer::SetParameters(const SServer_Parameters& new_params)
     if (new_params.init_threads <= 0  ||
         new_params.max_threads  < new_params.init_threads  ||
         new_params.max_threads > 1000) {
-        NCBI_THROW(CServerException, eBadParameters,
+        NCBI_THROW(CServer_Exception, eBadParameters,
                    "CServer::SetParameters: Bad parameters");
     }
     *m_Parameters = new_params;
@@ -321,10 +321,18 @@ void CServer::GetParameters(SServer_Parameters* params)
     *params = *m_Parameters;
 }
 
+
+void CServer::StartListening(void)
+{
+    m_ConnectionPool->StartListening();
+}
+
+
 static inline bool operator <(const STimeout& to1, const STimeout& to2)
 {
     return to1.sec != to2.sec ? to1.sec < to2.sec : to1.usec < to2.usec;
 }
+
 
 void CServer::Run(void)
 {
@@ -332,6 +340,8 @@ void CServer::Run(void)
                                  kMax_UInt,
                                  m_Parameters->spawn_threshold);
     threadPool.Spawn(m_Parameters->init_threads);
+
+    StartListening();
 
     vector<CSocketAPI::SPoll> polls;
     size_t                    count;
@@ -421,7 +431,7 @@ SServer_Parameters::SServer_Parameters() :
 {
 }
 
-const char* CServerException::GetErrCodeString(void) const
+const char* CServer_Exception::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eBadParameters: return "eBadParameters";

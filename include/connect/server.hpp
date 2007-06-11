@@ -86,6 +86,11 @@ public:
     ///
     void GetParameters(SServer_Parameters* params);
 
+    /// Start listening before the main loop. If called, tries
+    /// to listen on all requested ports for all listeners, correcting
+    /// errors by calling listeners' OnFailure
+    void StartListening(void);
+
     /// Enter the main loop
     void Run(void);
 
@@ -259,11 +264,21 @@ private:
 class NCBI_XCONNECT_EXPORT IServer_ConnectionFactory
 {
 public:
+    /// What to do if the port is busy
+    enum EListenAction {
+        eLAFail   = 0,   // Can not live without this port, default
+        eLAIgnore = 1,   // Do nothing, throw away this listener
+        eLARetry  = 2    // Listener should provide another port to try
+    };
     virtual ~IServer_ConnectionFactory() { }
 
     /// @return
     ///  a new instance of handler for connection
     virtual IServer_ConnectionHandler* Create(void) = 0;
+    /// Return desired action if the port, mentioned in AddListener is busy.
+    /// If the action is eLARetry, provide new port. The
+    virtual EListenAction OnFailure(unsigned short* /* port */)
+        { return eLAFail; }
 };
 
 
@@ -317,12 +332,12 @@ struct NCBI_XCONNECT_EXPORT SServer_Parameters
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  CServerException::
+///  CServer_Exception::
 ///
 /// Exceptions thrown by CServer::Run()
 ///
 
-class NCBI_XCONNECT_EXPORT CServerException
+class NCBI_XCONNECT_EXPORT CServer_Exception
     : EXCEPTION_VIRTUAL_BASE public CConnException
 {
 public:
@@ -331,7 +346,7 @@ public:
         eCouldntListen  ///< Unable to bind listening port
     };
     virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CServerException, CConnException);
+    NCBI_EXCEPTION_DEFAULT(CServer_Exception, CConnException);
 };
 
 

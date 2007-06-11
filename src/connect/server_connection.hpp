@@ -91,11 +91,23 @@ class CServer_Listener : public CListeningSocket, // CPollable
 public:
     CServer_Listener(IServer_ConnectionFactory* factory, unsigned short port)
         : m_Factory(factory), m_Port(port)
-        { Listen(m_Port); }
+        { }
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
                                        const STimeout* timeout);
-    virtual void Activate(void) { Listen(m_Port); }
+    virtual void Activate(void) {
+        EIO_Status st = GetStatus();
+        while (st != eIO_Success) {
+            st = Listen(m_Port);
+            if (st == eIO_Success) return;
+            IServer_ConnectionFactory::EListenAction action =
+                m_Factory->OnFailure(&m_Port);
+            if (action == IServer_ConnectionFactory::eLAFail)
+                NCBI_THROW(CServer_Exception, eCouldntListen, "Port busy");
+            else if (action == IServer_ConnectionFactory::eLAIgnore)
+                return;
+        }
+    }
     virtual void Passivate(void) { Close(); }
 private:
     friend class CAcceptRequest;
