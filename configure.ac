@@ -3766,11 +3766,17 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
       BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/boost/compatibility/cpp_c_headers"
    fi
    AC_MSG_CHECKING([for Boost library name tag])
+   case "$ncbi_cv_lib_boost_version" in
+      0.* | 1.[[0-9]] | 1.[[0-9]].* | 1.[[0-2]][[0-9]] | 1.[[0-2]][[0-9]].* ) ;;
+      1.3[[0-3]] | 1.3[[0-3]].* ) ;;
+      * ) boost_compiler_version=`echo $compiler_version | cut -c1-2`
+          boost134=yes ;;
+   esac
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
             darwin*:GCC) BOOST_TAG=""     ;;
-            *:GCC)       BOOST_TAG="-gcc" ;;
+            *:GCC)       BOOST_TAG="-gcc$boost_compiler_version" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
             linux*:ICC)  BOOST_TAG="-il"  ;;
             *:WORKSHOP)  BOOST_TAG="-sw"  ;;
@@ -3848,6 +3854,12 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
    else
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
+   fi
+
+   if test "$boost134" = "yes"; then
+       BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
+       BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
+       BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
    fi
       
    AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,

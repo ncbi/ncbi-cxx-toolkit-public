@@ -22060,11 +22060,17 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
    fi
    echo "$as_me:$LINENO: checking for Boost library name tag" >&5
 echo $ECHO_N "checking for Boost library name tag... $ECHO_C" >&6
+   case "$ncbi_cv_lib_boost_version" in
+      0.* | 1.[0-9] | 1.[0-9].* | 1.[0-2][0-9] | 1.[0-2][0-9].* ) ;;
+      1.3[0-3] | 1.3[0-3].* ) ;;
+      * ) boost_compiler_version=`echo $compiler_version | cut -c1-2`
+          boost134=yes ;;
+   esac
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
             darwin*:GCC) BOOST_TAG=""     ;;
-            *:GCC)       BOOST_TAG="-gcc" ;;
+            *:GCC)       BOOST_TAG="-gcc$boost_compiler_version" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
             linux*:ICC)  BOOST_TAG="-il"  ;;
             *:WORKSHOP)  BOOST_TAG="-sw"  ;;
@@ -22243,6 +22249,12 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_spirit" >&6
        BOOST_TEST_UTF_STATIC_LIBS=-lboost_unit_test_framework${BOOST_TAG}-static
    else
        BOOST_TEST_UTF_STATIC_LIBS=$BOOST_TEST_UTF_LIBS
+   fi
+
+   if test "$boost134" = "yes"; then
+       BOOST_TEST_PEM_LIBS=$BOOST_TEST_PEM_STATIC_LIBS
+       BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
+       BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
    fi
 
    echo "$as_me:$LINENO: checking for Boost.Test in $BOOST_PATH" >&5
