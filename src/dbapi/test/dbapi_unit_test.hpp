@@ -213,10 +213,11 @@ public:
     void Test_SetLogStream(void);
     void Test_Identity(void);
     void Test_BlobStore(void);
+    void Test_DropConnection(void);
 
 public:
     void Test_Exception_Safety(void);
-    void Test_ES_01(IConnection& conn);
+    void ES_01_Internal(IConnection& conn);
 
 public:
     // Not implemented yet ...

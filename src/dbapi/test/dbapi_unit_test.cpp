@@ -600,14 +600,15 @@ void CDBAPIUnitTest::Test_Unicode(void)
 void CDBAPIUnitTest::Test_NVARCHAR(void)
 {
     string sql;
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
     try {
         if (false) {
             string Title69;
+
             auto_ptr<IConnection> conn(
                 m_DS->CreateConnection(CONN_OWNERSHIP)
                 );
+
             conn->Connect("anyone","allowed","MSSQL69", "PMC3");
 //             conn->Connect("anyone","allowed","MSSQL42", "PMC3");
             auto_ptr<IStatement> auto_stmt(conn->GetStatement());
@@ -3444,7 +3445,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // Current connection should not be affected ...
             {
                 try {
-                    Test_ES_01(*local_conn);
+                    ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3462,7 +3463,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 drv_err_handler->Init();
 
                 try {
-                    Test_ES_01(*conn);
+                    ES_01_Internal(*conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3477,7 +3478,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
                 try {
-                    Test_ES_01(*local_conn);
+                    ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3499,7 +3500,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 drv_err_handler->Init();
 
                 try {
-                    Test_ES_01(*conn);
+                    ES_01_Internal(*conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3527,7 +3528,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // Current connection should not be affected ...
             {
                 try {
-                    Test_ES_01(*local_conn);
+                    ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3543,7 +3544,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
                 try {
-                    Test_ES_01(*local_conn);
+                    ES_01_Internal(*local_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3563,7 +3564,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             // New connection should be affected ...
             {
                 try {
-                    Test_ES_01(*new_conn);
+                    ES_01_Internal(*new_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3579,7 +3580,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
 
                 try {
-                    Test_ES_01(*new_conn);
+                    ES_01_Internal(*new_conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -3598,7 +3599,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 Connect(conn);
 
                 try {
-                    Test_ES_01(*conn);
+                    ES_01_Internal(*conn);
                 }
                 catch( const CDB_Exception& ) {
                     // Ignore it
@@ -4072,13 +4073,13 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
 {
     // Very first test ...
     // Try to catch a base class ...
-    BOOST_CHECK_THROW( Test_ES_01(*m_Conn), CDB_Exception );
+    BOOST_CHECK_THROW( ES_01_Internal(*m_Conn), CDB_Exception );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Throw CDB_Exception ...
 void
-CDBAPIUnitTest::Test_ES_01(IConnection& conn)
+CDBAPIUnitTest::ES_01_Internal(IConnection& conn)
 {
     auto_ptr<IStatement> auto_stmt( conn.GetStatement() );
 
@@ -4933,6 +4934,61 @@ void CDBAPIUnitTest::Test_BlobStore(void)
         DBAPI_BOOST_FAIL(ex);
     }
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_DropConnection(void)
+{
+    string sql;
+    enum {
+        num_of_tests = 31
+    };
+
+    try {
+        sql = "sleep 0 kill";
+        const unsigned orig_conn_num =
+            m_DS->GetDriverContext()->NofConnections();
+
+        for (unsigned i = 0; i < num_of_tests; ++i) {
+            // Start a connection scope ...
+            {
+                bool conn_killed = false;
+                auto_ptr<IConnection> auto_conn(
+                    m_DS->CreateConnection(CONN_OWNERSHIP)
+                    );
+                auto_conn->Connect("anyone","allowed","LINK_OS");
+
+                // kill connection ...
+                try {
+                    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+                    auto_stmt->ExecuteUpdate(sql);
+                } catch (const CDB_Exception&) {
+                    // Ignore it ...
+                }
+
+                try {
+                    auto_ptr<ICallableStatement> auto_stmt(
+                        auto_conn->GetCallableStatement("sp_who")
+                        );
+                    auto_stmt->Execute();
+                } catch (const CDB_Exception&) {
+                    conn_killed = true;
+                }
+
+                BOOST_CHECK(conn_killed);
+            }
+
+            BOOST_CHECK_EQUAL(
+                orig_conn_num,
+                m_DS->GetDriverContext()->NofConnections()
+                );
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Object(void)
@@ -7244,6 +7300,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
+    if (args.GetServerType() == CTestArguments::eSybase
+        && args.GetDriverName() != "dblib"
+        && args.GetDriverName() != "ftds"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
     if ((args.GetDriverName() == "ftds" &&
          !(Solaris && CompilerWorkShop) &&
@@ -7603,12 +7669,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if ((args.GetDriverName() == "ftds"
-         && args.GetServerType() == CTestArguments::eMsSql)
-        || (args.GetDriverName() == "ftds64"
-         && args.GetServerType() == CTestArguments::eMsSql)
-        || args.GetDriverName() == "ftds64_odbc")
-    {
+    if (args.GetServerType() == CTestArguments::eMsSql) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
@@ -7849,7 +7910,7 @@ END_NCBI_SCOPE
 test_suite*
 init_unit_test_suite( int argc, char * argv[] )
 {
-    ncbi::CException::SetStackTraceLevel(ncbi::eDiag_Warning);
+//     ncbi::CException::SetStackTraceLevel(ncbi::eDiag_Warning);
 
     // Configure UTF ...
     // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
