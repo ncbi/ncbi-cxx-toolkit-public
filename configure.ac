@@ -3767,8 +3767,8 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    fi
    AC_MSG_CHECKING([for Boost library name tag])
    case "$ncbi_cv_lib_boost_version" in
-      0.* | 1.[[0-9]] | 1.[[0-9]].* | 1.[[0-2]][[0-9]] | 1.[[0-2]][[0-9]].* ) ;;
-      1.3[[0-3]] | 1.3[[0-3]].* ) ;;
+      0_* | 1_[[0-9]] | 1_[[0-9]]_* | 1_[[0-2]][[0-9]] | 1_[[0-2]][[0-9]]_* ) ;;
+      1_3[[0-3]] | 1_3[[0-3]]_* ) ;;
       * ) boost_compiler_version=`echo $compiler_version | cut -c1-2`
           boost134=yes ;;
    esac
