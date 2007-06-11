@@ -52,6 +52,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/id2/id2__.hpp>
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
@@ -69,7 +70,13 @@ BEGIN_SCOPE(objects)
 NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
 
-NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, 0,
+#ifdef _DEBUG
+# define DEFAULT_DEBUG_LEVEL CId2ReaderBase::eTraceError
+#else
+# define DEFAULT_DEBUG_LEVEL 0
+#endif
+
+NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, DEFAULT_DEBUG_LEVEL,
                   eParam_NoThread, GENBANK_ID2_DEBUG);
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 20,
                   eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
@@ -123,11 +130,18 @@ LimitChunksRequests(size_t max_request_size = GetMaxChunksRequestSize())
 }
 
 
+struct SId2BlobInfo
+{
+    CId2ReaderBase::TContentsMask m_ContentMask;
+    list< CRef<CID2S_Seq_annot_Info> > m_AnnotInfo;
+};
+
+
 struct SId2LoadedSet
 {
     typedef set<string> TStringSet;
     typedef set<CSeq_id_Handle> TSeq_idSet;
-    typedef map<CBlob_id, CId2ReaderBase::TContentsMask> TBlob_ids;
+    typedef map<CBlob_id, SId2BlobInfo> TBlob_ids;
     typedef pair<int, TBlob_ids> TBlob_idsInfo;
     typedef map<CSeq_id_Handle, TBlob_idsInfo> TBlob_idSet;
     typedef map<CBlob_id, CConstRef<CID2_Reply_Data> > TSkeletons;
@@ -678,114 +692,123 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     vector<SId2LoadedSet> loaded_sets(request_count);
 
     CConn conn(this);
-    // send request
-    {{
-        if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn, "CId2Reader");
-            s << "Sending";
-            if ( GetDebugLevel() >= eTraceASN ) {
-                s << ": " << MSerial_AsnText << packet;
-            }
-            else {
-                s << " ID2-Request-Packet";
-            }
-            s << "...";
-        }
-        try {
-            x_SendPacket(conn, packet);
-        }
-        catch ( CException& exc ) {
-            NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                         "failed to send request: "+
-                         x_ConnDescription(conn));
-        }
-        if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn, "CId2Reader");
-            s << "Sent ID2-Request-Packet.";
-        }
-    }}
-
-    // process replies
-    size_t remaining_count = request_count;
-    while ( remaining_count > 0 ) {
-        CID2_Reply reply;
-        if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn, "CId2Reader");
-            s << "Receiving ID2-Reply...";
-        }
-        try {
-            x_ReceiveReply(conn, reply);
-        }
-        catch ( CException& exc ) {
-            NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
-                         "reply deserialization failed: "+
-                         x_ConnDescription(conn));
-        }
-        if ( GetDebugLevel() >= eTraceConn   ) {
-            CDebugPrinter s(conn, "CId2Reader");
-            s << "Received";
-            if ( GetDebugLevel() >= eTraceASN ) {
-                if ( GetDebugLevel() >= eTraceBlobData ) {
-                    s << ": " << MSerial_AsnText << reply;
+    try {
+        // send request
+        {{
+            if ( GetDebugLevel() >= eTraceConn ) {
+                CDebugPrinter s(conn, "CId2Reader");
+                s << "Sending";
+                if ( GetDebugLevel() >= eTraceASN ) {
+                    s << ": " << MSerial_AsnText << packet;
                 }
                 else {
-                    CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
-                    if ( iter && iter->IsSetData() ) {
-                        CID2_Reply_Data::TData save;
-                        save.swap(iter->SetData());
-                        size_t size = 0, count = 0, max_chunk = 0;
-                        ITERATE ( CID2_Reply_Data::TData, i, save ) {
-                            ++count;
-                            size_t chunk = (*i)->size();
-                            size += chunk;
-                            max_chunk = max(max_chunk, chunk);
-                        }
-                        s << ": " << MSerial_AsnText << reply <<
-                            "Data: " << size << " bytes in " <<
-                            count << " chunks with " <<
-                            max_chunk << " bytes in chunk max";
-                        save.swap(iter->SetData());
-                    }
-                    else {
+                    s << " ID2-Request-Packet";
+                }
+                s << "...";
+            }
+            try {
+                x_SendPacket(conn, packet);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                             "failed to send request: "+
+                             x_ConnDescription(conn));
+            }
+            if ( GetDebugLevel() >= eTraceConn ) {
+                CDebugPrinter s(conn, "CId2Reader");
+                s << "Sent ID2-Request-Packet.";
+            }
+        }}
+
+        // process replies
+        size_t remaining_count = request_count;
+        while ( remaining_count > 0 ) {
+            CID2_Reply reply;
+            if ( GetDebugLevel() >= eTraceConn ) {
+                CDebugPrinter s(conn, "CId2Reader");
+                s << "Receiving ID2-Reply...";
+            }
+            try {
+                x_ReceiveReply(conn, reply);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                             "reply deserialization failed: "+
+                             x_ConnDescription(conn));
+            }
+            if ( GetDebugLevel() >= eTraceConn   ) {
+                CDebugPrinter s(conn, "CId2Reader");
+                s << "Received";
+                if ( GetDebugLevel() >= eTraceASN ) {
+                    if ( GetDebugLevel() >= eTraceBlobData ) {
                         s << ": " << MSerial_AsnText << reply;
                     }
+                    else {
+                        CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
+                        if ( iter && iter->IsSetData() ) {
+                            CID2_Reply_Data::TData save;
+                            save.swap(iter->SetData());
+                            size_t size = 0, count = 0, max_chunk = 0;
+                            ITERATE ( CID2_Reply_Data::TData, i, save ) {
+                                ++count;
+                                size_t chunk = (*i)->size();
+                                size += chunk;
+                                max_chunk = max(max_chunk, chunk);
+                            }
+                            s << ": " << MSerial_AsnText << reply <<
+                                "Data: " << size << " bytes in " <<
+                                count << " chunks with " <<
+                                max_chunk << " bytes in chunk max";
+                            save.swap(iter->SetData());
+                        }
+                        else {
+                            s << ": " << MSerial_AsnText << reply;
+                        }
+                    }
+                }
+                else {
+                    s << " ID2-Reply.";
                 }
             }
-            else {
-                s << " ID2-Reply.";
-            }
-        }
-        if ( GetDebugLevel() >= eTraceBlob ) {
-            for ( CTypeIterator<CID2_Reply_Data> it(Begin(reply)); it; ++it ) {
-                if ( it->IsSetData() ) {
-                    CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+            if ( GetDebugLevel() >= eTraceBlob ) {
+                for ( CTypeIterator<CID2_Reply_Data> it(Begin(reply)); it; ++it ) {
+                    if ( it->IsSetData() ) {
+                        CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                    }
                 }
             }
+            size_t num = reply.GetSerial_number() - start_serial_num;
+            if ( reply.IsSetDiscard() ) {
+                // discard whole reply for now
+                continue;
+            }
+            if ( num >= request_count || done[num] ) {
+                // unknown serial num - bad reply
+                NCBI_THROW(CLoaderException, eOtherError,
+                           "CId2ReaderBase: bad reply serial number: "+
+                           x_ConnDescription(conn));
+            }
+            try {
+                x_ProcessReply(result, loaded_sets[num], reply);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW(exc, CLoaderException, eOtherError,
+                             "CId2ReaderBase: failed to process reply: "+
+                             x_ConnDescription(conn));
+            }
+            if ( reply.IsSetEnd_of_reply() ) {
+                done[num] = true;
+                x_UpdateLoadedSet(result, loaded_sets[num]);
+                --remaining_count;
+            }
         }
-        size_t num = reply.GetSerial_number() - start_serial_num;
-        if ( reply.IsSetDiscard() ) {
-            // discard whole reply for now
-            continue;
+    }
+    catch ( ... ) {
+        if ( GetDebugLevel() >= eTraceError ) {
+            CDebugPrinter s(conn, "CId2Reader");
+            s << "Error processing request: " << MSerial_AsnText << packet;
         }
-        if ( num >= request_count || done[num] ) {
-            // unknown serial num - bad reply
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "CId2ReaderBase: bad reply serial number: "+
-                       x_ConnDescription(conn));
-        }
-        try {
-            x_ProcessReply(result, loaded_sets[num], reply);
-        }
-        catch ( CException& exc ) {
-            NCBI_RETHROW(exc, CLoaderException, eOtherError,
-                         "CId2ReaderBase: failed to process reply: "+
-                         x_ConnDescription(conn));
-        }
-        if ( reply.IsSetEnd_of_reply() ) {
-            done[num] = true;
-            x_UpdateLoadedSet(result, loaded_sets[num]);
-            --remaining_count;
-        }
+        throw;
     }
     conn.Release();
 }
@@ -807,7 +830,7 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
         }
         ids->SetState(it->second.first);
         ITERATE ( SId2LoadedSet::TBlob_ids, it2, it->second.second ) {
-            ids.AddBlob_id(it2->first, it2->second);
+            ids.AddBlob_id(it2->first, it2->second.m_ContentMask);
         }
         SetAndSaveSeq_idBlob_ids(result, it->first, ids);
     }
@@ -937,28 +960,28 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
     }
     switch ( reply.GetReply().Which() ) {
     case CID2_Reply::TReply::e_Get_seq_id:
-        x_ProcessReply(result, loaded_set, reply,
-                       reply.GetReply().GetGet_seq_id());
+        x_ProcessGetSeqId(result, loaded_set, reply,
+                          reply.GetReply().GetGet_seq_id());
         break;
     case CID2_Reply::TReply::e_Get_blob_id:
-        x_ProcessReply(result, loaded_set, reply,
-                       reply.GetReply().GetGet_blob_id());
+        x_ProcessGetBlobId(result, loaded_set, reply,
+                           reply.GetReply().GetGet_blob_id());
         break;
     case CID2_Reply::TReply::e_Get_blob_seq_ids:
-        x_ProcessReply(result, loaded_set, reply,
-                       reply.GetReply().GetGet_blob_seq_ids());
+        x_ProcessGetBlobSeqIds(result, loaded_set, reply,
+                               reply.GetReply().GetGet_blob_seq_ids());
         break;
     case CID2_Reply::TReply::e_Get_blob:
-        x_ProcessReply(result, loaded_set, reply,
-                       reply.GetReply().GetGet_blob());
+        x_ProcessGetBlob(result, loaded_set, reply,
+                         reply.GetReply().GetGet_blob());
         break;
     case CID2_Reply::TReply::e_Get_split_info:
-        x_ProcessReply(result, loaded_set, reply,
-                       reply.GetReply().GetGet_split_info());
+        x_ProcessGetSplitInfo(result, loaded_set, reply,
+                              reply.GetReply().GetGet_split_info());
         break;
     case CID2_Reply::TReply::e_Get_chunk:
-        x_ProcessReply(result, loaded_set, reply,
-                       reply.GetReply().GetGet_chunk());
+        x_ProcessGetChunk(result, loaded_set, reply,
+                          reply.GetReply().GetGet_chunk());
         break;
     default:
         break;
@@ -966,25 +989,25 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& main_reply,
-                                    const CID2_Reply_Get_Seq_id& reply)
+void CId2ReaderBase::x_ProcessGetSeqId(CReaderRequestResult& result,
+                                       SId2LoadedSet& loaded_set,
+                                       const CID2_Reply& main_reply,
+                                       const CID2_Reply_Get_Seq_id& reply)
 {
     // we can save this data in cache
     const CID2_Request_Get_Seq_id& request = reply.GetRequest();
-    const CID2_Seq_id& request_id = request.GetSeq_id();
-    switch ( request_id.Which() ) {
+    const CID2_Seq_id& req_id = request.GetSeq_id();
+    switch ( req_id.Which() ) {
     case CID2_Seq_id::e_String:
-        x_ProcessReply(result, loaded_set, main_reply,
-                       request_id.GetString(),
-                       reply);
+        x_ProcessGetStringSeqId(result, loaded_set, main_reply,
+                                req_id.GetString(),
+                                reply);
         break;
 
     case CID2_Seq_id::e_Seq_id:
-        x_ProcessReply(result, loaded_set, main_reply,
-                       CSeq_id_Handle::GetHandle(request_id.GetSeq_id()),
-                       reply);
+        x_ProcessGetSeqIdSeqId(result, loaded_set, main_reply,
+                               CSeq_id_Handle::GetHandle(req_id.GetSeq_id()),
+                               reply);
         break;
 
     default:
@@ -993,11 +1016,12 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& main_reply,
-                                    const string& seq_id,
-                                    const CID2_Reply_Get_Seq_id& reply)
+void CId2ReaderBase::x_ProcessGetStringSeqId(
+    CReaderRequestResult& result,
+    SId2LoadedSet& loaded_set,
+    const CID2_Reply& main_reply,
+    const string& seq_id,
+    const CID2_Reply_Get_Seq_id& reply)
 {
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids.IsLoaded() ) {
@@ -1050,11 +1074,12 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& main_reply,
-                                    const CSeq_id_Handle& seq_id,
-                                    const CID2_Reply_Get_Seq_id& reply)
+void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
+    CReaderRequestResult& result,
+    SId2LoadedSet& loaded_set,
+    const CID2_Reply& main_reply,
+    const CSeq_id_Handle& seq_id,
+    const CID2_Reply_Get_Seq_id& reply)
 {
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids.IsLoaded() ) {
@@ -1106,10 +1131,11 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& main_reply,
-                                    const CID2_Reply_Get_Blob_Id& reply)
+void CId2ReaderBase::x_ProcessGetBlobId(
+    CReaderRequestResult& result,
+    SId2LoadedSet& loaded_set,
+    const CID2_Reply& main_reply,
+    const CID2_Reply_Get_Blob_Id& reply)
 {
     const CSeq_id& seq_id = reply.GetSeq_id();
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
@@ -1155,17 +1181,22 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
             }
         }
     }}
-    ids.second[blob_id] = mask;
+    SId2BlobInfo& blob_info = ids.second[blob_id];
+    blob_info.m_ContentMask = mask;
+    if ( reply.IsSetAnnot_info() ) {
+        blob_info.m_AnnotInfo = reply.GetAnnot_info();
+    }
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
         SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
     }
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& /* result */,
-                                    SId2LoadedSet& /*loaded_set*/,
-                                    const CID2_Reply& /*main_reply*/,
-                                    const CID2_Reply_Get_Blob_Seq_ids&/*reply*/)
+void CId2ReaderBase::x_ProcessGetBlobSeqIds(
+    CReaderRequestResult& /* result */,
+    SId2LoadedSet& /*loaded_set*/,
+    const CID2_Reply& /*main_reply*/,
+    const CID2_Reply_Get_Blob_Seq_ids&/*reply*/)
 {
 /*
     if ( reply.IsSetIds() ) {
@@ -1182,10 +1213,11 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& /* result */,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& main_reply,
-                                    const CID2_Reply_Get_Blob& reply)
+void CId2ReaderBase::x_ProcessGetBlob(
+    CReaderRequestResult& result,
+    SId2LoadedSet& loaded_set,
+    const CID2_Reply& main_reply,
+    const CID2_Reply_Get_Blob& reply)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
     const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
@@ -1268,10 +1300,11 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& loaded_set,
-                                    const CID2_Reply& /*main_reply*/,
-                                    const CID2S_Reply_Get_Split_Info& reply)
+void CId2ReaderBase::x_ProcessGetSplitInfo(
+    CReaderRequestResult& result,
+    SId2LoadedSet& loaded_set,
+    const CID2_Reply& /*main_reply*/,
+    const CID2S_Reply_Get_Split_Info& reply)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
     TBlobId blob_id = GetBlobId(reply.GetBlob_id());
@@ -1311,10 +1344,11 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
-                                    SId2LoadedSet& /*loaded_set*/,
-                                    const CID2_Reply& /*main_reply*/,
-                                    const CID2S_Reply_Get_Chunk& reply)
+void CId2ReaderBase::x_ProcessGetChunk(
+    CReaderRequestResult& result,
+    SId2LoadedSet& /*loaded_set*/,
+    const CID2_Reply& /*main_reply*/,
+    const CID2S_Reply_Get_Chunk& reply)
 {
     TBlobId blob_id = GetBlobId(reply.GetBlob_id());
     CLoadLockBlob blob(result, blob_id);

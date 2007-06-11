@@ -110,6 +110,7 @@ public:
     
     enum EDebugLevel
     {
+        eTraceError    = 1,
         eTraceConn     = 4,
         eTraceASN      = 5,
         eTraceBlob     = 8,
@@ -167,40 +168,40 @@ protected:
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
                         const CID2_Reply& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const string& seq_id,
-                        const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CSeq_id_Handle& seq_id,
-                        const CID2_Reply_Get_Seq_id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CID2_Reply_Get_Blob_Id& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CID2_Reply_Get_Blob_Seq_ids& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CID2_Reply_Get_Blob& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CID2S_Reply_Get_Split_Info& reply);
-    void x_ProcessReply(CReaderRequestResult& result,
-                        SId2LoadedSet& loaded_set,
-                        const CID2_Reply& main_reply,
-                        const CID2S_Reply_Get_Chunk& reply);
+    void x_ProcessGetSeqId(CReaderRequestResult& result,
+                           SId2LoadedSet& loaded_set,
+                           const CID2_Reply& main_reply,
+                           const CID2_Reply_Get_Seq_id& reply);
+    void x_ProcessGetStringSeqId(CReaderRequestResult& result,
+                                 SId2LoadedSet& loaded_set,
+                                 const CID2_Reply& main_reply,
+                                 const string& seq_id,
+                                 const CID2_Reply_Get_Seq_id& reply);
+    void x_ProcessGetSeqIdSeqId(CReaderRequestResult& result,
+                                SId2LoadedSet& loaded_set,
+                                const CID2_Reply& main_reply,
+                                const CSeq_id_Handle& seq_id,
+                                const CID2_Reply_Get_Seq_id& reply);
+    void x_ProcessGetBlobId(CReaderRequestResult& result,
+                            SId2LoadedSet& loaded_set,
+                            const CID2_Reply& main_reply,
+                            const CID2_Reply_Get_Blob_Id& reply);
+    void x_ProcessGetBlobSeqIds(CReaderRequestResult& result,
+                                SId2LoadedSet& loaded_set,
+                                const CID2_Reply& main_reply,
+                                const CID2_Reply_Get_Blob_Seq_ids& reply);
+    void x_ProcessGetBlob(CReaderRequestResult& result,
+                          SId2LoadedSet& loaded_set,
+                          const CID2_Reply& main_reply,
+                          const CID2_Reply_Get_Blob& reply);
+    void x_ProcessGetSplitInfo(CReaderRequestResult& result,
+                               SId2LoadedSet& loaded_set,
+                               const CID2_Reply& main_reply,
+                               const CID2S_Reply_Get_Split_Info& reply);
+    void x_ProcessGetChunk(CReaderRequestResult& result,
+                           SId2LoadedSet& loaded_set,
+                           const CID2_Reply& main_reply,
+                           const CID2S_Reply_Get_Chunk& reply);
 
     void x_UpdateLoadedSet(CReaderRequestResult& result,
                            const SId2LoadedSet& loaded_set);
