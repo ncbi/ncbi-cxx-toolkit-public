@@ -138,12 +138,22 @@ public:
     void PutResultGetJob(unsigned int   done_job_id,
                          int            ret_code,
                          const string&  output,
+                         // GetJob params
                          unsigned int   worker_node,
                          unsigned int*  job_id, 
                          string&        input,
                          const string&  client_name,
-                         unsigned*      job_mask);
+                         unsigned*      job_mask,
+                         const list<string>& aff_list,
+                         string&        aff_token);
 
+    void GetJob(unsigned int   worker_node,
+                unsigned int*  job_id, 
+                string&        input,
+                const string&  client_name,
+                unsigned*      job_mask,
+                const list<string>& aff_list,
+                string&        aff_token);
 
     void PutProgressMessage(unsigned int  job_id,
                             const char*   msg);
@@ -157,13 +167,6 @@ public:
 
     void GetJobKey(char* key_buf, unsigned job_id,
                    const string& host, unsigned port);
-
-
-    void GetJob(unsigned int   worker_node,
-                unsigned int*  job_id, 
-                string&        input,
-                const string&  client_name,
-                unsigned*      job_mask);
 
     void ReturnJob(unsigned int job_id);
 

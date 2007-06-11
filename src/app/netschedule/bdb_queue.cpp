@@ -2241,7 +2241,9 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
                         unsigned int*  job_id,
                         string&        input,
                         const string&  client_name,
-                        unsigned*      job_mask)
+                        unsigned*      job_mask,
+                        const list<string>& aff_list,
+                        string&        aff_token)
 {
     _ASSERT(job_id);
     _ASSERT(job_mask);
@@ -2410,6 +2412,7 @@ repeat_transaction:
         CFastMutexGuard aff_guard(q->aff_map_lock);
         q->worker_aff_map.AddAffinity(worker_node, client_name,
                                       job_aff_id);
+        aff_token = q->affinity_dict.GetAffToken(job_aff_id);
     }
 
     x_TimeLineExchange(done_job_id, *job_id, curr);
@@ -2431,6 +2434,121 @@ repeat_transaction:
 
         MonitorPost(msg);
     }
+}
+
+
+void CQueue::GetJob(unsigned int   worker_node,
+                    // ??? user SNS_SubmitRecord here
+                    unsigned int*  job_id, 
+                    string&        input,
+                    const string&  client_name,
+                    unsigned*      job_mask,
+                    const list<string>& aff_list,
+                    string&        aff_token)
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+
+    _ASSERT(worker_node);
+    unsigned get_attempts = 0;
+    const unsigned kMaxGetAttempts = 100;
+    EGetJobUpdateStatus upd_status;
+
+get_job_id:
+
+    ++get_attempts;
+    if (get_attempts > kMaxGetAttempts) {
+        *job_id = 0;
+        return;
+    }
+    time_t curr = time(0);
+
+    // affinity: get list of job candidates
+    // previous GetJob() call may have precomputed sutable job ids
+    //
+
+    *job_id = x_FindPendingJob(client_name, worker_node);
+    if (!*job_id) {
+        return;
+    }
+
+    unsigned job_aff_id = 0;
+
+    try {
+        SQueueDB& db = q->db;
+        SJobInfoDB& job_info_db = q->m_JobInfoDB;
+
+        CBDB_Transaction trans(*db.GetEnv(), 
+                               CBDB_Transaction::eEnvDefault,
+                               CBDB_Transaction::eNoAssociation);
+
+
+        {{
+            CFastMutexGuard guard(q->lock);
+            db.SetTransaction(&trans);
+            job_info_db.SetTransaction(&trans);
+
+            CBDB_FileCursor& cur = *q->GetCursor(trans);
+            CBDB_CursorGuard cg(cur);
+
+            upd_status =
+                x_UpdateDB_GetJobNoLock(db, job_info_db, curr, cur, trans,
+                                        worker_node, *job_id, input,
+                                        &job_aff_id, job_mask);
+        }}
+        trans.Commit();
+
+        switch (upd_status) {
+        case eGetJobUpdate_JobFailed:
+            q->status_tracker.ChangeStatus(*job_id,
+                                           CNetScheduleAPI::eFailed);
+            *job_id = 0;
+            break;
+        case eGetJobUpdate_JobStopped:
+            *job_id = 0;
+            break;
+        case eGetJobUpdate_NotFound:
+            *job_id = 0;
+            break;
+        case eGetJobUpdate_Ok:
+            break;
+        default:
+            _ASSERT(0);
+        } // switch
+
+        if (*job_id) x_Count(SLockedQueue::eStatGetEvent);
+
+        if (IsMonitoring() && *job_id) {
+            CTime tmp_t(CTime::eCurrent);
+            string msg = tmp_t.AsString();
+            msg += " CQueue::GetJob() job id=";
+            msg += NStr::IntToString(*job_id);
+            msg += " worker_node=";
+            msg += CSocketAPI::gethostbyaddr(worker_node);
+            MonitorPost(msg);
+        }
+
+    } 
+    catch (exception&)
+    {
+        q->status_tracker.ChangeStatus(*job_id, CNetScheduleAPI::ePending);
+        *job_id = 0;
+        throw;
+    }
+
+    // if we picked up expired job and need to re-get another job id    
+    if (*job_id == 0) {
+        goto get_job_id;
+    }
+
+    if (job_aff_id) {
+        CFastMutexGuard aff_guard(q->aff_map_lock);
+        q->worker_aff_map.AddAffinity(worker_node,
+                                      client_name,
+                                      job_aff_id);
+        aff_token = q->affinity_dict.GetAffToken(job_aff_id);
+    }
+
+    x_AddToTimeLine(*job_id, curr);
 }
 
 
@@ -2861,118 +2979,6 @@ CQueue::x_FindPendingJob(const string&  client_name,
     q->status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
 
     return job_id;
-}
-
-
-void CQueue::GetJob(unsigned int   worker_node,
-                    // ??? user SNS_SubmitRecord here
-                    unsigned int*  job_id, 
-                    string&        input,
-                    const string&  client_name,
-                    unsigned*      job_mask)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    _ASSERT(worker_node);
-    unsigned get_attempts = 0;
-    const unsigned kMaxGetAttempts = 100;
-    EGetJobUpdateStatus upd_status;
-
-get_job_id:
-
-    ++get_attempts;
-    if (get_attempts > kMaxGetAttempts) {
-        *job_id = 0;
-        return;
-    }
-    time_t curr = time(0);
-
-    // affinity: get list of job candidates
-    // previous GetJob() call may have precomputed sutable job ids
-    //
-
-    *job_id = x_FindPendingJob(client_name, worker_node);
-    if (!*job_id) {
-        return;
-    }
-
-    unsigned job_aff_id = 0;
-
-    try {
-        SQueueDB& db = q->db;
-        SJobInfoDB& job_info_db = q->m_JobInfoDB;
-
-        CBDB_Transaction trans(*db.GetEnv(), 
-                               CBDB_Transaction::eEnvDefault,
-                               CBDB_Transaction::eNoAssociation);
-
-
-        {{
-            CFastMutexGuard guard(q->lock);
-            db.SetTransaction(&trans);
-            job_info_db.SetTransaction(&trans);
-
-            CBDB_FileCursor& cur = *q->GetCursor(trans);
-            CBDB_CursorGuard cg(cur);
-
-            upd_status =
-                x_UpdateDB_GetJobNoLock(db, job_info_db, curr, cur, trans,
-                                        worker_node, *job_id, input,
-                                        &job_aff_id, job_mask);
-        }}
-        trans.Commit();
-
-        switch (upd_status) {
-        case eGetJobUpdate_JobFailed:
-            q->status_tracker.ChangeStatus(*job_id,
-                                           CNetScheduleAPI::eFailed);
-            *job_id = 0;
-            break;
-        case eGetJobUpdate_JobStopped:
-            *job_id = 0;
-            break;
-        case eGetJobUpdate_NotFound:
-            *job_id = 0;
-            break;
-        case eGetJobUpdate_Ok:
-            break;
-        default:
-            _ASSERT(0);
-        } // switch
-
-        if (*job_id) x_Count(SLockedQueue::eStatGetEvent);
-
-        if (IsMonitoring() && *job_id) {
-            CTime tmp_t(CTime::eCurrent);
-            string msg = tmp_t.AsString();
-            msg += " CQueue::GetJob() job id=";
-            msg += NStr::IntToString(*job_id);
-            msg += " worker_node=";
-            msg += CSocketAPI::gethostbyaddr(worker_node);
-            MonitorPost(msg);
-        }
-
-    } 
-    catch (exception&)
-    {
-        q->status_tracker.ChangeStatus(*job_id, CNetScheduleAPI::ePending);
-        *job_id = 0;
-        throw;
-    }
-
-    // if we picked up expired job and need to re-get another job id    
-    if (*job_id == 0) {
-        goto get_job_id;
-    }
-
-    if (job_aff_id) {
-        CFastMutexGuard aff_guard(q->aff_map_lock);
-        q->worker_aff_map.AddAffinity(worker_node,
-                                      client_name,
-                                      job_aff_id);
-    }
-
-    x_AddToTimeLine(*job_id, curr);
 }
 
 

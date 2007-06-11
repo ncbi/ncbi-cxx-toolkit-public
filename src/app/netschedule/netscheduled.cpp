@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.10"
+#define NETSCHEDULED_VERSION "2.10.11"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -407,7 +407,9 @@ private:
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
     void x_MakeLogMessage(string& lmsg);
-    void x_MakeGetAnswer(const char* key_buf, unsigned job_mask);
+    void x_MakeGetAnswer(const char* key_buf,
+                         unsigned job_mask,
+                         const string& aff_token);
 
     // Data
     string m_Request;
@@ -1312,16 +1314,22 @@ void CNetScheduleHandler::ProcessGet()
 {
     unsigned job_id;
     char key_buf[1024];
+    string aff_token;
+    list<string> aff_list;
+    NStr::Split(m_JobReq.affinity_token, "\t,",
+                aff_list, NStr::eNoMergeDelims);
     m_Queue->GetJob(m_PeerAddr, &job_id,
                     m_JobReq.input,
                     m_AuthString, 
-                    &m_JobReq.job_mask);
+                    &m_JobReq.job_mask,
+                    aff_list,
+                    aff_token);
 
     m_Queue->GetJobKey(key_buf, job_id,
         m_Server->GetHost(), m_Server->GetPort());
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, m_JobReq.job_mask);
+        x_MakeGetAnswer(key_buf, m_JobReq.job_mask, aff_token);
         WriteMsg("OK:", m_Answer);
     } else {
         WriteMsg("OK:");
@@ -1352,6 +1360,10 @@ CNetScheduleHandler::ProcessJobExchange()
 {
     unsigned job_id;
     char key_buf[1024];
+    string aff_token;
+    list<string> aff_list;
+    NStr::Split(m_JobReq.affinity_token, "\t,",
+                aff_list, NStr::eNoMergeDelims);
 
     unsigned done_job_id;
     if (!m_JobReq.job_key.empty()) {
@@ -1359,18 +1371,22 @@ CNetScheduleHandler::ProcessJobExchange()
     } else {
         done_job_id = 0;
     }
-    m_Queue->PutResultGetJob(done_job_id, m_JobReq.job_return_code,
+    m_Queue->PutResultGetJob(done_job_id,
+                             m_JobReq.job_return_code,
                              m_JobReq.output,
+                             // GetJob params
                              m_PeerAddr, &job_id,
                              m_JobReq.input,
                              m_AuthString,
-                             &m_JobReq.job_mask);
+                             &m_JobReq.job_mask,
+                             aff_list,
+                             aff_token);
 
     m_Queue->GetJobKey(key_buf, job_id,
         m_Server->GetHost(), m_Server->GetPort());
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, m_JobReq.job_mask);
+        x_MakeGetAnswer(key_buf, m_JobReq.job_mask, aff_token);
         WriteMsg("OK:", m_Answer);
     } else {
         WriteMsg("OK:");
@@ -1395,15 +1411,22 @@ CNetScheduleHandler::ProcessJobExchange()
 void CNetScheduleHandler::ProcessWaitGet()
 {
     unsigned job_id;
+    string aff_token;
+    list<string> aff_list;
+    NStr::Split(m_JobReq.affinity_token, "\t,",
+                aff_list, NStr::eNoMergeDelims);
     m_Queue->GetJob(m_PeerAddr, &job_id, 
                     m_JobReq.input,
-                    m_AuthString, &m_JobReq.job_mask);
+                    m_AuthString,
+                    &m_JobReq.job_mask,
+                    aff_list,
+                    aff_token);
 
     if (job_id) {
         char key_buf[1024];
         m_Queue->GetJobKey(key_buf, job_id,
             m_Server->GetHost(), m_Server->GetPort());
-        x_MakeGetAnswer(key_buf, m_JobReq.job_mask);
+        x_MakeGetAnswer(key_buf, m_JobReq.job_mask, aff_token);
         WriteMsg("OK:", m_Answer);
         return;
     }
@@ -1474,8 +1497,7 @@ void CNetScheduleHandler::ProcessPutFailure()
 void CNetScheduleHandler::ProcessPut()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->PutResult(job_id,
-                       m_JobReq.job_return_code, m_JobReq.output);
+    m_Queue->PutResult(job_id, m_JobReq.job_return_code, m_JobReq.output);
     WriteMsg("OK:");
 }
 
@@ -1912,6 +1934,11 @@ void CNetScheduleHandler::ProcessQuery()
     } else if (action == "DROP") {
     } else if (action == "FRES") {
     } else if (action == "CNCL") {
+    } else {
+        WriteMsg("ERR:", string("eProtocolSyntaxError:") +
+                 + "Unknown action " + action);
+        m_SelectedIds.release();
+        return;
     }
     WriteMsg("OK:", result_str);
     m_SelectedIds.release();
@@ -2041,9 +2068,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // STATUS job_key : id
     { "STATUS",   &CNetScheduleHandler::ProcessStatus, eNSCR_Queue,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
-    // GET [ port : int ]
+    // GET [ port : int ] [affinity_list : keystr(aff) ]
     { "GET",      &CNetScheduleHandler::ProcessGet, eNSCR_Worker,
-        { { eNSA_Optional, eNST_Int, eNSRF_Port }, sm_End } },
+        { { eNSA_Optional, eNST_Int, eNSRF_Port },
+          { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" },
+          sm_End } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      &CNetScheduleHandler::ProcessPut, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
@@ -2066,9 +2095,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "DROPQ",    &CNetScheduleHandler::ProcessDropQueue, eNSCR_QueueAdmin,
         NO_ARGS },
     // WGET port : uint  timeout : uint
+    //      [affinity_list : keystr(aff) ]
     { "WGET",     &CNetScheduleHandler::ProcessWaitGet, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port },
-          { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
+          { eNSA_Required, eNST_Int, eNSRF_Timeout },
+          { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" },
+          sm_End} },
     // JRTO job_key : id  timeout : uint
     { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
@@ -2099,10 +2131,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
         NO_ARGS },
     // JXCG [ job_key : id job_return_code : int output : str ]
+    //      [affinity_list : keystr(aff) ]
     { "JXCG",     &CNetScheduleHandler::ProcessJobExchange, eNSCR_Worker,
         { { eNSA_Optchain, eNST_Id,  eNSRF_JobKey },
           { eNSA_Optchain, eNST_Int, eNSRF_JobReturnCode },
-          { eNSA_Optchain, eNST_Str, eNSRF_Output }, sm_End } },
+          { eNSA_Optchain, eNST_Str, eNSRF_Output },
+          { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" },
+          sm_End } },
     // REGC port : uint
     { "REGC",     &CNetScheduleHandler::ProcessRegisterClient, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port }, sm_End} },
@@ -2411,7 +2446,8 @@ void CNetScheduleHandler::x_MakeLogMessage(string& lmsg)
 
 
 void CNetScheduleHandler::x_MakeGetAnswer(const char*   key_buf,
-                                          unsigned      job_mask)
+                                          unsigned      job_mask,
+                                          const string& aff_token)
 {
     string& answer = m_Answer;
     answer = key_buf;
@@ -2419,7 +2455,9 @@ void CNetScheduleHandler::x_MakeGetAnswer(const char*   key_buf,
     answer.append(m_JobReq.input);
     answer.append("\"");
 
-    answer.append(" \"\" \"\""); // to keep compat. with jout & jerr
+    answer.append(" \"");
+    answer.append(aff_token);
+    answer.append("\" \"\""); // to keep compat. with jout & jerr
 
     answer.append(" ");
     answer.append(NStr::UIntToString(job_mask));
