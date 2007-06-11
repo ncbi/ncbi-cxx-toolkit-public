@@ -136,7 +136,7 @@ private:
     enum {
         eKeyOffset       = 9*4,  ///< Offset of the key offset table.
         eKeyDelim        = 2,    ///< Byte indicating end of key.
-        eRecordDelim        = 10,   ///< Byte indicating end of data.
+        eRecordDelim     = 10,   ///< Byte indicating end of data.
         eMaxStringLine   = 4096, ///< Maximum line size for string.
         eIsamNumericType = 0,    ///< Code for numeric ISAM files.
         eIsamStringType  = 2     ///< Code for string ISAM files.
@@ -335,8 +335,8 @@ private:
         }
     };
     
-    set<string>    m_StringSort;  ///< Sorted list of strings.
-    vector<SIdOid> m_NumberTable; ///< Sorted list of numbers.
+    CWriteDB_PackedSemiTree m_StringSort;  ///< Sorted list of strings.
+    vector<SIdOid>          m_NumberTable; ///< Sorted list of numbers.
     
     /// The data file associated with this index file.
     CRef<CWriteDB_IsamData> m_DataFile;

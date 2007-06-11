@@ -206,7 +206,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     case eAcc:
         isam_type = eIsamStringType; // string w/ data
         max_line_size = eMaxStringLine;
-        num_terms = m_StringSort.size();
+        num_terms = m_StringSort.Size();
         break;
         
     default:
@@ -246,7 +246,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     // index file, then finally the list of keys.
     
     int data_pos = 0;
-    unsigned count = m_StringSort.size();
+    unsigned count = m_StringSort.Size();
     
     unsigned nsamples = s_DivideRoundUp(count, m_PageSize);
     
@@ -266,18 +266,27 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     string NUL("x");
     NUL[0] = (char) 0;
     
-    const string * prevs = 0;
-    
     int output_count = 0;
     int index = 0;
     
-    ITERATE(set<string>, iter, m_StringSort) {
-        const string & elemstr = * iter;
+    CWriteDB_PackedSemiTree::Iterator iter = m_StringSort.Begin();
+    CWriteDB_PackedSemiTree::Iterator end_iter = m_StringSort.End();
+    
+    string element, prev_elem;
+    
+    // A string containing a NUL cannot possibly be valid, so I'm
+    // using one as the "not set yet" value.
+    
+    element.resize(1);
+    element[0] = char(0);
+    
+    while(iter != end_iter) {
+        prev_elem.swap(element);
+        iter.Get(element);
         
-        if (prevs && ((*prevs) == elemstr)) {
+        if (prev_elem == element) {
+            ++iter;
             continue;
-        } else {
-            prevs = & elemstr;
         }
         
         // For each element whose index is a multiple of m_PageSize
@@ -303,13 +312,15 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
             // string is NUL terminated, whereas the data file rows
             // are line feed (aka newline) terminated.
             
-            key_buffer.append(elemstr.data(), elemstr.length()-1);
+            key_buffer.append(element.data(), element.length()-1);
             key_buffer.append(NUL);
         }
         output_count ++;
         
-        data_pos = m_DataFile->Write(elemstr);
+        data_pos = m_DataFile->Write(element);
         index ++;
+        
+        ++iter;
     }
     
     // Write the final data position.
@@ -712,7 +723,7 @@ void CWriteDB_IsamIndex::x_AddString(int oid, const string & s)
         buf[i] = tolower(buf[i]);
     }
     
-    m_StringSort.insert(string(buf, sz));
+    m_StringSort.Insert(buf, sz);
     
     m_DataFileSize += sz;
 }
@@ -806,7 +817,7 @@ bool CWriteDB_IsamIndex::CanFit(int num)
 
 void CWriteDB_IsamIndex::x_Free()
 {
-    m_StringSort.clear();
+    m_StringSort.Clear();
     m_NumberTable.clear();
 }
 
