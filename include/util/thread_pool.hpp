@@ -286,6 +286,11 @@ private:
     bool x_WaitForPredicate(TQueuePredicate pred, CSemaphore& sem,
                             CMutexGuard& guard, unsigned int timeout_sec,
                             unsigned int timeout_nsec) const;
+
+private:
+    /// forbidden
+    CBlockingQueue(const CBlockingQueue&);
+    CBlockingQueue& operator=(const CBlockingQueue&);
 };
 
 
