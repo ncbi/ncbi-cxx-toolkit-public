@@ -605,18 +605,16 @@ static void s_TestFormats(void)
     {{
         CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
         {{
-            t.SetFormat("M/D/Y h:m:s");
-            string s = t.AsString();
+            string s = t.AsString("M/D/Y h:m:s");
             assert(s.compare("02/10/2003 20:40:30") == 0);
         }}
         {{
-            t.SetFormat("MDY $M/$D/$Y $h:$m:$s hms");
-            string s = t.AsString();
+            string s = t.AsString("MDY $M/$D/$Y $h:$m:$s hms");
             assert(s.compare("02102003 $02/$10/$2003 $20:$40:$30 204030") == 0);
         }}
         {{
-            t.SetFormat("MDY $M/$D/$Y $h:$m:$s hms", CTime::eFmt_Ncbi);
-            string s = t.AsString();
+            string s = t.AsString(CTimeFormat("MDY $M/$D/$Y $h:$m:$s hms",
+                                               CTimeFormat::eNcbi));
             assert(s.compare("MDY 02/10/2003 20:40:30 hms") == 0);
         }}
     }}
@@ -1083,18 +1081,15 @@ static void s_TestTimeSpan(void)
     {{
         CTimeSpan t(123.456);
         {{
-            t.SetFormat("S.n");
-            string s = t.AsString();
+            string s = t.AsString("S.n");
             assert(s.compare("123.456000000") == 0);
         }}
         {{
-            t.SetFormat("$S.$n");
-            string s = t.AsString();
+            string s = t.AsString("$S.$n");
             assert(s.compare("$123.$456000000") == 0);
         }}
         {{
-            t.SetFormat("$S.$n", CTimeSpan::eFmt_Ncbi);
-            string s = t.AsString();
+            string s = t.AsString(CTimeFormat("$S.$n", CTimeFormat::eNcbi));
             assert(s.compare("123.456000000") == 0);
         }}
     }}
