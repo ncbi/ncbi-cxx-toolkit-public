@@ -93,23 +93,12 @@ DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
 DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
 DEFINE_STATIC_FAST_MUTEX(s_FastLocalTimeMutex);
 
-// Format structure to store in TLS
-struct STlsFormat {
-    STlsFormat(const string& fmt, CTime::EFormat fmt_type) 
-        {
-            str  = fmt;
-            type = fmt_type;
-        }
-public:
-    string         str;
-    CTime::EFormat type;
-};
 // Store global time/timespan formats in TLS
-static CSafeStaticRef< CTls<STlsFormat> > s_TlsFormatTime;
-static CSafeStaticRef< CTls<STlsFormat> > s_TlsFormatSpan;
-static CSafeStaticRef< CTls<STlsFormat> > s_TlsFormatStopWatch;
+static CSafeStaticRef< CTls<CTimeFormat> > s_TlsFormatTime;
+static CSafeStaticRef< CTls<CTimeFormat> > s_TlsFormatSpan;
+static CSafeStaticRef< CTls<CTimeFormat> > s_TlsFormatStopWatch;
 
-static void s_TlsFormatCleanup(STlsFormat* fmt, void* /* data */)
+static void s_TlsFormatCleanup(CTimeFormat* fmt, void* /* data */)
 {
     delete fmt;
 }
@@ -252,6 +241,54 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
 #define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "minute", 0, 59)
 #define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "second", 0, 61)
 #define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, kNanoSecondsPerSecond - 1)
+
+
+
+//============================================================================
+//
+// CTimeFormat
+//
+//============================================================================
+
+
+// eNcbiSimple
+//const char* CTimeFormat::kISO8601 = "Y-M-DTh:m:s";
+
+
+CTimeFormat::CTimeFormat(void)
+    : m_Type(eDefault)
+{
+    return;
+}
+
+
+CTimeFormat::CTimeFormat(const CTimeFormat& format)
+{
+    *this = format;
+}
+
+
+CTimeFormat::CTimeFormat(const char* fmt, EFormat fmt_type)
+{
+    SetFormat(fmt, fmt_type);
+}
+
+
+CTimeFormat::CTimeFormat(const string& fmt, EFormat fmt_type)
+{
+    SetFormat(fmt, fmt_type);
+}
+
+
+CTimeFormat& CTimeFormat::operator= (const CTimeFormat& format)
+{
+    if ( &format == this ) {
+        return *this;
+    }
+    m_Str  = format.m_Str;
+    m_Type = format.m_Type;
+    return *this;
+}
 
 
 //============================================================================
@@ -827,38 +864,30 @@ static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
 }
 
 
-void CTime::SetFormat(const string& fmt, EFormat fmt_type)
+void CTime::SetFormat(const CTimeFormat& format)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    STlsFormat* format = new STlsFormat(fmt, fmt_type);
-    s_TlsFormatTime->SetValue(format, s_TlsFormatCleanup);
+    CTimeFormat* ptr = new CTimeFormat(format);
+    s_TlsFormatTime->SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
-string CTime::GetFormat(EFormat *fmt_type)
+CTimeFormat CTime::GetFormat(void)
 {
-    STlsFormat* format = s_TlsFormatTime->GetValue();
-    if ( !format ) {
-        if ( fmt_type ) {
-            *fmt_type = eFmt_Default;
-        }
-        return kDefaultFormatTime;
+    CTimeFormat format;
+    CTimeFormat* ptr = s_TlsFormatTime->GetValue();
+    if ( !ptr ) {
+        format.SetFormat(kDefaultFormatTime);
+    } else {
+        format = *ptr;
     }
-    if ( fmt_type ) {
-        *fmt_type = format->type;
-    }
-    return format->str;
+    return format;
 }
 
-string CTime::AsString(const string& fmt, EFormat fmt_type,
-                       TSeconds out_tz) const
+
+string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 {
-    if ( fmt.empty() ) {
-        EFormat fmt_type;
-        string fmt = GetFormat(&fmt_type);
-        return AsString(fmt, fmt_type);
-    }
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -881,7 +910,17 @@ string CTime::AsString(const string& fmt, EFormat fmt_type,
 #endif
     }
     string str;
-    bool is_escaped = (fmt_type != CTime::eFmt_NcbiSimple);
+    string fmt;
+    CTimeFormat::EFormat fmt_type;
+    if ( format.IsEmpty() ) {
+        CTimeFormat f = GetFormat();
+        fmt      = f.GetString();
+        fmt_type = f.GetType();
+    } else {
+        fmt      = format.GetString();
+        fmt_type = format.GetType();
+    }
+    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
     bool is_format_symbol = !is_escaped;
 
     ITERATE(string, it, fmt) {
@@ -1826,41 +1865,42 @@ void CTimeSpan::x_Normalize(void)
 }
 
 
-void CTimeSpan::SetFormat(const string& fmt, EFormat fmt_type)
+void CTimeSpan::SetFormat(const CTimeFormat& format)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    STlsFormat* format = new STlsFormat(fmt, fmt_type);
-    s_TlsFormatSpan->SetValue(format, s_TlsFormatCleanup);
+    CTimeFormat* ptr = new CTimeFormat(format);
+    s_TlsFormatSpan->SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
-string CTimeSpan::GetFormat(EFormat *fmt_type)
+CTimeFormat CTimeSpan::GetFormat(void)
 {
-    STlsFormat* format = s_TlsFormatSpan->GetValue();
-    if ( !format ) {
-        if ( fmt_type ) {
-            *fmt_type = eFmt_Default;
-        }
-        return kDefaultFormatSpan;
+    CTimeFormat format;
+    CTimeFormat* ptr = s_TlsFormatSpan->GetValue();
+    if ( !ptr ) {
+        format.SetFormat(kDefaultFormatSpan);
+    } else {
+        format = *ptr;
     }
-    if ( fmt_type ) {
-        *fmt_type = format->type;
-    }
-    return format->str;
+    return format;
 }
 
 
-string CTimeSpan::AsString(const string& fmt, EFormat fmt_type) const
+string CTimeSpan::AsString(const CTimeFormat& format) const
 {
-    if ( fmt.empty() ) {
-        EFormat fmt_type;
-        string fmt = GetFormat(&fmt_type);
-        return AsString(fmt, fmt_type);
-    }
-
     string str;
-    bool is_escaped = (fmt_type != CTime::eFmt_NcbiSimple);
+    string fmt;
+    CTimeFormat::EFormat fmt_type;
+    if ( format.IsEmpty() ) {
+        CTimeFormat f = GetFormat();
+        fmt      = f.GetString();
+        fmt_type = f.GetType();
+    } else {
+        fmt      = format.GetString();
+        fmt_type = format.GetType();
+    }
+    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
     bool is_format_symbol = !is_escaped;
 
     ITERATE(string, it, fmt) {
@@ -2265,40 +2305,36 @@ double CStopWatch::GetTimeMark()
 }
 
 
-void CStopWatch::SetFormat(const string& fmt, EFormat fmt_type)
+void CStopWatch::SetFormat(const CTimeFormat& format)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    STlsFormat* format = new STlsFormat(fmt, fmt_type);
-    s_TlsFormatStopWatch->SetValue(format, s_TlsFormatCleanup);
+    CTimeFormat* ptr = new CTimeFormat(format);
+    s_TlsFormatStopWatch->SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
-string CStopWatch::GetFormat(EFormat *fmt_type)
+CTimeFormat CStopWatch::GetFormat(void)
 {
-    STlsFormat* format = s_TlsFormatStopWatch->GetValue();
-    if ( !format ) {
-        if ( fmt_type ) {
-            *fmt_type = eFmt_Default;
-        }
-        return kDefaultFormatStopWatch;
+    CTimeFormat format;
+    CTimeFormat* ptr = s_TlsFormatStopWatch->GetValue();
+    if ( !ptr ) {
+        format.SetFormat(kDefaultFormatStopWatch);
+    } else {
+        format = *ptr;
     }
-    if ( fmt_type ) {
-        *fmt_type = format->type;
-    }
-    return format->str;
+    return format;
 }
 
 
-string CStopWatch::AsString(const string& fmt, EFormat fmt_type) const
+string CStopWatch::AsString(const CTimeFormat& format) const
 {
-    if ( fmt.empty() ) {
-        EFormat fmt_type;
-        string fmt = GetFormat(&fmt_type);
-        return AsString(fmt, fmt_type);
-    }
     CTimeSpan ts(Elapsed());
-    return ts.AsString(fmt, fmt_type);
+    if ( format.IsEmpty() ) {
+        CTimeFormat fmt = GetFormat();
+        return ts.AsString(fmt);
+    }
+    return ts.AsString(format);
 }
 
 
