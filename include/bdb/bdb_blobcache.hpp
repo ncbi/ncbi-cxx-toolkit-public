@@ -762,6 +762,7 @@ private:
     string                  m_LogDir;
     /// Purge thread
     CRef<CCacheCleanerThread>  m_PurgeThread;
+
     /// Flag that Purge is already running
     bool                       m_PurgeNowRunning;
     /// Run a background purge thread

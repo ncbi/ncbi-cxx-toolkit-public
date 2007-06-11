@@ -606,7 +606,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSplitStore()
     }
 
     try {
-        if (m_OpenMode == CBDB_RawFile::eReadWriteCreate) {
+        if (m_OpenMode != CBDB_RawFile::eReadOnly) {
             Save();
         }
     }

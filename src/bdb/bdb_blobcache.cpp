@@ -30,12 +30,15 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <db.h>
 
@@ -43,8 +46,6 @@
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_trans.hpp>
 
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbitime.hpp>
 #include <time.h>
 
 #include <util/cache/icache_cf.hpp>
@@ -1293,17 +1294,19 @@ void CBDB_Cache::Open(const string& cache_path,
        m_PurgeThread.Reset(
            new CCacheCleanerThread(this, m_PurgeThreadDelay, 5));
        m_PurgeThread->Run();
+
+        if (!m_JoinedEnv) {
+            m_Env->RunCheckpointThread(m_PurgeThreadDelay, m_MempTrickle);
+        }
+
 # else
-        LOG_POST(Warning <<
+       LOG_POST(Warning <<
                  "Cannot run background thread in non-MT configuration.");
+       m_Env->TransactionCheckpoint();
 # endif
     }
 
-
-    m_Env->TransactionCheckpoint();
-
     m_ReadOnly = false;
-
 
     LOG_POST(Info <<
              "LC: '" << cache_name <<
@@ -1326,6 +1329,10 @@ void CBDB_Cache::StopPurgeThread()
         m_PurgeThread->RequestStop();
         m_PurgeThread->Join();
         LOG_POST(Info << "Stopped.");
+    }
+
+    if (m_Env) {
+        m_Env->StopCheckpointThread();
     }
 # endif
 }
@@ -1381,19 +1388,19 @@ void CBDB_Cache::Close()
     delete m_BLOB_SplitStore; m_BLOB_SplitStore = 0;
     delete m_CacheAttrDB;     m_CacheAttrDB = 0;
 
+    if (m_Env == 0) {
+        return;
+    }
     try {
-        if (m_Env) {
-            m_Env->ForceTransactionCheckpoint();
-            CleanLog();
+        m_Env->ForceTransactionCheckpoint();
+        CleanLog();
 
-            if (m_Env->CheckRemove()) {
-                LOG_POST(Info    <<
-                         "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
-            } else {
-                LOG_POST(Warning << "LC: '" << m_Name
-                                 << "' environment still in use.");
-
-            }
+        if (m_Env->CheckRemove()) {
+            LOG_POST(Info    <<
+                        "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
+        } else {
+            LOG_POST(Warning << "LC: '" << m_Name
+                                << "' environment still in use.");
         }
     }
     catch (exception& ex) {
@@ -2801,11 +2808,12 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
 purge_start:
     // Make sure m_MempTrickle% of pages are free and read-ready
+/*
     if (m_MempTrickle) {
         int nwrote;
         m_Env->MempTrickle(m_MempTrickle, &nwrote);
     }
-
+*/
 
     time_t gc_start = time(0); // time when we started GC scan
 
@@ -2815,7 +2823,7 @@ purge_start:
         } else {
             // Check if we nothing to purge
             if (!(m_NextExpTime <= gc_start)) {
-                m_Env->TransactionCheckpoint();
+//                m_Env->TransactionCheckpoint();
                 ++m_PurgeSkipCnt;
                 return;
             }
@@ -2884,10 +2892,11 @@ purge_start:
                     ++db_recs;
 
                     if (m_NextExpTime) {
-                        m_NextExpTime = min(m_NextExpTime, exp_time);
+                        m_NextExpTime = min(m_NextExpTime, exp_time);                        
                     } else {
                         m_NextExpTime = exp_time;
                     }
+                    
 
                 }
                 if (i == 0) { // first record in the batch
@@ -2944,6 +2953,7 @@ purge_start:
         // checkpoints and background writes
         // TODO: move checkpoints to a dedicated thread
         //
+/*
         time_t curr = time(0);
         if (curr - last_check >= 30) {
             m_Env->TransactionCheckpoint();
@@ -2959,7 +2969,7 @@ purge_start:
             }    
             last_check = time(0);
         }
-
+*/
 
     } // for flag
 
@@ -3042,7 +3052,7 @@ purge_start:
     if ((m_PurgeCount % 50) == 0) {
         m_BLOB_SplitStore->FreeUnusedMem();
     }
-    m_Env->TransactionCheckpoint();
+//    m_Env->TransactionCheckpoint();
 
     // check if we want to rescan the database right away
     if (m_PurgeThreadDelay) {
@@ -3050,7 +3060,8 @@ purge_start:
         // we spent more time in Purge than we planned to sleep
         // it means we have a lot of records and need to run GC
         // continuosly
-        if ((curr - gc_start) >= m_PurgeThreadDelay) {
+        if (((unsigned)curr - (unsigned)gc_start) >= m_PurgeThreadDelay || 
+            (m_NextExpTime != 0 && (curr > m_NextExpTime))) {
             goto purge_start;
         }
     }

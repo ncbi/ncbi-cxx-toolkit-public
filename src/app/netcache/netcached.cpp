@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.4.12  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.4.15  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -640,7 +640,7 @@ void CNetCacheServer::Process(SOCK sock)
     try {
         tdata->auth.erase();
         
-        CStopWatch              sw(CStopWatch::eStop);
+        CStopWatch  sw(CStopWatch::eStop);
         bool is_log = IsLog();
 
         if (is_log) {

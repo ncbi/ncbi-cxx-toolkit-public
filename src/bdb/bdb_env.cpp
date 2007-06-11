@@ -30,9 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbifile.hpp>
+
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/bdb_checkpoint_thread.hpp>
+
 #include <db.h>
 
 
@@ -114,7 +118,7 @@ void CBDB_Env::SetTransactionSync(CBDB_Transaction::ETransSync sync)
 
 void CBDB_Env::SetCacheSize(Uint8 cache_size)
 {
-    unsigned cache_g = cache_size / (Uint8)1073741824;  // gigabyte
+    unsigned cache_g = (unsigned) (cache_size / (Uint8)1073741824);  // gig
     if (cache_g) {
         cache_size = cache_size % 1073741824;
     }
@@ -855,6 +859,31 @@ void CBDB_Env::MpMaxWrite(int maxwrite, int maxwrite_sleep)
 }
 
 
+void CBDB_Env::RunCheckpointThread(unsigned thread_delay, int memp_trickle)
+{
+# ifdef NCBI_THREADS
+    LOG_POST(Info << "Starting BDB transaction checkpoint thread.");
+    m_CheckThread.Reset(
+        new CBDB_CheckPointThread(*this, memp_trickle, thread_delay, 5));
+    m_CheckThread->Run();
+# else
+    LOG_POST(Warning <<
+     "Cannot run BDB transaction checkpoint thread in non-MT configuration.");
+# endif
+}
+
+void CBDB_Env::StopCheckpointThread()
+{
+# ifdef NCBI_THREADS
+    if (!m_CheckThread.Empty()) {
+        LOG_POST(Info << "Stopping BDB transaction checkpoint thread...");
+        m_CheckThread->RequestStop();
+        m_CheckThread->Join();
+        LOG_POST(Info << "BDB transaction checkpoint thread stopped.");
+    }
+# endif
+}
+
 
 void BDB_RecoverEnv(const string& path,
                     bool          fatal_recover)
@@ -885,6 +914,7 @@ void BDB_RecoverEnv(const string& path,
     }
     ret = dbenv->close(dbenv, 0);
 }
+
 
 
 

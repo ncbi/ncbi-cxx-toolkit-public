@@ -35,12 +35,16 @@
 /// @file bdb_env.hpp
 /// Wrapper around Berkeley DB environment structure
 
+#include <corelib/ncbiobj.hpp>
+
 #include <bdb/bdb_types.hpp>
 #include <bdb/bdb_trans.hpp>
 
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
+
+class CBDB_CheckPointThread;
 
 /** @addtogroup BDB
  *
@@ -288,6 +292,15 @@ public:
     /// When OFF calls to TransactionCheckpoint() will be ignored
     void EnableCheckPoint(bool on_off) { m_CheckPointEnable = on_off; }
 
+    /// Schedule background transaction checkpoint thread
+    /// (Call when environment is open)
+    void RunCheckpointThread(unsigned thread_delay = 30,
+                             int memp_trickle = 0);
+
+    /// Stop transaction checkpoint thread
+    void StopCheckpointThread();
+
+
 private:
     /// Opens BDB environment returns error code
     /// Throws no exceptions.
@@ -311,6 +324,8 @@ private:
     bool                         m_CheckPointEnable; ///< Checkpoint enabled
     unsigned                     m_CheckPointKB;     ///< Checkpoint KBytes
     unsigned                     m_CheckPointMin;    ///< Checkpoint minutes
+
+    CRef<CBDB_CheckPointThread>  m_CheckThread;      ///< Checkpoint thread
 };
 
 
