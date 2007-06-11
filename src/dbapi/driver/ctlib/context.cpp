@@ -202,6 +202,8 @@ Connection::Connection(CTLibContext& context,
 Connection::~Connection(void) throw()
 {
     try {
+        // Connection must be closed before it is allowed to be dropped.
+        Close();
         Drop();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
@@ -210,10 +212,9 @@ Connection::~Connection(void) throw()
 
 bool Connection::Drop(void)
 {
+    // Connection must be dropped always, even if it is dead.
     if (m_IsAllocated) {
-        if (!IsDead()) {
-            GetCTLConn().Check(ct_con_drop(m_Handle));
-        }
+        GetCTLConn().Check(ct_con_drop(m_Handle));
         m_IsAllocated = false;
     }
 
@@ -264,14 +265,133 @@ bool Connection::Open(const string& srv_name)
 bool Connection::Close(void)
 {
     if (IsOpen()) {
-        if (GetCTLConn().Check(ct_close(GetNativeHandle(), CS_UNUSED)) == CS_SUCCEED ||
-            GetCTLConn().Check(ct_close(GetNativeHandle(), CS_FORCE_CLOSE)) == CS_SUCCEED) {
-            m_IsOpen = false;
+        if (IsDead()) {
+            if (GetCTLConn().Check(ct_close(GetNativeHandle(), CS_FORCE_CLOSE)) == CS_SUCCEED) {
+                m_IsOpen = false;
+            }
+        } else {
+            if (GetCTLConn().Check(ct_close(GetNativeHandle(), CS_UNUSED)) == CS_SUCCEED) {
+                m_IsOpen = false;
+            }
         }
     }
 
     return !IsOpen();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+Command::Command(CTL_Connection& ctl_conn)
+: m_CTL_Conn(&ctl_conn)
+, m_Handle(NULL)
+, m_IsAllocated(false)
+, m_IsOpen(false)
+{
+    if (GetCTLConn().Check(ct_cmd_alloc(
+                           GetCTLConn().GetNativeConnection().GetNativeHandle(),
+                           &m_Handle
+                           )) != CS_SUCCEED) {
+        DATABASE_DRIVER_ERROR("Cannot allocate a command handle.", 100011);
+    }
+
+    m_IsAllocated = true;
+}
+
+
+Command::~Command(void)
+{
+    try {
+        Close();
+        Drop();
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+}
+
+
+bool
+Command::Open(CS_INT type, CS_INT option, const string& arg)
+{
+    _ASSERT(!m_IsOpen);
+
+    if (!m_IsOpen) {
+        m_IsOpen = (GetCTLConn().Check(ct_command(m_Handle,
+                                                  type,
+                                                  (CS_CHAR*)arg .c_str(),
+                                                  arg.size(),
+                                                  option)) == CS_SUCCEED);
+    }
+
+    return m_IsOpen;
+}
+
+
+bool
+Command::GetDataInfo(CS_IODESC& desc)
+{
+    return (GetCTLConn().Check(ct_data_info(
+        m_Handle,
+        CS_SET,
+        CS_UNUSED,
+        &desc)) == CS_SUCCEED);
+}
+
+
+bool
+Command::SendData(CS_VOID* buff, CS_INT buff_len)
+{
+    return (GetCTLConn().Check(ct_send_data(
+        m_Handle,
+        buff,
+        buff_len)) == CS_SUCCEED);
+}
+
+
+bool
+Command::Send(void)
+{
+    return (GetCTLConn().Check(ct_send(
+        m_Handle)) == CS_SUCCEED);
+}
+
+
+CS_RETCODE
+Command::GetResults(CS_INT& res_type)
+{
+    return GetCTLConn().Check(ct_results(m_Handle, &res_type));
+}
+
+
+CS_RETCODE
+Command::Fetch(void)
+{
+    return GetCTLConn().Check(ct_fetch(
+        m_Handle,
+        CS_UNUSED,
+        CS_UNUSED,
+        CS_UNUSED,
+        0));
+}
+
+
+void
+Command::Drop(void)
+{
+    if (m_IsAllocated) {
+        GetCTLConn().Check(ct_cmd_drop(m_Handle));
+        m_Handle = NULL;
+        m_IsAllocated = false;
+    }
+}
+
+
+void
+Command::Close(void)
+{
+    if (m_IsOpen) {
+        GetCTLConn().Check(ct_cancel(NULL, m_Handle, CS_CANCEL_ALL));
+        m_IsOpen = false;
+    }
+}
+
 
 } // namespace ctlib
 
@@ -665,18 +785,84 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
         sev = eDiag_Critical;
     }
 
-    CDB_ClientEx ex(
-        kBlankCompileInfo,
-        0, msg->msgstring,
-        sev,
-        msg->msgnumber
-        );
+    try {
+        CDB_ClientEx ex(
+            kBlankCompileInfo,
+            0, msg->msgstring,
+            sev,
+            msg->msgnumber
+            );
 
-    ex.SetSybaseSeverity(msg->severity);
+        ex.SetSybaseSeverity(msg->severity);
 
-    GetCTLExceptionStorage().Accept(ex);
+        GetCTLExceptionStorage().Accept(ex);
+    } catch (...) {
+        return CS_FAIL;
+    }
 
     return CS_SUCCEED;
+}
+
+
+static
+void PassException(CDB_Exception& ex,
+                   const string&  server_name,
+                   const string&  user_name,
+                   CS_INT         severity
+                   )
+{
+    ex.SetServerName(server_name);
+    ex.SetUserName(user_name);
+    ex.SetSybaseSeverity(severity);
+
+    GetCTLExceptionStorage().Accept(ex);
+}
+
+
+static
+CS_RETCODE
+HandleConnStatus(CS_CONNECTION* conn,
+                 CS_CLIENTMSG*  msg,
+                 const string&  server_name,
+                 const string&  user_name
+                 )
+{
+    if(conn) {
+        CS_INT login_status = 0;
+
+        if( ct_con_props(conn,
+                         CS_GET,
+                         CS_LOGIN_STATUS,
+                         (CS_VOID*)&login_status,
+                         CS_UNUSED,
+                         NULL) != CS_SUCCEED) {
+            return CS_FAIL;
+        }
+
+        if (login_status) {
+            CS_RETCODE rc = ct_cancel(conn, NULL, CS_CANCEL_ATTN);
+
+            switch(rc){
+            case CS_SUCCEED:
+                return CS_SUCCEED;
+#if !defined(FTDS_IN_USE)
+            case CS_TRYING: {
+                CDB_TimeoutEx ex(
+                    kBlankCompileInfo,
+                    0,
+                    "Got timeout on ct_cancel(CS_CANCEL_ALL)",
+                    msg->msgnumber);
+
+                PassException(ex, server_name, user_name, msg->severity);
+            }
+#endif
+            default:
+                return CS_FAIL;
+            }
+        }
+    }
+
+    return CS_FAIL;
 }
 
 
@@ -692,145 +878,120 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
     string          server_name;
     string          user_name;
 
-    if ( msg->msgstring ) {
-        message.append( msg->msgstring );
-    }
-
-    // Retrieve CDBHandlerStack ...
-    if (con != 0  &&
-        ct_con_props(con,
-                     CS_GET,
-                     CS_USERDATA,
-                     (void*) &link,
-                     (CS_INT) sizeof(link),
-                     &outlen ) == CS_SUCCEED  &&  link != 0) {
-        if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
-            server_name = link->ServerName();
-            user_name = link->UserName();
-        } else {
-            ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
-        }
-    }
-    else if (cs_config(context,
-                       CS_GET,
-                       CS_USERDATA,
-                       (void*) &p_pot,
-                       (CS_INT) sizeof(p_pot),
-                       &outlen ) == CS_SUCCEED  &&
-             p_pot != 0  &&  p_pot->NofItems() > 0) {
-        // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-    }
-    else {
-        if (msg->severity != CS_SV_INFORM) {
-            ostrstream err_str;
-
-            // nobody can be informed, let's put it in stderr
-            err_str << "CTLIB error handler detects the following error" << endl
-                    << "Severity:" << msg->severity << err_str << " Msg # "
-                    << msg->msgnumber << endl;
-            err_str << msg->msgstring << endl;
-
-            if (msg->osstringlen > 1) {
-                err_str << "OS # "    << msg->osnumber
-                        << " OS msg " << msg->osstring << endl;
-            }
-
-            if (msg->sqlstatelen > 1  &&
-                (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-                err_str << "SQL: " << msg->sqlstate << endl;
-            }
-
-            ERR_POST((string)CNcbiOstrstreamToString(err_str));
+    try {
+        if (msg->msgstring) {
+            message.append(msg->msgstring);
         }
 
-        return CS_SUCCEED;
-    }
-
-    // Process the message ...
-    switch (msg->severity) {
-    case CS_SV_INFORM: {
-        CDB_ClientEx ex( kBlankCompileInfo,
-                           0,
-                           message,
-                           eDiag_Info,
-                           msg->msgnumber);
-
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(msg->severity);
-
-        GetCTLExceptionStorage().Accept(ex);
-
-        break;
-    }
-    case CS_SV_RETRY_FAIL: {
-        CDB_TimeoutEx ex(
-            kBlankCompileInfo,
-            0,
-            message,
-            msg->msgnumber);
-
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(msg->severity);
-
-        GetCTLExceptionStorage().Accept(ex);
-
-        if( con ) {
-            CS_INT status;
-            if((ct_con_props(con,
-                             CS_GET,
-                             CS_LOGIN_STATUS,
-                             (CS_VOID*)&status,
-                             CS_UNUSED,
-                             NULL) != CS_SUCCEED) ||
-                (!status)) {
-                return CS_FAIL;
+        // Retrieve CDBHandlerStack ...
+        if (con != NULL  &&
+            ct_con_props(con,
+                         CS_GET,
+                         CS_USERDATA,
+                         (void*) &link,
+                         (CS_INT) sizeof(link),
+                         &outlen ) == CS_SUCCEED  &&  link != 0) {
+            if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
+                server_name = link->ServerName();
+                user_name = link->UserName();
+            } else {
+                ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
             }
-
-            if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) {
-                return CS_FAIL;
-            }
+        }
+        else if (cs_config(context,
+                           CS_GET,
+                           CS_USERDATA,
+                           (void*) &p_pot,
+                           (CS_INT) sizeof(p_pot),
+                           &outlen ) == CS_SUCCEED  &&
+                 p_pot != 0  &&  p_pot->NofItems() > 0) {
+            // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
         }
         else {
-            return CS_FAIL;
+            if (msg->severity != CS_SV_INFORM) {
+                ostrstream err_str;
+
+                // nobody can be informed, let's put it in stderr
+                err_str << "CTLIB error handler detects the following error" << endl
+                        << "Severity:" << msg->severity << err_str << " Msg # "
+                        << msg->msgnumber << endl;
+                err_str << msg->msgstring << endl;
+
+                if (msg->osstringlen > 1) {
+                    err_str << "OS # "    << msg->osnumber
+                            << " OS msg " << msg->osstring << endl;
+                }
+
+                if (msg->sqlstatelen > 1  &&
+                    (msg->sqlstate[0] != 'Z' || msg->sqlstate[1] != 'Z')) {
+                    err_str << "SQL: " << msg->sqlstate << endl;
+                }
+
+                ERR_POST((string)CNcbiOstrstreamToString(err_str));
+            }
+
+            return CS_SUCCEED;
         }
 
-        break;
-    }
-    case CS_SV_CONFIG_FAIL:
-    case CS_SV_API_FAIL:
-    case CS_SV_INTERNAL_FAIL: {
-        CDB_ClientEx ex( kBlankCompileInfo,
-                          0,
-                          message,
-                          eDiag_Error,
-                          msg->msgnumber);
+        // In case of timeout ...
+        if (msg->msgnumber == 16908863) {
+            return HandleConnStatus(con, msg, server_name, user_name);
+        }
 
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(msg->severity);
+        // Process the message ...
+        switch (msg->severity) {
+        case CS_SV_INFORM: {
+            CDB_ClientEx ex( kBlankCompileInfo,
+                               0,
+                               message,
+                               eDiag_Info,
+                               msg->msgnumber);
 
-        GetCTLExceptionStorage().Accept(ex);
+            PassException(ex, server_name, user_name, msg->severity);
 
-        break;
-    }
-    default: {
-        CDB_ClientEx ex(
-            kBlankCompileInfo,
-            0,
-            message,
-            eDiag_Critical,
-            msg->msgnumber);
+            break;
+        }
+        case CS_SV_RETRY_FAIL: {
+            CDB_TimeoutEx ex(
+                kBlankCompileInfo,
+                0,
+                message,
+                msg->msgnumber);
 
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(msg->severity);
+            PassException(ex, server_name, user_name, msg->severity);
 
-        GetCTLExceptionStorage().Accept(ex);
+            return HandleConnStatus(con, msg, server_name, user_name);
 
-        break;
-    }
+            break;
+        }
+        case CS_SV_CONFIG_FAIL:
+        case CS_SV_API_FAIL:
+        case CS_SV_INTERNAL_FAIL: {
+            CDB_ClientEx ex( kBlankCompileInfo,
+                              0,
+                              message,
+                              eDiag_Error,
+                              msg->msgnumber);
+
+            PassException(ex, server_name, user_name, msg->severity);
+
+            break;
+        }
+        default: {
+            CDB_ClientEx ex(
+                kBlankCompileInfo,
+                0,
+                message,
+                eDiag_Critical,
+                msg->msgnumber);
+
+            PassException(ex, server_name, user_name, msg->severity);
+
+            break;
+        }
+        }
+    } catch (...) {
+        return CS_FAIL;
     }
 
     return CS_SUCCEED;
@@ -848,7 +1009,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         // send messages with 0 0 that need to be processed
         msg->msgnumber == 5701 ||
         msg->msgnumber == 5703 ||
-        msg->msgnumber == 5704) {
+        msg->msgnumber == 5704
+        ) {
         return CS_SUCCEED;
     }
 
@@ -859,120 +1021,108 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     string          server_name;
     string          user_name;
 
-    if (con != 0  &&  ct_con_props(con, CS_GET, CS_USERDATA,
-                                   (void*) &link, (CS_INT) sizeof(link),
-                                   &outlen) == CS_SUCCEED  &&
-        link != 0) {
-        if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
-            server_name = link->ServerName();
-            user_name = link->UserName();
-        } else {
-            ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
+    try {
+        if (con != NULL && ct_con_props(con, CS_GET, CS_USERDATA,
+                                       (void*) &link, (CS_INT) sizeof(link),
+                                       &outlen) == CS_SUCCEED  &&
+            link != NULL) {
+            if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
+                server_name = link->ServerName();
+                user_name = link->UserName();
+            } else {
+                ERR_POST(Error << "Invalid value of ServerName." << CStackTrace());
+            }
         }
-    }
-    else if (cs_config(context, CS_GET,
-                       CS_USERDATA,
-                       (void*) &p_pot,
-                       (CS_INT) sizeof(p_pot),
-                       &outlen) == CS_SUCCEED  &&
-             p_pot != 0  &&  p_pot->NofItems() > 0) {
+        else if (cs_config(context, CS_GET,
+                           CS_USERDATA,
+                           (void*) &p_pot,
+                           (CS_INT) sizeof(p_pot),
+                           &outlen) == CS_SUCCEED  &&
+                 p_pot != 0  &&  p_pot->NofItems() > 0) {
 
-        // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        server_name = string(msg->svrname, msg->svrnlen);
-    }
-    else {
-        ostrstream err_str;
-
-        err_str << "Message from the server ";
-
-        if (msg->svrnlen > 0) {
-            err_str << "<" << msg->svrname << "> ";
-        }
-
-        err_str << "msg # " << msg->msgnumber
-                << " severity: " << msg->severity << endl;
-
-        if (msg->proclen > 0) {
-            err_str << "Proc: " << msg->proc << " line: " << msg->line << endl;
-        }
-
-        if (msg->sqlstatelen > 1  &&
-            (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-            err_str << "SQL: " << msg->sqlstate << endl;
-        }
-
-        err_str << msg->text << endl;
-
-        ERR_POST((string)CNcbiOstrstreamToString(err_str));
-
-        return CS_SUCCEED;
-    }
-
-    if ( msg->text ) {
-        message += msg->text;
-    }
-
-    if (msg->msgnumber == 1205 /*DEADLOCK*/) {
-        CDB_DeadlockEx ex(kBlankCompileInfo,
-                          0,
-                          message);
-
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(msg->severity);
-
-        GetCTLExceptionStorage().Accept(ex);
-    }
-    else {
-        EDiagSev sev =
-            msg->severity <  10 ? eDiag_Info :
-            msg->severity == 10 ? (msg->msgnumber == 0 ? eDiag_Info : eDiag_Warning) :
-            msg->severity <  16 ? eDiag_Error : eDiag_Critical;
-
-        if (msg->proclen > 0) {
-            CDB_RPCEx ex(kBlankCompileInfo,
-                          0,
-                          message,
-                          sev,
-                          (int) msg->msgnumber,
-                          msg->proc,
-                          (int) msg->line);
-
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(msg->severity);
-
-            GetCTLExceptionStorage().Accept(ex);
-        }
-        else if (msg->sqlstatelen > 1  &&
-                 (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-            CDB_SQLEx ex(kBlankCompileInfo,
-                          0,
-                          message,
-                          sev,
-                          (int) msg->msgnumber,
-                          (const char*) msg->sqlstate,
-                          (int) msg->line);
-
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(msg->severity);
-
-            GetCTLExceptionStorage().Accept(ex);
+            // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
+            server_name = string(msg->svrname, msg->svrnlen);
         }
         else {
-            CDB_DSEx ex(kBlankCompileInfo,
-                        0,
-                        message,
-                        sev,
-                        (int) msg->msgnumber);
+            ostrstream err_str;
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(msg->severity);
+            err_str << "Message from the server ";
 
-            GetCTLExceptionStorage().Accept(ex);
+            if (msg->svrnlen > 0) {
+                err_str << "<" << msg->svrname << "> ";
+            }
+
+            err_str << "msg # " << msg->msgnumber
+                    << " severity: " << msg->severity << endl;
+
+            if (msg->proclen > 0) {
+                err_str << "Proc: " << msg->proc << " line: " << msg->line << endl;
+            }
+
+            if (msg->sqlstatelen > 1  &&
+                (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
+                err_str << "SQL: " << msg->sqlstate << endl;
+            }
+
+            err_str << msg->text << endl;
+
+            ERR_POST((string)CNcbiOstrstreamToString(err_str));
+
+            return CS_SUCCEED;
         }
+
+        if ( msg->text ) {
+            message += msg->text;
+        }
+
+        if (msg->msgnumber == 1205 /*DEADLOCK*/) {
+            CDB_DeadlockEx ex(kBlankCompileInfo,
+                              0,
+                              message);
+
+            PassException(ex, server_name, user_name, msg->severity);
+        }
+        else {
+            EDiagSev sev =
+                msg->severity <  10 ? eDiag_Info :
+                msg->severity == 10 ? (msg->msgnumber == 0 ? eDiag_Info : eDiag_Warning) :
+                msg->severity <  16 ? eDiag_Error : eDiag_Critical;
+
+            if (msg->proclen > 0) {
+                CDB_RPCEx ex(kBlankCompileInfo,
+                              0,
+                              message,
+                              sev,
+                              (int) msg->msgnumber,
+                              msg->proc,
+                              (int) msg->line);
+
+                PassException(ex, server_name, user_name, msg->severity);
+            }
+            else if (msg->sqlstatelen > 1  &&
+                     (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
+                CDB_SQLEx ex(kBlankCompileInfo,
+                              0,
+                              message,
+                              sev,
+                              (int) msg->msgnumber,
+                              (const char*) msg->sqlstate,
+                              (int) msg->line);
+
+                PassException(ex, server_name, user_name, msg->severity);
+            }
+            else {
+                CDB_DSEx ex(kBlankCompileInfo,
+                            0,
+                            message,
+                            sev,
+                            (int) msg->msgnumber);
+
+                PassException(ex, server_name, user_name, msg->severity);
+            }
+        }
+    } catch (...) {
+        return CS_FAIL;
     }
 
     return CS_SUCCEED;

@@ -130,8 +130,9 @@ public:
     }
     void SetDead(bool flag = true)
     {
+        // When connection is dead it doen't mean that it was automatically
+        // closed from ctlib's point of view.
         m_IsDead = flag;
-        m_IsOpen = !IsDead();
     }
 
 protected:
@@ -156,6 +157,47 @@ private:
     bool            m_IsAllocated;
     bool            m_IsOpen;
     bool            m_IsDead;
+};
+
+class Command
+{
+public:
+    Command(CTL_Connection& ctl_conn);
+    ~Command(void);
+
+public:
+    CS_COMMAND* GetNativeHandle(void) const
+    {
+        return m_Handle;
+    }
+
+    bool Open(CS_INT type, CS_INT option, const string& arg = kEmptyCStr);
+    bool GetDataInfo(CS_IODESC& desc);
+    bool SendData(CS_VOID* buff, CS_INT buff_len);
+    bool Send(void);
+    CS_RETCODE GetResults(CS_INT& res_type);
+    CS_RETCODE Fetch(void);
+
+protected:
+    const CTL_Connection& GetCTLConn(void) const
+    {
+        _ASSERT(m_CTL_Conn);
+        return *m_CTL_Conn;
+    }
+    CTL_Connection& GetCTLConn(void)
+    {
+        _ASSERT(m_CTL_Conn);
+        return *m_CTL_Conn;
+    }
+
+    void Drop(void);
+    void Close(void);
+
+private:
+    CTL_Connection* m_CTL_Conn;
+    CS_COMMAND*     m_Handle;
+    bool            m_IsAllocated;
+    bool            m_IsOpen;
 };
 
 } // namespace ctlib
@@ -308,6 +350,7 @@ public:
     }
 
     virtual bool IsAlive(void);
+    bool IsOpen();
 
 protected:
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,

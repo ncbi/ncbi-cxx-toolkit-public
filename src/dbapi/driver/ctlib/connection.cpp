@@ -245,10 +245,11 @@ CS_RETCODE CTL_Connection::CheckSFB(CS_RETCODE rc,
     case CS_SUCCEED:
         break;
     case CS_FAIL:
+        DATABASE_DRIVER_ERROR(msg, msg_num);
 #ifdef CS_BUSY
     case CS_BUSY:
-#endif
         DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
     }
 
     return rc;
@@ -293,6 +294,28 @@ bool CTL_Connection::IsAlive()
     return
         (status & CS_CONSTAT_CONNECTED) != 0  &&
         (status & CS_CONSTAT_DEAD     ) == 0;
+}
+
+
+bool
+CTL_Connection::IsOpen()
+{
+    CS_INT conn_is_open = CS_TRUE;
+
+#if !defined(FTDS_IN_USE)
+    CheckSFB(ct_con_props(
+        x_GetSybaseConn(),
+        CS_GET,
+        CS_LOGIN_STATUS,
+        (CS_VOID*)&conn_is_open,
+        CS_UNUSED,
+        NULL),
+             "ct_con_props failed",
+             121212
+    );
+#endif
+
+    return conn_is_open == CS_TRUE;
 }
 
 
@@ -371,7 +394,6 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                              size_t data_size,
                                              bool log_it)
 {
-
     CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(*this,
                                                   descr_in,
                                                   data_size,
@@ -405,19 +427,7 @@ bool CTL_Connection::Refresh()
         return false;
 
     // check the connection status
-    CS_INT status;
-    if (Check(ct_con_props(x_GetSybaseConn(),
-                           CS_GET,
-                           CS_CON_STATUS,
-                           &status,
-                           CS_UNUSED,
-                           0))
-        != CS_SUCCEED)
-        return false;
-
-    return
-        (status & CS_CONSTAT_CONNECTED) != 0  &&
-        (status & CS_CONSTAT_DEAD     ) == 0;
+    return IsAlive();
 }
 
 
@@ -462,23 +472,10 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
             return false;
     }
 
-
     auto_ptr<I_ITDescriptor> d_guard(p_desc);
-    CS_COMMAND* cmd = NULL;
+    ctlib::Command cmd(*this);
 
-    CheckSFB(
-        ct_cmd_alloc(
-            x_GetSybaseConn(),
-            &cmd
-            ),
-        "ct_cmd_alloc failed", 110001
-        );
-
-    if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
-        != CS_SUCCEED) {
-        Check(ct_cmd_drop(cmd));
-        DATABASE_DRIVER_ERROR( "ct_command failed", 110031 );
-    }
+    cmd.Open(CS_SEND_DATA_CMD, CS_COLUMN_DATA);
 
     CTL_ITDescriptor& desc = p_desc ?
         dynamic_cast<CTL_ITDescriptor&> (*p_desc) :
@@ -487,39 +484,34 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
     desc.m_Desc.total_txtlen  = size;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
 
-    if (Check(ct_data_info(cmd, CS_SET, CS_UNUSED, &desc.m_Desc)) != CS_SUCCEED) {
-        Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
-        Check(ct_cmd_drop(cmd));
+    if (!cmd.GetDataInfo(desc.m_Desc)) {
         return false;
     }
 
     while (size > 0) {
         char   buff[1800];
         CS_INT n_read = (CS_INT) img.Read(buff, sizeof(buff));
-        if ( !n_read ) {
-            Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
-            Check(ct_cmd_drop(cmd));
+        if (!n_read) {
             DATABASE_DRIVER_ERROR( "Text/Image data corrupted", 110032 );
         }
-        if (Check(ct_send_data(cmd, buff, n_read)) != CS_SUCCEED) {
-            Check(ct_cancel(0, cmd, CS_CANCEL_CURRENT));
-            Check(ct_cmd_drop(cmd));
+
+        if (!cmd.SendData(buff, n_read)) {
             DATABASE_DRIVER_ERROR( "ct_send_data failed", 110033 );
         }
+
         size -= n_read;
     }
 
-    if (Check(ct_send(cmd)) != CS_SUCCEED) {
-        Check(ct_cancel(0, cmd, CS_CANCEL_CURRENT));
-        Check(ct_cmd_drop(cmd));
+    if (!cmd.Send()) {
         DATABASE_DRIVER_ERROR( "ct_send failed", 110034 );
     }
 
     for (;;) {
         CS_INT res_type;
-        switch ( Check(ct_results(cmd, &res_type)) ) {
-        case CS_SUCCEED: {
-            if (x_ProcessResultInternal(cmd, res_type)) {
+
+        switch (cmd.GetResults(res_type)) {
+        case CS_SUCCEED:
+            if (x_ProcessResultInternal(cmd.GetNativeHandle(), res_type)) {
                 continue;
             }
 
@@ -530,38 +522,24 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
             case CS_ROW_RESULT:
             case CS_STATUS_RESULT: {
                 CS_RETCODE ret_code;
-                while ((ret_code = Check(ct_fetch(cmd, CS_UNUSED, CS_UNUSED,
-                                            CS_UNUSED, 0))) == CS_SUCCEED) {
+                while ((ret_code = cmd.Fetch()) == CS_SUCCEED) {
                     continue;
                 }
                 if (ret_code != CS_END_DATA) {
-                    Check(ct_cmd_drop(cmd));
                     DATABASE_DRIVER_ERROR( "ct_fetch failed", 110036 );
                 }
                 break;
             }
             case CS_CMD_FAIL:
-                Check(ct_cmd_drop(cmd));
                 DATABASE_DRIVER_ERROR( "command failed", 110037 );
             default:
                 break;
             }
             continue;
-        }
-        case CS_END_RESULTS: {
-            Check(ct_cmd_drop(cmd));
+        case CS_END_RESULTS:
             return true;
-        }
-        default: {
-            if (Check(ct_cancel(0, cmd, CS_CANCEL_ALL)) != CS_SUCCEED) {
-                // we need to close this connection
-                Check(ct_cmd_drop(cmd));
-                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed", 110033 );
-            }
-            Check(ct_cmd_drop(cmd));
+        default:
             DATABASE_DRIVER_ERROR( "ct_result failed", 110034 );
-        }
         }
     }
 }
@@ -644,17 +622,8 @@ bool CTL_Connection::Close(void)
                                     );
         }
 
-        return (!Refresh() || (m_Handle.Close() && m_Handle.Drop()));
-
-//         bool result = false;
-//         try {
-//             result = !Refresh() || m_Handle.Close();
-//         } catch (...) {
-//             m_Handle.Drop();
-//             throw;
-//         }
-//         m_Handle.Drop();
-//         return result;
+        // Finalyze connection ...
+        return (Refresh() && m_Handle.Close());
     }
 
     return false;

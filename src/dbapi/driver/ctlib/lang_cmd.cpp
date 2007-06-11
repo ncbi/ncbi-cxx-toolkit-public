@@ -69,6 +69,10 @@ CTL_Cmd::CTL_Cmd(CTL_Connection& conn)
 , m_Cmd(NULL)
 , m_Res(NULL)
 {
+    CHECK_DRIVER_ERROR(!GetConnection().IsAlive() || !GetConnection().IsOpen(),
+                       "Connection is not open or already dead.",
+                       110003 );
+
     CheckSFB_Internal(
         ct_cmd_alloc(
             GetConnection().GetNativeConnection().GetNativeHandle(),
@@ -472,21 +476,30 @@ CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
     return rc;
 }
 
-
 CDB_Result*
 CTL_LRCmd::MakeResult(void)
 {
     DeleteResult();
 
     CHECK_DRIVER_ERROR(
-                       !WasSent(),
+       !WasSent(),
         "you need to send a command first",
         120010 );
 
     for (;;) {
         CS_INT res_type;
+        CS_RETCODE rc = 0;
 
-        switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
+        try {
+            rc = Check(ct_results(x_GetSybaseCmd(), &res_type));
+        } catch (const CDB_Exception& ex) {
+            SetHasFailed();
+            Cancel();
+
+            DATABASE_DRIVER_ERROR_EX(ex, "ct_result failed", 120013);
+        }
+
+        switch (rc) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
@@ -494,24 +507,17 @@ CTL_LRCmd::MakeResult(void)
             return 0;
         case CS_FAIL:
             SetHasFailed();
-            if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
-                // we need to close this connection
-                DATABASE_DRIVER_ERROR(
-                    "Unrecoverable crash of ct_result. "
-                    "Connection must be closed",
-                    120012 );
-            }
-            SetWasSent(false);
-            DATABASE_DRIVER_ERROR( "ct_result failed", 120013 );
+            Cancel();
+            DATABASE_DRIVER_ERROR("ct_result failed", 120013);
         case CS_CANCELED:
             SetWasSent(false);
-            DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
+            DATABASE_DRIVER_ERROR("your command has been canceled", 120011);
 #ifdef CS_BUSY
         case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 120014 );
+            DATABASE_DRIVER_ERROR("connection has another request pending", 120014);
 #endif
         default:
-            DATABASE_DRIVER_ERROR( "your request is pending", 120015 );
+            DATABASE_DRIVER_ERROR("your request is pending", 120015);
         }
 
         switch ( res_type ) {
@@ -559,17 +565,21 @@ CTL_LRCmd::Cancel(void)
     if (WasSent()) {
         DeleteResultInternal();
 
-        switch ( Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) ) {
-        case CS_SUCCEED:
-            SetWasSent(false);
-            return true;
-        case CS_FAIL:
-            DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
+        if (GetConnection().IsAlive()) {
+            switch (Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL))) {
+            case CS_SUCCEED:
+                SetWasSent(false);
+                return true;
+            case CS_FAIL:
+                DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
 #ifdef CS_BUSY
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
+            case CS_BUSY:
+                DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
 #endif
-        default:
+            default:
+                return false;
+            }
+        } else {
             return false;
         }
     }
@@ -613,11 +623,7 @@ bool CTL_LangCmd::Send()
         break;
     case CS_FAIL:
         SetHasFailed();
-        if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
-            // we need to close this connection
-            DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
-                               "Connection must be closed", 120004 );
-        }
+        Cancel();
         DATABASE_DRIVER_ERROR( "ct_send failed", 120005 );
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "command was canceled", 120006 );
