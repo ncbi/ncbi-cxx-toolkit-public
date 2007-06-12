@@ -40,6 +40,8 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 
+#include <connect/server_monitor.hpp>
+
 #include <db.h>
 
 #include <bdb/bdb_blobcache.hpp>
@@ -1043,7 +1045,9 @@ CBDB_Cache::CBDB_Cache()
   m_MaxTTL_prolong(0),
   m_MaxBlobSize(0),
   m_RoundRobinVolumes(0),
-  m_MempTrickle(10)
+  m_MempTrickle(10),
+  m_Monitor(0)
+
 {
     m_TimeStampFlag = fTimeStampOnRead |
                       fExpireLeastFrequentlyUsed |
@@ -2807,13 +2811,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     }
 
 purge_start:
-    // Make sure m_MempTrickle% of pages are free and read-ready
-/*
-    if (m_MempTrickle) {
-        int nwrote;
-        m_Env->MempTrickle(m_MempTrickle, &nwrote);
-    }
-*/
+
 
     time_t gc_start = time(0); // time when we started GC scan
 
@@ -2823,11 +2821,17 @@ purge_start:
         } else {
             // Check if we nothing to purge
             if (!(m_NextExpTime <= gc_start)) {
-//                m_Env->TransactionCheckpoint();
                 ++m_PurgeSkipCnt;
+                if (m_Monitor && m_Monitor->IsActive()) {
+                    m_Monitor->Send("Purge: scan skipped(no delete candidates)\n");
+                }
                 return;
             }
         }
+    }
+
+    if (m_Monitor && m_Monitor->IsActive()) {
+        m_Monitor->Send("Purge: scan started.\n");
     }
     m_NextExpTime = 0;
 
@@ -2917,6 +2921,10 @@ purge_start:
 
         // Delete BLOBs if there are deletion candidates
         if (cache_entries.size() > 0) {
+            if (m_Monitor && m_Monitor->IsActive()) {
+                m_Monitor->Send("Purge:Deleting expired BLOBs...\n");
+            }
+
             for (size_t i = 0; i < cache_entries.size(); ++i) {
                 {{
                     CBDB_Transaction trans(*m_Env,
@@ -2934,12 +2942,29 @@ purge_start:
                                    it.overflow,
                                    it.blob_id,
                                    trans);
+                        if (m_Monitor && m_Monitor->IsActive()) {
+                            string msg = 
+                                "Purge: DELETE \"" + 
+                                it.key + "\"-" + NStr::UIntToString(it.version) + 
+                                "-\"" + it.subkey + "\"\n";
+                            m_Monitor->Send(msg);
+                        }
+
                     }} // m_DB_Lock
                     trans.Commit();
                     delay = m_BatchSleep;
                 }}
 
             } // for i
+
+            if (m_Monitor && m_Monitor->IsActive()) {
+                string msg = 
+                    "Purge: deleted " + 
+                    NStr::UIntToString(cache_entries.size()) + 
+                    " BLOBs\n";
+                m_Monitor->Send(msg);
+            }
+
             cache_entries.resize(0);
         }
 
@@ -2949,94 +2974,9 @@ purge_start:
             return;
         }
 
-        // While scanning we need to periodically run 
-        // checkpoints and background writes
-        // TODO: move checkpoints to a dedicated thread
-        //
-/*
-        time_t curr = time(0);
-        if (curr - last_check >= 30) {
-            m_Env->TransactionCheckpoint();
-            bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
-            if (purge_stop) {
-                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
-                return;
-            }
-
-            if (m_MempTrickle) {
-                int nwrote;
-                m_Env->MempTrickle(m_MempTrickle, &nwrote);
-            }    
-            last_check = time(0);
-        }
-*/
-
     } // for flag
 
 
-    // Delete BLOBs
-/*
-    last_check = time(0);
-
-    for (unsigned i = 0; i < cache_entries.size(); ) {
-        unsigned batch_size = GetPurgeBatchSize();
-        batch_size = batch_size / 2;
-        if (batch_size == 0) {
-            batch_size = 2;
-        }
-
-        for (unsigned j = 0;
-             (j < batch_size) && (i < cache_entries.size());
-             ++i,++j) {
-                {{
-                    CBDB_Transaction trans(*m_Env,
-                                            CBDB_Transaction::eEnvDefault,
-                                            CBDB_Transaction::eNoAssociation);
-                    
-                    {{
-                        CFastMutexGuard guard(m_DB_Lock);
-                        m_BLOB_SplitStore->SetTransaction(&trans);
-
-                        const SCacheDescr& it = cache_entries[i];
-                        x_DropBlob(it.key,
-                                    it.version,
-                                    it.subkey,
-                                    it.overflow,
-                                    it.blob_id,
-                                    trans);
-                    }} // m_DB_Lock
-                    trans.Commit();
-                    delay = m_BatchSleep;
-                }}
-
-        } // for j
-        bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
-        if (purge_stop) {
-            LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
-            return;
-        }
-        // While scanning we need to periodically run 
-        // checkpoints and background writes
-        // TODO: move checkpoints to a dedicated thread
-        //
-        time_t curr = time(0);
-        if (curr - last_check >= 30) {
-            m_Env->TransactionCheckpoint();
-            bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
-            if (purge_stop) {
-                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
-                return;
-            }
-
-            if (m_MempTrickle) {
-                int nwrote;
-                m_Env->MempTrickle(m_MempTrickle, &nwrote);
-            }    
-            last_check = time(0);
-        }
-
-    } // for i
-*/
     ++m_PurgeCount;
 
     {{
@@ -3052,7 +2992,8 @@ purge_start:
     if ((m_PurgeCount % 50) == 0) {
         m_BLOB_SplitStore->FreeUnusedMem();
     }
-//    m_Env->TransactionCheckpoint();
+
+    unsigned time_in_purge = 0;
 
     // check if we want to rescan the database right away
     if (m_PurgeThreadDelay) {
@@ -3060,10 +3001,22 @@ purge_start:
         // we spent more time in Purge than we planned to sleep
         // it means we have a lot of records and need to run GC
         // continuosly
-        if (((unsigned)curr - (unsigned)gc_start) >= m_PurgeThreadDelay || 
+        time_in_purge = (unsigned)curr - (unsigned)gc_start;
+        if (time_in_purge >= m_PurgeThreadDelay || 
             (m_NextExpTime != 0 && (curr > m_NextExpTime))) {
+
+            if (m_Monitor && m_Monitor->IsActive()) {
+                m_Monitor->Send("Purge: scan restarted. time=" + 
+                                NStr::UIntToString(time_in_purge)+ "s.\n");
+            }
+
             goto purge_start;
         }
+    }
+
+    if (m_Monitor && m_Monitor->IsActive()) {
+        m_Monitor->Send("Purge: scan ended. Scan time=" + 
+                        NStr::UIntToString(time_in_purge)+ "s.\n");
     }
 
 }

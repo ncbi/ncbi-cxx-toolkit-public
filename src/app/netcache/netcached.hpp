@@ -50,6 +50,16 @@
 BEGIN_NCBI_SCOPE
 
 
+/// request type
+///
+/// @internal
+typedef enum {
+    eNCServer_Unknown,
+    eNCServer_NetCache,
+    eNCServer_Session,
+    eNCServer_ICache
+} EServed_RequestType;
+
 /// NC requests
 ///
 /// @internal
@@ -263,6 +273,9 @@ public:
     void StartSessionManagement(unsigned session_shutdown_timeout);
     void StopSessionManagement();
 
+    /// Get server-monitor class
+    CServer_Monitor& GetMonitor() { return m_Monitor; }
+
 protected:
     virtual void ProcessOverflow(SOCK sock);
 
@@ -467,6 +480,7 @@ private:
     ICache* GetLocalCache(const string& cache_name);
     static
     bool WaitForReadSocket(CSocket& sock, unsigned time_to_wait);
+
 
 private:
     bool x_CheckBlobId(CSocket&       sock,

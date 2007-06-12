@@ -53,6 +53,9 @@
 
 BEGIN_NCBI_SCOPE
 
+struct IServer_Monitor;
+
+
 /** @addtogroup BDB_BLOB_Cache
  *
  * @{
@@ -372,6 +375,16 @@ public:
     /// Return TRUE if cache is read-only
     bool IsReadOnly() const { return m_ReadOnly; }
 
+    /// Set monitor (class does NOT take ownership)
+    ///
+    /// Monitor should be set at right after construction,
+    /// before using cache. (Especially important in MT environment)
+    ///
+    void SetMonitor(IServer_Monitor* monitor) { m_Monitor = monitor; }
+
+    /// Get monitor
+    IServer_Monitor* GetMonitor() { return m_Monitor; }
+
     /// Set update attribute limit (0 by default)
     ///
     /// When cache is configured to update BLOB time stamps on read
@@ -472,7 +485,8 @@ public:
     void Unlock();
 
 
-    // Error logging functions
+    /// @name Error logging functions
+    /// @{
 
     void RegisterInternalError(SBDB_CacheUnitStatistics::EErrGetPut operation,
                                const string&                        owner);
@@ -486,8 +500,12 @@ public:
     void RegisterCommError(SBDB_CacheUnitStatistics::EErrGetPut operation, 
                            const string&                        owner);
 
+    ///@}
 
-    // ICache interface
+
+
+    /// @name ICache interface
+    /// @{
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
@@ -554,6 +572,8 @@ public:
                        const string&    subkey,
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
+
+    ///@}
 
     /// Delete BLOB
     /// @param for_update
@@ -751,7 +771,6 @@ private:
     //bool                    m_PurgeStop;
     CSemaphore              m_PurgeStopSignal;
     /// Number of bytes stored in cache since last checkpoint
-    //unsigned                m_BytesWritten;
     /// Clean log on Purge (factor)
     unsigned                m_CleanLogOnPurge;
     /// Number of times we run purge
@@ -797,6 +816,9 @@ private:
     time_t                     m_NextExpTime;
     /// Number of times Purge skipped
     unsigned                   m_PurgeSkipCnt;
+
+    /// Pointer to monitoring interface
+    IServer_Monitor*           m_Monitor;
 };
 
 

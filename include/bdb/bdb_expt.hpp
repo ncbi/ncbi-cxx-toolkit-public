@@ -133,6 +133,7 @@ public:
         eQuerySyntaxError,
         eCannotOpenOverflowFile,
         eOverflowFileIO,
+        eFileIO,
         eQuotaLimit,
         eForeignTransaction,
         eCompressorError,
@@ -156,6 +157,7 @@ public:
         case eQuerySyntaxError:        return "eQuerySyntaxError";
         case eCannotOpenOverflowFile:  return "eCannotOpenOverflowFile";
         case eOverflowFileIO:          return "eOverflowFileIO";
+        case eFileIO:                  return "eFileIO";
         case eQuotaLimit:              return "eQuotaLimit";
         case eForeignTransaction:      return "eForeignTransaction";
         case eCompressorError:         return "eCompressorError";

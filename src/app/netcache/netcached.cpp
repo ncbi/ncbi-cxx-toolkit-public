@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.4.15  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.1  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -378,6 +378,11 @@ void CNetCacheServer::MountICache(CConfig&                conf,
 
             it->second = ic;
             LOG_POST("Local cache mounted: " << cache_name);
+            CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(ic);
+            if (bdb_cache) {
+                bdb_cache->SetMonitor(&m_Monitor);
+            }
+
         } 
         catch (exception& ex)
         {
@@ -629,8 +634,11 @@ void CNetCacheServer::ProcessSM(CSocket& socket, string& req)
 void CNetCacheServer::Process(SOCK sock)
 {
     SNC_ThreadData* tdata = x_GetThreadData();
+
     ENC_RequestType nc_req_type = eError;
     EIC_RequestType ic_req_type = eIC_Error;
+    EServed_RequestType service_req_type = eNCServer_Unknown;
+
     NetCache_RequestStat    stat;
     stat.blob_size = stat.io_blocks = 0;
 
@@ -643,9 +651,9 @@ void CNetCacheServer::Process(SOCK sock)
         CStopWatch  sw(CStopWatch::eStop);
         bool is_log = IsLog();
 
-        if (is_log) {
+        if (is_log || m_Monitor.IsMonitorActive()) {
             stat.conn_time = m_LocalTimer.GetLocalTime();
-            stat.comm_elapsed = 0;
+            stat.comm_elapsed = stat.elapsed = 0;
             stat.peer_address = socket.GetPeerAddress();
                        
             // get only host name
@@ -653,6 +661,7 @@ void CNetCacheServer::Process(SOCK sock)
             if (offs != string::npos) {
                 stat.peer_address.erase(offs, stat.peer_address.length());
             }
+            stat.req_code = '?';
 
             sw.Start();
         }
@@ -681,6 +690,7 @@ void CNetCacheServer::Process(SOCK sock)
 
                 if (rq[0] == 'I' && rq[1] == 'C') {  // ICache request
                     tdata->ic_req.Init();
+                    service_req_type = eNCServer_ICache;
                     ProcessIC(socket, 
                               ic_req_type, tdata->ic_req, *tdata, stat);
                 } else 
@@ -688,6 +698,7 @@ void CNetCacheServer::Process(SOCK sock)
                     WriteMsg(socket, "OK:", "");
                 } else
                 if (rq[0] == 'S' && rq[1] == 'M') {  // Session management
+                    service_req_type = eNCServer_Session;
                     ProcessSM(socket, rq);
                     break; // need to disconnect after reg-unreg
                 } else 
@@ -701,11 +712,13 @@ void CNetCacheServer::Process(SOCK sock)
                     return;
                 } else {
                     tdata->req.Init();
+                    service_req_type = eNCServer_NetCache;
                     ProcessNC(socket, 
                               nc_req_type, tdata->req, *tdata, stat);
                     // netcache protocol is not tested(and designed) for
                     // multi-command work, so for now I just break
                     // out of the loop and close the socket
+                    // TODO: Needs to be fixed!!!!
                     break;
                 }
             } // while
@@ -734,39 +747,118 @@ void CNetCacheServer::Process(SOCK sock)
             _ASSERT(lg);
             lg->Put(tdata->auth, stat, tdata->req.req_id);
         }
+        // 
+        // Monitoring
+        //
+        if (m_Monitor.IsMonitorActive()) {
+
+            stat.elapsed = sw.Elapsed();
+
+            string msg, tmp;
+            msg += tdata->auth;
+            msg += "\"";
+            msg += tdata->request;
+            msg += "\" ";
+            msg += stat.peer_address;
+            msg += "\n\t";
+            msg += "ConnTime=" + stat.conn_time.AsString();
+            msg += " BLOB size=";
+            NStr::UInt8ToString(tmp, stat.blob_size);
+            msg += tmp;
+            msg += " elapsed=";
+            msg += NStr::DoubleToString(stat.elapsed, 5);
+            msg += " comm.elapsed=";
+            msg += NStr::DoubleToString(stat.comm_elapsed, 5);
+            msg += "\n\t";
+            switch (service_req_type) {
+            case eNCServer_NetCache:                
+                msg += "NC:" + tdata->req.req_id;
+                break;
+            case eNCServer_Session:
+                msg += "Session request";
+                break;
+            case eNCServer_ICache:
+                msg + "IC:" + "Cache=\"" + tdata->ic_req.cache_name + "\"";
+                msg += " key=\"" + tdata->ic_req.key;
+                msg += "\" version=" + NStr::IntToString(tdata->ic_req.version);
+                msg += " subkey=\"" + tdata->ic_req.subkey +"\"";
+                break;
+            case eNCServer_Unknown:
+                msg += "UNK?";
+                break;
+            default:
+                _ASSERT(0);
+            }
+            msg += "\n";
+
+            m_Monitor.SendString(msg);
+        }
     } 
     catch (CNetCacheException &ex)
     {
-        ERR_POST("NC Server error: " << ex.what() 
-                 << " client="       << tdata->auth
-                 << " request='"     << tdata->request << "'"
-                 << " peer="         << socket.GetPeerAddress()
-                 << " blobsize="     << stat.blob_size
-                 << " io blocks="    << stat.io_blocks
-                 );
+        string msg;
+        msg = "NC Server error: ";
+        msg.append(ex.what());
+        msg.append(" client=");  msg.append(tdata->auth);
+        msg.append(" request='");msg.append(tdata->request); msg.append("'");
+        msg.append(" peer="); msg.append(socket.GetPeerAddress());
+        msg.append(" blobsize=");
+            msg.append(NStr::UIntToString(stat.blob_size));
+        msg.append(" io blocks=");
+            msg.append(NStr::UIntToString(stat.io_blocks));
+        msg.append("\n");
+
+        ERR_POST(msg);
+
         x_RegisterException(nc_req_type, tdata->auth, ex);
+
+        if (m_Monitor.IsMonitorActive()) {
+            m_Monitor.SendString(msg);
+        }
     }
     catch (CNetServiceException& ex)
     {
-        ERR_POST("Server error: " << ex.what() 
-                 << " client="    << tdata->auth
-                 << " request='"  << tdata->request << "'"
-                 << " peer="      << socket.GetPeerAddress()
-                 << " blobsize="     << stat.blob_size
-                 << " io blocks="    << stat.io_blocks
-                 );
+        string msg;
+        msg = "NC Service exception: ";
+        msg.append(ex.what());
+        msg.append(" client=");  msg.append(tdata->auth);
+        msg.append(" request='");msg.append(tdata->request); msg.append("'");
+        msg.append(" peer="); msg.append(socket.GetPeerAddress());
+        msg.append(" blobsize=");
+            msg.append(NStr::UIntToString(stat.blob_size));
+        msg.append(" io blocks=");
+            msg.append(NStr::UIntToString(stat.io_blocks));
+        msg.append("\n");
+
+        ERR_POST(msg);
+
         x_RegisterException(nc_req_type, tdata->auth, ex);
+
+        if (m_Monitor.IsMonitorActive()) {
+            m_Monitor.SendString(msg);
+        }
     }
     catch (exception& ex)
     {
-        ERR_POST("Execution error in command "
-                 << ex.what() << " client=" << tdata->auth
-                 << " request='" << tdata->request << "'"
-                 << " peer="     << socket.GetPeerAddress()
-                 << " blobsize="     << stat.blob_size
-                 << " io blocks="    << stat.io_blocks
-                 );
+        string msg;
+        msg = "NC std::exception: ";
+        msg.append(ex.what());
+        msg.append(" client=");  msg.append(tdata->auth);
+        msg.append(" request='");msg.append(tdata->request); msg.append("'");
+        msg.append(" peer="); msg.append(socket.GetPeerAddress());
+        msg.append(" blobsize=");
+            msg.append(NStr::UIntToString(stat.blob_size));
+        msg.append(" io blocks=");
+            msg.append(NStr::UIntToString(stat.io_blocks));
+        msg.append("\n");
+
+        ERR_POST(msg);
+
         x_RegisterInternalErr(nc_req_type, tdata->auth);
+
+        if (m_Monitor.IsMonitorActive()) {
+            m_Monitor.SendString(msg);
+        }
     }
 }
 
@@ -1996,9 +2088,6 @@ int CNetCacheDApp::Run(void)
             bdb_cache = dynamic_cast<CBDB_Cache*>(ic);
             cache.reset(ic);
 
-            if (bdb_cache) {
-                bdb_cache->CleanLog();
-            }
 
         } else {
             string msg = 
@@ -2050,6 +2139,9 @@ int CNetCacheDApp::Run(void)
 
         thr_srv->SetTLS_Size(tls_size);
 
+        if (bdb_cache) {
+            bdb_cache->SetMonitor(&thr_srv->GetMonitor());
+        }
 
         // create ICache instances
 
