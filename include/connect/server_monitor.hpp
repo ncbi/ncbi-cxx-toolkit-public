@@ -38,26 +38,63 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup ThreadedServer
+ *
+ * @{
+ */
+
+/// Base interface for monitoring
+///
+struct IServer_Monitor
+{
+    /// Check if monitoring is active
+    virtual bool IsActive() = 0;
+    /// Send message
+    virtual void Send(const char* msg, size_t length) = 0;
+    /// Send message
+    virtual void Send(const string& str) = 0;
+};
+
 /// Server monitor
 ///
-class NCBI_XCONNECT_EXPORT CServer_Monitor
+class NCBI_XCONNECT_EXPORT CServer_Monitor : public IServer_Monitor
 {
 public:
     CServer_Monitor();
 
-    ~CServer_Monitor();
-    // Pass open socket for monitor output. The original socket is
-    // empty afterwards, ownership is handled by monitor. It activates
-    // the monitor.
+    virtual ~CServer_Monitor();
+    /// Pass open socket for monitor output. The original socket is
+    /// empty afterwards, ownership is handled by monitor. It activates
+    /// the monitor.
     void SetSocket(CSocket& socket);
     bool IsMonitorActive();
     void SendMessage(const char* msg, size_t length);
     void SendString(const string& str);
 
+    /// @name IServer_Monitor interface
+    /// @{
+
+    virtual bool IsActive() 
+        { return IsMonitorActive(); };
+    /// Send message
+    virtual void Send(const char* msg, size_t length) 
+        { SendMessage(msg, length); }
+    /// Send message
+    virtual void Send(const string& str)
+        { SendString(str); }
+
+    ///@}
+
+private:
+    CServer_Monitor(const CServer_Monitor&);
+    CServer_Monitor& operator=(const CServer_Monitor&);
 private:
     CFastMutex m_Lock; 
     CSocket*   m_Sock;
 };
+
+/* @} */
+
 
 END_NCBI_SCOPE
 
