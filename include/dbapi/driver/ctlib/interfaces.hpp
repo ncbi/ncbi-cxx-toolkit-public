@@ -123,6 +123,8 @@ public:
     }
     bool Open(const string& srv_name);
     bool Close(void);
+    // cancel all pending commands
+    bool Cancel(void);
 
     bool IsDead(void) const
     {

@@ -279,6 +279,19 @@ bool Connection::Close(void)
     return !IsOpen();
 }
 
+
+bool Connection::Cancel(void)
+{
+    if (IsOpen()) {
+        if (GetCTLConn().Check(ct_cancel(GetNativeHandle(), NULL, CS_CANCEL_ALL) != CS_SUCCEED)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 Command::Command(CTL_Connection& ctl_conn)
 : m_CTL_Conn(&ctl_conn)

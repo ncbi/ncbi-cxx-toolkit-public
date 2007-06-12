@@ -423,8 +423,9 @@ bool CTL_Connection::Refresh()
     DeleteAllCommands();
 
     // cancel all pending commands
-    if (Check(ct_cancel(x_GetSybaseConn(), 0, CS_CANCEL_ALL) != CS_SUCCEED))
+    if (!m_Handle.Cancel()) {
         return false;
+    }
 
     // check the connection status
     return IsAlive();
@@ -623,7 +624,13 @@ bool CTL_Connection::Close(void)
         }
 
         // Finalyze connection ...
-        return (Refresh() && m_Handle.Close());
+        Refresh();
+        m_Handle.Close();
+        // This method is often used as a destructor.
+        // So, let's drop the connection handle.
+        m_Handle.Drop();
+
+        return true;
     }
 
     return false;
