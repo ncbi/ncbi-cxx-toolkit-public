@@ -1561,8 +1561,8 @@ case "$host_os" in
      ;;
 esac
 
-# When using ccache and distcc together, ccache needs to be on the
-# outside, so look for distcc(.sh) first.
+# When using ccache and distcc together, ccache needs to be primary,
+# so look for distcc(.sh) first.
 
 if test "$with_distcc" = "yes"; then
    if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
@@ -1583,8 +1583,16 @@ fi
 if test "$with_ccache" != "no"; then
    AC_CHECK_PROG(CCACHE, ccache, ccache, [])
    if test -n "$CCACHE" ; then
-      CC_WRAPPER="$CCACHE $CC_WRAPPER"
-      CXX_WRAPPER="$CCACHE $CXX_WRAPPER"
+      if test -n "$CC_WRAPPER"; then
+         CC_WRAPPER="CCACHE_PREFIX=$CC_WRAPPER $CCACHE"
+      else
+         CC_WRAPPER=$CCACHE
+      fi
+      if test -n "$CXX_WRAPPER"; then
+         CXX_WRAPPER="CCACHE_PREFIX=$CXX_WRAPPER $CCACHE"
+      else
+         CXX_WRAPPER=$CCACHE
+      fi
    elif test "$with_ccache" = "yes"; then
       AC_MSG_WARN([ccache explicitly requested, but not found in PATH.])
    fi

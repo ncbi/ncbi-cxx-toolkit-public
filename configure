@@ -5645,8 +5645,8 @@ fi
      ;;
 esac
 
-# When using ccache and distcc together, ccache needs to be on the
-# outside, so look for distcc(.sh) first.
+# When using ccache and distcc together, ccache needs to be primary,
+# so look for distcc(.sh) first.
 
 if test "$with_distcc" = "yes"; then
    if test -z "$DISTCC" -a -x $NCBI/bin/distcc.sh ; then
@@ -5736,8 +5736,16 @@ echo "${ECHO_T}no" >&6
 fi
 
    if test -n "$CCACHE" ; then
-      CC_WRAPPER="$CCACHE $CC_WRAPPER"
-      CXX_WRAPPER="$CCACHE $CXX_WRAPPER"
+      if test -n "$CC_WRAPPER"; then
+         CC_WRAPPER="CCACHE_PREFIX=$CC_WRAPPER $CCACHE"
+      else
+         CC_WRAPPER=$CCACHE
+      fi
+      if test -n "$CXX_WRAPPER"; then
+         CXX_WRAPPER="CCACHE_PREFIX=$CXX_WRAPPER $CCACHE"
+      else
+         CXX_WRAPPER=$CCACHE
+      fi
    elif test "$with_ccache" = "yes"; then
       { echo "$as_me:$LINENO: WARNING: ccache explicitly requested, but not found in PATH." >&5
 echo "$as_me: WARNING: ccache explicitly requested, but not found in PATH." >&2;}
