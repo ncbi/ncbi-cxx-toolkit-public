@@ -570,7 +570,7 @@ private:
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
     auto_ptr<INSCWrapper>        m_NSReadClient;
-    CFastMutex                   m_SharedClientMutex;
+    mutable CFastMutex           m_SharedClientMutex;
     auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;

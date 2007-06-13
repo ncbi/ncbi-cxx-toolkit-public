@@ -657,6 +657,7 @@ void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
 
 size_t CGridWorkerNode::GetServerOutputSize() const
 {
+    CFastMutexGuard gurad(m_SharedClientMutex);
     return IsEmeddedStorageUsed() ?  
         m_SharedNSClient->GetServerParams().max_output_size : 0;
 }

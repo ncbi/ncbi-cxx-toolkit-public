@@ -340,8 +340,7 @@ CNetScheduleAPI::x_GetJobStatus(const string& job_key, bool submitter) const
 
 const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams() const
 {
-    if (m_ServerParams.get() && m_ServerParamsAskCount > 0) {
-        --m_ServerParamsAskCount;
+    if (m_ServerParams.get() && m_ServerParamsAskCount-- > 0) {
         return *m_ServerParams;
     }
     if (!m_ServerParams.get())
