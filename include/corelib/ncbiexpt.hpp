@@ -542,6 +542,18 @@ public:
                     const string& message,
                     EDiagSev severity = eDiag_Error);
 
+    /// Polymorphically (re)throw an exception whose exact type is
+    /// uncertain.
+    ///
+    /// NB: for best results, *EVERY* concrete derived class in the
+    /// hierarchy must implement its *OWN* version of Throw().  (Using
+    /// NCBI_EXCEPTION_DEFAULT or a related macro will take care of
+    /// this for you.)
+    ///
+    /// Simply invoking the throw keyword with no arguments is a
+    /// better option when available (within a catch block), but there
+    /// are circumstances in which it is not.
+    void Throw(void) const;
 
     // ---- Reporting --------------
 
@@ -676,8 +688,12 @@ protected:
     /// Helper method for getting error code.
     virtual int  x_GetErrCode(void) const { return m_ErrCode; }
 
-    /// Get and store current stack trace
+    /// Get and store current stack trace.
     void x_GetStackTrace(void);
+
+    /// Warn if Throw() will end up slicing its invocant.
+    void x_ThrowSanityCheck(const type_info& expected_type,
+                            const char* human_name) const;
 
 private:
     EDiagSev    m_Severity;          ///< Severity level for the exception
@@ -712,6 +728,12 @@ const TTo* UppermostCast(const TFrom& from)
     return typeid(from) == typeid(TTo) ? dynamic_cast<const TTo*>(&from) : 0;
 }
 
+#define NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
+    virtual void Throw(void) const \
+    { \
+        this->x_ThrowSanityCheck(typeid(exception_class), #exception_class); \
+        throw *this; \
+    }
 
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
     exception_class(const exception_class& other) \
@@ -729,6 +751,7 @@ public: \
             (TErrCode) this->x_GetErrCode() : \
             (TErrCode) CException::eInvalid; \
     } \
+    NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
 protected: \
     exception_class(void) {} \
     virtual const CException* x_Clone(void) const \

@@ -88,6 +88,17 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSupersystemException, CSubsystemException);
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// CIncompletelyImplementedException
+
+class CIncompletelyImplementedException : public CSupersystemException
+{
+public:
+    CIncompletelyImplementedException(const CSupersystemException& e)
+        : CSupersystemException(e)
+        { }
+};
+
 
 class CErrnoMoreException : public CErrnoTemplException<CCoreException>
 {
@@ -190,7 +201,9 @@ void CExceptApplication::f3(void)
         assert( strcmp(e.GetErrCodeString(),
                         pe->GetErrCodeString())==0);
 
-        NCBI_RETHROW_SAME(e,"calling f4 from f3");
+        // NCBI_RETHROW_SAME(e,"calling f4 from f3");
+        e.AddBacklog(DIAG_COMPILE_INFO, "calling f4 from f3", e.GetSeverity());
+        e.Throw();
     }
 }
 
@@ -200,6 +213,17 @@ void CExceptApplication::f4(void)
 
     NCBI_EXCEPTION_VAR(f4_ex, CSupersystemException, eSuper2, "from f4");
     f4_ex.SetSeverity(eDiag_Critical);
+    try {
+        CIncompletelyImplementedException f4_ex2(f4_ex);
+        f4_ex2.Throw(); // slices (and warns about doing so)
+    } catch (CSupersystemException& e) {
+        assert(UppermostCast<CSupersystemException>(e));
+        // ErrCode trashed, though it would have been safe to keep in
+        // this case.
+        assert((int)e.GetErrCode() == (int)CException::eInvalid);
+    } catch (...) {
+        assert(0);
+    }
     NCBI_EXCEPTION_THROW(f4_ex);
 
 //    throw CSupersystemException(DIAG_COMPILE_INFO, 0, CSupersystemException::eSuper2, "from f4", eDiag_Warning);

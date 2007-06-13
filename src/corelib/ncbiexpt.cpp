@@ -224,6 +224,13 @@ void CException::SetSeverity(EDiagSev severity)
 }
 
 
+void CException::Throw(void) const
+{
+    x_ThrowSanityCheck(typeid(CException), "CException");
+    throw *this;
+}
+
+
 // ---- report --------------
 
 const char* CException::what(void) const throw()
@@ -435,6 +442,18 @@ void CException::x_GetStackTrace(void)
         return;
     }
     m_StackTrace.reset(new CStackTrace);
+}
+
+
+void CException::x_ThrowSanityCheck(const type_info& expected_type,
+                                    const char* human_name) const
+{
+    const type_info& actual_type = typeid(*this);
+    if (actual_type != expected_type) {
+        ERR_POST(Warning << "CException::Throw(): throwing object of type "
+                 << actual_type.name() << " as " << expected_type.name()
+                 << " [" << human_name << ']');
+    }
 }
 
 

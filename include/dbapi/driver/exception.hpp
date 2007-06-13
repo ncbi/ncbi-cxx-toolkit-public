@@ -70,6 +70,7 @@ public: \
     { \
         return new exception_class(*this); \
     } \
+    NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
 protected: \
     exception_class(void) {} \
     virtual const CException* x_Clone(void) const \
@@ -397,13 +398,13 @@ public:
     /// @return
     ///   TRUE if the exceptions are handled -- in this case, HandleIt() methods
     ///   will *NOT* be called.
-    /// @sa HandleIt()
+    /// @sa HandleIt(), CException::Throw()
     virtual bool HandleAll(const TExceptions& exceptions);
 
     /// Handle the exceptions resulting from a native API call, one-by-one.
     /// @return
     ///   TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    /// @sa HandleAll()
+    /// @sa HandleAll(), CException::Throw()
     virtual bool HandleIt(CDB_Exception* ex) = 0;
 
     // Get current global "last-resort" error handler.
