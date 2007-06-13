@@ -151,11 +151,14 @@ private:
 class CGridControlThread : public CThread
 {
 public:
-    CGridControlThread(unsigned int control_port, CGridWorkerNode& wnode) 
-        : m_Control(new CWorkerNodeControlThread(control_port, wnode)) {}
+    CGridControlThread(unsigned int start_port, unsigned int end_port, CGridWorkerNode& wnode) 
+        : m_Control(new CWorkerNodeControlThread(start_port, end_port, wnode)) {}
 
     ~CGridControlThread() {}
 
+    void Prepare() { m_Control->StartListening(); }
+
+    unsigned int GetControlPort() { return m_Control->GetControlPort(); }
     void Stop() { if (m_Control.get()) m_Control->RequestShutdown(); }
 protected:
 
@@ -414,13 +417,22 @@ void CGridWorkerApp_Impl::Init()
 
 const string kServerSec = "server";
 
+static void s_ParseControlPorts(const string& sports, unsigned int& start_port, unsigned int& end_port)
+{
+    string sport1, sport2;
+    NStr::SplitInTwo(sports, "-", sport1, sport2);
+    if (sport2.empty()) sport2 = sport1;
+    start_port = NStr::StringToUInt(sport1);
+    end_port = NStr::StringToUInt(sport2);
+}
+
 int CGridWorkerApp_Impl::Run()
 {
     LOG_POST( GetJobFactory().GetJobVersion() << WN_BUILD_DATE); 
 
     const IRegistry& reg = m_App.GetConfig();
-    unsigned int udp_port =
-        reg.GetInt(kServerSec, "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
+    //unsigned int udp_port =
+    //    reg.GetInt(kServerSec, "notify_udp_port", 0/*9111*/,0,IRegistry::eReturn);
     unsigned int max_threads = 1;
     unsigned int init_threads = 1;
     if (!m_SingleThreadForced) {
@@ -448,12 +460,16 @@ int CGridWorkerApp_Impl::Run()
         reg.GetInt(kServerSec,"job_wait_timeout",30,0,IRegistry::eReturn);
     unsigned int threads_pool_timeout = 
         reg.GetInt(kServerSec,"thread_pool_timeout",30,0,IRegistry::eReturn);
-    unsigned int control_port = 
-        reg.GetInt(kServerSec,"control_port",9300,0,IRegistry::eReturn);
+    string scontrol_port = 
+        reg.GetString(kServerSec,"control_port","9300");
+
+    unsigned int start_port, end_port;
+    s_ParseControlPorts(scontrol_port, start_port, end_port);
 
     const CArgs& args = m_App.GetArgs();
     if (args["control_port"]) {
-        control_port = args["control_port"].AsInteger();
+        scontrol_port = args["control_port"].AsString();
+        s_ParseControlPorts(scontrol_port, start_port, end_port);
     }
 
     bool server_log = 
@@ -553,9 +569,6 @@ int CGridWorkerApp_Impl::Run()
                                            GetClientFactory(),
                                            m_JobWatchers.get())
                        );
-    if (udp_port == 0)
-        udp_port = control_port;
-    m_WorkerNode->SetListeningPort(udp_port);
     m_WorkerNode->SetMaxThreads(max_threads);
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
@@ -586,10 +599,13 @@ int CGridWorkerApp_Impl::Run()
     }
 
     {{
-     CRef<CGridControlThread> control_thread(new CGridControlThread(control_port, *m_WorkerNode));
+    CRef<CGridControlThread> control_thread(new CGridControlThread(start_port, end_port, *m_WorkerNode));
 
     //CRef<CGridWorkerNodeThread> worker_thread(
     //                            new CGridWorkerNodeThread(*m_WorkerNode));
+
+    control_thread->Prepare();
+    m_WorkerNode->SetListeningPort(control_thread->GetControlPort());
 
     control_thread->Run();
     //worker_thread->Run();
@@ -602,7 +618,7 @@ int CGridWorkerApp_Impl::Run()
                  << " ===================\n"
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on " 
-                 << CSocketAPI::gethostname() << ":" << control_port << "\n"
+                 << CSocketAPI::gethostname() << ":" << control_thread->GetControlPort() << "\n"
                  << "Queue name: " << m_WorkerNode->GetQueueName() << "\n"
                  << "Maximum job threads: " << max_threads << "\n");
 

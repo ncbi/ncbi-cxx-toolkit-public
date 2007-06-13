@@ -231,13 +231,17 @@ inline void s_HandleRunJobError(CGridThreadContext& thr_context, exception* ex =
 {
     string msg = " Error in Job execution";
     if (ex) msg += string(": ") + ex->what();
-    ERR_POST(CTime(CTime::eCurrent).AsString() << msg);
+    ERR_POST(CTime(CTime::eCurrent).AsString()
+             << " " << thr_context.GetJobContext().GetJobKey() << " " 
+             << msg);
     try {
         thr_context.PutFailure(ex ? ex->what() : "Unknown error");
     } catch(exception& ex1) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception: " << ex1.what());
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception: " 
+                 << thr_context.GetJobContext().GetJobKey() << " " << ex1.what());
     } catch(...) {
-        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception");
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Failed to report an exception "
+                 << " " << thr_context.GetJobContext().GetJobKey() << " " );
     }
 }
 

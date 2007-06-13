@@ -229,27 +229,37 @@ CWorkerNodeControlThread::MakeProcessor(const string& cmd)
 class CWNCTConnectionFactory : public IServer_ConnectionFactory
 {
 public:
-    CWNCTConnectionFactory(CWorkerNodeControlThread& server)
-        : m_Server(server) 
+    CWNCTConnectionFactory(CWorkerNodeControlThread& server, unsigned int& start_port, unsigned int end_port)
+        : m_Server(server), m_Port(start_port), m_EndPort(end_port)
     {}
     virtual IServer_ConnectionHandler* Create(void) {
         return new CWNCTConnectionHandler(m_Server);
     }
+    virtual EListenAction OnFailure(unsigned short* port )
+    { 
+        if (*port >= m_EndPort)
+            return eLAFail; 
+        m_Port = ++(*port);
+        return eLARetry;
+    }
+
 private:
     CWorkerNodeControlThread& m_Server;
+    unsigned int& m_Port;
+    unsigned int m_EndPort;
 };
 
 static STimeout kAcceptTimeout = {1,0};
-CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port, 
+CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int start_port, unsigned int end_port,
                                                    CGridWorkerNode& worker_node)
-    : m_WorkerNode(worker_node), m_ShutdownRequested(false)
+    : m_WorkerNode(worker_node), m_ShutdownRequested(false), m_Port(start_port)
 {
     SServer_Parameters params;
     params.init_threads = 1;
     params.max_threads = 3;
     params.accept_timeout = &kAcceptTimeout;
-    SetParameters(params);
-    AddListener(new CWNCTConnectionFactory(*this),port);
+    SetParameters(params);    
+    AddListener(new CWNCTConnectionFactory(*this, m_Port, end_port),m_Port);
 }
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
