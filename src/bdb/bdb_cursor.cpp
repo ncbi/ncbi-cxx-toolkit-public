@@ -377,10 +377,21 @@ void CBDB_FileCursor::x_FetchFirst_Prolog(unsigned int& flag)
         // (prefix search) we set all remaining fields to max.
         // possible value for GT/LT condition
         if (m_FetchDirection == eBackward) {
+            //
+            // looks like FROM condition should be always min
+            // this is because:
+            // "DB_SET_RANGE the returned key/data pair is the smallest 
+            //              key greater than or equal to the specified key"
+            // so if we set max the algorithm cannot find the last record
+            //
+            //
+            /* This setting cannot find the last db record (commented out)
             From.m_Condition.InitUnassignedFields(m_CondFrom == eLT ?
                                         CBDB_FC_Condition::eAssignMinVal
                                         :
                                         CBDB_FC_Condition::eAssignMaxVal);
+            */
+            From.m_Condition.InitUnassignedFields(CBDB_FC_Condition::eAssignMinVal);
         } else {
             From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
                                         CBDB_FC_Condition::eAssignMaxVal
@@ -588,7 +599,7 @@ CBDB_FileCursor::FetchFirst(CBDB_RawFile::TBuffer*  buf)
     // up or down to reach the interval criteria.
     if (m_CondFrom == eGT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags);
+            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags, buf);
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -596,15 +607,17 @@ CBDB_FileCursor::FetchFirst(CBDB_RawFile::TBuffer*  buf)
     else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags, buf);
             if (ret != eBDB_Ok)
                 return ret;
         }
     }
     else 
     if (m_CondFrom == eLE) {
-        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) > 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
+        while (m_Dbf.m_KeyBuf->Compare(
+                        From.m_Condition.m_Buf, 
+                        From.m_Condition.GetFieldsAssigned()) > 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags, buf);
             if (ret != eBDB_Ok)
                 return ret;
         }
