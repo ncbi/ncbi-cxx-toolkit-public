@@ -604,19 +604,44 @@ static void s_TestFormats(void)
     // SetFormat/AsString with flag parameter test
     {{
         CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
-        {{
-            string s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("02/10/2003 20:40:30") == 0);
-        }}
-        {{
-            string s = t.AsString("MDY $M/$D/$Y $h:$m:$s hms");
-            assert(s.compare("02102003 $02/$10/$2003 $20:$40:$30 204030") == 0);
-        }}
-        {{
-            string s = t.AsString(CTimeFormat("MDY $M/$D/$Y $h:$m:$s hms",
-                                               CTimeFormat::eNcbi));
-            assert(s.compare("MDY 02/10/2003 20:40:30 hms") == 0);
-        }}
+        string s;
+        s = t.AsString("M/D/Y h:m:s");
+        assert(s.compare("02/10/2003 20:40:30") == 0);
+        s = t.AsString("MDY $M/$D/$Y $h:$m:$s hms");
+        assert(s.compare("02102003 $02/$10/$2003 $20:$40:$30 204030") == 0);
+        s = t.AsString(CTimeFormat("MDY $M/$D/$Y $h:$m:$s hms",
+                                   CTimeFormat::eNcbi));
+        assert(s.compare("MDY 02/10/2003 20:40:30 hms") == 0);
+    }}
+
+    // CTimeFormat::GetPredefined() test
+    {{
+        CTime t(2003, 2, 10, 20, 40, 30, 123456789, CTime::eGmt);
+        string s;
+        s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_Year));
+        assert(s.compare("2003") == 0);
+        s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_YearMonth));
+        assert(s.compare("2003-02") == 0);
+        s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_Date));
+        assert(s.compare("2003-02-10") == 0);
+        s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeMin));
+        assert(s.compare("2003-02-10T20:40") == 0);
+        s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeSec));
+        assert(s.compare("2003-02-10T20:40:30") == 0);
+        s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeFrac));
+        assert(s.compare("2003-02-10T20:40:30.123") == 0);
+    }}
+
+    // Test assignment operator in different (from default) time format
+    {{
+        CTime t0(2003, 2, 10, 20, 40, 30, 0, CTime::eLocal);
+        CTime::SetFormat(CTimeFormat::GetPredefined(
+                                CTimeFormat::eISO8601_DateTimeMin,
+                                CTimeFormat::eNcbi));
+        assert(t0.AsString() == "2003-02-10T20:40");
+        CTime t("2003-02-10T20:40");
+        t.SetSecond(30);
+        assert(t == t0);
     }}
 }
 
