@@ -269,6 +269,8 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     int output_count = 0;
     int index = 0;
     
+    m_StringSort.Sort();
+    
     CWriteDB_PackedSemiTree::Iterator iter = m_StringSort.Begin();
     CWriteDB_PackedSemiTree::Iterator end_iter = m_StringSort.End();
     
