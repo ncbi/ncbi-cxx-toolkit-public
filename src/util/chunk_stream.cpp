@@ -24,17 +24,16 @@
  * ===========================================================================
  *
  * Authors:
- *   Dmitry Kazimirov - Initial revision.
+ *   Dmitry Kazimirov
  *
  * File Description:
- *   This file contains implementations of classes CChunkStreamReader and
- *   CChunkStreamWriter. The former serializes chunks of binary data to a byte
- *   stream and the latter deserializes these chunks back from the stream.
+ *   This file contains implementations of classes CUTTPReader and
+ *   CUTTPWriter. They implement Untyped Tree Transfer Protocol - UTTP.
  */
 
 #include <ncbi_pch.hpp>
 
-#include <util/chunk_stream.hpp>
+#include <util/uttp.hpp>
 
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
+CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
 {
     if (m_BufferSize == 0)
         return eEndOfBuffer;
@@ -70,7 +69,7 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
         if (--m_BufferSize == 0)
             return eEndOfBuffer;
         ++m_Buffer;
-
+        /* FALLTHROUGH */
     case eReadChunkLength:
         while ((digit = (unsigned) *m_Buffer - '0') <= 9) {
             m_LengthAcc = m_LengthAcc * 10 + digit;
@@ -125,7 +124,7 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
     }
 }
 
-void CChunkStreamWriter::Reset(char* buffer,
+void CUTTPWriter::Reset(char* buffer,
     size_t buffer_size, size_t max_buffer_size)
 {
     assert(buffer_size >= sizeof(m_InternalBuffer) - 1 &&
@@ -138,7 +137,7 @@ void CChunkStreamWriter::Reset(char* buffer,
     m_MaxBufferSize = max_buffer_size;
 }
 
-bool CChunkStreamWriter::SendControlSymbol(char symbol)
+bool CUTTPWriter::SendControlSymbol(char symbol)
 {
     assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
@@ -150,7 +149,7 @@ bool CChunkStreamWriter::SendControlSymbol(char symbol)
     return ++m_OutputBufferSize < m_BufferSize;
 }
 
-bool CChunkStreamWriter::SendChunk(const char* chunk,
+bool CUTTPWriter::SendChunk(const char* chunk,
     size_t chunk_length, bool to_be_continued)
 {
     assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
@@ -193,7 +192,7 @@ bool CChunkStreamWriter::SendChunk(const char* chunk,
     return false;
 }
 
-bool CChunkStreamWriter::NextOutputBuffer()
+bool CUTTPWriter::NextOutputBuffer()
 {
     if (m_InternalBufferSize > 0) {
         memcpy(m_Buffer, m_InternalBuffer + sizeof(m_InternalBuffer) -

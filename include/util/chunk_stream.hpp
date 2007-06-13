@@ -1,5 +1,5 @@
-#ifndef UTIL___CHUNK_STREAM__HPP
-#define UTIL___CHUNK_STREAM__HPP
+#ifndef UTIL___UTTP__HPP
+#define UTIL___UTTP__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -27,61 +27,60 @@
  * ===========================================================================
  *
  * Authors:
- *   Dmitry Kazimirov - Initial revision.
+ *   Dmitry Kazimirov
  *
  * File Description:
- *   Declarations of CChunkStreamReader and CChunkStreamWriter. These are
- *   classes for serialization and deserialization of chunks of binary data to
- *   and from sequences of bytes.
+ *   Declarations of CUTTPReader and CUTTPWriter.
+ *   They implement Untyped Tree Transfer Protocol - UTTP.
  *
  */
 
-/// @file chunk_stream.hpp
-/// This file contains declarations of classes CChunkStreamReader and
-/// CChunkStreamWriter. The former serializes chunks of binary data to a byte
+/// @file uttp.hpp
+/// This file contains declarations of classes CUTTPReader and
+/// CUTTPWriter. The former serializes chunks of binary data to a byte
 /// stream and the latter deserializes these chunks back from the stream.
 
 #include <corelib/ncbimisc.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/// Class for reading series of chunks sent by a CChunkStreamWriter instance as
+/// Class for reading series of chunks sent by a CUTTPWriter instance as
 /// a stream of bytes.  Objects of this class parse the input byte stream and
 /// notify the caller of parsing events.
-/// @sa CChunkStreamWriter
+/// @sa CUTTPWriter
 /// @par Example:
 /// Function names starting with ToDo:: are to be implemented by the client
 /// class.
 /// @code
-/// bool ProcessParsingEvents(CChunkStreamReader& reader)
+/// bool ProcessParsingEvents(CUTTPReader& reader)
 /// {
 ///     for (;;)
-///         switch (reader.NextParsingEvent()) {
-///         case CChunkStreamReader::eChunkPart:
+///         switch (reader.GetNextEvent()) {
+///         case CUTTPReader::eChunkPart:
 ///             ToDo::ProcessChunkPart(reader.GetChunkPart(),
 ///                 reader.GetChunkPartSize());
 ///             break;
 ///
-///         case CChunkStreamReader::eChunk:
+///         case CUTTPReader::eChunk:
 ///             ToDo::ProcessChunk(reader.GetChunkPart(),
 ///                 reader.GetChunkPartSize());
 ///             break;
 ///
-///         case CChunkStreamReader::eControlSymbol:
+///         case CUTTPReader::eControlSymbol:
 ///             ToDo::ProcessControlSymbol(reader.GetControlSymbol());
 ///             break;
 ///
-///         case CChunkStreamReader::eEndOfBuffer:
+///         case CUTTPReader::eEndOfBuffer:
 ///             return true;
 ///
-///         default: // case CChunkStreamReader::eFormatError:
+///         default: // case CUTTPReader::eFormatError:
 ///             return false;
 ///         }
 /// }
 ///
 /// void Main()
 /// {
-///     CChunkStreamReader reader;
+///     CUTTPReader reader;
 ///
 ///     while (ToDo::ReadBuffer(buffer, &buffer_size)) {
 ///         reader.SetNewBuffer(buffer, buffer_size);
@@ -90,7 +89,7 @@ BEGIN_NCBI_SCOPE
 ///     }
 /// }
 /// @endcode
-class NCBI_XUTIL_EXPORT CChunkStreamReader
+class NCBI_XUTIL_EXPORT CUTTPReader
 {
 // Types
 public:
@@ -127,7 +126,7 @@ public:
 // Construction
 public:
     /// Initialize the state machine of this object.
-    CChunkStreamReader();
+    CUTTPReader();
 
     /// Reinitialize this object.
     void Reset();
@@ -157,10 +156,10 @@ public:
     /// @return
     ///   A constant from the EStreamParsingEvent enumeration.
     /// @sa EStreamParsingEvent
-    EStreamParsingEvent NextParsingEvent();
+    EStreamParsingEvent GetNextEvent();
 
     /// Return the control symbol that has been previously read.  The returned
-    /// value is only valid after a successful call to the NextParsingEvent()
+    /// value is only valid after a successful call to the GetNextEvent()
     /// method, that is, when it returned eControlSymbol.
     char GetControlSymbol() const;
 
@@ -168,7 +167,7 @@ public:
     /// currently being read. Note that this buffer is not zero-terminated. Use
     /// the GetChunkPartSize() method to retrieve the length of this buffer.
     /// The returned value is only valid after a successful call to the
-    /// NextParsingEvent() method, that is, when this call returned either
+    /// GetNextEvent() method, that is, when this call returned either
     /// eChunkPart or eChunk.
     ///
     /// @return
@@ -178,7 +177,7 @@ public:
 
     /// Return the size of the buffer returned by the GetChunkPart() method.
     /// The returned value is only value after a successful call to the
-    /// NextParsingEvent() method.
+    /// GetNextEvent() method.
     /// @return
     ///   Size of the buffer returned by a call to the GetChunkPart() method.
     size_t GetChunkPartSize() const;
@@ -200,45 +199,45 @@ private:
     bool m_ChunkContinued;
 };
 
-inline CChunkStreamReader::CChunkStreamReader() :
+inline CUTTPReader::CUTTPReader() :
     m_Offset(0), m_State(eReadControlChars)
 {
 }
 
-inline void CChunkStreamReader::Reset()
+inline void CUTTPReader::Reset()
 {
     m_Offset = 0;
     m_State = eReadControlChars;
 }
 
-inline void CChunkStreamReader::SetOffset(off_t offset)
+inline void CUTTPReader::SetOffset(off_t offset)
 {
     m_Offset = offset;
 }
 
-inline off_t CChunkStreamReader::GetOffset() const
+inline off_t CUTTPReader::GetOffset() const
 {
     return m_Offset;
 }
 
-inline void CChunkStreamReader::SetNewBuffer(const char* buffer,
+inline void CUTTPReader::SetNewBuffer(const char* buffer,
     size_t buffer_size)
 {
     m_Buffer = buffer;
     m_BufferSize = buffer_size;
 }
 
-inline char CChunkStreamReader::GetControlSymbol() const
+inline char CUTTPReader::GetControlSymbol() const
 {
     return *m_ChunkPart;
 }
 
-inline const char* CChunkStreamReader::GetChunkPart() const
+inline const char* CUTTPReader::GetChunkPart() const
 {
     return m_ChunkPart;
 }
 
-inline size_t CChunkStreamReader::GetChunkPartSize() const
+inline size_t CUTTPReader::GetChunkPartSize() const
 {
     return m_ChunkPartSize;
 }
@@ -248,12 +247,12 @@ inline size_t CChunkStreamReader::GetChunkPartSize() const
 /// @note This class does not have a constructor. Instead, methods
 /// Reset(char*, size_t) and Reset(char*, size_t, size_t) are provided for
 /// initialization at any convenient time.
-/// @sa CChunkStreamReader
+/// @sa CUTTPReader
 /// @par Example:
 /// Function names starting with ToDo:: are to be implemented by the client
 /// class.
 /// @code
-/// CChunkStreamWriter writer;
+/// CUTTPWriter writer;
 ///
 /// writer.Reset(buffer, sizeof(buffer));
 ///
@@ -270,7 +269,7 @@ inline size_t CChunkStreamReader::GetChunkPartSize() const
 /// writer.GetOutputBuffer(&buffer_ptr, &buffer_size);
 /// ToDo::SendBuffer(buffer_ptr, buffer_size);
 /// @endcode
-class NCBI_XUTIL_EXPORT CChunkStreamWriter
+class NCBI_XUTIL_EXPORT CUTTPWriter
 {
 // Construction
 public:
@@ -315,7 +314,7 @@ public:
     ///   The length of the chunk of data to be sent, in bytes.
     /// @param to_be_continued
     ///   Indicate that a chunk continuation mark must be inserted in the
-    ///   stream. The CChunkStreamReader class will fire a eChunkPart event
+    ///   stream. The CUTTPReader class will fire a eChunkPart event
     ///   after reading the entire chunk of data pointed to by the chunk
     ///   parameter.
     /// @return
@@ -372,12 +371,12 @@ private:
     char m_InternalBuffer[(sizeof(size_t) >> 1) * 5 + 1];
 };
 
-inline void CChunkStreamWriter::Reset(char* buffer, size_t buffer_size)
+inline void CUTTPWriter::Reset(char* buffer, size_t buffer_size)
 {
     Reset(buffer, buffer_size, buffer_size);
 }
 
-inline void CChunkStreamWriter::GetOutputBuffer(const char** output_buffer,
+inline void CUTTPWriter::GetOutputBuffer(const char** output_buffer,
     size_t* output_buffer_size)
 {
     *output_buffer = m_OutputBuffer;
@@ -386,4 +385,4 @@ inline void CChunkStreamWriter::GetOutputBuffer(const char** output_buffer,
 
 END_NCBI_SCOPE
 
-#endif // !defined(UTIL___CHUNK_STREAM__HPP)
+#endif /* UTIL___UTTP__HPP */
