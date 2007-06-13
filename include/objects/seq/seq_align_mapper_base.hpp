@@ -163,6 +163,10 @@ private:
     void x_GetDstStd(CRef<CSeq_align>& dst) const;
     void x_GetDstPacked(CRef<CSeq_align>& dst) const;
     void x_GetDstDisc(CRef<CSeq_align>& dst) const;
+    // Special case: have to convert multi-id alignments to disc.
+    void x_ConvToDstDisc(CRef<CSeq_align>& dst) const;
+    int x_GetPartialDenseg(CRef<CSeq_align>& dst,
+                           int start_seg) const;
 
     CConstRef<CSeq_align>        m_OrigAlign;
     bool                         m_HaveStrands;
