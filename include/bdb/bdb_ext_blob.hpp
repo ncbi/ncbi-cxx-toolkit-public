@@ -39,7 +39,9 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
-//#include <corelib/ncbitypes.hpp>
+
+#include <util/compress/compress.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
 
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_cursor.hpp>
@@ -294,6 +296,109 @@ private:
     CBlobMetaDB& operator=(const CBlobMetaDB&);
 };
 
+/// External BLOB store. BLOBs are stored in chunks in an external file.
+///
+/// BLOB attributes are in a BDB attribute dictionary.
+///
+template<class TBV>
+class CBDB_ExtBlobStore 
+{
+public:
+    typedef TBV                    TBitVector;
+    CBDB_RawFile::TBuffer          TBuffer;
+public:
+    CBDB_ExtBlobStore();
+    ~CBDB_ExtBlobStore();
+
+    /// External store location
+    void SetStoreDataDir(const string& dir_name);
+
+    /// Store attributes DB location 
+    /// (by default it is the same as SetStoreDataDir).
+    /// Works in the absense of BDB environment
+    ///
+    /// @sa SetEnv
+    ///
+    void SetStoreAttrDir(const string& dir_name);
+
+
+    void SetEnv(CBDB_Env& env) { m_Env = &env; }
+    CBDB_Env* GetEnv(void) const { return m_Env; }
+
+    /// Set compressor for external BLOB
+    void SetCompressor(ICompression* compressor, 
+                       EOwnership    own = eTakeOwnership);
+
+    /// Open external store
+    void Open(const string&             storage_name, 
+              CBDB_RawFile::EOpenMode   open_mode);
+
+    /// Close store
+    void Close();
+
+    /// Save all changes (flush buffers, store attributes, etc.)
+    void Save();
+
+    /// Set maximum size of BLOB container. 
+    /// All BLOBs smaller than container are getting packed together
+    ///
+    void SetContainerMaxSize(unsigned max_size) { m_ContainerMax = max_size; }
+
+    /// Get container max size
+    unsigned GetContainerMaxSize() const { return m_ContainerMax; }
+
+    /// Add blob to external store.
+    ///
+    /// BLOB is not written to stor immediately, but accumulated in the buffer
+    ///
+    void StoreBlob(unsigned blob_id, const CBDB_RawFile::TBuffer& buf);
+
+    /// Flush current container to disk
+    void Flush();
+
+    /// Read blob from external store
+    EBDB_ErrCode ReadBlob(unsigned blob_id, CBDB_RawFile::TBuffer& buf);
+
+private:
+    CBDB_ExtBlobStore(const CBDB_ExtBlobStore&);
+    CBDB_ExtBlobStore& operator=(const CBDB_ExtBlobStore&);
+private:
+
+    /// Last operation type.
+    ///
+    enum ELastOp {
+        eRead,
+        eWrite
+    };
+
+    /// Try to read BLOB from the recently loaded container
+    bool x_ReadCache(unsigned blob_id, CBDB_RawFile::TBuffer& buf);
+
+protected:
+    TBitVector              m_BlobIds;      ///< List of BLOB ids stored
+    /// temp block for bitvector serialization
+    bm::word_t*             m_STmpBlock;
+
+    CBDB_RawFile::EOpenMode m_OpenMode;
+    CBDB_Env*               m_Env;
+    CBlobMetaDB*            m_BlobAttrDB;
+    CNcbiFstream*           m_ExtStore;
+
+    ICompression*           m_Compressor;    ///< Record compressor
+    EOwnership              m_OwnCompressor;
+    CBDB_RawFile::TBuffer   m_CompressBuffer;
+
+    string                  m_StoreDataDir;
+    string                  m_StoreAttrDir;
+
+    unsigned                m_ContainerMax;   ///< Max size of a BLOB container
+    CBDB_RawFile::TBuffer   m_BlobContainer;  ///< Blob container
+    CBDB_BlobMetaContainer* m_AttrContainer;  ///< Blob attributes container
+    ELastOp                 m_LastOp;         ///< Last operation status
+    unsigned                m_LastFromBlobId; ///< Recently read id interval
+    unsigned                m_LastToBlobId;   ///< Recently read id interval
+};
+
 
 /* @} */
 
@@ -301,6 +406,424 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
+
+
+template<class TBV>
+CBDB_ExtBlobStore<TBV>::CBDB_ExtBlobStore()
+: m_OpenMode(CBDB_RawFile::eReadWriteCreate),
+  m_Env(0),
+  m_BlobAttrDB(0),
+  m_ExtStore(0),
+  m_Compressor(0),
+  m_OwnCompressor(eTakeOwnership),
+  m_ContainerMax(64 * 1024),
+  m_AttrContainer(0),
+  m_LastOp(eRead)
+{
+    m_BlobContainer.reserve(m_ContainerMax * 2);
+    m_LastFromBlobId = m_LastToBlobId = 0;
+    m_STmpBlock = m_BlobIds.allocate_tempblock();
+}
+
+template<class TBV>
+CBDB_ExtBlobStore<TBV>::~CBDB_ExtBlobStore()
+{
+    if (m_BlobAttrDB) { // save if store is still open
+        try {
+            if (m_OpenMode != CBDB_RawFile::eReadOnly) {
+                Save();
+            }
+            Close();
+            
+        } 
+        catch (std::exception& ex)
+        {
+            LOG_POST(Error <<
+                    "Exception in ~CBDB_ExtBlobStore " << ex.what());
+        }
+    }
+    if (m_OwnCompressor == eTakeOwnership) {
+        delete m_Compressor;
+    }
+    delete m_AttrContainer;
+    if (m_STmpBlock) {
+        m_BlobIds.free_tempblock(m_STmpBlock);
+    }
+
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::SetCompressor(ICompression* compressor, 
+                                           EOwnership    own = eTakeOwnership)
+{
+    if (m_OwnCompressor == eTakeOwnership) {
+        delete m_Compressor;
+    }
+    m_Compressor = compressor;
+    m_OwnCompressor = own;
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::SetStoreDataDir(const string& dir_name) 
+{ 
+    m_StoreDataDir = CDirEntry::AddTrailingPathSeparator(dir_name); 
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::SetStoreAttrDir(const string& dir_name)
+{ 
+    m_StoreAttrDir = CDirEntry::AddTrailingPathSeparator(dir_name); 
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::Close()
+{
+    delete m_BlobAttrDB; m_BlobAttrDB = 0;
+    delete m_ExtStore; m_ExtStore = 0;
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::Save()
+{
+    Flush();
+
+    typename TBitVector::statistics st1;
+    m_BlobIds.optimize(0, TBV::opt_compress, &st1);
+    m_CompressBuffer.resize_mem(st1.max_serialize_mem);
+
+    size_t size = bm::serialize(m_BlobIds, 
+                               (unsigned char*)&m_CompressBuffer[0],
+                                m_STmpBlock, 
+                                bm::BM_NO_BYTE_ORDER);
+    m_CompressBuffer.resize(size);
+
+    // create a magic record 0-0 storing the sum bit-vector
+
+    m_BlobAttrDB->id_from = 0;
+    m_BlobAttrDB->id_to = 0;
+
+    EBDB_ErrCode ret = m_BlobAttrDB->TParent::UpdateInsert(m_CompressBuffer);
+    if (ret != eBDB_Ok) {
+        BDB_THROW(eInvalidOperation, "Cannot save ext. blob summary");
+    }
+    
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::Open(const string&             storage_name, 
+                                  CBDB_RawFile::EOpenMode   open_mode)
+{
+    Close();
+
+    m_OpenMode = open_mode;
+
+    // Make sure dir exists
+    if (!m_StoreAttrDir.empty() && m_Env == 0) {
+        CDir dir(m_StoreAttrDir);
+        if ( !dir.Exists() ) {
+            dir.Create();
+        }
+    }
+    if (!m_StoreDataDir.empty()) {
+        CDir dir(m_StoreDataDir);
+        if ( !dir.Exists() ) {
+            dir.Create();
+        }
+    }
+
+    // Open attributes database
+    {{
+    string attr_fname;
+    const string attr_fname_postf = "_ext.db";
+    m_BlobAttrDB = new CBlobMetaDB;
+    if (m_Env) {
+        m_BlobAttrDB->SetEnv(*m_Env);
+        attr_fname = storage_name + attr_fname_postf;
+    } else {
+        if (!m_StoreAttrDir.empty()) {
+            attr_fname = m_StoreAttrDir + storage_name + attr_fname_postf;
+        } 
+        else {
+            attr_fname = storage_name + attr_fname_postf;
+        }
+    }
+    m_BlobAttrDB->Open(attr_fname, open_mode);
+    }}
+
+    // Open external store
+    {{
+    string ext_fname;
+    const string ext_fname_postf = "_store.blob";
+    if (!m_StoreDataDir.empty()) {
+        ext_fname = m_StoreDataDir + storage_name + ext_fname_postf;
+    } 
+    else {
+        ext_fname = storage_name + ext_fname_postf;
+    }
+
+    IOS_BASE::openmode om;
+    switch (open_mode) {
+    case CBDB_RawFile::eReadWriteCreate:
+    case CBDB_RawFile::eReadWrite:
+        om = IOS_BASE::in | IOS_BASE::out;
+        break;
+    case CBDB_RawFile::eReadOnly:
+        om = IOS_BASE::in;
+        break;
+    case CBDB_RawFile::eCreate:
+        om = IOS_BASE::in | IOS_BASE::out | IOS_BASE::trunc;
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+    om |= IOS_BASE::binary;
+    m_ExtStore = new CNcbiFstream(ext_fname.c_str(), om);
+    if (!m_ExtStore->is_open() || m_ExtStore->bad()) {
+        delete m_ExtStore; m_ExtStore = 0;
+        BDB_THROW(eFileIO, "Cannot open file " + ext_fname);
+    }
+    }}
+
+    m_BlobAttrDB->id_from = 0;
+    m_BlobAttrDB->id_to = 0;
+
+    EBDB_ErrCode ret = m_BlobAttrDB->ReadRealloc(m_CompressBuffer);
+    if (ret == eBDB_Ok) {
+        bm::operation_deserializer<TBitVector>::deserialize(m_BlobIds,
+                                            m_CompressBuffer.data(),
+                                            m_STmpBlock,
+                                            bm::set_ASSIGN);
+
+    } else {
+        m_BlobIds.clear();
+    }
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::StoreBlob(unsigned                     blob_id, 
+                                       const CBDB_RawFile::TBuffer& buf)
+{
+    _ASSERT(blob_id);
+
+    if (m_BlobIds[blob_id]) {
+        string msg = 
+            "External store already has BLOB id=" 
+                                + NStr::UIntToString(blob_id);
+        BDB_THROW(eInvalidValue, msg); 
+    }
+
+    unsigned offset;
+    if (m_LastOp == eRead && m_AttrContainer) {
+        delete m_AttrContainer; m_AttrContainer = 0;
+    }
+
+    m_LastOp = eWrite;
+
+    if (!m_AttrContainer) {
+        m_AttrContainer = new CBDB_BlobMetaContainer;
+        m_BlobContainer.resize_mem(buf.size());
+        offset = 0;
+        if (buf.size()) {
+            ::memcpy(m_BlobContainer.data(), buf.data(), buf.size());
+        }
+
+        CBDB_ExtBlobMap& ext_attr = m_AttrContainer->SetBlobMap();
+        ext_attr.Add(blob_id, offset, buf.size());
+
+        if (m_BlobContainer.size() > m_ContainerMax) {
+            Flush();
+        }
+        m_BlobIds.set(blob_id);
+        return;
+    }
+
+    if (buf.size() + m_BlobContainer.size() > m_ContainerMax) {
+        Flush();
+        this->StoreBlob(blob_id, buf);
+        return;
+    }
+
+    offset = m_BlobContainer.size();
+    m_BlobContainer.resize(m_BlobContainer.size() + buf.size());
+    if (buf.size()) {
+        ::memcpy(m_BlobContainer.data() + offset, buf.data(), buf.size());
+    }
+    CBDB_ExtBlobMap& ext_attr = m_AttrContainer->SetBlobMap();
+    ext_attr.Add(blob_id, offset, buf.size());
+    m_BlobIds.set(blob_id);
+}
+
+template<class TBV>
+void CBDB_ExtBlobStore<TBV>::Flush()
+{
+    if (!m_AttrContainer) {
+        return; // nothing to do
+    }
+
+    _ASSERT(m_ExtStore);
+    _ASSERT(m_BlobAttrDB);
+
+    CNcbiStreampos pos = m_ExtStore->tellg();
+    Int8 stream_offset = NcbiStreamposToInt8(pos);
+
+
+    // compress and write blob container
+    //
+    if (m_Compressor) {
+        m_CompressBuffer.resize_mem(m_BlobContainer.size() * 2);
+
+        size_t compressed_len;
+        bool compressed = 
+            m_Compressor->CompressBuffer(m_BlobContainer.data(), 
+                                         m_BlobContainer.size(),
+                                         m_CompressBuffer.data(),
+                                         m_CompressBuffer.size(),
+                                         &compressed_len);
+       if (!compressed) {
+            BDB_THROW(eInvalidOperation, "Cannot compress BLOB");
+       }
+
+       m_ExtStore->write((char*)m_CompressBuffer.data(), 
+                         compressed_len);
+       m_AttrContainer->SetLoc(stream_offset, compressed_len);
+    } else {
+        m_ExtStore->write((char*)m_BlobContainer.data(), 
+                          m_BlobContainer.size());
+        m_AttrContainer->SetLoc(stream_offset, m_BlobContainer.size());
+    }
+
+    if (m_ExtStore->bad()) {
+        BDB_THROW(eFileIO, "Cannot write to external store file ");
+    }
+
+    EBDB_ErrCode ret = m_BlobAttrDB->UpdateInsert(*m_AttrContainer);
+    delete m_AttrContainer; m_AttrContainer = 0;
+    if (ret != eBDB_Ok) {
+        BDB_THROW(eInvalidOperation, "Cannot store BLOB metainfo");
+    }
+
+}
+
+template<class TBV>
+bool 
+CBDB_ExtBlobStore<TBV>::x_ReadCache(unsigned               blob_id, 
+                                    CBDB_RawFile::TBuffer& buf)
+{
+    if (m_AttrContainer) {
+        // check if this call can be resolved out of the same BLOB
+        // container
+
+        if (blob_id >= m_LastFromBlobId && blob_id <= m_LastToBlobId) {
+            const CBDB_ExtBlobMap& ext_attr = m_AttrContainer->GetBlobMap();
+            Uint8 offset, size;
+            bool has_blob = ext_attr.GetBlobLoc(blob_id, &offset, &size);
+            if (has_blob) {
+                // empty BLOB
+                if (!size) {
+                    buf.resize_mem((size_t)size);
+                    return true;
+                }
+                buf.resize_mem((size_t)size);
+                if (m_Compressor) {
+                    // check logicall correctness of the decompressed container
+                    Uint8 sz = m_CompressBuffer.size();
+                    _ASSERT(offset < sz);
+                    _ASSERT(offset + size <= sz);
+                    ::memcpy(buf.data(), 
+                             m_CompressBuffer.data() + (size_t)offset, 
+                             (size_t)size);
+                } else {
+                    ::memcpy(buf.data(), 
+                             m_BlobContainer.data() + (size_t)offset, 
+                             (size_t)size);
+                }
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+template<class TBV>
+EBDB_ErrCode 
+CBDB_ExtBlobStore<TBV>::ReadBlob(unsigned blob_id, CBDB_RawFile::TBuffer& buf)
+{
+    // Current implementation uses attribute container for both read and write
+    // the read-after-write mechanism is underdeveloped, so you have always to
+    // call Flush to turn between read and write. Something to improve in the
+    // future.
+    //
+    if (m_LastOp == eWrite && m_AttrContainer) {
+        BDB_THROW(eInvalidOperation, "Cannot read on unflushed data. ");
+    }
+    m_LastOp = eRead;
+
+    if (!m_BlobIds[blob_id]) {
+        return eBDB_NotFound;
+    }
+
+    // check if BLOB can be restored from the current container
+    if (m_AttrContainer) {
+        if (x_ReadCache(blob_id, buf)) {
+            return eBDB_Ok;
+        }
+        delete m_AttrContainer; m_AttrContainer = 0;
+    }
+
+    // open new container
+    m_AttrContainer = new CBDB_BlobMetaContainer;
+
+    EBDB_ErrCode ret;
+    ret = m_BlobAttrDB->FetchMeta(blob_id, 
+                                  m_AttrContainer, 
+                                  &m_LastFromBlobId, 
+                                  &m_LastToBlobId);
+    if (ret != eBDB_Ok) {
+        delete m_AttrContainer; m_AttrContainer = 0;
+        return ret;
+    }
+
+    // read the container from the external file
+
+    {{
+    Uint8 offset, size;
+    m_AttrContainer->GetLoc(&offset, &size);
+
+    CNcbiStreampos pos = NcbiInt8ToStreampos(offset);
+    m_ExtStore->seekg(pos, IOS_BASE::beg);
+    if (m_ExtStore->bad()) {
+        BDB_THROW(eFileIO, "Cannot read from external store file ");
+    }
+    m_BlobContainer.resize_mem((size_t)size);
+    m_ExtStore->read((char*)m_BlobContainer.data(), (size_t)size);
+    if (m_ExtStore->bad()) {
+        BDB_THROW(eFileIO, "Cannot read from external store file ");
+    }
+
+    if (m_Compressor) {
+        m_CompressBuffer.resize_mem((size_t)m_ContainerMax * 10);
+        size_t dst_len;
+        bool ok = m_Compressor->DecompressBuffer(m_BlobContainer.data(),
+                                                 m_BlobContainer.size(),
+                                                 m_CompressBuffer.data(), 
+                                                 m_CompressBuffer.size(), 
+                                                 &dst_len);
+        if (!ok) {
+            BDB_THROW(eInvalidOperation, "Cannot decompress BLOB");
+        }
+        m_CompressBuffer.resize(dst_len);
+    }
+
+    }}
+
+    if (x_ReadCache(blob_id, buf)) {
+        return eBDB_Ok;
+    }
+    delete m_AttrContainer; m_AttrContainer = 0;
+    return eBDB_NotFound;
+}
+
 
 
 END_NCBI_SCOPE

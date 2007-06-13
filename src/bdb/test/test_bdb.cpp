@@ -50,8 +50,9 @@
 #include <bdb/bdb_query.hpp>
 #include <bdb/bdb_util.hpp>
 #include <bdb/bdb_ext_blob.hpp>
-
 #include <bdb/bdb_query_parser.hpp>
+
+#include <util/compress/zlib.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -2203,7 +2204,7 @@ static void s_TEST_ExtBlob(void)
     ext_attr.Add(10, 123, 10);
     ext_attr.Add(11, 149, 101);
     ext_attr.Add(13, 1,  20);
-    ext_attr.Add(20, 0,   15);
+    ext_attr.Add(20, 0,   1549934593485934085);
 
     assert(ext_attr.Size() == 4);
 
@@ -2219,7 +2220,7 @@ static void s_TEST_ExtBlob(void)
     assert(offset == 1 && size == 20);
     b = ext_attr.GetBlobLoc(20, &offset, &size);
     assert(b);
-    assert(offset == 0 && size == 15);
+    assert(offset == 0 && size == 1549934593485934085);
 
 
     Uint4 min_id, max_id;
@@ -2245,7 +2246,7 @@ static void s_TEST_ExtBlob(void)
     assert(offset == 1 && size == 20);
     b = ext_attr2.GetBlobLoc(20, &offset, &size);
     assert(b);
-    assert(offset == 0 && size == 15);
+    assert(offset == 0 && size == 1549934593485934085);
 
 
     ext_attr2.GetBlobIdRange(&min_id, &max_id);
@@ -2416,6 +2417,102 @@ static void s_TEST_ExtBlob(void)
 
 
     }}
+
+    NcbiCout << "Store test..." << NcbiEndl;
+
+    // Save blobs to ext store
+    {{
+    CBDB_ExtBlobStore<bm::bvector<> > ext_store;
+    ext_store.Open("extstore", CBDB_RawFile::eCreate);
+    ext_store.SetContainerMaxSize(4 * 1024);
+
+    for (int i = 0; i < 10; ++i) {
+        CBDB_RawFile::TBuffer buf;
+        string s = NStr::IntToString(i);
+        char ch = s[0];
+        buf.resize_mem(i * 200);
+        for (size_t j=0; j < buf.size(); ++j) {
+            buf[j] = ch;
+        }
+        ext_store.StoreBlob(i+1, buf);
+    }
+
+    ext_store.Save();
+    ext_store.Close();
+    }}
+
+    // Load blobs from ext.store
+    {{
+    CBDB_ExtBlobStore<bm::bvector<> > ext_store;
+    ext_store.Open("extstore", CBDB_RawFile::eReadOnly);
+
+    for (int i = 0; i < 10; ++i) {
+        CBDB_RawFile::TBuffer buf;
+        EBDB_ErrCode ret = ext_store.ReadBlob(i+1, buf);
+        assert(ret == eBDB_Ok);
+
+        string s = NStr::IntToString(i);
+        char ch = s[0];
+        
+        assert(buf.size() == i * 200);
+        for (size_t j=0; j < buf.size(); ++j) {
+            assert(buf[j] == ch);
+        }
+    }
+
+    }}
+    NcbiCout << "Store test...ok" << NcbiEndl;
+
+
+    NcbiCout << "Compressed Store test..." << NcbiEndl;
+
+    // Save blobs to ext store
+    {{
+    CBDB_ExtBlobStore<bm::bvector<> > ext_store;
+    ext_store.SetCompressor(new CZipCompression(), eTakeOwnership);
+    ext_store.Open("extstore_z", CBDB_RawFile::eCreate);
+    ext_store.SetContainerMaxSize(4 * 1024);
+
+    for (int i = 0; i < 10; ++i) {
+        CBDB_RawFile::TBuffer buf;
+        string s = NStr::IntToString(i);
+        char ch = s[0];
+        buf.resize_mem(i * 200);
+        for (size_t j=0; j < buf.size(); ++j) {
+            buf[j] = ch;
+        }
+        ext_store.StoreBlob(i+1, buf);
+    }
+
+    ext_store.Save();
+    ext_store.Close();
+    }}
+
+    // Load blobs from ext.store
+    {{
+    CBDB_ExtBlobStore<bm::bvector<> > ext_store;
+    ext_store.SetCompressor(new CZipCompression(), eTakeOwnership);
+    ext_store.Open("extstore_z", CBDB_RawFile::eReadOnly);
+
+    for (int i = 0; i < 10; ++i) {
+        CBDB_RawFile::TBuffer buf;
+        EBDB_ErrCode ret = ext_store.ReadBlob(i+1, buf);
+        assert(ret == eBDB_Ok);
+
+        string s = NStr::IntToString(i);
+        char ch = s[0];
+        
+        assert(buf.size() == i * 200);
+        for (size_t j=0; j < buf.size(); ++j) {
+            assert(buf[j] == ch);
+        }
+    }
+
+    }}
+    NcbiCout << "Compressed Store test...ok" << NcbiEndl;
+
+
+
     cout << "======== Ext BLOB attributes test. OK." << endl;
 
 }

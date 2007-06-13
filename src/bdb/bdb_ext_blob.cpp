@@ -100,6 +100,9 @@ CBlobMetaDB::FetchMeta(Uint4                   blob_id,
             unsigned from = this->id_from;
             unsigned to   = this->id_to;
 
+            if (from == 0 && to == 0)
+                break;
+
             if (blob_id > to || blob_id < from)
                 continue;
 
@@ -231,6 +234,7 @@ CBDB_BlobMetaContainer::Deserialize(const CBDB_RawFile::TBuffer& buf,
         ptr += sizeof(loc.size);
     } // for
 
+    
     size_t buffer_offset = ptr - &((buf)[0]);
     m_BlobMap.Deserialize(buf, buffer_offset);
 }
