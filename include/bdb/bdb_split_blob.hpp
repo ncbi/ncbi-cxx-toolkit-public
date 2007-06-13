@@ -500,6 +500,12 @@ public:
                           const unsigned* coords,
                           size_t*         blob_size);
 
+    /// Get all id of all BLOBs stored
+    ///
+    /// @param bv
+    ///    Vector of IDs stored
+    ///
+    void GetIdVector(TBitVector* bv) const { m_IdDeMux->GetIdVector(bv); }
 
     /// Reclaim unused memory 
     void FreeUnusedMem();

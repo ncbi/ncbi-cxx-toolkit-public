@@ -256,6 +256,9 @@ int CBDB_SplitTest::Run(void)
 
         split_store.FreeUnusedMem();
 
+        TBlobSplitStore::TBitVector bv;
+        split_store.GetIdVector(&bv);
+
         split_store.Save();
         }}
 
