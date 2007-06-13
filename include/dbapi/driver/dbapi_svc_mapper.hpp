@@ -258,7 +258,7 @@ public:
                         &CDBLB_ServiceMapper::Factory                          \
                         ))))
 #else
-#   define DBLB_INSTALL_DEFAULT()                                              \
+#   define DBLB_INSTALL_FACTORY(factory_name)                                  \
         CDbapiConnMgr::Instance().SetConnectionFactory                         \
             (new factory_name(                                                 \
                 new CDBUniversalMapper()))
