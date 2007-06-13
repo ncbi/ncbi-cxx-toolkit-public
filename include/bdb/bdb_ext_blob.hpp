@@ -42,6 +42,7 @@
 
 #include <util/compress/compress.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
+#include <util/bitset/bmserial.h>
 
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_cursor.hpp>
@@ -454,7 +455,7 @@ CBDB_ExtBlobStore<TBV>::~CBDB_ExtBlobStore()
 
 template<class TBV>
 void CBDB_ExtBlobStore<TBV>::SetCompressor(ICompression* compressor, 
-                                           EOwnership    own = eTakeOwnership)
+                                           EOwnership    own)
 {
     if (m_OwnCompressor == eTakeOwnership) {
         delete m_Compressor;
