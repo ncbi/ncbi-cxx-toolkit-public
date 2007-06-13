@@ -178,6 +178,13 @@ public:
                             const unsigned* coord,
                             bool            set_flag = true);
 
+    /// Get all ids registered in demux.
+    /// Method takes all dimention vectors and OR them into bv
+    ///
+    /// @param bv
+    ///    Vector of IDs stored in demux
+    ///
+    void GetIdVector(TBitVector* bv) const;
 
     /// Get dimension vector
     /// @param i
@@ -252,6 +259,29 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id,
             return dim_found;
     } // for i
     return true;
+}
+
+template<class TBV, class TBVFact>
+void CIdDeMux<TBV, TBVFact>::GetIdVector(TBitVector* bv) const
+{
+    _ASSERT(bv);
+
+    bool first = true;
+
+    // scan dimention 0 OR all vectors
+    const TDimVector& dv = GetDimVector(0);
+    size_t M = dv.size();
+    for (size_t j = 0; j < M; ++j) {
+        if (dv[j].get() == 0) 
+            continue;
+        const TBitVector& dbv = *(dv[j]);
+        if (first) {
+            *bv = dbv;
+            first = false;
+        } else {
+            *bv |= dbv;
+        }
+    } // for j
 }
 
 template<class TBV, class TBVFact>
