@@ -314,8 +314,8 @@ void CQueueDataBase::Open(const string& path,
 
     if (!params.private_env && !fl.empty()) {
         // Opening db with recover flags is unreliable.
-        NcbiCout << "Run db_recover tool" << NcbiEndl;
-        BDB_ERRNO_THROW(DB_RUNRECOVERY, "Run db_recover tool");
+        BDB_RecoverEnv(m_Path, false);
+        NcbiCout << "Running recovery..." << NcbiEndl;
     }
 
     CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
@@ -1462,10 +1462,17 @@ static string FormatNSId(const string& val, SQueueDescription* qdesc)
 }
 
 
+static const char* kISO8601DateTime = 0;
 static string FormatTime(const string& val, SQueueDescription*)
 {
     time_t t = NStr::StringToInt(val);
     if (!t) return "NULL";
+    if (!kISO8601DateTime) {
+        const char *format = CTimeFormat::GetPredefined(
+            CTimeFormat::eISO8601_DateTimeSec).GetString().c_str();
+        kISO8601DateTime = new char[strlen(format)+1];
+        strcpy(const_cast<char *>(kISO8601DateTime), format);
+    }
     return CTime(t).ToLocalTime().AsString(kISO8601DateTime);
 }
 

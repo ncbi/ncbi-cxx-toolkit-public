@@ -73,7 +73,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.11"
+#define NETSCHEDULED_VERSION "2.10.12"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -123,6 +123,7 @@ enum ENSRequestField {
     eNSRF_AffinityPrev,
     // for Query
     eNSRF_Select,
+    eNSRF_Where,
     eNSRF_Action,
     eNSRF_Fields
 };
@@ -215,6 +216,7 @@ struct SJS_Request
             tags.erase(); tags.append(val, size);
             break;
         case eNSRF_Select:
+        case eNSRF_Where:
             param1.erase(); param1.append(val, size);
             break;
         case eNSRF_Fields:
@@ -377,6 +379,7 @@ private:
     void ProcessDeleteQueue();
     void ProcessQueueInfo();
     void ProcessQuery();
+    void ProcessSelectQuery();
     void ProcessGetParam();
 
     // Delayed output handlers
@@ -458,7 +461,8 @@ public:
         m_Server(server)
     {
     }
-    IServer_ConnectionHandler* Create(void) {
+    IServer_ConnectionHandler* Create(void)
+    {
         return new CNetScheduleHandler(m_Server);
     }
 private:
@@ -1906,13 +1910,16 @@ void CNetScheduleHandler::ProcessQuery()
 
     string& action = m_JobReq.param2;
 
-    if (action == "SLCT" || !fields.empty()) {
+    if (!fields.empty()) {
+        WriteMsg("ERR:", string("eProtocolSyntaxError:") +
+                 "SELECT is not allowed");
+        m_SelectedIds.release();
+        return;
+    } else if (action == "SLCT") {
         // Execute 'projection' phase
-        if (fields.empty()) {
-            string str_fields(NStr::ParseEscapes(m_JobReq.param3));
-            // Split fields
-            NStr::Split(str_fields, "\t,", fields, NStr::eNoMergeDelims);
-        }
+        string str_fields(NStr::ParseEscapes(m_JobReq.param3));
+        // Split fields
+        NStr::Split(str_fields, "\t,", fields, NStr::eNoMergeDelims);
         m_Queue->PrepareFields(m_FieldDescr, fields);
         m_DelayedOutput = &CNetScheduleHandler::WriteProjection;
         return;
@@ -1936,12 +1943,32 @@ void CNetScheduleHandler::ProcessQuery()
     } else if (action == "CNCL") {
     } else {
         WriteMsg("ERR:", string("eProtocolSyntaxError:") +
-                 + "Unknown action " + action);
+                 "Unknown action " + action);
         m_SelectedIds.release();
         return;
     }
     WriteMsg("OK:", result_str);
     m_SelectedIds.release();
+}
+
+
+void CNetScheduleHandler::ProcessSelectQuery()
+{
+    string result_str;
+
+    string query = NStr::ParseEscapes(m_JobReq.param1);
+
+    list<string> fields;
+    m_SelectedIds.reset(m_Queue->ExecSelect(query, fields));
+
+    if (fields.empty()) {
+        WriteMsg("ERR:", string("eProtocolSyntaxError:") +
+                 "SQL-like select is expected");
+        m_SelectedIds.release();
+    } else {
+        m_Queue->PrepareFields(m_FieldDescr, fields);
+        m_DelayedOutput = &CNetScheduleHandler::WriteProjection;
+    }
 }
 
 
@@ -2168,9 +2195,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "QINF",     &CNetScheduleHandler::ProcessQueueInfo, eNSCR_Any,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
     { "QERY",     &CNetScheduleHandler::ProcessQuery, eNSCR_Queue,
-        { { eNSA_Required, eNST_Str,     eNSRF_Select },
+        { { eNSA_Required, eNST_Str,     eNSRF_Where },
           { eNSA_Optional, eNST_Id,      eNSRF_Action, "COUNT" },
           { eNSA_Optional, eNST_Str,     eNSRF_Fields }, sm_End} },
+    { "QSEL",     &CNetScheduleHandler::ProcessSelectQuery, eNSCR_Queue,
+        { { eNSA_Required, eNST_Str,     eNSRF_Select }, sm_End} },
     { "GETP",     &CNetScheduleHandler::ProcessGetParam, eNSCR_Queue,
         NO_ARGS },
     { 0,          &CNetScheduleHandler::ProcessError },
