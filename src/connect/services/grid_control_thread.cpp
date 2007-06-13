@@ -124,7 +124,8 @@ public:
         os << "Node started at: " << CGridGlobals::GetInstance().GetStartTime().AsString() << endl;
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)
-            os << "Executable path: " << app->GetProgramExecutablePath() << endl;
+            os << "Executable path: " << app->GetProgramExecutablePath() 
+               << "; PID: " << CProcess::GetCurrentPid() << endl;
 
         os << "Queue name: " << node.GetQueueName() << endl;
         if (node.GetMaxThreads() > 1)
