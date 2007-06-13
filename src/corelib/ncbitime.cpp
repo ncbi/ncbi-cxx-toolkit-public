@@ -86,8 +86,6 @@ static MyTZDLS sTZDLS = MyReadLocation();
 BEGIN_NCBI_SCOPE
 
 
-const char *const kISO8601DateTime = "Y-M-DTh:m:s";
-
 // Protective mutex
 DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
 DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
@@ -251,10 +249,6 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
 //============================================================================
 
 
-// eNcbiSimple
-//const char* CTimeFormat::kISO8601 = "Y-M-DTh:m:s";
-
-
 CTimeFormat::CTimeFormat(void)
     : m_Type(eDefault)
 {
@@ -268,13 +262,13 @@ CTimeFormat::CTimeFormat(const CTimeFormat& format)
 }
 
 
-CTimeFormat::CTimeFormat(const char* fmt, EFormat fmt_type)
+CTimeFormat::CTimeFormat(const char* fmt, EType fmt_type)
 {
     SetFormat(fmt, fmt_type);
 }
 
 
-CTimeFormat::CTimeFormat(const string& fmt, EFormat fmt_type)
+CTimeFormat::CTimeFormat(const string& fmt, EType fmt_type)
 {
     SetFormat(fmt, fmt_type);
 }
@@ -288,6 +282,22 @@ CTimeFormat& CTimeFormat::operator= (const CTimeFormat& format)
     m_Str  = format.m_Str;
     m_Type = format.m_Type;
     return *this;
+}
+
+
+CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, EType fmt_type)
+{
+    // Predefined time formats
+    static char* s_Predefined[][2] =
+    {
+        {"Y",              "$Y"},
+        {"Y-M",            "$Y-$M"},
+        {"Y-M-D",          "$Y-$M-$D"},
+        {"Y-M-DTh:m",      "$Y-$M-$DT$h:$m"},
+        {"Y-M-DTh:m:s",    "$Y-$M-$DT$h:$m:$s"},
+        {"Y-M-DTh:m:s.l",  "$Y-$M-$DT$h:$m:$s.$l"},
+    };
+    return CTimeFormat(s_Predefined[(int)fmt][(int)fmt_type], fmt_type);
 }
 
 
@@ -318,12 +328,16 @@ CTime::CTime(int year, int yearDayNumber,
 }
 
 
-void CTime::x_Init(const string& str, const string& fmt)
+void CTime::x_Init(const string& str, const CTimeFormat& format)
 {
     Clear();
     if ( str.empty() ) {
         return;
     }
+    const string& fmt = format.GetString();
+    CTimeFormat::EType fmt_type = format.GetType();
+    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
+    bool is_format_symbol = !is_escaped;
 
     const char* fff;
     const char* sss = str.c_str();
@@ -340,10 +354,19 @@ void CTime::x_Init(const string& str, const string& fmt)
 
     int weekday = -1;
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
-
         // Skip space symbols in format string
         if ( isspace((unsigned char)(*fff)) ) {
             continue;
+        }
+        // Skip preceding symbols for some formats
+        if ( !is_format_symbol ) {
+            if ( *fff == kFormatEscapeSymbol )  {
+                is_format_symbol = true;
+                continue;
+            }
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
         }
         // Skip space symbols in time string
         while ( isspace((unsigned char)(*sss)) )
@@ -623,16 +646,16 @@ CTime::CTime(time_t t, ETimeZonePrecision tzp)
 }
 
 
-CTime::CTime(const string& str, const string& fmt,
+CTime::CTime(const string& str, const CTimeFormat& format,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
 
-    if (fmt.empty()) {
+    if (format.IsEmpty()) {
         x_Init(str, GetFormat());
     } else {
-        x_Init(str, fmt);
+        x_Init(str, format);
     }
 }
 
@@ -911,7 +934,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     }
     string str;
     string fmt;
-    CTimeFormat::EFormat fmt_type;
+    CTimeFormat::EType fmt_type;
     if ( format.IsEmpty() ) {
         CTimeFormat f = GetFormat();
         fmt      = f.GetString();
@@ -932,6 +955,9 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                 str += *it;
             }
             continue;
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
         }
         switch ( *it ) {
         case 'y': s_AddZeroPadInt(str, t->Year() % 100);    break;
@@ -976,9 +1002,6 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'w': str += kWeekdayAbbr[t->DayOfWeek()];      break;
         case 'W': str += kWeekdayFull[t->DayOfWeek()];      break;
         default : str += *it;                               break;
-        }
-        if ( is_escaped ) {
-            is_format_symbol = false;
         }
     }
     // Free used memory
@@ -1758,21 +1781,25 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
 //
 //=============================================================================
 
-CTimeSpan::CTimeSpan(const string& str, const string& fmt)
+CTimeSpan::CTimeSpan(const string& str, const CTimeFormat& format)
 {
-    if (fmt.empty()) {
+    if (format.IsEmpty()) {
         x_Init(str, GetFormat());
     } else {
-        x_Init(str, fmt);
+        x_Init(str, format);
     }
 }
 
-void CTimeSpan::x_Init(const string& str, const string& fmt)
+void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
 {
     Clear();
     if ( str.empty() ) {
         return;
     }
+    const string& fmt = format.GetString();
+    CTimeFormat::EType fmt_type = format.GetType();
+    bool is_escaped = (fmt_type != CTimeFormat::eNcbiSimple);
+    bool is_format_symbol = !is_escaped;
 
     const char* fff;
     const char* sss = str.c_str();
@@ -1780,6 +1807,16 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
 
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
+        // Skip preceding symbols for some formats
+        if ( !is_format_symbol ) {
+            if ( *fff == kFormatEscapeSymbol )  {
+                is_format_symbol = true;
+                continue;
+            }
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
+        }
         // Non-format symbols
         if (strchr(kFormatSymbolsSpan, *fff) == 0) {
             if (*fff == *sss) {
@@ -1891,7 +1928,7 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
 {
     string str;
     string fmt;
-    CTimeFormat::EFormat fmt_type;
+    CTimeFormat::EType fmt_type;
     if ( format.IsEmpty() ) {
         CTimeFormat f = GetFormat();
         fmt      = f.GetString();
@@ -1912,6 +1949,9 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
                 str += *it;
             }
             continue;
+        }
+        if ( is_escaped ) {
+            is_format_symbol = false;
         }
         switch ( *it ) {
         case '-': if (GetSign() == eNegative) {
@@ -1936,9 +1976,6 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
                   break;
         default : str += *it;
                   break;
-        }
-        if ( is_escaped ) {
-            is_format_symbol = false;
         }
     }
     return str;
