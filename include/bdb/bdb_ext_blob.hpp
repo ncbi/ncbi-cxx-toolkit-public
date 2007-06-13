@@ -503,7 +503,7 @@ void CBDB_ExtBlobStore<TBV>::Save()
     m_BlobAttrDB->id_from = 0;
     m_BlobAttrDB->id_to = 0;
 
-    EBDB_ErrCode ret = CBDB_BLobFile::UpdateInsert(m_CompressBuffer);
+    EBDB_ErrCode ret = m_BlobAttrDB->CBDB_BLobFile::UpdateInsert(m_CompressBuffer);
     if (ret != eBDB_Ok) {
         BDB_THROW(eInvalidOperation, "Cannot save ext. blob summary");
     }
