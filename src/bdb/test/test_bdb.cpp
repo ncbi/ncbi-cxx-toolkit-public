@@ -2204,7 +2204,7 @@ static void s_TEST_ExtBlob(void)
     ext_attr.Add(10, 123, 10);
     ext_attr.Add(11, 149, 101);
     ext_attr.Add(13, 1,  20);
-    ext_attr.Add(20, 0,   1549934593485934085);
+    ext_attr.Add(20, 0,  0xFFFFAAAA);
 
     assert(ext_attr.Size() == 4);
 
@@ -2220,7 +2220,7 @@ static void s_TEST_ExtBlob(void)
     assert(offset == 1 && size == 20);
     b = ext_attr.GetBlobLoc(20, &offset, &size);
     assert(b);
-    assert(offset == 0 && size == 1549934593485934085);
+    assert(offset == 0 && size == 0xFFFFAAAA);
 
 
     Uint4 min_id, max_id;
@@ -2246,7 +2246,7 @@ static void s_TEST_ExtBlob(void)
     assert(offset == 1 && size == 20);
     b = ext_attr2.GetBlobLoc(20, &offset, &size);
     assert(b);
-    assert(offset == 0 && size == 1549934593485934085);
+    assert(offset == 0 && size == 0xFFFFAAAA);
 
 
     ext_attr2.GetBlobIdRange(&min_id, &max_id);
