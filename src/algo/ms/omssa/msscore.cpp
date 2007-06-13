@@ -291,7 +291,13 @@ void CMSSpectrumMatch::FillMatchedPeaks(
                                        TMSIntensity MinIntensity, 
                                        bool Skipb1,
                                        EMSTerminalBias TerminalIon,
-                                       int Maxproductions)
+                                       int Maxproductions
+//#if 0
+                                       ,
+                                       string &Sequence,
+                                       bool NoProline
+//#endif
+                                       )
 {
     // create a new match set
     CMSMatchedPeakSet *MatchPeakSet =
@@ -336,6 +342,22 @@ void CMSSpectrumMatch::FillMatchedPeaks(
         // if b1 should not be searched, mark it as so.
         if (i == 0 && Skipb1 && CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series)))
             MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeNoSearch;
+//#if 0
+        // apply rule that no 
+        if (NoProline && 
+            CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series)) &&
+            i+1 < Sequence.size() && 
+            Sequence[i+1] == 'P') {
+            MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeNoSearch;
+        }
+
+        if (NoProline &&
+            !CMSBasicMatchedPeak::IsForwardSeries(static_cast <EMSIonSeries> (Series)) &&
+            i < Sequence.size() &&
+            Sequence[Sequence.size() - i - 1] == 'P') {
+            MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeNoSearch;
+        }
+//#endif
 
     }
 

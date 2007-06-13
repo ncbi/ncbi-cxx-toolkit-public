@@ -56,6 +56,7 @@ USING_SCOPE(omssa);
 CLadder::CLadder(void): LadderIndex(0), 
     Ladder(new int[kMSLadderMax]),
     Hit(new int[kMSLadderMax]),
+    LadderNumber(new TMSNumber[kMSLadderMax]),
     Intensity(new unsigned[kMSLadderMax]),
     Delta(new int[kMSLadderMax]),
     LadderSize(kMSLadderMax),
@@ -68,6 +69,7 @@ CLadder::CLadder(void): LadderIndex(0),
 CLadder::CLadder(int SizeIn): LadderIndex(0),
     Ladder(new int[SizeIn]),
     Hit(new int[SizeIn]),
+    LadderNumber(new TMSNumber[SizeIn]),
     Intensity(new unsigned[SizeIn]),
     Delta(new int[SizeIn]),
     LadderSize(SizeIn),
@@ -100,6 +102,7 @@ CLadder::CLadder(const CLadder& Old) : LadderIndex(0),
         GetHit()[i] = *(Old.Hit.get() + i);
         SetIntensity()[i] = Old.GetIntensity()[i];
         SetDelta()[i] = Old.GetDelta()[i];
+        SetLadderNumber()[i] = Old.GetLadderNumber()[i];
     }
 }
 
@@ -123,11 +126,12 @@ CLadder::CreateLadder(const int IonType,
                       const unsigned ModMask,
                       const CMod ModList[],
                       const int NumMod, 
-                      const CMSSearchSettings& Settings
+                      const CMSSearchSettings& Settings,
+                      const bool NoProline
                       )
 {
     Charge = ChargeIn;
-    int i, ion = MSSCALE2INT((kTermMass[IonType] + Charge - 1) / Charge + 
+    int i, j, ion = MSSCALE2INT((kTermMass[IonType] + Charge - 1) / Charge + 
 				    kIonTypeMass[IonType]/Charge);
     const int *IntMassArray = MassArray.GetIntMass();
     const char * const AAMap(AA.GetMap());
@@ -145,6 +149,7 @@ CLadder::CreateLadder(const int IonType,
     int Direction;
     int Offset;
     int iSkip;  // number to skip at beginning of sequence
+    int ProlineOffset(0);  // offset used to calculate proline rule
 
     LadderIndex = stop - start;
     if(Settings.GetSearchctermproduct() == 1) LadderIndex--;
@@ -165,6 +170,8 @@ CLadder::CreateLadder(const int IonType,
             iSkip = 1;
             LadderIndex--;
         }
+        // set forward proline rule
+        ProlineOffset = 1;
     }
     else {
         ModIndex = NumMod - 1;
@@ -178,20 +185,32 @@ CLadder::CreateLadder(const int IonType,
                            ExactMass)) return false;
                iSkip = 1;
          }
+         // set reverse proline rule
+         ProlineOffset = 0;
     }
 
-
+    j = 0;
     for(i = 0; i < LadderIndex; i++) {
-        GetHit()[i] = 0;
         if(!CalcDelta(IntMassArray, AAMap, Sequence,
                       Offset, Direction, NumMod, ModIndex,
                       ModList, ModMask, i+iSkip, ion, Charge, SearchType,
                       ExactMass)) return false;
-        (*this)[i] = ion;
+        // proline is '\x0e'
+        // if (!prolinerule || Sequence[i+iSkip] != '\x0e') {
+        // 
+        if(!NoProline || 
+           (i + iSkip + ProlineOffset <= stop - start &&
+           Sequence[Offset + Direction * (i + iSkip + ProlineOffset)] != '\x0e')) {
+            GetHit()[j] = 0;
+            (*this)[j] = ion;
+            SetLadderNumber()[j] = i+iSkip;
+            j++;
+        }
     }
+    LadderIndex = j;
     return true;
 }
-
+    
 
 // or's the hitlist
 void CLadder::Or(CLadder& LadderIn)

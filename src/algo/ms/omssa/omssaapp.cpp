@@ -292,6 +292,10 @@ void COMSSABase::Init()
                             "evalue threshold to iteratively search a spectrum again, 0 = always",
                             CArgDescriptions::eDouble, 
                             "0.01");
+    argDesc->AddDefaultKey("p", "prolineruleions", 
+                "id numbers of ion series to apply no product ions at proline rule at (comma delimited, no spaces)",
+                CArgDescriptions::eString, 
+                "");
 
     argDesc->AddFlag("il", "print a list of ions and their corresponding id number");
     argDesc->AddFlag("el", "print a list of enzymes and their corresponding id number");
@@ -448,6 +452,7 @@ void COMSSABase::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings
     Settings->SetIterativesettings().SetSubsetthresh(args["is"].AsDouble());
     Settings->SetIterativesettings().SetReplacethresh(args["ir"].AsDouble());
 
+    InsertList(args["p"].AsString(), Settings->SetNoprolineions(), "unknown ion for proline rule");
 
     return;
 }

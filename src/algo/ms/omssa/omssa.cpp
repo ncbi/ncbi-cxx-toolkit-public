@@ -368,6 +368,15 @@ RestrictedSearch(false)
     ThreadNum = tNum;
 }
 
+
+void CSearch::ResetGlobals(void)
+{
+    iSearchGlobal = 0;
+    MaxMZ = 0;
+    SharedPeakSet.Reset(0);
+}
+
+
 int CSearch::InitBlast(const char *blastdb, bool use_mmap)
 {
     if (!blastdb) return 0;
@@ -394,6 +403,10 @@ int CSearch::CreateLadders(const char *Sequence,
     TLadderMap::iterator Iter;
     SetLadderContainer().Begin(Iter);
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
+        bool NoProline = find(GetSettings()->GetNoprolineions().begin(),
+                              GetSettings()->GetNoprolineions().end(),
+                              CMSMatchedPeakSetMap::Key2Series(Iter->first)) != 
+            GetSettings()->GetNoprolineions().end();
         if (!(*(Iter->second))[iMod]->
             CreateLadder(CMSMatchedPeakSetMap::Key2Series(Iter->first),
                          CMSMatchedPeakSetMap::Key2Charge(Iter->first),
@@ -407,7 +420,8 @@ int CSearch::CreateLadders(const char *Sequence,
                          SetMassAndMask(iMissed, iMod).Mask,
                          ModList,
                          NumMod,
-                         *SetSettings()
+                         *SetSettings(),
+                         NoProline
                          )) return 1;
         SetLadderContainer().Next(Iter);
     }
@@ -1386,6 +1400,21 @@ void CSearch::MakeModString(string& seqstring, string& modseqstring, CMSHit *MSH
     }
 }
 
+
+void CSearch::CreateSequence(int Start,
+                             int Stop,
+                             string &seqstring, 
+                             CSeqDBSequence &Sequence) 
+{
+    int iseq;
+    seqstring.clear();
+    
+    for (iseq = Start; iseq <= Stop; iseq++) {
+        seqstring += UniqueAA[Sequence.GetData()[iseq]];
+    }
+}   
+    
+
 void CSearch::SetResult(CRef<CMSPeakSet> PeakSet)
 {
 
@@ -1520,12 +1549,8 @@ void CSearch::SetResult(CRef<CMSPeakSet> PeakSet)
                 CSeqDBSequence Sequence(rdfp.GetPointer(), MSHit->GetSeqIndex());
 
                 string tempstartstop;
-                int iseq;
-
-                for (iseq = MSHit->GetStart(); iseq <= MSHit->GetStop();
-                    iseq++) {
-                    seqstring += UniqueAA[Sequence.GetData()[iseq]];
-                }
+                CreateSequence(MSHit->GetStart(), MSHit->GetStop(),
+                               seqstring, Sequence);
                 MakeModString(seqstring, modseqstring, MSHit);
 
                 if (PepDone.find(modseqstring) != PepDone.end()) {
@@ -1663,7 +1688,34 @@ CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
                 TerminalBias = eMSBothTerminalBias;
         }
     }
-    Hit.FillMatchedPeaks(SeriesCharge, Ion, Size, minintensity, false, TerminalBias, SeriesCharge*Maxproductions);
+
+//#if 0
+    // make a copy of the peptide sequence
+    CSeqDBSequence Sequence(rdfp.GetPointer(), Hit.GetSeqIndex());
+    string seqstring;
+    CreateSequence(Hit.GetStart(),
+                   Hit.GetStop(),
+                   seqstring,
+                   Sequence);
+//#endif
+    bool NoProline = find(GetSettings()->GetNoprolineions().begin(),
+                          GetSettings()->GetNoprolineions().end(),
+                          Ion) != 
+        GetSettings()->GetNoprolineions().end();
+    // fill in the matched ions
+    Hit.FillMatchedPeaks(SeriesCharge,
+                         Ion,
+                         Size,
+                         minintensity,
+                         false, 
+                         TerminalBias, 
+                         SeriesCharge*Maxproductions
+//#if 0
+                         ,
+                         seqstring,
+                         NoProline
+//#endif
+                         );
     CMSMatchedPeakSet *MatchPeakSet = Hit.SetIonSeriesMatchMap().SetSeries(SeriesCharge, Ion);
     TMatchedPeakSet::iterator bin, prev, next;
 
@@ -1835,7 +1887,6 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 (GetSettings()->GetZdep() * (Charge - 1) + 1) *
                 GetSettings()->GetPseudocount();
 
-
             if (NewScore) {
                 int High, Low, NumPeaks, NumLo, NumHi;
                 Peaks->HighLow(High, Low, NumPeaks, tempMass, Charge, Threshold, NumLo, NumHi);
@@ -1853,7 +1904,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             if (UseRankScore) {
                 if (HitList[iHitList].GetM() != 0.0) {
                     double Perf = HitList[iHitList].CalcRankProb();
-//                    _TRACE( "Perf=" << Perf << " pval=" << pval << " N=" << N );
+                    _TRACE( "Perf=" << Perf << " pval=" << pval << " N=" << N );
                     pval *= Perf;
                     pval *= 10.0;  // correction to scales
                 }

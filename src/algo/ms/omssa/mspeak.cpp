@@ -73,8 +73,9 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
             if(Ladder.GetHit()[i] > 0) {
                 SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
                 SetHitInfo(iHitInfo).SetIonSeries() = (char) Ladder.GetType();
-                if(kIonDirection[Ladder.GetType()] == 1) SetHitInfo(iHitInfo).SetNumber() = (short) i + NOffset;
-                else SetHitInfo(iHitInfo).SetNumber() = (short) i + COffset;
+//                if(kIonDirection[Ladder.GetType()] == 1) SetHitInfo(iHitInfo).SetNumber() = (short) i + NOffset;
+//                else SetHitInfo(iHitInfo).SetNumber() = (short) i + COffset;
+                SetHitInfo(iHitInfo).SetNumber() = Ladder.GetLadderNumber()[i];
                 SetHitInfo(iHitInfo).SetIntensity() = Ladder.GetIntensity()[i];
                 //  for poisson test
                 SetHitInfo(iHitInfo).SetMZ() = Ladder[i];

@@ -85,20 +85,28 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
     }
 
 
-    if (CanGetIonstosearch()) {
-        TIonstosearch::const_iterator i;
-        for (i = GetIonstosearch().begin(); i != GetIonstosearch().end(); i++)
+    if (CanGetNoprolineions()) {
+        TNoprolineions::const_iterator i;
+        for (i = GetNoprolineions().begin(); i != GetNoprolineions().end(); i++)
             if ( *i < 0 || *i >= eMSIonType_parent ) {
-                Error.push_back("Unknown search ion");
+                Error.push_back("Unknown proline rule ion series");
                 retval = 1;
             }
+    }
+
+
+    if (CanGetIonstosearch()) {
+         TIonstosearch::const_iterator i;
+         for (i = GetIonstosearch().begin(); i != GetIonstosearch().end(); i++)
+             if ( *i < 0 || *i >= eMSIonType_parent ) {
+                 Error.push_back("Unknown search ion");
+                 retval = 1;
+             }
     }
     else {
         Error.push_back("Ion search type missing");
         retval = 1;
     }
-
-
 
 
     if (CanGetPeptol()) {

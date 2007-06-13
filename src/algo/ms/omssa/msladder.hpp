@@ -61,6 +61,9 @@ typedef AutoArray <unsigned> TIntensity;
 /** container for mass deltas */
 typedef AutoArray <int> TDelta;
 
+/** container for ion series number */
+typedef AutoArray <TMSNumber> TLadderNumber;
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CLadder::
@@ -97,6 +100,7 @@ public:
      * @param ModList modification information
      * @param NumMod the total number of mods
      * @param Settings search settings
+     * @param NoProline do not create ions nterm to prolines
      * 
      * @return false if fails
      */
@@ -112,7 +116,8 @@ public:
                             const unsigned ModMask,
                             const CMod ModList[],
                             const int NumMod,
-                            const CMSSearchSettings& Settings
+                            const CMSSearchSettings& Settings,
+                            const bool NoProline
                             );
 
     /**
@@ -215,14 +220,38 @@ public:
      */
     int& SetSum(void);
 
+    /**
+     * Return the array containing the number of the ions
+     * 
+     * @return const TMSNumber
+     */
+    const TLadderNumber& GetLadderNumber(void) const;
+
+    /**
+     * Return the array containing the number of the ions
+     * 
+     * @return TMSNumber&
+     */
+    TLadderNumber& SetLadderNumber(void);
+
 private:
     int LadderIndex; // current end of the ladder
+
+    /** mass ladder */
     AutoPtr <int, ArrayDeleter<int> > Ladder;
+
+    /** hit count for a given m/z value */
     AutoPtr <THit, ArrayDeleter<THit> > Hit;
+
+    /** number of ion in the series */
+    TLadderNumber LadderNumber;
+
     /** intensity of matched peaks */
     TIntensity Intensity;
+
     /** mass deltas between theoretical and experimental */
     TDelta Delta;
+
     int LadderSize;  // size of allocated buffer
     int Start, Stop;  // inclusive start and stop position in sequence
     int Index;  // gi or position in blastdb
@@ -397,6 +426,18 @@ inline
 int& CLadder::SetSum(void)
 {
     return Sum;
+}
+
+inline
+const TLadderNumber& CLadder::GetLadderNumber(void) const
+{
+    return LadderNumber;
+}
+
+inline
+TLadderNumber& CLadder::SetLadderNumber(void)
+{
+    return LadderNumber;
 }
 
 /////////////////// end of CLadder inline methods

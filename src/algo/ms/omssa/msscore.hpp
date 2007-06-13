@@ -667,6 +667,8 @@ public:
      * @param Skipb1 should the first forward going ion be ignored?
      * @param TerminalIon is either of the terminal ions statistically biased, e.g. only K or R at Cterm?
      * @param Maxproductions the number of ions in the ions series actually calculated
+     * @param Sequence the sequence (used for proline rule)
+     * @param NoProline no n term proline cleavage 
      */
     void FillMatchedPeaks(
         TMSCharge ChargeIn, 
@@ -676,6 +678,11 @@ public:
         bool Skipb1,
         EMSTerminalBias TerminalIon,
         int Maxproductions
+//#if 0
+        ,
+        string &Sequence,
+        bool NoProline
+//#endif
         );
 
     /**

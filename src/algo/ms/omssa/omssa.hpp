@@ -114,6 +114,8 @@ typedef multimap <double, CMSHit *> TScoreList;
 
 class NCBI_XOMSSA_EXPORT CSearch : public CThread {
 public:
+
+
     CSearch(int tNum);
     ~CSearch(void);
 
@@ -125,6 +127,11 @@ public:
      */
     int InitBlast(const char *blastdb, bool use_mmap = false);
 
+    /**
+      *  Reset global parameters used in threaded search.
+      *  Call whenever rerunning a search.
+      */
+    static void ResetGlobals(void);
 
     /**
      *  Performs the ms/ms search
@@ -341,6 +348,16 @@ protected:
     ///  Makes a string hashed out of the sequence plus mods
     ///
     static void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
+
+    /**
+     * Generate a peptide sequence
+     * 
+     * @param Start start of sequence
+     * @param Stop stop of sequence
+     * @param seqstring sequence string
+     * @param Sequence sequence object
+     */
+    void CreateSequence(int Start, int Stop, string &seqstring, CSeqDBSequence &Sequence);
 
     /**
      * write oidset to result
