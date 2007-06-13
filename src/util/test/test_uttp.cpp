@@ -24,16 +24,17 @@
  * ===========================================================================
  *
  * Authors:
- *   Dmitry Kazimirov - Initial revision.
+ *   Dmitry Kazimirov
  *
  * File Description:
- *   Test program for testing 
+ *   Test program for testing Untyped Tree Transfer Protocol (UTTP)
+ *   implementation.
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include <util/chunk_stream.hpp>
+#include <util/uttp.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <stdio.h>
@@ -42,7 +43,7 @@
 
 USING_NCBI_SCOPE;
 
-class CChunkStreamTestApp : public CNcbiApplication
+class CUTTPTestApp : public CNcbiApplication
 {
 // Overridden
 public:
@@ -66,16 +67,16 @@ private:
     bool TestWriterOutput();
     bool TestWriter(size_t buffer_size);
 
-    CChunkStreamReader m_Reader;
+    CUTTPReader m_Reader;
     const SChunkData* m_ReaderTestChunk;
     const char* m_ReaderTestChunkPart;
 
-    CChunkStreamWriter m_Writer;
+    CUTTPWriter m_Writer;
     const char* m_WriterTestStream;
 };
 
-const CChunkStreamTestApp::SChunkData
-    CChunkStreamTestApp::sm_TestChunkSequence[] =
+const CUTTPTestApp::SChunkData
+    CUTTPTestApp::sm_TestChunkSequence[] =
 {
     {"", false, 0},
     {"cd", false, 0},
@@ -112,7 +113,7 @@ const CChunkStreamTestApp::SChunkData
     {NULL, false, ';'}
 };
 
-const char CChunkStreamTestApp::sm_TestStream[] =
+const char CUTTPTestApp::sm_TestStream[] =
     "0 "
     "2 cd;"
     "2 ls;"
@@ -126,9 +127,9 @@ const char CChunkStreamTestApp::sm_TestStream[] =
     "6+update"
     "2 db;";
 
-#define IN_READER_TEST "CChunkStreamReader test: "
+#define IN_READER_TEST "CUTTPReader test: "
 
-bool CChunkStreamTestApp::TestReaderChunkPart()
+bool CUTTPTestApp::TestReaderChunkPart()
 {
     if (m_ReaderTestChunk->control_symbol) {
         ERR_POST(IN_READER_TEST
@@ -154,14 +155,14 @@ bool CChunkStreamTestApp::TestReaderChunkPart()
     return true;
 }
 
-bool CChunkStreamTestApp::TestReaderInput(
+bool CUTTPTestApp::TestReaderInput(
     const char* buffer, size_t buffer_size)
 {
     m_Reader.SetNewBuffer(buffer, buffer_size);
 
     for (;;)
-        switch (m_Reader.NextParsingEvent()) {
-        case CChunkStreamReader::eChunkPart:
+        switch (m_Reader.GetNextEvent()) {
+        case CUTTPReader::eChunkPart:
             if (!TestReaderChunkPart())
                 return false;
 
@@ -172,7 +173,7 @@ bool CChunkStreamTestApp::TestReaderInput(
             }
             break;
 
-        case CChunkStreamReader::eChunk:
+        case CUTTPReader::eChunk:
             if (!TestReaderChunkPart())
                 return false;
 
@@ -187,7 +188,7 @@ bool CChunkStreamTestApp::TestReaderInput(
             m_ReaderTestChunkPart = NULL;
             break;
 
-        case CChunkStreamReader::eControlSymbol:
+        case CUTTPReader::eControlSymbol:
             if (!m_ReaderTestChunk->control_symbol) {
                 ERR_POST(IN_READER_TEST "unexpected control symbol '" <<
                     m_Reader.GetControlSymbol() << '\'');
@@ -203,17 +204,17 @@ bool CChunkStreamTestApp::TestReaderInput(
             ++m_ReaderTestChunk;
             break;
 
-        case CChunkStreamReader::eEndOfBuffer:
+        case CUTTPReader::eEndOfBuffer:
             return true;
 
-        default: /* case CChunkStreamReader::eFormatError: */
+        default: /* case CUTTPReader::eFormatError: */
             ERR_POST(IN_READER_TEST "stream format error at offset " <<
                 m_Reader.GetOffset());
             return false;
         }
 }
 
-bool CChunkStreamTestApp::TestReader(size_t buffer_size)
+bool CUTTPTestApp::TestReader(size_t buffer_size)
 {
     m_Reader.Reset();
     m_ReaderTestChunk = sm_TestChunkSequence;
@@ -231,9 +232,9 @@ bool CChunkStreamTestApp::TestReader(size_t buffer_size)
     return TestReaderInput(buffer, stream_length);
 }
 
-#define IN_WRITER_TEST "CChunkStreamWriter test: "
+#define IN_WRITER_TEST "CUTTPWriter test: "
 
-bool CChunkStreamTestApp::TestWriterOutput()
+bool CUTTPTestApp::TestWriterOutput()
 {
     const char* buffer;
     size_t buffer_size;
@@ -260,7 +261,7 @@ bool CChunkStreamTestApp::TestWriterOutput()
     return true;
 }
 
-bool CChunkStreamTestApp::TestWriter(size_t buffer_size)
+bool CUTTPTestApp::TestWriter(size_t buffer_size)
 {
     char buffer[sizeof(sm_TestStream) - 1];
 
@@ -288,7 +289,7 @@ bool CChunkStreamTestApp::TestWriter(size_t buffer_size)
     return TestWriterOutput();
 }
 
-int CChunkStreamTestApp::Run()
+int CUTTPTestApp::Run()
 {
     size_t buffer_size = (sizeof(size_t) >> 1) * 5 + 1;
 
@@ -307,5 +308,5 @@ int CChunkStreamTestApp::Run()
 
 int main(int argc, const char* argv[])
 {
-    return CChunkStreamTestApp().AppMain(argc, argv);
+    return CUTTPTestApp().AppMain(argc, argv);
 }
