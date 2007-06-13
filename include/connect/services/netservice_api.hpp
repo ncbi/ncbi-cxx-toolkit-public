@@ -80,10 +80,12 @@ public:
     void SetWaitServerTimeout(unsigned int sec);
     unsigned int GetWaitServerTimeout() const;
 
+    //protected:
+    void CheckServerOK(string& response) const ;
+
 protected:
 
     static void TrimErr(string& err_msg);
-    void CheckServerOK(string& response) const ;
     enum ETrimErr {
         eNoTrimErr,
         eTrimErr

@@ -707,7 +707,9 @@ public:
     unsigned long Count(const string& query) const;
     void ForceReschedule(const string& query) const;
     void Cancel(const string& query) const;
-    void Select(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
+    void Drop(const string& query) const;
+    void Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
+    void Select(const string& select_stmt, CNcbiOstream& os) const;
 
 private:
     friend class CNetScheduleAPI;

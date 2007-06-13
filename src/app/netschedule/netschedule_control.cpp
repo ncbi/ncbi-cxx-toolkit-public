@@ -179,6 +179,21 @@ void CNetScheduleControl::Init(void)
                              "query",
                              "Count all jobs with tags set by query string",
                              CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("query",
+                             "query",
+                             "Perform a query on the queue jobs",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("fields",
+                             "fields_list",
+                             "Fields (separated by ',') which should be returned by query",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("select",
+                             "select_stmt",
+                             "Perform a select query on the queue jobs",
+                             CArgDescriptions::eString);
+
     arg_desc->AddFlag("showparams", "Show service paramters");
 
     /*
@@ -250,6 +265,23 @@ int CNetScheduleControl::Run(void)
         ctl.reset(x_CreateNewClient(true));
         string query = args["count"].AsString();
         os << ctl->GetAdmin().Count(query) << endl;
+    }
+    else if( args["query"]) {
+        ctl.reset(x_CreateNewClient(true));
+        if (!args["fields"] )
+            NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -fields");
+        string query = args["query"].AsString();
+        string sfields = args["fields"].AsString();
+        vector<string> fields;
+        NStr::Tokenize(sfields, ",", fields);
+        ctl->GetAdmin().Query(query, fields, os);
+        os << endl;
+    }
+    else if( args["select"]) {
+        ctl.reset(x_CreateNewClient(true));
+        string select_stmt = args["select"].AsString();
+        ctl->GetAdmin().Select(select_stmt, os);
+        os << endl;
     }
     else if (args["reconf"]) {
         ctl.reset(x_CreateNewClient(false));

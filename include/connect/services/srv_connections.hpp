@@ -77,7 +77,13 @@ public:
     void WriteBuf(const void* buf, size_t len);
     void WaitForServer(unsigned int wait_sec = 20);
 
-    void Telnet(CNcbiOstream& out, const string& stop_string = kEmptyStr);
+    class IStringProcessor {
+    public:
+        virtual ~IStringProcessor() {}
+        // if returns false the telnet method will stop
+        virtual bool Process(string& line) = 0;
+    };
+    void Telnet(CNcbiOstream& out, IStringProcessor* processor = NULL);
 
     void Disconnect();
 private:

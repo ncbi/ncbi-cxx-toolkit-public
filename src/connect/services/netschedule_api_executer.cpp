@@ -218,7 +218,8 @@ void CNetScheduleExecuter::x_ParseGetJobResponse(string*        job_key,
     if (*str == 0) {
     throw_err:
         NCBI_THROW(CNetScheduleException, eProtocolSyntaxError, 
-                   "Internal error. Cannot parse server output.");
+                   "Internal error. Cannot parse server output. " +  *job_key + "\n" 
+                   + response);
     }
 
     for(;*str && !isspace((unsigned char)(*str)); ++str) {

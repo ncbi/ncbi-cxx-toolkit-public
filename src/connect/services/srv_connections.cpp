@@ -151,7 +151,7 @@ void CNetSrvConnector::WaitForServer(unsigned wait_sec)
     }
 }
 
-void CNetSrvConnector::Telnet( CNcbiOstream& out, const string& stop_string)
+void CNetSrvConnector::Telnet( CNcbiOstream& out,  CNetSrvConnector::IStringProcessor* processor)
 {
     _ASSERT(x_IsConnected());
 
@@ -165,7 +165,7 @@ void CNetSrvConnector::Telnet( CNcbiOstream& out, const string& stop_string)
 
         EIO_Status st = m_Socket->ReadLine(line);       
         if (st == eIO_Success) {
-            if (!stop_string.empty() && line == stop_string)
+            if (processor && !processor->Process(line))
                 break;
             out << line << "\n" << flush;
         } else {

@@ -187,8 +187,7 @@ void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
     
     CNetSrvConnectorHolder conn = m_API->x_GetConnector();
     conn->WriteStr("MONI QUIT\r\n");
-
-    conn->Telnet(out, "END");
+    conn->Telnet(out);
 }
 
 void CNetScheduleAdmin::Logging(bool on_off) const
@@ -252,7 +251,7 @@ unsigned long CNetScheduleAdmin::Count(const string& query) const
     string cmd = "QERY ";
     cmd.append("\"");
     cmd.append(NStr::PrintableString(query));
-    cmd.append("\"");
+    cmd.append("\"\r\n");
 
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
@@ -268,8 +267,62 @@ void CNetScheduleAdmin::ForceReschedule(const string& query) const
 void CNetScheduleAdmin::Cancel(const string& query) const
 {
 }
-void CNetScheduleAdmin::Select(const string& query, const vector<string>& fields, CNcbiOstream& os) const
+void CNetScheduleAdmin::Drop(const string& query) const
 {
 }
+
+class CQueryStringProcessor : public CNetSrvConnector::IStringProcessor
+{
+public:
+    explicit CQueryStringProcessor(const CNetScheduleAPI& api) : m_API(api) {}
+    virtual ~CQueryStringProcessor() {}
+    
+    virtual bool Process(string& line) {
+        m_API.CheckServerOK(line);
+        return line != "END";
+    }
+
+private:
+    const CNetScheduleAPI& m_API;
+};
+void CNetScheduleAdmin::Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const
+{
+    if (fields.empty())
+        return;
+    string cmd = "QERY ";
+    cmd.append("\"");
+    cmd.append(NStr::PrintableString(query));
+    cmd.append("\" SLCT \"");
+    string sfields;
+    ITERATE(vector<string>, it, fields) {
+        if (it != fields.begin() )
+            sfields.append(",");
+        sfields.append(*it);
+    }
+    cmd.append(NStr::PrintableString(sfields));
+    cmd.append("\"\r\n");
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        CNetSrvConnectorHolder ch = *it;
+        ch->WriteStr(cmd);
+        CQueryStringProcessor processor(*m_API);
+        ch->Telnet(os, &processor);
+    }
+}
+void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) const
+{
+    string cmd = "QSEL ";
+    cmd.append("\"");
+    cmd.append(NStr::PrintableString(select_stmt));
+    cmd.append("\"\r\n");
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        CNetSrvConnectorHolder ch = *it;
+        ch->WriteStr(cmd);
+        CQueryStringProcessor processor(*m_API);
+        ch->Telnet(os, &processor);
+    }
+}
+
 
 END_NCBI_SCOPE
