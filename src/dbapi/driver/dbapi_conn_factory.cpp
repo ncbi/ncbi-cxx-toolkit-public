@@ -188,7 +188,10 @@ CDBConnectionFactory::MakeDBConnection(
     CDB_Connection* t_con = NULL;
     TSvrRef dsp_srv = GetDispatchedServer(conn_attr.srv_name);
 
-    // Set timeouts ...
+    // Store original query timeout ...
+    unsigned int query_timeout = ctx.GetTimeout();
+
+    // Set "validation timeouts" ...
     ctx.SetTimeout(CalculateConnectionTimeout(ctx));
     ctx.SetLoginTimeout(CalculateLoginTimeout(ctx));
 
@@ -234,6 +237,9 @@ CDBConnectionFactory::MakeDBConnection(
             }
         }
     }
+
+    // Restore query timeout ...
+    ctx.SetTimeout(query_timeout);
 
     return t_con;
 }
