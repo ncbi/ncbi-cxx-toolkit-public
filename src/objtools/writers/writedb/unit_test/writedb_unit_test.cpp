@@ -77,7 +77,7 @@ using boost::unit_test::test_suite;
 // strings (in ncbi2na packed format), one for sequence data and one
 // for ambiguities.
 
-static void
+void
 s_FetchRawData(CSeqDBExpert & seqdb,
                int            oid,
                string       & sequence,
@@ -97,10 +97,9 @@ s_FetchRawData(CSeqDBExpert & seqdb,
 
 // Return a Seq-id built from the given int (gi).
 
-static CRef<CSeq_id> s_IdentToSeqId(int gi)
+CRef<CSeq_id> s_IdentToSeqId(int gi)
 {
-    CRef<CSeq_id> seqid(new CSeq_id);
-    seqid->SetGi(gi);
+    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gi));
     
     return seqid;
 }
@@ -108,7 +107,7 @@ static CRef<CSeq_id> s_IdentToSeqId(int gi)
 // Return a Seq-id built from the given string (accession or FASTA
 // format Seq-id).
 
-static CRef<CSeq_id> s_IdentToSeqId(const char * acc)
+CRef<CSeq_id> s_IdentToSeqId(const char * acc)
 {
     CRef<CSeq_id> seqid(new CSeq_id(acc));
     
@@ -228,7 +227,7 @@ void s_CompareBioseqs(CBioseq & src, CBioseq & dst)
 // Test the database compared to a reference database, usually the
 // database that provided the source data.
 
-static void
+void
 s_TestDatabase(CSeqDBExpert & src,
                const string & name,
                const string & title)
