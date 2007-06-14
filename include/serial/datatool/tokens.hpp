@@ -121,6 +121,7 @@ static const TToken K_ENUMERATION    = 312;
 static const TToken K_ANNOTATION     = 313;
 static const TToken K_DOCUMENTATION  = 314;
 static const TToken K_ATTRIBUTEGROUP = 315;
+static const TToken K_GROUP          = 316;
 
 END_NCBI_SCOPE
 

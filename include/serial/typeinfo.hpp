@@ -136,7 +136,7 @@ public:
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
                         ESerialRecursionMode how = eRecursive) const = 0;
 
-    /// Check is the object class is inherited from CObject
+    /// Check is this TypeInfo object is kind of CClassTypeInfoBase
     bool IsCObject(void) const;
     virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
     // return true CTypeInfo of object (redefined in polymorphic classes)

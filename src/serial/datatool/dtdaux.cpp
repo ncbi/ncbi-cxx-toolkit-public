@@ -46,12 +46,14 @@ BEGIN_NCBI_SCOPE
 DTDEntity::DTDEntity(void)
 {
     m_External = false;
+    m_Type = eEntity;
 }
 DTDEntity::DTDEntity(const DTDEntity& other)
 {
     m_Name = other.m_Name;
     m_Data = other.m_Data;
     m_External = other.m_External;
+    m_Type = other.m_Type;
 }
 DTDEntity::~DTDEntity(void)
 {
@@ -82,6 +84,14 @@ void DTDEntity::SetExternal(void)
 bool DTDEntity::IsExternal(void) const
 {
     return m_External;
+}
+void DTDEntity::SetType(EType type)
+{
+    m_Type = type;
+}
+DTDEntity::EType DTDEntity::GetType(void) const
+{
+    return m_Type;
 }
 
 /////////////////////////////////////////////////////////////////////////////

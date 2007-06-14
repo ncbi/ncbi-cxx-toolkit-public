@@ -993,7 +993,7 @@ CDataType* DTDParser::TypesBlock(
             if (refNode.GetType() == DTDElement::eAny) {
                 refNode.SetName("_Any");
             } else {
-                ERR_POST(Warning << "Undefined type: " << *i);
+                ERR_POST(Warning << "Element with no name: " << *i);
                 refNode.SetName(*i);
             }
         }
@@ -1252,7 +1252,7 @@ void DTDParser::PrintEntities(void)
         cout << " === Entities ===" << endl;
         map<string,DTDEntity>::iterator i;
         for (i = m_MapEntity.begin(); i != m_MapEntity.end(); ++i) {
-            cout << i->second.GetName() << " = \"" << i->second.GetData() << "\"" << endl << endl;
+            cout << i->first << " = \"" << i->second.GetData() << "\"" << endl << endl;
         }
     }
 }

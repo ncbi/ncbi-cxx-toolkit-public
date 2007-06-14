@@ -68,6 +68,12 @@ public:
     DTDEntity(const DTDEntity& other);
     virtual ~DTDEntity(void);
 
+    enum EType {
+        eEntity,
+        eType,
+        eGroup
+    };
+
     void SetName(const string& name);
     const string& GetName(void) const;
 
@@ -77,10 +83,14 @@ public:
     void SetExternal(void);
     bool IsExternal(void) const;
 
+    void SetType(EType type);
+    EType GetType(void) const;
+
 private:
     string m_Name;
     string m_Data;
     bool   m_External;
+    EType  m_Type;
 };
 
 /////////////////////////////////////////////////////////////////////////////

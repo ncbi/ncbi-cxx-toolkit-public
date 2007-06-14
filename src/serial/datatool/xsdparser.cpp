@@ -74,7 +74,10 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
             break;
         case K_COMPLEXTYPE:
         case K_SIMPLETYPE:
-            CreateTypeDefinition();
+            CreateTypeDefinition(DTDEntity::eType);
+            break;
+        case K_GROUP:
+            CreateTypeDefinition(DTDEntity::eGroup);
             break;
         case K_ATTPAIR:
             break;
@@ -294,7 +297,10 @@ void XSDParser::ParseInclude(void)
     if (tok != K_ENDOFTAG) {
         ParseError("Unexpected token");
     }
-    DTDEntity& node = m_MapEntity[name];
+    if (name.empty()) {
+        ParseError("schemaLocation");
+    }
+    DTDEntity& node = m_MapEntity[CreateEntityId(name, DTDEntity::eEntity)];
     node.SetName(name);
     node.SetData(name);
     node.SetExternal();
@@ -355,7 +361,43 @@ void XSDParser::SkipContent()
     }
 }
 
-string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
+DTDElement::EOccurrence XSDParser::ParseMinOccurs( DTDElement::EOccurrence occNow)
+{
+    DTDElement::EOccurrence occNew = occNow;
+    if (GetAttribute("minOccurs")) {
+        int m = NStr::StringToInt(m_Value);
+        if (m == 0) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eZeroOrOne;
+            } else if (occNow == DTDElement::eOneOrMore) {
+                occNew = DTDElement::eZeroOrMore;
+            }
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+    }
+    return occNew;
+}
+
+DTDElement::EOccurrence XSDParser::ParseMaxOccurs( DTDElement::EOccurrence occNow)
+{
+    DTDElement::EOccurrence occNew = occNow;
+    if (GetAttribute("maxOccurs")) {
+        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
+        if (m == -1) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eOneOrMore;
+            } else if (occNow == DTDElement::eZeroOrOne) {
+                occNew = DTDElement::eZeroOrMore;
+            }
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+    }
+    return occNew;
+}
+
+string XSDParser::ParseElementContent(DTDElement* owner, int emb)
 {
     TToken tok;
     string name, value;
@@ -372,9 +414,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
         ref=false;
         name = m_Value;
         if (owner) {
-            name = owner->GetName();
-            name += "__emb#__";
-            name += NStr::IntToString(emb++);
+            name = CreateEmbeddedName(owner->GetName(), emb);
             m_MapElement[name].SetEmbedded();
             m_MapElement[name].SetNamed();
         }
@@ -391,45 +431,9 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
     if (GetAttribute("default")) {
         m_MapElement[name].SetDefault(m_Value);
     }
-    if (GetAttribute("minOccurs")) {
-        if (!owner || name.empty()) {
-            ParseError("Unexpected attribute");
-        }
-        int m = NStr::StringToInt(m_Value);
-        DTDElement::EOccurrence occNow, occNew;
-        occNew = occNow = owner->GetOccurrence(name);
-        if (m == 0) {
-            if (occNow == DTDElement::eOne) {
-                occNew = DTDElement::eZeroOrOne;
-            } else if (occNow == DTDElement::eOneOrMore) {
-                occNew = DTDElement::eZeroOrMore;
-            }
-        } else if (m != 1) {
-            ParseError("Unsupported attribute");
-        }
-        if (occNow != occNew) {
-            owner->SetOccurrence(name, occNew);
-        }
-    }
-    if (GetAttribute("maxOccurs")) {
-        if (!owner || name.empty()) {
-            ParseError("Unexpected attribute");
-        }
-        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
-        DTDElement::EOccurrence occNow, occNew;
-        occNew = occNow = owner->GetOccurrence(name);
-        if (m == -1) {
-            if (occNow == DTDElement::eOne) {
-                occNew = DTDElement::eOneOrMore;
-            } else if (occNow == DTDElement::eZeroOrOne) {
-                occNew = DTDElement::eZeroOrMore;
-            }
-        } else if (m != 1) {
-            ParseError("Unsupported attribute");
-        }
-        if (occNow != occNew) {
-            owner->SetOccurrence(name, occNew);
-        }
+    if (owner && !name.empty()) {
+        owner->SetOccurrence(name, ParseMinOccurs( owner->GetOccurrence(name)));
+        owner->SetOccurrence(name, ParseMaxOccurs( owner->GetOccurrence(name)));
     }
     if (tok != K_CLOSING && tok != K_ENDOFTAG) {
         ParseError("Unexpected token");
@@ -445,12 +449,43 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
     return name;
 }
 
+string XSDParser::ParseGroup(DTDElement* owner, int emb)
+{
+    string name;
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("ref")) {
+
+        string id = CreateEntityId(m_Value,DTDEntity::eGroup);
+        name = CreateEmbeddedName(owner->GetName(), emb);
+        DTDElement& node = m_MapElement[name];
+        node.SetEmbedded();
+        node.SetName(m_Value);
+        node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
+        node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
+        m_Comments = &(node.Comments());
+
+        if (m_MapEntity.find(id) != m_MapEntity.end()) {
+            PushEntityLexer(id);
+            if (GetNextToken() != K_GROUP) {
+                ParseError("group");
+            }
+            ParseGroupRef(node);
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(m_MapElement[name]);
+    }
+    m_ExpectLastComment = true;
+    return name;
+}
+
 void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
 {
     int emb=0;
     bool eatEOT= false;
     TToken tok;
     for ( tok=GetNextToken(); ; tok=GetNextToken()) {
+        emb= node.GetContent().size();
         switch (tok) {
         case T_EOF:
             return;
@@ -480,14 +515,13 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             if (node.GetType() != DTDElement::eSequence) {
                 ParseError("Unexpected element type");
             } else {
-                string name = node.GetName();
-                name += "__emb#__";
-                name += NStr::IntToString(emb++);
-                m_MapElement[name].SetName(name);
-                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
-                m_MapElement[name].SetEmbedded();
-                m_MapElement[name].SetType(DTDElement::eAny);
-                ParseAny(m_MapElement[name]);
+                string name = CreateEmbeddedName(node.GetName(), emb);
+                DTDElement& elem = m_MapElement[name];
+                elem.SetName(name);
+                elem.SetSourceLine(Lexer().CurrentLine());
+                elem.SetEmbedded();
+                elem.SetType(DTDElement::eAny);
+                ParseAny(elem);
                 AddElementContent(node,name);
             }
             break;
@@ -505,14 +539,13 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 node.SetType(DTDElement::eSequence);
                 ParseContainer(node);
             } else {
-                string name = node.GetName();
-                name += "__emb#__";
-                name += NStr::IntToString(emb++);
-                m_MapElement[name].SetName(name);
-                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
-                m_MapElement[name].SetEmbedded();
-                m_MapElement[name].SetType(DTDElement::eSequence);
-                ParseContainer(m_MapElement[name]);
+                string name = CreateEmbeddedName(node.GetName(), emb);
+                DTDElement& elem = m_MapElement[name];
+                elem.SetName(name);
+                elem.SetSourceLine(Lexer().CurrentLine());
+                elem.SetEmbedded();
+                elem.SetType(DTDElement::eSequence);
+                ParseContainer(elem);
                 AddElementContent(node,name);
             }
             break;
@@ -521,14 +554,13 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 node.SetType(DTDElement::eChoice);
                 ParseContainer(node);
             } else {
-                string name = node.GetName();
-                name += "__emb#__";
-                name += NStr::IntToString(emb++);
-                m_MapElement[name].SetName(name);
-                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
-                m_MapElement[name].SetEmbedded();
-                m_MapElement[name].SetType(DTDElement::eChoice);
-                ParseContainer(m_MapElement[name]);
+                string name = CreateEmbeddedName(node.GetName(), emb);
+                DTDElement& elem = m_MapElement[name];
+                elem.SetName(name);
+                elem.SetSourceLine(Lexer().CurrentLine());
+                elem.SetEmbedded();
+                elem.SetType(DTDElement::eChoice);
+                ParseContainer(elem);
                 AddElementContent(node,name);
             }
             break;
@@ -537,20 +569,25 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 node.SetType(DTDElement::eSet);
                 ParseContainer(node);
             } else {
-                string name = node.GetName();
-                name += "__emb#__";
-                name += NStr::IntToString(emb++);
-                m_MapElement[name].SetName(name);
-                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
-                m_MapElement[name].SetEmbedded();
-                m_MapElement[name].SetType(DTDElement::eSet);
-                ParseContainer(m_MapElement[name]);
+                string name = CreateEmbeddedName(node.GetName(), emb);
+                DTDElement& elem = m_MapElement[name];
+                elem.SetName(name);
+                elem.SetSourceLine(Lexer().CurrentLine());
+                elem.SetEmbedded();
+                elem.SetType(DTDElement::eSet);
+                ParseContainer(elem);
                 AddElementContent(node,name);
             }
             break;
         case K_ELEMENT:
             {
 	            string name = ParseElementContent(&node,emb);
+	            AddElementContent(node,name);
+            }
+            break;
+        case K_GROUP:
+            {
+	            string name = ParseGroup(&node,emb);
 	            AddElementContent(node,name);
             }
             break;
@@ -589,41 +626,8 @@ void XSDParser::ParseContainer(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
     m_ExpectLastComment = true;
-
-    if (GetAttribute("minOccurs")) {
-        int m = NStr::StringToInt(m_Value);
-        DTDElement::EOccurrence occNow, occNew;
-        occNew = occNow = node.GetOccurrence();
-        if (m == 0) {
-            if (occNow == DTDElement::eOne) {
-                occNew = DTDElement::eZeroOrOne;
-            } else if (occNow == DTDElement::eOneOrMore) {
-                occNew = DTDElement::eZeroOrMore;
-            }
-        } else if (m != 1) {
-            ParseError("Unsupported attribute");
-        }
-        if (occNow != occNew) {
-            node.SetOccurrence(occNew);
-        }
-    }
-    if (GetAttribute("maxOccurs")) {
-        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
-        DTDElement::EOccurrence occNow, occNew;
-        occNew = occNow = node.GetOccurrence();
-        if (m == -1) {
-            if (occNow == DTDElement::eOne) {
-                occNew = DTDElement::eOneOrMore;
-            } else if (occNow == DTDElement::eZeroOrOne) {
-                occNew = DTDElement::eZeroOrMore;
-            }
-        } else if (m != 1) {
-            ParseError("Unsupported attribute");
-        }
-        if (occNow != occNew) {
-            node.SetOccurrence(occNew);
-        }
-    }
+    node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
+    node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -651,14 +655,23 @@ void XSDParser::ParseSimpleContent(DTDElement& node)
     }
 }
 
+void XSDParser::ParseGroupRef(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+}
+
 void XSDParser::ParseExtension(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
     bool extended=false;
     if (GetAttribute("base")) {
         if (!DefineElementType(node)) {
-            if (m_MapEntity.find(m_Value) != m_MapEntity.end()) {
-                PushEntityLexer(m_Value);
+            string id = CreateEntityId(m_Value,DTDEntity::eType);
+            if (m_MapEntity.find(id) != m_MapEntity.end()) {
+                PushEntityLexer(id);
                 extended=true;
             }
             node.SetTypeName(m_Value);
@@ -726,43 +739,12 @@ void XSDParser::ParseAny(DTDElement& node)
             ParseError("Unsupported attribute");
         }
     }
-    if (GetAttribute("minOccurs")) {
-        int m = NStr::StringToInt(m_Value);
-        DTDElement::EOccurrence occNow, occNew;
-        occNew = occNow = node.GetOccurrence();
-        if (m == 0) {
-            if (occNow == DTDElement::eOne) {
-                occNew = DTDElement::eZeroOrOne;
-            } else if (occNow == DTDElement::eOneOrMore) {
-                occNew = DTDElement::eZeroOrMore;
-            }
-        } else if (m != 1) {
-            ParseError("Unsupported attribute");
-        }
-        if (occNow != occNew) {
-            node.SetOccurrence(occNew);
-        }
-    }
-    if (GetAttribute("maxOccurs")) {
-        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
-        DTDElement::EOccurrence occNow, occNew;
-        occNew = occNow = node.GetOccurrence();
-        if (m == -1) {
-            if (occNow == DTDElement::eOne) {
-                occNew = DTDElement::eOneOrMore;
-            } else if (occNow == DTDElement::eZeroOrOne) {
-                occNew = DTDElement::eZeroOrMore;
-            }
-        } else if (m != 1) {
-            ParseError("Unsupported attribute");
-        }
-        if (occNow != occNew) {
-            node.SetOccurrence(occNew);
-        }
-    }
+    node.SetOccurrence( ParseMinOccurs( node.GetOccurrence()));
+    node.SetOccurrence( ParseMaxOccurs( node.GetOccurrence()));
     if (GetAttribute("namespace")) {
         node.SetNamespaceName(m_Value);
     }
+    m_Comments = &(node.Comments());
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -845,22 +827,51 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
     }
 }
 
-void XSDParser::CreateTypeDefinition(void)
+string XSDParser::CreateEmbeddedName(const string& name, int emb)
 {
-    string name, data;
+    string emb_name(name);
+    emb_name += "__emb#__";
+    emb_name += NStr::IntToString(emb);
+    return emb_name;
+}
+
+string XSDParser::CreateEntityId( const string& name, DTDEntity::EType type)
+{
+    string id;
+    switch (type) {
+    case DTDEntity::eType:
+        id = string("type:") + name;
+        break;
+    case DTDEntity::eGroup:
+        id = string("group:") + name;
+        break;
+    default:
+        id = name;
+        break;
+    }
+    return id;
+}
+
+void XSDParser::CreateTypeDefinition(DTDEntity::EType type)
+{
+    string id, name, data;
     TToken tok;
     data += "<" + m_Raw;
     for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken()) {
         data += " " + m_Raw;
         if (IsAttribute("name")) {
             name = m_Value;
-            m_MapEntity[name].SetName(name);
+            id = CreateEntityId(name,type);
+            m_MapEntity[id].SetName(name);
         }
     }
     data += m_Raw;
-    m_MapEntity[name].SetData(data);
+    if (name.empty()) {
+        ParseError("name");
+    }
+    m_MapEntity[id].SetData(data);
     if (tok == K_CLOSING) {
-        ParseTypeDefinition(m_MapEntity[name]);
+        ParseTypeDefinition(m_MapEntity[id]);
     }
 }
 
@@ -911,7 +922,7 @@ void XSDParser::ProcessNamedTypes(void)
             if ( node.GetType() == DTDElement::eUnknown &&
                 !node.GetTypeName().empty()) {
                 found = true;
-                PushEntityLexer(node.GetTypeName());
+                PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
                 ParseContent(node);
                 node.SetTypeIfUnknown(DTDElement::eEmpty);
 // this is not always correct, but it seems that local elements
@@ -956,7 +967,7 @@ void XSDParser::ProcessNamedTypes(void)
                     if ( a->GetType() == DTDAttribute::eUnknown &&
                         !a->GetTypeName().empty()) {
                         found = true;
-                        PushEntityLexer(a->GetTypeName());
+                        PushEntityLexer(CreateEntityId(a->GetTypeName(),DTDEntity::eType));
                         ParseContent(*a);
                     }
                 }

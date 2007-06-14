@@ -156,6 +156,9 @@ TToken XSDLexer::LookupKeyword(void)
         CHECK("any", K_ANY, 3);
         CHECK("all", K_SET, 3);
         break;
+    case 5:
+        CHECK("group", K_GROUP, 5);
+        break;
     case 6:
         CHECK("choice", K_CHOICE, 6);
         CHECK("schema", K_SCHEMA, 6);

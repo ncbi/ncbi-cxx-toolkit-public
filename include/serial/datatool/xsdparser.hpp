@@ -69,13 +69,18 @@ protected:
 
     void SkipContent();
 
-    string ParseElementContent(DTDElement* owner, int& emb);
+    DTDElement::EOccurrence ParseMinOccurs( DTDElement::EOccurrence occNow);
+    DTDElement::EOccurrence ParseMaxOccurs( DTDElement::EOccurrence occNow);
+
+    string ParseElementContent(DTDElement* owner, int emb);
+    string ParseGroup(DTDElement* owner, int emb);
     void ParseContent(DTDElement& node, bool extended=false);
     void ParseDocumentation(void);
     void ParseContainer(DTDElement& node);
 
     void ParseComplexType(DTDElement& node);
     void ParseSimpleContent(DTDElement& node);
+    void ParseGroupRef(DTDElement& node);
     void ParseExtension(DTDElement& node);
     void ParseRestriction(DTDElement& node);
     void ParseAttribute(DTDElement& node);
@@ -87,7 +92,9 @@ protected:
     void ParseRestriction(DTDAttribute& att);
     void ParseEnumeration(DTDAttribute& att);
 
-    void CreateTypeDefinition(void);
+    static string CreateEmbeddedName(const string& name, int emb);
+    static string CreateEntityId( const string& name, DTDEntity::EType type);
+    void CreateTypeDefinition(DTDEntity::EType type);
     void ParseTypeDefinition(DTDEntity& ent);
     void ProcessNamedTypes(void);
 
