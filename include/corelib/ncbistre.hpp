@@ -591,14 +591,15 @@ class CStringUTF8;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Helper function to read plain text data streams.
-/// It understands Byte Order Mark and converts the input if needed.
+/// Helper functions to read plain-text data streams.
+/// It understands Byte Order Mark (BOM) and converts the input if needed.
 ///
 /// See clause 13.6 in
-/// http://www.unicode.org/unicode/uni2book/ch13.pdf
+///   http://www.unicode.org/unicode/uni2book/ch13.pdf
 /// and also
-/// http://unicode.org/faq/utf_bom.html#BOM
-
+///   http://unicode.org/faq/utf_bom.html#BOM
+///
+/// @sa ReadIntoUtf8, GetTextEncodingForm
 enum EEncodingForm {
     /// Stream has no BOM.
     eEncodingForm_Unknown,
@@ -614,32 +615,73 @@ enum EEncodingForm {
     eEncodingForm_Utf16Foreign
 };
 
-/// Read all input data from stream and convert it into UTF8 string.
+
+/// How to read the text if the encoding form is not known (i.e. passed
+/// "eEncodingForm_Unknown" and the stream does not have BOM too)
 ///
-/// If the stream has no BOM, the result can be incorrect:
-/// conversion is based on guesses, which are not necessarily correct.
-/// In this case using CStringUTF8::IsValid() might be a good idea.
+/// @sa ReadIntoUtf8
+enum EReadUnknownNoBOM {
+    /// Read the text "as is" (raw octal data). The read data can then
+    /// be accessed using the regular std::string API (rather than the
+    /// CStringUTF8 one).
+    eNoBOM_RawRead,
+
+    /// Try to guess the text's encoding form.
+    ///
+    /// @note
+    ///   In this case the encoding is a guesswork, which is not necessarily
+    ///   correct. If the guess is wrong then the data may be distorted on
+    ///   read. Use CStringUTF8::IsValid() to verify that guess. If it
+    ///   does not verify, then the read data can be accessed using the
+    ///   regular std::string API (rather than the CStringUTF8 one).
+    eNoBOM_GuessEncoding
+};
+
+
+/// Read all input data from stream and try convert it into UTF8 string.
+///
+/// @param input
+///   Input text stream
+/// @param result
+///   UTF8 string (but it can be a raw octet string if the encoding is unknown)
+/// @param what_if_no_bom
+///   What to do if the 'encoding_form' is passed "eEncodingForm_Unknown" and
+///   the BOM is not detected in the stream
+/// @return
+///   The encoding as detected based on the BOM
+///   ("eEncodingForm_Unknown" if there was no BOM).
+NCBI_XNCBI_EXPORT
+EEncodingForm ReadIntoUtf8(
+    CNcbiIstream&     input,
+    CStringUTF8*      result,
+    EEncodingForm     encoding_form  = eEncodingForm_Unknown,
+    EReadUnknownNoBOM what_if_no_bom = eNoBOM_GuessEncoding
+);
+
+
+
+/// Whether to discard BOM or to keep it in the input stream
+///
+/// @sa GetTextEncodingForm
+enum EBOMDiscard {
+    eBOM_Discard,  ///< Discard the read BOM bytes
+    eBOM_Keep      ///< Push the read BOM bytes back into the input stream
+};
+
+
+/// Detect if the stream has BOM.
 ///
 /// @param input
 ///   Input stream
-/// @param result
-///   UTF8 string
-/// @param ef
-///   Encoding form. BOM, if present, will always override it.
-
-NCBI_XNCBI_EXPORT
-void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
-                  EEncodingForm ef = eEncodingForm_Unknown);
-
-/// Read first 4 bytes from the stream.
-/// If BOM is found it is analyzed and skipped.
+/// @param discard_bom
+///   Whether to discard the read BOM bytes or to push them back to the stream
 ///
-/// NOTE: non-BOM data of these 4 bytes
-/// is pushed back to the stream using CStreamUtils::Pushback.
-///
-/// @sa CStreamUtils::Pushback
+/// NOTE:  If the function needs to push back more than one char then it uses
+///        CStreamUtils::Pushback().
+/// @sa CStreamUtils::Pushback()
 NCBI_XNCBI_EXPORT
-EEncodingForm GetTextEncodingForm(CNcbiIstream& input);
+EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
+                                  EBOMDiscard   discard_bom);
 
 
 END_NCBI_SCOPE

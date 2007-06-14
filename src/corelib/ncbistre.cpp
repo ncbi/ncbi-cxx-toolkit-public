@@ -387,13 +387,18 @@ istream& istream::read(char *s, streamsize n)
 #  endif  /* NCBI_COMPILER_VERSION == 530 */
 #endif  /* NCBI_COMPILER_WORKSHOP */
 
-NCBI_XNCBI_EXPORT
-void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
-                  EEncodingForm ef /* = eEncodingForm_Unknown*/)
+
+EEncodingForm ReadIntoUtf8(
+    CNcbiIstream&     input,
+    CStringUTF8*      result,
+    EEncodingForm     ef             /*  = eEncodingForm_Unknown*/,
+    EReadUnknownNoBOM what_if_no_bom /* = eNoBOM_GuessEncoding*/
+)
 {
-    result.erase();
+    EEncodingForm ef_bom = eEncodingForm_Unknown;
+    result->erase();
     if (!input.good()) {
-        return;
+        return ef_bom;
     }
 
     const int buf_size = 256;
@@ -408,15 +413,15 @@ void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
     {
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
         if (n >= 3 && uc[0] == 0xEF && uc[1] == 0xBB && uc[2] == 0xBF) {
-            ef = eEncodingForm_Utf8;
+            ef_bom = ef = eEncodingForm_Utf8;
             uc[0] = uc[3];
             n -= 3;
         }
         else if (n >= 2 && (us[0] == 0xFEFF || us[0] == 0xFFFE)) {
             if (us[0] == 0xFEFF) {
-                ef = eEncodingForm_Utf16Native;
+                ef_bom = ef = eEncodingForm_Utf16Native;
             } else {
-                ef = eEncodingForm_Utf16Foreign;
+                ef_bom = ef = eEncodingForm_Utf16Foreign;
             }
             us[0] = us[1];
             n -= 2;
@@ -429,7 +434,7 @@ void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
         if (n == 0) {
             input.read(tmp, buf_size);
             n = input.gcount();
-            result.reserve( result.size() + n);
+            result->reserve( result->size() + n);
         }
         tmp[n] = '\0';
 
@@ -445,32 +450,32 @@ void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
             {
                 Uint2* u = us;
                 for (n = n/2; n--; ++u) {
-                    result.Append(*u);
+                    result->Append(*u);
                 }
             }
             break;
         case eEncodingForm_ISO8859_1:
-            result.Append(tmp,eEncoding_ISO8859_1);
+            result->Append(tmp,eEncoding_ISO8859_1);
             break;
         case eEncodingForm_Windows_1252:
-            result.Append(tmp,eEncoding_Windows_1252);
+            result->Append(tmp,eEncoding_Windows_1252);
             break;
         case eEncodingForm_Utf8:
-            result.Append(tmp,eEncoding_UTF8);
+            result->Append(tmp,eEncoding_UTF8);
             break;
         default:
-            {
+            if (what_if_no_bom == eNoBOM_GuessEncoding) {
                 EEncoding enc = CStringUTF8::GuessEncoding(tmp);
                 switch (enc) {
                 default:
                 case eEncoding_Unknown:
                     if (CStringUTF8::GetValidBytesCount(tmp, n) != 0) {
                         ef = eEncodingForm_Utf8;
-                        result.Append(tmp,enc);
+                        result->Append(tmp,enc);
                     }
                     else {
                         NCBI_THROW(CCoreException, eCore,
-                                "CTextReader::Read: cannot guess text encoding");
+                                "ReadIntoUtf8: cannot guess text encoding");
                     }
                     break;
                 case eEncoding_UTF8:
@@ -479,45 +484,62 @@ void ReadIntoUtf8(CNcbiIstream& input, CStringUTF8& result,
                 case eEncoding_Ascii:
                 case eEncoding_ISO8859_1:
                 case eEncoding_Windows_1252:
-                    result.Append(tmp,enc);
+                    result->Append(tmp,enc);
                     break;
                 }
+            } else {
+                result->Append(tmp,eEncoding_UTF8);
             }
             break;
         }
         n = 0;
     }
+    return ef_bom;
 }
 
 
-NCBI_XNCBI_EXPORT
-EEncodingForm GetTextEncodingForm(CNcbiIstream& input)
+EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
+                                  EBOMDiscard   discard_bom)
 {
     EEncodingForm ef = eEncodingForm_Unknown;
     if (input.good()) {
-        char tmp[4];
-        Uint2* us = reinterpret_cast<Uint2*>(tmp);
-
         const int bom_max = 4;
+        char tmp[bom_max];
         memset(tmp,0,bom_max);
-        input.read(tmp,bom_max);
-        int n = input.gcount();
+        Uint2* us = reinterpret_cast<Uint2*>(tmp);
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
-        if (n >= 3 && uc[0] == 0xEF && uc[1] == 0xBB && uc[2] == 0xBF) {
-            ef = eEncodingForm_Utf8;
-            uc[0] = uc[3];
-            n -= 3;
-        }
-        else if (n >= 2 && (us[0] == 0xFEFF || us[0] == 0xFFFE)) {
-            if (us[0] == 0xFEFF) {
-                ef = eEncodingForm_Utf16Native;
-            } else {
-                ef = eEncodingForm_Utf16Foreign;
+        input.get(tmp[0]);
+        int n = input.gcount();
+        if (n == 1 && (uc[0] == 0xEF || uc[0] == 0xFE || uc[0] == 0xFF)) {
+            input.get(tmp[1]);
+            if (input.gcount()==1) {
+                ++n;
+                if (us[0] == 0xFEFF) {
+                    ef = eEncodingForm_Utf16Native;
+                } else if (us[0] == 0xFFFE) {
+                    ef = eEncodingForm_Utf16Foreign;
+                } else if (uc[1] == 0xBB) {
+                    input.get(tmp[2]);
+                    if (input.gcount()==1) {
+                        ++n;
+                        if (uc[2] == 0xBF) {
+                            ef = eEncodingForm_Utf8;
+                        }
+                    }
+                }
             }
-            us[0] = us[1];
-            n -= 2;
         }
-        CStreamUtils::Pushback(input,tmp,n);
+        if (ef == eEncodingForm_Unknown) {
+            if (n > 1) {
+                CStreamUtils::Pushback(input,tmp,n);
+            } else if (n == 1) {
+                input.unget();
+            }
+        } else {
+            if (discard_bom == eBOM_Keep) {
+                CStreamUtils::Pushback(input,tmp,n);
+            }
+        }
     }
     return ef;
 }
