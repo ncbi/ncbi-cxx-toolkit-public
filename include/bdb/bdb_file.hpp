@@ -163,6 +163,10 @@ public:
     void Remove(const string& filename, const string& database = kEmptyStr);
     /// Empty the database. Return number of records removed.
     unsigned int Truncate();
+    /// Rename a database.  NOTE: This cannot be called on an opened file.
+    void Rename(const string& fname,
+                const string& old_name,
+                const string& new_name);
 
     /// Compact the database.  The target fill percent per page can be
     /// supplied, to allow for known expansion
@@ -230,7 +234,7 @@ public:
 
     /// Compute database statistic, return number of records.
     /// (Can be time consuming)
-    unsigned CountRecs();
+    unsigned CountRecs(bool bFast = false);
 
     /// Print database statistics
     void PrintStat(CNcbiOstream & out);

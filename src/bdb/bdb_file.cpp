@@ -286,6 +286,22 @@ void CBDB_RawFile::Reopen(EOpenMode open_mode,
 }
 
 
+void CBDB_RawFile::Rename(const string& file,
+                          const string& old_name,
+                          const string& new_name)
+{
+    _ASSERT(m_DB);
+    if (IsOpen()) {
+        NCBI_THROW(CBDB_Exception, eUnknown,
+                   "Cannot call rename on an opened database");
+    }
+    int ret = m_DB->rename(m_DB,
+                           file.c_str(), old_name.c_str(), new_name.c_str(),
+                           0);
+    BDB_CHECK(ret, file.c_str());
+}
+
+
 void CBDB_RawFile::Remove(const string& filename, const string& database)
 {
     const char* db_name;
@@ -683,15 +699,19 @@ void CBDB_RawFile::Sync()
 #endif
     
 
-unsigned CBDB_RawFile::CountRecs()
+unsigned CBDB_RawFile::CountRecs(bool bFast)
 {
+    Uint4 flags = 0;
+    if (bFast) {
+        flags = DB_FAST_STAT;
+    }
     DB_BTREE_STAT* stp;
 #ifdef BDB_USE_NEW_STAT
     CBDB_Transaction* trans = GetBDBTransaction();
     DB_TXN* txn = trans ? trans->GetTxn() : 0;
-    int ret = m_DB->stat(m_DB, txn, &stp, 0);
+    int ret = m_DB->stat(m_DB, txn, &stp, flags);
 #else
-    int ret = m_DB->stat(m_DB, &stp, 0);
+    int ret = m_DB->stat(m_DB, &stp, flags);
 #endif
 
     BDB_CHECK(ret, FileName().c_str());
