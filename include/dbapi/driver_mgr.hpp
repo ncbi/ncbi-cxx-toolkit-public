@@ -84,7 +84,7 @@ public:
     void DestroyDs(const IDataSource* ds);
 
 protected:
-    typedef map<string, class IDataSource*> TDsContainer;
+    typedef multimap<string, class IDataSource*> TDsContainer;
 
     // Prohibit explicit construction and destruction
     CDriverManager();

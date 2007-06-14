@@ -150,8 +150,8 @@ IDataSource* CDriverManager::RegisterDs(const string& driver_name,
 {
     CMutexGuard mg(m_Mutex);
 
-    IDataSource *ds = new CDataSource(ctx);
-    m_ds_list[driver_name] = ds;
+    IDataSource* ds = new CDataSource(ctx);
+    m_ds_list.insert(TDsContainer::value_type(driver_name, ds));
     return ds;
 }
 
@@ -159,10 +159,10 @@ void CDriverManager::DestroyDs(const string& driver_name)
 {
     CMutexGuard mg(m_Mutex);
 
-    TDsContainer::iterator i_ds = m_ds_list.find(driver_name);
-    if (i_ds != m_ds_list.end()) {
-        delete i_ds->second;
-        m_ds_list.erase(i_ds);
+    TDsContainer::iterator it;
+    while ((it = m_ds_list.find(driver_name)) != m_ds_list.end()) {
+        delete it->second;
+        m_ds_list.erase(it);
     }
 }
 

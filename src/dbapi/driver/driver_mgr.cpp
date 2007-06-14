@@ -80,10 +80,7 @@ CDllResolver_Getter<I_DriverContext>::operator()(void)
 class C_xDriverMgr : public I_DriverMgr
 {
 public:
-    C_xDriverMgr(unsigned int nof_drivers = 16);
-
-    FDBAPI_CreateContext GetDriver(const string& driver_name,
-                                   string*       err_msg = 0);
+    C_xDriverMgr(void);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
@@ -116,9 +113,6 @@ public:
         const string& driver_name,
         const map<string, string>* attr = NULL);
 
-protected:
-    bool LoadDriverDll(const string& driver_name, string* err_msg);
-
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
     typedef FDriverRegister (*FDllEntryPoint)  (void);
@@ -144,10 +138,8 @@ private:
     CRef<TContextManager>   m_ContextManager;
 };
 
-C_xDriverMgr::C_xDriverMgr( unsigned int /*nof_drivers*/ )
+C_xDriverMgr::C_xDriverMgr(void)
 {
-    ///////////////////////////////////
-
     m_ContextManager.Reset( TContextManagerStore::Get() );
 #ifndef NCBI_COMPILER_COMPAQ
     // For some reason, Compaq's compiler thinks m_ContextManager is
@@ -260,60 +252,12 @@ void C_xDriverMgr::RegisterDriver(const string&        driver_name,
     m_Drivers.push_back(SDrivers(driver_name, driver_ctx_func));
 }
 
-FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
-                                             string*       err_msg)
-{
-    CFastMutexGuard mg(m_Mutex);
 
-    ITERATE(vector<SDrivers>, it, m_Drivers) {
-        if (it->drv_name == driver_name) {
-            return it->drv_func;
-        }
-    }
-
-    if (!LoadDriverDll(driver_name, err_msg)) {
-        return 0;
-    }
-
-    ITERATE(vector<SDrivers>, it, m_Drivers) {
-        if (it->drv_name == driver_name) {
-            return it->drv_func;
-        }
-    }
-
-    DATABASE_DRIVER_ERROR( "internal error", 200 );
-}
-
-bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
-{
-    try {
-        CDll drv_dll("ncbi_xdbapi_" + driver_name);
-
-        FDllEntryPoint entry_point;
-        if ( !drv_dll.GetEntryPoint_Func("DBAPI_E_" + driver_name,
-                                         &entry_point) ) {
-            drv_dll.Unload();
-            return false;
-        }
-
-        FDriverRegister reg = entry_point();
-
-        if(!reg) {
-            DATABASE_DRIVER_ERROR( "driver reports an unrecoverable error "
-                               "(e.g. conflict in libraries)", 300 );
-        }
-
-        reg(*this);
-        return true;
-    }
-    catch (exception& e) {
-        if(err_msg) *err_msg= e.what();
-        return false;
-    }
-}
-
+////////////////////////////////////////////////////////////////////////////////
 static CSafeStaticPtr<C_xDriverMgr> s_DrvMgr;
 
+
+////////////////////////////////////////////////////////////////////////////////
 C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
 {
 }
@@ -321,12 +265,6 @@ C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
 
 C_DriverMgr::~C_DriverMgr()
 {
-}
-
-FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
-                                            string* err_msg)
-{
-    return s_DrvMgr->GetDriver(driver_name, err_msg);
 }
 
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
