@@ -62,6 +62,12 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Http_Referer, true, eParam_NoThread,
 static NCBI_PARAM_TYPE(CGI, Print_Http_Referer) s_PrintRefererParam;
 
 
+NCBI_PARAM_DECL(bool, CGI, Print_User_Agent);
+NCBI_PARAM_DEF_EX(bool, CGI, Print_User_Agent, true, eParam_NoThread,
+                  CGI_PRINT_USER_AGENT);
+static NCBI_PARAM_TYPE(CGI, Print_User_Agent) s_PrintUserAgentParam;
+
+
 NCBI_PARAM_DECL(bool, CGI, Print_Self_Url);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, false, eParam_NoThread,
                   CGI_PRINT_SELF_URL);
@@ -350,6 +356,13 @@ void CCgiApplication::ProcessHttpReferer(void)
         ref = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
         if ( !ref.empty() ) {
             GetDiagContext().PrintExtra("HTTP_REFERER=" + ref);
+        }
+    }
+    // Print USER_AGENT
+    if ( s_PrintUserAgentParam.Get() ) {
+        string agent = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
+        if ( !agent.empty() ) {
+            GetDiagContext().PrintExtra("USER_AGENT=" + agent);
         }
     }
 }
