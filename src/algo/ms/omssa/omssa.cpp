@@ -1407,7 +1407,7 @@ void CSearch::CreateSequence(int Start,
                              CSeqDBSequence &Sequence) 
 {
     int iseq;
-    seqstring.clear();
+    seqstring.erase();
     
     for (iseq = Start; iseq <= Stop; iseq++) {
         seqstring += UniqueAA[Sequence.GetData()[iseq]];
