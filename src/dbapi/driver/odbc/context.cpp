@@ -533,7 +533,12 @@ CDbapiOdbcCFBase::CreateInstance(
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
+#if defined(FTDS_IN_USE)
+        int tds_version = 80; // version 80 doesn't work with MS SQL 2005
+#else
         int tds_version = 80;
+#endif
+
         bool use_dsn = false;
 
         // Optional parameters ...
