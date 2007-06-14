@@ -475,9 +475,6 @@ public:
     /// Make the time "empty",
     CTime& Clear(void);
 
-    /// Truncate the time to days (strip H,M,S and Nanoseconds.
-    CTime& Truncate(void);
-
     /// Set the current time format.
     ///
     /// The default format is: "M/D/Y h:m:s".
@@ -854,29 +851,41 @@ public:
 
 
     /// Precision for rounding time.
-    /// @sa Round
+    /// @sa Round, Truncate
     enum ERoundPrecision {
-        eRound_Day,        ///< Round to days
-        eRound_Hour,       ///< Round to hours
-        eRound_Minute,     ///< Round to minutes
-        eRound_Second,     ///< Round to seconds
-        eRound_Millisecond,///< Round to milliseconds
-        eRound_Microsecond ///< Round to microseconds
+        eRound_Day,         ///< Round to days
+        eRound_Hour,        ///< Round to hours
+        eRound_Minute,      ///< Round to minutes
+        eRound_Second,      ///< Round to seconds
+        eRound_Millisecond, ///< Round to milliseconds
+        eRound_Microsecond  ///< Round to microseconds
     };
 
     /// Round time.
     ///
     /// Round stored time to specified precision. All time components with
-    /// precision less that specified will be zero-filled.
+    /// precision less that specified will be zero-filled, all other
+    /// components will be adjusted accondingly to rules for rounding
+    /// numbers.
     /// @param precision
     ///   Rounding precision. 
     /// @param adl
     ///   Whether to adjust for daylight saving time. Default is to adjust
     ///   for daylight saving time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone.
-    /// @sa ERoundPrecision
-    CTime& Round(ERoundPrecision precision, 
-                 EDaylight adl = eDaylightDefault);
+    /// @sa ERoundPrecision, Truncate
+    CTime& Round(ERoundPrecision precision = eRound_Day, 
+                 EDaylight       adl       = eDaylightDefault);
+
+    /// Truncate time.
+    ///
+    /// Truncate stored time to specified precision. All time components with
+    /// precision less that specified will be zero-filled. 
+    /// By default method strips hours, minutes, seconds and nanoseconds.
+    /// @param precision
+    ///   Truncating precision. 
+    /// @sa ERoundPrecision, Round
+    CTime& Truncate(ERoundPrecision precision = eRound_Day);
 
     //
     // Add/subtract days

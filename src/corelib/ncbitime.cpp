@@ -1435,20 +1435,51 @@ CTime& CTime::Round(ERoundPrecision precision, EDaylight adl)
         AddSecond(1, adl);
         m_Data.nanosec = 0;
     }
+    // Clean time components with lesser precision
+    Truncate(precision);
+    return *this;
+}
 
+
+CTime& CTime::Truncate(ERoundPrecision precision)
+{
     // Clean time components with lesser precision
     switch (precision) {
         case eRound_Day:
             m_Data.hour = 0;
+            // fall through
         case eRound_Hour:
             m_Data.min = 0;
+            // fall through
         case eRound_Minute:
             m_Data.sec = 0;
+            // fall through
         case eRound_Second:
             m_Data.nanosec = 0;
+            break;
+        case eRound_Millisecond:
+            m_Data.nanosec = m_Data.nanosec / 1000000 * 1000000;
+            break;
+        case eRound_Microsecond:
+            m_Data.nanosec = m_Data.nanosec / 1000 * 1000;
+            break;
         default:
             break;
     }
+    return *this;
+}
+
+
+CTime& CTime::Clear()
+{
+    m_Data.year        = 0;
+    m_Data.month       = 0;
+    m_Data.day         = 0;
+    m_Data.hour        = 0;
+    m_Data.min         = 0;
+    m_Data.sec         = 0;
+    m_Data.nanosec     = 0;
+    m_Data.adjTimeDiff = 0;
     return *this;
 }
 
@@ -1642,27 +1673,6 @@ bool CTime::IsLeap(void) const
 {
     int year = Year();
     return year % 4 == 0  &&  year % 100 != 0  ||  year % 400 == 0;
-}
-
-
-CTime& CTime::Truncate(void)
-{
-    m_Data.hour        = 0;
-    m_Data.min         = 0;
-    m_Data.sec         = 0;
-    m_Data.nanosec     = 0;
-    m_Data.adjTimeDiff = 0;
-    return *this;
-}
-
-
-CTime& CTime::Clear()
-{
-    Truncate();
-    m_Data.year  = 0;
-    m_Data.month = 0;
-    m_Data.day   = 0;
-    return *this;
 }
 
 

@@ -410,8 +410,9 @@ static void s_TestMisc(void)
     // Rounding time
     {{
         CTime::SetFormat("M/D/Y h:m:s.S");
-        CTime t(2000, 1, 2, 20, 40, 29, 998933833);
 
+        // Round
+        CTime t(2000, 1, 2, 20, 40, 29, 998933833);
         t.Round(CTime::eRound_Microsecond);
         assert(t.AsString() == "01/02/2000 20:40:29.998934000");
         t.Round(CTime::eRound_Millisecond);
@@ -425,10 +426,25 @@ static void s_TestMisc(void)
         t.Round(CTime::eRound_Day);
         assert(t.AsString() == "01/03/2000 00:00:00.000000000");
 
-        // Special case
+        // Round - special case
         CTime t1(2000, 1, 2, 20, 40, 29, 999999991);
         t1.Round(CTime::eRound_Microsecond);
         assert(t1.AsString() == "01/02/2000 20:40:30.000000000");
+
+        // Truncate
+        CTime t2(2000, 1, 2, 20, 40, 29, 998933833);
+        t2.Truncate(CTime::eRound_Microsecond);
+        assert(t2.AsString() == "01/02/2000 20:40:29.998933000");
+        t2.Truncate(CTime::eRound_Millisecond);
+        assert(t2.AsString() == "01/02/2000 20:40:29.998000000");
+        t2.Truncate(CTime::eRound_Second);
+        assert(t2.AsString() == "01/02/2000 20:40:29.000000000");
+        t2.Truncate(CTime::eRound_Minute);
+        assert(t2.AsString() == "01/02/2000 20:40:00.000000000");
+        t2.Truncate(CTime::eRound_Hour);
+        assert(t2.AsString() == "01/02/2000 20:00:00.000000000");
+        t2.Truncate(CTime::eRound_Day);
+        assert(t2.AsString() == "01/02/2000 00:00:00.000000000");
     }}
 }
 
