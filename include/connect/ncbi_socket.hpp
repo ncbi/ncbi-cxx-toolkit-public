@@ -39,7 +39,7 @@
  */
 
 #include <corelib/ncbitype.h>
-#include <corelib/ncbimisc.hpp>
+#include <corelib/ncbistr.hpp>
 #include <connect/ncbi_socket_unix.h>
 #include <string>
 #include <vector>
@@ -676,6 +676,15 @@ public:
 
     /// Local host address in network byte order (cached for faster retrieval)
     static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
+
+    /// See SOCK_HostPortToString()
+    static string         HostPortToString(unsigned int    host,
+                                           unsigned short  port);
+
+    /// Return position past the end of parsed portion, NPOS on error
+    static SIZE_TYPE      StringToHostPort(const string&   str,
+                                           unsigned int*   host,
+                                           unsigned short* port);
 };
 
 

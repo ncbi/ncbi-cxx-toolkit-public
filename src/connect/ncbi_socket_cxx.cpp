@@ -682,4 +682,23 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
 }
 
 
+string    CSocketAPI::HostPortToString(unsigned int    host,
+                                       unsigned short  port)
+{
+    char   buf[80];
+    size_t len = SOCK_HostPortToString(host, port, buf, sizeof(buf));
+    return string(buf, len);
+}
+
+
+SIZE_TYPE CSocketAPI::StringToHostPort(const string&   str,
+                                       unsigned int*   host,
+                                       unsigned short* port)
+{
+    const char* s = str.c_str();
+    const char* e = SOCK_StringToHostPort(str.c_str(), host, port);
+    return e ? (SIZE_TYPE)(e - s) : NPOS;
+}
+
+
 END_NCBI_SCOPE
