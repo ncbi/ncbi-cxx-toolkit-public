@@ -1495,6 +1495,13 @@ static string FormatWorkerNode(const string& val, SQueueDescription*)
 }
 
 
+static string FormatStatus(const string& val, SQueueDescription*)
+{
+    int status = NStr::StringToInt(val);
+    return CNetScheduleAPI::StatusToString(CNetScheduleAPI::EJobStatus(status));
+}
+
+
 #define FIELD_INPUT  10000
 #define FIELD_OUTPUT 10001
 void CQueue::PrepareFields(SFieldsDescription& field_descr,
@@ -1523,6 +1530,8 @@ void CQueue::PrepareFields(SFieldsDescription& field_descr,
         } else {
             if (field_name == "id") {
                 formatter = FormatNSId;
+            } else if (field_name == "status") {
+                formatter = FormatStatus;
             } else if (NStr::StartsWith(field_name, "time") &&
                        field_name != "timeout") {
                 formatter = FormatTime;
