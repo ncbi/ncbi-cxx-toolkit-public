@@ -73,6 +73,10 @@ using boost::unit_test::test_suite;
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 #define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
 
+// Fetch sequence and nucleotide data for the given oid as a pair of
+// strings (in ncbi2na packed format), one for sequence data and one
+// for ambiguities.
+
 static void
 s_FetchRawData(CSeqDBExpert & seqdb,
                int            oid,
@@ -91,16 +95,49 @@ s_FetchRawData(CSeqDBExpert & seqdb,
     seqdb.RetSequence(& buffer);
 }
 
-static void s_DupIdsBioseq(CWriteDB & w, CSeqDBExpert & s, int * ids)
+// Return a Seq-id built from the given int (gi).
+
+static CRef<CSeq_id> s_IdentToSeqId(int gi)
+{
+    CRef<CSeq_id> seqid(new CSeq_id);
+    seqid->SetGi(gi);
+    
+    return seqid;
+}
+
+// Return a Seq-id built from the given string (accession or FASTA
+// format Seq-id).
+
+static CRef<CSeq_id> s_IdentToSeqId(const char * acc)
+{
+    CRef<CSeq_id> seqid(new CSeq_id(acc));
+    
+    return seqid;
+}
+
+// Copy the sequences listed in 'ids' (integers or FASTA Seq-ids) from
+// the CSeqDB object to the CWriteDB object, using CBioseqs as the
+// intermediate data.
+
+template<class T>
+static void s_DupIdsBioseq(CWriteDB & w, CSeqDBExpert & s, T * ids)
 {
     for(unsigned i = 0; ids[i]; i++) {
-        int gi = ids[i];
+        CRef<CSeq_id> seqid = s_IdentToSeqId(ids[i]);
+        
         int oid = -1;
-        bool found = s.GiToOid(gi, oid);
+        bool found = s.SeqidToOid(*seqid, oid);
         
         CHECK(found);
         
-        CRef<CBioseq> bs = s.GetBioseq(oid, gi);
+        CRef<CBioseq> bs;
+        
+        if (seqid->IsGi()) {
+            bs = s.GetBioseq(oid, seqid->GetGi());
+        } else {
+            bs = s.GetBioseq(oid);
+        }
+        
         CRef<CBlast_def_line_set> bdls = s.GetHdr(oid);
         
         CHECK(bs.NotEmpty());
@@ -111,15 +148,21 @@ static void s_DupIdsBioseq(CWriteDB & w, CSeqDBExpert & s, int * ids)
     }
 }
 
+// Copy the sequences listed in 'ids' (integers or FASTA Seq-ids) from
+// the CSeqDB object to the CWriteDB object, using packed ncbi2na
+// strings ('raw' data) as the intermediate data.
+
+template<class T>
 static void
-s_DupIdsRaw(CWriteDB & w, CSeqDBExpert & seqdb, int * ids)
+s_DupIdsRaw(CWriteDB & w, CSeqDBExpert & seqdb, T * ids)
 {
     bool is_nucl = seqdb.GetSequenceType() == CSeqDB::eNucleotide;
     
     for(unsigned i = 0; ids[i]; i++) {
-        int gi = ids[i];
+        CRef<CSeq_id> seqid = s_IdentToSeqId(ids[i]);
+        
         int oid = -1;
-        bool found = seqdb.GiToOid(gi, oid);
+        bool found = seqdb.SeqidToOid(*seqid, oid);
         
         CHECK(found);
         
@@ -137,6 +180,8 @@ s_DupIdsRaw(CWriteDB & w, CSeqDBExpert & seqdb, int * ids)
     }
 }
 
+// Serialize the provided ASN.1 object into a string.
+
 template<class ASNOBJ>
 void s_Stringify(const ASNOBJ & a, string & s)
 {
@@ -145,6 +190,8 @@ void s_Stringify(const ASNOBJ & a, string & s)
     s = CNcbiOstrstreamToString(oss);
 }
 
+// Deserialize the provided string into an ASN.1 object.
+
 template<class ASNOBJ>
 void s_Unstringify(const string & s, ASNOBJ & a)
 {
@@ -152,6 +199,8 @@ void s_Unstringify(const string & s, ASNOBJ & a)
     iss.str(s);
     iss >> MSerial_AsnText >> a;
 }
+
+// Duplicate the provided ASN.1 object (via {,de}serialization).
 
 template<class ASNOBJ>
 CRef<ASNOBJ> s_Duplicate(const ASNOBJ & a)
@@ -165,6 +214,8 @@ CRef<ASNOBJ> s_Duplicate(const ASNOBJ & a)
     return newobj;
 }
 
+// Compare the two CBioseqs by comparing their serialized forms.
+
 void s_CompareBioseqs(CBioseq & src, CBioseq & dst)
 {
     string s1, s2;
@@ -173,6 +224,9 @@ void s_CompareBioseqs(CBioseq & src, CBioseq & dst)
     
     CHECK_EQUAL(s1, s2);
 }
+
+// Test the database compared to a reference database, usually the
+// database that provided the source data.
 
 static void
 s_TestDatabase(CSeqDBExpert & src,
@@ -199,17 +253,76 @@ s_TestDatabase(CSeqDBExpert & src,
     CHECK_EQUAL(dst.GetTitle(), title);
 }
 
-void s_RemoveFiles(vector<string> & files)
+// Remove the specified files.
+
+void s_RemoveFiles(const vector<string> & files)
 {
     for(unsigned i = 0; i < files.size(); i++) {
-        CHECK(NStr::StartsWith(files[i], ""));
         CDirEntry de(files[i]);
         de.Remove(CDirEntry::eOnlyEmpty);
     }
 }
 
+// Check if the given file is already sorted.
+
+void s_CheckSorted(const string & fname)
+{
+    CNcbiIfstream file(fname.c_str());
+    
+    string s, s2;
+    
+    while(NcbiGetlineEOL(file, s)) {
+        CHECK(s2 <= s);
+        s.swap(s2);
+    }
+}
+
+// Check the files that make up a database volume.
+//
+// nsd/psd: Check that the file is in sorted order
+
+string s_ExtractLast(const string & data, const string & delim)
+{
+    size_t pos = data.rfind(delim);
+    
+    if (pos == string::npos)
+        return "";
+    
+    return string(data,
+                  pos+delim.size(),
+                  data.size()-(pos + delim.size()));
+}
+
+// Check the files that make up a database volume.
+//
+// nsd/psd: Check that the file is in sorted order
+
+void s_CheckFiles(const vector<string> & files)
+{
+    for(unsigned i = 0; i < files.size(); i++) {
+        string ext = s_ExtractLast(files[i], ".");
+        
+        if (ext == "nsd" || ext == "psd") {
+            s_CheckSorted(files[i]);
+        }
+    }
+}
+
+// Do sanity checks appropriate for some files, then remove them.
+
+void s_WrapUpFiles(const vector<string> & files)
+{
+    s_CheckFiles(files);
+    s_RemoveFiles(files);
+}
+
+// Copy the specified ids (int -> GI, string -> FASTA Seq-id) from the
+// source database (src_name) to a new CWriteDB object, then perform
+// checks on the resulting database and remove it.
+
+template<class T>
 static void
-s_DupSequencesTest(int    * ids,
+s_DupSequencesTest(T      * ids,
                    bool     is_protein,
                    bool     raw_data,
                    string   src_name,
@@ -242,8 +355,10 @@ s_DupSequencesTest(int    * ids,
     db.Reset();
     
     s_TestDatabase(src, dst_name, title);
-    s_RemoveFiles(files);
+    s_WrapUpFiles(files);
 }
+
+// Create an object manager, add ID2 loaders to it, and return it.
 
 static CRef<CObjectManager> s_CreateObjMgr()
 {
@@ -253,6 +368,8 @@ static CRef<CObjectManager> s_CreateObjMgr()
     CGBDataLoader::RegisterInObjectManager(*obj_mgr, reader);
     return obj_mgr;
 }
+
+// Get and return a CScope with default loaders.
 
 CRef<CScope> s_GetScope()
 {
@@ -361,7 +478,7 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
     vector<string> files;
     db.Close();
     db.ListFiles(files);
-    s_RemoveFiles(files);
+    s_WrapUpFiles(files);
 }
 
 BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
@@ -392,7 +509,7 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
     vector<string> files;
     db.Close();
     db.ListFiles(files);
-    s_RemoveFiles(files);
+    s_WrapUpFiles(files);
 }
 
 BOOST_AUTO_UNIT_TEST(s_SetPig)
@@ -446,7 +563,7 @@ BOOST_AUTO_UNIT_TEST(s_SetPig)
     
     CHECK_EQUAL(oid, 3);
     
-    s_RemoveFiles(files);
+    s_WrapUpFiles(files);
 }
 
 // Test multiple volume construction and maximum letter limit.
@@ -502,7 +619,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
     
     seqdb.Reset();
     
-    s_RemoveFiles(f);
+    s_WrapUpFiles(f);
 }
 
 BOOST_AUTO_UNIT_TEST(s_UsPatId)
@@ -544,5 +661,44 @@ BOOST_AUTO_UNIT_TEST(s_UsPatId)
     CHECK_EQUAL(found, true);
     CHECK_EQUAL(oid,   0);
     
-    s_RemoveFiles(files);
+    s_WrapUpFiles(files);
 }
+
+BOOST_AUTO_UNIT_TEST(s_IsamSorting)
+{
+    // This checks whether the following IDs are fetchable from the
+    // given database.  It will fail if either the production blast
+    // databases (i.e. found at $BLASTDB) are corrupted or if the
+    // newly produced database is corrupted.  It will also fail if any
+    // of the IDs are legitimately missing (removed by the curators),
+    // in which case the given ID must be removed from the list.
+    
+    // However, the selection of these specific IDs is not arbitrary;
+    // these are several sets of IDs which have a common 6 letter
+    // prefix.  The test will not work correctly if these IDs are
+    // replaced with IDs that don't have this trait, if too many are
+    // removed, or if the IDs are put in sorted order.
+    
+    // A null terminated array of NUL terminated strings.
+    
+    const char* ids[] = {
+        "AAC76335.1", "AAC77159.1", "AAA58145.1", "AAC76880.1",
+        "AAC76230.1", "AAC76373.1", "AAC77137.1", "AAC76637.2",
+        "AAA58101.1", "AAC76329.1", "AAC76702.1", "AAC77109.1",
+        "AAC76757.1", "AAA58162.1", "AAC76604.1", "AAC76539.1",
+        "AAA24224.1", "AAC76351.1", "AAC76926.1", "AAC77047.1",
+        "AAC76390.1", "AAC76195.1", "AAA57930.1", "AAC76134.1",
+        "AAC76586.2", "AAA58123.1", "AAC76430.1", "AAA58107.1",
+        "AAC76765.1", "AAA24272.1", "AAC76396.2", "AAA24183.1",
+        "AAC76918.1", "AAC76727.1", "AAC76161.1", "AAA57964.1",
+        "AAA24251.1", 0
+    };
+    
+    s_DupSequencesTest(ids,
+                       true,
+                       false,
+                       "nr",
+                       "w-isam-sort-bs",
+                       "test of string ISAM sortedness");
+}
+
