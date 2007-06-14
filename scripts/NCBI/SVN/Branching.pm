@@ -153,6 +153,16 @@ sub ReadBranchMap
             MapFileLines => \@BranchMapLines)
 }
 
+sub List
+{
+    my ($Self) = @_;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    print 'Managed branches in ' . $SVN->GetRepository() . ":\n";
+    print $SVN->ReadFile('branches/branch_list')
+}
+
 sub Create
 {
     my ($Self, $BranchPath, $BranchMapFile, $Revision) = @_;

@@ -21,6 +21,8 @@ sub Usage
 
     print $Stream <<EOF;
 Usage:
+    $ScriptName list
+
     $ScriptName create <branch_path> <branch_map_file> [<trunk_rev>]
 
     $ScriptName remove <branch_path>
@@ -43,6 +45,9 @@ Where:
     trunk_rev           Trunk revision to operate with (HEAD by default).
 
 Commands:
+    list                Prints the list of branches that were created
+                        with the help of this utility.
+
     create              Either creates a new branch defined by its base path
                         <branch_path> and directory mapping <branch_map_file>
                         or updates (accordingly to the new directory mapping
@@ -77,6 +82,7 @@ EOF
 my ($Command, @Params) = @ARGV;
 
 my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
+my $Method;
 
 unless (defined $Command)
 {
@@ -86,33 +92,39 @@ elsif ($Command eq '--help' || $Command eq '-h')
 {
     Usage(\*STDOUT, 0)
 }
+elsif ($Command eq 'list')
+{
+    $Method = 'List'
+}
 elsif ($Command eq 'create')
 {
-    $Module->Create(@Params)
+    $Method = 'Create'
 }
 elsif ($Command eq 'remove')
 {
-    $Module->Remove(@Params)
+    $Method = 'Remove'
 }
 elsif ($Command eq 'merge_down')
 {
-    $Module->MergeDown(@Params)
+    $Method = 'MergeDown'
 }
 elsif ($Command eq 'merge_down_commit')
 {
-    $Module->MergeDownCommit(@Params)
+    $Method = 'MergeDownCommit'
 }
 elsif ($Command eq 'commit')
 {
-    $Module->Commit(@Params)
+    $Method = 'Commit'
 }
 elsif ($Command eq 'switch')
 {
-    $Module->Switch(@Params)
+    $Method = 'Switch'
 }
 else
 {
     die "$ScriptName\: unknown command '$Command'\n"
 }
+
+$Module->$Method(@Params);
 
 exit 0
