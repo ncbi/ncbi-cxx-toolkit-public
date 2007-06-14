@@ -261,10 +261,8 @@ sub Create
         print(($ExistingBranch ? 'Updating' : 'Creating') .
             " branch '$BranchPath'...\n");
 
-        system('mucc', '--message',
-            ($ExistingBranch ? 'Modified' : 'Created') .
-            " the '$BranchPath' branch structure.",
-            '--root-url', $SVN->{Repos}, @Commands)
+        system('mucc', '--message', ($ExistingBranch ? 'Modified' : 'Created') .
+            " branch '$BranchPath'.", '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
