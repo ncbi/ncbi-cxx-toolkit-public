@@ -254,11 +254,16 @@ CQueueDataBase::~CQueueDataBase()
 }
 
 
-void CQueueDataBase::Open(const string& path, 
+void CQueueDataBase::Open(const string& db_path, 
+                          const string& db_log_path,
                           const SNSDBEnvironmentParams& params)
 {
-    m_Path = CDirEntry::AddTrailingPathSeparator(path);
+    m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
+    string trailed_log_path = CDirEntry::AddTrailingPathSeparator(db_log_path);
 
+    const string* effective_log_path = trailed_log_path.empty() ?
+                                       &m_Path :
+                                       &trailed_log_path;
     {{
         CDir dir(m_Path);
         if ( !dir.Exists() ) {
@@ -269,6 +274,9 @@ void CQueueDataBase::Open(const string& path,
     delete m_Env;
     m_Env = new CBDB_Env();
 
+    if (!trailed_log_path.empty()) {
+        m_Env->SetLogDir(trailed_log_path);
+    }
 
     // memory log option. we probably need to reset LSN
     // numbers
@@ -309,7 +317,7 @@ void CQueueDataBase::Open(const string& path,
     
 
     // Check if bdb env. files are in place and try to join
-    CDir dir(m_Path);
+    CDir dir(*effective_log_path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
 
     if (!params.private_env && !fl.empty()) {
@@ -336,7 +344,7 @@ void CQueueDataBase::Open(const string& path,
                                     CBDB_Transaction::eTransSync :
                                     CBDB_Transaction::eTransASync);
 
-    m_Env->OpenWithTrans(path.c_str(), opt);
+    m_Env->OpenWithTrans(m_Path.c_str(), opt);
     LOG_POST(Info << "Opened " << (params.private_env ? "private " : "")
         << "BDB environment with "
         << m_Env->GetMaxLocks() << " max locks, "

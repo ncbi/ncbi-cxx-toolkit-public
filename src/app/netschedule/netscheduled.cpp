@@ -2634,6 +2634,9 @@ int CNetScheduleDApp::Run(void)
         CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
         const string& db_path = 
             bdb_conf.GetString("netschedule", "path", CConfig::eErr_Throw);
+        const string& db_log_path = ""; // doesn't work yet
+            // bdb_conf.GetString("netschedule", "transaction_log_path",
+            // CConfig::eErr_NoThrow, "");
         bool reg_reinit =
             reg.GetBool("server", "reinit", false, 0, IRegistry::eReturn);
 
@@ -2692,7 +2695,7 @@ int CNetScheduleDApp::Run(void)
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
 
-        qdb->Open(db_path, bdb_params);
+        qdb->Open(db_path, db_log_path, bdb_params);
 
         int port = 
             reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);

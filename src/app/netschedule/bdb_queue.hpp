@@ -602,7 +602,8 @@ public:
     ///    Path to the database
     /// @param params
     ///    Parameters of DB environment
-    void Open(const string& path,
+    void Open(const string& db_path,
+              const string& db_log_path,
               const SNSDBEnvironmentParams& params);
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);
