@@ -91,7 +91,7 @@ public:
     static
     unsigned SelectSplit(unsigned blob_size)
     {
-        static unsigned size_split[] = {
+        static const unsigned size_split[] = {
             256, 512, 2048, 4096, 8192, 16384, 32768
         };
         for(unsigned i = 0; i < sizeof(size_split)/sizeof(*size_split); ++i) {
@@ -471,6 +471,9 @@ public:
                        size_t          buf_size, 
                        CBDB_RawFile::EReallocMode allow_realloc,
                        size_t*         blob_size);
+
+    /// Sync the underlying stores
+    void Sync();
 
     /// Create stream oriented reader
     /// @returns NULL if BLOB not found
@@ -924,6 +927,25 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SetTransaction(ITransaction* trans)
         }
     }
     CThreadLocalTransactional::SetTransaction(curr_trans);
+}
+
+
+template<class TBV, class TObjDeMux, class TL>
+void
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Sync()
+{
+	for (size_t i = 0; i < m_Volumes.size(); ++i) {
+		SVolume* v = m_Volumes[i];
+        if ( !v ) {
+            continue;
+        }
+        for (size_t j = 0;  j < v->db_vect.size();  ++j) {
+            SLockedDb* db = &*(v->db_vect[j]);
+            if (db  &&  db->db) {
+                db->db->Sync();
+            }
+        }
+	}
 }
 
 
