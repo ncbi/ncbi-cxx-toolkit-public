@@ -281,41 +281,7 @@ CTL_Connection::GetBLKVersion(void) const
 
 bool CTL_Connection::IsAlive()
 {
-    CS_INT status;
-    if (Check(ct_con_props(x_GetSybaseConn(),
-                           CS_GET,
-                           CS_CON_STATUS,
-                           &status,
-                           CS_UNUSED,
-                           0))
-        != CS_SUCCEED)
-        return false;
-
-    return
-        (status & CS_CONSTAT_CONNECTED) != 0  &&
-        (status & CS_CONSTAT_DEAD     ) == 0;
-}
-
-
-bool
-CTL_Connection::IsOpen()
-{
-    CS_INT conn_is_open = CS_TRUE;
-
-#if !defined(FTDS_IN_USE)
-    CheckSFB(ct_con_props(
-        x_GetSybaseConn(),
-        CS_GET,
-        CS_LOGIN_STATUS,
-        (CS_VOID*)&conn_is_open,
-        CS_UNUSED,
-        NULL),
-             "ct_con_props failed",
-             121212
-    );
-#endif
-
-    return conn_is_open == CS_TRUE;
+    return m_Handle.IsAlive();
 }
 
 
@@ -428,7 +394,7 @@ bool CTL_Connection::Refresh()
     }
 
     // check the connection status
-    return IsAlive();
+    return m_Handle.IsAlive();
 }
 
 

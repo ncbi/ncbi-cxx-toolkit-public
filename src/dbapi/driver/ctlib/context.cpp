@@ -283,12 +283,57 @@ bool Connection::Close(void)
 bool Connection::Cancel(void)
 {
     if (IsOpen()) {
-        if (GetCTLConn().Check(ct_cancel(GetNativeHandle(), NULL, CS_CANCEL_ALL) != CS_SUCCEED)) {
+        if (!IsAlive()) {
+            return false;
+        }
+
+        if (GetCTLConn().Check(ct_cancel(
+            GetNativeHandle(),
+            NULL,
+            CS_CANCEL_ALL) != CS_SUCCEED)) {
             return false;
         }
     }
 
     return true;
+}
+
+
+bool Connection::IsAlive(void)
+{
+    CS_INT status;
+    if (GetCTLConn().Check(ct_con_props(
+        GetNativeHandle(),
+        CS_GET,
+        CS_CON_STATUS,
+        &status,
+        CS_UNUSED,
+        0)) != CS_SUCCEED) {
+        return false;
+    }
+
+    return
+        (status & CS_CONSTAT_CONNECTED) != 0  &&
+        (status & CS_CONSTAT_DEAD     ) == 0;
+}
+
+
+bool Connection::IsOpen_native(void)
+{
+    CS_INT is_logged = CS_TRUE;
+
+#if !defined(FTDS_IN_USE)
+    GetCTLConn().Check(ct_con_props(
+        GetNativeHandle(),
+        CS_GET,
+        CS_LOGIN_STATUS,
+        (CS_VOID*)&is_logged,
+        CS_UNUSED,
+        NULL)
+    );
+#endif
+
+    return is_logged == CS_TRUE;
 }
 
 
@@ -1319,9 +1364,10 @@ CDbapiCtlibCFBase::CreateInstance(
         // Mandatory parameters ....
 #ifdef FTDS_IN_USE
         bool reuse_context = false; // Be careful !!!
-        int  tds_version   = 80;
+        int  tds_version   = 80; // version 80 doesn't work with MS SQL 2005
 #else
-        bool reuse_context = true;
+        // Previous behahviour was: reuse_context = true
+        bool reuse_context = false;
         int  tds_version   = NCBI_CTLIB_TDS_VERSION;
 #endif
 

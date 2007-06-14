@@ -125,6 +125,9 @@ public:
     bool Close(void);
     // cancel all pending commands
     bool Cancel(void);
+    bool IsAlive(void);
+    // Ask ctlib directly whether a connection is open or not ...
+    bool IsOpen_native(void);
 
     bool IsDead(void) const
     {
@@ -352,7 +355,10 @@ public:
     }
 
     virtual bool IsAlive(void);
-    bool IsOpen();
+    bool IsOpen(void)
+    {
+        return m_Handle.IsOpen();
+    }
 
 protected:
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
