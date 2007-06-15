@@ -293,7 +293,8 @@ int CTarTest::Run(void)
             }
             IReader* ir = CTar::Extract(is, args[1].AsString(), m_Flags);
             if (!ir) {
-                NCBI_THROW(CTarException, eBadName, "Entry not found");
+                NCBI_THROW(CTarException, eBadName,
+                           "Entry either not found or has a non-file type");
             }
             CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                    CRWStreambuf::fLogExceptions));

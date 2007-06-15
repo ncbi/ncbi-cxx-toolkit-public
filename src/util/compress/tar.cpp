@@ -464,16 +464,20 @@ static string s_PositionAsString(const string& file, Uint8 pos, size_t recsize,
                                  const string* entry)
 {
     _ASSERT(!OFFSET_OF(pos));
+    _ASSERT(!OFFSET_OF(recsize));
+    _ASSERT(recsize >= kBlockSize);
     string result;
     if (!file.empty()) {
         CDirEntry temp(file);
         result = temp.GetName() + ": ";
     }
-    result +=
-        "At record " + NStr::UInt8ToString(         pos / recsize)
-        + ", block " + NStr::UInt8ToString(BLOCK_OF(pos % recsize))
-        + " [thru #" + NStr::UInt8ToString(BLOCK_OF(pos),
-                                           NStr::fWithCommas) + ']';
+    result += "At record " + NStr::UInt8ToString(pos / recsize);
+    if (recsize != kBlockSize) {
+        result +=
+            ", block " + NStr::UInt8ToString(BLOCK_OF(pos % recsize)) +
+            " [thru #" + NStr::UInt8ToString(BLOCK_OF(pos),
+                                             NStr::fWithCommas) + ']';
+    }
     if (entry  &&  !entry->empty()) {
         result += ", while in '" + *entry + '\'';
     }
@@ -1862,9 +1866,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                     size_t nread = size < m_BufferSize ? size : m_BufferSize;
                     const char* xbuf = x_ReadArchive(nread);
                     if (!xbuf) {
-                        TAR_THROW(eRead,
-                                  "Cannot extract '" + info.GetName() + "': "
-                                  "EOF");
+                        TAR_THROW(eRead, "Unexpected EOF");
                     }
                     // Write file to disk
                     if (!ofs.write(xbuf, nread)) {
@@ -2328,7 +2330,7 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
     _ASSERT(m_BufferSize == kBlockSize);
 
     if (m_Bad  ||  !count) {
-        if (*bytes_read)
+        if (bytes_read)
             *bytes_read = 0;
         return m_Bad ? eRW_Error :
             (m_Read < m_Info.GetSize()  ||  !m_Eof) ? eRW_Success : eRW_Eof;
@@ -2351,6 +2353,7 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
         } else if (!x_ReadArchive(count)) {
             read = 0;
             m_Bad = true;
+            TAR_THROW(eRead, "Unexpected EOF while streaming");
         } else {
             read = count;
             m_StreamPos += ALIGN_SIZE(read);
