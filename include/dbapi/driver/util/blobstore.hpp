@@ -43,15 +43,13 @@ enum ECompressMethod {
     eBZLib
 };
 
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobReader : public IReader {
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobReader : public IReader
+{
 public:
-    CBlobReader(CDB_Result* res, I_BaseCmd* cmd= 0, I_Connection* con= 0) {
-        m_Res= res;
-        m_Cmd= cmd;
-        m_Con= con;
-        m_ItemNum= 0;
-        m_AllDone= false;
-    }
+    CBlobReader(CDB_Result* res,
+                I_BaseCmd* cmd = NULL,
+                I_Connection* con = NULL);
+
     /// Read as many as count bytes into a buffer pointed
     /// to by buf argument.  Store the number of bytes actually read,
     /// or 0 on EOF or error, via the pointer "bytes_read", if provided.
@@ -79,7 +77,8 @@ private:
 };
 
 
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT ItDescriptorMaker {
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT ItDescriptorMaker
+{
 public:
     virtual bool Init(CDB_Connection* con)= 0;
     virtual I_ITDescriptor& ItDescriptor(void)= 0;
@@ -131,7 +130,8 @@ private:
 };
 
 
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobRetriever {
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobRetriever
+{
 public:
     CBlobRetriever(I_DriverContext* pCntxt,
                    const string& server,
@@ -153,7 +153,8 @@ private:
 };
 
 
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobLoader {
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobLoader
+{
 public:
     CBlobLoader(I_DriverContext* pCntxt,
                 const string& server,
@@ -189,7 +190,8 @@ private:
  */
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CSimpleBlobStore
-    : public ItDescriptorMaker {
+    : public ItDescriptorMaker
+{
 public:
     CSimpleBlobStore(const string& table_name,
                      const string& key_col_name,
@@ -226,7 +228,8 @@ protected:
  * the image/text data from a C++ application.
  */
 
-class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreBase {
+class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreBase
+{
 public:
 
     enum

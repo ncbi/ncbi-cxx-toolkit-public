@@ -38,6 +38,7 @@
 
 USING_NCBI_SCOPE;
 
+////////////////////////////////////////////////////////////////////////////////
 bool CBlobWriter::storeBlob(void)
 {
     try {
@@ -97,6 +98,27 @@ CBlobWriter::~CBlobWriter()
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+CBlobReader::CBlobReader(CDB_Result* res,
+                         I_BaseCmd* cmd,
+                         I_Connection* con)
+: m_Res(res)
+, m_Cmd(cmd)
+, m_Con(con)
+, m_ItemNum(0)
+, m_AllDone(false)
+{
+}
+
+
+CBlobReader::~CBlobReader()
+{
+    delete m_Res;
+    delete m_Cmd;
+    delete m_Con;
+}
+
+
 ERW_Result CBlobReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
     size_t n= 0;
@@ -150,17 +172,8 @@ ERW_Result CBlobReader::PendingCount(size_t* count)
     return m_AllDone? eRW_Eof : eRW_NotImplemented;
 }
 
-CBlobReader::~CBlobReader()
-{
-    if(m_Cmd) {
-        delete m_Res;
-        delete m_Cmd;
-    }
-    if(m_Con) {
-        delete m_Con;
-    }
-}
 
+////////////////////////////////////////////////////////////////////////////////
 CBlobRetriever::CBlobRetriever(I_DriverContext* pCntxt,
                                const string& server,
                                const string& user,
@@ -231,11 +244,12 @@ bool CBlobRetriever::Dump(ostream& s, ECompressMethod cm)
 
 CBlobRetriever::~CBlobRetriever()
 {
-    if(m_Res) delete m_Res;
-    if(m_Cmd) delete m_Cmd;
-    if(m_Conn) delete m_Conn;
+    delete m_Res;
+    delete m_Cmd;
+    delete m_Conn;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 CBlobLoader::CBlobLoader(I_DriverContext* pCntxt,
                          const string&    server,
                          const string&    user,
@@ -290,6 +304,9 @@ bool CBlobLoader::Load(istream& s, ECompressMethod cm, size_t image_limit, bool 
     return false;
 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
                                    const string& key_col_name,
                                    const string& num_col_name,
@@ -331,8 +348,8 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
 
 CSimpleBlobStore::~CSimpleBlobStore()
 {
-    if(m_DataColName) delete[]m_DataColName;
-    if(m_Cmd) delete m_Cmd;
+    delete [] m_DataColName;
+    delete m_Cmd;
 }
 
 bool CSimpleBlobStore::Init(CDB_Connection* con)
@@ -411,11 +428,11 @@ bool CSimpleBlobStore::Fini(void)
     return false;
 }
 
+
 /***************************************************************************************
  * CBlobStoreBase - the abstract base interface to deal with reading and writing
  * the image/text data from a C++ application.
  */
-
 
 CBlobStoreBase::CBlobStoreBase(const string& table_name,
                                ECompressMethod cm,
@@ -665,7 +682,7 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
 
         if(r->Fetch()) {
             // creating a stream
-            CBlobReader* bReader = new CBlobReader(r.release(), lcmd.get(), ReleaseConn(0) ? con : 0);
+            CBlobReader* bReader = new CBlobReader(r.release(), lcmd.release(), ReleaseConn(0) ? con : 0);
             auto_ptr<CRStream> iStream(new CRStream(bReader, 0, 0, CRWStreambuf::fOwnReader));
             auto_ptr<CCompressionStreamProcessor> zProc;
 
@@ -743,7 +760,6 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id)
  * the image/text data from a C++ application.
  * It uses connection to DB from an external pool.
  */
-
 
 CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
                                    const string& table_name,
