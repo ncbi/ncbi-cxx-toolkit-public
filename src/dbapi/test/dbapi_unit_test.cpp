@@ -4943,16 +4943,15 @@ void CDBAPIUnitTest::Test_BlobStore(void)
             }
 
             // Read blob ...
-            // Doesn't work at the moment ...
-//             {
-//                 auto_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
-//                 BOOST_CHECK(pStream.get());
-//
-//                 string line;
-//                 while (!pStream->eof()) {
-//                     NcbiGetline(*pStream, line, '\n');
-//                 }
-//             }
+            {
+                auto_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
+                BOOST_CHECK(pStream.get());
+
+                string line;
+                while (!pStream->eof()) {
+                    NcbiGetline(*pStream, line, '\n');
+                }
+            }
         }
     }
     catch(const CException& ex) {
