@@ -210,7 +210,8 @@ CDBAPIUnitTest::TestInit(void)
     try {
         DBLB_INSTALL_DEFAULT();
 
-        if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+        if ( m_args.GetServerType() == CTestArguments::eMsSql
+             || m_args.GetServerType() == CTestArguments::eMsSql2005) {
             m_max_varchar_size = 8000;
         } else {
             // Sybase
@@ -226,6 +227,15 @@ CDBAPIUnitTest::TestInit(void)
         DBAPI_RegisterDriver_FTDS();
 
 #endif
+
+        if (false) {
+            // Two calls below will cause problems with the Sybase 12.5.1 client
+            // (No problems with the Sybase 12.5.0 client)
+            IDataSource* ds = m_DM.CreateDs(
+                m_args.GetDriverName(),
+                &m_args.GetDBParameters());
+            m_DM.DestroyDs(ds);
+        }
 
         if (m_args.UseGateway()) {
             m_DS = m_DM.CreateDs("gateway", &m_args.GetDBParameters());
@@ -276,7 +286,8 @@ CDBAPIUnitTest::TestInit(void)
         auto_stmt->ExecuteUpdate( sql );
 
         // Table for bulk insert ...
-        if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+        if ( m_args.GetServerType() == CTestArguments::eMsSql
+             || m_args.GetServerType() == CTestArguments::eMsSql2005) {
             sql  = " CREATE TABLE #bulk_insert_table( \n";
             sql += "    id INT PRIMARY KEY, \n";
             sql += "    vc8000_field VARCHAR(8000) NULL, \n";
@@ -2307,7 +2318,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         {
             int num_of_tests;
 
-            if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+            if ( m_args.GetServerType() == CTestArguments::eMsSql
+                 || m_args.GetServerType() == CTestArguments::eMsSql2005) {
                 num_of_tests = 7;
             } else {
                 // Sybase
@@ -4886,7 +4898,6 @@ void CDBAPIUnitTest::Test_BlobStore(void)
             auto_stmt->ExecuteUpdate("INSERT INTO " + table_name + " (id) values (66)");
         }
 
-        // Write blob to the row
         {
             enum {
                 IMAGE_BUFFER_SIZE = (64*1024*1024),
@@ -4917,17 +4928,31 @@ void CDBAPIUnitTest::Test_BlobStore(void)
                 false
             );
 
-            auto_ptr<ostream> pStream(blobrw.OpenForWrite( "66" ));
-            BOOST_CHECK(pStream.get());
+            // Write blob to the row ...
+            {
+                auto_ptr<ostream> pStream(blobrw.OpenForWrite( "66" ));
+                BOOST_CHECK(pStream.get());
 
-            for(int i = 0; i < 10000; ++i) {
-                *pStream <<
-                    "A quick brown fox jumps over the lazy dog, message #" <<
-                    i << "\n";
+                for(int i = 0; i < 10000; ++i) {
+                    *pStream <<
+                        "A quick brown fox jumps over the lazy dog, message #" <<
+                        i << "\n";
+                }
+
+                pStream->flush();
             }
 
-            pStream->flush();
-            pStream.reset();
+            // Read blob ...
+            // Doesn't work at the moment ...
+//             {
+//                 auto_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
+//                 BOOST_CHECK(pStream.get());
+//
+//                 string line;
+//                 while (!pStream->eof()) {
+//                     NcbiGetline(*pStream, line, '\n');
+//                 }
+//             }
         }
     }
     catch(const CException& ex) {
@@ -7300,15 +7325,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
-    if (args.GetServerType() == CTestArguments::eSybase
-        && args.GetDriverName() != "dblib"
-        && args.GetDriverName() != "ftds"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+//     if (args.GetServerType() == CTestArguments::eSybase
+//         && args.GetDriverName() != "dblib"
+//         && args.GetDriverName() != "ftds"
+//         ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
+//                                    DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
 
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
     if ((args.GetDriverName() == "ftds" &&
@@ -7351,7 +7376,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    if (args.GetServerType() == CTestArguments::eMsSql &&
+    if ((args.GetServerType() == CTestArguments::eMsSql
+         || args.GetServerType() == CTestArguments::eMsSql2005) &&
         (args.GetDriverName() == "ftds64_odbc"
          || args.GetDriverName() == "ftds64")
         ) {
@@ -7418,7 +7444,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         {
             // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
             if ((args.GetDriverName() == "ftds" &&
-                args.GetServerType() == CTestArguments::eMsSql)
+                (args.GetServerType() == CTestArguments::eMsSql
+                 || args.GetServerType() == CTestArguments::eMsSql2005))
                 || args.GetDriverName() == "ctlib"
                 // || args.GetDriverName() == "dblib" // Code will hang up with dblib for some reason ...
                 || args.GetDriverName() == "ftds63"
@@ -7532,7 +7559,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 add(tc);
             }
 
-            if ( args.GetServerType() == CTestArguments::eMsSql &&
+            if ( (args.GetServerType() == CTestArguments::eMsSql
+                  || args.GetServerType() == CTestArguments::eMsSql2005) &&
                  (args.GetDriverName() != "msdblib" &&
                   args.GetDriverName() != "dblib")
                  ) {
@@ -7548,7 +7576,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         // ftds + Sybase and dblib won't work because of the early
         // protocol versions.
         if ((((args.GetDriverName() == "ftds"
-               && args.GetServerType() == CTestArguments::eMsSql)
+               && (args.GetServerType() == CTestArguments::eMsSql
+                   || args.GetServerType() == CTestArguments::eMsSql2005))
               || args.GetDriverName() == "ftds63"
               || args.GetDriverName() == "odbc"
               || args.GetDriverName() == "odbcw"
@@ -7556,7 +7585,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
               // !!! This driver won't work with Sybase because it supports
               // CS_VERSION_110 only. !!!
               || (args.GetDriverName() == "ftds64"
-                  && args.GetServerType() == CTestArguments::eMsSql)
+                  && (args.GetServerType() == CTestArguments::eMsSql
+                      || args.GetServerType() == CTestArguments::eMsSql2005))
               || args.GetDriverName() == "ftds64_dblib"
               ))
              // args.GetDriverName() == "ctlib" ||
@@ -7573,10 +7603,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && !(args.GetDriverName() == "ftds"
           && args.GetServerType() == CTestArguments::eSybase)
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+//         if (args.GetServerType() != CTestArguments::eMsSql2005) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+//         }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -7594,7 +7626,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
           || args.GetDriverName() == "ftds64"
           // || args.GetDriverName() == "ftds64_odbc"  // This is a big problem ....
           ) &&
-         args.GetServerType() == CTestArguments::eMsSql ) {
+         (args.GetServerType() == CTestArguments::eMsSql
+          || args.GetServerType() == CTestArguments::eMsSql2005) ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -7669,7 +7702,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (args.GetServerType() == CTestArguments::eMsSql) {
+    if (args.GetServerType() == CTestArguments::eMsSql
+        || args.GetServerType() == CTestArguments::eMsSql2005) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
@@ -7811,11 +7845,12 @@ CTestArguments::GetServerType(void) const
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          ) {
         return eSybase;
-    } else if ( NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
+    } else if (NStr::CompareNocase(GetServerName(), 0, 7, "MSSQL67") == 0) {
+        return eMsSql2005;
+    } else if (NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
                 || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
-                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
-                ) {
+                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0) {
         return eMsSql;
     }
 
@@ -7866,21 +7901,42 @@ CTestArguments::SetDatabaseParameters(void)
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
             // BcpIn to it using protocol version other than "100".
             m_DatabaseParameters["version"] = "100";
-        } else if ( (GetDriverName() == "ftds") &&
-                    GetServerType() == eSybase ) {
-            m_DatabaseParameters["version"] = "42";
+        } else if (GetDriverName() == "ftds") {
+            switch (GetServerType()) {
+            case eSybase:
+                m_DatabaseParameters["version"] = "42";
+                break;
+//             case eMsSql2005:
+//                 m_DatabaseParameters["version"] = "70";
+//                 break;
+            default:
+                break;
+            }
         } else if ( (GetDriverName() == "ftds63" ||
                      GetDriverName() == "ftds64_dblib") &&
                     GetServerType() == eSybase ) {
             // ftds work with Sybase databases using protocol v42 only ...
             m_DatabaseParameters["version"] = "100";
         } else if (GetDriverName() == "ftds64_odbc") {
-            if (GetServerType() == eSybase) {
+            switch (GetServerType()) {
+            case eSybase:
                 m_DatabaseParameters["version"] = "50";
+                break;
+            case eMsSql2005:
+                m_DatabaseParameters["version"] = "70";
+                break;
             }
-        } else if (GetDriverName() == "ftds64"  &&
-                   GetServerType() == eSybase) {
-            m_DatabaseParameters["version"] = "125";
+        } else if (GetDriverName() == "ftds64") {
+            switch (GetServerType()) {
+            case eSybase:
+                m_DatabaseParameters["version"] = "125";
+                break;
+            case eMsSql2005:
+                m_DatabaseParameters["version"] = "70";
+                break;
+            default:
+                break;
+            }
         }
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;
