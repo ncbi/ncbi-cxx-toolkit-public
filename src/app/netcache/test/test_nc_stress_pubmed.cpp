@@ -1,5 +1,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_client.hpp>
 
@@ -41,7 +42,8 @@ TSigHandler old_SIGBUS;
 static void /* RETSIGTYPE */
 on_SIGNAL(int OnDatr)
 {
-	cerr << "PID : " << getpid() << " : signal caught : " << OnDatr << endl;
+    cerr << "PID : " << CProcess::GetCurrentPid() << " : signal caught : "
+         << OnDatr << endl;
 	PrintAllStat();
 
 	switch(OnDatr) {
