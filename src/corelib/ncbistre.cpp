@@ -429,12 +429,12 @@ EEncodingForm ReadIntoUtf8(
     }
 
 // keep reading
-    while ( input || n ) {
+    while (n != 0  ||  (input.good()  &&  !input.eof())) {
 
         if (n == 0) {
             input.read(tmp, buf_size);
             n = input.gcount();
-            result->reserve( result->size() + n);
+            result->reserve(result->size() + n);
         }
         tmp[n] = '\0';
 
