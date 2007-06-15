@@ -3854,9 +3854,48 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
                        fwd_prelim_tback, nucl_align_length, 
                        &gap_align->edit_script);
     } else {
-        gap_align->edit_script = 
-            Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback,
-                                             fwd_prelim_tback);
+        Int4 i;
+        GapEditScript *esp = Blast_PrelimEditBlockToGapEditScript(
+                                                        rev_prelim_tback,
+                                                        fwd_prelim_tback);
+
+        /* rarely (typically when the scoring system changes between
+           the score-only and traceback stages, as happens with 
+           composition-based statistics) it is possible to compute an 
+           optimal alignment with a leading or trailing gap. Prune
+           these unneeded gaps here and update the score and 
+           alignment boundaries */
+
+        gap_align->edit_script = esp;
+        if (esp) {
+            if (esp->size && esp->op_type[0] != eGapAlignSub) {
+                score_left += score_params->gap_open +
+                             esp->num[0] * score_params->gap_extend;
+    
+                if (esp->op_type[0] == eGapAlignDel)
+                    gap_align->subject_start += esp->num[0];
+                else
+                    gap_align->query_start += esp->num[0];
+    
+                for (i = 1; i < esp->size; i++) {
+                    esp->op_type[i-1] = esp->op_type[i];
+                    esp->num[i-1] = esp->num[i];
+                }
+                esp->size--;
+            }
+            i = esp->size;
+            if (esp->size && esp->op_type[i-1] != eGapAlignSub) {
+                score_right += score_params->gap_open +
+                             esp->num[i-1] * score_params->gap_extend;
+    
+                if (esp->op_type[i-1] == eGapAlignDel)
+                    gap_align->subject_stop -= esp->num[i-1];
+                else
+                    gap_align->query_stop -= esp->num[i-1];
+    
+                esp->size--;
+            }
+        }
     }
 
     gap_align->score = score_right + score_left;
