@@ -1,28 +1,44 @@
 #include <ncbi_pch.hpp>
+#include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <sys/time.h>
 
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 
 USING_NCBI_SCOPE;
 
 
+static void PrintAllStat();
 
+#ifdef HAVE_SIGNAL_H
 /*******************************************************
  * Signals
  *******************************************************/
-#define ONDATR(Hndl, SigNo) if (Hndl != 0) { Hndl(SigNo); } else { exit(1); }
-sighandler_t old_SIGINT;
-sighandler_t old_SIGQUIT;
-sighandler_t old_SIGALRM;
-sighandler_t old_SIGABRT;
-sighandler_t old_SIGTERM;
-sighandler_t old_SIGBUS;
 
-static void PrintAllStat();
+// not all platforms define sighandler_t 
+typedef RETSIGTYPE (*TSigHandler)(int);
 
 static void
+ONDATR(TSigHandler handler, int n)
+{
+    if (handler == SIG_DFL) {
+        exit(1);
+    } else if (handler != SIG_IGN) {
+        handler(n);
+    }
+}
+
+TSigHandler old_SIGINT;
+TSigHandler old_SIGQUIT;
+TSigHandler old_SIGALRM;
+TSigHandler old_SIGABRT;
+TSigHandler old_SIGTERM;
+TSigHandler old_SIGBUS;
+
+static void /* RETSIGTYPE */
 on_SIGNAL(int OnDatr)
 {
 	cerr << "PID : " << getpid() << " : signal caught : " << OnDatr << endl;
@@ -51,6 +67,8 @@ SetSigHandlers()
 	old_SIGTERM = signal(SIGTERM, on_SIGNAL);
 	old_SIGBUS = signal(SIGBUS, on_SIGNAL);
 }
+#endif
+
 
 /*******************************************************
  * Stressing
@@ -92,19 +110,14 @@ public :
 
 	void WaitMilliSecs(size_t MilliSecs)
 		{
-			struct timespec sTS;
-			sTS.tv_sec = MilliSecs / 1000;
-			sTS.tv_nsec = (MilliSecs % 1000) * 1000000;
-
-			nanosleep(&sTS, NULL);
+            SleepMilliSec(MilliSecs);
 		};
 
 	size_t TimeOfDayMilliSecs()
 		{
-			struct timeval sTV;
-			gettimeofday(&sTV, NULL);
-			size_t Secs = (sTV.tv_sec % EPOCH_V) * 1000;
-			size_t MilliSecs = sTV.tv_usec / 1000;
+            CTime now(CTime::eCurrent, CTime::eGmt);
+            size_t Secs = (now.Second() % EPOCH_V) * 1000;
+            size_t MilliSecs = now.MilliSecond();
 // 
 			return Secs + MilliSecs;
 		};
@@ -719,7 +732,9 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+#ifdef HAVE_SIGNAL_H
 	SetSigHandlers();
+#endif
 
 	cerr << "Press <Cntrl-C> to inerrupt" << endl;
 
