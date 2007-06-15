@@ -793,7 +793,6 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
-      m_MaskUseCase(NStr::eCase),
       m_IsModified(false)
 {
     x_Init();
@@ -813,7 +812,6 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_Flags(fDefault),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
-      m_MaskUseCase(NStr::eCase),
       m_IsModified(false)
 {
     x_Init();
@@ -943,19 +941,19 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
             x_Close();
             switch (mode) {
             case eWO:
-                /// WO access
+                // WO access
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::out    |
                                    IOS_BASE::binary | IOS_BASE::trunc);
                 break;
             case eRO:
-                /// RO access
+                // RO access
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::in     |
                                    IOS_BASE::binary);
                 break;
             case eRW:
-                /// RW access
+                // RW access
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::in     | IOS_BASE::out |
                                    IOS_BASE::binary);
@@ -994,7 +992,7 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     _ASSERT(m_Stream);
     _ASSERT(m_Stream->rdbuf());
 
-    if (int(action) & ((eList | eExtract) & ~eRW)) {
+    if (int(action) & ((eList | eExtract | eInternal) & ~eRW)) {
         return x_ReadAndProcess(action);
     } else {
         return auto_ptr<TEntries>(0);
@@ -1700,14 +1698,17 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         bool match = (m_Mask  &&  (action == eList     ||
                                    action == eExtract  ||
                                    action == eInternal)
-                      ? m_Mask->Match(info.GetName(), m_MaskUseCase) : true);
+                      ? m_Mask->Match(info.GetName(),
+                                      m_Flags & fMaskNocase
+                                      ? NStr::eNocase
+                                      : NStr::eCase)
+                      : true);
 
         if ((match  &&  action == eInternal)  ||
             x_ProcessEntry(info, match  &&  action == eExtract, done.get())  ||
             (match  &&  !(int(action) & ((eExtract | eInternal) & ~eRW)))) {
             done->push_back(info);
-            if ((action == eExtract  &&  (m_Flags & fFirstOnly))  ||
-                action == eInternal) {
+            if (action == eInternal) {
                 break;
             }
         }
@@ -2324,6 +2325,8 @@ CTarReader::CTarReader(istream&is, size_t blocking_factor)
 
 ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
+    _ASSERT(m_BufferSize == kBlockSize);
+
     if (m_Bad  ||  !count) {
         if (*bytes_read)
             *bytes_read = 0;
@@ -2331,11 +2334,37 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
             (m_Read < m_Info.GetSize()  ||  !m_Eof) ? eRW_Success : eRW_Eof;
     }
 
-    // FIXME:: This is NOT yet fully implemented!!
-    m_Eof = true;
-    if (bytes_read)
-        *bytes_read = 0;
-    return eRW_NotImplemented;
+    size_t read;
+    if (m_Read >= m_Info.GetSize()) {
+        m_Eof = true;
+        read = 0;
+    } else {
+        if (count > m_Info.GetSize() - m_Read) {
+            count = m_Info.GetSize() - m_Read;
+        }
+        size_t left = OFFSET_OF(m_Read);
+        if (left) {
+            read = kBlockSize - left;
+            if (read > count) {
+                read = count;
+            }
+        } else if (!x_ReadArchive(count)) {
+            read = 0;
+            m_Bad = true;
+        } else {
+            read = count;
+            m_StreamPos += ALIGN_SIZE(read);
+        }
+        if (!m_Bad) {
+            memcpy(buf, m_Buffer + left, read);
+            m_Read += read;
+        }
+    }
+
+    if (bytes_read) {
+        *bytes_read = read;
+    }
+    return m_Bad ? eRW_Error : m_Eof ? eRW_Eof : eRW_Success;
 }
 
 
@@ -2352,12 +2381,11 @@ ERW_Result CTarReader::PendingCount(size_t* count)
 }
 
 
-IReader* CTar::Extract(istream& is, const string& name,
-                       CTar::TFlags flags, size_t blocking_factor)
+IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
 {
-    auto_ptr<CTarReader> retval(new CTarReader(is, blocking_factor));
+    auto_ptr<CTarReader> retval(new CTarReader(is, 1));
 
-    retval->SetFlags(flags | fFirstOnly);
+    retval->SetFlags(flags);
 
     auto_ptr<CMaskFileName> mask(new CMaskFileName);
     mask->Add(name);

@@ -68,4 +68,6 @@ test_tar -C /tmp/test_tar.$$.2 -x -B -f /tmp/test_tar.$$.tar '*testdir/?*'      
 
 (cd /tmp/test_tar.$$.2/testdir  &&  test "`echo * | tr ' ' '\n' | grep -v -c '[.]bak$'`" = "`echo * | tr ' ' '\n' | grep -c '[.]bak$'`")  ||  exit 1
 
+test_tar -X -v -f /tmp/test_tar.$$.tar '*test_tar' | cmp -l - ./test_tar          ||  exit 1
+
 exit 0
