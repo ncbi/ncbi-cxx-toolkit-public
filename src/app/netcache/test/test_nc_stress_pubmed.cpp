@@ -19,7 +19,10 @@ static void PrintAllStat();
  * Signals
  *******************************************************/
 
-// not all platforms define sighandler_t 
+// not all platforms define sighandler_t
+
+extern "C" {
+
 typedef RETSIGTYPE (*TSigHandler)(int);
 
 static void
@@ -68,6 +71,8 @@ SetSigHandlers()
 	old_SIGABRT = signal(SIGABRT, on_SIGNAL);
 	old_SIGTERM = signal(SIGTERM, on_SIGNAL);
 	old_SIGBUS = signal(SIGBUS, on_SIGNAL);
+}
+
 }
 #endif
 
