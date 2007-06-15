@@ -30,6 +30,7 @@
  *           Anton Lavrentiev
  *
  * File Description:
+ *   @file
  *   Tar archive API.
  *
  *   Supports subset of POSIX.1-1988 (ustar) format.
@@ -249,10 +250,11 @@ public:
         fPreserveTime       = (1<<9),
         /// Preserve all attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
-        /// Extract first matching entry only, then stop
-        fFirstOnly          = (1<<10),
 
-        // -- Debugging --
+        // --- Extract/List ---
+        fMaskNocase         = (1<<10),
+
+        // --- Debugging ---
         fDumpBlockHeaders   = (1<<20),
 
         /// Default flags
@@ -401,17 +403,16 @@ public:
     /// The set of masks is used to process existing entries in archive,
     /// and apply to list and extract operations only.
     /// If masks are not defined then all archive entries will be processed.
+    /// By default, the masks are used case sensitively.  To cancel this and
+    /// use the masks case-insensitively SetFlags() can be called with
+    /// fMaskIgnoreCase flag set.
     /// @param mask
     ///   Set of masks.
     /// @param if_to_own
     ///   Flag to take ownership on the masks (delete on destruction).
-    /// @param use_case
-    ///   Whether to do a case sensitive (eCase = default),
-    ///   or a case-insensitive (eNocase) match.
     /// @sa
-    //    UnsetMask
-    void SetMask(CMask* mask, EOwnership if_to_own = eNoOwnership,
-                 NStr::ECase use_case = NStr::eCase);
+    //    SetFlags, UnsetMask
+    void SetMask(CMask* mask, EOwnership if_to_own = eNoOwnership);
 
     /// Unset name mask.
     ///
@@ -441,9 +442,7 @@ public:
     ///   IReader interface to read the file contents with;  0 on error.
     /// @sa
     ///   Extract, SetFlags
-    static IReader* Extract(istream& is, const string& name,
-                            TFlags flags = fFirstOnly,
-                            size_t blocking_factor = 1);
+    static IReader* Extract(istream& is, const string& name, TFlags flags = 0);
 
 protected:
     /// Archive action
@@ -542,7 +541,6 @@ protected:
     TFlags         m_Flags;        ///< Bitwise OR of flags.
     CMask*         m_Mask;         ///< Masks for list/test/extract.
     EOwnership     m_MaskOwned;    ///< Flag to take ownership for m_Mask.
-    NStr::ECase    m_MaskUseCase;  ///< Flag for mask matching.
     bool           m_IsModified;   ///< True after at least one write.
     string         m_BaseDir;      ///< Base directory for relative paths.
     const string*  m_Current;      ///< Current entry name being processed.
@@ -611,12 +609,11 @@ void CTar::SetFlags(TFlags flags)
 }
 
 inline
-void CTar::SetMask(CMask *mask, EOwnership if_to_own, NStr::ECase use_case)
+void CTar::SetMask(CMask *mask, EOwnership if_to_own)
 {
     UnsetMask();
     m_Mask        = mask;
     m_MaskOwned   = if_to_own;
-    m_MaskUseCase = use_case;
 }
 
 inline
