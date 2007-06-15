@@ -143,9 +143,13 @@ sub ReadInfo
 
     for my $DirInfo (values %Info)
     {
-        my $Root = $DirInfo->{Root};
+        my ($Root, $Path) = @$DirInfo{qw(Root Path)};
 
-        substr($DirInfo->{Path}, 0, length($Root) + 1, '') eq $Root . '/' or die
+
+        substr($Path, 0, length($Root), '') eq $Root or die;
+
+        $DirInfo->{Path} = length($Path) > 0 ?
+            substr($Path, 0, 1, '') eq '/' ? $Path : die : '.'
     }
 
     $Stream->Close();
