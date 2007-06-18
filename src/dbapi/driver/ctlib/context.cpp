@@ -722,6 +722,36 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 }
 
 
+bool
+CTLibContext::SetMaxConnect(unsigned int num)
+{
+    return Check(ct_config(CTLIB_GetContext(),
+                           CS_SET,
+                           CS_MAX_CONNECT,
+                           (CS_VOID*)&num,
+                           CS_UNUSED,
+                           NULL)) == CS_SUCCEED;
+}
+
+
+unsigned int
+CTLibContext::GetMaxConnect(void)
+{
+    unsigned int num = 0;
+
+    if (Check(ct_config(CTLIB_GetContext(),
+                        CS_GET,
+                        CS_MAX_CONNECT,
+                        (CS_VOID*)&num,
+                        CS_UNUSED,
+                        NULL)) != CS_SUCCEED) {
+        return 0;
+    }
+
+    return num;
+}
+
+
 void
 CTLibContext::x_Close(bool delete_conn)
 {
@@ -1376,6 +1406,7 @@ CDbapiCtlibCFBase::CreateInstance(
         string prog_name;
         string host_name;
         string client_charset;
+        unsigned int max_connect = 0;
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
@@ -1391,15 +1422,17 @@ CDbapiCtlibCFBase::CreateInstance(
                 if ( v.id == "reuse_context" ) {
                     reuse_context = (v.value != "false");
                 } else if ( v.id == "version" ) {
-                    tds_version = NStr::StringToInt( v.value );
+                    tds_version = NStr::StringToInt(v.value);
                 } else if ( v.id == "packet" ) {
-                    page_size = NStr::StringToInt( v.value );
+                    page_size = NStr::StringToInt(v.value);
                 } else if ( v.id == "prog_name" ) {
                     prog_name = v.value;
                 } else if ( v.id == "host_name" ) {
                     host_name = v.value;
                 } else if ( v.id == "client_charset" ) {
                     client_charset = v.value;
+                } else if ( v.id == "max_connect" ) {
+                    max_connect = NStr::StringToUInt(v.value);;
                 }
             }
         }
@@ -1411,20 +1444,24 @@ CDbapiCtlibCFBase::CreateInstance(
                   );
 
         // Set parameters ...
-        if ( page_size ) {
-            drv->CTLIB_SetPacketSize( page_size );
+        if (page_size) {
+            drv->CTLIB_SetPacketSize(page_size);
         }
 
-        if ( !prog_name.empty() ) {
-            drv->CTLIB_SetApplicationName( prog_name );
+        if (!prog_name.empty()) {
+            drv->CTLIB_SetApplicationName(prog_name);
         }
 
-        if ( !host_name.empty() ) {
-            drv->CTLIB_SetHostName( host_name );
+        if (!host_name.empty()) {
+            drv->CTLIB_SetHostName(host_name);
         }
 
-        if ( !client_charset.empty() ) {
-            drv->SetClientCharset( client_charset );
+        if (!client_charset.empty()) {
+            drv->SetClientCharset(client_charset);
+        }
+
+        if (max_connect) {
+            drv->SetMaxConnect(max_connect);
         }
     }
 

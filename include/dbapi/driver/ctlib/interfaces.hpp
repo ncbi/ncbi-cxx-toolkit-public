@@ -252,6 +252,11 @@ public:
 
     virtual bool IsAbleTo(ECapability cpb) const;
 
+    /// Set maximal number of open connections.
+    /// Default value is 30.
+    bool SetMaxConnect(unsigned int num);
+    unsigned int GetMaxConnect(void);
+
     virtual CS_CONTEXT* CTLIB_GetContext(void) const;
     CS_LOCALE* GetLocale(void) const
     {
