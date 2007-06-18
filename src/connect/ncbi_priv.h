@@ -160,7 +160,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOGF_ERRNO_EX(level, x_errno, x_descr, fmt_args)  do { \
-    if (g_CORE_Log  ||  level == eLOG_Fatal) { \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {                \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, g_CORE_Sprintf fmt_args, \
                            x_errno, x_descr); \
