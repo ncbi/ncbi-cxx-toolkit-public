@@ -284,7 +284,7 @@ int CTarTest::Run(void)
                            "Must specify a single entry");
             }
             ifstream ifs;
-            istream& is = file.empty() ? cin : ifs;
+            istream& is = file.empty() ? cin : dynamic_cast<istream&>(ifs);
             if (!file.empty()) {
                 ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
             }
