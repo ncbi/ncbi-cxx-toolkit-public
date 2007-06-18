@@ -50,10 +50,16 @@ CBDB_CheckPointThread::CBDB_CheckPointThread(CBDB_Env& env,
 void CBDB_CheckPointThread::DoJob(void)
 {
     try {
-        m_Env.TransactionCheckpoint();
+        if (m_Env.IsTransactional()) {
+            m_Env.TransactionCheckpoint();
+        }
         if (m_MempTrickle) {
-            int nwrotep;
+            int nwrotep = 0;
             m_Env.MempTrickle(m_MempTrickle, &nwrotep);
+            if (nwrotep) {
+                LOG_POST(Info << "CBDB_CheckPointThread::DoJob(): trickled "
+                         << nwrotep << " pages");
+            }
         }
     } 
     catch(exception& ex)
