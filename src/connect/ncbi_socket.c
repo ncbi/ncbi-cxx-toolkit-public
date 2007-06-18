@@ -2069,9 +2069,8 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if (sock->r_status == eIO_Closed  &&  sock->w_status == eIO_Closed)
             return eIO_Success;
         if (sock->w_status != eIO_Closed
-            &&  (status = s_WritePending(sock, tv, 0, 0)) != eIO_Success
-            &&  (!tv  ||  (tv->tv_sec | tv->tv_usec))) {
-            CORE_LOGF(!tv  ||  (tv->sec | tv->tv_usec)
+            &&  (status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
+            CORE_LOGF(!tv  ||  (tv->tv_sec | tv->tv_usec)
                       ? eLOG_Warning : eLOG_Trace,
                       ("%s[SOCK::s_Shutdown]  Shutting down for "
                        "R/W with some output pending (%s)",
