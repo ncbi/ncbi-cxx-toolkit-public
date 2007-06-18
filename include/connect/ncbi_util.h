@@ -106,10 +106,10 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
  *  LOG_WriteInternal
  */
 #define LOG_Write(lg,level,module,file,line,message) \
-  (void) ((lg  ||  level == eLOG_Fatal) ? \
+  (void) (((lg)  ||  (level) == eLOG_Fatal) ?                         \
   (LOG_WriteInternal(lg,level,module,file,line,message,0,0), 0) : 1)
 #define LOG_Data(lg,level,module,file,line,data,size,message) \
-  (void) ((lg  ||  level == eLOG_Fatal) ? \
+  (void) (((lg)  ||  (level) == eLOG_Fatal) ?                         \
   (LOG_WriteInternal(lg,level,module,file,line,message,data,size), 0) : 1)
 
 
