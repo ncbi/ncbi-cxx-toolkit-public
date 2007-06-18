@@ -162,7 +162,9 @@ Uint1 CSeqMaskerOstatOpt::findBestRoff( Uint1 k, Uint1 & max_coll,
                 t += ht[l];
             }
 
-        avcoll[i] = (double)t/tc;
+        if( tc > 0 ) avcoll[i] = (double)t/tc;
+        else avcoll[i] = 0;
+
         ncoll[i] = t;
         NcbiCerr << " k                  = " << (int)k << endl
                  << " i                  = " << (int)i << endl
@@ -190,15 +192,22 @@ void CSeqMaskerOstatOpt::doFinalize()
     Uint4 M; /* Units with collisions. */
     AutoPtr< Uint4, ArrayDeleter< Uint4 > > ht;
 
+    Uint8 emem = 1ULL;
+    for( Uint1 i = 0; i < k + 2; ++i ) emem *= 2;
+
     // estimate the range of k
     while( k >= unit_bit_size - 7 )
     {
-        Uint4 emem = (1<<(k + 2));
-        
-        if( emem <= size_requested*MB )
-            break;
-
+        if( emem <= size_requested*MB ) break;
+        emem /= 2;
         --k;
+    }
+
+    // Guard against allocating too much memory on 32 bit platform.
+    // 
+    if( sizeof( char * ) <= sizeof( Uint4 ) ) {
+        if( k > 8*sizeof( char * ) - 4 )
+            k = 8*sizeof( char * ) - 4;
     }
 
     if( k < unit_bit_size - 7 )
@@ -211,6 +220,7 @@ void CSeqMaskerOstatOpt::doFinalize()
     // find the best value of k
     while( k >= unit_bit_size - 7 )
     {
+        ht.reset();
         ht.reset( new Uint4[sz] );
         roff = findBestRoff( k, max_coll, M, ht.get() );
         bc = 0;
