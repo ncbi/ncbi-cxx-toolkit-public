@@ -488,7 +488,7 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
     ::memcpy(&magic, ptr, sizeof(magic));
     ptr += sizeof(magic);
     
-    unsigned bits_used;
+    unsigned bits_used = 32;
     if (magic & s_ExtBlob_Mask_16bit) {
         bits_used = 16;
     } else
