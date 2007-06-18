@@ -364,12 +364,17 @@ bool CDirEntry::IsAbsolutePath(const string& path)
 {
     if ( path.empty() )
         return false;
-    char first = path[0];
 
-    if ( IsPathSeparator(first) )
+#if defined(NCBI_OS_MSWIN)
+    // Absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
+    if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
+           (path[2] == '/'  || path[2] == '\\') )  ||
+           (path[0] == '\\'  &&  path[1] == '\\') ) {
         return true;
-#if defined(DISK_SEPARATOR)
-    if ( path.find(DISK_SEPARATOR) != NPOS )
+    }
+#elif defined(NCBI_OS_UNIX)
+
+    if ( path[0] == '/' )
         return true;
 #endif
     return false;
@@ -380,18 +385,16 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
 {
     if ( path.empty() )
         return false;
-    char first = path[0];
 
-    // MAC or WIN absolute
-    if ( path.find(':') != NPOS  &&  first != ':' )
+    // Windows: 
+    // absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
+    if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
+           (path[2] == '/'  || path[2] == '\\') )  ||
+           (path[0] == '\\'  &&  path[1] == '\\') ) {
         return true;
-
-    // MAC relative path
-    if ( first == ':' )
-        return false;
-
-    // UNIX or WIN absolute
-    if ( first == '\\' || first == '/' )
+    }
+    // Unix
+    if ( path[0] == '/' )
         return true;
 
     // Else - relative
@@ -518,7 +521,17 @@ string CDirEntry::CreateAbsolutePath(const string& path)
     if ( IsAbsolutePath(path) ) {
         return path;
     }
-    string  result = CDirEntry::ConcatPath(CDir::GetCwd(), path);
+#if defined(NCBI_OS_MSWIN)
+    if ( path.find(DISK_SEPARATOR) != NPOS ) {
+        NCBI_THROW(CFileException, eRelativePath, 
+                   "path should not contains disk separator");
+    }
+    if ( !path.empty()  &&  (path[0] == '/'  || path[0] == '\\') ) {
+        NCBI_THROW(CFileException, eRelativePath, 
+                   "path started with slash is not relative on MS Windows");
+    }
+#endif
+    string result = CDirEntry::ConcatPath(CDir::GetCwd(), path);
     result = CDirEntry::NormalizePath(result);
     return result;
 }
@@ -549,18 +562,6 @@ string CDirEntry::ConvertToOSPath(const string& path)
         if ( c == '\\' || c == '/' || c == ':') {
             xpath[i] = DIR_SEPARATOR;
         }
-    }
-    // Fix current and parent refs in the path after conversion from MAC path
-    // Replace all "::" to "/../"
-    string xsearch  = string(2,DIR_SEPARATOR);
-    string xreplace = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
-    size_t pos = 0;
-    while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
-        xpath.replace(pos, xsearch.length(), xreplace);
-    }
-    // Remove leading ":" in the relative path on non-MAC platforms 
-    if ( xpath[0] == DIR_SEPARATOR ) {
-        xpath.erase(0,1);
     }
     // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
     xpath = NormalizePath(xpath);
@@ -1572,7 +1573,10 @@ CDirEntry::EType CDirEntry::GetType(const struct stat& st)
 
 string CDirEntry::LookupLink(void) const
 {
-#ifdef NCBI_OS_UNIX
+#ifdef NCBI_OS_MSWIN
+    return kEmptyStr;
+
+#else  // NCBI_OS_UNIX
     char buf[PATH_MAX];
     string name;
     int length = (int)readlink(GetPath().c_str(), buf, sizeof(buf));
@@ -1580,8 +1584,6 @@ string CDirEntry::LookupLink(void) const
         name.assign(buf, length);
     }
     return name;
-#else // NCBI_OS_MSWIN
-    return kEmptyStr;
 #endif
 }
 

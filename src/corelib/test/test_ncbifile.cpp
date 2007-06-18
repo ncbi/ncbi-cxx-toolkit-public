@@ -201,13 +201,14 @@ static void s_TEST_CheckPath(void)
 #if defined(NCBI_OS_MSWIN)
     assert( d.IsAbsolutePath("c:\\") );
     assert( d.IsAbsolutePath("c:\\file") );
-    assert( d.IsAbsolutePath("c:file") );
+    assert(!d.IsAbsolutePath("c:file") );
     assert( d.IsAbsolutePath("\\\\machine\\dir") );
-    assert( d.IsAbsolutePath("\\file") );
     assert(!d.IsAbsolutePath("file") );
+    assert(!d.IsAbsolutePath("\\file") );
     assert(!d.IsAbsolutePath(".\\file") );
     assert(!d.IsAbsolutePath("..\\file") );
     assert(!d.IsAbsolutePath("dir\\file") );
+
 #elif defined(NCBI_OS_UNIX)
     assert( d.IsAbsolutePath("/") );
     assert( d.IsAbsolutePath("/file") );
@@ -217,6 +218,20 @@ static void s_TEST_CheckPath(void)
     assert(!d.IsAbsolutePath("../file") );
     assert(!d.IsAbsolutePath("dir/file") );
 #endif
+    assert( d.IsAbsolutePathEx("c:\\") );
+    assert( d.IsAbsolutePathEx("c:\\file") );
+    assert(!d.IsAbsolutePathEx("c:") );
+    assert( d.IsAbsolutePathEx("\\\\machine\\dir") );
+    assert(!d.IsAbsolutePathEx("file") );
+    assert(!d.IsAbsolutePathEx(".\\file") );
+    assert(!d.IsAbsolutePathEx("./file") );
+    assert(!d.IsAbsolutePathEx("dir/file") );
+    assert(!d.IsAbsolutePathEx("dir\\file") );
+    assert(!d.IsAbsolutePathEx("dir/file") );
+    // MS Windows relative path
+    assert(!d.IsAbsolutePathEx("\\file") );
+    // UNIX absolute path
+    assert( d.IsAbsolutePathEx("/file") );
 
 
     // Normalize path test
@@ -284,14 +299,10 @@ static void s_TEST_CheckPath(void)
     assert( d.ConvertToOSPath("")               == "" );
     assert( d.ConvertToOSPath("c:\\file")       == "c:\\file" );
     assert( d.ConvertToOSPath("/dir/file")      == "/dir/file" );
-    assert( d.ConvertToOSPath("dir:file")       == "dir:file" );
 #if defined(NCBI_OS_MSWIN)
     assert( d.ConvertToOSPath("dir")            == "dir" );
     assert( d.ConvertToOSPath("dir\\file")      == "dir\\file" );
     assert( d.ConvertToOSPath("dir/file")       == "dir\\file" );
-    assert( d.ConvertToOSPath(":dir:file")      == "dir\\file" );
-    assert( d.ConvertToOSPath(":dir::file")     == "file" );
-    assert( d.ConvertToOSPath(":dir:::file")    == "..\\file" );
     assert( d.ConvertToOSPath("./dir/file")     == "dir\\file" );
     assert( d.ConvertToOSPath("../file")        == "..\\file" );
     assert( d.ConvertToOSPath("../../file")     == "..\\..\\file" );
@@ -299,9 +310,6 @@ static void s_TEST_CheckPath(void)
     assert( d.ConvertToOSPath("dir")            == "dir" );
     assert( d.ConvertToOSPath("dir\\file")      == "dir/file" );
     assert( d.ConvertToOSPath("dir/file")       == "dir/file" );
-    assert( d.ConvertToOSPath(":dir:file")      == "dir/file" );
-    assert( d.ConvertToOSPath(":dir::file")     == "file" );
-    assert( d.ConvertToOSPath(":dir:::file")    == "../file" );
     assert( d.ConvertToOSPath(".\\dir\\file")   == "dir/file" );
     assert( d.ConvertToOSPath("..\\file")       == "../file" );
     assert( d.ConvertToOSPath("..\\..\\file")   == "../../file" );
@@ -330,11 +338,8 @@ static void s_TEST_CheckPath(void)
     // Concat any OS paths
     assert( d.ConcatPathEx("dir/", "file")      == "dir/file" );
     assert( d.ConcatPathEx("/dir/", "file")     == "/dir/file" );
-    assert( d.ConcatPathEx("dir\\", ":file")    == "dir\\file" );
     assert( d.ConcatPathEx("dir\\dir", "file")  == "dir\\dir\\file" );
-    assert( d.ConcatPathEx("dir/", ":file")     == "dir/file" );
     assert( d.ConcatPathEx("dir/dir", "file")   == "dir/dir/file" );
-    assert( d.ConcatPathEx("dir:dir", "file")   == "dir:dir:file" );
 }
 
 
@@ -702,7 +707,7 @@ static void s_TEST_Dir(void)
         cout << "Home dir: " << homedir << endl;
     }}
 
-    // Creation of relative path from 2 absolute pathes:
+    // Create relative path from 2 absolute paths:
     {{
         string rel_path;
 
@@ -723,9 +728,17 @@ static void s_TEST_Dir(void)
                 "C:\\x\\y\\z\\", 
                 "C:\\x\\y\\a\\") == "..\\a\\" );
 
-        assert( CDirEntry::CreateRelativePath(
-                "\\x\\y\\z\\", 
-                "\\x\\y\\") == "..\\" );
+        // Expect an exceptions
+        try {
+            assert( CDirEntry::CreateRelativePath(
+                    "\\x\\y\\z\\", 
+                    "\\x\\y\\") == "..\\" );
+        } catch (CFileException&) { }
+        try {
+            assert( CDirEntry::CreateRelativePath(
+                    "C:\\x\\",
+                    "D:\\y\\") == "impossible" );
+        } catch (CFileException&) { }
 
 #elif defined(NCBI_OS_UNIX)
         assert( CDirEntry::CreateRelativePath(
@@ -738,10 +751,8 @@ static void s_TEST_Dir(void)
     // Creation of absolute path from relative path
     {{
         string cwd = CDir::GetCwd();
-
         assert( CDirEntry::CreateAbsolutePath("")   == cwd );
         assert( CDirEntry::CreateAbsolutePath(".")  == cwd );
-
 #if defined(NCBI_OS_MSWIN)
         assert( CDirEntry::CreateAbsolutePath("C:\\path\\") == "C:\\path\\" );
 #elif defined(NCBI_OS_UNIX)
@@ -1108,7 +1119,6 @@ int CTest::Run(void)
     s_TEST_SplitPath();
     s_TEST_CheckPath();
     s_TEST_MatchesMask();
-
     // CFile
     s_TEST_File();
     // CDir
