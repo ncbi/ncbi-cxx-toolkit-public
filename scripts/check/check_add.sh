@@ -56,9 +56,17 @@ if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then
       x_signature=`echo $x_signature | sed 's/-[^-]*$//'`
       root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
       ignore_list="$root_dir/src/check/ignore.lst"
-      if grep "^ *$x_srcdir_rel/$x_app *$x_signature" $ignore_list > /dev/null 2>&1; then
-         echo "SKIP -- $x_tpath"
-         exit 0
+      # Find "test signature"
+      s=`grep " *$x_srcdir_rel/$x_app *$x_signature" $ignore_list`
+      if [ -n "$s" ]; then
+         # Found. Check on possible date:
+         dc=`date '+%Y%m%d'`
+         dt=`echo $s | sed 's|\(....\)-\(..\)-\(..\):.*|\1\2\3|'`
+         if [ -z "$dt" -o  "$dc" -lt "$dt" ]; then
+            # Date is defined, but not arrived yet
+            echo "SKIP -- $x_tpath"
+            exit 0
+         fi
       fi
    fi
    echo "TEST -- $x_tpath"

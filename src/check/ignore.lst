@@ -1,8 +1,12 @@
 # $Id$
 #
-# List of pairs "test/signature" that will not be checked
+# List of tests that will not be checked.
 #
-#    test      - the path in form <src_dir/test_app_name>
+# [YYYY-MM-DD:] test signature 
+#
+#    date      - optional parameter, defines a date on which test will be
+#                included back into the testsuite.
+#    test      - path in form <src_dir/test_app_name> (APP from Makefile).
 #    signature - OS/compiler signature without machine name (from Makefile.mk)
 #
 ###########################################################################
