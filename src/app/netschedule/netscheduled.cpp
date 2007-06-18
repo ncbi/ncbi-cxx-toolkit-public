@@ -58,7 +58,6 @@
 #include <bdb/bdb_cursor.hpp>
 
 #include "bdb_queue.hpp"
-#include <db.h>
 
 #include "ns_types.hpp"
 #include "job_status.hpp"
@@ -643,7 +642,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
     catch (CBDB_ErrnoException& ex)
     {
-        if (ex.BDB_GetErrno() == DB_RUNRECOVERY) {
+        if (ex.IsRecovery()) {
             string msg = x_FormatErrorMessage("Fatal Berkeley DB error: DB_RUNRECOVERY. " 
                                               "Emergency shutdown initiated!", ex.what());
             ERR_POST(msg);
