@@ -1152,7 +1152,8 @@ public:
     #endif
         
         word_t*** blk_root = blockman_.get_rootblock();
-        if (!blk_root) return false;
+        if (!blk_root) 
+            return false;
         typename blocks_manager_type::block_any_func func(blockman_);
         return for_each_nzblock_if(blk_root, 
                                    blockman_.effective_top_block_size(),
@@ -1616,6 +1617,11 @@ bm::id_t bvector<Alloc, MS>::count() const
     if (count_is_valid_) return count_;
 #endif
     word_t*** blk_root = blockman_.get_rootblock();
+    if (!blk_root) 
+    {
+        BMCOUNT_SET(0);
+        return 0;
+    }    
     typename blocks_manager_type::block_count_func func(blockman_);
     for_each_nzblock(blk_root, blockman_.effective_top_block_size(), 
                                 bm::set_array_size, func);
