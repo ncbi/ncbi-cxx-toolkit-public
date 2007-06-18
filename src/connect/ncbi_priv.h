@@ -93,7 +93,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 ;
 
 #define CORE_LOG(level, message)  do { \
-    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {    \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, message); \
         CORE_UNLOCK; \
@@ -101,7 +101,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOGF(level, fmt_args)  do { \
-    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {    \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE(g_CORE_Log, level, g_CORE_Sprintf fmt_args); \
         CORE_UNLOCK; \
@@ -135,7 +135,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOG_ERRNO(level, x_errno, message)  do { \
-    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {  \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, message, x_errno, 0); \
         CORE_UNLOCK; \
@@ -143,7 +143,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOGF_ERRNO(level, x_errno, fmt_args)  do { \
-    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {    \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, g_CORE_Sprintf fmt_args, \
                            x_errno, 0); \
@@ -152,7 +152,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOG_ERRNO_EX(level, x_errno, x_descr, message)  do { \
-    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {              \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, message, x_errno, x_descr); \
         CORE_UNLOCK; \
@@ -160,7 +160,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 } while (0)
 
 #define CORE_LOGF_ERRNO_EX(level, x_errno, x_descr, fmt_args)  do { \
-    if (g_CORE_Log  ||  (level) == eLOG_Fatal) {                \
+    if (g_CORE_Log  ||  (level) == eLOG_Fatal) { \
         CORE_LOCK_READ; \
         LOG_WRITE_ERRNO_EX(g_CORE_Log, level, g_CORE_Sprintf fmt_args, \
                            x_errno, x_descr); \
