@@ -572,6 +572,9 @@ protected:
 
     /// True when all proj.dbs are pre-open
     bool                    m_AllProjAvail; 
+
+    /// Lock used to sync. muli-db transactions to avoid deadlocks    
+    TLock                   m_CrossDBLock;
 };
 
 /* @} */
@@ -750,6 +753,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int     id,
 
     unsigned slice = m_ObjDeMux->SelectSplit(size);
     if (slice != coord[1]) {
+        // lock to prevent deadlock (no guarentee on the order of update)
+        TLockGuard lg(m_CrossDBLock);
+
         this->Delete(id, CBDB_RawFile::eThrowOnError);
         return this->Insert(id, data, size, coord);
     } else {
@@ -780,6 +786,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned id,
     if (found) {
         // consistency check
         if (old_coord[0] != coord[0] || old_coord[1] != coord[1]) {
+            // lock to prevent deadlock (no guarentee on the order of update)
+            TLockGuard lg(m_CrossDBLock);
+
             // external (or internal)coordinate storage skrewed
             this->Delete(id, coord, CBDB_RawFile::eThrowOnError);
             this->Delete(id, old_coord, CBDB_RawFile::eThrowOnError);
@@ -803,6 +812,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned id,
 
     unsigned slice = m_ObjDeMux->SelectSplit(size);
     if (slice != coord[1]) {
+        // lock to prevent deadlock (no guarentee on the order of update)
+        TLockGuard lg(m_CrossDBLock);
+
         this->Delete(id, coord, CBDB_RawFile::eThrowOnError);
         return this->Insert(id, data, size, coord);
     } else {
