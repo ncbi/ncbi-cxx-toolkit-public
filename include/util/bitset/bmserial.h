@@ -1987,6 +1987,7 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
     BM_ASSERT(temp_block);
 
     unsigned count = 0;
+    gap_word_t   gap_temp_block[set_block_size*2+10] = {0,};
 
     blocks_manager_type& bman = bv.get_blocks_manager();
 
@@ -2342,7 +2343,6 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
             BM_ASSERT(bv_block_idx == sit.block_idx());
             bm::word_t* blk = bman.get_block(bv_block_idx);
 
-            gap_word_t   gap_temp_block[set_block_size*2+10];
             sit.get_gap_block(gap_temp_block);
             // gap_word_t   gap_head = gap_temp_block[0];
 
