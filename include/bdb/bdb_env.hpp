@@ -274,8 +274,18 @@ public:
 
     /// limits the number of sequential write operations scheduled by the 
     /// library when flushing dirty pages from the cache
+    ///
+    /// @param maxwrite
+    ///     maximum number of sequential writes to perform
+    /// @param maxwrite_sleep
+    ///     sleep time in microseconds between write attempts
     void MpMaxWrite(int maxwrite, int maxwrite_sleep);
 
+    /// Set the maximal size for mmap
+    void SetMpMmapSize(size_t map_size);
+
+    /// Get the maximal size for mmap
+    size_t GetMpMmapSize();
 
     /// return the path to the environment
     const string& GetPath() const { return m_HomePath; }

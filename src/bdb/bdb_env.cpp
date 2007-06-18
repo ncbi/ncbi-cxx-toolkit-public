@@ -188,7 +188,7 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
 
 void CBDB_Env::OpenWithLocks(const string& db_home)
 {
-    Open(db_home, DB_CREATE/*|DB_RECOVER*/|DB_INIT_LOCK|DB_INIT_MPOOL);
+    Open(db_home, DB_CREATE/*|DB_RECOVER*/|DB_THREAD|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
 void CBDB_Env::OpenPrivate(const string& db_home)
@@ -856,6 +856,22 @@ void CBDB_Env::MpMaxWrite(int maxwrite, int maxwrite_sleep)
 {
     int ret = m_Env->set_mp_max_write(m_Env, maxwrite, maxwrite_sleep);
     BDB_CHECK(ret, "DB_ENV::set_mp_max_write");
+}
+
+
+size_t CBDB_Env::GetMpMmapSize()
+{
+    size_t map_size = 0;
+    int ret = m_Env->get_mp_mmapsize(m_Env, &map_size);
+    BDB_CHECK(ret, "DB_ENV::get_mp_mmapsize");
+    return map_size;
+}
+
+
+void CBDB_Env::SetMpMmapSize(size_t map_size)
+{
+    int ret = m_Env->set_mp_mmapsize(m_Env, map_size);
+    BDB_CHECK(ret, "DB_ENV::set_mp_mmapsize");
 }
 
 
