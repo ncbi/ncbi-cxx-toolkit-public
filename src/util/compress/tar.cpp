@@ -1816,7 +1816,8 @@ bool CTar::x_ProcessEntry(const CTarEntryInfo& info, bool extract,
     }
 
     while (size) {
-        size_t nskip = size < m_BufferSize ? size : m_BufferSize;
+        size_t nskip = size < m_BufferSize
+            ? (size_t) size : m_BufferSize;
         if (!x_ReadArchive(nskip)) {
             int x_errno = errno;
             TAR_THROW(eRead, "Archive read failed" + s_OSReason(x_errno));
@@ -1863,7 +1864,8 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
 
                 while (size) {
                     // Read from the archive
-                    size_t nread = size < m_BufferSize ? size : m_BufferSize;
+                    size_t nread = size < m_BufferSize
+                        ? (size_t) size : m_BufferSize;
                     const char* xbuf = x_ReadArchive(nread);
                     if (!xbuf) {
                         TAR_THROW(eRead, "Unexpected EOF");
@@ -2341,8 +2343,8 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
         m_Eof = true;
         read = 0;
     } else {
-        if (count > m_Info.GetSize() - m_Read) {
-            count = m_Info.GetSize() - m_Read;
+        if (count > (size_t)(m_Info.GetSize() - m_Read)) {
+            count = (size_t)(m_Info.GetSize() - m_Read);
         }
         size_t left = OFFSET_OF(m_Read);
         if (left) {
