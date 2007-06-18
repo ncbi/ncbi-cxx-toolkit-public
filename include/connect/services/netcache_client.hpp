@@ -292,6 +292,8 @@ protected:
 
     bool IsError(const char* str);
 
+    void Monitor(CNcbiOstream & out);
+
     void SendClientName();
 
     /// Makes string including authentication info(client name) and

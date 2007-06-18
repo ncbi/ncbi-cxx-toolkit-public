@@ -68,6 +68,10 @@ public:
     {
         CNetCacheClient::PrintStat(out);
     }
+    void Monitor(CNcbiOstream & out)
+    {
+        CNetCacheClient::Monitor(out);
+    }
     void DropStat() { CNetCacheClient::DropStat(); }
 };
 
@@ -108,6 +112,7 @@ void CNetCacheControl::Init(void)
     arg_desc->AddFlag("c", "Server config");
     arg_desc->AddFlag("t", "Server statistics");
     arg_desc->AddFlag("d", "Drop server statistics");
+    arg_desc->AddFlag("monitor", "Monitor server");
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -171,6 +176,9 @@ int CNetCacheControl::Run(void)
 
     if (args["c"]) {  // config
         nc_client.PrintConfig(NcbiCout);
+    }
+    if (args["monitor"]) {  // monitor
+        nc_client.Monitor(NcbiCout);
     }
 
     if (args["t"]) {  // statistics

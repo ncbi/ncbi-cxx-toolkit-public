@@ -429,6 +429,35 @@ bool CNetCacheClient::IsAlive()
     return !version.empty();
 }
 
+void CNetCacheClient::Monitor(CNcbiOstream & out)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "MONI\r\n");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    //    m_Tmp = "QUIT";
+    //    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    STimeout rto = {1,0};
+    m_Sock->SetTimeout(eIO_Read, &rto);
+
+    string line;
+    while (1) {
+
+        EIO_Status st = m_Sock->ReadLine(line);       
+        if (st == eIO_Success) {
+            if (m_Tmp == "END")
+                break;
+            out << line << "\n" << flush;
+        } else {
+            EIO_Status st = m_Sock->GetStatus(eIO_Open);
+            if (st != eIO_Success) {
+                break;
+            }
+        }
+    }
+}
 
 string CNetCacheClient::ServerVersion()
 {
