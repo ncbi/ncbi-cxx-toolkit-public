@@ -1178,6 +1178,8 @@ void
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(
                            typename TDeMuxStore::ECompact  compact_vectors)
 {
+    _ASSERT(m_IdDeMux.get());
+    _ASSERT(m_DictFile.get());
     TLockGuard     lg1(m_DictFileLock);
     CReadLockGuard lg2(m_IdDeMuxLock);
 
