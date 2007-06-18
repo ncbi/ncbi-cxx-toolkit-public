@@ -55,7 +55,8 @@ static inline bool isLineEnd(char ch)
     return ch == 0x0D || ch == 0x0A || ch == '\n';
 }
 
-bool x_SplitLines( const char* byte_buf, size_t byte_count, list< string>& lines )
+static bool x_SplitLines( const char* byte_buf, size_t byte_count,
+                          list< string>& lines )
 //
 //  Note:   We are assuming that the data at hand is consistent in its line 
 //          delimiters.
@@ -108,7 +109,7 @@ bool x_SplitLines( const char* byte_buf, size_t byte_count, list< string>& lines
 }
 
 
-bool x_IsLineRmo( const string& line ) 
+static bool x_IsLineRmo( const string& line ) 
 {
     const size_t MIN_VALUES_PER_RECORD = 15;
     
@@ -173,7 +174,7 @@ bool x_IsLineRmo( const string& line )
 }
 
 
-bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
+static bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
 {
     //
     //  Repeatmasker files consist of columnar data with a couple of lines
@@ -238,7 +239,7 @@ bool x_IsInputRepeatMaskerWithHeader( list< string >& lines  )
 }
 
 
-bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
+static bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
 {
     //
     //  Repeatmasker files consist of columnar data with a couple of lines
@@ -274,7 +275,7 @@ bool x_IsInputRepeatMaskerWithoutHeader( list< string>& lines  )
 }
 
 
-bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count ) 
+static bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count ) 
 {
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
@@ -287,7 +288,7 @@ bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsLinePhrapId( const string& line ) 
+static bool x_IsLinePhrapId( const string& line ) 
 {
     vector<string> values;
     if ( NStr::Tokenize( line, " \t", values, NStr::eMergeDelims ).empty() ) {
@@ -313,7 +314,7 @@ bool x_IsLinePhrapId( const string& line )
 }
 
 
-bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
+static bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
@@ -330,7 +331,7 @@ bool x_IsInputPhrapAce( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsLineGlimmer3(const string& line)
+static bool x_IsLineGlimmer3(const string& line)
 {
     list<string> toks;
     NStr::Split(line, "\t ", toks);
@@ -374,7 +375,7 @@ bool x_IsLineGlimmer3(const string& line)
 }
 
 
-bool x_IsInputGlimmer3( const char* byte_buf, size_t byte_count )
+static bool x_IsInputGlimmer3( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
@@ -399,7 +400,7 @@ bool x_IsInputGlimmer3( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsLineGtf( const string& line )
+static bool x_IsLineGtf( const string& line )
 {
     vector<string> tokens;
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
@@ -429,7 +430,7 @@ bool x_IsLineGtf( const string& line )
 }
 
 
-bool x_IsLineAgp( const string& line ) 
+static bool x_IsLineAgp( const string& line ) 
 {
     vector<string> tokens;
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
@@ -466,7 +467,7 @@ bool x_IsLineAgp( const string& line )
 }
     
 
-bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
+static bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
@@ -497,7 +498,7 @@ bool x_IsInputGtf( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
+static bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
 {
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
@@ -521,7 +522,7 @@ bool x_IsInputAgp( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsLabelNewick( const string& label )
+static bool x_IsLabelNewick( const string& label )
 {
     //  Starts with a string of anything other than "[]:", optionally followed by
     //  a single ':', followed by a number, optionally followed by a dot and
@@ -545,7 +546,7 @@ bool x_IsLabelNewick( const string& label )
 }
 
 
-bool x_IsLineNewick( const string& cline )
+static bool x_IsLineNewick( const string& cline )
 {
     //
     //  Note:
@@ -594,7 +595,7 @@ bool x_IsLineNewick( const string& cline )
 }
 
 
-bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
+static bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
 {
     // Maybe we get home early ...
     if ( byte_count > 0 && byte_buf[0] != '(' ) {
@@ -622,7 +623,7 @@ bool x_IsInputNewick( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
+static bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
 {
     // Alignment files come in all different shapes and broken formats,
     // and some of them are hard to recognize as such, in particular
@@ -655,7 +656,7 @@ bool x_IsInputAlignment( const char* byte_buf, size_t byte_count )
 }
         
 
-bool x_IsInputXml( const char* byte_buf, size_t byte_count )
+static bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 {
     if (byte_count > 5) {
         const char* xml_sig = "<?XML";
@@ -673,7 +674,7 @@ bool x_IsInputXml( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
+static bool x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
 {
     //
     //  Criterion: Presence of any non-printing characters
@@ -689,7 +690,7 @@ bool x_IsInputBinaryAsn( const char* byte_buf, size_t byte_count )
 }
 
 
-bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
+static bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
 {
     // first split into a set of lines
     list<string> lines;
@@ -743,12 +744,63 @@ bool x_IsInputDistanceMatrix(const char* byte_buf, size_t byte_count)
     return true;
 }
 
-bool x_IsInputTaxplot(const char* byte_buf, size_t byte_count)
+static bool x_IsInputTaxplot(const char* byte_buf, size_t byte_count)
 {
     return false;
 }
 
-bool x_IsInputFiveColFeatureTable(const char* byte_buf, size_t byte_count)
+
+static bool x_IsLineFlatFileSequence(const string& line)
+{
+    // blocks of ten residues (or permitted punctuation characters)
+    // with a count at the start or end; require at least four
+    // (normally six)
+    SIZE_TYPE pos = line.find_first_not_of("0123456789 \t");
+    if (pos == NPOS  ||  pos + 45 >= line.size()) {
+        return false;
+    }
+
+    for (SIZE_TYPE i = 0;  i < 45;  ++i) {
+        char c = line[pos + i];
+        if (i % 11 == 10) {
+            if ( !isspace(c) ) {
+                return false;
+            }
+        } else {
+            if ( !isalpha(c)  &&  c != '-'  &&  c != '*') {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+static bool x_IsInputFlatFileSequence(const char* byte_buf, size_t byte_count)
+{
+    list<string> lines;
+    if ( !x_SplitLines(byte_buf, byte_count, lines) ) {
+        //  seemingly not even ASCII ...
+        return false;
+    }
+    if ( ! lines.empty() ) {
+        //  the last line is probably incomplete. We won't even bother with it.
+        lines.pop_back();
+    }
+    if (lines.empty()) {
+        return false;
+    }
+        
+    ITERATE (list<string>, it, lines) {
+        if ( !x_IsLineFlatFileSequence(*it) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool x_IsInputFiveColFeatureTable(const char* byte_buf,
+                                         size_t byte_count)
 {
     // first split into a set of lines
     list<string> lines;
@@ -783,7 +835,7 @@ bool x_IsInputFiveColFeatureTable(const char* byte_buf, size_t byte_count)
 }
 
 
-bool x_IsInputTable(const char* byte_buf, size_t byte_count)
+static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
 {
     // first split into a set of lines
     list<string> lines;
@@ -924,6 +976,9 @@ CFormatGuess::Format(const unsigned char* buffer,
     }
     if ( x_IsInputTaxplot(chbuf, buffer_size) ) {
         return eTaxplot;
+    }
+    if ( x_IsInputFlatFileSequence(chbuf, buffer_size) ) {
+        return eFlatFileSequence;
     }
     if ( x_IsInputFiveColFeatureTable(chbuf, buffer_size) ) {
         return eFiveColFeatureTable;

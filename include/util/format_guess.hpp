@@ -93,7 +93,10 @@ public:
         eTable,
 
         //< Text alignment
-        eAlignment
+        eAlignment,
+
+        //< GenBank/GenPept/DDBJ/EMBL flat-file sequence portion
+        eFlatFileSequence
     };
 
     enum ESequenceType {
