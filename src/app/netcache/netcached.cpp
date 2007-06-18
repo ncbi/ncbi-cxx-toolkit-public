@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.1  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.3  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -837,6 +837,38 @@ void CNetCacheServer::Process(SOCK sock)
         if (m_Monitor.IsMonitorActive()) {
             m_Monitor.SendString(msg);
         }
+    }
+    catch (CBDB_ErrnoException& ex)
+    {
+        if (ex.IsRecovery()) {
+            string msg = "Fatal Berkeley DB error: DB_RUNRECOVERY. " 
+                         "Emergency shutdown initiated!";
+            ERR_POST(msg);
+            if (m_Monitor.IsMonitorActive()) {
+                m_Monitor.SendString(msg);
+            }
+            SetShutdownFlag();
+        } else {
+            string msg;
+            msg = "NC BerkeleyDB error: ";
+            msg.append(ex.what());
+            msg.append(" client=");  msg.append(tdata->auth);
+            msg.append(" request='");msg.append(tdata->request); msg.append("'");
+            msg.append(" peer="); msg.append(socket.GetPeerAddress());
+            msg.append(" blobsize=");
+                msg.append(NStr::UIntToString(stat.blob_size));
+            msg.append(" io blocks=");
+                msg.append(NStr::UIntToString(stat.io_blocks));
+            msg.append("\n");
+            ERR_POST(msg);
+
+            if (m_Monitor.IsMonitorActive()) {
+                m_Monitor.SendString(msg);
+            }
+
+            x_RegisterInternalErr(nc_req_type, tdata->auth);
+        }
+        throw;
     }
     catch (exception& ex)
     {
