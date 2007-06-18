@@ -284,7 +284,7 @@ extern NCBI_XCONNECT_EXPORT char* MessagePlusErrno
  *  LOG_WRITE_ERRNO
  */
 #define LOG_WRITE_ERRNO_EX(lg, level, message, x_errno, x_descr)  do {   \
-    if (lg  ||  level == eLOG_Fatal) {                                   \
+    if ((lg)  ||  (level) == eLOG_Fatal) {                               \
         char _buf[1024];                                                 \
         LOG_WRITE(lg, level, MessagePlusErrno(message, x_errno, x_descr, \
                                               _buf, sizeof(_buf)));      \
