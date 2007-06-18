@@ -344,7 +344,7 @@ s_DupSequencesTest(T      * ids,
                           CWriteDB::eFullIndex));
     
     if (raw_data) {
-        s_DupIdsRaw(*db, src, ids);
+        s_DupIdsRaw<T>(*db, src, ids);
     } else {
         s_DupIdsBioseq(*db, src, ids);
     }
