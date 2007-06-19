@@ -1385,6 +1385,7 @@ EBDB_ErrCode CBDB_File::UpdateInsert(EAfterWrite write_flag)
 
 EBDB_ErrCode CBDB_File::Delete(EIgnoreError on_error)
 {
+    EBDB_ErrCode rcode = eBDB_Ok;
     m_KeyBuf->PrepareDBT_ForWrite(m_DBT_Key);
     DB_TXN* txn = GetTxn();
 
@@ -1392,11 +1393,15 @@ EBDB_ErrCode CBDB_File::Delete(EIgnoreError on_error)
                         txn,
                         m_DBT_Key,
                         0);
+    if (ret == DB_NOTFOUND) {
+        ret = 0;
+        rcode = eBDB_NotFound;
+    }
     if (on_error != eIgnoreError) {
         BDB_CHECK(ret, FileName().c_str());
     }
     Discard();
-    return eBDB_Ok;
+    return rcode;
 }
 
 
