@@ -23,6 +23,8 @@ sub Usage
 Usage:
     $ScriptName list
 
+    $ScriptName info <branch_path>
+
     $ScriptName create <branch_path> <branch_map_file> [<trunk_rev>]
 
     $ScriptName remove <branch_path>
@@ -34,6 +36,8 @@ Usage:
     $ScriptName commit <branch_path> [<log_message>]
 
     $ScriptName switch <branch_path>
+
+    $ScriptName unswitch <branch_path>
 
 Where:
     branch_map_file     Pathname of the file containing branch directory
@@ -47,6 +51,9 @@ Where:
 Commands:
     list                Prints the list of branches that were created
                         with the help of this utility.
+
+    info                Displays brief information about the branch specified
+                        by the <branch_path> argument.
 
     create              Either creates a new branch defined by its base path
                         <branch_path> and directory mapping <branch_map_file>
@@ -68,8 +75,11 @@ Commands:
     commit              Commits the local changes to the branch. If the log
                         message is omitted, it is read from the standard input.
 
-    switch              Switch working copy directories to the branch
+    switch              Switches working copy directories to the branch
                         identified by <branch_path>.
+
+    unswitch            "Unswitches" working copy directories from the
+                        branch identified by <branch_path>.
 
 Description:
     This script facilitates branch handling using Subversion.
@@ -96,6 +106,10 @@ elsif ($Command eq 'list')
 {
     $Method = 'List'
 }
+elsif ($Command eq 'info')
+{
+    $Method = 'Info'
+}
 elsif ($Command eq 'create')
 {
     $Method = 'Create'
@@ -119,6 +133,10 @@ elsif ($Command eq 'commit')
 elsif ($Command eq 'switch')
 {
     $Method = 'Switch'
+}
+elsif ($Command eq 'unswitch')
+{
+    $Method = 'Unswitch'
 }
 else
 {

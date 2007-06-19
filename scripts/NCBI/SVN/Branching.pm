@@ -145,9 +145,7 @@ sub ReadBranchMap
 {
     my ($Self, $SVN, $BranchMapRepoPath) = @_;
 
-    my @BranchMapLines = eval {$SVN->ReadFileLines($BranchMapRepoPath)};
-
-    return undef if $@;
+    my @BranchMapLines = $SVN->ReadFileLines($BranchMapRepoPath);
 
     return NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
             MapFileLines => \@BranchMapLines)
@@ -161,6 +159,35 @@ sub List
 
     print 'Managed branches in ' . $SVN->GetRepository() . ":\n";
     print $SVN->ReadFile('branches/branch_list')
+}
+
+sub Info
+{
+    my ($Self, $BranchPath) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+
+    print "Information about branch '$BranchPath':\n\n";
+
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
+
+    my ($LastMergeRev, $Revision) =
+        $Self->DetectLastMergeRevision($SVN, $SwitchMap->GetSwitchPlan());
+
+    if ($LastMergeRev == $Revision)
+    {
+        print "The branch was created in revision $Revision.\n"
+    }
+    else
+    {
+        print 'The branch was merged with trunk revision ' .
+            "$LastMergeRev in revision $Revision.\n"
+    }
 }
 
 sub Create
@@ -212,9 +239,9 @@ sub Create
     # Read the old branch_map, if it exists.
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my $OldSwitchMap;
+    my $OldSwitchMap = eval {$Self->ReadBranchMap($SVN, $BranchMapRepoPath)};
 
-    if ($OldSwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath))
+    unless ($@)
     {
         $ExistingBranch = 1;
 
@@ -328,7 +355,9 @@ sub Remove
     # Read the branch map, if it exists.
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    if (my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath))
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
+
+    unless ($@)
     {
         my %BranchMapRmPathTree;
         my %RmDirTree;
@@ -371,16 +400,12 @@ sub Remove
 
 sub DetectLastMergeRevision
 {
-    my ($Self, $SVN, @BranchDirs) = @_;
+    my ($Self, $SVN, $SwitchPlan) = @_;
 
     print "Detecting previous merge revision...\n";
 
-    my $Info = $SVN->ReadInfo('info', @BranchDirs);
-
-    my @Info = values %$Info;
-
     my $Stream = $SVN->Run('log', '--stop-on-copy',
-        $Info[0]->{Root}, map {$_->{Path}} @Info);
+        $SVN->GetRepository(), map {$_->[1]} @$SwitchPlan);
 
     my $LogLine;
     my $Revision;
@@ -422,10 +447,11 @@ sub MergeDown
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
 
-    my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
+    my $SwitchPlan = $SwitchMap->GetSwitchPlan();
+
+    my @BranchDirs = map {$_->[0]} @{$SwitchPlan};
 
     print "Running svn status on branch...\n";
 
@@ -440,7 +466,7 @@ sub MergeDown
     system($SVN->GetSvnPath(), 'update', @BranchDirs);
 
     my ($LastMergeRev, $Revision) =
-        $Self->DetectLastMergeRevision($SVN, @BranchDirs);
+        $Self->DetectLastMergeRevision($SVN, $SwitchPlan);
 
     unless ($TargetRev)
     {
@@ -500,8 +526,7 @@ sub MergeDownCommit
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
 
     my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
 
@@ -552,8 +577,7 @@ sub Commit
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
 
     system($SVN->GetSvnPath(), 'commit', '-m', $LogMessage,
         map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
@@ -570,11 +594,33 @@ sub Switch
 
     my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath) or
-        die "$Self->{MyName}: unable to retrieve '$BranchMapRepoPath'\n";
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
 
     NCBI::SVN::MultiSwitch->new(MyName => $Self->{MyName})->
         SwitchUsingMap($SwitchMap)
+}
+
+sub Unswitch
+{
+    my ($Self, $BranchPath) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+
+    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
+
+    my $BaseURL = $SVN->GetRepository() . "/$TrunkDir/";
+
+    print "Unswitching from branch '$BranchPath'...\n";
+
+    for my $BranchDir (map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
+    {
+        $Self->RunSubversion('switch', $BaseURL . $BranchDir, $BranchDir)
+    }
 }
 
 1
