@@ -2815,13 +2815,12 @@ purge_start:
 
 
     unsigned delay = 0;
-    unsigned bytes_written = 0;
+//    unsigned bytes_written = 0;
     vector<SCacheDescr> cache_entries;
     cache_entries.reserve(1000);
 
     unsigned db_recs = 0;
 
-    time_t last_check = time(0); // time of the last memp_tricle
 
     // Search the database for obsolete cache entries
     string first_key, last_key;
@@ -3495,7 +3494,6 @@ void CBDB_Cache::x_DropBlob(const string&      key,
             coords[0] = m_CacheAttrDB->volume_id;
             coords[1] = m_CacheAttrDB->split_id;
 
-            unsigned split_coord[2];
             EBDB_ErrCode ret = 
                 m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
             if (ret == eBDB_Ok) {
