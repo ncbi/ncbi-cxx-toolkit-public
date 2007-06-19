@@ -2882,8 +2882,8 @@ purge_start:
                             // we need this in order not to move point of restart
                             // too agressively
 
-                            double delta = fabs(m_NextExpTime - exp_time);
-                            double fraction = fabs(delta / m_NextExpTime);
+                            double delta = fabs(double(m_NextExpTime - exp_time));
+                            double fraction = fabs(double(delta / m_NextExpTime));
                             if (fraction > 0.1 && delta > m_PurgeThreadDelay) {
                                 next_exp_key = key;
                                 m_NextExpTime = exp_time;
