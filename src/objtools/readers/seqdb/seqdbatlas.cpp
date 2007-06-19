@@ -1431,6 +1431,8 @@ const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(16) << 30;
 
 Int8 CSeqDBMapStrategy::m_GlobalMaxBound = 0;
 
+bool CSeqDBMapStrategy::m_AdjustedBound = false;
+
 /// Constructor
 CSeqDBMapStrategy::CSeqDBMapStrategy(CSeqDBAtlas & atlas)
     : m_Atlas     (atlas),
@@ -1654,6 +1656,7 @@ void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
     }
     
     m_GlobalMaxBound = bytes;
+    m_AdjustedBound = true;
 }
 
 CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
@@ -1735,9 +1738,17 @@ void CSeqDBLockHold::HoldRegion(CSeqDBMemLease & lease)
     rmap->AddRef();
 }
 
-
 int CSeqDBAtlasHolder::m_Count = 0;
 CSeqDBAtlas * CSeqDBAtlasHolder::m_Atlas = NULL;
+
+
+void CSeqDBMapStrategy::x_CheckAdjusted()
+{
+    if (m_GlobalMaxBound && m_AdjustedBound) {
+        x_SetBounds(m_GlobalMaxBound);
+    }
+}
+
 
 END_NCBI_SCOPE
 

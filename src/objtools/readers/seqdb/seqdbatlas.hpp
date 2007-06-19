@@ -1108,6 +1108,7 @@ public:
     /// @param returning Specify true if returning from SeqDB.
     TIndx GetMemoryBound(bool returning)
     {
+        x_CheckAdjusted();
         return returning ? m_RetBound : m_MaxBound;
     }
     
@@ -1139,6 +1140,9 @@ public:
     static void SetDefaultMemoryBound(Uint8 bytes);
     
 private:
+    /// Check if the global bound has been adjusted and use that value.
+    void x_CheckAdjusted();
+    
     /// Mention an ordered or out-of-order access.
     void x_OidOrder(bool in_order);
     
@@ -1189,6 +1193,9 @@ private:
     
     /// Global maximum memory bound.
     static Int8 m_GlobalMaxBound;
+    
+    /// Has global memory bound been changed?
+    static bool m_AdjustedBound;
 };
 
 
