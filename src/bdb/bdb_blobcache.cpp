@@ -1487,16 +1487,6 @@ void CBDB_Cache::InitStatistics()
     m_Statistics.Init();
 }
 
-void CBDB_Cache::KillBlobNoLock(const string&  key,
-                                int            version,
-                                const string&  subkey,
-                                int            overflow,
-                                unsigned       blob_id,
-                                CBDB_Transaction& trans)
-{
-    x_DropBlob(key.c_str(), version, subkey.c_str(), overflow, blob_id, trans);
-}
-
 void CBDB_Cache::KillBlob(const string&  key,
                           int            version,
                           const string&  subkey,
@@ -1511,7 +1501,7 @@ void CBDB_Cache::KillBlob(const string&  key,
 
     {{
     CFastMutexGuard guard(m_DB_Lock);
-    KillBlobNoLock(key, version, subkey, overflow, blob_id, trans);
+    x_DropBlob(key, version, subkey, overflow, blob_id, trans);
     }}
     trans.Commit();
 
@@ -1583,11 +1573,11 @@ void CBDB_Cache::DropBlob(const string&  key,
         if (ret == eBDB_Ok) {
             if (coord[0] != split_coord[0] || coord[1] != split_coord[1]) {
                 m_BLOB_SplitStore->Delete(*blob_id, split_coord, 
-                                          CBDB_RawFile::eIgnoreError);
+                                          CBDB_RawFile::eThrowOnError);
             }
         }
         m_BLOB_SplitStore->Delete(*blob_id, coord,
-                                  CBDB_RawFile::eIgnoreError);
+                                  CBDB_RawFile::eThrowOnError);
 
     }
 
@@ -1611,83 +1601,47 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
     unsigned blob_id = 0;
     unsigned coord[2]={0,};
 
-    CBDB_Transaction trans(*m_Env, 
-                           CBDB_Transaction::eEnvDefault,
-                           CBDB_Transaction::eNoAssociation);
-
     {{
-    CFastMutexGuard guard(m_DB_Lock);
+        CBDB_Transaction trans(*m_Env, 
+                            CBDB_Transaction::eEnvDefault,
+                            CBDB_Transaction::eNoAssociation);
 
-    m_CacheAttrDB->SetTransaction(&trans);
+        {{
+        CFastMutexGuard guard(m_DB_Lock);
 
-    EBDB_ErrCode fetch_res;
-    {{
-        CBDB_FileCursor cur(*m_CacheAttrDB, 
-                            trans, 
-                            CBDB_FileCursor::eReadModifyUpdate);
-        cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << key << version << subkey;
+        m_CacheAttrDB->SetTransaction(&trans);
 
-        fetch_res = cur.Fetch();
-        if (fetch_res == eBDB_Ok) {
-            m_CacheAttrDB->time_stamp = (unsigned)curr;
-            m_CacheAttrDB->overflow = 1;
-            m_CacheAttrDB->ttl = time_to_live;
-            m_CacheAttrDB->max_time = ComputeMaxTime(curr);
-            unsigned upd_count = m_CacheAttrDB->upd_count;
-            ++upd_count;
-            m_CacheAttrDB->upd_count = upd_count;
-            m_CacheAttrDB->owner_name = owner;
-
-            blob_id = m_CacheAttrDB->blob_id;
-            coord[0] = m_CacheAttrDB->volume_id;
-            coord[1] = m_CacheAttrDB->split_id;
-
-            cur.Update();
-        }
-    }} // cursor
-
-    if (fetch_res != eBDB_Ok) { // record not found, needs re-registration
-        m_CacheAttrDB->key = key;
-        m_CacheAttrDB->version = version;
-	    m_CacheAttrDB->subkey = subkey;
-        m_CacheAttrDB->time_stamp = (unsigned)curr;
-        m_CacheAttrDB->overflow = 1;
-        m_CacheAttrDB->ttl = time_to_live;
-        m_CacheAttrDB->max_time = ComputeMaxTime(curr);
-        m_CacheAttrDB->upd_count  = 0;
-        m_CacheAttrDB->read_count = 0;
-        m_CacheAttrDB->owner_name = owner;
-        m_CacheAttrDB->blob_id = 0;
-        m_CacheAttrDB->volume_id = 0;
-        m_CacheAttrDB->split_id = 0;
-
-        m_CacheAttrDB->Insert();
-    }
-
-	// Time stamp the key with empty subkey
-/*
-	if ((m_TimeStampFlag & fTrackSubKey) && !subkey.empty()) {
+        EBDB_ErrCode ret;
         {{
             CBDB_FileCursor cur(*m_CacheAttrDB, 
                                 trans, 
                                 CBDB_FileCursor::eReadModifyUpdate);
             cur.SetCondition(CBDB_FileCursor::eEQ);
-            cur.From << key << version << "";
+            cur.From << key << version << subkey;
 
-            fetch_res = cur.Fetch();
-            if (fetch_res == eBDB_Ok) {
-                m_CacheAttrDB->ttl = time_to_live;
+            ret = cur.Fetch();
+            if (ret == eBDB_Ok) {
                 m_CacheAttrDB->time_stamp = (unsigned)curr;
+                m_CacheAttrDB->overflow = 1;
+                m_CacheAttrDB->ttl = time_to_live;
                 m_CacheAttrDB->max_time = ComputeMaxTime(curr);
+                unsigned upd_count = m_CacheAttrDB->upd_count;
+                ++upd_count;
+                m_CacheAttrDB->upd_count = upd_count;
+                m_CacheAttrDB->owner_name = owner;
+
+                blob_id = m_CacheAttrDB->blob_id;
+                coord[0] = m_CacheAttrDB->volume_id;
+                coord[1] = m_CacheAttrDB->split_id;
 
                 cur.Update();
             }
         }} // cursor
-        if (fetch_res != eBDB_Ok) { // record not found, needs re-registration
+
+        if (ret != eBDB_Ok) { // record not found: re-registration
             m_CacheAttrDB->key = key;
             m_CacheAttrDB->version = version;
-	        m_CacheAttrDB->subkey = "";
+	        m_CacheAttrDB->subkey = subkey;
             m_CacheAttrDB->time_stamp = (unsigned)curr;
             m_CacheAttrDB->overflow = 1;
             m_CacheAttrDB->ttl = time_to_live;
@@ -1695,35 +1649,49 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
             m_CacheAttrDB->upd_count  = 0;
             m_CacheAttrDB->read_count = 0;
             m_CacheAttrDB->owner_name = owner;
-            m_CacheAttrDB->blob_id = 0;
+            m_CacheAttrDB->blob_id = x_GetNextBlobId();
             m_CacheAttrDB->volume_id = 0;
             m_CacheAttrDB->split_id = 0;
 
-            m_CacheAttrDB->Insert();
-        }
-    }
-*/
-
-    }} // m_DB_Lock
-
-    if (blob_id) { // clean up the split store
-        m_BLOB_SplitStore->SetTransaction(&trans);
-
-        unsigned split_coord[2];
-        EBDB_ErrCode ret = 
-            m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
-        if (ret == eBDB_Ok) {
-            if (coord[0] != split_coord[0] || coord[1] != split_coord[1]) {
-                m_BLOB_SplitStore->Delete(blob_id, split_coord, 
-                                            CBDB_RawFile::eIgnoreError);
+            ret = m_CacheAttrDB->Insert();
+            if (ret != eBDB_Ok) {
+                LOG_POST(Error << "Failed to insert BLOB attributes " 
+                            << key << " " << version << " " << subkey);
             }
         }
-        m_BLOB_SplitStore->Delete(blob_id, coord,
-                                  CBDB_RawFile::eIgnoreError);
+
+        }} // m_DB_Lock
+
+        trans.Commit();
+    }} // trans
+
+    if (blob_id) { // clean up the split store
+        CBDB_Transaction trans(*m_Env, 
+                            CBDB_Transaction::eEnvDefault,
+                            CBDB_Transaction::eNoAssociation);
+
+        m_BLOB_SplitStore->SetTransaction(&trans);
+
+        try {
+            unsigned split_coord[2];
+            EBDB_ErrCode ret = 
+                m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
+            if (ret == eBDB_Ok) {
+                if (coord[0] != split_coord[0] || coord[1] != split_coord[1]) {
+                    m_BLOB_SplitStore->Delete(blob_id, split_coord, 
+                                                CBDB_RawFile::eThrowOnError);
+                }
+            }
+            m_BLOB_SplitStore->Delete(blob_id, coord,
+                                    CBDB_RawFile::eThrowOnError);
+        }
+        catch (CBDB_Exception& ex) {
+            LOG_POST(Error << "Cannot delete BLOB from split store " 
+                           << ex.what());
+            throw;
+        }
+        trans.Commit();
     }
-
-    trans.Commit();
-
 }
 
 
@@ -1754,6 +1722,37 @@ void CBDB_Cache::Store(const string&  key,
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
     }
+
+    // ----------------------------------------------------
+    // Read BLOB attributes
+    // ----------------------------------------------------
+
+    bool new_blob = true;  // new or existing BLOB?
+
+    {{
+        CFastMutexGuard guard(m_DB_Lock);
+        m_CacheAttrDB->SetTransaction(0);
+
+        CBDB_FileCursor cur(*m_CacheAttrDB);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << key << version << subkey;
+
+        ret = cur.Fetch();
+        if (ret == eBDB_Ok) {
+            old_overflow = m_CacheAttrDB->overflow;
+            blob_id = m_CacheAttrDB->blob_id;
+            coord[0] = m_CacheAttrDB->volume_id;
+            coord[1] = m_CacheAttrDB->split_id;
+            new_blob = false;
+        }
+    }} // m_DB_Lock
+
+    if (!blob_id) {
+        blob_id = x_GetNextBlobId();
+    }
+
+    // TO DO: lock the id
+
 
     try {
 
@@ -1794,74 +1793,49 @@ void CBDB_Cache::Store(const string&  key,
         }
 
         // ----------------------------------------------------
-        // Read BLOB attributes
+        // Check if BLOB changed overflow location
         // ----------------------------------------------------
-        {{
-            CFastMutexGuard guard(m_DB_Lock);
-            m_CacheAttrDB->SetTransaction(0);
+        
+        if (overflow != old_overflow) {
+            if (overflow) { // BLOB goes from split to file
+                // ----------------------------------------------------
+                // Delete old split store content
+                // ----------------------------------------------------
+                CBDB_Transaction trans(*m_Env,
+                                        CBDB_Transaction::eEnvDefault,
+                                        CBDB_Transaction::eNoAssociation);
+                m_BLOB_SplitStore->SetTransaction(&trans);
 
-            CBDB_FileCursor cur(*m_CacheAttrDB);
-            cur.SetCondition(CBDB_FileCursor::eEQ);
-            cur.From << key << version << subkey;
-
-            if (cur.Fetch() == eBDB_Ok) {
-                old_overflow = m_CacheAttrDB->overflow;
-                blob_id = m_CacheAttrDB->blob_id;
-
-                coord[0] = m_CacheAttrDB->volume_id;
-                coord[1] = m_CacheAttrDB->split_id;
-            }
-        }} // m_DB_Lock
-
-        if (overflow && blob_id) { // BLOB goes from split to file
-            // ----------------------------------------------------
-            // Delete old split store content
-            // ----------------------------------------------------
-
-            // TODO: Use env.default syncro-setting
-            CBDB_Transaction trans(*m_Env,
-                                    CBDB_Transaction::eEnvDefault,
-                                    CBDB_Transaction::eNoAssociation);
-            m_BLOB_SplitStore->SetTransaction(&trans);
-
-            unsigned split_coord[2];
-            EBDB_ErrCode ret = 
-                m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
-            if (ret == eBDB_Ok) {
-                if (coord[0] != split_coord[0] || coord[1] != split_coord[1]) {
-                    m_BLOB_SplitStore->Delete(blob_id, split_coord, 
-                                              CBDB_RawFile::eIgnoreError);
+                try {
+                    unsigned split_coord[2];
+                    EBDB_ErrCode ret = 
+                        m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
+                    if (ret == eBDB_Ok) {
+                        if (coord[0] != split_coord[0] || coord[1] != split_coord[1]) {
+                            m_BLOB_SplitStore->Delete(blob_id, split_coord, 
+                                                      CBDB_RawFile::eThrowOnError);
+                        }
+                    }
+                    m_BLOB_SplitStore->Delete(blob_id, coord,
+                                              CBDB_RawFile::eThrowOnError);
                 }
+                catch (CBDB_Exception& ex) {
+                    LOG_POST(Error << "Cannot delete BLOB from split store " 
+                                   << ex.what());
+                    throw;
+                }
+                trans.Commit();  
+                coord[0] = coord[1] = 0;
+            } else {
+                // ----------------------------------------------------
+                // Delete old overflow file
+                // ----------------------------------------------------
+
+                x_DropOverflow(key, version, subkey);
             }
-            m_BLOB_SplitStore->Delete(blob_id, coord,
-                                      CBDB_RawFile::eIgnoreError);
-            trans.Commit();  
-            coord[0] = coord[1] = blob_id = 0;
-        }
+        } 
 
-        // ----------------------------------------------------
-        // Delete old overflow file
-        // ----------------------------------------------------
-        if (overflow != old_overflow && old_overflow) {
-            x_DropOverflow(key.c_str(), version, subkey.c_str());
-        }
-
-        if (blob_id) {
-            // ----------------------------------------------------
-            // Update the split store content
-            // ----------------------------------------------------
-
-            CBDB_Transaction trans(*m_Env,
-                                    CBDB_Transaction::eEnvDefault,
-                                    CBDB_Transaction::eNoAssociation);
-            m_BLOB_SplitStore->SetTransaction(&trans);
-
-            m_BLOB_SplitStore->UpdateInsert(blob_id, 
-                                            coord, 
-                                            data, size, 
-                                            coord);
-            trans.Commit();
-        } else {
+        if (new_blob) {
 
             // ----------------------------------------------------
             // Insert new BLOB
@@ -1871,11 +1845,7 @@ void CBDB_Cache::Store(const string&  key,
             // (this is paranoid check)
             //
             do {
-                blob_id = m_BlobIdCounter.Add(1);
-                if (blob_id >= kMax_UInt) {
-                    m_BlobIdCounter.Set(0);
-                    continue;
-                }
+                _ASSERT(blob_id);
                 {{
                     CBDB_Transaction trans(*m_Env,
                                     CBDB_Transaction::eEnvDefault,
@@ -1887,10 +1857,33 @@ void CBDB_Cache::Store(const string&  key,
                                                     coord);
                     if (ret == eBDB_Ok) {
                         trans.Commit();
-                    }
+                        break;
+                    } 
+                    // hope we should never come here... 
+                    LOG_POST(Error << "Detected BLOB ID duplication in split store");
+                    // TO DO: release the old blob id
+                    blob_id = x_GetNextBlobId();
                 }}
             } while (ret == eBDB_KeyDup);
+
+        } else { // UPDATE of existing BLOB:
+
+            // ----------------------------------------------------
+            // Update the split store content
+            // ----------------------------------------------------
+
+            CBDB_Transaction trans(*m_Env,
+                                   CBDB_Transaction::eEnvDefault,
+                                   CBDB_Transaction::eNoAssociation);
+            m_BLOB_SplitStore->SetTransaction(&trans);
+
+            m_BLOB_SplitStore->UpdateInsert(blob_id, 
+                                            coord, 
+                                            data, size, 
+                                            coord);
+            trans.Commit();
         }
+
 
         // ----------------------------------------------------
         // Update BLOB attributes 
@@ -1909,15 +1902,47 @@ void CBDB_Cache::Store(const string&  key,
         unsigned blob_stored  = 0;
         EBlobAccessType access_type;
 
+        time_t ttl_max = ComputeMaxTime(curr);
+
         CBDB_Transaction trans(*m_Env, 
-                            CBDB_Transaction::eEnvDefault,
-                            CBDB_Transaction::eNoAssociation);
+                               CBDB_Transaction::eEnvDefault,
+                               CBDB_Transaction::eNoAssociation);
         {{
             CFastMutexGuard guard(m_DB_Lock);
 
             m_CacheAttrDB->SetTransaction(&trans);
 
-            {{
+            if (new_blob) {
+            blob_attr_insert:
+                m_CacheAttrDB->key = key;
+                m_CacheAttrDB->version = version;
+	            m_CacheAttrDB->subkey = subkey;
+                m_CacheAttrDB->time_stamp = (unsigned)curr;
+                m_CacheAttrDB->overflow = overflow;
+                m_CacheAttrDB->ttl = time_to_live;
+                m_CacheAttrDB->max_time = ttl_max;
+                m_CacheAttrDB->upd_count  = 0;
+                m_CacheAttrDB->read_count = 0;
+                m_CacheAttrDB->owner_name = owner;
+                m_CacheAttrDB->blob_id = blob_id;
+                m_CacheAttrDB->volume_id = coord[0];
+                m_CacheAttrDB->split_id = coord[1];
+
+                ret = m_CacheAttrDB->Insert();
+                if (ret == eBDB_KeyDup) {
+                    // exceptional situation! if we are locking that blob id
+                    string msg = "BLOB insert race detected!";
+                    ERR_POST(msg);
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        msg += "\n";
+                        m_Monitor->Send(msg);
+                    }
+
+                }
+                blob_stored = 1;
+                access_type = eBlobStore;
+
+            } else { // existing BLOB
                 CBDB_FileCursor cur(*m_CacheAttrDB, 
                                     trans, 
                                     CBDB_FileCursor::eReadModifyUpdate);
@@ -1930,58 +1955,41 @@ void CBDB_Cache::Store(const string&  key,
                     m_CacheAttrDB->time_stamp = (unsigned)curr;
                     m_CacheAttrDB->overflow = overflow;
                     m_CacheAttrDB->ttl = time_to_live;
-                    m_CacheAttrDB->max_time = ComputeMaxTime(curr);
+                    m_CacheAttrDB->max_time = ttl_max;
                     unsigned upd_count = m_CacheAttrDB->upd_count;
-                    ++upd_count;
-                    m_CacheAttrDB->upd_count = upd_count;
+                    m_CacheAttrDB->upd_count = ++upd_count;
                     m_CacheAttrDB->owner_name = owner;
+
+                    // here is a paranoid check in case blob id ever changes it's
+                    // value, this should never happen!
+                    //
+                    unsigned old_blob_id = m_CacheAttrDB->blob_id;
+                    if (blob_id != old_blob_id) {
+                        ERR_POST("BLOB id mutation detected!");
+                    }
                     m_CacheAttrDB->blob_id = blob_id;
+
                     m_CacheAttrDB->volume_id = coord[0];
                     m_CacheAttrDB->split_id = coord[1];
 
-                    cur.Update();
+                    EBDB_ErrCode ret = cur.Update();
 
                     blob_updated = 1;
                     access_type = eBlobUpdate;
-                } else {
-                    blob_stored = 1;
-                    access_type = eBlobStore;
+                } else {  // existing BLOB but cannot fetch
+                    // BLOB got deleted!
+                    string msg = "BLOB insert-delete race detected!";
+                    ERR_POST(msg);
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        msg += "\n";
+                        m_Monitor->Send(msg);
+                    }
+
+                    goto blob_attr_insert;
                 }
-            }} // cur
-
-            if (blob_stored) {
-                m_CacheAttrDB->key = key;
-                m_CacheAttrDB->version = version;
-	            m_CacheAttrDB->subkey = subkey;
-                m_CacheAttrDB->time_stamp = (unsigned)curr;
-                m_CacheAttrDB->overflow = overflow;
-                m_CacheAttrDB->ttl = time_to_live;
-                m_CacheAttrDB->max_time = ComputeMaxTime(curr);
-                m_CacheAttrDB->upd_count  = 0;
-                m_CacheAttrDB->read_count = 0;
-                m_CacheAttrDB->owner_name = owner;
-                m_CacheAttrDB->blob_id = blob_id;
-                m_CacheAttrDB->volume_id = coord[0];
-                m_CacheAttrDB->split_id = coord[1];
-
-                m_CacheAttrDB->Insert();
             }
-
             m_Statistics.AddStore(owner, curr - tz_delta, 
                                   blob_stored, blob_updated, size, overflow);
-
-            // update timestamp of all subkeys of this key
-            //
-/*
-	        if ((m_TimeStampFlag & fTrackSubKey)) {
-                if (!subkey.empty()) {
-                    m_CacheAttrDB->SetTransaction(&trans);
-
-		            x_UpdateAccessTime_NonTrans(key, version, subkey, 
-                                                access_type, trans);
-                }
-	        }
-*/
 
         }} // m_DB_Lock
 
@@ -1998,7 +2006,6 @@ void CBDB_Cache::Store(const string&  key,
                  1, // try to delete overflow file too
                  0);
         throw;
-
     }
 
 }
@@ -2577,12 +2584,12 @@ void CBDB_Cache::Remove(const string& key)
             CFastMutexGuard guard(m_DB_Lock);
             m_BLOB_SplitStore->SetTransaction(&trans);
 
-            x_DropBlob(it->key.c_str(),
-                    it->version,
-                    it->subkey.c_str(),
-                    it->overflow,
-                    it->blob_id, 
-                    trans);
+            x_DropBlob(it->key,
+                       it->version,
+                       it->subkey,
+                       it->overflow,
+                       it->blob_id, 
+                       trans);
 
         }} // m_DB_Lock
     }
@@ -2590,36 +2597,6 @@ void CBDB_Cache::Remove(const string& key)
 	trans.Commit();
     }}
 
-    // Second pass scan if for some resons some cache elements are
-    // still in the database
-/*
-    cache_elements.resize(0);
-    CCacheTransaction trans(*this);
-
-    {{
-
-    CBDB_FileCursor cur(*m_CacheDB);
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-
-    cur.From << key;
-    while (cur.Fetch() == eBDB_Ok) {
-        int version = m_CacheDB->version;
-        const char* subkey = m_CacheDB->subkey;
-
-        cache_elements.push_back(SCacheDescr(key, version, subkey, 0));
-    }
-
-    }}
-
-    ITERATE(vector<SCacheDescr>, it, cache_elements) {
-        x_DropBlob(it->key.c_str(),
-                   it->version,
-                   it->subkey.c_str(),
-                   it->overflow);
-    }
-
-    trans.Commit();
-*/
 }
 
 void CBDB_Cache::Remove(const string&    key,
@@ -2669,15 +2646,14 @@ void CBDB_Cache::Remove(const string&    key,
     ITERATE(vector<SCacheDescr>, it, cache_elements) {
         {{
             CFastMutexGuard guard(m_DB_Lock);
-//            m_CacheAttrDB->SetTransaction(&trans);
             m_BLOB_SplitStore->SetTransaction(&trans);
 
-            x_DropBlob(it->key.c_str(),
-                    it->version,
-                    it->subkey.c_str(),
-                    it->overflow,
-                    it->blob_id,
-                    trans);
+            x_DropBlob(it->key,
+                       it->version,
+                       it->subkey,
+                       it->overflow,
+                       it->blob_id,
+                       trans);
         }} // m_DB_Lock
     }
 
@@ -2847,9 +2823,14 @@ purge_start:
 
     // Search the database for obsolete cache entries
     string first_key, last_key;
+    string next_exp_key;
+
     for (bool flag = true; flag;) {
         unsigned batch_size = GetPurgeBatchSize();
         {{
+            time_t curr = time(0); // initial timepoint
+
+
             CFastMutexGuard guard(m_DB_Lock);
             // get to nanoseconds as CSemaphore::TryWait() needs
             delay = m_BatchSleep * 1000000;
@@ -2858,12 +2839,10 @@ purge_start:
 
             CBDB_FileCursor cur(*m_CacheAttrDB);
             if (batch_size > 500) {
-                cur.InitMultiFetch(8 * 1024);
+                cur.InitMultiFetch(4 * 1024);
             }
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
-
-            time_t curr = time(0);
 
             for (unsigned i = 0; i < batch_size; ++i) {
                 if (cur.Fetch() != eBDB_Ok) {
@@ -2896,9 +2875,22 @@ purge_start:
                     ++db_recs;
 
                     if (m_NextExpTime) {
-                        m_NextExpTime = min(m_NextExpTime, exp_time);                        
+                        if (exp_time < m_NextExpTime) {
+                            // compute fraction of the difference
+                            // with sensitivity based on purge thread delay
+                            // we need this in order not to move point of restart
+                            // too agressively
+
+                            double delta = abs(m_NextExpTime - exp_time);
+                            double fraction = abs(delta / m_NextExpTime);
+                            if (fraction > 0.1 && delta > m_PurgeThreadDelay) {
+                                next_exp_key = key;
+                                m_NextExpTime = exp_time;
+                            }
+                        }
                     } else {
                         m_NextExpTime = exp_time;
+                        next_exp_key = key;
                     }
                     
 
@@ -2911,6 +2903,7 @@ purge_start:
                     // the batch size to avoid the infinite loop
                     // when new batch starts with the very same key
                     // and never comes to the end
+                    //
                     if (first_key == last_key) {
                         batch_size += 10;
                     }
@@ -2919,6 +2912,15 @@ purge_start:
             } // for i
         }} // m_DB_Lock
 
+        if (m_Monitor && m_Monitor->IsActive()) {
+            string msg("Purge: Inspected ");
+            msg += NStr::UIntToString(batch_size);
+            msg += " records.\n";
+            
+            m_Monitor->Send(msg);
+        }
+        
+
         // Delete BLOBs if there are deletion candidates
         if (cache_entries.size() > 0) {
             if (m_Monitor && m_Monitor->IsActive()) {
@@ -2926,34 +2928,53 @@ purge_start:
             }
 
             for (size_t i = 0; i < cache_entries.size(); ++i) {
-                {{
+                try {
                     CBDB_Transaction trans(*m_Env,
                                             CBDB_Transaction::eEnvDefault,
                                             CBDB_Transaction::eNoAssociation);
                     
+                    const SCacheDescr& it = cache_entries[i];
                     {{
                         CFastMutexGuard guard(m_DB_Lock);
                         m_BLOB_SplitStore->SetTransaction(&trans);
 
-                        const SCacheDescr& it = cache_entries[i];
                         x_DropBlob(it.key,
                                    it.version,
                                    it.subkey,
                                    it.overflow,
                                    it.blob_id,
                                    trans);
-                        if (m_Monitor && m_Monitor->IsActive()) {
-                            string msg = 
-                                "Purge: DELETE \"" + 
-                                it.key + "\"-" + NStr::UIntToString(it.version) + 
-                                "-\"" + it.subkey + "\"\n";
-                            m_Monitor->Send(msg);
-                        }
 
                     }} // m_DB_Lock
                     trans.Commit();
-                    delay = m_BatchSleep;
-                }}
+
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        string msg = 
+                            "Purge: DELETE \"" + 
+                            it.key + "\"-" + NStr::UIntToString(it.version) + 
+                            "-\"" + it.subkey + "\"\n";
+                        m_Monitor->Send(msg);
+                    }
+                }
+                catch (CBDB_ErrnoException& ex)
+                {
+                    if (ex.IsRecovery()) {  // serious stuff! need to quit
+                        throw;
+                    }
+                    LOG_POST(Error << "Purge suppressed exception deleting BLOB "
+                                   << ex.what());
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        m_Monitor->Send(ex.what());
+                    }
+                    
+                }
+                catch(exception& ex) {
+                    LOG_POST(Error << "Purge suppressed exception deleting BLOB "
+                                   << ex.what());
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        m_Monitor->Send(ex.what());
+                    }
+                }
 
             } // for i
 
@@ -2973,6 +2994,24 @@ purge_start:
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
             return;
         }
+
+        // check if there are expired records before, so Purge rolls back
+        // to the lask known expired key and start scanning from there
+/*
+        {{
+            time_t curr = time(0); 
+            unsigned sens = m_PurgeThreadDelay;
+            if (curr > (m_NextExpTime + sens) && !next_exp_key.empty()) {
+                m_NextExpTime = 0;
+                last_key = next_exp_key;
+
+                if (m_Monitor && m_Monitor->IsActive()) {
+                    m_Monitor->Send("Purge: scan rolled back to key="
+                                    + last_key + "\n");
+                }
+            }
+        }}
+*/
 
     } // for flag
 
@@ -3045,8 +3084,7 @@ void CBDB_Cache::Purge(const string&    key,
     {{
     CFastMutexGuard guard(m_DB_Lock);
 
-     m_CacheAttrDB->SetTransaction(0);
-
+    m_CacheAttrDB->SetTransaction(0);
 
     CBDB_FileCursor cur(*m_CacheAttrDB);
     cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -3110,11 +3148,6 @@ void CBDB_Cache::Purge(const string&    key,
 
     }} // m_DB_Lock
 
-/*
-    CBDB_Transaction trans(*m_Env, 
-                        CBDB_Transaction::eEnvDefault,
-                        CBDB_Transaction::eNoAssociation);
-*/
 
     ITERATE(vector<SCacheDescr>, it, cache_entries) {
         CBDB_Transaction trans(*m_Env, 
@@ -3122,24 +3155,17 @@ void CBDB_Cache::Purge(const string&    key,
                             CBDB_Transaction::eNoAssociation);
         {{
             CFastMutexGuard guard(m_DB_Lock);
-//            m_CacheAttrDB->SetTransaction(&trans);
             m_BLOB_SplitStore->SetTransaction(&trans);
-            x_DropBlob(it->key.c_str(),
-                    it->version,
-                    it->subkey.c_str(),
-                    it->overflow,
-                    it->blob_id,
-                    trans);
+            x_DropBlob(it->key,
+                       it->version,
+                       it->subkey,
+                       it->overflow,
+                       it->blob_id,
+                       trans);
         }} // m_DB_Lock
 
         trans.Commit();
-
     }
-
-    
-/*
-    trans.Commit();
-*/
 }
 
 void CBDB_Cache::Verify(const string&  cache_path,
@@ -3427,6 +3453,16 @@ void CBDB_Cache::x_DropOverflow(const string&  file_path)
     }
 }
 
+unsigned CBDB_Cache::x_GetNextBlobId()
+{
+    unsigned blob_id = m_BlobIdCounter.Add(1);
+    if (blob_id >= kMax_UInt) {
+        m_BlobIdCounter.Set(0);
+        blob_id = m_BlobIdCounter.Add(1);
+    }
+    return blob_id;
+}
+
 void CBDB_Cache::x_DropBlob(const string&      key,
                             int                version,
                             const string&      subkey,
@@ -3473,21 +3509,20 @@ void CBDB_Cache::x_DropBlob(const string&      key,
         // delete blob as pointed by de-mux splitter
         if (delete_split) {
             m_BLOB_SplitStore->Delete(blob_id, 
-                                      CBDB_RawFile::eIgnoreError);
+                                      CBDB_RawFile::eThrowOnError);
         }
         // delete blob as accounted by meta-information
         m_BLOB_SplitStore->Delete(blob_id, coords, 
-                                  CBDB_RawFile::eIgnoreError);
+                                  CBDB_RawFile::eThrowOnError);
 
     }
-
     m_CacheAttrDB->SetTransaction(&trans);
 
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
     m_CacheAttrDB->subkey = subkey;
 
-    m_CacheAttrDB->Delete(CBDB_RawFile::eIgnoreError);
+    m_CacheAttrDB->Delete(CBDB_RawFile::eThrowOnError);
 }
 
 
@@ -3700,7 +3735,7 @@ static const string kCFParam_ttl_prolong        = "ttl_prolong";
 static const string kCFParam_max_blob_size      = "max_blob_size";
 static const string kCFParam_rr_volumes         = "rr_volumes";
 static const string kCFParam_memp_trickle       = "memp_trickle";
-
+static const string kCFParam_TAS_spins          = "tas_spins";
 
 
 
@@ -3839,6 +3874,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         drv->RunPurgeThread(purge_thread_delay);
     }
 
+    unsigned tas_spins =
+        GetParamInt(params, kCFParam_TAS_spins, false, 200);
 
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), (unsigned)mem_size);
@@ -3858,6 +3895,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         CBDB_Env* env = drv->GetEnv();
         env->SetDirectDB(direct_db);
         env->SetDirectLog(direct_log);
+        if (tas_spins) {
+            env->SetTasSpins(tas_spins);
+        }
+        env->SetLkDetect(CBDB_Env::eDeadLock_Default);
     }
 
     return drv.release();

@@ -597,15 +597,6 @@ public:
     const string& GetName() const { return m_Name; }
 protected:
 
-    /// Remove BLOB (using transaction) without updating statistics
-    /// (for error recovery situations)
-    /// No concurrent access locking
-    void KillBlobNoLock(const string&  key,
-                        int            version,
-                        const string&  subkey,
-                        int            overflow,
-                        unsigned       blob_id,
-                        CBDB_Transaction& trans);
     void KillBlob(const string&  key,
                   int            version,
                   const string&  subkey,        
@@ -719,6 +710,9 @@ private:
                          int         version,
                          const char* subkey);
     */
+
+    /// Get next BLOB id out from the atomic couter
+    unsigned x_GetNextBlobId();
 
 private:
     CBDB_Cache(const CBDB_Cache&);
