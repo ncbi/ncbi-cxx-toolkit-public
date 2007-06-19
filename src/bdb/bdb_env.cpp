@@ -67,7 +67,8 @@ CBDB_Env::CBDB_Env()
   m_CheckPointEnable(true),
   m_CheckPointKB(0),
   m_CheckPointMin(0),
-  m_DeadLockMode(eDeadLock_Disable)
+  m_DeadLockMode(eDeadLock_Disable),
+  m_Monitor(0)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
     int ret = db_env_create(&m_Env, 0);
@@ -85,7 +86,8 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
   m_CheckPointEnable(true),
   m_CheckPointKB(0),
   m_CheckPointMin(0),
-  m_DeadLockMode(eDeadLock_Disable)
+  m_DeadLockMode(eDeadLock_Disable),
+  m_Monitor(0)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
 }
