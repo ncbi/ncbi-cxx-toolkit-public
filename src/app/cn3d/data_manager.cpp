@@ -1061,27 +1061,26 @@ CNcbi_mime_asn1 * CreateMimeFromBiostruc(CRef < CBiostruc >& biostruc, EModel_ty
         if ((*g)->IsSetSeq_id() && (*g)->GetSeq_id().IsGi())
             gis.push_back((*g)->GetSeq_id().GetGi());
     }
-    if (gis.size() == 0) {
-        ERRORMSG("Can't find any sequence gi identifiers in this Biostruc");
-        return NULL;
-    }
 
     // fetch sequences and store in mime
-    CRef < CSeq_entry > seqs(new CSeq_entry());
-    strucseq->SetSequences().push_back(seqs);
-    CRef < CBioseq_set > seqset(new CBioseq_set());
-    seqs->SetSet(*seqset);
-    for (unsigned int i=0; i<gis.size(); ++i) {
-        CRef < CBioseq > bioseq = FetchSequenceViaHTTP(NStr::IntToString(gis[i]));
-        if (bioseq.NotEmpty()) {
-            CRef < CSeq_entry > seqentry(new CSeq_entry());
-            seqentry->SetSeq(*bioseq);
-            seqset->SetSeq_set().push_back(seqentry);
-        } else {
-            ERRORMSG("Failed to retrieve all Bioseqs");
-            return NULL;
+    if (gis.size() > 0) {
+        CRef < CSeq_entry > seqs(new CSeq_entry());
+        strucseq->SetSequences().push_back(seqs);
+        CRef < CBioseq_set > seqset(new CBioseq_set());
+        seqs->SetSet(*seqset);
+        for (unsigned int i=0; i<gis.size(); ++i) {
+            CRef < CBioseq > bioseq = FetchSequenceViaHTTP(NStr::IntToString(gis[i]));
+            if (bioseq.NotEmpty()) {
+                CRef < CSeq_entry > seqentry(new CSeq_entry());
+                seqentry->SetSeq(*bioseq);
+                seqset->SetSeq_set().push_back(seqentry);
+            } else {
+                ERRORMSG("Failed to retrieve all Bioseqs");
+                return NULL;
+            }
         }
-    }
+    } else
+        WARNINGMSG("Can't find any sequence gi identifiers in this Biostruc");
 
     return mime.Release();
 }
