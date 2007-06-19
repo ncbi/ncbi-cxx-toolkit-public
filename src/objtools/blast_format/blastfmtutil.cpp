@@ -1569,7 +1569,12 @@ bool CBlastFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset,
        
         const CSeq_id& id = (*iter)->GetSeq_id(1);
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
-        int linkout = GetLinkout(handle, id);
+        int linkout = 0;
+        try {
+          linkout = GetLinkout(handle, id);
+        } catch (CException&) {
+              continue; // linkout information not found, need to skip rest of loop.
+        }
         int cur_database = (linkout & eGenomicSeq);
         if (!is_first && cur_database != prev_database) {
             is_mixed = true;
