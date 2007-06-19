@@ -37,6 +37,8 @@
 #include <bdb/bdb_trans.hpp>
 #include <bdb/bdb_checkpoint_thread.hpp>
 
+#include <connect/server_monitor.hpp>
+
 #include <db.h>
 
 
@@ -64,7 +66,8 @@ CBDB_Env::CBDB_Env()
   m_DirectLOG(false),
   m_CheckPointEnable(true),
   m_CheckPointKB(0),
-  m_CheckPointMin(0)
+  m_CheckPointMin(0),
+  m_DeadLockMode(eDeadLock_Disable)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
     int ret = db_env_create(&m_Env, 0);
@@ -81,7 +84,8 @@ CBDB_Env::CBDB_Env(DB_ENV* env)
   m_DirectLOG(false),
   m_CheckPointEnable(true),
   m_CheckPointKB(0),
-  m_CheckPointMin(0)
+  m_CheckPointMin(0),
+  m_DeadLockMode(eDeadLock_Disable)
 {
     m_MaxLocks = m_MaxLockers = m_MaxLockObjects = 0;
 }
@@ -841,8 +845,20 @@ void CBDB_Env::PrintMemStat(CNcbiOstream & out)
 
 void CBDB_Env::MempTrickle(int percent, int *nwrotep)
 {
-    int ret = m_Env->memp_trickle(m_Env, percent, nwrotep);
+    int nwr;
+    int ret = m_Env->memp_trickle(m_Env, percent, &nwr);
     BDB_CHECK(ret, "DB_ENV::memp_trickle");
+    if (nwrotep) {
+        *nwrotep = nwr;
+    }
+    if (m_Monitor && m_Monitor->IsActive()) {
+        string msg = "BDB_ENV: memp_tricle ";
+        msg += NStr::IntToString(percent);
+        msg += "% written ";
+        msg += NStr::IntToString(nwr);
+        msg += " pages.";
+        m_Monitor->Send(msg);
+    }
 }
 
 void CBDB_Env::MempSync()
@@ -874,13 +890,69 @@ void CBDB_Env::SetMpMmapSize(size_t map_size)
     BDB_CHECK(ret, "DB_ENV::set_mp_mmapsize");
 }
 
+unsigned CBDB_Env::x_GetDeadLockDetect(EDeadLockDetect detect_mode)
+{
+    u_int32_t detect = 0;
+    switch (detect_mode)
+    {
+    case eDeadLock_Disable:
+        return 0;
+    case eDeadLock_Default:
+        detect = DB_LOCK_DEFAULT;
+        break;
+    case eDeadLock_MaxLocks:
+        detect = DB_LOCK_MAXLOCKS;
+        break;
+    case eDeadLock_MinWrite:
+        detect = DB_LOCK_MINWRITE;
+        break;
+    case eDeadLock_Oldest:
+        detect = DB_LOCK_OLDEST;
+        break;
+    case eDeadLock_Random:
+        detect = DB_LOCK_RANDOM;
+        break;
+    case eDeadLock_Youngest:
+        detect = DB_LOCK_YOUNGEST;
+    default:
+        _ASSERT(0);
+    }
+    return detect;
+}
 
-void CBDB_Env::RunCheckpointThread(unsigned thread_delay, int memp_trickle)
+
+void CBDB_Env::SetLkDetect(EDeadLockDetect detect_mode)
+{
+    m_DeadLockMode = detect_mode;
+    if (m_DeadLockMode == eDeadLock_Disable) {
+        return;
+    }
+    u_int32_t detect = x_GetDeadLockDetect(detect_mode);
+    
+    int ret = m_Env->set_lk_detect(m_Env, detect);
+    BDB_CHECK(ret, "DB_ENV::set_lk_detect");
+}
+
+void CBDB_Env::DeadLockDetect()
+{
+    if (m_DeadLockMode == eDeadLock_Disable) {
+        return;
+    }
+    u_int32_t detect = x_GetDeadLockDetect(m_DeadLockMode);
+    int aborted;
+    int ret = m_Env->lock_detect(m_Env, 0, detect, &aborted);
+    BDB_CHECK(ret, "lock_detect");
+}
+
+void CBDB_Env::RunCheckpointThread(unsigned thread_delay, 
+                                   int      memp_trickle,
+                                   unsigned err_max)
 {
 # ifdef NCBI_THREADS
     LOG_POST(Info << "Starting BDB transaction checkpoint thread.");
     m_CheckThread.Reset(
         new CBDB_CheckPointThread(*this, memp_trickle, thread_delay, 5));
+    m_CheckThread->SetMaxErrors(err_max);
     m_CheckThread->Run();
 # else
     LOG_POST(Warning <<

@@ -34,6 +34,8 @@
 #include <bdb/bdb_checkpoint_thread.hpp>
 #include <bdb/bdb_env.hpp>
 
+#include <connect/server_monitor.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -44,8 +46,15 @@ CBDB_CheckPointThread::CBDB_CheckPointThread(CBDB_Env& env,
                                              unsigned stop_request_poll)
 : CThreadNonStop(run_delay, stop_request_poll),
     m_Env(env),
-    m_MempTrickle(memp_trickle)
+    m_MempTrickle(memp_trickle),
+    m_ErrCnt(0),
+    m_MaxErrors(100)
 {}
+
+void CBDB_CheckPointThread::SetMaxErrors(unsigned max_err)
+{
+    m_MaxErrors = max_err;
+}
 
 void CBDB_CheckPointThread::DoJob(void)
 {
@@ -53,6 +62,7 @@ void CBDB_CheckPointThread::DoJob(void)
         if (m_Env.IsTransactional()) {
             m_Env.TransactionCheckpoint();
         }
+
         if (m_MempTrickle) {
             int nwrotep = 0;
             m_Env.MempTrickle(m_MempTrickle, &nwrotep);
@@ -61,13 +71,43 @@ void CBDB_CheckPointThread::DoJob(void)
                          << nwrotep << " pages");
             }
         }
+        m_Env.DeadLockDetect();
     } 
+    catch (CBDB_ErrnoException& ex)
+    {
+        if (m_MaxErrors) {
+            ++m_ErrCnt;            
+        }
+        if (ex.IsRecovery()) {
+            // fatal database error, stop right now!
+            RequestStop();
+            string msg ="Fatal Berkeley DB error: DB_RUNRECOVERY." 
+                        " Checkpoint thread has been stopped.";
+            LOG_POST(Error << msg);
+        } else {
+            LOG_POST(Error << "Error in checkpoint thread(supressed) " 
+                            << ex.what());
+        }
+
+        if (m_ErrCnt > m_MaxErrors) {
+            RequestStop();
+            LOG_POST(Error << 
+                     "Checkpoint thread has been stopped (too many errors)");
+        }
+    }
     catch(exception& ex)
     {
-        RequestStop();
+        if (m_MaxErrors) {
+            ++m_ErrCnt;            
+        }
         LOG_POST(Error << "Error in checkpoint thread: " 
-                        << ex.what()
-                        << " checkpoint thread has been stopped.");
+                        << ex.what());
+
+        if (m_ErrCnt > m_MaxErrors) {
+            RequestStop();
+            LOG_POST(Error << 
+                     "Checkpoint thread has been stopped (too many errors)");
+        }
     }
 }
 

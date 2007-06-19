@@ -45,6 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 class CBDB_CheckPointThread;
+struct IServer_Monitor;
 
 /** @addtogroup BDB
  *
@@ -302,19 +303,81 @@ public:
     /// When OFF calls to TransactionCheckpoint() will be ignored
     void EnableCheckPoint(bool on_off) { m_CheckPointEnable = on_off; }
 
-    /// Schedule background transaction checkpoint thread
+    /// @name Deadlock detection
+    /// @{
+
+
+    /// Deadlock detection modes
+    ///
+    enum EDeadLockDetect {
+        eDeadLock_Disable,   ///< No deadlock detection performed
+        eDeadLock_Default,  ///< Default deadlock detector
+        eDeadLock_MaxLocks, ///< Abort trans with the greatest number of locks
+        eDeadLock_MinWrite, ///< Abort trans with the fewest write locks
+        eDeadLock_Oldest,   ///< Abort the oldest trans
+        eDeadLock_Random,   ///< Abort a random trans involved in the deadlock
+        eDeadLock_Youngest  ///< Abort the youngest trans
+    };
+
+    /// Set deadlock detect mode (call before open).
+    /// By default deadlock detection is disabled
+    ///
+    void SetLkDetect(EDeadLockDetect detect_mode);
+
+    /// Run deadlock detector
+    void DeadLockDetect();
+
+    ///@}
+
+    /// @name Background writer
+    /// @{
+
+
+    /// Schedule background maintenance thread which will do:
+    ///    - transaction checkpointing
+    ///    - background write (memory trickle)
+    ///    - deadlock resolution
+    ///
     /// (Call when environment is open)
+    ///
+    /// @param thread_delay
+    ///     sleep in seconds between every call
+    /// @param memp_trickle 
+    ///     percent of dirty pages flushed to disk
+    /// @param err_max
+    ///     Max.tolerable number of errors (when exceeded - thread stops)
+    ///     0 - unrestricted
+    ///
     void RunCheckpointThread(unsigned thread_delay = 30,
-                             int memp_trickle = 0);
+                             int memp_trickle = 0,
+                             unsigned err_max = 0);
 
     /// Stop transaction checkpoint thread
     void StopCheckpointThread();
 
+    ///@}
+
+    /// @name Monitor
+    /// @{
+
+    /// Set monitor (class does NOT take ownership)
+    ///
+    /// Monitor should be set at right after construction,
+    /// before using cache. (Especially important in MT environment)
+    ///
+    void SetMonitor(IServer_Monitor* monitor) { m_Monitor = monitor; }
+
+    /// Get monitor
+    IServer_Monitor* GetMonitor() { return m_Monitor; }
+
+    ///@}
 
 private:
     /// Opens BDB environment returns error code
     /// Throws no exceptions.
     int x_Open(const char* db_home, int flags);
+
+    unsigned x_GetDeadLockDetect(EDeadLockDetect detect_mode);
     
 private:
     CBDB_Env(const CBDB_Env&);
@@ -334,8 +397,10 @@ private:
     bool                         m_CheckPointEnable; ///< Checkpoint enabled
     unsigned                     m_CheckPointKB;     ///< Checkpoint KBytes
     unsigned                     m_CheckPointMin;    ///< Checkpoint minutes
+    EDeadLockDetect              m_DeadLockMode;
 
-    CRef<CBDB_CheckPointThread>  m_CheckThread;      ///< Checkpoint thread
+    CRef<CBDB_CheckPointThread>  m_CheckThread;   ///< Checkpoint thread    
+    IServer_Monitor*             m_Monitor;       ///< Monitoring interface
 };
 
 

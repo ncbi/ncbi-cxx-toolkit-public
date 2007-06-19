@@ -57,12 +57,20 @@ public:
                           unsigned stop_request_poll = 10);
 
     virtual void DoJob(void);
+
+    /// Set maximum number of errors this thread tolerates
+    /// 0 - unlimited
+    ///
+    void SetMaxErrors(unsigned max_err);
+
 private:
     CBDB_CheckPointThread(const CBDB_CheckPointThread&);
     CBDB_CheckPointThread& operator=(const CBDB_CheckPointThread&);
 private:
-    CBDB_Env&  m_Env;
-    int        m_MempTrickle;
+    CBDB_Env&        m_Env;
+    int              m_MempTrickle;
+    unsigned         m_ErrCnt;
+    unsigned         m_MaxErrors;
 };
 
 /* @} */
