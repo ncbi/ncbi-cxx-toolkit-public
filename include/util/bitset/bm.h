@@ -224,7 +224,7 @@ public:
     {
     friend class bvector;
     public:
-        iterator_base() : block_(0) {}
+        iterator_base() : bv_(0), position_(bm::id_max), block_(0) {}
 
         bool operator==(const iterator_base& it) const
         {
