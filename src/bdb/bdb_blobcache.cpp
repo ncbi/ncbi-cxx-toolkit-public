@@ -39,6 +39,7 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <connect/server_monitor.hpp>
 
@@ -48,11 +49,12 @@
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_trans.hpp>
 
-#include <time.h>
-
 #include <util/cache/icache_cf.hpp>
 #include <util/cache/icache_clean_thread.hpp>
-#include <corelib/plugin_manager_store.hpp>
+
+#include <time.h>
+#include <math.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -1972,7 +1974,7 @@ void CBDB_Cache::Store(const string&  key,
                     m_CacheAttrDB->volume_id = coord[0];
                     m_CacheAttrDB->split_id = coord[1];
 
-                    EBDB_ErrCode ret = cur.Update();
+                    /* EBDB_ErrCode ret = */cur.Update();
 
                     blob_updated = 1;
                     access_type = eBlobUpdate;
@@ -2881,8 +2883,8 @@ purge_start:
                             // we need this in order not to move point of restart
                             // too agressively
 
-                            double delta = abs(m_NextExpTime - exp_time);
-                            double fraction = abs(delta / m_NextExpTime);
+                            double delta = fabs(m_NextExpTime - exp_time);
+                            double fraction = fabs(delta / m_NextExpTime);
                             if (fraction > 0.1 && delta > m_PurgeThreadDelay) {
                                 next_exp_key = key;
                                 m_NextExpTime = exp_time;
