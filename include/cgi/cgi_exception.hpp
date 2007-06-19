@@ -341,7 +341,7 @@ class CCgiResponseException : public CCgiException
 {
 public:
     enum EErrCode {
-        eDoubleHeader,         ///< Header has already been written
+        eDoubleHeader          ///< Header has already been written
     };
     virtual const char* GetErrCodeString(void) const
     {
