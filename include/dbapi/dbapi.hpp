@@ -754,6 +754,11 @@ public:
     /// Abort connection.
     virtual void Abort() = 0;
 
+    /// Set connection timeout.
+    /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
+    ///        DB API), then set the timeout to infinite.
+    virtual void SetTimeout(size_t nof_secs) = 0;
+
     /// If enabled, redirects all error messages
     /// to CDB_MultiEx object (see below).
     virtual void MsgToEx(bool v) = 0;

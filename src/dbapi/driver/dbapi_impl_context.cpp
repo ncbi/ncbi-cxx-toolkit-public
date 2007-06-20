@@ -69,7 +69,9 @@ bool CDriverContext::SetTimeout(unsigned int nof_secs)
 
     try {
         if (I_DriverContext::SetTimeout(nof_secs)) {
-            UpdateConnTimeout();
+            // We do not have to update query/connection timeout in context
+            // any more. Each connection can be updated explicitly now.
+            // UpdateConnTimeout();
         }
     } catch (...) {
         success = false;
@@ -426,7 +428,7 @@ void CDriverContext::SetClientCharset(const string& charset)
 
 void CDriverContext::UpdateConnTimeout(void) const
 {
-    // Do not protect this method. It is protected.
+    // Do not protect this method. It is already protected.
 
     ITERATE(TConnPool, it, m_NotInUse) {
         CConnection* t_con = *it;

@@ -100,6 +100,7 @@ public:
 
     virtual void Close();
     virtual void Abort();
+    virtual void SetTimeout(size_t nof_secs);
 
     virtual CDB_Connection* GetCDB_Connection();
 

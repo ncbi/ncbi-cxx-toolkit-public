@@ -250,18 +250,20 @@ public:
 /// and a user-defined connection factory
 #ifdef HAVE_LIBCONNEXT
 #   define DBLB_INSTALL_FACTORY(factory_name)                                  \
-        CDbapiConnMgr::Instance().SetConnectionFactory                         \
+        ncbi::CDbapiConnMgr::Instance().SetConnectionFactory                   \
             (new factory_name(                                                 \
-                new CDBUniversalMapper(                                        \
-                    CDBUniversalMapper::TMapperConf(                           \
-                        CDBServiceMapperTraits<CDBLB_ServiceMapper>::GetName(), \
-                        &CDBLB_ServiceMapper::Factory                          \
+                new ncbi::CDBUniversalMapper(                                  \
+                    ncbi::CDBUniversalMapper::TMapperConf(                     \
+                        ncbi::CDBServiceMapperTraits<                          \
+                            ncbi::CDBLB_ServiceMapper                          \
+                            >::GetName(),                                      \
+                        &ncbi::CDBLB_ServiceMapper::Factory                    \
                         ))))
 #else
 #   define DBLB_INSTALL_FACTORY(factory_name)                                  \
-        CDbapiConnMgr::Instance().SetConnectionFactory                         \
+        ncbi::CDbapiConnMgr::Instance().SetConnectionFactory                   \
             (new factory_name(                                                 \
-                new CDBUniversalMapper()))
+                new ncbi::CDBUniversalMapper()))
 #endif
 
 /// Easy-to-use macro to install the default DBAPI service mapper

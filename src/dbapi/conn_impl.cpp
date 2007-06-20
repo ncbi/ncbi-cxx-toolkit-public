@@ -94,7 +94,7 @@ void CConnection::ForceSingle(bool enable)
 CDB_Connection*
 CConnection::GetCDB_Connection()
 {
-	CHECK_NCBI_DBAPI(m_connection == 0, "Database connection has not been initialized");
+    CHECK_NCBI_DBAPI(m_connection == 0, "Database connection has not been initialized");
     return m_connection;
 }
 
@@ -118,9 +118,9 @@ void CConnection::Connect(const string& user,
 }
 
 void CConnection::ConnectValidated(IConnValidator& validator,
-								   const string& user,
+                                   const string& user,
                                    const string& password,
-								   const string& server,
+                                   const string& server,
                                    const string& database)
 {
     CHECK_NCBI_DBAPI(m_connection != 0, "Connection is already open");
@@ -129,7 +129,7 @@ void CConnection::ConnectValidated(IConnValidator& validator,
         GetDriverContext()->ConnectValidated(server,
                                     user,
                                     password,
-									validator,
+                                    validator,
                                     m_modeMask,
                                     m_ds->IsPoolUsed());
     if(GetCDB_Connection()) {
@@ -166,7 +166,7 @@ string CConnection::GetDatabase()
 
 bool CConnection::IsAlive()
 {
-	return m_connection == 0 ? false : m_connection->IsAlive();
+    return m_connection == 0 ? false : m_connection->IsAlive();
 }
 
 void CConnection::SetDbName(const string& name, CDB_Connection* conn)
@@ -176,7 +176,7 @@ void CConnection::SetDbName(const string& name, CDB_Connection* conn)
     if( m_database.empty() )
         return;
 
-	CDB_Connection* work = (conn == 0 ? GetCDB_Connection() : conn);
+    CDB_Connection* work = (conn == 0 ? GetCDB_Connection() : conn);
     string sql = "use " + m_database;
     CDB_LangCmd* cmd = work->LangCmd(sql.c_str());
     cmd->Send();
@@ -188,7 +188,7 @@ void CConnection::SetDbName(const string& name, CDB_Connection* conn)
 
 CDB_Connection* CConnection::CloneCDB_Conn()
 {
-	CDB_Connection *curr = GetCDB_Connection();
+    CDB_Connection *curr = GetCDB_Connection();
     CDB_Connection *temp = m_ds->
     GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
                                GetCDB_Connection()->UserName(),
@@ -217,7 +217,7 @@ CConnection* CConnection::Clone()
 
 IConnection* CConnection::CloneConnection(EOwnership ownership)
 {
-	CDB_Connection *cdbConn = CloneCDB_Conn();
+    CDB_Connection *cdbConn = CloneCDB_Conn();
     CConnection *conn = new CConnection(m_ds, ownership);
 
     conn->m_modeMask = this->m_modeMask;
@@ -268,6 +268,11 @@ void CConnection::Abort()
     //FreeResources();
 }
 
+void CConnection::SetTimeout(size_t nof_secs)
+{
+    GetCDB_Connection()->SetTimeout(nof_secs);
+}
+
 void CConnection::FreeResources()
 {
     delete m_connection;
@@ -301,7 +306,7 @@ ICallableStatement*
 CConnection::GetCallableStatement(const string& proc,
                                   int nofArgs)
 {
-	CHECK_NCBI_DBAPI(
+    CHECK_NCBI_DBAPI(
         m_connUsed,
         "CConnection::GetCallableStatement(): Connection taken, cannot use this method"
         );

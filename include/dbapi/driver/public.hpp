@@ -142,6 +142,11 @@ public:
     ///          false - if not
     virtual bool Close(void);
 
+    /// Set connection timeout.
+    /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
+    ///        DB API), then set the timeout to infinite.
+    virtual void SetTimeout(size_t nof_secs);
+
 private:
     impl::CConnection* m_ConnImpl;
 

@@ -238,8 +238,10 @@ CDBConnectionFactory::MakeDBConnection(
         }
     }
 
-    // Restore query timeout ...
-    ctx.SetTimeout(query_timeout);
+    // Restore original query timeout ...
+    if (t_con) {
+        t_con->SetTimeout(query_timeout);
+    }
 
     return t_con;
 }

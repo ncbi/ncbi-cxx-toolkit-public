@@ -195,10 +195,17 @@ bool CDB_Connection::Abort()
     return m_ConnImpl->Abort();
 }
 
+
 bool CDB_Connection::Close(void)
 {
     CHECK_CONNECTION(m_ConnImpl);
     return m_ConnImpl->Close();
+}
+
+void CDB_Connection::SetTimeout(size_t nof_secs)
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    m_ConnImpl->SetTimeout(nof_secs);
 }
 
 ////////////////////////////////////////////////////////////////////////////
