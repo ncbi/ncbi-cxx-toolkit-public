@@ -338,7 +338,7 @@ CNetScheduleAdmin::TIDsMap CNetScheduleAdmin::x_QueueIDs(const string& query) co
         CNetSrvConnectorHolder ch = *it;
         string resp = m_API->SendCmdWaitResponse(ch, cmd);
         string ip_addr = CSocketAPI::ntoa(CSocketAPI::gethostbyname(ch->GetHost()));
-        ret[make_pair(ip_addr, ch->GetPort())] = resp;
+        ret[TIDsMap::key_type(ip_addr, ch->GetPort())] = resp;
     }
     return ret;
 }
