@@ -3290,6 +3290,76 @@ void StressTest(int repetitions)
             exit(1);
         }
 
+        {
+            bvect bv1(*bvect_full1);
+            unsigned idx = rand() % size;
+            bool b = bv1[idx];
+            bool changed;
+            if (b) 
+            {
+                changed = bv1.set_bit_conditional(idx, true, false);
+                if (changed)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+                b = bv1[idx];
+                if (!b)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+
+                changed = bv1.set_bit_conditional(idx, false, false);
+                if (changed)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+                changed = bv1.set_bit_conditional(idx, true, true);
+                if (changed)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+                changed = bv1.set_bit_conditional(idx, false, true);
+                if (!changed)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+                b = bv1[idx];
+                if (b)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+            } 
+            else 
+            {
+                changed = bv1.set_bit_conditional(idx, false, true);
+                if (changed)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+                changed = bv1.set_bit_conditional(idx, true, false);
+                if (!changed)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+                b = bv1[idx];
+                if (!b)
+                {
+                    cout << "Set bit conditional failed!" << endl;
+                    exit(1);
+                }
+            }
+
+
+        }
+
         delete bvect_full2;
 
 
@@ -5470,6 +5540,99 @@ void SetTest()
         exit(1);
     }
 
+    {
+        bvect bv3;
+        bool changed;
+        changed = bv3.set_bit_conditional(10, true, true);
+        v = bv3[10];
+        if (v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, true, false);
+        v = bv3[10];
+        if (!v || !changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, false, false);
+        v = bv3[10];
+        if (!v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, false, true);
+        v = bv3[10];
+        if (v || !changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+    }
+    {
+        bvect bv3(bm::BM_GAP);
+        bool changed;
+        changed = bv3.set_bit_conditional(10, true, true);
+        v = bv3[10];
+        if (v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, true, false);
+        v = bv3[10];
+        if (!v || !changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, false, false);
+        v = bv3[10];
+        if (!v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, false, true);
+        v = bv3[10];
+        if (v || !changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+    }
+    {
+        bvect bv3(bm::BM_GAP);
+        bv3.invert();
+        bv3.optimize();
+        bool changed;
+        changed = bv3.set_bit_conditional(10, true, true);
+        v = bv3[10];
+        if (!v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, true, false);
+        v = bv3[10];
+        if (!v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, false, false);
+        v = bv3[10];
+        if (!v || changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, false, true);
+        v = bv3[10];
+        if (v || !changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+        changed = bv3.set_bit_conditional(10, true, false);
+        v = bv3[10];
+        if (!v || !changed) {
+            cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+    }
+
 }
 
 
@@ -6246,7 +6409,6 @@ int main(void)
     PrintSet(cout, bv2);
     return 0;
 */
-
      ExportTest();
      ResizeTest();
 
@@ -6255,7 +6417,7 @@ int main(void)
      SyntaxTest();
 
      SetTest();
-    
+
      BitCountChangeTest();
 
      EnumeratorTest();
