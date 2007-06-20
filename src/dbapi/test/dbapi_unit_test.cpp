@@ -326,7 +326,8 @@ CDBAPIUnitTest::TestInit(void)
 
         sql  = " CREATE TABLE #test_unicode_table ( \n";
         sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-        sql += "    nvc255_field NVARCHAR(255) NULL \n";
+//         sql += "    nvc255_field NVARCHAR(255) NULL \n";
+        sql += "    nvc255_field VARCHAR(255) NULL \n";
         sql += " )";
 
         // Create table
@@ -2793,7 +2794,7 @@ CDBAPIUnitTest::Test_Cursor(void)
             {
                 auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
-                BOOST_CHECK(rs.get());
+                BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
                 }
@@ -2803,7 +2804,7 @@ CDBAPIUnitTest::Test_Cursor(void)
             {
                 auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
-                BOOST_CHECK(rs.get());
+                BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
                 }
@@ -4931,7 +4932,7 @@ void CDBAPIUnitTest::Test_BlobStore(void)
             // Write blob to the row ...
             {
                 auto_ptr<ostream> pStream(blobrw.OpenForWrite( "66" ));
-                BOOST_CHECK(pStream.get());
+                BOOST_CHECK(pStream.get() != NULL);
 
                 for(int i = 0; i < 10000; ++i) {
                     *pStream <<
@@ -4945,7 +4946,7 @@ void CDBAPIUnitTest::Test_BlobStore(void)
             // Read blob ...
             {
                 auto_ptr<istream> pStream(blobrw.OpenForRead( "66" ));
-                BOOST_CHECK(pStream.get());
+                BOOST_CHECK(pStream.get() != NULL);
 
                 string line;
                 while (!pStream->eof()) {
@@ -7701,8 +7702,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (args.GetServerType() == CTestArguments::eMsSql
-        || args.GetServerType() == CTestArguments::eMsSql2005) {
+    if ((args.GetServerType() == CTestArguments::eMsSql
+        || args.GetServerType() == CTestArguments::eMsSql2005)
+        && args.GetDriverName() != "msdblib") {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
