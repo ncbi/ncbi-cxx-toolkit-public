@@ -65,15 +65,18 @@ public:
     /// ORred together.
     ///
     /// @param oid_fn
-    ///     Filename of an OID mask file for this volume
-    /// @param gi_fn
-    ///     Filename of a GI list for this volume
+    ///     Filename of an OID mask file for this volume.
+    /// @param id_fn
+    ///     Filename of a ID (GI or TI) list for this volume.
+    /// @param use_tis
+    ///     The Ids are TIs if this is true (otherwise GIs).
     /// @param start
-    ///     First OID to consider
+    ///     First OID to consider.
     /// @param end
-    ///     OID past the last OID to consider, or UINT_MAX
+    ///     OID past the last OID to consider, or UINT_MAX.
     CSeqDBVolFilter(const string & oid_fn,
-                    const string & gi_fn,
+                    const string & id_fn,
+                    bool           use_tis,
                     int            start,
                     int            end);
     
@@ -99,7 +102,7 @@ public:
     
     /// Returns the name of the OID mask file.
     ///
-    /// There are three masking operations: OID bit masking, GI list
+    /// There are three masking operations: OID bit masking, ID list
     /// masking, and range masking.  This method returns the filename
     /// of the OID mask file (an empty string if not an OID mask).
     ///
@@ -110,17 +113,17 @@ public:
         return m_OIDMask;
     }
     
-    /// Returns the name of the GI list file.
+    /// Returns the name of the ID list file.
     ///
-    /// There are three masking operations: OID bit masking, GI list
+    /// There are three masking operations: OID bit masking, ID list
     /// masking, and range masking.  This method returns the filename
-    /// of the GI list file (an empty string if not a GI list).
+    /// of the ID (GI or TI) list file (or "" if not a ID list).
     ///
     /// @return
-    ///   The OID mask filter file.
-    const string & GetGIList() const
+    ///   The ID list file.
+    const string & GetIdList() const
     {
-        return m_GIList;
+        return m_IdList;
     }
     
     /// Returns the first included OID.
@@ -148,18 +151,30 @@ public:
         return m_EndOID;
     }
     
+    /// Returns true if the ID list is a TI list.
+    ///
+    /// @return
+    ///   True if the ID list uses TIs rather than GIs.
+    bool UseTis()
+    {
+        return m_UseTis;
+    }
+    
 private:
     /// Filename of an OID mask file for this volume
     string m_OIDMask;
     
     /// Filename of a GI list for this volume
-    string m_GIList;
-    
+    string m_IdList;
+
     /// First OID to consider
     int m_BeginOID;
     
     /// OID past the last OID to consider, or UINT_MAX
     int m_EndOID;
+    
+    /// Whether or not to use TIs instead of GIs.
+    bool m_UseTis;
 };
 
 
@@ -233,18 +248,23 @@ public:
     ///   The first OID after the included range.
     void AddMask(const string & mask_file, int begin, int end);
     
-    /// Filter the volume with a GI list file
+    /// Filter the volume with a ID list file
     /// 
-    /// The specified filename is recorded as a GI list file, unless
+    /// The specified filename is recorded as a ID list file, unless
     /// the volume is already marked as unfiltered.
     /// 
-    /// @param gilist_file
-    ///   The file name of GI list file.
+    /// @param idlist_file
+    ///   The file name of ID list file.
     /// @param begin
     ///   The first OID to include in the range.
     /// @param end
     ///   The first OID after the included range.
-    void AddGiList(const string & gilist_file, int begin, int end);
+    /// @param use_tis
+    ///   The Ids are TIs if this is true (otherwise GIs).
+    void AddIdList(const string & idlist_file,
+                   bool           use_tis,
+                   int            begin,
+                   int            end);
     
     /// Filter the volume with a GI list file
     /// 
@@ -634,32 +654,35 @@ public:
         return x_GetNumOIDs();
     }
     
-    /// Add a volume with a GI list filter
+    /// Add a volume with a ID list filter
     ///
     /// This method adds a new volume to the set, which will be
-    /// filtered by the specified GI list.  The begin and end
-    /// parameters specify a range of OIDs.  If the GI translates to
+    /// filtered by the specified ID list.  The begin and end
+    /// parameters specify a range of OIDs.  If the ID translates to
     /// an OID that is outside of this range, it will be skipped.
     /// 
     /// @param volname
     ///   The name of the new volume.
-    /// @param gilist
-    ///   The filename of the GI list used to filter this volume.
+    /// @param idlist
+    ///   The filename of the ID list used to filter this volume.
     /// @param begin
     ///   Start of OID range to use.
     /// @param end
     ///   End of OID range to use (non-inclusive).
-    void AddGiListVolume(const string & volname,
-                         const string & gilist,
+    /// @param use_tis
+    ///   The Ids are TIs if this is true (otherwise GIs)
+    void AddIdListVolume(const string & volname,
+                         const string & idlist,
                          int            begin,
-                         int            end)
+                         int            end,
+                         bool           use_tis)
     {
         CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Error: Could not find volume (" + volname + ").");
         }
-        v->AddGiList(gilist, begin, end);
+        v->AddIdList(idlist, use_tis, begin, end);
     }
     
     /// Add a volume with an OID mask filter

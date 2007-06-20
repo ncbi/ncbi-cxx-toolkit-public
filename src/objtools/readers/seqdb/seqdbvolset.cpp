@@ -112,15 +112,17 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas    & atlas,
 }
 
 CSeqDBVolFilter::CSeqDBVolFilter(const string & oid_fn,
-                                 const string & gi_fn,
+                                 const string & id_fn,
+                                 bool           use_tis,
                                  int            start,
                                  int            end)
     : m_OIDMask  (oid_fn),
-      m_GIList   (gi_fn),
+      m_IdList   (id_fn),
       m_BeginOID (start),
-      m_EndOID   (end)
+      m_EndOID   (end),
+      m_UseTis   (use_tis)
 {
-    _ASSERT(oid_fn.empty() || gi_fn.empty());
+    _ASSERT(oid_fn.empty() || id_fn.empty());
     
     // It is legal for start == end, it means the list is empty.
 }
@@ -128,7 +130,7 @@ CSeqDBVolFilter::CSeqDBVolFilter(const string & oid_fn,
 bool CSeqDBVolFilter::operator == (const CSeqDBVolFilter & rhs) const
 {
     return ((m_OIDMask  == rhs.m_OIDMask ) &&
-            (m_GIList   == rhs.m_GIList  ) &&
+            (m_IdList   == rhs.m_IdList  ) &&
             (m_BeginOID == rhs.m_BeginOID) &&
             (m_EndOID   == rhs.m_EndOID  ));
 }
@@ -136,7 +138,7 @@ bool CSeqDBVolFilter::operator == (const CSeqDBVolFilter & rhs) const
 bool CSeqDBVolFilter::IsSimple() const
 {
     return (m_OIDMask.empty() == false     &&
-            m_GIList.empty()  == true      &&
+            m_IdList.empty()  == true      &&
             m_BeginOID        == 0         &&
             m_EndOID          == INT_MAX);
 }
@@ -146,19 +148,26 @@ void CSeqDBVolEntry::AddMask(const string & mask_file, int begin, int end)
     if (! m_AllOIDs) {
         //m_MaskFiles.insert(mask_file);
         CRef<CSeqDBVolFilter>
-            new_filter(new CSeqDBVolFilter(mask_file, "", begin, end));
+            new_filter(new CSeqDBVolFilter(mask_file, "", false, begin, end));
         
         x_InsertFilter(new_filter);
     }
 }
 
-void CSeqDBVolEntry::AddGiList(const string & gilist_file, int begin, int end)
+void CSeqDBVolEntry::AddIdList(const string & idlist_file,
+                               bool           use_tis,
+                               int            begin,
+                               int            end)
 {
     if (! m_AllOIDs) {
         //m_GiListFiles.insert(gilist_file);
         CRef<CSeqDBVolFilter>
-            new_filter(new CSeqDBVolFilter("", gilist_file, begin, end));
-            
+            new_filter(new CSeqDBVolFilter("",
+                                           idlist_file,
+                                           use_tis,
+                                           begin,
+                                           end));
+        
         x_InsertFilter(new_filter);
     }
 }
@@ -168,7 +177,7 @@ void CSeqDBVolEntry::AddRange(int begin, int end)
     if (! m_AllOIDs) {
         //m_GiListFiles.insert(gilist_file);
         CRef<CSeqDBVolFilter>
-            new_filter(new CSeqDBVolFilter("", "", begin, end));
+            new_filter(new CSeqDBVolFilter("", "", false, begin, end));
         
         x_InsertFilter(new_filter);
     }

@@ -88,7 +88,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
                            name,
                            prot_nucl,
                            'p',
-                           CSeqDBIsam::ePig);
+                           CSeqDBIsam::ePigId);
     }
     catch(CSeqDBException &) {
     }
@@ -99,7 +99,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
                            name,
                            prot_nucl,
                            'n',
-                           CSeqDBIsam::eGi);
+                           CSeqDBIsam::eGiId);
     }
     catch(CSeqDBException &) {
     }
@@ -110,7 +110,18 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
                            name,
                            prot_nucl,
                            's',
-                           CSeqDBIsam::eStringID);
+                           CSeqDBIsam::eStringId);
+    }
+    catch(CSeqDBException &) {
+    }
+    
+    try {
+        m_IsamTi =
+            new CSeqDBIsam(m_Atlas,
+                           name,
+                           prot_nucl,
+                           't',
+                           CSeqDBIsam::eTiId);
     }
     catch(CSeqDBException &) {
     }
@@ -2080,30 +2091,48 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
     return false;
 }
 
+bool CSeqDBVol::TiToOid(Int8 ti, int & oid, CSeqDBLockHold & locked) const
+{
+    // Note: this is the (Int8 to int) interface layer; code below
+    // this point (in the call stack) uses int; code above this level,
+    // up to the user level, uses Int8.
+    
+    if (m_IsamTi.Empty()) {
+        return false;
+    }
+    
+    return m_IsamTi->IdToOid(ti, oid, locked);
+}
+
 bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
 {
     if (m_IsamGi.Empty()) {
         return false;
     }
     
-    return m_IsamGi->GiToOid(gi, oid, locked);
+    return m_IsamGi->IdToOid(gi, oid, locked);
 }
 
-void CSeqDBVol::GisToOids(CSeqDBGiList   & gis,
+void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                           CSeqDBLockHold & locked) const
 {
-    if (! m_IsamGi.Empty()) {
-        // Numeric translation is done in batch mode.
-        m_IsamGi->GisToOids(m_VolStart, m_VolEnd, gis, locked);
+    // Numeric translation is done in batch mode.
+    
+    if (m_IsamGi.NotEmpty() && ids.GetNumGis()) {
+        m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+    }
+    
+    if (m_IsamTi.NotEmpty() && ids.GetNumTis()) {
+        m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
     }
     
     // Seq-id translations are done individually.
     
     vector<int> oids;
-    size_t N = gis.GetNumSeqIds();
+    size_t N = ids.GetNumSeqIds();
     
     for(size_t i = 0; i < N; i++) {
-        const CSeqDBGiList::SSeqIdOid & item = gis.GetSeqIdOid(i);
+        const CSeqDBGiList::SSeqIdOid & item = ids.GetSeqIdOid(i);
         
         if (item.oid == -1 && item.seqid.NotEmpty()) {
             SeqidToOids(const_cast<CSeq_id&>(*item.seqid), oids, locked);
@@ -2113,7 +2142,7 @@ void CSeqDBVol::GisToOids(CSeqDBGiList   & gis,
                 // file corruption.
                 
                 if (oids[j] < (m_VolEnd - m_VolStart)) {
-                    gis.SetSeqIdTranslation(i, m_VolStart + oids[j]);
+                    ids.SetSeqIdTranslation(i, m_VolStart + oids[j]);
                     break;
                 }
             }
@@ -2168,18 +2197,24 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
                                 CSeqDBLockHold & locked) const
 {
     bool   simpler (false);
-    int    ident   (-1);
+    Int8   ident   (-1);
     string str_id;
     
-    switch(CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler)) {
-    case CSeqDBIsam::eString:
+    CSeqDBIsam::EIdentType id_type =
+        CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler);
+    
+    bool fits_in_four = (ident == -1) || ! (ident >> 32);
+    bool needs_four = true;
+    
+    switch(id_type) {
+    case CSeqDBIsam::eStringId:
         if (! m_IsamStr.Empty()) {
             // Not simplified
             m_IsamStr->StringToOids(str_id, oids, simpler, locked);
         }
         break;
         
-    case CSeqDBIsam::ePig:
+    case CSeqDBIsam::ePigId:
         // Converted to PIG type.
         if (! m_IsamPig.Empty()) {
             int oid(-1);
@@ -2190,12 +2225,26 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
         }
         break;
         
-    case CSeqDBIsam::eGi:
+    case CSeqDBIsam::eGiId:
         // Converted to GI type.
         if (! m_IsamGi.Empty()) {
             int oid(-1);
             
-            if (m_IsamGi->GiToOid(ident, oid, locked)) {
+            if (m_IsamGi->IdToOid(ident, oid, locked)) {
+                oids.push_back(oid);
+            }
+        }
+        break;
+        
+    case CSeqDBIsam::eTiId:
+        // Uncomment when 8 byte version is written.
+        //needs_four = false;
+        
+        // Converted to GI type.
+        if (! m_IsamTi.Empty()) {
+            int oid(-1);
+            
+            if (m_IsamTi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
@@ -2206,25 +2255,37 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
         oids.push_back(ident);
         break;
     }
+    
+    if ((! fits_in_four) && needs_four) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "ID overflows range of specified type.");
+    }
 }
 
 void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
                             vector<int>    & oids,
                             CSeqDBLockHold & locked) const
 {
-    bool simpler (false);
-    int  ident   (-1);
+    bool   simpler (false);
+    Int8   ident   (-1);
     string str_id;
     
-    switch(CSeqDBIsam::SimplifySeqid(seqid, 0, ident, str_id, simpler)) {
-    case CSeqDBIsam::eString:
+    CSeqDBIsam::EIdentType id_type =
+        CSeqDBIsam::SimplifySeqid(seqid, 0, ident, str_id, simpler);
+    
+    bool fits_in_four = (ident == -1) || ! (ident >> 32);
+    bool needs_four = true;
+    
+    switch(id_type) {
+    case CSeqDBIsam::eStringId:
         if (! m_IsamStr.Empty()) {
             // Not simplified
             m_IsamStr->StringToOids(str_id, oids, simpler, locked);
         }
         break;
         
-    case CSeqDBIsam::ePig:
+    case CSeqDBIsam::ePigId:
         // Converted to PIG type.
         if (! m_IsamPig.Empty()) {
             int oid(-1);
@@ -2235,12 +2296,26 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
         }
         break;
         
-    case CSeqDBIsam::eGi:
+    case CSeqDBIsam::eGiId:
         // Converted to GI type.
         if (! m_IsamGi.Empty()) {
             int oid(-1);
             
-            if (m_IsamGi->GiToOid(ident, oid, locked)) {
+            if (m_IsamGi->IdToOid(ident, oid, locked)) {
+                oids.push_back(oid);
+            }
+        }
+        break;
+        
+    case CSeqDBIsam::eTiId:
+        // Uncomment when 8 byte version is written.
+        //needs_four = false;
+        
+        // Converted to GI type.
+        if (! m_IsamTi.Empty()) {
+            int oid(-1);
+            
+            if (m_IsamTi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
@@ -2250,6 +2325,12 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
         // Converted to OID directly.
         oids.push_back(ident);
         break;
+    }
+    
+    if ((! fits_in_four) && needs_four) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "ID overflows range of specified type.");
     }
 }
 
@@ -2509,6 +2590,16 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     }
 }
 
+static void
+s_SeqDBFitsInFour(Int8 id)
+{
+    if (id > (Int8(1) << 31)) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "ID overflows range of specified type.");
+    }
+}
+
 void CSeqDBVol::GetGiBounds(int            & low_id,
                             int            & high_id,
                             int            & count,
@@ -2518,7 +2609,15 @@ void CSeqDBVol::GetGiBounds(int            & low_id,
     low_id = high_id = count = 0;
     
     if (m_IsamGi.NotEmpty()) {
-        m_IsamGi->GetIdBounds(low_id, high_id, count, locked);
+        Int8 L(0), H(0);
+        
+        m_IsamGi->GetIdBounds(L, H, count, locked);
+        
+        low_id = L;
+        high_id = H;
+        
+        s_SeqDBFitsInFour(L);
+        s_SeqDBFitsInFour(H);
     }
 }
 
@@ -2531,7 +2630,15 @@ void CSeqDBVol::GetPigBounds(int            & low_id,
     low_id = high_id = count = 0;
     
     if (m_IsamPig.NotEmpty()) {
-        m_IsamPig->GetIdBounds(low_id, high_id, count, locked);
+        Int8 L(0), H(0);
+        
+        m_IsamPig->GetIdBounds(L, H, count, locked);
+        
+        low_id = L;
+        high_id = H;
+        
+        s_SeqDBFitsInFour(L);
+        s_SeqDBFitsInFour(H);
     }
 }
 
@@ -2621,17 +2728,17 @@ void CSeqDBVol::OptimizeGiLists() const
 {
     if (m_UserGiList.Empty() ||
         m_VolumeGiLists.empty() ||
-        m_UserGiList->GetNumSeqIds()) {
+        m_UserGiList->GetNumSeqIds() ||
+        m_UserGiList->GetNumTis()) {
         
         return;
     }
     
-    // Note: The use of Seq-ids in volume lists is not supported
-    // or implemented yet, and the following loop will not have an
-    // affect until/unless that changes.
-    
     NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
         if ((**gilist).GetNumSeqIds() != 0)
+            return;
+        
+        if ((**gilist).GetNumTis() != 0)
             return;
     }
     

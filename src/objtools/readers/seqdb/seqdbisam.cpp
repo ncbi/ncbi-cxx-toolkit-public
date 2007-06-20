@@ -135,7 +135,7 @@ Int4 CSeqDBIsam::x_GetPageNumElements(Int4   sample_num,
 }
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_SearchIndexNumeric(int              Number, 
+CSeqDBIsam::x_SearchIndexNumeric(Int8             Number, 
                                  int            * Data,
                                  Uint4          * Index,
                                  Int4           & SampleNum,
@@ -165,7 +165,7 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
     Int4 Start     (0);
     Int4 Stop      (m_NumSamples - 1);
     
-    int obj_size = (int) sizeof(SNumericKeyData);
+    int obj_size = (int) sizeof(SNumericKeyData4);
     
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
@@ -182,16 +182,16 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
                               offset_end);
         }
         
-        SNumericKeyData* keydatap(0);
+        SNumericKeyData4* keydatap(0);
         
-        Uint4 Key(0);
+        Int8 Key(0);
         
-        keydatap = (SNumericKeyData*) m_IndexLease.GetPtr(offset_begin);
+        keydatap = (SNumericKeyData4*) m_IndexLease.GetPtr(offset_begin);
         Key = SeqDB_GetStdOrd(& (keydatap->key));
         
         // If this is an exact match, return the master term number.
         
-        if ((int) Key == Number) {
+        if (Key == Number) {
             if (Data != NULL) {
                 *Data = SeqDB_GetStdOrd(& keydatap->data);
             }
@@ -233,6 +233,7 @@ void
 CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
                                       int              vol_end,
                                       CSeqDBGiList   & gis,
+                                      bool             use_tis,
                                       CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
@@ -283,7 +284,7 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
     //
     //......................................................................
     
-    int gilist_size = gis.GetNumGis();
+    int gilist_size = use_tis ? gis.GetNumTis() : gis.GetNumGis();
     int num_samples = m_NumSamples;
     
     int gilist_index = 0;
@@ -292,7 +293,9 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
     // Note: whenever updating samples_index, we also update isam_key
     // and isam_data to the corresponding values.
     
-    int isam_key(0), isam_data(0);
+    Int8 isam_key(0);
+    int isam_data(0);
+    
     x_GetNumericSample(index_lease, samples_index, isam_key, isam_data);
     
     while((gilist_index < gilist_size) && (samples_index < num_samples)) {
@@ -309,7 +312,8 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
                                 gis,
                                 gilist_index,
                                 isam_key,
-                                isam_data);
+                                isam_data,
+                                use_tis);
             
             if (gilist_index >= gilist_size)
                 break;
@@ -317,12 +321,22 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
             // Use PBS to skip any ISAM blocks fall before the first
             // untranslated GI.
             
-            if (x_AdvanceIsamIndex(index_lease,
-                                   samples_index,
-                                   gis[gilist_index].gi,
-                                   isam_key,
-                                   isam_data)) {
-                advanced = true;
+            if (use_tis) {
+                if (x_AdvanceIsamIndex(index_lease,
+                                       samples_index,
+                                       gis.GetTiOid(gilist_index).ti,
+                                       isam_key,
+                                       isam_data)) {
+                    advanced = true;
+                }
+            } else {
+                if (x_AdvanceIsamIndex(index_lease,
+                                       samples_index,
+                                       gis.GetGiOid(gilist_index).gi,
+                                       isam_key,
+                                       isam_data)) {
+                    advanced = true;
+                }
             }
             
             // If either of the above calls returned true, we might
@@ -372,6 +386,7 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
                                  gis,
                                  gilist_index,
                                  samples_index,
+                                 use_tis,
                                  locked);
         
         // We must be done with that one by now..
@@ -390,7 +405,7 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
 
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_SearchDataNumeric(int              Number,
+CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
                                 int            * Data,
                                 Uint4          * Index,
                                 Int4             SampleNum,
@@ -405,11 +420,11 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
     Int4 first = Start;
     Int4 last  = Start + NumElements - 1;
     
-    SNumericKeyData * KeyDataPage      = NULL;
-    SNumericKeyData * KeyDataPageStart = NULL;
+    SNumericKeyData4 * KeyDataPage      = NULL;
+    SNumericKeyData4 * KeyDataPageStart = NULL;
     
-    TIndx offset_begin = Start * sizeof(SNumericKeyData);
-    TIndx offset_end = offset_begin + sizeof(SNumericKeyData) * NumElements;
+    TIndx offset_begin = Start * sizeof(SNumericKeyData4);
+    TIndx offset_end = offset_begin + sizeof(SNumericKeyData4) * NumElements;
     
     m_Atlas.Lock(locked);
     
@@ -420,7 +435,7 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
                           offset_end);
     }
     
-    KeyDataPageStart = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
+    KeyDataPageStart = (SNumericKeyData4*) m_DataLease.GetPtr(offset_begin);
     
     KeyDataPage = KeyDataPageStart - Start;
     
@@ -431,11 +446,11 @@ CSeqDBIsam::x_SearchDataNumeric(int              Number,
     while (first <= last) {
         current = (first+last)/2;
         
-        Uint4 Key = SeqDB_GetStdOrd(& KeyDataPage[current].key);
+        Int8 Key = SeqDB_GetStdOrd(& KeyDataPage[current].key);
         
-        if ((int) Key > Number) {
+        if (Key > Number) {
             last = --current;
-        } else if ((int) Key < Number) {
+        } else if (Key < Number) {
             first = ++current;
         } else {
             found = true;
@@ -469,6 +484,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
                                      CSeqDBGiList   & gis,
                                      int            & gilist_index,
                                      int              sample_index,
+                                     bool             use_tis,
                                      CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
@@ -484,7 +500,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     _ASSERT(m_Type != eNumericNoData);
     
-    SNumericKeyData * data_page (0);
+    SNumericKeyData4 * data_page (0);
     
     int start(0);
     int num_elements(0);
@@ -500,14 +516,14 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     // 3. Find the last value in array.
     
-    int last_key = SeqDB_GetStdOrd(& data_page[num_elements-1].key);
+    Int8 last_key = SeqDB_GetStdOrd(& data_page[num_elements-1].key);
     
     // 4. Loop till out of target gis or out of data elements:
     
-    int gis_size = gis.GetNumGis();
+    int gis_size = use_tis ? gis.GetNumTis() : gis.GetNumGis();
     int elem_index(0);
     
-    int data_gi(0);
+    Int8 data_gi(0);
     int data_oid(0);
     
     // Get the current data element
@@ -522,7 +538,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
     
     while((gilist_index < gis_size) &&
           (elem_index < num_elements) &&
-          (gis[gilist_index].gi <= last_key)) {
+          (x_GetId(gis, gilist_index, use_tis) <= last_key)) {
         
         bool advanced = true;
         
@@ -532,7 +548,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
             // Skip translated elements
             
             while((gilist_index < gis_size) &&
-                  (gis[gilist_index].oid != -1)) {
+                  (x_GetOid(gis, gilist_index, use_tis) != -1)) {
                 advanced = true;
                 gilist_index ++;
             }
@@ -542,19 +558,21 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
             
             while((elem_index != 0) &&
                   (gilist_index < gis_size) &&
-                  (gis[gilist_index].gi < data_gi)) {
+                  (x_GetId(gis, gilist_index, use_tis) < data_gi)) {
                 advanced = true;
                 gilist_index ++;
             }
         }
         
-        if ((gilist_index >= gis_size) || (gis[gilist_index].gi > last_key)) {
+        if ((gilist_index >= gis_size) ||
+            (x_GetId(gis, gilist_index, use_tis) > last_key)) {
+            
             break;
         }
         
         // 6.   PBS search for the first target gi.
         
-        int target_gi = gis[gilist_index].gi;
+        Int8 target_gi = x_GetId(gis, gilist_index, use_tis);
         
         while((elem_index < num_elements) && (target_gi > data_gi)) {
             x_GetDataElement(data_page,
@@ -565,7 +583,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
             int jump = 2;
             
             while((elem_index + jump) < num_elements) {
-                int next_gi(0);
+                Int8 next_gi(0);
                 int next_oid(0);
                 
                 x_GetDataElement(data_page,
@@ -592,12 +610,18 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
         
         while((gilist_index < gis_size) &&
               (elem_index < num_elements) &&
-              (data_gi == gis[gilist_index].gi)) {
+              (data_gi == x_GetId(gis, gilist_index, use_tis))) {
             
-            while((gilist_index < gis_size) && (gis[gilist_index].gi == data_gi)) {
-                if (gis[gilist_index].oid == -1) {
+            while((gilist_index < gis_size) &&
+                  (x_GetId(gis, gilist_index, use_tis) == data_gi)) {
+                
+                if (x_GetOid(gis, gilist_index, use_tis) == -1) {
                     if ((data_oid + vol_start) < vol_end) {
-                        gis.SetTranslation(gilist_index, data_oid + vol_start);
+                        if (use_tis) {
+                            gis.SetTiTranslation(gilist_index, data_oid + vol_start);
+                        } else {
+                            gis.SetTranslation(gilist_index, data_oid + vol_start);
+                        }
                     }
                 }
                 gilist_index ++;
@@ -627,7 +651,7 @@ CSeqDBIsam::x_SearchDataNumericMulti(int              vol_start,
 // ----------------------------------------------------------------
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_NumericSearch(int              Number, 
+CSeqDBIsam::x_NumericSearch(Int8             Number, 
                             int            * Data,
                             Uint4          * Index,
                             CSeqDBLockHold & locked)
@@ -1302,12 +1326,13 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
     // These are the types that readdb.c seems to use.
     
     switch(ident_type) {
-    case eGi:
-    case ePig:
+    case eGiId:
+    case ePigId:
+    case eTiId:
         m_Type = eNumeric;
         break;
         
-    case eStringID:
+    case eStringId:
         m_Type = eString;
         break;
         
@@ -1368,7 +1393,7 @@ void CSeqDBIsam::UnLease()
     }
 }
 
-bool CSeqDBIsam::x_IdentToOid(int ident, TOid & oid, CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_IdentToOid(Int8 ident, TOid & oid, CSeqDBLockHold & locked)
 {
     EErrorCode err =
         x_NumericSearch(ident, & oid, 0, locked);
@@ -1494,7 +1519,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
                               bool             adjusted,
                               CSeqDBLockHold & locked)
 {
-    _ASSERT(m_IdentType == eStringID);
+    _ASSERT(m_IdentType == eStringId);
     
     m_Atlas.Lock(locked);
     
@@ -1575,11 +1600,11 @@ bool CSeqDBIsam::x_SparseStringToOids(const string   &,
 CSeqDBIsam::EIdentType
 CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
                           const string  * acc,
-                          int           & num_id,
+                          Int8          & num_id,
                           string        & str_id,
                           bool          & simpler)
 {
-    EIdentType result = eStringID;
+    EIdentType result = eStringId;
     
     CTextseq_id * tsip = 0;
     
@@ -1591,12 +1616,12 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
     case CSeq_id::e_Gi:
         simpler = true;
         num_id = bestid.GetGi();
-        result = eGi;
+        result = eGiId;
         break;
         
     case CSeq_id::e_Gibbsq:    /* gibbseq */
         simpler = true;
-        result = eStringID;
+        result = eStringId;
         str_id = NStr::UIntToString(bestid.GetGibbsq());
         break;
         
@@ -1615,13 +1640,13 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
                 if (dbt.GetDb() == "PIG") {
                     simpler = true;
                     num_id = dbt.GetTag().GetId();
-                    result = ePig;
+                    result = ePigId;
                     break;
                 }
             }
             
             if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {
-                result = eStringID;
+                result = eStringId;
                 str_id = dbt.GetTag().GetStr();
             } else {
                 // Use the default logic.
@@ -1632,7 +1657,7 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
         
     case CSeq_id::e_Local:     /* local */
         simpler = true;
-        result = eStringID;
+        result = eStringId;
         {
             const CObject_id & objid = bestid.GetLocal();
             
@@ -1711,7 +1736,7 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
         // (should not happen normally)
         
         simpler = false;
-        result  = eStringID;
+        result  = eStringId;
         
         if (acc) {
             str_id = *acc;
@@ -1722,7 +1747,7 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
     
     if (tsip) {
         simpler = true;
-        result = eStringID;
+        result = eStringId;
         
         string tmp_name;
         
@@ -1743,11 +1768,11 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
 
 CSeqDBIsam::EIdentType
 CSeqDBIsam::TryToSimplifyAccession(const string & acc,
-                                   int          & num_id,
+                                   Int8         & num_id,
                                    string       & str_id,
                                    bool         & simpler)
 {
-    EIdentType result = eStringID;
+    EIdentType result = eStringId;
     num_id = (Uint4)-1;
     
     vector< CRef< CSeq_id > > seqid_set;
@@ -1760,27 +1785,41 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
         result = SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
     } else {
         str_id = acc;
-        result = eStringID;
+        result = eStringId;
         simpler = false;
     }
     
     return result;
 }
 
-void CSeqDBIsam::GisToOids(int              vol_start,
+void CSeqDBIsam::IdsToOids(int              vol_start,
                            int              vol_end,
-                           CSeqDBGiList   & gis,
+                           CSeqDBGiList   & ids,
                            CSeqDBLockHold & locked)
 {
     // The vol_start parameter is needed because translations in the
     // GI list should refer to global OIDs, not per-volume OIDs.
     
-    _ASSERT(m_IdentType == eGi);
+    _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
     
     m_Atlas.Lock(locked);
-    gis.InsureOrder(CSeqDBGiList::eGi);
+    ids.InsureOrder(CSeqDBGiList::eGi);
     
-    x_SearchIndexNumericMulti(vol_start, vol_end, gis, locked);
+    if ((m_IdentType == eGiId) && ids.GetNumGis()) {
+        x_SearchIndexNumericMulti(vol_start,
+                                  vol_end,
+                                  ids,
+                                  false,
+                                  locked);
+    }
+    
+    if ((m_IdentType == eTiId) && ids.GetNumTis()) {
+        x_SearchIndexNumericMulti(vol_start,
+                                  vol_end,
+                                  ids,
+                                  true,
+                                  locked);
+    }
 }
 
 void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
@@ -1796,7 +1835,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         
         int num_elements(0);
         int start(0);
-        SNumericKeyData * data_page(0);
+        SNumericKeyData4 * data_page(0);
         
         x_MapDataPage(Start,
                       start,
@@ -1808,7 +1847,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
         
         int elem_index = 0;
         
-        int data_gi(0);
+        Int8 data_gi(0);
         int data_oid(-1);
         
         x_GetDataElement(data_page,
@@ -1906,7 +1945,7 @@ void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
     }
 }
 
-bool CSeqDBIsam::x_OutOfBounds(int key, CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_OutOfBounds(Int8 key, CSeqDBLockHold & locked)
 {
     if (! m_FirstKey.IsSet()) {
         x_FindIndexBounds(locked);
@@ -1954,8 +1993,8 @@ bool CSeqDBIsam::x_OutOfBounds(string key, CSeqDBLockHold & locked)
     return false;
 }
 
-void CSeqDBIsam::GetIdBounds(int            & low_id,
-                             int            & high_id,
+void CSeqDBIsam::GetIdBounds(Int8           & low_id,
+                             Int8           & high_id,
                              int            & count,
                              CSeqDBLockHold & locked)
 {

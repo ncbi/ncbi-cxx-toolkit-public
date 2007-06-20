@@ -516,6 +516,15 @@ bool CSeqDB::OidToPig(int oid, int & pig) const
     return rv;
 }
 
+bool CSeqDB::TiToOid(Int8 ti, int & oid) const
+{
+    m_Impl->Verify();
+    bool rv = m_Impl->TiToOid(ti, oid);
+    m_Impl->Verify();
+    
+    return rv;
+}
+
 bool CSeqDB::GiToOid(int gi, int & oid) const
 {
     m_Impl->Verify();

@@ -705,6 +705,9 @@ public:
     /// Translate an OID to a PIG.
     bool OidToPig(int oid, int & pig) const;
     
+    /// Translate a TI to an OID.
+    bool TiToOid(Int8 ti, int & oid) const;
+    
     /// Translate an OID to a GI.
     bool OidToGi(int oid, int & gi) const;
     

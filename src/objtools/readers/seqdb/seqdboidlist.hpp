@@ -252,7 +252,7 @@ private:
     ///   The OID after the end of the OID range.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_OrGiFileBits(CSeqDBGiList    & gilist,
+    void x_OrIdFileBits(CSeqDBGiList    & gilist,
                         int               oid_start,
                         int               oid_end,
                         CSeqDBLockHold  & locked);

@@ -135,6 +135,25 @@ public:
         int oid;
     };
     
+    /// Structure that holds TI,OID pairs.
+    struct STiOid {
+        /// Constuct an STiOid element from the given TI (trace ID,
+        /// expressed as a number) and oid.
+        ///
+        /// @param ti_in A TI, or 0 if none is available.
+        /// @param oid_in An OID, or -1 if none is available.
+        STiOid(Int8 ti_in = 0, int oid_in = -1)
+            : ti(ti_in), oid(oid_in)
+        {
+        }
+        
+        /// The TI or 0 if unknown.
+        Int8 ti;
+        
+        /// The OID or -1 if unknown.
+        int oid;
+    };
+    
     /// Structure that holds Seq-id,OID pairs.
     struct SSeqIdOid {
         /// Constuct a SSeqIdOid element from the given Seq-id and oid.
@@ -188,6 +207,22 @@ public:
     /// @return True if the GI was found.
     bool GiToOid(int gi, int & oid, int & index);
     
+    /// Test for existence of a TI.
+    bool FindTi(Int8 ti);
+    
+    /// Try to find a TI and return the associated OID.
+    /// @param ti The ti for which to search. [in]
+    /// @param oid The resulting oid if found. [out]
+    /// @return True if the TI was found.
+    bool TiToOid(Int8 ti, int & oid);
+    
+    /// Find a TI, returning the index and the associated OID.
+    /// @param ti The ti for which to search. [in]
+    /// @param oid The resulting oid if found. [out]
+    /// @param index The index of this TI (if found). [out]
+    /// @return True if the TI was found.
+    bool TiToOid(Int8 ti, int & oid, int & index);
+    
     /// Test for existence of a GI.
     bool FindSeqId(const CSeq_id & seqid);
     
@@ -214,6 +249,14 @@ public:
     
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
+    /// @return A reference to the TI/OID pair.
+    const STiOid & GetTiOid(int index) const
+    {
+        return m_TisOids[index];
+    }
+    
+    /// Access an element of the array.
+    /// @param index The index of the element to access. [in]
     /// @return A reference to the Seq-id/OID pair.
     const SSeqIdOid & GetSeqIdOid(int index) const
     {
@@ -234,6 +277,12 @@ public:
         return (int) m_GisOids.size();
     }
     
+    /// Get the number of TIs in the array.
+    int GetNumTis() const
+    {
+        return (int) m_TisOids.size();
+    }
+    
     /// Get the number of Seq-ids in the array.
     int GetNumSeqIds() const
     {
@@ -250,7 +299,7 @@ public:
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumSeqIds());
+        return ! (GetNumGis() || GetNumSeqIds() || GetNumTis());
     }
     
     /// Return true if there are elements present.
@@ -272,7 +321,21 @@ public:
     {
         m_GisOids[index].oid = oid;
     }
-
+    
+    /// Specify the correct OID for a TI.
+    ///
+    /// When SeqDB translates a TI into an OID, this method is called
+    /// to store the oid in the array.
+    ///
+    /// @param index
+    ///   The location in the array of the TI, OID pair.
+    /// @param oid
+    ///   The oid to store in that element.
+    void SetTiTranslation(int index, int oid)
+    {
+        m_TisOids[index].oid = oid;
+    }
+    
     /// Specify the correct OID for a Seq-id.
     ///
     /// When SeqDB translates a Seq-id into an OID, this method is
@@ -286,9 +349,12 @@ public:
     {
         m_SeqIdsOids[index].oid = oid;
     }
-
+    
     /// Get the gi list
     void GetGiList(vector<int>& gis) const;
+    
+    /// Get the ti list
+    void GetTiList(vector<Int8>& tis) const;
     
 protected:
     /// Indicates the current sort order, if any, of this container.
@@ -296,6 +362,9 @@ protected:
     
     /// Pairs of GIs and OIDs.
     vector<SGiOid> m_GisOids;
+    
+    /// Pairs of GIs and OIDs.
+    vector<STiOid> m_TisOids;
     
     /// Pairs of Seq-ids and OIDs.
     vector<SSeqIdOid> m_SeqIdsOids;
@@ -341,6 +410,25 @@ void SeqDB_ReadMemoryGiList(const char                   * fbeginp,
                             vector<CSeqDBGiList::SGiOid> & gis,
                             bool                         * in_order = 0);
 
+/// Read a text or binary TI list from an area of memory.
+///
+/// The TIs in a memory region are read into the provided STiOid
+/// vector.  The TI half of each element of the vector is assigned,
+/// but the OID half will be left as -1.  If the in_order parameter is
+/// not null, the function will test the TIs for orderedness.  It will
+/// set the bool to which in_order points to true if so, false if not.
+///
+/// @param fbeginp The start of the memory region holding the TI list. [in]
+/// @param fendp   The end of the memory region holding the TI list. [in]
+/// @param tis     The TIs returned by this function. [out]
+/// @param in_order If non-null, returns true iff the TIs were in order. [out]
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadMemoryTiList(const char                   * fbeginp,
+                            const char                   * fendp,
+                            vector<CSeqDBGiList::STiOid> & tis,
+                            bool                         * in_order = 0);
+
 /// Read a text or binary GI list from a file.
 ///
 /// The GIs in a file are read into the provided SGiOid vector.  The
@@ -356,6 +444,23 @@ void SeqDB_ReadMemoryGiList(const char                   * fbeginp,
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadGiList(const string                 & fname,
                       vector<CSeqDBGiList::SGiOid> & gis,
+                      bool                         * in_order = 0);
+
+/// Read a text or binary TI list from a file.
+///
+/// The TIs in a file are read into the provided STiOid vector.  The
+/// TI half of each element of the vector is assigned, but the OID
+/// half will be left as -1.  If the in_order parameter is not null,
+/// the function will test the TIs for orderedness.  It will set the
+/// bool to which in_order points to true if so, false if not.
+///
+/// @param fname    The name of the TI list file. [in]
+/// @param tis      The TIs returned by this function. [out]
+/// @param in_order If non-null, returns true iff the TIs were in order. [out]
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadTiList(const string                 & fname,
+                      vector<CSeqDBGiList::STiOid> & tis,
                       bool                         * in_order = 0);
 
 /// Read a text or binary GI list from a file.

@@ -190,15 +190,16 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
     
     if (! filter->GetOIDMask().empty()) {
         x_OrMaskBits(filter->GetOIDMask(), vol_start, start_g, end_g, locked);
-    } else if (! filter->GetGIList().empty()) {
-        CRef<CSeqDBGiList> gilist =
-            gis.GetNodeGiList(filter->GetGIList(),
+    } else if (! filter->GetIdList().empty()) {
+        CRef<CSeqDBGiList> idlist =
+            gis.GetNodeIdList(filter->GetIdList(),
                               vol->Vol(),
                               vol->OIDStart(),
                               vol->OIDEnd(),
+                              filter->UseTis(),
                               locked);
         
-        x_OrGiFileBits(*gilist,
+        x_OrIdFileBits(*idlist,
                        start_g,
                        end_g,
                        locked);
@@ -215,8 +216,9 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
     
     int gis_size = gis.GetNumGis();
     int seqids_size = gis.GetNumSeqIds();
+    int tis_size = gis.GetNumTis();
     
-    if (! (gis_size || seqids_size)) {
+    if (! (gis_size || seqids_size || tis_size)) {
         x_ClearBitRange(0, m_NumOIDs);
         m_NumOIDs = 0;
         return;
@@ -241,6 +243,14 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
     
     for(j = 0; j < seqids_size; j++) {
         int oid = gis.GetSeqIdOid(j).oid;
+        
+        if ((oid != -1) && (oid < m_NumOIDs)) {
+            gilist_oids[oid] = true;
+        }
+    }
+    
+    for(j = 0; j < tis_size; j++) {
+        int oid = gis.GetTiOid(j).oid;
         
         if ((oid != -1) && (oid < m_NumOIDs)) {
             gilist_oids[oid] = true;
@@ -444,7 +454,7 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
     m_Atlas.RetRegion(lease);
 }
 
-void CSeqDBOIDList::x_OrGiFileBits(CSeqDBGiList    & gilist,
+void CSeqDBOIDList::x_OrIdFileBits(CSeqDBGiList    & gilist,
                                    int               oid_start,
                                    int               oid_end,
                                    CSeqDBLockHold  & locked)
@@ -452,10 +462,22 @@ void CSeqDBOIDList::x_OrGiFileBits(CSeqDBGiList    & gilist,
     m_Atlas.Lock(locked);
     
     int num_gis = gilist.GetNumGis();
+    int num_tis = gilist.GetNumTis();
     int prev_oid = -1;
     
     for(int i = 0; i < num_gis; i++) {
-        int oid = gilist[i].oid;
+        int oid = gilist.GetGiOid(i).oid;
+        
+        if (oid != prev_oid) {
+            if ((oid >= oid_start) && (oid < oid_end)) {
+                x_SetBit(oid);
+            }
+            prev_oid = oid;
+        }
+    }
+    
+    for(int i = 0; i < num_tis; i++) {
+        int oid = gilist.GetTiOid(i).oid;
         
         if (oid != prev_oid) {
             if ((oid >= oid_start) && (oid < oid_end)) {

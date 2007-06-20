@@ -879,6 +879,21 @@ bool CSeqDBImpl::OidToPig(int oid, int & pig) const
                "OID not in valid range.");
 }
 
+bool CSeqDBImpl::TiToOid(Int8 ti, int & oid) const
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    
+    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+        if (m_VolSet.GetVol(i)->TiToOid(ti, oid, locked)) {
+            oid += m_VolSet.GetVolOIDStart(i);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 bool CSeqDBImpl::GiToOid(int gi, int & oid) const
 {
     CHECK_MARKER();

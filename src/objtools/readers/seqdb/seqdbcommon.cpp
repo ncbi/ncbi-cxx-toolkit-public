@@ -503,6 +503,21 @@ public:
 };
 
 
+/// Compare SGiOid structs by GI.
+class CSeqDB_SortTiLessThan {
+public:
+    /// Test whether lhs is less than (occurs before) rhs.
+    /// @param lhs Left hand side of less-than operator. [in]
+    /// @param rhs Right hand side of less-than operator. [in]
+    /// @return True if lhs has a lower GI than rhs.
+    int operator()(const CSeqDBGiList::STiOid & lhs,
+                   const CSeqDBGiList::STiOid & rhs)
+    {
+        return lhs.ti < rhs.ti;
+    }
+};
+
+
 /// Compare SSeqIdOid structs by SeqId.
 class CSeqDB_SortSeqIdLessThan {
 public:
@@ -516,6 +531,26 @@ public:
         return (*lhs.seqid) < (*rhs.seqid);
     }
 };
+
+
+template<class TCompare, class TVector>
+void s_InsureOrder(TVector & v)
+{
+    bool already = true;
+    
+    TCompare compare_less;
+    
+    for(int i = 1; i < (int) v.size(); i++) {
+        if (compare_less(v[i], v[i-1])) {
+            already = false;
+            break;
+        }
+    }
+    
+    if (! already) {
+        sort(v.begin(), v.end(), compare_less);
+    }
+}
 
 
 void CSeqDBGiList::InsureOrder(ESortOrder order)
@@ -538,36 +573,9 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
             break;
             
         case eGi:
-            {
-                bool already = true;
-                
-                CSeqDB_SortGiLessThan gi_less;
-                CSeqDB_SortSeqIdLessThan seqid_less;
-                
-                for(int i = 1; i < (int) m_GisOids.size(); i++) {
-                    if (gi_less(m_GisOids[i], m_GisOids[i-1])) {
-                        already = false;
-                        break;
-                    }
-                }
-                
-                if (! already) {
-                    sort(m_GisOids.begin(), m_GisOids.end(), gi_less);
-                }
-                
-                already = true;
-                
-                for(int i = 1; i < (int) m_SeqIdsOids.size(); i++) {
-                    if (seqid_less(m_SeqIdsOids[i], m_SeqIdsOids[i-1])) {
-                        already = false;
-                        break;
-                    }
-                }
-                
-                if (! already) {
-                    sort(m_SeqIdsOids.begin(), m_SeqIdsOids.end(), seqid_less);
-                }
-            }
+            s_InsureOrder<CSeqDB_SortGiLessThan>(m_GisOids);
+            s_InsureOrder<CSeqDB_SortTiLessThan>(m_TisOids);
+            s_InsureOrder<CSeqDB_SortSeqIdLessThan>(m_SeqIdsOids);
             break;
             
         default:
@@ -720,7 +728,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
     } else {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
-                   "Specified file is not a valid GI list.");
+                   "Specified file is not a valid GI/TI list.");
     }
     
     if (is_binary) {
@@ -847,6 +855,242 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
     }
 }
 
+// [ NOTE: The 8 byte versions described here are not yet
+// implemented. ]
+//
+// FF..FF = -1 -> GI list <32 bit>
+// FF..FE = -2 -> GI list <64 bit>
+// FF..FD = -3 -> TI list <32 bit>
+// FF..FC = -4 -> TI list <64 bit>
+//
+// Format of the 8 byte TI list; note that we are still limited to
+// 2^32-1 TIs, which would involve an 32 GB identifier list file; this
+// code (in its current form) will not work at all on a 32 bit system
+// for GI files with more than about 500 megasequences, or TI files
+// with more than about 256 megasequences, assuming the current 16
+// bytes per vector element.  This is larger than the current total
+// number of GI sequences, but not larger than the number of TIs, so a
+// TI query for all TIs everywhere will most likely choke on a 32 bit
+// system because the data will simply not fit into memory (there are
+// nearly that many active TIs and the program will have other memory
+// expenditures.)
+//
+// 4 bytes: FF FF FF F?
+// 4 bytes: <number of TIs>
+// 8 bytes: TI#0
+// 8 bytes: TI#1
+// ...
+
+void SeqDB_ReadMemoryTiList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::STiOid> & tis,
+                            bool * in_order)
+{
+    bool is_binary = false;
+    bool long_ids = false;
+    
+    Int8 file_size = fendp - fbeginp;
+    
+    if (file_size == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Specified file is empty.");
+    } else if (isdigit((unsigned char)(*((char*) fbeginp)))) {
+        is_binary = false;
+    } else if ((file_size >= 8) && ((*fbeginp & 0xFF) == 0xFF)) {
+        is_binary = true;
+        
+        int marker = fbeginp[3] & 0xFF;
+        
+        if (marker == 0xFE || marker == 0xFC) {
+            long_ids = true;
+        }
+    } else {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Specified file is not a valid GI/TI list.");
+    }
+    
+    if (is_binary) {
+        Int4 * bbeginp = (Int4*) fbeginp;
+        Int4 * bendp = (Int4*) fendp;
+        Int4 * bdatap = bbeginp + 2;
+        
+        Uint4 num_tis = (int)(bendp-bdatap);
+        
+        int remainder = num_tis % 2;
+        
+        if (long_ids) {
+            num_tis /= 2;
+        }
+        
+        tis.clear();
+        
+        bool bad_fmt = false;
+        
+        if (bendp < bdatap) {
+            bad_fmt = true;
+        } else {
+            int marker = SeqDB_GetStdOrd(bbeginp);
+            unsigned num_ids = SeqDB_GetStdOrd(bbeginp+1);
+            
+            if ((marker != -3 && marker != -4) ||
+                (num_ids != num_tis) ||
+                (remainder && long_ids)) {
+                
+                bad_fmt = true;
+            }
+        }
+        
+        if (bad_fmt) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Specified file is not a valid binary GI or TI file.");
+        }
+        
+        tis.reserve(num_tis);
+        
+        if (long_ids) {
+            Int8 * bdatap8 = (Int8*) bdatap;
+            Int8 * bendp8 = (Int8*) bendp;
+            
+            if (in_order) {
+                Int8 prev_ti =0;
+                bool in_ti_order = true;
+                
+                Int8 * elem = bdatap8;
+                
+                while(elem < bendp8) {
+                    Int8 this_ti = (Int8) SeqDB_GetStdOrd(elem);
+                    tis.push_back(this_ti);
+                    
+                    if (prev_ti > this_ti) {
+                        in_ti_order = false;
+                        break;
+                    }
+                    prev_ti = this_ti;
+                    elem ++;
+                }
+                
+                while(elem < bendp8) {
+                    tis.push_back((Int8) SeqDB_GetStdOrd(elem++));
+                }
+                
+                *in_order = in_ti_order;
+            } else {
+                for(Int8 * elem = bdatap8; elem < bendp8; elem ++) {
+                    tis.push_back((Int8) SeqDB_GetStdOrd(elem));
+                }
+            }
+        } else {
+            if (in_order) {
+                int prev_ti =0;
+                bool in_ti_order = true;
+                
+                Int4 * elem = bdatap;
+                
+                while(elem < bendp) {
+                    int this_ti = (int) SeqDB_GetStdOrd(elem);
+                    tis.push_back(this_ti);
+                    
+                    if (prev_ti > this_ti) {
+                        in_ti_order = false;
+                        break;
+                    }
+                    prev_ti = this_ti;
+                    elem ++;
+                }
+                
+                while(elem < bendp) {
+                    tis.push_back((int) SeqDB_GetStdOrd(elem++));
+                }
+                
+                *in_order = in_ti_order;
+            } else {
+                for(Int4 * elem = bdatap; elem < bendp; elem ++) {
+                    tis.push_back((int) SeqDB_GetStdOrd(elem));
+                }
+            }
+        }
+    } else {
+        // We would prefer to do only one allocation, so assume
+        // average gi is 6 digits plus newline.  A few extra will be
+        // allocated, but this is preferable to letting the vector
+        // double itself (which it still will do if needed).
+        
+        tis.reserve(int(file_size / 7));
+        
+        Int8 elem(0);
+        
+        for(const char * p = fbeginp; p < fendp; p ++) {
+            Uint4 dig = 0;
+            
+            switch(*p) {
+            case '0':
+                dig = 0;
+                break;
+            
+            case '1':
+                dig = 1;
+                break;
+            
+            case '2':
+                dig = 2;
+                break;
+            
+            case '3':
+                dig = 3;
+                break;
+            
+            case '4':
+                dig = 4;
+                break;
+            
+            case '5':
+                dig = 5;
+                break;
+            
+            case '6':
+                dig = 6;
+                break;
+            
+            case '7':
+                dig = 7;
+                break;
+            
+            case '8':
+                dig = 8;
+                break;
+            
+            case '9':
+                dig = 9;
+                break;
+            
+            case '\n':
+            case '\r':
+                // Skip blank lines by ignoring zero.
+                if (elem != 0) {
+                    tis.push_back(elem);
+                }
+                elem = 0;
+                continue;
+                
+            default:
+                {
+                    string msg = string("Invalid byte in text TI list [") +
+                        NStr::UIntToString(int(*p)) + " at location " +
+                        NStr::UIntToString(p-fbeginp) + "].";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+            }
+            
+            elem *= 10;
+            elem += dig;
+        }
+    }
+}
+
 
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
@@ -857,6 +1101,18 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, 
     const char * fendp   = fbeginp + (int)file_size;
     
     SeqDB_ReadMemoryGiList(fbeginp, fendp, gis, in_order);
+}
+
+
+void SeqDB_ReadTiList(const string & fname, vector<CSeqDBGiList::STiOid> & tis, bool * in_order)
+{
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+    
+    Int8 file_size = mfile.GetSize();
+    const char * fbeginp = (char*) mfile.GetPtr();
+    const char * fendp   = fbeginp + (int)file_size;
+    
+    SeqDB_ReadMemoryTiList(fbeginp, fendp, tis, in_order);
 }
 
 

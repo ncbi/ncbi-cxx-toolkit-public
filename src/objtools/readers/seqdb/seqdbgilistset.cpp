@@ -62,28 +62,31 @@ public:
 };
 
 
-/// CSeqDBNodeGiList
+/// CSeqDBNodeIdList
 /// 
 /// This class defines a simple CSeqDBGiList subclass which is read
 /// from a gi list file using the CSeqDBAtlas.  It uses the atlas for
 /// file access and registers the memory used by the vector with the
 /// atlas layer.
 
-class CSeqDBNodeFileGiList : public CSeqDBGiList {
+class CSeqDBNodeFileIdList : public CSeqDBGiList {
 public:
-    /// Build a GI list from a memory mapped file.
+    /// Build a GI or TI list from a memory mapped file.
     ///
-    /// Given a GI list file mapped into a region of memory, this
-    /// class reads the GIs from the file.
+    /// Given an ID list file mapped into a region of memory, this
+    /// class reads the GIs or TIs from the file.
     ///
     /// @param atlas
     ///   The memory management layer object. [in]
     /// @param fname
-    ///   The filename of this GI list. [in]
+    ///   The filename of this ID list. [in]
+    /// @param use_tis
+    ///   Use trace IDs instead of GIs.
     /// @param locked
     ///   Lock holder object for this thread. [in]
-    CSeqDBNodeFileGiList(CSeqDBAtlas    & atlas,
+    CSeqDBNodeFileIdList(CSeqDBAtlas    & atlas,
                          const string   & fname,
+                         bool             use_tis,
                          CSeqDBLockHold & locked)
         : m_VectorMemory(atlas)
     {
@@ -97,7 +100,13 @@ public:
         
         try {
             bool in_order = false;
-            SeqDB_ReadMemoryGiList(fbeginp, fendp, m_GisOids, & in_order);
+            
+            if (use_tis) {
+                SeqDB_ReadMemoryTiList(fbeginp, fendp, m_TisOids, & in_order);
+            } else {
+                SeqDB_ReadMemoryGiList(fbeginp, fendp, m_GisOids, & in_order);
+            }
+            
             if (in_order) {
                 m_CurrentOrder = eGi;
             }
@@ -106,14 +115,18 @@ public:
             memlease.Clear();
             throw;
         }
+        
         memlease.Clear();
         
-        int vector_size = int(m_GisOids.size() * sizeof(m_GisOids[0]));
+        int vector_size =
+            (int(m_GisOids.size() * sizeof(m_GisOids[0])) +
+             int(m_TisOids.size() * sizeof(m_TisOids[0])));
+        
         atlas.RegisterExternal(m_VectorMemory, vector_size, locked);
     }
     
     /// Destructor
-    virtual ~CSeqDBNodeFileGiList()
+    virtual ~CSeqDBNodeFileIdList()
     {
     }
     
@@ -161,16 +174,17 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas        & atlas,
             
             // Note: The implied ISAM lookups will sort by GI.
             
-            vol->Vol()->GisToOids(*m_UserList, locked);
+            vol->Vol()->IdsToOids(*m_UserList, locked);
         }
     }
 }
 
 CRef<CSeqDBGiList>
-CSeqDBGiListSet::GetNodeGiList(const string    & filename,
+CSeqDBGiListSet::GetNodeIdList(const string    & filename,
                                const CSeqDBVol * volp,
                                int               vol_start,
                                int               vol_end,
+                               bool              use_tis,
                                CSeqDBLockHold  & locked)
 {
     // Note: possibly the atlas should have a method to add and
@@ -179,16 +193,26 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
     // mapped file ranges.
     
     m_Atlas.Lock(locked);
-    CRef<CSeqDBGiList> gilist = m_NodeListMap[filename];
+    
+    // Seperate indexes are used for TIs and GIs.  (Attempting to use
+    // the same file for both should also produce an error when the
+    // binary file is read, as the magic number is different.)
+    
+    int map_index = use_tis ? 1 : 0;
+    CRef<CSeqDBGiList> gilist = m_NodeListMap[map_index][filename];
     
     if (gilist.Empty()) {
-        gilist.Reset(new CSeqDBNodeFileGiList(m_Atlas, filename, locked));
+        gilist.Reset(new CSeqDBNodeFileIdList(m_Atlas,
+                                              filename,
+                                              use_tis,
+                                              locked));
         
         if (m_UserList.NotEmpty()) {
-            // Note: only translates the GIs, ignores the Seq-ids.
+            // Note: translates the GIs and TIs, but ignores Seq-ids.
             x_TranslateFromUserList(*gilist);
         }
-        m_NodeListMap[filename] = gilist;
+        
+        m_NodeListMap[map_index][filename] = gilist;
     }
     
     // Note: in pure-GI mode, it might be more efficient (in some
@@ -206,12 +230,22 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
     // able to continue processing as if the User GI list were
     // strictly GI based.
     
-    // The ideal solution would be to build a conceptual map of all
+    // The ideal solution might be to build a conceptual map of all
     // data sources and estimate the time needed for different
-    // techniques.  This is not done yet.
+    // techniques.  This has not been done.
     
-    if (m_UserList.Empty() || m_UserList->GetNumSeqIds()) {
-        volp->GisToOids(*gilist, locked);
+    bool mixed_ids = m_UserList.Empty() || (!! m_UserList->GetNumSeqIds());
+    
+    if (! mixed_ids) {
+        if ((m_UserList->GetNumTis() && gilist->GetNumGis()) ||
+            (m_UserList->GetNumGis() && gilist->GetNumTis())) {
+            
+            mixed_ids = true;
+        }
+    }
+    
+    if (m_UserList.Empty() || mixed_ids) {
+        volp->IdsToOids(*gilist, locked);
     }
     
     // If there is a volume GI list, it will also be attached to the
@@ -224,7 +258,7 @@ CSeqDBGiListSet::GetNodeGiList(const string    & filename,
     return gilist;
 }
 
-void CSeqDBGiListSet::x_TranslateFromUserList(CSeqDBGiList & gilist)
+void CSeqDBGiListSet::x_TranslateGisFromUserList(CSeqDBGiList & gilist)
 {
     CSeqDBGiList & source = *m_UserList;
     CSeqDBGiList & target = gilist;
@@ -235,8 +269,8 @@ void CSeqDBGiListSet::x_TranslateFromUserList(CSeqDBGiList & gilist)
     int source_num = source.GetNumGis();
     int target_num = target.GetNumGis();
     
-    int source_index = 1;
-    int target_index = 1;
+    int source_index = 0;
+    int target_index = 0;
     
     while(source_index < source_num && target_index < target_num) {
         int source_gi = source[source_index].gi;
@@ -276,6 +310,72 @@ void CSeqDBGiListSet::x_TranslateFromUserList(CSeqDBGiList & gilist)
             }
         }
     }
+}
+
+void CSeqDBGiListSet::x_TranslateTisFromUserList(CSeqDBGiList & gilist)
+{
+    CSeqDBGiList & source = *m_UserList;
+    CSeqDBGiList & target = gilist;
+    
+    source.InsureOrder(CSeqDBGiList::eGi);
+    target.InsureOrder(CSeqDBGiList::eGi);
+    
+    int source_num = source.GetNumTis();
+    int target_num = target.GetNumTis();
+    
+    int source_index = 0;
+    int target_index = 0;
+    
+    while(source_index < source_num && target_index < target_num) {
+        Int8 source_ti = source.GetTiOid(source_index).ti;
+        Int8 target_ti = target.GetTiOid(target_index).ti;
+        
+        // Match; translate if needed
+        
+        if (source_ti == target_ti) {
+            if (target.GetTiOid(target_index).oid == -1) {
+                target.SetTiTranslation(target_index,
+                                        source.GetTiOid(source_index).oid);
+            }
+            
+            target_index++;
+            source_index++;
+        } else if (source_ti > target_ti) {
+            target_index ++;
+            
+            // Search target using expanding jumps
+            int jump = 2;
+            int test = target_index + jump;
+            
+            while(test < target_num &&
+                  target.GetTiOid(test).ti < source_ti) {
+                
+                target_index = test;
+                jump *= 2;
+                test = target_index + jump;
+            }
+        } else /* source_ti < target_ti */ {
+            source_index ++;
+            
+            // Search source using expanding jumps
+            int jump = 2;
+            int test = source_index + jump;
+            
+            while(test < source_num &&
+                  source.GetTiOid(test).ti < target_ti) {
+                
+                source_index = test;
+                jump *= 2;
+                test = source_index + jump;
+            }
+        }
+    }
+}
+
+void CSeqDBGiListSet::x_TranslateFromUserList(CSeqDBGiList & gilist)
+{
+    x_TranslateGisFromUserList(gilist);
+    x_TranslateTisFromUserList(gilist);
 }
 
 END_NCBI_SCOPE

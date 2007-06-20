@@ -52,7 +52,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
 CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                                  const string    & name_list,
                                  char              prot_nucl)
@@ -1175,10 +1174,10 @@ private:
 /// length is not specified, then SeqDB must scan the database to
 /// compute this length.
 
-class CSeqDB_GiListValuesTest : public CSeqDB_AliasExplorer {
+class CSeqDB_IdListValuesTest : public CSeqDB_AliasExplorer {
 public:
     /// Constructor
-    CSeqDB_GiListValuesTest()
+    CSeqDB_IdListValuesTest()
     {
         m_NeedScan = false;
     }
@@ -1195,9 +1194,9 @@ public:
     ///
     /// If the NSEQ and LENGTH fields are specified, this method can
     /// close this branch of the traversal tree.  Otherwise, if the
-    /// GILIST is specified, then this branch of the traversal will
-    /// fail to produce accurate totals information, therefore an oid
-    /// scan is required, and we are done.
+    /// GILIST or TILIST is specified, then this branch of the
+    /// traversal will fail to produce accurate totals information,
+    /// therefore an oid scan is required, and we are done.
     /// 
     /// @param vars
     ///   The name/value mapping for this node.
@@ -1224,6 +1223,13 @@ public:
         // and LENGTH), then we need to scan the entire database.
         
         if (vars.find("GILIST") != vars.end()) {
+            m_NeedScan = true;
+            return true;
+        }
+        
+        // Ditto for an attached TILIST.
+        
+        if (vars.find("TILIST") != vars.end()) {
             m_NeedScan = true;
             return true;
         }
@@ -1324,33 +1330,37 @@ void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet          & volset,
 }
 
 
-void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet          & volset,
+void CSeqDBAliasNode::x_SetIdListMask(CSeqDBVolSet          & volset,
                                       int                     begin,
                                       int                     end,
-                                      const CSeqDB_FileName & gilist)
+                                      const CSeqDB_FileName & idlist,
+                                      bool                    use_tis)
 {
-    CSeqDB_Path gipath(m_DBPath, gilist);
+    CSeqDB_Path idpath(m_DBPath, idlist);
     
     ITERATE(TVolNames, vn, m_VolNames) {
-        volset.AddGiListVolume(vn->GetBasePathS(),
-                               gipath.GetPathS(),
+        volset.AddIdListVolume(vn->GetBasePathS(),
+                               idpath.GetPathS(),
                                begin,
-                               end);
+                               end,
+                               use_tis);
     }
     
+    string id_key(use_tis ? "TILIST" : "GILIST");
+    
     NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
-        string & current = (**an).m_Values["GILIST"];
+        string & current = (**an).m_Values[id_key];
         
         if (! current.empty()) {
             string msg =
                 string("Alias file (") + m_DBPath.GetDirNameS() +
-                ") has multiple GI lists (" +
-                current + "," + gipath.GetPathS() + ").";
+                ") has multiple ID lists (" +
+                current + "," + idpath.GetPathS() + ").";
             
             NCBI_THROW(CSeqDBException, eFileErr, msg);
         }
         
-        current = gipath.GetPathS();
+        current = idpath.GetPathS();
     }
     
     NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
@@ -1391,6 +1401,7 @@ void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end)
 void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
     TVarList::iterator gil_iter   = m_Values.find(string("GILIST"));
+    TVarList::iterator til_iter   = m_Values.find(string("TILIST"));
     TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
     TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
     TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
@@ -1400,6 +1411,7 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
     if (! m_DBList.empty()) {
         if (oid_iter   != m_Values.end() ||
             gil_iter   != m_Values.end() ||
+            til_iter   != m_Values.end() ||
             f_oid_iter != m_Values.end() ||
             l_oid_iter != m_Values.end()) {
             
@@ -1441,7 +1453,25 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
                 CSeqDB_FileName gilist(gilname);
                 gilist.FixDelimiters();
                 
-                x_SetGiListMask(volset, first_oid, last_oid, gilist);
+                x_SetIdListMask(volset, first_oid, last_oid, gilist, false);
+                filtered = true;
+            }
+            
+            if (til_iter != m_Values.end()) {
+                const string & tilname(til_iter->second);
+                
+                if (tilname.find(" ") != tilname.npos) {
+                    string msg =
+                        string("Alias file (") + m_DBPath.GetDirNameS() +
+                        ") has multiple TI lists (" + tilname + ").";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+                
+                CSeqDB_FileName tilist(tilname);
+                tilist.FixDelimiters();
+                
+                x_SetIdListMask(volset, first_oid, last_oid, tilist, true);
                 filtered = true;
             }
             
@@ -1540,7 +1570,7 @@ int CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
 
 bool CSeqDBAliasNode::NeedTotalsScan(const CSeqDBVolSet & volset) const
 {
-    CSeqDB_GiListValuesTest explore;
+    CSeqDB_IdListValuesTest explore;
     WalkNodes(& explore, volset);
     
     return explore.NeedScan();

@@ -64,9 +64,10 @@ public:
     
     /// Identifier formats used by this class.
     enum EIdentType {
-        eGi,       /// Genomic ID is a relatively stable numeric identifier for sequences.
-        ePig,      /// Each PIG identifier refers to exactly one protein sequence.
-        eStringID, /// Some sequence sources uses string identifiers.
+        eGiId,     /// Genomic ID is a relatively stable numeric identifier for sequences.
+        eTiId,     /// Trace ID is a numeric identifier for Trace sequences.
+        ePigId,    /// Each PIG identifier refers to exactly one protein sequence.
+        eStringId, /// Some sequence sources uses string identifiers.
         eOID       /// The ordinal id indicates the order of the data in the volume's index file.
     };
     
@@ -90,6 +91,12 @@ public:
     
     /// Genomic IDs, the most common numerical identifier.
     typedef int TGi;
+    
+    /// Identifier type for trace databases.
+    typedef Int8 TTi;
+    
+    /// Type large enough to hold any numerical ID.
+    typedef Int8 TId;
     
     /// Constructor
     /// 
@@ -136,29 +143,30 @@ public:
     ///   true if the PIG was found
     bool PigToOid(TPig pig, TOid & oid, CSeqDBLockHold & locked)
     {
-        _ASSERT(m_IdentType == ePig);
+        _ASSERT(m_IdentType == ePigId);
         return x_IdentToOid(pig, oid, locked);
     }
     
-    /// GI translation
+    /// GI or TI translation
     /// 
-    /// A GI identifier is translated to an OID.  GI identifiers are
-    /// used exclusively for all types of sequences.  Multiple GIs may
-    /// indicate the same sequence of bases (ie. if several research
-    /// projects sequenced a gene and found the same results).
+    /// A GI or TI identifier is translated to an OID.  GI identifiers
+    /// are used for all types of sequences.  TI identifiers are used
+    /// primarily for nucleotide data in the Trace DBs.  Multiple GIs
+    /// may indicate the same sequence of bases and the same OID, but
+    /// TIs are usually unique.
     /// 
-    /// @param gi
-    ///   The GI to look up.
+    /// @param id
+    ///   The GI or TI to look up.
     /// @param oid
     ///   The returned oid.
     /// @param locked
     ///   The lock hold object for this thread.
     /// @return
     ///   true if the GI was found
-    bool GiToOid(TGi gi, TOid & oid, CSeqDBLockHold & locked)
+    bool IdToOid(Int8 id, TOid & oid, CSeqDBLockHold & locked)
     {
-        _ASSERT(m_IdentType == eGi);
-        return x_IdentToOid(gi, oid, locked);
+        _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
+        return x_IdentToOid(id, oid, locked);
     }
     
     /// Translate Gis to Oids for the given vector of Gi/Oid pairs.
@@ -177,7 +185,7 @@ public:
     ///   The set of GI-OID pairs.
     /// @param locked
     ///   The lock holder object for this thread
-    void GisToOids(int              vol_start,
+    void IdsToOids(int              vol_start,
                    int              vol_end,
                    CSeqDBGiList   & gis,
                    CSeqDBLockHold & locked);
@@ -242,7 +250,7 @@ public:
     ///   The resulting identifier type.
     static EIdentType
     TryToSimplifyAccession(const string & acc,
-                           int          & num_id,
+                           Int8         & num_id,
                            string       & str_id,
                            bool         & simpler);
     
@@ -275,7 +283,7 @@ public:
     static EIdentType
     SimplifySeqid(CSeq_id       & bestid,
                   const string  * acc,
-                  int           & num_id,
+                  Int8          & num_id,
                   string        & str_id,
                   bool          & simpler);
     
@@ -289,8 +297,8 @@ public:
     /// @param high_id Highest numeric id value in database. [out]
     /// @param count Number of numeric id values in database. [out]
     /// @param locked Lock holder object for this thread. [in]
-    void GetIdBounds(int            & low_id,
-                     int            & high_id,
+    void GetIdBounds(Int8           & low_id,
+                     Int8           & high_id,
                      int            & count,
                      CSeqDBLockHold & locked);
     
@@ -334,14 +342,14 @@ private:
         }
         
         /// Assign a numeric value to this object.
-        void SetNumeric(int ident)
+        void SetNumeric(Int8 ident)
         {
             m_IsSet = true;
             m_NKey = ident;
         }
         
         /// Fetch the numeric value of this object.
-        int GetNumeric() const
+        Int8 GetNumeric() const
         {
             return m_NKey;
         }
@@ -361,7 +369,7 @@ private:
         
         /// Returns true if the provided integer compares as lower
         /// than the assigned lower boundary for this ISAM file.
-        bool OutsideFirstBound(int ident)
+        bool OutsideFirstBound(Int8 ident)
         {
             return (m_IsSet && (ident < m_NKey));
         }
@@ -375,7 +383,7 @@ private:
         
         /// Returns true if the provided integer compares as higher
         /// than the assigned upper boundary for this ISAM file.
-        bool OutsideLastBound(int ident)
+        bool OutsideLastBound(Int8 ident)
         {
             return (m_IsSet && (ident > m_NKey));
         }
@@ -392,7 +400,7 @@ private:
         bool   m_IsSet;
         
         /// The key, if it is a number.
-        int    m_NKey;
+        Int8   m_NKey;
         
         /// The key, if it is a string.
         string m_SKey;
@@ -408,7 +416,7 @@ private:
     };
     
     /// The key-value pair type for numerical indices
-    struct SNumericKeyData {
+    struct SNumericKeyData4 {
         /// The key, a GI or PIG identifier.
         Uint4 key;
         
@@ -428,7 +436,7 @@ private:
     ///   The lock holder object for this thread.
     /// @return
     ///   true if the identifier was found.
-    bool x_IdentToOid(int              id,
+    bool x_IdentToOid(Int8             id,
                       TOid           & oid,
                       CSeqDBLockHold & locked);
     
@@ -452,7 +460,7 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_SearchIndexNumeric(int              Number, 
+    x_SearchIndexNumeric(Int8             Number,
                          int            * Data,
                          Uint4          * Index,
                          Int4           & SampleNum,
@@ -470,12 +478,15 @@ private:
     ///   The ending OID for this ISAM file's database volume.
     /// @param gis
     ///   The GI list to translate.
+    /// @param use_tis
+    ///   Iterate over the TI part of the GI list.
     /// @param locked
     ///   The lock holder object for this thread.
     void
     x_SearchIndexNumericMulti(int              vol_start,
                               int              vol_end,
                               CSeqDBGiList   & gis,
+                              bool             use_tis,
                               CSeqDBLockHold & locked);
     
     /// Data file search
@@ -496,7 +507,7 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_SearchDataNumeric(int              Number,
+    x_SearchDataNumeric(Int8             Number,
                         int            * Data,
                         Uint4          * Index,
                         Int4             SampleNum,
@@ -519,6 +530,8 @@ private:
     ///   The index of the first unexamined GI in the GI list.
     /// @param sample_index
     ///   Indicates which data page should be used.
+    /// @param use_tis
+    ///   Use trace IDs instead of GIs.
     /// @param locked
     ///   The lock holder object for this thread.
     void
@@ -527,6 +540,7 @@ private:
                              CSeqDBGiList   & gis,
                              int            & gilist_index,
                              int              sample_index,
+                             bool             use_tis,
                              CSeqDBLockHold & locked);
     
     /// Numeric identifier lookup
@@ -544,7 +558,7 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_NumericSearch(int              Number,
+    x_NumericSearch(Int8             Number,
                     int            * Data,
                     Uint4          * Index,
                     CSeqDBLockHold & locked);
@@ -855,8 +869,8 @@ private:
     ///   -1, 0 or 1 when key_in is less, equal greater than key_out.
     int x_TestNumericSample(CSeqDBMemLease & index_lease,
                             int              index,
-                            int              key_in,
-                            int            & key_out,
+                            Int8             key_in,
+                            Int8           & key_out,
                             int            & data_out);
     
     /// Get a sample key value from a numeric index.
@@ -876,7 +890,7 @@ private:
     ///   If an exact match, the data found will be returned here.
     void x_GetNumericSample(CSeqDBMemLease & index_lease,
                             int              index,
-                            int            & key_out,
+                            Int8           & key_out,
                             int            & data_out);
     
     /// Advance the GI list
@@ -898,14 +912,17 @@ private:
     ///   The current key in the ISAM file.
     /// @param data
     ///   The data corresponding to key.
+    /// @param use_tis
+    ///   Use trace IDs instead of GIs.
     /// @return
     ///   Returns true if any advancement was possible.
     bool x_AdvanceGiList(int            vol_start,
                          int            vol_end,
                          CSeqDBGiList & gis,
                          int          & index,
-                         int            key,
-                         int            data);
+                         Int8           key,
+                         int            data,
+                         bool           use_tis);
     
     /// Advance the ISAM file
     ///
@@ -926,8 +943,8 @@ private:
     ///   Returns true if any advancement was possible.
     bool x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
                             int            & index,
-                            int              target_gi,
-                            int            & isam_key,
+                            Int8             target_gi,
+                            Int8           & isam_key,
                             int            & isam_data);
     
     /// Map a data page.
@@ -942,20 +959,20 @@ private:
     /// @param num_elements Number of elements in the page.       [out]
     /// @param data_page_begin Pointer to the returned data.      [out]
     /// @param locked The lock holder object for this thread.     [out]
-    void x_MapDataPage(int                sample_index,
-                       int              & start,
-                       int              & num_elements,
-                       SNumericKeyData ** data_page_begin,
-                       CSeqDBLockHold   & locked);
+    void x_MapDataPage(int                 sample_index,
+                       int               & start,
+                       int               & num_elements,
+                       SNumericKeyData4 ** data_page_begin,
+                       CSeqDBLockHold    & locked);
     
     /// Get a particular data element from a data page.
     /// @param dpage A pointer to that page in memory.  [in]
     /// @param index The index of the element to fetch. [in]
     /// @param key   The returned key.   [out]
     /// @param data  The returned value. [out]
-    void x_GetDataElement(SNumericKeyData * dpage,
+    void x_GetDataElement(SNumericKeyData4 * dpage,
                           int               index,
-                          int             & key,
+                          Int8            & key,
                           int             & data);
     
     /// Find the least and greatest keys in this ISAM file.
@@ -964,7 +981,7 @@ private:
     /// Check whether a numeric key is within this volume's bounds.
     /// @param key The key for which to do the check.
     /// @param locked The lock holder object for this thread.
-    bool x_OutOfBounds(int key, CSeqDBLockHold & locked);
+    bool x_OutOfBounds(Int8 key, CSeqDBLockHold & locked);
     
     /// Check whether a string key is within this volume's bounds.
     /// @param key The key for which to do the check.
@@ -977,6 +994,22 @@ private:
         for(size_t i = 0; i < s.size(); i++) {
             s[i] = toupper(s[i]);
         }
+    }
+    
+    /// Fetch a GI or TI from a GI list.
+    static Int8 x_GetId(CSeqDBGiList & ids, int index, bool use_tis)
+    {
+        return (use_tis
+                ? ids.GetTiOid(index).ti
+                : ids.GetGiOid(index).gi);
+    }
+    
+    /// Fetch an OID from the GI or TI vector in a GI list.
+    static Int8 x_GetOid(CSeqDBGiList & ids, int index, bool use_tis)
+    {
+        return (use_tis
+                ? ids.GetTiOid(index).oid
+                : ids.GetGiOid(index).oid);
     }
     
     
@@ -1052,16 +1085,18 @@ private:
 inline int
 CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
                                 int              index,
-                                int              key_in,
-                                int            & key_out,
+                                Int8             key_in,
+                                Int8           & key_out,
                                 int            & data_out)
 {
-    SNumericKeyData * keydatap = 0;
+    // Only implements 4 byte keys.
     
-    int obj_size = (int) sizeof(SNumericKeyData);
+    SNumericKeyData4 * keydatap = 0;
+    
+    int obj_size = (int) sizeof(SNumericKeyData4);
     TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
     
-    keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
+    keydatap = (SNumericKeyData4*) index_lease.GetPtr(offset_begin);
     key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
     
     int rv = 0;
@@ -1081,15 +1116,17 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
 inline void
 CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
                                int              index,
-                               int            & key_out,
+                               Int8           & key_out,
                                int            & data_out)
 {
-    SNumericKeyData * keydatap = 0;
+    // Only implements 4 byte keys.
     
-    int obj_size = (int) sizeof(SNumericKeyData);
+    SNumericKeyData4 * keydatap = 0;
+    
+    int obj_size = (int) sizeof(SNumericKeyData4);
     TIndx offset_begin = m_KeySampleOffset + (obj_size * index);
     
-    keydatap = (SNumericKeyData*) index_lease.GetPtr(offset_begin);
+    keydatap = (SNumericKeyData4*) index_lease.GetPtr(offset_begin);
     key_out = (int) SeqDB_GetStdOrd(& (keydatap->key));
     data_out = (int) SeqDB_GetStdOrd(& (keydatap->data));
 }
@@ -1099,22 +1136,23 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
                             int            vol_end,
                             CSeqDBGiList & gis,
                             int          & index,
-                            int            key,
-                            int            data)
+                            Int8           key,
+                            int            data,
+                            bool           use_tis)
 {
     // Skip any that are less than key.
     
     bool advanced = false;
-    int gis_size = gis.GetNumGis();
+    int gis_size = use_tis ? gis.GetNumTis() : gis.GetNumGis();
     
-    while((index < gis_size) && (gis[index].gi < key)) {
+    while((index < gis_size) && (x_GetId(gis, index, use_tis) < key)) {
         advanced = true;
         index++;
         
         int jump = 2;
         
         while((index + jump) < gis_size &&
-              gis[index + jump].gi < key) {
+              x_GetId(gis, index + jump, use_tis) < key) {
             index += jump;
             jump += jump;
         }
@@ -1125,10 +1163,14 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     // If the sample is an exact match to one (or more) GIs, apply
     // the translation (if we have it) for those GIs.
     
-    while((index < gis_size) && (gis[index].gi == key)) {
-        if (gis[index].oid == -1) {
+    while((index < gis_size) && (x_GetId(gis,index,use_tis) == key)) {
+        if (x_GetOid(gis, index, use_tis) == -1) {
             if ((data + vol_start) < vol_end) {
-                gis.SetTranslation(index, data + vol_start);
+                if (use_tis) {
+                    gis.SetTiTranslation(index, data + vol_start);
+                } else {
+                    gis.SetTranslation(index, data + vol_start);
+                }
             }
         }
         
@@ -1139,7 +1181,9 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     // Continue skipping to eliminate any gi/oid pairs that are
     // already translated.
     
-    while((index < gis_size) && (gis[index].oid != -1)) {
+    while((index < gis_size) &&
+          (x_GetOid(gis, index, use_tis) != -1)) {
+        
         advanced = true;
         index++;
     }
@@ -1150,8 +1194,8 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
 inline bool
 CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
                                int            & index,
-                               int              target_gi,
-                               int            & isam_key,
+                               Int8             target_id,
+                               Int8           & isam_key,
                                int            & isam_data)
 {
     bool advanced = false;
@@ -1164,12 +1208,13 @@ CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
     // The following is basically equivalent to (but faster than):
     //   while(first_gi >= sample[i+1]) i++;
     
-    int post_key(0), post_data(0);
+    Int8 post_key(0);
+    int post_data(0);
     
     while(((index + 1) < num_samples) &&
           (x_TestNumericSample(index_lease,
                                index + 1,
-                               target_gi,
+                               target_id,
                                post_key,
                                post_data) >= 0)) {
         
@@ -1187,7 +1232,7 @@ CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,
         while(((index + jump + 1) < num_samples) &&
               (x_TestNumericSample(index_lease,
                                    index + jump + 1,
-                                   target_gi,
+                                   target_id,
                                    post_key,
                                    post_data) >= 0)) {
             index += jump + 1;
@@ -1205,15 +1250,15 @@ inline void
 CSeqDBIsam::x_MapDataPage(int                sample_index,
                           int              & start,
                           int              & num_elements,
-                          SNumericKeyData ** data_page_begin,
+                          SNumericKeyData4 ** data_page_begin,
                           CSeqDBLockHold   & locked)
 {
     num_elements =
         x_GetPageNumElements(sample_index, & start);
     
-    TIndx offset_begin = start * sizeof(SNumericKeyData);
+    TIndx offset_begin = start * sizeof(SNumericKeyData4);
     TIndx offset_end =
-        offset_begin + sizeof(SNumericKeyData) * num_elements;
+        offset_begin + sizeof(SNumericKeyData4) * num_elements;
     
     m_Atlas.Lock(locked);
     
@@ -1224,15 +1269,17 @@ CSeqDBIsam::x_MapDataPage(int                sample_index,
                           offset_end);
     }
     
-    *data_page_begin = (SNumericKeyData*) m_DataLease.GetPtr(offset_begin);
+    *data_page_begin = (SNumericKeyData4*) m_DataLease.GetPtr(offset_begin);
 }
 
 inline void
-CSeqDBIsam::x_GetDataElement(SNumericKeyData * dpage,
-                             int               index,
-                             int             & key,
-                             int             & data)
+CSeqDBIsam::x_GetDataElement(SNumericKeyData4 * dpage,
+                             int                index,
+                             Int8             & key,
+                             int              & data)
 {
+    // Only implements 4 byte keys.
+    
     key = (int) SeqDB_GetStdOrd((Int4*)  & dpage[index].key);
     data = (int) SeqDB_GetStdOrd((Int4*) & dpage[index].data);
 }

@@ -106,10 +106,11 @@ public:
     ///   The lock holder object for this thread.
     /// @return
     ///   A reference to the specified GI list.
-    TListRef GetNodeGiList(const string    & filename,
+    TListRef GetNodeIdList(const string    & filename,
                            const CSeqDBVol * volp,
                            int               vol_start,
                            int               vol_end,
+                           bool              use_tis,
                            CSeqDBLockHold  & locked);
     
 private:
@@ -125,14 +126,30 @@ private:
     /// @param gilist The volume GI list.
     void x_TranslateFromUserList(CSeqDBGiList & gilist);
     
+    /// Translate a volume gilists's GIs from the user gilist's GIs.
+    ///
+    /// This does the work described for x_TranslateFromUserList()
+    /// that is related to GIs.
+    ///
+    /// @param gilist The volume GI list.
+    void x_TranslateGisFromUserList(CSeqDBGiList & gilist);
+    
+    /// Translate a volume gilists's TIs from the user gilist's TIs.
+    ///
+    /// This does the work described for x_TranslateFromUserList()
+    /// that is related to TIs.
+    ///
+    /// @param gilist The volume GI list.
+    void x_TranslateTisFromUserList(CSeqDBGiList & gilist);
+    
     /// Memory management layer object.
     CSeqDBAtlas & m_Atlas;
     
     /// User-specified GI list.
     TListRef m_UserList;
     
-    /// Map of all alias node specified GI lists.
-    map<string, TListRef> m_NodeListMap;
+    /// Map of all alias node specified GI lists and TI lists.
+    map<string, TListRef> m_NodeListMap[2];
 };
 
 END_NCBI_SCOPE

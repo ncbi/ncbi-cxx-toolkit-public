@@ -860,12 +860,15 @@ private:
     ///   The first OID in the OID range.
     /// @param end
     ///   The OID after the last OID in the range.
-    /// @param gilist
+    /// @param idlist
     ///   The name of the GI list file.
-    void x_SetGiListMask(CSeqDBVolSet          & volset,
+    /// @param use_tis
+    ///   The Ids are TIs if this is true (otherwise GIs).
+    void x_SetIdListMask(CSeqDBVolSet          & volset,
                          int                     begin,
                          int                     end,
-                         const CSeqDB_FileName & gilist);
+                         const CSeqDB_FileName & idlist,
+                         bool                    use_tis);
     
     /// Add an OID range to a volume
     /// 
