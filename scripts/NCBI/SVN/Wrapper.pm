@@ -157,6 +157,82 @@ sub ReadInfo
     return \%Info
 }
 
+sub ReadLog
+{
+    my ($Self, @LogParams) = @_;
+
+    my $Stream = $Self->Run('log', '--verbose', @LogParams);
+
+    my $Line;
+    my $State = 'initial';
+    my $ErrorMessage = 'svn log parsing error';
+
+    my @Revisions;
+    my $CurrentRevision;
+    my $NumberOfLogLines;
+
+    while (defined($Line = $Stream->ReadLine()))
+    {
+        $Line =~ s/[\r\n]+$//;
+
+        if ($State eq 'changed_path')
+        {
+            if ($Line)
+            {
+                $Line =~ m/^   ([AMD]) (.+)(?: \(from (.+):(\d+)\))?$/o or
+                    goto ParsingError;
+
+                push @{$CurrentRevision->{ChangedPaths}}, [$1, $2, $3, $4]
+            }
+            else
+            {
+                $State = 'log_message';
+            }
+        }
+        elsif ($State eq 'log_message')
+        {
+            $State = 'initial' if --$NumberOfLogLines == 0;
+            $CurrentRevision->{LogMessage} .= $Line . "\n"
+        }
+        elsif ($State eq 'revision_header')
+        {
+            my %NewRev = (LogMessage => '', ChangedPaths => []);
+
+            push @Revisions, ($CurrentRevision = \%NewRev);
+
+            (@NewRev{qw(Number Author)}, $NumberOfLogLines) = $Line =~
+                m/^r(\d+) \| (.+?) \| .+? \| (\d) lines?$/o or
+                    goto ParsingError;
+
+            $State = $NumberOfLogLines > 0 ? 'changed_path_header' : 'initial'
+        }
+        elsif ($State eq 'changed_path_header')
+        {
+            goto ParsingError if $Line ne 'Changed paths:';
+
+            $State = 'changed_path'
+        }
+        elsif ($State eq 'initial')
+        {
+            goto ParsingError unless $Line =~ m/^-{70}/o;
+
+            $State = 'revision_header'
+        }
+    }
+
+    $Stream->Close();
+
+    chomp $_->{LogMessage} for @Revisions;
+
+    return \@Revisions;
+
+ParsingError:
+    local $/ = undef;
+    $Stream->ReadLine();
+    $Stream->Close();
+    die 'svn log parsing error'
+}
+
 sub GetLatestRevision
 {
     my ($Self) = @_;
