@@ -89,11 +89,8 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
         case K_IMPORT:
             ParseImport();
             break;
-// unsupported
         case K_ATTRIBUTEGROUP:
-            if (GetRawAttributeSet() == K_CLOSING) {
-                SkipContent();
-            }
+            CreateTypeDefinition(DTDEntity::eAttGroup);
             break;
         default:
             ParseError("Invalid keyword", "keyword");
@@ -202,7 +199,7 @@ bool XSDParser::DefineElementType(DTDElement& node)
 {
     if (IsValue("string") || IsValue("token") ||
         IsValue("normalizedString") ||
-        IsValue("anyURI") || IsValue("QName")) {
+        IsValue("anyURI") || IsValue("QName") || IsValue("date")) {
         node.SetType(DTDElement::eString);
     } else if (IsValue("double") || IsValue("float") || IsValue("decimal")) {
         node.SetType(DTDElement::eDouble);
@@ -248,7 +245,7 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
         attrib.SetType(DTDAttribute::eBoolean);
     } else if (IsValue("int") || IsValue("integer")) {
         attrib.SetType(DTDAttribute::eInteger);
-    } else if (IsValue("float") || IsValue("double")) {
+    } else if (IsValue("float") || IsValue("double") || IsValue("decimal")) {
         attrib.SetType(DTDAttribute::eDouble);
     } else {
         return false;
@@ -466,10 +463,10 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
 
         if (m_MapEntity.find(id) != m_MapEntity.end()) {
             PushEntityLexer(id);
-            if (GetNextToken() != K_GROUP) {
-                ParseError("group");
-            }
             ParseGroupRef(node);
+        } else {
+            node.SetTypeName(node.GetName());
+            node.SetType(DTDElement::eUnknownGroup);
         }
     }
     if (tok == K_CLOSING) {
@@ -477,6 +474,17 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
     }
     m_ExpectLastComment = true;
     return name;
+}
+
+void XSDParser::ParseGroupRef(DTDElement& node)
+{
+    if (GetNextToken() != K_GROUP) {
+        ParseError("group");
+    }
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
 }
 
 void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
@@ -511,6 +519,9 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         case K_ATTRIBUTE:
             ParseAttribute(node);
             break;
+        case K_ATTRIBUTEGROUP:
+            ParseAttributeGroup(node);
+            break;
         case K_ANY:
             if (node.GetType() != DTDElement::eSequence) {
                 ParseError("Unexpected element type");
@@ -535,7 +546,8 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
                 eatEOT = true;
                 break;
             }
-            if (node.GetType() == DTDElement::eUnknown) {
+            if (node.GetType() == DTDElement::eUnknown ||
+                node.GetType() == DTDElement::eUnknownGroup) {
                 node.SetType(DTDElement::eSequence);
                 ParseContainer(node);
             } else {
@@ -550,7 +562,8 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             }
             break;
         case K_CHOICE:
-            if (node.GetType() == DTDElement::eUnknown) {
+            if (node.GetType() == DTDElement::eUnknown ||
+                node.GetType() == DTDElement::eUnknownGroup) {
                 node.SetType(DTDElement::eChoice);
                 ParseContainer(node);
             } else {
@@ -565,7 +578,8 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             }
             break;
         case K_SET:
-            if (node.GetType() == DTDElement::eUnknown) {
+            if (node.GetType() == DTDElement::eUnknown ||
+                node.GetType() == DTDElement::eUnknownGroup) {
                 node.SetType(DTDElement::eSet);
                 ParseContainer(node);
             } else {
@@ -655,14 +669,6 @@ void XSDParser::ParseSimpleContent(DTDElement& node)
     }
 }
 
-void XSDParser::ParseGroupRef(DTDElement& node)
-{
-    TToken tok = GetRawAttributeSet();
-    if (tok == K_CLOSING) {
-        ParseContent(node);
-    }
-}
-
 void XSDParser::ParseExtension(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
@@ -729,6 +735,36 @@ void XSDParser::ParseAttribute(DTDElement& node)
         ParseContent(att);
     }
     m_ExpectLastComment = true;
+}
+
+void XSDParser::ParseAttributeGroup(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    if (GetAttribute("ref")) {
+        string id = CreateEntityId(m_Value,DTDEntity::eAttGroup);
+        if (m_MapEntity.find(id) != m_MapEntity.end()) {
+            PushEntityLexer(id);
+            ParseAttributeGroupRef(node);
+        } else {
+            DTDAttribute a;
+            a.SetType(DTDAttribute::eUnknownGroup);
+            a.SetTypeName(m_Value);
+            node.AddAttribute(a);
+        }
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(node);
+    }
+}
+
+void XSDParser::ParseAttributeGroupRef(DTDElement& node)
+{
+    if (GetNextToken() != K_ATTRIBUTEGROUP) {
+        ParseError("attributeGroup");
+    }
+    if (GetRawAttributeSet() == K_CLOSING) {
+        ParseContent(node);
+    }
 }
 
 void XSDParser::ParseAny(DTDElement& node)
@@ -845,6 +881,9 @@ string XSDParser::CreateEntityId( const string& name, DTDEntity::EType type)
     case DTDEntity::eGroup:
         id = string("group:") + name;
         break;
+    case DTDEntity::eAttGroup:
+        id = string("attgroup:") + name;
+        break;
     default:
         id = name;
         break;
@@ -882,6 +921,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
     TToken tok;
     CComments Comments;
     for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
+        data += '\n';
         data += "<" + m_Raw;
         if (tok == K_DOCUMENTATION) {
             data += ">";
@@ -906,6 +946,7 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
         data += CNcbiOstrstreamToString(buffer);
         data += closing;
     }
+    data += '\n';
     data += m_Raw;
     ent.SetData(data);
 }
@@ -919,16 +960,24 @@ void XSDParser::ProcessNamedTypes(void)
         for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
             DTDElement& node = i->second;
-            if ( node.GetType() == DTDElement::eUnknown &&
-                !node.GetTypeName().empty()) {
-                found = true;
-                PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
-                ParseContent(node);
-                node.SetTypeIfUnknown(DTDElement::eEmpty);
+            if (!node.GetTypeName().empty()) {
+                if ( node.GetType() == DTDElement::eUnknown) {
+                    found = true;
+                    PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eType));
+                    ParseContent(node);
+                    node.SetTypeIfUnknown(DTDElement::eEmpty);
 // this is not always correct, but it seems that local elements
 // defined by means of global types should be made global as well
-                if (node.IsNamed() && node.IsEmbedded()) {
-                    node.SetEmbedded(false);
+                    if (node.IsNamed() && node.IsEmbedded()) {
+                        node.SetEmbedded(false);
+                    }
+                } else if ( node.GetType() == DTDElement::eUnknownGroup) {
+                    found = true;
+                    PushEntityLexer(CreateEntityId(node.GetTypeName(),DTDEntity::eGroup));
+                    ParseGroupRef(node);
+                    if (node.GetType() == DTDElement::eUnknownGroup) {
+                        node.SetType(DTDElement::eEmpty);
+                    }
                 }
             }
         }
@@ -964,11 +1013,19 @@ void XSDParser::ProcessNamedTypes(void)
                 list<DTDAttribute>& atts = node.GetNonconstAttributes();
                 list<DTDAttribute>::iterator a;
                 for (a = atts.begin(); a != atts.end(); ++a) {
-                    if ( a->GetType() == DTDAttribute::eUnknown &&
-                        !a->GetTypeName().empty()) {
-                        found = true;
-                        PushEntityLexer(CreateEntityId(a->GetTypeName(),DTDEntity::eType));
-                        ParseContent(*a);
+
+                    if (!a->GetTypeName().empty()) { 
+                        if ( a->GetType() == DTDAttribute::eUnknown) {
+                            found = true;
+                            PushEntityLexer(CreateEntityId(a->GetTypeName(),DTDEntity::eType));
+                            ParseContent(*a);
+                        } else if ( a->GetType() == DTDAttribute::eUnknownGroup) {
+                            found = true;
+                            PushEntityLexer(CreateEntityId(a->GetTypeName(),DTDEntity::eAttGroup));
+                            atts.erase(a);
+                            ParseAttributeGroupRef(node);
+                            break;
+                        }
                     }
                 }
             }

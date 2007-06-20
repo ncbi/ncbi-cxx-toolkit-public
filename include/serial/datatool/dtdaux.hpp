@@ -71,7 +71,8 @@ public:
     enum EType {
         eEntity,
         eType,
-        eGroup
+        eGroup,
+        eAttGroup
     };
 
     void SetName(const string& name);
@@ -105,6 +106,8 @@ public:
 
     enum EType {
         eUnknown,
+        eUnknownGroup,
+
         eString,
         eEnum,
         eId,
@@ -183,6 +186,8 @@ public:
 
     enum EType {
         eUnknown,
+        eUnknownGroup,
+
         eString,   // #PCDATA
         eAny,      // ANY
         eEmpty,    // EMPTY

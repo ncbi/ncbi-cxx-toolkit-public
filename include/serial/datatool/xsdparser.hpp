@@ -74,16 +74,18 @@ protected:
 
     string ParseElementContent(DTDElement* owner, int emb);
     string ParseGroup(DTDElement* owner, int emb);
+    void ParseGroupRef(DTDElement& node);
     void ParseContent(DTDElement& node, bool extended=false);
     void ParseDocumentation(void);
     void ParseContainer(DTDElement& node);
 
     void ParseComplexType(DTDElement& node);
     void ParseSimpleContent(DTDElement& node);
-    void ParseGroupRef(DTDElement& node);
     void ParseExtension(DTDElement& node);
     void ParseRestriction(DTDElement& node);
     void ParseAttribute(DTDElement& node);
+    void ParseAttributeGroup(DTDElement& node);
+    void ParseAttributeGroupRef(DTDElement& node);
     
     void ParseAny(DTDElement& node);
 

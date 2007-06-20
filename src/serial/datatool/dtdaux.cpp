@@ -284,7 +284,7 @@ bool DTDElement::IsNamed(void) const
 
 void DTDElement::SetType( EType type)
 {
-    _ASSERT(m_Type == eUnknown || m_Type == type);
+    _ASSERT(m_Type == eUnknown || m_Type == eUnknownGroup || m_Type == type);
     m_Type = type;
 }
 

@@ -122,6 +122,7 @@ public:
 
     void FlushComments(void);
     void FlushCommentsTo(CComments& comments);
+    void FlushCommentsTo(AbstractLexer& lexer);
 
     const string& GetName(void) const
         {

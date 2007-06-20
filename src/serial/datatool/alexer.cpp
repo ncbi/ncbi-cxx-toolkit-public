@@ -218,6 +218,12 @@ void AbstractLexer::FlushCommentsTo(CComments& comments)
     FlushComments();
 }
 
+void AbstractLexer::FlushCommentsTo(AbstractLexer& lexer)
+{
+    lexer.m_Comments = m_Comments;
+    FlushComments();
+}
+
 void AbstractLexer::EndCommentBlock()
 {
     if (m_Parser) {

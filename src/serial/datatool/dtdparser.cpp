@@ -575,6 +575,7 @@ void DTDParser::PushEntityLexer(const string& name)
     }
     AbstractLexer *lexer = CreateEntityLexer(*in,lexer_name);
     lexer->SetParser(this);
+    Lexer().FlushCommentsTo(*lexer);
     m_StackLexer.push(lexer);
     SetLexer(lexer);
 }
@@ -754,7 +755,8 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
             ParseError(i->first.c_str(),"definition");
         }
 
-        bool generate = type != DTDElement::eUnknown;
+        bool generate = type != DTDElement::eUnknown &&
+                        type != DTDElement::eUnknownGroup;
         if (m_SrcType == eDTD) {
             generate = ( type == DTDElement::eSequence ||
                          type == DTDElement::eChoice ||
@@ -1140,6 +1142,9 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     case DTDAttribute::eUnknown:
         ParseError("Unknown attribute", "attribute");
         break;
+    case DTDAttribute::eUnknownGroup:
+        ParseError("Unknown attribute", "attribute");
+        break;
     case DTDAttribute::eId:
     case DTDAttribute::eIdRef:
     case DTDAttribute::eIdRefs:
@@ -1262,7 +1267,8 @@ void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
     cout << name << ": ";
     switch (node.GetType()) {
     default:
-    case DTDElement::eUnknown:  cout << "UNKNOWN"; break;
+    case DTDElement::eUnknown:       cout << "UNKNOWN"; break;
+    case DTDElement::eUnknownGroup:  cout << "UNKNOWN"; break;
     case DTDElement::eString:   cout << "string";  break;
     case DTDElement::eAny:      cout << "any";     break;
     case DTDElement::eEmpty:    cout << "empty";   break;
@@ -1343,7 +1349,8 @@ void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
     cout << attrib.GetName();
     cout << ": ";
     switch (attrib.GetType()) {
-    case DTDAttribute::eUnknown:  cout << "eUnknown"; break;
+    case DTDAttribute::eUnknown:       cout << "UNKNOWN"; break;
+    case DTDAttribute::eUnknownGroup:  cout << "UNKNOWN"; break;
     case DTDAttribute::eString:   cout << "eString"; break;
     case DTDAttribute::eEnum:     cout << "eEnum"; break;
     case DTDAttribute::eId:       cout << "eId"; break;
