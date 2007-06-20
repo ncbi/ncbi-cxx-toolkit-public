@@ -568,6 +568,51 @@ bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+//  CDB_UserHandler_Exception::
+//
+
+CDB_UserHandler_Exception::~CDB_UserHandler_Exception(void)
+{
+}
+
+bool
+CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
+{
+    if (!ex)
+        return false;
+
+    // Ignore errors with ErrorCode set to 0
+    // (this is related mostly to the FreeTDS driver)
+    if (ex->GetDBErrCode() == 0)
+        return true;
+
+    ex->Throw();
+
+    return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+//  CDB_UserHandler_Exception_ODBC::
+//
+
+CDB_UserHandler_Exception_ODBC::~CDB_UserHandler_Exception_ODBC(void)
+{
+}
+
+bool
+CDB_UserHandler_Exception_ODBC::HandleIt(CDB_Exception* ex)
+{
+    if (!ex)
+        return false;
+
+    ex->Throw();
+
+    return true;
+}
+
+
 END_NCBI_SCOPE
 
 

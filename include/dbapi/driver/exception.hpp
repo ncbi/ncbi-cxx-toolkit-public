@@ -47,6 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 
+////////////////////////////////////////////////////////////////////////////////
 /// Helper macro for default database exception implementation.
 #define NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class, db_err_code) \
     { \
@@ -82,6 +83,7 @@ private: \
     static void xx_unused_##exception_class(void)
 
 
+////////////////////////////////////////////////////////////////////////////////
 // DEPRECATED, Will be removed soon.
 enum EDB_Severity {
     eDB_Info,
@@ -91,7 +93,7 @@ enum EDB_Severity {
     eDB_Unknown
 };
 
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ///
 /// CDB_Exception --
 ///
@@ -100,6 +102,7 @@ enum EDB_Severity {
 /// databases.
 
 
+////////////////////////////////////////////////////////////////////////////////
 // class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public std::exception
 class NCBI_DBAPIDRIVER_EXPORT CDB_Exception :
     EXCEPTION_VIRTUAL_BASE public CException
@@ -188,7 +191,7 @@ private:
 };
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_DSEx : public CDB_Exception
 {
 public:
@@ -197,13 +200,18 @@ public:
              const string& message,
              EDiagSev severity,
              int db_err_code)
-        : CDB_Exception(info, prev_exception, CDB_Exception::eDS, message, severity, db_err_code)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DSEx, CDB_Exception, db_err_code);
+        : CDB_Exception(info, prev_exception,
+                        CDB_Exception::eDS,
+                        message, severity,
+                        db_err_code)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DSEx,
+                                                       CDB_Exception,
+                                                       db_err_code);
 
 };
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_RPCEx : public CDB_Exception
 {
 public:
@@ -222,7 +230,9 @@ public:
                         db_err_code)
         , m_ProcName(proc_name.empty() ? "Unknown" : proc_name)
         , m_ProcLine(proc_line)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_RPCEx, CDB_Exception, db_err_code);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_RPCEx,
+                                                       CDB_Exception,
+                                                       db_err_code);
 
 public:
     const string& ProcName()  const { return m_ProcName; }
@@ -239,7 +249,7 @@ private:
 };
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_SQLEx : public CDB_Exception
 {
 public:
@@ -258,7 +268,9 @@ public:
                         db_err_code)
         , m_SqlState(sql_state.empty() ? "Unknown" : sql_state)
         , m_BatchLine(batch_line)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_SQLEx, CDB_Exception, db_err_code);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_SQLEx,
+                                                       CDB_Exception,
+                                                       db_err_code);
 
 public:
     const string& SqlState()   const { return m_SqlState;  }
@@ -275,20 +287,27 @@ private:
 };
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_DeadlockEx : public CDB_Exception
 {
 public:
     CDB_DeadlockEx(const CDiagCompileInfo& info,
                    const CException* prev_exception,
                    const string& message)
-       : CDB_Exception(info, prev_exception, CDB_Exception::eDeadlock, message, eDiag_Error, 123456)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DeadlockEx, CDB_Exception, 123456);
+       : CDB_Exception(info,
+                       prev_exception,
+                       CDB_Exception::eDeadlock,
+                       message,
+                       eDiag_Error,
+                       123456)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DeadlockEx,
+                                                       CDB_Exception,
+                                                       123456);
 
 };
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_TimeoutEx : public CDB_Exception
 {
 public:
@@ -302,11 +321,13 @@ public:
                        message,
                        eDiag_Error,
                        db_err_code)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_TimeoutEx, CDB_Exception, db_err_code);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_TimeoutEx,
+                                                       CDB_Exception,
+                                                       db_err_code);
 };
 
 
-
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_ClientEx : public CDB_Exception
 {
 public:
@@ -321,11 +342,14 @@ public:
                        message,
                        severity,
                        db_err_code)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_ClientEx, CDB_Exception, db_err_code);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_ClientEx,
+                                                       CDB_Exception,
+                                                       db_err_code);
 };
 
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_MultiEx : public CDB_Exception
 {
 public:
@@ -341,7 +365,9 @@ public:
                         0)
         , m_Bag( new CObjectFor<TExceptionStack>() )
         , m_NofRooms( capacity )
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_MultiEx, CDB_Exception, 0 );
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_MultiEx,
+                                                       CDB_Exception,
+                                                       0 );
 
 public:
     bool              Push(const CDB_Exception& ex);
@@ -385,6 +411,7 @@ private:
 //
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler : public CObject
 {
 public:
@@ -435,6 +462,7 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Diag : public CDB_UserHandler
 {
 public:
@@ -450,6 +478,7 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Stream : public CDB_UserHandler
 {
 public:
@@ -469,9 +498,32 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Exception :
+    public CDB_UserHandler
+{
+public:
+    virtual ~CDB_UserHandler_Exception(void);
 
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Exception_ODBC :
+    public CDB_UserHandler
+{
+public:
+    virtual ~CDB_UserHandler_Exception_ODBC(void);
+
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
 typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 
+////////////////////////////////////////////////////////////////////////////////
 /// Generic macro to throw a database exception, given the exception class,
 /// database error code and message string.
 #define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
