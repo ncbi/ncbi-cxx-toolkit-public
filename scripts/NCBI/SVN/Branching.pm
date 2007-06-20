@@ -151,6 +151,48 @@ sub ReadBranchMap
             MapFileLines => \@BranchMapLines)
 }
 
+sub ReadBranchInfo
+{
+    my ($Self, $SVN, $SwitchPlan) = @_;
+
+    my $Revisions = $SVN->ReadLog('--stop-on-copy',
+        $SVN->GetRepository(), map {$_->[1]} @$SwitchPlan);
+
+    my @MergeRevisions;
+
+    for my $Revision (@$Revisions)
+    {
+        if ($Revision->{LogMessage} =~ m/trunk revision (\d+)/o)
+        {
+            push @MergeRevisions, [$Revision, $1]
+        }
+    }
+
+    return {Revisions => $Revisions, MergeRevisions => \@MergeRevisions}
+}
+
+sub DetectLastMergeRevision
+{
+    my ($Self, $SVN, $SwitchPlan) = @_;
+
+    print "Detecting previous merge revision...\n";
+
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $SwitchPlan);
+
+    my $MergeRevisions = $BranchInfo->{MergeRevisions};
+
+    if (@$MergeRevisions)
+    {
+        my $LastMergeRev = $MergeRevisions->[0];
+        return $LastMergeRev->[1], $LastMergeRev->[0]->{Number}
+    }
+    else
+    {
+        my $FirstRevNumber = $BranchInfo->{Revisions}->[-1]->{Number};
+        return $FirstRevNumber, $FirstRevNumber
+    }
+}
+
 sub List
 {
     my ($Self) = @_;
@@ -396,39 +438,6 @@ sub Remove
     }
 
     unlink $BranchListFN if $BranchListFN;
-}
-
-sub DetectLastMergeRevision
-{
-    my ($Self, $SVN, $SwitchPlan) = @_;
-
-    print "Detecting previous merge revision...\n";
-
-    my $Stream = $SVN->Run('log', '--stop-on-copy',
-        $SVN->GetRepository(), map {$_->[1]} @$SwitchPlan);
-
-    my $LogLine;
-    my $Revision;
-
-    while (defined($LogLine = $Stream->ReadLine()))
-    {
-        if ($LogLine =~ m/^r(\d+)/o)
-        {
-            $Revision = $1
-        }
-        elsif ($LogLine =~ m/trunk revision (\d+)/o)
-        {
-            my $MergeRevision = $1;
-
-            local $/ = undef;
-            $Stream->ReadLine();
-            $Stream->Close();
-
-            return ($MergeRevision, $Revision)
-        }
-    }
-
-    return ($Revision, $Revision)
 }
 
 sub MergeDown
