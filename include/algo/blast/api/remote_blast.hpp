@@ -718,6 +718,41 @@ public:
     /// Get the GI list.
     list<int> GetGiList();
     
+    /// Compute the EProgram value to use for this search.
+    ///
+    /// The blast4 protocol uses a notion of program and service to
+    /// represent the type of search to do.  This method computes the
+    /// EProgram value corresponding to these strings.  Sometimes this
+    /// result should be modified based on the value of other options,
+    /// specifically the existence of the PHI pattern indicates PHI
+    /// blast and certain megablast template options that can indicate
+    /// discontiguous megablast.
+    /// @sa AdjustProgram.
+    ///
+    /// @param program The program string used by blast4.
+    /// @param service The service string used by blast4.
+    /// @return The EProgram value corresponding to these strings.
+    static EProgram ComputeProgram(const string & program,
+                                   const string & service);
+    
+    /// Adjust the EProgram based on option values.
+    ///
+    /// The blast4 protocol uses a notion of program and service to
+    /// represent the type of search to do.  However, for some values
+    /// of program and service, it is necessary to look at options
+    /// values in order to determine the precise EProgram value.  This
+    /// is particularly true when dealing with discontiguous megablast
+    /// for example.  This method adjusts the program value based on
+    /// the additional information found in these options.
+    ///
+    /// @param L The list of options used for this search.
+    /// @param program The EProgram suggested by program+service.
+    /// @param program_string The program as a string.
+    /// @return The EProgram value as adjusted by options.
+    static EProgram AdjustProgram(const TValueList & L,
+                                  EProgram           program,
+                                  const string     & program_string);
+    
 private:
     /// Optional-value idiom.
     ///
@@ -762,36 +797,6 @@ private:
         /// The value itself, valid only if m_IsSet is true.
         T    m_Value;
     };
-    
-    /// Compute the EProgram value to use for this search.
-    ///
-    /// The blast4 protocol uses a notion of program and service to
-    /// represent the type of search to do.  This method computes the
-    /// EProgram value corresponding to these strings.  Sometimes this
-    /// result should be modified based on the value of other options.
-    /// @sa x_AdjustProgram.
-    ///
-    /// @param program The program string used by blast4.
-    /// @param service The service string used by blast4.
-    /// @return The EProgram value corresponding to these strings.
-    EProgram x_ComputeProgram(const string & program,
-                              const string & service);
-    
-    /// Adjust the EProgram based on option values.
-    ///
-    /// The blast4 protocol uses a notion of program and service to
-    /// represent the type of search to do.  However, for some values
-    /// of program and service, it is necessary to look at options
-    /// values in order to determine the precise EProgram value.  This
-    /// is particularly true when dealing with discontiguous megablast
-    /// for example.
-    ///
-    /// @param L The list of options used for this search.
-    /// @param program The EProgram suggested by program+service.
-    /// @return The EProgram value as adjusted by options.
-    EProgram
-    x_AdjustProgram(const TValueList & L,
-                    EProgram           program);
     
     /// Apply values directly to BlastOptions object.
     ///

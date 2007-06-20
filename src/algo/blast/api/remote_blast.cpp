@@ -1570,11 +1570,14 @@ CBlastOptionsBuilder::CBlastOptionsBuilder(const string & program,
 }
 
 EProgram
-CBlastOptionsBuilder::x_ComputeProgram(const string & program,
-                                       const string & service)
+CBlastOptionsBuilder::ComputeProgram(const string & program,
+                                     const string & service)
 {
     string p = program;
-    const string & s = service;
+    string s = service;
+    
+    NStr::ToLower(p);
+    NStr::ToLower(s);
     
     // a. is there a program for phiblast?
     // b. others, like vecscreen, disco?
@@ -1872,8 +1875,9 @@ void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
 }
 
 EProgram
-CBlastOptionsBuilder::x_AdjustProgram(const TValueList & L,
-                                      EProgram           program)
+CBlastOptionsBuilder::AdjustProgram(const TValueList & L,
+                                    EProgram           program,
+                                    const string     & program_string)
 {
     bool problem = false;
     string name;
@@ -1908,7 +1912,7 @@ CBlastOptionsBuilder::x_AdjustProgram(const TValueList & L,
             string msg = "Incorrect combination of option (";
             msg += name;
             msg += ") and program (";
-            msg += m_Program;
+            msg += program_string;
             msg += ")";
             
             NCBI_THROW(CRemoteBlastException,
@@ -1924,9 +1928,9 @@ CRef<CBlastOptionsHandle> CBlastOptionsBuilder::
 GetSearchOptions(const objects::CBlast4_parameters & aopts,
                  const objects::CBlast4_parameters & popts)
 {
-    EProgram program = x_ComputeProgram(m_Program, m_Service);
+    EProgram program = ComputeProgram(m_Program, m_Service);
     
-    program = x_AdjustProgram(aopts.Get(), program);
+    program = AdjustProgram(aopts.Get(), program, m_Program);
     
     // Using eLocal allows more of the options to be returned to the user.
     
