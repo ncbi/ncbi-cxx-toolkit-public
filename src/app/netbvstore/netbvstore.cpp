@@ -42,6 +42,7 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <connect/services/netservice_client.hpp>
+#include <connect/services/netservice_api_expt.hpp>
 
 #include <util/thread_nonstop.hpp>
 
