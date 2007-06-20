@@ -65,7 +65,6 @@ class CDBSourceItem;
 class CBioseqContext;
 class COriginItem;
 class CGapItem;
-class CBarcodeComment;
 
 
 
@@ -114,10 +113,6 @@ private:
     void x_Medline(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Pubmed(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Remark(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
-
-    // comment
-    void x_FormatBarcodeComment(const CBarcodeComment& barcode, IFlatTextOStream& text_os) const;
-    void x_AddOneBarCodeElement(list<string>& l, const string& label, const string& value) const;
 };
 
 

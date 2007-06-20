@@ -609,119 +609,6 @@ string CCommentItem::GetStringForModelEvidance
     return CNcbiOstrstreamToString(text);
 }
 
-
-string CCommentItem::GetStringForBarcode(CBioseqContext& ctx)
-{
-    CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_Source);
-    if (!desc_it) {
-        return kEmptyStr;
-    }
-    const CBioSource& src = desc_it->GetSource();
-
-    map<CSubSource::TSubtype, const string*> subsources;
-    ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
-        const CSubSource& sub = **it;
-        if (sub.IsSetSubtype()  &&  sub.IsSetName()  &&
-            !NStr::IsBlank(sub.GetName())) {
-            subsources[sub.GetSubtype()] = &sub.GetName();
-        }
-    }
-
-    const string* taxname = NULL;
-    map<COrgMod::TSubtype, const string*> orgmods;
-    if (src.IsSetOrg()) {
-        const COrg_ref& org = src.GetOrg();
-        if (org.IsSetTaxname()  &&  !NStr::IsBlank(org.GetTaxname())) {
-            taxname = &org.GetTaxname();
-        }
-        if (org.IsSetOrgname()) {
-            ITERATE (COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
-                const COrgMod& omod = **it;
-                if (omod.IsSetSubtype()  &&  omod.IsSetSubname()) {
-                    orgmods[omod.GetSubtype()] = &omod.GetSubname();
-                }
-            }
-        }
-    }
-
-    CNcbiOstrstream comment;
-
-    comment << "Barcode Consortium: Standard Data Elements" << "\n\n"
-            << "    Organism:";
-    if (taxname != NULL) {
-        comment << "          " << *taxname;
-    }
-    comment << '\n';
-
-    comment << "    Collected By:";
-    if (subsources.find(CSubSource::eSubtype_collected_by) != subsources.end()) {
-        comment << "      " << *subsources[CSubSource::eSubtype_collected_by];
-    }
-    comment << '\n';
-
-    comment << "    Collection Date:";
-    if (subsources.find(CSubSource::eSubtype_collection_date) != subsources.end()) {
-        comment << "   " << *subsources[CSubSource::eSubtype_collection_date];
-    }
-    comment << '\n';
-
-    comment << "    Country:";
-    if (subsources.find(CSubSource::eSubtype_country) != subsources.end()) {
-        comment << "           " << *subsources[CSubSource::eSubtype_country];
-    }
-    comment << '\n';
-
-    comment << "    Identified By:";
-    if (subsources.find(CSubSource::eSubtype_identified_by) != subsources.end()) {
-        comment << "     " << *subsources[CSubSource::eSubtype_identified_by];
-    }
-    comment << '\n';
-
-    comment << "    Isolate:";
-    if (orgmods.find(COrgMod::eSubtype_isolate) != orgmods.end()) {
-        comment << "           " << *orgmods[COrgMod::eSubtype_isolate];
-    }
-    comment << '\n';
-
-    comment << "    Lat-Lon:";
-    if (subsources.find(CSubSource::eSubtype_lat_lon) != subsources.end()) {
-        comment << "           " << *subsources[CSubSource::eSubtype_lat_lon];
-    }
-    comment << '\n';
-
-    comment << "    Specimen Voucher:";
-    if (orgmods.find(COrgMod::eSubtype_specimen_voucher) != orgmods.end()) {
-        comment << "  " << *orgmods[COrgMod::eSubtype_specimen_voucher];
-    }
-    comment << '\n';
-
-    comment << "    Forward Primer:";
-    if (subsources.find(CSubSource::eSubtype_fwd_primer_seq) != subsources.end()) {
-        comment << "    " << *subsources[CSubSource::eSubtype_fwd_primer_seq];
-    }
-    comment << '\n';
-
-    comment << "    Reverse Primer:";
-    if (subsources.find(CSubSource::eSubtype_rev_primer_seq) != subsources.end()) {
-        comment << "    " << *subsources[CSubSource::eSubtype_rev_primer_seq];
-    }
-    comment << '\n';
-
-    comment << "    Fwd Primer Name:";
-    if (subsources.find(CSubSource::eSubtype_fwd_primer_name) != subsources.end()) {
-        comment << "   " << *subsources[CSubSource::eSubtype_fwd_primer_name];
-    }
-    comment << '\n';
-
-    comment << "    Rev Primer Name:";
-    if (subsources.find(CSubSource::eSubtype_rev_primer_name) != subsources.end()) {
-        comment << "   " << *subsources[CSubSource::eSubtype_rev_primer_name];
-    }
-    comment << "\n\n";
-
-    return CNcbiOstrstreamToString(comment);
-}
-
 static bool s_GetEncodeValues
 (string& chromosome,
  string& assembly_date,
@@ -863,6 +750,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
         {{
             prefix = "Name: ";
             str = desc.GetName();
+            ncbi::objects::AddPeriod(str);
         }}
         break;
 
@@ -1098,75 +986,6 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext&)
     }
     x_SetComment(CNcbiOstrstreamToString(msg));
 }
-
-
-// --- CBarcodeComment
-
-CBarcodeComment::CBarcodeComment(CBioseqContext& ctx) :
-    CCommentItem(ctx, false)
-{
-    x_GatherInfo(ctx);
-}
-
-
-const string& CBarcodeComment::GetTaxname(void) const
-{
-    _ASSERT(m_BioSource);
-
-    if (m_BioSource->IsSetOrg()) {
-        const COrg_ref& org = m_BioSource->GetOrg();
-        if (org.IsSetTaxname()  &&  !NStr::IsBlank(org.GetTaxname())) {
-            return org.GetTaxname();
-        }
-    }
-    return kEmptyStr;
-}
-
-const string& CBarcodeComment::GetSubsource(CSubSource::TSubtype subtype) const
-{
-    _ASSERT(m_BioSource);
-    ITERATE (CBioSource::TSubtype, it, m_BioSource->GetSubtype()) {
-        const CSubSource& sub = **it;
-        if (sub.IsSetSubtype()  &&  sub.GetSubtype() == subtype  &&
-            sub.IsSetName()  &&  !NStr::IsBlank(sub.GetName())) {
-            return sub.GetName();
-        }
-    }
-    return kEmptyStr;
-}
-
-
-const string& CBarcodeComment::GetOrgmod(COrgMod::TSubtype subtype) const
-{
-    _ASSERT(m_BioSource);
-    if (m_BioSource->IsSetOrg()) {
-        const COrg_ref& org = m_BioSource->GetOrg();
-        if (org.IsSetOrgname()) {
-            ITERATE (COrgName::TMod, it, m_BioSource->GetOrg().GetOrgname().GetMod()) {
-                const COrgMod& omod = **it;
-                if (omod.IsSetSubtype()  &&  omod.GetSubtype() == subtype  &&
-                    omod.IsSetSubname()  &&  !NStr::IsBlank(omod.GetSubname())) {
-                    return omod.GetSubname();
-                }
-            }
-        }
-    }
-    return kEmptyStr;
-}
-
-
-void CBarcodeComment::x_GatherInfo(CBioseqContext& ctx)
-{
-    CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_Source);
-    if (!desc_it) {
-        x_SetSkip();
-        return;
-    }
-
-    m_BioSource.Reset(&desc_it->GetSource());
-    x_SetObject(*m_BioSource);
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

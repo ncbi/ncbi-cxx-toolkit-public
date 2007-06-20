@@ -521,7 +521,6 @@ void CFlatGatherer::x_GatherComments(void) const
     if ( ctx.ShowGBBSource() ) {
         x_GBBSourceComment(ctx);
     }
-    x_BarcodeComment(ctx);
     x_DescComments(ctx);
     x_MaplocComments(ctx);
     x_RegionComments(ctx);
@@ -867,15 +866,6 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
         }
     }
 }
-
-
-void CFlatGatherer::x_BarcodeComment(CBioseqContext& ctx) const
-{
-    if (ctx.GetTech() == CMolInfo::eTech_barcode) {
-        x_AddComment(new CBarcodeComment(ctx));
-    }
-}
-
 
 // add comment features that are full length on appropriate segment
 void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const

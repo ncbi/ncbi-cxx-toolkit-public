@@ -514,67 +514,16 @@ void CGenbankFormatter::x_Remark
 // COMMENT
 
 
-void CGenbankFormatter::x_AddOneBarCodeElement
-(list<string>& l,
- const string& label,
- const string& value) const
-{
-    Wrap(l, label, value, eBarcode);
-}
-
-
-void CGenbankFormatter::x_FormatBarcodeComment
-(const CBarcodeComment& barcode,
- IFlatTextOStream& text_os) const
-{
-    list<string> l;
-    static const string kBarcodeHeader =
-        "Barcode Consortium: Standard Data Elements";
-
-    if (barcode.IsFirst()) {
-        Wrap(l, "COMMENT", kBarcodeHeader);
-    } else {
-        Wrap(l, kEmptyStr, kBarcodeHeader, eSubp);
-    }
-
-    l.push_back("            ");
-    x_AddOneBarCodeElement(l, "Organism:", barcode.GetTaxname());
-    x_AddOneBarCodeElement(l, "Collected By:", barcode.GetSubsource(CSubSource::eSubtype_collected_by));
-    x_AddOneBarCodeElement(l, "Collection Date:", barcode.GetSubsource(CSubSource::eSubtype_collection_date));
-    x_AddOneBarCodeElement(l, "Country:", barcode.GetSubsource(CSubSource::eSubtype_country));
-    x_AddOneBarCodeElement(l, "Identified By:", barcode.GetSubsource(CSubSource::eSubtype_identified_by));
-    x_AddOneBarCodeElement(l, "Isolate:", barcode.GetOrgmod(COrgMod::eSubtype_isolate));
-    x_AddOneBarCodeElement(l, "Lat-Lon:", barcode.GetSubsource(CSubSource::eSubtype_lat_lon));
-    x_AddOneBarCodeElement(l, "Specimen Voucher:", barcode.GetOrgmod(COrgMod::eSubtype_specimen_voucher));
-    x_AddOneBarCodeElement(l, "Forward Primer:", barcode.GetSubsource(CSubSource::eSubtype_fwd_primer_seq));
-    x_AddOneBarCodeElement(l, "Reverse Primer:", barcode.GetSubsource(CSubSource::eSubtype_rev_primer_seq));
-    x_AddOneBarCodeElement(l, "Fwd Primer Name:", barcode.GetSubsource(CSubSource::eSubtype_fwd_primer_name));
-    x_AddOneBarCodeElement(l, "Rev Primer Name:", barcode.GetSubsource(CSubSource::eSubtype_rev_primer_name));
-    l.push_back("            ");
-    NON_CONST_ITERATE(list<string>, it, l) {
-        TrimSpaces(*it, 16);
-    }
-
-    text_os.AddParagraph(l, barcode.GetObject());
-}
-
-
 void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
  IFlatTextOStream& text_os)
 {
     list<string> l;
 
-    // Barcode comments are a special case
-    const CBarcodeComment* barcode = dynamic_cast<const CBarcodeComment*>(&comment);
-    if (barcode != NULL) {
-        x_FormatBarcodeComment(*barcode, text_os);
+    if (!comment.IsFirst()) {
+        Wrap(l, kEmptyStr, comment.GetComment(), eSubp);
     } else {
-        if (!comment.IsFirst()) {
-            Wrap(l, kEmptyStr, comment.GetComment(), eSubp);
-        } else {
-            Wrap(l, "COMMENT", comment.GetComment());
-        }
+        Wrap(l, "COMMENT", comment.GetComment());
     }
 
     text_os.AddParagraph(l, comment.GetObject());

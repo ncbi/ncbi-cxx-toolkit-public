@@ -119,7 +119,6 @@ public:
     static string GetStringForHTGS(CBioseqContext& ctx);
     static string GetStringForModelEvidance(const SModelEvidance& me,
         ECommentFormat format = eFormat_Text);
-    static string GetStringForBarcode(CBioseqContext& ctx);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
     static string GetStringForEncode(CBioseqContext& ctx);
@@ -211,25 +210,6 @@ private:
 
     // data
     CConstRef<CObject_id> m_Oid;
-};
-
-
-// --- CBarcodeComment
-
-class NCBI_FORMAT_EXPORT CBarcodeComment : public CCommentItem
-{
-public:
-    CBarcodeComment(CBioseqContext& ctx);
-
-    const string& GetTaxname(void) const;
-    const string& GetSubsource(CSubSource::TSubtype subtype) const;
-    const string& GetOrgmod(COrgMod::TSubtype subtype) const;
-
-private:
-    void x_GatherInfo(CBioseqContext& ctx);
-
-    // data
-    CConstRef<CBioSource>   m_BioSource;
 };
 
 
