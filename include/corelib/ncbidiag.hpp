@@ -757,6 +757,28 @@ extern void SetDiagTraceFlag(EDiagPostFlag flag);
 NCBI_XNCBI_EXPORT
 extern void UnsetDiagTraceFlag(EDiagPostFlag flag);
 
+
+/// Action to perform in StopTraceCollect()
+enum ETraceCollectAction {
+    eTrace_Print,   ///< Print all collected trace messages
+    eTrace_Discard  ///< Discard collected trace messages
+};
+
+/// Start collecting trace messages even if trace is turned off.
+/// Nested starts are allowed, see note to StopTraceCollect().
+NCBI_XNCBI_EXPORT
+void StartTraceCollect(void);
+
+/// Stop collecting trace messages and perform the specified action.
+/// On eTrace_Print all collected messages are printed and removed
+/// from the collection. On eTrace_Discard the messages are silently
+/// discarded only if the call matches the first call to StartTraceCollect,
+/// otherwise the messages are still kept in the collection and can be
+/// printed by another StopTraceMessages().
+NCBI_XNCBI_EXPORT
+void StopTraceCollect(ETraceCollectAction action);
+
+
 /// Specify a string to prefix all subsequent error postings with.
 NCBI_XNCBI_EXPORT
 extern void SetDiagPostPrefix(const char* prefix);

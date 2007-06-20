@@ -110,6 +110,61 @@ NCBI_PARAM_DEF_EX(bool, Diag, Print_System_TID, false, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 
 
+typedef list<SDiagMessage> TTraceCollection;
+static size_t kTraceCollectionMaxSize = 10;
+
+TTraceCollection& GetTraceCollection(void)
+{
+    static TTraceCollection s_TraceCollection;
+    return s_TraceCollection;
+}
+
+
+CAtomicCounter& GetTraceCollectCounter(void)
+{
+    static CAtomicCounter s_TraceCollectCounter;
+    return s_TraceCollectCounter;
+}
+
+
+void StartTraceCollect(void)
+{
+    GetTraceCollectCounter().Add(1);
+}
+
+
+void StopTraceCollect(ETraceCollectAction action)
+{
+    GetTraceCollectCounter().Add(-1);
+    if (action == eTrace_Print) {
+        CMutexGuard LOCK(s_DiagMutex);
+        TTraceCollection& coll = GetTraceCollection();
+        CDiagHandler* handler = GetDiagHandler();
+        if ( handler ) {
+            ITERATE(TTraceCollection, it, coll) {
+                handler->Post(*it);
+            }
+        }
+        coll.clear();
+    }
+    // Discard only at the top level
+    else if (GetTraceCollectCounter().Get() <= 0) {
+        CMutexGuard LOCK(s_DiagMutex);
+        GetTraceCollection().clear();
+    }
+}
+
+
+void CollectTraceMessage(const SDiagMessage& mess)
+{
+    TTraceCollection& coll = GetTraceCollection();
+    if (coll.size() >= kTraceCollectionMaxSize) {
+        coll.erase(coll.begin());
+    }
+    coll.push_back(mess);
+}
+
+
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
 
@@ -851,6 +906,8 @@ void RequestStopWatchTlsCleanup(CStopWatch* value, void* /*cleanup_data*/)
 }
 
 
+static const char* kZeroStr = "0";
+
 void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                                   const string&            message)
 {
@@ -881,31 +938,25 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             break;
         }
     case SDiagMessage::eEvent_Stop:
+        prop = GetProperty(kProperty_ExitCode);
+        if ( prop.empty() ) {
+            prop = kZeroStr;
+        }
+        ostr << prop;
+        ostr << " " << m_StopWatch->AsString();
         prop = GetProperty(kProperty_ExitSig);
         if ( !prop.empty() ) {
-            ostr << prop;
-            need_space = true;
+            ostr << " SIG=" << prop;
         }
-        prop = GetProperty(kProperty_ExitCode);
-        if ( !prop.empty() ) {
-            if (need_space) {
-                ostr << " ";
-            }
-            ostr << prop;
-            need_space = true;
-        }
-        if (need_space) {
-            ostr << " ";
-        }
-        ostr << m_StopWatch->AsString();
+        need_space = true;
         break;
     case SDiagMessage::eEvent_RequestStop:
         {
             prop = GetProperty(kProperty_ReqStatus);
-            if ( !prop.empty() ) {
-                ostr << prop;
-                need_space = true;
+            if ( prop.empty() ) {
+                prop = kZeroStr;
             }
+            ostr << prop;
             prop = GetProperty(kProperty_ReqTime);
             if ( prop.empty() ) {
                 // Try to get time from the stopwatch
@@ -916,27 +967,21 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                     prop = sw->AsString();
                     CDiagContextThreadData::GetThreadData().ResetStopWatch();
                 }
-            }
-            if ( !prop.empty() ) {
-                if (need_space) {
-                    ostr << " ";
+                else {
+                    prop = kZeroStr;
                 }
-                ostr << prop;
-                need_space = true;
             }
+            ostr << " " << prop;
             prop = GetProperty(kProperty_BytesRd);
             if ( prop.empty() ) {
-                prop = "0";
+                prop = kZeroStr;
             }
-            if (need_space) {
-                ostr << " ";
-            }
-            ostr << prop << " ";
+            ostr << " " << prop;
             prop = GetProperty(kProperty_BytesWr);
             if ( prop.empty() ) {
-                prop = "0";
+                prop = kZeroStr;
             }
-            ostr << prop;
+            ostr << " " << prop;
             need_space = true;
             // Reset properties
             DeleteProperty(kProperty_ReqStatus);
@@ -1445,7 +1490,8 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 
     EDiagSev sev = diag.GetSeverity();
     if ((sev < sm_PostSeverity  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie))
-        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled())) {
+        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled()
+        &&  GetTraceCollectCounter().Get() <= 0)) {
         return false;
     }
 
@@ -1482,7 +1528,8 @@ void CDiagBuffer::Flush(void)
     // Do nothing if diag severity is lower than allowed
     if (!m_Diag  ||
         (sev < sm_PostSeverity  &&  (sev < sm_DieSeverity  ||  sm_IgnoreToDie))
-        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled())) {
+        ||  (sev == eDiag_Trace  &&  !GetTraceEnabled()
+        &&  GetTraceCollectCounter().Get() <= 0)) {
         return;
     }
 
@@ -1529,7 +1576,14 @@ void CDiagBuffer::Flush(void)
                           ePostNumber_Increment),
                           thr_data.GetThreadPostNumber(ePostNumber_Increment),
                           thr_data.GetRequestId());
-        DiagHandler(mess);
+        if (sev == eDiag_Trace  &&  !GetTraceEnabled()) {
+            CollectTraceMessage(mess);
+            Reset(*m_Diag);
+            return;
+        }
+        else {
+            DiagHandler(mess);
+        }
     }
 
 #if defined(NCBI_COMPILER_KCC)
