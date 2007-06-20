@@ -56,6 +56,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/reader_exception.hpp>
 #include <objtools/lds/lds_admin.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
@@ -64,24 +65,27 @@
 #include <memory>
 
 
+namespace {
+    const char kQuality_high[] = "high";
+    const char kQuality_low[]  = "low";
+
+    const char kDirSense[]     = "sense";
+    const char kDirAntisense[] = "antisense";
+    const char kDirBoth[]      = "both";
+    const char kDirAuto[]      = "auto";
+}
+
+
 BEGIN_NCBI_SCOPE
-
-static const char kQuality_high[] = "high";
-static const char kQuality_low[] = "low";
-
-static const char kDirSense[]     = "sense";
-static const char kDirAntisense[] = "antisense";
-static const char kDirBoth[]      = "both";
-static const char kDirAuto[]      = "auto";
 
 void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 23, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 24, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.23");
+    string program_name ("Splign v.1.24");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';
@@ -186,8 +190,9 @@ void CSplignApp::Init()
     argdescr->AddDefaultKey
         ("direction", 
          "direction", 
-         "Query direction", 
-         CArgDescriptions::eString, kDirSense);
+         "Query sequence orientation", 
+         CArgDescriptions::eString,
+         kDirSense);
     
     argdescr->AddDefaultKey
         ("compartment_penalty",
@@ -750,38 +755,49 @@ void CSplignApp::x_DoIncremental(void)
         line_reader.Reset(
             new CMemoryLineReader(new CMemoryFile(argval.AsString()),
                                   eTakeOwnership));
-    } catch (...) { // fall back to streams
+    }
+    
+    catch (...) { // fall back to streams
         line_reader.Reset(new CStreamLineReader(argval.AsInputFile()));
     }
-    CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
-    for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
-        se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
-    {
-        CRef<CScope> scope (new CScope(*objmgr));
-        scope->AddDefaults();
-        scope->AddTopLevelSeqEntry(*se);
 
-        m_Splign->SetScope() = scope;
+    try {
+        CFastaReader fasta_reader(* line_reader, CFastaReader::fAssumeNuc);
+        for(CRef<CSeq_entry> se (fasta_reader.ReadOneSeq());
+            se.NotEmpty(); se = fasta_reader.ReadOneSeq()) 
+        {
+            CRef<CScope> scope (new CScope(*objmgr));
+            scope->AddDefaults();
+            scope->AddTopLevelSeqEntry(*se);
 
-        const CSeq_entry::TSeq& bioseq = se->GetSeq();    
-        const CSeq_entry::TSeq::TId& qids = bioseq.GetId();
-        CRef<CSeq_id> seqid_query (qids.back());
+            m_Splign->SetScope() = scope;
 
-        TSeqLocVector queries;
-        CRef<CSeq_loc> sl (new CSeq_loc);
-        sl->SetWhole().Assign(*seqid_query);
-        queries.push_back(SSeqLoc(*sl, *scope));
+            const CSeq_entry::TSeq& bioseq = se->GetSeq();    
+            const CSeq_entry::TSeq::TId& qids = bioseq.GetId();
+            CRef<CSeq_id> seqid_query (qids.back());
+
+            TSeqLocVector queries;
+            CRef<CSeq_loc> sl (new CSeq_loc);
+            sl->SetWhole().Assign(*seqid_query);
+            queries.push_back(SSeqLoc(*sl, *scope));
             
-        THitRefs hitrefs;
-        x_GetDbBlastHits(dbname, queries, &hitrefs, 0, 0);
-        typedef CHitComparator<CBlastTabular> THitComparator;
-        THitComparator hc (THitComparator::eSubjIdQueryId);
-        stable_sort(hitrefs.begin(), hitrefs.end(), hc);
+            THitRefs hitrefs;
+            x_GetDbBlastHits(dbname, queries, &hitrefs, 0, 0);
+            typedef CHitComparator<CBlastTabular> THitComparator;
+            THitComparator hc (THitComparator::eSubjIdQueryId);
+            stable_sort(hitrefs.begin(), hitrefs.end(), hc);
 
-        THitRefs hitrefs_pair;
-        m_CurHitRef = numeric_limits<size_t>::max();
-        while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
-            x_ProcessPair(hitrefs_pair, args); 
+            THitRefs hitrefs_pair;
+            m_CurHitRef = numeric_limits<size_t>::max();
+            while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
+                x_ProcessPair(hitrefs_pair, args); 
+            }
+        }
+    }
+
+    catch (CObjReaderParseException& e) {
+        if(e.GetErrCode() != CObjReaderParseException::eEOF) {
+            throw;
         }
     }
 }
@@ -1243,8 +1259,12 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
         return;
     }
 
-    THit::TId query = hitrefs.front()->GetQueryId();
-    THit::TId subj  = hitrefs.front()->GetSubjId();
+    if(hitrefs.front()->GetScore() < 0) {
+        return;
+    }
+
+    THit::TId query (hitrefs.front()->GetQueryId());
+    THit::TId subj  (hitrefs.front()->GetSubjId());
     
     m_Formatter->SetSeqIds(query, subj);
     
