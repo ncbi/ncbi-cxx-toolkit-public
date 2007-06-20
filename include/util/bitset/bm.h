@@ -962,6 +962,21 @@ public:
     }
 
     /*!
+       \brief Sets bit n only if current value is equal to the condition
+       \param n - index of the bit to be set. 
+       \param val - new bit value
+       \param condition - expected current value
+       \return TRUE if bit was changed
+    */
+    bool set_bit_conditional(bm::id_t n, bool val, bool condition)
+    {
+        BM_ASSERT(n < size_);
+        if (val == condition) return false;
+        return set_bit_conditional_impl(n, val, condition);
+    }
+
+
+    /*!
         \brief Sets bit n if val is true, clears bit n if val is false
         \param n - index of the bit to be set
         \param val - new bit value
@@ -1208,7 +1223,7 @@ public:
        \fn bm::id_t bvector::get_first() const
        \brief Gets number of first bit which is ON.
        \return Index of the first 1 bit.
-       \sa get_next
+       \sa get_next, extract_next
     */
     bm::id_t get_first() const { return check_or_next(0); }
 
@@ -1217,13 +1232,20 @@ public:
        \brief Finds the number of the next bit ON.
        \param prev - Index of the previously found bit. 
        \return Index of the next bit which is ON or 0 if not found.
-       \sa get_first
+       \sa get_first, extract_next
     */
     bm::id_t get_next(bm::id_t prev) const
     {
         return (++prev == bm::id_max) ? 0 : check_or_next(prev);
     }
 
+    /*!
+       \fn bm::id_t bvector::extract_next(bm::id_t prev)
+       \brief Finds the number of the next bit ON and sets it to 0.
+       \param prev - Index of the previously found bit. 
+       \return Index of the next bit which is ON or 0 if not found.
+       \sa get_first, get_next, 
+    */
     bm::id_t extract_next(bm::id_t prev)
     {
         return (++prev == bm::id_max) ? 0 : check_or_next_extract(prev);
@@ -1445,6 +1467,8 @@ private:
         \brief AND specified bit without checking preconditions (size, etc)
     */
     bool and_bit_no_check(bm::id_t n, bool val);
+
+    bool set_bit_conditional_impl(bm::id_t n, bool val, bool condition);
 
 
     void combine_operation_with_block(unsigned nb,
@@ -2166,6 +2190,87 @@ bool bvector<Alloc, MS>::set_bit_no_check(bm::id_t n, bool val)
         }
     }
     return false;
+}
+
+// -----------------------------------------------------------------------
+
+template<class Alloc, class MS> 
+bool bvector<Alloc, MS>::set_bit_conditional_impl(bm::id_t n, 
+                                                  bool     val, 
+                                                  bool     condition)
+{
+    // calculate logical block number
+    unsigned nblock = unsigned(n >>  bm::set_block_shift); 
+
+    int block_type;
+    bm::word_t* blk = 
+        blockman_.check_allocate_block(nblock, 
+                                       val,
+                                       get_new_blocks_strat(), 
+                                       &block_type);
+    if (!blk) 
+        return false;
+
+    // calculate word number in block and bit
+    unsigned nbit   = unsigned(n & bm::set_block_mask); 
+
+    if (block_type == 1) // gap
+    {
+        bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
+        bool old_val = (gap_test(gap_blk, nbit) != 0);
+
+        if (old_val != condition) 
+        {
+            return false;
+        }
+
+        if (val != old_val)
+        {
+            unsigned is_set;
+            unsigned new_block_len = 
+                gap_set_value(val, gap_blk, nbit, &is_set);
+            BM_ASSERT(is_set);
+            BMCOUNT_ADJ(val)
+
+            unsigned threshold = 
+                bm::gap_limit(gap_blk, blockman_.glen());
+            if (new_block_len > threshold) 
+            {
+                extend_gap_block(nblock, gap_blk);
+            }
+            return true;
+        }
+    }
+    else  // bit block
+    {
+        unsigned nword  = unsigned(nbit >> bm::set_word_shift); 
+        nbit &= bm::set_word_mask;
+
+        bm::word_t* word = blk + nword;
+        bm::word_t  mask = (((bm::word_t)1) << nbit);
+        bool is_set = ((*word) & mask) != 0;
+
+        if (is_set != condition)
+        {
+            return false;
+        }
+        if (is_set != val)    // need to change bit
+        {
+            if (val)          // set bit
+            {
+                *word |= mask;
+                BMCOUNT_INC;
+            }
+            else               // clear bit
+            {
+                *word &= ~mask;
+                BMCOUNT_DEC;
+            }
+            return true;
+        }
+    }
+    return false;
+
 }
 
 // -----------------------------------------------------------------------
