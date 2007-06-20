@@ -111,7 +111,7 @@ typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 
 
 typedef list<SDiagMessage> TTraceCollection;
-static size_t kTraceCollectionMaxSize = 10;
+static size_t kTraceCollectionMaxSize = 1000;
 
 TTraceCollection& GetTraceCollection(void)
 {
