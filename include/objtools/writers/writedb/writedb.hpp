@@ -85,7 +85,10 @@ public:
         eSparseIndex,
         
         /// Use several forms of each Seq-id in the string index.
-        eFullIndex
+        eFullIndex,
+        
+        /// Like eFullIndex but also build a numeric Trace ID index.
+        eFullWithTrace
     };
     
     //
@@ -107,7 +110,7 @@ public:
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
-             EIndexType     itype = eFullIndex);
+             EIndexType     itype = eFullWithTrace);
     
     /// Destructor.
     ///

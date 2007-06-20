@@ -79,7 +79,8 @@ public:
                     int            index,
                     Uint8          max_file_size,
                     Uint8          max_letters,
-                    EIndexType     indices);
+                    EIndexType     indices,
+                    bool           trace_index);
     
     /// Destructor.
     ///
@@ -140,13 +141,13 @@ public:
 private:
     // Configuration.
     
-    string     m_DbName;  ///< Base name of the database.
-    string     m_VolName; ///< Database name plus version (if used).
-    bool       m_Protein; ///< True for protein; false for nucleotide.
-    string     m_Title;   ///< Database title (same for all volumes).
-    string     m_Date;    ///< Construct time (same for all volumes).
-    int        m_Index;   ///< Index of this volume (1 based).
-    EIndexType m_Indices; ///< Indices are sparse, full, or disabled.
+    string     m_DbName;     ///< Base name of the database.
+    string     m_VolName;    ///< Database name plus version (if used).
+    bool       m_Protein;    ///< True for protein; false for nucleotide.
+    string     m_Title;      ///< Database title (same for all volumes).
+    string     m_Date;       ///< Construct time (same for all volumes).
+    int        m_Index;      ///< Index of this volume (1 based).
+    EIndexType m_Indices;    ///< Indices are sparse, full, or disabled.
     
     // Status.
     
@@ -159,9 +160,10 @@ private:
     CRef<CWriteDB_HeaderFile>   m_Hdr; ///< Header file (phr / nhr).
     CRef<CWriteDB_SequenceFile> m_Seq; ///< Sequence file (psq / nsq).
     
-    CRef<CWriteDB_Isam> m_AccIsam; ///< Accession index (psi+psd / nsi+nsd).
-    CRef<CWriteDB_Isam> m_GiIsam;  ///< GI index (pni+pnd / nni+nnd).
-    CRef<CWriteDB_Isam> m_PigIsam; ///< PIG index (ppi+ppd, protein only).
+    CRef<CWriteDB_Isam> m_AccIsam;   ///< Accession index (psi+psd / nsi+nsd).
+    CRef<CWriteDB_Isam> m_GiIsam;    ///< GI index (pni+pnd / nni+nnd).
+    CRef<CWriteDB_Isam> m_PigIsam;   ///< PIG index (ppi+ppd, protein only).
+    CRef<CWriteDB_Isam> m_TraceIsam; ///< Trace ID index (pti+ptd or nti+ntd).
     
     // Functions
     

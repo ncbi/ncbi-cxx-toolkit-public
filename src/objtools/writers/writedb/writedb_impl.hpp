@@ -70,7 +70,8 @@ public:
     CWriteDB_Impl(const string & dbname,
                   bool           protein,
                   const string & title,
-                  EIndexType     indices);
+                  EIndexType     indices,
+                  bool           trace_index);
     
     /// Destructor.
     ~CWriteDB_Impl();
@@ -255,6 +256,7 @@ private:
     string       m_MaskedLetters;    ///< Masked protein letters (IUPAC).
     string       m_MaskByte;         ///< Byte that replaced masked letters.
     vector<char> m_MaskLookup;       ///< Maps (blast-aa) byte to maskedness.
+    bool         m_TraceIndex;       ///< Produce trace ID index.
     
     // Functions
     

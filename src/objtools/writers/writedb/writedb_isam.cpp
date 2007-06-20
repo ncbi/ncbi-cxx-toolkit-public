@@ -74,6 +74,10 @@ s_IsamExtension(EWriteDBIsamType itype,
         type_ch = 's';
         break;
         
+    case eTrace:
+        type_ch = 't';
+        break;
+        
     default:
         NCBI_THROW(CWriteDBException, eArgErr, "Not implemented.");
     }
@@ -198,6 +202,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     switch(m_Type) {
     case eGi:
     case ePig:
+    case eTrace:
         isam_type = eIsamNumericType; // numeric w/ data
         num_terms = m_NumberTable.size();
         max_line_size = 0;
@@ -406,6 +411,8 @@ void CWriteDB_IsamIndex::AddIds(int oid, const TIdList & idlist)
         x_AddStringIds(oid, idlist);
     } else if (m_Type == eGi) {
         x_AddGis(oid, idlist);
+    } else if (m_Type == eTrace) {
+        x_AddTraceIds(oid, idlist);
     } else {
         NCBI_THROW(CWriteDBException,
                    eArgErr,
@@ -427,6 +434,25 @@ void CWriteDB_IsamIndex::x_AddGis(int oid, const TIdList & idlist)
         
         if (seqid.IsGi()) {
             SIdOid row(seqid.GetGi(), oid);
+            m_NumberTable.push_back(row);
+            m_DataFileSize += 8;
+        }
+    }
+}
+
+void CWriteDB_IsamIndex::x_AddTraceIds(int oid, const TIdList & idlist)
+{
+    ITERATE(TIdList, iter, idlist) {
+        const CSeq_id & seqid = **iter;
+        
+        if (seqid.IsGeneral() && seqid.GetGeneral().GetDb() == "ti") {
+            const CObject_id & obj = seqid.GetGeneral().GetTag();
+            
+            int id = (obj.IsId()
+                      ? obj.GetId()
+                      : NStr::StringToInt(obj.GetStr()));
+            
+            SIdOid row(id, oid);
             m_NumberTable.push_back(row);
             m_DataFileSize += 8;
         }

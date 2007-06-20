@@ -50,10 +50,13 @@ CWriteDB::CWriteDB(const string       & dbname,
                    EIndexType           indices)
     : m_Impl(0)
 {
+    bool trace_index = indices == eFullWithTrace;
+    
     m_Impl = new CWriteDB_Impl(dbname,
                                seqtype == CWriteDB::eProtein,
                                title,
-                               indices);
+                               indices,
+                               trace_index);
 }
 
 CWriteDB::~CWriteDB()

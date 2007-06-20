@@ -48,7 +48,8 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                  int            index,
                                  Uint8          max_file_size,
                                  Uint8          max_letters,
-                                 EIndexType     indices)
+                                 EIndexType     indices,
+                                 bool           trace_index)
     : m_DbName      (dbname),
       m_Protein     (protein),
       m_Title       (title),
@@ -103,6 +104,15 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                           index,
                                           max_file_size,
                                           sparse));
+        
+        if (trace_index) {
+            m_TraceIsam.Reset(new CWriteDB_Isam(eTrace,
+                                                dbname,
+                                                protein,
+                                                index,
+                                                max_file_size,
+                                                sparse));
+        }
     }
 }
 
@@ -142,11 +152,9 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
     if (m_Indices != CWriteDB::eNoIndex) {
         int num = idlist.size();
         
-        if (! (m_AccIsam->CanFit(num) && m_GiIsam->CanFit(num))) {
-            overfull = true;
-        }
-        
-        if (! (m_AccIsam->CanFit(num) && m_GiIsam->CanFit(num))) {
+        if (! (m_AccIsam->CanFit(num) &&
+               m_GiIsam->CanFit(num) &&
+               (m_TraceIsam.Empty() || m_TraceIsam->CanFit(num)))) {
             overfull = true;
         }
         
@@ -180,6 +188,10 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
         if (m_Protein && pig) {
             m_PigIsam->AddPig(m_OID, pig);
         }
+        
+        if (m_TraceIsam.NotEmpty()) {
+            m_TraceIsam->AddIds(m_OID, idlist);
+        }
     }
     
     m_OID ++;
@@ -212,6 +224,10 @@ void CWriteDB_Volume::Close()
             }
             m_GiIsam->Close();
             m_AccIsam->Close();
+            
+            if (m_TraceIsam.NotEmpty()) {
+                m_TraceIsam->Close();
+            }
         }
     }
 }
@@ -232,6 +248,10 @@ void CWriteDB_Volume::RenameSingle()
         }
         m_GiIsam->RenameSingle();
         m_AccIsam->RenameSingle();
+        
+        if (m_TraceIsam.NotEmpty()) {
+            m_TraceIsam->RenameSingle();
+        }
     }
 }
 
@@ -251,6 +271,10 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
     
     if (m_PigIsam.NotEmpty()) {
         m_PigIsam->ListFiles(files);
+    }
+    
+    if (m_TraceIsam.NotEmpty()) {
+        m_TraceIsam->ListFiles(files);
     }
 }
 

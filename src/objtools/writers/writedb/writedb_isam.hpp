@@ -57,7 +57,10 @@ enum EWriteDBIsamType {
     eAcc,
     
     /// GI Index.
-    eGi
+    eGi,
+    
+    /// Trace ID Index.
+    eTrace
 };
 
 /// Forward definition for CWriteDB_IsamData class.
@@ -155,6 +158,11 @@ private:
     /// @param oid OID of the sequence.
     /// @param idlist Identifiers for this sequence.
     void x_AddGis(int oid, const TIdList & idlist);
+    
+    /// Store GIs found in Seq-id list.
+    /// @param oid OID of the sequence.
+    /// @param idlist Identifiers for this sequence.
+    void x_AddTraceIds(int oid, const TIdList & idlist);
     
     /// Compute and store string IDs from Seq-ids.
     ///
