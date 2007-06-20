@@ -138,7 +138,8 @@ public:
         eForeignTransaction,
         eCompressorError,
         eIdConflict,
-        eTooManyChunks
+        eTooManyChunks,
+        eRaceCondition
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -163,6 +164,7 @@ public:
         case eCompressorError:         return "eCompressorError";
         case eIdConflict:              return "eIdConflict";
         case eTooManyChunks:           return "eTooManyChunks";
+        case eRaceCondition:           return "eRaceCondition";
 
         default: return CException::GetErrCodeString();
         }
