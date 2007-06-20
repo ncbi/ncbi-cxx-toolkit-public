@@ -179,7 +179,7 @@ sub ReadLog
         {
             if ($Line)
             {
-                $Line =~ m/^   ([AMD]) (.+)(?: \(from (.+):(\d+)\))?$/o or
+                $Line =~ m/^   ([AMD]) (.+?)(?: \(from (.+):(\d+)\))?$/o or
                     goto ParsingError;
 
                 push @{$CurrentRevision->{ChangedPaths}}, [$1, $2, $3, $4]
