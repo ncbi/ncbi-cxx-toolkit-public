@@ -36,6 +36,7 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_service.h>
 #include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api_expt.hpp>
 #include <util/request_control.hpp>
 #include <stdlib.h>
 #include <memory>

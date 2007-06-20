@@ -135,32 +135,6 @@ unsigned int INetServiceAPI::GetWaitServerTimeout() const
 }
 
 
-/// Net Service exception
-///
-class CNetServiceException : public CException
-{
-public:
-    enum EErrCode {
-        eTimeout,
-        eCommunicationError,
-        eProtocolError
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        case eProtocolError:      return "eProtocolError";
-        default:                  return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetServiceException, CException);
-};
-
-
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___NETSERVICE_API__HPP */

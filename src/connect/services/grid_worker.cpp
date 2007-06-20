@@ -37,6 +37,7 @@
 #include <connect/services/grid_worker.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
+#include <connect/services/netschedule_api_expt.hpp>
 #include <util/thread_pool.hpp>
 
 #include "grid_thread_context.hpp"

@@ -35,6 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netservice_client.hpp>
+#include <connect/services/netservice_api_expt.hpp>
 #include <memory>
 
 
@@ -249,6 +250,8 @@ void CNetServiceClient::CreateSocket(const string& hostname,
     EIO_Status io_st;
     if (m_Sock == 0) {
         m_Sock = new CSocket();
+        STimeout zero = {0,0};
+        m_Sock->SetTimeout(eIO_Close,&zero);
         m_OwnSocket = eTakeOwnership;
     } //else {
 

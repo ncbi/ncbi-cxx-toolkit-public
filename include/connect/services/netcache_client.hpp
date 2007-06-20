@@ -39,6 +39,7 @@
 
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netservice_client.hpp>
+#include <connect/services/netservice_api_expt.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/version.hpp>
 #include <util/transmissionrw.hpp>

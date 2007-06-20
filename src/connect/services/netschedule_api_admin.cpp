@@ -251,7 +251,7 @@ unsigned long CNetScheduleAdmin::Count(const string& query) const
     string cmd = "QERY ";
     cmd.append("\"");
     cmd.append(NStr::PrintableString(query));
-    cmd.append("\"\r\n");
+    cmd.append("\" COUNT\r\n");
 
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
@@ -324,5 +324,23 @@ void CNetScheduleAdmin::Select(const string& select_stmt, CNcbiOstream& os) cons
     }
 }
 
+
+CNetScheduleAdmin::TIDsMap CNetScheduleAdmin::x_QueueIDs(const string& query) const
+{
+    TIDsMap ret;
+    string cmd = "QERY ";
+    cmd.append("\"");
+    cmd.append(NStr::PrintableString(query));
+    cmd.append("\" IDS\r\n");
+
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        CNetSrvConnectorHolder ch = *it;
+        string resp = m_API->SendCmdWaitResponse(ch, cmd);
+        string ip_addr = CSocketAPI::ntoa(CSocketAPI::gethostbyname(ch->GetHost()));
+        ret[make_pair(ip_addr, ch->GetPort())] = resp;
+    }
+    return ret;
+}
 
 END_NCBI_SCOPE

@@ -41,6 +41,9 @@
 #include <connect/services/netservice_api.hpp>
 #include <corelib/plugin_manager.hpp>
 
+#include <connect/services/netschedule_key.hpp>
+#include <connect/services/netschedule_api_expt.hpp>
+#include <connect/services/netschedule_api_const.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,42 +52,6 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
-
-/// Meaningful information encoded in the NetSchedule key
-///
-struct NCBI_XCONNECT_EXPORT CNetScheduleKey
-{
-    CNetScheduleKey(unsigned _id, const string& _host, unsigned _port, unsigned ver = 1)
-        : id(_id), host(_host), port(_port), version(ver) {}
-
-    explicit CNetScheduleKey(const string& str_key);
-
-    operator string() const;
-
-    unsigned     id;        ///< Job id
-    string       host;      ///< server name
-    unsigned     port;      ///< TCP/IP port number
-    unsigned     version;   ///< Key version
-};
-
-const string kNetScheduleKeyPrefix = "JSID";
-
-
-/// @internal
-#define NETSCHEDULE_JOBMASK "JSID_01_%u_%s_%u"
-
-
-/// Map from exception names to codes
-/// @internal
-class NCBI_XCONNECT_EXPORT CNetScheduleExceptionMap
-{
-public:
-    CNetScheduleExceptionMap();
-    CException::TErrCode GetCode(const string& name);
-private:
-    typedef map<string, CException::TErrCode> TMap;
-    TMap m_Map;
-};
 
 template<typename T> struct ToStr { static string Convert(T t); };
 
@@ -615,6 +582,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
+
 class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 {
 public:
@@ -711,12 +679,18 @@ public:
     void Query(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
     void Select(const string& select_stmt, CNcbiOstream& os) const;
 
+    template <typename TBVector>
+    void RetrieveKeys(const string& query, CNetScheduleKeys<TBVector>& ids) const;
+     
 private:
     friend class CNetScheduleAPI;
     CNetScheduleAdmin(const CNetScheduleAPI& api) : m_API(&api) {}
 
     void x_SendCmdToAll(const string& cmd, ISink& sink) const;
     void x_SendCmdToAll1(const string& cmd, ISink& sink) const;
+
+    typedef map<pair<string,unsigned int>, string> TIDsMap;
+    TIDsMap x_QueueIDs(const string& queury) const;
     
     const CNetScheduleAPI* m_API;
 };
@@ -810,72 +784,20 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecuter::GetServerParams() co
     return m_API->GetServerParams();
 }
 
+template <typename BVAlloc>
+void CNetScheduleAdmin::RetrieveKeys(const string& query, 
+                                     CNetScheduleKeys<BVAlloc>& ids) const
+{
+    TIDsMap  inter_ids = x_QueueIDs(query);
+    ids.x_Clear();
+    ITERATE(TIDsMap, it, inter_ids) {
+        ids.x_Add(it->first, it->second);
+    }   
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleAPI,  "xnetschedule_api", 1,0, 0);
-
-/// NetSchedule internal exception
-///
-class CNetScheduleException : public CNetServiceException
-{
-public:
-    // NB: if you update this enum, update constructor for
-    // CNetScheduleExceptionMap to include new mapping.
-    enum EErrCode {
-        eInternalError,
-        eProtocolSyntaxError,
-        eAuthenticationError,
-        eKeyFormatError,
-        eInvalidJobStatus,
-        eUnknownQueue,
-        eUnknownQueueClass,
-        eTooManyPendingJobs,
-        eDataTooLong,
-        eInvalidClient,
-        eAccessDenied,
-        eDuplicateName,
-        eQuerySyntaxError,
-        eCommandIsNotAllowed,
-        eObsoleteCommand
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eInternalError:       return "eInternalError";
-        case eProtocolSyntaxError: return "eProtocolSyntaxError";
-        case eAuthenticationError: return "eAuthenticationError";
-        case eKeyFormatError:      return "eKeyFormatError";
-        case eInvalidJobStatus:    return "eInvalidJobStatus";
-        case eUnknownQueue:        return "eUnknownQueue";
-        case eUnknownQueueClass:   return "eUnknownQueueClass";
-        case eTooManyPendingJobs:  return "eTooManyPendingJobs";
-        case eDataTooLong:         return "eDataTooLong";
-        case eInvalidClient:       return "eInvalidClient";
-        case eAccessDenied:        return "eAccessDenied";
-        case eDuplicateName:       return "eDuplicateName";
-        case eQuerySyntaxError:    return "eQuerySyntaxError";
-        case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
-        case eObsoleteCommand:     return "eObsoleteCommand";
-        default:                   return CNetServiceException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
-};
-
-
-/// @internal
-const unsigned int kNetScheduleMaxDataSize = 512;
-/// @internal
-const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
-
-/// @internal
-const unsigned int kNetScheduleMaxErrSize = 1024;
-/// @internal
-const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
-
 
 
 /// @internal

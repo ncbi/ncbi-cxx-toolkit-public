@@ -30,6 +30,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/services/netservice_api.hpp>
+#include <connect/services/netservice_api_expt.hpp>
 
 
 BEGIN_NCBI_SCOPE

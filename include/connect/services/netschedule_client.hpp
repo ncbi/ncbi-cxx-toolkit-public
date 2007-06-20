@@ -39,7 +39,8 @@
 
 #include <connect/services/netservice_client.hpp>
 #include <corelib/plugin_manager.hpp>
-#include <connect/services/netschedule_api.hpp> // for CNetScheduleException
+#include <connect/services/netschedule_api_expt.hpp> // for CNetScheduleException
+#include <connect/services/netschedule_api_const.hpp>  
 
 
 BEGIN_NCBI_SCOPE
@@ -982,6 +983,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };
 
+
 /// @internal
 const unsigned int kNetScheduleMaxDataSize = 512;
 /// @internal
@@ -991,8 +993,8 @@ const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
 const unsigned int kNetScheduleMaxErrSize = 1024;
 /// @internal
 const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
-
 */
+
 /// Parse job key string into a CNetSchedule_Key structure
 extern NCBI_XCONNECT_EXPORT
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str);
