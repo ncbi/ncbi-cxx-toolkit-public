@@ -276,6 +276,15 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
     static TValueType s_Default =
         TDescription::sm_ParamDescription.default_value;
+    static bool s_DefaultInitialized = false;
+    if ( !TDescription::sm_ParamDescription.section ) {
+        // Static data not initialized yet, nothing to do.
+        return s_Default;
+    }
+    if ( !s_DefaultInitialized ) {
+        s_Default = TDescription::sm_ParamDescription.default_value;
+        s_DefaultInitialized = true;
+    }
 
     if ( force_reset ) {
         s_Default = TDescription::sm_ParamDescription.default_value;
