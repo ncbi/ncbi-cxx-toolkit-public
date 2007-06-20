@@ -1613,27 +1613,34 @@ void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
         except_text = m_Feat->GetExcept_text();
     }
     
-    // /exception currently legal only on cdregion and mRNA
+    // /exception currently legal only on cdregion
     bool isCdregion = m_Feat->GetData().IsCdregion();
-    bool ismRna = ( m_Feat->GetData().IsRna() ?
-        (m_Feat->GetData().GetRna().CanGetType() ?
-            m_Feat->GetData().GetRna().GetType() == CRNA_ref_Base::eType_mRNA :
-            false) :
-        false);
-
-    if ( isCdregion || ismRna ) {
+    if ( isCdregion ) {
         //
-        // exception qualifier is legal, may have to be mapped to /ribosomal_slippage
-        // or /trans_splicing:
+        //  Except-text is actually a multi string value, with the values separated
+        //  by commas. Note that some values have special meaning and thus get 
+        //  special treatment.
         //
-        if ( except_text == "ribosomal slippage" ) {
-            x_AddQual(eFQ_ribosomal_slippage, new CFlatBoolQVal(true));
-        }
-        else if ( except_text == "trans-splicing" ) {
-            x_AddQual(eFQ_trans_splicing, new CFlatBoolQVal(true));
-        }
-        else if ( ! except_text.empty() ) {
-            x_AddQual(eFQ_exception, new CFlatStringQVal(except_text));
+        list<string> exceptions;
+        NStr::Split( except_text, ",", exceptions );
+        ITERATE( list<string>, it, exceptions ) {
+            string exception = NStr::TruncateSpaces( *it );
+            if ( exception == "ribosomal slippage" ) {
+                x_AddQual(eFQ_ribosomal_slippage, new CFlatBoolQVal(true));
+            }
+            else if ( exception == "trans-splicing" ) {
+                x_AddQual(eFQ_trans_splicing, new CFlatBoolQVal(true));
+            }
+            else if ( exception == "nonconsensus splice site" ) {
+                string except = exception;
+                s_ParseException(except, exception, note_text, ctx);
+                if ( !note_text.empty() ) {
+                    x_AddQual(eFQ_exception_note, new CFlatStringQVal(note_text));
+                }
+            }
+            else if ( ! exception.empty() ) {
+                x_AddQual(eFQ_exception, new CFlatStringQVal(exception));
+            }
         }
     } 
     else if ( ! cfg.DropIllegalQuals() ) {
