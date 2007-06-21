@@ -229,8 +229,40 @@ sub ReadBranchInfo
 
     return
     {
+        BranchPath => $BranchPath,
         UpstreamPath => $UpstreamPath,
         BranchDirs => [sort @BranchDirs],
+        Revisions => $Revisions,
+        MergeRevisions => \@MergeRevisions
+    }
+}
+
+sub ReadUpstreamInfo
+{
+    my ($Self, $SVN, $BranchInfo) = @_;
+
+    my ($FirstBranchRevision, $LastBranchRevision) =
+        @{$BranchInfo->{Revisions}}[-1, 0];
+
+    my ($UpstreamPath, $BranchDirs) = @$BranchInfo{qw(UpstreamPath BranchDirs)};
+
+    my $Revisions = $SVN->ReadLog('--stop-on-copy',
+        "-r$FirstBranchRevision->{Number}:$LastBranchRevision->{Number}",
+        $SVN->GetRepository(), map {"$UpstreamPath/$_"} @$BranchDirs);
+
+    my @MergeRevisions;
+
+    for my $Revision (@$Revisions)
+    {
+        if ($Revision->{LogMessage} =~ m/revision (\d+)/o)
+        {
+            push @MergeRevisions, [$Revision, $1]
+        }
+    }
+
+    return
+    {
+        BranchInfo => $BranchInfo,
         Revisions => $Revisions,
         MergeRevisions => \@MergeRevisions
     }
@@ -260,26 +292,20 @@ sub DetectLastMergeRevision
 
 sub DetectLastMergeUpRevision
 {
-    my ($Self, $SVN, $BranchPath, $BranchInfo) = @_;
+    my ($Self, $SVN, $UpstreamInfo) = @_;
 
-    print "Detecting previous merge revision...\n";
+    my $MergeRevisions = $UpstreamInfo->{MergeRevisions};
 
-    my ($UpstreamPath, $BranchDirs, $Revisions) =
-        @$BranchInfo{qw(UpstreamPath BranchDirs Revisions)};
-
-    $Revisions = $SVN->ReadLog('--stop-on-copy',
-        "-r$Revisions->[-1]->{Number}:$Revisions->[0]->{Number}",
-        $SVN->GetRepository(), map {"$UpstreamPath/$_"} @$BranchDirs);
-
-    for my $Revision (@$Revisions)
+    if (@$MergeRevisions)
     {
-        if ($Revision->{LogMessage} =~ m/revision (\d+)/o)
-        {
-            return ($1, $Revision->{Number})
-        }
+        my $LastMergeRev = $MergeRevisions->[0];
+        return $LastMergeRev->[1], $LastMergeRev->[0]->{Number}
     }
-
-    return ($Revisions->[-1]->{Number}, $Revisions->[-1]->{Number})
+    else
+    {
+        my $FirstRevNumber = $UpstreamInfo->{Revisions}->[-1]->{Number};
+        return $FirstRevNumber, $FirstRevNumber
+    }
 }
 
 sub List
@@ -302,11 +328,12 @@ sub Info
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+    my $UpstreamInfo = $Self->ReadUpstreamInfo($SVN, $BranchInfo);
 
     print "Branch path: branches/$BranchPath\n" .
         "Upstream path: $BranchInfo->{UpstreamPath}\n";
 
-    print "Branch directories:\n";
+    print "Branch structure:\n";
     for my $Directory (@{$BranchInfo->{BranchDirs}})
     {
         print "  $Directory\n"
@@ -318,6 +345,14 @@ sub Info
     for my $RevRef (@{$BranchInfo->{MergeRevisions}})
     {
         print "  \@r$RevRef->[0]->{Number} (with trunk r$RevRef->[1])\n"
+    }
+
+    print 'Merged up: ' .
+        scalar(@{$UpstreamInfo->{MergeRevisions}}) . " time(s)\n";
+
+    for my $RevRef (@{$UpstreamInfo->{MergeRevisions}})
+    {
+        print "  \@r$RevRef->[0]->{Number} (with branch r$RevRef->[1])\n"
     }
 }
 
@@ -644,7 +679,7 @@ sub MergeUp
     system($SVN->GetSvnPath(), 'update', @BranchDirs);
 
     my ($LastMergeRev, $Revision) =
-        $Self->DetectLastMergeUpRevision($SVN, $BranchPath, $BranchInfo);
+        $Self->DetectLastMergeUpRevision($SVN, $BranchInfo);
 
     if ($TargetRev == $LastMergeRev)
     {
@@ -660,7 +695,7 @@ sub MergeUp
 
     for my $LocalDir (@BranchDirs)
     {
-        system($SVN->GetSvnPath(), 'merge', '-r', "$LastMergeRev:$TargetRev",
+        system($SVN->GetSvnPath(), 'merge', '-r', "$LastMergeRev\:$TargetRev",
             "$SVN->{Repos}/branches/$BranchPath/$LocalDir", $LocalDir)
     }
 
