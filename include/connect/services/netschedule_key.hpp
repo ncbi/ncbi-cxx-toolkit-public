@@ -169,7 +169,7 @@ private:
         size_t src_read, dst_written;
         size_t dst_size =  base64_enc_bv.size();
         vector<unsigned char> dst_buf(dst_size, 0);
-        BASE64_Decode(&base64_enc_bv[0],  base64_enc_bv.size(), &src_read,
+        BASE64_Decode(base64_enc_bv.data(),  base64_enc_bv.size(), &src_read,
                       &dst_buf[0], dst_size, &dst_written);
         TBVector& bv = m_Keys[host];
         bv.clear();
