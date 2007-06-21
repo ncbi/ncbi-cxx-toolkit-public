@@ -203,9 +203,6 @@ void CLockVectorGuard<TLockVect>::DoLock()
 {
     _ASSERT(m_LockSet == false);
 
-if (m_Id == 48) {
-    m_Id = m_Id + 1 - 1;
-}
     // Strategy implemented here is spin-and-lock
     // works fine if rate of contention is relatively low
     // in the future needs to be changed so lock vector returns semaphor to
