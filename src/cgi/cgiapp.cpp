@@ -914,7 +914,7 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
         }
     }
 
-    ERR_POST( (string) CNcbiOstrstreamToString(msg) );
+    LOG_POST( (string) CNcbiOstrstreamToString(msg) );
 }
 
 
