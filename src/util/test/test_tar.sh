@@ -85,6 +85,8 @@ test_tar -C $test_base.2 -c -f - . 2>/dev/null | $tar tBvf -          ||  exit 1
 echo "Testing backup feature"
 
 test_tar -C $test_base.2 -x -B -f $test_base.tar '*testdir/?*'        ||  exit 1
+echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v -c '[.]bak$'
+echo $test_base.2/testdir/* | tr ' ' '\n' | grep    -c '[.]bak$'
 files="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v -c '[.]bak$'`"
 bkups="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep    -c '[.]bak$'`"
 echo "Files: $files --- Backups: $bkups"
