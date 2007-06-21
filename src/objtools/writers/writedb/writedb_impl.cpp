@@ -625,8 +625,8 @@ void CWriteDB_Impl::x_CookSequence()
             }
         
             WriteDB_Ncbi4naToBinary(na4.data(),
-                                    na4.size(),
-                                    si.GetLength(),
+                                    (int) na4.size(),
+                                    (int) si.GetLength(),
                                     m_Sequence,
                                     m_Ambig);
         }
@@ -695,7 +695,7 @@ void CWriteDB_Impl::x_Publish()
     }
     
     if (! done) {
-        int index = m_VolumeList.size();
+        int index = (int) m_VolumeList.size();
         
         if (m_Volume.NotEmpty()) {
             m_Volume->Close();
@@ -797,7 +797,7 @@ void CWriteDB_Impl::SetMaskedLetters(const string & masked)
     CSeqConvert::Convert(m_MaskedLetters,
                          CSeqUtil::e_Iupacaa,
                          0,
-                         m_MaskedLetters.size(),
+                         (int) m_MaskedLetters.size(),
                          mask_bytes,
                          CSeqUtil::e_Ncbistdaa);
     

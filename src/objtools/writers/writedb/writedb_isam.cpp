@@ -204,7 +204,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     case ePig:
     case eTrace:
         isam_type = eIsamNumericType; // numeric w/ data
-        num_terms = m_NumberTable.size();
+        num_terms = (int) m_NumberTable.size();
         max_line_size = 0;
         break;
         
@@ -313,7 +313,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
             // Store the overall index file position where the key
             // will be written.
             
-            key_off.push_back(key_buffer.size());
+            key_off.push_back((int) key_buffer.size());
             
             // Store the string record for the index file (but this
             // string is NUL terminated, whereas the data file rows
@@ -336,7 +336,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     
     // Push back the final buffer offset.
     
-    key_off.push_back(key_buffer.size());
+    key_off.push_back((int) key_buffer.size());
     
     int key_off_start = eKeyOffset + (nsamples + 1) * 8;
     
@@ -357,7 +357,7 @@ void CWriteDB_IsamIndex::x_FlushNumericIndex()
     
     sort(m_NumberTable.begin(), m_NumberTable.end());
     
-    int count = m_NumberTable.size();
+    int count = (int) m_NumberTable.size();
     
     const SIdOid * prevp = 0;
     
@@ -650,7 +650,7 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
         if (chain2) {
             const char * ep = sf1.data() + sf1.size();
             string ext(ep-2, ep);
-            int offset = sf1.size()-2;
+            int offset = (int) sf1.size() - 2;
             
             sf1.resize(offset + 1);
             sf2.resize(offset + 1);

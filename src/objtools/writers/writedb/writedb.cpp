@@ -178,7 +178,7 @@ void CBinaryListBuilder::Write(const string & fname)
     }
     
     s_WriteInt4(outp, magic);
-    s_WriteInt4(outp, m_Ids.size());
+    s_WriteInt4(outp, (int)m_Ids.size());
     
     sort(m_Ids.begin(), m_Ids.end());
     
@@ -188,7 +188,7 @@ void CBinaryListBuilder::Write(const string & fname)
         }
     } else {
         ITERATE(vector<Int8>, iter, m_Ids) {
-            s_WriteInt4(outp, *iter);
+            s_WriteInt4(outp, (int)*iter);
         }
     }
 }

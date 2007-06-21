@@ -138,19 +138,19 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
     _ASSERT(m_Open);
     
     int length = (m_Protein
-                  ? seq.size()
+                  ? (int) seq.size()
                   : x_FindNuclLength(seq));
     
     bool overfull = false;
     
     if (! (m_Idx->CanFit() &&
-           m_Hdr->CanFit(binhdr.size()) &&
-           m_Seq->CanFit(seq.size() + ambig.size(), length))) {
+           m_Hdr->CanFit((int)binhdr.size()) &&
+           m_Seq->CanFit((int)(seq.size() + ambig.size()), length))) {
         overfull = true;
     }
     
     if (m_Indices != CWriteDB::eNoIndex) {
-        int num = idlist.size();
+        int num = (int)idlist.size();
         
         if (! (m_AccIsam->CanFit(num) &&
                m_GiIsam->CanFit(num) &&
@@ -175,7 +175,7 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
     
     if (m_Protein) {
         m_Seq->AddSequence(seq, off_seq, length);
-        m_Idx->AddSequence(seq.size(), off_hdr, off_seq);
+        m_Idx->AddSequence((int) seq.size(), off_hdr, off_seq);
     } else {
         m_Seq->AddSequence(seq, ambig, off_seq, off_amb, length);
         m_Idx->AddSequence(length, off_hdr, off_seq, off_amb);
@@ -204,7 +204,7 @@ int CWriteDB_Volume::x_FindNuclLength(const string & seq)
     _ASSERT(! m_Protein);
     _ASSERT(seq.size());
     
-    int wholebytes = seq.size() - 1;
+    int wholebytes = (int) seq.size() - 1;
     return (wholebytes << 2) + (seq[wholebytes] & 0x3);
 }
 

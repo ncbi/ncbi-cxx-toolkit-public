@@ -198,7 +198,7 @@ inline void s_WriteInt8BE(ostream & str, Uint8 x)
 /// @param s String to write.
 inline void s_WriteString(ostream & str, const string & s)
 {
-    s_WriteInt4(str, s.length());
+    s_WriteInt4(str, (int)s.length());
     str.write(s.data(), s.length());
 }
 
