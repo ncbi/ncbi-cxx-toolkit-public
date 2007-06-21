@@ -96,7 +96,6 @@ public:
 public:
 
     /// Construct without locking
-    explicit
     CLockVectorGuard(TLockVector& lvect, 
                      unsigned     timeout_ms);
 
@@ -110,10 +109,11 @@ public:
     ///     Timeout in milliseconds for how long lock makes attempts to
     ///     acquire the id. If cannot lock it throws an exception.
     ///
-    explicit
     CLockVectorGuard(TLockVector& lvect, 
                      unsigned     id,
                      unsigned     timeout_ms);
+
+
     ~CLockVectorGuard();
 
     /// Acquire lock 
@@ -134,8 +134,17 @@ public:
         m_Id = id; 
     }
 
+    /// Transfer lock ownership from another lock
+    /// @param lg
+    ///     Old lock guard (lock src)
+    ///
+    void TakeFrom(CLockVectorGuard& lg);
+
     /// Lock acquisition
     void DoLock();
+
+    TLockVector& GetLockVector() const {return *m_LockVector; }
+    unsigned GetTimeout() const { return m_Timeout; }
 
 private:
     CLockVectorGuard(const CLockVectorGuard<TLockVect>&);
@@ -249,7 +258,13 @@ void CLockVectorGuard<TLockVect>::Unlock()
     m_Id = 0;
 }
 
-
+template<class BV> 
+void CLockVectorGuard<BV>::TakeFrom(CLockVectorGuard& lg)
+{
+    m_LockVector = lg.m_LockVector;
+    m_Id = lg.m_Id;
+    lg.m_Id = 0;
+}
 
 
 template<class BV> 
