@@ -122,6 +122,9 @@ public:
     /// Unlocks the lock
     void Unlock();
 
+    /// Forger lock
+    void Release() { m_LockSet = false; }
+
     /// Get BLOB id
     unsigned GetId() const { return m_Id; }
 
@@ -154,6 +157,7 @@ private:
     unsigned       m_Id;
     unsigned       m_Timeout;
     unsigned       m_Spins;
+    bool           m_LockSet;
 };
 
 template<class TLockVect> 
@@ -162,7 +166,8 @@ CLockVectorGuard<TLockVect>::CLockVectorGuard(TLockVector& lvect,
 : m_LockVector(&lvect),
   m_Id(0),
   m_Timeout(timeout_ms),
-  m_Spins(200)
+  m_Spins(200),
+  m_LockSet(false)
 {
 }
 
@@ -174,7 +179,8 @@ CLockVectorGuard<TLockVect>::CLockVectorGuard(TLockVector& lvect,
 : m_LockVector(&lvect),
   m_Id(id),
   m_Timeout(timeout_ms),
-  m_Spins(200)
+  m_Spins(200),
+  m_LockSet(false)
 {
     _ASSERT(id);
     DoLock();
@@ -195,18 +201,19 @@ CLockVectorGuard<TLockVect>::~CLockVectorGuard()
 template<class TLockVect> 
 void CLockVectorGuard<TLockVect>::DoLock()
 {
-    _ASSERT(m_Id);
-    if (!m_Id) {
-        return;
-    }
+    _ASSERT(m_LockSet == false);
+
+if (m_Id == 48) {
+    m_Id = m_Id + 1 - 1;
+}
     // Strategy implemented here is spin-and-lock
     // works fine if rate of contention is relatively low
     // in the future needs to be changed so lock vector returns semaphor to
     // wait until requested id is free
     //
     for (unsigned i = 0; i < m_Spins; ++i) {
-        bool locked = m_LockVector->TryLock(m_Id);
-        if (locked) {
+        m_LockSet = m_LockVector->TryLock(m_Id);
+        if (m_LockSet) {
             return;
         }
     } // for
@@ -216,8 +223,8 @@ void CLockVectorGuard<TLockVect>::DoLock()
     unsigned sleep_ms = 10;
     unsigned time_spent = 0;
     while (true) {
-        bool locked = m_LockVector->TryLock(m_Id);
-        if (locked) {
+        m_LockSet = m_LockVector->TryLock(m_Id);
+        if (m_LockSet) {
             return;
         }
         SleepMilliSec(sleep_ms);
@@ -235,9 +242,7 @@ void CLockVectorGuard<TLockVect>::DoLock()
 template<class TLockVect> 
 void CLockVectorGuard<TLockVect>::Lock(unsigned id)
 {
-    if (m_Id) {
-        Unlock();
-    }
+    Unlock();
     m_Id = id;
     DoLock();
 }
@@ -245,7 +250,7 @@ void CLockVectorGuard<TLockVect>::Lock(unsigned id)
 template<class TLockVect> 
 void CLockVectorGuard<TLockVect>::Unlock()
 {
-    if (!m_Id) {
+    if (!m_LockSet) {
         return;
     }
     bool unlocked = m_LockVector->Unlock(m_Id);
@@ -255,15 +260,16 @@ void CLockVectorGuard<TLockVect>::Unlock()
             "Double unlock on object id=" + NStr::UIntToString(m_Id);
         NCBI_THROW(CMutexException, eTryLock, msg);
     }
-    m_Id = 0;
+    m_LockSet = false;
 }
 
 template<class BV> 
 void CLockVectorGuard<BV>::TakeFrom(CLockVectorGuard& lg)
 {
-    m_LockVector = lg.m_LockVector;
-    m_Id = lg.m_Id;
-    lg.m_Id = 0;
+    Unlock();
+    m_LockVector = lg.m_LockVector; m_Id = lg.m_Id;
+    m_LockSet = true;
+    lg.Release();
 }
 
 
@@ -294,6 +300,9 @@ bool CLockVector<BV>::Unlock(unsigned id)
 {
     CFastMutexGuard guard(m_IdVector_Lock);
     bool is_set = m_IdVector.set_bit_conditional(id, false, true);
+    if (!is_set) {
+        _ASSERT(m_IdVector[id] == false);
+    }
     return is_set;
 }
 
