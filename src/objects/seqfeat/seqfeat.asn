@@ -251,7 +251,7 @@ Trna-ext ::= SEQUENCE {                 -- tRNA feature extensions
         ncbi8aa INTEGER ,
         ncbistdaa INTEGER } OPTIONAL ,
     codon SET OF INTEGER OPTIONAL ,     -- codon(s) as in Genetic-code
-	anticodon Seq-loc OPTIONAL }        -- location of anticodon
+    anticodon Seq-loc OPTIONAL }        -- location of anticodon
 
 END
 
@@ -354,8 +354,8 @@ OrgMod ::= SEQUENCE {
         isolate (17) ,
         common (18) ,
         acronym (19) ,
-        dosage (20) ,		-- chromosome dosage of hybrid
-        nat-host (21) ,		-- natural host of this specimen
+        dosage (20) ,          -- chromosome dosage of hybrid
+        nat-host (21) ,        -- natural host of this specimen
         sub-species (22) ,
         specimen-voucher (23) ,
         authority (24) ,
@@ -369,6 +369,8 @@ OrgMod ::= SEQUENCE {
         gb-acronym (32) ,       -- used by taxonomy database
         gb-anamorph (33) ,      -- used by taxonomy database
         gb-synonym (34) ,       -- used by taxonomy database
+        culture-collection (35) ,
+        bio-material (36) ,
         old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
@@ -419,7 +421,7 @@ IMPORTS Org-ref FROM NCBI-Organism;
 --********************************************************************
 
 BioSource ::= SEQUENCE {
-    genome INTEGER {		 -- biological context
+    genome INTEGER {         -- biological context
         unknown (0) ,
         genomic (1) ,
         chloroplast (2) ,
