@@ -111,7 +111,7 @@ typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
 
 
 typedef list<SDiagMessage> TTraceCollection;
-static size_t kTraceCollectionMaxSize = 1000;
+static size_t s_TraceCollectionSize = 0;
 
 TTraceCollection& GetTraceCollection(void)
 {
@@ -146,22 +146,26 @@ void StopTraceCollect(ETraceCollectAction action)
             }
         }
         coll.clear();
+        s_TraceCollectionSize = 0;
     }
     // Discard only at the top level
     else if (GetTraceCollectCounter().Get() <= 0) {
         CMutexGuard LOCK(s_DiagMutex);
         GetTraceCollection().clear();
+        s_TraceCollectionSize = 0;
     }
 }
 
 
 void CollectTraceMessage(const SDiagMessage& mess)
 {
+    static const size_t kTraceCollectionMaxSize = 1000;
     TTraceCollection& coll = GetTraceCollection();
-    if (coll.size() >= kTraceCollectionMaxSize) {
+    if (s_TraceCollectionSize >= kTraceCollectionMaxSize) {
         coll.erase(coll.begin());
     }
     coll.push_back(mess);
+    s_TraceCollectionSize++;
 }
 
 
