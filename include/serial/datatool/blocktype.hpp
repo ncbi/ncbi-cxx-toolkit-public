@@ -47,7 +47,7 @@ public:
 
     void PrintASN(CNcbiOstream& out, int indent, bool last) const;
     void PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) const;
-    void PrintXMLSchema(CNcbiOstream& out, int indent) const;
+    void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTD(CNcbiOstream& out) const;
 
     bool Check(void) const;

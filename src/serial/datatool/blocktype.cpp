@@ -298,7 +298,7 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 }
             }
             if (isSimpleSeq || hasNotag) {
-                member.GetType()->PrintXMLSchema(out, indent, true);
+                member.PrintXMLSchema(out, indent, true);
             } else {
                 member.PrintXMLSchema(out, indent);
             }
@@ -848,10 +848,10 @@ void CDataMember::PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) 
     }
 }
 
-void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent) const
+void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only) const
 {
     m_Comments.PrintDTD(out, CComments::eNoEOL); 
-    GetType()->PrintXMLSchema(out, indent);
+    GetType()->PrintXMLSchema(out, indent, contents_only);
 }
 
 void CDataMember::PrintDTD(CNcbiOstream& out) const

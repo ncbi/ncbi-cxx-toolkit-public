@@ -467,6 +467,7 @@ string XSDParser::ParseGroup(DTDElement* owner, int emb)
         } else {
             node.SetTypeName(node.GetName());
             node.SetType(DTDElement::eUnknownGroup);
+            Lexer().FlushCommentsTo(node.Comments());
         }
     }
     if (tok == K_CLOSING) {
@@ -749,6 +750,7 @@ void XSDParser::ParseAttributeGroup(DTDElement& node)
             DTDAttribute a;
             a.SetType(DTDAttribute::eUnknownGroup);
             a.SetTypeName(m_Value);
+            Lexer().FlushCommentsTo(node.AttribComments());
             node.AddAttribute(a);
         }
     }
@@ -919,13 +921,22 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
     string data = ent.GetData();
     string closing;
     TToken tok;
-    CComments Comments;
+    CComments comments;
     for ( tok=GetNextToken(); tok != K_ENDOFTAG; tok=GetNextToken()) {
-        data += '\n';
+        {
+            CComments comm;
+            Lexer().FlushCommentsTo(comm);
+            if (!comm.Empty()) {
+                CNcbiOstrstream buffer;
+                comm.PrintDTD(buffer);
+                data += CNcbiOstrstreamToString(buffer);
+                data += closing;
+            }
+        }
         data += "<" + m_Raw;
         if (tok == K_DOCUMENTATION) {
             data += ">";
-            m_Comments = &Comments;
+            m_Comments = &comments;
             ParseDocumentation();
             closing = m_Raw;
         } else {
@@ -940,9 +951,9 @@ void XSDParser::ParseTypeDefinition(DTDEntity& ent)
             data = ent.GetData();
         }
     }
-    if (!Comments.Empty()) {
+    if (!comments.Empty()) {
         CNcbiOstrstream buffer;
-        Comments.Print(buffer, "", "\n", "");
+        comments.Print(buffer, "", "\n", "");
         data += CNcbiOstrstreamToString(buffer);
         data += closing;
     }
