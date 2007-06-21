@@ -258,6 +258,30 @@ sub DetectLastMergeRevision
     }
 }
 
+sub DetectLastMergeUpRevision
+{
+    my ($Self, $SVN, $BranchPath, $BranchInfo) = @_;
+
+    print "Detecting previous merge revision...\n";
+
+    my ($UpstreamPath, $BranchDirs, $Revisions) =
+        @$BranchInfo{qw(UpstreamPath BranchDirs Revisions)};
+
+    $Revisions = $SVN->ReadLog('--stop-on-copy',
+        "-r$Revisions->[-1]->{Number}:$Revisions->[0]->{Number}",
+        $SVN->GetRepository(), map {"$UpstreamPath/$_"} @$BranchDirs);
+
+    for my $Revision (@$Revisions)
+    {
+        if ($Revision->{LogMessage} =~ m/revision (\d+)/o)
+        {
+            return ($1, $Revision->{Number})
+        }
+    }
+
+    return ($Revisions->[-1]->{Number}, $Revisions->[-1]->{Number})
+}
+
 sub List
 {
     my ($Self) = @_;
@@ -562,6 +586,82 @@ sub MergeDown
     {
         system($SVN->GetSvnPath(), 'merge', '-r', "$LastMergeRev:$TargetRev",
             "$SVN->{Repos}/$TrunkDir/$LocalDir", $LocalDir)
+    }
+
+    my @RootDirs;
+    my @SubDirs;
+
+    find(sub
+        {
+            if ($_ eq '.')
+            {
+                push @RootDirs, $File::Find::name
+            }
+            elsif (-d $_ && -d $_ . '/.svn')
+            {
+                push @SubDirs, $File::Find::name
+            }
+        }, @BranchDirs);
+
+    my $PropValue = 'Please execute "' . $Self->{MyName} .
+            ' commit_merge" to commit this merge of branch ' .
+            "'$BranchPath' with trunk revision $TargetRev.";
+
+    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue, @RootDirs);
+
+    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue . ' [subdir]',
+        @SubDirs) if @SubDirs
+}
+
+sub MergeUp
+{
+    my ($Self, $BranchPath, $TargetRev) = @_;
+
+    die "$Self->{MyName}: <branch_path> parameter is missing\n"
+        unless $BranchPath;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    if (!$TargetRev || $TargetRev eq 'HEAD')
+    {
+        $TargetRev = $SVN->GetLatestRevision();
+    }
+
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+
+    my @BranchDirs = @{$BranchInfo->{BranchDirs}};
+
+    print "Running svn status on branch...\n";
+
+    for ($SVN->ReadSubversionLines('status', @BranchDirs))
+    {
+        die "$Self->{MyName}: local modifications detected.\n"
+            unless m/^[\?~X]/
+    }
+
+    print "Performing updates...\n";
+
+    system($SVN->GetSvnPath(), 'update', @BranchDirs);
+
+    my ($LastMergeRev, $Revision) =
+        $Self->DetectLastMergeUpRevision($SVN, $BranchPath, $BranchInfo);
+
+    if ($TargetRev == $LastMergeRev)
+    {
+        print "Already merged with trunk revision $TargetRev in r$Revision.\n";
+        return
+    }
+    elsif ($TargetRev < $LastMergeRev)
+    {
+        die "$Self->{MyName}: target revision number must be > $LastMergeRev\n"
+    }
+
+    print "Merging with r$TargetRev...\n";
+
+    for my $LocalDir (@BranchDirs)
+    {
+        system($SVN->GetSvnPath(), 'merge', '-r', "$LastMergeRev:$TargetRev",
+            "$SVN->{Repos}/branches/$BranchPath/$LocalDir", $LocalDir)
     }
 
     my @RootDirs;

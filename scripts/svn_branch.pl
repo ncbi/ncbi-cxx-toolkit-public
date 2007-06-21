@@ -70,7 +70,15 @@ Commands:
                         there must be no local changes in it.
 
     merge_down_commit   Commits the results of merge to the branch. A special
-                        format of the commit log message will be used.
+                        format of the commit log message is used.
+
+    merge_up            Merges the latest changes from the branch back to the
+                        trunk. The trunk stream must be checked out to the
+                        current working directory and there must be no local
+                        changes in it.
+
+    merge_up_commit     Commits the results of merge to the trunk. A special
+                        format of the commit log message is used.
 
     commit              Commits the local changes to the branch. If the log
                         message is omitted, it is read from the standard input.
@@ -125,6 +133,14 @@ elsif ($Command eq 'merge_down')
 elsif ($Command eq 'merge_down_commit')
 {
     $Method = 'MergeDownCommit'
+}
+elsif ($Command eq 'merge_up')
+{
+    $Method = 'MergeUp'
+}
+elsif ($Command eq 'merge_up_commit')
+{
+    $Method = 'MergeUpCommit'
 }
 elsif ($Command eq 'commit')
 {
