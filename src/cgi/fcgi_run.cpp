@@ -432,6 +432,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
         // Process the request
         CTime start_time(CTime::eCurrent);
+        bool skip_stat_log = false;
+
         try {            
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
@@ -599,6 +601,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     stat->Reset(start_time, *result, &e);
                     msg = stat->Compose();
                     stat->Submit(msg);
+                    skip_stat_log = true; // Don't print the same message again
                 }
             }}
 
@@ -645,7 +648,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             x_LogPost("CCgiApplication::x_RunFastCGI ",
                       m_Iteration, start_time, 0, fEnd);
         }
-        if ( is_stat_log ) {
+        if ( is_stat_log  &&  !skip_stat_log ) {
             stat->Reset(start_time, *result);
             string msg = stat->Compose();
             stat->Submit(msg);
