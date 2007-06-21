@@ -188,14 +188,13 @@ void CConnection::SetDbName(const string& name, CDB_Connection* conn)
 
 CDB_Connection* CConnection::CloneCDB_Conn()
 {
-    CDB_Connection *curr = GetCDB_Connection();
     CDB_Connection *temp = m_ds->
     GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
                                GetCDB_Connection()->UserName(),
                                GetCDB_Connection()->Password(),
                                m_modeMask,
                                true);
-    _TRACE("CDB_Connection " << (void*)curr
+    _TRACE("CDB_Connection " << (void*)GetCDB_Connection()
         << " cloned, new CDB_Connection: " << (void*)temp);
     SetDbName(m_database, temp);
     return temp;

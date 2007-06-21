@@ -296,8 +296,8 @@ string RetrieveModuleFileName(void)
     string file_name;
 
 #if defined(NCBI_OS_CYGWIN)
-	// no dladdr; just return the standard location
-	file_name = NCBI_GetDefaultRunpath() + string("libpython_ncbi_dbapi.a");
+    // no dladdr; just return the standard location
+    file_name = NCBI_GetDefaultRunpath() + string("libpython_ncbi_dbapi.a");
 
 #elif defined(NCBI_OS_MSWIN)
     // Add an additional search path ...
@@ -1359,6 +1359,11 @@ MakeTupleFromResult(IResultSet& rs)
             }
             break;
         case eDB_UnsupportedType :
+            break;
+        default:
+            // All cases are supposed to be handled.
+            // In case of PY_VERSION_HEX < 0x02040000 eDB_DateTime and
+            // eDB_SmallDateTimewill be missed.
             break;
         }
     }

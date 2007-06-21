@@ -59,25 +59,6 @@ enum { max_text_size = 8000 };
 static const char* msg_record_expected = "Record expected";
 
 
-///////////////////////////////////////////////////////////////////////////
-class CErrHandler : public CDB_UserHandler
-{
-public:
-    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    virtual bool HandleIt(CDB_Exception* ex);
-};
-
-
-///////////////////////////////////////////////////////////////////////////
-class CODBCErrHandler : public CDB_UserHandler
-{
-public:
-    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    virtual bool HandleIt(CDB_Exception* ex);
-};
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
 //      I) Statement:
@@ -127,33 +108,6 @@ protected:
         return ds->CreateConnection( CONN_OWNERSHIP );
     }
 };
-
-
-///////////////////////////////////////////////////////////////////////////////
-bool CErrHandler::HandleIt(CDB_Exception* ex)
-{
-    if ( !ex )
-        return false;
-
-    // Ignore errors with ErrorCode set to 0
-    // (this is related mostly to the FreeTDS driver)
-    if (ex->GetDBErrCode() == 0)
-        return true;
-
-    // On other errors, throw an exception (was not allowed before!)
-    throw *ex;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-bool CODBCErrHandler::HandleIt(CDB_Exception* ex)
-{
-    if ( !ex )
-        return false;
-
-    // On other errors, throw an exception (was not allowed before!)
-    throw *ex;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -248,15 +202,17 @@ CDBAPIUnitTest::TestInit(void)
         if ( m_args.GetDriverName() == "odbc" ||
             m_args.GetDriverName() == "odbcw" ||
             m_args.GetDriverName() == "ftds64_odbc" ) {
-            drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+            drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                             eTakeOwnership
                                             );
-            drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+            drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                                eTakeOwnership
                                                );
         } else {
-            drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
-            drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
+            drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception,
+                                            eTakeOwnership);
+            drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception,
+                                               eTakeOwnership);
         }
 
         m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
@@ -1218,7 +1174,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             }
 
             // Insert data using stored procedure ...
-            {
+            if (false) {
                 value = CTime(CTime::eCurrent);
 
                 // Set a database ...
@@ -5016,6 +4972,27 @@ void CDBAPIUnitTest::Test_DropConnection(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_N_Connections(void)
+{
+    enum {
+        eN = 50
+    };
+
+    auto_ptr<IConnection> auto_conns[eN];
+
+    for (int i = 0; i < eN; ++i) {
+        auto_ptr<IConnection> auto_conn(m_DS->CreateConnection(CONN_OWNERSHIP));
+        Connect(auto_conn);
+        auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+
+        auto_stmt->ExecuteUpdate("SELECT @@version");
+        auto_conns[i] = auto_conn;
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_CDB_Object(void)
 {
     try {
@@ -7021,17 +6998,19 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                 m_args.GetDriverName() == "odbcw" ||
                 m_args.GetDriverName() == "ftds64_odbc"
                 ) {
-                drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                                 eTakeOwnership
                                                 );
-                drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                                    eTakeOwnership
                                                    );
             } else {
-                CRef<CDB_UserHandler> hx(new CErrHandler);
+                CRef<CDB_UserHandler> hx(new CDB_UserHandler_Exception);
                 CDB_UserHandler::SetDefault(hx);
-                drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
-                drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
+                drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception,
+                                                eTakeOwnership);
+                drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception,
+                                                   eTakeOwnership);
             }
         }
 
@@ -7079,15 +7058,17 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                 m_args.GetDriverName() == "odbcw" ||
                 m_args.GetDriverName() == "ftds64_odbc"
                 ) {
-                drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                                 eNoOwnership
                                                 );
-                drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception_ODBC,
                                                    eNoOwnership
                                                    );
             } else {
-                drv_context->PushCntxMsgHandler(new CErrHandler, eNoOwnership);
-                drv_context->PushDefConnMsgHandler(new CErrHandler, eNoOwnership);
+                drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception,
+                                                eNoOwnership);
+                drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception,
+                                                   eNoOwnership);
             }
         }
 
@@ -7711,6 +7692,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    // This test is not supposed to be run every day.
+    if (false) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_N_Connections,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != "odbc" // Doesn't work ...
 //         && args.GetDriverName() != "odbcw" // Doesn't work ...
@@ -7759,18 +7748,18 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "ftds64_dblib", "ftds64_odbc", "ftds64", "odbcw"
+                      "ftds64_dblib", "ftds64_odbc", "ftds64", "odbcw", "ftds8"
 
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "ftds64_dblib", \
-                      "ftds64_odbc", "ftds64"
+                      "ftds64_odbc", "ftds64", "ftds8"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ftds", "ftds63", "ftds64_dblib", "ftds64_odbc", \
-                      "ftds64"
+                      "ftds64", "ftds8"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -7897,6 +7886,8 @@ CTestArguments::SetDatabaseParameters(void)
     if ( m_TDSVersion.empty() ) {
         if ( GetDriverName() == "ctlib" ) {
             // m_DatabaseParameters["version"] = "125";
+            // Set max_connect to let open more than 30 connections with ctlib.
+            // m_DatabaseParameters["max_connect"] = "100";
         } else if ( GetDriverName() == "dblib"  &&
                     GetServerType() == eSybase ) {
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
@@ -7925,6 +7916,8 @@ CTestArguments::SetDatabaseParameters(void)
                 break;
             case eMsSql2005:
                 m_DatabaseParameters["version"] = "70";
+                break;
+            default:
                 break;
             }
         } else if (GetDriverName() == "ftds64") {

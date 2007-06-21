@@ -215,6 +215,7 @@ public:
     void Test_Identity(void);
     void Test_BlobStore(void);
     void Test_DropConnection(void);
+    void Test_N_Connections(void);
 
 public:
     void Test_Exception_Safety(void);
