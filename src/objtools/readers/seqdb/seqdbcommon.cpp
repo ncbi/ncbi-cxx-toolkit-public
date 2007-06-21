@@ -629,6 +629,46 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 }
 
 
+bool CSeqDBGiList::FindTi(Int8 ti)
+{
+    int oid(0), index(0);
+    return TiToOid(ti, oid, index);
+}
+
+
+bool CSeqDBGiList::TiToOid(Int8 ti, int & oid)
+{
+    int index(0);
+    return TiToOid(ti, oid, index);
+}
+
+
+bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
+{
+    InsureOrder(eGi);  // would assert be better?
+    
+    int b(0), e((int)m_TisOids.size());
+    
+    while(b < e) {
+        int m = (b + e)/2;
+        Int8 m_ti = m_TisOids[m].ti;
+        
+        if (m_ti < ti) {
+            b = m + 1;
+        } else if (m_ti > ti) {
+            e = m;
+        } else {
+            oid = m_TisOids[m].oid;
+            index = m;
+            return true;
+        }
+    }
+    
+    oid = index = -1;
+    return false;
+}
+
+
 bool CSeqDBGiList::FindSeqId(const CSeq_id & seqid)
 {
     int oid(0), index(0);
@@ -679,6 +719,20 @@ CSeqDBGiList::GetGiList(vector<int>& gis) const
         gis.push_back(itr->gi);
     }
 }
+
+
+#if 0
+void
+CSeqDBGiList::GetTiList(vector<Int8>& tis) const
+{
+    tis.clear();
+    tis.reserve(GetNumTis());
+
+    ITERATE(vector<STiOid>, itr, m_TisOids) {
+        tis.push_back(itr->ti);
+    }
+}
+#endif
 
 
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
@@ -1242,7 +1296,6 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     
     m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
-
 
 END_NCBI_SCOPE
 
