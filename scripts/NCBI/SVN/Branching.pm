@@ -153,10 +153,10 @@ sub ReadBranchMap
 
 sub ReadBranchInfo
 {
-    my ($Self, $SVN, $SwitchPlan) = @_;
+    my ($Self, $SVN, $BranchPath) = @_;
 
     my $Revisions = $SVN->ReadLog('--stop-on-copy',
-        $SVN->GetRepository(), map {$_->[1]} @$SwitchPlan);
+        $SVN->GetRepository(), 'branches/' . $BranchPath);
 
     my @MergeRevisions;
 
@@ -168,16 +168,81 @@ sub ReadBranchInfo
         }
     }
 
-    return {Revisions => $Revisions, MergeRevisions => \@MergeRevisions}
+    my %BranchStructure;
+
+    for my $Revision (reverse @$Revisions)
+    {
+        my $Message = $Revision->{LogMessage};
+
+        if ($Message =~
+            m/^(?:Created|Modified) branch '(.+?)'.$/ && $1 eq $BranchPath)
+        {
+            for my $Change (@{$Revision->{ChangedPaths}})
+            {
+                my ($ChangeType, $TargetPath,
+                    $SourcePath, $SourceRevision) = @$Change;
+
+                if ($ChangeType eq 'D')
+                {
+                    delete $BranchStructure{$TargetPath}
+                }
+                elsif ($ChangeType eq 'A' && $SourcePath)
+                {
+                    $BranchStructure{$TargetPath} =
+                        [$SourcePath, $SourceRevision]
+                }
+            }
+        }
+    }
+
+    my $CommonTarget = "/branches/$BranchPath/";
+    my @BranchDirs;
+    my $UpstreamPath;
+    my $BranchStructureError = 'incorrect branch structure';
+
+    while (my ($TargetPath, $SourcePathInfo) = each %BranchStructure)
+    {
+        my ($SourcePath, $SourceRevision) = @$SourcePathInfo;
+
+        substr($TargetPath, 0, length($CommonTarget), '') eq $CommonTarget and
+            length($SourcePath) > length($TargetPath) and
+            substr($SourcePath, -length($TargetPath),
+                length($TargetPath), '') eq $TargetPath
+            or die $BranchStructureError;
+
+        unless ($UpstreamPath)
+        {
+            $UpstreamPath = $SourcePath
+        }
+        else
+        {
+            $UpstreamPath eq $SourcePath or die $BranchStructureError
+        }
+
+        push @BranchDirs, $TargetPath;
+    }
+
+    die 'unable to determine the upstream path (branch is empty?)'
+        unless $UpstreamPath;
+
+    $UpstreamPath =~ s/^\/?(.+?)\/?$/$1/;
+
+    return
+    {
+        UpstreamPath => $UpstreamPath,
+        BranchDirs => [sort @BranchDirs],
+        Revisions => $Revisions,
+        MergeRevisions => \@MergeRevisions
+    }
 }
 
 sub DetectLastMergeRevision
 {
-    my ($Self, $SVN, $SwitchPlan) = @_;
+    my ($Self, $SVN, $BranchPath) = @_;
 
     print "Detecting previous merge revision...\n";
 
-    my $BranchInfo = $Self->ReadBranchInfo($SVN, $SwitchPlan);
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
     my $MergeRevisions = $BranchInfo->{MergeRevisions};
 
@@ -212,23 +277,23 @@ sub Info
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
-    print "Information about branch '$BranchPath':\n\n";
+    print "Branch path: branches/$BranchPath\n" .
+        "Upstream path: $BranchInfo->{UpstreamPath}\n";
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
-
-    my ($LastMergeRev, $Revision) =
-        $Self->DetectLastMergeRevision($SVN, $SwitchMap->GetSwitchPlan());
-
-    if ($LastMergeRev == $Revision)
+    print "Branch directories:\n";
+    for my $Directory (@{$BranchInfo->{BranchDirs}})
     {
-        print "The branch was created in revision $Revision.\n"
+        print "  $Directory\n"
     }
-    else
+
+    print 'Merged down: ' .
+        scalar(@{$BranchInfo->{MergeRevisions}}) . " time(s)\n";
+
+    for my $RevRef (@{$BranchInfo->{MergeRevisions}})
     {
-        print 'The branch was merged with trunk revision ' .
-            "$LastMergeRev in revision $Revision.\n"
+        print "  \@r$RevRef->[0]->{Number} (with trunk r$RevRef->[1])\n"
     }
 }
 
@@ -475,7 +540,7 @@ sub MergeDown
     system($SVN->GetSvnPath(), 'update', @BranchDirs);
 
     my ($LastMergeRev, $Revision) =
-        $Self->DetectLastMergeRevision($SVN, $SwitchPlan);
+        $Self->DetectLastMergeRevision($SVN, $BranchPath);
 
     unless ($TargetRev)
     {
