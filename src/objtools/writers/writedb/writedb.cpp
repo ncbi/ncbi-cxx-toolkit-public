@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/writers/writedb/writedb.hpp>
 #include "writedb_impl.hpp"
+#include "writedb_convert.hpp"
 #include <iostream>
 
 BEGIN_NCBI_SCOPE
@@ -132,6 +133,64 @@ void CWriteDB::ListVolumes(vector<string> & vols)
 void CWriteDB::ListFiles(vector<string> & files)
 {
     m_Impl->ListFiles(files);
+}
+
+CBinaryListBuilder::CBinaryListBuilder(EIdType id_type)
+    : m_IdType(id_type)
+{
+}
+
+void CBinaryListBuilder::Write(const string & fname)
+{
+    // Create a binary stream.
+    
+    ofstream outp(fname.c_str(), ios::binary);
+    
+    // Header; first check for 8 byte ids.
+    
+    bool eight = false;
+    
+    ITERATE(vector<Int8>, iter, m_Ids) {
+        Int8 id = *iter;
+        _ASSERT(id > 0);
+        
+        if ((id >> 32) != 0) {
+            eight = true;
+            break;
+        }
+    }
+    
+    Int4 magic = 0;
+    
+    switch(m_IdType) {
+    case eGi:
+        magic = eight ? -2 : -1;
+        break;
+        
+    case eTi:
+        magic = eight ? -4 : -3;
+        break;
+        
+    default:
+        NCBI_THROW(CWriteDBException,
+                   eArgErr,
+                   "Error: Unsupported ID type specified.");
+    }
+    
+    s_WriteInt4(outp, magic);
+    s_WriteInt4(outp, m_Ids.size());
+    
+    sort(m_Ids.begin(), m_Ids.end());
+    
+    if (eight) {
+        ITERATE(vector<Int8>, iter, m_Ids) {
+            s_WriteInt8BE(outp, *iter);
+        }
+    } else {
+        ITERATE(vector<Int8>, iter, m_Ids) {
+            s_WriteInt4(outp, *iter);
+        }
+    }
 }
 
 END_NCBI_SCOPE

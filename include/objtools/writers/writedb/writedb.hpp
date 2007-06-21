@@ -320,6 +320,65 @@ protected:
     CWriteDB_Impl * m_Impl;
 };
 
+/// Binary GI or TI List Builder.
+///
+/// This class assists in building binary GI or TI lists for use with
+/// BLAST databases and associated software.
+class CBinaryListBuilder {
+public:
+    /// Identifier types.
+    enum EIdType {
+        /// Genomic id.
+        eGi,
+        
+        /// Trace id.
+        eTi
+    };
+    
+    /// Construct a list of a given type.
+    CBinaryListBuilder(EIdType id_type);
+    
+    /// Write the list to a file.
+    /// @param fname Filename of the file to write.
+    void Write(const string & fname);
+    
+    /// Add an identifier to the list.
+    void AppendId(const Int8 & id)
+    {
+        m_Ids.push_back(id);
+    }
+    
+    /// Add several 4 byte IDs to the list.
+    ///
+    /// This should take begin and end indicators, such as pointers to
+    /// the beginning and end (past the last element) of an array of
+    /// integers, or begin() and end() iterators to a compatible STL
+    /// collection type such as vector<Int4> or set<int>.
+    ///
+    /// @param a Iterator to the first included element.
+    /// @param b Iterator to element after the last included element.
+    template<class T>
+    void AppendIdList(const T & a, const T & b)
+    {
+        for(T c = a; c != b; ++c) {
+            Int8 id = *c;
+            AppendId(id);
+        }
+    }
+    
+private:
+    /// List of identifiers to use.
+    vector<Int8> m_Ids;
+    
+    /// Whether to use GIs or TIs.
+    EIdType m_IdType;
+    
+    /// Prevent copy construction.
+    CBinaryListBuilder(CBinaryListBuilder&);
+    
+    /// Prevent copy assignment.
+    CBinaryListBuilder& operator=(CBinaryListBuilder &);
+};
 
 END_NCBI_SCOPE
 

@@ -171,6 +171,24 @@ inline void s_WriteInt8LE(ostream & str, Uint8 x)
     str.write(buf, 8);
 }
 
+/// Write an eight byte integer to a stream in big-endian format.
+/// @param str Stream to write to.
+/// @param x Integer to write.
+inline void s_WriteInt8BE(ostream & str, Uint8 x)
+{
+    char buf[8];
+    buf[0] = (char)((x >> 56) & 0xFF);
+    buf[1] = (char)((x >> 48) & 0xFF);
+    buf[2] = (char)((x >> 40) & 0xFF);
+    buf[3] = (char)((x >> 32) & 0xFF);
+    buf[4] = (char)((x >> 24) & 0xFF);
+    buf[5] = (char)((x >> 16) & 0xFF);
+    buf[6] = (char)((x >>  8) & 0xFF);
+    buf[7] = (char)((x      ) & 0xFF);
+    
+    str.write(buf, 8);
+}
+
 /// Write a length-prefixed string to a stream.
 ///
 /// This method writes a string to a stream, prefixing the string with
