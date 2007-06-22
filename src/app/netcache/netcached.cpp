@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.4  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.5  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -76,6 +76,7 @@ DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
 /// Class guards the BLOB id, guarantees exclusive access to the object
 ///
 /// @internal
+
 class CIdBusyGuard
 {
 public:
@@ -968,7 +969,7 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 
-    CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
+//    CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
 
     m_Cache->Remove(req_id);
 }
@@ -1057,15 +1058,17 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
         return;
     }
 
-    CIdBusyGuard guard(&m_UsedIds);
+//    CIdBusyGuard guard(&m_UsedIds);
     if (req.no_lock) {
+/*
         bool lock_accuired = guard.Lock(req_id, 0);
         if (!lock_accuired) {  // BLOB is locked by someone else
             WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
             return;
         }
+*/
     } else {
-        guard.Lock(req_id, m_InactivityTimeout);
+//        guard.Lock(req_id, m_InactivityTimeout);
     }
     char* buf = tdata.buffer.get();
 
@@ -1190,15 +1193,17 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
         return;
     }
 
-    CIdBusyGuard guard(&m_UsedIds);
+//    CIdBusyGuard guard(&m_UsedIds);
     if (req.no_lock) {
+/*
         bool lock_accuired = guard.Lock(req_id, 0);
         if (!lock_accuired) {  // BLOB is locked by someone else
             WriteMsg(sock, "ERR:", "BLOB locked by another client");
             return;
         }
+*/
     } else {
-        guard.Lock(req_id, m_InactivityTimeout);
+//        guard.Lock(req_id, m_InactivityTimeout);
     }
     char* buf = tdata.buffer.get();
 
@@ -1319,7 +1324,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     CIdBusyGuard guard(&m_UsedIds);
 
     if (!req.req_id.empty()) {  // UPDATE request
-        guard.Lock(req.req_id, m_InactivityTimeout * 2);
+//        guard.Lock(req.req_id, m_InactivityTimeout * 2);
     } else {
         guard.LockNewId(&m_MaxId, m_InactivityTimeout);
         unsigned int id = guard.GetId();
@@ -1348,7 +1353,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
         not_eof = ReadBuffer(sock, buf, buf_size, &nn_read);
 
-        if (nn_read == 0 && !not_eof) {
+        if (nn_read == 0 && !not_eof && (iwrt.get() == 0)) {
             m_Cache->Store(rid, 0, kEmptyStr, 
                            buf, nn_read, req.timeout, tdata.auth);
             break;
@@ -1399,7 +1404,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
     CIdBusyGuard guard(&m_UsedIds);
 
     if (!req.req_id.empty()) {  // UPDATE request
-        guard.Lock(req.req_id, m_InactivityTimeout);
+//        guard.Lock(req.req_id, m_InactivityTimeout);
     } else {
         guard.LockNewId(&m_MaxId, m_InactivityTimeout);
         unsigned int id = guard.GetId();
@@ -1430,7 +1435,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         stat.blob_size += nn_read;
         
 
-        if (nn_read == 0 && !not_eof) {
+        if (nn_read == 0 && !not_eof && (iwrt.get() == 0)) {
             m_Cache->Store(rid, 0, kEmptyStr, 
                             buf, nn_read, req.timeout, tdata.auth);
             break;
@@ -1465,7 +1470,6 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         iwrt->Flush();
         iwrt.reset(0);
     }
-
 }
 
 void CNetCacheServer::ProcessGetBlobOwner(CSocket&           sock, 
@@ -1482,7 +1486,7 @@ void CNetCacheServer::ProcessGetBlobOwner(CSocket&           sock,
         return;
 
     CIdBusyGuard guard(&m_UsedIds);
-    guard.Lock(req.req_id, m_InactivityTimeout);
+//    guard.Lock(req.req_id, m_InactivityTimeout);
 
     string owner;
     m_Cache->GetBlobOwner(req_id, 0, kEmptyStr, &owner);
