@@ -281,6 +281,10 @@ connect/services/grid_worker_app_impl.hpp
 connect/services/netcache_client.hpp
 connect/services/neticache_client.hpp
 connect/services/netschedule_api.hpp
+connect/services/netschedule_api_const.hpp
+connect/services/netschedule_api_expt.hpp
+connect/services/netschedule_key.hpp
+connect/services/netservice_api_expt.hpp
 connect/services/netschedule_client.hpp
 connect/services/netschedule_storage.hpp
 connect/services/netservice_api.hpp
@@ -395,3 +399,30 @@ public:
 %template(AutoPtr_unsigned_char_ArrayDeleter_unsigned_char)
 ncbi::AutoPtr<unsigned char, ncbi::ArrayDeleter<unsigned char> >;
 
+%inline %{
+
+BEGIN_NCBI_SCOPE
+
+// A concrete subclass of CNcbiApplication
+// whose Run() method does nothing
+class CDoNothingApp : public CNcbiApplication
+{
+public:
+    int Run() {return 0;}
+    using CNcbiApplication::AppMain;
+    int AppMain(const vector<string>& args,
+                EAppDiagStream diag = eDS_Default,
+                string conf = "", string name = "")
+    {
+        vector<const char*> argv(args.size());
+        for (unsigned int i = 0; i < args.size(); ++i) {
+            argv[i] = args[i].c_str();
+        }
+        return AppMain(args.size(), &(argv[0]), 0, diag,
+                       conf.c_str(), name.c_str());
+    }
+};
+
+END_NCBI_SCOPE
+
+%}
