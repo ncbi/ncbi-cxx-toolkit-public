@@ -796,6 +796,11 @@ private:
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     mutable CFastMutex      m_DB_Lock;      ///< Database lock
 
+    SCache_AttrDB*          m_CacheAttrDB_RO1;  ///< Cache attributes r-only1
+    mutable CFastMutex      m_CARO1_Lock;       ///< Database lock
+    SCache_AttrDB*          m_CacheAttrDB_RO2;  ///< Cache attributes r-only2
+    mutable CFastMutex      m_CARO2_Lock;       ///< Database lock
+
 
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
     unsigned                m_Timeout;      ///< Timeout expiration policy

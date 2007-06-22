@@ -58,6 +58,20 @@
 
 BEGIN_NCBI_SCOPE
 
+
+// ===========================================================================
+//
+// Various implementation notes:
+//
+// The code below uses mixed transaction model, data store transactions 
+// go in the default mode (sync or async) (configurable).
+// Miscelaneous service transactions (like those from GC (Purge)) are
+// explicitly async (for speed). This is not critical if we lose some of them.
+//
+//
+
+
+
 		
 static void s_MakeOverflowFileName(string& buf,
                                    const string& path,
@@ -1048,6 +1062,8 @@ CBDB_Cache::CBDB_Cache()
   m_Env(0),
   m_BLOB_SplitStore(0),
   m_CacheAttrDB(0),
+  m_CacheAttrDB_RO1(0),
+  m_CacheAttrDB_RO2(0),
   m_Timeout(0),
   m_MaxTimeout(0),
   m_VersionFlag(eDropOlder),
@@ -1247,9 +1263,14 @@ void CBDB_Cache::Open(const string& cache_path,
     m_BLOB_SplitStore = 
         new TSplitStore(new CBDB_BlobDeMux_RoundRobin(m_RoundRobinVolumes));
     m_CacheAttrDB = new SCache_AttrDB();
+    m_CacheAttrDB_RO1 = new SCache_AttrDB();
+    m_CacheAttrDB_RO2 = new SCache_AttrDB();
 
     m_BLOB_SplitStore->SetEnv(*m_Env);
     m_CacheAttrDB->SetEnv(*m_Env);
+    m_CacheAttrDB_RO1->SetEnv(*m_Env);
+    m_CacheAttrDB_RO2->SetEnv(*m_Env);
+
     string cache_blob_db_name =
        string("lcs_") + string(cache_name) + string("_blob");
     string attr_db_name =
@@ -1257,6 +1278,8 @@ void CBDB_Cache::Open(const string& cache_path,
 
     m_BLOB_SplitStore->Open(cache_blob_db_name, CBDB_RawFile::eReadWriteCreate);
     m_CacheAttrDB->Open(attr_db_name,        CBDB_RawFile::eReadWriteCreate);
+    m_CacheAttrDB_RO1->Open(attr_db_name,    CBDB_RawFile::eReadOnly);
+    m_CacheAttrDB_RO2->Open(attr_db_name,    CBDB_RawFile::eReadOnly);
 
     // try to open all databases
     //
@@ -1413,6 +1436,8 @@ void CBDB_Cache::Close()
     delete m_PidGuard;        m_PidGuard = 0;
     delete m_BLOB_SplitStore; m_BLOB_SplitStore = 0;
     delete m_CacheAttrDB;     m_CacheAttrDB = 0;
+    delete m_CacheAttrDB_RO1; m_CacheAttrDB_RO1 = 0;
+    delete m_CacheAttrDB_RO2; m_CacheAttrDB_RO2 = 0;
 
     if (m_Env == 0) {
         return;
@@ -2829,16 +2854,16 @@ unsigned CBDB_Cache::GetBlobId(const string&  key,
                                int            version,
                                const string&  subkey)
 {
-    CFastMutexGuard guard(m_DB_Lock);
+    CFastMutexGuard guard(m_CARO1_Lock);
 
-    m_CacheAttrDB->SetTransaction(0);
+    m_CacheAttrDB_RO1->SetTransaction(0);
 
-    m_CacheAttrDB->key = key;
-    m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = subkey;
+    m_CacheAttrDB_RO1->key = key;
+    m_CacheAttrDB_RO1->version = version;
+    m_CacheAttrDB_RO1->subkey = subkey;
 
-    if (m_CacheAttrDB->Fetch() == eBDB_Ok) {
-        unsigned blob_id = m_CacheAttrDB->blob_id;
+    if (m_CacheAttrDB_RO1->Fetch() == eBDB_Ok) {
+        unsigned blob_id = m_CacheAttrDB_RO1->blob_id;
         return blob_id;
     }
     return 0;
@@ -3185,7 +3210,6 @@ purge_start:
 
 
     unsigned delay = 0;
-//    unsigned bytes_written = 0;
     vector<SCacheDescr> cache_entries;
     cache_entries.reserve(1000);
 
@@ -3201,17 +3225,13 @@ purge_start:
         {{
             time_t curr = time(0); // initial timepoint
 
-
-            CFastMutexGuard guard(m_DB_Lock);
+            CFastMutexGuard guard(m_CARO2_Lock);
             // get to nanoseconds as CSemaphore::TryWait() needs
             delay = m_BatchSleep * 1000000;
 
-            m_CacheAttrDB->SetTransaction(0);
+            m_CacheAttrDB_RO2->SetTransaction(0);
 
-            CBDB_FileCursor cur(*m_CacheAttrDB);
-            if (batch_size > 500) {
-                cur.InitMultiFetch(4 * 1024);
-            }
+            CBDB_FileCursor cur(*m_CacheAttrDB_RO2);
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
 
@@ -3221,24 +3241,28 @@ purge_start:
                     break;
                 }
 
-                int version = m_CacheAttrDB->version;
-                const char* key = m_CacheAttrDB->key;
+                int version = m_CacheAttrDB_RO2->version;
+                const char* key = m_CacheAttrDB_RO2->key;
                 last_key = key;
-                int overflow = m_CacheAttrDB->overflow;
-                const char* subkey = m_CacheAttrDB->subkey;
-                unsigned blob_id = m_CacheAttrDB->blob_id;
+                int overflow = m_CacheAttrDB_RO2->overflow;
+                const char* subkey = m_CacheAttrDB_RO2->subkey;
+                unsigned blob_id = m_CacheAttrDB_RO2->blob_id;
 
                 time_t exp_time;
                 if (x_CheckTimestampExpired(curr, &exp_time)) {
 
-                    unsigned read_count = m_CacheAttrDB->read_count;
-                    m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
+                    unsigned read_count = m_CacheAttrDB_RO2->read_count;
+                    m_CacheAttrDB_RO2->owner_name.ToString(m_TmpOwnerName);
+                    
+                    /* FIXME: statistics, locking, etc
                     if (0 == read_count) {
                         m_Statistics.AddNeverRead(m_TmpOwnerName);
                     }
                     m_Statistics.AddPurgeDelete(m_TmpOwnerName);
                     x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
-                                              false/*non-expl-delete*/);
+                                              false//non-expl-delete
+                                              );
+                    */
 
                     cache_entries.push_back(
                          SCacheDescr(key, version, subkey, overflow, blob_id));
@@ -3281,7 +3305,7 @@ purge_start:
                 }
 
             } // for i
-        }} // m_DB_Lock
+        }} // m_CARO2_Lock
 
         if (m_Monitor && m_Monitor->IsActive()) {
             string msg("Purge: Inspected ");
@@ -3300,11 +3324,15 @@ purge_start:
 
             for (size_t i = 0; i < cache_entries.size(); ++i) {
                 try {
+                    const SCacheDescr& it = cache_entries[i];
+                    
+                    // TODO: place a lock on blob id and re-check 
+                    // expiration time befor removing
+
                     CBDB_Transaction trans(*m_Env,
-                                            CBDB_Transaction::eEnvDefault,
+                                            CBDB_Transaction::eTransASync, // async!
                                             CBDB_Transaction::eNoAssociation);
                     
-                    const SCacheDescr& it = cache_entries[i];
                     {{
                         CFastMutexGuard guard(m_DB_Lock);
                         m_BLOB_SplitStore->SetTransaction(&trans);
@@ -3332,16 +3360,18 @@ purge_start:
                     if (ex.IsRecovery()) {  // serious stuff! need to quit
                         throw;
                     }
-                    LOG_POST(Error << "Purge suppressed exception deleting BLOB "
-                                   << ex.what());
+                    LOG_POST(Error
+                        <<  "Purge suppressed exception when deleting BLOB "
+                        << ex.what());
                     if (m_Monitor && m_Monitor->IsActive()) {
                         m_Monitor->Send(ex.what());
                     }
                     
                 }
                 catch(exception& ex) {
-                    LOG_POST(Error << "Purge suppressed exception deleting BLOB "
-                                   << ex.what());
+                    LOG_POST(Error 
+                        <<  "Purge suppressed exception when deleting BLOB "
+                        << ex.what());
                     if (m_Monitor && m_Monitor->IsActive()) {
                         m_Monitor->Send(ex.what());
                     }
@@ -3365,24 +3395,6 @@ purge_start:
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
             return;
         }
-
-        // check if there are expired records before, so Purge rolls back
-        // to the lask known expired key and start scanning from there
-/*
-        {{
-            time_t curr = time(0); 
-            unsigned sens = m_PurgeThreadDelay;
-            if (curr > (m_NextExpTime + sens) && !next_exp_key.empty()) {
-                m_NextExpTime = 0;
-                last_key = next_exp_key;
-
-                if (m_Monitor && m_Monitor->IsActive()) {
-                    m_Monitor->Send("Purge: scan rolled back to key="
-                                    + last_key + "\n");
-                }
-            }
-        }}
-*/
 
     } // for flag
 
