@@ -33,6 +33,10 @@ Usage:
 
     $ScriptName merge_down_commit <branch_path>
 
+    $ScriptName merge_up <branch_path> [<branch_rev>]
+
+    $ScriptName merge_up_commit <branch_path>
+
     $ScriptName commit <branch_path> [<log_message>]
 
     $ScriptName switch <branch_path>
