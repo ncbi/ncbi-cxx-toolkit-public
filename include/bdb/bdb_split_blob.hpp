@@ -575,6 +575,10 @@ protected:
 
     /// Lock used to sync. muli-db transactions to avoid deadlocks    
     TLock                   m_CrossDBLock;
+
+private:
+    CBDB_BlobSplitStore(const CBDB_BlobSplitStore<TBV, TObjDeMux, TL>&);
+    CBDB_BlobSplitStore<TBV, TObjDeMux, TL>& operator=(const CBDB_BlobSplitStore<TBV, TObjDeMux, TL>&);
 };
 
 /* @} */
@@ -632,7 +636,6 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSplitStore()
 template<class TBV, class TObjDeMux, class TL>
 void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CloseVolumes()
 {
-
 	for (size_t i = 0; i < m_Volumes.size(); ++i) {
 		SVolume* v = m_Volumes[i];
 		delete v;
@@ -1190,13 +1193,13 @@ void
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(
                            typename TDeMuxStore::ECompact  compact_vectors)
 {
-    _ASSERT(m_IdDeMux.get());
-    _ASSERT(m_DictFile.get());
-    TLockGuard     lg1(m_DictFileLock);
-    CReadLockGuard lg2(m_IdDeMuxLock);
+    if ( m_IdDeMux.get()  &&  m_DictFile.get() ) {
+        TLockGuard     lg1(m_DictFileLock);
+        CReadLockGuard lg2(m_IdDeMuxLock);
 
-    // use NULL transaction (autocommit)
-    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, 0, compact_vectors);
+        // use NULL transaction (autocommit)
+        this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, 0, compact_vectors);
+    }
 }
 
 
