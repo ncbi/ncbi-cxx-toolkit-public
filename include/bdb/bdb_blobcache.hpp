@@ -42,6 +42,7 @@
 
 #include <util/cache/icache.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
+#include <util/lock_vector.hpp>
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
@@ -63,13 +64,6 @@ struct IServer_Monitor;
 
 /// Register NCBI_BDB_ICacheEntryPoint
 void BDB_Register_Cache(void);
-
-typedef bm::bvector<> TNCBVector;
-
-/// Split store for BLOBs
-typedef CBDB_BlobSplitStore<TNCBVector, 
-                            CBDB_BlobDeMux_RoundRobin, 
-                            CFastMutex>                 TSplitStore;
 
 
 
@@ -596,7 +590,6 @@ public:
     }
     const string& GetName() const { return m_Name; }
 protected:
-
     void KillBlob(const string&  key,
                   int            version,
                   const string&  subkey,        
@@ -624,6 +617,25 @@ protected:
     {
         return start + (GetTimeout() * GetTTL_Prolongation());
     }
+
+
+    void x_Store(const string&  key,
+                 int            version,
+                 const string&  subkey,
+                 const void*    data,
+                 size_t         size,
+                 unsigned int   time_to_live,
+                 const string&  owner,
+                 bool           do_blob_lock);
+
+private:
+    typedef bm::bvector<> TBitVector;
+    /// Split store for BLOBs
+    typedef CBDB_BlobSplitStore<TBitVector, 
+                                CBDB_BlobDeMux_RoundRobin, 
+                                CFastMutex>                 TSplitStore;
+    typedef CLockVector<TBitVector>       TLockVector;
+    typedef CLockVectorGuard<TLockVector> TBlobLock;
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
@@ -695,11 +707,11 @@ private:
 
     void x_PerformCheckPointNoLock(unsigned bytes_written);
 
-    IReader* x_CreateOverflowReader(int overflow,
-                                    const string&  key,
+    IReader* x_CreateOverflowReader(const string&  key,
                                     int            version,
                                     const string&  subkey,
-                                    size_t&        file_length);
+                                    size_t&        file_length,
+                                    TBlobLock&     blob_lock);
 
     /// update BLOB owners' statistics on BLOB delete
     void x_UpdateOwnerStatOnDelete(const string& owner, bool expl_delete);
@@ -713,6 +725,38 @@ private:
 
     /// Get next BLOB id out from the atomic couter
     unsigned x_GetNextBlobId();
+
+    unsigned GetBlobId(const string&  key,
+                       int            version,
+                       const string&  subkey);
+
+
+    /// BLOB check-in mode
+    ///
+    enum EBlobCheckinMode {
+        eBlobCheckIn,         ///< Check if record exists
+        eBlobCheckIn_Create   ///< If record does not exist - create
+    };
+
+    /// Result of BLOB check-in process
+    enum EBlobCheckinRes {
+        EBlobCheckIn_NotFound,  ///< BLOB does not exist
+        eBlobCheckIn_Found,     ///< Existing BLOB
+        eBlobCheckIn_Created    ///< BLOB record created
+    };
+
+    /// Check if BLOB exists, create registration record if necessary
+    ///
+    EBlobCheckinRes BlobCheckIn(const string&    key,
+                                int              version,
+                                const string&    subkey,
+                                EBlobCheckinMode mode,
+                                TBlobLock&       blob_lock,
+                                unsigned*        volume_id,
+                                unsigned*        split_id,
+                                unsigned*        overflow);
+
+
 
 private:
     CBDB_Cache(const CBDB_Cache&);
@@ -745,6 +789,8 @@ private:
     bool                    m_ReadOnly;     ///< read-only flag
 
     bool                    m_JoinedEnv;    ///< Joined environment
+    TLockVector             m_LockVector;   ///< BLOB lock vector
+    unsigned                m_LockTimeout;  ///< Lock timeout (ms)
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     TSplitStore*            m_BLOB_SplitStore;///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
