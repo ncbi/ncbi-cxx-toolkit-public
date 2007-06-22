@@ -34,6 +34,18 @@
 
 import os, sys, re
 
+
+def Replace(s, begin, end, replacement):
+    '''
+    Replace string from first occurence of begin to first
+    subsequent occurence of end with replacement
+    '''
+    begin_index = s.index(begin)
+    end_index   = s.index(end, begin_index) + len(end)
+    s = s[:begin_index] + replacement + s[end_index:]
+    return s
+
+
 def Modify(s):
     trouble = '''    template<typename T>
     class SOptional {
@@ -78,9 +90,7 @@ def Modify(s):
     begin_trouble = \
         '    // merging of abutting hits sharing same ids and subject strand'
     end_trouble = '\n    }\n'
-    begin_index = s.index(begin_trouble)
-    end_index   = s.index(end_trouble, begin_index) + len(end_trouble)
-    s = s[:begin_index] + '// sx_TestAndMerge deleted\n' + s[end_index:]
+    s = Replace(s, begin_trouble, end_trouble, '// sx_TestAndMerge deleted\n')
     
     # In biotree.hpp, nested class inheriting from template causes trouble.
     # Hide the inheritance from SWIG.
@@ -91,9 +101,15 @@ def Modify(s):
     begin_trouble = \
         '    // a trivial but helpful memory allocator for core dynprog'
     end_trouble = '\n    };\n'
-    begin_index = s.index(begin_trouble)
-    end_index   = s.index(end_trouble, begin_index) + len(end_trouble)
-    s = s[:begin_index] + '// template struct SAllocator deleted\n' \
-                        + s[end_index:]
+    s = Replace(s, begin_trouble, end_trouble,
+                '// template struct SAllocator deleted\n')
+
+    # template class CNetSchedulekeys in connect/services/netschedule_key.hpp
+    # contains nested class
+    begin_trouble = 'template <typename TBVector = bm::bvector<> >\n' \
+                    'class CNetScheduleKeys'
+    end_trouble = '\n};'
+    s = Replace(s, begin_trouble, end_trouble,
+                '// template class CNetScheduleKeys deleted\n')
     
     return s
