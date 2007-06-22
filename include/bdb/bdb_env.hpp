@@ -280,7 +280,7 @@ public:
     ///     maximum number of sequential writes to perform
     /// @param maxwrite_sleep
     ///     sleep time in microseconds between write attempts
-    void MpMaxWrite(int maxwrite, int maxwrite_sleep);
+    void SetMpMaxWrite(int maxwrite, int maxwrite_sleep);
 
     /// Set the maximal size for mmap
     void SetMpMmapSize(size_t map_size);

@@ -200,7 +200,7 @@ void CBDB_Env::OpenWithLocks(const string& db_home)
 void CBDB_Env::OpenPrivate(const string& db_home)
 {
     int ret = x_Open(db_home.c_str(), 
-                     DB_CREATE|DB_PRIVATE|DB_INIT_MPOOL);
+                     DB_CREATE|DB_THREAD|DB_PRIVATE|DB_INIT_MPOOL);
     BDB_CHECK(ret, "DB_ENV");
 }
 
@@ -870,7 +870,7 @@ void CBDB_Env::MempSync()
 }
 
 
-void CBDB_Env::MpMaxWrite(int maxwrite, int maxwrite_sleep)
+void CBDB_Env::SetMpMaxWrite(int maxwrite, int maxwrite_sleep)
 {
     int ret = m_Env->set_mp_max_write(m_Env, maxwrite, maxwrite_sleep);
     BDB_CHECK(ret, "DB_ENV::set_mp_max_write");
