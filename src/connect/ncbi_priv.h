@@ -40,7 +40,7 @@
  *    macros:          CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
  * Tracing and logging:
  *    private global:  g_CORE_Log
- *    macros:          CORE_LOG[F](), CORE_DATA[F](), CORE_LOG[F]_ERRNO()
+ *    macros:          CORE_LOG[F](), CORE_DATA[F](), CORE_LOG[F]_ERRNO[_EX]()
  *
  */
 
@@ -183,7 +183,7 @@ extern NCBI_XCONNECT_EXPORT REG g_CORE_Registry;
     g_CORE_RegistryGET(section, name, value, value_size, def_value)
 
 #define CORE_REG_SET(section, name, value, storage)  do { \
-    CORE_LOCK_WRITE; \
+    CORE_LOCK_READ; \
     REG_Set(g_CORE_Registry, section, name, value, storage); \
     CORE_UNLOCK; \
 } while (0)
