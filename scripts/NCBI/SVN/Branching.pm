@@ -13,7 +13,6 @@ use File::Find;
 
 use NCBI::SVN::Wrapper;
 use NCBI::SVN::SwitchMap;
-use NCBI::SVN::MultiSwitch;
 
 my $TrunkDir = 'trunk/c++';
 
@@ -718,9 +717,9 @@ sub Svn
         @{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
 }
 
-sub Switch
+sub DoSwitchUnswitch
 {
-    my ($Self, $BranchPath) = @_;
+    my ($Self, $BranchPath, $DoSwitch) = @_;
 
     die "$Self->{MyName}: <branch_path> parameter is missing\n"
         unless $BranchPath;
@@ -729,29 +728,26 @@ sub Switch
 
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
-    NCBI::SVN::MultiSwitch->new(MyName => $Self->{MyName})->SwitchUsingMap(
-        [map {[$_ => "branches/$BranchPath/$_"]} @{$BranchInfo->{BranchDirs}}])
+    print(($DoSwitch ? 'Switching to' : 'Unswitching from') .
+        " branch '$BranchPath'...\n");
+
+    my $BaseURL = $SVN->GetRepository() . '/' . ($DoSwitch ?
+        "branches/$BranchPath" : $BranchInfo->{UpstreamPath}) . '/';
+
+    for (@{$BranchInfo->{BranchDirs}})
+    {
+        $Self->RunSubversion('switch', $BaseURL . $_, $_)
+    }
+}
+
+sub Switch
+{
+    DoSwitchUnswitch(@_, 1)
 }
 
 sub Unswitch
 {
-    my ($Self, $BranchPath) = @_;
-
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
-
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
-
-    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
-
-    my $BaseURL = $SVN->GetRepository() . "/$BranchInfo->{UpstreamPath}/";
-
-    print "Unswitching from branch '$BranchPath'...\n";
-
-    for my $BranchDir (@{$BranchInfo->{BranchDirs}})
-    {
-        $Self->RunSubversion('switch', $BaseURL . $BranchDir, $BranchDir)
-    }
+    DoSwitchUnswitch(@_, 0)
 }
 
 1
