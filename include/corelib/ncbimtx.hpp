@@ -635,18 +635,16 @@ public:
     operator SSystemFastMutex&(void);
 
 private:
-#if defined(NCBI_WIN32_THREADS)
-#  if !defined(NCBI_USE_CRITICAL_SECTION)
-    /// Get handle - Windows version.
-    /// 
-    /// Also used by CRWLock.
-    HANDLE GetHandle(void) { return m_Mutex.m_Handle; }
-#  endif
-#else
+#if   !defined(NCBI_WIN32_THREADS)
     /// Get handle - Unix version.
     /// 
     /// Also used by CRWLock.
     TSystemMutex* GetHandle(void) { return &m_Mutex.m_Handle; }
+#elif !defined(NCBI_USE_CRITICAL_SECTION)
+    /// Get handle - Windows version.
+    /// 
+    /// Also used by CRWLock.
+    HANDLE GetHandle(void) { return m_Mutex.m_Handle; }
 #endif
 
     friend class CRWLock;
@@ -817,7 +815,7 @@ struct SSimpleWriteLock
 };
 
 typedef CGuard<CRWLock, SSimpleWriteLock<CRWLock> > TWriteLockGuard;
-typedef TWriteLockGuard                              CWriteLockGuard;
+typedef TWriteLockGuard                             CWriteLockGuard;
 
 
 /////////////////////////////////////////////////////////////////////////////
