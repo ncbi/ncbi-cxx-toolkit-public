@@ -183,8 +183,11 @@ void CNetSrvConnector::x_CheckConnect()
     if (x_IsConnected())
         return;
 
-    if (!m_Socket.get())
+    if (!m_Socket.get()) {
         m_Socket.reset(new CSocket);
+        STimeout zero = {0,0};
+        m_Socket->SetTimeout(eIO_Close,&zero);
+    }
 
     unsigned conn_repeats = 0;
     const unsigned max_repeats = 10;
