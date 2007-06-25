@@ -53,19 +53,21 @@ if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then
    # Check ignore list
    x_use_ignore_list=`echo $x_use_ignore_list | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
    if test "$x_use_ignore_list"=='Y' ; then
-      x_signature=`echo $x_signature | sed 's/-[^-]*$//'`
       root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
       ignore_list="$root_dir/src/check/ignore.lst"
-      # Find "test signature"
-      s=`grep " *$x_srcdir_rel/$x_app *$x_signature" $ignore_list`
-      if [ -n "$s" ]; then
-         # Found. Check on possible date:
-         dc=`date '+%Y%m%d'`
-         dt=`echo $s | sed 's|\(....\)-\(..\)-\(..\):.*|\1\2\3|'`
-         if [ -z "$dt" -o  "$dc" -lt "$dt" ]; then
-            # Date is defined, but not arrived yet
-            echo "SKIP -- $x_tpath"
-            exit 0
+      if [ -f "$ignore_list" ]; then
+         x_signature=`echo $x_signature | sed 's/-[^-]*$//'`
+         # Find "test signature"
+         s=`grep " *$x_srcdir_rel/$x_app *$x_signature" $ignore_list`
+         if [ -n "$s" ]; then
+            # Found. Check on possible date:
+            dc=`date '+%Y%m%d'`
+            dt=`echo $s | sed 's|\(....\)-\(..\)-\(..\):.*|\1\2\3|'`
+            if [ -z "$dt" -o  "$dc" -lt "$dt" ]; then
+               # Date is defined, but not arrived yet
+               echo "SKIP -- $x_tpath"
+               exit 0
+            fi
          fi
       fi
    fi
@@ -97,12 +99,13 @@ x_requires=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e '
 if test -z "$x_requires"; then
    x_requires=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
 fi
+# Get list of autors to report errors
+x_authors=`grep '^ *CHECK_AUTHORS' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
 
 # Write data about current test into the list file
 for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
-
-    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires" >> $x_out
+    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires$x_delim$x_authors" >> $x_out
 done
 
 exit 0

@@ -9,15 +9,14 @@
 # Scripts exit code is equival to count of tests, executed with errors.
 #
 # Usage: (Run only from Makefile.meta)
-#    check_run.sh <build_dir> <make_command_line>
-#
-# Example:
-#    check_run.sh ~/c++/Debug/build make check_add_r
+#    check_run.sh <signature> <build_dir> <abs_top_srcdir> <make_cmd_line>
 #
 ###########################################################################
 
-build_dir=$1
-top_srcdir=$2
+signature=$1
+build_dir=$2
+top_srcdir=$3
+shift
 shift
 shift
 cmd=$*
@@ -56,7 +55,7 @@ fi
 
 # Build script on base of check-list
 echo "Building check script..."
-$make_check_script "$CHECK_RUN_LIST" "$build_dir" "$top_srcdir" "" "$CHECK_RUN_FILE"
+$make_check_script "$CHECK_RUN_LIST" "$signature" "$build_dir" "$top_srcdir" "" "$CHECK_RUN_FILE"
 
 # Check script build result
 if test $? -ne 0 -o \

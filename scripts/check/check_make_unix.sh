@@ -13,6 +13,7 @@
 #
 #    test_list       - a list of tests (it build with "make check_r")
 #                      (default: "<build_dir>/check.sh.list")
+#    signature       - build signature
 #    build_dir       - path to UNIX build tree like".../build/..."
 #                      (default: will try determine path from current work
 #                      directory -- root of build tree ) 
@@ -43,10 +44,11 @@ x_delim_internal="~"
 x_tmp="/var/tmp"
 
 x_list=$1
-x_build_dir=$2
-x_top_srcdir=$3
-x_target_dir=$4
-x_out=$5
+x_signature=$2
+x_build_dir=$3
+x_top_srcdir=$4
+x_target_dir=$5
+x_out=$6
 
 
 # Check for build dir
@@ -155,6 +157,9 @@ res_list="$x_list"
 res_concat="\$script.out"
 res_concat_err="\$script.out_err"
 
+is_report_err=false
+signature="$x_signature"
+sendmail=''
 
 ##  Printout USAGE info and exit
 
@@ -174,6 +179,8 @@ USAGE:  $x_script_name {run | clean | concat | concat_err}
 
 ERROR:  \$1
 EOF_usage
+# Undocumented command:
+#     report_err  Report failed tests directly to developers.
 
     exit 1
 }
@@ -193,6 +200,7 @@ method="\$1"
 case "\$method" in
 #----------------------------------------------------------
    run )
+      # See RunTest() below
       ;;
 #----------------------------------------------------------
    clean )
@@ -239,6 +247,22 @@ case "\$method" in
       done
       ) >> \$res_concat_err
       exit 0
+      ;;
+#----------------------------------------------------------
+   report_err )
+      # This method works inside NCBI only 
+      
+      test "\$NCBI_CHECK_MAILTO_AUTHORS." == 'Y'  &&  exit 0;
+      if [ -x /usr/sbin/sendmail ]; then
+         sendmail="/usr/sbin/sendmail -oi"
+      elif [ -x /usr/lib/sendmail ]; then
+         sendmail="/usr/lib/sendmail -oi"
+      else
+         echo sendmail not found on this platform
+         exit 0
+      fi
+      is_report_err=true
+      # See RunTest() below
       ;;
 #----------------------------------------------------------
    * )
@@ -308,10 +332,11 @@ rm -f "\$res_log"
 
 ulimit -c 1000000
 
+
 ##  Run one test
 
-RunTest() {
-
+RunTest()
+{
    # Parameters
    x_work_dir_tail="\$1"
    x_work_dir="\$compile_dir/\$x_work_dir_tail"
@@ -320,6 +345,12 @@ RunTest() {
    x_run="\$4"
    x_ext="\$5"
    x_timeout="\$6"
+   x_authors="\$7"
+
+   if \$is_report_err; then
+      # Authors are not defined for this test
+      test -z "\$x_authors" && exit
+   fi
 
    count_total=\`expr \$count_total + 1\`
    x_log="$x_tmp/\$\$.out\$count_total"
@@ -361,6 +392,19 @@ RunTest() {
                valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" ;;
                       * ) NCBI_CHECK_TOOL="?" ;;
             esac
+
+            # Just need to report errors to authors?
+            if \$is_report_err; then
+               test -f "\$x_test_out" || continue
+               x_code=\`cat \$x_test_out | grep -c '@@@ EXIT CODE:'\`
+               test \$x_code -ne 0 || continue
+               x_good=\`cat \$x_test_out | grep -c '@@@ EXIT CODE: 0'\`
+               if [ \$x_good -eq 1 ]; then
+                  continue
+               fi
+               MailToAuthors "\$x_authors" "\$x_test_out"
+               continue
+            fi
          
             if [ ".\$NCBI_CHECK_TOOL" = ".?" ] ; then
                result=255;
@@ -494,6 +538,21 @@ EOF_launch
   fi
 }
 
+MailToAuthors()
+{
+   test -z "\$sendmail" && exit
+   x_authors="\$1"
+   x_logfile="\$2"
+   {
+        echo "To: \$x_authors"
+        echo "Subject: [C++ CHECK] \$x_app | \$signature"
+        echo
+        echo \$x_cmd
+        echo
+        cat \$x_logfile
+   } | \$sendmail \$x_authors
+}
+
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
@@ -515,7 +574,8 @@ for x_row in $x_tests; do
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_files=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/~.*$//'`
-   x_requires=" `echo \"$x_row\" | sed -e 's/.*~//'` "
+   x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
+   x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Check application requirements
    for x_req in $x_requires; do
@@ -562,7 +622,8 @@ RunTest "$x_work_dir_tail" \\
         "$x_app" \\
         "$x_cmd" \\
         "$x_test_out" \\
-        "$x_timeout"
+        "$x_timeout" \\
+        "$x_authors"
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
