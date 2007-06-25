@@ -452,7 +452,8 @@ sub Create
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
-    # Unless there are no changes, commit a revision using mucc.
+    # Unless there are no changes, create the branch
+    # with a single revision using MUCC.
     if (@Commands)
     {
         print(($ExistingBranch ? 'Updating' : 'Creating') .
@@ -512,48 +513,21 @@ sub Remove
         }
     }
 
-    # Read the branch map, if it exists.
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+    my %RmDirTree;
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
-
-    unless ($@)
+    for (@{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
     {
-        my %BranchMapRmPathTree;
-        my %RmDirTree;
-        my %CommonTree;
-
-        LayPath($BranchMapRepoPath, \%BranchMapRmPathTree, \%CommonTree);
-
-        for (@{$SwitchMap->GetSwitchPlan()})
-        {
-            LayPath($_->[1], \%RmDirTree, \%CommonTree)
-        }
-
-        my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
-            $SVN->GetRepository(), \%CommonTree);
-
-        GetRmCommands(\@Commands, $ExistingStructure, \%RmDirTree);
-
-        GetRmCommands(\@Commands, $ExistingStructure, \%BranchMapRmPathTree)
-    }
-    else
-    {
-        warn "Warning: unable to retrieve '$BranchMapRepoPath'\n"
+        LayPath("branches/$BranchPath/$_", \%RmDirTree)
     }
 
-    # Unless there are no changes, commit a revision using mucc.
-    if (@Commands)
-    {
-        print("Removing branch '$BranchPath'...\n");
+    GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
+        $SVN->GetRepository(), \%RmDirTree), \%RmDirTree);
 
-        system('mucc', '--message', "Removed branch '$BranchPath'.",
-            '--root-url', $SVN->{Repos}, @Commands)
-    }
-    else
-    {
-        print "Nothing to do.\n"
-    }
+    # Remove the branch with a single revision using MUCC.
+    print("Removing branch '$BranchPath'...\n");
+
+    system('mucc', '--message', "Removed branch '$BranchPath'.",
+        '--root-url', $SVN->{Repos}, @Commands);
 
     unlink $BranchListFN if $BranchListFN;
 }
