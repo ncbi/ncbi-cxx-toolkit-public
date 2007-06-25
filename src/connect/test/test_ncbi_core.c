@@ -117,6 +117,12 @@ static int/*bool*/ TEST_CORE_LockHandler(void* user_data, EMT_Lock how)
   case eMT_Unlock:
     str = "eMT_Unlock";
     break;
+  case eMT_TryLock:
+    str = "eMT_TryLock";
+    break;
+  case eMT_TryLockRead:
+    str = "eMT_TryLockRead";
+    break;
   }
   assert(str);
   printf("TEST_CORE_LockHandler(%s)\n", str);
@@ -164,8 +170,19 @@ static void TEST_CORE_Lock(void)
                           TEST_CORE_LockHandler, TEST_CORE_LockCleanup);
   assert(x_lock);
 
+  /* NB: Write after read is not usually an allowed lock nesting */
   verify(MT_LOCK_Do(x_lock, eMT_LockRead));
   verify(MT_LOCK_Do(x_lock, eMT_Lock));
+  verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+  verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+  /* Read after write is usually okay */
+  verify(MT_LOCK_Do(x_lock, eMT_Lock));
+  verify(MT_LOCK_Do(x_lock, eMT_LockRead));
+  verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+  verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+  /* Try-locking sequence */
+  verify(MT_LOCK_Do(x_lock, eMT_TryLock));
+  verify(MT_LOCK_Do(x_lock, eMT_TryLockRead));
   verify(MT_LOCK_Do(x_lock, eMT_Unlock));
   verify(MT_LOCK_Do(x_lock, eMT_Unlock));
 
