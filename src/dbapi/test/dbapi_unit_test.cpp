@@ -3622,6 +3622,235 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// User error handler life-time ...
+void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
+{
+    I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+    // Context. eNoOwnership ...
+    {
+        // auto_ptr
+        // Use it once ...
+        {
+            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+
+            // Add handler ...
+            drv_context->PushCntxMsgHandler(drv_err_handler.get());
+            // Remove handler ...
+            drv_context->PopCntxMsgHandler(drv_err_handler.get());
+        }
+
+        // auto_ptr
+        // Use it twice ...
+        {
+            auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+
+            // Add handler ...
+            drv_context->PushCntxMsgHandler(drv_err_handler.get());
+            drv_context->PushDefConnMsgHandler(drv_err_handler.get());
+            // Remove handler ...
+            drv_context->PopCntxMsgHandler(drv_err_handler.get());
+            drv_context->PopDefConnMsgHandler(drv_err_handler.get());
+        }
+
+        // CRef
+        // Use it once ...
+        {
+            CRef<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+
+            // Add handler ...
+            drv_context->PushCntxMsgHandler(drv_err_handler);
+            // Remove handler ...
+            drv_context->PopCntxMsgHandler(drv_err_handler);
+        }
+
+        // CRef
+        // Use it twice ...
+        {
+            CRef<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+
+            // Add handler ...
+            drv_context->PushCntxMsgHandler(drv_err_handler);
+            drv_context->PushDefConnMsgHandler(drv_err_handler);
+            // Remove handler ...
+            drv_context->PopCntxMsgHandler(drv_err_handler);
+            drv_context->PopDefConnMsgHandler(drv_err_handler);
+        }
+    }
+
+    // Connection. eNoOwnership ...
+    {
+        // auto_ptr
+        // One connection ...
+        {
+            // Create new connection ...
+            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            Connect(new_conn);
+
+            // Add handler ...
+            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+            // Remove handler ...
+            new_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+        }
+
+        // auto_ptr
+        // Two connections ...
+        {
+            // Create new connection ...
+            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            Connect(new_conn1);
+            Connect(new_conn2);
+
+            // Add handler ...
+            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+            // Remove handler ...
+            new_conn1->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+            new_conn2->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+        }
+
+        // CRef
+        // One connection ...
+        {
+            // Create new connection ...
+            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            Connect(new_conn);
+
+            // Add handler ...
+            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler);
+            // Remove handler ...
+            new_conn->GetCDB_Connection()->PopMsgHandler(msg_handler);
+        }
+
+        // CRef
+        // Two connections ...
+        {
+            // Create new connection ...
+            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            Connect(new_conn1);
+            Connect(new_conn2);
+
+            // Add handler ...
+            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler);
+            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler);
+            // Remove handler ...
+            new_conn1->GetCDB_Connection()->PopMsgHandler(msg_handler);
+            new_conn2->GetCDB_Connection()->PopMsgHandler(msg_handler);
+        }
+    }
+
+    // Connection. eTakeOwnership ...
+    {
+        // Raw pointer ...
+        // One connection ...
+        {
+            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+            CTestErrHandler* msg_handler = new CTestErrHandler();
+
+            Connect(new_conn);
+            // Add handler ...
+            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                          eTakeOwnership);
+            // We do not remove msg_handler here because it is supposed to be
+            // deleted by new_conn ...
+        }
+
+        // Raw pointer ...
+        // Two connections ...
+        {
+            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+            CTestErrHandler* msg_handler = new CTestErrHandler();
+
+            Connect(new_conn1);
+            Connect(new_conn2);
+
+            // Add handler ...
+            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                           eTakeOwnership);
+            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                           eTakeOwnership);
+            // We do not remove msg_handler here because it is supposed to be
+            // deleted by new_conn ...
+        }
+
+        // CRef
+        // One connection ...
+        {
+            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            Connect(new_conn);
+            // Add handler ...
+            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                          eTakeOwnership);
+            // We do not remove msg_handler here because it is supposed to be
+            // deleted by new_conn ...
+        }
+
+        // CRef
+        // Two connections ...
+        {
+            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            Connect(new_conn1);
+            Connect(new_conn2);
+
+            // Add handler ...
+            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                           eTakeOwnership);
+            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                           eTakeOwnership);
+            // We do not remove msg_handler here because it is supposed to be
+            // deleted by new_conn ...
+        }
+    }
+
+    // Context. eTakeOwnership ...
+    {
+        // Raw pointer ...
+        {
+            CTestErrHandler* msg_handler = new CTestErrHandler();
+
+            // Add handler ...
+            drv_context->PushCntxMsgHandler(msg_handler,
+                                            eTakeOwnership);
+            drv_context->PushDefConnMsgHandler(msg_handler,
+                                               eTakeOwnership);
+            // We do not remove msg_handler here because it is supposed to be
+            // deleted by drv_context ...
+        }
+
+        // CRef
+        {
+            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            // Add handler ...
+            drv_context->PushCntxMsgHandler(msg_handler,
+                                            eTakeOwnership);
+            drv_context->PushDefConnMsgHandler(msg_handler,
+                                               eTakeOwnership);
+            // We do not remove msg_handler here because it is supposed to be
+            // deleted by drv_context ...
+        }
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Procedure(void)
@@ -7691,6 +7920,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler_LT,
+                               DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
 
     // This test is not supposed to be run every day.
     if (false) {

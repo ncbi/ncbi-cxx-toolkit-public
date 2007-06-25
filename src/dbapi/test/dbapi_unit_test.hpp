@@ -179,6 +179,8 @@ public:
 
     void Test_StatementParameters(void);
     void Test_UserErrorHandler(void);
+    // User error handler life-time ...
+    void Test_UserErrorHandler_LT(void);
     void Test_NULL();
 
     void Test_SelectStmt(void);
