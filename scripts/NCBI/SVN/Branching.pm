@@ -772,12 +772,14 @@ sub Switch
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
+    my @BranchMapLines = map {"$_ branches/$BranchPath/$_"}
+        @{$BranchInfo->{BranchDirs}};
 
     NCBI::SVN::MultiSwitch->new(MyName => $Self->{MyName})->
-        SwitchUsingMap($SwitchMap)
+        SwitchUsingMap(NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
+            MapFileLines => \@BranchMapLines))
 }
 
 sub Unswitch
@@ -789,15 +791,13 @@ sub Unswitch
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
-
-    my $BaseURL = $SVN->GetRepository() . "/$TrunkDir/";
+    my $BaseURL = $SVN->GetRepository() . "/$BranchInfo->{UpstreamPath}/";
 
     print "Unswitching from branch '$BranchPath'...\n";
 
-    for my $BranchDir (map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
+    for my $BranchDir (@{$BranchInfo->{BranchDirs}})
     {
         $Self->RunSubversion('switch', $BaseURL . $BranchDir, $BranchDir)
     }
