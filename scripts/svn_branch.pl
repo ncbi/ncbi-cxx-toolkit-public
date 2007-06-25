@@ -37,7 +37,7 @@ Usage:
 
     $ScriptName merge_up_commit <branch_path>
 
-    $ScriptName commit <branch_path> [<log_message>]
+    $ScriptName svn <branch_path> <svn_command_with_args>
 
     $ScriptName switch <branch_path>
 
@@ -78,8 +78,8 @@ Commands:
     merge_up_commit     Commits the results of merge to the trunk. A special
                         format of the commit log message is used.
 
-    commit              Commits the local changes to the branch. If the log
-                        message is omitted, it is read from the standard input.
+    svn                 Executes an arbitrary Subversion command with branch
+                        directory names as its arguments.
 
     switch              Switches working copy directories to the branch
                         identified by <branch_path>.
@@ -140,9 +140,9 @@ elsif ($Command eq 'merge_up_commit')
 {
     $Method = 'MergeUpCommit'
 }
-elsif ($Command eq 'commit')
+elsif ($Command eq 'svn')
 {
-    $Method = 'Commit'
+    $Method = 'Svn'
 }
 elsif ($Command eq 'switch')
 {

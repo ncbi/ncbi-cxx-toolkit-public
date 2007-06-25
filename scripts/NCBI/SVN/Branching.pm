@@ -705,36 +705,17 @@ sub MergeDownCommit
         "with trunk revision $TrunkRev.", @BranchDirs)
 }
 
-sub Commit
+sub Svn
 {
-    my ($Self, $BranchPath, $LogMessage) = @_;
+    my ($Self, $BranchPath, @CommandAndArgs) = @_;
 
     die "$Self->{MyName}: <branch_path> parameter is missing\n"
         unless $BranchPath;
 
-    unless ($LogMessage)
-    {
-        print "Enter the log message here - press Ctrl-D\n" .
-            "(or Ctrl-Z, Enter on Windows) to finish:\n";
-
-        $LogMessage = '';
-
-        while (<STDIN>)
-        {
-            $LogMessage .= $_
-        }
-
-        chomp $LogMessage
-    }
-
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
-
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
-
-    system($SVN->GetSvnPath(), 'commit', '-m', $LogMessage,
-        map {$_->[0]} @{$SwitchMap->GetSwitchPlan()})
+    exec($SVN->GetSvnPath(), @CommandAndArgs,
+        @{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
 }
 
 sub Switch
