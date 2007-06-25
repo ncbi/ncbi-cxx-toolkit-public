@@ -37,9 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
-#include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_core_cxx.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_types.h>
 
 
@@ -77,13 +75,9 @@ void CTestNetScheduleClient::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NetSchedule client");
     
-    arg_desc->AddPositional("hostname", 
-                            "NetSchedule host name.", 
+    arg_desc->AddPositional("service", 
+                            "NetSchedule lb_service or host:name.", 
                             CArgDescriptions::eString);
-
-    arg_desc->AddPositional("port",
-                            "Port number.", 
-                            CArgDescriptions::eInteger);
 
     arg_desc->AddPositional("queue", 
                             "NetSchedule queue name (like: noname).",
@@ -105,55 +99,50 @@ void CTestNetScheduleClient::Init(void)
 int CTestNetScheduleClient::Run(void)
 {
     CArgs args = GetArgs();
-    const string&  host  = args["hostname"].AsString();
-    unsigned short port = args["port"].AsInteger();
+    const string&  service  = args["service"].AsString();
     const string&  queue_name = args["queue"].AsString();  
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
         jcount = args["jcount"].AsInteger();
     }
-    CNetScheduleClient::EJobStatus status;
-    CNetScheduleClient cl(host, port, "client_test", queue_name);
+    CNetScheduleAPI::EJobStatus status;
+    CNetScheduleAPI cl(service, "client_test", queue_name);
+
+    CNetScheduleSubmitter submitter = cl.GetSubmitter();
 
     const string input = "Hello " + queue_name;
 
-    string job_key = cl.SubmitJob(input);
-    NcbiCout << job_key << NcbiEndl;
+    CNetScheduleJob job(input);
+    submitter.SubmitJob(job);
+    NcbiCout << job.job_id << NcbiEndl;
 
-    
-    
     vector<string> jobs;
 
     {{
 
     NcbiCout << "SubmitAndWait..." << NcbiEndl;
-    int ret_code;
-    string output, err_msg;
     unsigned wait_time = 60;
-    status = 
-        cl.SubmitJobAndWait(input, &job_key, &ret_code, &output, &err_msg, 
-                            wait_time, 9112);
-    if (status == CNetScheduleClient::eDone) {
-        NcbiCout << job_key << " done." << NcbiEndl;
+    CNetScheduleJob j1(input);
+    status = submitter.SubmitJobAndWait(j1, wait_time, 9112);
+    if (status == CNetScheduleAPI::eDone) {
+        NcbiCout << j1.job_id << " done." << NcbiEndl;
     } else {
-        NcbiCout << job_key << " is not done in " 
+        NcbiCout << j1.job_id << " is not done in " 
                  << wait_time << " seconds." << NcbiEndl;
     }
     NcbiCout << "SubmitAndWait...done." << NcbiEndl;
-
-
     }}
 
 
     {{
     CStopWatch sw(CStopWatch::eStart);
-
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
     for (unsigned i = 0; i < jcount; ++i) {
-        job_key = cl.SubmitJob(input, kEmptyStr, kEmptyStr, "out.txt", "err.txt");
-        jobs.push_back(job_key);
+        CNetScheduleJob j1(input);
+        submitter.SubmitJob(j1);
+        jobs.push_back(j1.job_id);
         if (i % 1000 == 0) {
             NcbiCout << "." << flush;
         }
@@ -179,22 +168,23 @@ int CTestNetScheduleClient::Run(void)
     while (jobs.size()) {
         NON_CONST_ITERATE(vector<string>, it, jobs) {
             const string& jk = *it;
-            string output;
-            int ret_code;
-            status = cl.GetStatus(jk, &ret_code, &output);
+            status = submitter.GetJobStatus(jk);
 
-            if (status == CNetScheduleClient::eDone) {
+            if (status == CNetScheduleAPI::eDone) {
+                CNetScheduleJob job;
+                job.job_id = *it;
+                status = submitter.GetJobDetails(job);
                 string expected_output = "DONE " + queue_name;
-                if (output != expected_output || ret_code != 0) {
+                if (job.output != expected_output || job.ret_code != 0) {
                     ERR_POST("Unexpected output or return code:" +
-                             output);
+                             job.output);
                 }
                 jobs.erase(it);
                 ++cnt;
                 break;
             } else 
-            if (status != CNetScheduleClient::ePending) {
-                if (status == CNetScheduleClient::eJobNotFound) {
+            if (status != CNetScheduleAPI::ePending) {
+                if (status == CNetScheduleAPI::eJobNotFound) {
                     NcbiCerr << "Job lost:" << jk << NcbiEndl;
                 }
                 jobs.erase(it);

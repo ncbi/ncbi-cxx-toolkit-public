@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/blob_storage.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/ra_dispatcher_client.hpp>
 
 
@@ -131,33 +131,33 @@ CRADispatcherClient::x_ProcessResponse()
     
     int tmp;
     m_Stream >> tmp;
-    CNetScheduleClient::EJobStatus njstatus = (CNetScheduleClient::EJobStatus)tmp;
+    CNetScheduleAPI::EJobStatus njstatus = (CNetScheduleAPI::EJobStatus)tmp;
     ReadStrWithLen(m_Stream, m_Jid);
     string msg;
     switch (njstatus) {
-    case CNetScheduleClient::ePending:
+    case CNetScheduleAPI::ePending:
         st = ePending;
         break;
-    case CNetScheduleClient::eRunning:
+    case CNetScheduleAPI::eRunning:
         st = eRunning;
         break;
-    case CNetScheduleClient::eReturned:
+    case CNetScheduleAPI::eReturned:
         st = eRescheduled;
         break;
-    case CNetScheduleClient::eDone:
+    case CNetScheduleAPI::eDone:
         st = eReady;
         m_Result.Reset(new CRemoteAppResultSB(m_Factory));
         m_Result->Receive(m_Stream);
         break;
-    case CNetScheduleClient::eCanceled:
+    case CNetScheduleAPI::eCanceled:
         msg = "Job is canceled.";
         NCBI_THROW(CRADispatcherClientException, eJobExecutionError, msg);
         break;
-    case CNetScheduleClient::eFailed:
+    case CNetScheduleAPI::eFailed:
         ReadStrWithLen(m_Stream, msg);
         NCBI_THROW(CRADispatcherClientException, eJobExecutionError, msg);
         break;
-    case CNetScheduleClient::eJobNotFound:
+    case CNetScheduleAPI::eJobNotFound:
     default:
         msg = "Job is lost.";
         NCBI_THROW(CRADispatcherClientException, eJobExecutionError, msg);
