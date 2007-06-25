@@ -721,7 +721,6 @@ CSeqDBGiList::GetGiList(vector<int>& gis) const
 }
 
 
-#if 0
 void
 CSeqDBGiList::GetTiList(vector<Int8>& tis) const
 {
@@ -732,7 +731,6 @@ CSeqDBGiList::GetTiList(vector<Int8>& tis) const
         tis.push_back(itr->ti);
     }
 }
-#endif
 
 
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
