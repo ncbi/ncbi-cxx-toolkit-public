@@ -42,7 +42,7 @@ $(FLTK_SRC)/fltkdll.dll :
 
 BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(INTDIR)
 !IF !EXIST($(BERKELEYDB_SRC))
-BERKELEYDB_SRC      = $(BERKELEYDB_BINPATH)\$(ALTDIR)
+BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(ALTDIR)
 !ENDIF
 install_berkeleydb:
 	$(TEST_NOT_STAMP)\berkeleydb$(STAMP_SUFFIX).installed echo Copying BerkeleyDB DLLs...
@@ -53,7 +53,7 @@ install_berkeleydb:
 
 SQLITE_SRC = $(SQLITE_BINPATH)\$(INTDIR)
 !IF !EXIST($(SQLITE_SRC))
-SQLITE_SRC          = $(SQLITE_BINPATH)\$(ALTDIR)
+SQLITE_SRC = $(SQLITE_BINPATH)\$(ALTDIR)
 !ENDIF
 install_sqlite:
 	$(TEST_NOT_STAMP)\sqlite$(STAMP_SUFFIX).installed     echo Copying SQLite DLLs...
@@ -64,7 +64,7 @@ install_sqlite:
 
 SQLITE3_SRC = $(SQLITE3_BINPATH)\$(INTDIR)
 !IF !EXIST($(SQLITE3_SRC))
-SQLITE3_SRC         = $(SQLITE3_BINPATH)\$(ALTDIR)
+SQLITE3_SRC = $(SQLITE3_BINPATH)\$(ALTDIR)
 !ENDIF
 install_sqlite3:
 	$(TEST_NOT_STAMP)\sqlite3$(STAMP_SUFFIX).installed     echo Copying SQLite3 DLLs...
@@ -79,7 +79,7 @@ install_sqlite3:
 
 WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(INTDIR)
 !IF !EXIST($(WXWINDOWS_SRC))
-WXWINDOWS_SRC       = $(WXWINDOWS_BINPATH)\$(ALTDIR)
+WXWINDOWS_SRC = $(WXWINDOWS_BINPATH)\$(ALTDIR)
 !ENDIF
 install_wxwindows:
 	$(TEST_NOT_STAMP)\wxwindows$(STAMP_SUFFIX).installed  echo Copying wxWindows DLLs...
@@ -88,9 +88,20 @@ install_wxwindows:
 	$(TEST_NOT_STAMP)\wxwindows$(STAMP_SUFFIX).installed  if exist "$(WXWINDOWS_SRC)\*.pdb" (copy /Y "$(WXWINDOWS_SRC)\*.pdb" "$(INSTALL_BINPATH)" > NUL)
 	$(TEST_NOT_STAMP)\wxwindows$(STAMP_SUFFIX).installed  if exist "$(WXWINDOWS_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\wxwindows$(STAMP_SUFFIX).installed")
 
+WXWIDGETS_SRC = $(WXWIDGETS_BINPATH)\$(INTDIR)
+!IF !EXIST($(WXWIDGETS_SRC))
+WXWIDGETS_SRC = $(WXWIDGETS_BINPATH)\$(ALTDIR)
+!ENDIF
+install_wxwidgets:
+	$(TEST_NOT_STAMP)\wxwidgets$(STAMP_SUFFIX).installed  echo Copying wxWindows DLLs...
+	$(TEST_IF__STAMP)\wxwidgets$(STAMP_SUFFIX).installed  echo wxWindows DLLs are already installed
+	$(TEST_NOT_STAMP)\wxwidgets$(STAMP_SUFFIX).installed  if exist "$(WXWIDGETS_SRC)\*.dll" (copy /Y "$(WXWIDGETS_SRC)\*.dll" "$(INSTALL_BINPATH)" > NUL) else (echo WARNING: wxWindows DLLs not found.)
+	$(TEST_NOT_STAMP)\wxwidgets$(STAMP_SUFFIX).installed  if exist "$(WXWIDGETS_SRC)\*.pdb" (copy /Y "$(WXWIDGETS_SRC)\*.pdb" "$(INSTALL_BINPATH)" > NUL)
+	$(TEST_NOT_STAMP)\wxwidgets$(STAMP_SUFFIX).installed  if exist "$(WXWIDGETS_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\wxwidgets$(STAMP_SUFFIX).installed")
+
 SYBASE_SRC = $(SYBASE_BINPATH)\$(INTDIR)
 !IF !EXIST($(SYBASE_SRC))
-SYBASE_SRC       = $(SYBASE_BINPATH)\$(ALTDIR)
+SYBASE_SRC = $(SYBASE_BINPATH)\$(ALTDIR)
 !ENDIF
 install_sybase:
 	$(TEST_NOT_STAMP)\sybase$(STAMP_SUFFIX).installed     echo Copying Sybase DLLs...
@@ -102,7 +113,7 @@ install_sybase:
 
 MYSQL_SRC = $(MYSQL_BINPATH)\$(INTDIR)
 !IF !EXIST($(MYSQL_SRC))
-MYSQL_SRC        = $(MYSQL_BINPATH)\$(ALTDIR)
+MYSQL_SRC = $(MYSQL_BINPATH)\$(ALTDIR)
 !ENDIF
 install_mysql:
 	$(TEST_NOT_STAMP)\mysql$(STAMP_SUFFIX).installed      echo Copying MySQL DLLs...
@@ -113,7 +124,7 @@ install_mysql:
 
 MSSQL_SRC = $(MSSQL_BINPATH)\$(INTDIR)
 !IF !EXIST($(MSSQL_SRC))
-MSSQL_SRC        = $(MSSQL_BINPATH)\$(ALTDIR)
+MSSQL_SRC = $(MSSQL_BINPATH)\$(ALTDIR)
 !ENDIF
 install_mssql:
 	$(TEST_NOT_STAMP)\mssql$(STAMP_SUFFIX).installed      echo Copying MSSQL DLLs...
@@ -124,7 +135,7 @@ install_mssql:
 
 OPENSSL_SRC = $(OPENSSL_BINPATH)\$(INTDIR)
 !IF !EXIST($(OPENSSL_SRC))
-OPENSSL_SRC      = $(OPENSSL_BINPATH)\$(ALTDIR)
+OPENSSL_SRC = $(OPENSSL_BINPATH)\$(ALTDIR)
 !ENDIF
 install_openssl:
 	$(TEST_NOT_STAMP)\openssl$(STAMP_SUFFIX).installed    echo Copying OpenSSL DLLs...
@@ -134,7 +145,7 @@ install_openssl:
 
 LZO_SRC = $(LZO_BINPATH)\$(INTDIR)
 !IF !EXIST($(LZO_SRC))
-LZO_SRC          = $(LZO_BINPATH)\$(ALTDIR)
+LZO_SRC = $(LZO_BINPATH)\$(ALTDIR)
 !ENDIF
 install_lzo:
 	$(TEST_NOT_STAMP)\lzo$(STAMP_SUFFIX).installed        echo Copying LZO DLLs...
@@ -145,6 +156,7 @@ install_lzo:
 #
 # MSVC7.10 run-time DLLs'
 #
+
 MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc71\7.1\bin
 install_msvc:
 	$(TEST_NOT_STAMP)\msvc$(STAMP_SUFFIX).installed       echo Copying MSVC DLLs...

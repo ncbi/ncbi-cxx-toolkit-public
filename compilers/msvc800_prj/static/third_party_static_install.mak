@@ -47,6 +47,7 @@ THIRD_PARTY_LIBS = \
 				install_sqlite     \
 				install_sqlite3    \
 				install_wxwindows  \
+				install_wxwidgets  \
 				install_sybase     \
 				install_mysql      \
 				install_mssql      \
