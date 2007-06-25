@@ -129,7 +129,7 @@ static void s_LOG_Handler(void*         /*user_data*/,
             level = eDiag_Critical;
             break;
         case eLOG_Fatal:
-            /*fallthru*/
+            /*FALLTHRU*/
         default:
             level = eDiag_Fatal;
             break;
@@ -184,6 +184,16 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
             break;
         case eMT_Unlock:
             lock->Unlock();
+            break;
+        case eMT_TryLock:
+            if (!lock->TryWriteLock()) {
+                return 0/*false*/;
+            }
+            break;
+        case eMT_TryLockRead:
+            if (!lock->TryReadLock()) {
+                return 0/*false*/;
+            }
             break;
         default:
             NCBI_THROW(CCoreException, eCore, "Lock used with unknown op #" +

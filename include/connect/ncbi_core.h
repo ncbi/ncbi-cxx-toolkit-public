@@ -168,9 +168,11 @@ typedef struct MT_LOCK_tag* MT_LOCK;
  *
  */
 typedef enum {
-    eMT_Lock,      /**< lock   critical section             */
-    eMT_LockRead,  /**< lock   critical section for reading */
-    eMT_Unlock     /**< unlock critical section             */
+    eMT_Lock,        /**< lock   critical section                     */
+    eMT_LockRead,    /**< lock   critical section for reading         */
+    eMT_Unlock,      /**< unlock critical section                     */
+    eMT_TryLock,     /**< try to lock,             return immediately */
+    eMT_TryLockRead  /**< try to lock for reading, return immediately */
 } EMT_Lock;
 
 
