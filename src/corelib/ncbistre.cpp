@@ -434,7 +434,7 @@ EEncodingForm ReadIntoUtf8(
         if (n == 0) {
             input.read(tmp, buf_size);
             n = input.gcount();
-            result->reserve(result->size() + n);
+            result->reserve(max(result->capacity(), result->size() + n));
         }
         tmp[n] = '\0';
 
