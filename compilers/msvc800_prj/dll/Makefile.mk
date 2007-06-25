@@ -153,11 +153,12 @@ install_lzo:
 	$(TEST_NOT_STAMP)\lzo$(STAMP_SUFFIX).installed        if exist "$(LZO_SRC)\*.dll" (copy /Y "$(LZO_SRC)\*.dll" "$(INSTALL_BINPATH)" > NUL) else (echo WARNING: LZO DLLs not found.)
 	$(TEST_NOT_STAMP)\lzo$(STAMP_SUFFIX).installed        if exist "$(LZO_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\lzo$(STAMP_SUFFIX).installed")
 
+
 #
-# MSVC7.10 run-time DLLs'
+# MSVC 8.0 run-time DLLs'
 #
 
-MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc71\7.1\bin
+MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc8\8\bin
 install_msvc:
 	$(TEST_NOT_STAMP)\msvc$(STAMP_SUFFIX).installed       echo Copying MSVC DLLs...
 	$(TEST_IF__STAMP)\msvc$(STAMP_SUFFIX).installed       echo MSVC DLLs are already installed
