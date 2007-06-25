@@ -94,6 +94,9 @@ public:
         ///< all identifiers are local IDs
         fAllIdsAsLocal      = 0x80,
 
+        ///< all identifiers are local IDs
+        fSetVersion3        = 0x100,
+
         fDefaults = 0
     };
     typedef int TFlags;
@@ -138,6 +141,12 @@ public:
         int          frame;
         unsigned int line_no;
         EType        type;
+
+        // gff3 specific properties
+        string       id;
+        string       parent;
+        string       name;
+
 
         TAttrs::const_iterator FindAttribute(const string& name,
                                              size_t min_values = 1) const;

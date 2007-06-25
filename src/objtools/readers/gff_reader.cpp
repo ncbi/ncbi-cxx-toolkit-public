@@ -106,6 +106,10 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
     m_Flags  = flags;
     m_LineReader = &in;
 
+    if (m_Flags & fSetVersion3) {
+        m_Version = 3;
+    }
+
     TStr line;
     while ( !in.AtEOF() ) {
         ++m_LineNumber;
@@ -123,8 +127,11 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
             line = *++in;
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
+                
                 record->line_no = m_LineNumber;
                 string id = x_FeatureID(*record);
+                record->id = id;
+
                 if (id.empty()) {
                     x_ParseAndPlace(*record);
                 } else {
@@ -515,6 +522,24 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
         record->type = SRecord::eAlign;
     } else {
         record->type = SRecord::eFeat;
+    } 
+
+    // extracting additional gff3 attributes
+    if (m_Version == 3) {
+        SRecord::TAttrs::const_iterator id_it = record->FindAttribute("ID");
+        if (id_it != record->attrs.end()) {
+            record->id = (*id_it)[1];
+        }
+    
+        SRecord::TAttrs::const_iterator parent_it = record->FindAttribute("Parent");
+        if (parent_it != record->attrs.end()) {
+            record->parent = (*parent_it)[1];
+        }
+
+        SRecord::TAttrs::const_iterator name_it = record->FindAttribute("Name");
+        if (name_it != record->attrs.end()) {
+            record->name = (*name_it)[1];
+        }        
     }
 
     return record;
@@ -874,14 +899,16 @@ string CGFFReader::x_FeatureID(const SRecord& record)
         return kEmptyStr;
     }
 
+    // has been retrieved in initial interval parsing
     if (m_Version == 3) {
-        SRecord::TAttrs::const_iterator id_it = record.FindAttribute("ID");
-        if (id_it != record.attrs.end()) {
-            return (*id_it)[1];
+        if (!record.id.empty()) {
+            return  record.id;   
+        }        
+        else { // mergeable record
+            return record.source + record.key + record.parent;
         }
-        // otherwise, do something with Parent?
-    }
-
+    }    
+    
     SRecord::TAttrs::const_iterator gene_it = record.FindAttribute("gene_id");
     SRecord::TAttrs::const_iterator transcript_it
         = record.FindAttribute("transcript_id");
