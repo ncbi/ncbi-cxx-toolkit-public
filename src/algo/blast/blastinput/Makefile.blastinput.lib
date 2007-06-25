@@ -3,6 +3,7 @@
 SRC_CXX = \
 blast_input \
 blast_fasta_input \
+blast_scope_src \
 blast_args \
 cmdline_flags \
 blast_input_aux \
