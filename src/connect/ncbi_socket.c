@@ -2203,21 +2203,24 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
     status = eIO_Success;
     if (abort  ||  sock->stype != eSOCK_ServerSideKeep) {
         for (;;) { /* close persistently - retry if interrupted by a signal */
+            int x_errno;
             if (SOCK_CLOSE(sock->sock) == 0)
                 break;
 
             /* error */
             if (!s_Initialized)
                 break;
-            if (abort  ||  SOCK_ERRNO != SOCK_EINTR) {
-                int x_errno = SOCK_ERRNO;
-                CORE_LOGF_ERRNO_EX(abort ? eLOG_Error : eLOG_Warning,
+            x_errno = SOCK_ERRNO;
+            if (abort  ||  x_errno != SOCK_EINTR) {
+                CORE_LOGF_ERRNO_EX(abort > 1 ? eLOG_Error : eLOG_Warning,
                                    x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_%s]  Failed close()",
                                     s_ID(sock, _id),
                                     abort ? "Abort" : "Close"));
-                status = eIO_Unknown;
-                break;
+                if (abort++ > 1  ||  x_errno != SOCK_EINTR) {
+                    status = eIO_Unknown;
+                    break;
+                }
             }
         }
     }
