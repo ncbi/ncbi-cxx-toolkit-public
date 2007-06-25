@@ -37,10 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
-#include <connect/ncbi_socket.hpp>
-
-#include "client_admin.hpp"
+#include <connect/services/netschedule_api.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -57,7 +54,7 @@ class CNetScheduleCheck : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
-    int Run(CNetScheduleClient& nc_client);
+    int Run(CNetScheduleAPI& nc_client);
 };
 
 
@@ -69,7 +66,7 @@ void CNetScheduleCheck::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule Check.");
     
-    arg_desc->AddPositional("host_service", 
+    arg_desc->AddPositional("service", 
         "NetSchedule host or service name. Format: service|host:port", 
         CArgDescriptions::eString);
 
@@ -85,111 +82,96 @@ void CNetScheduleCheck::Init(void)
 
 int CNetScheduleCheck::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
-    const string& host_service  = args["host_service"].AsString();
+    const string& service  = args["service"].AsString();
 
-    string queue = "noname";
+    string queue = "test";
     if (args["q"]) {  
         queue = args["q"].AsString(); 
     }
 
 
-    unsigned short port = 0;
-    string host, port_str;
-    auto_ptr<CNetScheduleClient> nc;
-    string client_name = "netschedule_amdin";
-    bool b = NStr::SplitInTwo(host_service, ":", host, port_str);
-    if (b) {
-        port = atoi(port_str.c_str());
-        
-        nc.reset(new CNetScheduleClient(host, port, client_name, queue));
-                 
-    } else {  // LB name
-        nc.reset(new CNetScheduleClient_LB(client_name, 
-                                           host_service, queue));
-    }
+    CNetScheduleAPI cln(service, "netschedule_admin", queue);
 
-    return Run(*nc);
+    return Run(cln);
 }
 
-int CNetScheduleCheck::Run(CNetScheduleClient& nc)
+int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
 {
-    CArgs args = GetArgs();
+    CNetScheduleSubmitter submitter = nc.GetSubmitter();
+    CNetScheduleExecuter executer = nc.GetExecuter();
 
     const string input = "Hello ";
     const string output = "DONE ";
-    string job_key = nc.SubmitJob(input);
+    CNetScheduleJob job(input);
+    submitter.SubmitJob(job);
 
     while ( true ) {
         SleepSec(1);
-
-        string job_key1;
-        string input1;
-        bool job_exists = nc.GetJob(&job_key1, &input1);
+        
+        CNetScheduleJob job1;
+        bool job_exists = executer.GetJob(job1);
         if (job_exists) {
-            if (job_key1 != job_key)
-                nc.ReturnJob(job_key1);
+            if (job1.job_id != job.job_id)
+                executer.ReturnJob(job1.job_id);
             else {
-                if (input1 != input) {
-                    string err = "Job's (" + job_key1 + 
-                        ") input does not match.(" + input + ") ["+ input1 +"]";
-                    nc.PutFailure(job_key1,err);
+                if (job1.input != job.input) {
+                    job1.error_msg = "Job's (" + job1.job_id + 
+                        ") input does not match.(" + job.input + ") ["+ job1.input +"]";
+                    executer.PutFailure(job1);
                 } else {
-                    nc.PutResult(job_key1, 0, output);
+                    job1.output = output;
+                    job1.ret_code = 0;
+                    executer.PutResult(job1);
                 }
                 break;
             }
         }
     }
 
+    bool check_again = true;
     int ret = 0;
     string err;
-    bool check_again = true;
     while(check_again) {
         check_again = false;
         SleepSec(1);
 
-        string output1;
-        string input1;
-        CNetScheduleClient::EJobStatus status = nc.GetStatus(job_key, 
-                                                             &ret,
-                                                             &output1,
-                                                             &err,
-                                                             &input1);
+        CNetScheduleAPI::EJobStatus status = submitter.GetJobDetails(job);
         switch(status) {
-            
-        case CNetScheduleClient::eJobNotFound:
+        
+        case CNetScheduleAPI::eJobNotFound:
             ret = 210;
-            err = "Job (" + job_key +") is lost.";
+            err = "Job (" + job.job_id +") is lost.";
             break;
-        case CNetScheduleClient::eReturned:
+        case CNetScheduleAPI::eReturned:
             ret = 211;
-            nc.CancelJob(job_key);
-            err = "Job (" + job_key +") is returned.";
+            submitter.CancelJob(job.job_id);
+            err = "Job (" + job.job_id +") is returned.";
             break;
-        case CNetScheduleClient::eCanceled:
+        case CNetScheduleAPI::eCanceled:
             ret = 212;
-            err = "Job (" + job_key +") is canceled.";
+            err = "Job (" + job.job_id +") is canceled.";
             break;           
-        case CNetScheduleClient::eFailed:
+        case CNetScheduleAPI::eFailed:
             ret = 213;
             break;
-        case CNetScheduleClient::eDone:
-            if (ret != 0) {
-                err = "Job (" + job_key +") is done, but retcode is not zero.";
-            } else if (output1 != output) {
-                err = "Job (" + job_key + ") is done, output does not match.(" 
-                    + output + ") ["+ output1 +"]";
+        case CNetScheduleAPI::eDone:
+            if (job.ret_code != 0) {
+                ret = job.ret_code;
+                err = "Job (" + job.job_id +") is done, but retcode is not zero.";
+            } else if (job.output != output) {
+                err = "Job (" + job.job_id + ") is done, output does not match.(" 
+                    + output + ") ["+ job.output +"]";
                 ret = 214;
-            } else if (input1 != input) {
-                err = "Job (" + job_key +") is done, input does not match.(" 
-                    + input + ") ["+ input1 +"]";
+            } else if (job.input != input) {
+                err = "Job (" + job.job_id +") is done, input does not match.(" 
+                    + input + ") ["+ job.input +"]";
                 ret = 215;
             }
             break;
-        case CNetScheduleClient::ePending:
-        case CNetScheduleClient::eRunning:
+        case CNetScheduleAPI::ePending:
+        case CNetScheduleAPI::eRunning:
         default:
             check_again = true;
         }
