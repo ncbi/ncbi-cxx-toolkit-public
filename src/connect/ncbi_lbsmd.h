@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Low-level API to resolve NCBI service name to the server meta-address
+ *   Low-level API to resolve NCBI service name to server meta-address
  *   with the use of NCBI Load-Balancing Service Mapper (LBSMD).
  *
  */
