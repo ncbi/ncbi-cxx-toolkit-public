@@ -3683,140 +3683,239 @@ void CDBAPIUnitTest::Test_UserErrorHandler_LT(void)
     // Connection. eNoOwnership ...
     {
         // auto_ptr
-        // One connection ...
         {
-            // Create new connection ...
-            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+            auto_ptr<CTestErrHandler> auto_msg_handler(new CTestErrHandler());
 
-            Connect(new_conn);
+            // One connection ...
+            {
+                // Create new connection ...
+                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            // Add handler ...
-            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-            // Remove handler ...
-            new_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
-        }
+                Connect(new_conn);
 
-        // auto_ptr
-        // Two connections ...
-        {
-            // Create new connection ...
-            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+                // Add handler ...
+                new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+                // Remove handler ...
+                new_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+            }
 
-            Connect(new_conn1);
-            Connect(new_conn2);
+            // Two connections ...
+            {
+                // Create new connection ...
+                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            // Add handler ...
-            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-            // Remove handler ...
-            new_conn1->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
-            new_conn2->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+                Connect(new_conn1);
+                Connect(new_conn2);
+
+                // Add handler ...
+                new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+                new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+                // Remove handler ...
+                new_conn1->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+                new_conn2->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+            }
+
+            // One connection ...
+            {
+                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
+
+                Connect(conn1);
+
+                // Add handler ...
+                conn1->GetCDB_Connection()->PushMsgHandler(auto_msg_handler.get());
+                // Remove handler ...
+                conn1->GetCDB_Connection()->PopMsgHandler(auto_msg_handler.get());
+            }
+
+            // Two connections ...
+            {
+                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> conn2(m_DS->CreateConnection());
+
+                Connect(conn1);
+                Connect(conn2);
+
+                // Add handler ...
+                conn1->GetCDB_Connection()->PushMsgHandler(auto_msg_handler.get());
+                conn2->GetCDB_Connection()->PushMsgHandler(auto_msg_handler.get());
+                // Remove handler ...
+                conn1->GetCDB_Connection()->PopMsgHandler(auto_msg_handler.get());
+                conn2->GetCDB_Connection()->PopMsgHandler(auto_msg_handler.get());
+            }
         }
 
         // CRef
-        // One connection ...
         {
-            // Create new connection ...
-            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
-            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+            CRef<CTestErrHandler> cref_msg_handler(new CTestErrHandler());
 
-            Connect(new_conn);
+            // One connection ...
+            {
+                // Create new connection ...
+                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            // Add handler ...
-            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler);
-            // Remove handler ...
-            new_conn->GetCDB_Connection()->PopMsgHandler(msg_handler);
-        }
+                Connect(new_conn);
 
-        // CRef
-        // Two connections ...
-        {
-            // Create new connection ...
-            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
-            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+                // Add handler ...
+                new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler);
+                // Remove handler ...
+                new_conn->GetCDB_Connection()->PopMsgHandler(msg_handler);
+            }
 
-            Connect(new_conn1);
-            Connect(new_conn2);
+            // Two connections ...
+            {
+                // Create new connection ...
+                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            // Add handler ...
-            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler);
-            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler);
-            // Remove handler ...
-            new_conn1->GetCDB_Connection()->PopMsgHandler(msg_handler);
-            new_conn2->GetCDB_Connection()->PopMsgHandler(msg_handler);
+                Connect(new_conn1);
+                Connect(new_conn2);
+
+                // Add handler ...
+                new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler);
+                new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler);
+                // Remove handler ...
+                new_conn1->GetCDB_Connection()->PopMsgHandler(msg_handler);
+                new_conn2->GetCDB_Connection()->PopMsgHandler(msg_handler);
+            }
+
+            // One connection ...
+            {
+                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
+
+                Connect(conn1);
+
+                // Add handler ...
+                conn1->GetCDB_Connection()->PushMsgHandler(cref_msg_handler);
+                // Remove handler ...
+                conn1->GetCDB_Connection()->PopMsgHandler(cref_msg_handler);
+            }
+
+            // Two connections ...
+            {
+                auto_ptr<IConnection> conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> conn2(m_DS->CreateConnection());
+
+                Connect(conn1);
+                Connect(conn2);
+
+                // Add handler ...
+                conn1->GetCDB_Connection()->PushMsgHandler(cref_msg_handler);
+                conn2->GetCDB_Connection()->PushMsgHandler(cref_msg_handler);
+                // Remove handler ...
+                conn1->GetCDB_Connection()->PopMsgHandler(cref_msg_handler);
+                conn2->GetCDB_Connection()->PopMsgHandler(cref_msg_handler);
+            }
         }
     }
 
     // Connection. eTakeOwnership ...
     {
-        // Raw pointer ...
-        // One connection ...
-        {
-            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
-            CTestErrHandler* msg_handler = new CTestErrHandler();
-
-            Connect(new_conn);
-            // Add handler ...
-            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler,
-                                                          eTakeOwnership);
-            // We do not remove msg_handler here because it is supposed to be
-            // deleted by new_conn ...
-        }
+        CRef<CTestErrHandler> cref_msg_handler(new CTestErrHandler());
 
         // Raw pointer ...
-        // Two connections ...
         {
-            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
-            CTestErrHandler* msg_handler = new CTestErrHandler();
+            // One connection ...
+            {
+                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                CTestErrHandler* msg_handler = new CTestErrHandler();
 
-            Connect(new_conn1);
-            Connect(new_conn2);
+                Connect(new_conn);
 
-            // Add handler ...
-            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler,
-                                                           eTakeOwnership);
-            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler,
-                                                           eTakeOwnership);
-            // We do not remove msg_handler here because it is supposed to be
-            // deleted by new_conn ...
+                // Add handler ...
+                new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                              eTakeOwnership);
+                // We do not remove msg_handler here because it is supposed to be
+                // deleted by new_conn ...
+            }
+
+            // Raw pointer ...
+            // Two connections ...
+            {
+                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                CTestErrHandler* msg_handler = new CTestErrHandler();
+
+                Connect(new_conn1);
+                Connect(new_conn2);
+
+                // Add handler ...
+                new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                               eTakeOwnership);
+                new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                               eTakeOwnership);
+                // We do not remove msg_handler here because it is supposed to be
+                // deleted by new_conn ...
+            }
         }
 
         // CRef
-        // One connection ...
         {
-            auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
-            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+            // One connection ...
+            {
+                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+                CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            Connect(new_conn);
-            // Add handler ...
-            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler,
-                                                          eTakeOwnership);
-            // We do not remove msg_handler here because it is supposed to be
-            // deleted by new_conn ...
-        }
+                Connect(new_conn);
 
-        // CRef
-        // Two connections ...
-        {
-            auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
-            auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
-            CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
+                // Add handler ...
+                new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                              eTakeOwnership);
+                // We do not remove msg_handler here because it is supposed to be
+                // deleted by new_conn ...
+            }
 
-            Connect(new_conn1);
-            Connect(new_conn2);
+            // Two connections ...
+            {
+                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+                CRef<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            // Add handler ...
-            new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler,
-                                                           eTakeOwnership);
-            new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler,
-                                                           eTakeOwnership);
-            // We do not remove msg_handler here because it is supposed to be
-            // deleted by new_conn ...
+                Connect(new_conn1);
+                Connect(new_conn2);
+
+                // Add handler ...
+                new_conn1->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                               eTakeOwnership);
+                new_conn2->GetCDB_Connection()->PushMsgHandler(msg_handler,
+                                                               eTakeOwnership);
+                // We do not remove msg_handler here because it is supposed to be
+                // deleted by new_conn ...
+            }
+
+            // One connection ...
+            {
+                auto_ptr<IConnection> new_conn(m_DS->CreateConnection());
+
+                Connect(new_conn);
+
+                // Add handler ...
+                new_conn->GetCDB_Connection()->PushMsgHandler(cref_msg_handler,
+                                                              eTakeOwnership);
+                // We do not remove msg_handler here because it is supposed to be
+                // deleted by new_conn ...
+            }
+
+            // Two connections ...
+            {
+                auto_ptr<IConnection> new_conn1(m_DS->CreateConnection());
+                auto_ptr<IConnection> new_conn2(m_DS->CreateConnection());
+
+                Connect(new_conn1);
+                Connect(new_conn2);
+
+                // Add handler ...
+                new_conn1->GetCDB_Connection()->PushMsgHandler(cref_msg_handler,
+                                                               eTakeOwnership);
+                new_conn2->GetCDB_Connection()->PushMsgHandler(cref_msg_handler,
+                                                               eTakeOwnership);
+                // We do not remove msg_handler here because it is supposed to be
+                // deleted by new_conn ...
+            }
         }
     }
 
