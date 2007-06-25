@@ -35,6 +35,7 @@ EOF
 die "$ScriptName\: must be in a working copy directory.\n" unless -d '.svn';
 
 NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->SwitchUsingMap(
-    NCBI::SVN::SwitchMap->new(MyName => $ScriptName, MapFileName => $ARGV[0]));
+    NCBI::SVN::SwitchMap->new(MyName => $ScriptName, MapFileName => $ARGV[0])->
+        GetSwitchPlan());
 
 exit 0

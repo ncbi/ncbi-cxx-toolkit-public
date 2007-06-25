@@ -729,12 +729,8 @@ sub Switch
 
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
-    my @BranchMapLines = map {"$_ branches/$BranchPath/$_"}
-        @{$BranchInfo->{BranchDirs}};
-
-    NCBI::SVN::MultiSwitch->new(MyName => $Self->{MyName})->
-        SwitchUsingMap(NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-            MapFileLines => \@BranchMapLines))
+    NCBI::SVN::MultiSwitch->new(MyName => $Self->{MyName})->SwitchUsingMap(
+        [map {[$_ => "branches/$BranchPath/$_"]} @{$BranchInfo->{BranchDirs}}])
 }
 
 sub Unswitch

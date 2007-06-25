@@ -357,7 +357,7 @@ chdir $BuildDir;
 $Update->UpdateDirList($HEAD, @Paths);
 
 NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->
-    SwitchUsingMap($SwitchMap) if $SwitchMap;
+    SwitchUsingMap($SwitchMap->GetSwitchPlan()) if $SwitchMap;
 
 exit 0 if $^O eq 'MSWin32';
 

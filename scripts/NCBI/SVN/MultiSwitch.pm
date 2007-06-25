@@ -79,7 +79,7 @@ sub SwitchUsingMap
 
     die "$Self->{MyName}\: unable to detect repository URL.\n" unless $Repos;
 
-    for (@{$SwitchMap->GetSwitchPlan()})
+    for (@$SwitchMap)
     {
         my ($FromDir, $ToDir) = @$_;
 
