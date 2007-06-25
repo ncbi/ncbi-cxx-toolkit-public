@@ -25,7 +25,7 @@ Usage:
 
     $ScriptName info <branch_path>
 
-    $ScriptName create <branch_path> <branch_map_file> [<trunk_rev>]
+    $ScriptName create <branch_path> <upstream_path>[:<rev>] <branch_dirs>
 
     $ScriptName remove <branch_path>
 
@@ -44,9 +44,6 @@ Usage:
     $ScriptName unswitch <branch_path>
 
 Where:
-    branch_map_file     Pathname of the file containing branch directory
-                        mappings.
-
     branch_path         Path in the repository (relative to /branches)
                         that identifies the branch.
 
@@ -60,10 +57,7 @@ Commands:
                         by the <branch_path> argument.
 
     create              Either creates a new branch defined by its base path
-                        <branch_path> and directory mapping <branch_map_file>
-                        or updates (accordingly to the new directory mapping
-                        <branch_map_file>) an existing branch identified by
-                        its base path <branch_path>.
+                        <branch_path> and directory listing <branch_dirs>.
 
     remove              Removes branch identified by the path <branch_path>
                         from the repository.

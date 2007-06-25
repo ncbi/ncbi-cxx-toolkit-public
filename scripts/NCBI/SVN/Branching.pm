@@ -374,17 +374,21 @@ sub Info
 
 sub Create
 {
-    my ($Self, $BranchPath, $BranchMapFile, $Revision) = @_;
+    my ($Self, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
-    for ([branch_path => $BranchPath], [branch_map_file => $BranchMapFile])
+    for ([branch_path => $BranchPath], [upstream_path => $UpstreamPath],
+        [branch_dirs => $BranchDirs[0]])
     {
         die "$Self->{MyName}: <$_->[0]> parameter is missing\n" unless $_->[1]
     }
 
-    $Revision ||= 'HEAD';
+    my $Revision = 'HEAD';
 
-    my $SwitchMap = NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-        MapFileName => $BranchMapFile);
+    if ($UpstreamPath =~ m/^(.+):(.+)$/)
+    {
+        $UpstreamPath = $1;
+        $Revision = $2
+    }
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
@@ -425,37 +429,18 @@ sub Create
 
     unless ($@)
     {
-        $ExistingBranch = 1;
-
-        # Compare the old and the new branch maps, find which dirs to remove
-        # and which to copy from trunk.
-        my @BranchMapDiff = $OldSwitchMap->DiffSwitchPlan($SwitchMap);
-
-        if (@BranchMapDiff)
-        {
-            for my $DiffLine (@BranchMapDiff)
-            {
-                if ($DiffLine->[1])
-                {
-                    LayPath($DiffLine->[0], \%RmDirTree,
-                        \%MkDirTree, \%CommonTree);
-                    push @CopyCommands, 'cp', 'HEAD',
-                        "$TrunkDir/$DiffLine->[1]", $DiffLine->[0]
-                }
-                else
-                {
-                    LayPath($DiffLine->[0], \%RmDirTree, \%CommonTree)
-                }
-            }
-            push @PutCommands, 'put', $BranchMapFile, $BranchMapRepoPath
-        }
+        die "$Self->{MyName}: branch '$BranchPath' already exists.\n"
     }
     else
     {
-        for (@{$SwitchMap->GetSwitchPlan()})
+        for my $Dir (@BranchDirs)
         {
-            LayPath($_->[1], \%RmDirTree, \%MkDirTree, \%CommonTree);
-            push @CopyCommands, 'cp', 'HEAD', "$TrunkDir/$_->[0]", $_->[1]
+            my $SourcePath = "$UpstreamPath/$Dir";
+            my $TargetPath = "branches/$BranchPath/$Dir";
+
+            LayPath($TargetPath, \%RmDirTree, \%MkDirTree, \%CommonTree);
+
+            push @CopyCommands, 'cp', 'HEAD', $SourcePath, $TargetPath
         }
     }
 
@@ -464,13 +449,6 @@ sub Create
 
     GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
     GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
-
-    unless ($OldSwitchMap)
-    {
-        LayPath($BranchMapRepoPath, \%MkDirTree, \%CommonTree);
-        push @PutCommands, 'put', $BranchMapFile, $BranchMapRepoPath;
-        GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree)
-    }
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
