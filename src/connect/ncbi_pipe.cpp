@@ -1078,14 +1078,14 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         close(status_pipe[1]);
 
-        // Check status pipe.
-        // If it have some data, this is an errno from the child process.
-        // If EOF in status pipe, that child executed successful.
+        // Check status pipe:
+        // if it has some data, this is an errno from the child process;
+        // if there is an EOF, then the child exec()'d successfully.
         // Retry if either blocked or interrupted
 
         // Try to read errno from forked process
+        ssize_t n;
         int errcode;
-        size_t n;
         while ((n = read(status_pipe[0], &errcode, sizeof(errcode))) < 0) {
             if (errno != EINTR)
                 break;
