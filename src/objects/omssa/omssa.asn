@@ -419,7 +419,9 @@ MSSearchSettings ::= SEQUENCE {
         automassadjust REAL OPTIONAL,                  -- fraction allowable adjustment of product mass tolerance
 	lomasscutoff REAL OPTIONAL,                    -- low mass filter in Daltons, unscaled
         libsearchsettings MSLibrarySettings OPTIONAL,  -- library search settings
-        noprolineions SEQUENCE OF MSIonType OPTIONAL    -- which ions to use no proline rule
+        noprolineions SEQUENCE OF MSIonType OPTIONAL,  -- which ions to use no proline rule
+        reversesearch BOOLEAN OPTIONAL,                -- do reverse search
+	othersettings SEQUENCE OF NameValue OPTIONAL   -- extra search settings
         }
 
 MSSerialDataFormat ::= INTEGER {
@@ -550,8 +552,9 @@ MSPepHit ::= SEQUENCE {
         defline VisibleString OPTIONAL,    -- sequence description
         protlength INTEGER OPTIONAL,       -- length of protein
         oid INTEGER OPTIONAL,              -- blast library oid 
+        reversed BOOLEAN OPTIONAL,         -- reversed sequence
         pepstart VisibleString OPTIONAL,   -- AA before the peptide
-        pepstop VisibleString OPTIONAL    -- AA after the peptide
+        pepstop VisibleString OPTIONAL     -- AA after the peptide
 }        
 
 -- modifications to a hit peptide
@@ -585,7 +588,8 @@ MSHits ::= SEQUENCE {
         protlength INTEGER OPTIONAL,      -- length of protein hit (depricated)
         theomass INTEGER OPTIONAL,        -- scaled theoretical mass of peptide hit
         oid INTEGER OPTIONAL,              -- blast library oid (depricated) 
-	scores SEQUENCE OF MSScoreSet OPTIONAL -- optional scores (for library search)
+	scores SEQUENCE OF MSScoreSet OPTIONAL, -- optional scores (for library search)
+	libaccession VisibleString OPTIONAL     -- library search accesssion
         }
 
 

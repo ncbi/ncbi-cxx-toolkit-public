@@ -438,15 +438,24 @@ int CSearch::CompareLadders(int iMod,
 {
     EMSPeakListTypes Which = Peaks->GetWhich(MassPeak->Charge);
 
-    int ChargeLimit(0);
-    if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) 
-        ChargeLimit = 1;
+    int ChargeLimitLo(0), ChargeLimitHi(0);
+    if (MassPeak) {
+        if(MassPeak->Charge < Peaks->GetConsiderMult()) { 
+            ChargeLimitLo = 1;
+            ChargeLimitHi = 1;
+        }
+        else {
+            ChargeLimitLo = 1;
+            ChargeLimitHi = 2;
+        }
+    }
+
     TLadderMap::iterator Iter;
-    SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
+    SetLadderContainer().Begin(Iter, ChargeLimitLo, ChargeLimitHi);
     vector<bool> usedPeaks(Peaks->SetPeakLists()[Which]->GetNum(), false);
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
         Peaks->CompareSortedRank(*((*(Iter->second))[iMod]), Which, usedPeaks);
-        SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
+        SetLadderContainer().Next(Iter, ChargeLimitLo, ChargeLimitHi);
     }
     return 0;
 }
@@ -457,16 +466,23 @@ bool CSearch::CompareLaddersTop(int iMod,
                                 CMSPeak *Peaks,
                                 const TMassPeak *MassPeak)
 {
-    int ChargeLimit(0);
-    if (MassPeak && MassPeak->Charge < Peaks->GetConsiderMult()) { 
-        ChargeLimit = 1;
+    int ChargeLimitLo(0), ChargeLimitHi(0);
+    if (MassPeak) {
+        if(MassPeak->Charge < Peaks->GetConsiderMult()) { 
+            ChargeLimitLo = 1;
+            ChargeLimitHi = 1;
+        }
+        else {
+            ChargeLimitLo = 1;
+            ChargeLimitHi = 2;
+        }
     }
 
     TLadderMap::iterator Iter;
-    SetLadderContainer().Begin(Iter, ChargeLimit, ChargeLimit);
+    SetLadderContainer().Begin(Iter, ChargeLimitLo, ChargeLimitHi);
     while(Iter != SetLadderContainer().SetLadderMap().end()) {
         if(Peaks->CompareTop(*((*(Iter->second))[iMod]))) return true;
-        SetLadderContainer().Next(Iter, ChargeLimit, ChargeLimit);
+        SetLadderContainer().Next(Iter, ChargeLimitLo, ChargeLimitHi);
     }
     return false;
 }

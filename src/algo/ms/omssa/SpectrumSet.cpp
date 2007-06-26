@@ -501,9 +501,27 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
             double precursor;
             if(istr >> precursor) {
                 MySpectrum->SetPrecursormz(MSSCALE2INT(precursor));
-                MySpectrum->SetCharge().push_back(1);   // required in asn.1 (but shouldn't be)
                 }
             else return 1;
+        }
+        else if(NStr::CompareNocase(Line, 0, 7, "CHARGE=") == 0) {
+            string LastLine(Line.substr(7, Line.size()-7));
+            // todo: see above for setcharge line!
+            NStr::ReplaceInPlace(LastLine, "and", " ");
+            NStr::ReplaceInPlace(LastLine, "-", " ");  // probably should throw here
+            NStr::ReplaceInPlace(LastLine, "+", " ");
+            NStr::ReplaceInPlace(LastLine, ",", " ");
+
+            CNcbiIstrstream istr(LastLine.c_str());
+            int charge;
+            MySpectrum->SetCharge().clear();
+            do {
+                charge = 0;
+                istr >> charge;
+                if(charge != 0) {
+                    MySpectrum->SetCharge().push_back(charge);
+                }
+            } while(charge != 0);
         }
         // check for an empty scan
         else if(NStr::CompareNocase(Line, 0, 8, "END IONS") == 0) {
@@ -514,6 +532,9 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
 
     if(!GotMass) 
         return 1;
+
+    if(MySpectrum->SetCharge().empty())
+        MySpectrum->SetCharge().push_back(1);   // required in asn.1 (shouldn't be!)
 
     while (NStr::CompareNocase(Line, 0, 8, "END IONS") != 0) {
         if(!DTA || DTA.eof()) 
