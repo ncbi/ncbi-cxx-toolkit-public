@@ -37,6 +37,7 @@
  * the Genbank data loader if the former fails.
  */
 
+#include <algo/blast/core/blast_export.h>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
@@ -47,7 +48,7 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 /// Configuration structure for the CBlastScopeSource
-struct SDataLoaderConfig {
+struct NCBI_XBLAST_EXPORT SDataLoaderConfig {
 
     /// Default protein BLAST database to use for the BLAST DB data loader
     static const char* kDefaultProteinBlastDb;
@@ -119,7 +120,7 @@ private:
 /// added with different priorities, so that the BLAST database data loader is
 /// used first, then the Genbank data loader.
 /// @note all data loaders are registered as non-default data loaders
-class CBlastScopeSource : public CObject 
+class NCBI_XBLAST_EXPORT CBlastScopeSource : public CObject 
 {
 public:
     /// Convenience typedef
