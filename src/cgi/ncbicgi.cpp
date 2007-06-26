@@ -1175,6 +1175,11 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                         }
                     }
                     pos += count;
+                    // NB: this is an ugly workaround for a buggy STL behavior
+                    //     that lets short reads (e.g. originating from reading
+                    //     pipes) get through to the user level, causing
+                    //     istream::read() to wrongly assert EOF...
+                    istr->clear();
                 }
             }
             if (content_type.empty()) {
