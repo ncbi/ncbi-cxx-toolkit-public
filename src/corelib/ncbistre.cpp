@@ -401,7 +401,7 @@ EEncodingForm ReadIntoUtf8(
         return ef_bom;
     }
 
-    const int buf_size = 256;
+    const int buf_size = 2048;//256;
     char tmp[buf_size+2];
     Uint2* us = reinterpret_cast<Uint2*>(tmp);
 
@@ -461,7 +461,8 @@ EEncodingForm ReadIntoUtf8(
             result->Append(tmp,eEncoding_Windows_1252);
             break;
         case eEncodingForm_Utf8:
-            result->Append(tmp,eEncoding_UTF8);
+//            result->Append(tmp,eEncoding_UTF8);   
+            result->append(tmp,n);
             break;
         default:
             if (what_if_no_bom == eNoBOM_GuessEncoding) {
@@ -488,7 +489,8 @@ EEncodingForm ReadIntoUtf8(
                     break;
                 }
             } else {
-                result->Append(tmp,eEncoding_UTF8);
+//                result->Append(tmp,eEncoding_UTF8);
+                result->append(tmp,n);
             }
             break;
         }

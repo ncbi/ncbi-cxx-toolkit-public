@@ -2508,7 +2508,7 @@ void CStringUTF8::x_Append(const char* src,
     if ( !needed ) {
         return;
     }
-    reserve(length()+needed+1);
+    reserve(max(capacity(),length()+needed+1));
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         x_AppendChar( CharToSymbol( *srcBuf, encoding ) );
     }
@@ -2527,7 +2527,7 @@ void CStringUTF8::x_Append(const wchar_t* src)
     if ( !needed ) {
         return;
     }
-    reserve(length()+needed+1);
+    reserve(max(capacity(),length()+needed+1));
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         x_AppendChar( *srcBuf );
     }
