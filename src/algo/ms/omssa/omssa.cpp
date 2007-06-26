@@ -445,8 +445,8 @@ int CSearch::CompareLadders(int iMod,
             ChargeLimitHi = 1;
         }
         else {
-            ChargeLimitLo = 1;
-            ChargeLimitHi = 2;
+            ChargeLimitLo = 0;
+            ChargeLimitHi = 0;
         }
     }
 
@@ -473,8 +473,8 @@ bool CSearch::CompareLaddersTop(int iMod,
             ChargeLimitHi = 1;
         }
         else {
-            ChargeLimitLo = 1;
-            ChargeLimitHi = 2;
+            ChargeLimitLo = 0;
+            ChargeLimitHi = 0;
         }
     }
 
