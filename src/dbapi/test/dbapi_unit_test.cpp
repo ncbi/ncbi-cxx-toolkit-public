@@ -4370,7 +4370,60 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
 {
     // Very first test ...
     // Try to catch a base class ...
-    BOOST_CHECK_THROW( ES_01_Internal(*m_Conn), CDB_Exception );
+    BOOST_CHECK_THROW(ES_01_Internal(*m_Conn), CDB_Exception);
+
+    // Second test ...
+    // Restore after invalid statement ...
+    try {
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+
+        auto_stmt->ExecuteUpdate("INSERT #bulk_insert_table(id) VALUES(17)");
+
+        try {
+            // Try to insert duplicate value ...
+            auto_stmt->ExecuteUpdate("INSERT #bulk_insert_table(id) VALUES(17)");
+        } catch (const CDB_Exception&) {
+            // ignore it ...
+        }
+
+        try {
+            // execute invalid statement ...
+            auto_stmt->ExecuteUpdate("ISERT #bulk_insert_table(id) VALUES(17)");
+        } catch (const CDB_Exception&) {
+            // ignore it ...
+        }
+
+        // Check status of the statement ...
+        if (false) {
+            auto_stmt->ExecuteUpdate("SELECT max(id) FROM #bulk_insert_table");
+        } else {
+            auto_stmt->SendSql("SELECT max(id) FROM #bulk_insert_table");
+            while(auto_stmt->HasMoreResults()) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                    switch( rs->GetResultType() ) {
+                    case eDB_RowResult:
+                        while(rs->Next()) {
+                            // retrieve row results
+                        }
+                        break;
+                    case eDB_ParamResult:
+                        _ASSERT(false);
+                        while(rs->Next()) {
+                            // Retrieve parameter row
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7853,6 +7906,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    // Test_UserErrorHandler depends on Test_Exception_Safety ...
     {
         boost::unit_test::test_case* except_safety_tc =
             BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety,
