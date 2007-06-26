@@ -1286,7 +1286,7 @@ void CSearch::Search(CRef <CMSRequest> MyRequestIn,
                         NonSpecificMass = 0;
                         const char *iSeqChar;
                         for (iSeqChar = PepStart[0]; iSeqChar <= SetEnzyme()->GetStop(); iSeqChar++)
-                           PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
+                           NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
                         // reset sequence done flag if at end of sequence
                         SequenceDone = false;
                     }
