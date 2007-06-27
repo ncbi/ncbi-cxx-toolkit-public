@@ -4375,7 +4375,7 @@ CFileReader::CFileReader(int handle)
 
 CFileReader::~CFileReader()
 {
-    if ( m_Handle == -1 ) {
+    if ( m_Handle != -1 ) {
         close(m_Handle);
     }
 }
