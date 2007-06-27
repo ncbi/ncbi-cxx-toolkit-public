@@ -161,11 +161,14 @@ sub ReadBranchInfo
     my $BranchRevisions = $SVN->ReadLog('--stop-on-copy',
         "-r$TargetBranchRev\:1", $SVN->GetRepository(), 'branches/' . $BranchPath);
 
+    my $MergeRegExp =
+        qr/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o;
+
     my @MergeDownRevisions;
 
     for my $Revision (@$BranchRevisions)
     {
-        if ($Revision->{LogMessage} =~ m/trunk revision (\d+)/o)
+        if ($Revision->{LogMessage} =~ $MergeRegExp && $3 eq $BranchPath)
         {
             push @MergeDownRevisions, [$Revision, $1]
         }
@@ -278,7 +281,7 @@ sub ReadBranchInfo
 
     for my $Revision (@$UpstreamRevisions)
     {
-        if ($Revision->{LogMessage} =~ m/revision (\d+)/o)
+        if ($Revision->{LogMessage} =~ $MergeRegExp && $2 eq $BranchPath)
         {
             push @MergeUpRevisions, [$Revision, $1]
         }
@@ -617,8 +620,10 @@ sub DoMerge
 
     print "Merging with r$TargetRev...\n";
 
+    my $UpstreamPath = $BranchInfo->{UpstreamPath};
+
     my $BaseURL = $SVN->{Repos} . '/' . ($Direction eq 'up' ?
-        'branches/' . $BranchPath : $BranchInfo->{UpstreamPath}) . '/';
+        'branches/' . $BranchPath : $UpstreamPath) . '/';
 
     for my $LocalDir (@BranchDirs)
     {
@@ -644,9 +649,10 @@ sub DoMerge
             }
         }, @BranchDirs);
 
-    my $PropValue = 'Please execute "' . $Self->{MyName} .
-            ' commit_merge" to commit this merge of branch ' .
-            "'$BranchPath' with trunk revision $TargetRev.";
+    my $PropValue = qq(Please run "$Self->{MyName} commit_merge" to merge ) .
+            "changes up to r$TargetRev from '" . ($Direction ne 'up' ?
+            $UpstreamPath . q(' into ') . $BranchPath :
+            $BranchPath . q(' into ') . $UpstreamPath) . q('.);
 
     system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue, @RootDirs);
 
@@ -668,7 +674,7 @@ sub MergeUp
     return $Self->DoMerge('up', @_)
 }
 
-sub MergeDownCommit
+sub CommitMerge
 {
     my ($Self, $BranchPath) = @_;
 
@@ -677,16 +683,29 @@ sub MergeDownCommit
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath, undef, undef);
 
-    my $SwitchMap = $Self->ReadBranchMap($SVN, $BranchMapRepoPath);
+    my @BranchDirs = @{$BranchInfo->{BranchDirs}};
 
-    my @BranchDirs = map {$_->[0]} @{$SwitchMap->GetSwitchPlan()};
+    my $Message;
 
-    my ($TrunkRev) = $SVN->ReadSubversionStream('propget', 'ncbi:raw',
-        $BranchDirs[0]) =~ m/trunk revision (\d+)/o;
+    for my $Dir (@BranchDirs)
+    {
+        my $PropValue = $SVN->ReadSubversionStream('propget', 'ncbi:raw', $Dir);
 
-    die "$Self->{MyName}: unable to detect trunk revision.\n" unless $TrunkRev;
+        unless ($Message)
+        {
+            $Message = $PropValue
+        }
+        elsif ($Message ne $PropValue)
+        {
+            die "$Self->{MyName}: wrong cwd for the commit_merge operation.\n"
+        }
+    }
+
+    my ($Changes) = $Message =~ m/to merge (changes .*)$/o;
+
+    die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
 
     my @SubDirs;
 
@@ -700,8 +719,7 @@ sub MergeDownCommit
 
     system($SVN->GetSvnPath(), 'propdel', 'ncbi:raw', @SubDirs) if @SubDirs;
 
-    system($SVN->GetSvnPath(), 'commit', '-m', "Merged branch '$BranchPath' " .
-        "with trunk revision $TrunkRev.", @BranchDirs)
+    system($SVN->GetSvnPath(), 'commit', '-m', "Merged $Changes", @BranchDirs)
 }
 
 sub Svn

@@ -67,16 +67,13 @@ Commands:
                         be checked out to the current working directory and
                         there must be no local changes in it.
 
-    merge_down_commit   Commits the results of merge to the branch. A special
-                        format of the commit log message is used.
-
     merge_up            Merges the latest changes from the branch back to the
                         trunk. The trunk stream must be checked out to the
                         current working directory and there must be no local
                         changes in it.
 
-    merge_up_commit     Commits the results of merge to the trunk. A special
-                        format of the commit log message is used.
+    commit_merge        Commits the results of merge_down or merge_up.
+                        A special format of the commit log message is used.
 
     svn                 Executes an arbitrary Subversion command with branch
                         directory names as its arguments.
@@ -128,17 +125,13 @@ elsif ($Command eq 'merge_down')
 {
     $Method = 'MergeDown'
 }
-elsif ($Command eq 'merge_down_commit')
-{
-    $Method = 'MergeDownCommit'
-}
 elsif ($Command eq 'merge_up')
 {
     $Method = 'MergeUp'
 }
-elsif ($Command eq 'merge_up_commit')
+elsif ($Command eq 'commit_merge')
 {
-    $Method = 'MergeUpCommit'
+    $Method = 'CommitMerge'
 }
 elsif ($Command eq 'svn')
 {
