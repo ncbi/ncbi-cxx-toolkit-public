@@ -856,14 +856,58 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord span [4];
         CHitFilter<THit>::s_GetSpan(*phitrefs, span);
         THit::TCoord qmin (span[0]), qmax (span[1]), smin (span[2]), smax (span[3]);
-
-        // select terminal genomic extents based on uncovered end sizes
-        const THit::TCoord extent_left (x_GetGenomicExtent(qmin));
-        const THit::TCoord qspace (
-            (m_polya_start < kMax_UInt? m_polya_start:mrna_size) - qmax + 1);
-        const THit::TCoord extent_right (x_GetGenomicExtent(qspace));
         
         const bool ctg_strand (phitrefs->front()->GetSubjStrand());
+
+        // m1: estimate terminal genomic extents based on uncovered end sizes
+        const THit::TCoord extent_left_m1 (x_GetGenomicExtent(qmin));
+        const THit::TCoord rspace   ((m_polya_start < kMax_UInt?
+                                      m_polya_start: mrna_size) - qmax + 1);
+        const THit::TCoord extent_right_m1 (x_GetGenomicExtent(rspace));
+        
+        // m2: estimate genomic extents using compartment hits
+        THit::TCoord fixed_left (numeric_limits<THit::TCoord>::max() / 2), 
+                     fixed_right(fixed_left);
+
+        const bool fix_left  (qmin   <= kNonCoveredEndThreshold / 3);
+        const bool fix_right (rspace <= kNonCoveredEndThreshold / 3);
+        if(fix_left || fix_right) {
+
+            if(phitrefs->size() > 1) {
+
+                // select based on the max intron length 
+                THit::TCoord max_intron (0);
+                THit::TCoord prev_start (phitrefs->front()->GetSubjStart());
+
+                ITERATE(THitRefs, ii, (*phitrefs)) {
+
+                    const THit::TCoord cur_start ((*ii)->GetSubjStart());
+                    const THit::TCoord intron    (cur_start >= prev_start?
+                                                  cur_start - prev_start:
+                                                  prev_start - cur_start);
+                    if(intron > max_intron) {
+                        max_intron = intron;
+                    }
+                    prev_start = cur_start;
+                }
+
+                const double factor (2.5);
+                if(fix_left)  { fixed_left  = THit::TCoord(max_intron * factor); }
+                if(fix_right) { fixed_right = THit::TCoord(max_intron * factor); }
+            }
+            else {
+                // stay conservative for single-hit compartments
+                const THit::TCoord single_hit_extent (300);
+                if(fix_left)  { fixed_left  = single_hit_extent; }
+                if(fix_right) { fixed_right = single_hit_extent; }
+            }
+        }
+
+        const THit::TCoord extent_left_m2  (100 + max(fixed_left,  qmin));
+        const THit::TCoord extent_right_m2 (100 + max(fixed_right, rspace));
+
+        const THit::TCoord extent_left (min(extent_left_m1, extent_left_m2));
+        const THit::TCoord extent_right (min(extent_right_m1, extent_right_m2));
 
         if(ctg_strand) {
             smin = max(0, int(smin - extent_left));
@@ -874,10 +918,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             smax += extent_left;
         }
 
-        // regardless of hits, all cDNA is aligned (without the tail, if any)
+        // regardless of hits, entire cDNA is aligned (without the tail, if any)
         qmin = 0;
         qmax = m_polya_start < kMax_UInt? m_polya_start - 1: mrna_size - 1;
     
+        // make sure to obey the genomic range specified
         if(smin < range_left) {
             smin = range_left;
         }
@@ -889,8 +934,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
                        smin, smax, true);
     
-        const THit::TCoord ctg_end = smin + m_genomic.size();
-        if(ctg_end - 1 < smax) { // perhabs adjust smax
+        const THit::TCoord ctg_end (smin + m_genomic.size());
+        if(ctg_end - 1 < smax) { // adjust smax if beyond the end
             smax = ctg_end - 1;
         }
 
@@ -924,7 +969,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         x_SetPattern(phitrefs);
         x_Run(&m_mrna.front(), &m_genomic.front());
 
-        const size_t seg_dim = m_segments.size();
+        const size_t seg_dim (m_segments.size());
         if(seg_dim == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
@@ -967,26 +1012,26 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         // look for PolyA in trailing segments:
         // if a segment is mostly 'A's then we add it to PolyA
 
-        int j = seg_dim - 1, j0 = j;
+        int j (seg_dim - 1), j0 (j);
         for(; j >= 0; --j) {
         
-            const TSegment& s = m_segments[j];
+            const TSegment& s (m_segments[j]);
 
-            const char* p0 = &m_mrna[qmin] + s.m_box[0];
-            const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
+            const char* p0 (&m_mrna[qmin] + s.m_box[0]);
+            const char* p1 (&m_mrna[qmin] + s.m_box[1] + 1);
             const size_t len_chars (p1 - p0);
-            size_t count = 0;
-            for(const char* pc = p0; pc != p1; ++pc) {
+            size_t count (0);
+            for(const char* pc (p0); pc != p1; ++pc) {
                 if(*pc == 'A') ++count;
             }
         
-            double min_a_content = 0.799;
+            double min_a_content (0.799); // min 'A' content in a polyA
             // also check splices
             if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
 
-                bool consensus = TSegment
-                   ::s_IsConsensusSplice(m_segments[j-1].GetDonor(), s.GetAcceptor());
-                if(!consensus || len_chars <= 6 ) {
+                bool consensus (TSegment::s_IsConsensusSplice(
+                                m_segments[j-1].GetDonor(), s.GetAcceptor()));
+                if(!consensus || len_chars <= 6) {
                     min_a_content = 0.599;
                 }
                 if(len_chars < 3) {
@@ -995,12 +1040,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             }
 
             if(!s.m_exon) {
-                min_a_content = s.m_len > 4? 0.599: -1;
+                min_a_content = (s.m_len <= 4)? 0.49: 0.599;
             }
         
-
             if(double(count)/len_chars < min_a_content) {
-                if(s.m_exon) break;
+                if(s.m_exon && s.m_len > 4) break;
             }
             else {
                 j0 = j - 1;
@@ -1012,13 +1056,14 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         // test if we have at least one exon before poly(a)
-        bool some_exons = false;
+        bool some_exons (false);
         for(int i = 0; i <= j0; ++i ) {
             if(m_segments[i].m_exon) {
                 some_exons = true;
                 break;
             }
         }
+    
         if(!some_exons) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment,g_msg_NoExonsAboveIdtyLimit);
         }
@@ -1026,7 +1071,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         m_segments.resize(j0 + 1);
 
         // scratch it if the total coverage is too low
-        double mcount = 0;
+        double mcount (0);
         ITERATE(TSegments, jj, m_segments) {
             if(jj->m_exon) {
                 mcount += jj->m_idty * jj->m_len;
