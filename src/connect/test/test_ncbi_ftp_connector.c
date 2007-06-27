@@ -72,13 +72,13 @@ int main(int argc, char* argv[])
     data_file = fopen("test_ncbi_ftp_connector.out", "wb");
     assert(data_file);
 
-    timeout.sec  = 3;
+    timeout.sec  = 5;
     timeout.usec = 0;
 
     if (env) {
-        if (    strcasecmp(env, "1")    == 0  ||
-                strcasecmp(env, "TRUE") == 0  ||
-                strcasecmp(env, "SOME") == 0)
+        if (     strcasecmp(env, "1")    == 0  ||
+                 strcasecmp(env, "TRUE") == 0  ||
+                 strcasecmp(env, "SOME") == 0)
             flags |= eFCDC_LogControl;
         else if (strcasecmp(env, "DATA") == 0)
             flags |= eFCDC_LogData;
@@ -183,10 +183,10 @@ int main(int argc, char* argv[])
     if (!aborting  ||  (rand() & 1) == 0) {
         if (CONN_Write(conn, "NLST blah*", 10, &n, eIO_WritePlain)
             != eIO_Success) {
-            CORE_LOG(eLOG_Fatal, "Cannot write gobbled NLST command");
+            CORE_LOG(eLOG_Fatal, "Cannot write garbled NLST command");
         }
 
-        CORE_LOG(eLOG_Note, "Gobbled NLST command output (should be empty):");
+        CORE_LOG(eLOG_Note, "Garbled NLST command output (should be empty):");
         first = 1/*true*/;
         do {
             status = CONN_Read(conn, buf, sizeof(buf), &n, eIO_ReadPlain);
