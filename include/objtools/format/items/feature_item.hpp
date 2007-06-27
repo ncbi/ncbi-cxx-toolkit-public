@@ -152,6 +152,10 @@ private:
     void x_GatherInfo(CBioseqContext& ctx);
     //void x_FixLocation(CBioseqContext& ctx);
 
+    void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
+        CConstRef<CSeq_feat>& );
+    void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> );
+
     // qualifier collection
     void x_AddQuals(CBioseqContext& ctx);
     void x_AddQuals(const CCdregion& cds)  const;

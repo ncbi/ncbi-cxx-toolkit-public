@@ -817,6 +817,112 @@ bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
 }
 
 
+//  ----------------------------------------------------------------------------
+static CConstRef< CSeq_feat > s_GetGeneFeatureByLocus_tag(
+    CBioseqContext& ctx,
+    const string& given_tag )
+//
+//  Retrieve gene in given context carrying the given locus tag. Returns invalid
+//  feature if not found.
+//  ----------------------------------------------------------------------------
+{
+    CConstRef< CSeq_feat > GeneFeature;
+
+    try {
+        SAnnotSelector sel;
+        sel.SetFeatType( CSeqFeatData::e_Gene )
+            .SetFeatSubtype( CSeqFeatData::eSubtype_gene );
+        for ( CFeat_CI it( ctx.GetTopLevelEntry(), sel ); it; ++it ) {
+            const CSeq_feat& feat = it->GetMappedFeature();
+            const CSeq_loc& location = feat.GetLocation();
+            if ( location.IsInt() ) {
+                const CSeq_interval& interval = location.GetInt();
+                TSeqPos from = interval.GetFrom();
+             }
+            if ( ! feat.GetData().IsGene() ) {
+                continue;
+            }
+            if ( ! feat.GetData().GetGene().IsSetLocus_tag() ) {
+                continue;
+            }
+            if ( feat.GetData().GetGene().GetLocus_tag() == given_tag ) {
+                GeneFeature.Reset( &feat );
+                break;
+            }
+        }
+    }
+    catch( CException& ) {
+        _TRACE( "s_GetGeneFeatureByLocus_tag(): Error: Feature iteration failed" );
+    }
+    return GeneFeature;
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_GetAssociatedGeneInfo(
+    CBioseqContext& ctx,
+    const CGene_ref*& g_ref,                    //  out: gene ref
+    CConstRef<CSeq_feat>& s_feat )              //  out: gene seq feat
+//
+//  Find the feature's related gene information. The association is established
+//  through dbxref if it exists, and through bet overlap otherwise.
+//
+//  Note: Any of the two outs may be invalid if the corresponding information
+//  could not be found.
+//  ----------------------------------------------------------------------------
+{
+    g_ref = m_Feat->GetGeneXref();
+    if (g_ref != NULL  &&  g_ref->CanGetDb() && g_ref->CanGetLocus_tag() ) {
+
+        s_feat = s_GetGeneFeatureByLocus_tag( ctx, g_ref->GetLocus_tag() );
+    }
+
+    if ( s_feat == 0 ) {
+        if ( ctx.IsProt()  ||  !IsMapped()) {
+
+            s_feat = GetBestOverlappingFeat(
+                *m_Feat,
+                CSeqFeatData::e_Gene,
+                sequence::eOverlap_Contained,
+                ctx.GetScope(),
+                fBestFeat_NoExpensive);
+        } 
+        else {
+            s_feat = GetOverlappingGene(GetLoc(), ctx.GetScope());
+        }
+
+        if ( s_feat ) {
+            if ( g_ref == 0 ) {
+                g_ref = &s_feat->GetData().GetGene();
+            }
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualOldLocusTag(
+    const CGene_ref* gene_ref,
+    CConstRef<CSeq_feat> gene_feat )
+//
+//  For non-gene features, add /old_locus_tag, if one exists somewhere.
+//  ----------------------------------------------------------------------------
+{
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
+
+    if ( gene_feat && subtype != CSeqFeatData::eSubtype_repeat_region ) {
+        const CSeq_feat::TQual& quals = gene_feat->GetQual();
+        for ( size_t iPos = 0; iPos < quals.size(); ++iPos ) {
+            CRef< CGb_qual > qual = quals[ iPos ];
+            if ( ! qual->CanGetQual() || ! qual->CanGetVal() ) {
+                continue;
+            }
+            if ( qual->GetQual() == "old_locus_tag" ) {
+                x_AddQual(eFQ_old_locus_tag, 
+                    new CFlatStringQVal( qual->GetVal() ) );            
+            }
+        }
+    }
+}
+
 void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
 {
     if ( ctx.Config().IsFormatFTable() ) {
@@ -927,14 +1033,13 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 } else if ( overlap_gene->IsSetDbxref() ) {
                     x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(overlap_gene->GetDbxref()));
                 }
-                string old_locus_tag;
-                if ( subtype != CSeqFeatData::eSubtype_repeat_region &&
-                    s_GetGbValue( overlap_gene, "old_locus_tag", old_locus_tag ) ) 
-                {
-                    x_AddQual(eFQ_old_locus_tag, new CFlatStringQVal( old_locus_tag ) );            
-                }
             }
         }
+        const CGene_ref* gene_ref = 0;
+        CConstRef<CSeq_feat> gene_feat;
+        x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
+        x_AddQualOldLocusTag( gene_ref, gene_feat );
+
         if (grp != NULL) {
             if (grp->CanGetPseudo()  &&  grp->GetPseudo() ) {
                 pseudo = true;
