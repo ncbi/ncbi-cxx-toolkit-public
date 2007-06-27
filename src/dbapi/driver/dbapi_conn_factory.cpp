@@ -41,11 +41,12 @@ BEGIN_NCBI_SCOPE
 CDBConnectionFactory::CDBConnectionFactory(IDBServiceMapper* svc_mapper,
                                            const IRegistry* registry,
                                            EDefaultMapping def_mapping) :
-m_MaxNumOfConnAttempts( 1 ),
-m_MaxNumOfServerAlternatives( 32 ),
-m_MaxNumOfDispatches( 0 ),
-m_ConnectionTimeout( 0 ),
-m_LoginTimeout( 0 )
+m_MaxNumOfConnAttempts(1),
+m_MaxNumOfValidationAttempts(1),
+m_MaxNumOfServerAlternatives(32),
+m_MaxNumOfDispatches(0),
+m_ConnectionTimeout(0),
+m_LoginTimeout(0)
 {
     CHECK_DRIVER_ERROR(!svc_mapper && def_mapping != eUseDefaultMapper,
                        "Database service name to server name mapper was not "
@@ -83,6 +84,8 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
     if (registry) {
         m_MaxNumOfConnAttempts =
             registry->GetInt(section_name, "MAX_CONN_ATTEMPTS", 1);
+        m_MaxNumOfValidationAttempts =
+            registry->GetInt(section_name, "MAX_VALIDATION_ATTEMPTS", 1);
         m_MaxNumOfServerAlternatives =
             registry->GetInt(section_name, "MAX_SERVER_ALTERNATIVES", 32);
         m_MaxNumOfDispatches =
@@ -114,6 +117,14 @@ CDBConnectionFactory::SetMaxNumOfConnAttempts(unsigned int max_num)
     CFastMutexGuard mg(m_Mtx);
 
     m_MaxNumOfConnAttempts = max_num;
+}
+
+void
+CDBConnectionFactory::SetMaxNumOfValidationAttempts(unsigned int max_num)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    m_MaxNumOfValidationAttempts = max_num;
 }
 
 void
@@ -177,6 +188,20 @@ CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
     return timeout;
 }
 
+void
+CDBConnectionFactory::IncNumOfValidationFailures(const string& server_name,
+                                                 const TSvrRef& dsp_srv)
+{
+    ++m_ValidationFailureMap[server_name];
+
+    if (GetMaxNumOfValidationAttempts() &&
+        GetNumOfValidationFailures(server_name) >=
+            GetMaxNumOfValidationAttempts()) {
+        // It is time to finish with this server ...
+        m_DBServiceMapper->Exclude(server_name, dsp_srv);
+    }
+}
+
 CDB_Connection*
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
@@ -206,13 +231,16 @@ CDBConnectionFactory::MakeDBConnection(
 
         // We probably need to redispatch it ...
         if (GetMaxNumOfDispatches() &&
-            GetNumOfDispatches(conn_attr.srv_name) >= GetMaxNumOfDispatches() ) {
+            GetNumOfDispatches(conn_attr.srv_name) >= GetMaxNumOfDispatches()) {
 
             // We definitely need to redispatch it ...
             m_DispatchNumMap[conn_attr.srv_name] = 0;
             t_con = DispatchServerName(ctx, conn_attr, validator);
         } else {
             // We do not need to redispatch it ...
+
+            IConnValidator::EConnStatus conn_status =
+                IConnValidator::eInvalidConn;
 
             // Try to connect.
             try {
@@ -222,14 +250,26 @@ CDBConnectionFactory::MakeDBConnection(
 
                 // MakeValidConnection may return NULL here because a newly
                 // created connection may not pass validation.
-                t_con = MakeValidConnection(ctx, cur_conn_attr, validator);
+                t_con = MakeValidConnection(ctx,
+                                            cur_conn_attr,
+                                            validator,
+                                            conn_status);
 
-            } catch(const CDB_Exception&) {
-                // Ignore exceptions. We still can redispatch ...
+            } catch(const CDB_Exception& ex) {
+                if (validator) {
+                    conn_status = validator->ValidateException(ex);
+                }
             }
 
-            if ( !t_con ) {
+            if (!t_con) {
                 // We couldn't connect ...
+
+                // Server might be temporarily unavailable ...
+                // Check conn_status ...
+                if (conn_status == IConnValidator::eTempInvalidConn) {
+                    IncNumOfValidationFailures(conn_attr.srv_name, dsp_srv);
+                }
+
                 // Redispach ...
                 t_con = DispatchServerName(ctx, conn_attr, validator);
             } else {
@@ -267,8 +307,7 @@ CDBConnectionFactory::DispatchServerName(
         // This is possible when somebody uses a named connection pool.
         // In this case we even won't try to map it.
         if (!conn_attr.srv_name.empty()) {
-            dsp_srv =
-                m_DBServiceMapper->GetServer(conn_attr.srv_name);
+            dsp_srv = m_DBServiceMapper->GetServer(conn_attr.srv_name);
 
             if (dsp_srv.Empty()) {
                 return NULL;
@@ -282,20 +321,36 @@ CDBConnectionFactory::DispatchServerName(
 
         // Try to connect up to a given number of attempts ...
         unsigned int attepmpts = GetMaxNumOfConnAttempts();
-        for ( ; !t_con && attepmpts > 0; --attepmpts ) {
+        IConnValidator::EConnStatus conn_status =
+            IConnValidator::eInvalidConn;
+
+        // We don't check value of conn_status inside of a loop below by design.
+        for (; !t_con && attepmpts > 0; --attepmpts) {
             try {
-                t_con = MakeValidConnection(ctx, curr_conn_attr, validator);
-            } catch(const CDB_Exception&) {
-                // Do nothing,
+                t_con = MakeValidConnection(ctx,
+                                            curr_conn_attr,
+                                            validator,
+                                            conn_status);
+            } catch(const CDB_Exception& ex) {
+                if (validator) {
+                    conn_status = validator->ValidateException(ex);
+                }
             }
         }
 
         if (!t_con) {
             // Restore previous server name.
             curr_conn_attr.srv_name = conn_attr.srv_name;
-            m_DBServiceMapper->Exclude(conn_attr.srv_name, dsp_srv);
+
+            // Server might be temporarily unavailable ...
+            // Check conn_status ...
+            if (conn_status == IConnValidator::eTempInvalidConn) {
+                IncNumOfValidationFailures(conn_attr.srv_name, dsp_srv);
+            } else {
+                // conn_status == IConnValidator::eInvalidConn
+                m_DBServiceMapper->Exclude(conn_attr.srv_name, dsp_srv);
+            }
         } else {
-            ++m_DispatchNumMap[conn_attr.srv_name];
             SetDispatchedServer(conn_attr.srv_name, dsp_srv);
         }
     }
@@ -307,13 +362,20 @@ CDB_Connection*
 CDBConnectionFactory::MakeValidConnection(
     I_DriverContext& ctx,
     const I_DriverContext::SConnAttr& conn_attr,
-    IConnValidator* validator) const
+    IConnValidator* validator,
+    IConnValidator::EConnStatus& conn_status) const
 {
     auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, conn_attr));
 
     if (conn.get() && validator) {
         try {
-            if (validator->Validate(*conn) == IConnValidator::eInvalidConn) {
+            conn_status = validator->Validate(*conn);
+            if (conn_status != IConnValidator::eValidConn) {
+                return NULL;
+            }
+        } catch (const CDB_Exception& ex) {
+            conn_status = validator->ValidateException(ex);
+            if (conn_status != IConnValidator::eValidConn) {
                 return NULL;
             }
         } catch (const CException& ex) {
@@ -351,6 +413,12 @@ CDBConnectionFactory::GetNumOfDispatches(const string& service_name)
     return m_DispatchNumMap[service_name];
 }
 
+unsigned int
+CDBConnectionFactory::GetNumOfValidationFailures(const string& service_name)
+{
+    return m_ValidationFailureMap[service_name];
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 CDBGiveUpFactory::CDBGiveUpFactory(IDBServiceMapper* svc_mapper,
                                    const IRegistry* registry,
@@ -358,7 +426,7 @@ CDBGiveUpFactory::CDBGiveUpFactory(IDBServiceMapper* svc_mapper,
 : CDBConnectionFactory(svc_mapper, registry, def_mapping)
 {
     SetMaxNumOfConnAttempts(1); // This value is supposed to be default.
-    SetMaxNumOfServerAlternatives(1);
+    SetMaxNumOfServerAlternatives(1); // Do not try other servers.
 }
 
 CDBGiveUpFactory::~CDBGiveUpFactory(void)
@@ -371,7 +439,8 @@ CDBRedispatchFactory::CDBRedispatchFactory(IDBServiceMapper* svc_mapper,
                                            EDefaultMapping def_mapping)
 : CDBConnectionFactory(svc_mapper, registry, def_mapping)
 {
-    SetMaxNumOfDispatches( 1 );
+    SetMaxNumOfDispatches(1);
+    SetMaxNumOfValidationAttempts(0); // Unlimited ...
 }
 
 CDBRedispatchFactory::~CDBRedispatchFactory(void)

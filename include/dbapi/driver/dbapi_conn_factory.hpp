@@ -72,6 +72,9 @@ public:
     unsigned int GetMaxNumOfConnAttempts(void) const;
     void SetMaxNumOfConnAttempts(unsigned int max_num);
 
+    unsigned int GetMaxNumOfValidationAttempts(void) const;
+    void SetMaxNumOfValidationAttempts(unsigned int max_num);
+
     unsigned int GetMaxNumOfServerAlternatives(void) const;
     void SetMaxNumOfServerAlternatives(unsigned int max_num);
 
@@ -97,7 +100,12 @@ protected:
                              const TSvrRef& server);
 
     //
+    void IncNumOfValidationFailures(const string& server_name,
+                                    const TSvrRef& dsp_srv);
+
+    //
     unsigned int GetNumOfDispatches(const string& service_name);
+    unsigned int GetNumOfValidationFailures(const string& service_name);
 
 private:
     // Methods
@@ -109,24 +117,28 @@ private:
     CDB_Connection* MakeValidConnection(
         I_DriverContext& ctx,
         const I_DriverContext::SConnAttr& conn_attr,
-        IConnValidator* validator) const;
+        IConnValidator* validator,
+        IConnValidator::EConnStatus& conn_status) const;
 
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
 
     // Data types
     typedef map<string, TSvrRef>      TDispatchedSet;
-    typedef map<string, unsigned int> TDispatchNumMap;
+    typedef map<string, unsigned int> TServer2NumMap;
 
     // Data
     TDispatchedSet  m_DispatchedSet;
-    TDispatchNumMap m_DispatchNumMap;
+    TServer2NumMap  m_DispatchNumMap;
+    TServer2NumMap  m_ValidationFailureMap;
 
     mutable CFastMutex m_Mtx;
 
     auto_ptr<IDBServiceMapper> m_DBServiceMapper;
     // 0 means *none* (even do not try to connect)
     unsigned int m_MaxNumOfConnAttempts;
+    // 0 means *unlimited*
+    unsigned int m_MaxNumOfValidationAttempts;
     // 0 means *none* (even do not try to connect)
     // 1 means *try only one server* (give up strategy)
     unsigned int m_MaxNumOfServerAlternatives;
@@ -157,6 +169,8 @@ public:
 
 /// Helper class
 /// This policy will redispatch every time after a successful dispatch.
+/// Servers will be kept in a list of available servers till they are
+/// reported as IConnValidator::eInvalidConn by a validator.
 class NCBI_DBAPIDRIVER_EXPORT CDBRedispatchFactory : public CDBConnectionFactory
 {
 public:
@@ -243,6 +257,13 @@ unsigned int
 CDBConnectionFactory::GetMaxNumOfConnAttempts(void) const
 {
     return m_MaxNumOfConnAttempts;
+}
+
+inline
+unsigned int
+CDBConnectionFactory::GetMaxNumOfValidationAttempts(void) const
+{
+    return m_MaxNumOfValidationAttempts;
 }
 
 inline

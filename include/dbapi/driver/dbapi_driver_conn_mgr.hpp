@@ -59,13 +59,15 @@ template <typename T> class CSafeStaticPtr;
 class NCBI_DBAPIDRIVER_EXPORT IConnValidator : public CObject
 {
 public:
-    enum EConnStatus {eValidConn, eInvalidConn};
+    enum EConnStatus {eValidConn, eInvalidConn, eTempInvalidConn};
 
     virtual ~IConnValidator(void);
 
     // All CException-derived exceptions will be caught by CDBConnectionFactory.
     // Please use other tools to report validation information to a user.
     virtual EConnStatus Validate(CDB_Connection& conn) = 0;
+    // This method shouldn't rethrow the exception.
+    virtual EConnStatus ValidateException(const CDB_Exception& ex);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

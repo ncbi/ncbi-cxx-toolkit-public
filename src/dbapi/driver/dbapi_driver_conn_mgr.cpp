@@ -84,6 +84,14 @@ IConnValidator::~IConnValidator(void)
 {
 }
 
+
+IConnValidator::EConnStatus
+IConnValidator::ValidateException(const CDB_Exception&)
+{
+    return eInvalidConn;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 IDBConnectionFactory::IDBConnectionFactory(void)
 {
