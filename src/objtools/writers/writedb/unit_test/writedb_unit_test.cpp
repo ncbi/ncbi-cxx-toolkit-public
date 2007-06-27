@@ -125,8 +125,8 @@ s_DupIdsBioseq(CWriteDB      & w,
                CSeqDBExpert  & s,
                const TIdList & ids)
 {
-    for(unsigned i = 0; ids[i]; i++) {
-        CRef<CSeq_id> seqid = ids[i];
+    ITERATE(TIdList, iter, ids) {
+        CRef<CSeq_id> seqid = *iter;
         
         int oid = -1;
         bool found = s.SeqidToOid(*seqid, oid);
@@ -162,8 +162,8 @@ s_DupIdsRaw(CWriteDB      & w,
 {
     bool is_nucl = seqdb.GetSequenceType() == CSeqDB::eNucleotide;
     
-    for(unsigned i = 0; ids[i]; i++) {
-        CRef<CSeq_id> seqid = ids[i];
+    ITERATE(TIdList, iter, ids) {
+        CRef<CSeq_id> seqid = *iter;
         
         int oid = -1;
         bool found = seqdb.SeqidToOid(*seqid, oid);
