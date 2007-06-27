@@ -40,6 +40,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
+#include <corelib/reader_writer.hpp>
 #include <memory>
 
 #include <sys/types.h>
@@ -2906,6 +2907,39 @@ void FindFiles(TContainer&    out,
 void NCBI_XNCBI_EXPORT FindFiles(const string& pattern,
                                  list<string>& result,
                                  TFindFiles flags);
+
+
+/// File based IReader with low level IO for speed
+class CFileReader : public IReader
+{
+public:
+    /// Construct CFileReader for reading from the file with name 'filename'.
+    /// Throw CFileException if file doesn't exist.
+    CFileReader(const string& filename);
+
+    /// Destruct the CFileReader closing system handle if necessary
+    ~CFileReader();
+
+    /// Return a new IReader object corresponding to the given
+    /// filename, taking "-" (but not "./-") to mean standard input.
+    static IReader* New(const string& filename);
+
+    /// Virtual methods from IReader
+    virtual ERW_Result Read(void* buf, size_t  count, size_t* bytes_read = 0);
+    virtual ERW_Result PendingCount(size_t* count);
+
+protected:
+    /// Construct CFileReader for reading from system handle 'handle'
+    CFileReader(int handle);
+
+private:
+    /// System IO handle
+    int m_Handle;
+
+private: // prevent copying
+    CFileReader(const CFileReader&);
+    void operator=(const CFileReader&);
+};
 
 
 END_NCBI_SCOPE

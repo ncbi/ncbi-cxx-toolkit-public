@@ -4357,4 +4357,61 @@ void FindFiles(const string& pattern,
 }
 
 
+CFileReader::CFileReader(const string& filename)
+    : m_Handle(open(filename.c_str(), O_RDONLY))
+{
+    if ( m_Handle == -1 ) {
+        NCBI_THROW(CFileException, eNotExists,
+                   "Unable to construct a reader on " + filename);
+    }
+}
+
+
+CFileReader::CFileReader(int handle)
+    : m_Handle(handle)
+{
+}
+
+
+CFileReader::~CFileReader()
+{
+    if ( m_Handle == -1 ) {
+        close(m_Handle);
+    }
+}
+
+
+IReader* CFileReader::New(const string& filename)
+{
+    if ( filename == "-" ) {
+        return new CFileReader(1);
+    }
+    else {
+        return new CFileReader(filename);
+    }
+}
+
+
+ERW_Result CFileReader::Read(void*   buf,
+                             size_t  count,
+                             size_t* bytes_read)
+{
+    ssize_t r = read(m_Handle, buf, count);
+    if ( r == -1 ) {
+        bytes_read = 0;
+        return eRW_Error;
+    }
+    if ( bytes_read ) {
+        *bytes_read = r;
+    }
+    return r? eRW_Success: eRW_Eof;
+}
+
+
+ERW_Result CFileReader::PendingCount(size_t* count)
+{
+    return eRW_NotImplemented;
+}
+
+
 END_NCBI_SCOPE
