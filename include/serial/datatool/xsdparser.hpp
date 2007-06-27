@@ -63,6 +63,8 @@ protected:
     void ParseHeader(void);
     void ParseInclude(void);
     void ParseImport(void);
+    void ParseAnnotation(void);
+    void ParseDocumentation(void);
 
     TToken GetRawAttributeSet(void);
     bool GetAttribute(const string& att);
@@ -76,7 +78,6 @@ protected:
     string ParseGroup(DTDElement* owner, int emb);
     void ParseGroupRef(DTDElement& node);
     void ParseContent(DTDElement& node, bool extended=false);
-    void ParseDocumentation(void);
     void ParseContainer(DTDElement& node);
 
     void ParseComplexType(DTDElement& node);

@@ -92,6 +92,10 @@ void XSDParser::BuildDocumentTree(CDataTypeModule& module)
         case K_ATTRIBUTEGROUP:
             CreateTypeDefinition(DTDEntity::eAttGroup);
             break;
+        case K_ANNOTATION:
+            m_Comments = &(module.Comments());
+            ParseAnnotation();
+            break;
         default:
             ParseError("Invalid keyword", "keyword");
             return;
@@ -319,6 +323,36 @@ void XSDParser::ParseImport(void)
     if (tok == K_CLOSING) {
         SkipContent();
     }
+}
+
+void XSDParser::ParseAnnotation(void)
+{
+    if (GetRawAttributeSet() == K_CLOSING) {
+        if (GetNextToken() != K_DOCUMENTATION) {
+            ParseError("documentation");
+        }
+        ParseDocumentation();
+        m_ExpectLastComment = false;
+    }
+    if (GetNextToken() != K_ENDOFTAG) {
+        ParseError("endoftag");
+    }
+    m_ExpectLastComment = true;
+}
+
+void XSDParser::ParseDocumentation(void)
+{
+    TToken tok = GetRawAttributeSet();
+    if (tok == K_CLOSING) {
+        XSDLexer& l = dynamic_cast<XSDLexer&>(Lexer());
+        while (l.ProcessDocumentation())
+            ;
+    }
+    tok = GetNextToken();
+    if (tok != K_ENDOFTAG) {
+        ParseError("Unexpected tag", "endoftag");
+    }
+    m_ExpectLastComment = true;
 }
 
 TToken XSDParser::GetRawAttributeSet(void)
@@ -606,9 +640,9 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
 	            AddElementContent(node,name);
             }
             break;
-        case K_DOCUMENTATION:
+        case K_ANNOTATION:
             m_Comments = &(node.Comments());
-            ParseDocumentation();
+            ParseAnnotation();
             break;
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR; tok = GetNextToken())
@@ -620,21 +654,6 @@ void XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
         }
     }
     FixEmbeddedNames(node);
-}
-
-void XSDParser::ParseDocumentation(void)
-{
-    TToken tok = GetRawAttributeSet();
-    if (tok == K_CLOSING) {
-        XSDLexer& l = dynamic_cast<XSDLexer&>(Lexer());
-        while (l.ProcessDocumentation())
-            ;
-    }
-    tok = GetNextToken();
-    if (tok != K_ENDOFTAG) {
-        ParseError("Unexpected tag", "endoftag");
-    }
-    m_ExpectLastComment = true;
 }
 
 void XSDParser::ParseContainer(DTDElement& node)
@@ -826,9 +845,9 @@ void XSDParser::ParseContent(DTDAttribute& att)
         case K_RESTRICTION:
             ParseRestriction(att);
             break;
-        case K_DOCUMENTATION:
+        case K_ANNOTATION:
             m_Comments = &(att.Comments());
-            ParseDocumentation();
+            ParseAnnotation();
             break;
         default:
             tok = GetRawAttributeSet();
