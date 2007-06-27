@@ -25,12 +25,12 @@
     CVersionInfo version = TCompression().GetVersion();
     LOG_POST("Compression library name and version: " << version.Print());
 
-    // zlib v1.1.4 and earlier have a bug in decoding. In some cases
+    // zlib v1.2.2 and earlier have a bug in decoding. In some cases
     // decompressor can produce output data on invalid compressed data.
-    // So, we do not run such tests if zlib version < 1.2.x.
+    // So, we do not run such tests if zlib version < 1.2.3.
     bool allow_transparent_read_test = 
             version.GetName() != "zlib"  || 
-            version.IsUpCompatible(CVersionInfo(1,2,0));
+            version.IsUpCompatible(CVersionInfo(1,2,3));
 
     LOG_POST("Transparent read tests are " << 
             (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
