@@ -38,6 +38,8 @@
 /// @sa IReader, IWriter, IReaderWriter, CRWStreambuf
 
 
+#include <corelib/reader_writer.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <corelib/impl/rwstreambuf.hpp>
 
 
@@ -143,6 +145,28 @@ public:
 
 private:
     CRWStreambuf m_Sb;
+};
+
+
+/// istream based IReader
+class NCBI_XNCBI_EXPORT CStreamReader : public IReader
+{
+public:
+    CStreamReader(CNcbiIstream& is, EOwnership own = eNoOwnership)
+        : m_Stream(&is, own)
+        {
+        }
+    ~CStreamReader();
+
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    virtual ERW_Result PendingCount(size_t* count);
+
+private:
+    AutoPtr<CNcbiIstream> m_Stream;
+
+private: // prevent copy
+    CStreamReader(const CStreamReader&);
+    void operator=(const CStreamReader&);
 };
 
 

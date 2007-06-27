@@ -33,7 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <corelib/impl/rwstreambuf.hpp>
+#include <corelib/reader_writer.hpp>
+#include <corelib/rwstream.hpp>
 
 
 #define RWSTREAMBUF_CATCH_ALL(message, action)                                \
@@ -441,6 +442,31 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
         }
     }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
+}
+
+
+CStreamReader::~CStreamReader()
+{
+}
+
+
+ERW_Result CStreamReader::Read(void*   buf,
+                               size_t  count,
+                               size_t* bytes_read)
+{
+    m_Stream->read(static_cast<char*>(buf), count);
+    size_t r = m_Stream->gcount();
+    if ( bytes_read ) {
+        *bytes_read = r;
+    }
+    return r? eRW_Success: m_Stream->eof()? eRW_Eof: eRW_Error;
+}
+
+
+ERW_Result CStreamReader::PendingCount(size_t* count)
+{
+    *count = m_Stream->rdbuf()->in_avail();
+    return eRW_Success;
 }
 
 
