@@ -210,10 +210,17 @@ if test -n "$file_list_full" ; then
    done
 fi
 
+# Report check results to authors (Unix only)
+if test "$need_check" = "yes" ; then
+   if test "$NCBI_CHECK_MAILTO_AUTHORS." == 'Y.' ; then
+      $run_script ./check.sh report_err
+   fi
+fi
+
 if test -n "$file_list" ; then
    for loc in $file_list ; do
       cp -p $summary_res $loc  ||  \
-         err_list="$err_list COPY_ERR:\"$loc\""
+          err_list="$err_list COPY_ERR:\"$loc\""
    done
 fi
 
