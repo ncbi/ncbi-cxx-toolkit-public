@@ -416,6 +416,18 @@ public:
     {
     }
 
+    /// Constructor, own the pointed object if ownership == eTakeOwnership
+    AutoPtr(element_type* p, EOwnership ownership)
+        : m_Ptr(p), m_Data(ownership != eNoOwnership)
+    {
+    }
+
+    /// Constructor, own the pointed object if ownership == eTakeOwnership
+    AutoPtr(element_type* p, const deleter_type& deleter, EOwnership ownership)
+        : m_Ptr(p), m_Data(deleter, ownership != eNoOwnership)
+    {
+    }
+
     /// Copy constructor.
     AutoPtr(const AutoPtr<X, Del>& p)
         : m_Ptr(0), m_Data(p.m_Data)
