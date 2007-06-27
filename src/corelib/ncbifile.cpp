@@ -4384,7 +4384,7 @@ CFileReader::~CFileReader()
 IReader* CFileReader::New(const string& filename)
 {
     if ( filename == "-" ) {
-        return new CFileReader(1);
+        return new CFileReader(0);
     }
     else {
         return new CFileReader(filename);
