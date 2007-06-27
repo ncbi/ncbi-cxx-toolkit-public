@@ -97,7 +97,7 @@ s_FetchRawData(CSeqDBExpert & seqdb,
 
 // Return a Seq-id built from the given int (gi).
 
-CRef<CSeq_id> s_IdentToSeqId(int gi)
+CRef<CSeq_id> s_GiToSeqId(int gi)
 {
     CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gi));
     
@@ -107,7 +107,7 @@ CRef<CSeq_id> s_IdentToSeqId(int gi)
 // Return a Seq-id built from the given string (accession or FASTA
 // format Seq-id).
 
-CRef<CSeq_id> s_IdentToSeqId(const char * acc)
+CRef<CSeq_id> s_AccToSeqId(const char * acc)
 {
     CRef<CSeq_id> seqid(new CSeq_id(acc));
     
@@ -118,11 +118,15 @@ CRef<CSeq_id> s_IdentToSeqId(const char * acc)
 // the CSeqDB object to the CWriteDB object, using CBioseqs as the
 // intermediate data.
 
-template<class T>
-static void s_DupIdsBioseq(CWriteDB & w, CSeqDBExpert & s, T * ids)
+typedef vector< CRef<CSeq_id> > TIdList;
+
+static void
+s_DupIdsBioseq(CWriteDB      & w,
+               CSeqDBExpert  & s,
+               const TIdList & ids)
 {
     for(unsigned i = 0; ids[i]; i++) {
-        CRef<CSeq_id> seqid = s_IdentToSeqId(ids[i]);
+        CRef<CSeq_id> seqid = ids[i];
         
         int oid = -1;
         bool found = s.SeqidToOid(*seqid, oid);
@@ -151,14 +155,15 @@ static void s_DupIdsBioseq(CWriteDB & w, CSeqDBExpert & s, T * ids)
 // the CSeqDB object to the CWriteDB object, using packed ncbi2na
 // strings ('raw' data) as the intermediate data.
 
-template<class T>
 static void
-s_DupIdsRaw(CWriteDB & w, CSeqDBExpert & seqdb, T * ids)
+s_DupIdsRaw(CWriteDB      & w,
+            CSeqDBExpert  & seqdb,
+            const TIdList & ids)
 {
     bool is_nucl = seqdb.GetSequenceType() == CSeqDB::eNucleotide;
     
     for(unsigned i = 0; ids[i]; i++) {
-        CRef<CSeq_id> seqid = s_IdentToSeqId(ids[i]);
+        CRef<CSeq_id> seqid = ids[i];
         
         int oid = -1;
         bool found = seqdb.SeqidToOid(*seqid, oid);
@@ -319,14 +324,13 @@ void s_WrapUpFiles(const vector<string> & files)
 // source database (src_name) to a new CWriteDB object, then perform
 // checks on the resulting database and remove it.
 
-template<class T>
 static void
-s_DupSequencesTest(T      * ids,
-                   bool     is_protein,
-                   bool     raw_data,
-                   string   src_name,
-                   string   dst_name,
-                   string   title)
+s_DupSequencesTest(const TIdList & ids,
+                   bool            is_protein,
+                   bool            raw_data,
+                   string          src_name,
+                   string          dst_name,
+                   string          title)
 {
     CSeqDBExpert src(src_name, (is_protein
                                 ? CSeqDB::eProtein
@@ -344,7 +348,7 @@ s_DupSequencesTest(T      * ids,
                           CWriteDB::eFullIndex));
     
     if (raw_data) {
-        s_DupIdsRaw<T>(*db, src, ids);
+        s_DupIdsRaw(*db, src, ids);
     } else {
         s_DupIdsBioseq(*db, src, ids);
     }
@@ -382,13 +386,27 @@ CRef<CScope> s_GetScope()
     return scope;
 }
 
+static void s_BuildIds(TIdList & ids, int * gis)
+{
+    for(int * ptr = gis; *ptr; ptr ++) {
+        ids.push_back(s_GiToSeqId(*ptr));
+    }
+}
+
+static void s_BuildIds(TIdList & ids, const char ** gis)
+{
+    for(const char ** ptr = gis; *ptr; ptr ++) {
+        ids.push_back(s_AccToSeqId(*ptr));
+    }
+}
+
 //
 // Actual test cases.
 //
 
 BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
 {
-    int ids[] = {
+    int gis[] = {
         78883515, 78883517, 71143095, 24431485, 19110479, 15054463,
         15054465, 15054467, 15054469, 15054471, 19570808, 18916476,
         1669608,  1669610,  1669612,  1669614,  1669616,  10944307,
@@ -399,6 +417,9 @@ BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
         21623739, 21623761, 38303844, 38197377, 56788779, 57032781,
         57870443, 56789136, 0
     };
+    
+    TIdList ids;
+    s_BuildIds(ids, gis);
     
     s_DupSequencesTest(ids,
                        false,
@@ -417,7 +438,7 @@ BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
 
 BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
 {
-    int ids[] = {
+    int gis[] = {
         1477444,  1669609,  1669611,  1669615, 1669617, 7544146,
         22652804, 1310870,  3114354,  3891778, 3891779, 81294290,
         81294330, 49089974, 62798905, 3041810, 7684357, 7684359,
@@ -428,6 +449,9 @@ BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
         13365559, 8096667,  3721768,  9857600, 2190043, 3219276,
         10799943, 10799945, 0
     };
+    
+    TIdList ids;
+    s_BuildIds(ids, gis);
     
     s_DupSequencesTest(ids,
                        true,
@@ -680,7 +704,7 @@ BOOST_AUTO_UNIT_TEST(s_IsamSorting)
     
     // A null terminated array of NUL terminated strings.
     
-    const char* ids[] = {
+    const char* accs[] = {
         "AAC76335.1", "AAC77159.1", "AAA58145.1", "AAC76880.1",
         "AAC76230.1", "AAC76373.1", "AAC77137.1", "AAC76637.2",
         "AAA58101.1", "AAC76329.1", "AAC76702.1", "AAC77109.1",
@@ -692,6 +716,9 @@ BOOST_AUTO_UNIT_TEST(s_IsamSorting)
         "AAC76918.1", "AAC76727.1", "AAC76161.1", "AAA57964.1",
         "AAA24251.1", 0
     };
+    
+    TIdList ids;
+    s_BuildIds(ids, accs);
     
     s_DupSequencesTest(ids,
                        true,
