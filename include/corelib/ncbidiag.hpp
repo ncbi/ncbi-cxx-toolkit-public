@@ -1360,7 +1360,7 @@ private:
     void x_PrintMessage(SDiagMessage::EEventType event,
                         const string&            message);
 
-    const string& x_GetHost(void) const;
+    const string x_GetHost(void) const;
 
     typedef map<string, string> TProperties;
     friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,

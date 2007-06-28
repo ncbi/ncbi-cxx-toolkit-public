@@ -581,7 +581,7 @@ string CDiagContext::GetStringUID(TUID uid) const
 }
 
 
-const string& CDiagContext::x_GetHost(void) const
+const string CDiagContext::x_GetHost(void) const
 {
     // Check context properties
     string ret = GetDiagContext().GetProperty(
