@@ -2929,12 +2929,20 @@ public:
     virtual ERW_Result PendingCount(size_t* count);
 
 protected:
+#ifdef NCBI_OS_MSWIN
+    typedef HANDLE THandle;
+#else
+    typedef int THandle;
+#endif
+
     /// Construct CFileReader for reading from system handle 'handle'
-    CFileReader(int handle);
+    CFileReader(THandle handle);
 
 private:
-    /// System IO handle
-    int m_Handle;
+    // System IO handle
+    THandle m_Handle;
+    // Close handle in destructor
+    bool m_CloseHandle;
 
 private: // prevent copying
     CFileReader(const CFileReader&);

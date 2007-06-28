@@ -4358,25 +4358,43 @@ void FindFiles(const string& pattern,
 
 
 CFileReader::CFileReader(const string& filename)
-    : m_Handle(open(filename.c_str(), O_RDONLY))
+    : m_CloseHandle(false)
 {
-    if ( m_Handle == -1 ) {
+#ifdef NCBI_OS_MSWIN
+    m_Handle = CreateFile(filename.c_str(),
+                          GENERIC_READ,
+                          FILE_SHARE_READ,
+                          0,
+                          OPEN_EXISTING,
+                          0,
+                          NULL);
+#else
+    m_Handle = open(filename.c_str(), O_RDONLY);
+# define INVALID_HANDLE_VALUE -1
+#endif
+
+    if ( m_Handle == INVALID_HANDLE_VALUE ) {
         NCBI_THROW(CFileException, eNotExists,
-                   "Unable to construct a reader on " + filename);
+                   "Unable to construct CFileReader from " + filename);
     }
+    m_CloseHandle = true;
 }
 
 
-CFileReader::CFileReader(int handle)
-    : m_Handle(handle)
+CFileReader::CFileReader(THandle handle)
+    : m_Handle(handle), m_CloseHandle(false)
 {
 }
 
 
 CFileReader::~CFileReader()
 {
-    if ( m_Handle != -1 ) {
+    if ( m_CloseHandle ) {
+#ifdef NCBI_OS_MSWIN
+        CloseHandle(m_Handle);
+#else
         close(m_Handle);
+#endif
     }
 }
 
@@ -4384,7 +4402,12 @@ CFileReader::~CFileReader()
 IReader* CFileReader::New(const string& filename)
 {
     if ( filename == "-" ) {
-        return new CFileReader(0);
+#ifdef NCBI_OS_MSWIN
+        THandle handle = GetStdHandle(STD_INPUT_HANDLE);
+#else
+        THandle handle = 0;
+#endif
+        return new CFileReader(handle);
     }
     else {
         return new CFileReader(filename);
@@ -4396,11 +4419,23 @@ ERW_Result CFileReader::Read(void*   buf,
                              size_t  count,
                              size_t* bytes_read)
 {
-    ssize_t r = read(m_Handle, buf, count);
+#ifdef NCBI_OS_MSWIN
+    DWORD r;
+    if ( ReadFile(m_Handle, buf, count, &r, NULL) == 0 ) {
+        if ( bytes_read ) {
+            *bytes_read = 0;
+        }
+        return GetLastError() == ERROR_HANDLE_EOF? eRW_Eof: eRW_Success;
+    }
+#else
+    ssize_t r = read(int(m_Handle), buf, count);
     if ( r == -1 ) {
-        bytes_read = 0;
+        if ( bytes_read ) {
+            *bytes_read = 0;
+        }
         return eRW_Error;
     }
+#endif
     if ( bytes_read ) {
         *bytes_read = r;
     }
@@ -4408,7 +4443,7 @@ ERW_Result CFileReader::Read(void*   buf,
 }
 
 
-ERW_Result CFileReader::PendingCount(size_t* count)
+ERW_Result CFileReader::PendingCount(size_t* /*count*/)
 {
     return eRW_NotImplemented;
 }
