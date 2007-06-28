@@ -651,7 +651,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        for (index = 0; index < hsp_list->hspcnt; index++) {
            hsp = hsp_array[index];
        
-           if (BlastIntervalTreeContainsHSP(tree, hsp, query_info, 0)) {
+           if (BlastIntervalTreeContainsHSP(tree, hsp, query_info,
+                                     hit_options->min_diag_separation)) {
                hsp_array[index] = Blast_HSPFree(hsp);
            }
            else {
