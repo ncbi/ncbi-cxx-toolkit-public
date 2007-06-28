@@ -121,6 +121,8 @@ void HandleException(void) {
 #undef Copy
 #undef IsSet
 #undef Bit
+#undef gethostbyaddr
+#undef gethostbyname
 %}
 #endif
 
