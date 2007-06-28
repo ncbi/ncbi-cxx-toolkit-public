@@ -150,14 +150,14 @@ sub ReadBranchMap
 
 sub ReadBranchInfo
 {
-    my ($Self, $SVN, $BranchPath, $TargetBranchRev, $TargetUpstreamRev) = @_;
+    my ($Self, $SVN, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
 
     print "Reading branch info...\n";
 
-    $_ ||= 'HEAD' for $TargetBranchRev, $TargetUpstreamRev;
+    $_ ||= 'HEAD' for $MaxBranchRev, $MaxUpstreamRev;
 
     my $BranchRevisions = $SVN->ReadLog('--stop-on-copy',
-        "-r$TargetBranchRev\:1", $SVN->GetRepository(), 'branches/' . $BranchPath);
+        "-r$MaxBranchRev\:1", $SVN->GetRepository(), 'branches/' . $BranchPath);
 
     my $MergeRegExp =
         qr/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o;
@@ -272,7 +272,7 @@ sub ReadBranchInfo
     my $FirstBranchRevision = $BranchRevisions->[-1];
 
     my $UpstreamRevisions = $SVN->ReadLog('--stop-on-copy',
-        "-r$TargetUpstreamRev\:$FirstBranchRevision->{Number}",
+        "-r$MaxUpstreamRev\:$FirstBranchRevision->{Number}",
         $SVN->GetRepository(), map {"$UpstreamPath/$_"} @BranchDirs);
 
     my @MergeUpRevisions;
@@ -516,7 +516,7 @@ sub Remove
 
 sub DoMerge
 {
-    my ($Self, $Direction, $BranchPath, $TargetRev) = @_;
+    my ($Self, $Direction, $BranchPath, $SourceRev) = @_;
 
     die "$Self->{MyName}: <branch_path> parameter is missing\n"
         unless $BranchPath;
@@ -528,18 +528,18 @@ sub DoMerge
     if ($Direction eq 'up')
     {
         $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath,
-            $TargetRev, undef);
+            $SourceRev, undef);
 
-        $TargetRev = $BranchInfo->{BranchRevisions}->[0]->{Number}
+        $SourceRev = $BranchInfo->{BranchRevisions}->[0]->{Number}
     }
     else
     {
         $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath,
-            undef, $TargetRev);
+            undef, $SourceRev);
 
         my $UpstreamRevisions = $BranchInfo->{UpstreamRevisions};
 
-        $TargetRev = @$UpstreamRevisions ? $UpstreamRevisions->[0]->{Number} :
+        $SourceRev = @$UpstreamRevisions ? $UpstreamRevisions->[0]->{Number} :
             ($BranchInfo->{BranchRevisions}->[0]->{Number} - 1);
     }
 
@@ -562,7 +562,7 @@ sub DoMerge
             qw(MergeUpRevisions MergeDownRevisions) :
             qw(MergeDownRevisions MergeUpRevisions)};
 
-    my $LastTargetRev = @$MergeRevisions ? $MergeRevisions->[0]->[1] :
+    my $LastSourceRev = @$MergeRevisions ? $MergeRevisions->[0]->[1] :
         $Direction ne 'up' ? $BranchInfo->{BranchSourceRevision} :
             $BranchInfo->{BranchCreationRevision}->{Number};
 
@@ -571,10 +571,10 @@ sub DoMerge
     my ($SourcePath, $TargetPath) = $Direction ne 'up' ?
         ($UpstreamPath, $BranchPath) : ($BranchPath, $UpstreamPath);
 
-    unless ($TargetRev > $LastTargetRev)
+    unless ($SourceRev > $LastSourceRev)
     {
         die "$Self->{MyName}: '$TargetPath' is already " .
-            "in synch with r$LastTargetRev of '$SourcePath'\n"
+            "in synch with r$LastSourceRev of '$SourcePath'\n"
     }
 
     my @ExcludedRevisions;
@@ -583,7 +583,7 @@ sub DoMerge
     {
         my $RevNumber = $Revision->[0]->{Number};
 
-        last if $RevNumber <= $LastTargetRev;
+        last if $RevNumber <= $LastSourceRev;
 
         push @ExcludedRevisions, $RevNumber
     }
@@ -592,14 +592,14 @@ sub DoMerge
 
     for my $Revision (reverse @ExcludedRevisions)
     {
-        push @MergePlan, "-r$LastTargetRev\:" . ($Revision - 1)
-            if $LastTargetRev < $Revision - 1;
+        push @MergePlan, "-r$LastSourceRev\:" . ($Revision - 1)
+            if $LastSourceRev < $Revision - 1;
 
-        $LastTargetRev = $Revision
+        $LastSourceRev = $Revision
     }
 
-    push @MergePlan, "-r$LastTargetRev\:$TargetRev"
-        if $LastTargetRev < $TargetRev;
+    push @MergePlan, "-r$LastSourceRev\:$SourceRev"
+        if $LastSourceRev < $SourceRev;
 
     unless (@MergePlan)
     {
@@ -607,7 +607,7 @@ sub DoMerge
         return
     }
 
-    print "Merging with r$TargetRev...\n";
+    print "Merging with r$SourceRev...\n";
 
     my $BaseURL = $SVN->{Repos} . '/' . ($Direction eq 'up' ?
         'branches/' . $BranchPath : $UpstreamPath) . '/';
@@ -638,7 +638,7 @@ sub DoMerge
         }, @BranchDirs);
 
     my $PropValue = qq(Please run "$Self->{MyName} commit_merge" to merge ) .
-            "changes up to r$TargetRev from '$SourcePath' into '$TargetPath'.";
+            "changes up to r$SourceRev from '$SourcePath' into '$TargetPath'.";
 
     system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue, @RootDirs);
 
