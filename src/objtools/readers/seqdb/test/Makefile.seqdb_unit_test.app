@@ -15,3 +15,4 @@ CHECK_CMD = seqdb_unit_test
 CHECK_COPY = data
 
 CHECK_TIMEOUT = 300
+CHECK_AUTHORS = bealer madden
