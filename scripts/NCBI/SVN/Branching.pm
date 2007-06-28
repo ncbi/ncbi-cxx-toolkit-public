@@ -618,6 +618,7 @@ sub DoMerge
     {
         for my $RevRange (@MergePlan)
         {
+            print "  $RevRange => $LocalDir\n";
             system($SVN->GetSvnPath(), 'merge', $RevRange,
                 $BaseURL . $LocalDir, $LocalDir)
         }
