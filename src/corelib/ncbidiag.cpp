@@ -581,7 +581,7 @@ string CDiagContext::GetStringUID(TUID uid) const
 }
 
 
-static string s_GetHost(void)
+const string& CDiagContext::x_GetHost(void) const
 {
     // Check context properties
     string ret = GetDiagContext().GetProperty(
@@ -593,29 +593,38 @@ static string s_GetHost(void)
     if ( !ret.empty() )
         return ret;
 
+    if ( m_Host.empty() ) {
 #if defined(NCBI_OS_UNIX)
-    // UNIX - use uname()
-    {{
-        struct utsname buf;
-        if (uname(&buf) == 0)
-            return string(buf.nodename);
-    }}
+        // UNIX - use uname()
+        {{
+            struct utsname buf;
+            if (uname(&buf) == 0) {
+                m_Host = buf.nodename;
+                return m_Host;
+            }
+        }}
 #endif
 
 #if defined(NCBI_OS_MSWIN)
-    // MSWIN - use COMPUTERNAME
-    const char* compname = ::getenv("COMPUTERNAME");
-    if ( compname  &&  *compname )
-        return compname;
+        // MSWIN - use COMPUTERNAME
+        const char* compname = ::getenv("COMPUTERNAME");
+        if ( compname  &&  *compname ) {
+            m_Host = compname;
+            return m_Host;
+        }
 #endif
 
-    // Server env. - use SERVER_ADDR
-    const char* servaddr = ::getenv("SERVER_ADDR");
-    if ( servaddr  &&  *servaddr )
-        return servaddr;
+        // Server env. - use SERVER_ADDR
+        const char* servaddr = ::getenv("SERVER_ADDR");
+        if ( servaddr  &&  *servaddr ) {
+            m_Host = servaddr;
+            return m_Host;
+        }
 
-    // Can not get hostname
-    return "UNK_HOST";
+        // Can not get hostname
+        m_Host = "UNK_HOST";
+    }
+    return m_Host;
 }
 
 
@@ -623,7 +632,7 @@ void CDiagContext::x_CreateUID(void) const
 {
     Int8 pid = GetPID();
     time_t t = time(0);
-    string host = s_GetHost();
+    string host = x_GetHost();
     TUID h = 201;
     ITERATE(string, s, host) {
         h = (h*15 + *s) & 0xFFFF;
@@ -855,7 +864,7 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
     int tsn = msg ?
         msg->m_ThrPost : thr_data.GetThreadPostNumber(ePostNumber_Increment);
     CTime timestamp = msg ? msg->GetTime() : CTime(CTime::eCurrent);
-    string host = s_GetHost();
+    string host = x_GetHost();
     string client = GetProperty(kProperty_ClientIP);
     string session = GetProperty(kProperty_SessionID);
     string app = GetProperty(kProperty_AppName);

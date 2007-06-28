@@ -1360,6 +1360,8 @@ private:
     void x_PrintMessage(SDiagMessage::EEventType event,
                         const string&            message);
 
+    const string& x_GetHost(void) const;
+
     typedef map<string, string> TProperties;
     friend void ThreadDataTlsCleanup(CDiagContextThreadData* value,
                                      void* cleanup_data);
@@ -1371,6 +1373,7 @@ private:
     static TPID            sm_PID;
 
     mutable TUID           m_UID;
+    mutable string         m_Host;
     TProperties            m_Properties;
     auto_ptr<CStopWatch>   m_StopWatch;
     auto_ptr<TMessages>    m_Messages;
