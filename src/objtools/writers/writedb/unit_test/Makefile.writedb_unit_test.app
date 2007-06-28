@@ -12,4 +12,4 @@ LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(D
 
 REQUIRES = objects
 CHECK_CMD = writedb_unit_test
-CHECK_AUTHORS = bealer madden
+CHECK_AUTHORS = blastsoft

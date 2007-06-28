@@ -13,3 +13,4 @@ LDFLAGS = $(FAST_LDFLAGS)
 REQUIRES = objects
 
 CHECK_CMD = blast_unit_test
+CHECK_AUTHORS = blastsoft

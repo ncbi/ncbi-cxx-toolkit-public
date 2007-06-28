@@ -18,3 +18,4 @@ REQUIRES = objects
 
 CHECK_CMD = blastinput_unit_test
 CHECK_COPY = data
+CHECK_AUTHORS = blastsoft
