@@ -81,8 +81,8 @@ public:
 class NCBI_XUTIL_EXPORT CStreamLineReader : public ILineReader
 {
 public:
-    CStreamLineReader(CNcbiIstream& is, EOwnership own = eNoOwnership)
-        : m_Stream(is), m_OwnStream(own) { }
+    CStreamLineReader(CNcbiIstream& is,
+                      EOwnership ownership = eNoOwnership);
     ~CStreamLineReader();
 
     bool               AtEOF(void) const;
@@ -92,8 +92,7 @@ public:
     CT_POS_TYPE        GetPosition(void) const;
 
 private:
-    CNcbiIstream& m_Stream;
-    EOwnership    m_OwnStream;
+    AutoPtr<CNcbiIstream> m_Stream;
     string        m_Line;
 };
 
@@ -108,7 +107,8 @@ public:
         : m_Start(start), m_End(end), m_Pos(start) { }
     CMemoryLineReader(const char* start, SIZE_TYPE length)
         : m_Start(start), m_End(start + length), m_Pos(start) { }
-    CMemoryLineReader(CMemoryFile* mem_file, EOwnership ownership);
+    CMemoryLineReader(CMemoryFile* mem_file,
+                      EOwnership ownership = eNoOwnership);
 
     bool               AtEOF(void) const;
     char               PeekChar(void) const;
@@ -121,41 +121,47 @@ private:
     const char*           m_End;
     const char*           m_Pos;
     CTempString           m_Line;
-    auto_ptr<CMemoryFile> m_MemFile;
+    AutoPtr<CMemoryFile>  m_MemFile;
 };
 
 /// Implementation of ILineReader for IReader
 ///
-class NCBI_XUTIL_EXPORT CIReaderLineReader : public ILineReader
+class NCBI_XUTIL_EXPORT CBufferedLineReader : public ILineReader
 {
 public:
-    /// Work with the half-open range [start, end).
-    CIReaderLineReader(IReader* reader, EOwnership ownership);
-    virtual ~CIReaderLineReader();
+    /// read from the IReader
+    CBufferedLineReader(IReader* reader,
+                        EOwnership ownership = eNoOwnership);
 
-    /// In this implementation buffer size MUST be larger than line 
-    /// length we expect
-    void SetBufferSize(size_t buf_size);
+    /// read from the istream
+    CBufferedLineReader(CNcbiIstream& is,
+                        EOwnership ownership = eNoOwnership);
+
+    /// read from the file, "-" (but not "./-") means standard input
+    CBufferedLineReader(const string& filename);
+
+    virtual ~CBufferedLineReader();
 
     bool                AtEOF(void) const;
     char                PeekChar(void) const;
-    CIReaderLineReader& operator++(void);
+    CBufferedLineReader& operator++(void);
     CTempString         operator*(void) const;
     CT_POS_TYPE         GetPosition(void) const;
 private:
-    CIReaderLineReader(const CIReaderLineReader&);
-    CIReaderLineReader& operator=(const CIReaderLineReader&);
+    CBufferedLineReader(const CBufferedLineReader&);
+    CBufferedLineReader& operator=(const CBufferedLineReader&);
 private:
-    ERW_Result x_ReadBuffer();
+    void x_LoadLong();
+    bool x_ReadBuffer();
 private:
-    IReader*      m_Reader;
-    EOwnership    m_OwnReader;
-    vector<char>  m_Buffer;
-    size_t        m_BufferDataSize;
-    ERW_Result    m_RW_Result;
+    AutoPtr<IReader> m_Reader;
     bool          m_Eof;
-    size_t        m_BufferReadSize;
+    size_t        m_BufferSize;
+    AutoArray<char> m_Buffer;
+    const char*   m_Pos;
+    const char*   m_End;
     CTempString   m_Line;
+    string        m_String;
 };
 
 

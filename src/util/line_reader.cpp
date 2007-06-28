@@ -35,6 +35,8 @@
 #include <ncbi_pch.hpp>
 #include <util/line_reader.hpp>
 #include <util/util_exception.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <string.h>
 
@@ -43,48 +45,36 @@ BEGIN_NCBI_SCOPE
 CRef<ILineReader> ILineReader::New(const string& filename)
 {
     CRef<ILineReader> lr;
-    if (filename == "-") {
-        lr.Reset(new CStreamLineReader(NcbiCin, eNoOwnership));
-    } else {
-        try {
-            // favor memory mapping, which tends to be more efficient
-            // but isn't always possible
-            auto_ptr<CMemoryFile> mf(new CMemoryFile(filename));
-            lr.Reset(new CMemoryLineReader(mf.release(), eTakeOwnership));
-        } catch (...) { // fall back to streams, which are somewhat slower
-            auto_ptr<CNcbiIfstream> ifs(new CNcbiIfstream(filename.c_str()));
-            if (ifs.get()  &&  ifs->is_open()) {
-                lr.Reset(new CStreamLineReader(*ifs.release(), eTakeOwnership));
-            } else {
-                NCBI_THROW(CFileException, eNotExists,
-                           "Unable to construct a line reader on " + filename);
-            }
-        }
-    }
+    lr.Reset(new CBufferedLineReader(filename));
     return lr;
+}
+
+
+CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
+                                     EOwnership ownership)
+    : m_Stream(&is, ownership)
+{
 }
 
 
 CStreamLineReader::~CStreamLineReader()
 {
-    if (m_OwnStream) {
-        delete &m_Stream;
-    }
 }
+
 
 bool CStreamLineReader::AtEOF(void) const
 {
-    return m_Stream.eof()  ||  CT_EQ_INT_TYPE(m_Stream.peek(), CT_EOF);
+    return m_Stream->eof()  ||  CT_EQ_INT_TYPE(m_Stream->peek(), CT_EOF);
 }
 
 char CStreamLineReader::PeekChar(void) const
 {
-    return m_Stream.peek();
+    return m_Stream->peek();
 }
 
 CStreamLineReader& CStreamLineReader::operator++(void)
 {
-    NcbiGetlineEOL(m_Stream, m_Line);
+    NcbiGetlineEOL(*m_Stream, m_Line);
     return *this;
 }
 
@@ -95,7 +85,7 @@ CTempString CStreamLineReader::operator*(void) const
 
 CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 {
-    return m_Stream.tellg();
+    return m_Stream->tellg();
 }
 
 
@@ -103,12 +93,10 @@ CMemoryLineReader::CMemoryLineReader(CMemoryFile* mem_file,
                                      EOwnership ownership)
     : m_Start(static_cast<char*>(mem_file->GetPtr())),
       m_End(m_Start + mem_file->GetSize()),
-      m_Pos(m_Start)
+      m_Pos(m_Start),
+      m_MemFile(mem_file, ownership)
 {
-    mem_file->MemMapAdvise(CMemoryFile::eMMA_Sequential);
-    if (ownership == eTakeOwnership) {
-        m_MemFile.reset(mem_file);
-    }
+    m_MemFile->MemMapAdvise(CMemoryFile::eMMA_Sequential);
 }
 
 bool CMemoryLineReader::AtEOF(void) const
@@ -151,143 +139,197 @@ CT_POS_TYPE CMemoryLineReader::GetPosition(void) const
 
 
 
-CIReaderLineReader::CIReaderLineReader(IReader* reader, EOwnership ownership)
-: m_Reader(reader),
-  m_OwnReader(ownership),
-  m_Buffer(1024 * 1024),
-  m_BufferDataSize(0),
-  m_RW_Result(eRW_Success),
-  m_Eof(false),
-  m_BufferReadSize(0)
-{}
-
-CIReaderLineReader::~CIReaderLineReader()
+CBufferedLineReader::CBufferedLineReader(IReader* reader,
+                                         EOwnership ownership)
+    : m_Reader(reader, ownership),
+      m_Eof(false),
+      m_BufferSize(32*1024),
+      m_Buffer(new char[m_BufferSize]),
+      m_Pos(m_Buffer.get()),
+      m_End(m_Pos)
 {
-    if (eTakeOwnership == m_OwnReader) {
-        delete m_Reader;
-    }
+    x_ReadBuffer();
 }
 
-void CIReaderLineReader::SetBufferSize(size_t buf_size)
+
+CBufferedLineReader::CBufferedLineReader(CNcbiIstream& is,
+                                         EOwnership ownership)
+    : m_Reader(new CStreamReader(is, ownership)),
+      m_Eof(false),
+      m_BufferSize(32*1024),
+      m_Buffer(new char[m_BufferSize]),
+      m_Pos(m_Buffer.get()),
+      m_End(m_Pos)
 {
-    m_Buffer.resize(buf_size);
+    x_ReadBuffer();
 }
 
-bool CIReaderLineReader::AtEOF(void) const
+
+CBufferedLineReader::CBufferedLineReader(const string& filename)
+    : m_Reader(CFileReader::New(filename)),
+      m_Eof(false),
+      m_BufferSize(32*1024),
+      m_Buffer(new char[m_BufferSize]),
+      m_Pos(m_Buffer.get()),
+      m_End(m_Pos)
+{
+    x_ReadBuffer();
+}
+
+
+CBufferedLineReader::~CBufferedLineReader()
+{
+}
+
+
+bool CBufferedLineReader::AtEOF(void) const
 {
     return m_Eof;
 }
 
-char  CIReaderLineReader::PeekChar(void) const
+
+char  CBufferedLineReader::PeekChar(void) const
 {
-    return m_Buffer[m_BufferReadSize];
+    return *m_Pos;
 }
 
-CIReaderLineReader& CIReaderLineReader::operator++(void)
+
+CBufferedLineReader& CBufferedLineReader::operator++(void)
 {
     // check if we are at the buffer end
-    if (m_BufferReadSize == m_BufferDataSize) {
-        m_BufferDataSize = m_BufferReadSize = 0;
-        if (x_ReadBuffer() != eRW_Success) {
-            m_Eof = true;
+    const char* start = m_Pos;
+    const char* end = m_End;
+    for ( const char* p = start; p < end; ++p ) {
+        if ( *p == '\n' ) {
+            m_Line = CTempString(start, p - start);
+            m_Pos = ++p;
+            if ( p == end ) {
+                m_String = m_Line;
+                m_Line = m_String;
+                x_ReadBuffer();
+            }
+            return *this;
+        }
+        else if ( *p == '\r' ) {
+            m_Line = CTempString(start, p - start);
+            if ( ++p == end ) {
+                m_String = m_Line;
+                m_Line = m_String;
+                if ( x_ReadBuffer() ) {
+                    p = m_Pos;
+                    if ( *p == '\n' ) {
+                        m_Pos = p+1;
+                    }
+                }
+                return *this;
+            }
+            if ( *p != '\n' ) {
+                return *this;
+            }
+            m_Pos = ++p;
+            if ( p == end ) {
+                m_String = m_Line;
+                m_Line = m_String;
+                x_ReadBuffer();
+            }
             return *this;
         }
     }
-
-    // find the next line-end in the current buffer
-
-    size_t line_start = m_BufferReadSize;
-    while (1) {
-        const char* p = &(m_Buffer[0]) + m_BufferReadSize;
-        for (;m_BufferReadSize < m_BufferDataSize;  ++m_BufferReadSize, ++p) {
-            if (*p == '\r'  || *p == '\n') {
-                m_Line = 
-                    CTempString(&(m_Buffer[0]) + line_start, m_BufferReadSize - line_start);
-                // skip over delimiters
-                if (++m_BufferReadSize < m_BufferDataSize && 
-                    *p == '\r'  &&  p[1] == '\n') {
-                    ++m_BufferReadSize;
-                }
-                return *this;
-            }
-        }
-
-        // no final delimiter: load next portion of data to keep searching
-
-        if (line_start) {
-            _ASSERT(m_BufferReadSize > line_start);
-            m_BufferDataSize = m_BufferReadSize = m_BufferReadSize - line_start;
-            ::memmove(&(m_Buffer[0]), &(m_Buffer[0]) + line_start, m_BufferDataSize);
-            line_start = 0;
-            if (x_ReadBuffer() != eRW_Success) {
-                m_Line = 
-                    CTempString(&(m_Buffer[0]) + line_start, 
-                                m_BufferReadSize - line_start);
-                return *this;
-            }
-        } else {
-            if (m_BufferDataSize < m_Buffer.size()) {
-                if (x_ReadBuffer() != eRW_Success) {
-                    m_Line = 
-                        CTempString(&(m_Buffer[0]) + line_start, 
-                                    m_BufferReadSize - line_start);
-                    return *this;
-                }
-            } else {
-                // string too long?
-                NCBI_THROW(CIOException, eRead, "Buffer too small to accomodate line");
-            }
-        }
-
-    } // while
-
+    x_LoadLong();
     return *this;
 }
 
-ERW_Result CIReaderLineReader::x_ReadBuffer()
+
+void CBufferedLineReader::x_LoadLong(void)
+{
+    const char* start = m_Pos;
+    const char* end = m_End;
+    m_String.assign(start, end);
+    while ( x_ReadBuffer() ) {
+        start = m_Pos;
+        end = m_End;
+        for ( const char* p = start; p < end; ++p ) {
+            char c = *p;
+            if ( c == '\r' || c == '\n' ) {
+                m_String.append(start, p - start);
+                m_Line = m_String;
+                if ( ++p == end ) {
+                    m_String = m_Line;
+                    m_Line = m_String;
+                    if ( x_ReadBuffer() ) {
+                        p = m_Pos;
+                        end = m_End;
+                        if ( p < end && c == '\r' && *p == '\n' ) {
+                            ++p;
+                            m_Pos = p;
+                        }
+                    }
+                }
+                else {
+                    if ( c == '\r' && *p == '\n' ) {
+                        if ( ++p == end ) {
+                            x_ReadBuffer();
+                            p = m_Pos;
+                        }
+                    }
+                    m_Pos = p;
+                }
+                return;
+            }
+        }
+        m_String.append(start, end - start);
+    }
+    m_Line = m_String;
+    return;
+}
+
+
+bool CBufferedLineReader::x_ReadBuffer()
 {
     _ASSERT(m_Reader);
 
-    if (m_RW_Result == eRW_Eof) {
-        return eRW_Eof;
+    if ( m_Eof ) {
+        return false;
     }
 
-    // compute buffer availability
-    size_t buf_avail = m_Buffer.size() - m_BufferDataSize;
-    size_t bytes_read;
+    m_Pos = m_End = m_Buffer.get();
     for (bool flag = true; flag; ) {
-        m_RW_Result = 
-            m_Reader->Read(&(m_Buffer[0]) + m_BufferDataSize, buf_avail, &bytes_read);
-        switch (m_RW_Result) {
+        size_t size;
+        ERW_Result result =
+            m_Reader->Read(m_Buffer.get(), m_BufferSize, &size);
+        switch (result) {
         case eRW_NotImplemented:
         case eRW_Error:
             NCBI_THROW(CIOException, eRead, "Read error");
             break;
         case eRW_Success:
-            m_BufferDataSize += bytes_read;
-            flag = false;
-            break;
+            m_End = m_Pos + size;
+            return true;
         case eRW_Timeout:
             // keep spinning around
             break;
         case eRW_Eof:
-            flag = false;
-            break;
+            m_End = m_Pos + size;
+            m_Eof = true;
+            return size > 0;
         default:
             _ASSERT(0);
         }
     } // for
-    return m_RW_Result;
+    return false;
 }
 
-CTempString CIReaderLineReader::operator*(void) const
+
+CTempString CBufferedLineReader::operator*(void) const
 {
     return m_Line;
 }
 
-CT_POS_TYPE CIReaderLineReader::GetPosition(void) const
+
+CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 {
     _ASSERT(0);
     return 0; // TODO: implement position counter
 }
+
 END_NCBI_SCOPE
