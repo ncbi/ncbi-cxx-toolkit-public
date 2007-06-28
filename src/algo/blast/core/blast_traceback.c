@@ -467,7 +467,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        * are applied there. Such corrections should be added.
        */
       if (program_number == eBlastTypeRpsBlast ||
-          !BlastIntervalTreeContainsHSP(tree, hsp, query_info, 0)) {
+          !BlastIntervalTreeContainsHSP(tree, hsp, query_info,
+                               hit_options->min_diag_separation)) {
 
          Int4 start_shift = 0;
          Int4 adjusted_s_length;
