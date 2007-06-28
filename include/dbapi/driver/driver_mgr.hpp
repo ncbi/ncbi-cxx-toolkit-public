@@ -51,9 +51,16 @@ class NCBI_DBAPIDRIVER_EXPORT C_DriverMgr : public I_DriverMgr
 public:
     C_DriverMgr(unsigned int nof_drivers = 16);
 
-//     FDBAPI_CreateContext GetDriver(const string& driver_name,
-//                                    string*       err_msg = 0);
+    // Old API ...
+    /// Please use GetDriverContext() instead.
+    /// @deprecated
+    NCBI_DEPRECATED
+    FDBAPI_CreateContext GetDriver(const string& driver_name,
+                                   string*       err_msg = 0);
 
+    // Old API ...
+    /// @deprecated
+    NCBI_DEPRECATED
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 

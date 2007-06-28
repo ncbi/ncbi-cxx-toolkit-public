@@ -43,13 +43,16 @@ BEGIN_NCBI_SCOPE
 
 class I_DriverMgr;
 
-extern void DBAPI_RegisterDriver_CTLIB   (I_DriverMgr& mgr);
-extern void DBAPI_RegisterDriver_DBLIB   (I_DriverMgr& mgr);
-extern void DBAPI_RegisterDriver_FTDS    (I_DriverMgr& mgr);
-extern void DBAPI_RegisterDriver_ODBC    (I_DriverMgr& mgr);
-extern void DBAPI_RegisterDriver_MSDBLIB (I_DriverMgr& mgr);
-extern void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
+// Old and deprecated.
+// Please use functions below instead.
+NCBI_DEPRECATED extern void DBAPI_RegisterDriver_CTLIB   (I_DriverMgr& mgr);
+NCBI_DEPRECATED extern void DBAPI_RegisterDriver_DBLIB   (I_DriverMgr& mgr);
+NCBI_DEPRECATED extern void DBAPI_RegisterDriver_FTDS    (I_DriverMgr& mgr);
+NCBI_DEPRECATED extern void DBAPI_RegisterDriver_ODBC    (I_DriverMgr& mgr);
+NCBI_DEPRECATED extern void DBAPI_RegisterDriver_MSDBLIB (I_DriverMgr& mgr);
+NCBI_DEPRECATED extern void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
 
+// New and recommended.
 extern void DBAPI_RegisterDriver_CTLIB   (void);
 extern void DBAPI_RegisterDriver_DBLIB   (void);
 extern void DBAPI_RegisterDriver_FTDS    (void);
@@ -57,6 +60,8 @@ extern void DBAPI_RegisterDriver_ODBC    (void);
 extern void DBAPI_RegisterDriver_MSDBLIB (void);
 extern void DBAPI_RegisterDriver_MYSQL   (void);
 extern void DBAPI_RegisterDriver_SQLITE3 (void);
+// Development ...
+// extern void DBAPI_RegisterDriver_GATEWAY (void);
 
 END_NCBI_SCOPE
 

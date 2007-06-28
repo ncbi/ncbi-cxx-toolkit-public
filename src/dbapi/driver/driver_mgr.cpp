@@ -82,6 +82,11 @@ class C_xDriverMgr : public I_DriverMgr
 public:
     C_xDriverMgr(void);
 
+    // Old API ...
+    FDBAPI_CreateContext GetDriver(const string& driver_name,
+                                   string*       err_msg = 0);
+
+    // Old API ...
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
@@ -112,6 +117,10 @@ public:
     I_DriverContext* GetDriverContext(
         const string& driver_name,
         const map<string, string>* attr = NULL);
+
+protected:
+    // Old API ...
+    bool LoadDriverDll(const string& driver_name, string* err_msg);
 
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
@@ -252,6 +261,60 @@ void C_xDriverMgr::RegisterDriver(const string&        driver_name,
     m_Drivers.push_back(SDrivers(driver_name, driver_ctx_func));
 }
 
+// Old API ...
+FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
+                                             string*       err_msg)
+{
+    CFastMutexGuard mg(m_Mutex);
+
+    ITERATE(vector<SDrivers>, it, m_Drivers) {
+        if (it->drv_name == driver_name) {
+            return it->drv_func;
+        }
+    }
+
+    if (!LoadDriverDll(driver_name, err_msg)) {
+        return 0;
+    }
+
+    ITERATE(vector<SDrivers>, it, m_Drivers) {
+        if (it->drv_name == driver_name) {
+            return it->drv_func;
+        }
+    }
+
+    DATABASE_DRIVER_ERROR( "internal error", 200 );
+}
+
+// Old API ...
+bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
+{
+    try {
+        CDll drv_dll("ncbi_xdbapi_" + driver_name);
+
+        FDllEntryPoint entry_point;
+        if ( !drv_dll.GetEntryPoint_Func("DBAPI_E_" + driver_name,
+                                         &entry_point) ) {
+            drv_dll.Unload();
+            return false;
+        }
+
+        FDriverRegister reg = entry_point();
+
+        if(!reg) {
+            DATABASE_DRIVER_ERROR( "driver reports an unrecoverable error "
+                               "(e.g. conflict in libraries)", 300 );
+        }
+
+        reg(*this);
+        return true;
+    }
+    catch (exception& e) {
+        if(err_msg) *err_msg= e.what();
+        return false;
+    }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 static CSafeStaticPtr<C_xDriverMgr> s_DrvMgr;
@@ -267,6 +330,14 @@ C_DriverMgr::~C_DriverMgr()
 {
 }
 
+// Old API ...
+FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
+                                            string* err_msg)
+{
+    return s_DrvMgr->GetDriver(driver_name, err_msg);
+}
+
+    // Old API ...
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
                                  FDBAPI_CreateContext driver_ctx_func)
 {

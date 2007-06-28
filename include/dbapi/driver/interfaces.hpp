@@ -647,6 +647,8 @@ public:
     virtual ~I_DriverMgr(void);
 
 public:
+    /// @deprecated
+    NCBI_DEPRECATED
     virtual void RegisterDriver(const string& driver_name,
                                 FDBAPI_CreateContext driver_ctx_func) = 0;
 };

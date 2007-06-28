@@ -59,11 +59,15 @@ template <typename T> class CSafeStaticPtr;
 class NCBI_DBAPIDRIVER_EXPORT IConnValidator : public CObject
 {
 public:
-    enum EConnStatus {eValidConn, eInvalidConn, eTempInvalidConn};
+    enum EConnStatus {
+        eValidConn,         //< means "everything is fine"
+        eInvalidConn,       //< means "bad connection, do not use it any more"
+        eTempInvalidConn    //< means "temporarily unavailable connection"
+        };
 
     virtual ~IConnValidator(void);
 
-    // All CException-derived exceptions will be caught by CDBConnectionFactory.
+    // All CException-derived exceptions might be caught by a connection factory.
     // Please use other tools to report validation information to a user.
     virtual EConnStatus Validate(CDB_Connection& conn) = 0;
     // This method shouldn't rethrow the exception.
