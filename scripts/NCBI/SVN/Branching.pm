@@ -14,8 +14,6 @@ use File::Find;
 use NCBI::SVN::Wrapper;
 use NCBI::SVN::SwitchMap;
 
-my $TrunkDir = 'trunk/c++';
-
 sub GetTreeContainingSubtree
 {
     my ($Self, $SVN, $Path, $Subtree) = @_;
