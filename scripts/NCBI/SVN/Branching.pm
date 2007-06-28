@@ -540,7 +540,7 @@ sub DoMerge
         my $UpstreamRevisions = $BranchInfo->{UpstreamRevisions};
 
         $SourceRev = @$UpstreamRevisions ? $UpstreamRevisions->[0]->{Number} :
-            ($BranchInfo->{BranchRevisions}->[0]->{Number} - 1);
+            $BranchInfo->{BranchRevisions}->[-1]->{Number} - 1;
     }
 
     my @BranchDirs = @{$BranchInfo->{BranchDirs}};
