@@ -27,6 +27,8 @@ Usage:
 
     $ScriptName create <branch_path> <upstream_path>[:<rev>] <branch_dirs>
 
+    $ScriptName alter <branch_path> <branch_dirs>
+
     $ScriptName remove <branch_path>
 
     $ScriptName merge_down <branch_path> [<trunk_rev>]
@@ -53,11 +55,16 @@ Commands:
     list                Prints the list of branches that were created
                         with the help of this utility.
 
-    info                Displays brief information about the branch specified
-                        by the <branch_path> argument.
+    info                Displays brief information about the branch
+                        specified by the <branch_path> argument.
 
-    create              Either creates a new branch defined by its base path
-                        <branch_path> and directory listing <branch_dirs>.
+    create              Creates a new branch defined by its base path
+                        <branch_path>, upstream path, and directory
+                        listing <branch_dirs>.
+
+    alter               Modifies branch structure bringing it to the state
+                        as if it was initially created with directory
+                        listing <branch_dirs>.
 
     remove              Removes branch identified by the path <branch_path>
                         from the repository.
@@ -116,6 +123,10 @@ elsif ($Command eq 'info')
 elsif ($Command eq 'create')
 {
     $Method = 'Create'
+}
+elsif ($Command eq 'alter')
+{
+    $Method = 'Alter'
 }
 elsif ($Command eq 'remove')
 {

@@ -12,7 +12,6 @@ use File::Temp qw/tempfile/;
 use File::Find;
 
 use NCBI::SVN::Wrapper;
-use NCBI::SVN::SwitchMap;
 
 sub GetTreeContainingSubtree
 {
@@ -138,16 +137,6 @@ sub LayPath
     }
 }
 
-sub ReadBranchMap
-{
-    my ($Self, $SVN, $BranchMapRepoPath) = @_;
-
-    my @BranchMapLines = $SVN->ReadFileLines($BranchMapRepoPath);
-
-    return NCBI::SVN::SwitchMap->new(MyName => $Self->{MyName},
-            MapFileLines => \@BranchMapLines)
-}
-
 sub ReadBranchInfo
 {
     my ($Self, $SVN, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
@@ -156,31 +145,17 @@ sub ReadBranchInfo
 
     $_ ||= 'HEAD' for $MaxBranchRev, $MaxUpstreamRev;
 
-    my $BranchRevisions = $SVN->ReadLog('--stop-on-copy',
+    my $RevisionLog = $SVN->ReadLog('--stop-on-copy',
         "-r$MaxBranchRev\:1", $SVN->GetRepository(), 'branches/' . $BranchPath);
 
-    my $MergeRegExp =
-        qr/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o;
-
-    my @MergeDownRevisions;
-
-    for my $Revision (@$BranchRevisions)
-    {
-        if ($Revision->{LogMessage} =~ $MergeRegExp && $3 eq $BranchPath)
-        {
-            push @MergeDownRevisions, [$Revision, $1]
-        }
-    }
-
+    my @BranchRevisions;
     my $BranchCreationRevision;
     my $BranchSourceRevision;
     my %BranchStructure;
 
-    my $RevisionIndex = @$BranchRevisions;
-
-    while (--$RevisionIndex >= 0)
+    for my $Revision (@$RevisionLog)
     {
-        my $Revision = $BranchRevisions->[$RevisionIndex];
+        push @BranchRevisions, $Revision;
 
         if ($Revision->{LogMessage} =~ m/^Created branch '(.+?)'.$/o &&
             $1 eq $BranchPath)
@@ -214,12 +189,16 @@ sub ReadBranchInfo
 
     die 'unable to determine branch source' unless $BranchSourceRevision;
 
-    while (--$RevisionIndex >= 0)
-    {
-        my $Revision = $BranchRevisions->[$RevisionIndex];
+    my $MergeRegExp =
+        qr/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o;
 
-        if ($Revision->{LogMessage} =~ m/^Modified branch '(.+?)'.$/ &&
-            $1 eq $BranchPath)
+    my @MergeDownRevisions;
+
+    for my $Revision (reverse @BranchRevisions)
+    {
+        my $LogMessage = $Revision->{LogMessage};
+
+        if ($LogMessage =~ m/^Modified branch '(.+?)'.$/o && $1 eq $BranchPath)
         {
             for my $Change (@{$Revision->{ChangedPaths}})
             {
@@ -229,11 +208,16 @@ sub ReadBranchInfo
                 {
                     delete $BranchStructure{$TargetPath}
                 }
-                elsif ($ChangeType eq 'A' && $SourcePath)
+                elsif ($SourcePath &&
+                    ($ChangeType eq 'A' || $ChangeType eq 'R'))
                 {
                     $BranchStructure{$TargetPath} = $SourcePath
                 }
             }
+        }
+        elsif ($LogMessage =~ $MergeRegExp && $3 eq $BranchPath)
+        {
+            unshift @MergeDownRevisions, [$Revision, $1]
         }
     }
 
@@ -269,10 +253,8 @@ sub ReadBranchInfo
 
     @BranchDirs = sort @BranchDirs;
 
-    my $FirstBranchRevision = $BranchRevisions->[-1];
-
     my $UpstreamRevisions = $SVN->ReadLog('--stop-on-copy',
-        "-r$MaxUpstreamRev\:$FirstBranchRevision->{Number}",
+        "-r$MaxUpstreamRev\:$BranchRevisions[-1]->{Number}",
         $SVN->GetRepository(), map {"$UpstreamPath/$_"} @BranchDirs);
 
     my @MergeUpRevisions;
@@ -292,7 +274,7 @@ sub ReadBranchInfo
         BranchCreationRevision => $BranchCreationRevision,
         BranchSourceRevision => $BranchSourceRevision,
         BranchDirs => \@BranchDirs,
-        BranchRevisions => $BranchRevisions,
+        BranchRevisions => \@BranchRevisions,
         UpstreamRevisions => $UpstreamRevisions,
         MergeDownRevisions => \@MergeDownRevisions,
         MergeUpRevisions => \@MergeUpRevisions
@@ -398,32 +380,22 @@ sub Create
 
         push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
     }
+    else
+    {
+        die "$Self->{MyName}: branch '$BranchPath' already exists.\n";
+    }
 
     my %MkDirTree;
     my %RmDirTree;
     my %CommonTree;
 
-    my $ExistingBranch;
-    # Read the old branch_map, if it exists.
-    my $BranchMapRepoPath = "branches/$BranchPath/branch_map";
-
-    my $OldSwitchMap = eval {$Self->ReadBranchMap($SVN, $BranchMapRepoPath)};
-
-    unless ($@)
+    for my $Dir (@BranchDirs)
     {
-        die "$Self->{MyName}: branch '$BranchPath' already exists.\n"
-    }
-    else
-    {
-        for my $Dir (@BranchDirs)
-        {
-            my $SourcePath = "$UpstreamPath/$Dir";
-            my $TargetPath = "branches/$BranchPath/$Dir";
+        my $SourcePath = "$UpstreamPath/$Dir";
+        my $TargetPath = "branches/$BranchPath/$Dir";
 
-            LayPath($TargetPath, \%RmDirTree, \%MkDirTree, \%CommonTree);
-
-            push @CopyCommands, 'cp', 'HEAD', $SourcePath, $TargetPath
-        }
+        LayPath($TargetPath, \%RmDirTree, \%MkDirTree, \%CommonTree);
+        push @CopyCommands, 'cp', 'HEAD', $SourcePath, $TargetPath
     }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
@@ -438,11 +410,102 @@ sub Create
     # with a single revision using MUCC.
     if (@Commands)
     {
-        print(($ExistingBranch ? 'Updating' : 'Creating') .
-            " branch '$BranchPath'...\n");
+        print "Creating branch '$BranchPath'...\n";
 
-        system('mucc', '--message', ($ExistingBranch ? 'Modified' : 'Created') .
-            " branch '$BranchPath'.", '--root-url', $SVN->{Repos}, @Commands)
+        system('mucc', '--message', "Created branch '$BranchPath'.",
+            '--root-url', $SVN->{Repos}, @Commands)
+    }
+    else
+    {
+        print "Nothing to do.\n"
+    }
+
+    unlink $BranchListFN if $BranchListFN;
+}
+
+sub Alter
+{
+    my ($Self, $BranchPath, @BranchDirs) = @_;
+
+    for ([branch_path => $BranchPath], [branch_dirs => $BranchDirs[0]])
+    {
+        die "$Self->{MyName}: <$_->[0]> parameter is missing\n" unless $_->[1]
+    }
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+
+    my $MergeRevisions = $BranchInfo->{MergeDownRevisions};
+    my $LastSynchRev = @$MergeRevisions ? $MergeRevisions->[0]->[1] :
+        $BranchInfo->{BranchSourceRevision};
+
+    my $UpstreamPath = $BranchInfo->{UpstreamPath};
+
+    my @RmCommands;
+    my @MkdirCommands;
+    my @CopyCommands;
+    my @PutCommands;
+
+    my $BranchListFN;
+
+    # Read branch_list, if it exists.
+    my @ExistingBranches = eval {$SVN->ReadFileLines('branches/branch_list')};
+
+    # Unless branch_list contains our branch path already, add a MUCC
+    # command to (re-)create branch_list.
+    if ($@ || !grep {$_ eq $BranchPath} @ExistingBranches)
+    {
+        my $BranchListFH;
+
+        ($BranchListFH, $BranchListFN) = tempfile();
+
+        print $BranchListFH "$_\n" for @ExistingBranches, $BranchPath;
+
+        close $BranchListFH;
+
+        push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
+    }
+
+    my %MkDirTree;
+    my %RmDirTree;
+    my %CommonTree;
+
+    my %OldBranchDirs = map {$_ => 1} @{$BranchInfo->{BranchDirs}};
+
+    for my $Dir (@BranchDirs)
+    {
+        unless (delete $OldBranchDirs{$Dir})
+        {
+            my $SourcePath = "$UpstreamPath/$Dir";
+            my $TargetPath = "branches/$BranchPath/$Dir";
+
+            LayPath($TargetPath, \%RmDirTree, \%MkDirTree, \%CommonTree);
+            push @CopyCommands, 'cp', $LastSynchRev, $SourcePath, $TargetPath
+        }
+    }
+
+    for my $Dir (keys %OldBranchDirs)
+    {
+        LayPath("branches/$BranchPath/$Dir", \%RmDirTree, \%CommonTree)
+    }
+
+    my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
+        $SVN->GetRepository(), \%CommonTree);
+
+    GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
+    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
+
+    my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
+
+    # Unless there are no changes, alter the branch
+    # with a single revision using MUCC.
+    if (@Commands)
+    {
+        print "Updating branch '$BranchPath'...\n";
+
+        system('mucc', '--message', "Modified branch '$BranchPath'.",
+            '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
