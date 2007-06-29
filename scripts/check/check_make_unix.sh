@@ -544,6 +544,7 @@ MailToAuthors()
    x_logfile="\$2"
    {
         echo "To: \$x_authors"
+        echo "Bcc: ivanov"
         echo "Subject: [C++ CHECK] \$x_app | \$signature"
         echo
         echo \$x_cmd
