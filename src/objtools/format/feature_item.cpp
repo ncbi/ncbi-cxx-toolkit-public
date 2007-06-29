@@ -25,7 +25,8 @@
 *
 * Author:  Aaron Ucko, NCBI
 *          Mati Shomrat
-*
+* Maintainer: Frank Ludwig
+*						
 * File Description:
 *   new (early 2003) flat-file generator -- representation of features
 *   (mainly of interest to implementors)
