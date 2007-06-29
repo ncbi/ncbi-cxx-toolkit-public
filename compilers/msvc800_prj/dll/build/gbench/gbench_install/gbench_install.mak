@@ -81,8 +81,8 @@ CORELIBS = \
         $(GBENCH)\bin\gui_core.dll              \
         $(GBENCH)\bin\gui_dialogs.dll           \
         $(GBENCH)\bin\gui_graph.dll             \
-        $(GBENCH)\bin\gui_utils.dll             \
         $(GBENCH)\bin\gui_services.dll          \
+        $(GBENCH)\bin\gui_utils.dll             \
         $(GBENCH)\bin\gui_widgets.dll           \
         $(GBENCH)\bin\gui_widgets_aln.dll       \
         $(GBENCH)\bin\gui_widgets_misc.dll      \
@@ -111,6 +111,7 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xdbapi_msdblib.dll   \
         $(GBENCH)\bin\ncbi_xdbapi_mysql.dll     \
         $(GBENCH)\bin\ncbi_xdbapi_odbc.dll      \
+        $(GBENCH)\bin\ncbi_xloader_basltdb.dll  \
         $(GBENCH)\bin\ncbi_xloader_cdd.dll      \
         $(GBENCH)\bin\ncbi_xloader_genbank.dll  \
         $(GBENCH)\bin\ncbi_xloader_lds.dll      \
@@ -134,6 +135,7 @@ PLUGINS = \
         $(GBENCH)\plugins\algo_init.dll         \
         $(GBENCH)\plugins\algo_linkout.dll      \
         $(GBENCH)\plugins\algo_phylo.dll        \
+        $(GBENCH)\plugins\algo_submit.dll       \
         $(GBENCH)\plugins\algo_validator.dll    \
         $(GBENCH)\plugins\algo_web_page.dll     \
         $(GBENCH)\plugins\dload_basic.dll       \
@@ -147,72 +149,99 @@ PLUGINS = \
         $(GBENCH)\plugins\view_validator.dll
 
 INTERNAL_PLUGINS = \
-        ncbi_gbench_internal
-        
+        ncbi_gbench_internal \
+        ncbi_gbench_contig
+
 #
 # Resource files
 #
 RESOURCES = \
-        share\gbench\about.png        	    \
+        share\gbench\about.png              \
+        share\gbench\alignment_symbol.png     \
+        share\gbench\annot_aligns_symbol.png     \
+        share\gbench\annot_feats_symbol.png     \
         share\gbench\annot_folder.png       \
+        share\gbench\annot_graphs_symbol.png     \
+        share\gbench\annot_ids_symbol.png     \
         share\gbench\annot_item.png         \
+        share\gbench\annot_locs_symbol.png     \
         share\gbench\attachment_item.png    \
         share\gbench\back.png               \
         share\gbench\broadcast.png          \
         share\gbench\broadcast_options.png  \
         share\gbench\check.png              \
         share\gbench\close_container.png    \
+        share\gbench\cross_align_view.png     \
         share\gbench\doc_item.png           \
         share\gbench\doc_item_disabled.png  \
-        share\gbench\export.png        	    \
+        share\gbench\dot_matrix_view.png     \
+        share\gbench\export.png             \
+        share\gbench\feature_symbol.png     \
+        share\gbench\feature_table_view.png     \
         share\gbench\folder.png             \
+        share\gbench\folder_closed.png     \
+        share\gbench\folder_open.png     \
         share\gbench\forward.png            \
         share\gbench\gbench_about.png       \
-        share\gbench\help.png        	    \
+        share\gbench\graphical_view.png     \
+        share\gbench\help.png               \
         share\gbench\history_folder.png     \
-        share\gbench\import.png        	    \
+        share\gbench\home.png               \
+        share\gbench\import.png             \
+        share\gbench\insp_brief_text_mode.png           \
+        share\gbench\insp_table_mode.png    \
+        share\gbench\insp_text_mode.png     \
         share\gbench\mouse_mode_def.png        \
         share\gbench\mouse_mode_pan.png        \
         share\gbench\mouse_mode_zoom_in.png    \
         share\gbench\mouse_mode_zoom_out.png   \
         share\gbench\mouse_mode_zoom_rect.png  \
+        share\gbench\multi_align_view.png     \
+        share\gbench\phylo_tree_view.png     \
         share\gbench\project_item.png       \
         share\gbench\radio.png              \
-        share\gbench\search.png        	    \
+        share\gbench\search.png             \
+        share\gbench\sequence_dna_symbol.png     \
+        share\gbench\sequence_id_dna_symbol.png     \
+        share\gbench\sequence_id_protein_symbol.png     \
+        share\gbench\sequence_id_symbol.png     \
+        share\gbench\sequence_protein_symbol.png     \
+        share\gbench\sequence_set_symbol.png     \
+        share\gbench\sequence_symbol.png     \
+        share\gbench\sequence_text_view.png     \
         share\gbench\splash.png             \
         share\gbench\splitter_2x2.png       \
         share\gbench\splitter_horz.png      \
         share\gbench\splitter_vert.png      \
         share\gbench\tab_control.png        \
-        share\gbench\tool.png        	    \
+        share\gbench\text_view.png     \
+        share\gbench\tool.png               \
         share\gbench\view_item.png          \
         share\gbench\viewer_item.png        \
+        share\gbench\wm_close.png           \
+        share\gbench\wm_maximize.png        \
         share\gbench\wm_menu.png        \
         share\gbench\wm_minimize.png        \
-        share\gbench\wm_maximize.png        \
         share\gbench\wm_restore.png        \
-        share\gbench\wm_close.png           \
         share\gbench\workspace_item.png     \
         share\gbench\zoom_all.png           \
         share\gbench\zoom_in.png            \
         share\gbench\zoom_out.png           \
         share\gbench\zoom_sel.png           \
         share\gbench\zoom_seq.png           \
-        share\gbench\insp_table_mode.png    \
-        share\gbench\insp_brief_text_mode.png           \
-        share\gbench\insp_text_mode.png     \
         \
         etc\algo_urls                       \
         etc\gbench.asn                      \
+        etc\gbench_cache_agent.ini          \
         etc\news.ini                        \
         etc\plugin_config.asn               \
         etc\web_pages.ini                   \
-        etc\gbench_cache_agent.ini          \
         \
         etc\dialogs\feat_edit               \
+        etc\dialogs\feat_edit_res           \
         \
-        etc\align_scores\aa-shapely-colors  \
         etc\align_scores\aa-rasmol-colors   \
+        etc\align_scores\aa-shapely-colors  \
         etc\align_scores\blosum45           \
         etc\align_scores\blosum62           \
         etc\align_scores\blosum80           \
@@ -250,6 +279,7 @@ all : dirs \
     $(PLUGINS) \
     $(INTERNAL_PLUGINS) \
     $(RESOURCES) \
+    EXTRA_RESOURCES \
     $(PATTERNS) \
     $(GBENCH)/plugins/plugin-cache
 
@@ -308,6 +338,14 @@ ncbi_gbench_internal :
     @if exist $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-macos-config.asn copy $(SRCDIR)\internal\gbench\plugins\ncbi\ncbi-macos-config.asn $(GBENCH)\extra\ncbi\ncbi-macos-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\ncbi
 
+ncbi_gbench_contig :
+    @echo Installing NCBI contig editing plugin...
+    @if not exist $(GBENCH)\extra\contig mkdir $(GBENCH)\extra\contig
+    @if exist $(DLLBIN)\ncbi_gbench_contig.dll copy $(DLLBIN)\ncbi_gbench_contig.dll $(GBENCH)\extra\contig\ncbi_gbench_contig.dll
+    @if exist $(DLLBIN)\ncbi_gbench_contig.pdb copy $(DLLBIN)\ncbi_gbench_contig.pdb $(GBENCH)\extra\contig\ncbi_gbench_contig.pdb
+    @if exist $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn copy $(SRCDIR)\internal\gbench\plugins\contig\contig-config.asn $(GBENCH)\extra\contig\contig-config.asn
+    @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\contig
+
 ###############################################################
 #
 # Target: Copy the resources
@@ -316,6 +354,10 @@ $(RESOURCES) : $(SRCDIR)\gui\res\$@
     @if not exist $(GBENCH)\$(*D) mkdir $(GBENCH)\$(*D)
     @if exist $(SRCDIR)\gui\res\$@ echo Updating $@...
     @if exist $(SRCDIR)\gui\res\$@ $(COPY) $(SRCDIR)\gui\res\$@ $(GBENCH)\$@ > NUL
+
+EXTRA_RESOURCES : $(SRCDIR)\objects\seqloc\accguide.txt
+    @if not exist $(GBENCH)\etc mkdir $(GBENCH)\etc 
+    $(COPY) $(SRCDIR)\objects\seqloc\accguide.txt $(GBENCH)\etc
 
 ###############################################################
 #
