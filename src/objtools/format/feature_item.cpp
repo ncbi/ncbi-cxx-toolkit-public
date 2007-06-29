@@ -816,6 +816,38 @@ bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
     return false;
 }
 
+static const string sc_ValidExceptionText[] = {
+  "RNA editing",
+  "reasons given in citation"
+};
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegatExceptText, sc_ValidExceptionText);
+
+static bool s_IsValidExceptionText(const string& text)
+{
+    return sc_LegatExceptText.find(text) != sc_LegatExceptText.end();
+}
+
+
+static const string sc_ValidRefSeqExceptionText[] = {
+    "RNA editing",
+    "alternative processing",
+    "alternative start codon",
+    "artificial frameshift",
+    "modified codon recognition",
+    "nonconsensus splice site",
+    "rearrangement required for product",
+    "reasons given in citation",
+    "ribosomal slippage",
+    "trans-splicing",
+    "unclassified transcription discrepancy",
+    "unclassified translation discrepancy"
+};
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegalRefSeqExceptText, sc_ValidRefSeqExceptionText);
+
+static bool s_IsValidRefSeqExceptionText(const string& text)
+{
+    return sc_LegalRefSeqExceptText.find(text) != sc_LegalRefSeqExceptText.end();
+}
 
 //  ----------------------------------------------------------------------------
 static CConstRef< CSeq_feat > s_GetGeneFeatureByLocus_tag(
@@ -834,11 +866,6 @@ static CConstRef< CSeq_feat > s_GetGeneFeatureByLocus_tag(
             .SetFeatSubtype( CSeqFeatData::eSubtype_gene );
         for ( CFeat_CI it( ctx.GetTopLevelEntry(), sel ); it; ++it ) {
             const CSeq_feat& feat = it->GetMappedFeature();
-            const CSeq_loc& location = feat.GetLocation();
-            if ( location.IsInt() ) {
-                const CSeq_interval& interval = location.GetInt();
-                TSeqPos from = interval.GetFrom();
-             }
             if ( ! feat.GetData().IsGene() ) {
                 continue;
             }
@@ -855,6 +882,130 @@ static CConstRef< CSeq_feat > s_GetGeneFeatureByLocus_tag(
         _TRACE( "s_GetGeneFeatureByLocus_tag(): Error: Feature iteration failed" );
     }
     return GeneFeature;
+}
+
+//  ----------------------------------------------------------------------------
+bool CFeatureItem::x_ExceptionIsLegalForFeature() const
+//  ----------------------------------------------------------------------------
+{
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
+
+    return ( subtype == CSeqFeatData::eSubtype_gene ||
+             subtype == CSeqFeatData::eSubtype_cdregion ||
+             subtype == CSeqFeatData::eSubtype_mRNA ||
+             subtype == CSeqFeatData::eSubtype_tRNA ||
+             subtype == CSeqFeatData::eSubtype_preRNA ||
+             subtype == CSeqFeatData::eSubtype_otherRNA ||
+             subtype == CSeqFeatData::eSubtype_3clip ||
+             subtype == CSeqFeatData::eSubtype_3UTR ||
+             subtype == CSeqFeatData::eSubtype_5clip ||
+             subtype == CSeqFeatData::eSubtype_5UTR );
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualCitation(
+    CBioseqContext& )
+//
+//  Process the /citation qualifier, if present.
+//  ----------------------------------------------------------------------------
+{
+    if (m_Feat->IsSetCit()) {
+        x_AddQual(eFQ_citation, new CFlatPubSetQVal(m_Feat->GetCit()));
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualExceptions( 
+    CBioseqContext& ctx ) const
+//
+//  Add any existing exception qualifiers.
+//  Note: These include /ribosomal_slippage and /tarns-splicing as special 
+//  cases. Also, some exceptions are listed as notes.
+//  ----------------------------------------------------------------------------
+{
+    const CSeqFeatData& data  = m_Feat->GetData();
+
+    string raw_exception;
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    if ( m_Feat->CanGetExcept_text()  &&  !m_Feat->GetExcept_text().empty() ) {
+        raw_exception = m_Feat->GetExcept_text();
+    }
+    if ( raw_exception == "" ) {
+        return;
+    }
+
+    list<string> exceptions;
+    NStr::Split( raw_exception, ",", exceptions );
+
+    list<string> output_exceptions;
+    list<string> output_notes;
+    ITERATE( list<string>, it, exceptions ) {
+        string cur = NStr::TruncateSpaces( *it );
+
+        //
+        //  If exceptions aren't legal for the feature, then turn them into
+        //  notes for strict modes, and let them stand in relaxed modes:
+        //
+        if ( ! x_ExceptionIsLegalForFeature() ) {
+            if ( cfg.DropIllegalQuals() ) {
+                output_notes.push_back( cur );
+            }
+            else {
+                output_exceptions.push_back( cur );
+            }
+        }
+
+        //
+        //  If exceptions are legal then it depends on the exception. Some are
+        //  turned into their own custom qualifiers. Others are allowed to stand
+        //  as exceptions, while others are turned into notes.
+        //
+        else {
+            if ( cur == "ribosomal slippage" ) {
+                x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
+                continue;
+            }
+            if ( cur == "trans-splicing" ) {
+                x_AddQual( eFQ_trans_splicing, new CFlatBoolQVal( true ) );
+                continue;
+            }
+            if ( cur == "nonconsensus splice site" ) {
+                x_AddQual( eFQ_exception_note, new CFlatStringQVal( cur ) );
+                continue;
+            }
+            if ( cur == "reasons given in citation" ) {
+                if ( data.IsCdregion() || data.IsGene() ) {
+                    output_exceptions.push_back( cur );
+                }
+                else { 
+                    output_notes.push_back( cur );
+                }
+                continue;
+            }
+            if ( s_IsValidExceptionText( cur ) ) {
+                output_exceptions.push_back( cur );
+            }
+            else if ( ctx.IsRefSeq() && s_IsValidRefSeqExceptionText( cur ) ) {
+                output_exceptions.push_back( cur );
+            }
+            else {
+//                if ( cfg.DropIllegalQuals() ) {
+//                }
+//                else {
+                    output_notes.push_back( cur );
+//                }
+            }
+        }
+    }
+    if ( ! output_exceptions.empty() ) {
+        string exception = NStr::Join( output_exceptions, ", " );
+        x_AddQual(eFQ_exception, new CFlatStringQVal( exception ) );
+    }
+    if ( ! output_notes.empty() ) {
+        string note = NStr::Join( output_notes, ", " );
+        x_AddQual(eFQ_exception_note, new CFlatStringQVal( note ) );
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -899,9 +1050,24 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQualNote(
+    const CGene_ref* gene_ref,
+    CConstRef<CSeq_feat> gene_feat ) const
+//
+//  For non-gene features, add the /comment qualifier if the necessary info
+//  exists.
+//  ----------------------------------------------------------------------------
+{
+    if ( gene_feat && gene_feat->CanGetComment() ) {
+        x_AddQual( eFQ_gene_note, new CFlatStringQVal( 
+            gene_feat->GetComment() ) );
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualOldLocusTag(
     const CGene_ref* gene_ref,
-    CConstRef<CSeq_feat> gene_feat )
+    CConstRef<CSeq_feat> gene_feat ) const
 //
 //  For non-gene features, add /old_locus_tag, if one exists somewhere.
 //  ----------------------------------------------------------------------------
@@ -923,7 +1089,12 @@ void CFeatureItem::x_AddQualOldLocusTag(
     }
 }
 
-void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
+//  ----------------------------------------------------------------------------
+void CFeatureItem::x_AddQuals(
+    CBioseqContext& ctx)
+//
+//  Add the various qualifiers to this feature. Top level function.
+//  ----------------------------------------------------------------------------
 {
     if ( ctx.Config().IsFormatFTable() ) {
         x_AddFTableQuals(ctx);
@@ -990,13 +1161,8 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
             x_AddQual(eFQ_inference, new CFlatInferenceQVal( value ));
         }
     }
-
-    // citation
-    if (m_Feat->IsSetCit()) {
-        x_AddQual(eFQ_citation, new CFlatPubSetQVal(m_Feat->GetCit()));
-    }
-    // exception
-    x_AddExceptionQuals(ctx);
+    x_AddQualCitation( ctx );
+    x_AddQualExceptions( ctx );
 
     if (!data.IsGene()  &&
         (subtype != CSeqFeatData::eSubtype_operon)  &&
@@ -1005,6 +1171,10 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
         const CGene_ref* grp = m_Feat->GetGeneXref();
         CConstRef<CSeq_feat> overlap_gene;
 
+        const CGene_ref* gene_ref = 0;
+        CConstRef<CSeq_feat> gene_feat;
+        x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
+        
         if (grp != NULL  &&  grp->CanGetDb()) {
             x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(grp->GetDb()));
         }
@@ -1019,6 +1189,10 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
             } else {
                 overlap_gene = GetOverlappingGene(GetLoc(), scope);
             }
+        }
+        x_AddQualNote( gene_ref, gene_feat );
+
+        if (grp == NULL) {
             if (overlap_gene) {
                 if (overlap_gene->CanGetComment()) {
                     x_AddQual(eFQ_gene_note,
@@ -1035,9 +1209,6 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 }
             }
         }
-        const CGene_ref* gene_ref = 0;
-        CConstRef<CSeq_feat> gene_feat;
-        x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat );
         x_AddQualOldLocusTag( gene_ref, gene_feat );
 
         if (grp != NULL) {
@@ -1589,85 +1760,6 @@ const CProt_ref* CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
 }
 
 
-static const string sc_ValidExceptionText[] = {
-  "RNA editing",
-  "reasons given in citation"
-};
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegatExceptText, sc_ValidExceptionText);
-
-static bool s_IsValidExceptionText(const string& text)
-{
-    return sc_LegatExceptText.find(text) != sc_LegatExceptText.end();
-}
-
-
-static const string sc_ValidRefSeqExceptionText[] = {
-    "RNA editing",
-    "alternative processing",
-    "alternative start codon",
-    "artificial frameshift",
-    "modified codon recognition",
-    "nonconsensus splice site",
-    "rearrangement required for product",
-    "reasons given in citation",
-    "ribosomal slippage",
-    "trans-splicing",
-    "unclassified transcription discrepancy",
-    "unclassified translation discrepancy"
-};
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_LegalRefSeqExceptText, sc_ValidRefSeqExceptionText);
-
-static bool s_IsValidRefSeqExceptionText(const string& text)
-{
-    return sc_LegalRefSeqExceptText.find(text) != sc_LegalRefSeqExceptText.end();
-}
-
-
-static void s_ParseException
-(const string& original,
- string& except,
- string& note,
- CBioseqContext& ctx)
-{
-    if ( original.empty() ) {
-        return;
-    }
-
-    except.erase();
-    note.erase();
-
-    if ( !ctx.Config().DropIllegalQuals() ) {
-        except = original;
-        return;
-    }
-
-    list<string> l;
-    NStr::Split(original, ",", l);
-    NON_CONST_ITERATE (list<string>, it, l) {
-        NStr::TruncateSpacesInPlace(*it);
-    }
-
-    list<string> except_list, note_list;
-
-    ITERATE (list<string>, it, l) {
-        if (s_IsValidExceptionText(*it)) {            
-            except_list.push_back(*it);
-        } else if (ctx.IsRefSeq()  &&  s_IsValidRefSeqExceptionText(*it)) {
-            except_list.push_back(*it);
-        } else {
-            note_list.push_back(*it);
-        }
-    }
-
-    if (!except_list.empty()) {
-        except = NStr::Join(except_list, ", ");
-    }
-    if (!note_list.empty()) {
-        note = NStr::Join(note_list, ", ");
-    }
-}
-
-
 static int s_ScoreSeqIdHandle(const CSeq_id_Handle& idh)
 {
     CConstRef<CSeq_id> id = idh.GetSeqId();
@@ -1708,66 +1800,6 @@ CSeq_id_Handle s_FindBestIdChoice(const CBioseq_Handle::TId& ids)
     return tracker.GetBestChoice();
 }
 
-
-void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
-{
-    string except_text, note_text;
-    const CFlatFileConfig& cfg = ctx.Config();
-
-    if ( m_Feat->CanGetExcept_text()  &&  !m_Feat->GetExcept_text().empty() ) {
-        except_text = m_Feat->GetExcept_text();
-    }
-    
-    // /exception currently legal only on cdregion
-    bool isCdregion = m_Feat->GetData().IsCdregion();
-    if ( isCdregion ) {
-        //
-        //  Except-text is actually a multi string value, with the values separated
-        //  by commas. Note that some values have special meaning and thus get 
-        //  special treatment.
-        //
-        list<string> exceptions;
-        NStr::Split( except_text, ",", exceptions );
-        ITERATE( list<string>, it, exceptions ) {
-            string exception = NStr::TruncateSpaces( *it );
-            if ( exception == "ribosomal slippage" ) {
-                x_AddQual(eFQ_ribosomal_slippage, new CFlatBoolQVal(true));
-            }
-            else if ( exception == "trans-splicing" ) {
-                x_AddQual(eFQ_trans_splicing, new CFlatBoolQVal(true));
-            }
-            else if ( exception == "nonconsensus splice site" ) {
-                string except = exception;
-                s_ParseException(except, exception, note_text, ctx);
-                if ( !note_text.empty() ) {
-                    x_AddQual(eFQ_exception_note, new CFlatStringQVal(note_text));
-                }
-            }
-            else if ( ! exception.empty() ) {
-                x_AddQual(eFQ_exception, new CFlatStringQVal(exception));
-            }
-        }
-    } 
-    else if ( ! cfg.DropIllegalQuals() ) {
-        //
-        // exception qualifier is not legal; we dump it to the flat file without any
-        // modifications:
-        //
-        if ( !except_text.empty() ) {
-            x_AddQual(eFQ_exception, new CFlatStringQVal(except_text));
-        }
-    }
-    else {
-        //
-        // exception qualifier is not legal; we add its string value to the /notes:
-        //
-        string except = except_text;
-        s_ParseException(except, except_text, note_text, ctx);
-        if ( !note_text.empty() ) {
-            x_AddQual(eFQ_exception_note, new CFlatStringQVal(note_text));
-        }
-    }
-}
 
 
 void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const

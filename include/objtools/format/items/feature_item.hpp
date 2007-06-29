@@ -152,12 +152,16 @@ private:
     void x_GatherInfo(CBioseqContext& ctx);
     //void x_FixLocation(CBioseqContext& ctx);
 
+    bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>& );
-    void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> );
+    void x_AddQualCitation( CBioseqContext& );
+    void x_AddQualExceptions( CBioseqContext& ) const;
+    void x_AddQualNote( const CGene_ref*, CConstRef<CSeq_feat> ) const;
+    void x_AddQualOldLocusTag( const CGene_ref*, CConstRef<CSeq_feat> ) const;
 
     // qualifier collection
-    void x_AddQuals(CBioseqContext& ctx);
+    void x_AddQuals( CBioseqContext& ctx );
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
     const TGeneSyn* x_AddGeneQuals(const CSeq_feat& gene, bool& pseudo) const;
@@ -176,7 +180,6 @@ private:
         CSeqFeatData::ESubtype subtype, bool from_overlap) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
-    void x_AddExceptionQuals(CBioseqContext& ctx) const;
     void x_ImportQuals(CBioseqContext& ctx) const;
     void x_AddRptUnitQual(const string& rpt_unit) const;
     void x_AddRptTypeQual(const string& rpt_type, bool check_qual_syntax) const;
