@@ -95,9 +95,11 @@ protected:
         return *m_ConnImpl;
     }
 
-private:
+    // Temporarily ...
     impl::CConnection*  m_ConnImpl;
     bool                m_WasSent;
+
+private:
 };
 
 
@@ -278,6 +280,7 @@ private:
     CInterfaceHook<CDB_BCPInCmd>    m_InterfaceBCPIn;
     CInterfaceHook<CDB_CursorCmd>   m_InterfaceCursor;
 
+public: // Temporarily ...
     string              m_Query;
     CDB_Params          m_Params;
     bool                m_Recompile; // Temporary. Should be deleted.

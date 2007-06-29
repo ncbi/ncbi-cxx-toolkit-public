@@ -412,7 +412,9 @@ protected:
     }
 
 private:
+    void x_CmdAlloc(CS_COMMAND** cmd);
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
@@ -513,6 +515,9 @@ protected:
     inline void DeleteResult(void);
     inline void DeleteResultInternal(void);
 
+    // Temporarily ...
+//     virtual CDB_Result* CreateResult(impl::CResult& result) = 0;
+
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
     {
@@ -584,6 +589,9 @@ protected:
     virtual CDB_Result* Result(void);
     virtual bool HasMoreResults(void) const;
     virtual int  RowCount(void) const;
+
+    // Temporarily ...
+//     CDB_Result* CreateResult(impl::CResult& result);
 
 private:
     bool x_AssignParams(void);

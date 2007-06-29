@@ -476,48 +476,128 @@ CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
     return rc;
 }
 
+// CDB_Result*
+// CTL_LRCmd::MakeResult(void)
+// {
+//     DeleteResult();
+//
+//     CHECK_DRIVER_ERROR(
+//        !WasSent(),
+//         "you need to send a command first",
+//         120010 );
+//
+//     for (;;) {
+//         CS_INT res_type;
+//         CS_RETCODE rc = 0;
+//
+//         try {
+//             rc = Check(ct_results(x_GetSybaseCmd(), &res_type));
+//         } catch (const CDB_Exception& ex) {
+//             SetHasFailed();
+//             Cancel();
+//
+//             DATABASE_DRIVER_ERROR_EX(ex, "ct_result failed", 120013);
+//         }
+//
+//         switch (rc) {
+//         case CS_SUCCEED:
+//             break;
+//         case CS_END_RESULTS:
+//             SetWasSent(false);
+//             return 0;
+//         case CS_FAIL:
+//             SetHasFailed();
+//             Cancel();
+//             DATABASE_DRIVER_ERROR("ct_result failed", 120013);
+//         case CS_CANCELED:
+//             SetWasSent(false);
+//             DATABASE_DRIVER_ERROR("your command has been canceled", 120011);
+// #ifdef CS_BUSY
+//         case CS_BUSY:
+//             DATABASE_DRIVER_ERROR("connection has another request pending", 120014);
+// #endif
+//         default:
+//             DATABASE_DRIVER_ERROR("your request is pending", 120015);
+//         }
+//
+//         switch ( res_type ) {
+//         case CS_CMD_SUCCEED:
+//         case CS_CMD_DONE: // done with this command
+//             // check the number of affected rows
+//             GetRowCount(&m_RowCount);
+//             continue;
+//         case CS_CMD_FAIL: // the command has failed
+//             // check the number of affected rows
+//             GetRowCount(&m_RowCount);
+//             SetHasFailed();
+//             DATABASE_DRIVER_WARNING( "The server encountered an error while "
+//                                "executing a command", 120016 );
+//         case CS_ROW_RESULT:
+//             SetResult(MakeRowResult());
+//             break;
+//         case CS_PARAM_RESULT:
+//             SetResult(MakeParamResult());
+//             break;
+//         case CS_COMPUTE_RESULT:
+//             SetResult(MakeComputeResult());
+//             break;
+//         case CS_STATUS_RESULT:
+//             SetResult(MakeStatusResult());
+//             break;
+//         case CS_COMPUTEFMT_RESULT:
+//             DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 120017 );
+//         case CS_ROWFMT_RESULT:
+//             DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 120018 );
+//         case CS_MSG_RESULT:
+//             DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 120019 );
+//         default:
+//             DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
+//         }
+//
+//         return Create_Result(static_cast<impl::CResult&>(GetResult()));
+//     }
+// }
+
+
 CDB_Result*
 CTL_LRCmd::MakeResult(void)
 {
     DeleteResult();
 
     CHECK_DRIVER_ERROR(
-       !WasSent(),
+        !m_WasSent,
         "you need to send a command first",
         120010 );
 
     for (;;) {
         CS_INT res_type;
-        CS_RETCODE rc = 0;
 
-        try {
-            rc = Check(ct_results(x_GetSybaseCmd(), &res_type));
-        } catch (const CDB_Exception& ex) {
-            SetHasFailed();
-            Cancel();
-
-            DATABASE_DRIVER_ERROR_EX(ex, "ct_result failed", 120013);
-        }
-
-        switch (rc) {
+        switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
-            SetWasSent(false);
+            m_WasSent = false;
             return 0;
         case CS_FAIL:
-            SetHasFailed();
-            Cancel();
-            DATABASE_DRIVER_ERROR("ct_result failed", 120013);
+            m_HasFailed = true;
+            if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
+                // we need to close this connection
+                DATABASE_DRIVER_ERROR(
+                    "Unrecoverable crash of ct_result. "
+                    "Connection must be closed",
+                    120012 );
+            }
+            m_WasSent = false;
+            DATABASE_DRIVER_ERROR( "ct_result failed", 120013 );
         case CS_CANCELED:
-            SetWasSent(false);
-            DATABASE_DRIVER_ERROR("your command has been canceled", 120011);
+            m_WasSent = false;
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
 #ifdef CS_BUSY
         case CS_BUSY:
-            DATABASE_DRIVER_ERROR("connection has another request pending", 120014);
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 120014 );
 #endif
         default:
-            DATABASE_DRIVER_ERROR("your request is pending", 120015);
+            DATABASE_DRIVER_ERROR( "your request is pending", 120015 );
         }
 
         switch ( res_type ) {
@@ -529,7 +609,7 @@ CTL_LRCmd::MakeResult(void)
         case CS_CMD_FAIL: // the command has failed
             // check the number of affected rows
             GetRowCount(&m_RowCount);
-            SetHasFailed();
+            m_HasFailed = true;
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 120016 );
         case CS_ROW_RESULT:
@@ -554,6 +634,7 @@ CTL_LRCmd::MakeResult(void)
             DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
         }
 
+//         return CTL_Cmd::CreateResult();
         return Create_Result(static_cast<impl::CResult&>(GetResult()));
     }
 }
@@ -658,6 +739,12 @@ int CTL_LangCmd::RowCount() const
     return m_RowCount;
 }
 
+
+// CDB_Result*
+// CTL_LangCmd::CreateResult(impl::CResult& result)
+// {
+//     return Create_Result(result);
+// }
 
 CTL_LangCmd::~CTL_LangCmd()
 {
