@@ -1769,6 +1769,14 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
                     return kInvalidMember;
                 }
             } else {
+                if (!m_Attlist && InsideOpeningTag()) {
+                    TMemberIndex first = classType->GetMembers().FirstIndex();
+                    if (classType->GetMemberInfo(first)->GetId().IsAttlist()) {
+                        m_Attlist = true;
+                        return first;
+                    }
+                }
+                m_Attlist = false;
                 if ( NextTagIsClosing() )
                     return kInvalidMember;
                 tagName = ReadName(BeginOpeningTag());
