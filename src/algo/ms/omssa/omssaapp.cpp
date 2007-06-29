@@ -140,9 +140,9 @@ void COMSSABase::Init()
     argDesc->AddDefaultKey("oc", "csvfile", "filename for csv formatted search summary",
                 CArgDescriptions::eString, "");
     argDesc->AddFlag("w", "include spectra and search params in search results");
-    argDesc->AddDefaultKey("to", "pretol", "product ion mass tolerance in Da",
+    argDesc->AddDefaultKey("to", "pretol", "product ion m/z tolerance in Da",
 			   CArgDescriptions::eDouble, "0.8");
-    argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
+    argDesc->AddDefaultKey("te", "protol", "precursor ion m/z tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
     argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact)",
                 CArgDescriptions::eInteger, "0");
