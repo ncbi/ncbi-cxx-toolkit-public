@@ -42,98 +42,121 @@ sub GetTreeContainingSubtree
 
 sub GetRmCommandsR
 {
-    my ($RmCommands, $ExistingStructure, $DirName, $TreeToRemove, $Path) = @_;
+    my ($RmCommands, $ExistingStructure, $DirName, $DirContents, $Path) = @_;
 
-    if (my $ThisDirStructure = $ExistingStructure->{$DirName})
+    my $DirExistingStructure = $ExistingStructure->{$DirName};
+
+    return 0 unless $DirExistingStructure;
+
+    if (!$DirContents->{'/'}->{rm})
     {
-        if (%$TreeToRemove)
+        my $ChildRemoved;
+        my @RmCommands;
+
+        while (my ($Subdir, $Subtree) = each %$DirContents)
         {
-            my @RmCommands;
+            next if $Subdir eq '/';
 
-            while (my ($SubdirName, $Subdir) = each %$TreeToRemove)
-            {
-                GetRmCommandsR(\@RmCommands, $ThisDirStructure,
-                    $SubdirName, $Subdir, "$Path/$SubdirName")
-            }
-
-            if (keys %$ThisDirStructure)
-            {
-                push @$RmCommands, @RmCommands;
-                return
-            }
+            $ChildRemoved = 1
+                if GetRmCommandsR(\@RmCommands, $DirExistingStructure,
+                    $Subdir, $Subtree, "$Path/$Subdir")
         }
 
-        push @$RmCommands, 'rm', $Path;
-        delete $ExistingStructure->{$DirName}
+        if (!$ChildRemoved || %$DirExistingStructure)
+        {
+            push @$RmCommands, @RmCommands;
+            return 0
+        }
     }
+
+    delete $ExistingStructure->{$DirName};
+    push @$RmCommands, 'rm', $Path;
+    return 1
 }
 
 sub GetRmCommands
 {
-    my ($RmCommands, $ExistingStructure, $TreeToRemove) = @_;
+    my ($RmCommands, $ExistingStructure, $ModTree) = @_;
 
-    while (my ($DirName, $Subdir) = each %$TreeToRemove)
+    while (my ($Subdir, $Subtree) = each %$ModTree)
     {
+        next if $Subdir eq '/';
+
         GetRmCommandsR($RmCommands, $ExistingStructure,
-            $DirName, $Subdir, $DirName)
+            $Subdir, $Subtree, $Subdir)
     }
 }
 
 sub CreateEntireTree
 {
-    my ($MkdirCommands, $TreeToCreate, $Path) = @_;
+    my ($MkdirCommands, $ModTree, $Path) = @_;
 
-    return unless %$TreeToCreate;
+    return 0 unless %$ModTree;
 
-    push @$MkdirCommands, 'mkdir', $Path;
+    my $NeedToCreateThisPath;
+    my $NeedToCreateParent;
 
-    while (my ($DirName, $Subdir) = each %$TreeToCreate)
+    while (my ($Subdir, $Subtree) = each %$ModTree)
     {
-        CreateEntireTree($MkdirCommands, $Subdir, "$Path/$DirName")
+        if ($Subdir eq '/')
+        {
+            $NeedToCreateParent = 1 if $Subtree->{mkparent}
+        }
+        elsif (CreateEntireTree($MkdirCommands, $Subtree, "$Path/$Subdir"))
+        {
+            $NeedToCreateParent = $NeedToCreateThisPath = 1
+        }
     }
+
+    unshift @$MkdirCommands, 'mkdir', $Path if $NeedToCreateThisPath;
+
+    return $NeedToCreateParent
 }
 
 sub GetMkdirCommandsR
 {
-    my ($MkdirCommands, $ExistingStructure,
-        $DirName, $TreeToCreate, $Path) = @_;
+    my ($MkdirCommands, $ExistingStructure, $ModTree, $Path) = @_;
 
-    unless ($ExistingStructure->{$DirName})
+    unless ($ExistingStructure)
     {
-        $ExistingStructure->{$DirName} = $TreeToCreate;
-        return CreateEntireTree($MkdirCommands, $TreeToCreate, $Path)
+        CreateEntireTree($MkdirCommands, $ModTree, $Path);
+        return
     }
 
-    $ExistingStructure = $ExistingStructure->{$DirName};
-
-    while (my ($DirName, $Subdir) = each %$TreeToCreate)
+    while (my ($Subdir, $Subtree) = each %$ModTree)
     {
+        next if $Subdir eq '/';
+
         GetMkdirCommandsR($MkdirCommands,
-            $ExistingStructure, $DirName, $Subdir, "$Path/$DirName")
+            $ExistingStructure->{$Subdir}, $Subtree, "$Path/$Subdir")
     }
 }
 
 sub GetMkdirCommands
 {
-    my ($MkdirCommands, $ExistingStructure, $TreeToCreate) = @_;
+    my ($MkdirCommands, $ExistingStructure, $ModTree) = @_;
 
-    while (my ($DirName, $Subdir) = each %$TreeToCreate)
+    while (my ($Subdir, $Subtree) = each %$ModTree)
     {
+        next if $Subdir eq '/';
+
         GetMkdirCommandsR($MkdirCommands,
-            $ExistingStructure, $DirName, $Subdir, $DirName)
+            $ExistingStructure->{$Subdir}, $Subtree, $Subdir)
     }
 }
 
-sub LayPath
+sub MarkPath
 {
-    my ($Path, @Subdirs) = @_;
+    my ($Path, $Tree, @Markers) = @_;
 
-    for my $DirName (split('/', $Path))
+    for my $Subdir (split('/', $Path))
     {
-        for my $Subdir (@Subdirs)
-        {
-            $Subdir = ($Subdir->{$DirName} ||= {})
-        }
+        $Tree = ($Tree->{$Subdir} ||= {})
+    }
+
+    for my $Marker (@Markers)
+    {
+        $Tree->{'/'}->{$Marker} = 1
     }
 }
 
@@ -346,12 +369,12 @@ sub Create
         die "$Self->{MyName}: <$_->[0]> parameter is missing\n" unless $_->[1]
     }
 
-    my $Revision = 'HEAD';
+    my $SourceRevision = 'HEAD';
 
     if ($UpstreamPath =~ m/^(.+):(.+)$/)
     {
         $UpstreamPath = $1;
-        $Revision = $2
+        $SourceRevision = $2
     }
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
@@ -385,24 +408,22 @@ sub Create
         die "$Self->{MyName}: branch '$BranchPath' already exists.\n";
     }
 
-    my %MkDirTree;
-    my %RmDirTree;
-    my %CommonTree;
+    my %ModTree;
 
     for my $Dir (@BranchDirs)
     {
         my $SourcePath = "$UpstreamPath/$Dir";
         my $TargetPath = "branches/$BranchPath/$Dir";
 
-        LayPath($TargetPath, \%RmDirTree, \%MkDirTree, \%CommonTree);
-        push @CopyCommands, 'cp', 'HEAD', $SourcePath, $TargetPath
+        MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
+        push @CopyCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
     }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
-        $SVN->GetRepository(), \%CommonTree);
+        $SVN->GetRepository(), \%ModTree);
 
-    GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
-    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
+    GetRmCommands(\@RmCommands, $ExistingStructure, \%ModTree);
+    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%ModTree);
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
@@ -467,11 +488,9 @@ sub Alter
         push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
     }
 
-    my %MkDirTree;
-    my %RmDirTree;
-    my %CommonTree;
-
     my %OldBranchDirs = map {$_ => 1} @{$BranchInfo->{BranchDirs}};
+
+    my %ModTree;
 
     for my $Dir (@BranchDirs)
     {
@@ -480,21 +499,21 @@ sub Alter
             my $SourcePath = "$UpstreamPath/$Dir";
             my $TargetPath = "branches/$BranchPath/$Dir";
 
-            LayPath($TargetPath, \%RmDirTree, \%MkDirTree, \%CommonTree);
+            MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
             push @CopyCommands, 'cp', $LastSynchRev, $SourcePath, $TargetPath
         }
     }
 
     for my $Dir (keys %OldBranchDirs)
     {
-        LayPath("branches/$BranchPath/$Dir", \%RmDirTree, \%CommonTree)
+        MarkPath("branches/$BranchPath/$Dir", \%ModTree, 'rm')
     }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
-        $SVN->GetRepository(), \%CommonTree);
+        $SVN->GetRepository(), \%ModTree);
 
-    GetRmCommands(\@RmCommands, $ExistingStructure, \%RmDirTree);
-    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%MkDirTree);
+    GetRmCommands(\@RmCommands, $ExistingStructure, \%ModTree);
+    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%ModTree);
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
@@ -558,15 +577,15 @@ sub Remove
         }
     }
 
-    my %RmDirTree;
+    my %ModTree;
 
     for (@{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
     {
-        LayPath("branches/$BranchPath/$_", \%RmDirTree)
+        MarkPath("branches/$BranchPath/$_", \%ModTree, 'rm')
     }
 
     GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
-        $SVN->GetRepository(), \%RmDirTree), \%RmDirTree);
+        $SVN->GetRepository(), \%ModTree), \%ModTree);
 
     # Remove the branch with a single revision using MUCC.
     print("Removing branch '$BranchPath'...\n");
