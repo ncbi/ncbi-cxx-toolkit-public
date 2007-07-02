@@ -39,6 +39,11 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Score_set.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/seq_vector.hpp>
@@ -594,6 +599,97 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     sa->SetSegs(*segs);
 
     return sa;
+}
+
+
+
+
+CSplignFormatter::TSplicedSegs CSplignFormatter::AsSplicedSegs(
+  const CSplign::TResults* results) const
+{
+    if(results == 0) {
+        results = &(m_splign_results);
+    }
+
+    TSplicedSegs rv;
+
+    ITERATE(CSplign::TResults, ii_res, *results) {
+
+        const CSplign::SAlignedCompartment & ac (*ii_res);
+        if(ac.m_error) continue;
+
+        CRef<CSpliced_seg> sseg (new CSpliced_seg);
+    
+        sseg->SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+
+        CSeq_id * pseqid_query (const_cast<CSeq_id*>(m_QueryId.GetNonNullPointer()));
+        sseg->SetProduct_id(*pseqid_query);
+
+        CSeq_id * pseqid_subj (const_cast<CSeq_id*>(m_SubjId.GetNonNullPointer()));
+        sseg->SetGenomic_id(*pseqid_subj);
+        
+        sseg->SetProduct_strand(ac.m_QueryStrand? eNa_strand_plus: eNa_strand_minus);
+        sseg->SetGenomic_strand(ac.m_SubjStrand? eNa_strand_plus: eNa_strand_minus);
+
+        if(ac.m_QueryLen > 0) {
+            sseg->SetProduct_length(ac.m_QueryLen);
+        }
+
+        if(ac.m_PolyA > 0) {
+            sseg->SetPoly_a(ac.m_PolyA);
+        }
+
+        CSpliced_seg::TExons & exons (sseg->SetExons());
+        for(size_t i (0), seg_dim (ac.m_segments.size()); i < seg_dim; ++i) {
+
+            const CSplign::TSegment & seg (ac.m_segments[i]);
+            if(seg.m_exon) {
+
+                CRef<CSpliced_exon> exon (new CSpliced_exon);
+
+                TSeqPos qmin, qmax, smin, smax;
+                if(seg.m_box[0] <= seg.m_box[1]) {
+                    qmin = seg.m_box[0];
+                    qmax = seg.m_box[1];
+                }
+                else {
+                    qmax = seg.m_box[0];
+                    qmin = seg.m_box[1];
+                }
+
+                if(seg.m_box[2] <= seg.m_box[3]) {
+                    smin = seg.m_box[2];
+                    smax = seg.m_box[3];
+                }
+                else {
+                    smax = seg.m_box[2];
+                    smin = seg.m_box[3];
+                }
+
+                CProduct_pos pp;
+                pp.SetNucpos(qmin);
+                exon->SetProduct_start(pp);
+                pp.SetNucpos(qmax);
+                exon->SetProduct_end(pp);
+
+                exon->SetGenomic_start(smin);
+                exon->SetGenomic_end(smax);
+
+                CSpliced_exon::TScores scores;
+                CSpliced_exon::TScores::Tdata & data (scores.Set());
+                CRef<CScore> score (new CScore);
+                data.push_back(score);
+                score->SetValue().SetReal(seg.m_score);
+                exon->SetScores(scores);
+
+                exons.push_back(exon);
+            }
+        }
+
+        rv.push_back(sseg);
+    }
+    
+    return rv;
 }
 
 
