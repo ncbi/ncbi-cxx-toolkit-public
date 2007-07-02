@@ -385,8 +385,7 @@ protected:
     CBlobMetaDB*            m_BlobAttrDB;
     CNcbiFstream*           m_ExtStore;
 
-    ICompression*           m_Compressor;    ///< Record compressor
-    EOwnership              m_OwnCompressor;
+    AutoPtr<ICompression>   m_Compressor;    ///< Record compressor
     CBDB_RawFile::TBuffer   m_CompressBuffer;
 
     string                  m_StoreDataDir;
@@ -415,8 +414,7 @@ CBDB_ExtBlobStore<TBV>::CBDB_ExtBlobStore()
   m_Env(0),
   m_BlobAttrDB(0),
   m_ExtStore(0),
-  m_Compressor(0),
-  m_OwnCompressor(eTakeOwnership),
+  m_Compressor(0, eTakeOwnership),
   m_ContainerMax(64 * 1024),
   m_AttrContainer(0),
   m_LastOp(eRead)
@@ -443,9 +441,6 @@ CBDB_ExtBlobStore<TBV>::~CBDB_ExtBlobStore()
                     "Exception in ~CBDB_ExtBlobStore " << ex.what());
         }
     }
-    if (m_OwnCompressor == eTakeOwnership) {
-        delete m_Compressor;
-    }
     delete m_AttrContainer;
     if (m_STmpBlock) {
         m_BlobIds.free_tempblock(m_STmpBlock);
@@ -457,11 +452,7 @@ template<class TBV>
 void CBDB_ExtBlobStore<TBV>::SetCompressor(ICompression* compressor, 
                                            EOwnership    own)
 {
-    if (m_OwnCompressor == eTakeOwnership) {
-        delete m_Compressor;
-    }
-    m_Compressor = compressor;
-    m_OwnCompressor = own;
+    m_Compressor.reset(compressor, own);
 }
 
 template<class TBV>
@@ -670,7 +661,7 @@ void CBDB_ExtBlobStore<TBV>::Flush()
 
     // compress and write blob container
     //
-    if (m_Compressor) {
+    if (m_Compressor.get()) {
         m_CompressBuffer.resize_mem(m_BlobContainer.size() * 2);
 
         size_t compressed_len;
@@ -725,7 +716,7 @@ CBDB_ExtBlobStore<TBV>::x_ReadCache(unsigned               blob_id,
                     return true;
                 }
                 buf.resize_mem((size_t)size);
-                if (m_Compressor) {
+                if (m_Compressor.get()) {
                     // check logicall correctness of the decompressed container
                     Uint8 sz = m_CompressBuffer.size();
                     _ASSERT(offset < sz);
@@ -802,7 +793,7 @@ CBDB_ExtBlobStore<TBV>::ReadBlob(unsigned blob_id, CBDB_RawFile::TBuffer& buf)
         BDB_THROW(eFileIO, "Cannot read from external store file ");
     }
 
-    if (m_Compressor) {
+    if (m_Compressor.get()) {
         m_CompressBuffer.resize_mem((size_t)m_ContainerMax * 10);
         size_t dst_len;
         bool ok = m_Compressor->DecompressBuffer(m_BlobContainer.data(),

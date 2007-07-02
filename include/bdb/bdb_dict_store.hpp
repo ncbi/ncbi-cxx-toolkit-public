@@ -222,12 +222,8 @@ public:
     BvStore&    GetBvStore()    { return *m_Store; }
 
 protected:
-    Dictionary* m_Dict;
-    BvStore*    m_Store;
-
-private:
-    auto_ptr<Dictionary> m_DictOwned;
-    auto_ptr<BvStore>    m_StoreOwned;
+    AutoPtr<Dictionary> m_Dict;
+    AutoPtr<BvStore>    m_Store;
 };
 
 
@@ -350,15 +346,9 @@ inline CBDB_BlobDictStore<Key, Dictionary, BvStore>
 ::CBDB_BlobDictStore(Dictionary& generator,
                      BvStore&    store,
                      EOwnership  own)
-    : m_Dict(NULL)
-    , m_Store(NULL)
+    : m_Dict(&generator, own),
+      m_Store(&store, own)
 {
-    if (own == eTakeOwnership) {
-        m_DictOwned.reset(&generator);
-        m_StoreOwned.reset(&store);
-    }
-    m_Dict = &generator;
-    m_Store = &store;
 }
 
 

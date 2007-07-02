@@ -381,41 +381,34 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 
 
 CConfig::CConfig(TParamTree* param_tree, EOwnership own)
-    : m_ParamTree(param_tree), m_OwnTree(own)
+    : m_ParamTree(param_tree, own)
 {
     if ( !param_tree ) {
-        m_ParamTree = new TParamTree;
-        m_OwnTree = eTakeOwnership;
+        m_ParamTree.reset(new TParamTree, eTakeOwnership);
     }
 }
 
 
 CConfig::CConfig(const IRegistry& reg)
 {
-    m_ParamTree = ConvertRegToTree(reg);
-    _ASSERT(m_ParamTree);
-    m_OwnTree = eTakeOwnership;
+    m_ParamTree.reset(ConvertRegToTree(reg), eTakeOwnership);
+    _ASSERT(m_ParamTree.get());
 }
 
 
 CConfig::CConfig(const TParamTree* param_tree)
 {
     if ( !param_tree ) {
-        m_ParamTree = new TParamTree;
-        m_OwnTree = eTakeOwnership;
+        m_ParamTree.reset(new TParamTree, eTakeOwnership);
     }
     else {
-        m_ParamTree = const_cast<TParamTree*>(param_tree);
-        m_OwnTree = eNoOwnership;
+        m_ParamTree.reset(const_cast<TParamTree*>(param_tree), eNoOwnership);
     }
 }
 
 
 CConfig::~CConfig()
 {
-    if (m_OwnTree == eTakeOwnership) {
-        delete m_ParamTree;
-    }
 }
 
 

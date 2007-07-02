@@ -81,8 +81,7 @@ public:
     virtual void SetRecordMoved() {}
 
 protected:
-    TBlobFile*                  m_BlobFile;
-    auto_ptr<TBlobFile>         m_BlobFile_Owned;
+    AutoPtr<TBlobFile>          m_BlobFile;
     auto_ptr<CBDB_FileCursor>   m_Cursor;
     size_t                      m_FetchBufferSize;
     bool                        m_Eof;
@@ -173,8 +172,7 @@ protected:
     void DoFetch();
 protected:
     mutable CFastMutex          m_Lock;
-    TBlobFile*                  m_BlobFile;
-    auto_ptr<TBlobFile>         m_BlobFile_Owned;
+    AutoPtr<TBlobFile>          m_BlobFile;
     auto_ptr<CBDB_FileCursor>   m_Cursor;
     size_t                      m_FetchBufferSize;
     bool                        m_Eof;
@@ -207,8 +205,7 @@ public:
     virtual void Close() {}
     virtual CMergeVolumes::TRawBuffer* ReadBlob(Uint4 blob_id);
 private:
-    TBlobStore*  m_BlobStore;
-    EOwnership   m_OwnBlobStore;
+    AutoPtr<TBlobStore> m_BlobStore;
 };
 
 
@@ -285,8 +282,7 @@ protected:
 protected:
     mutable CFastMutex         m_Lock;
     bool                       m_Good;
-    TBlobStore*                m_BlobStore;
-    EOwnership                 m_OwnBlobStore;
+    AutoPtr<TBlobStore>        m_BlobStore;
     CRef<CJobThread>           m_JobThread;
     Uint4                      m_Request_BlobId;
     CMergeVolumes::TRawBuffer* m_Request_Buffer;
@@ -305,13 +301,10 @@ template<class BF>
 CBDB_MergeBlobWalker<BF>::CBDB_MergeBlobWalker(TBlobFile*   blob_file,
                                                EOwnership   own,
                                                size_t       fetch_buffer_size)
- : m_BlobFile(blob_file),
+ : m_BlobFile(blob_file, own),
    m_FetchBufferSize(fetch_buffer_size),
    m_Eof(false)
 {
-    if (own == eTakeOwnership) {
-        m_BlobFile_Owned.reset(m_BlobFile);
-    }
 }
 
 template<class BF>
@@ -363,17 +356,13 @@ void CBDB_MergeBlobWalker<BF>::Fetch()
 template<class BStore>
 CBDB_MergeStore<BStore>::CBDB_MergeStore(TBlobStore*  blob_store, 
                                  EOwnership   own)
-  : m_BlobStore(blob_store),
-    m_OwnBlobStore(own)
+  : m_BlobStore(blob_store, own)
 {
 }
 
 template<class BStore>
 CBDB_MergeStore<BStore>::~CBDB_MergeStore()
 {
-    if (m_OwnBlobStore == eTakeOwnership) {
-        delete m_BlobStore;
-    }
 }
 
 template<class BStore>
@@ -405,8 +394,7 @@ template<class BStore>
 CBDB_MergeStoreAsync<BStore>::CBDB_MergeStoreAsync(TBlobStore*  blob_store, 
                                                    EOwnership   own)
   : m_Good(true),
-    m_BlobStore(blob_store),
-    m_OwnBlobStore(own),
+    m_BlobStore(blob_store, own),
     m_Request_BlobId(0),
     m_Request_Buffer(0),
     m_AsyncImpl(*this)
@@ -418,9 +406,6 @@ CBDB_MergeStoreAsync<BStore>::CBDB_MergeStoreAsync(TBlobStore*  blob_store,
 template<class BStore>
 CBDB_MergeStoreAsync<BStore>::~CBDB_MergeStoreAsync()
 {
-    if (m_OwnBlobStore == eTakeOwnership) {
-        delete m_BlobStore;
-    }
 }
 
 template<class BStore>
@@ -506,15 +491,12 @@ CBDB_MergeBlobWalkerAsync<BF>::CBDB_MergeBlobWalkerAsync(
                                                TBlobFile*   blob_file,
                                                EOwnership   own,
                                                size_t       fetch_buffer_size)
- : m_BlobFile(blob_file),
+ : m_BlobFile(blob_file, own),
    m_FetchBufferSize(fetch_buffer_size),
    m_Eof(false),
    m_Good(true),
    m_AsyncImpl(*this)
 {
-    if (own == eTakeOwnership) {
-        m_BlobFile_Owned.reset(m_BlobFile);
-    }
     m_JobThread.Reset(new CJobThread(*this));
     m_JobThread->Run();
 }

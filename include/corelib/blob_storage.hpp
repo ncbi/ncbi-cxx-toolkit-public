@@ -173,8 +173,7 @@ public:
     virtual IBlobStorage* CreateInstance(void);
 
 private:
-    const TPluginManagerParamTree* m_Params;
-    EOwnership m_Owner;
+    AutoPtr<const TPluginManagerParamTree> m_Params;
 
 private:
     CBlobStorageFactory(const CBlobStorageFactory&);

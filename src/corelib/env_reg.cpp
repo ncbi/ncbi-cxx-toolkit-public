@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 
 CEnvironmentRegistry::CEnvironmentRegistry()
-    : m_Env(new CNcbiEnvironment), m_EnvOwnership(eTakeOwnership),
+    : m_Env(new CNcbiEnvironment, eTakeOwnership),
       m_Modified(false)
 {
     AddMapper(*new CNcbiEnvRegMapper);
@@ -49,7 +49,7 @@ CEnvironmentRegistry::CEnvironmentRegistry()
 
 CEnvironmentRegistry::CEnvironmentRegistry(CNcbiEnvironment& env,
                                            EOwnership own)
-    : m_Env(&env), m_EnvOwnership(own), m_Modified(false)
+    : m_Env(&env, own), m_Modified(false)
 {
     AddMapper(*new CNcbiEnvRegMapper);
 }
@@ -57,9 +57,6 @@ CEnvironmentRegistry::CEnvironmentRegistry(CNcbiEnvironment& env,
 
 CEnvironmentRegistry::~CEnvironmentRegistry()
 {
-    if (m_EnvOwnership) {
-        delete m_Env;
-    }
 }
 
 

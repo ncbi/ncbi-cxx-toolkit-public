@@ -53,20 +53,17 @@ IBlobStorageFactory::~IBlobStorageFactory()
 
 
 CBlobStorageFactory::CBlobStorageFactory(const IRegistry& reg)
-    : m_Params(CConfig::ConvertRegToTree(reg)), m_Owner(eTakeOwnership)
+    : m_Params(CConfig::ConvertRegToTree(reg), eTakeOwnership)
 {
 }
 CBlobStorageFactory::CBlobStorageFactory(const TPluginManagerParamTree* params,
                                          EOwnership own)
-    : m_Params(params), m_Owner(own)
+    : m_Params(params, own)
 {
 }
 
 CBlobStorageFactory::~CBlobStorageFactory()
 {
-    if (m_Owner == eTakeOwnership)
-        delete m_Params;
-    m_Params = NULL;
 }
 
 IBlobStorage* CBlobStorageFactory::CreateInstance()

@@ -102,12 +102,10 @@ private:
 
 private:
     TBufResourcePool            m_BufResourcePool;
-    IMergeBlob*                 m_Merger;
-    EOwnership                  m_OwnMerger;
+    AutoPtr<IMergeBlob>         m_Merger;
     vector<IMergeVolumeWalker*> m_VolumeVect;
     EOwnership                  m_OwnVolumeVect;
-    IMergeStore*                m_Store;
-    EOwnership                  m_OwnStore;
+    AutoPtr<IMergeStore>        m_Store;
 
     unsigned                    m_MergeKey;         ///< key in the merger
     unsigned                    m_MinKey;           ///< min key value

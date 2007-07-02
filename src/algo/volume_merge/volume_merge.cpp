@@ -39,10 +39,8 @@ BEGIN_NCBI_SCOPE
 
 CMergeVolumes::CMergeVolumes()
 : m_Merger(0),
-  m_OwnMerger(eTakeOwnership),
   m_OwnVolumeVect(eTakeOwnership),
   m_Store(0),
-  m_OwnStore(eTakeOwnership),
   m_MergeKey(0),
   m_MinKey(0)
 {
@@ -50,12 +48,6 @@ CMergeVolumes::CMergeVolumes()
 
 CMergeVolumes::~CMergeVolumes()
 {
-    if (m_OwnMerger == eTakeOwnership)
-        delete m_Merger;
-
-    if (m_OwnStore == eTakeOwnership)
-        delete m_Store;
-
     if (m_OwnVolumeVect == eTakeOwnership) {
         for (size_t i = 0; i < m_VolumeVect.size(); ++i) {
             delete m_VolumeVect[i];
@@ -66,10 +58,7 @@ CMergeVolumes::~CMergeVolumes()
 void CMergeVolumes::SetMergeAccumulator(IMergeBlob*  merger, 
                                         EOwnership   own)
 {
-    if (m_OwnMerger == eTakeOwnership)
-        delete m_Merger;
-    m_Merger = merger;
-    m_OwnMerger = own;
+    m_Merger.reset(merger, own);
     if (merger) {
         merger->SetResourcePool(m_BufResourcePool);
     }
@@ -91,10 +80,7 @@ void CMergeVolumes::SetVolumes(const vector<IMergeVolumeWalker*>& vol_vector,
 void CMergeVolumes::SetMergeStore(IMergeStore*  store,
                                   EOwnership    own)
 {
-    if (m_OwnStore == eTakeOwnership)
-        delete m_Store;
-    m_Store = store;
-    m_OwnStore = own;
+    m_Store.reset(store, own);
     if (store) {
         store->SetResourcePool(m_BufResourcePool);
     }
@@ -111,8 +97,8 @@ IAsyncInterface::EStatus s_GetAsyncStatus(IAsyncInterface* iasync)
 
 void CMergeVolumes::Run()
 {
-    _ASSERT(m_Store);
-    _ASSERT(m_Merger);
+    _ASSERT(m_Store.get());
+    _ASSERT(m_Merger.get());
     _ASSERT(m_VolumeVect.size());
 
     // initiate volume traverse

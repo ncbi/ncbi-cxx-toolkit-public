@@ -366,8 +366,7 @@ protected:
     unsigned          m_H_nelem;
     unsigned          m_BT_minkey;
 
-    ICompression*     m_Compressor;    ///< Record compressor
-    EOwnership        m_OwnCompressor;
+    AutoPtr<ICompression> m_Compressor;    ///< Record compressor
     TBuffer           m_CompressBuffer;
 
 private:

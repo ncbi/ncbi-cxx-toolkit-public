@@ -132,8 +132,7 @@ private:
 
     typedef multimap<TPriority, CConstRef<IEnvRegMapper> > TPriorityMap;
 
-    CNcbiEnvironment* m_Env;
-    EOwnership        m_EnvOwnership;
+    AutoPtr<CNcbiEnvironment> m_Env;
     TPriorityMap      m_PriorityMap;
     bool              m_Modified; ///< only tracks mods made through this.
 };

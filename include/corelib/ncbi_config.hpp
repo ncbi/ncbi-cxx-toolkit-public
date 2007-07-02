@@ -184,7 +184,7 @@ public:
                  EErrAction     on_error,
                  bool           default_value);
 
-    const TParamTree* GetTree() const { return m_ParamTree; }
+    const TParamTree* GetTree() const { return m_ParamTree.get(); }
 
     /// Reconstruct param tree from the application registry
     /// @param reg
@@ -198,8 +198,7 @@ private:
     CConfig& operator=(const CConfig&);
 
 protected:
-    TParamTree*  m_ParamTree;
-    EOwnership   m_OwnTree;
+    AutoPtr<TParamTree> m_ParamTree;
 };
 
 /* @} */

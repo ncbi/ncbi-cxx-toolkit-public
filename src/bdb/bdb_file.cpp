@@ -123,7 +123,6 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_H_nelem(0),
   m_BT_minkey(0),
   m_Compressor(0),
-  m_OwnCompressor(eNoOwnership),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_RevSplitOff(false),
@@ -172,9 +171,6 @@ CBDB_RawFile::~CBDB_RawFile()
         BDB_THROW(eTransInProgress, 
                   "Cannot close the file while transaction is in progress.");
     }
-    if (m_OwnCompressor == eTakeOwnership) {
-        delete m_Compressor;
-    }
 }
 
 
@@ -204,11 +200,7 @@ DB_TXN* CBDB_RawFile::GetTxn()
 
 void CBDB_RawFile::SetCompressor(ICompression* compressor, EOwnership own)
 {
-    if (m_OwnCompressor == eTakeOwnership) {
-        delete m_Compressor;
-    }
-    m_Compressor = compressor;
-    m_OwnCompressor = own;
+    m_Compressor.reset(compressor, own);
 }
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
@@ -917,7 +909,7 @@ int CBDB_RawFile::x_DB_Fetch(DBT *key,
     int ret;
     DB_TXN* txn = GetTxn();
 
-    if (m_Compressor) {
+    if (m_Compressor.get()) {
         _ASSERT(flags == 0 || flags & DB_DBT_USERMEM);
         _ASSERT(data->doff == 0);
 
@@ -942,7 +934,7 @@ int CBDB_RawFile::x_DBC_Fetch(DBC* dbc,
                               unsigned flags)
 {
     int ret;
-    if (m_Compressor) {
+    if (m_Compressor.get()) {
         m_CompressBuffer.resize_mem(data->ulen + 4);
         void* usr_data = data->data;
         data->data = m_CompressBuffer.data();
@@ -968,7 +960,7 @@ int CBDB_RawFile::x_DB_Put(DBT *key,
    int ret;
 
    DB_TXN* txn = GetTxn();
-   if (m_Compressor) {
+   if (m_Compressor.get()) {
        // save original data fields
         void* usr_data = data->data;
         unsigned usr_size = data->size;
@@ -1041,7 +1033,7 @@ int CBDB_RawFile::x_DB_CPut(DBC *dbc,
 {
    int ret;
 
-   if (m_Compressor) {
+   if (m_Compressor.get()) {
        // save original data fields
         void* usr_data = data->data;
         unsigned usr_size = data->size;
@@ -1648,9 +1640,9 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
             m_DBT_Data->flags = DB_DBT_MALLOC;
         } else {
             // compressor does not support re-alloc mode
-            _ASSERT(m_Compressor == 0);
+            _ASSERT(m_Compressor.get() == 0);
 
-            if (m_Compressor) {
+            if (m_Compressor.get()) {
                 BDB_THROW(eCompressorError, 
                   "Use of dynamic reallocation on compressed file - not implemented");
             }
@@ -1800,7 +1792,7 @@ read_epilog:
     m_KeyBuf->CopyPackedFrom(multirow_buf->m_LastKey,  
                              multirow_buf->m_LastKeyLen);
     if ( m_DataBuf.get() ) {
-        if (m_Compressor) {
+        if (m_Compressor.get()) {
             // first 4 bytes in the buffer encode length
             unsigned char* uncompressed_data = 
                 (unsigned char*) multirow_buf->m_LastData;
