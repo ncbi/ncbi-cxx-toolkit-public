@@ -919,6 +919,7 @@ static const char * kBuiltInGuide[] = {
     "2+6  ER  gb_gss",
     "2+6  ES  gb_est",
     "2+6  ET  gb_gss",
+    "2+6  EU  gb_dirsub",
     "2+6  ??  unreserved_nuc",
     "",
     "# SPECIAL CASES",
