@@ -48,18 +48,51 @@
 #  include <sys/stat.h>
 #endif
 
+#include <limits.h>
+#include <stdlib.h>
+#if defined(NCBI_OS_UNIX)
+#  include <sys/param.h>
+#endif
+
 /** @addtogroup Files
  *
  * @{
  */
 
-
 BEGIN_NCBI_SCOPE
 
 
 // Define missing types
+
+// mode_t
 #if defined(NCBI_OS_MSWIN)
     typedef unsigned int mode_t;
+#endif
+
+// FILENAME_MAX
+#if !defined(FILENAME_MAX)
+#  if defined(MAXNAMELEN)
+#    define PATH_MAX MAXNAMELEN    /* in <sys/param.h> on some systems */
+#  elif defined(_MAX_FNAME)
+#    define PATH_MAX _MAX_FNAME    /* MS Windows */
+#  else
+#    define FILENAME_MAX 256
+#  endif
+#endif
+
+// PATH_MAX
+#if !defined(PATH_MAX)
+#  if defined(MAXPATHLEN)
+#    define PATH_MAX MAXPATHLEN    /* in <sys/param.h> on some systems */
+#  elif defined(_MAX_PATH)
+#    define PATH_MAX _MAX_PATH     /* MS Windows */
+#  else
+#    if FILENAME_MAX > 255
+#      define PATH_MAX FILENAME_MAX
+#    else
+#      define PATH_MAX 1024
+#    endif
+#  endif
 #endif
 
 
