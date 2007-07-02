@@ -78,6 +78,7 @@ THIRDPARTYLIB = ..\..\..\..\..\..\..\lib\$(INTDIR)
 #
 CORELIBS = \
         $(GBENCH)\bin\gui_config.dll            \
+	  $(GBENCH)\bin\gui_objects.dll              \
         $(GBENCH)\bin\gui_core.dll              \
         $(GBENCH)\bin\gui_dialogs.dll           \
         $(GBENCH)\bin\gui_graph.dll             \
