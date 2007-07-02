@@ -31,11 +31,15 @@
  */
 
 /// @file writedb_general.hpp
-/// Defines implementation class of WriteDB.
-///
+/// Implementation for general purpose utilities for WriteDB.
+/// 
 /// Defines classes:
-///     CWriteDBHeader
-///
+///     CWriteDB_PackedStringsCompare
+///     CWriteDB_PackedBuffer
+///     CWriteDB_PackedStrings
+///     CArrayString
+///     CWriteDB_PackedSemiTree
+/// 
 /// Implemented for: UNIX, MS-Windows
 
 #include <objects/seq/seq__.hpp>
@@ -374,37 +378,10 @@ public:
     }
     
     /// Insert string data into the container.
-    void Insert(const char * x, int L)
-    {
-        if (L <= PREFIX) {
-            CArrayString<PREFIX> pre(x, L);
-            CRef<TPacked> & packed = m_Packed[pre];
-            
-            if (packed.Empty()) {
-                packed.Reset(new TPacked(m_Buffer));
-            }
-            
-            packed->Insert("", 0);
-        } else {
-            CArrayString<PREFIX> pre(x, PREFIX);
-            CRef<TPacked> & packed = m_Packed[pre];
-            
-            if (packed.Empty()) {
-                packed.Reset(new TPacked(m_Buffer));
-            }
-            
-            packed->Insert(x + PREFIX, L-PREFIX);
-        }
-        m_Size++;
-    }
+    void Insert(const char * x, int L);
     
     /// Sort all contained data.
-    void Sort()
-    {
-        NON_CONST_ITERATE(TPackedMap, iter, m_Packed) {
-            iter->second->Sort();
-        }
-    }
+    void Sort();
     
     /// Return the number of contained entries.
     int Size()
@@ -506,12 +483,7 @@ public:
     }
     
     /// Clear all objects from this container.
-    void Clear()
-    {
-        m_Size = 0;
-        TPackedMap empty;
-        m_Packed.swap(empty);
-    }
+    void Clear();
     
 private:
     /// Number of elements stored in this container.

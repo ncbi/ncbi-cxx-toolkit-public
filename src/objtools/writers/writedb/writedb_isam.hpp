@@ -238,13 +238,42 @@ private:
     
     /// Add a string to the string table.
     /// 
+    /// This is a convenience method for using x_AddStringData() with
+    /// normal c++ strings.  This uses a different name than the other
+    /// methods to prevent automatic conversions between strings and
+    /// CTempStrings from accidentally occurring.
+    /// 
+    /// @param oid OID for this sequence.
+    /// @param s String to add.
+    void x_AddStdString(int oid, const string & s)
+    {
+        x_AddStringData(oid, s.data(), (int) s.size());
+    }
+    
+    /// Add a string to the string table.
+    /// 
+    /// This is a convenience method for using x_AddStringData() with
+    /// CTempString objects.  This uses a different name than the
+    /// other methods to prevent automatic conversions between strings
+    /// and CTempStrings from accidentally occurring.
+    /// 
+    /// @param oid OID for this sequence.
+    /// @param s String to add.
+    void x_AddStringData(int oid, const CTempString & s)
+    {
+        x_AddStringData(oid, s.data(), (int) s.size());
+    }
+    
+    /// Add a string to the string table.
+    /// 
     /// This is the bottom-most level of the AddString() design; it
     /// just adds a record mapping the string to the OID.  Every
     /// string added to the string table goes through this method.
     /// 
     /// @param oid OID for this sequence.
     /// @param s String to add.
-    void x_AddString(int oid, const string & s);
+    /// @param size Size of string to add.
+    void x_AddStringData(int oid, const char * s, int size);
     
     /// Add an accession with a version.
     ///
@@ -256,7 +285,7 @@ private:
     /// @param oid OID for this sequence.
     /// @param s Accession string to add.
     /// @param ver Version to use, or zero.
-    void x_AddString(int oid, const string & s, int ver);
+    void x_AddString(int oid, const CTempString & s, int ver);
     
     /// Add several strings for the given identifier.
     ///
@@ -279,11 +308,11 @@ private:
     /// @param nm The name component of the identifier.
     /// @param ver Version to use, or zero.
     /// @param acc The accession string.
-    void x_AddString(int            oid,
-                     const char   * typestr,
-                     const string & nm,
-                     int            ver,
-                     const string & acc);
+    void x_AddString(int                 oid,
+                     const char        * typestr,
+                     const CTempString & nm,
+                     int                 ver,
+                     const CTempString & acc);
     
     /// Write the ISAM index header to disk.
     void x_WriteHeader();

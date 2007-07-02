@@ -32,6 +32,7 @@
 /// class for WriteDB.
 
 #include <ncbi_pch.hpp>
+#include <corelib/tempstr.hpp>
 #include <objtools/writers/writedb/writedb_error.hpp>
 #include "writedb_isam.hpp"
 #include "writedb_convert.hpp"
@@ -543,7 +544,7 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
             
         case CSeq_id::e_General:
             if (! m_Sparse) {
-                x_AddString(oid, seqid.AsFastaString());
+                x_AddStdString(oid, seqid.AsFastaString());
             }
             break;
             
@@ -573,7 +574,11 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
 
 void CWriteDB_IsamIndex::x_AddGiString(int oid, int gi)
 {
-    x_AddString(oid, string("gi|") + NStr::UIntToString(gi));
+    char buf[64];
+    memcpy(buf, "gi|", 3);
+    int sz = 3 + sprintf(buf + 3, "%d", gi);
+    
+    x_AddStringData(oid, buf, sz);
 }
 
 void CWriteDB_IsamIndex::x_AddLocal(int             oid,
@@ -582,10 +587,10 @@ void CWriteDB_IsamIndex::x_AddLocal(int             oid,
     const CObject_id & objid = seqid.GetLocal();
     
     if (! m_Sparse) {
-        x_AddString(oid, seqid.AsFastaString());
+        x_AddStdString(oid, seqid.AsFastaString());
     }
     if (objid.IsStr()) {
-        x_AddString(oid, objid.GetStr());
+        x_AddStdString(oid, objid.GetStr());
     }
 }
 
@@ -593,7 +598,7 @@ void CWriteDB_IsamIndex::x_AddPatent(int             oid,
                                      const CSeq_id & seqid)
 {
     if (! m_Sparse) {
-        x_AddString(oid, seqid.AsFastaString());
+        x_AddStdString(oid, seqid.AsFastaString());
     }
 }
 
@@ -614,7 +619,7 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     // "102l| "
     // "pdb|102l| "
     
-    string mol;
+    CTempString mol;
     
     if (pdb.CanGetMol()) {
         mol = pdb.GetMol().Get();
@@ -633,8 +638,16 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     
     _ASSERT(f1.size() > 4);
     
-    string sf1(f1, 4, f1.size()-4);
-    string sf2 = sf1;
+    // Some extra bytes to make reallocation unlikely; fixed size
+    // local buffers might make even more sense, expecially if given
+    // string like semantics.
+    
+    string sf1, sf2;
+    sf1.reserve(f1.size()+5);
+    sf2.reserve(f1.size()+5);
+    
+    sf1.assign(f1, 4, f1.size()-4);
+    sf2.assign(sf1.data(), sf1.size());
     
     if (sf2[sf2.size()-2] == '|') {
         sf2[sf2.size()-2] = ' ';
@@ -648,30 +661,41 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     
     if (pedantic) {
         if (chain2) {
+            // pdb|abc|xy
             const char * ep = sf1.data() + sf1.size();
-            string ext(ep-2, ep);
+            CTempString ext(ep-2, 2);
+            bool is_vb = (ext == "VB");
+            
             int offset = (int) sf1.size() - 2;
             
             sf1.resize(offset + 1);
             sf2.resize(offset + 1);
             
-            if (ext == "VB") {
+            if (is_vb) {
                 sf1[offset] = sf2[offset] = '|';
             }
         } else if (pdb.CanGetChain() && (pdb.GetChain() == 0)) {
-            if (sf1[sf1.size()] == '|') {
+            if (sf1[sf1.size()-1] == '|') {
                 sf1[sf1.size()-1] = ' ';
             }
         }
     }
     
-    x_AddString(oid, mol);
-    x_AddString(oid, sf1);
-    x_AddString(oid, sf2);
+    x_AddStringData(oid, mol);
+    x_AddStdString(oid, sf1);
+    x_AddStdString(oid, sf2);
     
     if (! m_Sparse) {
-        x_AddString(oid, f1);
+        x_AddStdString(oid, f1);
     }
+}
+
+bool s_NoCaseEqual(CTempString & a, CTempString & b)
+{
+    if (a.size() != b.size())
+        return false;
+    
+    return 0 == strncasecmp(a.data(), b.data(), a.size());
 }
 
 void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
@@ -679,7 +703,7 @@ void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
                                      const CTextseq_id & id,
                                      bool                add_gb)
 {
-    string acc, nm;
+    CTempString acc, nm;
     
     // Note: if there is no accession, the id will not be added to a
     // sparse databases (even if there is a name).
@@ -692,16 +716,16 @@ void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
         nm = id.GetName();
     }
     
-    x_ToLower(acc);
-    x_ToLower(nm);
-    
     if (! acc.empty()) {
-        x_AddString(oid, acc);
+        x_AddStringData(oid, acc);
     }
     
     if (! m_Sparse) {
-        if (! (nm.empty() || acc == nm)) {
-            x_AddString(oid, nm);
+        // Skip name if it is empty or if it is the same as 'acc' when
+        // case is ignored.
+        
+        if (! (nm.empty() || s_NoCaseEqual(acc, nm))) {
+            x_AddStringData(oid, nm);
         }
         
         int ver = id.CanGetVersion() ? id.GetVersion() : 0;
@@ -718,7 +742,9 @@ void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
     }
 }
 
-void CWriteDB_IsamIndex::x_AddString(int oid, const string & s)
+// All string handling goes through this method.
+
+void CWriteDB_IsamIndex::x_AddStringData(int oid, const char * sbuf, int ssize)
 {
     // NOTE: all of the string finagling in this code could probably
     // benefit from some kind of pool-of-strings swap-allocator.
@@ -739,39 +765,46 @@ void CWriteDB_IsamIndex::x_AddString(int oid, const string & s)
     //
     // 5. User would need to return strings they were done with.
     
-    _ASSERT(s.size());
-    
     char buf[256];
-    int sz = sprintf(buf, "%s%c%d%c",
-                     s.c_str(), (char)eKeyDelim, oid, (char)eRecordDelim);
+    
+    int sz = ssize;
+    memcpy(buf, sbuf, sz);
+    _ASSERT(sz);
     
     // lowercase the 'key' portion
-    
-    for(unsigned i = 0; i < s.size(); i++) {
+    for(int i = 0; i < sz; i++) {
         buf[i] = tolower(buf[i]);
     }
+    
+    buf[sz++] = (char) eKeyDelim;
+    sz += sprintf(buf + sz, "%d", oid);
+    buf[sz++] = (char) eRecordDelim;
     
     m_StringSort.Insert(buf, sz);
     
     m_DataFileSize += sz;
 }
 
-void CWriteDB_IsamIndex::x_AddString(int oid, const string & acc, int ver)
+void CWriteDB_IsamIndex::x_AddString(int oid, const CTempString & acc, int ver)
 {
     _ASSERT(! m_Sparse);
     
     if (acc.size() && ver) {
         char buf[256];
-        sprintf(buf, "%s.%d", acc.c_str(), ver);
-        x_AddString(oid, buf);
+        memcpy(buf, acc.data(), acc.size());
+        
+        int sz = acc.size();
+        sz += sprintf(buf + sz, ".%d", ver);
+        
+        x_AddStringData(oid, buf, sz);
     }
 }
 
-void CWriteDB_IsamIndex::x_AddString(int            oid,
-                                     const char   * typestr,
-                                     const string & acc,
-                                     int            ver,
-                                     const string & nm)
+void CWriteDB_IsamIndex::x_AddString(int                 oid,
+                                     const char        * typestr,
+                                     const CTempString & acc,
+                                     int                 ver,
+                                     const CTempString & nm)
 {
     _ASSERT(! m_Sparse);
     
@@ -793,28 +826,46 @@ void CWriteDB_IsamIndex::x_AddString(int            oid,
     _ASSERT((acc.size() + nm.size()) < 240);
     
     if (acc.size()) {
-        sprintf(buf, "%s|%s|", typestr, acc.c_str());
-        x_AddString(oid, buf);
+        int sz = sprintf(buf, "%s|", typestr);
+        memcpy(buf+sz, acc.data(), acc.size());
+        sz += acc.size();
+        buf[sz++] = '|';
+        
+        x_AddStringData(oid, buf, sz);
         
         if (nm.size()) {
-            strcat(buf, nm.c_str());
-            x_AddString(oid, buf);
+            memcpy(buf + sz, nm.data(), nm.size());
+            sz += nm.size();
+            
+            x_AddStringData(oid, buf, sz);
         }
         
         if (ver) {
-            sprintf(buf, "%s|%s.%d|", typestr, acc.c_str(), ver);
-            x_AddString(oid, buf);
+            // format is "typestr|acc.ver|"
+            sz = sprintf(buf, "%s|", typestr);
+            
+            memcpy(buf+sz, acc.data(), acc.size());
+            
+            sz += acc.size();
+            sz += sprintf(buf+sz, ".%d|", ver);
+            
+            x_AddStringData(oid, buf, sz);
             
             if (nm.size()) {
-                strcat(buf, nm.c_str());
-                x_AddString(oid, buf);
+                memcpy(buf + sz, nm.data(), nm.size());
+                sz += nm.size();
+                
+                x_AddStringData(oid, buf, sz);
             }
         }
     }
     
     if (nm.size()) {
-        sprintf(buf, "%s||%s", typestr, nm.c_str());
-        x_AddString(oid, buf);
+        int sz = sprintf(buf, "%s||", typestr);
+        memcpy(buf + sz, nm.data(), nm.size());
+        sz += nm.size();
+        
+        x_AddStringData(oid, buf, sz);
     }
 }
 
