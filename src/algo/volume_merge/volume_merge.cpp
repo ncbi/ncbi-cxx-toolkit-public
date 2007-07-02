@@ -84,6 +84,7 @@ void CMergeVolumes::SetVolumes(const vector<IMergeVolumeWalker*>& vol_vector,
         }
     }
     m_VolumeVect = vol_vector;
+    m_OwnVolumeVect = own;
 }
 
 
