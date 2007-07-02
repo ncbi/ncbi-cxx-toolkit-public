@@ -2137,7 +2137,7 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
 
             lgr.l_onoff = 0;
             if (abort) {
-                lgr.l_linger = 0;
+                lgr.l_linger = 0;   /* RFC 793, Abort */
                 lgr.l_onoff  = 1;
             } else if (!tv) {
                 lgr.l_linger = 120; /*this is standard TCP TTL, 2 minutes*/
@@ -2158,9 +2158,9 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
             }
 #  ifdef TCP_LINGER2
             if (abort  ||  (tv  &&  !(tv->tv_sec | tv->tv_usec))) {
-                int no = abort ? -1 : 0/*let OS decide using RTT algorithm*/;
+                int no = -1;
                 if (setsockopt(sock->sock, IPPROTO_TCP, TCP_LINGER2,
-                               (char*) &no, sizeof(no)) != 0) {
+                               (char*) &no, sizeof(no)) != 0  &&  !abort) {
                     int x_err = SOCK_ERRNO;
                     CORE_LOGF_ERRNO_EX(eLOG_Trace, x_err, SOCK_STRERROR(x_err),
                                        ("%s[SOCK::s_%s]  Failed setsockopt"
