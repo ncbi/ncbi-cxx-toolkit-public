@@ -589,6 +589,7 @@ void CFastaReader::AssembleSeq(void)
     if (m_Gaps.empty()) {
         _ASSERT(m_TotalGapLength == 0);
         if (m_SeqData.empty()) {
+            inst.SetLength(0);
             inst.SetRepr(CSeq_inst::eRepr_virtual);
         } else {
             inst.SetLength(GetCurrentPos(eRawPos));
