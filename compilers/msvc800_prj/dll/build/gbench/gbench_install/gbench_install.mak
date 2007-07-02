@@ -111,7 +111,7 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xdbapi_msdblib.dll   \
         $(GBENCH)\bin\ncbi_xdbapi_mysql.dll     \
         $(GBENCH)\bin\ncbi_xdbapi_odbc.dll      \
-        $(GBENCH)\bin\ncbi_xloader_basltdb.dll  \
+        $(GBENCH)\bin\ncbi_xloader_blastdb.dll  \
         $(GBENCH)\bin\ncbi_xloader_cdd.dll      \
         $(GBENCH)\bin\ncbi_xloader_genbank.dll  \
         $(GBENCH)\bin\ncbi_xloader_lds.dll      \
