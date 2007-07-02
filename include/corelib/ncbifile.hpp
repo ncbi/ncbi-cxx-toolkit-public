@@ -72,9 +72,9 @@ BEGIN_NCBI_SCOPE
 // FILENAME_MAX
 #if !defined(FILENAME_MAX)
 #  if defined(MAXNAMELEN)
-#    define PATH_MAX MAXNAMELEN    /* in <sys/param.h> on some systems */
+#    define FILENAME MAXNAMELEN    /* in <sys/param.h> on some systems */
 #  elif defined(_MAX_FNAME)
-#    define PATH_MAX _MAX_FNAME    /* MS Windows */
+#    define FILENAME _MAX_FNAME    /* MS Windows */
 #  else
 #    define FILENAME_MAX 256
 #  endif
