@@ -146,7 +146,9 @@ CBufferedLineReader::CBufferedLineReader(IReader* reader,
       m_BufferSize(32*1024),
       m_Buffer(new char[m_BufferSize]),
       m_Pos(m_Buffer.get()),
-      m_End(m_Pos)
+      m_End(m_Pos),
+      m_InputPos(CT_POS_TYPE(0)),
+      m_NextInputPos(CT_POS_TYPE(0))
 {
     x_ReadBuffer();
 }
@@ -159,7 +161,9 @@ CBufferedLineReader::CBufferedLineReader(CNcbiIstream& is,
       m_BufferSize(32*1024),
       m_Buffer(new char[m_BufferSize]),
       m_Pos(m_Buffer.get()),
-      m_End(m_Pos)
+      m_End(m_Pos),
+      m_InputPos(CT_POS_TYPE(0)),
+      m_NextInputPos(CT_POS_TYPE(0))
 {
     x_ReadBuffer();
 }
@@ -171,7 +175,9 @@ CBufferedLineReader::CBufferedLineReader(const string& filename)
       m_BufferSize(32*1024),
       m_Buffer(new char[m_BufferSize]),
       m_Pos(m_Buffer.get()),
-      m_End(m_Pos)
+      m_End(m_Pos),
+      m_InputPos(CT_POS_TYPE(0)),
+      m_NextInputPos(CT_POS_TYPE(0))
 {
     x_ReadBuffer();
 }
@@ -302,16 +308,17 @@ bool CBufferedLineReader::x_ReadBuffer()
         case eRW_Error:
             NCBI_THROW(CIOException, eRead, "Read error");
             break;
-        case eRW_Success:
-            m_End = m_Pos + size;
-            return true;
         case eRW_Timeout:
             // keep spinning around
             break;
         case eRW_Eof:
-            m_End = m_Pos + size;
             m_Eof = true;
-            return size > 0;
+            // fall through
+        case eRW_Success:
+            m_End = m_Pos + size;
+            m_InputPos = m_NextInputPos;
+            m_NextInputPos += CT_OFF_TYPE(size);
+            return (result == eRW_Success  ||  size > 0);
         default:
             _ASSERT(0);
         }
@@ -328,8 +335,7 @@ CTempString CBufferedLineReader::operator*(void) const
 
 CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 {
-    _ASSERT(0);
-    return 0; // TODO: implement position counter
+    return m_InputPos + CT_OFF_TYPE(m_Pos - m_Buffer.get());
 }
 
 END_NCBI_SCOPE

@@ -162,6 +162,8 @@ private:
     const char*   m_End;
     CTempString   m_Line;
     string        m_String;
+    CT_POS_TYPE   m_InputPos;
+    CT_POS_TYPE   m_NextInputPos;
 };
 
 
