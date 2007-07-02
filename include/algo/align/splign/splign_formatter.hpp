@@ -82,10 +82,29 @@ public:
     string AsAlignmentText(CRef<objects::CScope> scope,
                            const CSplign::TResults* results = 0,
                            size_t line_width = 80,
-                           int segnum = -1) const;
+                           int segnum = -1)
+        const;
 
-    CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults*
-                                                results = 0) const;
+    /// Format alignment as a seq-align-set
+    ///
+    /// @param results
+    ///   Splign results for formatting. If not specified, the results
+    ///   will be read from the object used to construct the formatter.
+    /// @return
+    ///   Formatted alignment as a seq-align-set reference.
+    CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults* results = 0)
+        const;
+
+    typedef vector<CRef<objects::CSpliced_seg> > TSplicedSegs;
+
+    /// Format alignment as a spliced-seg
+    ///
+    /// @param results
+    ///   Splign results for formatting. If not specified, the results
+    ///   will be read from the object used to construct the formatter.
+    /// @return
+    ///   Formatted alignment as a spliced_seg reference vector
+    TSplicedSegs AsSplicedSegs(const CSplign::TResults* results = 0) const;
 
 private:
 

@@ -116,15 +116,21 @@ public:
         string           m_msg;
         bool             m_QueryStrand, m_SubjStrand;
         size_t           m_cds_start, m_cds_stop;
+        size_t           m_QueryLen;
+        size_t           m_PolyA;
         TSegments        m_segments;
         
         SAlignedCompartment(void): m_id(0), m_error(true), 
-                                   m_cds_start(0), m_cds_stop(0)
+                                   m_cds_start(0), m_cds_stop(0),
+                                   m_QueryLen (0),
+                                   m_PolyA(0)
         {}
         
         SAlignedCompartment(size_t id, bool err, const char* msg):
             m_id(id), m_error(err), m_msg(msg),
-            m_cds_start(0), m_cds_stop(0)
+            m_cds_start(0), m_cds_stop(0),
+            m_QueryLen(0),
+            m_PolyA(0)
         {}
         
         // return overall identity (including gaps)
