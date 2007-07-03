@@ -145,18 +145,152 @@ sub GetMkdirCommands
     }
 }
 
-sub MarkPath
+sub FindParentNode
 {
-    my ($Path, $Tree, @Markers) = @_;
+    my ($Tree, $Path) = @_;
+
+    my @Subdirs = split('/', $Path);
+    my $LastSubdir = pop(@Subdirs);
+
+    for my $Subdir (@Subdirs)
+    {
+        $Tree = ($Tree->{$Subdir} ||= {})
+    }
+
+    return ($Tree, $LastSubdir)
+}
+
+sub FindTreeNode
+{
+    my ($Tree, $Path) = @_;
 
     for my $Subdir (split('/', $Path))
     {
         $Tree = ($Tree->{$Subdir} ||= {})
     }
 
+    return $Tree
+}
+
+sub MarkPath
+{
+    my ($Path, $Tree, @Markers) = @_;
+
+    $Tree = FindTreeNode($Tree, $Path);
+
     for my $Marker (@Markers)
     {
         $Tree->{'/'}->{$Marker} = 1
+    }
+}
+
+sub CutOffCommonTargetPrefix
+{
+    my ($TargetPath, $CommonTarget, $Revision) = @_;
+
+    substr($TargetPath, 0, length($CommonTarget), '') eq $CommonTarget
+        or die "target directory $TargetPath is not " .
+            "under $CommonTarget in r$Revision->{Number}";
+
+    return $TargetPath
+}
+
+sub SetUpstreamAndSynchRev
+{
+    my ($BranchInfo, $SourcePath, $BranchDir, $SourceRevision, $Revision) = @_;
+
+    my $UpstreamPath = $SourcePath;
+
+    length($UpstreamPath) > length($BranchDir) and
+        substr($UpstreamPath, -length($BranchDir),
+            length($BranchDir), '') eq $BranchDir
+        or die 'branch structure does not replicate ' .
+            "upstream structure in r$Revision->{Number}";
+
+    unless (my $SameUpstreamPath = $BranchInfo->{UpstreamPath})
+    {
+        $BranchInfo->{UpstreamPath} = $UpstreamPath
+    }
+    else
+    {
+        die "inconsistent source paths in r$Revision->{Number}"
+            if $UpstreamPath ne $SameUpstreamPath
+    }
+
+    unless (my $SingleSourceRevision = $BranchInfo->{LastSynchRevision})
+    {
+        $BranchInfo->{LastSynchRevision} = $SourceRevision
+    }
+    else
+    {
+        die "inconsistent source revision numbers in r$Revision->{Number}"
+            if $SourceRevision != $SingleSourceRevision
+    }
+}
+
+sub ModelBranchStructure
+{
+    my ($BranchInfo, $BranchStructure, $Revision, $CommonTarget) = @_;
+
+    for my $Change (@{$Revision->{ChangedPaths}})
+    {
+        my ($ChangeType, $TargetPath, $SourcePath, $SourceRevision) = @$Change;
+
+        if ($ChangeType eq 'D')
+        {
+            my ($ParentNode, $LastSubdir) = FindParentNode($BranchStructure,
+                CutOffCommonTargetPrefix($TargetPath,
+                    $CommonTarget, $Revision));
+
+            delete $ParentNode->{$LastSubdir}
+        }
+        elsif ($ChangeType eq 'R')
+        {
+            my $BranchDir = CutOffCommonTargetPrefix($TargetPath,
+                $CommonTarget, $Revision);
+
+            my ($ParentNode, $LastSubdir) = FindParentNode($BranchStructure,
+                $BranchDir);
+
+            unless ($SourcePath)
+            {
+                delete $ParentNode->{$LastSubdir}
+            }
+            else
+            {
+                $ParentNode->{$LastSubdir} = {'/' => 1};
+
+                SetUpstreamAndSynchRev($BranchInfo, $SourcePath,
+                    $BranchDir, $SourceRevision)
+            }
+        }
+        elsif ($ChangeType eq 'A' && $SourcePath)
+        {
+            my $BranchDir = CutOffCommonTargetPrefix($TargetPath,
+                $CommonTarget, $Revision);
+
+            FindTreeNode($BranchStructure, $BranchDir)->{'/'} = 1;
+
+            SetUpstreamAndSynchRev($BranchInfo, $SourcePath,
+                $BranchDir, $SourceRevision)
+        }
+    }
+}
+
+sub ExtractBranchDirs
+{
+    my ($BranchDirs, $Path, $Contents) = @_;
+
+    while (my ($Subdir, $Subtree) = each %$Contents)
+    {
+        unless ($Subdir eq '/')
+        {
+            ExtractBranchDirs($BranchDirs, "$Path/$Subdir", $Subtree)
+        }
+        elsif ($Subtree)
+        {
+            push @$BranchDirs, $Path
+        }
     }
 }
 
@@ -172,9 +306,20 @@ sub ReadBranchInfo
         "-r$MaxBranchRev\:1", $SVN->GetRepository(), 'branches/' . $BranchPath);
 
     my @BranchRevisions;
-    my $BranchCreationRevision;
-    my $BranchSourceRevision;
+    my @MergeDownRevisions;
+
     my %BranchStructure;
+    my @BranchDirs;
+
+    my %BranchInfo =
+    (
+        BranchPath => $BranchPath,
+        BranchDirs => \@BranchDirs,
+        BranchRevisions => \@BranchRevisions,
+        MergeDownRevisions => \@MergeDownRevisions
+    );
+
+    my $CommonTarget = "/branches/$BranchPath/";
 
     for my $Revision (@$RevisionLog)
     {
@@ -183,39 +328,23 @@ sub ReadBranchInfo
         if ($Revision->{LogMessage} =~ m/^Created branch '(.+?)'.$/o &&
             $1 eq $BranchPath)
         {
-            $BranchCreationRevision = $Revision;
+            $BranchInfo{BranchCreationRevision} = $Revision;
 
-            for my $Change (@{$Revision->{ChangedPaths}})
-            {
-                my ($ChangeType, $TargetPath, $SourcePath,
-                    $SourceRevision) = @$Change;
-
-                if ($ChangeType eq 'A' && $SourcePath)
-                {
-                    $BranchStructure{$TargetPath} = $SourcePath;
-
-                    unless ($BranchSourceRevision)
-                    {
-                        $BranchSourceRevision = $SourceRevision
-                    }
-                    else
-                    {
-                        die 'inconsistent branch creation revision'
-                            if $BranchSourceRevision != $SourceRevision
-                    }
-                }
-            }
+            ModelBranchStructure(\%BranchInfo, \%BranchStructure,
+                $Revision, $CommonTarget);
 
             last
         }
     }
 
-    die 'unable to determine branch source' unless $BranchSourceRevision;
+    unless ($BranchInfo{UpstreamPath} &&
+        ($BranchInfo{BranchSourceRevision} = $BranchInfo{LastSynchRevision}))
+    {
+        die 'unable to determine branch source'
+    }
 
     my $MergeRegExp =
         qr/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o;
-
-    my @MergeDownRevisions;
 
     for my $Revision (reverse @BranchRevisions)
     {
@@ -223,58 +352,25 @@ sub ReadBranchInfo
 
         if ($LogMessage =~ m/^Modified branch '(.+?)'.$/o && $1 eq $BranchPath)
         {
-            for my $Change (@{$Revision->{ChangedPaths}})
-            {
-                my ($ChangeType, $TargetPath, $SourcePath) = @$Change;
-
-                if ($ChangeType eq 'D')
-                {
-                    delete $BranchStructure{$TargetPath}
-                }
-                elsif ($SourcePath &&
-                    ($ChangeType eq 'A' || $ChangeType eq 'R'))
-                {
-                    $BranchStructure{$TargetPath} = $SourcePath
-                }
-            }
+            ModelBranchStructure(\%BranchInfo, \%BranchStructure,
+                $Revision, $CommonTarget)
         }
         elsif ($LogMessage =~ $MergeRegExp && $3 eq $BranchPath)
         {
-            unshift @MergeDownRevisions, [$Revision, $1]
+            unshift @MergeDownRevisions,
+                [$Revision, $BranchInfo{LastSynchRevision} = $1]
         }
     }
 
-    my $CommonTarget = "/branches/$BranchPath/";
-    my @BranchDirs;
-    my $UpstreamPath;
-    my $BranchStructureError = 'incorrect branch structure';
-
-    while (my ($TargetPath, $SourcePath) = each %BranchStructure)
+    while (my ($Dir, $Contents) = each %BranchStructure)
     {
-        substr($TargetPath, 0, length($CommonTarget), '') eq $CommonTarget and
-            length($SourcePath) > length($TargetPath) and
-            substr($SourcePath, -length($TargetPath),
-                length($TargetPath), '') eq $TargetPath
-            or die $BranchStructureError;
-
-        unless ($UpstreamPath)
-        {
-            $UpstreamPath = $SourcePath
-        }
-        else
-        {
-            $UpstreamPath eq $SourcePath or die $BranchStructureError
-        }
-
-        push @BranchDirs, $TargetPath;
+        ExtractBranchDirs(\@BranchDirs, $Dir, $Contents)
     }
-
-    die 'unable to determine the upstream path (branch is empty?)'
-        unless $UpstreamPath;
-
-    $UpstreamPath =~ s/^\/?(.+?)\/?$/$1/;
 
     @BranchDirs = sort @BranchDirs;
+
+    $BranchInfo{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
+    my $UpstreamPath = $BranchInfo{UpstreamPath};
 
     my $UpstreamRevisions = $SVN->ReadLog('--stop-on-copy',
         "-r$MaxUpstreamRev\:$BranchRevisions[-1]->{Number}",
@@ -290,18 +386,10 @@ sub ReadBranchInfo
         }
     }
 
-    return
-    {
-        BranchPath => $BranchPath,
-        UpstreamPath => $UpstreamPath,
-        BranchCreationRevision => $BranchCreationRevision,
-        BranchSourceRevision => $BranchSourceRevision,
-        BranchDirs => \@BranchDirs,
-        BranchRevisions => \@BranchRevisions,
-        UpstreamRevisions => $UpstreamRevisions,
-        MergeDownRevisions => \@MergeDownRevisions,
-        MergeUpRevisions => \@MergeUpRevisions
-    }
+    @BranchInfo{qw(UpstreamRevisions MergeUpRevisions)} =
+        ($UpstreamRevisions, \@MergeUpRevisions);
+
+    return \%BranchInfo
 }
 
 sub List
