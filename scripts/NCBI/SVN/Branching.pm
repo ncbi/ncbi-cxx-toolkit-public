@@ -546,9 +546,7 @@ sub Alter
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
     my $MergeRevisions = $BranchInfo->{MergeDownRevisions};
-    my $LastSynchRev = @$MergeRevisions ? $MergeRevisions->[0]->[1] :
-        $BranchInfo->{BranchSourceRevision};
-
+    my $LastSynchRev = $BranchInfo->{LastSynchRevision};
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
     my @RmCommands;
