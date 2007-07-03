@@ -695,7 +695,7 @@ bool s_NoCaseEqual(CTempString & a, CTempString & b)
     if (a.size() != b.size())
         return false;
     
-    return 0 == strncasecmp(a.data(), b.data(), a.size());
+    return 0 == NStr::strncasecmp(a.data(), b.data(), a.size());
 }
 
 void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
