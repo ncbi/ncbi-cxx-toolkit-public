@@ -316,10 +316,10 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
     dr.Redirect(error_stream);
 
     vector< pair<long, long> > gi_length;
-    gi_length.push_back(make_pair(89161185, 247249719));
-    gi_length.push_back(make_pair(0, 0));   // bad sequence
+    gi_length.push_back(make_pair(89161185L, 247249719L));
+    gi_length.push_back(make_pair(0L, 0L));   // bad sequence
     // this is never read...
-    //gi_length.push_back(make_pair(557, 489));
+    //gi_length.push_back(make_pair(557L, 489L));
 
     const size_t kNumQueries(gi_length.size());
 
