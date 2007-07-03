@@ -42,6 +42,7 @@
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/blastinput/blastp_args.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
@@ -90,6 +91,28 @@ using boost::unit_test::test_suite;
 
 #define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
+
+
+class CAutoDiagnosticsRedirector
+{
+public:
+    CAutoDiagnosticsRedirector(EDiagSev severity = eDiag_Warning) {
+        SetDiagPostLevel(severity);
+        m_DiagStream = GetDiagStream();
+    }
+
+    void Redirect(CNcbiOstrstream& redirect_stream) {
+        SetDiagStream(&redirect_stream);
+    }
+
+    ~CAutoDiagnosticsRedirector() {
+        // Restore diagnostics stream
+        SetDiagStream(m_DiagStream);
+    }
+
+private:
+    CNcbiOstream* m_DiagStream;
+};
 
 static CRef<CBlastFastaInputSource>
 s_DeclareSource(CNcbiIstream& input_file, const CBlastInputConfig& iconfig)
@@ -190,13 +213,11 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces)
 
 BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
 {
-    // Make sure to post warnings
-    SetDiagPostLevel(eDiag_Warning);
-    CNcbiOstream* diag_stream = GetDiagStream();
+    CAutoDiagnosticsRedirector dr;
 
     // Redirect the output warnings
     CNcbiOstrstream error_stream;
-    SetDiagStream(&error_stream); 
+    dr.Redirect(error_stream);
 
     // this is gi 555, length 624
     CNcbiIfstream infile("data/gbreport.txt");
@@ -210,9 +231,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
 
     string s(error_stream.str());
     CHECK(s.find("Ignoring invalid residue 1 at position 9") != string::npos);
-
-    // Restore diagnostics stream
-    SetDiagStream(diag_stream);
 
     CHECK(ssl.seqloc->IsInt() == true);
 
@@ -232,99 +250,134 @@ BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
     CHECK(!ssl.mask);
 }
 
-#if 0
 BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
 {
     const char* fname = "data/bad_input.txt";
     const bool is_protein(false);
-    {
-        DECLARE_SOURCE(fname, is_protein);
-        CHECK(source.End() == true);
+    const size_t kNumQueries(1);
+    CBlastInputConfig iconfig(is_protein);
+    CAutoDiagnosticsRedirector dr;
+    CNcbiOstrstream error_stream;
+    dr.Redirect(error_stream);
 
-        CBlastInput bi(&source);
+    {
+        CNcbiIfstream infile(fname);
+        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CHECK(source->End() == false);
+
+        CBlastInput bi(source);
         blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
-        CHECK(query_vector.empty());
+        CHECK_EQUAL(kNumQueries, query_vector.size());
+
+        string s(error_stream.str());
+        CHECK(s.find("Ignoring invalid residue $ at position 1") != 
+              string::npos);
+
+        CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+        CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+        const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
+        CHECK(b.IsNa());
+        CHECK_EQUAL(CSeq_id::e_Local, b.GetId().front()->Which());
+        CHECK_EQUAL((long)0, (long)b.GetInst().GetLength());
     }
 
     {
-        DECLARE_SOURCE(fname, is_protein);
-        CHECK(source.End() == true);
+        CNcbiIfstream infile(fname);
+        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CHECK(source->End() == false);
 
-        CBlastInput bi(&source);
+        CBlastInput bi(source);
         CRef<blast::CBlastQueryVector> query_vector = bi.GetAllSeqs();
-        CHECK(query_vector->Empty());
+        CHECK_EQUAL(kNumQueries, query_vector->Size());
     }
 
-    // Confirm advertised exceptions
     {
-        DECLARE_SOURCE(fname, is_protein);
-        CHECK(source.End() == true);
+        CNcbiIfstream infile(fname);
+        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+        CHECK(source->End() == false);
 
-        blast::SSeqLoc ssl;
-        BOOST_REQUIRE_THROW(ssl = source.GetNextSSeqLoc(), 
-                            CObjReaderParseException);
+        blast::SSeqLoc ssl(source->GetNextSSeqLoc());
+        const TSeqPos length = sequence::GetLength(*ssl.seqloc, ssl.scope);
+        CHECK_EQUAL((TSeqPos)0, length);
 
-        CRef<blast::CBlastSearchQuery> query;
-        BOOST_REQUIRE_THROW(query = source.GetNextSequence(),
-                            CObjReaderParseException);
+        CHECK(source->End() == true);
     }
 }
 
 BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
 {
     const char* fname = "data/gis_bad_input.txt";
+    CNcbiIfstream infile(fname);
     const bool is_protein(false);
+    CBlastInputConfig iconfig(is_protein);
+
+    CAutoDiagnosticsRedirector dr;
+    CNcbiOstrstream error_stream;
+    dr.Redirect(error_stream);
+
     vector< pair<long, long> > gi_length;
     gi_length.push_back(make_pair(89161185, 247249719));
-    gi_length.push_back(make_pair(557, 489));
+    gi_length.push_back(make_pair(0, 0));   // bad sequence
+    // this is never read...
+    //gi_length.push_back(make_pair(557, 489));
 
     const size_t kNumQueries(gi_length.size());
 
-    DECLARE_SOURCE(fname, is_protein);
-    CHECK(source.End() == false);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    CHECK(source->End() == false);
 
-    for (size_t i = 0; i < kNumQueries; i++) {
-        blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    // check the first sequence
+    {
+        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
         CHECK(ssl.seqloc->IsInt() == true);
-
         CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
         CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
-
         CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
         CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
-
         CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
-        const TSeqPos length = gi_length[i].second;
+        const TSeqPos length = gi_length[0].second;
         CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
-
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
         CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-        const int gi = gi_length[i].first;
+        const int gi = gi_length[0].first;
         CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
-
+        CHECK(!ssl.mask);
+    }
+    {
+        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        CHECK(ssl.seqloc->IsInt() == true);
+        CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+        CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
         CHECK(!ssl.mask);
     }
 
     /// Validate the data that would be retrieved by blast.cgi
-    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 
     CBioseq_set::TSeq_set::const_iterator itr = bioseqs->GetSeq_set().begin();
     CBioseq_set::TSeq_set::const_iterator end = bioseqs->GetSeq_set().end();
-    for (size_t i = 0; i < kNumQueries; i++, ++itr) {
+    {
         CHECK(itr != end);
         CHECK((*itr)->IsSeq());
         const CBioseq& b = (*itr)->GetSeq();
         CHECK(b.IsNa());
         CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
-        CHECK_EQUAL(gi_length[i].first, b.GetId().front()->GetGi());
+        CHECK_EQUAL(gi_length[0].first, b.GetId().front()->GetGi());
         CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
         CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
-        CHECK_EQUAL((long)gi_length[i].second, (long)b.GetInst().GetLength());
+        CHECK_EQUAL((long)gi_length[0].second, (long)b.GetInst().GetLength());
+    }
+    ++itr;
+    {
+        CHECK(itr != end);
+        CHECK((*itr)->IsSeq());
+        const CBioseq& b = (*itr)->GetSeq();
+        CHECK(b.IsNa());
+        CHECK_EQUAL(CSeq_id::e_Local, b.GetId().front()->Which());
+        CHECK_EQUAL((long)0, (long)b.GetInst().GetLength());
     }
 }
-
-#endif
 
 BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
 {
