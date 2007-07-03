@@ -34,6 +34,7 @@
 /// Classes to support using environment variables as a backend for
 /// the registry framework.
 
+#include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 
 
@@ -44,8 +45,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-class CNcbiEnvironment;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
