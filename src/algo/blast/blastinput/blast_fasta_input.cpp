@@ -44,43 +44,175 @@ static char const rcsid[] =
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
+
+#include <util/regexp.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+/// Class to read non-FASTA sequence input to BLAST programs using the various
+/// data loaders configured in CBlastScopeSource objects
+class CBlastInputReader : public CFastaReader
+{
+public:
+    /// Constructor
+    /// @param dlconfig CBlastScopeSource configuration options, used to
+    /// instantiate a CScope object to fetch the length of the IDs read by
+    /// this class (otherwise it is ignored) [in]
+    /// @param read_proteins are we expecting to read proteins? [in]
+    /// @param reader line reader argument for parent class [in]
+    /// @param flags flags for parent class [in]
+    CBlastInputReader(const SDataLoaderConfig& dlconfig,
+                      bool read_proteins,
+                      ILineReader& reader, 
+                      CFastaReader::TFlags flags = 0)
+        : CFastaReader(reader, flags), m_DLConfig(dlconfig),
+          m_ReadProteins(read_proteins) {}
+
+    /// Overloaded method to attempt to read non-FASTA input types
+    virtual CRef<CSeq_entry> ReadOneSeq(void) {
+        
+        Int8 position = StreamPosition();
+        const string line = *++GetLineReader();
+
+        CRegexpUtil regex(line);
+        const CRegexp::ECompile flags = static_cast<CRegexp::ECompile>
+            (CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline);
+
+        // Test for GI only
+        if (regex.Exists("^[0-9]+$")) {
+            int gi = NStr::StringToLong(line);
+            return x_PrepareBioseqWithGi(gi);
+        // Test for accession
+        } else if (regex.Exists("^[a-z].*[0-9]+$", flags)) {
+            return x_PrepareBioseqWithAccession(line);
+        // Test for Trace ID
+        } else if (regex.Exists("^gnl\\|ti\\|[0-9]+$", flags)) {
+            int ti = NStr::StringToLong(regex.Extract("[0-9]+", flags));
+            return x_PrepareBioseqWithTi(ti);
+        }
+
+        // If all fails, fall back to parent's implementation
+        ILineReader* lr = &GetLineReader();
+        CStreamLineReader* slr = NULL;
+        CMemoryLineReader* mlr = NULL;
+        if ( (slr = dynamic_cast<CStreamLineReader*>(lr)) ) {
+            slr->Seek(NcbiInt8ToStreampos(position));
+        } else if ( (mlr = dynamic_cast<CMemoryLineReader*>(lr)) ) {
+            mlr->Seek(NcbiInt8ToStreampos(position));
+        } else {
+            NCBI_THROW(CBlastException, eNotSupported,
+                       "Unsupported ILineReader implementation");
+        }
+        //FIXME: use the call below if Seek is added to ILineReader...
+        //GetLineReader().Seek(NcbiInt8ToStreampos(position));
+        return CFastaReader::ReadOneSeq();
+    }
+
+private:
+    /// Configuration options for the CBlastScopeSource
+    const SDataLoaderConfig& m_DLConfig;
+    /// Scope used to retrieve the sequence length
+    CRef<CScope> m_LengthRetriever;
+    /// True if we're supposed to be reading proteins, else false
+    bool m_ReadProteins;
+
+    /// Auxiliary function to create a Bioseq given a CSeq_id ready to be added
+    /// to a BlastObject, which does NOT contain sequence data
+    CRef<CBioseq> x_CreateBioseq(CRef<CSeq_id> id)
+    {
+        if (m_LengthRetriever.Empty()) {
+            CBlastScopeSource scope_src(m_DLConfig);
+            m_LengthRetriever = scope_src.NewScope();
+        }
+
+        // N.B.: this call fetches the Bioseq into the scope from its
+        // data sources (should be BLAST DB first, then Genbank)
+        TSeqPos len = sequence::GetLength(*id, m_LengthRetriever);
+        if (len == numeric_limits<TSeqPos>::max()) {
+            throw runtime_error("Failed to resolve Seq-id " + 
+                                id->AsFastaString());
+        }
+
+        CRef<CBioseq> retval(new CBioseq());
+        retval->SetId().push_back(id);
+        retval->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+        retval->SetInst().SetMol(m_ReadProteins 
+                                 ? CSeq_inst::eMol_aa
+                                 : CSeq_inst::eMol_dna);
+        retval->SetInst().SetLength(len);
+        return retval;
+    }
+
+    /// Create a Bioseq with a gi and save it in a Seq-entry object
+    CRef<CSeq_entry> x_PrepareBioseqWithGi(int gi) {
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi));
+        CRef<CBioseq> bioseq(x_CreateBioseq(id));
+        CRef<CSeq_entry> retval(new CSeq_entry());
+        retval->SetSeq(*bioseq);
+        return retval;
+    }
+
+    /// Create a Bioseq with a Trace ID and save it in a Seq-entry object
+    CRef<CSeq_entry> x_PrepareBioseqWithTi(int ti) {
+        CRef<CDbtag> general_id(new CDbtag());
+        general_id->SetDb("ti");
+        general_id->SetTag().SetId(ti);
+        CRef<CSeq_id> id(new CSeq_id());
+        id->SetGeneral(*general_id);
+        CRef<CBioseq> bioseq(x_CreateBioseq(id));
+        CRef<CSeq_entry> retval(new CSeq_entry());
+        retval->SetSeq(*bioseq);
+        return retval;
+    }
+
+    /// Create a Bioseq with an accession and save it in a Seq-entry object
+    CRef<CSeq_entry> x_PrepareBioseqWithAccession(const string& line) {
+        CRef<CSeq_id> id(new CSeq_id(line));
+        CRef<CBioseq> bioseq(x_CreateBioseq(id));
+        CRef<CSeq_entry> retval(new CSeq_entry());
+        retval->SetSeq(*bioseq);
+        return retval;
+    }
+};
 
 CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
                                                CNcbiIstream& infile,
-                                               bool read_proteins,
-                                               objects::ENa_strand strand,
-                                               bool lowercase,
-                                               bool believe_defline,
-                                               TSeqRange range,
+                                               const CBlastInputConfig& iconfig,
                                                int local_id_counter)
     : CBlastInputSource(objmgr),
-      m_Config(strand, lowercase, believe_defline, range),
-      m_LineReader(infile),
-      m_IdGenerator(local_id_counter),
-      m_ReadProteins(read_proteins)
+      m_Config(iconfig),
+      m_LineReader(new CStreamLineReader(infile)),
+      m_ReadProteins(iconfig.IsProteinInput())
 {
+    x_InitInputReader(local_id_counter);
 }
 
-
-bool
-CBlastFastaInputSource::End()
+CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
+                                               const string& user_input,
+                                               const CBlastInputConfig& iconfig,
+                                               int local_id_counter)
+    : CBlastInputSource(objmgr),
+      m_Config(iconfig),
+      m_ReadProteins(iconfig.IsProteinInput())
 {
-    return m_LineReader.AtEOF();
+    if (user_input.empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, "Empty user input");
+    }
+    m_LineReader.Reset(new CMemoryLineReader(user_input.c_str(), 
+                                             user_input.size()));
+    x_InitInputReader(local_id_counter);
 }
 
-
-CRef<CSeq_loc>
-CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
+void
+CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
 {
-    static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
-
     CFastaReader::TFlags flags = m_Config.GetBelieveDeflines() ? 
                                     CFastaReader::fAllSeqIds :
                                     (CFastaReader::fNoParseID |
@@ -90,19 +222,52 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
               ? CFastaReader::fAssumeProt 
               : CFastaReader::fAssumeNuc) | CFastaReader::fForceType);
 
+    if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
+        m_InputReader.reset
+            (new CBlastInputReader(m_Config.GetDataLoaderConfig(), 
+                                   m_ReadProteins, *m_LineReader, flags));
+    } else {
+        m_InputReader.reset(new CFastaReader(*m_LineReader, flags));
+    }
+
+    CRef<CSeqIdGenerator> idgen(new CSeqIdGenerator(local_id_counter));
+    m_InputReader->SetIDGenerator(*idgen);
+}
+
+bool
+CBlastFastaInputSource::End()
+{
+    return m_LineReader->AtEOF();
+}
+
+CRef<CBioseq_set>
+CBlastFastaInputSource::GetBioseqs()
+{
+    if (m_Bioseqs.Empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "No sequences have been read");
+    }
+    return CRef<CBioseq_set>(&m_Bioseqs->SetSet());
+}
+
+CRef<CSeq_loc>
+CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
+{
+    static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
+
     CRef<CSeq_entry> seq_entry;
-    CFastaReader fasta_reader(m_LineReader, flags);
-
-    fasta_reader.SetIDGenerator(m_IdGenerator);
-
     if (m_Config.GetLowercaseMask())
-        lcase_mask = fasta_reader.SaveMask();
+        lcase_mask = m_InputReader->SaveMask();
 
-    if ( !(seq_entry = fasta_reader.ReadOneSeq())) {
+    if ( !(seq_entry = m_InputReader->ReadOneSeq())) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Could not retrieve seq entry");
     }
 
+    if (m_Bioseqs.Empty()) {
+        m_Bioseqs.Reset(new CSeq_entry());
+    }
+    m_Bioseqs->SetSet().SetSeq_set().push_back(seq_entry);
     m_Scope->AddTopLevelSeqEntry(*seq_entry);
 
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
@@ -130,15 +295,18 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
         ? 0 : m_Config.GetRange().GetFrom();
     const TSeqPos to = m_Config.GetRange().GetTo() == kEmptyRange.GetTo()
         ? 0 : m_Config.GetRange().GetTo();
+
+    // Get the sequence length
     const TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
-                                                   m_Scope) - 1;
+                                                   m_Scope);
+    ASSERT(seq_length != numeric_limits<TSeqPos>::max());
     if (to > seq_length || from > seq_length || (to > 0 && to < from)) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Invalid sequence range");
     }
     // set sequence range
     retval->SetInt().SetFrom(from);
-    retval->SetInt().SetTo(to > 0 ? to : seq_length);
+    retval->SetInt().SetTo(to > 0 ? to : (seq_length-1));
 
     // set ID
     retval->SetInt().SetId().Assign(*itr->GetId().front());

@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -49,6 +50,8 @@ class NCBI_XBLAST_EXPORT CBlastInputConfig {
 public:
 
     /// Constructor
+    /// @param dlconfig Configuration object for the data loaders used in
+    /// CBlastScopeSource [in]
     /// @param strand All SeqLoc types will have this strand assigned;
     ///             If set to 'other', the strand will be set to 'unknown'
     ///             for protein sequences and 'both' for nucleotide [in]
@@ -58,8 +61,9 @@ public:
     ///                 otherwise all sequences receive a local ID set
     ///                 to a monotonically increasing count value [in]
     /// @param range Range restriction for all sequences (default means no
-    //                  restriction) [in]
-    CBlastInputConfig(objects::ENa_strand strand = objects::eNa_strand_other,
+    ///                 restriction) [in]
+    CBlastInputConfig(const SDataLoaderConfig& dlconfig,
+                      objects::ENa_strand strand = objects::eNa_strand_other,
                      bool lowercase = false,
                      bool believe_defline = false,
                      TSeqRange range = TSeqRange());
@@ -106,11 +110,20 @@ public:
     /// @return range specified for all sequences
     TSeqRange GetRange() const { return m_Range; }
 
+    /// Retrieve the data loader configuration object for manipulation
+    SDataLoaderConfig& SetDataLoaderConfig() { return m_DLConfig; }
+    /// Retrieve the data loader configuration object for read-only access
+    const SDataLoaderConfig& GetDataLoaderConfig() { return m_DLConfig; }
+
+    /// Determine if this object is for configuring reading protein sequences
+    bool IsProteinInput() const { return m_DLConfig.m_IsLoadingProteins; }
+
 private:
     objects::ENa_strand m_Strand;  ///< strand to assign to sequences
     bool m_LowerCaseMask;          ///< whether to save lowercase mask locs
     bool m_BelieveDeflines;        ///< whether to parse sequence IDs
     TSeqRange m_Range;             ///< sequence range
+    SDataLoaderConfig m_DLConfig;  ///< Configuration object for data loaders
 };
 
 

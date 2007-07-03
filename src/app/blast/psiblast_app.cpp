@@ -127,13 +127,12 @@ int CPsiBlastApp::Run(void)
         _ASSERT(opts.NotEmpty());
         const CBlastOptions& opt = opts->GetOptions();
 
-        CBlastFastaInputSource fasta(*m_ObjMgr, 
-                                     m_CmdLineArgs->GetInputStream(), 
-                                     query_opts->QueryIsProtein(),
-                                     query_opts->GetStrand(),
+        CBlastInputConfig iconfig(query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->BelieveQueryDefline(),
                                      query_opts->GetRange());
+        CBlastFastaInputSource fasta(*m_ObjMgr, m_CmdLineArgs->GetInputStream(),
+                                     query_opts->QueryIsProtein(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
         // initialize the database

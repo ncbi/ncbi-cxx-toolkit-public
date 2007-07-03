@@ -35,6 +35,7 @@
 #define ALGO_BLAST_BLASTINPUT___BLAST_FASTA_INPUT__HPP
 
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <util/range.hpp>
 
@@ -49,51 +50,58 @@ class NCBI_XBLAST_EXPORT CBlastFastaInputSource : public CBlastInputSource
 public:
 
     /// Constructor
-    /// @param objmgr Object Manager instance
-    /// @param infile The file to read
-    /// @param read_proteins Specifies to read the sequence data as proteins or
-    /// nucleotides [in]
-    /// @param strand All SeqLoc types will have this strand assigned [in]
-    /// @param lowercase If true, lowercase mask locations are generated
-    ///                 for all input sequences [in]
-    /// @param believe_defline If true, all sequences ID's are parsed;
-    ///                 otherwise all sequences receive a local ID set
-    ///                 to a monotonically increasing count value [in]
-    /// @param range Range restriction for all sequences (default means no
-    //                  restriction) [in]
+    /// @param objmgr Object Manager instance [in]
+    /// @param infile The file to read [in]
+    /// @param iconfig Input configuration object, this options apply to all
+    /// input read [in]
+    /// @param local_id_counter counter used to create the CSeqidGenerator to
+    /// create local identifiers for sequences read [in]
     CBlastFastaInputSource(objects::CObjectManager& objmgr,
                    CNcbiIstream& infile,
-                   bool read_proteins,
-                   objects::ENa_strand strand = objects::eNa_strand_other,
-                   bool lowercase = false,
-                   bool believe_defline = false,
-                   TSeqRange range = TSeqRange(),
+                   const CBlastInputConfig& iconfig,
                    int local_id_counter = 1);
 
+    /// Constructor
+    /// @param objmgr Object Manager instance [in]
+    /// @param user_input User provided input in a string [in]
+    /// @param iconfig Input configuration object, this options apply to all
+    /// input read [in]
+    /// @param local_id_counter counter used to create the CSeqidGenerator to
+    /// create local identifiers for sequences read [in]
+    CBlastFastaInputSource(objects::CObjectManager& objmgr,
+                           const string& user_input,
+                           const CBlastInputConfig& iconfig,
+                           int local_id_counter = 1);
+
     /// Destructor
-    ///
     virtual ~CBlastFastaInputSource() {}
 
     /// Retrieve a single sequence (in an SSeqLoc container)
-    ///
+    /// @throws CObjReaderParseException if input file is empty
     virtual SSeqLoc GetNextSSeqLoc();
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
-    ///
+    /// @throws CObjReaderParseException if input file is empty
     virtual CRef<CBlastSearchQuery> GetNextSequence();
 
     /// Signal whether there are any unread sequences left
     /// @return true if no unread sequences remaining
-    ///
     virtual bool End();
 
-    /// Configuration for the sequences to be read
-    CBlastInputConfig m_Config;
+    /// Return all the queries read as a Bioseq-set (for blastcgi)
+    /// Assumes that all queries have been read (i.e.: via a call to 
+    /// CBlastInput::GetAllSeqLocs or CBlastInput::GetAllSeqs())
+    CRef<CBioseq_set> GetBioseqs();
 
 private:
-    CStreamLineReader m_LineReader; ///< interface to read lines
-    objects::CSeqIdGenerator m_IdGenerator;  ///< creates local sequence IDs
+    CBlastInputConfig m_Config; ///< Configuration for the sequences to be read
+    CRef<ILineReader> m_LineReader; ///< interface to read lines
+    /// Reader of FASTA sequences or identifiers
+    AutoPtr<CFastaReader> m_InputReader; 
     bool m_ReadProteins;        ///< read protein sequences?
+    /// Set of sequences read, this is saved to be used in the context of
+    /// blast.cgi
+    CRef<CSeq_entry> m_Bioseqs;
 
     /// Read a single sequence from file and convert to a Seq_loc
     /// @param lcase_mask A Seq_loc that describes the
@@ -104,6 +112,9 @@ private:
     ///
     CRef<objects::CSeq_loc> 
     x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask);
+
+    /// Initialization method for the input reader
+    void x_InitInputReader(int local_id_counter);
 };
 
 END_SCOPE(blast)

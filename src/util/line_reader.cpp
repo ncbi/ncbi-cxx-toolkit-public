@@ -72,6 +72,11 @@ char CStreamLineReader::PeekChar(void) const
     return m_Stream->peek();
 }
 
+void CStreamLineReader::Seek(CT_POS_TYPE pos)
+{
+    m_Stream->seekg(pos);
+}
+
 CStreamLineReader& CStreamLineReader::operator++(void)
 {
     NcbiGetlineEOL(*m_Stream, m_Line);
@@ -107,6 +112,13 @@ bool CMemoryLineReader::AtEOF(void) const
 char CMemoryLineReader::PeekChar(void) const
 {
     return *m_Pos;
+}
+
+void CMemoryLineReader::Seek(CT_POS_TYPE pos)
+{
+    Int8 offset(NcbiStreamposToInt8(pos));
+    _ASSERT( (m_Start + offset) <= m_End );
+    m_Pos = m_Start + offset;
 }
 
 CMemoryLineReader& CMemoryLineReader::operator++(void)
