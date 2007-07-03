@@ -4368,12 +4368,13 @@ CFileReader::CFileReader(const string& filename)
                           OPEN_EXISTING,
                           0,
                           NULL);
+    bool error = m_Handle == INVALID_HANDLE_VALUE;
 #else
     m_Handle = open(filename.c_str(), O_RDONLY);
-# define INVALID_HANDLE_VALUE -1
+    bool error = m_Handle == -1;
 #endif
 
-    if ( m_Handle == INVALID_HANDLE_VALUE ) {
+    if ( error ) {
         NCBI_THROW(CFileException, eNotExists,
                    "Unable to construct CFileReader from " + filename);
     }
