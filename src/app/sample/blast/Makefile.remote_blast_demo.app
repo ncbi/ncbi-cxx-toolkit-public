@@ -10,8 +10,9 @@ SRC = remote_blast_demo
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = blastinput ncbi_xloader_blastdb $(BLAST_LIBS) $(OBJMGR_LIBS)
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+BLAST_INPUT_LIBS = blastinput xregexp $(PCRE_LIB)
+LIB = $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # These settings are necessary for optimized WorkShop builds, due to
 # BLAST's own use of them.

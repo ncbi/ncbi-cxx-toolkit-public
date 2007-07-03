@@ -66,11 +66,11 @@ void CBl2Seq_Runner::ProcessDatabaseArgs(CRef<CBlastDatabaseArgs> db_args,
         return;
 
     /*** Get the subject sequence(s) ***/
-    CBlastInputConfig iconfig(objects::eNa_strand_other, false, false, 
-                              db_args->GetSubjectRange());
+    SDataLoaderConfig dlconfig(m_is_subject_protein);
+    CBlastInputConfig iconfig(dlconfig, objects::eNa_strand_other, false, 
+                              false, db_args->GetSubjectRange());
     m_fasta_subject.Reset(new CBlastFastaInputSource(*obj_mgr, 
-                                db_args->GetSubjectInputStream(),
-                                m_is_subject_protein, iconfig,
+                                db_args->GetSubjectInputStream(), iconfig,
                                 m_subject_id_offset + 1));
     m_input_subject.Reset(new CBlastInput(m_fasta_subject.GetPointer()));
     m_subject_seqs = m_input_subject->GetAllSeqLocs();

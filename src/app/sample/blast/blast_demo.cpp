@@ -187,8 +187,12 @@ int CBlastDemoApplication::Run(void)
          throw std::runtime_error("Could not initialize object manager");
     }
 
+    const bool is_protein = 
+        Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
+    SDataLoaderConfig dlconfig(is_protein);
+    CBlastInputConfig iconfig(dlconfig);
     CBlastFastaInputSource fasta_input(*objmgr, args["in"].AsInputFile(),
-               Blast_QueryIsProtein(opts->GetOptions().GetProgramType()));
+                                       iconfig);
 
     CBlastInput blast_input(&fasta_input);
 

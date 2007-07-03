@@ -101,12 +101,13 @@ int CTblastnApp::Run(void)
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
-        CBlastInputConfig iconfig(query_opts->GetStrand(),
+        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
+        CBlastInputConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->BelieveQueryDefline(),
                                      query_opts->GetRange());
         CBlastFastaInputSource fasta(*m_ObjMgr, m_CmdLineArgs->GetInputStream(),
-                                     query_opts->QueryIsProtein(), iconfig);
+                                     iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
         /*** Initialize the database ***/
