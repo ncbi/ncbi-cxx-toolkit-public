@@ -163,7 +163,7 @@ public:
 
 template <class BV>
 class CBDB_PersistentSplitStore
-    : public CBDB_BlobSplitStore<BV, CBDB_BlobDeMuxPersistent>
+: public CBDB_BlobSplitStore<BV, CBDB_BlobDeMuxPersistent>
 {
 public:
     typedef CBDB_BlobSplitStore<BV, CBDB_BlobDeMuxPersistent> TParent;
@@ -171,8 +171,8 @@ public:
         : TParent(new CBDB_BlobDeMuxPersistent(demux_path,
                                                3.0 * 1024.0 * 1024.0 * 1024.0,
                                                6 * 1000000))
-    {
-    }
+        {
+        }
 };
 
 
@@ -180,19 +180,19 @@ public:
 
 
 template <typename Key,
-          typename Dictionary = CBDB_BlobDictionary<Key>,
-          typename BvStore = CBDB_PersistentSplitStore< bm::bvector<> > >
-class CBDB_BlobDictStore
+    typename Dictionary = CBDB_BlobDictionary<Key>,
+    typename Store = CBDB_PersistentSplitStore< bm::bvector<> > >
+    class CBDB_BlobDictStore
 {
 public:
     typedef Key        TKey;
     typedef Uint4      TKeyId;
     typedef Dictionary TDictionary;
-    typedef BvStore    TBvStore;
+    typedef Store    TStore;
 
     CBDB_BlobDictStore(const string& demux_path = kEmptyStr);
     CBDB_BlobDictStore(Dictionary& dict,
-                       BvStore&    store,
+                       Store&    store,
                        EOwnership  own = eNoOwnership);
     ~CBDB_BlobDictStore();
 
@@ -214,16 +214,21 @@ public:
 
     /// Delete the underlying blob
     EBDB_ErrCode Delete(unsigned id, 
-	                    CBDB_RawFile::EIgnoreError on_error = 
-						                        CBDB_RawFile::eThrowOnError,
+                        CBDB_RawFile::EIgnoreError on_error = 
+                        CBDB_RawFile::eThrowOnError,
                         CBDB_Transaction* trans = 0);
 
     Dictionary& GetDictionary() { return *m_Dict; }
-    BvStore&    GetBvStore()    { return *m_Store; }
+    Store&    GetStore()    { return *m_Store; }
 
 protected:
-    AutoPtr<Dictionary> m_Dict;
-    AutoPtr<BvStore>    m_Store;
+    AutoPtr<TDictionary> m_Dict;
+    AutoPtr<TStore>      m_Store;
+
+private:
+    /// forbidden
+    CBDB_BlobDictStore(const CBDB_BlobDictStore<Key, Dictionary, Store>&);
+    CBDB_BlobDictStore<Key, Dictionary, Store>& operator=(const CBDB_BlobDictStore<Key, Dictionary, Store>&);
 };
 
 
@@ -328,23 +333,19 @@ Uint4 CBDB_BlobDictionary<Key>::PutKey(const Key& key)
 /////////////////////////////////////////////////////////////////////////////
 
 
-template <typename Key, typename Dictionary, typename BvStore>
-inline CBDB_BlobDictStore<Key, Dictionary, BvStore>
+template <typename Key, typename Dictionary, typename Store>
+inline CBDB_BlobDictStore<Key, Dictionary, Store>
 ::CBDB_BlobDictStore(const string& demux_path)
-    : m_Dict(NULL)
-    , m_Store(NULL)
-    , m_DictOwned(new Dictionary)
-    , m_StoreOwned(new BvStore(demux_path))
+    : m_Dict(new Dictionary)
+    , m_Store(new Store(demux_path))
 {
-    m_Dict = m_DictOwned.get();
-    m_Store = m_StoreOwned.get();
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
-inline CBDB_BlobDictStore<Key, Dictionary, BvStore>
+template <typename Key, typename Dictionary, typename Store>
+inline CBDB_BlobDictStore<Key, Dictionary, Store>
 ::CBDB_BlobDictStore(Dictionary& generator,
-                     BvStore&    store,
+                     Store&    store,
                      EOwnership  own)
     : m_Dict(&generator, own),
       m_Store(&store, own)
@@ -352,42 +353,42 @@ inline CBDB_BlobDictStore<Key, Dictionary, BvStore>
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::~CBDB_BlobDictStore()
+CBDB_BlobDictStore<Key, Dictionary, Store>::~CBDB_BlobDictStore()
 {
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline
-CBDB_Env* CBDB_BlobDictStore<Key, Dictionary, BvStore>::GetEnv()
+CBDB_Env* CBDB_BlobDictStore<Key, Dictionary, Store>::GetEnv()
 {
     return m_Store->GetEnv();
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline
-const string& CBDB_BlobDictStore<Key, Dictionary, BvStore>::GetFileName() const
+const string& CBDB_BlobDictStore<Key, Dictionary, Store>::GetFileName() const
 {
     return m_Store->GetFileName();
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline
-void CBDB_BlobDictStore<Key, Dictionary, BvStore>::SetEnv(CBDB_Env& env)
+void CBDB_BlobDictStore<Key, Dictionary, Store>::SetEnv(CBDB_Env& env)
 {
     m_Dict->SetEnv(env);
     m_Store->SetEnv(env);
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline
-void CBDB_BlobDictStore<Key, Dictionary, BvStore>::Open(const string& fname,
-                                                        CBDB_RawFile::EOpenMode mode)
+void CBDB_BlobDictStore<Key, Dictionary, Store>::Open(const string& fname,
+                                                      CBDB_RawFile::EOpenMode mode)
 {
     /// open our dictionary
     if ( !m_Dict->IsOpen() ) {
@@ -397,10 +398,10 @@ void CBDB_BlobDictStore<Key, Dictionary, BvStore>::Open(const string& fname,
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::Read(const Key& key,
-                                                   CBDB_RawFile::TBuffer& data)
+CBDB_BlobDictStore<Key, Dictionary, Store>::Read(const Key& key,
+                                                 CBDB_RawFile::TBuffer& data)
 {
     TKeyId key_id = m_Dict->GetKey(key);
     if ( !key_id ) {
@@ -410,29 +411,29 @@ CBDB_BlobDictStore<Key, Dictionary, BvStore>::Read(const Key& key,
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::ReadById(TKeyId key_id,
-                                                       CBDB_RawFile::TBuffer& data)
+CBDB_BlobDictStore<Key, Dictionary, Store>::ReadById(TKeyId key_id,
+                                                     CBDB_RawFile::TBuffer& data)
 {
     return m_Store->ReadRealloc(key_id, data);
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::Write(const Key& key,
-                                                    const CBDB_RawFile::TBuffer& data)
+CBDB_BlobDictStore<Key, Dictionary, Store>::Write(const Key& key,
+                                                  const CBDB_RawFile::TBuffer& data)
 {
     return Write(key, &data[0], data.size());
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::Write(const Key& key,
-                                                    const void* data,
-                                                    size_t size)
+CBDB_BlobDictStore<Key, Dictionary, Store>::Write(const Key& key,
+                                                  const void* data,
+                                                  size_t size)
 {
     TKeyId key_id = m_Dict->PutKey(key);
     if ( !key_id ) {
@@ -443,40 +444,40 @@ CBDB_BlobDictStore<Key, Dictionary, BvStore>::Write(const Key& key,
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::WriteById(TKeyId key_id,
-                                                        const void* data,
-                                                        size_t size)
+CBDB_BlobDictStore<Key, Dictionary, Store>::WriteById(TKeyId key_id,
+                                                      const void* data,
+                                                      size_t size)
 {
     return UpdateInsert(key_id, data, size);
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::WriteById(TKeyId key_id,
-                                                        const CBDB_RawFile::TBuffer& data)
+CBDB_BlobDictStore<Key, Dictionary, Store>::WriteById(TKeyId key_id,
+                                                      const CBDB_RawFile::TBuffer& data)
 {
     return UpdateInsert(key_id, &data[0], data.size());
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::UpdateInsert(Uint4 uid,
-                                                           const void* data,
-                                                           size_t size)
+CBDB_BlobDictStore<Key, Dictionary, Store>::UpdateInsert(Uint4 uid,
+                                                         const void* data,
+                                                         size_t size)
 {
     return m_Store->UpdateInsert(uid, data, size);
 }
 
 
-template <typename Key, typename Dictionary, typename BvStore>
+template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
-CBDB_BlobDictStore<Key, Dictionary, BvStore>::Delete(unsigned id, 
-                                                     CBDB_RawFile::EIgnoreError on_error,
-                                                     CBDB_Transaction* trans)
+CBDB_BlobDictStore<Key, Dictionary, Store>::Delete(unsigned id, 
+                                                   CBDB_RawFile::EIgnoreError on_error,
+                                                   CBDB_Transaction* trans)
 {
     return m_Store->Delete(id, on_error, trans);
 }
