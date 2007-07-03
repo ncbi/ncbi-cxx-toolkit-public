@@ -276,6 +276,7 @@ public:
                        EOwnership    own = eTakeOwnership);
 
 private:
+    /// forbidden
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
 
@@ -627,6 +628,7 @@ protected:
 	virtual void x_SetByteSwapped(bool bswp);
 
 private:
+    /// forbidden
     CBDB_File(const CBDB_File&);
     CBDB_File& operator= (const CBDB_File&);
 

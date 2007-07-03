@@ -577,6 +577,7 @@ protected:
     TLock                   m_CrossDBLock;
 
 private:
+    /// forbidden
     CBDB_BlobSplitStore(const CBDB_BlobSplitStore<TBV, TObjDeMux, TL>&);
     CBDB_BlobSplitStore<TBV, TObjDeMux, TL>& operator=(const CBDB_BlobSplitStore<TBV, TObjDeMux, TL>&);
 };

@@ -380,6 +380,7 @@ private:
     unsigned x_GetDeadLockDetect(EDeadLockDetect detect_mode);
     
 private:
+    /// forbidden
     CBDB_Env(const CBDB_Env&);
     CBDB_Env& operator=(const CBDB_Env&);
 private:

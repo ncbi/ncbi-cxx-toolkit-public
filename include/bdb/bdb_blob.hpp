@@ -142,6 +142,10 @@ public:
     /// Return NULL if not found
     IReader* CreateReader();
 
+private:
+    /// forbidden
+    CBDB_BLobFile(const CBDB_BLobFile&);
+    CBDB_BLobFile& operator=(const CBDB_BLobFile&);
 };
 
 /// Variant of BLOB storage for integer key database

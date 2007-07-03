@@ -253,6 +253,7 @@ public:
     CBDB_ConditionHandle  To;
 
 private:
+    /// forbidden
     CBDB_FileCursor(const CBDB_FileCursor&);
     CBDB_FileCursor& operator= (const CBDB_FileCursor&);
 private:
