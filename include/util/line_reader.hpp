@@ -69,6 +69,14 @@ public:
     /// obtaining the first line.
     virtual ILineReader& operator++(void) = 0;
 
+    /// Unget current line, which must be valid.
+    /// After calling this method:
+    ///   AtEOF() should return false,
+    ///   PeekChar() should return first char of the line
+    ///   call to operator*() is illegal
+    ///   operator++() will make the line current
+    virtual void UngetLine(void) = 0;
+
     /// Return the current line, minus its terminator.
     virtual CTempString operator*(void) const = 0;
 
@@ -92,12 +100,14 @@ public:
     char               PeekChar(void) const;
     void               Seek(CT_POS_TYPE pos);
     CStreamLineReader& operator++(void);
+    void               UngetLine(void);
     CTempString        operator*(void) const;
     CT_POS_TYPE        GetPosition(void) const;
 
 private:
     AutoPtr<CNcbiIstream> m_Stream;
-    string        m_Line;
+    string             m_Line;
+    bool               m_UngetLine;
 };
 
 
@@ -118,6 +128,7 @@ public:
     char               PeekChar(void) const;
     void               Seek(CT_POS_TYPE pos);
     CMemoryLineReader& operator++(void);
+    void               UngetLine(void);
     CTempString        operator*(void) const;
     CT_POS_TYPE        GetPosition(void) const;
 
@@ -150,6 +161,7 @@ public:
     bool                AtEOF(void) const;
     char                PeekChar(void) const;
     CBufferedLineReader& operator++(void);
+    void                UngetLine(void);
     CTempString         operator*(void) const;
     CT_POS_TYPE         GetPosition(void) const;
 private:
@@ -161,6 +173,7 @@ private:
 private:
     AutoPtr<IReader> m_Reader;
     bool          m_Eof;
+    bool          m_UngetLine;
     size_t        m_BufferSize;
     AutoArray<char> m_Buffer;
     const char*   m_Pos;
@@ -168,7 +181,6 @@ private:
     CTempString   m_Line;
     string        m_String;
     CT_POS_TYPE   m_InputPos;
-    CT_POS_TYPE   m_NextInputPos;
 };
 
 

@@ -42,6 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CRef<ILineReader> ILineReader::New(const string& filename)
 {
     CRef<ILineReader> lr;
@@ -52,7 +53,8 @@ CRef<ILineReader> ILineReader::New(const string& filename)
 
 CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
                                      EOwnership ownership)
-    : m_Stream(&is, ownership)
+    : m_Stream(&is, ownership),
+      m_UngetLine(false)
 {
 }
 
@@ -64,29 +66,50 @@ CStreamLineReader::~CStreamLineReader()
 
 bool CStreamLineReader::AtEOF(void) const
 {
-    return m_Stream->eof()  ||  CT_EQ_INT_TYPE(m_Stream->peek(), CT_EOF);
+    return !m_UngetLine &&
+        (m_Stream->eof()  ||  CT_EQ_INT_TYPE(m_Stream->peek(), CT_EOF));
 }
+
 
 char CStreamLineReader::PeekChar(void) const
 {
-    return m_Stream->peek();
+    return m_UngetLine? *m_Line.begin(): m_Stream->peek();
 }
+
+
+void CStreamLineReader::UngetLine(void)
+{
+    _ASSERT(!m_UngetLine);
+    m_UngetLine = true;
+}
+
 
 void CStreamLineReader::Seek(CT_POS_TYPE pos)
 {
     m_Stream->seekg(pos);
 }
 
+
 CStreamLineReader& CStreamLineReader::operator++(void)
 {
+    if ( m_UngetLine ) {
+        m_UngetLine = false;
+        return *this;
+    }
     NcbiGetlineEOL(*m_Stream, m_Line);
+    if ( !m_Line.empty() && m_Line[m_Line.size()-1] == '\r' ) {
+        m_Line.erase(m_Line.size()-1);
+    }
     return *this;
 }
 
+
 CTempString CStreamLineReader::operator*(void) const
 {
+    _ASSERT(!m_UngetLine);
     return CTempString(m_Line);
 }
+
 
 CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 {
@@ -104,15 +127,26 @@ CMemoryLineReader::CMemoryLineReader(CMemoryFile* mem_file,
     m_MemFile->MemMapAdvise(CMemoryFile::eMMA_Sequential);
 }
 
+
 bool CMemoryLineReader::AtEOF(void) const
 {
     return m_Pos >= m_End;
 }
 
+
 char CMemoryLineReader::PeekChar(void) const
 {
     return *m_Pos;
 }
+
+
+void CMemoryLineReader::UngetLine(void)
+{
+    _ASSERT(m_Line.begin());
+    _ASSERT(m_Pos != m_Line.begin());
+    m_Pos = m_Line.begin();
+}
+
 
 void CMemoryLineReader::Seek(CT_POS_TYPE pos)
 {
@@ -121,12 +155,19 @@ void CMemoryLineReader::Seek(CT_POS_TYPE pos)
     m_Pos = m_Start + offset;
 }
 
+
 CMemoryLineReader& CMemoryLineReader::operator++(void)
 {
-    const char* p;
-    for (p = m_Pos;  p < m_End  &&  *p != '\r'  && *p != '\n';  ++p)
-        ;
-    m_Line = CTempString(m_Pos, p - m_Pos);
+    const char* p = m_Pos;
+    if ( p == m_Line.begin() ) {
+        p = m_Line.end();
+    }
+    else {
+        while ( p < m_End  &&  *p != '\r'  && *p != '\n' ) {
+            ++p;
+        }
+        m_Line = CTempString(m_Pos, p - m_Pos);
+    }
     // skip over delimiters
     if (p + 1 < m_End  &&  *p == '\r'  &&  p[1] == '\n') {
         m_Pos = p + 2;
@@ -138,17 +179,18 @@ CMemoryLineReader& CMemoryLineReader::operator++(void)
     return *this;
 }
 
+
 CTempString CMemoryLineReader::operator*(void) const
 {
+    _ASSERT(m_Line.begin());
     return m_Line;
 }
+
 
 CT_POS_TYPE CMemoryLineReader::GetPosition(void) const
 {
     return NcbiInt8ToStreampos(m_Pos - m_Start);
 }
-
-
 
 
 CBufferedLineReader::CBufferedLineReader(IReader* reader,
@@ -159,8 +201,7 @@ CBufferedLineReader::CBufferedLineReader(IReader* reader,
       m_Buffer(new char[m_BufferSize]),
       m_Pos(m_Buffer.get()),
       m_End(m_Pos),
-      m_InputPos(CT_POS_TYPE(0)),
-      m_NextInputPos(CT_POS_TYPE(0))
+      m_InputPos(0)
 {
     x_ReadBuffer();
 }
@@ -174,8 +215,7 @@ CBufferedLineReader::CBufferedLineReader(CNcbiIstream& is,
       m_Buffer(new char[m_BufferSize]),
       m_Pos(m_Buffer.get()),
       m_End(m_Pos),
-      m_InputPos(CT_POS_TYPE(0)),
-      m_NextInputPos(CT_POS_TYPE(0))
+      m_InputPos(0)
 {
     x_ReadBuffer();
 }
@@ -184,12 +224,12 @@ CBufferedLineReader::CBufferedLineReader(CNcbiIstream& is,
 CBufferedLineReader::CBufferedLineReader(const string& filename)
     : m_Reader(CFileReader::New(filename)),
       m_Eof(false),
+      m_UngetLine(false),
       m_BufferSize(32*1024),
       m_Buffer(new char[m_BufferSize]),
       m_Pos(m_Buffer.get()),
       m_End(m_Pos),
-      m_InputPos(CT_POS_TYPE(0)),
-      m_NextInputPos(CT_POS_TYPE(0))
+      m_InputPos(0)
 {
     x_ReadBuffer();
 }
@@ -202,18 +242,31 @@ CBufferedLineReader::~CBufferedLineReader()
 
 bool CBufferedLineReader::AtEOF(void) const
 {
-    return m_Eof;
+    return m_Eof && !m_UngetLine;
 }
 
 
-char  CBufferedLineReader::PeekChar(void) const
+char CBufferedLineReader::PeekChar(void) const
 {
-    return *m_Pos;
+    return m_UngetLine? *m_Line.begin(): *m_Pos;
+}
+
+
+void CBufferedLineReader::UngetLine(void)
+{
+    _ASSERT(!m_UngetLine);
+    _ASSERT(m_Line.begin());
+    m_UngetLine = true;
 }
 
 
 CBufferedLineReader& CBufferedLineReader::operator++(void)
 {
+    if ( m_UngetLine ) {
+        _ASSERT(m_Line.begin());
+        m_UngetLine = false;
+        return *this;
+    }
     // check if we are at the buffer end
     const char* start = m_Pos;
     const char* end = m_End;
@@ -310,6 +363,7 @@ bool CBufferedLineReader::x_ReadBuffer()
         return false;
     }
 
+    m_InputPos += CT_OFF_TYPE(m_End - m_Buffer.get());
     m_Pos = m_End = m_Buffer.get();
     for (bool flag = true; flag; ) {
         size_t size;
@@ -328,8 +382,6 @@ bool CBufferedLineReader::x_ReadBuffer()
             // fall through
         case eRW_Success:
             m_End = m_Pos + size;
-            m_InputPos = m_NextInputPos;
-            m_NextInputPos += CT_OFF_TYPE(size);
             return (result == eRW_Success  ||  size > 0);
         default:
             _ASSERT(0);
@@ -349,5 +401,6 @@ CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 {
     return m_InputPos + CT_OFF_TYPE(m_Pos - m_Buffer.get());
 }
+
 
 END_NCBI_SCOPE
