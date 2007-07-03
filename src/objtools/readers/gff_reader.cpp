@@ -1260,16 +1260,16 @@ void CGFFReader::x_PlaceSeq(CBioseq& seq)
 
 
 CGFFReader::SRecord::TAttrs::const_iterator
-CGFFReader::SRecord::FindAttribute(const string& name, size_t min_values)
+CGFFReader::SRecord::FindAttribute(const string& att_name, size_t min_values)
 const
 {
     SRecord::TAttrs::const_iterator it
-        = attrs.lower_bound(vector<string>(1, name));
-    while (it != attrs.end()  &&  it->front() == name
+        = attrs.lower_bound(vector<string>(1, att_name));
+    while (it != attrs.end()  &&  it->front() == att_name
            &&  it->size() <= min_values) {
         ++it;
     }
-    return (it == attrs.end() || it->front() == name) ? it : attrs.end();
+    return (it == attrs.end() || it->front() == att_name) ? it : attrs.end();
 }
 
 

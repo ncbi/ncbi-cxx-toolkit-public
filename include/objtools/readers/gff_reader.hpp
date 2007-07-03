@@ -148,7 +148,7 @@ public:
         string       name;
 
 
-        TAttrs::const_iterator FindAttribute(const string& name,
+        TAttrs::const_iterator FindAttribute(const string& att_name,
                                              size_t min_values = 1) const;
     };
 
