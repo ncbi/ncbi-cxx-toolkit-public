@@ -48,12 +48,6 @@ USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
 void CWinMaskWriter::PrintId( CBioseq_Handle& bsh )
-{
-    os << ">"
-        << CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(),
-                                   CSeq_id::eFormat_FastA)
-        << " "
-        << sequence::GetTitle(bsh) << "\n";
-}
+{ os << ">" << sequence::GetTitle( bsh ) << "\n"; }
 
 END_NCBI_SCOPE

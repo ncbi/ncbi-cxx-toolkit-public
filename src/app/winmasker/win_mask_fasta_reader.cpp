@@ -50,23 +50,15 @@ CRef< CSeq_entry > CWinMaskFastaReader::GetNextSequence()
         CFastaReader::fAssumeNuc |
         CFastaReader::fForceType |
         CFastaReader::fOneSeq    |
+        CFastaReader::fNoParseID |
         CFastaReader::fAllSeqIds;
 
     CFastaReader fasta_reader( line_reader, flags );
-    CFastaReader fasta_reader_2( 
-            line_reader, flags|CFastaReader::fNoParseID );
 
     while( !input_stream.eof() )
     {
         CRef< CSeq_entry > aSeqEntry( null );
-        CT_POS_TYPE pos = input_stream.tellg();
-
-        try {
-            aSeqEntry = fasta_reader.ReadSet( 1 );
-        }catch( ... ) {
-            input_stream.seekg( pos );
-            aSeqEntry = fasta_reader_2.ReadSet( 1 );
-        }
+        aSeqEntry = fasta_reader.ReadSet( 1 );
 
         if( aSeqEntry != 0 && 
                 aSeqEntry->IsSeq() && 
