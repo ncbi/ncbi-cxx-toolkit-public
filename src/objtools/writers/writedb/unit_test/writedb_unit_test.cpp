@@ -674,7 +674,7 @@ BOOST_AUTO_UNIT_TEST(s_UsPatId)
         
         writedb->Close();
         writedb->ListFiles(files);
-        CHECK(files.size());
+        CHECK(files.size() != 0);
     }
     
     CSeqDB seqdb("uspatid", CSeqDB::eProtein);
