@@ -78,7 +78,6 @@ public:
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
         
-        Int8 position = StreamPosition();
         const string line = *++GetLineReader();
 
         CRegexpUtil regex(line);
@@ -99,19 +98,7 @@ public:
         }
 
         // If all fails, fall back to parent's implementation
-        ILineReader* lr = &GetLineReader();
-        CStreamLineReader* slr = NULL;
-        CMemoryLineReader* mlr = NULL;
-        if ( (slr = dynamic_cast<CStreamLineReader*>(lr)) ) {
-            slr->Seek(NcbiInt8ToStreampos(position));
-        } else if ( (mlr = dynamic_cast<CMemoryLineReader*>(lr)) ) {
-            mlr->Seek(NcbiInt8ToStreampos(position));
-        } else {
-            NCBI_THROW(CBlastException, eNotSupported,
-                       "Unsupported ILineReader implementation");
-        }
-        //FIXME: use the call below if Seek is added to ILineReader...
-        //GetLineReader().Seek(NcbiInt8ToStreampos(position));
+        GetLineReader().UngetLine();
         return CFastaReader::ReadOneSeq();
     }
 

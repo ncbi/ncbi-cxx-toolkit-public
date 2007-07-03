@@ -82,9 +82,6 @@ public:
 
     /// Return the current (absolute) position.
     virtual CT_POS_TYPE GetPosition(void) const = 0;
-
-    /// Seek into the position indicated by the first argument
-    //virtual void Seek(CT_POS_TYPE position) = 0;
 };
 
 
@@ -98,7 +95,6 @@ public:
 
     bool               AtEOF(void) const;
     char               PeekChar(void) const;
-    void               Seek(CT_POS_TYPE pos);
     CStreamLineReader& operator++(void);
     void               UngetLine(void);
     CTempString        operator*(void) const;
@@ -126,7 +122,6 @@ public:
 
     bool               AtEOF(void) const;
     char               PeekChar(void) const;
-    void               Seek(CT_POS_TYPE pos);
     CMemoryLineReader& operator++(void);
     void               UngetLine(void);
     CTempString        operator*(void) const;

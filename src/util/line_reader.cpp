@@ -84,12 +84,6 @@ void CStreamLineReader::UngetLine(void)
 }
 
 
-void CStreamLineReader::Seek(CT_POS_TYPE pos)
-{
-    m_Stream->seekg(pos);
-}
-
-
 CStreamLineReader& CStreamLineReader::operator++(void)
 {
     if ( m_UngetLine ) {
@@ -145,14 +139,6 @@ void CMemoryLineReader::UngetLine(void)
     _ASSERT(m_Line.begin());
     _ASSERT(m_Pos != m_Line.begin());
     m_Pos = m_Line.begin();
-}
-
-
-void CMemoryLineReader::Seek(CT_POS_TYPE pos)
-{
-    Int8 offset(NcbiStreamposToInt8(pos));
-    _ASSERT( (m_Start + offset) <= m_End );
-    m_Pos = m_Start + offset;
 }
 
 
