@@ -421,10 +421,10 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleAccessions)
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     vector< pair<string, long> > accession_lengths;
-    accession_lengths.push_back(make_pair("NC_000001.9", 247249719));
-    accession_lengths.push_back(make_pair("NC_000010.9", 135374737));
-    accession_lengths.push_back(make_pair("NC_000011.8", 134452384));
-    accession_lengths.push_back(make_pair("NC_000012.10", 132349534));
+    accession_lengths.push_back(make_pair(string("NC_000001.9"), 247249719L));
+    accession_lengths.push_back(make_pair(string("NC_000010.9"), 135374737L));
+    accession_lengths.push_back(make_pair(string("NC_000011.8"), 134452384L));
+    accession_lengths.push_back(make_pair(string("NC_000012.10"), 132349534L));
 
     const size_t kNumQueries(accession_lengths.size());
     CBlastInput bi(source);
@@ -517,9 +517,9 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis)
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     vector< pair<long, long> > gi_length;
-    gi_length.push_back(make_pair(89161185, 247249719));
-    gi_length.push_back(make_pair(555, 624));
-    gi_length.push_back(make_pair(557, 489));
+    gi_length.push_back(make_pair(89161185L, 247249719L));
+    gi_length.push_back(make_pair(555L, 624L));
+    gi_length.push_back(make_pair(557L, 489L));
 
     const size_t kNumQueries(gi_length.size());
 
@@ -576,10 +576,10 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleTis)
     CHECK(source->End() == false);
 
     vector< pair<int, long> > ti_lengths;
-    ti_lengths.push_back(make_pair(12345, 657));
-    ti_lengths.push_back(make_pair(12347, 839));
-    ti_lengths.push_back(make_pair(12348, 658));
-    ti_lengths.push_back(make_pair(10000, 670));
+    ti_lengths.push_back(make_pair(12345, 657L));
+    ti_lengths.push_back(make_pair(12347, 839L));
+    ti_lengths.push_back(make_pair(12348, 658L));
+    ti_lengths.push_back(make_pair(10000, 670L));
 
     const size_t kNumQueries(ti_lengths.size());
     CBlastInput bi(source);
@@ -665,14 +665,14 @@ BOOST_AUTO_UNIT_TEST(s_ReadAccessionsAndGisWithNewLines)
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     vector< pair<string, long> > gi_accessions;
-    gi_accessions.push_back(make_pair("89161215", 111583154));
-    gi_accessions.push_back(make_pair("89161217", 155407050));
-    gi_accessions.push_back(make_pair("89161219", 11133097));
-    gi_accessions.push_back(make_pair("NC_000001.9", 247249719));
-    gi_accessions.push_back(make_pair("NC_000010.9", 135374737));
-    gi_accessions.push_back(make_pair("gnl|ti|12345", 657));
-    gi_accessions.push_back(make_pair("NC_000011.8", 134452384));
-    gi_accessions.push_back(make_pair("NC_000012.10", 132349534));
+    gi_accessions.push_back(make_pair(string("89161215"), 111583154L));
+    gi_accessions.push_back(make_pair(string("89161217"), 155407050L));
+    gi_accessions.push_back(make_pair(string("89161219"), 11133097L));
+    gi_accessions.push_back(make_pair(string("NC_000001.9"), 247249719L));
+    gi_accessions.push_back(make_pair(string("NC_000010.9"), 135374737L));
+    gi_accessions.push_back(make_pair(string("gnl|ti|12345"), 657L));
+    gi_accessions.push_back(make_pair(string("NC_000011.8"), 134452384L));
+    gi_accessions.push_back(make_pair(string("NC_000012.10"), 132349534L));
 
     const size_t kNumQueries(gi_accessions.size());
     CBlastInput bi(source);
