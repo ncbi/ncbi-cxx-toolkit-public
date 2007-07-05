@@ -66,11 +66,11 @@ namespace {
     // For non-covered ends longer than kNonCoveredEndThreshold use
     // m_max_genomic_ext. For shorter ends use k * query_len^(1/kPower)
     
-    const Uint4 kNonCoveredEndThreshold (55);
+    const Uint4  kNonCoveredEndThreshold (55);
     const double kPower (2.5);
     
     // (2) - post-processing
-    // exons shorter than kMinTermExonSize with identity lower than
+    // term exons shorter than kMinTermExonSize with identity lower than
     // kMinTermExonIdty will be converted to gaps
     const size_t kMinTermExonSize (28);
     const double kMinTermExonIdty (0.9);
@@ -88,7 +88,7 @@ CSplign::CSplign( void )
     m_cds_start = m_cds_stop = 0;
     m_model_id = 0;
     m_MaxCompsPerQuery = 0;
-    m_MinPatternHitLength = 14;
+    m_MinPatternHitLength = 13;
 }
 
 CSplign::~CSplign()
@@ -337,6 +337,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
         THitRef& h = *ii;
+
         if(h->GetQuerySpan() < m_MinPatternHitLength) {
             h.Reset(0);
             continue;
@@ -633,8 +634,8 @@ void CSplign::Run(THitRefs* phitrefs)
                                        min_singleton_matches,
                                        true );
 
-    size_t dim (comps.GetCount());
-    if(dim > 0) {
+    pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
+    if(dim.second > 0) {
  
         // pre-load cDNA
         m_mrna.clear();
@@ -648,56 +649,60 @@ void CSplign::Run(THitRefs* phitrefs)
         }
 
         x_InitCDS(id_query); // init m_cds_start, m_cds_stop
-    }
 
-    // compartments share the space between them
-    size_t smin = 0, smax = kMax_UInt;
-    bool same_strand = false;
+        // compartments share the space between them
+        size_t smin (0), smax (kMax_UInt);
+        bool same_strand (false);
 
-    const THit::TCoord* box = comps.GetBox(0);
-    if(m_MaxCompsPerQuery > 0 && dim > m_MaxCompsPerQuery) {
-        dim = m_MaxCompsPerQuery;
-    }
-
-    for(size_t i = 0; i < dim; ++i, box += 4) {
+        const THit::TCoord* box (comps.GetBox(0));
+        if(m_MaxCompsPerQuery > 0 && dim.second > m_MaxCompsPerQuery) {
+            dim.second = m_MaxCompsPerQuery;
+        }
         
-        if(i + 1 == dim) {
-            smax = kMax_UInt;
-            same_strand = false;
-        }
-        else {            
-            bool strand_this = comps.GetStrand(i);
-            bool strand_next = comps.GetStrand(i+1);
-            same_strand = strand_this == strand_next;
-            smax = same_strand? (box+4)[2] - 1: kMax_UInt;
-        }
-     
-        try {
-
-            THitRefs comp_hits;
-            comps.Get(i, comp_hits);
-
-            SAlignedCompartment ac (x_RunOnCompartment(&comp_hits, smin, smax));
-
-            ac.m_id = ++m_model_id;
-            ac.m_segments = m_segments;
-            ac.m_error = false;
-            ac.m_msg = "Ok";
-            ac.m_cds_start = m_cds_start;
-            ac.m_cds_stop = m_cds_stop;
-            m_result.push_back(ac);
-        }
-
-        catch(CAlgoAlignException& e) {
+        for(size_t i (0); i < dim.first; ++i, box += 4) {
             
-            if(e.GetSeverity() == eDiag_Fatal) {
-                throw;
+            if(i + 1 == dim.first) {
+                smax = kMax_UInt;
+                same_strand = false;
+            }
+            else {            
+                bool strand_this (comps.GetStrand(i));
+                bool strand_next (comps.GetStrand(i+1));
+                same_strand = strand_this == strand_next;
+                smax = same_strand? (box+4)[2] - 1: kMax_UInt;
+            }
+     
+            try {
+                
+                THitRefs comp_hits;
+                comps.Get(i, comp_hits);
+            
+                if(comps.GetStatus(i)) {
+            
+                    SAlignedCompartment ac (x_RunOnCompartment(&comp_hits,smin,smax));
+
+                    ac.m_id = ++m_model_id;
+                    ac.m_segments = m_segments;
+                    ac.m_error = false;
+                    ac.m_msg = "Ok";
+                    ac.m_cds_start = m_cds_start;
+                    ac.m_cds_stop = m_cds_stop;
+                    m_result.push_back(ac);
+                }
             }
 
-            m_result.push_back(SAlignedCompartment(0, true, e.GetMsg().c_str()));
-            ++m_model_id;
+            catch(CAlgoAlignException& e) {
+                
+                if(e.GetSeverity() == eDiag_Fatal) {
+                    throw;
+                }
+                
+                m_result.push_back(SAlignedCompartment(0, true, e.GetMsg().c_str()));
+                ++m_model_id;
+            }
+
+            smin = same_strand? box[3] + 1: 0;
         }
-        smin = same_strand? box[3] + 1: 0;
     }
 }
 
@@ -720,7 +725,7 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
 
     x_InitCDS(id_query);
 
-    bool rv = true;
+    bool rv (true);
     try {
 
         SAlignedCompartment ac (x_RunOnCompartment(phitrefs, subj_min, subj_max));
@@ -814,7 +819,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
     
         // keep short terminal hits out of the pattern
         THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
-        const size_t min_termhitlen (20);
+        const size_t min_termhitlen (m_MinPatternHitLength);
         bool b0 (true), b1 (true);
         while(b0 && b1 && ii < jj) {
             
@@ -856,7 +861,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord span [4];
         CHitFilter<THit>::s_GetSpan(*phitrefs, span);
         THit::TCoord qmin (span[0]), qmax (span[1]), smin (span[2]), smax (span[3]);
-        
+
         const bool ctg_strand (phitrefs->front()->GetSubjStrand());
 
         // m1: estimate terminal genomic extents based on uncovered end sizes
@@ -869,8 +874,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord fixed_left (numeric_limits<THit::TCoord>::max() / 2), 
                      fixed_right(fixed_left);
 
-        const bool fix_left  (qmin   <= kNonCoveredEndThreshold / 3);
-        const bool fix_right (rspace <= kNonCoveredEndThreshold / 3);
+        const size_t kTermLenCutOff_m2 (10);
+        const bool fix_left  (qmin   <= kTermLenCutOff_m2);
+        const bool fix_right (rspace <= kTermLenCutOff_m2);
         if(fix_left || fix_right) {
 
             if(phitrefs->size() > 1) {
@@ -988,7 +994,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 if(*p != *q) break;
             }
         
-            const size_t sh = p - p0;
+            const size_t sh (p - p0);
             if(sh) {
                 // resize
                 s.m_box[1] += sh;
@@ -1063,7 +1069,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 break;
             }
         }
-    
+
         if(!some_exons) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment,g_msg_NoExonsAboveIdtyLimit);
         }
@@ -1228,6 +1234,51 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     }
 #endif
 
+    if(segments.size() == 0) {
+        NCBI_THROW(CAlgoAlignException, eInternal,
+                   "CSplign::x_Run(): Missing alignment segments.");
+    }
+
+    // indicate any slack space on the left
+    if(segments[0].m_box[0] > 0) {
+
+        segments.push_front(TSegment());
+        TSegment& g = segments.front();
+        g.m_exon = false;
+        g.m_box[0] = 0;
+        g.m_box[1] = segments[0].m_box[0] - 1;
+        g.m_box[2] = 0;
+        g.m_box[3] = segments[0].m_box[2] - 1;
+        g.m_idty = 0;
+        g.m_len = segments[0].m_box[0];
+        g.m_annot = s_kGap;
+        g.m_details.resize(0);
+        g.m_score = 0;
+    }
+
+    const size_t SeqLen2 (m_genomic.size());
+    const size_t SeqLen1 (m_polya_start == kMax_UInt?
+                          m_mrna.size():
+                          m_polya_start);
+
+    // same on the right
+    TSegment& seg_last (segments.back());
+    if(seg_last.m_box[1] + 1 < SeqLen1) {
+        
+        TSegment g;
+        g.m_exon = false;
+        g.m_box[0] = seg_last.m_box[1] + 1;
+        g.m_box[1] = SeqLen1 - 1;
+        g.m_box[2] = seg_last.m_box[3] + 1;
+        g.m_box[3] = SeqLen2 - 1;
+        g.m_idty = 0;
+        g.m_len = g.m_box[1] - g.m_box[0] + 1;
+        g.m_annot = s_kGap;
+        g.m_details.resize(0);
+        g.m_score = 0;
+        segments.push_back(g);
+    }
+
     // segment-level postprocessing
     m_segments.resize(0);
     while(true) {
@@ -1238,28 +1289,28 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             m_segments.resize(0);
         }
 
-        size_t seg_dim = segments.size();
+        size_t seg_dim (segments.size());
         if(seg_dim == 0) {
             return;
         }
 
-        size_t exon_count0 = 0;
+        size_t exon_count0 (0);
         ITERATE(TSegmentDeque, ii, segments) {
             if(ii->m_exon) ++exon_count0;
         }
 
-        // First go from the ends and see if we
-        // can improve boundary exons
-        size_t k0 = 0;
+        // Go from the ends and see if we can improve term exons
+        size_t k0 (0);
         while(k0 < seg_dim) {
 
             TSegment& s = segments[k0];
             if(s.m_exon) {
 
-                const size_t len = 1 + s.m_box[1] - s.m_box[0];
-                const double min_idty = len >= kMinTermExonSize?
-                    m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
-
+                const size_t len (1 + s.m_box[1] - s.m_box[0]);
+                const double min_idty (len >= kMinTermExonSize?
+                                       m_MinExonIdty:
+                                       max(m_MinExonIdty, kMinTermExonIdty));
+                
                 if(s.m_idty < min_idty || m_endgaps) {
                     s.ImproveFromLeft(Seq1, Seq2, m_aligner);
                 }
@@ -1271,63 +1322,26 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             ++k0;
         }
 
-        // fill the left-hand gap, if any
-        if(segments[0].m_exon && segments[0].m_box[0] > 0) {
-            segments.push_front(TSegment());
-            TSegment& g = segments.front();
-            g.m_exon = false;
-            g.m_box[0] = 0;
-            g.m_box[1] = segments[0].m_box[0] - 1;
-            g.m_box[2] = 0;
-            g.m_box[3] = segments[0].m_box[2] - 1;
-            g.m_idty = 0;
-            g.m_len = segments[0].m_box[0];
-            g.m_annot = s_kGap;
-            g.m_details.resize(0);
-            g.m_score = 0;
-            ++seg_dim;
-            ++k0;
-        }
-
-        int k1 = int(seg_dim - 1);
+        int k1 (seg_dim - 1);
         while(k1 >= int(k0)) {
-            TSegment& s = segments[k1];
+
+            TSegment& s (segments[k1]);
             if(s.m_exon) {
 
-                const size_t len = 1 + s.m_box[1] - s.m_box[0];
-                const double min_idty = len >= kMinTermExonSize?
-                    m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
+                const size_t len (1 + s.m_box[1] - s.m_box[0]);
+                const double min_idty (len >= kMinTermExonSize?
+                                       m_MinExonIdty:
+                                       max(m_MinExonIdty, kMinTermExonIdty));
+
                 if(s.m_idty < min_idty || m_endgaps) {
                     s.ImproveFromRight(Seq1, Seq2, m_aligner);
                 }
+
                 if(s.m_idty >= min_idty) {
                     break;
                 }
             }
             --k1;
-        }
-
-        const size_t SeqLen2 = m_genomic.size();
-        const size_t SeqLen1 = m_polya_start == kMax_UInt? m_mrna.size():
-                                                           m_polya_start;
-
-        // fill the right-hand gap, if any
-        if( segments[seg_dim - 1].m_exon && 
-            segments[seg_dim - 1].m_box[1] < SeqLen1 - 1) {
-
-            TSegment g;
-            g.m_exon = false;
-            g.m_box[0] = segments[seg_dim - 1].m_box[1] + 1;
-            g.m_box[1] = SeqLen1 - 1;
-            g.m_box[2] = segments[seg_dim - 1].m_box[3] + 1;
-            g.m_box[3] = SeqLen2 - 1;
-            g.m_idty = 0;
-            g.m_len = g.m_box[1] - g.m_box[0] + 1;
-            g.m_annot = s_kGap;
-            g.m_details.resize(0);
-            g.m_score = 0;
-            segments.push_back(g);
-            ++seg_dim;
         }
 
         // turn to gaps exons with low identity
@@ -1383,15 +1397,15 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }}
 
         // turn to gaps extra-short exons preceeded/followed by gaps
-        bool gap_prev = false;
-        for(size_t k = 0; k < seg_dim; ++k) {
+        bool gap_prev (false);
+        for(size_t k (0); k < seg_dim; ++k) {
             TSegment& s = segments[k];
             if(s.m_exon == false) {
                 gap_prev = true;
             }
             else {
-                size_t length = s.m_box[1] - s.m_box[0] + 1;
-                bool gap_next = false;
+                size_t length (s.m_box[1] - s.m_box[0] + 1);
+                bool gap_next (false);
                 if(k + 1 < seg_dim) {
                     gap_next = !segments[k+1].m_exon;
                 }
@@ -1408,12 +1422,13 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         // merge all adjacent gaps
-        int gap_start_idx = -1;
+        int gap_start_idx (-1);
         if(seg_dim && segments[0].m_exon == false) {
             gap_start_idx = 0;
         }
-        for(size_t k = 0; k < seg_dim; ++k) {
-            TSegment& s = segments[k];
+
+        for(size_t k (0); k < seg_dim; ++k) {
+            TSegment& s (segments[k]);
             if(!s.m_exon) {
                 if(gap_start_idx == -1) {
                     gap_start_idx = int(k);
@@ -1436,8 +1451,9 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 m_segments.push_back(s);
             } 
         }
+
         if(gap_start_idx >= 0) {
-            TSegment& g = segments[gap_start_idx];
+            TSegment& g (segments[gap_start_idx]);
             g.m_box[1] = segments[seg_dim-1].m_box[1];
             g.m_box[3] = segments[seg_dim-1].m_box[3];
             g.m_len = g.m_box[1] - g.m_box[0] + 1;
@@ -1445,7 +1461,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             m_segments.push_back(g);
         }
 
-        size_t exon_count1 = 0;
+        size_t exon_count1 (0);
         ITERATE(TSegments, ii, m_segments) {
             if(ii->m_exon) ++exon_count1;
         }
