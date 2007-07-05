@@ -152,7 +152,7 @@ sub ExtractBranchPathArg
     UsageError('"' . ($ArgName || 'branch_path') .
         '" argument is missing') unless $BranchPath;
 
-    unless ($BranchPath =~ m/^(?:\/|trunk\/|branches\/)/)
+    unless ($BranchPath =~ m/^(?:\/|trunk|branches)/)
     {
         $BranchPath = 'branches/' . $BranchPath
     }
