@@ -134,6 +134,11 @@ void CObjectOStream::SetVerifyDataThread(ESerialVerifyData verify)
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
         tls_verify != eSerialVerifyData_DefValueAlways) {
+        if (tls_verify != verify &&
+            (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
+            ERR_POST_ONCE(Warning <<
+                "CObjectOStream::SetVerifyDataThread: data verification disabled");
+        }
         s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
     }
 }
@@ -144,6 +149,11 @@ void CObjectOStream::SetVerifyDataGlobal(ESerialVerifyData verify)
     if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
         ms_VerifyDataDefault != eSerialVerifyData_Always &&
         ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
+        if (ms_VerifyDataDefault != verify &&
+            (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
+            ERR_POST_ONCE(Warning <<
+                "CObjectOStream::SetVerifyDataGlobal: data verification disabled");
+        }
         ms_VerifyDataDefault = verify;
     }
 }
