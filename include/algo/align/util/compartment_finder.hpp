@@ -220,8 +220,11 @@ public:
     bool GetFirst(THitRefs& compartment);
     bool GetNext(THitRefs& compartment);
     
-    size_t GetCount(void) const {
-        return m_pending.size();
+    pair<size_t,size_t> GetCounts(void) const {
+
+        pair<size_t, size_t> rv (m_pending.size(), count(m_status.begin(), 
+                                                         m_status.end(), true));
+        return rv;
     }
     
     void Get(size_t i, THitRefs& compartment) const {
@@ -235,12 +238,17 @@ public:
     bool GetStrand(size_t i) const {
         return m_strands[i];
     }
+
+    bool GetStatus(size_t i) const {
+        return m_status[i];
+    }
         
 private:
     
     vector<THitRefs>         m_pending;
     vector<TCoord>           m_ranges;
     vector<bool>             m_strands;
+    vector<bool>             m_status;
     size_t                   m_iter;
         
     void x_Copy2Pending(TCompartmentFinder& finder);
@@ -552,6 +560,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
     const double min_matches   (m_MinSingletonMatches < m_MinMatches? 
         m_MinSingletonMatches: m_MinMatches);
 
+    vector<bool> comp_status;
     if(score_best + m_penalty >= min_matches) {
 
         int i (i_bestsofar);
@@ -560,12 +569,15 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
         while(i != -1) {
 
             if(new_compartment) {
+
                 const double mp (GetTotalMatches<THit>(hitrefs));
-                if(mp >= m_MinMatches) {
+                if(mp > 0) {
                     // save the current compartment
                     m_compartments.push_back(CCompartment());
                     m_compartments.back().SetMembers() = hitrefs;
+                    comp_status.push_back(mp >= m_MinMatches);
                 }
+
                 hitrefs.resize(0);
                 new_compartment = false;
             }
@@ -582,11 +594,12 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
         }
 
         const double mp (GetTotalMatches<THit>(hitrefs));
-        if(m_compartments.size() == 0 && mp >= m_MinSingletonMatches 
-           || mp >= m_MinMatches) 
-        {
+        if(mp > 0) {
+            bool status (m_compartments.size() == 0 && mp >= m_MinSingletonMatches 
+                         || mp >= m_MinMatches);
             m_compartments.push_back(CCompartment());
             m_compartments.back().SetMembers() = hitrefs;
+            comp_status.push_back(status);
         }
     }
 
@@ -718,8 +731,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             }
         }
 
-//#define ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
-#ifdef ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
+#define ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
+#ifdef  ALGO_ALIGN_COMPARTMENT_FINDER_USE_FULL_XFILTERING
 
         typename THitRefs::iterator ihr_b (m_hitrefs.begin()),
             ihr_e(m_hitrefs.end()), ihr (ihr_b);
@@ -739,6 +752,8 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 NON_CONST_ITERATE(typename THitRefs, ii, hitrefs) {
                     (*ii)->SetScore(- (*ii)->GetScore());
                 }
+                hitrefs.front()->SetEValue(-1);
+                hitrefs.back()->SetEValue(-1);
             }
             
             const TCoord comp_subj_min (hitrefs.back()->GetSubjStart());
@@ -762,8 +777,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
             size_t nullified (sx_XFilter(hitrefs, ihrc_b, ihrc_e, 1, 
                                          kMinCompartmentHitLength));
-            stable_sort(ihrc_b, ihrc_e,
-                        THitComparator (THitComparator::eQueryMinQueryMax));
+            sort(ihrc_b, ihrc_e, THitComparator (THitComparator::eQueryMinQueryMax));
 
             nullified += sx_XFilter(hitrefs, ihrc_b, ihrc_e, 0,
                                     kMinCompartmentHitLength);
@@ -786,11 +800,25 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
                 if(score < 0) {
                     (*ii)->SetScore(-score);
                 }
+                const double eval ((*ii)->GetEValue());
+                if(eval < 0) {
+                    (*ii)->SetEValue(0);
+                }
             }
         }
-
 #endif
+    }
 
+    // mask out compartments with low identity
+    for(size_t i (0), in (m_compartments.size()); i < in; ++i) {
+        if(comp_status[i] == false) {
+
+            THitRefs & hitrefs (m_compartments[i].SetMembers());
+            NON_CONST_ITERATE(typename THitRefs, ii, hitrefs) {
+                THitRef & hr (*ii);
+                hr->SetScore(-hr->GetScore());
+            }
+        }
     }
 
     return m_compartments.size();
@@ -806,7 +834,7 @@ size_t CCompartmentFinder<THit>::sx_XFilter(
     size_t min_compartment_hit_len)
 {
     size_t nullified (0);
-    for(int in (hitrefs.size()), i (in - 1); i >= 0 && ihr != ihr_e; --i) {
+    for(int in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
 
         THitRef& h1 (hitrefs[i]);
         if(h1.IsNull()) continue;
@@ -923,11 +951,11 @@ size_t CCompartmentFinder<THit>::sx_XFilter(
         else {
 
             if(box1[2*w] < segmax_start) {
-                h1->Modify(2*w, segmax_start);
+                h1->Modify(2 * w, segmax_start);
             }
             
             if(segmax_stop < box1[2*w+1]) {
-                h1->Modify(2*w + 1, segmax_stop);
+                h1->Modify(2 * w + 1, segmax_stop);
             }
         }
         
@@ -987,9 +1015,9 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
      TCoord min_singleton_matches,
      bool cross_filter)
 {
-    const TCoord kMax_TCoord = numeric_limits<TCoord>::max();
+    const TCoord kMax_TCoord (numeric_limits<TCoord>::max());
 
-    const TCoord max_intron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
+    const TCoord max_intron (CCompartmentFinder<THit>::s_GetDefaultMaxIntron());
 
     // separate strands for CompartmentFinder
     typename THitRefs::iterator ib = istart, ie = ifinish, ii = ib, 
@@ -1044,6 +1072,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
             (*ii)->SetSubjStart(s1);
             (*ii)->SetSubjStop(s0);
         }        
+
         x_Copy2Pending(finder);
     }}
 
@@ -1070,14 +1099,14 @@ void CCompartmentAccessor<THit>::x_Copy2Pending(
 
     // copy to pending
     for(typename CCompartmentFinder<THit>::CCompartment* compartment =
-            finder.GetFirst();  compartment; compartment = finder.GetNext()) {
+            finder.GetFirst(); compartment; compartment = finder.GetNext()) {
         
         if(compartment->GetMembers().size() > 0) {
 
             m_pending.push_back(THitRefs(0));
             THitRefs& vh = m_pending.back();
         
-            for(THitRef ph = compartment->GetFirst(); ph; ph = compartment->GetNext())
+            for(THitRef ph (compartment->GetFirst()); ph; ph = compartment->GetNext())
             {
                 vh.push_back(ph);
             }
@@ -1089,6 +1118,7 @@ void CCompartmentAccessor<THit>::x_Copy2Pending(
             m_ranges.push_back(box[3] - 1);
         
             m_strands.push_back(compartment->GetStrand());
+            m_status.push_back(compartment->GetFirst()->GetScore() > 0);
         }
     }
 }
