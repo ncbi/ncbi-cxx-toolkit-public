@@ -64,6 +64,16 @@ inline int s_RoundUp(int value, int blocksize)
 /// Comparator for sorting null terminated strings.
 class CWriteDB_PackedStringsCompare {
 public:
+#ifdef NCBI_OS_SOLARIS
+    /// Constructor.
+    ///
+    /// This definition silences a false-alarm warning on solaris.
+    CWriteDB_PackedStringsCompare()
+    {
+    }
+#endif // NCBI_OS_SOLARIS
+    
+    /// Compare two null terminated strings.
     bool operator()(const char * a, const char * b) const
     {
         return strcmp(a, b) < 0;
