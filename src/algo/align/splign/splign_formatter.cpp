@@ -666,11 +666,8 @@ CSplignFormatter::TSplicedSegs CSplignFormatter::AsSplicedSegs(
                     smin = seg.m_box[3];
                 }
 
-                CProduct_pos pp;
-                pp.SetNucpos(qmin);
-                exon->SetProduct_start(pp);
-                pp.SetNucpos(qmax);
-                exon->SetProduct_end(pp);
+                exon->SetProduct_start().SetNucpos(qmin);
+                exon->SetProduct_end().SetNucpos(qmax);
 
                 exon->SetGenomic_start(smin);
                 exon->SetGenomic_end(smax);
