@@ -73,6 +73,10 @@ public:
     ///
     bool Unlock(unsigned id);
 
+    /// Check if id is locked or not
+    bool IsLocked(unsigned id) const;
+
+
     /// Reclaim unused memory 
     void FreeUnusedMem();
     
@@ -80,8 +84,8 @@ private:
     CLockVector(const CLockVector<BV>&);
     CLockVector& operator=(const CLockVector<BV>&);
 protected:
-    TBitVector    m_IdVector;      ///< vector of locked objects
-    CFastMutex    m_IdVector_Lock; ///< lock for m_LockVector
+    TBitVector          m_IdVector;      ///< vector of locked objs
+    mutable CFastMutex  m_IdVector_Lock; ///< lock for m_LockVector
 };
 
 /// Lock guard for the CLockVector
@@ -236,6 +240,7 @@ void CLockVectorGuard<TLockVect>::DoLock()
     } // while
 }
 
+
 template<class TLockVect> 
 void CLockVectorGuard<TLockVect>::Lock(unsigned id)
 {
@@ -309,6 +314,14 @@ void CLockVector<BV>::FreeUnusedMem()
     CFastMutexGuard guard(m_IdVector_Lock);
     m_IdVector.optimize(0, TBitVector::opt_free_0);
 }
+
+template<class BV> 
+bool CLockVector<BV>::IsLocked(unsigned id) const
+{
+    CFastMutexGuard guard(m_IdVector_Lock);
+    return m_IdVector[id];
+}
+
 
 /* @} */
 
