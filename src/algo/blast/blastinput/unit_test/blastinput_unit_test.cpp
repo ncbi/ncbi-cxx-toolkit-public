@@ -266,7 +266,11 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
         CHECK(source->End() == false);
 
         CBlastInput bi(source);
-        blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+        blast::TSeqLocVector query_vector;
+        BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqLocs(),
+                            CObjReaderParseException);
+    }
+#if 0
         CHECK_EQUAL(kNumQueries, query_vector.size());
 
         string s(error_stream.str());
@@ -302,6 +306,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
 
         CHECK(source->End() == true);
     }
+#endif
 }
 
 BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
@@ -344,7 +349,10 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
         CHECK(!ssl.mask);
     }
     {
-        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        blast::SSeqLoc ssl;
+        BOOST_REQUIRE_THROW(ssl = source->GetNextSSeqLoc(),
+                            CObjReaderParseException);
+#if 0
         CHECK(ssl.seqloc->IsInt() == true);
         CHECK(ssl.seqloc->GetInt().IsSetId() == true);
         CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
@@ -376,6 +384,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
         CHECK(b.IsNa());
         CHECK_EQUAL(CSeq_id::e_Local, b.GetId().front()->Which());
         CHECK_EQUAL((long)0, (long)b.GetInst().GetLength());
+#endif
     }
 }
 
