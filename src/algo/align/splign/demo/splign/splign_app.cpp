@@ -656,8 +656,7 @@ CSplignApp::x_SetupBlastOptions(bool cross)
         const CArgs& args = GetArgs();
         blast_opt.SetWordSize(args["W"].AsInteger());
         blast_opt.SetMaskAtHash(true);
-        //blast_opt.SetGapXDropoff(1);
-        //blast_opt.SetGapXDropoffFinal(1);
+        blast_opt.SetDustFiltering(false);
     }
 
     if(blast_options_handle->Validate() == false) {
@@ -707,11 +706,11 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
     CSeqDB seqdb (dbname, CSeqDB::eNucleotide);
     CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
     CLocalBlast blast (query_factory, m_BlastOptionsHandle, seq_src);
-    CSearchResultSet results = *blast.Run();
+    CSearchResultSet results (*blast.Run());
     phitrefs->resize(0);
 
-    const size_t num_results = results.GetNumResults();
-    for(size_t query_index = 0; query_index != num_results; ++query_index) {
+    const size_t num_results (results.GetNumResults());
+    for(size_t query_index (0); query_index != num_results; ++query_index) {
         
         CConstRef<objects::CSeq_align_set> ref_sas0 (results[query_index].
                                                      GetSeqAlign());
@@ -724,14 +723,14 @@ void CSplignApp::x_GetDbBlastHits(const string& dbname,
                 phitrefs->push_back(hitref);
                 
                 THit::TId id (hitref->GetSubjId());
-                int oid = -1;
+                int oid (-1);
                 seqdb.SeqidToOid(*id, oid);
                 id = seqdb.GetSeqIDs(oid).back();
                 hitref->SetSubjId(id);
             }
         }
     }
-    
+
 //    BlastSeqSrcFree(seq_src);
 }
 
@@ -1259,6 +1258,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
         return;
     }
 
+    // skip void compartments but obey their bounds
     if(hitrefs.front()->GetScore() < 0) {
         return;
     }
@@ -1267,7 +1267,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     THit::TId subj  (hitrefs.front()->GetSubjId());
     
     m_Formatter->SetSeqIds(query, subj);
-    
+
     const string strand (args["direction"].AsString());
     CSplign::TResults splign_results;
 
