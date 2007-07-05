@@ -5,6 +5,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/rwstream.hpp>
+#include <util/random_gen.hpp>
 #include <util/line_reader.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -143,20 +144,21 @@ void CTestApp::RunFile(const string& filename)
 
 int CTestApp::RunSelfTest()
 {
+    CRandom r;
     int errors = 0;
     vector<string> lines;
     vector<CT_POS_TYPE> positions;
     for ( int i = 0; i < 100000; ++i ) {
         int size;
-        if ( random()%100 == 0 ) {
-            size = random()%100000;
+        if ( r.GetRand(0, 100) == 0 ) {
+            size = r.GetRand(0, 100000);
         }
         else {
-            size = random()%10;
+            size = r.GetRand(0, 10);
         }
         string line(size, ' ');
         for ( int i = 0; i < size; ++i ) {
-            line[i] = 32+random()%95;
+            line[i] = r.GetRand(' ', 126);
         }
         lines.push_back(line);
     }
@@ -167,7 +169,7 @@ int CTestApp::RunSelfTest()
             ITERATE ( vector<string>, i, lines ) {
                 positions.push_back(out.tellp());
                 out << *i;
-                if ( random()&1 ) out << '\r';
+                if ( r.GetRand()&1 ) out << '\r';
                 out << '\n';
             }
             positions.push_back(out.tellp());
@@ -190,7 +192,7 @@ int CTestApp::RunSelfTest()
             }
             int l = 0;
             while ( !rdr->AtEOF() ) {
-                if ( random()&1 ) {
+                if ( r.GetRand()&1 ) {
                     ++*rdr;
                     rdr->UngetLine();
                 }
