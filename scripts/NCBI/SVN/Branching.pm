@@ -399,7 +399,12 @@ sub List
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     print 'Managed branches in ' . $SVN->GetRepository() . ":\n";
-    print $SVN->ReadFile('branches/branch_list')
+
+    for my $BranchPath ($SVN->ReadFileLines('branches/branch_list'))
+    {
+        $BranchPath =~ s/^branches\///o;
+        print "$BranchPath\n"
+    }
 }
 
 sub Info
