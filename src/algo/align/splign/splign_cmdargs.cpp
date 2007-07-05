@@ -39,22 +39,13 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char kStrandPlus[] = "plus";
-static const char kStrandMinus[] = "minus";
-static const char kStrandBoth[] = "both";
-static const char kStrandAuto[] = "auto";
-
 
 void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 {    
-    argdescr->AddFlag ("noendgaps",
-                       "Skip detection of unaligning regions at the ends.",
-                       true);
-    
-    argdescr->AddFlag ("nopolya", "Assume no Poly(A) tail.",  true);
     
     argdescr->AddDefaultKey
-        ("compartment_penalty", "compartment_penalty",
+        ("compartment_penalty",
+         "compartment_penalty",
          "Penalty to open a new compartment "
          "(compartment identification parameter). "
          "Multiple compartments will only be identified if "
@@ -63,28 +54,31 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          NStr::DoubleToString(CSplign::s_GetDefaultCompartmentPenalty()));
     
     argdescr->AddDefaultKey
-        ("min_compartment_idty", "min_compartment_identity",
+        ("min_compartment_idty",
+         "min_compartment_identity",
          "Minimal compartment identity to align.",
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
     
     argdescr->AddOptionalKey
-        ("min_singleton_idty", "min_singleton_identity",
+        ("min_singleton_idty",
+         "min_singleton_identity",
          "Minimal singleton compartment identity to align. Singletons are "
          "per subject and strand",
          CArgDescriptions::eDouble);
     
     argdescr->AddDefaultKey
-        ("max_extent", "max_extent",
-         "Max genomic extent to look for exons beyond compartment boundaries "
-         "as determined with Blast hits.",
+        ("max_extent",
+         "max_extent",
+         "Max genomic extent to look for exons beyond compartment ends.",
          CArgDescriptions::eInteger,
          NStr::IntToString(CSplign::s_GetDefaultMaxGenomicExtent()) );
     
     argdescr->AddDefaultKey
-        ("min_exon_idty", "identity",
-         "Minimal exon identity. Lower identity segments "
-         "will be marked as gaps.",
+        ("min_exon_idty",
+         "identity",
+         "Minimal exon identity. "
+         "Segments with lower identity will be marked as gaps.",
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
 
@@ -128,6 +122,13 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eInteger,
          NStr::IntToString(CSplicedAligner16::GetDefaultWi(3)).c_str());
         
+    argdescr->AddFlag ("noendgaps",
+                       "Skip detection of unaligning regions at the ends.",
+                       true);
+    
+    argdescr->AddFlag ("nopolya", "Assume no Poly(A) tail.",  true);
+    
+
     CArgAllow* constrain01 = new CArgAllow_Doubles(0,1);
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
@@ -164,13 +165,13 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     CRef<CSplicedAligner> aligner(
         static_cast<CSplicedAligner*>(new CSplicedAligner16));
         
-    aligner->SetWm(args["Wm"].AsInteger());
+    aligner->SetWm (args["Wm"].AsInteger());
     aligner->SetWms(args["Wms"].AsInteger());
-    aligner->SetWg(args["Wg"].AsInteger());
-    aligner->SetWs(args["Ws"].AsInteger());
+    aligner->SetWg (args["Wg"].AsInteger());
+    aligner->SetWs (args["Ws"].AsInteger());
     aligner->SetScoreMatrix(NULL);
 
-    for(size_t i = 0, n = aligner->GetSpliceTypeCount(); i < n; ++i) {
+    for(size_t i (0), n (aligner->GetSpliceTypeCount()); i < n; ++i) {
         string arg_name ("Wi");
         arg_name += NStr::IntToString(i);
         aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
