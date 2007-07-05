@@ -111,16 +111,11 @@ sub UsageError
     exit 1
 }
 
-sub CheckNumberOfArguments
+sub TooManyArgs
 {
-    my ($Command, $NumReqArgs) = @_;
+    my ($Command) = @_;
 
-    if (@ARGV != $NumReqArgs)
-    {
-        UsageError($NumReqArgs == 0 ? qq("$Command" doesn't accept arguments) :
-            $NumReqArgs == 1 ? qq("$Command" accepts only one argument) :
-            qq("$Command" requires $NumReqArgs arguments))
-    }
+    UsageError(qq(too many arguments for "$Command"))
 }
 
 my $DirList;
@@ -135,123 +130,160 @@ unless (defined $Command)
 }
 elsif ($Command eq 'help')
 {
-    CheckNumberOfArguments('help', 1);
+    TooManyArgs($Command) if @ARGV > 1;
 
-    Help(@ARGV)
+    Help($ARGV[0])
 }
 
-sub AdjustBranchPath
+sub TrimSlashes
 {
-    my ($BranchPath) = @_;
+    my ($PathRef) = @_;
 
-    return $BranchPath !~ m/^branches\// ?
-        'branches/' . $BranchPath : $BranchPath
+    $$PathRef =~ s/\/+$//o;
+    $$PathRef =~ s/^\/+//o
 }
 
-sub CheckBranchStructureCommandArgs
+sub ExtractBranchPathArg
 {
-    my ($Command, $NumReqArgs) = @_;
+    my ($ArgName) = @_;
 
-    if (@ARGV < $NumReqArgs || (@ARGV == $NumReqArgs && !$DirList))
+    my $BranchPath = shift @ARGV;
+
+    UsageError('"' . ($ArgName || 'branch_path') .
+        '" argument is missing') unless $BranchPath;
+
+    unless ($BranchPath =~ m/^(?:\/|trunk\/|branches\/)/)
     {
-        UsageError("$Command requires $NumReqArgs arguments, " .
-            'followed by a directory listing')
+        $BranchPath = 'branches/' . $BranchPath
     }
 
-    if (@ARGV > $NumReqArgs && $DirList)
+    TrimSlashes(\$BranchPath);
+
+    return $BranchPath
+}
+
+sub AcceptOnlyBranchPathArg
+{
+    my ($Command) = @_;
+
+    my $BranchPath = ExtractBranchPathArg();
+
+    TooManyArgs($Command) if @ARGV;
+
+    return $BranchPath
+}
+
+sub ReadFileLines
+{
+    my ($FH) = @_;
+
+    my $Line;
+    my @Lines;
+
+    while (defined($Line = readline($FH)))
     {
-        UsageError('excessive command line arguments')
+        chomp $Line;
+        next unless $Line;
+        push @Lines, $Line
     }
 
-    return @ARGV unless $DirList;
+    return @Lines
+}
+
+sub ExtractBranchDirArgs
+{
+    my ($Command, @AdditionalPathArgs) = @_;
 
     my @BranchDirs;
 
-    if ($DirList eq '-')
+    unless ($DirList)
     {
-        while (<STDIN>)
-        {
-            chomp;
-            push @BranchDirs, $_
-        }
+        UsageError('directory listing is missing') unless @ARGV;
+
+        @BranchDirs = @ARGV
     }
     else
     {
-        open FILE, '<', $DirList or die "$ScriptName\: $DirList\: $!\n";
+        TooManyArgs($Command) if @ARGV;
 
-        while (<FILE>)
+        if ($DirList eq '-')
         {
-            chomp;
-            push @BranchDirs, $_
+            @BranchDirs = ReadFileLines(\*STDIN)
         }
+        else
+        {
+            open FILE, '<', $DirList or die "$ScriptName\: $DirList\: $!\n";
 
-        close FILE
+            @BranchDirs = ReadFileLines(\*FILE);
+
+            close FILE
+        }
     }
 
-    return (@ARGV, @BranchDirs)
+    for my $Dir (@BranchDirs)
+    {
+        TrimSlashes(\$Dir)
+    }
+
+    return (@AdditionalPathArgs, @BranchDirs)
 }
 
 my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
 
 if ($Command eq 'list')
 {
-    CheckNumberOfArguments('list', 0);
+    UsageError(q("list" doesn't accept arguments)) if @ARGV;
 
     $Module->List()
 }
 elsif ($Command eq 'info')
 {
-    CheckNumberOfArguments('info', 1);
-
-    $Module->Info(AdjustBranchPath(@ARGV))
+    $Module->Info(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'create')
 {
-    $Module->Create(CheckBranchStructureCommandArgs('create', 2))
+    my $BranchPath = ExtractBranchPathArg();
+    my $UpstreamPath = ExtractBranchPathArg('upstream_path');
+
+    $Module->Create($BranchPath, $UpstreamPath, ExtractBranchDirArgs($Command))
 }
 elsif ($Command eq 'alter')
 {
-    $Module->Alter(CheckBranchStructureCommandArgs('alter', 1))
+    my $BranchPath = ExtractBranchPathArg();
+
+    $Module->Alter($BranchPath, ExtractBranchDirArgs($Command))
 }
 elsif ($Command eq 'remove')
 {
-    CheckNumberOfArguments('remove', 1);
-
-    $Module->Remove(AdjustBranchPath(@ARGV))
+    $Module->Remove(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'merge_down')
 {
-    CheckNumberOfArguments('merge_down', 1);
-
-    $Module->MergeDown(AdjustBranchPath(@ARGV))
+    $Module->MergeDown(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'merge_up')
 {
-    CheckNumberOfArguments('merge_up', 1);
-
-    $Module->MergeUp(AdjustBranchPath(@ARGV))
+    $Module->MergeUp(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'commit_merge')
 {
-    CheckNumberOfArguments('commit_merge', 1);
-
-    $Module->CommitMerge(AdjustBranchPath(@ARGV))
+    $Module->CommitMerge(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'switch')
 {
-    CheckNumberOfArguments('switch', 1);
-
-    $Module->Switch(AdjustBranchPath(@ARGV))
+    $Module->Switch(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'unswitch')
 {
-    CheckNumberOfArguments('unswitch', 1);
-
-    $Module->Unswitch(AdjustBranchPath(@ARGV))
+    $Module->Unswitch(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'svn')
 {
-    $Module->Svn(@ARGV)
+    my $BranchPath = ExtractBranchPathArg();
+
+    UsageError('an svn command must be specified') unless @ARGV;
+
+    $Module->Svn($BranchPath, @ARGV)
 }
 else
 {
