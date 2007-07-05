@@ -50,17 +50,18 @@ class NCBI_XALGOALIGN_EXPORT CSplignFormatter: public CObject
 {
 public:
 
-    enum EFlags {
-        fNone = 0,
-        fNoExonScores = 1
-    };
-
     CSplignFormatter(const CSplign::TResults& results);
     CSplignFormatter(const CSplign& splign);
 
     // setters
     void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
                    CConstRef<objects::CSeq_id> id2);
+
+
+    enum EFlags {
+        fNone = 0,
+        fNoExonScores = 1
+    };
 
     // formatters
     string AsExonTable(const CSplign::TResults* results = 0,
@@ -90,21 +91,14 @@ public:
     /// @param results
     ///   Splign results for formatting. If not specified, the results
     ///   will be read from the object used to construct the formatter.
+    /// @use_spliced_segs
+    ///   Use spliced_segs or discontiguous seq-align to represent alignments
     /// @return
     ///   Formatted alignment as a seq-align-set reference.
-    CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults* results = 0)
-        const;
-
-    typedef vector<CRef<objects::CSpliced_seg> > TSplicedSegs;
-
-    /// Format alignment as a spliced-seg
-    ///
-    /// @param results
-    ///   Splign results for formatting. If not specified, the results
-    ///   will be read from the object used to construct the formatter.
-    /// @return
-    ///   Formatted alignment as a spliced_seg reference vector
-    TSplicedSegs AsSplicedSegs(const CSplign::TResults* results = 0) const;
+    CRef<objects::CSeq_align_set> AsSeqAlignSet(
+        const CSplign::TResults* results = 0,
+        bool use_spliced_seg = false)
+    const;
 
 private:
 
