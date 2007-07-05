@@ -69,6 +69,10 @@ void CCompartApp::Init()
     argdescr->AddDefaultKey("min_singleton_idty", "min_singleton_idty", 
                             "Minimal identity for singleton compartments",
                             CArgDescriptions::eDouble, "0.1");
+
+    argdescr->AddFlag("noxf", 
+                      "Suppress overlap x-filtering: print all "
+                      "compartment hits intact");
     
     argdescr->AddDefaultKey("N", "N", 
                             "Max number of compartments per query",
@@ -136,6 +140,8 @@ size_t CCompartApp::x_GetSeqLength(const string& id)
 int CCompartApp::Run()
 {   
     const CArgs& args = GetArgs();
+
+    m_NoXF = args["noxf"];
 
     if(args["seqlens"]) {
         x_ReadSeqLens(args["seqlens"].AsInputFile());
@@ -240,7 +246,7 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
                   penalty_bps,
                   min_matches,
                   min_singleton_matches,
-                  true);
+                  !m_NoXF);
 
     THitRefs comp;
     for(bool b0 (ca.GetFirst(comp)); b0 ; b0 = ca.GetNext(comp)) {

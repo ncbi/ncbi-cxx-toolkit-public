@@ -111,6 +111,8 @@ private:
 
     size_t                 m_MaxCompsPerQuery;
 
+    bool                   m_NoXF;
+
     int     x_ProcessPair  (const string& query0, THitRefs& hitrefs);
     void    x_RankAndStore (void);
     void    x_ReadSeqLens  (CNcbiIstream& istr);
