@@ -304,6 +304,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     bool generateDoNotDeleteThisObject = false;
     bool wrapperClass = SizeIsOne(m_Members) &&
         m_Members.front().cName.empty();
+    bool thisNullWithAtt;
     // generate member methods
     {
         ITERATE ( TMembers, i, m_Members ) {
@@ -318,6 +319,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->delayed )
                 delayed = true;
         }
+        TMembers::const_iterator j=m_Members.begin();
+        thisNullWithAtt = m_Members.size() == 2 && j->attlist && x_IsNullType(++j);
     }
     // check if the class is Attlist
     bool isSet = false;
@@ -465,41 +468,44 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 code.ClassPublic() <<
                     "    bool IsSet" << i->cName<<"(void) const;\n";
-                inlineMethods <<
-                    "inline\n"
-                    "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n"
-                    "{\n";
-                if ( i->haveFlag ) {
-                    // use special boolean flag
+
+
+                if (!i->haveFlag && as_ref && isNullWithAtt) {
+                    methods <<
+                        "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n{\n" <<
+                        "    return "<<i->mName<<"->IsSet"<<i->cName<<"();\n}\n\n";
+                } else {
                     inlineMethods <<
-                        "    return (("SET_PREFIX"["<<set_index<<"] & 0x"<<
-                        hex<<set_mask<<dec<<") != 0);\n";
-                }
-                else {
-                    if ( i->delayed ) {
+                        "inline\n"
+                        "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n"
+                        "{\n";
+                    if ( i->haveFlag ) {
+                        // use special boolean flag
                         inlineMethods <<
-                            "    if ( "DELAY_PREFIX<<i->cName<<" )\n"
-                            "        return true;\n";
+                            "    return (("SET_PREFIX"["<<set_index<<"] & 0x"<<
+                            hex<<set_mask<<dec<<") != 0);\n";
                     }
-                    if ( as_ref ) {
-                        // CRef
-                        if (isNullWithAtt) {
+                    else {
+                        if ( i->delayed ) {
                             inlineMethods <<
-                                "    return "<<i->mName<<"->IsSet"<<i->cName<<"();\n";
-                        } else {
+                                "    if ( "DELAY_PREFIX<<i->cName<<" )\n"
+                                "        return true;\n";
+                        }
+                        if ( as_ref ) {
+                            // CRef
                             inlineMethods <<
                                 "    return "<<i->mName<<".NotEmpty();\n";
                         }
+                        else {
+                            // doesn't need set flag -> use special code
+                            inlineMethods <<
+                                "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
+                        }
                     }
-                    else {
-                        // doesn't need set flag -> use special code
-                        inlineMethods <<
-                            "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
-                    }
+                    inlineMethods <<
+                        "}\n"
+                        "\n";
                 }
-                inlineMethods <<
-                    "}\n"
-                    "\n";
 
 // CanGetX
                 if (CClassCode::GetDoxygenComments()) {
@@ -692,35 +698,37 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
             // generate setter
             if ( as_ref ) {
-                if (!isNullWithAtt) {
-                    // generate reference setter
-                    if (CClassCode::GetDoxygenComments()) {
-                        setters <<
-                            "\n"
-                            "    /// Assign a value to "<<i->cName<<" data member.\n"
-                            "    ///\n"
-                            "    /// @param value\n"
-                            "    ///   Reference to value.\n";
-                    }
+                // generate reference setter
+                if (CClassCode::GetDoxygenComments()) {
                     setters <<
-                        "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n";
-                    methods <<
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
-                        "{\n";
-                    if ( i->delayed ) {
-                        methods <<
-                            "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
-                    }
-                    methods <<
-                        "    "<<i->mName<<".Reset(&value);\n";
-                    if ( i->haveFlag ) {
-                        methods <<
-                            "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
-                    }
-                    methods <<
-                        "}\n"
-                        "\n";
+                        "\n"
+                        "    /// Assign a value to "<<i->cName<<" data member.\n"
+                        "    ///\n"
+                        "    /// @param value\n"
+                        "    ///   Reference to value.\n";
                 }
+                setters <<
+                    "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n";
+                methods <<
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
+                    "{\n";
+                if ( i->delayed ) {
+                    methods <<
+                        "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                }
+                methods <<
+                    "    "<<i->mName<<".Reset(&value);\n";
+                if (i->attlist && thisNullWithAtt) {
+                    TMembers::const_iterator j = i;
+                    methods << "    Set" << (++j)->cName << "();\n";
+                }
+                if ( i->haveFlag ) {
+                    methods <<
+                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                }
+                methods <<
+                    "}\n"
+                    "\n";
                 if (CClassCode::GetDoxygenComments()) {
                     setters <<
                         "\n"
@@ -749,33 +757,49 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "\n";
                 }
                 else {
-                    // value already not null -> simple inline method
-                    inlineMethods <<
-                        "inline\n"<<
-                        rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
-                        "{\n";
-                    if ( i->delayed ) {
-                        inlineMethods <<
-                            "    "DELAY_PREFIX<<i->cName<<".Update();\n";
-                    }
-                    if ( (as_ref && !i->canBeNull) ) {
-                        inlineMethods <<
+                    if (isNullWithAtt) {
+                        methods <<
+                            rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                            "{\n";
+                        methods <<
                             "    if ( !"<<i->mName<<" ) {\n"
                             "        Reset"<<i->cName<<"();\n"
                             "    }\n";
-                    }
-                    if ( i->haveFlag) {
-                        inlineMethods <<
-                            "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
-                    }
-                    if (isNullWithAtt) {
-                        inlineMethods <<
+                        methods <<
                             "    "<<i->mName<<"->Set"<<i->cName<<"();\n";
+                        methods <<
+                            "    return "<<i->valueName<<";\n"
+                            "}\n"
+                            "\n";
+                    } else {
+                        // value already not null -> simple inline method
+                        inlineMethods <<
+                            "inline\n"<<
+                            rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                            "{\n";
+                        if ( i->delayed ) {
+                            inlineMethods <<
+                                "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                        }
+                        if ( (as_ref && !i->canBeNull) ) {
+                            inlineMethods <<
+                                "    if ( !"<<i->mName<<" ) {\n"
+                                "        Reset"<<i->cName<<"();\n"
+                                "    }\n";
+                        }
+                        if (i->attlist && thisNullWithAtt) {
+                            TMembers::const_iterator j = i;
+                            inlineMethods << "    Set" << (++j)->cName << "();\n";
+                        }
+                        if ( i->haveFlag) {
+                            inlineMethods <<
+                                "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                        }
+                        inlineMethods <<
+                            "    return "<<i->valueName<<";\n"
+                            "}\n"
+                            "\n";
                     }
-                    inlineMethods <<
-                        "    return "<<i->valueName<<";\n"
-                        "}\n"
-                        "\n";
                 }
                 if (i->dataType && !isNullWithAtt) {
                     const CDataType* resolved = i->dataType->Resolve();
