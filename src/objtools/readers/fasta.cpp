@@ -495,8 +495,37 @@ void CFastaReader::GenerateID(void)
     SetIDs().push_back(SetIDGenerator().GenerateID(true));
 }
 
+void CFastaReader::CheckDataLine(const TStr& s)
+{
+    // make sure the first data line has at least SOME resemblance to
+    // actual sequence data.
+    if (TestFlag(fGarbageOK)  ||  ! m_SeqData.empty() ) {
+        return;
+    }
+    size_t good = 0, bad = 0, len = s.length();
+    for (size_t pos = 0;  pos < len;  ++pos) {
+        unsigned char c = s[pos];
+        if (s_ASCII_IsAlpha(c)  ||  c == '-'  ||  c == '*') {
+            ++good;
+        } else if (isspace(c)  ||  (c >= '0' && c <= '9')) {
+            // treat whitespace and digits as neutral
+        } else if (c == ';') {
+            break; // comment -- ignore rest of line
+        } else {
+            ++bad;
+        }
+    }
+    if (bad >= good / 3) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "CFastaReader: purported data line fails sanity check",
+                    StreamPosition());
+    }
+}
+
 void CFastaReader::ParseDataLine(const TStr& s)
 {
+    CheckDataLine(s);
+
     size_t len = s.length();
     if (m_SeqData.capacity() < m_SeqData.size() + len) {
         // ensure exponential capacity growth to avoid quadratic runtime

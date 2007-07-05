@@ -79,7 +79,8 @@ public:
         fNoSeqData  = 0x80,  ///< Parse the deflines but skip the data
         fRequireID  = 0x100, ///< Reject deflines that lack IDs
         fDLOptional = 0x200, ///< Don't require a leading defline
-        fParseRawID = 0x400  ///< Try to identify raw accessions
+        fParseRawID = 0x400, ///< Try to identify raw accessions
+        fGarbageOK  = 0x800  ///< Attempt to parse anything whatsoever
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -139,6 +140,7 @@ protected:
     virtual bool   IsValidLocalID(const string& s);
     virtual void   GenerateID    (void);
     virtual void   ParseDataLine (const TStr& s);
+    virtual void   CheckDataLine (const TStr& s);
     virtual void   x_CloseGap    (TSeqPos len);
     virtual void   x_OpenMask    (void);
     virtual void   x_CloseMask   (void);
