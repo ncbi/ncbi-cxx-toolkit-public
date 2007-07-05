@@ -704,6 +704,12 @@ static int/*bool*/ TEST_LockHandler(void* user_data, EMT_Lock how)
     case eMT_Unlock:
         what_str = "eMT_Unlock";
         break;
+    case eMT_TryLock:
+        what_str = "eMT_TryLock";
+        break;
+    case eMT_TryLockRead:
+        what_str = "eMT_TryLockRead";
+        break;
     }
     fprintf(log_fp, "TEST_LockHandler(\"%s\", %s)\n",
             user_data ? (char*)user_data : "<NULL>", what_str);
