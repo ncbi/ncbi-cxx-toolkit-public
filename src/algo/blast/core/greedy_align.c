@@ -324,13 +324,15 @@ static Int4 s_FindFirstMismatch(const Uint1 *seq1, const Uint1 *seq2,
 
     /* Sentry detection here should be relatively inexpensive: The
        sentry value cannot appear in the query, so detection only
-       needs to be done at exit from the subject-query matching loop.  */
+       needs to be done at exit from the subject-query matching loop.
+       For uncompressed sequences, ambiguities in the query (i.e. seq1)
+       always count as mismatches */
     
     if (reverse) {
         if (rem == 4) {
             while (seq1_index < len1 && seq2_index < len2 && 
-                            seq1[len1-1 - seq1_index] == 
-                            seq2[len2-1 - seq2_index]) {
+                   seq1[len1-1 - seq1_index] < 4 &&
+                   seq1[len1-1 - seq1_index] == seq2[len2-1 - seq2_index]) {
                 ++seq1_index;
                 ++seq2_index;
             }
@@ -352,6 +354,7 @@ static Int4 s_FindFirstMismatch(const Uint1 *seq1, const Uint1 *seq2,
     else {
         if (rem == 4) {
             while (seq1_index < len1 && seq2_index < len2 && 
+                   seq1[seq1_index] < 4 &&
                    seq1[seq1_index] == seq2[seq2_index]) {
                 ++seq1_index;
                 ++seq2_index;
