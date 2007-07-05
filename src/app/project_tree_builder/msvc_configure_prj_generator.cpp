@@ -71,7 +71,11 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                  (CDirEntry::CreateRelativePath(m_ProjectDir, 
                                                                 m_OutputDir));
     if (m_BuildPtb) {
-        ptb_path_par += "Release";
+        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
+            ptb_path_par += "Release";
+        } else {
+            ptb_path_par += "ReleaseDLL";
+        }
     } else {
         ptb_path_par += "$(ConfigurationName)";
     }
@@ -87,36 +91,61 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 
     // Build command for project_tree_builder.sln
     if (m_BuildPtb) {
-        m_CustomBuildCommand += 
-            "devenv /build Release /project project_tree_builder.exe ";
-//         "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
-
-        string project_tree_builder_sln_dir = 
-            GetApp().GetProjectTreeInfo().m_Compilers;
-        project_tree_builder_sln_dir = 
-            CDirEntry::ConcatPath(project_tree_builder_sln_dir,
-                                GetApp().GetRegSettings().m_CompilersSubdir);
-        project_tree_builder_sln_dir = 
-            CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
-        project_tree_builder_sln_dir = 
-            CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                GetApp().GetRegSettings().m_ProjectsSubdir);
-        project_tree_builder_sln_dir = 
-            CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
-        project_tree_builder_sln_dir = 
-            CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                "project_tree_builder");
-        project_tree_builder_sln_dir = 
-            CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
-        
-        string project_tree_builder_sln_path = 
-            CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
-                                "project_tree_builder.sln");
-        project_tree_builder_sln_path = 
-            CDirEntry::CreateRelativePath(project_dir, 
-                                        project_tree_builder_sln_path);
-        
-        m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
+            m_CustomBuildCommand += 
+                "devenv /build Release /project project_tree_builder.exe ";
+//           "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
+            string project_tree_builder_sln_dir = 
+                GetApp().GetProjectTreeInfo().m_Compilers;
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir,
+                                    GetApp().GetRegSettings().m_CompilersSubdir);
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                    GetApp().GetRegSettings().m_ProjectsSubdir);
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                    "project_tree_builder");
+            project_tree_builder_sln_dir = 
+                CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
+            
+            string project_tree_builder_sln_path = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                    "project_tree_builder.sln");
+            project_tree_builder_sln_path = 
+                CDirEntry::CreateRelativePath(project_dir, 
+                                            project_tree_builder_sln_path);
+            
+            m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+        } else {
+            string project_tree_builder_sln_dir = 
+                GetApp().GetProjectTreeInfo().m_Compilers;
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir,
+                                    GetApp().GetRegSettings().m_CompilersSubdir);
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, "static");
+            project_tree_builder_sln_dir = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                    GetApp().GetRegSettings().m_ProjectsSubdir);
+            project_tree_builder_sln_dir = 
+                CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
+            
+            string project_tree_builder_sln_path = 
+                CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                                    "ncbi_cpp.sln");
+            project_tree_builder_sln_path = 
+                CDirEntry::CreateRelativePath(project_dir, 
+                                            project_tree_builder_sln_path);
+            
+            m_CustomBuildCommand += "msbuild \"";
+            m_CustomBuildCommand += project_tree_builder_sln_path;
+            m_CustomBuildCommand += "\" /t:\"project_tree_builder_exe\" /p:Configuration=ReleaseDLL;PlatformName=$(PlatformName)\n";
+        }
         m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     }
 

@@ -230,7 +230,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,3,0) );
+    SetVersion( CVersionInfo(1,3,1) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -729,8 +729,8 @@ void CProjBulderApp::ParseArguments(void)
         CDirEntry::NormalizePath( CDirEntry::ConcatPath( CDirEntry::ConcatPath( 
             CDirEntry(m_Solution).GetDir(),".."),"status"));
     m_BuildPtb = !((bool)args["nobuildptb"]);
-    m_BuildPtb = m_BuildPtb &&
-        CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
+//    m_BuildPtb = m_BuildPtb &&
+//        CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
 
     m_AddMissingLibs =   (bool)args["ext"];
     m_ScanWholeTree  = !((bool)args["nws"]);

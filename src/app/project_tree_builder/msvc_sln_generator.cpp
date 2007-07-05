@@ -403,6 +403,7 @@ CMsvcSolutionGenerator::WriteConfigureProject(const TUtilityProject& project,
                                             CNcbiOfstream&         ofs)
 {
     BeginUtilityProject(project,ofs);
+/*
     if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
         string ptb("project_tree_builder");
         CProjKey id_ptb(CProjKey::eApp,ptb);
@@ -421,6 +422,7 @@ CMsvcSolutionGenerator::WriteConfigureProject(const TUtilityProject& project,
             ofs << '\t' << "EndProjectSection" << endl;
         }
     }
+*/
     EndUtilityProject(project,ofs);
 }
 

@@ -90,7 +90,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
     // Platforms
     {{
-        CRef<CPlatform> platform(new CPlatform(""));
+        CRef<CPlatform> platform(new CPlatform());
         platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
@@ -122,7 +122,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
        
         // Compiler
         {{
-            CRef<CTool> tool(new CTool("")); 
+            CRef<CTool> tool(new CTool()); 
 
             BIND_TOOLS(tool, msvc_tool.Compiler(), Name);
             BIND_TOOLS(tool, msvc_tool.Compiler(), Optimization);
@@ -164,7 +164,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
         // Linker
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
 
             BIND_TOOLS(tool, msvc_tool.Linker(), Name);
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalDependencies);
@@ -189,7 +189,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
         // Librarian
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
 
             BIND_TOOLS(tool, msvc_tool.Librarian(), Name);
             BIND_TOOLS(tool, msvc_tool.Librarian(), AdditionalOptions);
@@ -204,28 +204,28 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
         // CustomBuildTool
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.CustomBuid(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // MIDL
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.MIDL(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // PostBuildEvent
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PostBuildEvent(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // PreBuildEvent
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), Name);
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), CommandLine);
             conf->SetTool().push_back(tool);
@@ -233,14 +233,14 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
         // PreLinkEvent
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.PreLinkEvent(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // ResourceCompiler
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Name);
             BIND_TOOLS(tool, 
                        msvc_tool.ResourceCompiler(), 
@@ -257,28 +257,28 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
         // WebServiceProxyGenerator
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.WebServiceProxyGenerator(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // XMLDataGenerator
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.XMLDataGenerator(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // ManagedWrapperGenerator
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, msvc_tool.ManagedWrapperGenerator(), Name);
             conf->SetTool().push_back(tool);
         }}
 
         // AuxiliaryManagedWrapperGenerator
         {{
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             BIND_TOOLS(tool, 
                        msvc_tool.AuxiliaryManagedWrapperGenerator(),
                        Name);

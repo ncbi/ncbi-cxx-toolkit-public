@@ -5,11 +5,11 @@
 									Globals	)>
  
  <!ELEMENT Platforms (Platform+)>
- <!ELEMENT Platform (#PCDATA)>
+ <!ELEMENT Platform EMPTY>
  
  <!ELEMENT Configurations (Configuration+)>
  <!ELEMENT Configuration (Tool+)>
- <!ELEMENT Tool (#PCDATA)>
+ <!ELEMENT Tool EMPTY>
 
  <!ELEMENT References (#PCDATA)>
  

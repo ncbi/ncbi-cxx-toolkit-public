@@ -585,7 +585,7 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
             file_config->SetAttlist().SetExcludedFromBuild("TRUE");
         }
 
-        CRef<CTool> compilerl_tool(new CTool(""));
+        CRef<CTool> compilerl_tool(new CTool());
         compilerl_tool->SetAttlist().SetName("VCCLCompilerTool");
 
         if (pch_usage.first == eCreate) {
@@ -1027,7 +1027,7 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
         CRef<CFileConfiguration> file_config(new CFileConfiguration());
         file_config->SetAttlist().SetName(ConfigName(config));
 
-        CRef<CTool> custom_build(new CTool(""));
+        CRef<CTool> custom_build(new CTool());
         custom_build->SetAttlist().SetName("VCCustomBuildTool");
         custom_build->SetAttlist().SetDescription(build_info.m_Description);
         custom_build->SetAttlist().SetCommandLine(build_info.m_CommandLine);
@@ -1061,7 +1061,7 @@ void CreateUtilityProject(const string&            name,
     
     {{
         //Platforms
-         CRef<CPlatform> platform(new CPlatform(""));
+         CRef<CPlatform> platform(new CPlatform());
          platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
          project->SetPlatforms().SetPlatform().push_back(platform);
     }}
@@ -1090,25 +1090,25 @@ void CreateUtilityProject(const string&            name,
 
         {{
             //VCCustomBuildTool
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
             conf->SetTool().push_back(tool);
         }}
         {{
             //VCMIDLTool
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
             conf->SetTool().push_back(tool);
         }}
         {{
             //VCPostBuildEventTool
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
             conf->SetTool().push_back(tool);
         }}
         {{
             //VCPreBuildEventTool
-            CRef<CTool> tool(new CTool(""));
+            CRef<CTool> tool(new CTool());
             SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
             conf->SetTool().push_back(tool);
         }}
