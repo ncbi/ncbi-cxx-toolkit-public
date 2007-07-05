@@ -672,12 +672,10 @@ CSplignFormatter::TSplicedSegs CSplignFormatter::AsSplicedSegs(
                 exon->SetGenomic_start(smin);
                 exon->SetGenomic_end(smax);
 
-                CSpliced_exon::TScores scores;
-                CSpliced_exon::TScores::Tdata & data (scores.Set());
+                CSpliced_exon::TScores::Tdata & data (exon->SetScores().Set());
                 CRef<CScore> score (new CScore);
-                data.push_back(score);
                 score->SetValue().SetReal(seg.m_score);
-                exon->SetScores(scores);
+                data.push_back(score);
 
                 exons.push_back(exon);
             }
