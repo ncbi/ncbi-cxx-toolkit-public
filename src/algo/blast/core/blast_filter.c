@@ -289,8 +289,8 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
 			if (buffer[0] != NULLB)
 			{
-                                int window;
-                                double locut, hicut; 
+                                int window = 0;
+                                double locut = .0, hicut = .0;
 				status = s_ParseSegOptions(buffer, &window, &locut, &hicut);
                                 if (status)
                                 {
