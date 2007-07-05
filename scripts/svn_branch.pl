@@ -15,11 +15,13 @@ use lib $ScriptDir;
 
 use NCBI::SVN::Branching;
 
-sub Usage
-{
-    my ($Stream, $Status) = @_;
+use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 
-    print $Stream <<EOF;
+sub Help
+{
+    my ($Topic) = @_;
+
+    print <<EOF;
 Usage:
     $ScriptName list
 
@@ -96,71 +98,164 @@ Description:
 
 EOF
 
-    exit $Status
+    exit 0
 }
 
-my ($Command, @Params) = @ARGV;
+sub UsageError
+{
+    my ($Error) = @_;
 
-my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
-my $Method;
+    print STDERR ($Error ? "$ScriptName\: $Error\n" : '') .
+        "Type '$ScriptName help' for usage.\n";
+
+    exit 1
+}
+
+sub CheckNumberOfArguments
+{
+    my ($Command, $NumReqArgs) = @_;
+
+    if (@ARGV != $NumReqArgs)
+    {
+        UsageError($NumReqArgs == 0 ? qq("$Command" doesn't accept arguments) :
+            $NumReqArgs == 1 ? qq("$Command" accepts only one argument) :
+            qq("$Command" requires $NumReqArgs arguments))
+    }
+}
+
+my $DirList;
+
+GetOptions('help|h|?' => sub {Help()}, 'dirlist' => \$DirList) or UsageError();
+
+my $Command = shift @ARGV;
 
 unless (defined $Command)
 {
-    Usage(\*STDERR, 1)
+    UsageError()
 }
-elsif ($Command eq '--help' || $Command eq '-h')
+elsif ($Command eq 'help')
 {
-    Usage(\*STDOUT, 0)
+    CheckNumberOfArguments('help', 1);
+
+    Help(@ARGV)
 }
-elsif ($Command eq 'list')
+
+sub AdjustBranchPath
 {
-    $Method = 'List'
+    my ($BranchPath) = @_;
+
+    return $BranchPath !~ m/^branches\// ?
+        'branches/' . $BranchPath : $BranchPath
+}
+
+sub CheckBranchStructureCommandArgs
+{
+    my ($Command, $NumReqArgs) = @_;
+
+    if (@ARGV < $NumReqArgs || (@ARGV == $NumReqArgs && !$DirList))
+    {
+        UsageError("$Command requires $NumReqArgs arguments, " .
+            'followed by a directory listing')
+    }
+
+    if (@ARGV > $NumReqArgs && $DirList)
+    {
+        UsageError('excessive command line arguments')
+    }
+
+    return @ARGV unless $DirList;
+
+    my @BranchDirs;
+
+    if ($DirList eq '-')
+    {
+        while (<STDIN>)
+        {
+            chomp;
+            push @BranchDirs, $_
+        }
+    }
+    else
+    {
+        open FILE, '<', $DirList or die "$ScriptName\: $DirList\: $!\n";
+
+        while (<FILE>)
+        {
+            chomp;
+            push @BranchDirs, $_
+        }
+
+        close FILE
+    }
+
+    return (@ARGV, @BranchDirs)
+}
+
+my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
+
+if ($Command eq 'list')
+{
+    CheckNumberOfArguments('list', 0);
+
+    $Module->List()
 }
 elsif ($Command eq 'info')
 {
-    $Method = 'Info'
+    CheckNumberOfArguments('info', 1);
+
+    $Module->Info(AdjustBranchPath(@ARGV))
 }
 elsif ($Command eq 'create')
 {
-    $Method = 'Create'
+    $Module->Create(CheckBranchStructureCommandArgs('create', 2))
 }
 elsif ($Command eq 'alter')
 {
-    $Method = 'Alter'
+    $Module->Alter(CheckBranchStructureCommandArgs('alter', 1))
 }
 elsif ($Command eq 'remove')
 {
-    $Method = 'Remove'
+    CheckNumberOfArguments('remove', 1);
+
+    $Module->Remove(AdjustBranchPath(@ARGV))
 }
 elsif ($Command eq 'merge_down')
 {
-    $Method = 'MergeDown'
+    CheckNumberOfArguments('merge_down', 1);
+
+    $Module->MergeDown(AdjustBranchPath(@ARGV))
 }
 elsif ($Command eq 'merge_up')
 {
-    $Method = 'MergeUp'
+    CheckNumberOfArguments('merge_up', 1);
+
+    $Module->MergeUp(AdjustBranchPath(@ARGV))
 }
 elsif ($Command eq 'commit_merge')
 {
-    $Method = 'CommitMerge'
-}
-elsif ($Command eq 'svn')
-{
-    $Method = 'Svn'
+    CheckNumberOfArguments('commit_merge', 1);
+
+    $Module->CommitMerge(AdjustBranchPath(@ARGV))
 }
 elsif ($Command eq 'switch')
 {
-    $Method = 'Switch'
+    CheckNumberOfArguments('switch', 1);
+
+    $Module->Switch(AdjustBranchPath(@ARGV))
 }
 elsif ($Command eq 'unswitch')
 {
-    $Method = 'Unswitch'
+    CheckNumberOfArguments('unswitch', 1);
+
+    $Module->Unswitch(AdjustBranchPath(@ARGV))
+}
+elsif ($Command eq 'svn')
+{
+    $Module->Svn(@ARGV)
 }
 else
 {
-    die "$ScriptName\: unknown command '$Command'\n"
+    UsageError("unknown command '$Command'")
 }
-
-$Module->$Method(@Params);
 
 exit 0

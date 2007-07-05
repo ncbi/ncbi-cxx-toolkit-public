@@ -303,7 +303,7 @@ sub ReadBranchInfo
     $_ ||= 'HEAD' for $MaxBranchRev, $MaxUpstreamRev;
 
     my $RevisionLog = $SVN->ReadLog('--stop-on-copy',
-        "-r$MaxBranchRev\:1", $SVN->GetRepository(), 'branches/' . $BranchPath);
+        "-r$MaxBranchRev\:1", $SVN->GetRepository(), $BranchPath);
 
     my @BranchRevisions;
     my @MergeDownRevisions;
@@ -319,7 +319,7 @@ sub ReadBranchInfo
         MergeDownRevisions => \@MergeDownRevisions
     );
 
-    my $CommonTarget = "/branches/$BranchPath/";
+    my $CommonTarget = "/$BranchPath/";
 
     for my $Revision (@$RevisionLog)
     {
@@ -415,7 +415,7 @@ sub Info
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
-    print "Branch path: branches/$BranchPath\n" .
+    print "Branch path: $BranchPath\n" .
         "Created: in r$BranchInfo->{BranchCreationRevision}->{Number}" .
         " from $UpstreamPath\@$BranchInfo->{BranchSourceRevision}\n";
 
@@ -430,7 +430,7 @@ sub Info
         return @{$_[0]} ? @{$_[0]} > 1 ? @{$_[0]} . ' times' : 'once' : 'never'
     }
 
-    print "Merged down into $BranchPath\: " .
+    print "Merged from '$UpstreamPath' into '$BranchPath': " .
         Times($BranchInfo->{MergeDownRevisions}) . "\n";
 
     for my $RevRef (@{$BranchInfo->{MergeDownRevisions}})
@@ -438,7 +438,7 @@ sub Info
         print "  r$RevRef->[0]->{Number} (from $UpstreamPath\@$RevRef->[1])\n"
     }
 
-    print "Merged up into $UpstreamPath\: " .
+    print "Merged from '$BranchPath' into '$UpstreamPath': " .
         Times($BranchInfo->{MergeUpRevisions}) . "\n";
 
     for my $RevRef (@{$BranchInfo->{MergeUpRevisions}})
@@ -501,7 +501,7 @@ sub Create
     for my $Dir (@BranchDirs)
     {
         my $SourcePath = "$UpstreamPath/$Dir";
-        my $TargetPath = "branches/$BranchPath/$Dir";
+        my $TargetPath = "$BranchPath/$Dir";
 
         MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
         push @CopyCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
@@ -583,7 +583,7 @@ sub Alter
         unless (delete $OldBranchDirs{$Dir})
         {
             my $SourcePath = "$UpstreamPath/$Dir";
-            my $TargetPath = "branches/$BranchPath/$Dir";
+            my $TargetPath = "$BranchPath/$Dir";
 
             MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
             push @CopyCommands, 'cp', $LastSynchRev, $SourcePath, $TargetPath
@@ -592,7 +592,7 @@ sub Alter
 
     for my $Dir (keys %OldBranchDirs)
     {
-        MarkPath("branches/$BranchPath/$Dir", \%ModTree, 'rm')
+        MarkPath("$BranchPath/$Dir", \%ModTree, 'rm')
     }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
@@ -667,7 +667,7 @@ sub Remove
 
     for (@{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
     {
-        MarkPath("branches/$BranchPath/$_", \%ModTree, 'rm')
+        MarkPath("$BranchPath/$_", \%ModTree, 'rm')
     }
 
     GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
@@ -778,7 +778,7 @@ sub DoMerge
     print "Merging with r$SourceRev...\n";
 
     my $BaseURL = $SVN->{Repos} . '/' . ($Direction eq 'up' ?
-        'branches/' . $BranchPath : $UpstreamPath) . '/';
+        $BranchPath : $UpstreamPath) . '/';
 
     for my $LocalDir (@BranchDirs)
     {
@@ -904,7 +904,7 @@ sub DoSwitchUnswitch
         " branch '$BranchPath'...\n");
 
     my $BaseURL = $SVN->GetRepository() . '/' . ($DoSwitch ?
-        "branches/$BranchPath" : $BranchInfo->{UpstreamPath}) . '/';
+        $BranchPath : $BranchInfo->{UpstreamPath}) . '/';
 
     for (@{$BranchInfo->{BranchDirs}})
     {
