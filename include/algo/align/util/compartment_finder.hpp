@@ -222,8 +222,14 @@ public:
     
     pair<size_t,size_t> GetCounts(void) const {
 
-        pair<size_t, size_t> rv (m_pending.size(), count(m_status.begin(), 
-                                                         m_status.end(), true));
+        // std::count() not supported on some platforms
+        size_t valid_count (0);
+        for(size_t i(0), n(m_status.size()); i != n; ++i) {
+            if(m_status[i]) ++valid_count;
+        }
+
+        pair<size_t, size_t> rv (m_pending.size(), valid_count);
+
         return rv;
     }
     
