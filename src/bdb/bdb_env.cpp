@@ -306,7 +306,9 @@ void CBDB_Env::OpenConcurrentDB(const string& db_home)
     Open(db_home, DB_INIT_CDB | DB_INIT_MPOOL);
 }
 
-void CBDB_Env::JoinEnv(const string& db_home, TEnvOpenFlags opt)
+void CBDB_Env::JoinEnv(const string& db_home, 
+                       TEnvOpenFlags opt,
+                       ETransactionDiscovery trans_test)
 {
     int flag = DB_JOINENV;
     if (opt & eThreaded) {
@@ -314,15 +316,29 @@ void CBDB_Env::JoinEnv(const string& db_home, TEnvOpenFlags opt)
     }
     
     Open(db_home, flag);
-    
-    // Check if we joined the transactional environment
-    // Try to create a fake transaction to test the environment
-    DB_TXN* txn = 0;
-    int ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
 
-    if (ret == 0) {
+    switch (trans_test) {
+    case eTestTransactions:
+        {
+        // Check if we joined the transactional environment
+        // Try to create a fake transaction to test the environment
+        DB_TXN* txn = 0;
+        int ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
+
+        if (ret == 0) {
+            m_Transactional = true;
+            ret = txn->abort(txn);
+        }
+        }
+        break;
+    case eAssumeTransactions:
         m_Transactional = true;
-        ret = txn->abort(txn);
+        break;
+    case eAssumeNoTransactions:
+        m_Transactional = false;
+        break;
+    default:
+        _ASSERT(0);
     }
 
     // commented since it caused crash on windows trying to free

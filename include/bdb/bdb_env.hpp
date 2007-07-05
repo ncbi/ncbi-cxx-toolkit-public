@@ -116,14 +116,25 @@ public:
     ///    all errors are redirected to that device
     void OpenErrFile(const string& file_name);
 
+    /// Modes to test if environment is transactional or not
+    ///
+    enum ETransactionDiscovery {
+        eTestTransactions,    ///< Do a test to discover transactions
+        eAssumeTransactions,  ///< Assume env. is transactional
+        eAssumeNoTransactions ///< Assume env. is non-transactional
+    };
+
+
     /// Join the existing environment
     ///
-    /// @param 
-    ///    db_home destination directory for the database
-    /// @param 
-    ///    opt environment options (see EEnvOptions)
+    /// @param  db_home 
+    ///    destination directory for the database
+    /// @param  opt 
+    ///    environment options (see EEnvOptions)
     /// @sa EEnvOptions
-    void JoinEnv(const string& db_home, TEnvOpenFlags opt = 0);
+    void JoinEnv(const string& db_home, 
+                 TEnvOpenFlags opt = 0,
+                 ETransactionDiscovery trans_test = eTestTransactions);
 
     /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
