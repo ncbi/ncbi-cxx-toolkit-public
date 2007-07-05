@@ -151,8 +151,8 @@ public:
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
     
     /******************* Query setup options ************************/
-    /// Clears the fitlering options
-    void ClearFilterOptions();
+    /// Clears the filtering options
+    void ClearFilterOptions() { m_Opts->ClearFilterOptions(); }
     /// Returns FilterString
     const char* GetFilterString() const { return m_Opts->GetFilterString(); }
     /// Sets FilterString
