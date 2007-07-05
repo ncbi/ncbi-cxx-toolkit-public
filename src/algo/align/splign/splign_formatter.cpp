@@ -466,44 +466,6 @@ string CSplignFormatter::AsAlignmentText(
 }
 
 
-CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
-                                                     results) const
-{
-    if(results == 0) {
-        results = &(m_splign_results);
-    }
-
-    CRef<CSeq_align_set> rv (new CSeq_align_set);
-    CSeq_align_set::Tdata& data = rv->Set();
-
-
-    ITERATE(CSplign::TResults, ii, *results) {
-    
-        if(ii->m_error) continue;
-
-        vector<size_t> boxes;
-        vector<string> transcripts;
-        vector<CNWAligner::TScore> scores;
-
-        for(size_t i = 0, seg_dim = ii->m_segments.size(); i < seg_dim; ++i) {
-
-            const CSplign::TSegment& seg = ii->m_segments[i];
-
-            if(seg.m_exon) {
-                
-                copy(seg.m_box, seg.m_box + 4, back_inserter(boxes));
-                transcripts.push_back(seg.m_details);
-                scores.push_back(seg.m_score);
-            }
-        }
-       
-        CRef<CSeq_align> sa (x_Compartment2SeqAlign(boxes,transcripts,scores));
-        data.push_back(sa);
-    }
-    
-    return rv;
-}
-
 
 double CalcIdentity(const string& transcript)
 {
@@ -602,88 +564,119 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
 }
 
 
-
-
-CSplignFormatter::TSplicedSegs CSplignFormatter::AsSplicedSegs(
-  const CSplign::TResults* results) const
+CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
+   const CSplign::TResults * results,
+   bool use_spliced_seg) const
 {
     if(results == 0) {
         results = &(m_splign_results);
     }
 
-    TSplicedSegs rv;
+    CRef<CSeq_align_set> rv (new CSeq_align_set);
+    CSeq_align_set::Tdata& data (rv->Set());
 
-    ITERATE(CSplign::TResults, ii_res, *results) {
-
-        const CSplign::SAlignedCompartment & ac (*ii_res);
-        if(ac.m_error) continue;
-
-        CRef<CSpliced_seg> sseg (new CSpliced_seg);
+    ITERATE(CSplign::TResults, ii, *results) {
     
-        sseg->SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+        if(ii->m_error) continue;
 
-        CSeq_id * pseqid_query (const_cast<CSeq_id*>(m_QueryId.GetNonNullPointer()));
-        sseg->SetProduct_id(*pseqid_query);
+        if(use_spliced_seg) {
 
-        CSeq_id * pseqid_subj (const_cast<CSeq_id*>(m_SubjId.GetNonNullPointer()));
-        sseg->SetGenomic_id(*pseqid_subj);
+            CRef<CSeq_align> sa (new CSeq_align);
+            sa->SetType(CSeq_align::eType_global);
+            sa->SetDim(2);
+
+            CSpliced_seg& sseg (sa->SetSegs().SetSpliced());
+
+            sseg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+            CSeq_id * pseqid_query (const_cast<CSeq_id*>(
+                                    m_QueryId.GetNonNullPointer()));
+            sseg.SetProduct_id(*pseqid_query);
+
+            CSeq_id * pseqid_subj (const_cast<CSeq_id*>(
+                                   m_SubjId.GetNonNullPointer()));
+            sseg.SetGenomic_id(*pseqid_subj);
         
-        sseg->SetProduct_strand(ac.m_QueryStrand? eNa_strand_plus: eNa_strand_minus);
-        sseg->SetGenomic_strand(ac.m_SubjStrand? eNa_strand_plus: eNa_strand_minus);
+            sseg.SetProduct_strand((*ii).m_QueryStrand? eNa_strand_plus:
+                                   eNa_strand_minus);
+            sseg.SetGenomic_strand((*ii).m_SubjStrand? eNa_strand_plus:
+                                   eNa_strand_minus);
 
-        if(ac.m_QueryLen > 0) {
-            sseg->SetProduct_length(ac.m_QueryLen);
-        }
-
-        if(ac.m_PolyA > 0) {
-            sseg->SetPoly_a(ac.m_PolyA);
-        }
-
-        CSpliced_seg::TExons & exons (sseg->SetExons());
-        for(size_t i (0), seg_dim (ac.m_segments.size()); i < seg_dim; ++i) {
-
-            const CSplign::TSegment & seg (ac.m_segments[i]);
-            if(seg.m_exon) {
-
-                CRef<CSpliced_exon> exon (new CSpliced_exon);
-
-                TSeqPos qmin, qmax, smin, smax;
-                if(seg.m_box[0] <= seg.m_box[1]) {
-                    qmin = seg.m_box[0];
-                    qmax = seg.m_box[1];
-                }
-                else {
-                    qmax = seg.m_box[0];
-                    qmin = seg.m_box[1];
-                }
-
-                if(seg.m_box[2] <= seg.m_box[3]) {
-                    smin = seg.m_box[2];
-                    smax = seg.m_box[3];
-                }
-                else {
-                    smax = seg.m_box[2];
-                    smin = seg.m_box[3];
-                }
-
-                exon->SetProduct_start().SetNucpos(qmin);
-                exon->SetProduct_end().SetNucpos(qmax);
-
-                exon->SetGenomic_start(smin);
-                exon->SetGenomic_end(smax);
-
-                CSpliced_exon::TScores::Tdata & data (exon->SetScores().Set());
-                CRef<CScore> score (new CScore);
-                score->SetValue().SetReal(seg.m_score);
-                data.push_back(score);
-
-                exons.push_back(exon);
+            if((*ii).m_QueryLen > 0) {
+                sseg.SetProduct_length((*ii).m_QueryLen);
             }
-        }
 
-        rv.push_back(sseg);
+            if((*ii).m_PolyA > 0) {
+                sseg.SetPoly_a((*ii).m_PolyA);
+            }
+
+            CSpliced_seg::TExons & exons (sseg.SetExons());
+            for(size_t i (0), seg_dim ((*ii).m_segments.size()); i < seg_dim; ++i) {
+
+                const CSplign::TSegment & seg ((*ii).m_segments[i]);
+                if(seg.m_exon) {
+
+                    CRef<CSpliced_exon> exon (new CSpliced_exon);
+
+                    TSeqPos qmin, qmax, smin, smax;
+                    if(seg.m_box[0] <= seg.m_box[1]) {
+                        qmin = seg.m_box[0];
+                        qmax = seg.m_box[1];
+                    }
+                    else {
+                        qmax = seg.m_box[0];
+                        qmin = seg.m_box[1];
+                    }
+
+                    if(seg.m_box[2] <= seg.m_box[3]) {
+                        smin = seg.m_box[2];
+                        smax = seg.m_box[3];
+                    }
+                    else {
+                        smax = seg.m_box[2];
+                        smin = seg.m_box[3];
+                    }
+
+                    exon->SetProduct_start().SetNucpos(qmin);
+                    exon->SetProduct_end().SetNucpos(qmax);
+
+                    exon->SetGenomic_start(smin);
+                    exon->SetGenomic_end(smax);
+
+                    CSpliced_exon::TScores scores;
+                    CSpliced_exon::TScores::Tdata & data (scores.Set());
+                    CRef<CScore> score (new CScore);
+                    data.push_back(score);
+                    score->SetValue().SetReal(seg.m_score);
+                    exon->SetScores(scores);
+
+                    exons.push_back(exon);
+                }
+            }
+
+            data.push_back(sa);
+        }
+        else {
+            vector<size_t> boxes;
+            vector<string> transcripts;
+            vector<CNWAligner::TScore> scores;
+
+            for(size_t i (0), seg_dim (ii->m_segments.size()); i < seg_dim; ++i) {
+            
+                const CSplign::TSegment& seg = ii->m_segments[i];
+            
+                if(seg.m_exon) {
+                
+                    copy(seg.m_box, seg.m_box + 4, back_inserter(boxes));
+                    transcripts.push_back(seg.m_details);
+                    scores.push_back(seg.m_score);
+                }
+            }
+       
+            CRef<CSeq_align> sa (x_Compartment2SeqAlign(boxes,transcripts,scores));
+            data.push_back(sa);
+        }
     }
-    
+
     return rv;
 }
 
