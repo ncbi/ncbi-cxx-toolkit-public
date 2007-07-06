@@ -9,7 +9,6 @@ use warnings;
 use Carp qw(confess);
 
 use File::Temp qw/tempfile/;
-use File::Find;
 
 use NCBI::SVN::Wrapper;
 
@@ -775,45 +774,9 @@ sub DoMerge
         }
     }
 
-    my @RootDirs;
-    my @SubDirs;
-
-    my @Dirs;
-
-    for my $BranchDir (@BranchDirs)
-    {
-        if (-f $BranchDir)
-        {
-            push @RootDirs, $BranchDir
-        }
-        else
-        {
-            push @Dirs, $BranchDir
-        }
-    }
-
-    if (@Dirs)
-    {
-        find(sub
-            {
-                if ($_ eq '.')
-                {
-                    push @RootDirs, $File::Find::name
-                }
-                elsif (-d $_ && -d $_ . '/.svn')
-                {
-                    push @SubDirs, $File::Find::name
-                }
-            }, @Dirs)
-    }
-
-    my $PropValue = qq(Please run "$Self->{MyName} commit_merge" to merge ) .
-            "changes up to r$SourceRev from '$SourcePath' into '$TargetPath'.";
-
-    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue, @RootDirs);
-
-    system($SVN->GetSvnPath(), 'propset', 'ncbi:raw', $PropValue . ' [subdir]',
-        @SubDirs) if @SubDirs
+    system($SVN->GetSvnPath(), 'propset', '-R', 'ncbi:raw',
+        qq(Please run "$Self->{MyName} commit_merge" to merge changes up to ) .
+        "r$SourceRev from '$SourcePath' into '$TargetPath'.", @BranchDirs)
 }
 
 sub MergeDown
