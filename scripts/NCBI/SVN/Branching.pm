@@ -298,7 +298,7 @@ sub ReadBranchInfo
 {
     my ($Self, $SVN, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
 
-    print "Reading branch info...\n";
+    print STDERR "Reading branch info...\n";
 
     $_ ||= 'HEAD' for $MaxBranchRev, $MaxUpstreamRev;
 
@@ -515,14 +515,14 @@ sub Create
     # with a single revision using MUCC.
     if (@Commands)
     {
-        print "Creating branch '$BranchPath'...\n";
+        print STDERR "Creating branch '$BranchPath'...\n";
 
         system('mucc', '--message', "Created branch '$BranchPath'.",
             '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
-        print "Nothing to do.\n"
+        print STDERR "Nothing to do.\n"
     }
 
     unlink $BranchListFN if $BranchListFN;
@@ -598,14 +598,14 @@ sub Alter
     # with a single revision using MUCC.
     if (@Commands)
     {
-        print "Updating branch '$BranchPath'...\n";
+        print STDERR "Updating branch '$BranchPath'...\n";
 
         system('mucc', '--message', "Modified branch '$BranchPath'.",
             '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
-        print "Nothing to do.\n"
+        print STDERR "Nothing to do.\n"
     }
 
     unlink $BranchListFN if $BranchListFN;
@@ -662,7 +662,7 @@ sub Remove
         $SVN->GetRepository(), \%ModTree), \%ModTree);
 
     # Remove the branch with a single revision using MUCC.
-    print("Removing branch '$BranchPath'...\n");
+    print STDERR "Removing branch '$BranchPath'...\n";
 
     system('mucc', '--message', "Removed branch '$BranchPath'.",
         '--root-url', $SVN->{Repos}, @Commands);
@@ -698,7 +698,7 @@ sub DoMerge
 
     my @BranchDirs = @{$BranchInfo->{BranchDirs}};
 
-    print "Running svn status on branch directories...\n";
+    print STDERR "Running svn status on branch directories...\n";
 
     for ($SVN->ReadSubversionLines('status', @BranchDirs))
     {
@@ -706,7 +706,7 @@ sub DoMerge
             unless m/^(?:[\?~X]|    S)/o
     }
 
-    print "Performing updates...\n";
+    print STDERR "Performing updates...\n";
 
     system($SVN->GetSvnPath(), 'update', @BranchDirs);
 
@@ -756,11 +756,11 @@ sub DoMerge
 
     unless (@MergePlan)
     {
-        print "Nothing to do.\n";
+        print STDERR "Nothing to do.\n";
         return
     }
 
-    print "Merging with r$SourceRev...\n";
+    print STDERR "Merging with r$SourceRev...\n";
 
     my $BaseURL = $SVN->{Repos} . '/' . ($Direction eq 'up' ?
         $BranchPath : $UpstreamPath) . '/';
@@ -769,7 +769,7 @@ sub DoMerge
     {
         for my $RevRange (@MergePlan)
         {
-            print "  $RevRange => $LocalDir\n";
+            print STDERR "  $RevRange => $LocalDir\n";
             system($SVN->GetSvnPath(), 'merge', $RevRange,
                 $BaseURL . $LocalDir, $LocalDir)
         }
@@ -941,8 +941,8 @@ sub DoSwitchUnswitch
 
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
-    print(($DoSwitch ? 'Switching to' : 'Unswitching from') .
-        " branch '$BranchPath'...\n");
+    print STDERR ($DoSwitch ? 'Switching to' : 'Unswitching from') .
+        " branch '$BranchPath'...\n";
 
     my $BaseURL = $SVN->GetRepository() . '/' . ($DoSwitch ?
         $BranchPath : $BranchInfo->{UpstreamPath}) . '/';
