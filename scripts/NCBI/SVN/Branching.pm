@@ -411,9 +411,6 @@ sub Info
 {
     my ($Self, $BranchPath) = @_;
 
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
-
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
@@ -455,12 +452,6 @@ sub Info
 sub Create
 {
     my ($Self, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
-
-    for ([branch_path => $BranchPath], [upstream_path => $UpstreamPath],
-        [branch_dirs => $BranchDirs[0]])
-    {
-        die "$Self->{MyName}: <$_->[0]> parameter is missing\n" unless $_->[1]
-    }
 
     my $SourceRevision = 'HEAD';
 
@@ -540,11 +531,6 @@ sub Create
 sub Alter
 {
     my ($Self, $BranchPath, @BranchDirs) = @_;
-
-    for ([branch_path => $BranchPath], [branch_dirs => $BranchDirs[0]])
-    {
-        die "$Self->{MyName}: <$_->[0]> parameter is missing\n" unless $_->[1]
-    }
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
@@ -629,9 +615,6 @@ sub Remove
 {
     my ($Self, $BranchPath) = @_;
 
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
-
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     my @Commands;
@@ -690,9 +673,6 @@ sub Remove
 sub DoMerge
 {
     my ($Self, $Direction, $BranchPath, $SourceRev) = @_;
-
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
@@ -854,9 +834,6 @@ sub CommitMerge
 {
     my ($Self, $BranchPath) = @_;
 
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
-
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath, undef, undef);
@@ -892,9 +869,6 @@ sub Svn
 {
     my ($Self, $BranchPath, @CommandAndArgs) = @_;
 
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
-
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     exec($SVN->GetSvnPath(), @CommandAndArgs,
@@ -904,9 +878,6 @@ sub Svn
 sub DoSwitchUnswitch
 {
     my ($Self, $BranchPath, $DoSwitch) = @_;
-
-    die "$Self->{MyName}: <branch_path> parameter is missing\n"
-        unless $BranchPath;
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
