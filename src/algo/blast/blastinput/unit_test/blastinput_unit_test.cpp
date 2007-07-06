@@ -254,11 +254,8 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
 {
     const char* fname = "data/bad_input.txt";
     const bool is_protein(false);
-    const size_t kNumQueries(1);
+    const size_t kNumQueries(0);
     CBlastInputConfig iconfig(is_protein);
-    CAutoDiagnosticsRedirector dr;
-    CNcbiOstrstream error_stream;
-    dr.Redirect(error_stream);
 
     {
         CNcbiIfstream infile(fname);
@@ -269,20 +266,11 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
         blast::TSeqLocVector query_vector;
         BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqLocs(),
                             CObjReaderParseException);
-    }
-#if 0
         CHECK_EQUAL(kNumQueries, query_vector.size());
 
-        string s(error_stream.str());
-        CHECK(s.find("Ignoring invalid residue $ at position 1") != 
-              string::npos);
-
-        CRef<CBioseq_set> bioseqs = source->GetBioseqs();
-        CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
-        const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
-        CHECK(b.IsNa());
-        CHECK_EQUAL(CSeq_id::e_Local, b.GetId().front()->Which());
-        CHECK_EQUAL((long)0, (long)b.GetInst().GetLength());
+        CRef<CBioseq_set> bioseqs;
+        BOOST_REQUIRE_THROW(bioseqs = source->GetBioseqs(), CBlastException);
+        CHECK(bioseqs.Empty());
     }
 
     {
@@ -291,8 +279,10 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
         CHECK(source->End() == false);
 
         CBlastInput bi(source);
-        CRef<blast::CBlastQueryVector> query_vector = bi.GetAllSeqs();
-        CHECK_EQUAL(kNumQueries, query_vector->Size());
+        CRef<blast::CBlastQueryVector> query_vector;
+        BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqs(), 
+                            CObjReaderParseException);
+        CHECK(query_vector.Empty());
     }
 
     {
@@ -300,13 +290,10 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
         CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
         CHECK(source->End() == false);
 
-        blast::SSeqLoc ssl(source->GetNextSSeqLoc());
-        const TSeqPos length = sequence::GetLength(*ssl.seqloc, ssl.scope);
-        CHECK_EQUAL((TSeqPos)0, length);
-
+        blast::SSeqLoc ssl;
+        BOOST_REQUIRE_THROW(source->GetNextSSeqLoc(), CObjReaderParseException);
         CHECK(source->End() == true);
     }
-#endif
 }
 
 BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
@@ -316,14 +303,14 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
 
-    CAutoDiagnosticsRedirector dr;
-    CNcbiOstrstream error_stream;
-    dr.Redirect(error_stream);
+    //CAutoDiagnosticsRedirector dr;
+    //CNcbiOstrstream error_stream;
+    //dr.Redirect(error_stream);
 
     vector< pair<long, long> > gi_length;
     gi_length.push_back(make_pair(89161185L, 247249719L));
-    gi_length.push_back(make_pair(0L, 0L));   // bad sequence
     // this is never read...
+    //gi_length.push_back(make_pair(0L, 0L));   // bad sequence
     //gi_length.push_back(make_pair(557L, 489L));
 
     const size_t kNumQueries(gi_length.size());
@@ -352,11 +339,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
         blast::SSeqLoc ssl;
         BOOST_REQUIRE_THROW(ssl = source->GetNextSSeqLoc(),
                             CObjReaderParseException);
-#if 0
-        CHECK(ssl.seqloc->IsInt() == true);
-        CHECK(ssl.seqloc->GetInt().IsSetId() == true);
-        CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
-        CHECK(!ssl.mask);
     }
 
     /// Validate the data that would be retrieved by blast.cgi
@@ -375,16 +357,8 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
         CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
         CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
         CHECK_EQUAL((long)gi_length[0].second, (long)b.GetInst().GetLength());
-    }
-    ++itr;
-    {
-        CHECK(itr != end);
-        CHECK((*itr)->IsSeq());
-        const CBioseq& b = (*itr)->GetSeq();
-        CHECK(b.IsNa());
-        CHECK_EQUAL(CSeq_id::e_Local, b.GetId().front()->Which());
-        CHECK_EQUAL((long)0, (long)b.GetInst().GetLength());
-#endif
+        ++itr;
+        CHECK(itr == end);
     }
 }
 
