@@ -120,7 +120,9 @@ sub TooManyArgs
 
 my $DirList;
 
-GetOptions('help|h|?' => sub {Help()}, 'dirlist' => \$DirList) or UsageError();
+GetOptions('help|h|?' => sub {Help()},
+    'dirlist|l=s' => \$DirList)
+        or UsageError();
 
 my $Command = shift @ARGV;
 
