@@ -865,6 +865,64 @@ sub CommitMerge
     system($SVN->GetSvnPath(), 'commit', '-m', "Merged $Changes", @BranchDirs)
 }
 
+sub MergeDiff
+{
+    my ($Self, $BranchPath) = @_;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $Stream = $SVN->Run('diff',
+        @{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}});
+
+    my $Line;
+    my $State = 0;
+    my $Buffer;
+
+    while (defined($Line = $Stream->ReadLine()))
+    {
+        if ($State == 0)
+        {
+            if ($Line eq '')
+            {
+                $Buffer = "\n";
+                $State = 1;
+                next
+            }
+        }
+        elsif ($State == 1)
+        {
+            if ($Line =~ m/^Property changes on: /o)
+            {
+                $Buffer .= $Line . "\n";
+                $Line = $Stream->ReadLine();
+                if ($Line =~ m/^_{66}/o)
+                {
+                    $Buffer .= $Line . "\n";
+                    $State = 2;
+                    next
+                }
+            }
+        }
+        elsif ($Line eq 'Name: ncbi:raw')
+        {
+            $Stream->ReadLine();
+            next
+        }
+        elsif ($Line eq '')
+        {
+            $State = 0;
+            next
+        }
+        else
+        {
+            print $Buffer;
+            $State = 0
+        }
+
+        print "$Line\n"
+    }
+}
+
 sub Svn
 {
     my ($Self, $BranchPath, @CommandAndArgs) = @_;

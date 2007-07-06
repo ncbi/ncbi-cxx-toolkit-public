@@ -273,6 +273,10 @@ elsif ($Command eq 'commit_merge')
 {
     $Module->CommitMerge(AcceptOnlyBranchPathArg($Command))
 }
+elsif ($Command eq 'merge_diff')
+{
+    $Module->MergeDiff(AcceptOnlyBranchPathArg($Command))
+}
 elsif ($Command eq 'switch')
 {
     $Module->Switch(AcceptOnlyBranchPathArg($Command))
