@@ -143,14 +143,9 @@ sub TrimSlashes
     $$PathRef =~ s/^\/+//o
 }
 
-sub ExtractBranchPathArg
+sub AdjustBranchPath
 {
-    my ($ArgName) = @_;
-
-    my $BranchPath = shift @ARGV;
-
-    UsageError('"' . ($ArgName || 'branch_path') .
-        '" argument is missing') unless $BranchPath;
+    my ($BranchPath) = @_;
 
     unless ($BranchPath =~ m/^(?:\/|trunk|branches)/)
     {
@@ -160,6 +155,15 @@ sub ExtractBranchPathArg
     TrimSlashes(\$BranchPath);
 
     return $BranchPath
+}
+
+sub ExtractBranchPathArg
+{
+    my ($ArgName) = @_;
+
+    return AdjustBranchPath(shift(@ARGV) or
+        UsageError('"' . ($ArgName || 'branch_path') .
+            '" argument is missing'))
 }
 
 sub AcceptOnlyBranchPathArg
@@ -190,7 +194,7 @@ sub ReadFileLines
     return @Lines
 }
 
-sub ExtractBranchDirArgs
+sub GetBranchDirArgs
 {
     my ($Command, @AdditionalPathArgs) = @_;
 
@@ -245,13 +249,13 @@ elsif ($Command eq 'create')
     my $BranchPath = ExtractBranchPathArg();
     my $UpstreamPath = ExtractBranchPathArg('upstream_path');
 
-    $Module->Create($BranchPath, $UpstreamPath, ExtractBranchDirArgs($Command))
+    $Module->Create($BranchPath, $UpstreamPath, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'alter')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Alter($BranchPath, ExtractBranchDirArgs($Command))
+    $Module->Alter($BranchPath, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'remove')
 {
@@ -279,9 +283,9 @@ elsif ($Command eq 'unswitch')
 }
 elsif ($Command eq 'svn')
 {
-    my $BranchPath = ExtractBranchPathArg();
+    UsageError('not enough arguments for "svn"') if @ARGV < 2;
 
-    UsageError('an svn command must be specified') unless @ARGV;
+    my $BranchPath = AdjustBranchPath(pop @ARGV);
 
     $Module->Svn($BranchPath, @ARGV)
 }
