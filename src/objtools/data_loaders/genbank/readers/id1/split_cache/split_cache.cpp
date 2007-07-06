@@ -930,6 +930,9 @@ void CSplitContentIndex::IndexChunkContent(int chunk_id,
         break;
     case CID2S_Chunk_Content::e_Bioseq_place:
         flags = fBioseq;
+        break;
+    default:
+        break;
     }
     m_SplitContent |= flags;
     m_ContentIndex[chunk_id] |= flags;
