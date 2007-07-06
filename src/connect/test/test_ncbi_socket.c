@@ -683,6 +683,7 @@ static void TEST__server(unsigned short port)
  */
 static char TEST_LockUserData[] = "TEST_LockUserData";
 
+
 #if defined(__cplusplus)
 extern "C" {
     static int/*bool*/ TEST_LockHandler(void* user_data, EMT_Lock how);
@@ -724,8 +725,6 @@ static void TEST_LockCleanup(void* user_data)
 }
 
 
-static int/*bool*/ TEST_gethostbyaddr(unsigned int host);
-
 static const char* s_ntoa(unsigned int host)
 {
     static char buf[256];
@@ -735,6 +734,7 @@ static const char* s_ntoa(unsigned int host)
     }
     return buf;
 }
+
 
 static int/*bool*/ TEST_gethostbyname(const char* name)
 {
