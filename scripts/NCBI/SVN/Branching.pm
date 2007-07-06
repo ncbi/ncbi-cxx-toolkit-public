@@ -723,7 +723,7 @@ sub DoMerge
     for ($SVN->ReadSubversionLines('status', @BranchDirs))
     {
         die "$Self->{MyName}: local modifications detected.\n"
-            unless m/^[\?~X]/
+            unless m/^(?:[\?~X]|    S)/o
     }
 
     print "Performing updates...\n";
@@ -798,17 +798,34 @@ sub DoMerge
     my @RootDirs;
     my @SubDirs;
 
-    find(sub
+    my @Dirs;
+
+    for my $BranchDir (@BranchDirs)
+    {
+        if (-f $BranchDir)
         {
-            if ($_ eq '.')
+            push @RootDirs, $BranchDir
+        }
+        else
+        {
+            push @Dirs, $BranchDir
+        }
+    }
+
+    if (@Dirs)
+    {
+        find(sub
             {
-                push @RootDirs, $File::Find::name
-            }
-            elsif (-d $_ && -d $_ . '/.svn')
-            {
-                push @SubDirs, $File::Find::name
-            }
-        }, @BranchDirs);
+                if ($_ eq '.')
+                {
+                    push @RootDirs, $File::Find::name
+                }
+                elsif (-d $_ && -d $_ . '/.svn')
+                {
+                    push @SubDirs, $File::Find::name
+                }
+            }, @Dirs)
+    }
 
     my $PropValue = qq(Please run "$Self->{MyName} commit_merge" to merge ) .
             "changes up to r$SourceRev from '$SourcePath' into '$TargetPath'.";
@@ -866,17 +883,7 @@ sub CommitMerge
 
     die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
 
-    my @SubDirs;
-
-    find(sub
-        {
-            if (-d $_ && -d $_ . '/.svn')
-            {
-                push @SubDirs, $File::Find::name
-            }
-        }, @BranchDirs);
-
-    system($SVN->GetSvnPath(), 'propdel', 'ncbi:raw', @SubDirs) if @SubDirs;
+    system($SVN->GetSvnPath(), 'propdel', '-R', 'ncbi:raw', @BranchDirs);
 
     system($SVN->GetSvnPath(), 'commit', '-m', "Merged $Changes", @BranchDirs)
 }
