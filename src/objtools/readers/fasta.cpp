@@ -499,7 +499,7 @@ void CFastaReader::CheckDataLine(const TStr& s)
 {
     // make sure the first data line has at least SOME resemblance to
     // actual sequence data.
-    if (TestFlag(fGarbageOK)  ||  ! m_SeqData.empty() ) {
+    if (TestFlag(fSkipCheck)  ||  ! m_SeqData.empty() ) {
         return;
     }
     size_t good = 0, bad = 0, len = s.length();
