@@ -80,7 +80,7 @@ public:
         fRequireID  = 0x100, ///< Reject deflines that lack IDs
         fDLOptional = 0x200, ///< Don't require a leading defline
         fParseRawID = 0x400, ///< Try to identify raw accessions
-        fGarbageOK  = 0x800  ///< Attempt to parse anything whatsoever
+        fSkipCheck  = 0x800  ///< Skip (rudimentary) body content check
     };
     typedef int TFlags; ///< binary OR of EFlags
 
