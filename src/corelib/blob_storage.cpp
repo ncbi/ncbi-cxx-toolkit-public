@@ -91,11 +91,20 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
     } else
         storage_tree = m_Params->FindSubNode("netcache_client");
         
-    drv = cache_manager->CreateInstance(
-            driver_name,
-            NCBI_INTERFACE_VERSION(IBlobStorage),
-            storage_tree
-            );
+    try {
+        drv = cache_manager->CreateInstance(
+                                     driver_name,
+                                     NCBI_INTERFACE_VERSION(IBlobStorage),
+                                     storage_tree
+                                     );
+    } catch (CPluginManagerException& ex) {
+        if (ex.GetErrCode() == CPluginManagerException::eResolveFailure) {
+            LOG_POST(Warning << ex);
+        } else if (ex.GetErrCode() == CPluginManagerException::eNullInstance) {
+        } else {
+            throw;
+        }
+    }
 
     if (!drv)
         drv = new CBlobStorage_Null;
