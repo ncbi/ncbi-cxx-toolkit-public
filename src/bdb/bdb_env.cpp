@@ -122,13 +122,14 @@ void CBDB_Env::SetTransactionSync(CBDB_Transaction::ETransSync sync)
 }
 
 
-void CBDB_Env::SetCacheSize(Uint8 cache_size)
+void CBDB_Env::SetCacheSize(Uint8 cache_size,
+                            int   num_caches)
 {
     unsigned cache_g = (unsigned) (cache_size / (Uint8)1073741824);  // gig
     if (cache_g) {
         cache_size = cache_size % 1073741824;
     }
-    unsigned ncache = 1; // number of caches
+    unsigned ncache = max(num_caches, 1);
     int ret = 
         m_Env->set_cachesize(m_Env, cache_g, (unsigned)cache_size, ncache);
     BDB_CHECK(ret, 0);
@@ -291,16 +292,13 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
         BDB_CHECK(ret, "DB_ENV");
     }
 
-    
-
     Open(db_home,  flag);
     m_Transactional = true;
 }
 
 void CBDB_Env::OpenConcurrentDB(const string& db_home)
 {
-    int ret = 
-      m_Env->set_flags(m_Env, DB_CDB_ALLDB, 1);
+    int ret = m_Env->set_flags(m_Env, DB_CDB_ALLDB, 1);
     BDB_CHECK(ret, "DB_ENV::set_flags");
 
     Open(db_home, DB_INIT_CDB | DB_INIT_MPOOL);
@@ -316,20 +314,35 @@ void CBDB_Env::JoinEnv(const string& db_home,
     }
     
     Open(db_home, flag);
+    
 
     switch (trans_test) {
     case eTestTransactions:
-        {
-        // Check if we joined the transactional environment
-        // Try to create a fake transaction to test the environment
-        DB_TXN* txn = 0;
-        int ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
+        {{
+             // Check if we joined the transactional environment
+             // Try to create a fake transaction to test the environment
+             DB_TXN* txn = 0;
+             int ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
 
-        if (ret == 0) {
-            m_Transactional = true;
-            ret = txn->abort(txn);
-        }
-        }
+             if (ret == 0) {
+                 m_Transactional = true;
+                 ret = txn->abort(txn);
+             }
+         }}
+        break;
+
+    case eInspectTransactions:
+        {{
+             // Check if we joined the transactional environment
+             Uint4 flags = 0;
+             int ret = m_Env->get_open_flags(m_Env, &flags);
+             BDB_CHECK(ret, "DB_ENV::get_open_flags");
+             if (flags & DB_INIT_TXN) {
+                 m_Transactional = true;
+             } else {
+                 m_Transactional = false;
+             }
+         }}
         break;
     case eAssumeTransactions:
         m_Transactional = true;
@@ -415,6 +428,13 @@ bool CBDB_Env::CheckRemove()
         return true;
     }
     return false;
+}
+
+void CBDB_Env::SetErrPrefix(const string& prefix)
+{
+    _ASSERT(m_Env);
+    m_ErrPrefix = prefix;
+    m_Env->set_errpfx(m_Env, m_ErrPrefix.c_str());
 }
 
 void CBDB_Env::SetLogDir(const string& log_dir)

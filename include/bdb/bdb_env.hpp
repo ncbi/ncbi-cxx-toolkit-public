@@ -116,14 +116,18 @@ public:
     ///    all errors are redirected to that device
     void OpenErrFile(const string& file_name);
 
+    /// Set the prefix used during reporting of errors
+    void SetErrPrefix(const string& s);
+
     /// Modes to test if environment is transactional or not
     ///
     enum ETransactionDiscovery {
         eTestTransactions,    ///< Do a test to discover transactions
+        eInspectTransactions, ///< Ask the joined environment if it supports
+                              ///< transactions
         eAssumeTransactions,  ///< Assume env. is transactional
         eAssumeNoTransactions ///< Assume env. is non-transactional
     };
-
 
     /// Join the existing environment
     ///
@@ -140,7 +144,10 @@ public:
     DB_ENV* GetEnv() { return m_Env; }
 
     /// Set cache size for the environment.
-    void SetCacheSize(Uint8 cache_size);
+    /// We also have the option of setting the total number of caches to use
+    /// The default is 1
+    void SetCacheSize(Uint8 cache_size,
+                      int   num_caches = 1);
     
     /// Start transaction (DB_ENV->txn_begin)
     /// 
@@ -398,6 +405,7 @@ private:
     DB_ENV*                      m_Env;
     bool                         m_Transactional; ///< TRUE if transactional
     FILE*                        m_ErrFile;
+    string                       m_ErrPrefix;
     string                       m_HomePath;
     bool                         m_LogInMemory;
     CBDB_Transaction::ETransSync m_TransSync;
