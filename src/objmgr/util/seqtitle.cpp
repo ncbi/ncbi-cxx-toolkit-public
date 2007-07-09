@@ -71,6 +71,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
 
 static string s_TitleFromBioSource (const CBioSource&    source,
+                                          CMolInfo::TTech tech,
                                     const string&        suffix = kEmptyStr);
 
 
@@ -207,10 +208,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     if (title.empty()  &&  use_biosrc  &&  source.NotEmpty()) {
         if (tech == CMolInfo::eTech_wgs  &&  !wgs_master
             &&  general_id.NotEmpty()  &&  general_id->GetTag().IsStr()) {
-            title = s_TitleFromBioSource(*source,
+            title = s_TitleFromBioSource(*source, tech,
                                          general_id->GetTag().GetStr());
         } else {
-            title = s_TitleFromBioSource(*source);
+            title = s_TitleFromBioSource(*source, tech);
         }
         flags &= ~fGetTitle_Organism;
     }
@@ -326,7 +327,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     }
 
     if (title.empty()  &&  !htg_tech  &&  source.NotEmpty()) {
-        title = s_TitleFromBioSource(*source);
+        title = s_TitleFromBioSource(*source, tech);
         if (title.empty()) {
             title = "No definition line found";
         }
@@ -525,9 +526,10 @@ static bool s_EndsWithStrain(const string& name, const string& strain)
 
 
 static string s_TitleFromBioSource(const CBioSource& source,
+                                   CMolInfo::TTech   tech,
                                    const string&     suffix)
 {
-    string          name, chromosome, clone, map_, strain, sfx;
+    string          name, chromosome, clone, map_, plasmid, strain, sfx;
     const COrg_ref& org = source.GetOrg();
 
     if (org.IsSetTaxname()) {
@@ -545,6 +547,11 @@ static string s_TitleFromBioSource(const CBioSource& source,
                 break;
             case CSubSource::eSubtype_map:
                 map_ = " map " + (*it)->GetName();
+                break;
+            case CSubSource::eSubtype_plasmid_name:
+                if (tech == CMolInfo::eTech_wgs) { // omit otherwise
+                    plasmid = " plasmid " + (*it)->GetName();
+                }
                 break;
             }
         }
@@ -564,7 +571,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
     }
 
     string title = NStr::TruncateSpaces(name + strain + chromosome + clone
-                                        + map_ + sfx);
+                                        + map_ + plasmid + sfx);
     if (islower((unsigned char) title[0])) {
         title[0] = toupper((unsigned char) title[0]);
     }
