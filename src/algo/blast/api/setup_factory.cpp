@@ -350,11 +350,13 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
         errstr = "Database indexing is available for blastn only.";
     }
     else if( options->GetMBTemplateLength() > 0 ) {
-        errstr = "Database indexing is not available for discontiguous searches.";
+        errstr = "Database indexing is not available for discontiguous ";
+        errstr += "searches.";
     }
     else if( options->GetWordSize() < MinIndexWordSize() ) {
         errstr = "MegaBLAST database index requires word size greater than ";
         errstr += NStr::IntToString(MinIndexWordSize() - 1);
+        errstr += ".";
     }
     else {
         BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
@@ -367,7 +369,8 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
             options->GetIndexName(), new_seqsrc );
 
             if( ind_seqsrc == 0 ) {
-                errstr = "Allocation of BlastSeqSrc structure for index failed.";
+                errstr = "Allocation of BlastSeqSrc structure for index ";
+                errstr += "failed.";
                 free( new_seqsrc );
             }
         }
