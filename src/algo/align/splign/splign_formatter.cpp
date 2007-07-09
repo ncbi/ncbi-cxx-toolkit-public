@@ -44,6 +44,7 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Splice_site.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/seq_vector.hpp>
@@ -646,6 +647,23 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
                     CRef<CScore> score (new CScore);
                     score->SetValue().SetReal(seg.m_score);
                     data.push_back(score);
+
+                    // add 5' (acceptor) residues if available
+                    const size_t adim (seg.m_annot.size());
+                    if(adim > 2 && seg.m_annot[2] == '<') {
+                        string acc;
+                        acc.push_back(seg.m_annot[0]);
+                        acc.push_back(seg.m_annot[1]);
+                        exon->SetSplice_5_prime().SetBases(acc);
+                    }
+
+                    // add 3' (donor) residues if available
+                    if(adim > 2 && seg.m_annot[adim - 3] == '>') {
+                        string dnr;
+                        dnr.push_back(seg.m_annot[adim - 2]);
+                        dnr.push_back(seg.m_annot[adim - 1]);
+                        exon->SetSplice_3_prime().SetBases(dnr);
+                    }
 
                     exons.push_back(exon);
                 }
