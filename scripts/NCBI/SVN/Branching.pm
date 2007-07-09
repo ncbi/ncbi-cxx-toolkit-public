@@ -448,17 +448,9 @@ sub Info
     }
 }
 
-sub Create
+sub ShapeBranch
 {
-    my ($Self, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
-
-    my $SourceRevision = 'HEAD';
-
-    if ($UpstreamPath =~ m/^(.+):(.+)$/)
-    {
-        $UpstreamPath = $1;
-        $SourceRevision = $2
-    }
+    my ($Self, $CreateBranch, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
@@ -486,20 +478,57 @@ sub Create
 
         push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
     }
-    else
+    elsif ($CreateBranch)
     {
         die "$Self->{MyName}: branch '$BranchPath' already exists.\n";
     }
 
     my %ModTree;
 
-    for my $Dir (@BranchDirs)
+    if ($CreateBranch)
     {
-        my $SourcePath = "$UpstreamPath/$Dir";
-        my $TargetPath = "$BranchPath/$Dir";
+        my $SourceRevision = 'HEAD';
 
-        MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
-        push @CopyCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
+        if ($UpstreamPath =~ m/^(.+):(.+)$/)
+        {
+            $UpstreamPath = $1;
+            $SourceRevision = $2
+        }
+
+        for my $Dir (@BranchDirs)
+        {
+            my $SourcePath = "$UpstreamPath/$Dir";
+            my $TargetPath = "$BranchPath/$Dir";
+
+            MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
+            push @CopyCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
+        }
+    }
+    else
+    {
+        my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+
+        $UpstreamPath = $BranchInfo->{UpstreamPath};
+
+        my %OldBranchDirs = map {$_ => 1} @{$BranchInfo->{BranchDirs}};
+
+        for my $Dir (@BranchDirs)
+        {
+            unless (delete $OldBranchDirs{$Dir})
+            {
+                my $SourcePath = "$UpstreamPath/$Dir";
+                my $TargetPath = "$BranchPath/$Dir";
+
+                MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
+                push @CopyCommands, 'cp', $BranchInfo->{LastSynchRevision},
+                    $SourcePath, $TargetPath
+            }
+        }
+
+        for my $Dir (keys %OldBranchDirs)
+        {
+            MarkPath("$BranchPath/$Dir", \%ModTree, 'rm')
+        }
     }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
@@ -510,14 +539,15 @@ sub Create
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
-    # Unless there are no changes, create the branch
+    # Unless there are no changes, (re)shape the branch
     # with a single revision using MUCC.
     if (@Commands)
     {
-        print STDERR "Creating branch '$BranchPath'...\n";
+        print STDERR ($CreateBranch ? 'Creating' : 'Updating') .
+            " branch '$BranchPath'...\n";
 
-        system('mucc', '--message', "Created branch '$BranchPath'.",
-            '--root-url', $SVN->{Repos}, @Commands)
+        system('mucc', '--message', ($CreateBranch ? 'Created' : 'Modified') .
+            " branch '$BranchPath'.", '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
@@ -527,87 +557,18 @@ sub Create
     unlink $BranchListFN if $BranchListFN;
 }
 
+sub Create
+{
+    my ($Self, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+
+    $Self->ShapeBranch(1, $BranchPath, $UpstreamPath, @BranchDirs)
+}
+
 sub Alter
 {
     my ($Self, $BranchPath, @BranchDirs) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
-
-    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
-
-    my $MergeRevisions = $BranchInfo->{MergeDownRevisions};
-    my $LastSynchRev = $BranchInfo->{LastSynchRevision};
-    my $UpstreamPath = $BranchInfo->{UpstreamPath};
-
-    my @RmCommands;
-    my @MkdirCommands;
-    my @CopyCommands;
-    my @PutCommands;
-
-    my $BranchListFN;
-
-    # Read branch_list, if it exists.
-    my @ExistingBranches = eval {$SVN->ReadFileLines('branches/branch_list')};
-
-    # Unless branch_list contains our branch path already, add a MUCC
-    # command to (re-)create branch_list.
-    if ($@ || !grep {$_ eq $BranchPath} @ExistingBranches)
-    {
-        my $BranchListFH;
-
-        ($BranchListFH, $BranchListFN) = tempfile();
-
-        print $BranchListFH "$_\n" for @ExistingBranches, $BranchPath;
-
-        close $BranchListFH;
-
-        push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
-    }
-
-    my %OldBranchDirs = map {$_ => 1} @{$BranchInfo->{BranchDirs}};
-
-    my %ModTree;
-
-    for my $Dir (@BranchDirs)
-    {
-        unless (delete $OldBranchDirs{$Dir})
-        {
-            my $SourcePath = "$UpstreamPath/$Dir";
-            my $TargetPath = "$BranchPath/$Dir";
-
-            MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
-            push @CopyCommands, 'cp', $LastSynchRev, $SourcePath, $TargetPath
-        }
-    }
-
-    for my $Dir (keys %OldBranchDirs)
-    {
-        MarkPath("$BranchPath/$Dir", \%ModTree, 'rm')
-    }
-
-    my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
-        $SVN->GetRepository(), \%ModTree);
-
-    GetRmCommands(\@RmCommands, $ExistingStructure, \%ModTree);
-    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%ModTree);
-
-    my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
-
-    # Unless there are no changes, alter the branch
-    # with a single revision using MUCC.
-    if (@Commands)
-    {
-        print STDERR "Updating branch '$BranchPath'...\n";
-
-        system('mucc', '--message', "Modified branch '$BranchPath'.",
-            '--root-url', $SVN->{Repos}, @Commands)
-    }
-    else
-    {
-        print STDERR "Nothing to do.\n"
-    }
-
-    unlink $BranchListFN if $BranchListFN;
+    $Self->ShapeBranch(0, $BranchPath, undef, @BranchDirs)
 }
 
 sub Remove
