@@ -283,7 +283,7 @@ if test "$with_objects" = "yes" ; then
         | sed 's%^.*-m  *\([a-zA-Z0-9_][a-zA-Z0-9_]*\.dtd\).*%  \1%g'
     cd ../../../..  ||  Usage "Failed:  cd ../../../..  (from src/app/sample/soap)"
     if test "$with_gui" != "no"; then
-        cd src/gui/core  ||  Usage "Failed:  cd ../core (from src/gui/config)"
+        cd src/gui/objects  ||  Usage "Failed:  cd src/gui/objects"
         for x in *.asn; do
             { $NCBI/c++.metastable/Release/build/new_module.sh `basename $x .asn`  ||  Usage "Failed to generate serialization classes" ; } \
                 | grep '\-m  *[a-zA-Z0-9_][a-zA-Z0-9_]*\.asn ' \
