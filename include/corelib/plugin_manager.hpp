@@ -98,7 +98,8 @@ class NCBI_XNCBI_EXPORT CPluginManagerException : public CCoreException
 public:
     enum EErrCode {
         eResolveFailure,       ///< Cannot resolve interface driver
-        eParameterMissing      ///< Missing mandatory parameter
+        eParameterMissing,     ///< Missing mandatory parameter
+        eNullInstance          ///< Factory returned NULL instance
     };
 
     /// Translate from the error code value to its string representation.
@@ -328,7 +329,14 @@ public:
         }
 
         TClassFactory* factory = GetFactory(driver_name, version);
-        return factory->CreateInstance(driver_name, version, params);
+        TClass* drv = factory->CreateInstance(driver_name, version, params);
+        if (!drv) {
+            string msg = "Cannot create a driver instatance (driver: ";
+            msg += driver;
+            msg += ").";
+            NCBI_THROW(CPluginManagerException, eNullInstance,msg);
+        }
+        return drv;
     }
 
     /// Create first available driver from the list of drivers.
