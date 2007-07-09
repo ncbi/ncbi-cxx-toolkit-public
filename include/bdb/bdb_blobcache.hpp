@@ -589,6 +589,13 @@ public:
         return m_Path + "<" + m_Name + ">";
     }
     const string& GetName() const { return m_Name; }
+
+    /// Get next BLOB id out from the atomic couter
+    unsigned GetNextBlobId();
+
+    /// Check if BLOB is locked
+    bool IsLocked(unsigned blob_id);
+
 protected:
     void KillBlob(const string&  key,
                   int            version,
@@ -693,6 +700,13 @@ private:
                     unsigned           blob_id,
                     CBDB_Transaction&  trans);
 
+    /// Drop BLOB with time expiration check
+    void DropBlobWithExpCheck(const string&      key,
+                              int                version,
+                              const string&      subkey,
+                              CBDB_Transaction&  trans);
+
+
     void x_DropOverflow(const string&    key,
                         int              version,
                         const string&    subkey);
@@ -723,9 +737,6 @@ private:
                          const char* subkey);
     */
 
-    /// Get next BLOB id out from the atomic couter
-    unsigned x_GetNextBlobId();
-
     unsigned GetBlobId(const string&  key,
                        int            version,
                        const string&  subkey);
@@ -752,6 +763,7 @@ private:
                                 const string&    subkey,
                                 EBlobCheckinMode mode,
                                 TBlobLock&       blob_lock,
+                                bool             do_id_lock,
                                 unsigned*        volume_id,
                                 unsigned*        split_id,
                                 unsigned*        overflow);

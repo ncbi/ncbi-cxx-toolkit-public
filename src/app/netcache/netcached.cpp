@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.5  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.6  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -68,150 +68,6 @@ DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex);
 /// Mutex to guard vector of busy IDs 
 DEFINE_STATIC_FAST_MUTEX(x_NetCacheMutex_ID);
 
-
-
-
-
-
-/// Class guards the BLOB id, guarantees exclusive access to the object
-///
-/// @internal
-
-class CIdBusyGuard
-{
-public:
-    CIdBusyGuard(bm::bvector<>* id_set)
-        : m_IdSet(id_set), m_Id(0)
-    {}
-
-    CIdBusyGuard(bm::bvector<>* id_set, 
-                 unsigned int   id,
-                 unsigned       timeout)
-        : m_IdSet(id_set)
-    {
-        Lock(id, timeout);
-    }
-
-    bool IsLocked(unsigned int  id)
-    {
-        CFastMutexGuard guard(x_NetCacheMutex_ID);
-        return (*m_IdSet)[id];
-    }
-
-    void Lock(unsigned int   id,
-              unsigned       timeout)
-    {
-        _ASSERT(id);
-        unsigned cnt = 0; unsigned sleep_ms = 10;
-        while (true) {
-            {{
-            CFastMutexGuard guard(x_NetCacheMutex_ID);
-            if (!(*m_IdSet)[id]) {
-                m_IdSet->set(id);
-                break;
-            }
-            }}
-            cnt += sleep_ms;
-            if (cnt > timeout * 1000) {
-                string err_msg("Failed to lock BLOB object ");
-                err_msg.append("timeout=");
-                err_msg.append(NStr::UIntToString(timeout));
-                NCBI_THROW(CNetServiceException, eTimeout, err_msg);
-            }
-            SleepMilliSec(sleep_ms);
-        } // while
-        m_Id = id;
-    }
-
-    /// Returns false if lock was not successfull 
-    /// (when timeout == 0 i.e. no-locking mode)
-    bool Lock(const string& blob_key, unsigned timeout)
-    {
-        unsigned cnt = 0; unsigned sleep_ms = 10;
-        unsigned id = 0;
-        while (true) {
-            if (id == 0) {
-                id = CNetCache_Key::GetBlobId(blob_key);
-            }
-
-            {{
-            CFastMutexGuard guard(x_NetCacheMutex_ID);
-
-            if ((*m_IdSet)[id] == false) {
-                m_IdSet->set(id);
-                break;
-            }
-            }}
-
-            if (timeout == 0) {
-                return false;
-            }
-
-            cnt += sleep_ms;
-            if (cnt > timeout * 1000) {
-                string err_msg("Failed to lock BLOB object ");
-                err_msg.append("timeout=");
-                err_msg.append(NStr::UIntToString(timeout));
-
-                NCBI_THROW(CNetServiceException, eTimeout, err_msg);
-            }
-            SleepMilliSec(sleep_ms);
-        } // while
-        m_Id = id;
-        return true;
-    }
-
-    void LockNewId(unsigned*  max_id, unsigned timeout)
-    {
-        unsigned cnt = 0; unsigned sleep_ms = 10;
-        unsigned id = 0;
-        while (true) {
-            {{
-            CFastMutexGuard guard(x_NetCacheMutex_ID);
-
-            if (id == 0) {
-                id = ++(*max_id);
-            }
-
-            if (!(*m_IdSet)[id]) {
-                m_IdSet->set(id);
-                break;
-            }
-            }}
-            cnt += sleep_ms;
-            if (cnt > timeout * 1000) {
-                NCBI_THROW(CNetServiceException, 
-                           eTimeout, "Failed to lock new BLOB object");
-            }
-            SleepMilliSec(sleep_ms);
-        } // while
-        m_Id = id;
-    }
-
-
-    ~CIdBusyGuard()
-    {
-        Release();
-    }
-
-    void Release()
-    {
-        if (m_Id) {
-            CFastMutexGuard guard(x_NetCacheMutex_ID);
-            m_IdSet->set(m_Id, false);
-            m_Id = 0;
-        }
-    }
-
-    unsigned GetId() const { return m_Id; }
-
-private:
-    CIdBusyGuard(const CIdBusyGuard&);
-    CIdBusyGuard& operator=(const CIdBusyGuard&);
-private:
-    bm::bvector<>*   m_IdSet;
-    unsigned int     m_Id;
-};
 
 
 void CNetCache_Logger::Put(const string&               auth, 
@@ -262,7 +118,7 @@ CRef< CTls<SNC_ThreadData> > s_tls(new CTls<SNC_ThreadData>);
 
 CNetCacheServer::CNetCacheServer(unsigned int     port,
                                  bool             use_hostname,
-                                 ICache*          cache,
+                                 CBDB_Cache*      cache,
                                  unsigned         max_threads,
                                  unsigned         init_threads,
                                  unsigned         network_timeout,
@@ -969,8 +825,6 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 
-//    CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
-
     m_Cache->Remove(req_id);
 }
 
@@ -1058,7 +912,6 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
         return;
     }
 
-//    CIdBusyGuard guard(&m_UsedIds);
     if (req.no_lock) {
 /*
         bool lock_accuired = guard.Lock(req_id, 0);
@@ -1321,16 +1174,10 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 {
     string& rid = req.req_id;
 
-    CIdBusyGuard guard(&m_UsedIds);
-
-    if (!req.req_id.empty()) {  // UPDATE request
-//        guard.Lock(req.req_id, m_InactivityTimeout * 2);
-    } else {
-        guard.LockNewId(&m_MaxId, m_InactivityTimeout);
-        unsigned int id = guard.GetId();
+    if (req.req_id.empty()) {
+        unsigned int id = m_Cache->GetNextBlobId();
         CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
-
 
     WriteMsg(sock, "ID:", rid);
 
@@ -1401,19 +1248,12 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 {
     string& rid = req.req_id;
 
-    CIdBusyGuard guard(&m_UsedIds);
-
-    if (!req.req_id.empty()) {  // UPDATE request
-//        guard.Lock(req.req_id, m_InactivityTimeout);
-    } else {
-        guard.LockNewId(&m_MaxId, m_InactivityTimeout);
-        unsigned int id = guard.GetId();
+    if (req.req_id.empty()) {
+        unsigned int id = m_Cache->GetNextBlobId();
         CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
 
-
     WriteMsg(sock, "ID:", rid);
-
 
     auto_ptr<IWriter> iwrt;
     char* buf = tdata.buffer.get();
@@ -1485,9 +1325,6 @@ void CNetCacheServer::ProcessGetBlobOwner(CSocket&           sock,
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 
-    CIdBusyGuard guard(&m_UsedIds);
-//    guard.Lock(req.req_id, m_InactivityTimeout);
-
     string owner;
     m_Cache->GetBlobOwner(req_id, 0, kEmptyStr, &owner);
 
@@ -1507,8 +1344,7 @@ void CNetCacheServer::ProcessIsLock(CSocket& sock, const SNC_Request& req)
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 
-    CIdBusyGuard guard(&m_UsedIds);
-    if (guard.IsLocked(blob_id.id)) {
+    if (m_Cache->IsLocked(blob_id.id)) {
         WriteMsg(sock, "OK:", "1");
     } else {
         WriteMsg(sock, "OK:", "0");
@@ -2166,7 +2002,7 @@ int CNetCacheDApp::Run(void)
         auto_ptr<CNetCacheServer> thr_srv(
             new CNetCacheServer(port,
                                 use_hostname,
-                                cache.get(),
+                                bdb_cache,
                                 max_threads,
                                 init_threads,
                                 network_timeout,

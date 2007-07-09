@@ -229,7 +229,7 @@ private:
     CNetCacheLogStream m_Log;
 };
 
-
+class CBDB_Cache;
 
 /// Netcache threaded server 
 ///
@@ -244,7 +244,7 @@ public:
 public:
     CNetCacheServer(unsigned int     port,
                     bool             use_hostname,
-                    ICache*          cache,
+                    CBDB_Cache*      cache,
                     unsigned         max_threads,
                     unsigned         init_threads,
                     unsigned         network_timeout,
@@ -525,7 +525,7 @@ private:
     unsigned           m_MaxId;
     /// Set of ids in use (PUT)
     bm::bvector<>      m_UsedIds;
-    ICache*            m_Cache;
+    CBDB_Cache*        m_Cache;
     /// Flags that server received a shutdown request
     volatile bool      m_Shutdown; 
     /// Time to wait for the client (seconds)
