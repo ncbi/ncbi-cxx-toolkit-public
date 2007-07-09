@@ -326,10 +326,15 @@ public:
     typedef CBDB_IdBlobFile              TBlobFile;
     
     /// BDB Database together with the locker
+    /// One database is opened twice, one regular mode, 
+    /// another - dedicated read-only instance to improve concurrency
+    ///
     struct SLockedDb 
     {
-        AutoPtr<TBlobFile>      db;    ///< database file
-        AutoPtr<TLock>          lock;  ///< db lock
+        AutoPtr<TBlobFile>      db;       ///< database file
+        AutoPtr<TLock>          lock;     ///< db lock
+        AutoPtr<TBlobFile>      db_ro;    ///< database file for reads
+        AutoPtr<TLock>          lock_ro;  ///< db lock for reads
     };
 
     /// Volume split on optimal page size
@@ -894,15 +899,27 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CreateReader(
                                                 unsigned        id,
                                                 const unsigned* coords)
 {
-    SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+    TBlobFile* db;
+    TLock*     lock;
     {{
-        TLockGuard lg(*(dbp.lock));
-        dbp.db->SetTransaction(GetTransaction());
-        dbp.db->id = id;
-        if (dbp.db->Fetch() != eBDB_Ok) {
+        SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+
+        if (dbp.db_ro.get()) {
+            db = dbp.db_ro.get();
+            lock = dbp.lock_ro.get();
+        } else {
+            db = dbp.db.get();
+            lock = dbp.lock.get();
+        }
+    }}
+    {{
+        TLockGuard lg(*lock);
+        db->SetTransaction(GetTransaction());
+        db->id = id;
+        if (db->Fetch() != eBDB_Ok) {
             return 0;
         }
-        return dbp.db->CreateReader();
+        return db->CreateReader();
     }}
 }
 
@@ -975,16 +992,28 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Fetch(unsigned        id,
                                               size_t*          blob_size)
 {
     EBDB_ErrCode ret;
-    SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+    TBlobFile* db;
+    TLock*     lock;
     {{
-        TLockGuard lg(*dbp.lock);
-        dbp.db->SetTransaction(GetTransaction());
-        dbp.db->id = id;
+        SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+
+        if (dbp.db_ro.get()) {
+            db = dbp.db_ro.get();
+            lock = dbp.lock_ro.get();
+        } else {
+            db = dbp.db.get();
+            lock = dbp.lock.get();
+        }
+    }}
+    {{
+        TLockGuard lg(*lock);
+        db->SetTransaction(GetTransaction());
+        db->id = id;
         
-        ret = dbp.db->Fetch(buf, buf_size, allow_realloc);
+        ret = db->Fetch(buf, buf_size, allow_realloc);
         if (ret == eBDB_Ok) {
             if (blob_size) {
-                *blob_size = dbp.db->LobSize();
+                *blob_size = db->LobSize();
             }
         }
     }}
@@ -1038,13 +1067,27 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
                                             CBDB_RawFile::TBuffer& buffer)
 {
     _ASSERT(coords);
-    SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
-    {{
-        TLockGuard lg(*dbp.lock);
 
-        dbp.db->SetTransaction(GetBDBTransaction());
-        dbp.db->id = id;
-        EBDB_ErrCode e = dbp.db->ReadRealloc(buffer);
+    TBlobFile* db;
+    TLock*     lock;
+    {{
+        SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+
+        if (dbp.db_ro.get()) {
+            db = dbp.db_ro.get();
+            lock = dbp.lock_ro.get();
+        } else {
+            db = dbp.db.get();
+            lock = dbp.lock.get();
+        }
+    }}
+
+    {{
+        TLockGuard lg(*lock);
+
+        db->SetTransaction(GetBDBTransaction());
+        db->id = id;
+        EBDB_ErrCode e = db->ReadRealloc(buffer);
         return e;
     }}
 }
@@ -1091,16 +1134,29 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned        id,
                                                   const unsigned* coords,
                                                   size_t*         blob_size)
 {
-    SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+    TBlobFile* db;
+    TLock*     lock;
     {{
-        TLockGuard lg(*dbp.lock);
-        dbp.db->SetTransaction(GetTransaction());
-        dbp.db->id = id;
-        EBDB_ErrCode e = dbp.db->Fetch();
+        SLockedDb& dbp = this->GetDb(coords[0], coords[1], eGetRead);
+
+        if (dbp.db_ro.get()) {
+            db = dbp.db_ro.get();
+            lock = dbp.lock_ro.get();
+        } else {
+            db = dbp.db.get();
+            lock = dbp.lock.get();
+        }
+    }}
+
+    {{
+        TLockGuard lg(*lock);
+        db->SetTransaction(GetTransaction());
+        db->id = id;
+        EBDB_ErrCode e = db->Fetch();
         if (e != eBDB_Ok) {
             return e;
         }
-        *blob_size = dbp.db->LobSize();
+        *blob_size = db->LobSize();
         return e;
     }}
 }
@@ -1266,10 +1322,13 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::MakeDbFileName(unsigned vol,
 template<class TBV, class TObjDeMux, class TL>
 void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::InitDbMutex(SLockedDb* ldb)
 {
-    if (ldb->lock.get() == 0) {
+    if ((ldb->lock.get() == 0) || (ldb->lock_ro.get() == 0)) {
         TLockGuard lg(m_VolumesLock);
         if (ldb->lock.get() == 0) {
             ldb->lock.reset(new TLock);
+        }        
+        if (ldb->lock_ro.get() == 0) {
+            ldb->lock_ro.reset(new TLock);
         }        
     }
 }
@@ -1354,6 +1413,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
                                         m_DB_Type));
              if (m_Env) {
                  lp->db->SetEnv(*m_Env);
+                 lp->db_ro.reset(new TBlobFile(CBDB_File::eDuplicatesDisable,
+                                               m_DB_Type));
+                 lp->db_ro->SetEnv(*m_Env);
              } else {
                  if (m_VolumeCacheSize) {
                      lp->db->SetCacheSize(m_VolumeCacheSize);
@@ -1384,6 +1446,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
              }
 
              lp->db->Open(fname.c_str(), m_OpenMode);
+             if (lp->db_ro.get()) {
+                lp->db_ro->Open(fname.c_str(), CBDB_RawFile::eReadOnly);
+             }
              needs_save = true;
          }
      }}
