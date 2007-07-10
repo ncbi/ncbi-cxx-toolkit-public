@@ -640,40 +640,74 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
 I_ITDescriptor*
 CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
 {
-    string q= "set rowcount 1\nupdate ";
-    q+= descr_in.TableName();
-    q+= " set ";
-    q+= descr_in.ColumnName();
-    q+= "=NULL where ";
-    q+= descr_in.SearchConditions();
-    q+= " \nselect ";
-    q+= descr_in.ColumnName();
-    q+= " from ";
-    q+= descr_in.TableName();
-    q+= " where ";
-    q+= descr_in.SearchConditions();
-    q+= " \nset rowcount 0";
+    string q;
+    auto_ptr<CDB_LangCmd> lcmd;
+    bool rc = false;
 
-    CDB_LangCmd* lcmd= LangCmd(q, 0);
-    bool rc = !lcmd->Send();
+#ifdef FTDS_IN_USE
+    EDB_Type data_type = eDB_UnsupportedType;
+
+    q  = "select ";
+    q += descr_in.ColumnName();
+    q += " from ";
+    q += descr_in.TableName();
+
+    lcmd.reset(LangCmd(q, 0));
+    rc = !lcmd->Send();
+    CHECK_DRIVER_ERROR( rc, "Cannot send the language command", 110035 );
+
+    while(lcmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> res(lcmd->Result());
+        if(res.get() == NULL) continue;
+        if((res->ResultType() == eDB_RowResult)) {
+            data_type = res->ItemDataType(0);
+        }
+    }
+#endif
+
+    q  = "set rowcount 1\nupdate ";
+    q += descr_in.TableName();
+    q += " set ";
+    q += descr_in.ColumnName();
+#ifdef FTDS_IN_USE
+    if (data_type == eDB_Image) {
+        q += " = 0x0 where ";
+    } else if (data_type == eDB_Text) {
+        q += " = '' where ";
+    } else {
+        q += " = NULL where ";
+    }
+#else
+    q += " = NULL where ";
+#endif
+    q += descr_in.SearchConditions();
+    q += " \nselect ";
+    q += descr_in.ColumnName();
+    q += " from ";
+    q += descr_in.TableName();
+    q += " where ";
+    q += descr_in.SearchConditions();
+    q += " \nset rowcount 0";
+
+    lcmd.reset(LangCmd(q, 0));
+    rc = !lcmd->Send();
     CHECK_DRIVER_ERROR( rc, "Cannot send the language command", 110035 );
 
     CDB_Result* res;
-    I_ITDescriptor* descr= 0;
+    I_ITDescriptor* descr = NULL;
 
     while(lcmd->HasMoreResults()) {
-        res= lcmd->Result();
+        res = lcmd->Result();
         if(res == 0) continue;
-        if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
+        if((res->ResultType() == eDB_RowResult) && (descr == NULL)) {
             while(res->Fetch()) {
-                //res->ReadItem(&i, 0);
-                descr= res->GetImageOrTextDescriptor();
+                // res->ReadItem(NULL, 0);
+                descr = res->GetImageOrTextDescriptor();
                 if(descr) break;
             }
         }
         delete res;
     }
-    delete lcmd;
 
     return descr;
 }

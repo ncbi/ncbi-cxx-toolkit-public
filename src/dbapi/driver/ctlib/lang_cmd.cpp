@@ -87,6 +87,8 @@ CTL_Cmd::~CTL_Cmd(void)
 {
     try {
         if (!IsDead()) {
+            // Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT));
+            // Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL));
             Check(ct_cmd_drop(x_GetSybaseCmd()));
         }
     }
@@ -455,6 +457,12 @@ CTL_LRCmd::CTL_LRCmd(CTL_Connection& conn,
 
 CTL_LRCmd::~CTL_LRCmd(void)
 {
+    try {
+        // In test mode ... Mon Jul  9 15:20:21 EDT 2007
+        // This call is supposed to cancel brocken resultset.
+        Cancel();
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 

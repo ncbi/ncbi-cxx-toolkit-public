@@ -69,8 +69,9 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
 
     m_NofCols = nof_cols;
 
-    CS_INT bind_len= 0;
-    m_BindedCols= 0;
+    CS_INT bind_len = 0;
+    m_BindedCols = 0;
+    bool buff_is_full = false;
 
     m_ColFmt = AutoArray<CS_DATAFMT>(m_NofCols);
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
@@ -90,9 +91,20 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
         }
 #endif
 
-        bind_len += m_ColFmt[nof_items].maxlength;
-        if(bind_len <= 2048) m_BindedCols++;
+        if (!buff_is_full) {
+            if (m_ColFmt[nof_items].maxlength > 2048) {
+                buff_is_full = true;
+            } else {
+                bind_len += m_ColFmt[nof_items].maxlength;
+                if (bind_len <= 2048) {
+                    m_BindedCols++;
+                } else {
+                    buff_is_full = true;
+                }
+            }
+        }
     }
+
     if(m_BindedCols) {
         m_BindItem = AutoArray<CS_VOID*>(m_BindedCols);
         m_Copied = AutoArray<CS_INT>(m_BindedCols);
@@ -228,8 +240,12 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
                                          CS_INT buflen, CS_INT *outlen)
 {
     if(item > m_BindedCols) {
+        // Not bound ...
         return Check(ct_get_data(cmd, item, buffer, buflen, outlen));
     }
+
+    // Bound ...
+    // Move data ...
 
     --item;
 
@@ -946,9 +962,15 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
     switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, buffer, (CS_INT) buffer_size,
                          &outlen) ) {
     case CS_END_ITEM:
+        // This is not the last column in the row.
+        break;
     case CS_END_DATA:
-        ++m_CurrItem;
+        // This is the last column in the row.
+        // ++m_CurrItem; // Previous logic ...
+        break;
     case CS_SUCCEED:
+        // ct_get_data successfully retrieved a chunk of data that is
+        // not the last chunk of data for this column.
         break;
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
@@ -966,29 +988,14 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
 I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
-        return 0;
-    }
-
-    char dummy[4];
-
-    switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, dummy, 0, 0) ) {
-//     switch ( ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
-    case CS_END_ITEM:
-    case CS_END_DATA:
-    case CS_SUCCEED:
-        break;
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
-    default:
-        DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
-    }
-
-
     auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
 
+    ReadItem(NULL, 0, NULL);
+
 #if defined(FTDS_IN_USE)
-    Check(ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0));
+    if(m_CurrItem + 1 <= m_BindedCols) {
+        Check(ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, NULL, 0, NULL));
+    }
 #endif
 
     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
