@@ -375,17 +375,17 @@ else
 */
 I_ITDescriptor& CSimpleBlobStore::ItDescriptor(void)
 {
-    m_RowNum= (Int4)(m_ImageNum / m_nofDataCols);
-    int i= m_ImageNum % m_nofDataCols;
+    m_RowNum = (Int4)(m_ImageNum / m_nofDataCols);
+    int i = m_ImageNum % m_nofDataCols;
     if(i == 0) { // prepare new row
         if(m_RowNum.Value() > 0) {
             m_Cmd->Send(); // sending command to update/insert row
             m_Cmd->DumpResults(); // we don't expect any useful results
         }
 
-        string s= m_KeyColName + "= '";
+        string s = m_KeyColName + "= '";
         s.append(m_Key.Value());
-        s+= "' AND " + m_NumColName + "=";
+        s += "' AND " + m_NumColName + "=";
         char buf[32];
         sprintf(buf, "%ld", (long) m_RowNum.Value());
         s.append(buf);
