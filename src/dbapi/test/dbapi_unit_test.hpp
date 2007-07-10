@@ -193,6 +193,7 @@ public:
     void Test_Bulk_Overflow(void);
     void Test_GetTotalColumns(void);
     void Test_LOB(void);
+    void Test_LOB_LowLevel(void);
     void Test_LOB2(void);
     void Test_BlobStream(void);
     void Test_BulkInsertBlob(void);

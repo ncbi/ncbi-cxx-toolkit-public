@@ -1670,6 +1670,105 @@ CDBAPIUnitTest::Test_LOB2(void)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_LOB_LowLevel(void)
+{
+    string sql;
+    CDB_Text txt;
+
+    try {
+        bool rc = false;
+        auto_ptr<CDB_LangCmd> auto_stmt;
+        CDB_Connection* conn = m_Conn->GetCDB_Connection();
+        BOOST_CHECK(conn != NULL);
+
+        // Clean table ...
+        sql = "DELETE FROM " + GetTableName();
+        auto_stmt.reset(conn->LangCmd(sql));
+        rc = auto_stmt->Send();
+        BOOST_CHECK(rc);
+        auto_stmt->DumpResults();
+
+        sql = "INSERT INTO " + GetTableName() + "(text_field) VALUES('')";
+        auto_stmt.reset(conn->LangCmd(sql));
+        rc = auto_stmt->Send();
+        BOOST_CHECK(rc);
+        auto_stmt->DumpResults();
+
+        sql = "SELECT text_field FROM " + GetTableName();
+        auto_stmt.reset(conn->LangCmd(sql));
+        rc = auto_stmt->Send();
+        BOOST_CHECK(rc);
+
+        // Retrieve descriptor ...
+        auto_ptr<I_ITDescriptor> descr;
+        while(auto_stmt->HasMoreResults()) {
+            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+            if (rs.get() == NULL) {
+                continue;
+            }
+
+            if (rs->ResultType() != eDB_RowResult) {
+                continue;
+            }
+
+            while(rs->Fetch()) {
+                rs->ReadItem(NULL, 0);
+
+                descr.reset(rs->GetImageOrTextDescriptor());
+            }
+        }
+
+        // Send data ...
+        txt.Append("test clob data ...");
+        conn->SendData(*descr, txt);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+// void
+// CDBAPIUnitTest::Test_LOB_LowLevel(void)
+// {
+//     string sql;
+//     CDB_Text txt;
+//
+//     try {
+//         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+//         bool rc = false;
+//
+//         // Clean table ...
+//         auto_stmt->ExecuteUpdate("DELETE FROM "+ GetTableName());
+//
+//         sql = "INSERT INTO " + GetTableName() + "(text_field) VALUES('')";
+//         auto_stmt->ExecuteUpdate(sql);
+//
+//         sql = "SELECT text_field FROM " + GetTableName();
+//         auto_stmt->SendSql(sql);
+//         while(auto_stmt->HasMoreResults()) {
+//             if(auto_stmt->HasRows()) {
+//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//                 while (rs->Next()) {
+//                     rs->ReadItem(NULL, 0);
+//
+//                     descr.reset(rs->GetImageOrTextDescriptor());
+//                 }
+//             }
+//         }
+//
+//         // Send data ...
+//         txt.Append("test clob data ...");
+//         auto_conn->SendData(*descr, txt);
+//     }
+//     catch(const CException& ex) {
+//         DBAPI_BOOST_FAIL(ex);
+//     }
+// }
+
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_BulkInsertBlob(void)
 {
@@ -2066,7 +2165,10 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             }
 
             // Retrieve data ...
-            {
+            // Some drivers limit size of text/binary to 255 bytes ...
+            if (m_args.GetDriverName() != "dblib"
+                && m_args.GetDriverName() != "msdblib"
+                ) {
                 auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
                 sql  = " SELECT id, vb8000_field FROM #bin_bulk_insert_table";
@@ -2157,9 +2259,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
             // BIGINT collumn ...
             {
-                // There is a problem at least with the ftds driver ...
-                // enum { num_of_tests = 16 };
-                enum { num_of_tests = 14 };
+                enum { num_of_tests = 16 };
 
                 // Insert data ...
                 {
@@ -2327,7 +2427,10 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             }
 
             // Retrieve data ...
-            {
+            // Some drivers limit size of text/binary to 255 bytes ...
+            if (m_args.GetDriverName() != "dblib"
+                && m_args.GetDriverName() != "msdblib"
+                ) {
                 sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
                 sql += " ORDER BY id";
 
@@ -2343,9 +2446,10 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                             switch (i) {
                             case 0:
-                                BOOST_CHECK_EQUAL(col1.size(),
-                                                  string::size_type(255)
-                                                  );
+                                BOOST_CHECK_EQUAL(
+                                    col1.size(),
+                                    string::size_type(m_max_varchar_size)
+                                    );
                                 break;
                             case 1:
                                 BOOST_CHECK_EQUAL(
@@ -5226,6 +5330,11 @@ void CDBAPIUnitTest::Test_BlobStore(void)
                 "  data2 IMAGE NULL, \n"
                 "  data3 IMAGE NULL, \n"
                 "  data4 IMAGE NULL \n"
+//                 "  data0 TEXT NULL, \n"
+//                 "  data1 TEXT NULL, \n"
+//                 "  data2 TEXT NULL, \n"
+//                 "  data3 TEXT NULL, \n"
+//                 "  data4 TEXT NULL \n"
                 ") "
                 ;
             auto_stmt->ExecuteUpdate(sql);
@@ -5289,6 +5398,9 @@ void CDBAPIUnitTest::Test_BlobStore(void)
                 while (!pStream->eof()) {
                     NcbiGetline(*pStream, line, '\n');
                 }
+                // while (NcbiGetline(*pStream, line, "\r\n")) {
+                //     ;
+                // }
             }
         }
     }
@@ -7709,15 +7821,25 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
-//     if (args.GetServerType() == CTestArguments::eSybase
-//         && args.GetDriverName() != "dblib"
-//         && args.GetDriverName() != "ftds"
-//         ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
-//                                    DBAPIInstance);
-//         tc->depends_on(tc_init);
-//         add(tc);
-//     }
+    if (args.GetServerType() == CTestArguments::eSybase
+        && args.GetDriverName() != "dblib"
+        && args.GetDriverName() != "ftds"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    if ((args.GetServerType() == CTestArguments::eMsSql
+        || args.GetServerType() == CTestArguments::eMsSql2005)
+        && args.GetDriverName() != "msdblib"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
     if ((args.GetDriverName() == "ftds" &&
@@ -7819,60 +7941,64 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
 
         // Doesn't work at the moment ...
+        if (args.GetDriverName() == "ftds64"
+            || args.GetDriverName() == "ctlib") {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_LowLevel,
+                                   DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
         tc->depends_on(tc_init);
-        tc->depends_on(tc_parameters);
         add(tc);
 
-        {
-            // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
-            if ((args.GetDriverName() == "ftds" &&
-                (args.GetServerType() == CTestArguments::eMsSql
-                 || args.GetServerType() == CTestArguments::eMsSql2005))
-                || args.GetDriverName() == "ctlib"
-                // || args.GetDriverName() == "dblib" // Code will hang up with dblib for some reason ...
-                || args.GetDriverName() == "ftds63"
-                || args.GetDriverName() == "odbc"
-                || args.GetDriverName() == "odbcw"
-                // || args.GetDriverName() == "msdblib" // doesn't work ...
-                || args.GetDriverName() == "ftds64_odbc"
-                || args.GetDriverName() == "ftds64"
-                || args.GetDriverName() == "ftds64_dblib"
-                ) {
-                //
-                boost::unit_test::test_case* tc_cursor =
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor,
-                                           DBAPIInstance);
-                tc->depends_on(tc_init);
-                tc->depends_on(tc_parameters);
-                add(tc);
+        // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
+        if ((args.GetDriverName() == "ftds" &&
+            (args.GetServerType() == CTestArguments::eMsSql
+             || args.GetServerType() == CTestArguments::eMsSql2005))
+            || args.GetDriverName() == "ctlib"
+            // || args.GetDriverName() == "dblib" // Code will hang up with dblib for some reason ...
+            || args.GetDriverName() == "ftds63"
+            || args.GetDriverName() == "odbc"
+            || args.GetDriverName() == "odbcw"
+            // || args.GetDriverName() == "msdblib" // doesn't work ...
+            || args.GetDriverName() == "ftds64_odbc"
+            || args.GetDriverName() == "ftds64"
+            || args.GetDriverName() == "ftds64_dblib"
+            ) {
+            //
+            boost::unit_test::test_case* tc_cursor =
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_parameters);
+            add(tc);
 
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
-                                           DBAPIInstance);
-                tc->depends_on(tc_init);
-                tc->depends_on(tc_parameters);
-                add(tc);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_parameters);
+            add(tc);
 
-                // Does not work with all databases and drivers currently ...
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
-                                           DBAPIInstance);
-                tc->depends_on(tc_init);
-                tc->depends_on(tc_cursor);
-                add(tc);
+            // Does not work with all databases and drivers currently ...
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_cursor);
+            add(tc);
 
-    //             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2,
-    //             DBAPIInstance);
-    //             tc->depends_on(tc_init);
-    //             tc->depends_on(tc_cursor);
-    //             add(tc);
+//             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2,
+//             DBAPIInstance);
+//             tc->depends_on(tc_init);
+//             tc->depends_on(tc_cursor);
+//             add(tc);
 
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream,
-                                           DBAPIInstance);
-                tc->depends_on(tc_init);
-                tc->depends_on(tc_cursor);
-                add(tc);
-            }
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream,
+                                       DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_cursor);
+            add(tc);
         }
 
         // Not completed yet ...
@@ -7897,6 +8023,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! Need to be fixed !!!
     if (args.IsBCPAvailable()
+        && args.GetDriverName() != "ctlib"
         && !(args.GetDriverName() == "ftds" &&
              args.GetServerType() == CTestArguments::eSybase)
         ) {
@@ -8019,6 +8146,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.IsBCPAvailable()
+         && args.GetDriverName() != "ftds64"
+         && !(args.GetDriverName() == "ftds"
+           && args.GetServerType() == CTestArguments::eSybase)
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP,
@@ -8028,7 +8158,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     // !!! There are still problems ...
-    if (args.IsBCPAvailable())
+    if (args.IsBCPAvailable()
+        && args.GetDriverName() != "ctlib"
+        )
     {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
                                    DBAPIInstance);
@@ -8087,14 +8219,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if ((args.GetServerType() == CTestArguments::eMsSql
-        || args.GetServerType() == CTestArguments::eMsSql2005)
-        && args.GetDriverName() != "msdblib") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStore,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler_LT,
                                DBAPIInstance);
@@ -8128,9 +8252,18 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+//     if (args.IsBCPAvailable()) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
+
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment.
-//     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
+//     if ( (args.GetDriverName() == "ftds"
+//           || args.GetDriverName() == "ftds63"
+//           || args.GetDriverName() == "ftds64"
+//           ) &&
 //          args.GetServerType() == CTestArguments::eMsSql ) {
 //         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
 //         tc->depends_on(tc_init);
@@ -8281,7 +8414,7 @@ CTestArguments::IsBCPAvailable(void) const
         // There is no apropriate client
         return false;
     } else if ( GetDriverName() == "ftds64_odbc"
-         || GetDriverName() != "odbcw"
+         || GetDriverName() == "odbcw"
          ) {
         return false;
     }
