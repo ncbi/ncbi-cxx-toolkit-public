@@ -127,6 +127,39 @@ private:
 };
 
 
+
+/// Defines user input exceptions
+class CInputException : public CException
+{
+public:
+    /// Error types that reading BLAST input can generate
+    enum EErrCode {
+        eInvalidStrand,     ///< Invalid strand specification
+        eSeqIdNotFound,     ///< The sequence ID cannot be resolved
+        eEmptyUserInput,    ///< No input was provided
+        eInvalidRange,      ///< Invalid range specification
+        eSequenceMismatch,  ///< Expected sequence type isn't what was expected
+    };
+
+    /// Translate from the error code value to its string representation
+    virtual const char* GetErrCodeString(void) const {
+        switch ( GetErrCode() ) {
+        case eInvalidStrand:        return "eInvalidStrand";
+        case eSeqIdNotFound:        return "eSeqIdNotFound";
+        case eEmptyUserInput:       return "eEmptyUserInput";
+        case eInvalidRange:         return "eInvalidRange";
+        case eSequenceMismatch:     return "eSequenceMismatch";
+        default:                    return CException::GetErrCodeString();
+        }
+    }
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+    NCBI_EXCEPTION_DEFAULT(CInputException, CException);
+#endif /* SKIP_DOXYGEN_PROCESSING */
+};
+
+
+
 /// Base class representing a source of biological sequences
 ///
 class NCBI_XBLAST_EXPORT CBlastInputSource : public CObject
@@ -145,11 +178,11 @@ public:
     virtual ~CBlastInputSource() {}
 
     /// Retrieve a single sequence (in an SSeqLoc container)
-    ///
+    /// @note Embedded Seq-loc returned must be of type interval or whole
     virtual SSeqLoc GetNextSSeqLoc() = 0;
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
-    ///
+    /// @note Embedded Seq-loc returned must be of type interval or whole
     virtual CRef<CBlastSearchQuery> GetNextSequence() = 0;
 
     /// Signal whether there are any unread sequence left

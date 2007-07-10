@@ -77,8 +77,9 @@ CBlastInput::GetNextSeqLocBatch()
             size_read += sequence::GetLength(loc.seqloc->GetWhole(),
                                             loc.scope);
         } else {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
-                       "Unsupported SeqLoc type encountered");
+            // programmer error, CBlastInputSource should only return Seq-locs
+            // of type interval or whole
+            abort();
         }
     }
 
@@ -106,8 +107,9 @@ CBlastInput::GetNextSeqBatch()
         } else if (loc->IsWhole()) {
             size_read += sequence::GetLength(loc->GetWhole(), q->GetScope());
         } else {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
-                       "Unsupported SeqLoc type encountered");
+            // programmer error, CBlastInputSource should only return Seq-locs
+            // of type interval or whole
+            abort();
         }
 
         retval->AddQuery(q);

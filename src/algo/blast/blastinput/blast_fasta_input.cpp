@@ -78,23 +78,39 @@ public:
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
         
+        static const string kRegex_Gi("^[0-9]+$");
+        static const string kRegex_Accession("^[a-z].*[0-9]+$");
+        static const string kRegex_Ti("^gnl\\|ti\\|[0-9]+$");
+
         const string line = *++GetLineReader();
 
         CRegexpUtil regex(line);
         const CRegexp::ECompile flags = static_cast<CRegexp::ECompile>
             (CRegexp::fCompile_ignore_case | CRegexp::fCompile_newline);
 
-        // Test for GI only
-        if (regex.Exists("^[0-9]+$")) {
-            int gi = NStr::StringToLong(line);
-            return x_PrepareBioseqWithGi(gi);
-        // Test for accession
-        } else if (regex.Exists("^[a-z].*[0-9]+$", flags)) {
-            return x_PrepareBioseqWithAccession(line);
-        // Test for Trace ID
-        } else if (regex.Exists("^gnl\\|ti\\|[0-9]+$", flags)) {
-            int ti = NStr::StringToLong(regex.Extract("[0-9]+", flags));
-            return x_PrepareBioseqWithTi(ti);
+        try {
+            // Test for GI only
+            if (regex.Exists(kRegex_Gi)) {
+                int gi = NStr::StringToLong(line);
+                return x_PrepareBioseqWithGi(gi);
+            // Test for accession
+            } else if (regex.Exists(kRegex_Accession, flags)) {
+                return x_PrepareBioseqWithAccession(line);
+            // Test for Trace ID
+            } else if (regex.Exists(kRegex_Ti, flags)) {
+                int ti = NStr::StringToLong(regex.Extract("[0-9]+", flags));
+                return x_PrepareBioseqWithTi(ti);
+            }
+        } catch (const CInputException&) { 
+            throw; 
+        } catch (const CSeqIdException& e) {
+            if (e.GetErrCode() == CSeqIdException::eFormat) {
+                NCBI_THROW(CInputException, eSeqIdNotFound,
+                           "Sequence ID not found: '" + line + "'");
+            }
+        } catch (...) {
+            // in case of other exceptions, just defer to the parent 
+            // implementation
         }
 
         // If all fails, fall back to parent's implementation
@@ -123,8 +139,9 @@ private:
         // data sources (should be BLAST DB first, then Genbank)
         TSeqPos len = sequence::GetLength(*id, m_LengthRetriever);
         if (len == numeric_limits<TSeqPos>::max()) {
-            throw runtime_error("Failed to resolve Seq-id " + 
-                                id->AsFastaString());
+            NCBI_THROW(CInputException, eSeqIdNotFound,
+                       "Sequence ID not found: '" + 
+                       id->AsFastaString() + "'");
         }
 
         CRef<CBioseq> retval(new CBioseq());
@@ -190,7 +207,7 @@ CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
       m_ReadProteins(iconfig.IsProteinInput())
 {
     if (user_input.empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, "Empty user input");
+        NCBI_THROW(CInputException, eEmptyUserInput, "No sequence input was provided");
     }
     m_LineReader.Reset(new CMemoryLineReader(user_input.c_str(), 
                                              user_input.size()));
@@ -204,10 +221,9 @@ CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
                                     CFastaReader::fAllSeqIds :
                                     (CFastaReader::fNoParseID |
                                      CFastaReader::fDLOptional);
-    // N.B.: fForceType is needed otherwise fAssumeProt is overriden...
-    flags += ((m_ReadProteins
+    flags += (m_ReadProteins
               ? CFastaReader::fAssumeProt 
-              : CFastaReader::fAssumeNuc) | CFastaReader::fForceType);
+              : CFastaReader::fAssumeNuc);
 
     if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
         m_InputReader.reset
@@ -231,7 +247,7 @@ CRef<CBioseq_set>
 CBlastFastaInputSource::GetBioseqs()
 {
     if (m_Bioseqs.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
+        NCBI_THROW(CInputException, eEmptyUserInput, 
                    "No sequences have been read");
     }
     return CRef<CBioseq_set>(&m_Bioseqs->SetSet());
@@ -242,15 +258,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
 {
     static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
 
-    CRef<CSeq_entry> seq_entry;
     if (m_Config.GetLowercaseMask())
         lcase_mask = m_InputReader->SaveMask();
 
-    if ( !(seq_entry = m_InputReader->ReadOneSeq())) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Could not retrieve seq entry");
-    }
-
+    CRef<CSeq_entry> seq_entry(m_InputReader->ReadOneSeq());
     if (m_Bioseqs.Empty()) {
         m_Bioseqs.Reset(new CSeq_entry());
     }
@@ -260,6 +271,13 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
     CRef<CSeq_loc> retval(new CSeq_loc());
 
+    if (m_ReadProteins && itr->IsNa()) {
+        NCBI_THROW(CInputException, eSequenceMismatch,
+                   "Sequence mismatch: expected protein, found nucleotide");
+    } else if ( !m_ReadProteins && itr->IsAa() ) {
+        NCBI_THROW(CInputException, eSequenceMismatch,
+                   "Sequence mismatch: expected nucleotide, found protein");
+    }
     _ASSERT(m_ReadProteins == itr->IsAa());
 
     // set strand
@@ -271,7 +289,7 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
             retval->SetInt().SetStrand(eNa_strand_both);
     } else {
         if (m_ReadProteins) {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
+            NCBI_THROW(CInputException, eInvalidStrand,
                        "Cannot assign nucleotide strand to protein sequence");
         }
         retval->SetInt().SetStrand(m_Config.GetStrand());
@@ -287,9 +305,13 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
     const TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
                                                    m_Scope);
     ASSERT(seq_length != numeric_limits<TSeqPos>::max());
-    if (to > seq_length || from > seq_length || (to > 0 && to < from)) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
+    if (to > 0 && to < from) {
+        NCBI_THROW(CInputException, eInvalidRange, 
                    "Invalid sequence range");
+    }
+    if (from > seq_length) {
+        NCBI_THROW(CInputException, eInvalidRange, 
+                   "Invalid from coordinate (greater than sequence length)");
     }
     // set sequence range
     retval->SetInt().SetFrom(from);
