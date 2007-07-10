@@ -288,6 +288,7 @@ static bool x_IsInputRepeatMasker( const char* byte_buf, size_t byte_count )
 }
 
 
+
 static bool x_IsLinePhrapId( const string& line ) 
 {
     vector<string> values;
@@ -837,6 +838,24 @@ static bool x_IsInputFiveColFeatureTable(const char* byte_buf,
 
 static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
 {
+    //  ------------------------------------------------------------------------
+    //  NOTE 1:
+    //  There is a bunch of file formats that are a special type of table and
+    //  that we want to identify (like Repeat Masker output). So not to shade
+    //  out those more special formats, this test should be performed only after
+    //  all the more specialized table formats have been tested.
+    //  ------------------------------------------------------------------------
+
+    //  ------------------------------------------------------------------------
+    //  NOTE 2:
+    //  The original criterion for this test was "the same number of observed
+    //  columns in every line".
+    //  In order to weed out false positives the following *additional*
+    //  conditions have been imposed:
+    //  - there are at least two observed columns
+    //  - the sample contains at least two non-comment lines.
+    //  ------------------------------------------------------------------------
+
     // first split into a set of lines
     list<string> lines;
     if ( ! x_SplitLines( byte_buf, byte_count, lines ) ) {
@@ -863,13 +882,18 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
         ncols = toks.size();
         break;
     }
+    if ( ncols < 2 ) {
+        return false;
+    }
 
+    size_t nlines = 1;
     // verify that columns all have the same size
     // we can add an exception for the last line
     for ( ;  iter != lines.end();  ++iter) {
         if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
             continue;
         }
+        ++nlines;
 
         toks.clear();
         NStr::Split(*iter, " \t,", toks);
@@ -882,7 +906,7 @@ static bool x_IsInputTable(const char* byte_buf, size_t byte_count)
         }
     }
 
-    return true;
+    return ( nlines >= 2 );
 }
 
 
@@ -928,6 +952,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     }
     return Format(input);
 }
+
 
 CFormatGuess::EFormat 
 CFormatGuess::Format(const unsigned char* buffer, 
@@ -989,7 +1014,7 @@ CFormatGuess::Format(const unsigned char* buffer,
 
     //
     //  The following is actually three tests rolled into one, based on symbol
-    //  frequencies in the input sample. I am eaving them "as is".
+    //  frequencies in the input sample. I am leaving them "as is".
     //
     unsigned int i = 0;
     unsigned ATGC_content = 0;
@@ -1148,4 +1173,428 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     return Format(buf, count);
 }
 
-END_NCBI_SCOPE
+//  ============================================================================
+//  New Style Interface:
+//  ============================================================================
+
+//  ----------------------------------------------------------------------------
+CFormatGuess::CFormatGuess()
+    : m_Stream( NcbiCin )
+{
+}
+
+//  ----------------------------------------------------------------------------
+CFormatGuess::CFormatGuess(
+    const string& FileName )
+    : m_Stream( (CNcbiIstream&)CNcbiIfstream( FileName.c_str() ) )
+{
+    Initialize();
+}
+
+//  ----------------------------------------------------------------------------
+CFormatGuess::CFormatGuess(
+    CNcbiIstream& Stream )
+    : m_Stream( Stream )
+{
+    Initialize();
+}
+
+//  ----------------------------------------------------------------------------
+CFormatGuess::~CFormatGuess()
+{
+    delete[] m_pTestBuffer;
+}
+
+//  ----------------------------------------------------------------------------
+CFormatGuess::EFormat
+CFormatGuess::GuessFormat(
+    EMode mode )
+{
+    if ( TestFormatRepeatMasker( mode ) ) {
+        return eRmo;
+    }
+    if ( TestFormatPhrapAce( mode ) ) {
+        return ePhrapAce;
+    }
+    if ( TestFormatGtf( mode ) ) {
+        return eGtf;
+    }
+    if ( TestFormatGlimmer3( mode ) ) {
+        return eGlimmer3;
+    }
+    if ( TestFormatAgp( mode ) ) {
+        return eAgp;
+    }
+    if ( TestFormatNewick( mode ) ) {
+        return eNewick;
+    }
+    if ( TestFormatXml( mode ) ) {
+        return eXml;
+    }
+    if ( TestFormatAlignment( eQuick /* !!! */ ) ) {
+        return eAlignment;
+    }
+    if ( TestFormatBinaryAsn( mode ) ) {
+        return eBinaryASN;
+    }
+    if ( TestFormatDistanceMatrix( mode ) ) {
+        return eDistanceMatrix;
+    }
+    if ( TestFormatTaxplot( mode ) ) {
+        return eTaxplot;
+    }
+    if ( TestFormatFlatFileSequence( mode ) ) {
+        return eFlatFileSequence;
+    }
+    if ( TestFormatFiveColFeatureTable( mode ) ) {
+        return eFiveColFeatureTable;
+    }
+    if ( TestFormatTable( mode ) ) {
+        return eTable;
+    }
+    if ( TestFormatFasta( mode ) ) {
+        return eFasta;
+    }
+    if ( TestFormatTextAsn( mode ) ) {
+        return eTextASN;
+    }
+    return eUnknown;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormat(
+    EFormat format,
+    EMode mode )
+{
+    switch( format ) {
+    
+    case eRmo:
+        return TestFormatRepeatMasker( mode );
+    case ePhrapAce:
+        return TestFormatPhrapAce( mode );
+    case eGtf:
+        return TestFormatGtf( mode );
+    case eGlimmer3:
+        return TestFormatGlimmer3( mode );
+    case eAgp:
+        return TestFormatAgp( mode );
+    case eNewick:
+        return TestFormatNewick( mode );
+    case eXml:
+        return TestFormatXml( mode );
+    case eAlignment:
+        return TestFormatAlignment( mode );
+    case eBinaryASN:
+        return TestFormatBinaryAsn( mode );
+    case eDistanceMatrix:
+        return TestFormatDistanceMatrix( mode );
+    case eTaxplot:
+        return TestFormatTaxplot( mode );
+    case eFlatFileSequence:
+        return TestFormatFlatFileSequence( mode );
+    case eFiveColFeatureTable:
+        return TestFormatFiveColFeatureTable( mode );
+    case eTable:
+        return TestFormatTable( mode );
+    case eFasta:
+        return TestFormatFasta( mode );
+    case eTextASN:
+        return TestFormatTextAsn( mode );
+
+    default:
+        NCBI_THROW( CCoreException, eInvalidArg, 
+            "CFormatGuess::TestFormat(): Unsupported format ID." );
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void
+CFormatGuess::Initialize()
+{
+    m_pTestBuffer = 0;
+
+    m_bStatsAreValid = false;
+    m_iStatsCountData = 0;
+    m_iStatsCountAlNumChars = 0;
+    m_iStatsCountDnaChars = 0;
+    m_iStatsCountAaChars = 0;
+}
+
+//  ----------------------------------------------------------------------------
+void
+CFormatGuess::EnsureTestBuffer()
+{
+    if ( m_pTestBuffer ) {
+        return;
+    }
+    m_pTestBuffer = new char[ s_iTestBufferSize ];
+    m_Stream.read( m_pTestBuffer, s_iTestBufferSize );
+    m_iTestDataSize = m_Stream.gcount();
+    m_Stream.clear();  // in case we reached eof
+    CStreamUtils::Pushback( m_Stream, (const CT_CHAR_TYPE*)m_pTestBuffer, 
+        m_iTestDataSize);
+}
+
+//  ----------------------------------------------------------------------------
+void 
+CFormatGuess::EnsureStats()
+{
+    if ( m_bStatsAreValid ) {
+        return;
+    }
+
+    EnsureTestBuffer();
+    if ( m_iTestDataSize == 0 ) {
+        m_bStatsAreValid = true;
+        return;
+    }
+
+    CNcbiIstrstream TestBuffer( 
+        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strLine;
+
+    // Things we keep track of:
+    //   m_iStatsCountAlNumChars: number of characters that are letters or 
+    //     digits
+    //   m_iStatsCountData: number of characters not part of a line starting
+    //     with '>'
+    //   m_iStatsCountDnaChars: number of characters counted in m_iStatsCountData
+    //     from the DNA alphabet
+    //   m_iStatsCountAaChars: number of characters counted in m_iStatsCountData
+    //     from the AA alphabet
+    //
+    while ( ! TestBuffer.fail() ) {
+        NcbiGetline( TestBuffer, strLine, "\n\r" );
+        for ( size_t i=0; i < strLine.length(); ++i ) {
+            char cur = strLine[i];
+            if ( isalnum( cur ) || isspace( cur ) ) {
+                ++m_iStatsCountAlNumChars;
+            }
+            if ( strLine[0] != '>' ) {
+                ++m_iStatsCountData;
+
+                cur = toupper( cur );
+                if ( isDNA_Alphabet( cur ) ) {
+                    ++m_iStatsCountDnaChars;
+                }
+                if ( isProtein_Alphabet( cur ) ) {
+                    ++m_iStatsCountAaChars;
+                }
+                if ( isLineEnd( cur ) ) {
+                    --m_iStatsCountData;
+                }
+            }
+        }
+    }
+    m_bStatsAreValid = true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+s_RepresentsAsnComment(
+    const vector<string>& Fields )
+{
+    if ( Fields.size() == 0 ) {
+        return true;
+    }
+    return ( NStr::StartsWith( Fields[0], "--" ) );
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatRepeatMasker(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputRepeatMasker( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatPhrapAce(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputPhrapAce( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatGtf(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputGtf( m_pTestBuffer, m_iTestDataSize );
+}
+    
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatGlimmer3(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputGlimmer3( m_pTestBuffer, m_iTestDataSize );
+}
+    
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatAgp(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputAgp( m_pTestBuffer, m_iTestDataSize );
+}
+    
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatNewick(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputNewick( m_pTestBuffer, m_iTestDataSize );
+}
+    
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatXml(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputXml( m_pTestBuffer, m_iTestDataSize );
+}
+    
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatAlignment(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputAlignment( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatBinaryAsn(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputBinaryAsn( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatDistanceMatrix(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputDistanceMatrix( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatTaxplot(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputTaxplot( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatFlatFileSequence(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputFlatFileSequence( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatFiveColFeatureTable(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputFiveColFeatureTable( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatTable(
+    EMode /* not used */ )
+{
+    EnsureTestBuffer();
+    return x_IsInputTable( m_pTestBuffer, m_iTestDataSize );
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatFasta(
+    EMode /* not used */ )
+{
+    EnsureStats();
+
+    // reject obvious misfits:
+    if ( m_iTestDataSize == 0 || m_pTestBuffer[0] != '>' ) {
+        return false;
+    }
+    if ( m_iStatsCountData == 0 ) {
+        return false;
+    }
+
+    // remaining decision based on text stats:
+    double dAlNumFraction =  (double)m_iStatsCountAlNumChars / m_iTestDataSize;
+    double dDnaFraction = (double)m_iStatsCountDnaChars / m_iStatsCountData;
+    double dAaFraction = (double)m_iStatsCountAaChars / m_iStatsCountData;
+
+    // want at least 80% text-ish overall:
+    if ( dAlNumFraction < 0.80 ) {
+        return false;
+    }
+
+    // want more than 91 percent of either DNA content or AA content in what we
+    // presume is data:
+    if ( dDnaFraction > 0.91 || dAaFraction > 0.91 ) {
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatTextAsn(
+    EMode /* not used */ )
+{
+    EnsureStats();
+
+    // reject obvious misfits:
+    if ( m_iTestDataSize == 0 || m_pTestBuffer[0] == '>' ) {
+        return false;
+    }
+
+    // criteria:
+    // at least 80% text-ish,
+    // "::=" as the 2nd field of the first non-blank non comment line.
+    //
+    double dAlNumFraction =  (double)m_iStatsCountAlNumChars / m_iTestDataSize;
+    if ( dAlNumFraction < 0.80 ) {
+        return false;
+    }
+    
+    CNcbiIstrstream TestBuffer( 
+        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strLine;
+
+    while ( ! TestBuffer.fail() ) {
+        vector<string> Fields;
+        NcbiGetline( TestBuffer, strLine, "\n\r" );
+        NStr::Tokenize( strLine, " \t", Fields, NStr::eMergeDelims );
+        if ( s_RepresentsAsnComment( Fields  ) ) {
+            continue;
+        }      
+        return ( Fields.size() >= 2 && Fields[1] == "::=" );
+    }
+    return false;
+}
+
+ END_NCBI_SCOPE

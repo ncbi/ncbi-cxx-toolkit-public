@@ -36,7 +36,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
 //////////////////////////////////////////////////////////////////
 //
 // Class implements different ad-hoc unreliable file format 
@@ -105,10 +104,21 @@ public:
         eProtein
     };
 
+    enum EMode {
+        eQuick,
+        eThorough
+    };
+    
     // Guess sequence type. Function calculates sequence alphabet and 
     // identifies if the source belongs to nucleotide or protein sequence
     static ESequenceType SequenceType(const char* str, unsigned length);
 
+    //  ------------------------------------------------------------------------
+    //  "Stateless" interface:
+    //  Useful for checking for all formats in one simple call.
+    //  May go away; use object interface instead.
+    //  ------------------------------------------------------------------------
+public:
     /// Guess file format structure.
     EFormat Format(const string& path);
     /// Format prediction based on an input stream
@@ -119,6 +129,87 @@ public:
     EFormat Format(const unsigned char* buffer, 
                    size_t               buffer_size);
 
+    //  ------------------------------------------------------------------------
+    //  "Object" interface:
+    //  Use when interested only in a limited number of formats, in excluding 
+    //  certain tests, a specific order in which formats are tested, ...
+    //  ------------------------------------------------------------------------
+
+    //  Construction, destruction
+public:
+    CFormatGuess();
+
+    CFormatGuess(
+        const string& /* file name */ );
+
+    CFormatGuess(
+        CNcbiIstream& );
+
+    ~CFormatGuess();
+
+    //  Interface:
+public:
+    EFormat GuessFormat(
+        EMode = eQuick );
+
+    bool TestFormat(
+        EFormat,
+        EMode = eQuick );
+
+    // helpers:
+protected:
+    void Initialize();
+
+    void EnsureTestBuffer();
+
+    void EnsureStats();
+
+    bool TestFormatRepeatMasker(
+        EMode );
+    bool TestFormatPhrapAce(
+        EMode );
+    bool TestFormatGtf(
+        EMode );
+    bool TestFormatGlimmer3(
+        EMode );
+    bool TestFormatAgp(
+        EMode );
+    bool TestFormatNewick(
+        EMode );
+    bool TestFormatXml(
+        EMode );
+    bool TestFormatAlignment(
+        EMode );
+    bool TestFormatBinaryAsn(
+        EMode );
+    bool TestFormatDistanceMatrix(
+        EMode );
+    bool TestFormatTaxplot(
+        EMode );
+    bool TestFormatFlatFileSequence(
+        EMode );
+    bool TestFormatFiveColFeatureTable(
+        EMode );
+    bool TestFormatTable(
+        EMode );
+    bool TestFormatFasta(
+        EMode );
+    bool TestFormatTextAsn(
+        EMode );
+
+    // data:
+protected:
+    static const streamsize s_iTestBufferSize = 1024;
+
+    CNcbiIstream& m_Stream;
+    char* m_pTestBuffer;
+    streamsize m_iTestDataSize;
+
+    bool m_bStatsAreValid;
+    unsigned int m_iStatsCountData;
+    unsigned int m_iStatsCountAlNumChars;
+    unsigned int m_iStatsCountDnaChars;
+    unsigned int m_iStatsCountAaChars;
 };
 
 END_NCBI_SCOPE
