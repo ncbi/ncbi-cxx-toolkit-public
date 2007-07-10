@@ -1,148 +1,29 @@
 # $Id$
 
+use strict;
+use warnings;
+
+package NCBI::SVN::Branching::Util;
+
+sub FindTreeNode
+{
+    my ($Tree, $Path) = @_;
+
+    for my $Subdir (split('/', $Path))
+    {
+        $Tree = ($Tree->{$Subdir} ||= {})
+    }
+
+    return $Tree
+}
+
 package NCBI::SVN::Branching;
 
 use base qw(NCBI::SVN::Base);
 
-use strict;
-use warnings;
-use Carp qw(confess);
-
 use File::Temp qw/tempfile/;
 
 use NCBI::SVN::Wrapper;
-
-sub GetTreeContainingSubtree
-{
-    my ($Self, $SVN, $Path, $Subtree) = @_;
-
-    my %Result;
-
-    my $Subdir;
-
-    for my $Entry ($SVN->ReadSubversionLines('list', $Path))
-    {
-        $Entry =~ s/\/$//o;
-
-        if (ref($Subdir = $Subtree->{$Entry}))
-        {
-            $Result{$Entry} = keys %$Subdir ?
-                $Self->GetTreeContainingSubtree($SVN,
-                    "$Path/$Entry", $Subdir) : {}
-        }
-        else
-        {
-            $Result{'/moreentries'} = 1
-        }
-    }
-
-    return \%Result
-}
-
-sub GetRmCommandsR
-{
-    my ($RmCommands, $ExistingStructure, $DirName, $DirContents, $Path) = @_;
-
-    my $DirExistingStructure = $ExistingStructure->{$DirName};
-
-    return 0 unless $DirExistingStructure;
-
-    if (!$DirContents->{'/'}->{rm})
-    {
-        my $ChildRemoved;
-        my @RmCommands;
-
-        while (my ($Subdir, $Subtree) = each %$DirContents)
-        {
-            next if $Subdir eq '/';
-
-            $ChildRemoved = 1
-                if GetRmCommandsR(\@RmCommands, $DirExistingStructure,
-                    $Subdir, $Subtree, "$Path/$Subdir")
-        }
-
-        if (!$ChildRemoved || %$DirExistingStructure)
-        {
-            push @$RmCommands, @RmCommands;
-            return 0
-        }
-    }
-
-    delete $ExistingStructure->{$DirName};
-    push @$RmCommands, 'rm', $Path;
-    return 1
-}
-
-sub GetRmCommands
-{
-    my ($RmCommands, $ExistingStructure, $ModTree) = @_;
-
-    while (my ($Subdir, $Subtree) = each %$ModTree)
-    {
-        next if $Subdir eq '/';
-
-        GetRmCommandsR($RmCommands, $ExistingStructure,
-            $Subdir, $Subtree, $Subdir)
-    }
-}
-
-sub CreateEntireTree
-{
-    my ($MkdirCommands, $ModTree, $Path) = @_;
-
-    return 0 unless %$ModTree;
-
-    my $NeedToCreateThisPath;
-    my $NeedToCreateParent;
-
-    while (my ($Subdir, $Subtree) = each %$ModTree)
-    {
-        if ($Subdir eq '/')
-        {
-            $NeedToCreateParent = 1 if $Subtree->{mkparent}
-        }
-        elsif (CreateEntireTree($MkdirCommands, $Subtree, "$Path/$Subdir"))
-        {
-            $NeedToCreateParent = $NeedToCreateThisPath = 1
-        }
-    }
-
-    unshift @$MkdirCommands, 'mkdir', $Path if $NeedToCreateThisPath;
-
-    return $NeedToCreateParent
-}
-
-sub GetMkdirCommandsR
-{
-    my ($MkdirCommands, $ExistingStructure, $ModTree, $Path) = @_;
-
-    unless ($ExistingStructure)
-    {
-        CreateEntireTree($MkdirCommands, $ModTree, $Path);
-        return
-    }
-
-    while (my ($Subdir, $Subtree) = each %$ModTree)
-    {
-        next if $Subdir eq '/';
-
-        GetMkdirCommandsR($MkdirCommands,
-            $ExistingStructure->{$Subdir}, $Subtree, "$Path/$Subdir")
-    }
-}
-
-sub GetMkdirCommands
-{
-    my ($MkdirCommands, $ExistingStructure, $ModTree) = @_;
-
-    while (my ($Subdir, $Subtree) = each %$ModTree)
-    {
-        next if $Subdir eq '/';
-
-        GetMkdirCommandsR($MkdirCommands,
-            $ExistingStructure->{$Subdir}, $Subtree, $Subdir)
-    }
-}
 
 sub FindParentNode
 {
@@ -157,30 +38,6 @@ sub FindParentNode
     }
 
     return ($Tree, $LastSubdir)
-}
-
-sub FindTreeNode
-{
-    my ($Tree, $Path) = @_;
-
-    for my $Subdir (split('/', $Path))
-    {
-        $Tree = ($Tree->{$Subdir} ||= {})
-    }
-
-    return $Tree
-}
-
-sub MarkPath
-{
-    my ($Path, $Tree, @Markers) = @_;
-
-    $Tree = FindTreeNode($Tree, $Path);
-
-    for my $Marker (@Markers)
-    {
-        $Tree->{'/'}->{$Marker} = 1
-    }
 }
 
 sub CutOffCommonTargetPrefix
@@ -268,7 +125,8 @@ sub ModelBranchStructure
             my $BranchDir = CutOffCommonTargetPrefix($TargetPath,
                 $CommonTarget, $Revision);
 
-            FindTreeNode($BranchStructure, $BranchDir)->{'/'} = 1;
+            NCBI::SVN::Branching::Util::FindTreeNode($BranchStructure,
+                $BranchDir)->{'/'} = 1;
 
             SetUpstreamAndSynchRev($BranchInfo, $SourcePath,
                 $BranchDir, $SourceRevision)
@@ -448,6 +306,124 @@ sub Info
     }
 }
 
+sub MarkPath
+{
+    my ($Path, $Tree, @Markers) = @_;
+
+    $Tree = NCBI::SVN::Branching::Util::FindTreeNode($Tree, $Path);
+
+    for my $Marker (@Markers)
+    {
+        $Tree->{'/'}->{$Marker} = 1
+    }
+}
+
+sub GetTreeContainingSubtree
+{
+    my ($Self, $SVN, $Path, $Subtree) = @_;
+
+    my %Result;
+
+    my $Subdir;
+
+    for my $Entry ($SVN->ReadSubversionLines('list', $Path))
+    {
+        $Entry =~ s/\/$//o;
+
+        if (ref($Subdir = $Subtree->{$Entry}))
+        {
+            $Result{$Entry} = keys %$Subdir ?
+                $Self->GetTreeContainingSubtree($SVN,
+                    "$Path/$Entry", $Subdir) : {}
+        }
+        else
+        {
+            $Result{'/moreentries'} = 1
+        }
+    }
+
+    return \%Result
+}
+
+sub GetRmCommands
+{
+    my ($RmCommands, $ExistingStructure, $DirName, $DirContents, $Path) = @_;
+
+    my $DirExistingStructure = $ExistingStructure->{$DirName};
+
+    return 0 unless $DirExistingStructure;
+
+    if (!$DirContents->{'/'}->{rm})
+    {
+        my $ChildRemoved;
+        my @RmCommands;
+
+        while (my ($Subdir, $Subtree) = each %$DirContents)
+        {
+            next if $Subdir eq '/';
+
+            $ChildRemoved = 1
+                if GetRmCommands(\@RmCommands, $DirExistingStructure,
+                    $Subdir, $Subtree, "$Path/$Subdir")
+        }
+
+        if (!$ChildRemoved || %$DirExistingStructure)
+        {
+            push @$RmCommands, @RmCommands;
+            return 0
+        }
+    }
+
+    delete $ExistingStructure->{$DirName};
+    push @$RmCommands, 'rm', $Path;
+    return 1
+}
+
+sub CreateEntireTree
+{
+    my ($MkdirCommands, $ModTree, $Path) = @_;
+
+    return 0 unless %$ModTree;
+
+    my $NeedToCreateThisPath;
+    my $NeedToCreateParent;
+
+    while (my ($Subdir, $Subtree) = each %$ModTree)
+    {
+        if ($Subdir eq '/')
+        {
+            $NeedToCreateParent = 1 if $Subtree->{mkparent}
+        }
+        elsif (CreateEntireTree($MkdirCommands, $Subtree, "$Path/$Subdir"))
+        {
+            $NeedToCreateParent = $NeedToCreateThisPath = 1
+        }
+    }
+
+    unshift @$MkdirCommands, 'mkdir', $Path if $NeedToCreateThisPath;
+
+    return $NeedToCreateParent
+}
+
+sub GetMkdirCommands
+{
+    my ($MkdirCommands, $ExistingStructure, $ModTree, $Path) = @_;
+
+    unless ($ExistingStructure)
+    {
+        CreateEntireTree($MkdirCommands, $ModTree, $Path);
+        return
+    }
+
+    while (my ($Subdir, $Subtree) = each %$ModTree)
+    {
+        next if $Subdir eq '/';
+
+        GetMkdirCommands($MkdirCommands,
+            $ExistingStructure->{$Subdir}, $Subtree, "$Path/$Subdir")
+    }
+}
+
 sub ShapeBranch
 {
     my ($Self, $Action, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
@@ -574,11 +550,23 @@ sub ShapeBranch
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
         $SVN->GetRepository(), \%ModTree);
 
-    GetRmCommands(\@RmCommands, $ExistingStructure, \%ModTree);
+    while (my ($Subdir, $Subtree) = each %ModTree)
+    {
+        next if $Subdir eq '/';
+
+        GetRmCommands(\@RmCommands, $ExistingStructure,
+            $Subdir, $Subtree, $Subdir)
+    }
 
     unless ($Action eq 'remove')
     {
-        GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%ModTree)
+        while (my ($Subdir, $Subtree) = each %ModTree)
+        {
+            next if $Subdir eq '/';
+
+            GetMkdirCommands(\@MkdirCommands,
+                $ExistingStructure->{$Subdir}, $Subtree, $Subdir)
+        }
     }
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
