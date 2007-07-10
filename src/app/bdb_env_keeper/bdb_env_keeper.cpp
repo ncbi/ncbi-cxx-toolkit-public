@@ -42,6 +42,12 @@
 #include <connect/server.hpp>
 
 
+#if defined(NCBI_OS_UNIX)
+# include <corelib/ncbi_os_unix.hpp>
+# include <signal.h>
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 #define BDB_ENV_KEEPER_VERSION "0.1.1"
@@ -108,7 +114,6 @@ string s_ReadStrFromBUF(BUF buf)
 
 void CBDBEnvKeeperConnectionHandler::OnMessage(BUF buf)
 {
-    char data[1024];
     CSocket &socket = GetSocket();
 
     string cmd = s_ReadStrFromBUF(buf);
@@ -189,6 +194,20 @@ int CBDBEnvKeeperApp::Run(void)
         // attempt to get server gracefully shutdown on signal
         signal( SIGINT,  Server_SignalHandler);
         signal( SIGTERM, Server_SignalHandler);    
+#endif
+
+
+
+#if defined(NCBI_OS_UNIX)
+        if (is_daemon) {
+            LOG_POST("Entering UNIX daemon mode...");
+            bool daemon = Daemonize(0, fDaemon_DontChroot);
+            if (!daemon) {
+                return 0;
+            }
+
+        }
+        
 #endif
 
 
