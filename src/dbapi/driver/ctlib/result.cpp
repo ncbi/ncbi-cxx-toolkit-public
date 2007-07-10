@@ -961,13 +961,20 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
     switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, buffer, (CS_INT) buffer_size,
                          &outlen) ) {
+#ifdef FTDS_IN_USE
     case CS_END_ITEM:
         // This is not the last column in the row.
         break;
     case CS_END_DATA:
         // This is the last column in the row.
-        // ++m_CurrItem; // Previous logic ...
         break;
+#else
+    case CS_END_ITEM:
+        // This is not the last column in the row.
+    case CS_END_DATA:
+        // This is the last column in the row.
+        ++m_CurrItem; // That won't work with the ftds64 driver
+#endif
     case CS_SUCCEED:
         // ct_get_data successfully retrieved a chunk of data that is
         // not the last chunk of data for this column.
