@@ -92,6 +92,17 @@ public:
         Create(EProgram program, 
                EAPILocality locality = CBlastOptions::eLocal);
 
+    /// Creates an options handle object configured with default options for 
+    /// the requested task, throws an exception if an unsupported task 
+    /// is requested
+    /// @param task BLAST task [in]
+    /// @param locality Local processing (default) or remote processing.
+    /// @return requested options handle with default values set
+    /// @throw CBlastException in case of an unhandled program type
+    static CBlastOptionsHandle*
+        CreateTask(string task,
+               EAPILocality locality = CBlastOptions::eLocal);
+
 private:
     /// Private c-tor
     CBlastOptionsFactory();
