@@ -301,7 +301,7 @@ void CBDB_Env::OpenConcurrentDB(const string& db_home)
     int ret = m_Env->set_flags(m_Env, DB_CDB_ALLDB, 1);
     BDB_CHECK(ret, "DB_ENV::set_flags");
 
-    Open(db_home, DB_INIT_CDB | DB_INIT_MPOOL);
+    Open(db_home, DB_CREATE | DB_THREAD | DB_INIT_CDB | DB_INIT_MPOOL);
 }
 
 void CBDB_Env::JoinEnv(const string& db_home, 
