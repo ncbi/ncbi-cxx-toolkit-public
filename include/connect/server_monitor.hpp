@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 ///
 struct IServer_Monitor
 {
+    virtual ~IServer_Monitor() {}
     /// Check if monitoring is active
     virtual bool IsActive() = 0;
     /// Send message
