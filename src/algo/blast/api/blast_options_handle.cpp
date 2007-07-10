@@ -161,6 +161,100 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
     return retval;
 }
 
+
+CBlastOptionsHandle*
+CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
+{
+    CBlastOptionsHandle* retval = NULL;
+
+    if (!NStr::CompareNocase(task, "blastn") || !NStr::CompareNocase(task, "blastn-short"))
+    {
+        CBlastNucleotideOptionsHandle* opts = 
+             dynamic_cast<CBlastNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eBlastn, locality));
+        ASSERT(opts);
+        if (!NStr::CompareNocase(task, "blastn"))
+        {
+             opts->SetMatchReward(2);
+             opts->SetMismatchPenalty(-3);
+             opts->SetMaskAtHash(true);
+        }
+        else
+        {
+             opts->SetMatchReward(1);
+             opts->SetMismatchPenalty(-3);
+             opts->SetEvalueThreshold(50);
+             opts->SetWordSize(7);
+             opts->ClearFilterOptions();
+        }
+        retval = opts;
+    }
+    else if (!NStr::CompareNocase(task, "megablast"))
+    {
+        CBlastNucleotideOptionsHandle* opts = 
+             dynamic_cast<CBlastNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eMegablast, locality));
+        ASSERT(opts);
+        opts->SetMatchReward(1);
+        opts->SetMismatchPenalty(-2);
+        opts->SetMaskAtHash(true);
+        retval = opts;
+    }
+    else if (!NStr::CompareNocase(task, "dc-megablast"))
+    {
+        CDiscNucleotideOptionsHandle* opts = 
+             dynamic_cast<CDiscNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eDiscMegablast, locality));
+        ASSERT(opts);
+        opts->SetMatchReward(2);
+        opts->SetMismatchPenalty(-3);
+        opts->SetMaskAtHash(true);
+        retval = opts;
+    }
+    else if (!NStr::CompareNocase(task, "blastp") || !NStr::CompareNocase(task, "blastp-short"))
+    {
+         CBlastAdvancedProteinOptionsHandle* opts =
+               dynamic_cast<CBlastAdvancedProteinOptionsHandle*> (CBlastOptionsFactory::Create(eBlastp, locality));
+         if (task == "blastp-short")
+         {
+            opts->SetMatrixName("PAM30");
+            opts->SetGapOpeningCost(9);
+            opts->SetGapExtensionCost(1);
+            opts->SetEvalueThreshold(20000);
+            opts->SetWordSize(2);
+            opts->ClearFilterOptions();
+         }
+         retval = opts;
+    }
+    else if (!NStr::CompareNocase(task, "psiblast"))
+    {
+         retval = CBlastOptionsFactory::Create(ePSIBlast, locality);
+    }
+    else if (!NStr::CompareNocase(task, "phiblast"))
+    {
+         retval = CBlastOptionsFactory::Create(ePHIBlastp, locality);
+    }
+    else if (!NStr::CompareNocase(task, "rpsblast"))
+    {
+         retval = CBlastOptionsFactory::Create(eRPSBlast, locality);
+    }
+    else if (!NStr::CompareNocase(task, "blastx"))
+    {
+         retval = CBlastOptionsFactory::Create(eBlastx, locality);
+    }
+    else if (!NStr::CompareNocase(task, "tblastn"))
+    {
+         retval = CBlastOptionsFactory::Create(eTblastn, locality);
+    }
+    else if (!NStr::CompareNocase(task, "tblastx"))
+    {
+         retval = CBlastOptionsFactory::Create(eTblastx, locality);
+    }
+    else
+    {
+        string msg = string(task) + " is not a supported task";
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    }
+    return retval;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
