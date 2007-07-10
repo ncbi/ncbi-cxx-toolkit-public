@@ -21,8 +21,12 @@ DESTINATION        = $(DESTINATION_ROOT)\$(INTDIR)
 # Extensions of files to copy
 EXTENSIONS         = dll pdb
 
-# not used
+# MSVC DLLs
+#  MSVC_SRC must be defined elsewhere (eg, in command line)
 #MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc71\7.1\bin
+#MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\msvc8\8\bin
+
+MSVCRT_SRC = \\snowman\win-coremake\Lib\ThirdParty\msvc\$(MSVC_SRC)\bin
 
 
 #################################################################
@@ -226,3 +230,18 @@ $(LZO_SRC).install :
 $(LZO_SRC).clean :
 	@echo ---- & echo Deleting LZO DLLs & $(CLEAN_CMD)
 
+
+# -----------------------------------------
+# MSVC RT DLLs are not included into 'all'
+
+msvc_install : $(MSVCRT_SRC).install
+
+msvc_clean : $(MSVCRT_SRC).clean
+
+msvc_rebuild : msvc_clean msvc_install
+
+$(MSVCRT_SRC).install :
+	@echo ---- & echo Copying MSVC DLLs & $(INSTALL_CMD)
+
+$(MSVCRT_SRC).clean :
+	@echo ---- & echo Deleting MSVC DLLs & $(CLEAN_CMD)
