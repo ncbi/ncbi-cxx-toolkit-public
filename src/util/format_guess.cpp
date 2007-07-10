@@ -1180,13 +1180,15 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess()
     : m_Stream( NcbiCin )
+    , m_bOwnsStream( false )
 {
 }
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess(
     const string& FileName )
-    : m_Stream( (CNcbiIstream&)CNcbiIfstream( FileName.c_str() ) )
+    : m_Stream( * new CNcbiIfstream( FileName.c_str() ) )
+    , m_bOwnsStream( true )
 {
     Initialize();
 }
@@ -1195,6 +1197,7 @@ CFormatGuess::CFormatGuess(
 CFormatGuess::CFormatGuess(
     CNcbiIstream& Stream )
     : m_Stream( Stream )
+    , m_bOwnsStream( false )
 {
     Initialize();
 }
@@ -1203,6 +1206,9 @@ CFormatGuess::CFormatGuess(
 CFormatGuess::~CFormatGuess()
 {
     delete[] m_pTestBuffer;
+    if ( m_bOwnsStream ) {
+        delete &m_Stream;
+    }
 }
 
 //  ----------------------------------------------------------------------------

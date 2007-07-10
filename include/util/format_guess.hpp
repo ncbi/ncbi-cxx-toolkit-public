@@ -202,6 +202,7 @@ protected:
     static const streamsize s_iTestBufferSize = 1024;
 
     CNcbiIstream& m_Stream;
+    bool m_bOwnsStream;
     char* m_pTestBuffer;
     streamsize m_iTestDataSize;
 
