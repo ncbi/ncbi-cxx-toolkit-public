@@ -450,7 +450,7 @@ sub Info
 
 sub ShapeBranch
 {
-    my ($Self, $CreateBranch, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $Action, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
@@ -459,33 +459,66 @@ sub ShapeBranch
     my @CopyCommands;
     my @PutCommands;
 
+    my $RewriteBranchList;
     my $BranchListFN;
 
     # Read branch_list, if it exists.
-    my @ExistingBranches = eval {$SVN->ReadFileLines('branches/branch_list')};
+    my @Branches = eval {$SVN->ReadFileLines('branches/branch_list')};
 
-    # Unless branch_list contains our branch path already, add a MUCC
+    if ($Action eq 'create')
+    {
+        if ($@)
+        {
+            warn "Warning: 'branches/branch_list' was not found.\n"
+        }
+        elsif (grep {$_ eq $BranchPath} @Branches)
+        {
+            die "$Self->{MyName}: branch '$BranchPath' already exists.\n"
+        }
+
+        push @Branches, $BranchPath;
+        $RewriteBranchList = 1
+    }
+    elsif ($Action eq 'alter')
+    {
+        unless (grep {$_ eq $BranchPath} @Branches)
+        {
+            warn 'Warning: branch ' .
+                "'$BranchPath' was not found in branch_list.\n";
+
+            push @Branches, $BranchPath;
+            $RewriteBranchList = 1
+        }
+    }
+    elsif ($Action eq 'remove')
+    {
+        my @NewBranchList = grep {$_ ne $BranchPath} @Branches;
+
+        if (scalar(@NewBranchList) != scalar(@Branches))
+        {
+            @Branches = @NewBranchList;
+            $RewriteBranchList = 1
+        }
+    }
+
+    # If the current operation affects branch_list, add a MUCC
     # command to (re-)create branch_list.
-    if ($@ || !grep {$_ eq $BranchPath} @ExistingBranches)
+    if ($RewriteBranchList)
     {
         my $BranchListFH;
 
         ($BranchListFH, $BranchListFN) = tempfile();
 
-        print $BranchListFH "$_\n" for @ExistingBranches, $BranchPath;
+        print $BranchListFH "$_\n" for @Branches;
 
         close $BranchListFH;
 
         push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
     }
-    elsif ($CreateBranch)
-    {
-        die "$Self->{MyName}: branch '$BranchPath' already exists.\n";
-    }
 
     my %ModTree;
 
-    if ($CreateBranch)
+    if ($Action eq 'create')
     {
         my $SourceRevision = 'HEAD';
 
@@ -504,7 +537,7 @@ sub ShapeBranch
             push @CopyCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
         }
     }
-    else
+    elsif ($Action eq 'alter')
     {
         my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
 
@@ -530,104 +563,66 @@ sub ShapeBranch
             MarkPath("$BranchPath/$Dir", \%ModTree, 'rm')
         }
     }
+    elsif ($Action eq 'remove')
+    {
+        for (@{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
+        {
+            MarkPath("$BranchPath/$_", \%ModTree, 'rm')
+        }
+    }
 
     my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
         $SVN->GetRepository(), \%ModTree);
 
     GetRmCommands(\@RmCommands, $ExistingStructure, \%ModTree);
-    GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%ModTree);
+
+    unless ($Action eq 'remove')
+    {
+        GetMkdirCommands(\@MkdirCommands, $ExistingStructure, \%ModTree)
+    }
 
     my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
 
-    # Unless there are no changes, (re)shape the branch
+    # Unless there are no changes, (re)shape or remove the branch
     # with a single revision using MUCC.
     if (@Commands)
     {
-        print STDERR ($CreateBranch ? 'Creating' : 'Updating') .
-            " branch '$BranchPath'...\n";
+        my ($VerbING, $VerbED) = $Action eq 'create' ?
+            qw(Creating Created) : $Action eq 'alter' ?
+            qw(Updating Modified) : qw(Removing Removed);
 
-        system('mucc', '--message', ($CreateBranch ? 'Created' : 'Modified') .
-            " branch '$BranchPath'.", '--root-url', $SVN->{Repos}, @Commands)
+        print STDERR "$VerbING branch '$BranchPath'...\n";
+
+        system('mucc', '--message', "$VerbED branch '$BranchPath'.",
+            '--root-url', $SVN->{Repos}, @Commands)
     }
     else
     {
         print STDERR "Nothing to do.\n"
     }
 
-    unlink $BranchListFN if $BranchListFN;
+    unlink $BranchListFN if $BranchListFN
 }
 
 sub Create
 {
     my ($Self, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch(1, $BranchPath, $UpstreamPath, @BranchDirs)
+    $Self->ShapeBranch('create', $BranchPath, $UpstreamPath, @BranchDirs)
 }
 
 sub Alter
 {
     my ($Self, $BranchPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch(0, $BranchPath, undef, @BranchDirs)
+    $Self->ShapeBranch('alter', $BranchPath, undef, @BranchDirs)
 }
 
 sub Remove
 {
     my ($Self, $BranchPath) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
-
-    my @Commands;
-
-    my $BranchListFN;
-
-    # Read branch_list, if it exists.
-    my @Branches = eval {$SVN->ReadFileLines('branches/branch_list')};
-
-    if ($@)
-    {
-        warn "Warning: 'branches/branch_list' was not found.\n"
-    }
-    else
-    {
-        my @NewBranches = grep {$_ ne $BranchPath} @Branches;
-
-        if (scalar(@NewBranches) != scalar(@Branches))
-        {
-            my $BranchListFH;
-
-            ($BranchListFH, $BranchListFN) = tempfile();
-
-            print $BranchListFH "$_\n" for @NewBranches;
-
-            close $BranchListFH;
-
-            push @Commands, 'put', $BranchListFN, 'branches/branch_list'
-        }
-        else
-        {
-            warn 'Warning: branch ' .
-                "'$BranchPath' was not found in branch_list.\n";
-        }
-    }
-
-    my %ModTree;
-
-    for (@{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
-    {
-        MarkPath("$BranchPath/$_", \%ModTree, 'rm')
-    }
-
-    GetRmCommands(\@Commands, $Self->GetTreeContainingSubtree($SVN,
-        $SVN->GetRepository(), \%ModTree), \%ModTree);
-
-    # Remove the branch with a single revision using MUCC.
-    print STDERR "Removing branch '$BranchPath'...\n";
-
-    system('mucc', '--message', "Removed branch '$BranchPath'.",
-        '--root-url', $SVN->{Repos}, @Commands);
-
-    unlink $BranchListFN if $BranchListFN;
+    $Self->ShapeBranch('remove', $BranchPath)
 }
 
 sub DoMerge
