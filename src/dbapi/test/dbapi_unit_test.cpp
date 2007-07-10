@@ -8146,7 +8146,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.IsBCPAvailable()
-         && args.GetDriverName() != "ftds64"
          && !(args.GetDriverName() == "ftds"
            && args.GetServerType() == CTestArguments::eSybase)
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
@@ -8252,11 +8251,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+//--------------------------------------------------
 //     if (args.IsBCPAvailable()) {
 //         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
 //         tc->depends_on(tc_init);
 //         add(tc);
 //     }
+//-------------------------------------------------- 
 
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment.
