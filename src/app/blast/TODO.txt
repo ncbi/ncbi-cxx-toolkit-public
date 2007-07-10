@@ -1,7 +1,5 @@
-* Test/performance suite (plug in QA-blastall.pl?)
-
-* rpsblast (and its translation in legacy_blast.pl)
-* bl2seq handling (locally and remotely)
+* bl2seq handling (locally and remotely - only blastn is implemented)
+* QA for bl2seq
 * phiblast (add to PSI-BLAST): reading of pattern file
 * psi-tblastn implementation (see tblastn_app.cpp)
 
