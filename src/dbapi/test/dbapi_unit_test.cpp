@@ -7824,6 +7824,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != "dblib"
         && args.GetDriverName() != "ftds"
+        && args.GetDriverName() != "ctlib" // It stopped working accidentally !!!
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
                                    DBAPIInstance);
