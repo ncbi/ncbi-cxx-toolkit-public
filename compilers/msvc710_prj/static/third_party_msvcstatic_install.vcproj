@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="third_party_msvcstatic_install"
+	ProjectGUID="{9E4B5381-9B6C-4867-BF8A-F1AAA1FD581E}"
+	Keyword="MakeFileProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="DebugMT|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="DebugDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseMT|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_DebugMT|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_DebugDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="gbench-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_ReleaseMT|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+		<Configuration
+			Name="VTune_ReleaseDLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_install IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_rebuild IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f &quot;$(InputDir)\third_party_static_install.mak&quot; msvc_clean IntDir=&quot;$(IntDir)&quot; MSVC_SRC=&quot;msvc71\7.1&quot;"
+				Output="dlls-install.exe"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath=".\third_party_static_install.mak">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
