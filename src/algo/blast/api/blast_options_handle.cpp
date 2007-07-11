@@ -46,6 +46,7 @@
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/phiblast_nucl_options.hpp>
 #include <algo/blast/api/phiblast_prot_options.hpp>
+#include <sstream>
 
 /** @addtogroup AlgoBlast
  *
@@ -187,11 +188,13 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     CBlastOptionsHandle* retval = NULL;
 
     // Sanity check to force updating of GetTasks() method
-#if _DEBUG
     set<string> allowed_tasks = GetTasks();
     string lc_task(NStr::ToLower(task));
-    ASSERT(allowed_tasks.find(lc_task) != allowed_tasks.end());
-#endif
+    if (allowed_tasks.find(lc_task) == allowed_tasks.end()) {
+        ostringstream os;
+        os << "'" << task << "' is not a supported task";
+        NCBI_THROW(CBlastException, eInvalidArgument, os.str());
+    }
 
     if (!NStr::CompareNocase(task, "blastn") || !NStr::CompareNocase(task, "blastn-short"))
     {
@@ -275,8 +278,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     }
     else
     {
-        string msg = string(task) + " is not a supported task";
-        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+        abort();    // should never get here
     }
     return retval;
 }
