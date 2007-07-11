@@ -45,6 +45,60 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
 
+/// Auxiliary class to write temporary NCBI configuration files in the local
+/// directory for the purpose of testing the CBlastScopeSource configuration
+/// class via this file
+class CAutoNcbiConfigFile {
+public:
+    static const char* kConfigFile;
+    static const char* kSavedConfigFile;
+
+    typedef SDataLoaderConfig::EConfigOpts EConfigOpts;
+
+    CAutoNcbiConfigFile(EConfigOpts opts = SDataLoaderConfig::eDefault) {
+        CMetaRegistry::SEntry sentry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        sentry.registry->Clear();
+
+        CFile existing_configuration(kConfigFile);
+        if (existing_configuration.Exists()) {
+            existing_configuration.Rename(".ncbirc.sav");
+        } else {
+            ofstream out(kConfigFile);
+            out << "[BLAST]" << endl << "DATA_LOADERS=";
+            if (opts & SDataLoaderConfig::eUseBlastDbDataLoader) {
+                out << "blastdb ";
+            }
+            if (opts & SDataLoaderConfig::eUseGenbankDataLoader) {
+                out << "genbank";
+            }
+            if (opts & SDataLoaderConfig::eUseNoDataLoaders) {
+                out << "none";
+            }
+            out << endl;
+            out.close();
+        }
+
+        ifstream in(kConfigFile);
+        sentry.registry->Read(in);
+    }
+
+    ~CAutoNcbiConfigFile() {
+        CMetaRegistry::SEntry sentry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        sentry.registry->Clear();
+
+        CFile previous_configuration(kSavedConfigFile);
+        if (previous_configuration.Exists()) {
+            previous_configuration.Rename(kConfigFile);
+        } else {
+            CFile(kConfigFile).Remove();
+        }
+    }
+};
+
+const char* CAutoNcbiConfigFile::kConfigFile = ".ncbirc";
+const char* CAutoNcbiConfigFile::kSavedConfigFile = ".ncbirc.sav";
 
 BOOST_AUTO_UNIT_TEST(RetrieveFromBlastDb_TestSequenceData) 
 {
@@ -66,6 +120,72 @@ BOOST_AUTO_UNIT_TEST(RetrieveFromBlastDb_TestSequenceData)
     }
 }
 
+BOOST_AUTO_UNIT_TEST(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData) 
+{
+    CSeq_loc seqloc;
+    seqloc.SetWhole().SetGi(129295);
+
+    const char* seq =
+"QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
+
+
+    CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseBlastDbDataLoader);
+    SDataLoaderConfig dlconfig("nr", true);
+    BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
+    BOOST_CHECK(dlconfig.m_UseGenbank == false);
+    CBlastScopeSource scope_source(dlconfig);
+    CRef<CScope> scope = scope_source.NewScope();
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    for (size_t i = 0; i < sv.size(); i++) {
+        BOOST_CHECK_EQUAL((char)seq[i], (char)sv[i]);
+    }
+}
+
+BOOST_AUTO_UNIT_TEST(ConfigFileTest_RetrieveFromGenbank_TestSequenceData) 
+{
+    CSeq_loc seqloc;
+    seqloc.SetWhole().SetGi(129295);
+
+    const char* seq =
+"QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
+
+
+    CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseGenbankDataLoader);
+    SDataLoaderConfig dlconfig("nr", true);
+    BOOST_CHECK(dlconfig.m_UseBlastDbs == false);
+    BOOST_CHECK(dlconfig.m_UseGenbank == true);
+    CBlastScopeSource scope_source(dlconfig);
+    CRef<CScope> scope = scope_source.NewScope();
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    for (size_t i = 0; i < sv.size(); i++) {
+        BOOST_CHECK_EQUAL((char)seq[i], (char)sv[i]);
+    }
+}
+
+// not the best thing to do, but supported nonetheless...
+BOOST_AUTO_UNIT_TEST(ConfigFileTest_UseNoDataLoaders) 
+{
+    CSeq_loc seqloc;
+    seqloc.SetWhole().SetGi(129295);
+
+    CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseNoDataLoaders);
+    SDataLoaderConfig dlconfig("nr", true);
+    BOOST_CHECK(dlconfig.m_UseBlastDbs == false);
+    BOOST_CHECK(dlconfig.m_UseGenbank == false);
+    CBlastScopeSource scope_source(dlconfig);
+    CRef<CScope> scope = scope_source.NewScope();
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    //CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    //BOOST_CHECK_EQUAL((size_t)0, sv.size());
+}
+
 static 
 void s_RetrieveSequenceLength(int gi, 
                               const string& dbname,
@@ -75,6 +195,8 @@ void s_RetrieveSequenceLength(int gi,
     const CSeq_id seqid(CSeq_id::e_Gi, gi);
 
     SDataLoaderConfig dlconfig(dbname, is_prot);
+    BOOST_CHECK(dlconfig.m_UseBlastDbs == true);
+    BOOST_CHECK(dlconfig.m_UseGenbank == true);
     CBlastScopeSource scope_source(dlconfig);
 
     CRef<CScope> scope = scope_source.NewScope();

@@ -50,7 +50,37 @@ USING_SCOPE(objects);
 const char* SDataLoaderConfig::kDefaultProteinBlastDb = "prot_dbs";
 const char* SDataLoaderConfig::kDefaultNucleotideBlastDb = "nucl_dbs";
 
-CBlastScopeSource::CBlastScopeSource(CObjectManager* objmgr /* = NULL */)
+void
+SDataLoaderConfig::x_Init(SDataLoaderConfig::EConfigOpts options,
+                          const string& dbname,
+                          bool load_proteins)
+{
+    m_UseBlastDbs = (options & eUseBlastDbDataLoader) ? true : false;
+    m_UseGenbank = (options & eUseGenbankDataLoader) ? true : false;
+    m_BlastDbName.assign(dbname);
+    m_IsLoadingProteins = load_proteins;
+
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    if (sentry.registry && sentry.registry->HasEntry("BLAST", "DATA_LOADERS")) {
+        string loaders = sentry.registry->Get("BLAST", "DATA_LOADERS");
+        if (NStr::FindNoCase(loaders, "blastdb") == NPOS) {
+            m_UseBlastDbs = false;
+        }
+        if (NStr::FindNoCase(loaders, "genbank") == NPOS) {
+            m_UseGenbank = false;
+        }
+        if (NStr::FindNoCase(loaders, "none") != NPOS) {
+            m_UseBlastDbs = false;
+            m_UseGenbank = false;
+        }
+    }
+}
+
+CBlastScopeSource::CBlastScopeSource(bool load_proteins /* = true */,
+                                     CObjectManager* objmgr /* = NULL */)
+ : m_Config(load_proteins)
 {
     m_ObjMgr.Reset(objmgr ? objmgr : CObjectManager::GetInstance());
     x_InitGenbankDataLoader();
@@ -58,21 +88,19 @@ CBlastScopeSource::CBlastScopeSource(CObjectManager* objmgr /* = NULL */)
 
 CBlastScopeSource::CBlastScopeSource(const SDataLoaderConfig& config,
                                      CObjectManager* objmgr /* = NULL */)
+ : m_Config(config)
 {
     m_ObjMgr.Reset(objmgr ? objmgr : CObjectManager::GetInstance());
-    if (config.m_UseBlastDbs) {
-        x_InitBlastDatabaseDataLoader(config.m_BlastDbName, 
-                                      config.m_IsLoadingProteins
-                                      ? CBlastDbDataLoader::eProtein
-                                      : CBlastDbDataLoader::eNucleotide);
-    }
-    if (config.m_UseGenbank) {
-        x_InitGenbankDataLoader();
-    }
+    x_InitBlastDatabaseDataLoader(m_Config.m_BlastDbName, 
+                                  m_Config.m_IsLoadingProteins
+                                  ? CBlastDbDataLoader::eProtein
+                                  : CBlastDbDataLoader::eNucleotide);
+    x_InitGenbankDataLoader();
 }
 
 CBlastScopeSource::CBlastScopeSource(CRef<CSeqDB> db_handle,
                                      CObjectManager* objmgr /* = NULL */)
+ : m_Config(static_cast<bool>(db_handle->GetSequenceType() == CSeqDB::eProtein))
 {
     m_ObjMgr.Reset(objmgr ? objmgr : CObjectManager::GetInstance());
     x_InitBlastDatabaseDataLoader(db_handle);
@@ -83,6 +111,10 @@ void
 CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
                                                  EDbType dbtype)
 {
+    if ( !m_Config.m_UseBlastDbs ) {
+        return;
+    }
+
     try {
 
         m_BlastDbLoaderName = CBlastDbDataLoader::RegisterInObjectManager
@@ -104,6 +136,10 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
 void
 CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
 {
+    if ( !m_Config.m_UseBlastDbs ) {
+        return;
+    }
+
     if (db_handle.Empty()) {
         ERR_POST(Warning << "No BLAST database handle provided");
     } else {
@@ -124,9 +160,14 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
         }
     }
 }
+
 void
 CBlastScopeSource::x_InitGenbankDataLoader()
 {
+    if ( !m_Config.m_UseGenbank ) {
+        return;
+    }
+
     try {
         CRef<CReader> reader(new CId2Reader);
         reader->SetPreopenConnection(false);

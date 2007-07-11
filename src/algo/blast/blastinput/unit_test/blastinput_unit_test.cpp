@@ -623,8 +623,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
         try { source.Reset(new CBlastFastaInputSource(*om, empty, iconfig)); }
         catch (const CInputException& e) {
             string msg(e.what());
-            BOOST_CHECK(msg.find("No sequence input was provided") 
-                        != NPOS);
+            BOOST_CHECK(msg.find("No sequence input was provided") != NPOS);
             BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
             caught_exception = true;
         }
@@ -1204,8 +1203,7 @@ BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
     try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("Cannot assign nucleotide strand to protein") !=
-                    NPOS);
+        BOOST_CHECK(msg.find("Cannot assign nucleotide strand to protein") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eInvalidStrand, e.GetErrCode());
         caught_exception = true;
     }

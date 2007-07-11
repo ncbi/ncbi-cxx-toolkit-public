@@ -34,7 +34,8 @@
 /** @file blast_scope_src.hpp
  * Declares CBlastScopeSource class to create properly configured CScope
  * objects to invoke the BLAST database data loader first and fall back on to
- * the Genbank data loader if the former fails.
+ * the Genbank data loader if the former fails (this is configurable at
+ * runtime).
  */
 
 #include <algo/blast/core/blast_export.h>
@@ -56,6 +57,9 @@ struct NCBI_XBLAST_EXPORT SDataLoaderConfig {
     static const char* kDefaultNucleotideBlastDb;
 
     /// Configuration options for the BlastScopeSource
+    /// @note these are overridden at runtime by the DATA_LOADERS entry in the
+    /// BLAST section of the NCBI configuration file. Allowed values are
+    /// blastdb, genbank, and none
     enum EConfigOpts {
         eUseBlastDbDataLoader = (0x1 << 0),
         eUseGenbankDataLoader = (0x1 << 1),
@@ -106,19 +110,17 @@ private:
     /// @param dbname name of BLAST database [in]
     /// @param load_proteins is this object going to load/read proteins only
     /// [in]
-    void x_Init(EConfigOpts options, const string& dbname, bool load_proteins) 
-    {
-        m_UseBlastDbs = (options & eUseBlastDbDataLoader) ? true : false;
-        m_UseGenbank = (options & eUseGenbankDataLoader) ? true : false;
-        m_BlastDbName.assign(dbname);
-        m_IsLoadingProteins = load_proteins;
-    }
+    void x_Init(EConfigOpts options, const string& dbname, bool load_proteins);
 };
 
 
 /// Class whose purpose is to create CScope objects which have data loaders
 /// added with different priorities, so that the BLAST database data loader is
 /// used first, then the Genbank data loader.
+/// The selection of data loaders can be configured via the SDataLoaderConfig
+/// object and the DATA_LOADERS entry of the BLAST section of an NCBI
+/// configuration file, the latter setting trumping the selection of the
+/// SDataLoaderConfig object.
 /// @note all data loaders are registered as non-default data loaders
 class NCBI_XBLAST_EXPORT CBlastScopeSource : public CObject 
 {
@@ -127,7 +129,10 @@ public:
     typedef CBlastDbDataLoader::EDbType EDbType;
 
     /// Constructor which only registers the Genbank data loader
-    CBlastScopeSource(CObjectManager* objmgr = NULL);
+    /// @param load_proteins is this object going to load/read proteins only
+    /// [in]
+    CBlastScopeSource(bool load_proteins = true,
+                      CObjectManager* objmgr = NULL);
 
     /// Constructor with explicit data loader configuration object
     CBlastScopeSource(const SDataLoaderConfig& config,
@@ -144,6 +149,8 @@ public:
 private:
     /// Our reference to the object manager
     CRef<objects::CObjectManager> m_ObjMgr;
+    /// The configuration for this object
+    SDataLoaderConfig m_Config;
     /// Name of the BLAST database data loader
     string m_BlastDbLoaderName;
     /// Name of the Genbank data loader
