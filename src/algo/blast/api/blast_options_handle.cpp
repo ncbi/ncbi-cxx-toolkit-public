@@ -161,11 +161,37 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
     return retval;
 }
 
+set<string>
+CBlastOptionsFactory::GetTasks()
+{
+    set<string> retval;
+    retval.insert("blastn");
+    retval.insert("blastn-short");
+    retval.insert("megablast");
+    retval.insert("dc-megablast");
+    retval.insert("blastp");
+    retval.insert("blastp-short");
+    retval.insert("psiblast");
+    retval.insert("phiblast");
+    retval.insert("rpsblast");
+    retval.insert("blastx");
+    retval.insert("tblastn");
+    retval.insert("tblastx");
+    return retval;
+}
+
 
 CBlastOptionsHandle*
 CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
 {
     CBlastOptionsHandle* retval = NULL;
+
+    // Sanity check to force updating of GetTasks() method
+#if _DEBUG
+    set<string> allowed_tasks = GetTasks();
+    string lc_task(NStr::ToLower(task));
+    ASSERT(allowed_tasks.find(lc_task) != allowed_tasks.end());
+#endif
 
     if (!NStr::CompareNocase(task, "blastn") || !NStr::CompareNocase(task, "blastn-short"))
     {

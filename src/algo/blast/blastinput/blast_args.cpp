@@ -141,7 +141,7 @@ protected:                                                                  \
         ostringstream os;                                                   \
         os << "Permissible values: ";                                       \
         ITERATE(set<DataType>, itr, m_AllowedValues) {                      \
-            os << *itr << " ";                                              \
+            os << "'" << *itr << "' ";                                      \
         }                                                                   \
         return os.str();                                                    \
     }                                                                       \

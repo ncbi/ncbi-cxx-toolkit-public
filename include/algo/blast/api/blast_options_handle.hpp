@@ -34,6 +34,7 @@
 /// Declares the CBlastOptionsHandle and CBlastOptionsFactory classes.
 
 #include <algo/blast/api/blast_options.hpp>
+#include <set>
 
 /** @addtogroup AlgoBlast
  *
@@ -102,6 +103,9 @@ public:
     static CBlastOptionsHandle*
         CreateTask(string task,
                EAPILocality locality = CBlastOptions::eLocal);
+
+    /// Retrieve the set of supported tasks
+    static set<string> GetTasks();
 
 private:
     /// Private c-tor
