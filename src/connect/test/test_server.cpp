@@ -26,13 +26,14 @@
  * Authors:  Aaron Ucko, Victor Joukov
  *
  * File Description:
- *   Sample server using a thread pool
+ *   CServer test application
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbicntr.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -47,65 +48,111 @@
 BEGIN_NCBI_SCOPE
 
 
-// Subclass CServer for implementation of ShutdownRequested
+/// CTestServer --
+///
+/// Lightly customized subclass of CServer.
+///
+/// CTestServer collaborates with CTestConnectionHandler to exit
+/// cleanly after processing a predetermined number of client
+/// connections.  It also holds some application-wide state that
+/// CTestConnectionHandler consults and in some cases modifies.
+
 class CTestServer : public CServer
 {
 public:
+    /// Constructor: initialize class-specific fields.  (CServer has
+    /// no construction-time parameters of its own.)
+    ///
+    /// @param max_number_of_clients
+    ///  How many client connections to process before automatically
+    ///  shutting down (when used in conjunction with CTestConnection
+    ///  Handler).
+    /// @param max_delay
+    ///  Maximum (artificial) per-request processing time, in
+    ///  milliseconds.
     CTestServer(int max_number_of_clients, unsigned int max_delay) :
         m_MaxNumberOfClients(max_number_of_clients),
-        m_ClientCount(0),
         m_MaxDelay(max_delay),
         m_ShutdownRequested(false)
     {
+        m_ClientCount.Set(0);
     }
+
+    /// Callback indicating whether to proceed with a clean exit.
     virtual bool ShutdownRequested(void) { return m_ShutdownRequested; }
+
+    /// Request a clean exit.  (Called by CTestConnectionHandler upon
+    /// processing the Nth connection.)
     void RequestShutdown(void) { m_ShutdownRequested = true; }
-    int  RegisterClient();
-    int  GetMaxNumberOfClients() const;
-    unsigned int GetMaxDelay() const {return m_MaxDelay;}
+
+    /// Increment the count of client connections received, and return
+    /// the new value.
+    int  RegisterClient() { return m_ClientCount.Add(1); }
+
+    /// Return the (cumulative) connection limit originally supplied
+    /// to the constructor.
+    int  GetMaxNumberOfClients() const { return m_MaxNumberOfClients; }
+
+    /// Return a randomized "processing time" up to the limit
+    /// originally supplied to the constructor.
+    unsigned int GetRandomDelay() const;
+
 private:
-    int m_MaxNumberOfClients;
-    int m_ClientCount;
-    CFastMutex m_ClientCountMutex;
-    unsigned int m_MaxDelay;
-    volatile bool m_ShutdownRequested;
+    int                m_MaxNumberOfClients;   ///< Limit on total connections
+    CAtomicCounter     m_ClientCount;          ///< Number of connections so far
+    unsigned int       m_MaxDelay;             ///< Max processing time, in ms
+    volatile bool      m_ShutdownRequested;    ///< Done with the last client?
+    mutable CRandom    m_Rng;                  ///< Random delay generator
+    mutable CFastMutex m_RngMutex;             ///< Ensure RNG thread-safety
 };
 
 
-int CTestServer::RegisterClient()
+unsigned int CTestServer::GetRandomDelay() const
 {
-    CFastMutexGuard guard(m_ClientCountMutex);
-    return ++m_ClientCount;
+    CFastMutexGuard LOCK(m_RngMutex);
+    return m_Rng.GetRand(0, m_MaxDelay);
 }
 
 
-int CTestServer::GetMaxNumberOfClients() const
-{
-    return m_MaxNumberOfClients;
-}
+/// CTestConnectionHandler --
+///
+/// Class for processing incoming client connections.
+///
+/// Each connection spawns a fresh instance of this class, which
+/// collaborates with CTestServer to maintain the (small) amount of
+/// state it needs.
+///
+/// All virtual methods here are implementations of parent classes'
+/// hooks (some of which are optional to define); see their
+/// documentation (particularly IServer_ConnectionHandler's) for more
+/// details.
 
-
-// ConnectionHandler
 class CTestConnectionHandler : public IServer_LineMessageHandler
 {
 public:
+    /// Constructor.
     CTestConnectionHandler(CTestServer* server) :
         m_Server(server), m_AlarmTime(CTime::eEmpty, CTime::eGmt)
     {
     }
+
+    /// optional
     virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
-    virtual void OnOpen(void);
-    virtual void OnTimer(void);
+    virtual void OnOpen(void); ///< MANDATORY to implement
+    virtual void OnTimer(void); ///< optional (no-op by default)
+
+    /// MANDATORY for subclasses of IServer_(Line)MessageHandler
     virtual void OnMessage(BUF buf);
-    virtual void OnWrite(void);
-    virtual void OnClose(void) { }
+    virtual void OnWrite(void); ///< MANDATORY to implement
+    virtual void OnClose(void) { } ///< MANDATORY to implement
+
 private:
     CTestServer* m_Server;
-    CTime m_AlarmTime;
-    enum {
-        Delay,
-        SayHello,
-        Read
+    CTime        m_AlarmTime;
+    enum {        ///< Possible connection states, in sequence
+        Delay,    ///< (Randomized) "processing time"
+        SayHello, ///< Greeting the client (or waiting to do so)
+        Read      ///< Receiving (or awaiting) the client's response
     } m_State;
 };
 
@@ -118,6 +165,7 @@ EIO_Event CTestConnectionHandler::GetEventsToPollFor(
 
     case Delay:
         *alarm_time = &m_AlarmTime;
+        // fall through
 
     default:
         return eIO_Read;
@@ -127,7 +175,7 @@ EIO_Event CTestConnectionHandler::GetEventsToPollFor(
 void CTestConnectionHandler::OnOpen(void)
 {
     CRandom rng;
-    unsigned int delay = rng.GetRand(0, m_Server->GetMaxDelay());
+    unsigned int delay = m_Server->GetRandomDelay();
     m_AlarmTime.SetCurrent();
     m_AlarmTime.AddTimeSpan(CTimeSpan(delay / 1000,
         (delay % 1000) * 1000 * 1000));
@@ -146,8 +194,7 @@ void CTestConnectionHandler::OnMessage(BUF buf)
 
     size_t msg_size = BUF_Read(buf, data, sizeof(data));
     if (msg_size > 0) {
-        data[msg_size] = '\0';
-        ERR_POST(Info << "got \"" << data << "\"");
+        ERR_POST(Info << "got \"" << string(data, msg_size) << "\"");
     } else {
         ERR_POST(Info << "got empty line");
     }
@@ -178,7 +225,10 @@ void CTestConnectionHandler::OnWrite(void)
     m_State = Read;
 }
 
-// ConnectionFactory
+/// CTestConnectionFactory --
+///
+/// Factory for CTestConnectionHandler objects.
+
 class CTestConnectionFactory : public IServer_ConnectionFactory
 {
 public:
@@ -186,6 +236,11 @@ public:
         m_Server(server)
     {
     }
+
+    /// Create a new CTestConnectionHandler object tied to the main
+    /// (only ;-) CTestServer instance.
+    ///
+    /// Called on each incoming connection.
     IServer_ConnectionHandler* Create(void) {
         return new CTestConnectionHandler(m_Server);
     }
@@ -194,7 +249,9 @@ private:
 };
 
 
-// The client part
+/// CConnectionRequest --
+///
+/// Simple built-in client code to ease testing.
 
 class CConnectionRequest : public CStdRequest
 {
@@ -224,7 +281,9 @@ void CConnectionRequest::Process(void)
 }
 
 
-// Application
+/// CServerTestApp --
+///
+/// Main application class pulling everything together.
 class CServerTestApp : public CNcbiApplication
 {
 public:
