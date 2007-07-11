@@ -133,11 +133,11 @@ private:
     {
         ASSERT(m_LengthRetriever.NotEmpty());
         CBioseq_Handle bh = m_LengthRetriever->GetBioseqHandle(*id);
-        if (CSeq_inst::IsNa(bh.GetInst_Mol()) && m_ReadProteins) {
+        if (bh.IsNucleotide() && m_ReadProteins) {
             NCBI_THROW(CInputException, eSequenceMismatch,
                "Gi/accession mismatch: requested protein, found nucleotide");
         }
-        if (CSeq_inst::IsAa(bh.GetInst_Mol()) && !m_ReadProteins) {
+        if (bh.IsProtein() && !m_ReadProteins) {
             NCBI_THROW(CInputException, eSequenceMismatch,
                "Gi/accession mismatch: requested nucleotide, found protein");
         }
