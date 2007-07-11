@@ -234,7 +234,7 @@ $(LZO_SRC).clean :
 # -----------------------------------------
 # MSVC RT DLLs are not included into 'all'
 
-msvc_install : $(MSVCRT_SRC).install
+msvc_install : dirs $(MSVCRT_SRC).install
 
 msvc_clean : $(MSVCRT_SRC).clean
 
