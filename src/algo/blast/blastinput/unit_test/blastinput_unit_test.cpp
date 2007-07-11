@@ -92,7 +92,6 @@ using boost::unit_test::test_suite;
 #define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
 
-
 class CAutoDiagnosticsRedirector
 {
 public:
@@ -122,6 +121,90 @@ s_DeclareSource(CNcbiIstream& input_file, const CBlastInputConfig& iconfig)
         (new CBlastFastaInputSource(*om, input_file, iconfig));
 }
 
+BOOST_AUTO_UNIT_TEST(s_ReadAccession_MismatchNuclProt)
+{
+    CNcbiIfstream infile("data/nucl_acc.txt");
+    const bool is_protein(true);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    CHECK(source->End() == false);
+    bool caught_exception(false);
+    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    catch (const CInputException& e) {
+        string msg(e.what());
+        BOOST_CHECK(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
+                    != NPOS);
+        BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
+        caught_exception = true;
+    }
+    CHECK(caught_exception);
+    CHECK(source->End() == true);
+}
+
+BOOST_AUTO_UNIT_TEST(s_ReadAccession_MismatchProtNucl)
+{
+    CNcbiIfstream infile("data/prot_acc.txt");
+    const bool is_protein(false);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    CHECK(source->End() == false);
+    bool caught_exception(false);
+    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    catch (const CInputException& e) {
+        string msg(e.what());
+        BOOST_CHECK(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
+                    != NPOS);
+        BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
+        caught_exception = true;
+    }
+    CHECK(caught_exception);
+    CHECK(source->End() == true);
+}
+
+BOOST_AUTO_UNIT_TEST(s_ReadGi_MismatchNuclProt)
+{
+    CNcbiIfstream infile("data/gi.txt");
+    const bool is_protein(true);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    CHECK(source->End() == false);
+    bool caught_exception(false);
+    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    catch (const CInputException& e) {
+        string msg(e.what());
+        BOOST_CHECK(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
+                    != NPOS);
+        BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
+        caught_exception = true;
+    }
+    CHECK(caught_exception);
+    CHECK(source->End() == true);
+}
+
+BOOST_AUTO_UNIT_TEST(s_ReadGi_MismatchProtNucl)
+{
+    CNcbiIfstream infile("data/prot_gi.txt");
+    const bool is_protein(false);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    CHECK(source->End() == false);
+    bool caught_exception(false);
+    try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
+    catch (const CInputException& e) {
+        string msg(e.what());
+        BOOST_CHECK(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
+                    != NPOS);
+        BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
+        caught_exception = true;
+    }
+    CHECK(caught_exception);
+    CHECK(source->End() == true);
+}
+
 BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/aa.129295");
@@ -134,8 +217,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchProtNucl)
     try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("expected nucleotide, found protein") !=
-                    string::npos);
+        BOOST_CHECK(msg.find("Protein FASTA provided for nucleotide") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
         caught_exception = true;
     }
@@ -155,8 +237,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchNuclProt)
     try { blast::SSeqLoc ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("expected protein, found nucleotide") !=
-                    string::npos);
+        BOOST_CHECK(msg.find("Nucleotide FASTA provided for protein") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
         caught_exception = true;
     }
@@ -272,7 +353,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
     CHECK(source->End() == true);
 
     string s(error_stream.str());
-    CHECK(s.find("Ignoring invalid residue 1 at position 9") != string::npos);
+    CHECK(s.find("Ignoring invalid residue 1 at position 9") != NPOS);
 
     CHECK(ssl.seqloc->IsInt() == true);
 
@@ -296,7 +377,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidGi)
 {
     const char* fname = "data/invalid_gi.txt";
     const bool is_protein(false);
-    const size_t kNumQueries(0);
     CBlastInputConfig iconfig(is_protein);
 
     CNcbiIfstream infile(fname);
@@ -309,7 +389,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidGi)
     try { ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("Sequence ID not found: ") != string::npos);
+        BOOST_CHECK(msg.find("Sequence ID not found: ") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eSeqIdNotFound, e.GetErrCode());
         caught_exception = true;
     }
@@ -322,7 +402,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidSeqId)
 {
     const char* fname = "data/bad_seqid.txt";
     const bool is_protein(false);
-    const size_t kNumQueries(0);
     CBlastInputConfig iconfig(is_protein);
 
     CNcbiIfstream infile(fname);
@@ -335,7 +414,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidSeqId)
     try { ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("Sequence ID not found: ") != string::npos);
+        BOOST_CHECK(msg.find("Sequence ID not found: ") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eSeqIdNotFound, e.GetErrCode());
         caught_exception = true;
     }
@@ -370,7 +449,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
         try { bioseqs = source->GetBioseqs(); }
         catch (const CInputException& e) {
             string msg(e.what());
-            BOOST_CHECK(msg.find("No sequences have been read") != string::npos);
+            BOOST_CHECK(msg.find("No sequences have been read") != NPOS);
             BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
             caught_exception = true;
         }
@@ -489,7 +568,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
         try { bioseqs = source->GetBioseqs(); }
         catch (const CInputException& e) {
             string msg(e.what());
-            BOOST_CHECK(msg.find("No sequences have been read") != string::npos);
+            BOOST_CHECK(msg.find("No sequences have been read") != NPOS);
             BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
             caught_exception = true;
         }
@@ -510,7 +589,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
         try { bioseqs = source->GetBioseqs(); }
         catch (const CInputException& e) {
             string msg(e.what());
-            BOOST_CHECK(msg.find("No sequences have been read") != string::npos);
+            BOOST_CHECK(msg.find("No sequences have been read") != NPOS);
             BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
             caught_exception = true;
         }
@@ -545,7 +624,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
         catch (const CInputException& e) {
             string msg(e.what());
             BOOST_CHECK(msg.find("No sequence input was provided") 
-                        != string::npos);
+                        != NPOS);
             BOOST_CHECK_EQUAL(CInputException::eEmptyUserInput, e.GetErrCode());
             caught_exception = true;
         }
@@ -1072,7 +1151,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid_FromGreaterThanTo)
     try { source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("Invalid sequence range") != string::npos);
+        BOOST_CHECK(msg.find("Invalid sequence range") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eInvalidRange, e.GetErrCode());
         return;
     }
@@ -1090,7 +1169,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid_FromGreaterThanSequenceLength)
     try { source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_CHECK(msg.find("Invalid from coordinate") != string::npos);
+        BOOST_CHECK(msg.find("Invalid from coordinate") != NPOS);
         BOOST_CHECK_EQUAL(CInputException::eInvalidRange, e.GetErrCode());
         return;
     }
@@ -1126,7 +1205,7 @@ BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
     catch (const CInputException& e) {
         string msg(e.what());
         BOOST_CHECK(msg.find("Cannot assign nucleotide strand to protein") !=
-                    string::npos);
+                    NPOS);
         BOOST_CHECK_EQUAL(CInputException::eInvalidStrand, e.GetErrCode());
         caught_exception = true;
     }

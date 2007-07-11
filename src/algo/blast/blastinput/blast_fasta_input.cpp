@@ -126,8 +126,26 @@ private:
     /// True if we're supposed to be reading proteins, else false
     bool m_ReadProteins;
 
+    /// Performs sanity checks to make sure that the sequence requested is of
+    /// the expected type. If the tests fail, an exception is thrown.
+    /// @param id Sequence id for this sequence [in]
+    void x_ValidateMoleculeType(CConstRef<CSeq_id> id) 
+    {
+        ASSERT(m_LengthRetriever.NotEmpty());
+        CBioseq_Handle bh = m_LengthRetriever->GetBioseqHandle(*id);
+        if (CSeq_inst::IsNa(bh.GetInst_Mol()) && m_ReadProteins) {
+            NCBI_THROW(CInputException, eSequenceMismatch,
+               "Gi/accession mismatch: requested protein, found nucleotide");
+        }
+        if (CSeq_inst::IsAa(bh.GetInst_Mol()) && !m_ReadProteins) {
+            NCBI_THROW(CInputException, eSequenceMismatch,
+               "Gi/accession mismatch: requested nucleotide, found protein");
+        }
+    }
+
     /// Auxiliary function to create a Bioseq given a CSeq_id ready to be added
     /// to a BlastObject, which does NOT contain sequence data
+    /// @param id Sequence id for this bioseq [in]
     CRef<CBioseq> x_CreateBioseq(CRef<CSeq_id> id)
     {
         if (m_LengthRetriever.Empty()) {
@@ -144,6 +162,8 @@ private:
                        id->AsFastaString() + "'");
         }
 
+        x_ValidateMoleculeType(id);
+
         CRef<CBioseq> retval(new CBioseq());
         retval->SetId().push_back(id);
         retval->SetInst().SetRepr(CSeq_inst::eRepr_raw);
@@ -155,6 +175,7 @@ private:
     }
 
     /// Create a Bioseq with a gi and save it in a Seq-entry object
+    /// @param gi Gi which identifies Bioseq [in]
     CRef<CSeq_entry> x_PrepareBioseqWithGi(int gi) {
         CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi));
         CRef<CBioseq> bioseq(x_CreateBioseq(id));
@@ -164,6 +185,7 @@ private:
     }
 
     /// Create a Bioseq with a Trace ID and save it in a Seq-entry object
+    /// @param ti Trace ID which identifies Bioseq [in]
     CRef<CSeq_entry> x_PrepareBioseqWithTi(int ti) {
         CRef<CDbtag> general_id(new CDbtag());
         general_id->SetDb("ti");
@@ -177,6 +199,7 @@ private:
     }
 
     /// Create a Bioseq with an accession and save it in a Seq-entry object
+    /// @param line accession which identifies Bioseq [in]
     CRef<CSeq_entry> x_PrepareBioseqWithAccession(const string& line) {
         CRef<CSeq_id> id(new CSeq_id(line));
         CRef<CBioseq> bioseq(x_CreateBioseq(id));
@@ -273,10 +296,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
 
     if (m_ReadProteins && itr->IsNa()) {
         NCBI_THROW(CInputException, eSequenceMismatch,
-                   "Sequence mismatch: expected protein, found nucleotide");
+                   "Nucleotide FASTA provided for protein sequence");
     } else if ( !m_ReadProteins && itr->IsAa() ) {
         NCBI_THROW(CInputException, eSequenceMismatch,
-                   "Sequence mismatch: expected nucleotide, found protein");
+                   "Protein FASTA provided for nucleotide sequence");
     }
     _ASSERT(m_ReadProteins == itr->IsAa());
 
