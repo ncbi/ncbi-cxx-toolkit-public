@@ -182,8 +182,7 @@ BOOST_AUTO_UNIT_TEST(ConfigFileTest_UseNoDataLoaders)
     CRef<CScope> scope = scope_source.NewScope();
 
     CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
-    //CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-    //BOOST_CHECK_EQUAL((size_t)0, sv.size());
+    BOOST_CHECK(bh.State_NoData());
 }
 
 static 
