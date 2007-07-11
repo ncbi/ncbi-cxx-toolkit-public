@@ -76,6 +76,7 @@ public:
                 out << "none";
             }
             out << endl;
+            out << "BLASTDB=/net/nabl000/vol/blast/db/blast";
             out.close();
         }
 
