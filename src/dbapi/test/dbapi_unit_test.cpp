@@ -8146,6 +8146,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.IsBCPAvailable()
+         && args.GetDriverName() != "ftds64"
          && !(args.GetDriverName() == "ftds"
            && args.GetServerType() == CTestArguments::eSybase)
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
