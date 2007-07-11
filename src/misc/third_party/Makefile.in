@@ -3,7 +3,7 @@
 # Author:  Viatcheslav Gorelenkov
 #################################
 
-MSVC_PROJ = third_party_dll_install
+MSVC_PROJ = third_party_dll_install third_party_msvcdll_install
 REQUIRES = DLL
 
 srcdir = @srcdir@

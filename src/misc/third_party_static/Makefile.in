@@ -3,7 +3,7 @@
 # Author:  Viatcheslav Gorelenkov
 #################################
 
-MSVC_PROJ = third_party_static_install
+MSVC_PROJ = third_party_static_install third_party_msvcstatic_install
 REQUIRES = -DLL
 
 srcdir = @srcdir@
