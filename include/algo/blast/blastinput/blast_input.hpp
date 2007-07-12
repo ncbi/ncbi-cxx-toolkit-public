@@ -138,7 +138,7 @@ public:
         eSeqIdNotFound,     ///< The sequence ID cannot be resolved
         eEmptyUserInput,    ///< No input was provided
         eInvalidRange,      ///< Invalid range specification
-        eSequenceMismatch,  ///< Expected sequence type isn't what was expected
+        eSequenceMismatch   ///< Expected sequence type isn't what was expected
     };
 
     /// Translate from the error code value to its string representation
