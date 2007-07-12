@@ -109,7 +109,8 @@ private:
                 BlastSeqSrc* seqsrc);
 
     /// Runs the preliminary search in multi-threaded mode
-    int x_LaunchMultiThreadedSearch();
+    /// @param internal_data internal preliminary data structures
+    int x_LaunchMultiThreadedSearch(SInternalData& internal_data);
 
     /// Query factory is retained to ensure the lifetime of the data (queries)
     /// produced by it.

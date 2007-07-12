@@ -198,7 +198,8 @@ s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
 
    return kBlastHSPStream_Success;
 }
-/*#define _DEBUG_VERBOSE 0*/
+
+/* #define _DEBUG_VERBOSE 1 */
 /** Merge two HSPStreams. The HSPs from the first stream are
  *  moved to the second stream.
  * @param squery_blk Structure controlling the merge process [in]
@@ -235,6 +236,7 @@ s_BlastHSPListCollectorMerge(SSplitQueryBlk *squery_blk,
    SplitQueryBlk_GetContextOffsetsForChunk(squery_blk, chunk_num, &offset_list);
 
 #if defined(_DEBUG_VERBOSE)
+   fprintf(stderr, "Chunk %d\n", chunk_num);
    fprintf(stderr, "Queries : ");
    for (num_queries = 0; query_list[num_queries] != UINT4_MAX; num_queries++)
        fprintf(stderr, "%d ", query_list[num_queries]);
@@ -265,7 +267,9 @@ s_BlastHSPListCollectorMerge(SSplitQueryBlk *squery_blk,
 #endif
 
        if (hitlist == NULL) {
+#if defined(_DEBUG_VERBOSE)
 fprintf(stderr, "No hits to query %d\n", global_query);
+#endif
            continue;
        }
 
@@ -280,7 +284,7 @@ fprintf(stderr, "No hits to query %d\n", global_query);
                                 offset_list[local_context];
        }
 
-#if defined(_DEBUG)
+#if defined(_DEBUG_VERBOSE)
        fprintf(stderr, "query %d split points: ", i);
        for (j = 0; j < contexts_per_query; j++) {
            fprintf(stderr, "%d ", split_points[j]);

@@ -109,7 +109,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
 }
 
 int
-CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
+CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
 {
     typedef vector< CRef<CPrelimSearchThread> > TBlastThreads;
     TBlastThreads the_threads(GetNumberOfThreads());
@@ -120,7 +120,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
 
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
-        thread->Reset(new CPrelimSearchThread(*m_InternalData, 
+        thread->Reset(new CPrelimSearchThread(internal_data,
                                               opts_memento.get()));
         if (thread->Empty()) {
             NCBI_THROW(CBlastSystemException, eOutOfMemory,
@@ -157,60 +157,67 @@ CBlastPrelimSearch::Run()
     // N.B.: this changes the options!
     SplitQuery_SetEffectiveSearchSpace(m_Options, m_QueryFactory,
                                        m_InternalData);
-
     int retval = 0;
-    if (IsMultiThreaded()) {
-         x_LaunchMultiThreadedSearch();
-    } else {
 
-        auto_ptr<const CBlastOptionsMemento> opts_memento
-            (m_Options->CreateSnapshot());
-        if (m_QuerySplitter->IsQuerySplit()) {
+    auto_ptr<const CBlastOptionsMemento> opts_memento
+        (m_Options->CreateSnapshot());
+    if (m_QuerySplitter->IsQuerySplit()) {
 
-            CRef<CSplitQueryBlk> split_query_blk = m_QuerySplitter->Split();
+        CRef<CSplitQueryBlk> split_query_blk = m_QuerySplitter->Split();
 
-            for (Uint4 i = 0; i < m_QuerySplitter->GetNumberOfChunks(); i++) {
-                try {
-                    CRef<IQueryFactory> chunk_qf = 
-                        m_QuerySplitter->GetQueryFactoryForChunk(i);
-                    _TRACE("Query chunk " << i << "/" << 
-                           m_QuerySplitter->GetNumberOfChunks());
-                    CRef<SInternalData> chunk_data =
-                        SplitQuery_CreateChunkData(chunk_qf, m_Options,
-                                                   m_InternalData);
+        for (Uint4 i = 0; i < m_QuerySplitter->GetNumberOfChunks(); i++) {
+            try {
+                CRef<IQueryFactory> chunk_qf = 
+                    m_QuerySplitter->GetQueryFactoryForChunk(i);
+                _TRACE("Query chunk " << i << "/" << 
+                       m_QuerySplitter->GetNumberOfChunks());
+                CRef<SInternalData> chunk_data =
+                    SplitQuery_CreateChunkData(chunk_qf, m_Options,
+                                               m_InternalData,
+                                               IsMultiThreaded());
+                if (IsMultiThreaded()) {
+                     x_LaunchMultiThreadedSearch(*chunk_data);
+                } else {
                     retval = 
                         CPrelimSearchRunner(*chunk_data, opts_memento.get())();
-
-                    _ASSERT(chunk_data->m_HspStream->GetPointer());
-                    BlastHSPStreamMerge(split_query_blk->GetCStruct(), i,
-                                    chunk_data->m_HspStream->GetPointer(),
-                                    m_InternalData->m_HspStream->GetPointer());
-                    _ASSERT(m_InternalData->m_HspStream->GetPointer());
-                } catch (const CBlastException& e) {
-                    // This error message is safe to ignore for a given chunk,
-                    // because the chunks might end up producing a region of
-                    // the query for which ungapped Karlin-Altschul blocks
-                    // cannot be calculated
-                    const string err_msg("search cannot proceed due to errors "
-                                         "in all contexts/frames of query "
-                                         "sequences");
-                    if (e.GetMsg().find(err_msg) == NPOS) {
-                        throw;
+                    if (retval) {
+                        NCBI_THROW(CBlastException, eCoreBlastError,
+                                   BlastErrorCode2String(retval));
                     }
                 }
-            }
 
-        } else {
-            retval = CPrelimSearchRunner(*m_InternalData, opts_memento.get())();
+
+                _ASSERT(chunk_data->m_HspStream->GetPointer());
+                BlastHSPStreamMerge(split_query_blk->GetCStruct(), i,
+                                chunk_data->m_HspStream->GetPointer(),
+                                m_InternalData->m_HspStream->GetPointer());
+                _ASSERT(m_InternalData->m_HspStream->GetPointer());
+            } catch (const CBlastException& e) {
+                // This error message is safe to ignore for a given chunk,
+                // because the chunks might end up producing a region of
+                // the query for which ungapped Karlin-Altschul blocks
+                // cannot be calculated
+                const string err_msg("search cannot proceed due to errors "
+                                     "in all contexts/frames of query "
+                                     "sequences");
+                if (e.GetMsg().find(err_msg) == NPOS) {
+                    throw;
+                }
+            }
         }
 
+    } else {
+        if (IsMultiThreaded()) {
+             x_LaunchMultiThreadedSearch(*m_InternalData);
+        } else {
+            retval = CPrelimSearchRunner(*m_InternalData, opts_memento.get())();
+            if (retval) {
+                NCBI_THROW(CBlastException, eCoreBlastError,
+                           BlastErrorCode2String(retval));
+            }
+        }
     }
-    
-    if (retval) {
-        NCBI_THROW(CBlastException, eCoreBlastError,
-                   BlastErrorCode2String(retval));
-    }
-    
+
     return m_InternalData;
 }
 
