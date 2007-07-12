@@ -60,7 +60,10 @@ public:
 
     enum EFlags {
         fNone = 0,
-        fNoExonScores = 1
+        fNoExonScores = 1,
+        fSeqAlign_Disc,
+        fSeqAlign_SplicedSeg_NoParts,
+        fSeqAlign_SplicedSeg_WithParts
     };
 
     // formatters
@@ -91,13 +94,13 @@ public:
     /// @param results
     ///   Splign results for formatting. If not specified, the results
     ///   will be read from the object used to construct the formatter.
-    /// @use_spliced_segs
-    ///   Use spliced_segs or discontiguous seq-align to represent alignments
+    /// @flag
+    ///   Must be one of the fSeqAlign_* flags specifying seq-align content.
     /// @return
     ///   Formatted alignment as a seq-align-set reference.
     CRef<objects::CSeq_align_set> AsSeqAlignSet(
         const CSplign::TResults* results = 0,
-        bool use_spliced_seg = false)
+        EFlags flag = fSeqAlign_Disc)
     const;
 
 private:
