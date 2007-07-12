@@ -100,6 +100,11 @@ CBlastpAppArgs::CBlastpAppArgs()
 
     arg.Reset(new CCompositionBasedStatsArgs);
     m_Args.push_back(arg);
+
+    set<string> tasks
+        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt));
+    arg.Reset(new CTaskCmdLineArgs(tasks));
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 

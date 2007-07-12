@@ -104,8 +104,15 @@ public:
         CreateTask(string task,
                EAPILocality locality = CBlastOptions::eLocal);
 
+    /// Sets of tasks for the command line BLAST binaries
+    enum ETaskSets {
+        eNuclNucl,      ///< Nucleotide-nucleotide tasks
+        eProtProt,      ///< Protein-protein tasks
+        eAll            ///< Retrieve all available tasks
+    };
+
     /// Retrieve the set of supported tasks
-    static set<string> GetTasks();
+    static set<string> GetTasks(ETaskSets choice = eAll);
 
 private:
     /// Private c-tor

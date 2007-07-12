@@ -102,7 +102,8 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(m_RemoteArgs);
     m_Args.push_back(arg);
 
-    set<string> tasks(CBlastOptionsFactory::GetTasks());
+    set<string> tasks
+        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
     arg.Reset(new CTaskCmdLineArgs(tasks));
     m_Args.push_back(arg);
 }

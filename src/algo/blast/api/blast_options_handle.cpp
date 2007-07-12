@@ -163,21 +163,30 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
 }
 
 set<string>
-CBlastOptionsFactory::GetTasks()
+CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
 {
     set<string> retval;
-    retval.insert("blastn");
-    retval.insert("blastn-short");
-    retval.insert("megablast");
-    retval.insert("dc-megablast");
-    retval.insert("blastp");
-    retval.insert("blastp-short");
-    retval.insert("psiblast");
-    retval.insert("phiblast");
-    retval.insert("rpsblast");
-    retval.insert("blastx");
-    retval.insert("tblastn");
-    retval.insert("tblastx");
+    if (choice == eNuclNucl || choice == eAll) {
+        retval.insert("blastn");
+        retval.insert("blastn-short");
+        retval.insert("megablast");
+        retval.insert("dc-megablast");
+    }
+
+    if (choice == eProtProt || choice == eAll) {
+        retval.insert("blastp");
+        retval.insert("blastp-short");
+    }
+
+    if (choice == eAll) {
+        retval.insert("psiblast");
+        retval.insert("phiblast");
+        retval.insert("rpsblast");
+        retval.insert("blastx");
+        retval.insert("tblastn");
+        retval.insert("tblastx");
+    }
+
     return retval;
 }
 
