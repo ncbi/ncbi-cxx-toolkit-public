@@ -266,6 +266,7 @@ CDBAPIUnitTest::TestInit(void)
             sql  = " CREATE TABLE #bulk_insert_table( \n";
             sql += "    id INT PRIMARY KEY, \n";
             sql += "    vc8000_field VARCHAR(1900) NULL, \n";
+            sql += "    int_field INT NULL \n";
             sql += " )";
 
             // Create the table
@@ -2258,7 +2259,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
 
             // BIGINT collumn ...
-            {
+            // Sybase doesn't have BIGINT data type ...
+            if (m_args.GetServerType() != CTestArguments::eSybase) {
                 enum { num_of_tests = 16 };
 
                 // Insert data ...
@@ -2308,7 +2310,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         }
 
         // Yet another BIGINT test (and more) ...
-        {
+        // Sybase doesn't have BIGINT data type ...
+        if (m_args.GetServerType() != CTestArguments::eSybase) {
             auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
 
             // Create table ...
@@ -7824,6 +7827,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != "dblib"
         && args.GetDriverName() != "ftds"
+        // ctlib on x86_64 requires right Sybase client ...
         && args.GetDriverName() != "ctlib" // It stopped working accidentally !!!
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
@@ -8146,6 +8150,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (args.IsBCPAvailable()
+            && args.GetDriverName() != "ftds64"
+            && !(args.GetDriverName() == "ftds"
+                && args.GetServerType() == CTestArguments::eSybase)           
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     if ( args.IsBCPAvailable()
          && args.GetDriverName() != "ftds64"
          && !(args.GetDriverName() == "ftds"
@@ -8252,14 +8266,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
-//--------------------------------------------------
-//     if (args.IsBCPAvailable()) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
-//         tc->depends_on(tc_init);
-//         add(tc);
-//     }
-//-------------------------------------------------- 
 
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment.
