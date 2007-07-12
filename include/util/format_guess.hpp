@@ -143,7 +143,7 @@ public:
         const string& /* file name */ );
 
     CFormatGuess(
-        CNcbiIstream& );
+        CNcbiIfstream& );
 
     ~CFormatGuess();
 
@@ -160,9 +160,9 @@ public:
 protected:
     void Initialize();
 
-    void EnsureTestBuffer();
+    bool EnsureTestBuffer();
 
-    void EnsureStats();
+    bool EnsureStats();
 
     bool TestFormatRepeatMasker(
         EMode );
@@ -201,7 +201,7 @@ protected:
 protected:
     static const streamsize s_iTestBufferSize = 1024;
 
-    CNcbiIstream& m_Stream;
+    CNcbiIfstream& m_Stream;
     bool m_bOwnsStream;
     char* m_pTestBuffer;
     streamsize m_iTestDataSize;

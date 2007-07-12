@@ -1179,9 +1179,10 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess()
-    : m_Stream( NcbiCin )
-    , m_bOwnsStream( false )
+    : m_Stream( * new CNcbiIfstream )
+    , m_bOwnsStream( true )
 {
+    Initialize();
 }
 
 //  ----------------------------------------------------------------------------
@@ -1195,7 +1196,7 @@ CFormatGuess::CFormatGuess(
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess(
-    CNcbiIstream& Stream )
+    CNcbiIfstream& Stream )
     : m_Stream( Stream )
     , m_bOwnsStream( false )
 {
@@ -1328,11 +1329,14 @@ CFormatGuess::Initialize()
 }
 
 //  ----------------------------------------------------------------------------
-void
+bool 
 CFormatGuess::EnsureTestBuffer()
 {
     if ( m_pTestBuffer ) {
-        return;
+        return true;
+    }
+    if ( ! m_Stream.is_open() || ! m_Stream.good() ) {
+        return false;
     }
     m_pTestBuffer = new char[ s_iTestBufferSize ];
     m_Stream.read( m_pTestBuffer, s_iTestBufferSize );
@@ -1340,20 +1344,22 @@ CFormatGuess::EnsureTestBuffer()
     m_Stream.clear();  // in case we reached eof
     CStreamUtils::Pushback( m_Stream, (const CT_CHAR_TYPE*)m_pTestBuffer, 
         m_iTestDataSize);
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-void 
+bool
 CFormatGuess::EnsureStats()
 {
     if ( m_bStatsAreValid ) {
-        return;
+        return true;
     }
-
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     if ( m_iTestDataSize == 0 ) {
         m_bStatsAreValid = true;
-        return;
+        return true;
     }
 
     CNcbiIstrstream TestBuffer( 
@@ -1394,6 +1400,7 @@ CFormatGuess::EnsureStats()
         }
     }
     m_bStatsAreValid = true;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1412,7 +1419,9 @@ bool
 CFormatGuess::TestFormatRepeatMasker(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputRepeatMasker( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1421,7 +1430,9 @@ bool
 CFormatGuess::TestFormatPhrapAce(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputPhrapAce( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1430,7 +1441,9 @@ bool
 CFormatGuess::TestFormatGtf(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputGtf( m_pTestBuffer, m_iTestDataSize );
 }
     
@@ -1439,7 +1452,9 @@ bool
 CFormatGuess::TestFormatGlimmer3(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputGlimmer3( m_pTestBuffer, m_iTestDataSize );
 }
     
@@ -1448,7 +1463,9 @@ bool
 CFormatGuess::TestFormatAgp(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputAgp( m_pTestBuffer, m_iTestDataSize );
 }
     
@@ -1457,7 +1474,9 @@ bool
 CFormatGuess::TestFormatNewick(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputNewick( m_pTestBuffer, m_iTestDataSize );
 }
     
@@ -1466,7 +1485,9 @@ bool
 CFormatGuess::TestFormatXml(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputXml( m_pTestBuffer, m_iTestDataSize );
 }
     
@@ -1475,7 +1496,9 @@ bool
 CFormatGuess::TestFormatAlignment(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputAlignment( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1484,7 +1507,9 @@ bool
 CFormatGuess::TestFormatBinaryAsn(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputBinaryAsn( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1493,7 +1518,9 @@ bool
 CFormatGuess::TestFormatDistanceMatrix(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputDistanceMatrix( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1502,7 +1529,9 @@ bool
 CFormatGuess::TestFormatTaxplot(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputTaxplot( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1511,7 +1540,9 @@ bool
 CFormatGuess::TestFormatFlatFileSequence(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputFlatFileSequence( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1520,7 +1551,9 @@ bool
 CFormatGuess::TestFormatFiveColFeatureTable(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputFiveColFeatureTable( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1529,7 +1562,9 @@ bool
 CFormatGuess::TestFormatTable(
     EMode /* not used */ )
 {
-    EnsureTestBuffer();
+    if ( ! EnsureTestBuffer() ) {
+        return false;
+    }
     return x_IsInputTable( m_pTestBuffer, m_iTestDataSize );
 }
 
@@ -1538,7 +1573,9 @@ bool
 CFormatGuess::TestFormatFasta(
     EMode /* not used */ )
 {
-    EnsureStats();
+    if ( ! EnsureStats() ) {
+        return false;
+    }
 
     // reject obvious misfits:
     if ( m_iTestDataSize == 0 || m_pTestBuffer[0] != '>' ) {
@@ -1571,7 +1608,9 @@ bool
 CFormatGuess::TestFormatTextAsn(
     EMode /* not used */ )
 {
-    EnsureStats();
+    if ( ! EnsureStats() ) {
+        return false;
+    }
 
     // reject obvious misfits:
     if ( m_iTestDataSize == 0 || m_pTestBuffer[0] == '>' ) {
