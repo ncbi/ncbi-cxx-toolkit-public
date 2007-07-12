@@ -45,6 +45,7 @@
 #include <objects/seqalign/Score_set.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Splice_site.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/seq_vector.hpp>
@@ -565,10 +566,37 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
 }
 
 
-CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
-   const CSplign::TResults * results,
-   bool use_spliced_seg) const
+
+CRef<CSpliced_exon_chunk> CreateSplicedExonChunk(char cur, size_t count)
 {
+    CRef<CSpliced_exon_chunk> chunk (new CSpliced_exon_chunk);
+    switch(cur) {
+    case 'M': chunk->SetMatch()       = count; break;
+    case 'R': chunk->SetMismatch()    = count; break;
+    case 'I': chunk->SetGenomic_ins() = count; break;
+    case 'D': chunk->SetProduct_ins() = count; break;
+    default:
+        NCBI_THROW(CAlgoAlignException,
+                   eInternal,
+                   g_msg_UnknownTranscriptSymbol + cur);
+    }
+    return chunk;
+}
+
+
+CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
+   const CSplign::TResults * results, 
+   EFlags flag)
+const
+{
+    if(flag != fSeqAlign_Disc && flag != fSeqAlign_SplicedSeg_NoParts
+       && flag != fSeqAlign_SplicedSeg_WithParts)
+    {
+        NCBI_THROW(CAlgoAlignException,
+                   eBadParameter,
+                   "Incorrect flag passed to CSplignFormatter::AsSeqAlignSet()");
+    }
+    
     if(results == 0) {
         results = &(m_splign_results);
     }
@@ -580,7 +608,7 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
     
         if(ii->m_error) continue;
 
-        if(use_spliced_seg) {
+        if(flag != fSeqAlign_Disc) {
 
             CRef<CSeq_align> sa (new CSeq_align);
             sa->SetType(CSeq_align::eType_global);
@@ -665,10 +693,37 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
                         exon->SetSplice_3_prime().SetBases(dnr);
                     }
 
+                    if(flag == fSeqAlign_SplicedSeg_WithParts) {
+
+                        // add parts
+                        CSpliced_exon::TParts & parts (exon->SetParts());
+                        if(seg.m_details.size() == 0) {
+                            NCBI_THROW(CAlgoAlignException,
+                                       eInternal,
+                                       "Alignment details not available");
+                        }
+
+                        char cur (seg.m_details[0]);
+                        size_t count (0);
+                        ITERATE(string, ii, seg.m_details) {
+                            
+                            if(cur != *ii) {
+
+                                parts.push_back(CreateSplicedExonChunk(cur, count));
+                                count = 1;
+                                cur = *ii;
+                            }
+                            else {
+                                ++count;
+                            }
+                        }
+                        parts.push_back(CreateSplicedExonChunk(cur, count));
+                    }
+
                     exons.push_back(exon);
                 }
             }
-
+            
             data.push_back(sa);
         }
         else {
