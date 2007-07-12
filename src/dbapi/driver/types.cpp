@@ -460,7 +460,7 @@ void CheckStringTruncation(size_t cur_len, size_t max_len)
 {
     if (cur_len > max_len) {
         ERR_POST(Warning << "String of size " << cur_len <<
-                 " was truncated to " << max_len << " characters");
+                 " was truncated to " << max_len << " character(s)");
     }
 }
 
@@ -471,7 +471,7 @@ void CheckBinaryTruncation(size_t cur_len, size_t max_len)
 {
     if (cur_len > max_len) {
         ERR_POST(Warning << "Binary data of size " << cur_len <<
-                 " was truncated to " << max_len << " bytes");
+                 " was truncated to " << max_len << " byte(s)");
     }
 }
 
