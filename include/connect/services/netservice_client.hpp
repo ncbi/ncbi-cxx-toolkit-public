@@ -153,11 +153,14 @@ public:
     const string& GetHost() const { return m_Host; }
     unsigned short GetPort() const { return m_Port; }
 
+    void SetWaitFroServerTimeout(unsigned tm) { m_WaitForServerTimeout = tm; }
+    unsigned GetWaitFroServerTimeout() const { return  m_WaitForServerTimeout; }
+
 protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
     void CreateSocket(const string& hostname, unsigned port);
-    void WaitForServer(unsigned wait_sec=20);
+    void WaitForServer(unsigned wait_sec=0);
     /// Remove "ERR:" prefix 
     static
     void TrimErr(string* err_msg);
@@ -199,6 +202,7 @@ protected:
     STimeout                m_Timeout;
     string                  m_ClientNameComment;
     string                  m_Tmp;                 ///< Temporary string
+    unsigned int            m_WaitForServerTimeout;
 
 private:
     CResourcePool<CSocket>  m_SockPool;
