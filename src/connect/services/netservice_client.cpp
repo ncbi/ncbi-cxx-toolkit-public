@@ -73,8 +73,7 @@ CNetServiceClient::EUseName CNetServiceClient::GetNameUse()
 CNetServiceClient::CNetServiceClient(const string& client_name)
     : m_Sock(0),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_DefaultCommTimeout),
-      m_WaitForServerTimeout(20)
+      m_Timeout(s_DefaultCommTimeout)
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -91,8 +90,7 @@ CNetServiceClient::CNetServiceClient(const string&  host,
       m_Host(host),
       m_Port(port),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_DefaultCommTimeout),
-      m_WaitForServerTimeout(20)
+      m_Timeout(s_DefaultCommTimeout)
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -109,8 +107,7 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
       m_Port(0),
       m_OwnSocket(eNoOwnership),
       m_ClientName(client_name),
-      m_Timeout(s_DefaultCommTimeout),
-      m_WaitForServerTimeout(20)
+      m_Timeout(s_DefaultCommTimeout)
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -306,7 +303,9 @@ void CNetServiceClient::CreateSocket(const string& hostname,
 
 void CNetServiceClient::WaitForServer(unsigned wait_sec)
 {
-    STimeout to = {wait_sec == 0 ?  m_WaitForServerTimeout : wait_sec, 0};
+    STimeout to = {wait_sec, 0};
+    if ( wait_sec == 0)
+        to = m_Timeout;
     while (true) {
         EIO_Status io_st = m_Sock->Wait(eIO_Read, &to);
         if (io_st == eIO_Timeout) {
