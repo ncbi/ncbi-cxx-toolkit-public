@@ -258,6 +258,19 @@ bool CTL_BCPInCmd::x_AssignParams()
                                       &m_Bind[i].indicator));
             break;
         }
+        case eDB_LongChar: {
+            CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
+            param_fmt.datatype  = CS_LONGCHAR_TYPE;
+            param_fmt.maxlength = (CS_INT) par.Size() + 1;
+            m_Bind[i].datalen   =
+                (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.DataSize();
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                        (CS_VOID*) par.Value(),
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
+            break;
+        }
         case eDB_VarChar: {
             CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
             param_fmt.datatype  = CS_CHAR_TYPE;
@@ -276,6 +289,19 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
+            ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                                      par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
+                                        (CS_VOID*) par.Value(),
+                                      &m_Bind[i].datalen,
+                                      &m_Bind[i].indicator));
+            break;
+        }
+        case eDB_LongBinary: {
+            CDB_LongBinary& par = dynamic_cast<CDB_LongBinary&> (param);
+            param_fmt.datatype  = CS_LONGBINARY_TYPE;
+            param_fmt.maxlength = (CS_INT) par.Size();
+            m_Bind[i].datalen   =
+                (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.DataSize();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
                                         (CS_VOID*) par.Value(),
@@ -350,6 +376,7 @@ bool CTL_BCPInCmd::x_AssignParams()
                 dt.dttime = par.Get300Secs();
             }
 
+            _ASSERT(sizeof(CS_NUMERIC) >= sizeof(CS_DATETIME));
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) m_Bind[i].buffer,
