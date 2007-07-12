@@ -723,7 +723,7 @@ private:
     struct SBcpBind {
         CS_INT      datalen;
         CS_SMALLINT indicator;
-        char        buffer[sizeof(CS_NUMERIC)];
+        char        buffer[sizeof(CS_NUMERIC)]; // 35 bytes ...
     };
 
     CS_BLKDESC*         m_Cmd;
