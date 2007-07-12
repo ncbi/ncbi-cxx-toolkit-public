@@ -430,8 +430,8 @@ void CTestNetCacheStress::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagTrace(eDT_Enable);
+    //    SetDiagPostLevel(eDiag_Info);
+    //SetDiagTrace(eDT_Enable);
 }
 
 
