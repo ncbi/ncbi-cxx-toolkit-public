@@ -1327,6 +1327,11 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
             else use_index = false;
         }
 
+        if( args.Exist( kTask ) && args[kTask] && 
+                args[kTask].AsString() != "megablast" ) {
+            use_index = false;
+        }
+
         if( use_index ) {
             string index_name;
 
