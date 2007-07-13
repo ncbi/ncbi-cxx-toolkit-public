@@ -361,199 +361,166 @@ NCBI::SVN::MultiSwitch->new(MyName => $ScriptName)->
 
 exit 0 if $^O eq 'MSWin32';
 
-my @ConfigOptions;
-
-for my $OptProject (qw(dbapi serial objects app internal))
-{
-    push @ConfigOptions, ($AllProjects{$OptProject} ?
-        '--with-' : '--without-') . $OptProject
-}
-
 while (my ($Var, $Val) = each %OldEnv)
 {
     $ENV{$Var} = $Val if defined $Val
 }
 
-my ($Child, $Parent);
-
-pipe $Child, $Parent or die $!;
-
-my $PID = fork();
-
-if ($PID)
+sub ConfirmYes
 {
-    # parent
-    close $Child;
-    print $Parent <<'SHELL';
-#!/bin/sh
+    my ($Prompt) = @_;
 
-# Author: Aaron Ucko, NCBI
-#
-#  Reconfigures just the specified projects.
-#  Does NOT do anything with Windows or MacOS project files.
+    print "\n$Prompt (y/n)\n";
 
-Usage() {
-    cat <<EOF
-This script configures and builds the C++ Toolkit source tree.
-Usage: $0 <project-list> [<directory>]
-EOF
+    my $Answer;
+
+    do
+    {
+        $Answer = readline STDIN;
+
+        exit 0 if $Answer =~ m/^n/i
+    }
+    until ($Answer =~ m/^y/i)
 }
 
-Die() {
-    echo "$@" >& 2
-    exit 1
+sub RunOrDie
+{
+    my ($CommandLine) = @_;
+
+    if (system($CommandLine) != 0)
+    {
+        die "$ScriptName\: " .
+            ($? == -1 ? "failed to execute $CommandLine\: $!" :
+            $? & 127 ? "'$CommandLine' died with signal " . ($? & 127) :
+            "'$CommandLine' exited with status " . ($? >> 8)) . "\n"
+    }
 }
 
-ConfirmYes() {
-    while :; do
-        read answer
-        case "$answer" in
-            [Yy]*) break ;;
-            [Nn]*) exit 0 ;;
-        esac
-        echo "Please answer Y(es) or N(o)."
-    done
+sub Menu
+{
+    my ($Prompt, $Base, @Items) = @_;
+
+    print "\n$Prompt\n";
+
+    my $MaxChoice = $Base;
+
+    for my $Item (@Items)
+    {
+        print $MaxChoice++ . " - $Item\n";
+    }
+
+    --$MaxChoice;
+
+    for (;;)
+    {
+        my $Choice = readline STDIN;
+
+        return $Choice if $Choice >= $Base && $Choice <= $MaxChoice;
+
+        print "Please give a number between 1 and $MaxChoice.\n";
+    }
 }
 
-if test "x$1" = "x--help"; then
-    Usage
-    exit 0
-fi
+my @ExistingBuilds;
 
-tty -s || exit 0
+sub FindExistingBuilds
+{
+    opendir DIR, '.' or die "$ScriptName\: can't opendir '.': $!\n";
+    @ExistingBuilds = grep {!m/^\./ && -d $_ . '/build'} readdir DIR;
+    closedir DIR
+}
 
-n=0
-for d in */build; do
-    if test "x$d" = "x*/build"; then
-    break # No real matches
-    else
-    n=`expr $n + 1`
-    eval "dir$n=$d"
-    fi
-done
-if [ $n -eq 0 ]; then
+FindExistingBuilds();
+
+unless (@ExistingBuilds)
+{
     # No builds; presumably a new checkout
-    echo 'Would you like to configure this tree? (y/n)'
-    ConfirmYes
-    config_options=$*
-    case "`uname -s`:`uname -m`" in
-        SunOS:*)
-            n=3
-            conf1=./configure
-            conf2="compilers/WorkShop.sh 32"
-            conf3="compilers/WorkShop.sh 64"
-            ;;
-        Linux:i?86)
-            n=3
-            conf1=./configure
-            conf2=compilers/ICC.sh
-            conf3="compilers/KCC.sh 32"
-            ;;
-        IRIX*:*)
-            n=3
-            conf1=./configure
-            conf2="compilers/MIPSpro73.sh 32"
-            conf3="compilers/MIPSpro73.sh 64"
-            ;;
-        *:alpha)
-            n=2
-            conf1=./configure
-            conf2=compilers/Compaq.sh
-            ;;
-        *)
-            n=1
-            configure=./configure
-            ;;
-    esac
-    if [ $n -gt 1 ]; then
-        echo ; echo "Which configure script would you like to use?"
-        i=1
-        while [ $i -le $n ]; do
-            eval echo "$i - \$conf$i"
-            i=`expr $i + 1`
-        done
-        while :; do
-            read answer
-            case "$answer" in
-                [1-9])
-                    if [ $answer -le $n ]; then
-                        eval configure="\$conf$answer"
-                        break
-                    fi
-                    ;;
-            esac
-            echo "Please give a number between 1 and $n."
-        done
-    fi
-    case "$configure" in
-        */ICC*)
-            IA32ROOT="/opt/intel/compiler80"
-            PATH="$IA32ROOT/bin:$PATH"
-            LD_LIBRARY_PATH="$IA32ROOT/lib:$LD_LIBRARY_PATH"
-            INTEL_FLEXLM_LICENSE="/opt/intel/licenses"
-            export IA32ROOT PATH LD_LIBRARY_PATH INTEL_FLEXLM_LICENSE
-            ;;
-        */KCC*)
-            PATH="/usr/kcc/KCC_BASE/bin:$PATH"
-            export PATH
-            ;;
-    esac
-    cat <<EOF
-Current options to configure (deduced from project list):
-$config_options
-If you would like to pass any additional options, please enter them now;
-otherwise, just hit return.
-EOF
-    read more_options
-    config_options="$config_options $more_options"
-    $run $configure $config_options
-    echo ; echo "Would you like to compile this tree? (y/n)"
-    ConfirmYes
-    $run cd */build
-    $run make all_p
-else
-    echo ; echo "Would you like to reconfigure an existing build of this tree?"
-    echo "0 - No, thank you."
-    i=1
-    while [ $i -le $n ]; do
-        eval echo "$i - Yes, please reconfigure \$dir$i."
-        i=`expr $i + 1`
-    done
-    while :; do
-        read answer
-        case "$answer" in
-            0) exit 0 ;;
-            [1-9]|[1-9][0-9]) # Nobody is likely to have more than 99 configs!
-                if [ $answer -le $n ]; then
-                    eval $run cd \$dir$answer
-                    $run chmod +x reconfigure.sh
-                    $run ./reconfigure.sh reconf
-                    break
-                fi
-                ;;
-        esac
-        echo "Please give a number between 0 and $n."
-    done
-    echo ; echo "Would you like to recompile this build? (y/n)"
-    ConfirmYes
-    $run make all_p
-fi
+    ConfirmYes('Would you like to configure this tree?');
 
-echo ; echo "Would you like to run tests on this build? (y/n)"
-ConfirmYes
-$run make check_p
-SHELL
-    close $Parent;
-    wait()
-}
-elsif (defined $PID)
-{
-    # child
-    close $Parent;
-    fcntl $Child, F_SETFD, 0;
-    exec '/bin/sh', '/dev/fd/' . fileno($Child), @ConfigOptions or die $!
+    my $Platform = `uname -sm`;
+    chomp $Platform;
+
+    my @AvailableConfigs =
+        $Platform =~ m/^SunOS / ?
+            ('./configure', 'compilers/WorkShop.sh 32',
+                'compilers/WorkShop.sh 64') :
+        $Platform =~ m/^Linux i.86/ ?
+            ('./configure', 'compilers/ICC.sh', 'compilers/KCC.sh 32') :
+        $Platform =~ m/^IRIX / ?
+            ('./configure', 'compilers/MIPSpro73.sh 32',
+                'compilers/MIPSpro73.sh 64') :
+        $Platform =~ m/ alpha$/ ?
+            ('./configure', 'compilers/Compaq.sh') : ('./configure');
+
+    my $Configure = $AvailableConfigs[@AvailableConfigs == 1 ? 0 :
+        Menu('Which configure script would you like to use?',
+            1 => @AvailableConfigs) - 1];
+
+    if ($Configure =~ m/\/ICC/)
+    {
+        my $IA32ROOT = '/opt/intel/compiler80';
+
+        @ENV{qw(IA32ROOT PATH LD_LIBRARY_PATH INTEL_FLEXLM_LICENSE)} =
+            ($IA32ROOT, "$IA32ROOT/bin:$ENV{PATH}",
+                "$IA32ROOT/lib:$ENV{LD_LIBRARY_PATH}",
+                '/opt/intel/licenses')
+    }
+    elsif ($Configure =~ m/\/KCC/)
+    {
+        $ENV{PATH} = '/usr/kcc/KCC_BASE/bin:' . $ENV{PATH}
+    }
+
+    my @ConfigOptions;
+
+    for my $OptProject (qw(dbapi serial objects app internal))
+    {
+        push @ConfigOptions, ($AllProjects{$OptProject} ?
+            '--with-' : '--without-') . $OptProject
+    }
+
+    my $ConfigOptions = join(' ', @ConfigOptions);
+
+    print "Current options to configure (deduced from project list):\n" .
+        "$ConfigOptions\nIf you would like to pass any additional options, " .
+        "please enter them now;\notherwise, just hit return.\n";
+
+    my $MoreOptions = readline STDIN;
+    chomp $MoreOptions;
+
+    $ConfigOptions .= ' ' . $MoreOptions if $MoreOptions;
+
+    RunOrDie("$Configure $ConfigOptions");
+
+    FindExistingBuilds();
+
+    die "$ScriptName\: configure did not result in a single build directory\n"
+        if @ExistingBuilds != 1;
+
+    ConfirmYes('Would you like to compile this tree?');
+
+    chdir $ExistingBuilds[0] . '/build' or die
 }
 else
 {
-    die "fork() failed: $!"
+    my $Choice = Menu('Would you like to reconfigure an existing ' .
+        'build of this tree?', 0 => 'No, thank you.',
+        map {"Yes, please reconfigure $_."} @ExistingBuilds);
+
+    exit 0 if $Choice == 0;
+
+    chdir $ExistingBuilds[$Choice - 1] . '/build';
+
+    chmod 0755, 'reconfigure.sh';
+
+    RunOrDie('./reconfigure.sh reconf');
+
+    ConfirmYes('Would you like to recompile this build?')
 }
+
+RunOrDie('make all_p');
+
+ConfirmYes('Would you like to run tests on this build?');
+
+RunOrDie('make check_p');
+
+exit 0
