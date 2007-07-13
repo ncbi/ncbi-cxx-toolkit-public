@@ -41,6 +41,8 @@
 #include <connect/ncbi_util.h>
 #include <connect/server.hpp>
 
+#include <bdb/bdb_util.hpp>
+#include <bdb/bdb_env.hpp>
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -211,7 +213,9 @@ int CBDBEnvKeeperApp::Run(void)
 #endif
 
 
-    const CArgs& args = GetArgs();
+    auto_ptr<CBDB_Env> env(BDB_CreateEnv(reg, "bdb"));
+
+//    const CArgs& args = GetArgs();
 
     unsigned short port = 
         reg.GetInt("server", "port", 9200, 0, CNcbiRegistry::eReturn);
@@ -228,6 +232,23 @@ int CBDBEnvKeeperApp::Run(void)
     server.AddListener(new CBDBEnvKeeperConnectionFactory(&server), port);
 
     server.Run();
+
+
+    // Finalization
+    {{
+        if (env->IsTransactional()) {
+            env->ForceTransactionCheckpoint();
+        }
+
+
+        if (env->CheckRemove()) {
+            LOG_POST(Info 
+                << "Environment has been unmounted and deleted.");
+        } else {
+            LOG_POST(Warning 
+                << "Environment still in use. Cannot delete it.");
+        }
+    }}
 
     return 0;
 }
