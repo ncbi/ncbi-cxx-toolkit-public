@@ -105,12 +105,16 @@ CDbapiSQLite3CF2::~CDbapiSQLite3CF2(void)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-NCBI_EntryPoint_xdbapi_sqlite3(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+extern "C"
 {
-    CHostEntryPointImpl<CDbapiSQLite3CF2>::NCBI_EntryPointImpl( info_list, method );
+    NCBI_DBAPIDRIVER_SQLITE3_EXPORT
+    void
+    NCBI_EntryPoint_xdbapi_sqlite3(
+        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+        CPluginManager<I_DriverContext>::EEntryPointRequest method)
+    {
+        CHostEntryPointImpl<CDbapiSQLite3CF2>::NCBI_EntryPointImpl( info_list, method );
+    }
 }
 
 NCBI_DBAPIDRIVER_SQLITE3_EXPORT
