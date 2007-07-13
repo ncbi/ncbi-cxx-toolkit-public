@@ -995,22 +995,59 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
 I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 {
-    auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
+    // !!! ReadItem is not suitable here because it may increase value of m_CurrItem
+    // under some conditions.
+    // ReadItem(NULL, 0, NULL);
 
-    ReadItem(NULL, 0, NULL);
+    // Code, which is almost the same as in ReadItem.
+    {
+        if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
+            return 0;
+        }
 
-#if defined(FTDS_IN_USE)
-    if(m_CurrItem + 1 <= m_BindedCols) {
-        Check(ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, NULL, 0, NULL));
+        char dummy[4];
+
+        switch (my_ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
+        // switch ( ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
+        case CS_END_ITEM:
+        case CS_END_DATA:
+        case CS_SUCCEED:
+            break;
+        case CS_CANCELED:
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
+        default:
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
+        }
     }
-#endif
+
+
+    auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
 
     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
                                   CS_GET,
-                                  m_CurrItem+1,
+                                  m_CurrItem + 1,
                                   &desc->m_Desc))
         != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_data_info failed", 130010 );
+
+    // Code below was supposed to be used with ReadItem, which behaves somewhat
+    // differenly than expected. Fri Jul 13 12:39:12 EDT 2007
+//--------------------------------------------------
+//     int current_item = m_CurrItem;
+// 
+// #if defined(FTDS_IN_USE)
+//     // At the moment ctlib from Sybase will increase m_CurrItemi, but ctlib
+//     // from FreeTDS won't ...
+//     ++ current_item;
+// #endif
+// 
+//     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
+//                                   CS_GET,
+//                                   current_item,
+//                                   &desc->m_Desc))
+//         != CS_SUCCEED);
+//     CHECK_DRIVER_ERROR( rc, "ct_data_info failed", 130010 );
+//-------------------------------------------------- 
 
     return desc.release();
 }
