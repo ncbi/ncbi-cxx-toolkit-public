@@ -106,13 +106,13 @@ echo
 test_tar -C $test_base.2 -x -B -f $test_base.tar '*testdir/?*'        ||  exit 1
 
 echo '+++ Files:'
-echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v '[.]bak$'
+echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v '[.]bak'
 echo
 echo '+++ Backups:'
-echo $test_base.2/testdir/* | tr ' ' '\n' | grep    '[.]bak$'
+echo $test_base.2/testdir/* | tr ' ' '\n' | grep    '[.]bak'
 echo
-files="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v -c '[.]bak$'`"
-bkups="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep    -c '[.]bak$'`"
+files="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v -c '[.]bak'`"
+bkups="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep    -c '[.]bak'`"
 echo "+++ Files: $files --- Backups: $bkups"
 test _"$files" = _"$bkups"                                            ||  exit 1
 
