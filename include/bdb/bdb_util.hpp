@@ -33,6 +33,8 @@
  *
  */
 
+#include <corelib/ncbireg.hpp>
+
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_trans.hpp>
@@ -164,6 +166,13 @@ BDB_find_field(const CBDB_File&          dbf,
 int NCBI_BDB_EXPORT BDB_get_rowid(const CBDB_File& dbf);
 
 /* @} */
+
+
+/// Create and configure BDB environment using CNcbiRegistry 
+/// as a parameter container
+///
+CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg, 
+                        const string& section_name);
 
 
 END_NCBI_SCOPE

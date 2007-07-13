@@ -30,7 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include <bdb/bdb_util.hpp>
+#include <bdb/bdb_env.hpp>
 #include <util/strsearch.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -162,6 +164,349 @@ int BDB_get_rowid(const CBDB_File& dbf)
 
     return 0;
 }
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+///
+/// Log a parameter in a human-readable format
+///
+/// @internal
+///
+template <typename T>
+void s_LogEnvParam(const string& param_name,
+                   const T& param_value,
+                   const string& units = kEmptyStr)
+{
+    LOG_POST(Info
+             << setw(20) << param_name
+             << " : "
+             << param_value << units);
+}
+
+/// Log a parameter in a human-readable format
+///
+/// @internal
+template <>
+void s_LogEnvParam<bool>(const string& param_name,
+                         const bool& param_value,
+                         const string& units)
+{
+    LOG_POST(Info
+             << setw(20) << param_name
+             << " : "
+             << (param_value ? "true" : "false"));
+}
+
+
+
+static const string kEnvParam_type           = "env_type";
+static const string kEnvParam_path           = "path";
+static const string kEnvParam_reinit         = "reinit";
+static const string kEnvParam_errfile        = "error_file";
+
+static const string kEnvParam_mem_size             = "mem_size";
+static const string kEnvParam_cache_size           = "cache_size";
+static const string kEnvParam_log_mem_size         = "log_mem_size";
+static const string kEnvParam_write_sync           = "write_sync";
+static const string kEnvParam_direct_db            = "direct_db";
+static const string kEnvParam_direct_log           = "direct_log";
+static const string kEnvParam_transaction_log_path = "transaction_log_path";
+static const string kEnvParam_log_file_max         = "log_file_max";
+static const string kEnvParam_log_autoremove       = "log_autoremove";
+static const string kEnvParam_lock_timeout         = "lock_timeout";
+static const string kEnvParam_TAS_spins            = "tas_spins";
+static const string kEnvParam_max_locks            = "max_locks";
+static const string kEnvParam_max_lock_objects     = "max_lock_objects";
+static const string kEnvParam_mp_maxwrite          = "mp_maxwrite";
+static const string kEnvParam_mp_maxwrite_sleep    = "mp_maxwrite_sleep";
+
+static const string kEnvParam_checkpoint_interval  = "checkpoint_interval";
+static const string kEnvParam_enable_checkpoint    = "enable_checkpoint";
+static const string kEnvParam_checkpoint_kb        = "checkpoint_kb";
+static const string kEnvParam_checkpoint_min       = "checkpoint_min";
+static const string kEnvParam_memp_trickle_percent = "memp_trickle_percent";
+
+
+CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg, 
+                        const string& section_name)
+{
+    auto_ptr<CBDB_Env> env;
+
+    CBDB_Env::EEnvType e_type = CBDB_Env::eEnvTransactional;
+
+    string env_type = 
+        reg.GetString(section_name, kEnvParam_type, "transactional");
+    NStr::ToLower(env_type);
+    if (NStr::EqualNocase(env_type, "locking")) {
+        e_type = CBDB_Env::eEnvLocking;
+    } else if (NStr::EqualNocase(env_type, "transactional")) {
+        e_type = CBDB_Env::eEnvTransactional;
+    } else if (NStr::EqualNocase(env_type, "concurrent")) {
+        e_type = CBDB_Env::eEnvConcurrent;
+    }
+
+    // path to the environment, re-initialization options
+    
+    string path = 
+        reg.GetString(section_name, kEnvParam_path, ".");
+    path = CDirEntry::AddTrailingPathSeparator(path);
+    s_LogEnvParam("BDB env.path", path);
+
+    bool reinit =
+        reg.GetBool(section_name, kEnvParam_reinit, false, 0, 
+                    IRegistry::eReturn);
+
+
+    // Make sure our directory exists
+    {{
+        CDir dir(path);
+        if ( !dir.Exists() ) {
+            dir.Create();
+        } else {
+            if (reinit) {
+                s_LogEnvParam("BDB re-initialization", reinit);
+
+                dir.Remove();
+                dir.Create();
+            }
+        }
+    }}
+
+    // the error file for BDB errors
+    string err_path = reg.GetString(section_name, kEnvParam_errfile,
+                                    path + "/bdb_err.log");
+    
+    if (!err_path.empty()) {
+        string dir, base, ext;
+        CDirEntry::SplitPath(err_path, &dir, &base, &ext);
+        if (dir.empty()) {
+            err_path = CDirEntry::MakePath(path, base, ext);
+        }
+    }
+
+    // cache RAM size
+    string cache_size_str;
+    if (reg.HasEntry(section_name, kEnvParam_cache_size)) {
+        cache_size_str = 
+            reg.GetString(section_name, kEnvParam_cache_size, "");
+    } else {
+        cache_size_str = 
+            reg.GetString(section_name, kEnvParam_mem_size, "");
+    }
+    Uint8 cache_size = 
+        NStr::StringToUInt8_DataSize(cache_size_str, NStr::fConvErr_NoThrow);
+
+    // in-memory log size
+    string log_mem_size_str;
+    log_mem_size_str = 
+        reg.GetString(section_name, kEnvParam_log_mem_size, "");
+    Uint8 log_mem_size = 
+        NStr::StringToUInt8_DataSize(log_mem_size_str, NStr::fConvErr_NoThrow);
+
+    // transaction log path
+    string log_path = 
+        reg.GetString(section_name, kEnvParam_transaction_log_path,
+                      path);
+
+    // transaction log file max
+    string log_max_str;
+    log_max_str = 
+        reg.GetString(section_name, kEnvParam_log_file_max, "200M");
+    Uint8 log_max = NStr::StringToUInt8_DataSize(log_max_str);
+    if (log_max < 1024 * 1024) {
+        log_max = 1024 * 1024;
+    }
+
+    // automatic log truncation
+    bool log_autoremove =
+        reg.GetBool(section_name, kEnvParam_log_autoremove, true, 0, 
+                    IRegistry::eReturn);
+
+    // transaction sync
+    bool write_sync =
+        reg.GetBool(section_name, kEnvParam_write_sync, false, 0, 
+                    IRegistry::eReturn);
+
+    // direct IO
+    bool direct_db =
+        reg.GetBool(section_name, kEnvParam_direct_db, false, 0, 
+                    IRegistry::eReturn);
+
+    bool direct_log =
+        reg.GetBool(section_name, kEnvParam_direct_log, false, 0, 
+                    IRegistry::eReturn);
+
+    // deadlock detection interval
+    int lock_timeout =
+        reg.GetInt(section_name, kEnvParam_lock_timeout, 0, 0,
+                   IRegistry::eReturn);
+
+    // BDB spin lock spin count
+    int tas_spins =
+        reg.GetInt(section_name, kEnvParam_TAS_spins, 0, 0,
+                   IRegistry::eReturn);
+
+    // maximum locks and locked objects
+    // lock starvation is a critical flaw in a transactional situation,
+    // and will lead to deadlocks or worse
+    //
+    int max_locks =
+        reg.GetInt(section_name, kEnvParam_max_locks, 0, 0,
+                   IRegistry::eReturn);
+    int max_lock_objects =
+        reg.GetInt(section_name, kEnvParam_max_lock_objects, 0, 0,
+                   IRegistry::eReturn);
+
+    // mempool write governors
+    // we can limit the amount written in any sync operation, as well as
+    // determine a sleep time between successive writes
+    //
+    int mp_maxwrite = 
+        reg.GetInt(section_name, kEnvParam_mp_maxwrite, 0, 0,
+                   IRegistry::eReturn);
+    int mp_maxwrite_sleep = 
+        reg.GetInt(section_name, kEnvParam_mp_maxwrite_sleep, 0, 0,
+                   IRegistry::eReturn);
+
+    // checkpointing parameters
+    //
+    int checkpoint_interval = 
+        reg.GetInt(section_name, kEnvParam_checkpoint_interval, 30, 0,
+                   IRegistry::eReturn);
+
+    bool enable_checkpoint =
+        reg.GetBool(section_name, kEnvParam_enable_checkpoint, true, 0, 
+                    IRegistry::eReturn);
+    
+    int checkpoint_kb = 
+        reg.GetInt(section_name, kEnvParam_checkpoint_kb, 256, 0,
+                   IRegistry::eReturn);
+
+    int checkpoint_min = 
+        reg.GetInt(section_name, kEnvParam_checkpoint_min, 5, 0,
+                   IRegistry::eReturn);
+
+    int memp_trickle_percent = 
+        reg.GetInt(section_name, kEnvParam_memp_trickle_percent, 60, 0,
+                   IRegistry::eReturn);
+
+
+    //
+    // establish our BDB environment
+    //
+    try {
+        env.reset(new CBDB_Env());
+        s_LogEnvParam("BDB error file)",  err_path);
+        env->OpenErrFile(err_path);
+        if (cache_size) {
+            s_LogEnvParam("BDB cache size)",  cache_size);
+            env->SetCacheSize(cache_size);
+        }
+        if (log_mem_size) {
+            env->SetLogInMemory(true);
+            s_LogEnvParam("BDB log mem size (in-memory log)",  log_mem_size);
+            env->SetLogBSize((unsigned)log_mem_size);        
+        }
+
+        if (!log_path.empty() && log_path != path) {
+            s_LogEnvParam("BDB log path",  log_path);
+            env->SetLogDir(log_path);
+        }
+
+        if (log_max) {
+            s_LogEnvParam("BDB log file max size",  log_max);
+            env->SetLogFileMax((unsigned)log_max);
+        }
+        s_LogEnvParam("BDB log auto remove",  log_autoremove);
+        env->SetLogAutoRemove(log_autoremove);
+
+        s_LogEnvParam("BDB direct db",  direct_db);
+        s_LogEnvParam("BDB direct log", direct_log);
+        env->SetDirectDB(direct_db);
+        env->SetDirectLog(direct_log);
+
+
+        if (lock_timeout) {
+            s_LogEnvParam("BDB lock timeout", lock_timeout);
+            env->SetLockTimeout(lock_timeout);
+        }        
+        if (tas_spins) {
+            s_LogEnvParam("BDB TAS spins", tas_spins);
+            env->SetTasSpins(tas_spins);
+        }
+        if (max_locks) {
+            s_LogEnvParam("BDB max locks", max_locks);
+            env->SetMaxLocks(max_locks);
+        }
+        if (max_lock_objects) {
+            s_LogEnvParam("BDB max lock objects", max_lock_objects);
+            env->SetMaxLockObjects(max_lock_objects);
+        }
+        s_LogEnvParam("BDB mempool max write", mp_maxwrite);
+        s_LogEnvParam("BDB mempool max write sleep", mp_maxwrite_sleep);
+        env->SetMpMaxWrite(mp_maxwrite, mp_maxwrite_sleep);
+
+        if (checkpoint_kb) {
+            s_LogEnvParam("BDB checkpoint KB", checkpoint_kb);
+            env->SetCheckPointKB(checkpoint_kb);
+        }
+        if (checkpoint_min) {
+            s_LogEnvParam("BDB checkpoint minitues", checkpoint_min);
+            env->SetCheckPointKB(checkpoint_min);
+        }
+        env->EnableCheckPoint(enable_checkpoint);
+
+
+        switch (e_type) {
+        case CBDB_Env::eEnvTransactional:
+            env->OpenWithTrans(path, 
+                               CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+            break;
+        case CBDB_Env::eEnvLocking:
+            env->OpenWithLocks(path);
+            break;
+        case CBDB_Env::eEnvConcurrent:
+            env->OpenConcurrentDB(path);
+            break;
+        default:
+            _ASSERT(0);
+        }
+
+
+        if (env->IsTransactional()) {
+            if (write_sync) {
+                s_LogEnvParam("BDB transaction sync", "Sync");
+                env->SetTransactionSync(CBDB_Transaction::eTransSync);
+            } else {
+                s_LogEnvParam("BDB transaction sync", "Async");
+                env->SetTransactionSync(CBDB_Transaction::eTransASync);
+            }
+            // TODO: another parameter to add
+            s_LogEnvParam("BDB deadlock detection", "Default");
+            env->SetLkDetect(CBDB_Env::eDeadLock_Default);
+        }
+
+
+        if (checkpoint_interval) {
+            s_LogEnvParam("BDB checkpoint interval (sec)", checkpoint_interval);
+            s_LogEnvParam("BDB trickle percent", memp_trickle_percent);
+            env->RunCheckpointThread(checkpoint_interval, memp_trickle_percent);
+        }
+    }
+    catch (CBDB_ErrnoException& e) {
+        if (e.IsRecovery()) {
+            env.reset();
+            BDB_RecoverEnv(path, true);
+        }
+        throw;
+    }
+
+    return env.release();
+}
+
+
 
 
 END_NCBI_SCOPE

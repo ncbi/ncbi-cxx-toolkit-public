@@ -66,6 +66,13 @@ public:
         eRunRecoveryFatal = (1 << 2),  ///< Run DB recovery first
         ePrivate = (1 << 3)            ///< Create private directory
     };
+
+    /// Environment types
+    enum EEnvType {
+        eEnvLocking,
+        eEnvConcurrent,
+        eEnvTransactional
+    };
     
     /// OR-ed combination of EEnvOptions    
     typedef unsigned int  TEnvOpenFlags;
