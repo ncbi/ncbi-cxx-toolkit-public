@@ -23,6 +23,7 @@ use File::Basename;
 use File::Find;
 use Cwd;
 use Fcntl qw(F_SETFD);
+use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 
 my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit';
 
@@ -42,17 +43,15 @@ my @ProjectDirs = ("$ScriptDir/projects", "$ScriptDir/internal/projects");
 
 sub Usage
 {
-    my ($Error) = @_;
-
-    print STDERR $ScriptName . ' $Revision$' . <<EOF;
+    print $ScriptName . ' $Revision$' . <<EOF;
 
 This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
 
 Usage:
-    1. $ScriptName [-switch-map SwitchMapFile] Project BuildDir
+    1. $ScriptName [options] Project BuildDir
 
-    2. $ScriptName [-switch-map SwitchMapFile] Project
+    2. $ScriptName [options] Project
 
 Where:
     Project - The name of the project you want to build or a pathname
@@ -159,6 +158,37 @@ Description:
         working copy directories in accordance with this file.
         The script will then optionally reconfigure and rebuild the tree.
 
+Options:
+    --help                          Display this help screen.
+
+    --switch-map=<SwitchMapFile>    After retrieval, switch working copy
+                                    subdirectories as described in
+                                    SwitchMapFile.
+
+    --with-toolkit=<Location>       Either override the default repository
+                                    URL or specify an alternative path within
+                                    the default repository.
+
+    --with-configure=<Path>         In mode 1 - pathname of the configure
+                                    script to run after the initial checkout,
+                                    relative to BuildDir; in mode 2 - a build
+                                    subdirectory pathname in which to chdir
+                                    before reconfigure.
+
+    --without-configure             Do not attempt to (re-)configure the
+                                    source tree.
+
+    --with-make                     Make the configured projects without
+                                    asking.
+
+    --without-make                  Skip the make step
+                                    (implies --without-check).
+
+    --with-check                    Build and run the check programs for the
+                                    configured projects without asking.
+
+    --without-check                 Do not build or run the check programs.
+
 Examples:
     1. Perform initial checkout of project "connect" and its
         dependencies, then optionally configure and build them:
@@ -174,13 +204,17 @@ Examples:
 
 EOF
 
-    if ($Error)
-    {
-        print STDERR "Error:  $Error.\n";
-        exit 1
-    }
-
     exit 0
+}
+
+sub UsageError
+{
+    my ($Error) = @_;
+
+    print STDERR ($Error ? "$ScriptName\: $Error.\n" : '') .
+        "Type '$ScriptName --help' for usage.\n";
+
+    exit 1
 }
 
 my @Paths;
@@ -260,33 +294,38 @@ sub FindProjectListing
     die "$Context: unable to find project '$Project'\n"
 }
 
-Usage() if @ARGV < 1 || $ARGV[0] eq '--help';
+my ($SwitchMapFile, $ToolkitLocation, $WithConfigure, $WithoutConfigure,
+    $WithMake, $WithoutMake, $WithCheck, $WithoutCheck);
 
-my ($SwitchMapFile, $MainProject, $BuildDir);
+GetOptions('help|h|?' => sub {Usage()},
+    'switch-map=s' => \$SwitchMapFile,
+    'with-toolkit=s' => \$ToolkitLocation,
+    'with-configure=s' => \$WithConfigure,
+    'without-configure' => \$WithoutConfigure,
+    'with-make' => \$WithMake,
+    'without-make' => \$WithoutMake,
+    'with-check' => \$WithCheck,
+    'without-check' => \$WithoutCheck)
+        or UsageError();
 
-while (@ARGV)
+UsageError() if @ARGV < 1;
+UsageError('Too many command line arguments') if @ARGV > 2;
+
+my ($MainProject, $BuildDir) = @ARGV;
+
+unless ($ToolkitLocation)
 {
-    my $Arg = shift @ARGV;
-
-    if ($Arg eq '-switch-map' || $Arg eq '-branches')
-    {
-        $SwitchMapFile = shift @ARGV or Usage("Pathname missing after $Arg")
-    }
-    elsif (!$MainProject)
-    {
-        $MainProject = $Arg
-    }
-    elsif (!$BuildDir)
-    {
-        $BuildDir = $Arg
-    }
-    else
-    {
-        Usage('Too many command line arguments')
-    }
+    $DefaultRepos .= '/trunk/c++'
 }
-
-Usage('Missing mandatory argument Project') unless $MainProject;
+elsif ($ToolkitLocation =~ m/:\/\//)
+{
+    $DefaultRepos = $ToolkitLocation
+}
+else
+{
+    $ToolkitLocation =~ s/^\/+//;
+    $DefaultRepos .= '/' . $ToolkitLocation
+}
 
 $MainProject = FindProjectListing($MainProject, $ScriptName);
 
@@ -344,7 +383,7 @@ my $HEAD = NCBI::SVN::Wrapper->new()->GetLatestRevision();
 if ($RepositoryURL)
 {
     $Update->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-r', $HEAD,
-        '-N', "$RepositoryURL/trunk/c++", $BuildDir)
+        '-N', $RepositoryURL, $BuildDir)
 }
 
 my $SwitchMap;
@@ -435,12 +474,16 @@ FindExistingBuilds();
 unless (@ExistingBuilds)
 {
     # No builds; presumably a new checkout
-    ConfirmYes('Would you like to configure this tree?');
+
+    exit 0 if $WithoutConfigure;
+
+    ConfirmYes('Would you like to configure this tree?') unless $WithConfigure;
 
     my $Platform = `uname -sm`;
     chomp $Platform;
 
     my @AvailableConfigs =
+        $WithConfigure ? ($WithConfigure) :
         $Platform =~ m/^SunOS / ?
             ('./configure', 'compilers/WorkShop.sh 32',
                 'compilers/WorkShop.sh 64') :
@@ -496,11 +539,17 @@ unless (@ExistingBuilds)
     die "$ScriptName\: configure did not result in a single build directory\n"
         if @ExistingBuilds != 1;
 
-    ConfirmYes('Would you like to compile this tree?');
-
     chdir $ExistingBuilds[0] . '/build' or die
 }
-else
+elsif ($WithConfigure)
+{
+    chdir $WithConfigure;
+
+    chmod 0755, 'reconfigure.sh';
+
+    RunOrDie('./reconfigure.sh reconf')
+}
+elsif (!$WithoutConfigure)
 {
     my $Choice = Menu('Would you like to reconfigure an existing ' .
         'build of this tree?', 0 => 'No, thank you.',
@@ -512,15 +561,22 @@ else
 
     chmod 0755, 'reconfigure.sh';
 
-    RunOrDie('./reconfigure.sh reconf');
-
-    ConfirmYes('Would you like to recompile this build?')
+    RunOrDie('./reconfigure.sh reconf')
 }
 
-RunOrDie('make all_p');
+unless ($WithoutMake)
+{
+    ConfirmYes('Would you like to compile this tree?') unless $WithMake;
 
-ConfirmYes('Would you like to run tests on this build?');
+    RunOrDie('make all_p');
 
-RunOrDie('make check_p');
+    unless ($WithoutCheck)
+    {
+        ConfirmYes('Would you like to run tests on this build?')
+            unless $WithCheck;
+
+        RunOrDie('make check_p')
+    }
+}
 
 exit 0
