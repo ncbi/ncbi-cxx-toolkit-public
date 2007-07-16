@@ -287,7 +287,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     if(n >= NCBI_NUM_SERVERS) {
         char message[128];
 
-        if (config->server_name) {
+        if (config && config->server_name) {
             sprintf(message, "Server '%s' is unavailable or does not exist.",
                     config->server_name);
         } else {
@@ -451,7 +451,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && errno == EINPROGRESS) retval = 0;
         if (retval < 0) {
-            if (config->server_name) {
+            if (config && config->server_name) {
                 sprintf(message, "Server '%s' is unavailable or does not exist.",
                         config->server_name);
             } else {
@@ -475,7 +475,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         }
 
         if ((now-start) > connect_timeout) {
-            if (config->server_name) {
+            if (config && config->server_name) {
                 sprintf(message, "Server '%s' is unavailable or does not exist.",
                         config->server_name);
             } else {
@@ -492,7 +492,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
             sprintf(message, "src/tds/login.c: tds_connect: %s:%d",
                     inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
             perror(message);
-            if (config->server_name) {
+            if (config && config->server_name) {
                 sprintf(message, "Server '%s' is unavailable or does not exist.",
                         config->server_name);
             } else {
