@@ -475,12 +475,19 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
 
 void CObjectOStreamXml::WriteBool(bool data)
 {
-    OpenTagEndBack();
-    if ( data )
-        m_Output.PutString(" value=\"true\"");
-    else
-        m_Output.PutString(" value=\"false\"");
-    SelfCloseTagEnd();
+    if ( !(x_IsStdXml() && m_Attlist) ) {
+        OpenTagEndBack();
+        if ( data )
+            m_Output.PutString(" value=\"true\"");
+        else
+            m_Output.PutString(" value=\"false\"");
+        SelfCloseTagEnd();
+    } else {
+        if ( data )
+            m_Output.PutString("true");
+        else
+            m_Output.PutString("false");
+    }
 }
 
 void CObjectOStreamXml::WriteChar(char data)

@@ -752,17 +752,20 @@ char CObjectIStreamXml::ReadUndefinedAttributes(void)
 bool CObjectIStreamXml::ReadBool(void)
 {
     CLightString attr;
-    while (HasAttlist()) {
-        attr = ReadAttributeName();
-        if ( attr == "value" ) {    
-            break;
+    bool checktag = !(x_IsStdXml() && m_Attlist);
+    if (checktag) {
+        while (HasAttlist()) {
+            attr = ReadAttributeName();
+            if ( attr == "value" ) {    
+                break;
+            }
+            string value;
+            ReadAttributeValue(value);
         }
-        string value;
-        ReadAttributeValue(value);
-    }
-    if ( attr != "value" ) {
-        EndOpeningTagSelfClosed();
-        ThrowError(fMissingValue,"attribute 'value' is missing");
+        if ( attr != "value" ) {
+            EndOpeningTagSelfClosed();
+            ThrowError(fMissingValue,"attribute 'value' is missing");
+        }
     }
     string sValue;
     ReadAttributeValue(sValue);
@@ -776,7 +779,7 @@ bool CObjectIStreamXml::ReadBool(void)
         }
         value = false;
     }
-    if ( !EndOpeningTagSelfClosed() && !NextTagIsClosing() )
+    if ( checktag && !EndOpeningTagSelfClosed() && !NextTagIsClosing() )
         ThrowError(fFormatError, "boolean tag must have empty contents");
     return value;
 }
