@@ -4370,7 +4370,12 @@ CFileReader::CFileReader(const string& filename)
                           NULL);
     bool error = m_Handle == INVALID_HANDLE_VALUE;
 #else
-    m_Handle = open(filename.c_str(), O_RDONLY);
+# ifndef O_BINARY
+    int open_mode = O_RDONLY;
+# else
+    int open_mode = O_RDONLY|O_BINARY;
+# endif
+    m_Handle = open(filename.c_str(), open_mode);
     bool error = m_Handle == -1;
 #endif
 
