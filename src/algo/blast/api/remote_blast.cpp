@@ -1560,12 +1560,15 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
     return CSeqLocInfo::eFrameNotSet;
 }
 
-CBlastOptionsBuilder::CBlastOptionsBuilder(const string & program,
-                                           const string & service)
+CBlastOptionsBuilder::
+CBlastOptionsBuilder(const string                & program,
+                     const string                & service,
+                     CBlastOptions::EAPILocality   locality)
     : m_Program        (program),
       m_Service        (service),
       m_PerformCulling (false),
-      m_HspRangeMax    (0)
+      m_HspRangeMax    (0),
+      m_Locality       (locality)
 {
 }
 
@@ -1935,7 +1938,7 @@ GetSearchOptions(const objects::CBlast4_parameters & aopts,
     // Using eLocal allows more of the options to be returned to the user.
     
     CRef<CBlastOptionsHandle>
-        cboh(CBlastOptionsFactory::Create(program, CBlastOptions::eLocal));
+        cboh(CBlastOptionsFactory::Create(program, m_Locality));
     
     x_ProcessOptions(*cboh, aopts.Get());
     x_ProcessOptions(*cboh, popts.Get());

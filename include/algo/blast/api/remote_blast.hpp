@@ -81,6 +81,8 @@ public:
     NCBI_EXCEPTION_DEFAULT(CRemoteBlastException, CBlastException);
 #endif /* SKIP_DOXYGEN_PROCESSING */
 };
+
+
 /// API for Remote Blast Requests
 ///
 /// API Class to facilitate submission of Remote Blast requests.
@@ -681,8 +683,11 @@ public:
     ///
     /// @param program Blast4 program string (e.g. blastn or blastp).
     /// @param service Blast4 service string (e.g. plain or rpsblast).
-    CBlastOptionsBuilder(const string & program,
-                         const string & service);
+    /// @param locality Locality of the resulting object.
+    CBlastOptionsBuilder(const string                & program,
+                         const string                & service,
+                         CBlastOptions::EAPILocality   locality
+                             = CBlastOptions::eLocal);
     
     /// Build and return options as a CBlastOptionsHandle.
     ///
@@ -847,7 +852,11 @@ private:
     
     /// The GI list (or none).
     SOptional< list<int> > m_GiList;
+    
+    /// API Locality of resulting options.
+    CBlastOptions::EAPILocality m_Locality;
 };
+
 
 /** Converts the return value of CSeqLocInfo::GetFrame into the
  * Blast4-frame-type field. Note that for non-translated queries, this value
@@ -859,6 +868,7 @@ NCBI_XBLAST_EXPORT
 objects::EBlast4_frame_type
 FrameNumber2NetworkFrame(int frame, EBlastProgramType program);
 
+
 /** Converts Blast4-frame-type into CSeqLocInfo::ETranslationFrame 
  * @param frame frame as specified by objects::EBlast4_frame_type
  * @param program CORE BLAST program type
@@ -867,6 +877,7 @@ NCBI_XBLAST_EXPORT
 CSeqLocInfo::ETranslationFrame
 NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame, 
                          EBlastProgramType program);
+
 
 /// Function to convert from program and service name into the CORE BLAST
 /// program type
@@ -877,6 +888,7 @@ NetworkFrame2FrameNumber(objects::EBlast4_frame_type frame,
 NCBI_XBLAST_EXPORT
 EBlastProgramType
 NetworkProgram2BlastProgramType(const string& program, const string& service);
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
