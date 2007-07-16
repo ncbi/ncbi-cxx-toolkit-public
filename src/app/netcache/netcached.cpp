@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.6  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.7  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -345,6 +345,10 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         ProcessVersion(socket, tdata.req);
         break;
     case eRemove:
+        stat.req_code = 'R';
+        ProcessRemove(socket, tdata.req);
+        break;
+    case eRemove2:
         stat.req_code = 'R';
         ProcessRemove(socket, tdata.req);
         break;
@@ -827,6 +831,26 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
 
     m_Cache->Remove(req_id);
 }
+
+
+void CNetCacheServer::ProcessRemove2(CSocket& sock, const SNC_Request& req)
+{
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+
+    CNetCache_Key blob_id(req_id);
+    if (!x_CheckBlobId(sock, &blob_id, req_id))
+        return;
+
+    m_Cache->Remove(req_id);
+
+    WriteMsg(sock, "OK:", "");
+}
+
 
 void CNetCacheServer::x_WriteBuf(CSocket& sock,
                                  char*    buf,

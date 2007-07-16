@@ -72,6 +72,7 @@ typedef enum {
     eShutdown,
     eVersion,
     eRemove,
+    eRemove2, ///< Remove with confirmation
     eLogging,
     eGetConfig,
     eGetStat,
@@ -411,6 +412,9 @@ private:
 
     /// Process "REMOVE" request
     void ProcessRemove(CSocket& sock, const SNC_Request& req);
+
+    /// Process "REMOVE2" request
+    void ProcessRemove2(CSocket& sock, const SNC_Request& req);
 
     /// Process "SHUTDOWN" request
     void ProcessShutdown();
