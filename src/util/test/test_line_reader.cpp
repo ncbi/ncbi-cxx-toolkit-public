@@ -197,14 +197,19 @@ int CTestApp::RunSelfTest()
                     rdr->UngetLine();
                 }
                 CTempString s = *++*rdr;
-                _ASSERT(rdr->GetPosition() == positions[l+1]);
-                if ( !(s == lines[l]) ) {
+                if ( !(s == lines[l]) ||
+                     rdr->GetPosition() != positions[l+1] ) {
                     ERR_POST("ILineReader type "<<type<<" at "<<l<<
-                             " \""<<s<<"\" != \""<<lines[l]<<"\"");
+                             " \""<<s<<"\" vs \""<<lines[l]<<"\"");
+                    ERR_POST("Next line position: "<<
+                             NcbiStreamposToInt8(rdr->GetPosition())<<
+                             " vs "<<
+                             NcbiStreamposToInt8(positions[l]));
                     ++errors;
                     break;
                 }
                 _ASSERT(s == lines[l]);
+                _ASSERT(rdr->GetPosition() == positions[l+1]);
                 ++l;
             }
         }
