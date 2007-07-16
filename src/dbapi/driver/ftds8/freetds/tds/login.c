@@ -124,7 +124,7 @@ void tds_set_capabilities(TDSLOGIN *tds_login, unsigned char *capabilities, int 
 #ifdef NCBI_FTDS
 TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 {
-    TDSSOCKET	*tds;
+    TDSSOCKET   *tds;
     struct sockaddr_in      sin;
     /* Jeff's hack - begin */
     unsigned long ioctl_blocking = 1;
@@ -180,7 +180,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     /* specified a date format? */
     /*
       if (config->date_fmt) {
-		tds->date_fmt=strdup(config->date_fmt);
+        tds->date_fmt=strdup(config->date_fmt);
       }
     */
     if (login->connect_timeout) {
@@ -215,39 +215,39 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     }
     memcpy(tds->capabilities,login->capabilities,TDS_MAX_CAPABILITY);
 
-	for(n= 0; n < NCBI_NUM_SERVERS; n++) {
-	    if(config->ip_addr[n] == NULL) {
-		    /* no more servers */
-		    tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
-						   "Server is unavailable or does not exist.");
-			tds_free_config(config);
-			tds_free_socket(tds);
-			return NULL;
+    for(n= 0; n < NCBI_NUM_SERVERS; n++) {
+        if(config->ip_addr[n] == NULL) {
+            /* no more servers */
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
+                           "Server is unavailable or does not exist.");
+            tds_free_config(config);
+            tds_free_socket(tds);
+            return NULL;
         }
-	    sin.sin_addr.s_addr = inet_addr(config->ip_addr[n]);
-		if (sin.sin_addr.s_addr == -1) {
-		    tdsdump_log(TDS_DBG_ERROR, "%L inet_addr() failed, IP = %s\n", config->ip_addr[n]);
-			continue;
-		}
+        sin.sin_addr.s_addr = inet_addr(config->ip_addr[n]);
+        if (sin.sin_addr.s_addr == -1) {
+            tdsdump_log(TDS_DBG_ERROR, "%L inet_addr() failed, IP = %s\n", config->ip_addr[n]);
+            continue;
+        }
 
-		sin.sin_family = AF_INET;
-		sin.sin_port = htons(config->port[n]);
+        sin.sin_family = AF_INET;
+        sin.sin_port = htons(config->port[n]);
 
 
-		tdsdump_log(TDS_DBG_INFO1, "%L Connecting addr %s port %d\n",
-					inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+        tdsdump_log(TDS_DBG_INFO1, "%L Connecting addr %s port %d\n",
+                    inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
 
-		if ((tds->s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
-		    perror ("socket");
-			tds_free_config(config);
-			tds_free_socket(tds);
-			return NULL;
-		}
+        if ((tds->s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
+            perror ("socket");
+            tds_free_config(config);
+            tds_free_socket(tds);
+            return NULL;
+        }
 
 #ifdef FIONBIO
         ioctl_blocking = 1; /* ~0; //TRUE; */
         if (IOCTL(tds->s, FIONBIO, &ioctl_blocking) < 0) {
-		    tds_free_config(config);
+            tds_free_config(config);
             tds_free_socket(tds);
             return NULL;
         }
@@ -255,12 +255,12 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && (sock_errno == TDSSOCK_EINPROGRESS || sock_errno == TDSSOCK_EWOULDBLOCK)) retval = 0;
         if (retval < 0) {
-		    CLOSESOCKET(tds->s);
-		    continue;
+            CLOSESOCKET(tds->s);
+            continue;
         }
         /* Select on writeability for connect_timeout */
-		FD_ZERO (&fds);
-		FD_ZERO (&fds1);
+        FD_ZERO (&fds);
+        FD_ZERO (&fds1);
         for(retval= -1; retval < 0;) {
             selecttimeout.tv_sec = connect_timeout;
             selecttimeout.tv_usec = 0;
@@ -269,28 +269,35 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
             retval = select(tds->s + 1, NULL, &fds, &fds1,
                             (connect_timeout > 0)? &selecttimeout : NULL);
             if((retval < 0) && (errno != EINTR)) {
-			    break;
+                break;
             }
         }
-		if(retval > 0) {
-		  int r, r_len= sizeof(r);
-		  if(FD_ISSET(tds->s, &fds1)) retval= -1;
-		  if(getsockopt(tds->s, SOL_SOCKET, SO_ERROR, &r, &r_len) < 0 ||
-			 r != 0) retval= -1;
-		}
+        if(retval > 0) {
+          int r, r_len= sizeof(r);
+          if(FD_ISSET(tds->s, &fds1)) retval= -1;
+          if(getsockopt(tds->s, SOL_SOCKET, SO_ERROR, &r, &r_len) < 0 ||
+             r != 0) retval= -1;
+        }
         if(retval > 0)
-		  break;
-		close(tds->s);
-		tds->s= 0;
-	}
+          break;
+        close(tds->s);
+        tds->s= 0;
+    }
 
-	if(n >= NCBI_NUM_SERVERS) {
-		tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
-					   "Server is unavailable or does not exist.");
-		tds_free_config(config);
-		tds_free_socket(tds);
-		return NULL;
-	}
+    if(n >= NCBI_NUM_SERVERS) {
+        char message[128];
+
+        if (config->server_name) {
+            sprintf(message, "Server '%s' is unavailable or does not exist.",
+                    config->server_name);
+        } else {
+            sprintf(message, "Server is unavailable or does not exist.");
+        }
+        tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, message);
+        tds_free_config(config);
+        tds_free_socket(tds);
+        return NULL;
+    }
 
     if (IS_TDS7_PLUS(tds)) {
         tds->out_flag=0x10;
@@ -311,7 +318,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         sprintf(query,"set textsize %d", config->text_size);
         retval = tds_submit_query(tds,query);
         if (retval == TDS_SUCCEED) {
-   			while (tds_process_result_tokens(tds)==TDS_SUCCEED);
+            while (tds_process_result_tokens(tds)==TDS_SUCCEED);
         }
     }
 
@@ -322,7 +329,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 #else
 TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 {
-    TDSSOCKET	*tds;
+    TDSSOCKET   *tds;
     struct sockaddr_in      sin;
     /* Jeff's hack - begin */
     unsigned long ioctl_blocking = 1;
@@ -376,7 +383,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
     /* specified a date format? */
     /*
       if (config->date_fmt) {
-		tds->date_fmt=strdup(config->date_fmt);
+        tds->date_fmt=strdup(config->date_fmt);
       }
     */
     if (login->connect_timeout) {
@@ -444,8 +451,13 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
         if (retval < 0 && errno == EINPROGRESS) retval = 0;
         if (retval < 0) {
-            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
-                           "Server is unavailable or does not exist.");
+            if (config->server_name) {
+                sprintf(message, "Server '%s' is unavailable or does not exist.",
+                        config->server_name);
+            } else {
+                sprintf(message, "Server is unavailable or does not exist.");
+            }
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, message);
             tds_free_config(config);
             tds_free_socket(tds);
             return NULL;
@@ -463,8 +475,13 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         }
 
         if ((now-start) > connect_timeout) {
-            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
-                           "Server is unavailable or does not exist.");
+            if (config->server_name) {
+                sprintf(message, "Server '%s' is unavailable or does not exist.",
+                        config->server_name);
+            } else {
+                sprintf(message, "Server is unavailable or does not exist.");
+            }
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, message);
             tds_free_config(config);
             tds_free_socket(tds);
             return NULL;
@@ -475,8 +492,13 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
             sprintf(message, "src/tds/login.c: tds_connect: %s:%d",
                     inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
             perror(message);
-            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0,
-                           "Server is unavailable or does not exist.");
+            if (config->server_name) {
+                sprintf(message, "Server '%s' is unavailable or does not exist.",
+                        config->server_name);
+            } else {
+                sprintf(message, "Server is unavailable or does not exist.");
+            }
+            tds_client_msg(tds->tds_ctx, tds, 20009, 9, 0, 0, message);
             tds_free_config(config);
             tds_free_socket(tds);
             return NULL;
@@ -503,7 +525,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         sprintf(query,"set textsize %d", config->text_size);
         retval = tds_submit_query(tds,query);
         if (retval == TDS_SUCCEED) {
-   			while (tds_process_result_tokens(tds)==TDS_SUCCEED);
+            while (tds_process_result_tokens(tds)==TDS_SUCCEED);
         }
     }
 
@@ -873,14 +895,14 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
         packet_size += (user_name_len + password_len)*2;
 
 #ifdef NCBI_FTDS
-	tds_put_int(tds, packet_size);
-	if (IS_TDS80(tds)) {
-	  static const unsigned char tds8Version[] = { 0x01, 0x00, 0x00, 0x71 };
-		tds_put_n(tds, tds8Version, 4);
-	} else {
-	  static const unsigned char tds7Version[] = { 0x00, 0x00, 0x00, 0x70 };
-		tds_put_n(tds, tds7Version, 4);
-	}
+    tds_put_int(tds, packet_size);
+    if (IS_TDS80(tds)) {
+      static const unsigned char tds8Version[] = { 0x01, 0x00, 0x00, 0x71 };
+        tds_put_n(tds, tds8Version, 4);
+    } else {
+      static const unsigned char tds7Version[] = { 0x00, 0x00, 0x00, 0x70 };
+        tds_put_n(tds, tds7Version, 4);
+    }
 #else
     tds_put_smallint(tds,packet_size);
     tds_put_n(tds,NULL,5);
@@ -892,44 +914,44 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
     tds_put_n(tds,NULL,3);       /* rest of TDSVersion which is a 4 byte field    */
 #endif
 #ifdef NCBI_FTDS
-	if(config->block_size < 512 || config->block_size > 1000000)
-	  config->block_size= 4096;
-	tds_put_int(tds, config->block_size);
+    if(config->block_size < 512 || config->block_size > 1000000)
+      config->block_size= 4096;
+    tds_put_int(tds, config->block_size);
 
-	tds_put_n(tds, magic1, 4);	/* client program version ? */
+    tds_put_n(tds, magic1, 4);  /* client program version ? */
 
-	packet_size= getpid();
-	tds_put_int(tds, packet_size);	/* process id of this process */
+    packet_size= getpid();
+    tds_put_int(tds, packet_size);  /* process id of this process */
 
-	/*tds_put_n(tds, magic1+8, 13);*/
+    /*tds_put_n(tds, magic1+8, 13);*/
 #if 1
-	{
-	static const unsigned char connection_id[] = { 0x00, 0x00, 0x00, 0x00 };
-	unsigned char option_flag1 = 0x00;
-	unsigned char option_flag2 = 0x00;
-	static const unsigned char sql_type_flag = 0x00;
-	static const unsigned char reserved_flag = 0x00;
-	static const unsigned char time_zone[] = { 0x88, 0xff, 0xff, 0xff };
-	static const unsigned char collation[] = { 0x36, 0x04, 0x00, 0x00 };
+    {
+    static const unsigned char connection_id[] = { 0x00, 0x00, 0x00, 0x00 };
+    unsigned char option_flag1 = 0x00;
+    unsigned char option_flag2 = 0x00;
+    static const unsigned char sql_type_flag = 0x00;
+    static const unsigned char reserved_flag = 0x00;
+    static const unsigned char time_zone[] = { 0x88, 0xff, 0xff, 0xff };
+    static const unsigned char collation[] = { 0x36, 0x04, 0x00, 0x00 };
 
-	tds_put_n(tds, connection_id, 4);
-	option_flag1 |= 0x80;	/* enable warning messages if SET LANGUAGE issued   */
-	option_flag1 |= 0x40;	/* change to initial database must succeed          */
-	option_flag1 |= 0x20;	/* enable warning messages if USE <database> issued */
+    tds_put_n(tds, connection_id, 4);
+    option_flag1 |= 0x80;   /* enable warning messages if SET LANGUAGE issued   */
+    option_flag1 |= 0x40;   /* change to initial database must succeed          */
+    option_flag1 |= 0x20;   /* enable warning messages if USE <database> issued */
 
-	tds_put_byte(tds, option_flag1);
+    tds_put_byte(tds, option_flag1);
 
-	option_flag2 |= 0x02;	/* client is an ODBC driver                         */
-	option_flag2 |= 0x01;	/* change to initial language must succeed          */
+    option_flag2 |= 0x02;   /* client is an ODBC driver                         */
+    option_flag2 |= 0x01;   /* change to initial language must succeed          */
 
-	tds_put_byte(tds, option_flag2);
+    tds_put_byte(tds, option_flag2);
 
-	tds_put_byte(tds, sql_type_flag);
-	tds_put_byte(tds, reserved_flag);
+    tds_put_byte(tds, sql_type_flag);
+    tds_put_byte(tds, reserved_flag);
 
-	tds_put_n(tds, time_zone, 4);
-	tds_put_n(tds, collation, 4);
-	}
+    tds_put_n(tds, time_zone, 4);
+    tds_put_n(tds, collation, 4);
+    }
 #endif
 
 
