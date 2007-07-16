@@ -188,10 +188,9 @@ void s_LogEnvParam(const string& param_name,
 /// Log a parameter in a human-readable format
 ///
 /// @internal
-template <>
-void s_LogEnvParam<bool>(const string& param_name,
-                         const bool& param_value,
-                         const string& units)
+static
+void s_LogEnvParam(const string& param_name,
+                   const bool& param_value)
 {
     LOG_POST(Info
              << setw(20) << param_name
