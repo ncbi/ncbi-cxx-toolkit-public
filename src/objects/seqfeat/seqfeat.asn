@@ -371,6 +371,7 @@ OrgMod ::= SEQUENCE {
         gb-synonym (34) ,       -- used by taxonomy database
         culture-collection (35) ,
         bio-material (36) ,
+        metagenome-source (37) ,
         old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
