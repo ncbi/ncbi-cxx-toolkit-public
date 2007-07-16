@@ -510,6 +510,16 @@ public:
     virtual int GetTimeout() const;
     virtual void SetVersionRetention(EKeepVersions policy);
     virtual EKeepVersions GetVersionRetention() const;
+
+    void Store(unsigned blob_id_ext,
+               const string&  key,
+               int            version,
+               const string&  subkey,
+               const void*    data,
+               size_t         size,
+               unsigned int   time_to_live = 0,
+               const string&  owner = kEmptyStr);
+
     virtual void Store(const string&  key,
                        int            version,
                        const string&  subkey,
@@ -541,11 +551,19 @@ public:
                                const string&     subkey,
                                SBlobAccessDescr* blob_descr);
 
+    IWriter* GetWriteStream(unsigned         blob_id_ext,
+                            const string&    key,
+                            int              version,
+                            const string&    subkey,
+                            unsigned int     time_to_live = 0,
+                            const string&    owner = kEmptyStr);
+
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
                                     unsigned int     time_to_live = 0,
                                     const string&    owner = kEmptyStr);
+
     virtual bool HasBlobs(const string&  key,
                           const string&  subkey);
 
@@ -626,7 +644,8 @@ protected:
     }
 
 
-    void x_Store(const string&  key,
+    void x_Store(unsigned       blob_id,
+                 const string&  key,
                  int            version,
                  const string&  subkey,
                  const void*    data,
@@ -758,7 +777,8 @@ private:
 
     /// Check if BLOB exists, create registration record if necessary
     ///
-    EBlobCheckinRes BlobCheckIn(const string&    key,
+    EBlobCheckinRes BlobCheckIn(unsigned         blob_id_ext,
+                                const string&    key,
                                 int              version,
                                 const string&    subkey,
                                 EBlobCheckinMode mode,

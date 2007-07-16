@@ -267,6 +267,16 @@ void CNetCacheServer::ParseRequestNC(const string& reqstr, SNC_Request* req)
 
     case 'P':
 
+        if (strncmp(s, "PUT3", 4) == 0) {
+            req->req_type = ePut3;
+            req->timeout = 0;
+            req->req_id.erase();
+
+            s += 4;
+            goto put_args_parse;
+
+        } // PUT2
+
         if (strncmp(s, "PUT2", 4) == 0) {
             req->req_type = ePut2;
             req->timeout = 0;

@@ -214,6 +214,7 @@ class CBDB_CacheIWriter : public IWriter
 public:
     CBDB_CacheIWriter(CBDB_Cache&                bdb_cache,
                       const char*                path,
+                      unsigned                   blob_id_ext,
                       const string&              blob_key,
                       int                        version,
                       const string&              subkey,
@@ -224,6 +225,7 @@ public:
                       CBDB_Cache::TBlobLock&     blob_lock)
     : m_Cache(bdb_cache),
       m_Path(path),
+      m_BlobIdExt(blob_id_ext),
       m_BlobKey(blob_key),
       m_Version(version),
       m_SubKey(subkey),
@@ -254,7 +256,8 @@ public:
 			    // Dumping the buffer
                 try {
                     if (m_Buffer) {
-                        m_Cache.x_Store(m_BlobKey,
+                        m_Cache.x_Store(m_BlobIdExt,
+                                        m_BlobKey,
                                         m_Version,
                                         m_SubKey,
                                         m_Buffer,
@@ -294,11 +297,11 @@ public:
                 try {
                     CFastMutexGuard guard(m_Cache.m_DB_Lock);
                     m_Cache.m_Statistics.AddStore(m_Owner,
-                                                m_RequestTime,
-                                                m_BlobStore,
-                                                m_BlobUpdate,
-                                                m_BlobSize,
-                                                m_Overflow);
+                                                  m_RequestTime,
+                                                  m_BlobStore,
+                                                  m_BlobUpdate,
+                                                  m_BlobSize,
+                                                  m_Overflow);
                 } catch (exception& ) {
                     // ignore non critical exceptions
                 }
@@ -404,7 +407,8 @@ public:
             _ASSERT(m_OverflowFile == 0);
 
             try {
-                m_Cache.x_Store(m_BlobKey,
+                m_Cache.x_Store(m_BlobIdExt,
+                                m_BlobKey,
                                 m_Version,
                                 m_SubKey,
                                 m_Buffer,
@@ -516,6 +520,7 @@ private:
 private:
     CBDB_Cache&           m_Cache;
     const char*           m_Path;
+    unsigned              m_BlobIdExt;
     string                m_BlobKey;
     int                   m_Version;
     string                m_SubKey;
@@ -1741,7 +1746,8 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
     }
 }
 
-void CBDB_Cache::x_Store(const string&  key,
+void CBDB_Cache::x_Store(unsigned       blob_id,
+                         const string&  key,
                          int            version,
                          const string&  subkey,
                          const void*    data,
@@ -1753,7 +1759,6 @@ void CBDB_Cache::x_Store(const string&  key,
     if (IsReadOnly()) {
         return;
     }
-    unsigned blob_id = 0;
     unsigned coord[2] = {0,};
     unsigned overflow = 0, old_overflow = 0;
     EBDB_ErrCode ret;
@@ -1792,7 +1797,8 @@ void CBDB_Cache::x_Store(const string&  key,
     // ----------------------------------------------------
 
     EBlobCheckinRes check_res = 
-        BlobCheckIn(key, version, subkey,
+        BlobCheckIn(blob_id,
+                    key, version, subkey,
                     eBlobCheckIn_Create,
                     blob_lock, do_blob_lock, 
                     &coord[0], &coord[1],
@@ -1987,6 +1993,19 @@ void CBDB_Cache::x_Store(const string&  key,
     }
 }
 
+void CBDB_Cache::Store(unsigned       blob_id_ext,
+                       const string&  key,
+                       int            version,
+                       const string&  subkey,
+                       const void*    data,
+                       size_t         size,
+                       unsigned int   time_to_live,
+                       const string&  owner)
+{
+    x_Store(blob_id_ext, key, version, subkey, data, size, time_to_live, owner,
+            true // do blob is locking
+            );
+}
 
 
 
@@ -1998,7 +2017,7 @@ void CBDB_Cache::Store(const string&  key,
                        unsigned int   time_to_live,
                        const string&  owner)
 {
-    x_Store(key, version, subkey, data, size, time_to_live, owner,
+    x_Store(0, key, version, subkey, data, size, time_to_live, owner,
             true // do blob is locking
             );
 }
@@ -2873,8 +2892,18 @@ unsigned CBDB_Cache::GetBlobId(const string&  key,
 }
 
 
-
 IWriter* CBDB_Cache::GetWriteStream(const string&    key,
+                                    int              version,
+                                    const string&    subkey,
+                                    unsigned int     time_to_live,
+                                    const string&    owner)
+{
+    return GetWriteStream(0, key, version, subkey, time_to_live, owner);
+}
+
+
+IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
+                                    const string&    key,
                                     int              version,
                                     const string&    subkey,
                                     unsigned int     time_to_live,
@@ -2909,7 +2938,8 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
     unsigned coord[2] = {0,};
     unsigned overflow;
     EBlobCheckinRes check_res = 
-        BlobCheckIn(key, version, subkey,
+        BlobCheckIn(blob_id_ext,
+                    key, version, subkey,
                     eBlobCheckIn_Create,
                     blob_lock, true, // lock the blob
                     &coord[0], &coord[1],
@@ -2921,6 +2951,7 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
     return
         new CBDB_CacheIWriter(*this,
                               m_Path.c_str(),
+                              blob_lock.GetId(),
                               key,
                               version,
                               subkey,
@@ -3989,7 +4020,8 @@ bool CBDB_Cache::IsLocked(unsigned blob_id)
 }
 
 CBDB_Cache::EBlobCheckinRes 
-CBDB_Cache::BlobCheckIn(const string&    key,
+CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
+                        const string&    key,
                         int              version,
                         const string&    subkey,
                         EBlobCheckinMode mode,
@@ -4041,7 +4073,11 @@ CBDB_Cache::BlobCheckIn(const string&    key,
             break;
         case eBlobCheckIn_Create:
             {
-            blob_id = GetNextBlobId();
+            if (blob_id_ext == 0) {
+                blob_id = GetNextBlobId();
+            } else {
+                blob_id = blob_id_ext;
+            }
 
             CBDB_Transaction trans(*m_Env, 
                                 CBDB_Transaction::eTransASync,  // async!

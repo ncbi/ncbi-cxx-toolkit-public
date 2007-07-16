@@ -67,6 +67,7 @@ typedef enum {
     eError,
     ePut,
     ePut2,   ///< PUT v.2 transmission protocol
+    ePut3,   ///< PUT v.2 transmission protocol with commit confirmation
     eGet,
     eGet2,   ///< GET v.2 (with confirmation message)
     eShutdown,
@@ -388,6 +389,12 @@ private:
 
     /// Process "PUT2" request
     void ProcessPut2(CSocket&              sock, 
+                     SNC_Request&          req,
+                     SNC_ThreadData&       tdata,
+                     NetCache_RequestStat& stat);
+
+    /// Process "PUT3" request
+    void ProcessPut3(CSocket&              sock, 
                      SNC_Request&          req,
                      SNC_ThreadData&       tdata,
                      NetCache_RequestStat& stat);
