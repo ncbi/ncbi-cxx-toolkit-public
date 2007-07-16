@@ -504,10 +504,10 @@ BOOST_AUTO_UNIT_TEST(SummaryDataP)
     CHECK_EQUAL(dbname,       localP.GetDBNameList());
     
     CHECK_EQUAL(string("Test database for BLAST unit tests"),
-                         localP.GetTitle());
+                localP.GetTitle());
     
-    CHECK_EQUAL(string("Oct 30, 2006  1:34 PM"),
-                         localP.GetDate());
+    CHECK_EQUAL(string("Jul 11, 2007  4:21 PM"),
+                localP.GetDate());
 }
 
 BOOST_AUTO_UNIT_TEST(GetAmbigSeqAllocN)
