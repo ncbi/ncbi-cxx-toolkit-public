@@ -620,6 +620,12 @@ void CFastaReader::AssembleSeq(void)
         if (m_SeqData.empty()) {
             inst.SetLength(0);
             inst.SetRepr(CSeq_inst::eRepr_virtual);
+        } else if (TestFlag(fNoSplit)) {
+            inst.SetLength(GetCurrentPos(eRawPos));
+            inst.SetRepr(CSeq_inst::eRepr_raw);
+            CRef<CSeq_data> data(new CSeq_data(m_SeqData, format));
+            CSeqportUtil::Pack(data, inst.GetLength());
+            inst.SetSeq_data(*data);
         } else {
             inst.SetLength(GetCurrentPos(eRawPos));
             CDelta_ext& delta_ext = inst.SetExt().SetDelta();
@@ -640,8 +646,12 @@ void CFastaReader::AssembleSeq(void)
         SIZE_TYPE n = m_Gaps.size();
         for (SIZE_TYPE i = 0;  i < n;  ++i) {
             if (i == 0  &&  m_Gaps[i].pos > 0) {
-                delta_ext.AddAndSplit(TStr(m_SeqData, 0, m_Gaps[i].pos),
-                                      format, m_Gaps[i].pos);
+                TStr chunk(m_SeqData, 0, m_Gaps[i].pos);
+                if (TestFlag(fNoSplit)) {
+                    delta_ext.AddLiteral(chunk, inst.GetMol());
+                } else {
+                    delta_ext.AddAndSplit(chunk, format, m_Gaps[i].pos);
+                }
             }
 
             if (m_Gaps[i].len == 0) { // unknown length
@@ -655,8 +665,12 @@ void CFastaReader::AssembleSeq(void)
             TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1].pos;
             if (next_start != m_Gaps[i].pos) {
                 TSeqPos seq_len = next_start - m_Gaps[i].pos;
-                delta_ext.AddAndSplit(TStr(m_SeqData, m_Gaps[i].pos, seq_len),
-                                      format, seq_len);
+                TStr chunk(m_SeqData, m_Gaps[i].pos, seq_len);
+                if (TestFlag(fNoSplit)) {
+                    delta_ext.AddLiteral(chunk, inst.GetMol());
+                } else {
+                    delta_ext.AddAndSplit(chunk, format, seq_len);
+                }
             }
         }
     }
