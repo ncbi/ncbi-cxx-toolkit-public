@@ -169,26 +169,56 @@ public:
         return x_IdentToOid(id, oid, locked);
     }
     
-    /// Translate Gis to Oids for the given vector of Gi/Oid pairs.
+    /// Translate Gis and Tis to Oids for the given ID list.
     ///
-    /// This method iterates over a vector of Gi/Oid pairs.  For each
-    /// pair where OID is -1, the GI will be looked up in the ISAM
-    /// file, and (if found) the correct OID will be stored (otherwise
-    /// the -1 will remain).  This method will normally be called once
-    /// for each volume.
+    /// This method iterates over a vector of Gi/OID and/or Ti/OID
+    /// pairs.  For each pair where the OID is -1, the GI or TI will
+    /// be looked up in the ISAM file, and (if found) the correct OID
+    /// will be stored (otherwise the -1 will remain).  This method
+    /// will normally be called once for each volume.
     ///
     /// @param vol_start
     ///   The starting OID of this volume.
     /// @param vol_end
     ///   The fist OID past the end of this volume.
-    /// @param gis
-    ///   The set of GI-OID pairs.
+    /// @param ids
+    ///   The set of GI-OID or TI-OID pairs.
     /// @param locked
     ///   The lock holder object for this thread
     void IdsToOids(int              vol_start,
                    int              vol_end,
-                   CSeqDBGiList   & gis,
+                   CSeqDBGiList   & ids,
                    CSeqDBLockHold & locked);
+    
+    /// Compute list of included OIDs based on a negative ID list.
+    ///
+    /// This method iterates over a vector of Gis or Tis, along with
+    /// the corresponding ISAM file for this volume.  Each OID found
+    /// in the ISAM file is marked in the negative ID list.  For those
+    /// for which the GI or TI is not mentioned in the negative ID
+    /// list, the OID will be marked as an 'included' OID in the ID
+    /// list (that OID will be searched).  The OIDs for IDs that are
+    /// not found in the ID list will be marked as 'visible' OIDs.
+    /// When this process is done for all volumes, the SeqDB object
+    /// will use all OIDs that are either marked as 'included' or NOT
+    /// marked as 'visible'.  The 'visible' list is needed because
+    /// otherwise iteration would skip IDs that are do not have GIs or
+    /// TIs (whichever is being iterated).  To use this method, this
+    /// volume must have an ISAM file matching the negative ID list's
+    /// identifier type or an exception will be thrown.
+    ///
+    /// @param vol_start
+    ///   The starting OID of this volume.
+    /// @param vol_end
+    ///   The fist OID past the end of this volume.
+    /// @param ids
+    ///   The set of GI-OID pairs.
+    /// @param locked
+    ///   The lock holder object for this thread
+    void IdsToOids(int                  vol_start,
+                   int                  vol_end,
+                   CSeqDBNegativeList & ids,
+                   CSeqDBLockHold     & locked);
     
     /// String translation
     /// 
@@ -469,7 +499,7 @@ private:
     
     /// GiList Translation
     /// 
-    /// Given a GI list, this routine finds the OID for each GI in the
+    /// Given a GI list, this routine finds the OID for each ID in the
     /// list not already having a translation.
     /// 
     /// @param vol_start
@@ -488,6 +518,28 @@ private:
                               CSeqDBGiList   & gis,
                               bool             use_tis,
                               CSeqDBLockHold & locked);
+    
+    /// Negative ID List Translation
+    /// 
+    /// Given a Negative ID list, this routine turns on the bits for
+    /// the OIDs found in the volume but not in the negated ID list.
+    /// 
+    /// @param vol_start
+    ///   The starting OID for this ISAM file's database volume.
+    /// @param vol_end
+    ///   The ending OID for this ISAM file's database volume.
+    /// @param nlist
+    ///   The Negative ID list to translate.
+    /// @param use_tis
+    ///   Iterate over TIs if true (GIs otherwise).
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void
+    x_SearchNegativeMulti(int                  vol_start,
+                          int                  vol_end,
+                          CSeqDBNegativeList & gis,
+                          bool                 use_tis,
+                          CSeqDBLockHold     & locked);
     
     /// Data file search
     /// 
@@ -924,6 +976,26 @@ private:
                          int            data,
                          bool           use_tis);
     
+    /// Find ID in the negative GI list using PBS.
+    ///
+    /// Use parabolic binary search to find the specified ID in the
+    /// negative ID list.  The 'index' value is the index to start the
+    /// search at (this must refer to an index at or before the target
+    /// data if the search is to succeed).  Whether the search was
+    /// successful or not, the index will be moved forward past any
+    /// elements with values less than 'key'.
+    ///
+    /// @param ids     Negative ID list. [in|out]
+    /// @param index   Index into negative ID list. [in|out]
+    /// @param key     Key for which to search. [in]
+    /// @param use_tis If true, search for a TI, else for a GI. [in]
+    /// @return True if the search found the ID.
+    inline bool
+    x_FindInNegativeList(CSeqDBNegativeList & ids,
+                         int                & index,
+                         Int8                 key,
+                         bool                 use_tis);
+    
     /// Advance the ISAM file
     ///
     /// Skip over any GI/OID pairs in the ISAM file that are less than
@@ -1010,6 +1082,14 @@ private:
         return (use_tis
                 ? ids.GetTiOid(index).oid
                 : ids.GetGiOid(index).oid);
+    }
+    
+    /// Fetch a GI or TI from a GI list.
+    static Int8 x_GetId(CSeqDBNegativeList & ids, int index, bool use_tis)
+    {
+        return (use_tis
+                ? ids.GetTi(index)
+                : ids.GetGi(index));
     }
     
     
@@ -1190,6 +1270,40 @@ CSeqDBIsam::x_AdvanceGiList(int            vol_start,
     
     return advanced;
 }
+
+inline bool
+CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
+                                 int                & index,
+                                 Int8                 key,
+                                 bool                 use_tis)
+{
+    bool found = false;
+    
+    // Skip any that are less than key.
+    
+    int ids_size = use_tis ? ids.GetNumTis() : ids.GetNumGis();
+    
+    while((index < ids_size) && (x_GetId(ids, index, use_tis) < key)) {
+        index++;
+        
+        int jump = 2;
+        
+        while((index + jump) < ids_size &&
+              x_GetId(ids, index + jump, use_tis) < key) {
+            index += jump;
+            jump += jump;
+        }
+    }
+    
+    // Check whether the GI or TI was found.
+    
+    if ((index < ids_size) && (x_GetId(ids,index,use_tis) == key)) {
+        found = true;
+    }
+    
+    return found;
+}
+
 
 inline bool
 CSeqDBIsam::x_AdvanceIsamIndex(CSeqDBMemLease & index_lease,

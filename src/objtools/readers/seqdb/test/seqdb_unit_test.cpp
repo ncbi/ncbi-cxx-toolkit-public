@@ -2847,6 +2847,224 @@ BOOST_AUTO_UNIT_TEST(TotalLengths)
     CHECK_EQUAL((int)seqn.GetTotalLengthStats(),  0);
 }
 
+class CNegativeIdList : public CSeqDBNegativeList {
+public:
+    CNegativeIdList(const int * ids, bool use_tis)
+    {
+        while(*ids) {
+            if (use_tis) {
+                m_Tis.push_back(*ids);
+            } else {
+                m_Gis.push_back(*ids);
+            }
+            ++ ids;
+        }
+    }
+    
+    ~CNegativeIdList()
+    {
+    }
+};
+
+static void s_ModifyMap(map<int,int> & m, int key, int c, int & total)
+{
+    int & amt = m[key];
+    amt += c;
+    total += c;
+    
+    if (! amt) {
+        m.erase(key);
+    }
+}
+
+static void s_MapAllGis(CSeqDB       & db,
+                        map<int,int> & m,
+                        int            change,
+                        int          & total)
+{
+    total = 0;
+    vector<int> gis;
+    
+    for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+        gis.clear();
+        
+        db.GetGis(oid, gis, false);
+        
+        ITERATE(vector<int>, iter, gis) {
+            s_ModifyMap(m, *iter, change, total);
+        }
+    }
+}
+
+BOOST_AUTO_UNIT_TEST(NegativeGiList)
+{
+    START;
+    
+    // 15 ids from the middle of the seqp database.
+    
+    int gis[] = {
+        23058829,
+        9910844,
+        23119763,
+        7770223,
+        15705575,
+        9651810,
+        27364740,
+        23113886,
+        21593385,
+        15217498,
+        39592435,
+        22126577,
+        44281419,
+        14325807,
+        15605992,
+        0
+    };
+    
+    int seqp_gis = 146;
+    int nlist_gis = 15;
+    
+    CRef<CSeqDBNegativeList> neg(new CNegativeIdList(gis, false));
+    
+    CSeqDB have_got("data/seqp", CSeqDB::eProtein);
+    CSeqDB have_not("data/seqp", CSeqDB::eProtein, &* neg);
+    
+    CHECK_EQUAL((int)have_got.GetTotalLength(), 26945);
+    CHECK_EQUAL((int)have_got.GetNumSeqs(),     100);
+    
+    // From 100 original OIDs, 15 GIs were removed, but 4 of the OIDs
+    // had multiple deflines, leaving a final count of 89 OIDs.
+    
+    CHECK_EQUAL((int)have_not.GetTotalLength(), 23602);
+    CHECK_EQUAL((int)have_not.GetNumSeqs(),     89);
+    
+    map<int, int> id_pop;
+    
+    int total = 0;
+    
+    // Add all 'negated' IDs to the map; verify that the map size is
+    // correct.
+    
+    for(int * idp = gis; *idp; ++idp) {
+        s_ModifyMap(id_pop, *idp, 1, total);
+    }
+    
+    CHECK_EQUAL((int) id_pop.size(), nlist_gis);
+    CHECK_EQUAL(total, nlist_gis);
+    
+    // Add all filtered IDs to the map; verify that the map size is
+    // correct and that the total change is seqp_gis-nlist_gis
+    
+    s_MapAllGis(have_not, id_pop, 1, total);
+    
+    CHECK_EQUAL((int) id_pop.size(), seqp_gis);
+    CHECK_EQUAL(total, seqp_gis-nlist_gis);
+    
+    // Remove all unfiltered IDs from the map; the result should be a
+    // negative change of (the number of gis in seqp) and cause the
+    // map to be empty.  This verifies that the negative GI list and
+    // the set of GIs in the filtered DB are an exact partition of the
+    // unfiltered database.
+    
+    s_MapAllGis(have_got, id_pop, -1, total);
+    
+    CHECK_EQUAL((int) id_pop.size(), 0);
+    CHECK_EQUAL(total, -seqp_gis);
+    
+    // One last thing: since there is some non-redundancy in the seqp
+    // database, I want to check that it affects the header data that
+    // is reported from SeqDB::GetHdr().
+    
+    int gi1 = 27360885;
+    int oid1 = -1;
+    
+    bool ok = have_got.GiToOid(gi1, oid1);
+    CHECK(ok);
+    
+    list< CRef<CSeq_id> > got_ids = have_got.GetSeqIDs(oid1);
+    list< CRef<CSeq_id> > not_ids = have_not.GetSeqIDs(oid1);
+    
+    int diff = 0;
+    
+    ITERATE(list< CRef<CSeq_id> >, iter, got_ids) {
+        diff ++;
+    }
+    ITERATE(list< CRef<CSeq_id> >, iter, not_ids) {
+        diff --;
+    }
+    CHECK_EQUAL(diff, 2);
+}
+
+BOOST_AUTO_UNIT_TEST(NegativeListNr)
+{
+    START;
+    
+    int gis[] = {
+        129296, 0
+    };
+    
+    CRef<CSeqDBNegativeList> neg(new CNegativeIdList(gis, false));
+    
+    string db = "nr";
+    
+    CSeqDB have_got(db, CSeqDB::eProtein);
+    CSeqDB have_not(db, CSeqDB::eProtein, &* neg);
+    
+    CHECK_EQUAL(have_got.GetTotalLength(), have_not.GetTotalLength());
+    CHECK_EQUAL(have_got.GetNumSeqs(),     have_not.GetNumSeqs());
+    
+    int oid = -1;
+    bool found = have_got.GiToOid(gis[0], oid);
+    CHECK(found);
+    
+    vector<int> gis_w, gis_wo;
+    have_got.GetGis(oid, gis_w);
+    have_not.GetGis(oid, gis_wo);
+    
+    // Check that exactly 1 GI was removed.
+    
+    int count_w = (int) gis_w.size();
+    int count_wo = (int) gis_wo.size();
+    CHECK_EQUAL(count_w, (count_wo+1));
+}
+
+
+BOOST_AUTO_UNIT_TEST(NegativeListSwissprot)
+{
+    START;
+    
+    // 1 id from the swissprot database.
+    
+    int gis[] = {
+        81723792, 0
+    };
+    
+    CRef<CSeqDBNegativeList> neg(new CNegativeIdList(gis, false));
+    
+    string db = "swissprot";
+    
+    CSeqDB have_got(db, CSeqDB::eProtein);
+    CSeqDB have_not(db, CSeqDB::eProtein, &* neg);
+    
+    CHECK_EQUAL(have_got.GetTotalLength(), have_not.GetTotalLength());
+    CHECK_EQUAL(have_got.GetNumSeqs(),     have_not.GetNumSeqs());
+    
+    int oid = -1;
+    bool found = have_got.GiToOid(gis[0], oid);
+    CHECK(found);
+    
+    vector<int> gis_w, gis_wo;
+    have_got.GetGis(oid, gis_w);
+    have_not.GetGis(oid, gis_wo);
+    
+    // Check that exactly 1 GI was removed.
+    
+    int count_w = (int) gis_w.size();
+    int count_wo = (int) gis_wo.size();
+    CHECK_EQUAL(count_w, (count_wo+1));
+}
+
+
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)

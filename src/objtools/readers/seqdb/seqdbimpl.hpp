@@ -134,13 +134,16 @@ public:
     ///   fails, or this platform does not support it, the less
     ///   efficient read and write calls are used instead.
     /// @param gi_list
-    ///   If not null, will be used to filter deflines and OIDs.
-    CSeqDBImpl(const string & db_name_list,
-               char           prot_nucl,
-               int            oid_begin,
-               int            oid_end,
-               bool           use_mmap,
-               CSeqDBGiList * gi_list);
+    ///   If not null, specifies included deflines and OIDs.
+    /// @param neg_list
+    ///   If not null, specifies excluded deflines and OIDs.
+    CSeqDBImpl(const string       & db_name_list,
+               char                 prot_nucl,
+               int                  oid_begin,
+               int                  oid_end,
+               bool                 use_mmap,
+               CSeqDBGiList       * gi_list,
+               CSeqDBNegativeList * neg_list);
     
     /// Default Constructor
     /// 
@@ -910,6 +913,9 @@ private:
     
     /// The User GI list for the entire CSeqDB object.
     mutable CRef<CSeqDBGiList> m_UserGiList;
+    
+    /// The Negative ID list for the entire CSeqDB object.
+    mutable CRef<CSeqDBNegativeList> m_NegativeList;
     
     /// Cache header data for sequences.
     mutable CSeqDBSimpleCache<int, CRef<CBlast_def_line_set> > m_HeaderCache;

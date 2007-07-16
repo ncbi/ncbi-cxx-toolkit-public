@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include <objects/general/general__.hpp>
 #include "seqdbgeneral.hpp"
 #include "seqdbatlas.hpp"
 #include <algorithm>
@@ -1182,12 +1183,111 @@ void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
     }
 }
 
+
+bool CSeqDBNegativeList::FindGi(int gi)
+{
+    InsureOrder();
+    
+    int b(0), e((int)m_Gis.size());
+    
+    while(b < e) {
+        int m = (b + e)/2;
+        int m_gi = m_Gis[m];
+        
+        if (m_gi < gi) {
+            b = m + 1;
+        } else if (m_gi > gi) {
+            e = m;
+        } else {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
+bool CSeqDBNegativeList::FindTi(Int8 ti)
+{
+    InsureOrder();
+    
+    int b(0), e((int)m_Tis.size());
+    
+    while(b < e) {
+        int m = (b + e)/2;
+        Int8 m_ti = m_Tis[m];
+        
+        if (m_ti < ti) {
+            b = m + 1;
+        } else if (m_ti > ti) {
+            e = m;
+        } else {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
+bool CSeqDBNegativeList::FindId(const CSeq_id & id)
+{
+    bool match_type = false;
+    return FindId(id, match_type);
+}
+
+
+bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
+{
+    if (id.IsGi()) {
+        match_type = true;
+        return FindGi(id.GetGi());
+    } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
+        match_type = true;
+        const CObject_id & obj = id.GetGeneral().GetTag();
+        
+        Int8 ti = (obj.IsId()
+                   ? obj.GetId()
+                   : NStr::StringToInt8(obj.GetStr()));
+        
+        return FindTi(ti);
+    } else {
+        match_type = false;
+    }
+    
+    return false;
+}
+
+
+bool CSeqDBGiList::FindId(const CSeq_id & id)
+{
+    if (id.IsGi()) {
+        if (FindGi(id.GetGi())) {
+            return true;
+        }
+    } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
+        const CObject_id & obj = id.GetGeneral().GetTag();
+        
+        Int8 ti = (obj.IsId()
+                   ? obj.GetId()
+                   : NStr::StringToInt8(obj.GetStr()));
+        
+        if (FindTi(ti)) {
+            return true;
+        }
+    }
+    
+    return FindSeqId(id);
+}
+
+
 CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
 {
     bool in_order = false;
     SeqDB_ReadGiList(fname, m_GisOids, & in_order);
     m_CurrentOrder = in_order ? eGi : eNone;
 }
+
 
 void SeqDB_CombineAndQuote(const vector<string> & dbs,
                            string               & dbname)
@@ -1214,6 +1314,7 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
         }
     }
 }
+
 
 void SeqDB_SplitQuoted(const string             & dbname,
                        vector<CSeqDB_Substring> & dbs)
@@ -1259,6 +1360,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
         dbs.push_back(CSeqDB_Substring(sp + begin, sp + dbname.size()));
     }
 }
+
 
 CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis)
 {

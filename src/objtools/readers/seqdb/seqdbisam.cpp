@@ -229,6 +229,7 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
     return eNoError;
 }
 
+
 void
 CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
                                       int              vol_end,
@@ -401,6 +402,103 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
     }
     
     m_Atlas.RetRegion(index_lease);
+}
+
+
+void
+CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
+                                  int                  vol_end,
+                                  CSeqDBNegativeList & ids,
+                                  bool                 use_tis,
+                                  CSeqDBLockHold     & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    if(m_Initialized == false) {
+        EErrorCode error = x_InitSearch(locked);
+        
+        if(error != eNoError) {
+            // Most ordinary errors (missing IDs for example) are
+            // ignored for "multi" mode searches.  But if a GI list is
+            // specified, and cannot be interpreted, it is an error.
+            
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Error: Unable to use ISAM index in batch mode.");
+        }
+    }
+    
+    m_Atlas.Lock(locked);
+    
+    // We can use Parabolic Binary Search for the negative GI list but
+    // not for the ISAM file data, because in the negative ID list
+    // case, every line of the ISAM data must be looked at.
+    
+    _ASSERT(m_Type != eNumericNoData);
+    
+    //......................................................................
+    //
+    // Translate the entire Gi List.
+    //
+    //......................................................................
+    
+    int gilist_size = use_tis ? ids.GetNumTis() : ids.GetNumGis();
+    
+    int gilist_index = 0;
+    
+    int sample_index(0);
+    SNumericKeyData4 * data_page (0);
+    
+    while(sample_index < m_NumSamples) {
+        int start = 0, num_elements = 0;
+        
+        x_MapDataPage(sample_index,
+                      start,
+                      num_elements,
+                      & data_page,
+                      locked);
+        
+        for(int i = 0; i < num_elements; i++) {
+            Int8 isam_key(0);
+            int isam_data(0);
+            
+            // 1. Get the ID+OID from the data page.
+            
+            x_GetDataElement(data_page,
+                             i,
+                             isam_key,
+                             isam_data);
+            
+            // 2. Look for it in the negative id list.
+            
+            bool found = false;
+            
+            if (gilist_index < gilist_size) {
+                found = x_FindInNegativeList(ids,
+                                             gilist_index,
+                                             isam_key,
+                                             use_tis);
+            }
+            
+            // 3. If not found, add the OID to the negative ID list.
+            
+            if (isam_data < vol_end) {
+                if (found) {
+                    // OID is found, but may not be included yet.
+                    ids.AddVisibleOid(isam_data + vol_start);
+                } else {
+                    // OID is included for iteration.
+                    ids.AddIncludedOid(isam_data + vol_start);
+                }
+            }
+        }
+        
+        // Move to next data page.  Note that for a negative ID list
+        // processing, we don't actually fetch any samples, because
+        // every ID->OID line needs to be examined anyway.
+        
+        sample_index ++;
+    }
 }
 
 
@@ -1819,6 +1917,36 @@ void CSeqDBIsam::IdsToOids(int              vol_start,
                                   ids,
                                   true,
                                   locked);
+    }
+}
+
+void CSeqDBIsam::IdsToOids(int                  vol_start,
+                           int                  vol_end,
+                           CSeqDBNegativeList & ids,
+                           CSeqDBLockHold     & locked)
+{
+    // The vol_start parameter is needed because translations in the
+    // GI list should refer to global OIDs, not per-volume OIDs.
+    
+    _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
+    
+    m_Atlas.Lock(locked);
+    ids.InsureOrder();
+    
+    if ((m_IdentType == eGiId) && ids.GetNumGis()) {
+        x_SearchNegativeMulti(vol_start,
+                              vol_end,
+                              ids,
+                              false,
+                              locked);
+    }
+    
+    if ((m_IdentType == eTiId) && ids.GetNumTis()) {
+        x_SearchNegativeMulti(vol_start,
+                              vol_end,
+                              ids,
+                              true,
+                              locked);
     }
 }
 

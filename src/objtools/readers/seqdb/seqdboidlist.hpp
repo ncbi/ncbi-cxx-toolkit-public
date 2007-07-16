@@ -69,7 +69,7 @@ public:
     /// A type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
-    /// Constructor
+    /// Constructor.
     /// 
     /// All processing to build the oid mask array is done in the
     /// constructor.  The volumes will be queried for information on
@@ -82,14 +82,17 @@ public:
     ///   The set of database volumes.
     /// @param gi_list
     ///   The User GI List (if there is one).
+    /// @param neg_list
+    ///   The Negative User GI List (if there is one).
     /// @param locked
     ///   The lock holder object for this thread.
-    CSeqDBOIDList(CSeqDBAtlas        & atlas,
-                  const CSeqDBVolSet & volumes,
-                  CRef<CSeqDBGiList> & gi_list,
-                  CSeqDBLockHold     & locked);
+    CSeqDBOIDList(CSeqDBAtlas              & atlas,
+                  const CSeqDBVolSet       & volumes,
+                  CRef<CSeqDBGiList>       & gi_list,
+                  CRef<CSeqDBNegativeList> & neg_list,
+                  CSeqDBLockHold           & locked);
     
-    /// Destructor
+    /// Destructor.
     /// 
     /// All resources will be freed (returned to the atlas).  This
     /// class uses the atlas to get the memory it needs, so the space
@@ -209,11 +212,14 @@ private:
     ///   The set of volumes to build an oid mask for.
     /// @param gi_list
     ///   Gi list object.
+    /// @param neg_list
+    ///   Negative ID list object.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_Setup(const CSeqDBVolSet & volset,
-                 CRef<CSeqDBGiList> & gi_list,
-                 CSeqDBLockHold     & locked);
+    void x_Setup(const CSeqDBVolSet       & volset,
+                 CRef<CSeqDBGiList>       & gi_list,
+                 CRef<CSeqDBNegativeList> & neg_list,
+                 CSeqDBLockHold           & locked);
     
     /// Copy data from an OID mask into the bit array.
     /// 
@@ -321,7 +327,7 @@ private:
     ///   The volume's ending oid.
     void x_ClearBitRange(int oid_start, int oid_end);
     
-    /// Apply a filter to a volume
+    /// Apply a filter to a volume.
     ///
     /// This method applies the specified filter to a database volume.
     /// The filter in question may be an OID list, GI list, or OID
@@ -343,7 +349,7 @@ private:
                        CSeqDBGiListSet       & gis,
                        CSeqDBLockHold        & locked);
     
-    /// Apply a user GI list to a volume
+    /// Apply a user GI list to a volume.
     ///
     /// This method applies a user-specified filter to the OID list.
     /// Unlike x_ApplyFilter, which turns on the bits of the filter,
@@ -357,6 +363,22 @@ private:
     ///   The lock holder object for this thread.
     void x_ApplyUserGiList(CSeqDBGiList   & gis,
                            CSeqDBLockHold & locked);
+    
+    /// Apply a negative user GI list to a volume.
+    ///
+    /// This method applies a user-specified filter to the OID list.
+    /// It serves the same purpose for negative GI lists that
+    /// x_ApplyUserGiList serves for positive GI lists.  The operation
+    /// performed here is an AND operation between the the (already
+    /// applied) alias file filters and the negation of the user
+    /// filter.
+    ///
+    /// @param neg
+    ///   The negative user gi list to apply to the volumes.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void x_ApplyNegativeList(CSeqDBNegativeList & neg,
+                             CSeqDBLockHold     & locked);
     
     /// The memory management layer object.
     CSeqDBAtlas    & m_Atlas;

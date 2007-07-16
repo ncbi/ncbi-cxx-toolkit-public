@@ -49,12 +49,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
-                     const string   & name,
-                     char             prot_nucl,
-                     CSeqDBGiList   * user_gilist,
-                     int              vol_start,
-                     CSeqDBLockHold & locked)
+CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
+                     const string       & name,
+                     char                 prot_nucl,
+                     CSeqDBGiList       * user_list,
+                     CSeqDBNegativeList * neg_list,
+                     int                  vol_start,
+                     CSeqDBLockHold     & locked)
     : m_Atlas    (atlas),
       m_IsAA     (prot_nucl == 'p'),
       m_VolName  (name),
@@ -62,8 +63,11 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas    & atlas,
       m_VolStart (vol_start),
       m_VolEnd   (0)
 {
-    if (user_gilist) {
-        m_UserGiList.Reset(user_gilist);
+    if (user_list) {
+        m_UserGiList.Reset(user_list);
+    }
+    if (neg_list) {
+        m_NegativeList.Reset(neg_list);
     }
     
     m_Idx.Reset(new CSeqDBIdxFile(atlas, name, prot_nucl, locked));
@@ -1851,7 +1855,9 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     
     // Filter based on "rdfp->membership_bit" or similar.
     
-    if (x_HaveGiList() || (have_oidlist && (membership_bit != 0))) {
+    bool id_filter = x_HaveIdFilter();
+    
+    if (id_filter || (have_oidlist && (membership_bit != 0))) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
         
@@ -1882,7 +1888,7 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
             // Here we must pass both the user-gi and volume-gi test,
             // for each defline, but not necessarily for each Seq-id.
             
-            if (have_memb && x_HaveGiList() && defline.CanGetSeqid()) {
+            if (have_memb && id_filter && defline.CanGetSeqid()) {
                 have_memb = false;
                 
                 bool have_user = false, have_volume = false;
@@ -2098,7 +2104,21 @@ bool CSeqDBVol::TiToOid(Int8 ti, int & oid, CSeqDBLockHold & locked) const
     // up to the user level, uses Int8.
     
     if (m_IsamTi.Empty()) {
-        return false;
+        // If the "nti/ntd" files become ubiquitous, this could be
+        // removed.  For now, I will look up trace IDs in the string
+        // DB if the database in question does not have the Trace ID
+        // ISAM files.  (The following could be made more efficient.)
+        
+        CSeq_id seqid(string("gnl|ti|") + NStr::Int8ToString(ti));
+        vector<int> oids;
+        
+        SeqidToOids(seqid, oids, locked);
+        
+        if (oids.size()) {
+            oid = oids[0];
+        }
+        
+        return ! oids.empty();
     }
     
     return m_IsamTi->IdToOid(ti, oid, locked);
@@ -2118,12 +2138,24 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
 {
     // Numeric translation is done in batch mode.
     
-    if (m_IsamGi.NotEmpty() && ids.GetNumGis()) {
-        m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+    if (ids.GetNumGis()) {
+        if (m_IsamGi.NotEmpty()) {
+            m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "GI list specified but no ISAM file found for GI.");
+        }
     }
     
-    if (m_IsamTi.NotEmpty() && ids.GetNumTis()) {
-        m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+    if (ids.GetNumTis()) {
+        if (m_IsamTi.NotEmpty()) {
+            m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "TI list specified but no ISAM file found for TI.");
+        }
     }
     
     // Seq-id translations are done individually.
@@ -2148,6 +2180,32 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
             }
             
             oids.resize(0);
+        }
+    }
+}
+
+void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
+                          CSeqDBLockHold     & locked) const
+{
+    // Numeric translation is done in batch mode.
+    
+    if (ids.GetNumGis()) {
+        if (m_IsamGi.NotEmpty()) {
+            m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "GI list specified but no ISAM file found for GI.");
+        }
+    }
+    
+    if (ids.GetNumTis()) {
+        if (m_IsamTi.NotEmpty()) {
+            m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "TI list specified but no ISAM file found for TI.");
         }
     }
 }

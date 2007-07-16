@@ -40,10 +40,11 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
-                             const CSeqDBVolSet & volset,
-                             CRef<CSeqDBGiList> & gi_list,
-                             CSeqDBLockHold     & locked)
+CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas              & atlas,
+                             const CSeqDBVolSet       & volset,
+                             CRef<CSeqDBGiList>       & gi_list,
+                             CRef<CSeqDBNegativeList> & neg_list,
+                             CSeqDBLockHold           & locked)
     : m_Atlas   (atlas),
       m_Lease   (atlas),
       m_NumOIDs (0),
@@ -57,12 +58,13 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
     //_ASSERT(volset.HasFilter() || gi_list);
     //_ASSERT(gi_list || volset.HasFilter());
     // (A step further: Lets not trust it to convert pointer->bool. -kmb)
-    _ASSERT(gi_list.NotEmpty() || volset.HasFilter());
     
-    if (volset.HasSimpleMask() && gi_list.Empty()) {
+    _ASSERT(gi_list.NotEmpty() || neg_list.NotEmpty() || volset.HasFilter());
+    
+    if (volset.HasSimpleMask() && gi_list.Empty() && neg_list.Empty()) {
         x_Setup( volset.GetSimpleMask(), locked );
     } else {
-        x_Setup( volset, gi_list, locked );
+        x_Setup( volset, gi_list, neg_list, locked );
     }
 }
 
@@ -92,11 +94,13 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
 // The general rule I am following in these methods is to use byte
 // computations except during actual looping.
 
-void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
-                            CRef<CSeqDBGiList> & gi_list,
-                            CSeqDBLockHold     & locked)
+void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
+                            CRef<CSeqDBGiList>       & gi_list,
+                            CRef<CSeqDBNegativeList> & neg_list,
+                            CSeqDBLockHold           & locked)
 {
-    _ASSERT((volset.HasFilter() && (! volset.HasSimpleMask())) || gi_list.NotEmpty());
+    _ASSERT((volset.HasFilter() && (! volset.HasSimpleMask()))
+            || gi_list.NotEmpty() || neg_list.NotEmpty());
     
     // First, get the memory space for the OID bitmap and clear it.
     
@@ -114,9 +118,13 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
     m_BitOwner = true;
     m_NumOIDs = num_oids;
     
-    CSeqDBGiListSet gi_list_set(m_Atlas, volset, gi_list, locked);
-    
     try {
+        CSeqDBGiListSet gi_list_set(m_Atlas,
+                                    volset,
+                                    gi_list,
+                                    neg_list,
+                                    locked);
+        
         memset((void*) m_Bits, 0, byte_length);
         
         // Then get the list of filenames and offsets to overlay onto it.
@@ -137,6 +145,8 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
         
         if (gi_list.NotEmpty()) {
             x_ApplyUserGiList(*gi_list, locked);
+        } else if (neg_list.NotEmpty()) {
+            x_ApplyNegativeList(*neg_list, locked);
         }
     }
     catch(...) {
@@ -271,6 +281,36 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis,
     }
 }
 
+void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist,
+                                        CSeqDBLockHold     & locked)
+{
+    m_Atlas.Lock(locked);
+    
+    // Intersect the user GI list with the OID bit map.
+    
+    // Iterate over the bitmap, clearing bits we find there but not in
+    // the bool vector.  For very dense OID bit maps, it might be
+    // faster to use two similarly implemented bitmaps and AND them
+    // together word-by-word.
+    
+    int max = nlist.GetNumOids();
+    
+    // Clear any OIDs after the included range.
+    
+    if (max < m_NumOIDs) {
+        x_ClearBitRange(max, m_NumOIDs);
+    }
+    
+    // If a 'get next included oid' method was added to the negative
+    // list, the following loop could be made a bit faster.
+    
+    for(int oid = 0; oid < max; oid++) {
+        if (! nlist.GetOidStatus(oid)) {
+            x_ClearBit(oid);
+        }
+    }
+}
+
 void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
                                  int              vol_start,
                                  int              oid_start,
@@ -388,8 +428,8 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
             if ((oid_end/8) == (oid_start/8)) {
                 // Another intuitive formula.
                 
-                // oid_end:  first disincluded oid after the included range.
-                // (oid_end % 8):  disincluded oids in last examined byte.
+                // oid_end:  first excluded oid after the included range.
+                // (oid_end % 8):  excluded oids in last examined byte.
                 
                 Uint4 oids_in_last_byte = (oid_end % 8);
                 

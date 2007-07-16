@@ -53,6 +53,9 @@ public:
     /// Type used for a reference to a GI list.
     typedef CRef<CSeqDBGiList> TListRef;
     
+    /// Type used for a reference to a GI list.
+    typedef CRef<CSeqDBNegativeList> TNegativeRef;
+    
     /// Constructor
     ///
     /// This class encapsulates some of the behavior of the GI lists
@@ -70,13 +73,16 @@ public:
     ///   The memory management layer object.
     /// @param vol_set
     ///   The set of database volumes.
-    /// @param user_gi_list
+    /// @param user_list
     ///   GI list provided by the end user.
+    /// @param neg_list
+    ///   Negative GI list provided by the end user.
     /// @param locked
     ///   The lock holder object for this thread.
     CSeqDBGiListSet(CSeqDBAtlas        & atlas,
                     const CSeqDBVolSet & vol_set,
-                    TListRef             user_gi_list,
+                    TListRef             user_list,
+                    TNegativeRef         neg_list,
                     CSeqDBLockHold     & locked);
     
     /// Get a reference to a named GI list.
@@ -147,6 +153,9 @@ private:
     
     /// User-specified GI list.
     TListRef m_UserList;
+    
+    /// User-specified Negative GI list.
+    TNegativeRef m_NegativeList;
     
     /// Map of all alias node specified GI lists and TI lists.
     map<string, TListRef> m_NodeListMap[2];

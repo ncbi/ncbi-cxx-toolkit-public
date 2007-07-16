@@ -38,7 +38,8 @@ BEGIN_NCBI_SCOPE
 CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
                            const vector<string> & vol_names,
                            char                   prot_nucl,
-                           CSeqDBGiList         * user_gilist)
+                           CSeqDBGiList         * user_gilist,
+                           CSeqDBNegativeList   * neg_gilist)
     : m_RecentVol(0)
 {
     CSeqDBLockHold locked(atlas);
@@ -46,7 +47,12 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     
     try {
         for(int i = 0; i < (int) vol_names.size(); i++) {
-            x_AddVolume(atlas, vol_names[i], prot_nucl, user_gilist, locked);
+            x_AddVolume(atlas,
+                        vol_names[i],
+                        prot_nucl,
+                        user_gilist,
+                        neg_gilist,
+                        locked);
             
             if (prot_nucl == '-') {
                 // Once one volume picks a prot/nucl type, enforce that
@@ -95,16 +101,17 @@ CSeqDBVolSet::~CSeqDBVolSet()
     }
 }
 
-void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas    & atlas,
-                               const string   & nm,
-                               char             pn,
-                               CSeqDBGiList   * user_gilist,
-                               CSeqDBLockHold & locked)
+void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas        & atlas,
+                               const string       & nm,
+                               char                 pn,
+                               CSeqDBGiList       * user_list,
+                               CSeqDBNegativeList * neg_list,
+                               CSeqDBLockHold     & locked)
 {
     int num_oids = x_GetNumOIDs();
     
     CSeqDBVol * new_volp =
-        new CSeqDBVol(atlas, nm, pn, user_gilist, num_oids, locked);
+        new CSeqDBVol(atlas, nm, pn, user_list, neg_list, num_oids, locked);
     
     CSeqDBVolEntry new_vol( new_volp );
     new_vol.SetStartEnd( num_oids );

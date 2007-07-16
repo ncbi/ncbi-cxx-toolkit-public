@@ -37,12 +37,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
-                       char           prot_nucl,
-                       int            oid_begin,
-                       int            oid_end,
-                       bool           use_mmap,
-                       CSeqDBGiList * gi_list)
+CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
+                       char                 prot_nucl,
+                       int                  oid_begin,
+                       int                  oid_end,
+                       bool                 use_mmap,
+                       CSeqDBGiList       * gi_list,
+                       CSeqDBNegativeList * neg_list)
     : m_AtlasHolder     (use_mmap, & m_FlushCB),
       m_Atlas           (m_AtlasHolder.Get()),
       m_DBNames         (db_name_list),
@@ -50,7 +51,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_VolSet          (m_Atlas,
                          m_Aliases.GetVolumeNames(),
                          prot_nucl,
-                         gi_list),
+                         gi_list,
+                         neg_list),
       m_RestrictBegin   (oid_begin),
       m_RestrictEnd     (oid_end),
       m_NextChunkOID    (0),
@@ -63,15 +65,18 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_SeqType         (prot_nucl),
       m_OidListSetup    (false),
       m_UserGiList      (gi_list),
+      m_NegativeList    (neg_list),
       m_HeaderCache     (256),
       m_NeedTotalsScan  (false)
 {
     INIT_CLASS_MARK();
     
+    _ASSERT((! gi_list) || (! neg_list));
+    
     m_Aliases.SetMasks(m_VolSet);
     m_VolSet.OptimizeGiLists();
     
-    m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
+    m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list || neg_list);
     
     m_VolumeLength = x_GetVolumeLength();
     m_NumOIDs      = x_GetNumOIDs();
@@ -98,7 +103,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     // the alias file cannot have correct values.
     
     try {
-        if (gi_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
+        if (gi_list || neg_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
             m_NeedTotalsScan = true;
         }
         
@@ -123,6 +128,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     }
     catch(CSeqDBException & e) {
         m_UserGiList.Reset();
+        m_NegativeList.Reset();
         m_VolSet.UnLease();
         m_FlushCB.SetImpl(0);
         throw e;
@@ -146,7 +152,6 @@ CSeqDBImpl::CSeqDBImpl()
       m_VolumeLength    (0),
       m_SeqType         ('-'),
       m_OidListSetup    (true),
-      m_UserGiList      (0),
       m_HeaderCache     (1),
       m_NeedTotalsScan  (false)
 {
@@ -218,6 +223,7 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
             m_OIDList.Reset( new CSeqDBOIDList(m_Atlas,
                                                m_VolSet,
                                                m_UserGiList,
+                                               m_NegativeList,
                                                locked) );
         }
         

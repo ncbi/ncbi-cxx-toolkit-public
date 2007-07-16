@@ -202,6 +202,23 @@ public:
     ///   The database will be filtered by this GI list if non-null.
     CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gilist = 0);
     
+    /// Short Constructor with Negative ID list.
+    /// 
+    /// This version of the constructor assumes the entire OID range
+    /// will be included, and applies filtering by a negative ID list.
+    /// Please use quotes ("") around database names that contains
+    /// space characters.
+    /// 
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces
+    /// @param seqtype
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param nlist
+    ///   The database will be filtered to not include these GIs or TIs.
+    CSeqDB(const string       & dbname,
+           ESeqType             seqtype,
+           CSeqDBNegativeList * nlist);
+    
     /// Short Constructor
     /// 
     /// This version of the constructor assumes memory mapping and

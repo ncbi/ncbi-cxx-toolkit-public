@@ -223,7 +223,7 @@ public:
     /// @return True if the TI was found.
     bool TiToOid(Int8 ti, int & oid, int & index);
     
-    /// Test for existence of a GI.
+    /// Test for existence of a Seq-id.
     bool FindSeqId(const CSeq_id & seqid);
     
     /// Try to find a Seq-id and return the associated OID.
@@ -238,6 +238,18 @@ public:
     /// @param index The index of this Seq-id (if found). [out]
     /// @return True if the Seq-id was found.
     bool SeqIdToOid(const CSeq_id & seqid, int & oid, int & index);
+    
+    /// Test for existence of a Seq-id by type.
+    /// 
+    /// This method uses FindGi or FindTi if the input ID is a GI or
+    /// TI.  If not, or if not found, it falls back to a Seq-id lookup
+    /// to find the ID.  It returns true iff ID was found, otherwise
+    /// it returns false.  This method is used by SeqDB to filter
+    /// Blast Defline lists.
+    ///
+    /// @param id The identifier to find.
+    /// @return true iff the id is found in the list.
+    bool FindId(const CSeq_id & id);
     
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
@@ -383,6 +395,298 @@ private:
     /// Prevent assignment.
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
 };
+
+
+/// CSeqDBBitVector
+/// 
+/// This class defines a bit vector that is similar to vector<bool>,
+/// but with a differently designed API that performs better on at
+/// least some platforms, and slightly altered semantics.
+
+class NCBI_XOBJREAD_EXPORT CSeqDBBitVector {
+public:
+    /// Constructor
+    CSeqDBBitVector()
+        : m_Size(0)
+    {
+    }
+    
+    /// Destructor
+    virtual ~CSeqDBBitVector()
+    {
+    }
+    
+    /// Set the inclusion of an OID.
+    ///
+    /// @param oid The OID in question. [in]
+    void SetBit(int oid)
+    {
+        if (oid >= m_Size) {
+            x_Resize(oid+1);
+        }
+        x_SetBit(oid);
+    }
+    
+    /// Set the inclusion of an OID.
+    ///
+    /// @param oid The OID in question. [in]
+    void ClearBit(int oid)
+    {
+        if (oid < m_Size) {
+            return;
+        }
+        x_ClearBit(oid);
+    }
+    
+    /// Get the inclusion status of an OID.
+    ///
+    /// @param oid The OID in question. [in]
+    /// @return True if the OID is included by SeqDB.
+    bool GetBit(int oid)
+    {
+        if (oid >= m_Size) {
+            return false;
+        }
+        return x_GetBit(oid);
+    }
+    
+    /// Get the size of the OID array.
+    int Size()
+    {
+        return m_Size;
+    }
+    
+private:
+    /// Prevent copy constructor.
+    CSeqDBBitVector(const CSeqDBBitVector & other);
+    
+    /// Prevent assignment.
+    CSeqDBBitVector & operator=(const CSeqDBBitVector & other);
+    
+    /// Bit vector element.
+    typedef int TBits;
+    
+    /// Bit vector.
+    vector<TBits> m_Bitmap;
+    
+    /// Maximum enabled OID plus one.
+    int m_Size;
+    
+    /// Resize the OID list.
+    void x_Resize(int num)
+    {
+        int bits = 8*sizeof(TBits);
+        int need = (num + bits - 1)/bits;
+        
+        if ((int)m_Bitmap.size() < need) {
+            int new_size = 1024;
+            
+            while (new_size < need) {
+                new_size *= 2;
+            }
+            
+            m_Bitmap.resize(new_size);
+        }
+        
+        m_Size = num;
+    }
+    
+    /// Set a specific bit (to 1).
+    void x_SetBit(int num)
+    {
+        int bits = 8*sizeof(TBits);
+        
+        m_Bitmap[num/bits] |= (1 << (num % bits));
+    }
+    
+    /// Set a specific bit (to 1).
+    bool x_GetBit(int num)
+    {
+        int bits = 8*sizeof(TBits);
+        
+        return !! (m_Bitmap[num/bits] & (1 << (num % bits)));
+    }
+    
+    /// Clear a specific bit (to 0).
+    void x_ClearBit(int num)
+    {
+        int bits = 8*sizeof(TBits);
+        
+        m_Bitmap[num/bits] &= ~(1 << (num % bits));
+    }
+};
+
+
+/// CSeqDBNegativeList
+/// 
+/// This class defines a list of GIs or TIs of sequences that should
+/// not be included in a SeqDB instance.  It is used by CSeqDB for
+/// user specified negative ID lists.  This class can be subclassed to
+/// allow more efficient population of the GI or TI list.
+
+class NCBI_XOBJREAD_EXPORT CSeqDBNegativeList : public CObject {
+public:
+    /// Constructor
+    CSeqDBNegativeList()
+        : m_LastSortSize (0)
+    {
+    }
+    
+    /// Destructor
+    virtual ~CSeqDBNegativeList()
+    {
+    }
+    
+    /// Sort list if not already sorted.
+    void InsureOrder()
+    {
+        if (m_LastSortSize != (int)(m_Gis.size() + m_Tis.size())) {
+            std::sort(m_Gis.begin(), m_Gis.end());
+            std::sort(m_Tis.begin(), m_Tis.end());
+            
+            m_LastSortSize = m_Gis.size() + m_Tis.size();
+        }
+    }
+    
+    /// Test for existence of a GI.
+    void AddGi(int gi)
+    {
+        m_Gis.push_back(gi);
+    }
+    
+    /// Test for existence of a GI.
+    void AddTi(Int8 ti)
+    {
+        m_Tis.push_back(ti);
+    }
+    
+    /// Test for existence of a GI.
+    bool FindGi(int gi);
+    
+    /// Test for existence of a TI.
+    bool FindTi(Int8 ti);
+    
+    /// Test for existence of a TI or GI here and report whether the
+    /// ID was one of those types.
+    /// 
+    /// If the input ID is a GI or TI, this method sets match_type to
+    /// true and returns the output of FindGi or FindTi.  If it is
+    /// neither of those types, it sets match_type to false and
+    /// returns false.  This method is used by SeqDB to filter Blast
+    /// Defline lists.
+    ///
+    /// @param id The identifier to find.
+    /// @param match_type The identifier is either a TI or GI.
+    /// @return true iff the id is found in the list.
+    bool FindId(const CSeq_id & id, bool & match_type);
+    
+    /// Test for existence of a TI or GI included here.
+    bool FindId(const CSeq_id & id);
+    
+    /// Access an element of the GI array.
+    /// @param index The index of the element to access. [in]
+    /// @return The GI for that index.
+    const int GetGi(int index) const
+    {
+        return m_Gis[index];
+    }
+    
+    /// Access an element of the TI array.
+    /// @param index The index of the element to access. [in]
+    /// @return The TI for that index.
+    const Int8 GetTi(int index) const
+    {
+        return m_Tis[index];
+    }
+    
+    /// Get the number of GIs in the array.
+    int GetNumGis() const
+    {
+        return (int) m_Gis.size();
+    }
+    
+    /// Get the number of TIs in the array.
+    int GetNumTis() const
+    {
+        return (int) m_Tis.size();
+    }
+    
+    /// Return false if there are elements present.
+    bool Empty() const
+    {
+        return ! (GetNumGis() || GetNumTis());
+    }
+    
+    /// Return true if there are elements present.
+    bool NotEmpty() const
+    {
+        return ! Empty();
+    }
+    
+    /// Include an OID in the iteration.
+    ///
+    /// The OID will be included by SeqDB in the set returned to users
+    /// by OID iteration.
+    ///
+    /// @param oid The OID in question. [in]
+    void AddIncludedOid(int oid)
+    {
+        m_Included.SetBit(oid);
+    }
+    
+    /// Indicate a visible OID.
+    ///
+    /// The OID will be marked as having been found in a GI or TI
+    /// ISAM index (but possibly not included for iteration).
+    ///
+    /// @param oid The OID in question. [in]
+    void AddVisibleOid(int oid)
+    {
+        m_Visible.SetBit(oid);
+    }
+    
+    /// Get the inclusion status of an OID.
+    ///
+    /// This returns true for OIDs that were in the included set and
+    /// for OIDs that were not found in the ISAM file at all.
+    ///
+    /// @param oid The OID in question. [in]
+    /// @return True if the OID is included by SeqDB.
+    bool GetOidStatus(int oid)
+    {
+        return m_Included.GetBit(oid) || (! m_Visible.GetBit(oid));
+    }
+    
+    /// Get the size of the OID array.
+    int GetNumOids()
+    {
+        return max(m_Visible.Size(), m_Included.Size());
+    }
+    
+protected:
+    /// GIs to exclude from the SeqDB instance.
+    vector<int> m_Gis;
+    
+    /// TIs to exclude from the SeqDB instance.
+    vector<Int8> m_Tis;
+    
+private:
+    /// Prevent copy constructor.
+    CSeqDBNegativeList(const CSeqDBNegativeList & other);
+    
+    /// Prevent assignment.
+    CSeqDBNegativeList & operator=(const CSeqDBNegativeList & other);
+    
+    /// Included OID bitmap.
+    CSeqDBBitVector m_Included;
+    
+    /// OIDs visible to the ISAM file.
+    CSeqDBBitVector m_Visible;
+    
+    /// Zero if unsorted, or the size it had after the last sort.
+    int m_LastSortSize;
+};
+
 
 /// Read a binary-format GI list from a file.
 ///

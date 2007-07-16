@@ -84,18 +84,20 @@ static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
 ///   fails, this platform does not support it, the less efficient
 ///   read and write calls are used instead.
 /// @param gi_list
-///   If non-null, this GI list will be used to filter the deflines
-///   and OIDs.
+///   This ID list specifies OIDs and deflines to include.
+/// @param neg_list
+///   This negative ID list specifies deflines and OIDs to exclude.
 /// @return
 ///   The CSeqDBImpl object that was created.
 
 static CSeqDBImpl *
-s_SeqDBInit(const string & dbname,
-            char           prot_nucl,
-            int            oid_begin,
-            int            oid_end,
-            bool           use_mmap,
-            CSeqDBGiList * gi_list)
+s_SeqDBInit(const string       & dbname,
+            char                 prot_nucl,
+            int                  oid_begin,
+            int                  oid_end,
+            bool                 use_mmap,
+            CSeqDBGiList       * gi_list,
+            CSeqDBNegativeList * neg_list)
 {
     CSeqDBImpl * impl = 0;
     
@@ -107,7 +109,8 @@ s_SeqDBInit(const string & dbname,
                                   oid_begin,
                                   oid_end,
                                   use_mmap,
-                                  gi_list);
+                                  gi_list,
+                                  neg_list);
         }
         catch(CSeqDBException &) {
             prot_nucl = 'n';
@@ -120,7 +123,8 @@ s_SeqDBInit(const string & dbname,
                               oid_begin,
                               oid_end,
                               use_mmap,
-                              gi_list);
+                              gi_list,
+                              neg_list);
     }
     
     _ASSERT(impl);
@@ -128,7 +132,9 @@ s_SeqDBInit(const string & dbname,
     return impl;
 }
 
-CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
+CSeqDB::CSeqDB(const string & dbname,
+               ESeqType       seqtype,
+               CSeqDBGiList * gi_list)
 {
     if (dbname.size() == 0) {
         NCBI_THROW(CSeqDBException,
@@ -141,7 +147,29 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gi_list)
                          0,
                          0,
                          true,
-                         gi_list);
+                         gi_list,
+                         NULL);
+    
+    m_Impl->Verify();
+}
+
+CSeqDB::CSeqDB(const string       & dbname,
+               ESeqType             seqtype,
+               CSeqDBNegativeList * nlist)
+{
+    if (dbname.size() == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Database name is required.");
+    }
+    
+    m_Impl = s_SeqDBInit(dbname,
+                         s_GetSeqTypeChar(seqtype),
+                         0,
+                         0,
+                         true,
+                         NULL,
+                         nlist);
     
     m_Impl->Verify();
 }
@@ -164,7 +192,8 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                          0,
                          0,
                          true,
-                         gi_list);
+                         gi_list,
+                         NULL);
     
     m_Impl->Verify();
 }
@@ -187,7 +216,8 @@ CSeqDB::CSeqDB(const string & dbname,
                          oid_begin,
                          oid_end,
                          use_mmap,
-                         gi_list);
+                         gi_list,
+                         NULL);
     
     m_Impl->Verify();
 }
@@ -213,7 +243,8 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                          oid_begin,
                          oid_end,
                          use_mmap,
-                         gi_list);
+                         gi_list,
+                         NULL);
     
     m_Impl->Verify();
 }

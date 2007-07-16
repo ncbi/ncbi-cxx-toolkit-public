@@ -136,13 +136,17 @@ private:
 };
 
 
-CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas        & atlas,
-                                 const CSeqDBVolSet & volset,
-                                 CRef<CSeqDBGiList>   user_gi_list,
-                                 CSeqDBLockHold     & locked)
-    : m_Atlas    (atlas),
-      m_UserList (user_gi_list)
+CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
+                                 const CSeqDBVolSet     & volset,
+                                 CRef<CSeqDBGiList>       user_list,
+                                 CRef<CSeqDBNegativeList> neg_list,
+                                 CSeqDBLockHold         & locked)
+    : m_Atlas        (atlas),
+      m_UserList     (user_list),
+      m_NegativeList (neg_list)
 {
+    _ASSERT(user_list.Empty() || neg_list.Empty());
+    
     if (m_UserList.NotEmpty() && m_UserList->NotEmpty()) {
         typedef SSeqDB_IndexCountPair TIndexCount;
         vector<TIndexCount> OidsPerVolume;
@@ -172,9 +176,20 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas        & atlas,
             
             const CSeqDBVolEntry * vol = volset.GetVolEntry(vol_idx);
             
-            // Note: The implied ISAM lookups will sort by GI.
+            // Note: The implied ISAM lookups will sort by GI/TI.
             
             vol->Vol()->IdsToOids(*m_UserList, locked);
+        }
+    } else if (m_NegativeList.NotEmpty() && m_NegativeList->NotEmpty()) {
+        // We don't bother to sort these since every ISAM mapping must
+        // be examined for the negative ID list case.
+        
+        for(int i = 0; i < volset.GetNumVols(); i++) {
+            const CSeqDBVolEntry * vol = volset.GetVolEntry(i);
+            
+            // Note: The implied ISAM lookups will sort by GI/TI.
+            
+            vol->Vol()->IdsToOids(*m_NegativeList, locked);
         }
     }
 }

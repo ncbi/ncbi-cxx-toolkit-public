@@ -160,18 +160,21 @@ public:
     ///   The base name of the volumes files. [in]
     /// @param prot_nucl
     ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl. [in]
-    /// @param user_gilist
-    ///   If specified, will be used to filter deflines by GI. [in]
+    /// @param user_list
+    ///   Specifies GIs or TIs of sequences to include. [in]
+    /// @param neg_list
+    ///   Specifies GIs or TIs of sequences to exclude. [in]
     /// @param vol_start
     ///   The volume's starting OID. [in]
     /// @param locked
     ///   The lock holder object for this thread. [in]
-    CSeqDBVol(CSeqDBAtlas    & atlas,
-              const string   & name,
-              char             prot_nucl,
-              CSeqDBGiList   * user_gilist,
-              int              vol_start,
-              CSeqDBLockHold & locked);
+    CSeqDBVol(CSeqDBAtlas        & atlas,
+              const string       & name,
+              char                 prot_nucl,
+              CSeqDBGiList       * user_list,
+              CSeqDBNegativeList * neg_list,
+              int                  vol_start,
+              CSeqDBLockHold     & locked);
     
     /// Sequence length for protein databases.
     /// 
@@ -550,6 +553,21 @@ public:
     void IdsToOids(CSeqDBGiList   & gis,
                    CSeqDBLockHold & locked) const;
     
+    /// Add OIDs for this volume, filtered by negative ID lists.
+    ///
+    /// This method iterates over a vector of Gis or Tis.  For each
+    /// GI+OID or TI+OID line in the ISAM file, the OID's bit will be
+    /// enabled in the ID list, if the GI or TI is not found in the
+    /// negated GI or TI lists.  This method will normally be called
+    /// once for each volume.
+    ///
+    /// @param gis
+    ///   The set of GIs, TIs, and the OID bitmap. [in|out]
+    /// @param locked
+    ///   The lock holder object for this thread. [in]
+    void IdsToOids(CSeqDBNegativeList & gis,
+                   CSeqDBLockHold     & locked) const;
+    
     /// Filter this volume using the specified GI list.
     ///
     /// A volume can be filtered by a GI list.  This method attaches a
@@ -700,25 +718,39 @@ private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
     
-    /// Returns true if this volume has a GI list.
+    /// Returns true if this volume has a positive ID list.
     bool x_HaveGiList() const
     {
         return ! (m_UserGiList.Empty() && m_VolumeGiLists.empty());
     }
     
-    /// Returns true if this volume's GI list, if any, has this GI.
+    /// Returns true if this volume has a negative ID list.
+    bool x_HaveNegativeList() const
+    {
+        return m_NegativeList.NotEmpty();
+    }
+    
+    /// Returns true if this volume has an ID list.
+    bool x_HaveIdFilter() const
+    {
+        return x_HaveGiList() || x_HaveNegativeList();
+    }
+    
+    /// Determine if a user ID list affects this ID, and how.
     ///
     /// This is used to accumulate information about a Seq-id in two
     /// boolean variables.  In order for a Seq-id to be considered
-    /// `included', it must pass filtering by both the user GI list
-    /// (if one was specified) and at least one of the set of GI lists
+    /// `included', it must pass filtering by both the user ID list
+    /// (if one was specified) and at least one of the set of ID lists
     /// attached to the volume (if any exist).  This function will be
     /// called repeatedly for each ID in a defline to determine if the
     /// defline as a whole passes the filtering tests.  If the
     /// booleans are set to true, this code never sets it to false,
     /// and can skip the associated test.  This is because a defline
-    /// is included if one of its Seq-ids matches the volume GI list
-    /// but a different one matches the user GI list.
+    /// is included if one of its Seq-ids matches the volume ID list
+    /// but a different one matches the user ID list.  For negative ID
+    /// lists this returns true if the type of ID matches the kind
+    /// used by the negative list, but the ID is not found therein.
     ///
     /// @param id Sequence id to check for. [in]
     /// @param have_user Will be set if the user list has id. [in|out]
@@ -728,10 +760,12 @@ private:
                        bool          & have_vol) const
     {
         if (! have_user) {
-            if (m_UserGiList.Empty()) {
-                have_user = true;
+            if (m_UserGiList.NotEmpty()) {
+                have_user |= x_ListIncludesId(*m_UserGiList, id);
+            } else if (m_NegativeList.NotEmpty()) {
+                have_user |= x_ListIncludesId(*m_NegativeList, id);
             } else {
-                have_user |= x_ListHasId(*m_UserGiList, id);
+                have_user = true;
             }
         }
         
@@ -740,7 +774,7 @@ private:
                 have_vol = true;
             } else {
                 NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
-                    if (x_ListHasId(**gilist, id)) {
+                    if (x_ListIncludesId(**gilist, id)) {
                         have_vol = true;
                         break;
                     }
@@ -749,21 +783,46 @@ private:
         }
     }
     
-    /// Returns true if this volume's GI list has this Seq-id.
+    /// Returns true if this volume's ID list has this Seq-id.
     /// @param L A GI list to test against. [in]
     /// @param id A Seq-id to test against L. [in]
     /// @return True if the list contains the specified Seq-id.
-    bool x_ListHasId(CSeqDBGiList & L, const CSeq_id & id) const
+    bool x_ListIncludesId(CSeqDBGiList & L, const CSeq_id & id) const
     {
-        int oid = -1;
+        return L.FindId(id);
+    }
+    
+    /// Returns true if this ID is not found in the negative ID list.
+    ///
+    /// This checks whether an ID is found in the negative ID list,
+    /// and whether the ID is the right type (so that it might
+    /// possibly be found).  If the ID is the right type, and is not
+    /// found, this method returns true.  In other cases it returns
+    /// false.  This technique could be described as treating the
+    /// negative GI list as the list of all GIs not mentioned in the
+    /// vector stored in the list, and similarly for the TIs.  This
+    /// means that every TI and GI in the ASN.1 for this defline must
+    /// be mentioned in the negative ID list in order to exclude the
+    /// defline.  In normal practice, only one GI or TI ever exists
+    /// for a defline.
+    ///
+    /// @param L A GI list to test against. [in]
+    /// @param id A Seq-id to test against L. [in]
+    /// @return True if the list contains the specified Seq-id.
+    bool x_ListIncludesId(CSeqDBNegativeList & L, const CSeq_id & id) const
+    {
+        // A defline is included IFF either a GI or TI is found, and
+        // that ID is not on the list.
         
-        if (id.IsGi()) {
-            if (L.GiToOid(id.GetGi(), oid) && (oid != -1)) {
-                return true;
-            }
-        }
+        // I use the terms 'included' and 'mentioned' to describe the
+        // negative list processing as follows: "A negative list
+        // INCLUDES a TI or GI if that ID is not MENTIONED in the
+        // negative list."
         
-        return L.SeqIdToOid(id, oid) && (oid != -1);
+        bool match_type = false;
+        bool found = L.FindId(id, match_type);
+        
+        return (! found) && match_type;
     }
     
     /// Get sequence header object.
@@ -1102,8 +1161,11 @@ private:
     /// This cache allows CBioseqs to share taxonomic objects.
     mutable CSeqDBSimpleCache< int, CRef<CSeqdesc> > m_TaxCache;
     
-    /// The user GI list, if one exists.
+    /// The user ID list, if one exists.
     mutable CRef<CSeqDBGiList> m_UserGiList;
+    
+    /// The negative ID list, if one exists.
+    mutable CRef<CSeqDBNegativeList> m_NegativeList;
     
     /// The volume GI lists, if any exist.
     mutable TGiLists m_VolumeGiLists;

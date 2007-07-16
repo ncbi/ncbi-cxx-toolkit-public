@@ -437,10 +437,13 @@ public:
     ///   Whether these are protein or nucleotide sequences.
     /// @param user_gilist
     ///   If specified, will be used to filter deflines by GI.
+    /// @param neg_gilist
+    ///   If specified, will be used to filter deflines by GI.
     CSeqDBVolSet(CSeqDBAtlas          & atlas,
                  const vector<string> & vol_names,
                  char                   prot_nucl,
-                 CSeqDBGiList         * user_gilist);
+                 CSeqDBGiList         * user_list,
+                 CSeqDBNegativeList   * neg_list);
     
     /// Default Constructor
     ///
@@ -892,15 +895,18 @@ private:
     ///   The name of the volume.
     /// @param pn
     ///   The sequence type.
-    /// @param user_gilist
-    ///   If specified, will be used to filter deflines by GI.
+    /// @param user_list
+    ///   If specified, will be used to include deflines by ID.
+    /// @param neg_list
+    ///   If specified, will be used to exclude deflines by ID.
     /// @param locked
     ///   The lock holder object for this thread.
-    void x_AddVolume(CSeqDBAtlas    & atlas,
-                     const string   & nm,
-                     char             pn,
-                     CSeqDBGiList   * user_gilist,
-                     CSeqDBLockHold & locked);
+    void x_AddVolume(CSeqDBAtlas        & atlas,
+                     const string       & nm,
+                     char                 pn,
+                     CSeqDBGiList       * user_list,
+                     CSeqDBNegativeList * neg_list,
+                     CSeqDBLockHold     & locked);
     
     /// Find a volume by name
     /// 
