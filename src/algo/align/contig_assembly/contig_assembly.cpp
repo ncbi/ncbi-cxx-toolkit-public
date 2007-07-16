@@ -280,7 +280,7 @@ void CContigAssembly::FindDiagFromAlignSet(const CSeq_align_set& align_set,
         cerr << "Warning: strips with max count not contiguous; "
             "using first contiguous set only" << endl;
         vector<unsigned int> new_r(1, r[0]);
-        for (unsigned int i = 0; i < r.size(); ++i) {
+        for (unsigned int i = 1; i < r.size(); ++i) {
             if (r[i] != r[i - 1] + 1) {
                 break;
             }
