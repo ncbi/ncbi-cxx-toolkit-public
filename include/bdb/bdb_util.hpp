@@ -154,7 +154,8 @@ class CBoyerMooreMatcher;
 ///    Temporary string used for search in non-text fields
 /// @return 
 ///    0 if value not found
-CBDB_File::TUnifiedFieldIndex NCBI_BDB_EXPORT 
+NCBI_BDB_EXPORT
+CBDB_File::TUnifiedFieldIndex 
 BDB_find_field(const CBDB_File&          dbf, 
                const CBoyerMooreMatcher& matcher,
                string*                   tmp_str_buffer = 0);
@@ -171,6 +172,7 @@ int NCBI_BDB_EXPORT BDB_get_rowid(const CBDB_File& dbf);
 /// Create and configure BDB environment using CNcbiRegistry 
 /// as a parameter container
 ///
+NCBI_BDB_EXPORT 
 CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg, 
                         const string& section_name);
 
