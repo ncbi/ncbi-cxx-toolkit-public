@@ -1685,89 +1685,113 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
         BOOST_CHECK(conn != NULL);
 
         // Clean table ...
-        sql = "DELETE FROM " + GetTableName();
-        auto_stmt.reset(conn->LangCmd(sql));
-        rc = auto_stmt->Send();
-        BOOST_CHECK(rc);
-        auto_stmt->DumpResults();
+        {
+            sql = "DELETE FROM " + GetTableName();
+            auto_stmt.reset(conn->LangCmd(sql));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
+            auto_stmt->DumpResults();
+        }
 
-        sql = "INSERT INTO " + GetTableName() + "(text_field) VALUES('')";
-        auto_stmt.reset(conn->LangCmd(sql));
-        rc = auto_stmt->Send();
-        BOOST_CHECK(rc);
-        auto_stmt->DumpResults();
-
-        sql = "SELECT text_field FROM " + GetTableName();
-        auto_stmt.reset(conn->LangCmd(sql));
-        rc = auto_stmt->Send();
-        BOOST_CHECK(rc);
+        // Create descriptor ...
+        {
+            sql = "INSERT INTO " + GetTableName() + "(text_field, int_field) VALUES('', 1)";
+            auto_stmt.reset(conn->LangCmd(sql));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
+            auto_stmt->DumpResults();
+        }
 
         // Retrieve descriptor ...
         auto_ptr<I_ITDescriptor> descr;
-        while(auto_stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(auto_stmt->Result());
+        {
+            sql = "SELECT text_field FROM " + GetTableName();
+            auto_stmt.reset(conn->LangCmd(sql));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
 
-            if (rs.get() == NULL) {
-                continue;
-            }
+            // Retrieve descriptor ...
+            while(auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
 
-            if (rs->ResultType() != eDB_RowResult) {
-                continue;
-            }
+                if (rs.get() == NULL) {
+                    continue;
+                }
 
-            while(rs->Fetch()) {
-                rs->ReadItem(NULL, 0);
+                if (rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
 
-                descr.reset(rs->GetImageOrTextDescriptor());
+                while(rs->Fetch()) {
+                    rs->ReadItem(NULL, 0);
+                    descr.reset(rs->GetImageOrTextDescriptor());
+                }
             }
         }
 
         // Send data ...
-        txt.Append("test clob data ...");
-        conn->SendData(*descr, txt);
+        {
+            txt.Append("test clob data ...");
+            conn->SendData(*descr, txt);
+        }
+
+        // Use CDB_ITDescriptor explicitely ..,
+        {
+            CDB_ITDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
+            CDB_Text text;
+            
+            text.Append("test clob data ...");
+            conn->SendData(descriptor, text);
+        }
+
+        // Create relatively big CLOB ...
+        {
+            CDB_ITDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
+            CDB_Text text;
+            
+            for(int i = 0; i < 1000; ++i) {
+                string str_value;
+
+                str_value += "A quick brown fox jumps over the lazy dog, message #";
+                str_value += NStr::IntToString(i);
+                str_value += "\n";
+                text.Append(str_value);
+            }
+        }
+        
+        // Read CLOB value back ...
+        {
+            sql = "SELECT text_field FROM " + GetTableName() + " WHERE int_field = 1";
+            auto_stmt.reset(conn->LangCmd(sql));
+            rc = auto_stmt->Send();
+            BOOST_CHECK(rc);
+
+            // Retrieve descriptor ...
+            while(auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL) {
+                    continue;
+                }
+
+                if (rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                char buff[4096];
+                while(rs->Fetch()) {
+                    if (rs->ReadItem(buff, sizeof(buff)) < sizeof(buff)) {
+                        break;    
+                    };
+                }
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
 }
 
-// void
-// CDBAPIUnitTest::Test_LOB_LowLevel(void)
-// {
-//     string sql;
-//     CDB_Text txt;
-//
-//     try {
-//         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-//         bool rc = false;
-//
-//         // Clean table ...
-//         auto_stmt->ExecuteUpdate("DELETE FROM "+ GetTableName());
-//
-//         sql = "INSERT INTO " + GetTableName() + "(text_field) VALUES('')";
-//         auto_stmt->ExecuteUpdate(sql);
-//
-//         sql = "SELECT text_field FROM " + GetTableName();
-//         auto_stmt->SendSql(sql);
-//         while(auto_stmt->HasMoreResults()) {
-//             if(auto_stmt->HasRows()) {
-//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-//                 while (rs->Next()) {
-//                     rs->ReadItem(NULL, 0);
-//
-//                     descr.reset(rs->GetImageOrTextDescriptor());
-//                 }
-//             }
-//         }
-//
-//         // Send data ...
-//         txt.Append("test clob data ...");
-//         auto_conn->SendData(*descr, txt);
-//     }
-//     catch(const CException& ex) {
-//         DBAPI_BOOST_FAIL(ex);
-//     }
-// }
 
 ////////////////////////////////////////////////////////////////////////////////
 void
