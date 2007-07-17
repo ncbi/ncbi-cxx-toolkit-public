@@ -1687,12 +1687,11 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
 
 void CObjectIStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
 {
-    if (m_EnforcedStdXml) {
-        m_StdXml = false;
-        return;
-    }
     TMemberIndex first = classType->GetItems().FirstIndex();
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
+    if (m_StdXml) {
+        m_EnforcedStdXml = false;
+    }
 }
 
 TTypeInfo CObjectIStreamXml::GetRealTypeInfo(TTypeInfo typeInfo)
