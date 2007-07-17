@@ -72,7 +72,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.13"
+#define NETSCHEDULED_VERSION "2.10.14"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -478,7 +478,6 @@ class CNetScheduleServer : public CServer
 public:
     CNetScheduleServer(unsigned        port,
                        bool            use_hostname,
-                       CQueueDataBase* qdb,
                        unsigned        network_timeout,
                        bool            is_log); 
 
@@ -487,6 +486,12 @@ public:
     virtual bool ShutdownRequested(void)
     {
         return m_Shutdown;
+    }
+
+    void SetQueueDB(CQueueDataBase* qdb)
+    {
+        delete m_QueueDB;
+        m_QueueDB = qdb;
     }
 
     void SetShutdownFlag(int signum = 0)
@@ -2496,18 +2501,18 @@ void CNetScheduleHandler::x_MakeGetAnswer(const char*   key_buf,
 // CNetScheduleServer implementation
 CNetScheduleServer::CNetScheduleServer(unsigned int    port,
                                        bool            use_hostname,
-                                       CQueueDataBase* qdb,
                                        unsigned        network_timeout,
                                        bool            is_log)
 :   m_Port(port),
     m_Shutdown(false),
     m_SigNum(0),
     m_InactivityTimeout(network_timeout),
+    m_QueueDB(0),
     m_StartTime(CTime::eCurrent)
 {
     m_AtomicCommandNumber.Set(1);
 
-    m_QueueDB = qdb;
+//    m_QueueDB = qdb;
 
     m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
     if (use_hostname) {
@@ -2686,18 +2691,68 @@ int CNetScheduleDApp::Run(void)
 
         LOG_POST(Info << "Mounting database at: " << db_path);
 
-        unsigned max_threads =
+        SServer_Parameters params;
+
+        params.max_connections =
+            reg.GetInt("server", "max_connections", 100, 0, CNcbiRegistry::eReturn);
+
+        params.max_threads =
             reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
 
+        params.init_threads =
+            reg.GetInt("server", "init_threads", 10, 0, CNcbiRegistry::eReturn);
+        if (params.init_threads > params.max_threads)
+            params.init_threads = params.max_threads;
+
+        unsigned network_timeout =
+            reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
+        if (network_timeout == 0) {
+            LOG_POST(Warning << 
+                "INI file sets 0 sec. network timeout. Assume 10 seconds.");
+            network_timeout =  10;
+        }
+
+        bool is_log =
+            reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
+
+        bool use_hostname =
+            reg.GetBool("server", "use_hostname", false, 0, CNcbiRegistry::eReturn);
+
+        m_ServerAcceptTimeout.sec = 1;
+        m_ServerAcceptTimeout.usec = 0;
+        params.accept_timeout  = &m_ServerAcceptTimeout;
+
+        int port = 
+            reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);
+
+        auto_ptr<CNetScheduleServer> server(
+            new CNetScheduleServer(port,
+                                   use_hostname,
+                                   network_timeout,
+                                   is_log));
+
+        string admin_hosts =
+            reg.GetString("server", "admin_host", kEmptyStr);
+        if (!admin_hosts.empty())
+            server->SetAdminHosts(admin_hosts);
+
+        server->SetParameters(params);
+
+        server->AddListener(
+            new CNetScheduleConnectionFactory(&*server),
+            port);
+
+        server->StartListening();
+
+        NcbiCout << "Running server on port " << port << NcbiEndl;
+        LOG_POST(Info << "Running server on port " << port);
+
         // two transactions per thread should be enough
-        bdb_params.max_trans = max_threads * 2;
+        bdb_params.max_trans = params.max_threads * 2;
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
 
         qdb->Open(db_path, db_log_path, bdb_params);
-
-        int port = 
-            reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);
 
         int udp_port = 
             reg.GetInt("server", "udp_port", 0, 0, CNcbiRegistry::eReturn);
@@ -2743,58 +2798,7 @@ int CNetScheduleDApp::Run(void)
         qdb->RunPurgeThread();
         qdb->RunNotifThread();
 
-
-        SServer_Parameters params;
-
-        unsigned max_connections =
-            reg.GetInt("server", "max_connections", 100, 0, CNcbiRegistry::eReturn);
-
-        unsigned init_threads =
-            reg.GetInt("server", "init_threads", 10, 0, CNcbiRegistry::eReturn);
-        params.init_threads = init_threads < max_threads ?
-                              init_threads : max_threads;
-
-        unsigned network_timeout =
-            reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
-        if (network_timeout == 0) {
-            LOG_POST(Warning << 
-                "INI file sets 0 sec. network timeout. Assume 10 seconds.");
-            network_timeout =  10;
-        }
-
-        bool is_log =
-            reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
-
-        bool use_hostname =
-            reg.GetBool("server", "use_hostname", false, 0, CNcbiRegistry::eReturn);
-
-        params.max_threads     = max_threads;
-        params.max_connections = max_connections;
-        m_ServerAcceptTimeout.sec = 1;
-        m_ServerAcceptTimeout.usec = 0;
-        params.accept_timeout  = &m_ServerAcceptTimeout;
-
-        auto_ptr<CNetScheduleServer> server(
-            new CNetScheduleServer(port,
-                                   use_hostname,
-                                   qdb.release(),
-                                   network_timeout,
-                                   is_log));
-
-        string admin_hosts =
-            reg.GetString("server", "admin_host", kEmptyStr);
-        if (!admin_hosts.empty()) {
-            server->SetAdminHosts(admin_hosts);
-        }
-        
-        server->SetParameters(params);
-
-        server->AddListener(
-            new CNetScheduleConnectionFactory(&*server),
-            port);
-
-        NcbiCout << "Running server on port " << port << NcbiEndl;
-        LOG_POST(Info << "Running server on port " << port);
+        server->SetQueueDB(qdb.release());
 
         server->Run();
 
