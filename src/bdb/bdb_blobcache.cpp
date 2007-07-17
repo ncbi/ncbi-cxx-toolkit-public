@@ -1219,7 +1219,23 @@ void CBDB_Cache::Open(const string& cache_path,
         }
 
         if (cache_ram_size) {
-            m_Env->SetCacheSize(cache_ram_size);
+            // empirically if total cache size is large
+            // you Berkeley DB works faster if you break it into several
+            // files. The sweetspot seems to be around 250M per file.
+            // (but growing number of files is not a good idea as well)
+            // so here I'm dancing to set some reasonable number of caches
+            //
+            int cache_num = 1;
+            if (cache_ram_size > (500 * 1024 * 1024)) {
+                cache_num = cache_ram_size / (250 * 1024 * 1024);
+            }
+            if (!cache_num) {
+                cache_num = 1;  // paranoid check
+            }
+            if (cache_num > 10) { // too many files?
+                cache_num = 10;
+            }
+            m_Env->SetCacheSize(cache_ram_size, cache_num);
         }
 
         unsigned checkpoint_KB = m_CheckPointInterval / 1024;
