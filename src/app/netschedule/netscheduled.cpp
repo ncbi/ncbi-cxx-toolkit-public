@@ -72,7 +72,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.14"
+#define NETSCHEDULED_VERSION "2.10.15"
 
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
@@ -2689,8 +2689,6 @@ int CNetScheduleDApp::Run(void)
             bdb_conf.GetBool("netschedule", "private_env",
                              CConfig::eErr_NoThrow, false);
 
-        LOG_POST(Info << "Mounting database at: " << db_path);
-
         SServer_Parameters params;
 
         params.max_connections =
@@ -2744,13 +2742,16 @@ int CNetScheduleDApp::Run(void)
 
         server->StartListening();
 
-        NcbiCout << "Running server on port " << port << NcbiEndl;
-        LOG_POST(Info << "Running server on port " << port);
+        NcbiCout << "Server listening on port " << port << NcbiEndl;
+        LOG_POST(Info << "Server listening on port " << port);
 
         // two transactions per thread should be enough
         bdb_params.max_trans = params.max_threads * 2;
 
         auto_ptr<CQueueDataBase> qdb(new CQueueDataBase());
+
+        NcbiCout << "Mounting database at " << db_path << NcbiEndl;
+        LOG_POST(Info << "Mounting database at " << db_path);
 
         qdb->Open(db_path, db_log_path, bdb_params);
 
@@ -2766,7 +2767,7 @@ int CNetScheduleDApp::Run(void)
             udp_port = -1;
         }
         if (udp_port < 0) {
-            LOG_POST(Info << "UDP notification disabled. ");
+            LOG_POST(Info << "UDP notification disabled.");
         }
         if (udp_port > 0) {
             qdb->SetUdpPort((unsigned short) udp_port);
@@ -2786,11 +2787,13 @@ int CNetScheduleDApp::Run(void)
             }
 
         }
-        
+
+#else
+        is_daemon = false;
 #endif
 
         LOG_POST(Info << "Running execution control every " 
-                      << min_run_timeout << " seconds. ");
+                      << min_run_timeout << " seconds");
         min_run_timeout = min_run_timeout >= 0 ? min_run_timeout : 2;
         
         
@@ -2800,9 +2803,17 @@ int CNetScheduleDApp::Run(void)
 
         server->SetQueueDB(qdb.release());
 
+        if (!is_daemon) {
+            NcbiCout << "Server started" << NcbiEndl;
+        }
+        LOG_POST(Info << "Server started");
+
         server->Run();
 
-        LOG_POST("NetSchedule server stopped.");
+        if (!is_daemon) {
+            NcbiCout << "Server stopped" << NcbiEndl;
+        }
+        LOG_POST("Server stopped");
 
     }
     catch (CBDB_ErrnoException& ex)
