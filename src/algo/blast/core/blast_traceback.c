@@ -966,6 +966,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;
    BlastQueryInfo* concat_db_info = NULL;
+   Boolean make_up_kbp = FALSE;
 
    if (!hsp_stream || !seq_src || !results) {
       return -1;
@@ -982,6 +983,24 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
 
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
+
+   /* the first Karlin block must be valid for traceback to
+      be performed; if it is not valid (i.e. if the first query
+      was completely masked), make up a valid Karlin block.
+      This is possible because all gapped Karlin blocks currently
+      look the same */
+
+   if (sbp->kbp_gap[0] == NULL) {
+       Int4 index;
+       for (index = query_info->first_context; 
+                        index <= query_info->last_context; index++) {
+           if (sbp->kbp_gap[index] != NULL) {
+               sbp->kbp_gap[0] = sbp->kbp_gap[index];
+               break;
+           }
+       }
+       make_up_kbp = TRUE;
+   }
 
    while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
           != kBlastHSPStream_Eof) {
@@ -1070,6 +1089,9 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
       Blast_HSPResultsInsertHSPList(results, hsp_list, 
                                     hit_params->options->hitlist_size);
    }
+
+   if (make_up_kbp)
+       sbp->kbp_gap[0] = NULL;
 
    BlastQueryInfoFree(concat_db_info);
 
