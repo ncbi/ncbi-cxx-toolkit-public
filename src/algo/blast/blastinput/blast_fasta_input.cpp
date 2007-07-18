@@ -247,7 +247,9 @@ CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
     flags += (m_ReadProteins
               ? CFastaReader::fAssumeProt 
               : CFastaReader::fAssumeNuc);
-    flags += CFastaReader::fNoSplit;
+    if (getenv("BLASTINPUT_GEN_DELTA_SEQ") == NULL) {
+        flags += CFastaReader::fNoSplit;
+    }
 
     if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
         m_InputReader.reset

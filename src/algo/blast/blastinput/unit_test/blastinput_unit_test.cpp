@@ -332,11 +332,31 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces)
     CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
     CRef<CBioseq_set> bioseqs = source->GetBioseqs();
-    cerr << "gi 555 raw fasta" << endl;
-    cerr << MSerial_AsnText << *bioseqs << endl;
+    CHECK(bioseqs.NotEmpty());
 
     CHECK(!ssl.mask);
 }
+
+class CAutoEnvironmentVariable
+{
+public:
+    CAutoEnvironmentVariable(const char* var_name) 
+        : m_VariableName(var_name)
+    {
+#ifdef NCBI_OS_UNIX
+        setenv(m_VariableName, "1", 1);
+#endif
+    }
+
+    ~CAutoEnvironmentVariable() {
+#ifdef NCBI_OS_UNIX
+        unsetenv(m_VariableName);
+#endif
+    }
+
+private:
+    const char* m_VariableName;
+};
 
 BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
 {
@@ -365,11 +385,34 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
+    CHECK(!ssl.mask);
 
     CRef<CBioseq_set> bioseqs = source->GetBioseqs();
-    cerr << "problematic raw fasta" << endl;
-    cerr << MSerial_AsnText << *bioseqs << endl;
-    CHECK(!ssl.mask);
+    CHECK(bioseqs->CanGetSeq_set());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
+    CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
+          == CSeq_inst::eRepr_raw);
+
+    {
+        CAutoEnvironmentVariable env("BLASTINPUT_GEN_DELTA_SEQ");
+        CNcbiIfstream infile("data/nucl_w_n.fsa");
+        const bool is_protein(false);
+        CBlastInputConfig iconfig(is_protein);
+        CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        CHECK(source->End() == true);
+
+        CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+        CHECK(bioseqs->CanGetSeq_set());
+        CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+        CHECK(bioseqs->GetSeq_set().front()->GetSeq().CanGetInst());
+        CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().CanGetRepr());
+        CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
+              == CSeq_inst::eRepr_delta);
+    }
 }
 
 BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
