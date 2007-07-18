@@ -207,6 +207,7 @@ static const string kEnvParam_errfile        = "error_file";
 
 static const string kEnvParam_mem_size             = "mem_size";
 static const string kEnvParam_cache_size           = "cache_size";
+static const string kEnvParam_cache_num            = "cache_num";
 static const string kEnvParam_log_mem_size         = "log_mem_size";
 static const string kEnvParam_write_sync           = "write_sync";
 static const string kEnvParam_direct_db            = "direct_db";
@@ -296,6 +297,10 @@ CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg,
     }
     Uint8 cache_size = 
         NStr::StringToUInt8_DataSize(cache_size_str, NStr::fConvErr_NoThrow);
+
+    int cache_num = 
+        reg.GetInt(section_name, kEnvParam_cache_num, 1, 0,
+                   IRegistry::eReturn);
 
     // in-memory log size
     string log_mem_size_str;
@@ -401,7 +406,7 @@ CBDB_Env* BDB_CreateEnv(const CNcbiRegistry& reg,
         env->OpenErrFile(err_path);
         if (cache_size) {
             s_LogEnvParam("BDB cache size)",  cache_size);
-            env->SetCacheSize(cache_size);
+            env->SetCacheSize(cache_size, cache_num);
         }
         if (log_mem_size) {
             env->SetLogInMemory(true);
