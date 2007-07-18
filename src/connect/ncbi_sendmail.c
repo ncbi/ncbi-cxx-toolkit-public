@@ -36,6 +36,7 @@
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_util.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #ifdef NCBI_CXX_TOOLKIT
 #define NCBI_SENDMAIL_TOOLKIT "C++"
@@ -46,68 +47,89 @@
 #define MX_MAGIC_NUMBER 0xBA8ADEDA
 #define MX_CRLF         "\r\n"
 
-#define SMTP_READERR    -1      /* Error reading from socket         */
-#define SMTP_REPLYERR   -2      /* Error reading reply prefix        */
-#define SMTP_BADCODE    -3      /* Reply code doesn't match in lines */
-#define SMTP_BADREPLY   -4      /* Malformed reply text              */
-#define SMTP_NOCODE     -5      /* No reply code detected (letters?) */
-#define SMTP_WRITERR    -6      /* Error writing to socket           */
+#define SMTP_READERR    -1      /* Error reading from socket            */
+#define SMTP_READTMO    -2      /* Read timed out                       */
+#define SMTP_RESPERR    -3      /* Error reading response prefix        */
+#define SMTP_NOCODE     -4      /* No response code detected (letters?) */
+#define SMTP_BADCODE    -5      /* Response code doesn't match in lines */
+#define SMTP_BADRESP    -6      /* Malformed response                   */
 
 
-/* Read SMTP reply from the socket.
- * Return reply in the buffer provided,
- * and reply code (positive value) as a return value.
- * Return a negative code in case of problem (protocol reply
+/* Read SMTP response from the socket.
+ * Return the response in the buffer provided,
+ * and the response code (positive value) as a return value.
+ * Return a negative code in case of problem (protocol response
  * read error or protocol violations).
- * Return 0 in case of call error.
+ * Return 0 in case of a call error.
  */
-static int s_SockRead(SOCK sock, char* reply, size_t reply_len)
+static int s_SockRead(SOCK sock, char* response, size_t max_response_len)
 {
     int/*bool*/ done = 0;
     size_t n = 0;
     int code = 0;
 
-    if (!reply  ||  !reply_len)
-        return 0;
-
+    assert(response  &&  max_response_len);
     do {
+        EIO_Status status;
         size_t m = 0;
         char buf[4];
 
-        if (SOCK_Read(sock, buf, 4, &m, eIO_ReadPersist) != eIO_Success)
-            return SMTP_READERR;
-        if (m != 4)
-            return SMTP_REPLYERR;
+        status = SOCK_Read(sock, buf, 4, &m, eIO_ReadPersist);
+        if (status != eIO_Success) {
+            if (m == 3  &&  status == eIO_Closed)
+                buf[m++] = ' ';
+            else if (status == eIO_Timeout)
+                return SMTP_READTMO;
+            else if (m)
+                return SMTP_RESPERR;
+            else
+                return SMTP_READERR;
+        }
+        assert(m == 4);
 
         if (buf[3] == '-'  ||  (done = isspace((unsigned char) buf[3]))) {
-            buf[3] = 0;
+            buf[3] = '\0';
             if (!code) {
-                if (!(code = atoi(buf)))
+                char* e;
+                errno = 0;
+                code = (int) strtol(buf, &e, 10);
+                if (errno  ||  code <= 0  ||  e != buf + 3)
                     return SMTP_NOCODE;
             } else if (code != atoi(buf))
                 return SMTP_BADCODE;
         } else
-            return SMTP_BADREPLY;
+            return SMTP_BADRESP;
 
-        do {
-            m = 0;
-            if (SOCK_Read(sock,buf,1,&m,eIO_ReadPlain) != eIO_Success  ||  !m)
-                return SMTP_READERR;
+        if (status == eIO_Success) {
+            do {
+                status = SOCK_Read(sock, buf, 1, &m, eIO_ReadPlain);
+                if (status == eIO_Closed) {
+                    if (n < max_response_len)
+                        response[n++] = '\n';
+                    done = 1;
+                    break;
+                }
+                if (!m)
+                    return status == eIO_Timeout ? SMTP_READTMO : SMTP_READERR;
+                if (*buf != '\r'  &&  n < max_response_len)
+                    response[n++] = *buf;
+                assert(status == eIO_Success);
+            } while (*buf != '\n');
 
-            if (buf[0] != '\r'  &&  n < reply_len)
-                reply[n++] = buf[0];
-        } while (buf[0] != '\n');
-
-        /* At least '\n' should sit in buffer */
-        assert(n);
-        if (done)
-            reply[n - 1] = 0;
-        else if (n < reply_len)
-            reply[n] = ' ';
-        
+            /* At least '\n' should sit in the buffer */
+            assert(n);
+            if (done)
+                response[n - 1] = '\0';
+            else if (n < max_response_len)
+                response[n] = ' ';
+        } else {
+            *response = '\0';
+            assert(done);
+            break;
+        }
     } while (!done);
 
-    assert(code);
+    assert(code > 0);
     return code;
 }
 
@@ -122,23 +144,24 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
         case SMTP_READERR:
             message = "Read error";
             break;
-        case SMTP_REPLYERR:
-            message = "Error reading reply prefix";
+        case SMTP_READTMO:
+            message = "Read timed out";
             break;
-        case SMTP_BADCODE:
-            message = "Reply code doesn't match in lines";
-            break;
-        case SMTP_BADREPLY:
-            message = "Malformed reply text";
+        case SMTP_RESPERR:
+            message = "Error reading response prefix";
             break;
         case SMTP_NOCODE:
-            message = "No reply code detected";
+            message = "No response code detected";
             break;
-        case SMTP_WRITERR:
-            message = "Write error";
+        case SMTP_BADCODE:
+            message = "Response code doesn't match in lines";
+            break;
+        case SMTP_BADRESP:
+            message = "Malformed response";
             break;
         default:
             message = "Unknown error";
+            assert(0);
             break;
         }
         assert(message);
