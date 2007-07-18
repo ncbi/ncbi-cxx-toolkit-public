@@ -2620,6 +2620,12 @@ TFindFunc FindFilesInDir(const CDir&            dir,
                          TFindFunc              find_func,
                          TFindFiles             flags = fFF_Default)
 {
+    TFindFiles find_type = flags & (fFF_Dir | fFF_File);
+    if ( find_type == 0 ) {
+        // nothing to find
+        return find_func;
+    }
+
     auto_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive | 
                                        CDir::fIgnorePath));
@@ -2629,30 +2635,29 @@ TFindFunc FindFilesInDir(const CDir&            dir,
     if ( dir.GetPath().length() ) {
         path = CDirEntry::AddTrailingPathSeparator(dir.GetPath());
     }
-    bool check_dir = ((flags & fFF_Dir) | (flags & fFF_Recursive)) > 0;
     ITERATE(CDir::TEntries, it, *contents) {
         CDirEntry& dir_entry = **it;
         string name = dir_entry.GetPath();
         dir_entry.Reset(CDirEntry::MakePath(path, name));
-
-        if (check_dir  &&  dir_entry.IsDir()) {
-            if (flags & fFF_Dir) {
-                if (CDirEntry::MatchesMask(name, masks, use_case)) {
-                    find_func(dir_entry);
-                }
+        
+        TFindFiles entry_type = fFF_Dir | fFF_File; // unknown
+        if ( CDirEntry::MatchesMask(name, masks, use_case) ) {
+            if ( find_type != (fFF_Dir | fFF_File) ) {
+                // need to check actual entry type
+                entry_type = dir_entry.IsDir()? fFF_Dir: fFF_File;
             }
-            if (flags & fFF_Recursive) {
-                if (CDirEntry::MatchesMask(name, masks_subdir, use_case)) {
-                    CDir nested_dir(dir_entry.GetPath());
-                    find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
-                                               find_func, flags);
-                }
-            }
-        }
-        else if ((flags & fFF_File)  &&  dir_entry.IsFile()) {
-            if (CDirEntry::MatchesMask(name, masks, use_case)) {
+            if ( (entry_type & find_type) != 0 ) {
+                // entry type matches
                 find_func(dir_entry);
             }
+        }
+        if ( (flags & fFF_Recursive) &&
+             (entry_type & fFF_Dir) /*possible dir*/ &&
+             CDirEntry::MatchesMask(name, masks_subdir, use_case) &&
+             (entry_type == fFF_Dir || dir_entry.IsDir()) /*real dir*/ ) {
+            CDir nested_dir(dir_entry.GetPath());
+            find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
+                                       find_func, flags);
         }
     } // ITERATE
     return find_func;
@@ -2666,6 +2671,12 @@ TFindFunc FindFilesInDir(const CDir&   dir,
                          TFindFunc     find_func,
                          TFindFiles    flags = fFF_Default)
 {
+    TFindFiles find_type = flags & (fFF_Dir | fFF_File);
+    if ( find_type == 0 ) {
+        // nothing to find
+        return find_func;
+    }
+
     auto_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive | 
                                        CDir::fIgnorePath));
@@ -2675,30 +2686,29 @@ TFindFunc FindFilesInDir(const CDir&   dir,
     if ( dir.GetPath().length() ) {
         path = CDirEntry::AddTrailingPathSeparator(dir.GetPath());
     }
-    bool check_dir = ((flags & fFF_Dir) | (flags & fFF_Recursive)) > 0;
     ITERATE(CDir::TEntries, it, *contents) {
         CDirEntry& dir_entry = **it;
         string name = dir_entry.GetPath();
         dir_entry.Reset(CDirEntry::MakePath(path, name));
 
-        if (check_dir  &&  dir_entry.IsDir()) {
-            if (flags & fFF_Dir) {
-                if (masks.Match(name, use_case)) {
-                    find_func(dir_entry);
-                }
+        TFindFiles entry_type = fFF_Dir | fFF_File; // unknown
+        if ( masks.Match(name, use_case) ) {
+            if ( find_type != (fFF_Dir | fFF_File) ) {
+                // need to check actual entry type
+                entry_type = dir_entry.IsDir()? fFF_Dir: fFF_File;
             }
-            if (flags & fFF_Recursive) {
-                if (masks_subdir.Match(name, use_case)) {
-                    CDir nested_dir(dir_entry.GetPath());
-                    find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
-                                               find_func, flags);
-                }
-            }
-        }
-        else if ((flags & fFF_File)  &&  dir_entry.IsFile()) {
-            if ( masks.Match(name, use_case) ) {
+            if ( (entry_type & find_type) != 0 ) {
+                // entry type matches
                 find_func(dir_entry);
             }
+        }
+        if ( (flags & fFF_Recursive) &&
+             (entry_type & fFF_Dir) /*possible dir*/ &&
+             masks_subdir.Match(name, use_case) &&
+             (entry_type == fFF_Dir || dir_entry.IsDir()) /*real dir*/ ) {
+            CDir nested_dir(dir_entry.GetPath());
+            find_func = FindFilesInDir(nested_dir, masks,masks_subdir,
+                                       find_func, flags);
         }
     } // ITERATE entries
     return find_func;
