@@ -331,6 +331,44 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces)
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
+    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    cerr << "gi 555 raw fasta" << endl;
+    cerr << MSerial_AsnText << *bioseqs << endl;
+
+    CHECK(!ssl.mask);
+}
+
+BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
+{
+    // this has length 682 and contains an 'N' which without the
+    // CFastaReader::fNoSplit flag, produces a delta sequence
+    CNcbiIfstream infile("data/nucl_w_n.fsa");
+    const bool is_protein(false);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    CHECK(source->End() == false);
+    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CHECK(source->End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    const TSeqPos length(682);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
+
+    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    cerr << "problematic raw fasta" << endl;
+    cerr << MSerial_AsnText << *bioseqs << endl;
     CHECK(!ssl.mask);
 }
 
