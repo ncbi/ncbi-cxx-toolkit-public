@@ -297,7 +297,7 @@ typename C::E_Choice GetVariant(const CArgValue& value)
 
 int CDemoApp::Run(void)
 {
-    SetDiagPostLevel(eDiag_Info);
+    //SetDiagPostLevel(eDiag_Warning);
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
