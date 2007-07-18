@@ -111,13 +111,26 @@ struct SIndexHeader< 5 > : public SIndexHeader< 1 >
 */
 CMemoryFile * MapFile( const std::string & fname )
 {
-    CMemoryFile * result = new CMemoryFile( fname );
+    CMemoryFile * result = 0;
+
+    try {
+        result = new CMemoryFile( fname );
+    }
+    catch( ... ) { result = 0; }
 
     if( result ) {
         if( !result->Map() ) {
             delete result;
             result = 0;
         }
+    }
+
+    if( result == 0 ) {
+        ERR_POST( 
+            "Index memory mapping failed.\n"
+            "It is possible that an index volume is missing or is too large.\n"
+            "Please, consider using -volsize option of makeindex utility to\n"
+            "reduce the size of index volumes." );
     }
 
     return result;
@@ -3398,9 +3411,9 @@ template< unsigned long VER >
 CRef< CDbIndex > CDbIndex::LoadIndex( const std::string & fname )
 {
     CMemoryFile * map = MapFile( fname );
-    SIndexHeader< 1 > header = ReadIndexHeader( map->GetPtr() );
     CRef< CDbIndex > result( null );
     if( map ==0 ) return result;
+    SIndexHeader< 1 > header = ReadIndexHeader( map->GetPtr() );
 
     // Make a choice of CDbIndex_Impl specialization
     if( header.width_ == WIDTH_32 ) {
