@@ -148,12 +148,14 @@ bool CTL_BCPInCmd::x_IsUnicodeClientAPI(void) const
 CS_VOID*
 CTL_BCPInCmd::x_GetValue(const CDB_Char& value) const
 {
-#if defined(HAVE_WSTRING)
-    if (x_IsUnicodeClientAPI()) {
-        return const_cast<CS_VOID*>(
-            static_cast<const CS_VOID*>(value.AsUnicode(eEncoding_UTF8)));
-    }
-#endif
+//--------------------------------------------------
+// #if defined(HAVE_WSTRING)
+//     if (x_IsUnicodeClientAPI()) {
+//         return const_cast<CS_VOID*>(
+//             static_cast<const CS_VOID*>(value.AsUnicode(eEncoding_UTF8)));
+//     }
+// #endif
+//-------------------------------------------------- 
 
     return const_cast<CS_VOID*>(
         static_cast<const CS_VOID*>(value.Value()));
@@ -163,12 +165,14 @@ CTL_BCPInCmd::x_GetValue(const CDB_Char& value) const
 CS_VOID*
 CTL_BCPInCmd::x_GetValue(const CDB_VarChar& value) const
 {
-#if defined(HAVE_WSTRING)
-    if (x_IsUnicodeClientAPI()) {
-        return const_cast<CS_VOID*>(
-            static_cast<const CS_VOID*>(value.AsUnicode(eEncoding_UTF8)));
-    }
-#endif
+//--------------------------------------------------
+// #if defined(HAVE_WSTRING)
+//     if (x_IsUnicodeClientAPI()) {
+//         return const_cast<CS_VOID*>(
+//             static_cast<const CS_VOID*>(value.AsUnicode(eEncoding_UTF8)));
+//     }
+// #endif
+//-------------------------------------------------- 
 
     return const_cast<CS_VOID*>(
         static_cast<const CS_VOID*>(value.Value()));
@@ -229,16 +233,25 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_BigInt: {
             CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
+
+            /* Old code ...
             param_fmt.datatype = CS_NUMERIC_TYPE;
             CS_NUMERIC value;
             Int8 val8 = par.Value();
             memset(&value, 0, sizeof(value));
-            value.precision= 18;
-            if (longlong_to_numeric(val8, 18, value.array) == 0)
+            value.precision = 20;
+            if (longlong_to_numeric(val8, 20, value.array) == 0)
                 return false;
             param_fmt.scale     = 0;
-            param_fmt.precision = 18;
+            param_fmt.precision = 20;
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_NUMERIC));
+            m_Bind[i].datalen = sizeof(CS_NUMERIC);
+            */
+
+            param_fmt.datatype = CS_LONG_TYPE;
+            Int8 value = par.Value();
+            memcpy(m_Bind[i].buffer, &value, sizeof(value));
+
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) m_Bind[i].buffer,
                                       &m_Bind[i].datalen,
@@ -273,8 +286,9 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_VarChar: {
             CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
-            param_fmt.datatype  = CS_CHAR_TYPE;
-            param_fmt.maxlength = (CS_INT) par.Size() + 1;
+            param_fmt.datatype  = CS_VARCHAR_TYPE;
+            // param_fmt.maxlength = (CS_INT) par.Size() + 1;
+            param_fmt.maxlength = (CS_INT) par.Size();
             m_Bind[i].datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
@@ -303,6 +317,9 @@ bool CTL_BCPInCmd::x_AssignParams()
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.DataSize();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
+                        // par.Value() may return NULL. But NULL has a special
+                        // meaning for this parameter. So, it is replaced a by
+                        // a fake pointer (m_Bind[i].buffer).
                                       par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
                                         (CS_VOID*) par.Value(),
                                       &m_Bind[i].datalen,
@@ -446,7 +463,7 @@ bool CTL_BCPInCmd::Send(void)
 {
     unsigned int i;
     CS_INT       datalen = 0;
-    CS_SMALLINT  indicator = 0;
+    CS_SMALLINT  indicator = -1; // NULL value
     size_t       len = 0;
     char         buff[2048];
 
@@ -459,10 +476,12 @@ bool CTL_BCPInCmd::Send(void)
 
         // check what needs to be default
         CS_DATAFMT fmt;
+
         for (i = 0;  i < GetParams().NofParams();  i++) {
             if (GetParams().GetParamStatus(i) != 0) {
                 continue;
             }
+
 
             SetHasFailed((Check(blk_describe(x_GetSybaseCmd(),
                                              i + 1,
@@ -473,9 +492,13 @@ bool CTL_BCPInCmd::Send(void)
                 "columns in a table)",
                 123002 );
 
+            // It is a fake binding ...
             SetHasFailed((Check(blk_bind(x_GetSybaseCmd(),
                                          i + 1,
                                          &fmt,
+                                         // This adderess is semantically
+                                         // invalid, but we have to pass
+                                         // something except of NULL.
                                          (void*) &GetParams(),
                                          &datalen,
                                          &indicator)) != CS_SUCCEED));
@@ -483,6 +506,8 @@ bool CTL_BCPInCmd::Send(void)
                 HasFailed(),
                 "blk_bind failed for default value",
                 123003 );
+
+            // GetParams().SetParamStatus(i, CDB_Params::fSet);
         }
     }
 
