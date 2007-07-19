@@ -219,7 +219,7 @@ sub handle_blastall($)
             $retval .= "./blastn ";
         } else {
             $retval .= "./$opt_p ";                 
-            $retval .= "-task traditional " if ($opt_p eq "blastn");
+            $retval .= "-task blastn " if ($opt_p eq "blastn");
         }
     }
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
