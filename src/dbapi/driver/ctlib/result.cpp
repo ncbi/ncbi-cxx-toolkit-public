@@ -769,6 +769,37 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
     }
 
+    case CS_LONG_TYPE: {
+        if (item_buf  &&  b_type != eDB_BigInt) {
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
+        }
+
+        Int8 v;
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        case CS_SUCCEED:
+        case CS_END_ITEM:
+        case CS_END_DATA: {
+            if ( item_buf ) {
+                if (outlen == 0) {
+                    item_buf->AssignNULL();
+                }
+                else {
+                    *((CDB_BigInt*) item_buf) = (Int8) v;
+                }
+                return item_buf;
+            }
+
+            return (outlen == 0) ? new CDB_BigInt() : new CDB_BigInt(v);
+        }
+        case CS_CANCELED: {
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
+        }
+        default: {
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
+        }
+        }
+    }
+
     case CS_DECIMAL_TYPE:
     case CS_NUMERIC_TYPE: {
         if (item_buf  &&  b_type != eDB_BigInt  &&  b_type != eDB_Numeric) {
@@ -920,7 +951,6 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         // Not handled data types ...
 //         CS_MONEY_TYPE
 //         CS_MONEY4_TYPE
-//         CS_LONG_TYPE
 //         CS_SENSITIVITY_TYPE
 //         CS_BOUNDARY_TYPE
 //         CS_VOID_TYPE
