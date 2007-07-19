@@ -17,13 +17,9 @@ sub FindTreeNode
     return $Tree
 }
 
-package NCBI::SVN::Branching;
+package NCBI::SVN::BranchInfo;
 
 use base qw(NCBI::SVN::Base);
-
-use File::Temp qw/tempfile/;
-
-use NCBI::SVN::Wrapper;
 
 sub FindParentNode
 {
@@ -151,13 +147,13 @@ sub ExtractBranchDirs
     }
 }
 
-sub ReadBranchInfo
+sub new
 {
-    my ($Self, $SVN, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
+    my ($Class, $SVN, $BranchPath, $MaxBranchRev) = @_;
 
     print STDERR "Reading branch info...\n";
 
-    $_ ||= 'HEAD' for $MaxBranchRev, $MaxUpstreamRev;
+    $MaxBranchRev ||= 'HEAD';
 
     my $RevisionLog = $SVN->ReadLog('--stop-on-copy',
         "-r$MaxBranchRev\:1", $SVN->GetRepository(), $BranchPath);
@@ -200,9 +196,6 @@ sub ReadBranchInfo
         die 'unable to determine branch source'
     }
 
-    my $MergeRegExp =
-        qr/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o;
-
     for my $Revision (reverse @BranchRevisions)
     {
         my $LogMessage = $Revision->{LogMessage};
@@ -212,7 +205,9 @@ sub ReadBranchInfo
             ModelBranchStructure(\%BranchInfo, \%BranchStructure,
                 $Revision, $CommonTarget)
         }
-        elsif ($LogMessage =~ $MergeRegExp && $3 eq $BranchPath)
+        elsif ($LogMessage =~
+            m/^Merged changes up to r(\d+) from '.+' into '(.+)'.$/o &&
+                $2 eq $BranchPath)
         {
             unshift @MergeDownRevisions,
                 [$Revision, $BranchInfo{LastSynchRevision} = $1]
@@ -227,27 +222,54 @@ sub ReadBranchInfo
     @BranchDirs = sort @BranchDirs;
 
     $BranchInfo{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
-    my $UpstreamPath = $BranchInfo{UpstreamPath};
+
+    return bless \%BranchInfo, $Class
+}
+
+package NCBI::SVN::BranchAndUpstreamInfo;
+
+use base qw(NCBI::SVN::BranchInfo);
+
+sub new
+{
+    my ($Class, $SVN, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
+
+    my $BranchInfo = $Class->SUPER::new($SVN, $BranchPath, $MaxBranchRev);
+
+    $MaxUpstreamRev ||= 'HEAD';
+
+    my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
     my $UpstreamRevisions = $SVN->ReadLog('--stop-on-copy',
-        "-r$MaxUpstreamRev\:$BranchRevisions[-1]->{Number}",
-        $SVN->GetRepository(), map {"$UpstreamPath/$_"} @BranchDirs);
+        "-r$MaxUpstreamRev\:$BranchInfo->{BranchRevisions}->[-1]->{Number}",
+        $SVN->GetRepository(), map {"$UpstreamPath/$_"}
+            @{$BranchInfo->{BranchDirs}});
 
     my @MergeUpRevisions;
 
     for my $Revision (@$UpstreamRevisions)
     {
-        if ($Revision->{LogMessage} =~ $MergeRegExp && $2 eq $BranchPath)
+        if ($Revision->{LogMessage} =~
+            m/^Merged changes up to r(\d+) from '(.+)' into '.+'.$/o &&
+                $2 eq $BranchPath)
         {
             push @MergeUpRevisions, [$Revision, $1]
         }
     }
 
-    @BranchInfo{qw(UpstreamRevisions MergeUpRevisions)} =
+    @$BranchInfo{qw(UpstreamRevisions MergeUpRevisions)} =
         ($UpstreamRevisions, \@MergeUpRevisions);
 
-    return \%BranchInfo
+    return $BranchInfo
 }
+
+package NCBI::SVN::Branching;
+
+use base qw(NCBI::SVN::Base);
+
+use File::Temp qw/tempfile/;
+
+use NCBI::SVN::Wrapper;
 
 sub List
 {
@@ -270,7 +292,7 @@ sub Info
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+    my $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($SVN, $BranchPath);
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -515,7 +537,7 @@ sub ShapeBranch
     }
     elsif ($Action eq 'alter')
     {
-        my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+        my $BranchInfo = NCBI::SVN::BranchInfo->new($SVN, $BranchPath);
 
         $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -541,7 +563,7 @@ sub ShapeBranch
     }
     elsif ($Action eq 'remove')
     {
-        for (@{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
+        for (@{NCBI::SVN::BranchInfo->new($SVN, $BranchPath)->{BranchDirs}})
         {
             MarkPath("$BranchPath/$_", \%ModTree, 'rm')
         }
@@ -623,15 +645,15 @@ sub DoMerge
 
     if ($Direction eq 'up')
     {
-        $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath,
-            $SourceRev, undef);
+        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($SVN,
+            $BranchPath, $SourceRev, undef);
 
         $SourceRev = $BranchInfo->{BranchRevisions}->[0]->{Number}
     }
     else
     {
-        $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath,
-            undef, $SourceRev);
+        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($SVN,
+            $BranchPath, undef, $SourceRev);
 
         my $UpstreamRevisions = $BranchInfo->{UpstreamRevisions};
 
@@ -743,9 +765,8 @@ sub CommitMerge
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath, undef, undef);
-
-    my @BranchDirs = @{$BranchInfo->{BranchDirs}};
+    my @BranchDirs = @{NCBI::SVN::BranchInfo->new($SVN,
+        $BranchPath)->{BranchDirs}};
 
     my $Message;
 
@@ -778,8 +799,8 @@ sub MergeDiff
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $Stream = $SVN->Run('diff',
-        @{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}});
+    my $Stream = $SVN->Run('diff', @{NCBI::SVN::BranchInfo->new($SVN,
+        $BranchPath)->{BranchDirs}});
 
     my $Line;
     my $State = 0;
@@ -837,7 +858,7 @@ sub Svn
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
     exec($SVN->GetSvnPath(), @CommandAndArgs,
-        @{$Self->ReadBranchInfo($SVN, $BranchPath)->{BranchDirs}})
+        @{NCBI::SVN::BranchInfo->new($SVN, $BranchPath)->{BranchDirs}})
 }
 
 sub DoSwitchUnswitch
@@ -846,7 +867,7 @@ sub DoSwitchUnswitch
 
     my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
 
-    my $BranchInfo = $Self->ReadBranchInfo($SVN, $BranchPath);
+    my $BranchInfo = NCBI::SVN::BranchInfo->new($SVN, $BranchPath);
 
     print STDERR ($DoSwitch ? 'Switching to' : 'Unswitching from') .
         " branch '$BranchPath'...\n";
