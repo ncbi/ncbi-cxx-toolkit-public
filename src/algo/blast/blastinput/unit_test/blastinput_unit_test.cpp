@@ -465,7 +465,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidGi)
     CHECK(source->End() == false);
 
     blast::SSeqLoc ssl;
-#ifndef NCBI_OS_MSWIN
     bool caught_exception(false);
     try { ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
@@ -475,7 +474,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidGi)
         caught_exception = true;
     }
     CHECK(caught_exception);
-#endif
     CHECK(source->End() == true);
 }
 
@@ -490,7 +488,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidSeqId)
     CHECK(source->End() == false);
 
     blast::SSeqLoc ssl;
-#ifndef NCBI_OS_MSWIN
     bool caught_exception(false);
     try { ssl = source->GetNextSSeqLoc(); }
     catch (const CInputException& e) {
@@ -500,7 +497,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidSeqId)
         caught_exception = true;
     }
     CHECK(caught_exception);
-#endif
     CHECK(source->End() == true);
 }
 
@@ -518,14 +514,11 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
 
         CBlastInput bi(source);
         blast::TSeqLocVector query_vector;
-#ifndef NCBI_OS_MSWIN
         BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqLocs(),
                             CObjReaderParseException);
-#endif
         CHECK_EQUAL(kNumQueries, query_vector.size());
 
         CRef<CBioseq_set> bioseqs;
-#ifndef NCBI_OS_MSWIN
         bool caught_exception(false);
         try { bioseqs = source->GetBioseqs(); }
         catch (const CInputException& e) {
@@ -535,7 +528,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
             caught_exception = true;
         }
         CHECK(caught_exception);
-#endif
         CHECK(bioseqs.Empty());
     }
 
@@ -546,10 +538,8 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
 
         CBlastInput bi(source);
         CRef<blast::CBlastQueryVector> query_vector;
-#ifndef NCBI_OS_MSWIN
         BOOST_REQUIRE_THROW(query_vector = bi.GetAllSeqs(), 
                             CObjReaderParseException);
-#endif
         CHECK(query_vector.Empty());
     }
 
@@ -559,9 +549,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
         CHECK(source->End() == false);
 
         blast::SSeqLoc ssl;
-#ifndef NCBI_OS_MSWIN
         BOOST_REQUIRE_THROW(source->GetNextSSeqLoc(), CObjReaderParseException);
-#endif
         CHECK(source->End() == true);
     }
 }
@@ -601,13 +589,12 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
         CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
         CHECK(!ssl.mask);
     }
-#ifndef NCBI_OS_MSWIN
+
     {
         blast::SSeqLoc ssl;
         BOOST_REQUIRE_THROW(ssl = source->GetNextSSeqLoc(),
                             CObjReaderParseException);
     }
-#endif
 
     /// Validate the data that would be retrieved by blast.cgi
     CRef<CBioseq_set> bioseqs = source->GetBioseqs();
@@ -683,7 +670,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
         CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
         CHECK(source->End() == true);
 
-#ifndef NCBI_OS_MSWIN
         blast::SSeqLoc ssl;
         BOOST_REQUIRE_THROW(ssl = source->GetNextSSeqLoc(), 
                             CObjReaderParseException);
@@ -691,7 +677,6 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
         CRef<blast::CBlastSearchQuery> query;
         BOOST_REQUIRE_THROW(query = source->GetNextSequence(),
                             CObjReaderParseException);
-#endif
     }
 
     // Read from buffer
