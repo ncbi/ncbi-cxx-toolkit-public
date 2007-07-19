@@ -151,9 +151,9 @@ sub new
 {
     my ($Class, $SVN, $BranchPath, $MaxBranchRev) = @_;
 
-    print STDERR "Reading branch info...\n";
-
     $MaxBranchRev ||= 'HEAD';
+
+    print STDERR "Gathering information about $BranchPath...\n";
 
     my $RevisionLog = $SVN->ReadLog('--stop-on-copy',
         "-r$MaxBranchRev\:1", $SVN->GetRepository(), $BranchPath);
@@ -239,6 +239,8 @@ sub new
     $MaxUpstreamRev ||= 'HEAD';
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
+
+    print STDERR "Gathering information about $UpstreamPath...\n";
 
     my $UpstreamRevisions = $SVN->ReadLog('--stop-on-copy',
         "-r$MaxUpstreamRev\:$BranchInfo->{BranchRevisions}->[-1]->{Number}",
