@@ -548,7 +548,7 @@ SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
 BLAST_FORMATTER_LIBS = xblastformat xalnmgr blastinput ncbi_xloader_blastdb \
-                       blastxml xcgi xhtml
+                       blastxml xcgi xhtml xregexp $(PCRE_LIB)
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
              seqdb xobjutil xobjread creaders \
              xnetblastcli xnetblast blastdb scoremat tables
