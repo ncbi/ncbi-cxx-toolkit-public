@@ -572,10 +572,19 @@ CS_RETCODE ret;
         } else {
             memcpy(dest, cres.ib, len);
             free(cres.ib);
+            /* Original ...
             for (i = len; i < destlen; i++)
                 dest[i] = '\0';
             if (resultlen != NULL)
                 *resultlen = destlen;
+            */
+            /* ssikorsk */
+            if (desttype == SYBBINARY) {
+                for (i = len; i < destlen; i++)
+                    dest[i] = '\0';
+            }
+            if (resultlen != NULL)
+                *resultlen = len;
             ret = CS_SUCCEED;
         }
         break;
