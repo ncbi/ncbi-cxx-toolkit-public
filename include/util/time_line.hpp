@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Timeline object for approximate tracking of time events
  *                   
@@ -81,19 +81,18 @@ public:
     ///    Initial time. (if 0 current time is taken)
     CTimeLine(unsigned discr_factor, time_t tm);
 
-    void ReInit(time_t tm);
+    void ReInit(time_t tm = 0);
 
     ~CTimeLine();
 
     /// Add object to the timeline
-    /// @param object_time
+    /// @param tm
     ///    Moment in time associated with the object
     /// @param object_id
     ///    Objects id
-    void AddObject(time_t object_time, unsigned object_id);
+    void AddObject(time_t tm, unsigned object_id);
 
-    /// Add object to the timeline using time slot
-    void AddObjectToSlot(unsigned time_slot, unsigned object_id);
+    void AddObjects(time_t tm, const TBitVector& objects);
 
     /// Remove object from the time line, object_time defines time slot
     /// @return true if object has been removed, false if object is not 
@@ -106,16 +105,9 @@ public:
     /// Move object from one time slot to another
     void MoveObject(time_t old_time, time_t new_time, unsigned object_id);
 
-    /// Compute slot position in the timeline
-    unsigned TimeLineSlot(time_t tm) const;
-
-    /// Add all object ids to the vector up to the specified slot
-    /// [0, slot] closed interval
-    void EnumerateObjects(TBitVector* objects, unsigned slot) const;
-
-    /// Truncate the timeline from the head up to the specified slot
-    /// slot + 1 becomes the new head
-    void HeadTruncate(unsigned slot);
+    /// Extracts all objects up to 'tm' and puts them into 'objects' vector.
+    /// Objects inserted into 'tm' are not extracted to provide histeresis.
+    void ExtractObjects(time_t tm, TBitVector* objects);
 
     /// Return head of the timeline
     time_t GetHead() const { return m_TimeLineHead; }
@@ -126,6 +118,11 @@ public:
 private:
     CTimeLine(const CTimeLine&);
     CTimeLine& operator=(const CTimeLine&);
+    /// Add object to the timeline using time slot
+    void x_AddObjectToSlot(unsigned time_slot, unsigned object_id);
+    /// Compute slot position in the timeline
+    unsigned x_TimeLineSlot(time_t tm) const;
+
 private:
     unsigned    m_DiscrFactor;  //< Discretization factor
     time_t      m_TimeLineHead; //< Timeline head time
@@ -137,12 +134,14 @@ private:
 #define TIMELINE_ITERATE(Var, Cont) \
     for ( typename TTimeLine::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
+
 template<class BV> 
 CTimeLine<BV>::CTimeLine(unsigned discr_factor, time_t tm)
 : m_DiscrFactor(discr_factor)
 {
     ReInit(tm);
 }
+
 
 template<class BV> 
 CTimeLine<BV>::~CTimeLine()
@@ -152,6 +151,7 @@ CTimeLine<BV>::~CTimeLine()
         delete bv;
     }
 }
+
 
 template<class BV> 
 void CTimeLine<BV>::ReInit(time_t tm)
@@ -168,6 +168,7 @@ void CTimeLine<BV>::ReInit(time_t tm)
     m_TimeLine.push_back(0);
 }
 
+
 template<class BV> 
 void CTimeLine<BV>::AddObject(time_t object_time, unsigned object_id)
 {
@@ -175,12 +176,19 @@ void CTimeLine<BV>::AddObject(time_t object_time, unsigned object_id)
         object_time = m_TimeLineHead;
     }
 
-    unsigned slot = TimeLineSlot(object_time);
-    AddObjectToSlot(slot, object_id);
+    unsigned slot = x_TimeLineSlot(object_time);
+    x_AddObjectToSlot(slot, object_id);
 }
 
+
 template<class BV> 
-void CTimeLine<BV>::AddObjectToSlot(unsigned slot, unsigned object_id)
+void CTimeLine<BV>::AddObjects(time_t tm, const TBitVector& objects)
+{
+}
+
+
+template<class BV> 
+void CTimeLine<BV>::x_AddObjectToSlot(unsigned slot, unsigned object_id)
 {
     while (slot >= m_TimeLine.size()) {
         m_TimeLine.push_back(0); 
@@ -193,13 +201,14 @@ void CTimeLine<BV>::AddObjectToSlot(unsigned slot, unsigned object_id)
     bv->set(object_id);
 }
 
+
 template<class BV> 
 bool CTimeLine<BV>::RemoveObject(time_t object_time, unsigned object_id)
 {
     if (object_time < m_TimeLineHead) {
         return false;
     }
-    unsigned slot = TimeLineSlot(object_time);
+    unsigned slot = x_TimeLineSlot(object_time);
     if (slot < m_TimeLine.size()) {
         TBitVector* bv = m_TimeLine[slot];
         if (!bv) {
@@ -212,6 +221,7 @@ bool CTimeLine<BV>::RemoveObject(time_t object_time, unsigned object_id)
     }
     return false;
 }
+
 
 template<class BV> 
 void CTimeLine<BV>::RemoveObject(unsigned object_id)
@@ -241,7 +251,7 @@ void CTimeLine<BV>::MoveObject(time_t old_time,
 
 
 template<class BV> 
-unsigned CTimeLine<BV>::TimeLineSlot(time_t tm) const
+unsigned CTimeLine<BV>::x_TimeLineSlot(time_t tm) const
 {
     _ASSERT(tm >= m_TimeLineHead);
 
@@ -253,38 +263,26 @@ unsigned CTimeLine<BV>::TimeLineSlot(time_t tm) const
     return diff / m_DiscrFactor;
 }
 
+
 template<class BV> 
-void CTimeLine<BV>::EnumerateObjects(TBitVector* objects, unsigned slot) const
+void CTimeLine<BV>::ExtractObjects(time_t tm, TBitVector* objects)
 {
     _ASSERT(objects);
 
-    for (unsigned i = 0; i <= slot && i < m_TimeLine.size(); ++i) {
-        const TBitVector* bv = m_TimeLine[i];
-        if (bv) {
-            *objects |= *bv;
-        }
-    }
-}
-
-template<class BV> 
-void CTimeLine<BV>::HeadTruncate(unsigned slot)
-{
-    time_t new_head = m_TimeLineHead + (slot+1) * m_DiscrFactor;
-
-    if (slot + 1 >= m_TimeLine.size()) {
-        ReInit(0);
-        return;
-    }
-    for (unsigned i = 0; i <= slot; ++i) {
+    unsigned slot = x_TimeLineSlot(tm);
+    for (unsigned i = 0; i < slot && i < m_TimeLine.size(); ++i) {
         if (m_TimeLine.size() == 0) {
-            ReInit(0);
+            ReInit();
             return;
         }
-        TBitVector* bv = m_TimeLine[0];
-        delete bv;
+        const TBitVector* bv = m_TimeLine[0];
+        if (bv) {
+            *objects |= *bv;
+            delete bv;
+        }
         m_TimeLine.pop_front();
     }
-    m_TimeLineHead = new_head;
+    m_TimeLineHead = m_TimeLineHead + (slot+1) * m_DiscrFactor;
 }
 
 

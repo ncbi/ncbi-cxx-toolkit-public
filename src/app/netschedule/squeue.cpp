@@ -327,7 +327,7 @@ unsigned SLockedQueue::ReadStatus()
             // Add object to the first available slot
             // it is going to be rescheduled or dropped
             // in the background control thread
-            run_time_line->AddObjectToSlot(0, job_id);
+            run_time_line->AddObject(run_time_line->GetHead(), job_id);
         }
     }
     return recs;

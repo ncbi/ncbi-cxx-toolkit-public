@@ -3466,11 +3466,11 @@ CQueue::x_TimeLineExchange(unsigned remove_job_id,
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned queue_run_timeout = CQueueParamAccessor(*q).GetRunTimeout();
     if (q->run_time_line) {
+        CJobTimeLine& tl = *q->run_time_line;
         CWriteLockGuard guard(q->rtl_lock);
-        q->run_time_line->RemoveObject(remove_job_id);
+        tl.RemoveObject(remove_job_id);
 
         if (add_job_id) {
-            CJobTimeLine& tl = *q->run_time_line;
             tl.AddObject(curr + queue_run_timeout, add_job_id);
         }
     }
@@ -3636,20 +3636,10 @@ void CQueue::CheckExecutionTimeout()
     }
     CJobTimeLine& tl = *q->run_time_line;
     time_t curr = time(0);
-    unsigned curr_slot;
-    {{
-        CReadLockGuard guard(q->rtl_lock);
-        curr_slot = tl.TimeLineSlot(curr);
-    }}
-    if (curr_slot == 0) {
-        return;
-    }
-    --curr_slot;
-
     TNSBitVector bv;
     {{
         CReadLockGuard guard(q->rtl_lock);
-        tl.EnumerateObjects(&bv, curr_slot);
+        tl.ExtractObjects(curr, &bv);
     }}
     TNSBitVector::enumerator en(bv.first());
     for ( ;en.valid(); ++en) {
@@ -3660,16 +3650,9 @@ void CQueue::CheckExecutionTimeout()
         
         if (exp_time) {
             CWriteLockGuard guard(q->rtl_lock);
-            unsigned job_slot = tl.TimeLineSlot(exp_time);
-            while (job_slot <= curr_slot) {
-                ++job_slot;
-            }
-            tl.AddObjectToSlot(job_slot, job_id);
+            tl.AddObject(curr, job_id);
         }
     } // for
-
-    CWriteLockGuard guard(q->rtl_lock);
-    tl.HeadTruncate(curr_slot);
 }
 
 time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
