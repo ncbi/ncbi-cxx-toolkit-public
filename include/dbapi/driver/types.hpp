@@ -563,6 +563,8 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
 {
 public:
+    enum { kMaxVarBinarySize = 8000 };
+
     CDB_VarBinary()                         : CDB_Object(true)  { return; }
     CDB_VarBinary(const void* v, size_t l)  { SetValue(v, l); }
 
@@ -578,7 +580,7 @@ public:
 
 protected:
     size_t        m_Size;
-    unsigned char m_Val[255];
+    unsigned char m_Val[kMaxVarBinarySize];
 };
 
 
