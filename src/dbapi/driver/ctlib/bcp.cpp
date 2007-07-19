@@ -286,7 +286,13 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_VarChar: {
             CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
+#ifdef FTDS_IN_USE
+            // FreeTDS will work fine with CS_CHAR_TYPE either ...
             param_fmt.datatype  = CS_VARCHAR_TYPE;
+#else
+            // There is a problem with CS_VARCHAR_TYPE on x86_64 ...
+            param_fmt.datatype  = CS_CHAR_TYPE;
+#endif
             // param_fmt.maxlength = (CS_INT) par.Size() + 1;
             param_fmt.maxlength = (CS_INT) par.Size();
             m_Bind[i].datalen   = (CS_INT) par.Size();
