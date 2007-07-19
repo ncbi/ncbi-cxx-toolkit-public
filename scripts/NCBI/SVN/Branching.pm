@@ -853,6 +853,28 @@ sub MergeDiff
     }
 }
 
+sub MergeStat
+{
+    my ($Self, $BranchPath) = @_;
+
+    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+
+    my $Stream = $SVN->Run('status', @{NCBI::SVN::BranchInfo->new($SVN,
+        $BranchPath)->{BranchDirs}});
+
+    my $Line;
+
+    while (defined($Line = $Stream->ReadLine()))
+    {
+        next if $Line =~ s/^(.)M/$1 /o && $Line =~ m/ {7}/o;
+
+        print "$Line\n"
+    }
+
+    print "\nNOTE:  all property changes were omitted; " .
+        "status may be inaccurate\n"
+}
+
 sub Svn
 {
     my ($Self, $BranchPath, @CommandAndArgs) = @_;

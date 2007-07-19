@@ -279,6 +279,10 @@ elsif ($Command eq 'merge_diff')
 {
     $Module->MergeDiff(AcceptOnlyBranchPathArg($Command))
 }
+elsif ($Command eq 'merge_stat')
+{
+    $Module->MergeStat(AcceptOnlyBranchPathArg($Command))
+}
 elsif ($Command eq 'switch')
 {
     $Module->Switch(AcceptOnlyBranchPathArg($Command))
