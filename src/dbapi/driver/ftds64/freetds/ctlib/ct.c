@@ -2117,7 +2117,16 @@ _ct_get_server_type(int datatype)
         break;
     case CS_UNICHAR_TYPE:
         return SYBVARCHAR;
+    case CS_LONGCHAR_TYPE:    /* ssikorsk */
+        return SYBVARCHAR;
+    case CS_VARCHAR_TYPE:     /* ssikorsk */
+        return SYBVARCHAR;
     default:
+        /*
+        CS_SENSITIVITY_TYPE
+        CS_BOUNDARY_TYPE
+        CS_VOID_TYPE
+        */
         return -1;
         break;
     }
