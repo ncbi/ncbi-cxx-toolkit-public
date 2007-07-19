@@ -1816,6 +1816,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             CVariant col2(eDB_Int);
             CVariant col3(eDB_VarChar);
             CVariant col4(eDB_Text);
+            // CVariant col4(eDB_VarChar);
 
             bi->Bind(1, &col1);
             bi->Bind(2, &col2);
@@ -1827,6 +1828,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
                 col1 = i;
                 col2 = i;
                 col3 = im;
+                // col4 = im;
                 col4.Truncate();
                 col4.Append(im.c_str(), im.size());
                 bi->AddRow();
@@ -2191,8 +2193,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
             // Retrieve data ...
             // Some drivers limit size of text/binary to 255 bytes ...
-            if (m_args.GetDriverName() != "dblib"
-                && m_args.GetDriverName() != "msdblib"
+            if ( m_args.GetDriverName() != "dblib"
+                 && m_args.GetDriverName() != "msdblib"
                 ) {
                 auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
@@ -2238,18 +2240,25 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 {
                     auto_ptr<IBulkInsert> bi(
                         m_Conn->GetBulkInsert("#bulk_insert_table", 3)
+                        // m_Conn->GetBulkInsert("#bulk_insert_table", 4)
                         );
 
                     CVariant col1(eDB_Int);
                     CVariant col2(eDB_Int);
+                    CVariant col_tmp(eDB_VarChar);
+                    CVariant col4(eDB_BigInt);
 
                     bi->Bind(1, &col1);
+                    // bi->Bind(2, &col_tmp);
                     bi->Bind(3, &col2);
+                    // bi->Bind(4, &col4);
 
                     for(int i = 0; i < num_of_tests; ++i ) {
                         col1 = i;
                         Int4 value = Int4( 1 ) << (i * 4);
                         col2 = value;
+                        // Int8 value8 = Int8( 1 ) << (i * 4);
+                        // col4 = value8;
                         bi->AddRow();
                     }
                     bi->Complete();
@@ -7951,6 +7960,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (args.IsBCPAvailable()
+        && !(args.GetDriverName() == "ftds"
+            && args.GetServerType() == CTestArguments::eSybase)           
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+
     //
     if (!(args.GetDriverName() == "ftds64"
           && args.GetServerType() == CTestArguments::eSybase)
@@ -8050,9 +8069,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    // !!! Need to be fixed !!!
+    
     if (args.IsBCPAvailable()
-        && args.GetDriverName() != "ctlib"
+        && args.GetDriverName() != "ctlib" // !!! Need to be fixed !!!
         && !(args.GetDriverName() == "ftds" &&
              args.GetServerType() == CTestArguments::eSybase)
         ) {
@@ -8174,18 +8193,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (args.IsBCPAvailable()
-            && args.GetDriverName() != "ftds64"
-            && !(args.GetDriverName() == "ftds"
-                && args.GetServerType() == CTestArguments::eSybase)           
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
-
     if ( args.IsBCPAvailable()
-         && args.GetDriverName() != "ftds64"
          && !(args.GetDriverName() == "ftds"
            && args.GetServerType() == CTestArguments::eSybase)
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
