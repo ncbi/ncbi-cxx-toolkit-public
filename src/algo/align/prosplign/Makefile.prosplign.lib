@@ -1,0 +1,10 @@
+# $Id$
+
+ASN_DEP = seqalign
+
+SRC = prosplign scoring PSeq NSeq Ali  AliSeqAlign AliUtil Info nucprot intron AlignInfo
+
+LIB = prosplign
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
