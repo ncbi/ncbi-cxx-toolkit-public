@@ -1255,9 +1255,11 @@ _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcpcol, int first)
 	case XSYBVARCHAR:
 		sprintf(column_type, "varchar(%d)", bcpcol->column_size);
 		break;
+        /* case SYBLONGCHAR: */
 	case XSYBBINARY:
 		sprintf(column_type, "binary(%d)", bcpcol->column_size);
 		break;
+        /* case SYBLONGBINARY: */
 	case XSYBCHAR:
 		sprintf(column_type, "char(%d)", bcpcol->column_size);
 		break;
@@ -1526,7 +1528,8 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
                     new_record_size += tds_numeric_bytes_per_prec[num->precision];
                 } else {
                     memcpy(record, bindcol->bcp_column_data->data, bindcol->bcp_column_data->datalen);
-                    record += bindcol->bcp_column_data->datalen; new_record_size += bindcol->bcp_column_data->datalen;
+                    record += bindcol->bcp_column_data->datalen; 
+                    new_record_size += bindcol->bcp_column_data->datalen;
                 }
 
             }
@@ -1858,9 +1861,9 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 	 * and increment it if offset specified
 	 */
 
-    if (bindcol->column_varaddr == NULL) {
-        return CS_BLK_HAS_TEXT;
-    }
+        if (is_blob_type(bindcol->column_type) && bindcol->column_varaddr == NULL) {
+            return CS_BLK_HAS_TEXT;
+        }
 
 	src = (unsigned char *) bindcol->column_varaddr;
 	src += offset * bindcol->column_bindlen;
@@ -1904,7 +1907,7 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 			}
 		}
 		if (srclen == 0) {
-			if (*nullind == -1) {
+			if (nullind &&  *nullind == -1) {
 				null_column = 1;
 			}
 		}
@@ -1935,8 +1938,14 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 		return CS_SUCCEED;
 
 	} else {
-		printf("error source field not addressable \n");
-		return CS_FAIL;
+		/*--------------------------------------------------
+		* printf("error source field not addressable \n");
+		* return CS_FAIL;
+		*--------------------------------------------------*/
+		bindcol->bcp_column_data->datalen = destlen;
+		bindcol->bcp_column_data->null_column = 1;
+
+		return CS_SUCCEED;
 	}
 }
 
