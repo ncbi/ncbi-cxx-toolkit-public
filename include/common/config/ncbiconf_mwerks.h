@@ -299,10 +299,6 @@
 /* Define to 1 if the PUBSEQ service is available. */
 /* #undef HAVE_PUBSEQ_OS */
 
-/* If you have the `readdir_r' function, define to the number of arguments it
-   takes (normally 2 or 3). */
-#define HAVE_READDIR_R 3
-
 /* Define to 1 if you have the `sched_yield' function. */
 #define HAVE_SCHED_YIELD 1
 
@@ -406,6 +402,10 @@
 /* Define to whatever syntax, if any, your compiler supports for marking
    functions as deprecated. */
 #define NCBI_DEPRECATED
+
+/* If you have the `readdir_r' function, define to the number of arguments it
+   takes (normally 2 or 3). */
+#define NCBI_HAVE_READDIR_R 3
 
 /* Define to 1 if `string::compare()' is non-standard. */
 #define NCBI_OBSOLETE_STR_COMPARE 1

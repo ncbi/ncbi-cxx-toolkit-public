@@ -2485,7 +2485,7 @@ AC_CACHE_CHECK([for readdir_r], ncbi_cv_func_readdir_r,
     fi])
 
 if test "$ncbi_cv_func_readdir_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_READDIR_R, $ncbi_cv_func_readdir_r,
+   AC_DEFINE_UNQUOTED(NCBI_HAVE_READDIR_R, $ncbi_cv_func_readdir_r,
     [If you have the `readdir_r' function, define to the number of
      arguments it takes (normally 2 or 3).])
 fi

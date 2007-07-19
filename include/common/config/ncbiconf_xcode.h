@@ -405,10 +405,6 @@
 /* Define to 1 if Python 2.5 libraries are available. */
 /* #undef HAVE_PYTHON25 */
 
-/* If you have the `readdir_r' function, define to the number of arguments it
-   takes (normally 2 or 3). */
-#define HAVE_READDIR_R 3
-
 /* Define to 1 if you have the `readpassphrase' function. */
 #define HAVE_READPASSPHRASE 1
 
@@ -647,6 +643,10 @@
 
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #define NCBI_FTDS_RENAME_SYBDB 1
+
+/* If you have the `readdir_r' function, define to the number of arguments it
+   takes (normally 2 or 3). */
+#define NCBI_HAVE_READDIR_R 3
 
 /* Define to 1 if `string::compare()' is non-standard. */
 /* #undef NCBI_OBSOLETE_STR_COMPARE */

@@ -11022,7 +11022,7 @@ echo "${ECHO_T}$ncbi_cv_func_readdir_r" >&6
 if test "$ncbi_cv_func_readdir_r" != "no" ; then
 
 cat >>confdefs.h <<_ACEOF
-#define HAVE_READDIR_R $ncbi_cv_func_readdir_r
+#define NCBI_HAVE_READDIR_R $ncbi_cv_func_readdir_r
 _ACEOF
 
 fi
