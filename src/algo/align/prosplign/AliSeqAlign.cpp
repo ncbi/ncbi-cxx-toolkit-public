@@ -150,7 +150,9 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
         char s[] = "GT"; 
         
         list<CNPiece>::const_iterator good_piece_it = m_ali.m_pcs.begin();
-        if (good_piece_it->beg == 0) {
+        int good_begin = good_piece_it->beg;
+        int good_end = good_piece_it->end -1;
+        if (good_begin == 0) {
             exon = new CSpliced_exon;
             SetExonBioStart(exon, nulpos, nultripos);
         }
@@ -197,10 +199,10 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
                     int tmp_alipos = alipos;
                     while (remaining_len > 0 &&
                            good_piece_it != m_ali.m_pcs.end() &&
-                           tmp_alipos <= good_piece_it->end && good_piece_it->beg <= tmp_alipos+remaining_len) {
+                           tmp_alipos <= good_end && good_begin <= tmp_alipos+remaining_len) {
 
-                        if (tmp_alipos <= good_piece_it->beg) {
-                            int bad_len = good_piece_it->beg - tmp_alipos;
+                        if (tmp_alipos <= good_begin) {
+                            int bad_len = good_begin - tmp_alipos;
                             nultripos += bad_len;
                             nulpos += bad_len;
                             remaining_len -= bad_len;
@@ -210,7 +212,7 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
                             chunk = new CSpliced_exon_chunk;
                             exon->SetParts().push_back(chunk);
                         }
-                        int chunk_len = min(remaining_len,good_piece_it->end - tmp_alipos+1);
+                        int chunk_len = min(remaining_len,good_end - tmp_alipos+1);
                         chunk->SetDiag(chunk_len);
                         nultripos += chunk_len;
                         nulpos += chunk_len;
@@ -223,8 +225,10 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(void) const
                             exon.Reset();
                             chunk.Reset();
                         }
-                        if (tmp_alipos > good_piece_it->end) {
+                        if (tmp_alipos > good_end) {
                             ++good_piece_it;
+                            good_begin = good_piece_it->beg;
+                            good_end = good_piece_it->end -1;
                         }
                     }
                     
