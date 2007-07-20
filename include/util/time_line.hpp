@@ -195,7 +195,10 @@ void CTimeLine<BV>::x_AddObjectToSlot(unsigned slot, unsigned object_id)
     }
     TBitVector* bv = m_TimeLine[slot];
     if (bv == 0) {
-        bv = new TBitVector(); // bm::BM_GAP is NOT defined for template bv
+        // TODO: Add class factory class to create TBitVector
+        // meanwhile use hardcoded bm::BM_GAP (faster and economical)
+        //    (bm::BM_GAP is NOT defined for template bv)
+        bv = new TBitVector(bm::BM_GAP);
         m_TimeLine[slot] = bv;
     }
     bv->set(object_id);
