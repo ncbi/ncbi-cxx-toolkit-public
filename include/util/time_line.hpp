@@ -32,8 +32,8 @@
  *                   
  */
 
-#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbitime.hpp>
+#include <util/bitset/bmconst.h>
 #include <deque>
 
 
