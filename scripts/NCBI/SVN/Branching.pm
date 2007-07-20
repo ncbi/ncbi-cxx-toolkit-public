@@ -49,7 +49,7 @@ sub CutOffCommonTargetPrefix
 
 sub SetUpstreamAndSynchRev
 {
-    my ($BranchInfo, $SourcePath, $BranchDir, $SourceRevision, $Revision) = @_;
+    my ($Self, $SourcePath, $BranchDir, $SourceRevision, $Revision) = @_;
 
     my $UpstreamPath = $SourcePath;
 
@@ -59,9 +59,9 @@ sub SetUpstreamAndSynchRev
         or die 'branch structure does not replicate ' .
             "upstream structure in r$Revision->{Number}";
 
-    unless (my $SameUpstreamPath = $BranchInfo->{UpstreamPath})
+    unless (my $SameUpstreamPath = $Self->{UpstreamPath})
     {
-        $BranchInfo->{UpstreamPath} = $UpstreamPath
+        $Self->{UpstreamPath} = $UpstreamPath
     }
     else
     {
@@ -69,9 +69,9 @@ sub SetUpstreamAndSynchRev
             if $UpstreamPath ne $SameUpstreamPath
     }
 
-    unless (my $SingleSourceRevision = $BranchInfo->{LastSynchRevision})
+    unless (my $SingleSourceRevision = $Self->{LastSynchRevision})
     {
-        $BranchInfo->{LastSynchRevision} = $SourceRevision
+        $Self->{LastSynchRevision} = $SourceRevision
     }
     else
     {
@@ -82,7 +82,7 @@ sub SetUpstreamAndSynchRev
 
 sub ModelBranchStructure
 {
-    my ($BranchInfo, $BranchStructure, $Revision, $CommonTarget) = @_;
+    my ($Self, $BranchStructure, $Revision, $CommonTarget) = @_;
 
     for my $Change (@{$Revision->{ChangedPaths}})
     {
@@ -112,7 +112,7 @@ sub ModelBranchStructure
             {
                 $ParentNode->{$LastSubdir} = {'/' => 1};
 
-                SetUpstreamAndSynchRev($BranchInfo, $SourcePath,
+                $Self->SetUpstreamAndSynchRev($SourcePath,
                     $BranchDir, $SourceRevision)
             }
         }
@@ -124,7 +124,7 @@ sub ModelBranchStructure
             NCBI::SVN::Branching::Util::FindTreeNode($BranchStructure,
                 $BranchDir)->{'/'} = 1;
 
-            SetUpstreamAndSynchRev($BranchInfo, $SourcePath,
+            $Self->SetUpstreamAndSynchRev($SourcePath,
                 $BranchDir, $SourceRevision)
         }
     }
@@ -149,29 +149,27 @@ sub ExtractBranchDirs
 
 sub new
 {
-    my ($Class, $SVN, $BranchPath, $MaxBranchRev) = @_;
+    my ($Class, $RootURL, $BranchPath, $MaxBranchRev) = @_;
 
     $MaxBranchRev ||= 'HEAD';
 
-    print STDERR "Gathering information about $BranchPath...\n";
-
-    my $RevisionLog = $SVN->ReadLog('--stop-on-copy',
-        "-r$MaxBranchRev\:1", $SVN->GetRepository(), $BranchPath);
-
+    my @BranchDirs;
     my @BranchRevisions;
     my @MergeDownRevisions;
 
-    my %BranchStructure;
-    my @BranchDirs;
-
-    my %BranchInfo =
-    (
+    my $Self = $Class->SUPER::new(
         BranchPath => $BranchPath,
         BranchDirs => \@BranchDirs,
         BranchRevisions => \@BranchRevisions,
         MergeDownRevisions => \@MergeDownRevisions
     );
 
+    print STDERR "Gathering information about $BranchPath...\n";
+
+    my $RevisionLog = $Self->{SVN}->ReadLog('--stop-on-copy',
+        "-r$MaxBranchRev\:1", $RootURL, $BranchPath);
+
+    my %BranchStructure;
     my $CommonTarget = "/$BranchPath/";
 
     for my $Revision (@$RevisionLog)
@@ -181,17 +179,17 @@ sub new
         if ($Revision->{LogMessage} =~ m/^Created branch '(.+?)'.$/o &&
             $1 eq $BranchPath)
         {
-            $BranchInfo{BranchCreationRevision} = $Revision;
+            $Self->{BranchCreationRevision} = $Revision;
 
-            ModelBranchStructure(\%BranchInfo, \%BranchStructure,
+            $Self->ModelBranchStructure(\%BranchStructure,
                 $Revision, $CommonTarget);
 
             last
         }
     }
 
-    unless ($BranchInfo{UpstreamPath} &&
-        ($BranchInfo{BranchSourceRevision} = $BranchInfo{LastSynchRevision}))
+    unless ($Self->{UpstreamPath} &&
+        ($Self->{BranchSourceRevision} = $Self->{LastSynchRevision}))
     {
         die 'unable to determine branch source'
     }
@@ -202,7 +200,7 @@ sub new
 
         if ($LogMessage =~ m/^Modified branch '(.+?)'.$/o && $1 eq $BranchPath)
         {
-            ModelBranchStructure(\%BranchInfo, \%BranchStructure,
+            $Self->ModelBranchStructure(\%BranchStructure,
                 $Revision, $CommonTarget)
         }
         elsif ($LogMessage =~
@@ -210,7 +208,7 @@ sub new
                 $2 eq $BranchPath)
         {
             unshift @MergeDownRevisions,
-                [$Revision, $BranchInfo{LastSynchRevision} = $1]
+                [$Revision, $Self->{LastSynchRevision} = $1]
         }
     }
 
@@ -221,9 +219,9 @@ sub new
 
     @BranchDirs = sort @BranchDirs;
 
-    $BranchInfo{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
+    $Self->{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
 
-    return bless \%BranchInfo, $Class
+    return $Self
 }
 
 package NCBI::SVN::BranchAndUpstreamInfo;
@@ -232,20 +230,19 @@ use base qw(NCBI::SVN::BranchInfo);
 
 sub new
 {
-    my ($Class, $SVN, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
+    my ($Class, $RootURL, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
 
-    my $BranchInfo = $Class->SUPER::new($SVN, $BranchPath, $MaxBranchRev);
+    my $Self = $Class->SUPER::new($RootURL, $BranchPath, $MaxBranchRev);
 
     $MaxUpstreamRev ||= 'HEAD';
 
-    my $UpstreamPath = $BranchInfo->{UpstreamPath};
+    my $UpstreamPath = $Self->{UpstreamPath};
 
     print STDERR "Gathering information about $UpstreamPath...\n";
 
-    my $UpstreamRevisions = $SVN->ReadLog('--stop-on-copy',
-        "-r$MaxUpstreamRev\:$BranchInfo->{BranchRevisions}->[-1]->{Number}",
-        $SVN->GetRepository(), map {"$UpstreamPath/$_"}
-            @{$BranchInfo->{BranchDirs}});
+    my $UpstreamRevisions = $Self->{SVN}->ReadLog('--stop-on-copy',
+        "-r$MaxUpstreamRev\:$Self->{BranchRevisions}->[-1]->{Number}",
+        $RootURL, map {"$UpstreamPath/$_"} @{$Self->{BranchDirs}});
 
     my @MergeUpRevisions;
 
@@ -259,10 +256,10 @@ sub new
         }
     }
 
-    @$BranchInfo{qw(UpstreamRevisions MergeUpRevisions)} =
+    @$Self{qw(UpstreamRevisions MergeUpRevisions)} =
         ($UpstreamRevisions, \@MergeUpRevisions);
 
-    return $BranchInfo
+    return $Self
 }
 
 package NCBI::SVN::Branching;
@@ -275,13 +272,12 @@ use NCBI::SVN::Wrapper;
 
 sub List
 {
-    my ($Self) = @_;
+    my ($Self, $RootURL) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    print "Managed branches in $RootURL\:\n";
 
-    print 'Managed branches in ' . $SVN->GetRepository() . ":\n";
-
-    for my $BranchPath ($SVN->ReadFileLines('branches/branch_list'))
+    for my $BranchPath ($Self->{SVN}->ReadFileLines($RootURL .
+        '/branches/branch_list'))
     {
         $BranchPath =~ s/^branches\///o;
         print "$BranchPath\n"
@@ -290,11 +286,9 @@ sub List
 
 sub Info
 {
-    my ($Self, $BranchPath) = @_;
+    my ($Self, $RootURL, $BranchPath) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
-
-    my $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($SVN, $BranchPath);
+    my $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -344,21 +338,20 @@ sub MarkPath
 
 sub GetTreeContainingSubtree
 {
-    my ($Self, $SVN, $Path, $Subtree) = @_;
+    my ($Self, $Path, $Subtree) = @_;
 
     my %Result;
 
     my $Subdir;
 
-    for my $Entry ($SVN->ReadSubversionLines('list', $Path))
+    for my $Entry ($Self->{SVN}->ReadSubversionLines('list', $Path))
     {
         $Entry =~ s/\/$//o;
 
         if (ref($Subdir = $Subtree->{$Entry}))
         {
             $Result{$Entry} = keys %$Subdir ?
-                $Self->GetTreeContainingSubtree($SVN,
-                    "$Path/$Entry", $Subdir) : {}
+                $Self->GetTreeContainingSubtree("$Path/$Entry", $Subdir) : {}
         }
         else
         {
@@ -450,9 +443,7 @@ sub GetMkdirCommands
 
 sub ShapeBranch
 {
-    my ($Self, $Action, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
-
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my ($Self, $Action, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
     my @RmCommands;
     my @MkdirCommands;
@@ -463,7 +454,8 @@ sub ShapeBranch
     my $BranchListFN;
 
     # Read branch_list, if it exists.
-    my @Branches = eval {$SVN->ReadFileLines('branches/branch_list')};
+    my @Branches = eval {$Self->{SVN}->ReadFileLines($RootURL .
+        '/branches/branch_list')};
 
     if ($Action eq 'create')
     {
@@ -539,7 +531,7 @@ sub ShapeBranch
     }
     elsif ($Action eq 'alter')
     {
-        my $BranchInfo = NCBI::SVN::BranchInfo->new($SVN, $BranchPath);
+        my $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath);
 
         $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -565,14 +557,14 @@ sub ShapeBranch
     }
     elsif ($Action eq 'remove')
     {
-        for (@{NCBI::SVN::BranchInfo->new($SVN, $BranchPath)->{BranchDirs}})
+        for (@{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}})
         {
             MarkPath("$BranchPath/$_", \%ModTree, 'rm')
         }
     }
 
-    my $ExistingStructure = $Self->GetTreeContainingSubtree($SVN,
-        $SVN->GetRepository(), \%ModTree);
+    my $ExistingStructure =
+        $Self->GetTreeContainingSubtree($RootURL, \%ModTree);
 
     while (my ($Subdir, $Subtree) = each %ModTree)
     {
@@ -605,8 +597,8 @@ sub ShapeBranch
 
         print STDERR "$VerbING branch '$BranchPath'...\n";
 
-        system('mucc', '--message', "$VerbED branch '$BranchPath'.",
-            '--root-url', $SVN->{Repos}, @Commands)
+        $Self->{SVN}->RunMUCC('--root-url', $RootURL,
+            '--message', "$VerbED branch '$BranchPath'.", @Commands)
     }
     else
     {
@@ -618,43 +610,44 @@ sub ShapeBranch
 
 sub Create
 {
-    my ($Self, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch('create', $BranchPath, $UpstreamPath, @BranchDirs)
+    $Self->ShapeBranch('create', $RootURL, $BranchPath, $UpstreamPath, @BranchDirs)
 }
 
 sub Alter
 {
-    my ($Self, $BranchPath, @BranchDirs) = @_;
+    my ($Self, $RootURL, $BranchPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch('alter', $BranchPath, undef, @BranchDirs)
+    $Self->ShapeBranch('alter', $RootURL, $BranchPath, undef, @BranchDirs)
 }
 
 sub Remove
 {
-    my ($Self, $BranchPath) = @_;
+    my ($Self, $RootURL, $BranchPath) = @_;
 
-    $Self->ShapeBranch('remove', $BranchPath)
+    $Self->ShapeBranch('remove', $RootURL, $BranchPath)
 }
 
 sub DoMerge
 {
     my ($Self, $Direction, $BranchPath, $SourceRev) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
 
     my $BranchInfo;
 
     if ($Direction eq 'up')
     {
-        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($SVN,
+        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($RootURL,
             $BranchPath, $SourceRev, undef);
 
         $SourceRev = $BranchInfo->{BranchRevisions}->[0]->{Number}
     }
     else
     {
-        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($SVN,
+        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($RootURL,
             $BranchPath, undef, $SourceRev);
 
         my $UpstreamRevisions = $BranchInfo->{UpstreamRevisions};
@@ -667,7 +660,7 @@ sub DoMerge
 
     print STDERR "Running svn status on branch directories...\n";
 
-    for ($SVN->ReadSubversionLines('status', @BranchDirs))
+    for ($Self->{SVN}->ReadSubversionLines('status', @BranchDirs))
     {
         die "$Self->{MyName}: local modifications detected.\n"
             unless m/^(?:[\?~X]|    S)/o
@@ -675,7 +668,7 @@ sub DoMerge
 
     print STDERR "Performing updates...\n";
 
-    system($SVN->GetSvnPath(), 'update', @BranchDirs);
+    system($Self->{SVN}->GetSvnPathname(), 'update', @BranchDirs);
 
     my ($MergeRevisions, $ReverseMergeRevisions) =
         @$BranchInfo{$Direction eq 'up' ?
@@ -729,7 +722,7 @@ sub DoMerge
 
     print STDERR "Merging with r$SourceRev...\n";
 
-    my $BaseURL = $SVN->{Repos} . '/' . ($Direction eq 'up' ?
+    my $BaseURL = $RootURL . '/' . ($Direction eq 'up' ?
         $BranchPath : $UpstreamPath) . '/';
 
     for my $LocalDir (@BranchDirs)
@@ -737,12 +730,12 @@ sub DoMerge
         for my $RevRange (@MergePlan)
         {
             print STDERR "  $RevRange => $LocalDir\n";
-            system($SVN->GetSvnPath(), 'merge', $RevRange,
+            system($Self->{SVN}->GetSvnPathname(), 'merge', $RevRange,
                 $BaseURL . $LocalDir, $LocalDir)
         }
     }
 
-    system($SVN->GetSvnPath(), 'propset', '-R', 'ncbi:raw',
+    system($Self->{SVN}->GetSvnPathname(), 'propset', '-R', 'ncbi:raw',
         qq(Please run "$Self->{MyName} commit_merge" to merge changes up to ) .
         "r$SourceRev from '$SourcePath' into '$TargetPath'.", @BranchDirs)
 }
@@ -765,16 +758,17 @@ sub CommitMerge
 {
     my ($Self, $BranchPath) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
 
-    my @BranchDirs = @{NCBI::SVN::BranchInfo->new($SVN,
+    my @BranchDirs = @{NCBI::SVN::BranchInfo->new($RootURL,
         $BranchPath)->{BranchDirs}};
 
     my $Message;
 
     for my $Dir (@BranchDirs)
     {
-        my $PropValue = $SVN->ReadSubversionStream('propget', 'ncbi:raw', $Dir);
+        my $PropValue = $Self->{SVN}->ReadSubversionStream('propget', 'ncbi:raw', $Dir);
 
         unless ($Message)
         {
@@ -790,19 +784,20 @@ sub CommitMerge
 
     die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
 
-    system($SVN->GetSvnPath(), 'propdel', '-R', 'ncbi:raw', @BranchDirs);
+    system($Self->{SVN}->GetSvnPathname(), 'propdel', '-R', 'ncbi:raw', @BranchDirs);
 
-    system($SVN->GetSvnPath(), 'commit', '-m', "Merged $Changes", @BranchDirs)
+    system($Self->{SVN}->GetSvnPathname(), 'commit', '-m', "Merged $Changes", @BranchDirs)
 }
 
 sub MergeDiff
 {
     my ($Self, $BranchPath) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
 
-    my $Stream = $SVN->Run('diff', @{NCBI::SVN::BranchInfo->new($SVN,
-        $BranchPath)->{BranchDirs}});
+    my $Stream = $Self->{SVN}->Run('diff',
+        @{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}});
 
     my $Line;
     my $State = 0;
@@ -857,10 +852,11 @@ sub MergeStat
 {
     my ($Self, $BranchPath) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
 
-    my $Stream = $SVN->Run('status', @{NCBI::SVN::BranchInfo->new($SVN,
-        $BranchPath)->{BranchDirs}});
+    my $Stream = $Self->{SVN}->Run('status',
+        @{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}});
 
     my $Line;
 
@@ -879,29 +875,31 @@ sub Svn
 {
     my ($Self, $BranchPath, @CommandAndArgs) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
 
-    exec($SVN->GetSvnPath(), @CommandAndArgs,
-        @{NCBI::SVN::BranchInfo->new($SVN, $BranchPath)->{BranchDirs}})
+    exec($Self->{SVN}->GetSvnPathname(), @CommandAndArgs,
+        @{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}})
 }
 
 sub DoSwitchUnswitch
 {
     my ($Self, $BranchPath, $DoSwitch) = @_;
 
-    my $SVN = NCBI::SVN::Wrapper->new(MyName => $Self->{MyName});
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
 
-    my $BranchInfo = NCBI::SVN::BranchInfo->new($SVN, $BranchPath);
+    my $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath);
 
     print STDERR ($DoSwitch ? 'Switching to' : 'Unswitching from') .
         " branch '$BranchPath'...\n";
 
-    my $BaseURL = $SVN->GetRepository() . '/' . ($DoSwitch ?
+    my $BaseURL = $RootURL . '/' . ($DoSwitch ?
         $BranchPath : $BranchInfo->{UpstreamPath}) . '/';
 
     for (@{$BranchInfo->{BranchDirs}})
     {
-        $Self->RunSubversion('switch', $BaseURL . $_, $_)
+        $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }
 }
 

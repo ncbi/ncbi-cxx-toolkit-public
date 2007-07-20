@@ -3,64 +3,35 @@
 package NCBI::SVN::Base;
 
 use strict;
-use warnings;
-use Carp qw(confess);
 
-use File::Spec;
+use NCBI::SVN::Wrapper;
 
-our $SvnPathCache;
-
-sub FindSubversion
-{
-    for my $Path (File::Spec->path())
-    {
-        for my $Program qw(svn svn.bat svn.exe)
-        {
-            my $Pathname = File::Spec->catfile($Path, $Program);
-
-            return $Pathname if -x $Pathname
-        }
-    }
-
-    confess 'Unable to find "svn" in PATH'
-}
+our $SvnWrapperCache;
 
 sub new
 {
     my ($Class, @Params) = @_;
 
-    my %Param = @Params;
+    my %Self = @Params;
 
-    $Param{MyName} ||= $Class;
+    $Self{MyName} ||= $Class;
+    $Self{SVN} ||= ($SvnWrapperCache || NCBI::SVN::Wrapper->new(@Params));
 
-    return bless \%Param, $Class
+    return bless \%Self, $Class
 }
 
-sub GetSvnPath
+sub SetSvn
+{
+    my ($Self, $SVN) = @_;
+
+    $Self->{SVN} = $SVN
+}
+
+sub GetSvn
 {
     my ($Self) = @_;
 
-    return $Self->{SvnPath} ||= ($SvnPathCache ||= FindSubversion())
-}
-
-sub RunSubversion
-{
-    my ($Self, @Params) = @_;
-
-    return system $Self->GetSvnPath(), @Params
-}
-
-sub CallSubversion
-{
-    my ($Self, @Params) = @_;
-
-    local $" = '" "';
-
-    my $SvnPath = $Self->GetSvnPath();
-    my @Output = `"$SvnPath" "@Params"`;
-    chomp @Output;
-
-    return @Output
+    return $Self->{SVN}
 }
 
 1

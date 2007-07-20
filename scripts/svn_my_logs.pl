@@ -55,7 +55,8 @@ my $UserName = $ENV{USER};
 my $SVN = NCBI::SVN::Wrapper->new(MyName => $ScriptName);
 
 my $Log = $SVN->ReadSubversionStream('log', '--non-interactive', '--xml',
-    "-r{$ARGV[0]}:{$ARGV[1]}", $SVN->GetRepository());
+    "-r{$ARGV[0]}:{$ARGV[1]}", $SVN->GetRootURL() ||
+        die "$ScriptName\: not in a working copy.\n");
 
 my $Parser = new XML::Parser(Style => 'Tree');
 

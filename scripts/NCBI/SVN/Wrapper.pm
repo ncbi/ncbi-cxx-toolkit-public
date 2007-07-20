@@ -6,10 +6,16 @@ use Carp qw(confess);
 
 package NCBI::SVN::Wrapper::Stream;
 
-use base qw(NCBI::SVN::Base);
-
 use IPC::Open3;
 use File::Temp qw/tempfile/;
+use File::Spec;
+
+sub new
+{
+    my ($Class, $SVN) = @_;
+
+    return bless {SVN => $SVN}, $Class
+}
 
 sub Run
 {
@@ -19,7 +25,7 @@ sub Run
 
     $Self->{PID} = open3($WriteFH, $Self->{ReadFH},
         $Self->{ErrorFH} = tempfile(),
-        $Self->GetSvnPath(), '--non-interactive', @Args);
+        $Self->{SVN}->GetSvnPathname(), '--non-interactive', @Args);
 
     close $WriteFH
 }
@@ -54,47 +60,113 @@ sub Close
 
 package NCBI::SVN::Wrapper;
 
-use base qw(NCBI::SVN::Base);
+sub FindProgram
+{
+    my ($Path, @Names) = @_;
+
+    for my $Program (@Names)
+    {
+        my $Pathname = File::Spec->catfile($Path, $Program);
+
+        return $Pathname if -x $Pathname
+    }
+
+    return undef
+}
+
+sub FindSubversion
+{
+    my ($Self) = @_;
+
+    my ($SvnMUCCName, $MUCCName, @SvnNames) =
+        $^O ne 'MSWin32' ? qw(svnmucc mucc svn) :
+            qw(svnmucc.exe mucc.exe svn.bat svn.exe);
+
+    my ($SvnPathname, $SvnMUCCPathname, $MUCCPathname);
+
+    for my $Path (File::Spec->path())
+    {
+        $SvnPathname ||= FindProgram($Path, @SvnNames);
+        $SvnMUCCPathname ||= FindProgram($Path, $SvnMUCCName);
+        $MUCCPathname ||= FindProgram($Path, $MUCCName);
+
+        last if $SvnMUCCPathname && $SvnPathname
+    }
+
+    confess('Unable to find "svn" in PATH') unless $SvnPathname;
+
+    @$Self{qw(SvnPathname MUCCPathname)} =
+        ($SvnPathname, ($SvnMUCCPathname || $MUCCPathname))
+}
 
 sub new
 {
-    my $Self = NCBI::SVN::Base::new(@_);
+    my ($Class, @Params) = @_;
 
-    if ($Self->{Repos})
-    {
-        $Self->{Repos} =~ s/\/+$//;
-    }
-    elsif (-d '.svn')
-    {
-        $Self->{Repos} = $Self->ReadInfo('.')->{'.'}->{Root}
-    }
-    else
-    {
-        $Self->{Repos} = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit'
-    }
+    my $Self = bless {@Params}, $Class;
+
+    $Self->FindSubversion() unless $Self->{SvnPathname};
 
     return $Self
 }
 
-sub SetRepository
+sub SetSvnPathname
 {
-    my ($Self, $Repository) = @_;
+    my ($Self, $Pathname) = @_;
 
-    $Self->{Repos} = $Repository
+    $Self->{SvnPathname} = $Pathname
 }
 
-sub GetRepository
+sub GetSvnPathname
 {
     my ($Self) = @_;
 
-    return $Self->{Repos}
+    return $Self->{SvnPathname}
+}
+
+sub SetMUCCPathname
+{
+    my ($Self, $Pathname) = @_;
+
+    $Self->{MUCCPathname} = $Pathname
+}
+
+sub GetMUCCPathname
+{
+    my ($Self) = @_;
+
+    return $Self->{MUCCPathname}
+}
+
+sub GetRootURL
+{
+    my ($Self, $Path) = @_;
+
+    $Path ||= '.';
+
+    return -d '.svn' ? $Self->ReadInfo($Path)->{$Path}->{Root} : undef
+}
+
+sub RunSubversion
+{
+    my ($Self, @Params) = @_;
+
+    return system $Self->GetSvnPathname(), @Params
+}
+
+sub RunMUCC
+{
+    my ($Self, @Params) = @_;
+
+    return system(($Self->GetMUCCPathname() or
+        confess('Unable to find "svnmucc" or "mucc" in PATH')), @Params)
 }
 
 sub Run
 {
     my ($Self, @Args) = @_;
 
-    my $Stream = NCBI::SVN::Wrapper::Stream->new();
+    my $Stream = NCBI::SVN::Wrapper::Stream->new($Self);
 
     $Stream->Run(@Args);
 
@@ -103,16 +175,16 @@ sub Run
 
 sub ReadFile
 {
-    my ($Self, $FileName) = @_;
+    my ($Self, $URL) = @_;
 
-    return $Self->ReadSubversionStream('cat', "$Self->{Repos}/$FileName")
+    return $Self->ReadSubversionStream('cat', $URL)
 }
 
 sub ReadFileLines
 {
-    my ($Self, $FileName) = @_;
+    my ($Self, $URL) = @_;
 
-    return $Self->ReadSubversionLines('cat', "$Self->{Repos}/$FileName")
+    return $Self->ReadSubversionLines('cat', $URL)
 }
 
 sub ReadInfo
@@ -141,9 +213,11 @@ sub ReadInfo
         }
     }
 
+    my $Root;
+
     for my $DirInfo (values %Info)
     {
-        my ($Root, $Path) = @$DirInfo{qw(Root Path)};
+        ($Root, $Path) = @$DirInfo{qw(Root Path)};
 
 
         substr($Path, 0, length($Root), '') eq $Root or die;
@@ -230,14 +304,14 @@ ParsingError:
     local $/ = undef;
     $Stream->ReadLine();
     $Stream->Close();
-    die 'svn log parsing error'
+    confess('svn log parsing error')
 }
 
 sub GetLatestRevision
 {
-    my ($Self) = @_;
+    my ($Self, $URL) = @_;
 
-    my $Stream = $Self->Run('info', $Self->GetRepository());
+    my $Stream = $Self->Run('info', $URL);
 
     my $Line;
     my $Revision;

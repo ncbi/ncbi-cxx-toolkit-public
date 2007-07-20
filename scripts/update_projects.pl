@@ -13,7 +13,6 @@ BEGIN
 
 use lib $ScriptDir;
 
-use NCBI::SVN::Wrapper;
 use NCBI::SVN::Update;
 use NCBI::SVN::SwitchMap;
 use NCBI::SVN::MultiSwitch;
@@ -25,13 +24,12 @@ use Cwd;
 use Fcntl qw(F_SETFD);
 use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 
-my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit';
-
 my $Update = NCBI::SVN::Update->new(MyName => $ScriptName);
 
-# Find (and cache) the path to Subversion before unsetting
-# the PATH environment variable.
-$Update->GetSvnPath();
+my $SVN = $Update->GetSvn();
+
+my $DefaultRepos = $SVN->GetRootURL() ||
+    'https://svn.ncbi.nlm.nih.gov/repos/toolkit';
 
 my @UnsafeVars = qw(PATH IFS CDPATH ENV BASH_ENV TERM);
 my %OldEnv;
@@ -378,11 +376,11 @@ while (@ProjectQueue)
     ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
-my $HEAD = NCBI::SVN::Wrapper->new()->GetLatestRevision();
+my $HEAD = $SVN->GetLatestRevision($RepositoryURL);
 
 if ($RepositoryURL)
 {
-    $Update->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-r', $HEAD,
+    $SVN->RunSubversion(($NewCheckout ? 'co' : 'switch'), '-r', $HEAD,
         '-N', $RepositoryURL, $BuildDir)
 }
 

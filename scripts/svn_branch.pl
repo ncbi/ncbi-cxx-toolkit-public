@@ -119,10 +119,14 @@ sub TooManyArgs
 }
 
 my $DirList;
+my $RootURL;
 
 GetOptions('help|h|?' => sub {Help()},
+    'root-url|root|U=s' => \$RootURL,
     'dirlist|l=s' => \$DirList)
         or UsageError();
+
+my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
 
 my $Command = shift @ARGV;
 
@@ -166,6 +170,12 @@ sub ExtractBranchPathArg
     return AdjustBranchPath(shift(@ARGV) or
         UsageError('"' . ($ArgName || 'branch_path') .
             '" argument is missing'))
+}
+
+sub RequireRootURL
+{
+    return $RootURL || $Module->{SVN}->GetRootURL() ||
+        die "$ScriptName\: chdir to a working copy or use --root-url\n"
 }
 
 sub AcceptOnlyBranchPathArg
@@ -234,34 +244,34 @@ sub GetBranchDirArgs
     return (@AdditionalPathArgs, @BranchDirs)
 }
 
-my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
-
 if ($Command eq 'list')
 {
     UsageError(q("list" doesn't accept arguments)) if @ARGV;
 
-    $Module->List()
+    $Module->List(RequireRootURL())
 }
 elsif ($Command eq 'info')
 {
-    $Module->Info(AcceptOnlyBranchPathArg($Command))
+    $Module->Info(RequireRootURL(), AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'create')
 {
     my $BranchPath = ExtractBranchPathArg();
     my $UpstreamPath = ExtractBranchPathArg('upstream_path');
 
-    $Module->Create($BranchPath, $UpstreamPath, GetBranchDirArgs($Command))
+    $Module->Create(RequireRootURL(), $BranchPath,
+        $UpstreamPath, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'alter')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Alter($BranchPath, GetBranchDirArgs($Command))
+    $Module->Alter(RequireRootURL(), $BranchPath,
+        GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'remove')
 {
-    $Module->Remove(AcceptOnlyBranchPathArg($Command))
+    $Module->Remove(RequireRootURL(), AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'merge_down')
 {

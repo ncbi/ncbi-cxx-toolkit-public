@@ -8,8 +8,6 @@ use strict;
 use warnings;
 use Carp qw(confess);
 
-use NCBI::SVN::Wrapper;
-
 use File::Find;
 
 sub new
@@ -31,7 +29,7 @@ sub SwitchToRecursive
     {
         print "L $Dir\n";
 
-        for my $SubDir ($Self->CallSubversion('list', $Dir))
+        for my $SubDir ($Self->{SVN}->ReadSubversionLines('list', $Dir))
         {
             if ($SubDir =~ m/^(.+)\/$/os)
             {
@@ -172,7 +170,7 @@ sub PerformUpdates
     {
         print "Performing non-recursive updates:\n";
 
-        $Self->RunSubversion('update', '-r', $Revision,
+        $Self->{SVN}->RunSubversion('update', '-r', $Revision,
             '-N', @{$Self->{NonRecursiveUpdates}})
     }
 
@@ -180,9 +178,17 @@ sub PerformUpdates
     {
         print "Performing recursive updates:\n";
 
-        $Self->RunSubversion('update', '-r', $Revision,
+        $Self->{SVN}->RunSubversion('update', '-r', $Revision,
             @{$Self->{RecursiveUpdates}})
     }
+}
+
+sub GetLatestRevision
+{
+    my ($Self) = @_;
+
+    $Self->{SVN}->GetLatestRevision($Self->{SVN}->GetRootURL() or
+        confess('Unable to detect root URL'));
 }
 
 sub UpdateDirList
@@ -192,7 +198,7 @@ sub UpdateDirList
     confess 'List of directories to update is empty' unless @Paths;
     confess 'Not in a working copy directory' unless -d '.svn';
 
-    $Revision = NCBI::SVN::Wrapper->new()->GetLatestRevision() unless $Revision;
+    $Revision = $Self->GetLatestRevision() unless $Revision;
 
     delete @$Self{qw(NonRecursiveUpdates RecursiveUpdates)};
 
@@ -290,7 +296,7 @@ sub UpdateCWD
 
     delete @$Self{qw(NonRecursiveUpdates RecursiveUpdates)};
 
-    $Revision = NCBI::SVN::Wrapper->new()->GetLatestRevision() unless $Revision;
+    $Revision = $Self->GetLatestRevision() unless $Revision;
 
     $Self->CollectUpdates('.');
 
