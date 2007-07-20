@@ -69,6 +69,10 @@
 #include <objtools/data_loaders/genbank/processors.hpp>
 #endif
 
+#ifdef NCBI_OS_UNIX
+#include <stdlib.h>
+#endif
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
