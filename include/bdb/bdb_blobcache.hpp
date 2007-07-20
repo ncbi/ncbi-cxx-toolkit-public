@@ -43,6 +43,7 @@
 #include <util/cache/icache.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/lock_vector.hpp>
+#include <util/time_line.hpp>
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
@@ -107,6 +108,31 @@ struct NCBI_BDB_CACHE_EXPORT SCache_AttrDB : public CBDB_File
         BindData("owner_name", &owner_name, 512);
     }
 };
+
+/// BLOB ID -> key, value, subkey index
+///
+struct NCBI_BDB_CACHE_EXPORT SCache_IdIDX : public CBDB_File
+{
+    CBDB_FieldUint4        blob_id;
+
+    CBDB_FieldString       key;
+    CBDB_FieldInt4         version;
+    CBDB_FieldString       subkey;      
+
+    SCache_IdIDX()
+    {
+        DisableNull();
+
+        BindKey("blob_id",    &blob_id);
+
+        BindData("key",     &key, 256);
+        BindData("version", &version);
+        BindData("subkey",  &subkey, 256);
+    }
+};
+
+
+
 
 class CPIDGuard;
 class CCacheCleanerThread;
@@ -644,6 +670,7 @@ protected:
     }
 
 
+
     void x_Store(unsigned       blob_id,
                  const string&  key,
                  int            version,
@@ -655,19 +682,21 @@ protected:
                  bool           do_blob_lock);
 
 private:
-    typedef bm::bvector<> TBitVector;
+    typedef bm::bvector<>                             TBitVector;
     /// Split store for BLOBs
     typedef CBDB_BlobSplitStore<TBitVector, 
                                 CBDB_BlobDeMux_RoundRobin, 
-                                CFastMutex>                 TSplitStore;
-    typedef CLockVector<TBitVector>       TLockVector;
-    typedef CLockVectorGuard<TLockVector> TBlobLock;
+                                CFastMutex>           TSplitStore;
+    typedef CLockVector<TBitVector>                   TLockVector;
+    typedef CLockVectorGuard<TLockVector>             TBlobLock;
+    typedef CTimeLine<TBitVector>                     TTimeLine;
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
     /// prerequisite: attributes record fetched to memory
     bool x_CheckTimestampExpired();
 
+    time_t x_ComputeExpTime(int time_stamp, unsigned ttl, int timeout);
     bool x_CheckTimestampExpired(time_t  curr, time_t* exp_time=0);
 
 
@@ -720,9 +749,13 @@ private:
                     CBDB_Transaction&  trans);
 
     /// Drop BLOB with time expiration check
-    void DropBlobWithExpCheck(const string&      key,
+    bool DropBlobWithExpCheck(const string&      key,
                               int                version,
                               const string&      subkey,
+                              CBDB_Transaction&  trans);
+
+    /// Drop BLOB with time expiration check
+    bool DropBlobWithExpCheck(unsigned           blob_id,
                               CBDB_Transaction&  trans);
 
 
@@ -760,6 +793,9 @@ private:
                        int            version,
                        const string&  subkey);
 
+    /// Add BLOB to expiration timeline
+    void AddToTimeLine(unsigned blob_id, time_t exp_time);
+
 
     /// BLOB check-in mode
     ///
@@ -787,6 +823,12 @@ private:
                                 unsigned*        volume_id,
                                 unsigned*        split_id,
                                 unsigned*        overflow);
+
+    /// Evaluate timeline BLOBs as deletion candidates
+    ///
+    /// @param interrupted
+    ///     returns TRUE if stop signal received during the call
+    void EvaluateTimeLine(bool* interrupted);
 
 
 
@@ -826,12 +868,15 @@ private:
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     TSplitStore*            m_BLOB_SplitStore;///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
+    SCache_IdIDX*           m_CacheIdIDX;   ///< Cache id index
     mutable CFastMutex      m_DB_Lock;      ///< Database lock
 
     SCache_AttrDB*          m_CacheAttrDB_RO1;  ///< Cache attributes r-only1
     mutable CFastMutex      m_CARO1_Lock;       ///< Database lock
     SCache_AttrDB*          m_CacheAttrDB_RO2;  ///< Cache attributes r-only2
     mutable CFastMutex      m_CARO2_Lock;       ///< Database lock
+    SCache_IdIDX*           m_CacheIdIDX_RO;    ///< Cache id index r-only
+    mutable CFastMutex      m_IDIDX_Lock_RO;    ///< Database lock
 
 
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
@@ -896,6 +941,11 @@ private:
 
     /// Pointer to monitoring interface
     IServer_Monitor*           m_Monitor;
+
+    /// BLOB expiration timeline
+    TTimeLine*                 m_TimeLine;
+    mutable CFastMutex         m_TimeLine_Lock;
+    time_t                     m_LastTimeLineCheck;
 };
 
 
