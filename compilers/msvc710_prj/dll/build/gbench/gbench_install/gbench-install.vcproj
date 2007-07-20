@@ -18,9 +18,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 		<Configuration
@@ -30,9 +30,9 @@
 			ConfigurationType="0">
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir)"
-				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir)"
-				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir)"
+				BuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+				ReBuildCommandLine="nmake -f gbench_install.mak all IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
+				CleanCommandLine="nmake -f gbench_install.mak clean IntDir=$(IntDir) MSVC_SRC=&quot;msvc71\7.1&quot;"
 				Output="gbench-install.exe"/>
 		</Configuration>
 	</Configurations>

@@ -59,7 +59,9 @@ GBENCH        = $(DLLBIN)\gbench
 INSTALL_BINPATH          = $(GBENCH)\bin
 THIRDPARTY_MAKEFILES_DIR = ..\..\..
 STAMP_SUFFIX             = _gbench
-!include $(THIRDPARTY_MAKEFILES_DIR)\Makefile.mk
+#!include $(THIRDPARTY_MAKEFILES_DIR)\Makefile.mk
+!include $(THIRDPARTY_MAKEFILES_DIR)\..\third_party_install.meta.mk
+
 
 
 #
@@ -78,7 +80,7 @@ THIRDPARTYLIB = ..\..\..\..\..\..\..\lib\$(INTDIR)
 #
 CORELIBS = \
         $(GBENCH)\bin\gui_config.dll            \
-	  $(GBENCH)\bin\gui_objects.dll              \
+        $(GBENCH)\bin\gui_objects.dll           \
         $(GBENCH)\bin\gui_core.dll              \
         $(GBENCH)\bin\gui_dialogs.dll           \
         $(GBENCH)\bin\gui_graph.dll             \
@@ -287,10 +289,6 @@ all : dirs \
 clean :
     @echo Removing Genome Workbench Installation...
     -@rmdir /S /Q $(GBENCH)
-    -@del $(GBENCH)\..\..\..\$(INTDIR)\fltk_gbench.installed
-    -@del $(GBENCH)\..\..\..\$(INTDIR)\berkeleydb_gbench.installed
-    -@del $(GBENCH)\..\..\..\$(INTDIR)\sqlite_gbench.installed
-    -@del $(GBENCH)\..\..\..\$(INTDIR)\msvc_gbench.installed
 
 
 ###############################################################

@@ -49,15 +49,6 @@ DLLBIN        = $(INSTALL)\$(INTDIR)
 GBENCH        = $(DLLBIN)\gbench
 
 #
-# Third-party DLLs' installation path and rules
-#
-INSTALL_BINPATH          = $(GBENCH)\bin
-THIRDPARTY_MAKEFILES_DIR =  ..\..\..\..
-STAMP_SUFFIX             = _gbench
-!include $(THIRDPARTY_MAKEFILES_DIR)\Makefile.mk
-
-
-#
 # Alias for the source tree
 #
 SRCDIR        = ..\..\..\..\..\..\..\src
