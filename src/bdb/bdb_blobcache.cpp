@@ -1365,9 +1365,9 @@ void CBDB_Cache::Open(const string& cache_path,
             if (m_CacheIdIDX->Fetch() == eBDB_Ok) {
             } else {
                 // index not found... corruption?
-                string key = m_CacheAttrDB->key;
+                string key = m_CacheAttrDB->key.GetString();
                 int version = m_CacheAttrDB->version;
-                string subkey = m_CacheAttrDB->subkey;
+                string subkey = m_CacheAttrDB->subkey.GetString();
 
                 m_CacheIdIDX->blob_id = blob_id;
                 m_CacheIdIDX->key = key;
