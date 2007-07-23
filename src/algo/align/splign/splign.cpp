@@ -1235,8 +1235,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 #endif
 
     if(segments.size() == 0) {
-        NCBI_THROW(CAlgoAlignException, eInternal,
-                   "CSplign::x_Run(): Missing alignment segments.");
+        NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
     }
 
     // indicate any slack space on the left
