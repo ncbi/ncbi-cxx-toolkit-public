@@ -629,6 +629,15 @@ sub Remove
     $Self->ShapeBranch('remove', $RootURL, $BranchPath)
 }
 
+sub SetRawMergeProp
+{
+    my ($Self, $Changes, @BranchDirs) = @_;
+
+    $Self->{SVN}->RunSubversion('propset', '-R', 'ncbi:raw',
+        qq(Please run "$Self->{MyName} commit_merge" to merge $Changes),
+            @BranchDirs)
+}
+
 sub DoMerge
 {
     my ($Self, $Direction, $BranchPath, $SourceRev) = @_;
@@ -735,9 +744,8 @@ sub DoMerge
         }
     }
 
-    $Self->{SVN}->RunSubversion('propset', '-R', 'ncbi:raw',
-        qq(Please run "$Self->{MyName} commit_merge" to merge changes up to ) .
-        "r$SourceRev from '$SourcePath' into '$TargetPath'.", @BranchDirs)
+    $Self->SetRawMergeProp("changes up to r$SourceRev from " .
+        "'$SourcePath' into '$TargetPath'.", @BranchDirs)
 }
 
 sub MergeDown
@@ -787,7 +795,13 @@ sub CommitMerge
 
     $Self->{SVN}->RunSubversion('propdel', '-R', 'ncbi:raw', @BranchDirs);
 
-    $Self->{SVN}->RunSubversion('commit', '-m', "Merged $Changes", @BranchDirs)
+    eval
+    {
+        $Self->{SVN}->RunSubversion('commit',
+            '-m', "Merged $Changes", @BranchDirs)
+    };
+
+    $Self->SetRawMergeProp($Changes, @BranchDirs) if $@
 }
 
 sub MergeDiff
