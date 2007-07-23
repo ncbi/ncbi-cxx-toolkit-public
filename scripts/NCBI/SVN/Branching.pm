@@ -780,7 +780,7 @@ sub CommitMerge
         }
     }
 
-    my ($Changes) = $Message =~ m/to merge (changes .*)$/o;
+    my ($Changes) = $Message =~ m/to merge (changes .*?)[\r\n]*$/o;
 
     die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
 
@@ -807,9 +807,9 @@ sub MergeDiff
     {
         if ($State == 0)
         {
-            if ($Line eq '')
+            if ($Line =~ m/^[\r\n]*$/o)
             {
-                $Buffer = "\n";
+                $Buffer = $Line;
                 $State = 1;
                 next
             }
@@ -818,22 +818,22 @@ sub MergeDiff
         {
             if ($Line =~ m/^Property changes on: /o)
             {
-                $Buffer .= $Line . "\n";
+                $Buffer .= $Line;
                 $Line = $Stream->ReadLine();
                 if ($Line =~ m/^_{66}/o)
                 {
-                    $Buffer .= $Line . "\n";
+                    $Buffer .= $Line;
                     $State = 2;
                     next
                 }
             }
         }
-        elsif ($Line eq 'Name: ncbi:raw')
+        elsif ($Line =~ m/^Name: ncbi:raw/o)
         {
             $Stream->ReadLine();
             next
         }
-        elsif ($Line eq '')
+        elsif ($Line =~ m/^[\r\n]*$/o)
         {
             $State = 0;
             next
@@ -844,7 +844,7 @@ sub MergeDiff
             $State = 0
         }
 
-        print "$Line\n"
+        print $Line
     }
 }
 
@@ -862,9 +862,9 @@ sub MergeStat
 
     while (defined($Line = $Stream->ReadLine()))
     {
-        next if $Line =~ s/^(.)M/$1 /o && $Line =~ m/ {7}/o;
+        next if $Line =~ s/^(.)M/$1 /o && $Line =~ m/^ {7}/o;
 
-        print "$Line\n"
+        print $Line
     }
 
     print "\nNOTE:  all property changes were omitted; " .
