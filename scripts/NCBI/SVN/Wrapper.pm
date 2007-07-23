@@ -141,18 +141,33 @@ sub GetRootURL
     return -d '.svn' ? $Self->ReadInfo($Path)->{$Path}->{Root} : undef
 }
 
+sub RunOrDie
+{
+    my ($Self, @CommandAndParams) = @_;
+
+    if (system(@CommandAndParams) != 0)
+    {
+        my $CommandLine = join(' ', @CommandAndParams);
+
+        die "$Self->{MyName}: " .
+            ($? == -1 ? "failed to execute $CommandLine\: $!" :
+            $? & 127 ? "'$CommandLine' died with signal " . ($? & 127) :
+            "'$CommandLine' exited with status " . ($? >> 8)) . "\n"
+    }
+}
+
 sub RunSubversion
 {
     my ($Self, @Params) = @_;
 
-    return system $Self->GetSvnPathname(), @Params
+    $Self->RunOrDie($Self->GetSvnPathname(), @Params)
 }
 
 sub RunMUCC
 {
     my ($Self, @Params) = @_;
 
-    return system(($Self->GetMUCCPathname() or
+    $Self->RunOrDie(($Self->GetMUCCPathname() or
         confess('Unable to find "svnmucc" or "mucc" in PATH')), @Params)
 }
 

@@ -668,7 +668,7 @@ sub DoMerge
 
     print STDERR "Performing updates...\n";
 
-    system($Self->{SVN}->GetSvnPathname(), 'update', @BranchDirs);
+    $Self->{SVN}->RunSubversion('update', @BranchDirs);
 
     my ($MergeRevisions, $ReverseMergeRevisions) =
         @$BranchInfo{$Direction eq 'up' ?
@@ -730,12 +730,12 @@ sub DoMerge
         for my $RevRange (@MergePlan)
         {
             print STDERR "  $RevRange => $LocalDir\n";
-            system($Self->{SVN}->GetSvnPathname(), 'merge', $RevRange,
+            $Self->{SVN}->RunSubversion('merge', $RevRange,
                 $BaseURL . $LocalDir, $LocalDir)
         }
     }
 
-    system($Self->{SVN}->GetSvnPathname(), 'propset', '-R', 'ncbi:raw',
+    $Self->{SVN}->RunSubversion('propset', '-R', 'ncbi:raw',
         qq(Please run "$Self->{MyName} commit_merge" to merge changes up to ) .
         "r$SourceRev from '$SourcePath' into '$TargetPath'.", @BranchDirs)
 }
@@ -768,7 +768,8 @@ sub CommitMerge
 
     for my $Dir (@BranchDirs)
     {
-        my $PropValue = $Self->{SVN}->ReadSubversionStream('propget', 'ncbi:raw', $Dir);
+        my $PropValue =
+            $Self->{SVN}->ReadSubversionStream('propget', 'ncbi:raw', $Dir);
 
         unless ($Message)
         {
@@ -784,9 +785,9 @@ sub CommitMerge
 
     die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
 
-    system($Self->{SVN}->GetSvnPathname(), 'propdel', '-R', 'ncbi:raw', @BranchDirs);
+    $Self->{SVN}->RunSubversion('propdel', '-R', 'ncbi:raw', @BranchDirs);
 
-    system($Self->{SVN}->GetSvnPathname(), 'commit', '-m', "Merged $Changes", @BranchDirs)
+    $Self->{SVN}->RunSubversion('commit', '-m', "Merged $Changes", @BranchDirs)
 }
 
 sub MergeDiff
