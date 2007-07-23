@@ -69,10 +69,6 @@
 #include <objtools/data_loaders/genbank/processors.hpp>
 #endif
 
-#ifdef NCBI_OS_UNIX
-#include <stdlib.h>
-#endif
-
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -347,17 +343,18 @@ public:
     CAutoEnvironmentVariable(const char* var_name) 
         : m_VariableName(var_name)
     {
-#ifdef NCBI_OS_UNIX
-        setenv(m_VariableName, "1", 1);
-#endif
+        _ASSERT(var_name);
+        string var(m_VariableName);
+        string value("1");
+        CNcbiEnvironment env(0);
+        env.Set(var, value);
     }
 
     ~CAutoEnvironmentVariable() {
-#ifdef NCBI_OS_UNIX
-        unsetenv(m_VariableName);
-#endif
+        string var(m_VariableName);
+        CNcbiEnvironment env(0);
+        env.Set(var, kEmptyStr);
     }
-
 private:
     const char* m_VariableName;
 };
@@ -399,6 +396,7 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
     CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
           == CSeq_inst::eRepr_raw);
 
+#ifndef NCBI_OS_MSWIN
     {
         CAutoEnvironmentVariable env("BLASTINPUT_GEN_DELTA_SEQ");
         CNcbiIfstream infile("data/nucl_w_n.fsa");
@@ -417,6 +415,7 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
         CHECK(bioseqs->GetSeq_set().front()->GetSeq().GetInst().GetRepr() 
               == CSeq_inst::eRepr_delta);
     }
+#endif
 }
 
 BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
@@ -438,7 +437,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
     CHECK(source->End() == true);
 
     string s(error_stream.str());
-    CHECK(s.find("Ignoring invalid residue 1 at position 9") != NPOS);
+    CHECK(s.find("Ignoring invalid residue 1 at position ") != NPOS);
 
     CHECK(ssl.seqloc->IsInt() == true);
 

@@ -58,6 +58,7 @@ public:
     CAutoNcbiConfigFile(EConfigOpts opts = SDataLoaderConfig::eDefault) {
         CMetaRegistry::SEntry sentry =
             CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        const string blastdb_dir = x_GetBlastDbDir(sentry.registry);
         sentry.registry->Clear();
 
         CFile existing_configuration(kConfigFile);
@@ -76,7 +77,7 @@ public:
                 out << "none";
             }
             out << endl;
-            out << "BLASTDB=/net/nabl000/vol/blast/db/blast";
+            out << "BLASTDB=" << blastdb_dir << endl;
             out.close();
         }
 
@@ -95,6 +96,15 @@ public:
         } else {
             CFile(kConfigFile).Remove();
         }
+    }
+
+private:
+    string x_GetBlastDbDir(IRegistry* registry) {
+        if (registry == NULL) {
+            return string();
+        }
+        string blastdb_dir = registry->Get("BLAST", "BLASTDB");
+        return blastdb_dir;
     }
 };
 
