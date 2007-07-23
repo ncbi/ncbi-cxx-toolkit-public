@@ -126,7 +126,7 @@ bool CheckAccession(const string  & acc,
     try {
         seqid.Reset(new CSeq_id(acc));
     }
-    catch(CException & e) {
+    catch(CException &) {
         return false;
     }
     

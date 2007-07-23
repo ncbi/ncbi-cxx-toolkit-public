@@ -319,7 +319,7 @@ void CMultisourceApplication::x_FetchArgs()
                 found = true;
             }
         }
-        catch(CSeqDBException & e) {
+        catch(CSeqDBException &) {
         }
         
         if (! found) {

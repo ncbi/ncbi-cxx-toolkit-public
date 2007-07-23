@@ -382,7 +382,7 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<CBioseq> bs)
         
         bs = bs2;
     }
-    catch(CInvalidChoiceSelection & e) {
+    catch(CInvalidChoiceSelection &) {
         NCBI_THROW(CMultisourceException, eArg,
                    "Bioseq must have Seq-data or "
                    "Delta containing only literals.");
@@ -436,7 +436,7 @@ void CBuildDatabase::x_AddOneRemoteSequence(const CSeq_id & seqid,
         
         if (debug_mode > 5) m_LogFile << MSerial_AsnText << *bs << endl;
     }
-    catch (const CException& e) {
+    catch (const CException & e) {
         m_LogFile << "Caught exception for query: "
                   << seqid.AsFastaString() << endl
                   << e.what() << endl;
