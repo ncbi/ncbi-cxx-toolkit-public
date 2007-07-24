@@ -1803,38 +1803,96 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
     try {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        // Prepare data ...
+        // First test ...
         {
-            // Clean table ...
-            auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
-        }
-
-        // Insert data ...
-        {
-            auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
-            CVariant col1(eDB_Int);
-            CVariant col2(eDB_Int);
-            CVariant col3(eDB_VarChar);
-            CVariant col4(eDB_Text);
-            // CVariant col4(eDB_VarChar);
-
-            bi->Bind(1, &col1);
-            bi->Bind(2, &col2);
-            bi->Bind(3, &col3);
-            bi->Bind(4, &col4);
-
-            for( int i = 0; i < record_num; ++i ) {
-                string im = NStr::IntToString(i);
-                col1 = i;
-                col2 = i;
-                col3 = im;
-                // col4 = im;
-                col4.Truncate();
-                col4.Append(im.c_str(), im.size());
-                bi->AddRow();
+            // Prepare data ...
+            {
+                // Clean table ...
+                auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
             }
 
-            bi->Complete();
+            // Insert data ...
+            {
+                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
+                // auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 1));
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_Int);
+                CVariant col3(eDB_VarChar);
+                CVariant col4(eDB_Text);
+                // CVariant col4(eDB_VarChar);
+
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+                bi->Bind(3, &col3);
+                bi->Bind(4, &col4);
+
+                for( int i = 0; i < record_num; ++i ) {
+                    string im = NStr::IntToString(i);
+                    col1 = i;
+                    col2 = i;
+                    col3 = im;
+                    // col4 = im;
+                    col4.Truncate();
+                    col4.Append(im.c_str(), im.size());
+
+                    bi->AddRow();
+                }
+
+                // bi->StoreBatch();
+                bi->Complete();
+            }
+
+            // Check inserted data ...
+            {
+                int rec_num = GetNumOfRecords(auto_stmt, GetTableName());
+                BOOST_CHECK_EQUAL(rec_num, (int)record_num); 
+            }
+        }
+
+        // Second test ...
+        if (false) {
+            enum { batch_num = 1 };
+            // Prepare data ...
+            {
+                // Clean table ...
+                auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+            }
+
+            // Insert data ...
+            {
+                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_Int);
+                CVariant col3(eDB_VarChar);
+                CVariant col4(eDB_Text);
+
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+                bi->Bind(3, &col3);
+                bi->Bind(4, &col4);
+
+                for (int j = 0; j < batch_num; ++j) {
+                    for( int i = 0; i < record_num; ++i ) {
+                        string im = NStr::IntToString(i);
+                        col1 = i;
+                        col2 = i;
+                        col3 = im;
+                        col4.Truncate();
+                        col4.Append(im.c_str(), im.size());
+                        bi->AddRow();
+                    }
+
+                    bi->StoreBatch();
+                }
+
+                bi->Complete();
+            }
+
+            // Check inserted data ...
+            {
+                int rec_num = GetNumOfRecords(auto_stmt, GetTableName());
+                BOOST_CHECK_EQUAL(rec_num, int(record_num * batch_num)); 
+            }
         }
     }
     catch(const CException& ex) {
@@ -2824,7 +2882,8 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     BOOST_CHECK( auto_stmt->HasMoreResults() );
     BOOST_CHECK( auto_stmt->HasRows() );
     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-    BOOST_CHECK( rs->Next() );
+    bool rc = rs->Next();
+    BOOST_CHECK(rc);
     int cur_rec_num = rs->GetVariant(1).GetInt4();
     return cur_rec_num;
 }
@@ -8206,6 +8265,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! There are still problems ...
     if (args.IsBCPAvailable()
+        && args.GetDriverName() != "ftds64"
         && args.GetDriverName() != "ctlib"
         )
     {
@@ -8335,7 +8395,7 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
                       "ftds64_dblib", "ftds64_odbc", "ftds64", "odbcw", "ftds8"
 
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "OBERON"
+#define DEF_SERVER    "TAPER"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "ftds64_dblib", \
                       "ftds64_odbc", "ftds64", "ftds8"
@@ -8415,6 +8475,7 @@ CTestArguments::GetServerType(void) const
     if ( NStr::CompareNocase(GetServerName(), "STRAUSS") == 0
          || NStr::CompareNocase(GetServerName(), "MOZART") == 0
          || NStr::CompareNocase(GetServerName(), "OBERON") == 0
+         || NStr::CompareNocase(GetServerName(), "TAPER") == 0
          || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
          || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          ) {

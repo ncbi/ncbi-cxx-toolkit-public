@@ -5,7 +5,7 @@
 # Tere are problems with ftds63 ...
 # Tere are problems with ftds64 ...
 driver_list="ctlib dblib ftds odbc odbcw msdblib ftds64_odbc" # mysql
-server_list="MS_DEV1 OBERON"
+server_list="MS_DEV1 TAPER"
 server_mssql="MS_DEV1"
 
 # DBLIB does not work (on Linux at least) when this limit is > 1024
