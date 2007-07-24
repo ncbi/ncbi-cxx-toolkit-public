@@ -174,19 +174,22 @@ protected:
                       // Not affected by comment lines, even though these are skipped, too.
     bool m_new_obj;   // For OnScaffoldEnd(), true if this scaffold ends with an object.
                       // (false if there are scaffold-breaking gaps at object end)
-    int m_error_code;
+    int m_error_code; // Set to non-zero value to trigger OnError().
+                      // Can be used to stop reading of the stream midway:
+                      //    OnGapOrComponent() { if(need to stop) m_error_code=-1; }
+                      //    OnError() { if(m_error_code==-1) { /*not an error*/ }; return false; }
 
     CAgpRow *m_prev_row;
     CAgpRow *m_this_row;
     int m_line_num, m_prev_line_num;
     string  m_line;  // for valid gap/componentr lines, corresponds to this_row
-    // We do not save line corresponding to m_prev_row, to save time.
+    // To save time, we do not keep the line corresponding to m_prev_row.
     // You can use m_prev_row->ToString(), or save it at the end of OnGapOrComponent():
     //   m_prev_line=m_line; // preserves EOL comments
     //
-    // Note that m_prev_line_num != m_line_num -1:
+    // Note that m_prev_line_num != m_line_num - 1:
     // - after skipped lines (syntax errors or comments)
-    // - when reading from multiple files.
+    // - when reading from multiple files without Finalize().
 
     //// Callbacks, in the order of invocation.
     //// Override to implement custom functionality.
@@ -250,7 +253,7 @@ public:
       fAtNone    =8  // Not tied to any specifc line(s) (empty file; possibly, taxid errors)
     };
 
-    // This implementation accumulates multiple errors separeately for
+    // This implementation accumulates multiple errors separately for
     // the current and the previous lines, ignores warnings.
     virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine);
     void Msg(int code, int appliesTo=fAtThisLine)
