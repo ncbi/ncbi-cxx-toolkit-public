@@ -78,8 +78,8 @@ public:
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
         
-        static const string kRegex_Gi("^[0-9]+$");
-        static const string kRegex_Accession("^[a-z].*[0-9]+$");
+        static const string kRegex_Gi("^ *[0-9]+ *$");
+        static const string kRegex_Accession("^ *[a-z].*[0-9]+ *$");
         static const string kRegex_Ti("^gnl\\|ti\\|[0-9]+$");
 
         const string line = *++GetLineReader();
@@ -91,7 +91,9 @@ public:
         try {
             // Test for GI only
             if (regex.Exists(kRegex_Gi)) {
-                int gi = NStr::StringToLong(line);
+                const int conv_flags
+                    (NStr::fAllowLeadingSpaces|NStr::fAllowTrailingSpaces);
+                int gi = NStr::StringToLong(line, conv_flags);
                 return x_PrepareBioseqWithGi(gi);
             // Test for accession
             } else if (regex.Exists(kRegex_Accession, flags)) {

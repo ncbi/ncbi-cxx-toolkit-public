@@ -1129,6 +1129,97 @@ BOOST_AUTO_UNIT_TEST(s_ReadAccessionNucleotideIntoBuffer_Single)
 
 }
 
+BOOST_AUTO_UNIT_TEST(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
+{
+    auto_ptr<string> user_input(new string("    1945386   "));
+
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CBlastInputConfig iconfig(false);
+    CBlastFastaInputSource source(*om, *user_input, iconfig);
+
+    CHECK(source.End() == false);
+    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK(source.End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    const TSeqPos length(2772);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
+    const int gi(1945386);
+    CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+
+    CHECK(!ssl.mask);
+
+    /// Validate the data that would be retrieved by blast.cgi
+    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
+    CHECK(b.IsNa());
+    CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
+    CHECK_EQUAL(gi, b.GetId().front()->GetGi());
+    CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
+    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    CHECK_EQUAL(length, b.GetInst().GetLength());
+
+}
+
+BOOST_AUTO_UNIT_TEST(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
+{
+    auto_ptr<string> user_input(new string("    u93236 "));
+
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CBlastInputConfig iconfig(false);
+    CBlastFastaInputSource source(*om, *user_input, iconfig);
+
+    CHECK(source.End() == false);
+    blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK(source.End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    const TSeqPos length(2772);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+    CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+    CHECK_EQUAL(CSeq_id::e_Genbank, ssl.seqloc->GetInt().GetId().Which());
+    const string accession("u93236");
+    CHECK_EQUAL(accession,
+                ssl.seqloc->GetInt().GetId().GetGenbank().GetAccession());
+
+    CHECK(!ssl.mask);
+
+    /// Validate the data that would be retrieved by blast.cgi
+    CRef<CBioseq_set> bioseqs = source.GetBioseqs();
+    CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
+    CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+    const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
+    CHECK(b.IsNa());
+    CHECK_EQUAL(CSeq_id::e_Genbank, b.GetId().front()->Which());
+    CHECK_EQUAL(accession, b.GetId().front()->GetGenbank().GetAccession());
+    CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
+    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    CHECK_EQUAL(length, b.GetInst().GetLength());
+
+}
+
 BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
 {
     const char* fname("data/aa.129295");
