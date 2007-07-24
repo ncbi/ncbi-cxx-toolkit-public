@@ -95,7 +95,7 @@ int CDbCopyApp::Run(void)
 
         conn_from->Connect("anyone",
                            "allowed",
-                           "OBERON",
+                           "TAPER",
                            "DBAPI_Sample");
 
         conn_to->Connect("anyone",
@@ -134,7 +134,7 @@ int CDbCopyApp::Run(void)
 
             conn_tmp->Connect("anyone",
                               "allowed",
-                              "OBERON");
+                              "TAPER");
 
             // Prepare an INSERT stattement ...
             sql = "INSERT INTO #source_table VALUES(@attr_id, @attr_name, @attr_value)";

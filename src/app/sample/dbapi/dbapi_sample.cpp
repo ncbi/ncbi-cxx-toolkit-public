@@ -80,12 +80,12 @@ void CDbapiTest::Init()
 
 	argList->AddDefaultKey("s", "string",
                            "Server name",
-                           CArgDescriptions::eString, "OBERON");
+                           CArgDescriptions::eString, "TAPER");
 
 	argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds>",
                            CArgDescriptions::eString, 
-                           "ftds");
+                           "ctlib");
 #endif
 
     SetupArgDescriptions(argList);
@@ -113,7 +113,7 @@ int CDbapiTest::Run()
         // objects in the library.
 
         if ( NStr::CompareNocase(server, "STRAUSS") == 0 ||
-             NStr::CompareNocase(server, "OBERON") == 0 ||
+             NStr::CompareNocase(server, "TAPER") == 0 ||
              NStr::CompareNocase(server, "MOZART") == 0 ) {
 
             map<string,string> attr;
@@ -396,7 +396,7 @@ end";
         stmt->ExecuteUpdate(sql);
 
 	if( NStr::CompareNocase(server, "STRAUSS") == 0 || 
-        NStr::CompareNocase(server, "OBERON") == 0 ||
+        NStr::CompareNocase(server, "TAPER") == 0 ||
         NStr::CompareNocase(server, "MOZART") == 0 )
         sql = "create procedure SampleProc \
 	@id int, \
