@@ -217,7 +217,7 @@ protected:
     void CopyBase(CGuideAlignment_Base* guideCopy) const;
 
     //  Use this to transfer base-class elements between instances of two different subclasses.
-    static CopyBase(CGuideAlignment_Base* from, CGuideAlignment_Base* to) { 
+    static void CopyBase(CGuideAlignment_Base* from, CGuideAlignment_Base* to) { 
         if (from) 
             from->CopyBase(to);
     }
