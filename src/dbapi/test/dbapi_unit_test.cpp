@@ -238,7 +238,19 @@ CDBAPIUnitTest::TestInit(void)
         auto_stmt->ExecuteUpdate(sql);
 
         sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
+
         // Create an index
+        auto_stmt->ExecuteUpdate( sql );
+
+        sql  = " CREATE TABLE #dbapi_bcp_table2 ( \n";
+        sql += "    id INT NULL, \n";
+        // Identity won't work with bulk insert ...
+        // sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
+        sql += "    int_field INT NULL, \n";
+        sql += "    vc1000_field VARCHAR(1000) NULL, \n";
+        sql += "    text_field TEXT NULL \n";
+        sql += " )";
+
         auto_stmt->ExecuteUpdate( sql );
 
         // Table for bulk insert ...
@@ -1799,6 +1811,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 {
     string sql;
     enum { record_num = 100 };
+    // string table_name = GetTableName();
+    string table_name = "#dbapi_bcp_table2";
 
     try {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
@@ -1808,13 +1822,13 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             // Prepare data ...
             {
                 // Clean table ...
-                auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+                auto_stmt->ExecuteUpdate("DELETE FROM "+ table_name);
             }
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
-                // auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 1));
+                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 4));
+                // auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 1));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -1844,7 +1858,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
             // Check inserted data ...
             {
-                int rec_num = GetNumOfRecords(auto_stmt, GetTableName());
+                int rec_num = GetNumOfRecords(auto_stmt, table_name);
                 BOOST_CHECK_EQUAL(rec_num, (int)record_num); 
             }
         }
@@ -1855,12 +1869,12 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             // Prepare data ...
             {
                 // Clean table ...
-                auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+                auto_stmt->ExecuteUpdate("DELETE FROM "+ table_name);
             }
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(GetTableName(), 4));
+                auto_ptr<IBulkInsert> bi(m_Conn->CreateBulkInsert(table_name, 4));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -1890,7 +1904,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
 
             // Check inserted data ...
             {
-                int rec_num = GetNumOfRecords(auto_stmt, GetTableName());
+                int rec_num = GetNumOfRecords(auto_stmt, table_name);
                 BOOST_CHECK_EQUAL(rec_num, int(record_num * batch_num)); 
             }
         }
@@ -8130,7 +8144,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     
     if (args.IsBCPAvailable()
-        && args.GetDriverName() != "ctlib" // !!! Need to be fixed !!!
         && !(args.GetDriverName() == "ftds" &&
              args.GetServerType() == CTestArguments::eSybase)
         ) {
