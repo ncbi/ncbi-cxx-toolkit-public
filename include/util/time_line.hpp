@@ -256,7 +256,7 @@ void CTimeLine<BV>::MoveObject(time_t old_time,
 template<class BV> 
 unsigned CTimeLine<BV>::x_TimeLineSlot(time_t tm) const
 {
-    _ASSERT(tm >= m_TimeLineHead);
+    //_ASSERT(tm >= m_TimeLineHead);
 
     if (tm <= m_TimeLineHead)
         return 0;
@@ -273,9 +273,9 @@ void CTimeLine<BV>::ExtractObjects(time_t tm, TBitVector* objects)
     _ASSERT(objects);
 
     unsigned slot = x_TimeLineSlot(tm);
-    for (unsigned i = 0; i < slot && i < m_TimeLine.size(); ++i) {
+    for (unsigned i = 0; i < slot; ++i) {
         if (m_TimeLine.size() == 0) {
-            ReInit();
+            ReInit(tm);
             return;
         }
         const TBitVector* bv = m_TimeLine[0];
@@ -285,7 +285,7 @@ void CTimeLine<BV>::ExtractObjects(time_t tm, TBitVector* objects)
         }
         m_TimeLine.pop_front();
     }
-    m_TimeLineHead = m_TimeLineHead + (slot+1) * m_DiscrFactor;
+    m_TimeLineHead = m_TimeLineHead + slot * m_DiscrFactor;
 }
 
 
