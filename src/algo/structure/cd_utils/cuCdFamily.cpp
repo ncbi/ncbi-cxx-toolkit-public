@@ -120,6 +120,16 @@ CDFamilyIterator CDFamily::findCDByAccession(CCdCore* cd) const
 	return end();
 }
 
+CDFamilyIterator CDFamily::findCDByAccession(const string& acc) const
+{
+	for (iterator it = begin();  it != end();  ++it) {
+		if (it->cd->GetAccession() == acc) {
+			return it;
+		}
+	}
+	return end();
+}
+
 //parent=0, get from root
 void CDFamily::getChildren(vector<CCdCore*>& cds, CCdCore* parentCD) const
 {

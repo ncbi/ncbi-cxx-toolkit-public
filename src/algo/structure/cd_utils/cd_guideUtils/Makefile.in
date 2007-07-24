@@ -1,9 +1,7 @@
 # $Id$
 #################################
 
-LIB_PROJ = xcd_utils
-
-EXPENDABLE_SUB_PROJ = cd_guideUtils
+LIB_PROJ = xcd_guideUtils
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

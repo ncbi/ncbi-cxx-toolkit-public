@@ -119,6 +119,17 @@ public:
 	bool isValid(int seqLen, int& errBlock) const;
 	bool overlap(const BlockModel& bm)const;
 	void addOffset(int nExt);
+
+    //  Both versions of 'mask' modify the blocks so that no residues in 'maskBlocks' remain.
+    //  In the first version, the seqId of this object and maskBlockModel must match to proceed.
+    //  Both return true if this object was modified; false if there was no effect. 
+    bool mask(const BlockModel& maskBlockModel);
+    bool mask(const vector<Block>& maskBlocks);
+
+    //  Truncate the current block model to be within the interval [min, max].
+    void clipToRange(unsigned int min, unsigned max);
+
+
     string toString() const;
     static string toString(const BlockModel& bm);
 	
@@ -156,6 +167,13 @@ public:
 	//assume this.master is the same as guide.master
 	//change this.master to guide.slave
 	int remaster(const BlockModelPair& guide);
+
+    //  Returns true if this object was modified; false if there was no effect.
+    //  Mask using blocks and not a BlockModel to factor out logic to verify
+    //  SeqIds are common between the pair and the mask.  Assumes this 
+    //  was already done.  Also assumes that the this BlockModelPair is valid.
+    bool mask(const vector<Block>& maskBlocks, bool maskBasedOnMaster);
+
 	//reverse the master vs slave
 	void reverse();
     //  clear out m_master, m_slave.

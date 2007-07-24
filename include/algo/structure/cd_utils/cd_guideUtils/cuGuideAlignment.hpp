@@ -28,7 +28,7 @@
  * File Description:
  *
  *          Base class for representing the guide alignment between two CDs.
- *          Default implementation assumes both are from a single CDFamily
+ *          Also contains a pure virtual base class for family-based guides.
  *
  * ===========================================================================
  */
@@ -38,7 +38,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/cdd/Domain_parent.hpp>
+//#include <objects/cdd/Domain_parent.hpp>
 #include <algo/structure/cd_utils/cuBlock.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuCdFamily.hpp>
@@ -105,31 +105,55 @@ public:
         unsigned int rootParentIndex;  //  in non-classical families, index specifies which parent
     };
 
-
     CGuideAlignment_Base()  {Initialize();}
     virtual ~CGuideAlignment_Base() {
         Cleanup();
     }
 
-    //  Override to specify parent relationship underlying this guide.
-    virtual CDomain_parent::EParent_type GetType() const = 0;
+    //  Subclass instances must be able to duplicate themselves, populating non-base-class members.
+    virtual CGuideAlignment_Base* Copy() const = 0;
 
-    //  Most general case; default implementations for the following two virtual methods
-    //  call this pure virtual function.
+    //  Most general case.
     virtual bool Make(const SGuideInput& guideInput1, const SGuideInput& guideInput2) = 0;
 
+    //  Subclasses will typically need to override the default implementation:  two CDs, no family information.
+    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2);
+
     //  Default implementation:  single hierarchy, use masters to generate a guide.
-    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2, CDFamily* family);
+//    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2, CDFamily* family);
 
     //  Default implementation:  two hierarchies, use masters to generate a guide.
-    virtual bool Make(const CCdCore* cd1, CDFamily* family1, const CCdCore* cd2, CDFamily* family2);
+//    virtual bool Make(const CCdCore* cd1, CDFamily* family1, const CCdCore* cd2, CDFamily* family2);
 
+    virtual string ToString() const;
+
+    /// Reset the whole object
+    virtual void Reset(void) {
+        Initialize();
+    }
 
     bool IsOK() const {return m_isOK;}
 
     const BlockModelPair& GetGuide() const {return m_guideBlockModelPair;}
     BlockModelPair GetGuide() {return m_guideBlockModelPair;}
     CRef<CSeq_align> GetGuideAsSeqAlign() const {return m_guideBlockModelPair.toSeqAlign();}
+
+    //  Modify the guide by cutting out all residues not overlapping with the passed BlockModel,
+    //  based on which BlockModel in the guide has a matching SeqId.
+    //  If the SeqId does not match a SeqId in the existing guide, do nothing.
+    //  The second parameter is ONLY used when the guide master and slave refer to the same sequence.
+    //  NOTE:  the intersection may result in an empty set.  In such cases,  m_isOK will be set to false.
+    void Intersect(const BlockModel& bm, bool basedOnMasterWhenSameSeqIdInGuide = true);
+
+    //  Modify the guide by cutting out all residues overlapping with the mask,
+    //  based on which BlockModel in the guide has a matching SeqId.
+    //  If the SeqId does not match a SeqId in the existing guide, do nothing.
+    //  The second parameter is ONLY used when the guide master and slave refer to the same sequence.
+    //  NOTE:  the mask may remove all residues.  In such cases,  m_isOK will be set to false.
+    void Mask(const BlockModel& mask, bool basedOnMasterWhenSameSeqIdInGuide = true);
+
+    //  Swap the sense of the guide.
+    void Reverse();
 
     //  Attempt to replace the master/slave of this guide with the alignment
     //  from seqAlign (the seqAlign's master if useFirst is true; the seqAlign's
@@ -169,13 +193,6 @@ public:
     string GetCommonCDRowIdStr(bool onMaster) const;
     unsigned int GetCommonCDRow(bool onMaster) const;
 
-    virtual string ToString() const;
-
-    /// Reset the whole object
-    virtual void Reset(void) {
-        Initialize();
-    }
-
 protected:
 
     bool m_isOK;
@@ -196,9 +213,95 @@ protected:
     //  is non-NULL, the end.
     virtual void MakeChains(const SGuideInput& guideInput1, const SGuideInput& guideInput2, const CCdCore* commonCd);
 
+    //  Copies base-class members of this into guideCopy.  Does not create guideCopy!!
+    void CopyBase(CGuideAlignment_Base* guideCopy) const;
+
+    //  Use this to transfer base-class elements between instances of two different subclasses.
+    static CopyBase(CGuideAlignment_Base* from, CGuideAlignment_Base* to) { 
+        if (from) 
+            from->CopyBase(to);
+    }
+
 private:
 
     bool Replace(bool replaceMaster, const CRef< CSeq_align >& seqAlign, bool useFirst);
+
+};
+
+// ==========================================
+//      CFamilyBasedGuide declaration
+// ==========================================
+
+//  Adds a few member variables/methods common to making guides
+//  based on a family.
+
+class NCBI_CDUTILS_EXPORT CFamilyBasedGuide : public CGuideAlignment_Base
+{
+protected:
+
+    static const int m_defaultOverlapPercentage;
+
+public:
+
+    CFamilyBasedGuide(const ncbi::cd_utils::CDFamily* family) : m_family1(family), m_overlapPercentage1(m_defaultOverlapPercentage), m_cleanupFamily1(false), m_family2(NULL), m_overlapPercentage2(m_defaultOverlapPercentage), m_cleanupFamily2(false) {
+        Initialize();
+    }
+
+    CFamilyBasedGuide(const ncbi::cd_utils::CDFamily* family, int overlapPercentage) : m_family1(family), m_overlapPercentage1(m_defaultOverlapPercentage), m_cleanupFamily1(false), m_family2(NULL), m_overlapPercentage2(m_defaultOverlapPercentage), m_cleanupFamily2(false) {
+        SetOverlapPercentage(overlapPercentage, true);
+        Initialize();
+    }
+
+
+    virtual ~CFamilyBasedGuide() {
+        Cleanup();
+    }
+
+    //  Subclass instances must be able to duplicate themselves, populating non-base-class members.
+    virtual CGuideAlignment_Base* Copy() const = 0;
+
+    //  Most general case.
+    virtual bool Make(const SGuideInput& guideInput1, const SGuideInput& guideInput2) = 0;
+
+    //  Since explicitly expect a family to be defined, subclasses *must* define this method
+    //  as the base class default implementation is not applicable.
+    //  'cd1' must come from m_family1; the requirements for 'cd2' will vary in the different subclasses.
+    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2) = 0;
+
+//    virtual string ToString() const;
+
+    //  Allow only the second family to be specified outside of the constructor.
+    //  This class does not assume ownership of the passed family.
+    void SetSecondFamily(const ncbi::cd_utils::CDFamily* secondFamily, int percentage = m_defaultOverlapPercentage);
+    const ncbi::cd_utils::CDFamily* GetFamily(bool firstFamily = true) const { return (firstFamily) ? m_family1 : m_family2;}
+
+    //  Set the minimum overlap required when creating a guide.  An integer between one and one hundred
+    //  Returns false if the input was out of range, in which case nothing is changed.
+    bool SetOverlapPercentage(int percentage, bool firstFamily = true);
+    int GetOverlapPercentage(bool firstFamily = true) const { return (firstFamily) ? m_overlapPercentage1 : m_overlapPercentage2;}
+
+    static bool InSameFamily(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* family);
+
+protected:
+
+    const ncbi::cd_utils::CDFamily* m_family1;  //  this should always be non-NULL    
+    int m_overlapPercentage1;  //  Between 0 and 100; ultimately used in BlockFormatter
+    bool m_cleanupFamily1;     //  need to cleanup m_family if initialized w/ a ::CDFamily object.
+
+    //  This set of members may or may not be used by derived classes.
+    const ncbi::cd_utils::CDFamily* m_family2;  
+    int m_overlapPercentage2;  //  Between 0 and 100; ultimately used in BlockFormatter
+    bool m_cleanupFamily2;     //  need to cleanup m_family if initialized w/ a ::CDFamily object.
+
+
+    virtual void Initialize();   // puts 2nd family members back to defaults.
+    virtual void Cleanup();
+
+    //  Build the TGuideChain structures:  default implementation just has start and, if commonCd
+    //  is non-NULL, the end.
+    virtual void MakeChains(const SGuideInput& guideInput1, const SGuideInput& guideInput2, const CCdCore* commonCd) {};
+
+private:
 
 };
 

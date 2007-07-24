@@ -37,7 +37,7 @@
 #define CU_CLASSICALGUIDEALIGNMENT_HPP
 
 #include <corelib/ncbistd.hpp>
-#include <algo/structure/cd_utils/cuGuideAlignment.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuGuideAlignment.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -57,7 +57,7 @@ class MultipleAlignment;
 //  In most cases, it is best to use the CGuideAlignmentFactory class to instantiate 
 //  an object of this class.
 
-class NCBI_CDUTILS_EXPORT CMastersClassicalGuideAlignment : public CGuideAlignment_Base
+class NCBI_CDUTILS_EXPORT CValidatedHierarchyGuideAlignment : public CFamilyBasedGuide
 {
     friend class CGuideAlignmentFactory;
 
@@ -65,51 +65,40 @@ class NCBI_CDUTILS_EXPORT CMastersClassicalGuideAlignment : public CGuideAlignme
 
 public:
 
-    CMastersClassicalGuideAlignment() {
-        Initialize();
+    CValidatedHierarchyGuideAlignment(const ncbi::cd_utils::CDFamily* family) : CFamilyBasedGuide(family) {
     }
 
-    virtual ~CMastersClassicalGuideAlignment() {
+    virtual ~CValidatedHierarchyGuideAlignment() {
         Cleanup();
     }
 
-    //  This class deals only with classical hierarchies.
-    virtual CDomain_parent::EParent_type GetType() const { return CDomain_parent::eParent_type_classical;}
+    //  Pure virtual function from base class.
+    virtual CGuideAlignment_Base* Copy() const;
 
     //  This specialized class ignores everything except the 'cd' in the guideInputs; 
     //  always uses the master of the specified CDs.  Returns false if the families
     //  in the two SGuideInput arguments differ.
     virtual bool Make(const SGuideInput& guideInput1, const SGuideInput& guideInput2);
 
-    //  Overrides base-class version.
+    //  Both CDs must be from the family.
     //  Never uses the cache as the cached alignment may represent a different subfamily than needed.
-    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2, CDFamily* family);
-
-    //  Overrides base-class version to always return false unless the families are the same.  
-    //  (A classical guide should be for one hierarchy by definition!)
-    virtual bool Make(const CCdCore* cd1, CDFamily* family1, const CCdCore* cd2, CDFamily* family2) {
-        bool result = false;
-        if (family1 == family2) {
-            result = Make(cd1, cd2, family1);
-        }
-        return result;
-    }
+    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2);
 
     //  Convenience method for when one of the two CDs is the family's root node.
     //  Caches the multiple alignment object if 'cache' is true.
-    bool MakeGuideToRoot(const CCdCore* cd, CDFamily* family, bool cache = false);
+    bool MakeGuideToRoot(const CCdCore* cd, bool cache = false);
     static void ClearAlignmentCache();
 
 protected:
 
-    static map<CDFamily*, MultipleAlignment*> m_alignmentCache;
+    static map<const CDFamily*, MultipleAlignment*> m_alignmentCache;
 
     //  Build the TGuideChain structures.
     virtual void MakeChains(const SGuideInput& guideInput1, const SGuideInput& guideInput2, const CCdCore* commonCd);
 
 private:
 
-    void MakeChains(const CCdCore* cd1, const CCdCore* cd2, const CCdCore* commonCd, CDFamily* family);
+    void MakeChains(const CCdCore* cd1, const CCdCore* cd2, const CCdCore* commonCd);
 
     //  In cases where the cache is used, pass the cached alignment.
     bool MakeFromMultipleAlignment(const CCdCore* cd1, const CCdCore* cd2, MultipleAlignment* ma);

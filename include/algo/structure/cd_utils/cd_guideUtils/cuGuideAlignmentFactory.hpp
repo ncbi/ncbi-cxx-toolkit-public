@@ -35,7 +35,7 @@
 #ifndef CU_GUIDEALIGNMENTFACTORY_HPP
 #define CU_GUIDEALIGNMENTFACTORY_HPP
 
-#include <algo/structure/cd_utils/cuGuideAlignment.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuGuideAlignment.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -45,6 +45,8 @@ BEGIN_SCOPE(cd_utils)
 
 class NCBI_CDUTILS_EXPORT CGuideAlignmentFactory {
 
+    static const int m_defaultOverlapPercent;
+
 public:
 
     typedef map<CCdCore*, CGuideAlignment_Base*> GuideMap;
@@ -52,7 +54,9 @@ public:
     typedef GuideMap::value_type GuideMapVT;
 
 
-    CGuideAlignmentFactory(bool allowConsensus = true) : m_allowConsensus(allowConsensus) {};
+    CGuideAlignmentFactory(int overlapPercentage = m_defaultOverlapPercent, bool allowConsensus = true) : m_allowConsensus(allowConsensus), m_overlapPercentage(m_defaultOverlapPercent) { 
+        SetOverlapPercentage(overlapPercentage);
+    }
     ~CGuideAlignmentFactory() {};
 
     //  When m_allowConsensus is false, any guides made by the factory will first
@@ -63,21 +67,36 @@ public:
     bool IsAllowConsensus() const {return m_allowConsensus;}
     void SetAllowConsensus(bool allowConsensus) { m_allowConsensus = allowConsensus;}
 
-    //  ** Classical-parent only method.  **
+    //  Control amount of overlap of a specified range required when making guide.
+    //  true if set value is in range [0, 100]; return false if out of range    
+    bool SetOverlapPercentage(int overlapPercentage);  
+    int GetOverlapPercentage() const {return m_overlapPercentage;}
+
+    //  ** Validated hierarchy method.  **
     //  Get all classical guide alignments to the root of the family.
     //  Caller should verify that the guides in the GuideMap are valid (a null pointer is not sufficient, so
     //  check for error messages or call the IsOK method).
+    //  (All pointers returned are instances of CValidatedHierarchyGuideAlignment.)
     void MakeAllGuidesToRoot(CDFamily* family, GuideMap& guideMap);
 
     //   Destroys all CGuideAlignment_Base objects in the passed map and clears the map.
     void DestroyGuides(GuideMap& guideMap);
 
-    //  ULTIMATELY, will infers the proper type of guide alignment needed based on the contents 
-    //  of the guide inputs, then uses the virtual methods to create objects of the required 
-    //  CGuideAlignment_Base-derived class.
-    //  Caller should verify that the guide returned is valid (a null pointer is not sufficient, so
-    //  check for error messages or call the IsOK method).
-    CGuideAlignment_Base* MakeGuide(const CGuideAlignment_Base::SGuideInput& guideInput1, const CGuideAlignment_Base::SGuideInput& guideInput2);
+    //  Only uses sequences in the two CDs passed in to build a guide.
+    CGuideAlignment_Base* MakeGuide(const CCdCore* cd1, const CCdCore* cd2);
+
+    //  Uses the family to make a guide between the two CDs passed in.
+    //  If neither CD is in the family, or the family is NULL, will still try to make the guide.
+    CGuideAlignment_Base* MakeGuide(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* family);
+
+    //  Special case of the above when the family is known to be valid (i.e., from CDD or CDTrack).
+    //  cd1 and cd2 are required to be members of the family, which can not be NULL.
+    //  (All pointers returned are instances of CValidatedHierarchyGuideAlignment.)
+    CGuideAlignment_Base* MakeGuideFromValidatedHierarchy(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* validatedFamily);
+
+    //  For simplicity, cd1 is required to be in family1 and cd2 is required to be in family2
+    //  when both are different non-null objects.  Returns NULL pointer if this pre-condition fails.
+    CGuideAlignment_Base* MakeGuide(const CCdCore* cd1, const CDFamily* family1, const CCdCore* cd2, const CDFamily* family2);
 
 private:
 
@@ -86,7 +105,15 @@ private:
     typedef ConsensusStore::value_type ConsensusStoreVT;
 
     bool m_allowConsensus;
+    int m_overlapPercentage;
     ConsensusStore m_consensusStore;
+
+    //  Infers the proper type of guide alignment needed based on the contents 
+    //  of the guide inputs, then uses the virtual methods to create objects of the required 
+    //  CGuideAlignment_Base-derived class.
+    //  Caller should verify that the guide returned is valid (a non-null pointer is not sufficient, so
+    //  check for error messages or call the IsOK method).
+    CGuideAlignment_Base* MakeGuide(const CGuideAlignment_Base::SGuideInput& guideInput1, const CGuideAlignment_Base::SGuideInput& guideInput2);
 
     //  Use the specified entries in the ConsensusStore to remap the guide alignment.
     bool RemapGuideToConsensus(CGuideAlignment_Base& gaToMap, ConsensusStoreIt& master, ConsensusStoreIt& slave);

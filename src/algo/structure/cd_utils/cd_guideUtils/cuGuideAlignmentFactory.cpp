@@ -37,12 +37,25 @@
 //#include <algo/structure/cd_utils/cuUtils.hpp>
 //#include <algo/structure/cd_utils/cuGuideAlignment.hpp>
 //#include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
-#include <algo/structure/cd_utils/cuGuideAlignmentFactory.hpp>
-#include <algo/structure/cd_utils/cuClassicalGuideAlignment.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuGuideAlignmentFactory.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuClassicalGuideAlignment.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuGuideToFamilyMember.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuTwoCDGuideAlignment.hpp>
+#include <algo/structure/cd_utils/cd_guideUtils/cuWithinFamilyGuideAlignment.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
+
+
+const int CGuideAlignmentFactory::m_defaultOverlapPercent = 75;
+
+bool CGuideAlignmentFactory::SetOverlapPercentage(int overlapPercentage)
+{
+    if (overlapPercentage < 0 || overlapPercentage > 100) return false;
+    m_overlapPercentage = overlapPercentage;
+    return true;
+}
 
 /*
 //  True only if seqId is a local string identifier that starts with the specified string.
@@ -228,7 +241,7 @@ void CGuideAlignmentFactory::MakeAllGuidesToRoot(CDFamily* family, GuideMap& gui
     guideMap.clear();
     if (!family) return;
 
-    CMastersClassicalGuideAlignment* ga;
+    CValidatedHierarchyGuideAlignment* ga;
     CCdCore* thisCd;
     CCdCore* rootCd = family->getRootCD();
     CDFamilyIterator famIt = family->begin(), famEnd = family->end();
@@ -245,9 +258,9 @@ void CGuideAlignmentFactory::MakeAllGuidesToRoot(CDFamily* family, GuideMap& gui
         ga = NULL;
         thisCd = famIt->cd;
         if (thisCd != rootCd) {
-            ga = new CMastersClassicalGuideAlignment();
+            ga = new CValidatedHierarchyGuideAlignment(family);
             if (ga) {
-                ga->MakeGuideToRoot(thisCd, family, true);   //  cache the multiple alignment 
+                ga->MakeGuideToRoot(thisCd, true);   //  cache the multiple alignment 
             }
         }
 
@@ -264,26 +277,10 @@ void CGuideAlignmentFactory::MakeAllGuidesToRoot(CDFamily* family, GuideMap& gui
 	}
 
     //  Clean up the static cache as noone else likely needs it any longer.
-    CMastersClassicalGuideAlignment::ClearAlignmentCache();
+    CValidatedHierarchyGuideAlignment::ClearAlignmentCache();
 
     //  Put consensus masters back if present.
     RestoreConsensusMasters(*family);
-
-
-}
-
-//  Infers the proper type of guide alignment needed based on the contents of the guide inputs,
-//  then uses the virtual Make method to create objects of the associated class.
-CGuideAlignment_Base* CGuideAlignmentFactory::MakeGuide(const CGuideAlignment_Base::SGuideInput& guideInput1, const CGuideAlignment_Base::SGuideInput& guideInput2)
-{
-    //  Simple case when need a classical alignment (only type supported right now...)
-    CGuideAlignment_Base* ga = new CMastersClassicalGuideAlignment();
-    if (ga) {
-        ga->Make(guideInput1, guideInput2);
-    }
-
-    //  It is the caller's responsibility to see if the creation succeeded by calling CGuideAlignment methods.
-    return ga;
 }
 
 void CGuideAlignmentFactory::DestroyGuides(GuideMap& guideMap)
@@ -295,6 +292,135 @@ void CGuideAlignmentFactory::DestroyGuides(GuideMap& guideMap)
     guideMap.clear();
 }
 
+
+CGuideAlignment_Base* CGuideAlignmentFactory::MakeGuide(const CCdCore* cd1, const CCdCore* cd2)
+{
+    //  Only one class instance possible when no family is available.
+    CGuideAlignment_Base* ga = new CTwoCDGuideAlignment(m_overlapPercentage);
+    if (ga && !ga->Make(cd1, cd2)) {
+        delete ga;
+        ga = NULL;
+    }
+
+    //  It is the caller's responsibility to see if the creation succeeded by calling CGuideAlignment methods.
+    return ga;
+}
+
+//  Special case of the above when the family is known to be valid.
+//  cd1 and cd2 are required to be members of the family, which can not be NULL.
+//  (All pointers returned are instances of CValidatedHierarchyGuideAlignment.)
+CGuideAlignment_Base* CGuideAlignmentFactory::MakeGuideFromValidatedHierarchy(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* validatedFamily)
+{
+    //  Special case for validated alignment (Make performs necessary sanity checks)
+    CGuideAlignment_Base* ga = new CValidatedHierarchyGuideAlignment(validatedFamily);
+    if (!ga->Make(cd1, cd2)) {
+        delete ga;
+        ga = NULL;
+    }
+
+    //  It is the caller's responsibility to see if the creation succeeded by calling CGuideAlignment methods.
+    return ga;
+}
+
+CGuideAlignment_Base* CGuideAlignmentFactory::MakeGuide(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* family)
+{
+    //  The casts are harmless; SGuideInput is only a container to pass into MakeGuide,
+    //  which ultimately uses the CDs as arguments to Make(const cd1, const cd2).
+    CDFamily* castedFamily = const_cast<CDFamily*>(family);
+    CGuideAlignment_Base::SGuideInput input1(const_cast<CCdCore*>(cd1), castedFamily, kMax_UInt, 0);
+    CGuideAlignment_Base::SGuideInput input2(const_cast<CCdCore*>(cd2), castedFamily, kMax_UInt, 0);
+    return MakeGuide(input1, input2);
+}
+
+CGuideAlignment_Base* CGuideAlignmentFactory::MakeGuide(const CCdCore* cd1, const CDFamily* family1, const CCdCore* cd2, const CDFamily* family2)
+{
+    //  The casts are harmless; SGuideInput is only a container to pass into MakeGuide,
+    //  which ultimately uses the CDs as arguments to Make(const cd1, const cd2).
+    CGuideAlignment_Base::SGuideInput input1(const_cast<CCdCore*>(cd1), const_cast<CDFamily*>(family1), kMax_UInt, 0);
+    CGuideAlignment_Base::SGuideInput input2(const_cast<CCdCore*>(cd2), const_cast<CDFamily*>(family2), kMax_UInt, 0);
+    return MakeGuide(input1, input2);
+}
+
+//  Used only by MakeGuide, below, which we assume has made all necessary sanity checks.
+CGuideAlignment_Base* MakeGuideInstance(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* family, bool cd1InFam, bool cd2InFam, int overlapPercentage)
+{
+    CGuideAlignment_Base* guide = NULL;
+    if (cd1InFam && cd2InFam) {
+        guide = new CWithinFamilyGuideAlignment(family, overlapPercentage);
+    } else if ((cd1InFam && !cd2InFam) || (cd2InFam && !cd1InFam)) {
+        guide = new CGuideToFamilyMember(family, overlapPercentage);
+    } else {  //  both false...
+        guide = new CTwoCDGuideAlignment(overlapPercentage);
+    }
+
+    bool madeGuide;
+    if (guide) {
+        if (cd2InFam && !cd1InFam) {
+            madeGuide = guide->Make(cd2, cd1);  //  in this case, cd2 has to appear first as it is the family member
+        } else {
+            madeGuide = guide->Make(cd1, cd2);
+        }
+        if (!madeGuide) {
+            delete guide;
+            guide = NULL;
+        }
+    }
+    return guide;
+}
+
+//  Infers the proper type of guide alignment needed based on the contents of the guide inputs,
+//  then uses the virtual Make method to create objects of the associated class.
+CGuideAlignment_Base* CGuideAlignmentFactory::MakeGuide(const CGuideAlignment_Base::SGuideInput& guideInput1, const CGuideAlignment_Base::SGuideInput& guideInput2)
+{
+    CGuideAlignment_Base* guide = NULL;
+    CDFamilyIterator fam1End, fam2End;
+    bool hasFam1 = (guideInput1.fam != NULL), hasFam2 = (guideInput2.fam != NULL);
+    bool sameFam = (guideInput1.fam == guideInput2.fam);  //  includes two null families
+    bool diffValidFams = (hasFam1 && hasFam2 && (guideInput1.fam != guideInput2.fam));
+
+    if (hasFam1) fam1End = guideInput1.fam->end();
+    if (hasFam2) fam2End = guideInput2.fam->end();
+
+    bool cd1InFam1= (hasFam1 && guideInput1.fam->findCD(guideInput1.cd) != fam1End);
+    bool cd1InFam2= (hasFam2 && guideInput2.fam->findCD(guideInput1.cd) != fam2End);
+    bool cd2InFam1= (hasFam1 && guideInput1.fam->findCD(guideInput2.cd) != fam1End);
+    bool cd2InFam2= (hasFam2 && guideInput2.fam->findCD(guideInput2.cd) != fam2End);
+
+    //  A pre-condition for two different families, require that each CD be from the family of the corresponding input
+    if (diffValidFams && (!cd1InFam1 || !cd2InFam2) ) {
+//        m_errors.push_back("When different families passed, CDs must below to their corresponding family.\n");
+        return guide;
+    }
+
+    
+    if (sameFam) {
+        guide = MakeGuideInstance(guideInput1.cd, guideInput2.cd, guideInput1.fam, cd1InFam1, cd2InFam1, m_overlapPercentage);
+    } else {
+        if (hasFam1 && !hasFam2) {
+            guide = MakeGuideInstance(guideInput1.cd, guideInput2.cd, guideInput1.fam, cd1InFam1, cd2InFam1, m_overlapPercentage);
+        } else if (hasFam2 && !hasFam1) {
+            guide = MakeGuideInstance(guideInput1.cd, guideInput2.cd, guideInput2.fam, cd1InFam2, cd2InFam2, m_overlapPercentage);
+        } else if (hasFam1 && hasFam2) {
+
+            //  Will only get here if the pre-condition above (cd in its corresponding family) passes
+            //  Until have a derived class that takes two families, try to use CGuideToFamilyMember
+        
+            guide = new CGuideToFamilyMember(guideInput1.fam, m_overlapPercentage);
+            if (guide && !guide->Make(guideInput1.cd, guideInput2.cd)) {
+                delete guide;
+                //  try with other family...
+                guide = new CGuideToFamilyMember(guideInput2.fam, m_overlapPercentage);
+                if (guide && !guide->Make(guideInput2.cd, guideInput1.cd)) {
+                    delete guide;
+                    guide = NULL;
+                }
+            }
+
+        }  //  no final case -- won't get to 'else' if have two null families
+    }
+
+    return guide;
+}
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

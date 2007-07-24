@@ -10,60 +10,57 @@ ASN_DEP = cdd ncbimime taxon1 id1cli blastdb entrez2
 LIB = xcd_utils
 
 SRC = \
-	cuAlign \
-	cuBlock \
-	cuCD \
-	cuConsensusMaker \
-	cuPssmMaker \
-	cuResidueProfile \
-	cuSequence \
-	cuCdCore \
-	cuMatrix \
-	cuUtils \
-	cuSort  \
-	cuCdFamily \
-	cuAlignedDM \
-	cuAlignmentCollection \
-	cuBaseClusterer \
-	cuBlockExtender \
-	cuBlockIntersector \
-	cuDistmat \
-	cuDmAlignedOptimalScore \
-	cuDmAlignedscore \
-	cuDmIdentities \
-    cuGuideAlignment \
-    cuClassicalGuideAlignment \
-    cuGuideAlignmentFactory \
-	cuNRCriteria \
-	cuRowSourceTable \
-	cuPrefTaxNodes \
-	cuScoringMatrix \
-	cuSeqtree \
-	cuSeqTreeAlg \
-	cuSeqTreeFactory \
-	cuSeqTreeNj \
-	cuSeqTreeSlc \
-	cuSeqTreeStream \
-	cuSequenceTable \
-	cuTaxClient \
-	cuTaxNRCriteria \
-	cuTaxTree \
-	cuSeqTreeAsnizer \
-	cuSeqTreeRootedLayout \
-	cuSeqTreeAPI \
+    cuAlign \
+    cuBlock \
+    cuCD \
+    cuConsensusMaker \
+    cuPssmMaker \
+    cuResidueProfile \
+    cuSequence \
+    cuCdCore \
+    cuMatrix \
+    cuUtils \
+    cuSort  \
+    cuCdFamily \
+    cuAlignedDM \
+    cuAlignmentCollection \
+    cuBaseClusterer \
+    cuBlockExtender \
+    cuBlockIntersector \
+    cuDistmat \
+    cuDmAlignedOptimalScore \
+    cuDmAlignedscore \
+    cuDmIdentities \
+    cuNRCriteria \
+    cuRowSourceTable \
+    cuPrefTaxNodes \
+    cuScoringMatrix \
+    cuSeqtree \
+    cuSeqTreeAlg \
+    cuSeqTreeFactory \
+    cuSeqTreeNj \
+    cuSeqTreeSlc \
+    cuSeqTreeStream \
+    cuSequenceTable \
+    cuTaxClient \
+    cuTaxNRCriteria \
+    cuTaxTree \
+    cuSeqTreeAsnizer \
+    cuSeqTreeRootedLayout \
+    cuSeqTreeAPI \
     cuReadFastaWrapper \
     cuSeqAnnotFromFasta \
     cuCdFromFasta \
-	cuBlockFormater \
-	cuCdUpdater \
-	cuCdUpdateParameters \
-	cuDmBlastscore \
-	cuBlast2Seq \
+    cuBlockFormater \
+    cuCdUpdater \
+    cuCdUpdateParameters \
+    cuDmBlastscore \
+    cuBlast2Seq \
     cuSimpleB2SWrapper \
-	cuHitsDistributor \
-	cuSeqSwapper \
-	cuFlexiDm \
-	cuPssmScorer
+    cuHitsDistributor \
+    cuSeqSwapper \
+    cuFlexiDm \
+    cuPssmScorer
 
 DLL_LIB = xobjread
 

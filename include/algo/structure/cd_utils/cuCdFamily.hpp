@@ -84,6 +84,7 @@ public:
 
 	CDFamilyIterator findCD(CCdCore* cd) const;
     CDFamilyIterator findCDByAccession(CCdCore* cd) const;  //  in case have a different pointer than used to build family
+    CDFamilyIterator findCDByAccession(const string& acc) const;  //  get the iterator to the CD w/ this accession
 
 	int getCDCounts() const;
 	int getAllCD(vector<CCdCore*>& cds) const;

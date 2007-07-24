@@ -757,6 +757,119 @@ int BlockModel::getBlockNumber(int pos) const
 		return i;
 }
 
+bool BlockModel::mask(const BlockModel& maskBlockModel)
+{
+    bool result = (SeqIdsMatch(getSeqId(), maskBlockModel.getSeqId()));
+    if (result) {
+        result = mask(maskBlockModel.getBlocks());
+    }
+    return result;
+}
+
+//  Returns true if this object was modified; false if there was no effect.
+bool BlockModel::mask(const vector<Block>& maskBlocks)
+{
+    vector<Block> maskedBlocks;
+    vector<Block>& originalBlocks = getBlocks();
+    unsigned int i, nOrigBlocks = originalBlocks.size();
+    unsigned int j, nMaskBlocks = maskBlocks.size();
+    int origTotalLength = getTotalBlockLength();
+    int newBlockId = 0;
+    int pos, start, len;
+    int origStart, origEnd;
+    int maskBlockStart, maskBlockEnd, maskFirst, maskLast;
+    bool hasEffect;
+
+    if (nOrigBlocks == 0 || nMaskBlocks == 0) return false;
+
+    //  Collect all mask positions to simplify search code.
+    set<int> maskPositions;
+    set<int>::iterator maskPosEnd;
+    for (i = 0; i < nMaskBlocks; ++i) {
+        maskBlockStart = maskBlocks[i].getStart();
+        maskBlockEnd = maskBlocks[i].getEnd();
+        for (j = maskBlockStart; j <= maskBlockEnd; ++j) maskPositions.insert(j);
+    }
+    maskPosEnd = maskPositions.end();
+
+    maskFirst = maskBlocks[0].getStart();
+    maskLast = maskBlocks.back().getEnd();
+
+    for (i = 0; i < nOrigBlocks; ++i) {
+        origStart = originalBlocks[i].getStart();
+        origEnd = originalBlocks[i].getEnd();
+
+        //  If origBlock does not intersects the maskBlocks footprint, it is unmasked and can be directly copied.
+        if (origEnd < maskFirst || origStart > maskLast) {
+            maskedBlocks.push_back(originalBlocks[i]);
+            maskedBlocks.back().setId(newBlockId);
+            ++newBlockId;
+            continue;
+        }
+
+        start = -1;
+        len = 0;
+        for (pos = origStart; pos <= origEnd; ++pos) {
+
+            //  If position is masked; end current block.
+            if (maskPositions.find(pos) != maskPosEnd) {
+                if (len > 0) {
+                    maskedBlocks.push_back(Block(start, len, newBlockId));
+                    ++newBlockId;
+                }
+                len = 0;
+                start = -1;
+            }
+            else
+            {
+                //  Found the first position in a new block.
+                if (len == 0) {
+                    start = pos;
+                }
+                ++len;
+            }
+
+        }  //  end loop on original block positions
+
+        //  Make sure to include the block at the end...
+        if (len > 0) {
+            maskedBlocks.push_back(Block(start, len, newBlockId));
+        }
+
+    }  //  end loop on original blocks
+
+    _ASSERT(getTotalBlockLength() <= origTotalLength);
+    hasEffect = (getTotalBlockLength() != origTotalLength);
+    if (hasEffect) {
+        originalBlocks.clear();
+        originalBlocks = maskedBlocks;
+    }
+
+    return hasEffect;
+}
+
+void BlockModel::clipToRange(unsigned int min, unsigned max)
+{
+    unsigned int nBlocks = getBlocks().size();
+    if (nBlocks == 0) return;
+
+    vector<Block> maskBlocks;
+    int firstAligned = getBlocks().front().getStart();
+    int lastAligned = getBlocks().back().getEnd();
+
+    //  Add a masking block for all residues < min.
+    if (firstAligned < min) {
+        maskBlocks.push_back(Block(firstAligned, min - firstAligned));
+    }
+    //  Add a masking block for all residues > max.
+    if (lastAligned > max) {
+        maskBlocks.push_back(Block(max + 1, lastAligned - max));
+    }
+
+    mask(maskBlocks);
+}
+
+
 string BlockModel::toString() const
 {
     string blockModelStr, tmp;
@@ -957,7 +1070,38 @@ int BlockModelPair::remaster(const BlockModelPair& guide)
 	m_slave = intersectedThisSlave.first;
 	return m_master->getTotalBlockLength();
 }
-	//reverse the master vs slave
+
+bool BlockModelPair::mask(const vector<Block>& maskBlocks, bool maskBasedOnMaster)
+{
+    if (!m_master || !m_slave || !isValid()) return false;
+
+    bool hasEffect = false;
+    BlockModel& maskedBm = (maskBasedOnMaster) ? getMaster() : getSlave();
+    vector<Block>& newBlocks = maskedBm.getBlocks();
+    unsigned int i, nBlocks = newBlocks.size();
+    int pos, mappedPos;
+
+    //  First, mask the primary BlockModel in the pair.
+    if (maskBlocks.size() > 0 && nBlocks > 0 && maskedBm.mask(maskBlocks)) {
+
+        hasEffect = true;
+
+        //  Then, fix up the other BlockModel in the pair to match the new masked primary BlockModel.
+        vector<Block>& newOtherBlocks = (maskBasedOnMaster) ? getSlave().getBlocks() : getMaster().getBlocks(); 
+        newOtherBlocks.clear();
+        for (i = 0; i < nBlocks; ++i) {
+            Block& b = newBlocks[i];
+            pos = b.getStart();
+            mappedPos = (maskBasedOnMaster) ? mapToSlave(pos) : mapToMaster(pos);
+            if (mappedPos >= 0) {  // should never fail if bmp.isValid is true.
+                newOtherBlocks.push_back(Block(mappedPos, b.getLen(), b.getId()));
+            }
+        }
+    }
+    return hasEffect;
+}
+
+//reverse the master vs slave
 void BlockModelPair::reverse()
 {
 	BlockModel* bm = m_master;
