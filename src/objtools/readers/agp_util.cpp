@@ -537,7 +537,19 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
             return CAgpErr::E_NoValidLines;
         }
         else if(m_error_code) {
-            if(!OnError(0)) return m_error_code;
+            if(m_error_code<0) {
+                // Simulated EOF midstream
+                m_AgpErr->Clear();
+                m_prev_line_skipped=false;
+
+                m_this_row=m_prev_row;
+                m_prev_row=this_row;
+                m_prev_line_num=m_line_num;
+
+                return finalize ? Finalize() : 0;
+            }
+            else if( !OnError(0) ) return m_error_code;
+
             m_AgpErr->Clear();
             m_prev_line_skipped=false;
         }
@@ -600,7 +612,18 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
             OnGapOrComponent();
 
             if(m_error_code){
-                if( !OnError(0) ) return m_error_code;
+                if(m_error_code<0) {
+                    // Simulated EOF midstream
+                    m_AgpErr->Clear();
+                    m_prev_line_skipped=false;
+
+                    m_this_row=prev_row;
+                    m_prev_row=this_row;
+                    m_prev_line_num=m_line_num;
+
+                    break;
+                }
+                else if( !OnError(0) ) return m_error_code;
                 m_AgpErr->Clear();
                 m_prev_line_skipped=false;
             }

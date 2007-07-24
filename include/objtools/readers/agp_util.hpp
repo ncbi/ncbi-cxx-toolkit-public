@@ -174,10 +174,12 @@ protected:
                       // Not affected by comment lines, even though these are skipped, too.
     bool m_new_obj;   // For OnScaffoldEnd(), true if this scaffold ends with an object.
                       // (false if there are scaffold-breaking gaps at object end)
-    int m_error_code; // Set to non-zero value to trigger OnError().
-                      // Can be used to stop reading of the stream midway:
-                      //    OnGapOrComponent() { if(need to stop) m_error_code=-1; }
-                      //    OnError() { if(m_error_code==-1) { /*not an error*/ }; return false; }
+    int m_error_code; // Set to a positive value to trigger OnError().
+                      // Set to -1 to graciously stop reading of the stream midway:
+                      // void OnGapOrComponent()
+                      // {
+                      //     if(need to stop && m_error_code==0) m_error_code=-1;
+                      // }
 
     CAgpRow *m_prev_row;
     CAgpRow *m_this_row;
