@@ -348,7 +348,7 @@ RunTest()
 
    if \$is_report_err; then
       # Authors are not defined for this test
-      test -z "\$x_authors" && exit
+      test -z "\$x_authors"  &&  return 0
    fi
 
    count_total=\`expr \$count_total + 1\`
@@ -539,7 +539,7 @@ EOF_launch
 
 MailToAuthors()
 {
-   test -z "\$sendmail" && exit
+   test -z "\$sendmail"  &&  return 0
    x_authors="\$1"
    x_logfile="\$2"
    {
