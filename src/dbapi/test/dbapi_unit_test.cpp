@@ -1864,8 +1864,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
         }
 
         // Second test ...
-        if (false) {
-            enum { batch_num = 1 };
+        {
+            enum { batch_num = 10 };
             // Prepare data ...
             {
                 // Clean table ...
@@ -2890,15 +2890,21 @@ int
 CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                 const string& table_name)
 {
+    int cur_rec_num = 0;
+
     DumpResults(auto_stmt.get());
     auto_stmt->ClearParamList();
     auto_stmt->SendSql( "select count(*) FROM " + table_name );
-    BOOST_CHECK( auto_stmt->HasMoreResults() );
-    BOOST_CHECK( auto_stmt->HasRows() );
-    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-    bool rc = rs->Next();
-    BOOST_CHECK(rc);
-    int cur_rec_num = rs->GetVariant(1).GetInt4();
+    if (auto_stmt->HasMoreResults()) {
+        if (auto_stmt->HasRows()) {
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            if (rs.get() != NULL) {
+                if (rs->Next()) {
+                    cur_rec_num = rs->GetVariant(1).GetInt4();
+                }
+            }
+        }
+    }
     return cur_rec_num;
 }
 
@@ -7978,6 +7984,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // on orkShop55_550-ReleaseMT
     if (args.GetDriverName() != "ftds"
         && args.GetDriverName() != "ftds64"
+        && args.GetDriverName() != "ftds64_dblib"
         && args.GetDriverName() != "msdblib"
         && !(args.GetDriverName() == "ftds" && Solaris)
         && !(args.GetDriverName() == "ftds64" && Solaris)
@@ -8014,6 +8021,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == "ftds"
           && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == "ftds64_dblib"
+          && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy,
                                    DBAPIInstance);
@@ -8026,6 +8035,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == "ftds"
           && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == "ftds64_dblib"
+          && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Multiple_Close,
                                    DBAPIInstance);
@@ -8036,6 +8047,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && !(args.GetDriverName() == "ftds"
             && args.GetServerType() == CTestArguments::eSybase)           
+        && !(args.GetDriverName() == "ftds64_dblib"
+          && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
