@@ -326,8 +326,10 @@ count_err=0
 count_absent=0
 count_total=0
 
-rm -f "\$res_journal"
-rm -f "\$res_log"
+if ! \$is_report_err; then
+   rm -f "\$res_journal"
+   rm -f "\$res_log"
+fi
 
 ulimit -c 1000000
 
@@ -525,15 +527,19 @@ EOF_launch
             fi
          done
       else
-         echo "ABS --  \$x_cmd"
-         echo "ABS --  \$x_cmd" >> \$res_log
-         count_absent=\`expr \$count_absent + 1\`
+         if ! \$is_report_err; then
+            echo "ABS --  \$x_cmd"
+            echo "ABS --  \$x_cmd" >> \$res_log
+            count_absent=\`expr \$count_absent + 1\`
+         fi
       fi
   else
-      # Test application is absent
-      echo "ABS -- \$x_work_dir - \$x_test"
-      echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
-      count_absent=\`expr \$count_absent + 1\`
+      if ! \$is_report_err; then
+         # Test application is absent
+         echo "ABS -- \$x_work_dir - \$x_test"
+         echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
+         count_absent=\`expr \$count_absent + 1\`
+      fi
   fi
 }
 
@@ -542,6 +548,7 @@ MailToAuthors()
    test -z "\$sendmail"  &&  return 0
    x_authors="\$1"
    x_logfile="\$2"
+   echo "Send results of the test \$x_app to \$x_authors"
    {
         echo "To: \$x_authors"
         echo "Bcc: ivanov"
@@ -634,18 +641,18 @@ done # for x_row in x_tests
 # Write ending code into the script 
 cat >> $x_out <<EOF
 
-
-# Write result of the tests execution
-echo
-echo "Succeeded : \$count_ok"
-echo "Failed    : \$count_err"
-echo "Absent    : \$count_absent"
-echo
-
-if [ \$count_err -eq 0 ]; then
+if ! \$is_report_err; then
+   # Write result of the tests execution
    echo
-   echo "******** ALL TESTS COMPLETED SUCCESSFULLY ********"
+   echo "Succeeded : \$count_ok"
+   echo "Failed    : \$count_err"
+   echo "Absent    : \$count_absent"
    echo
+   if [ \$count_err -eq 0 ]; then
+      echo
+      echo "******** ALL TESTS COMPLETED SUCCESSFULLY ********"
+      echo
+   fi
 fi
 
 exit \$count_err
