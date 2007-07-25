@@ -172,6 +172,88 @@ AC_DEFUN(NCBI_CHECK_LIBS,
 
 
 # Arguments:
+# 1. variable name
+# 2. path(s)
+# 3. suffix (optional)
+dnl
+dnl Naive implementation
+dnl
+dnl AC_DEFUN(NCBI_RPATHIFY,
+dnl [$1="-L$2 ${CONF_f_runpath}$2$3"])
+dnl 
+dnl AC_DEFUN(NCBI_RPATHIFY_COND,
+dnl [: ${$1="-L$2 ${CONF_f_runpath}$2$3"}])
+
+AC_DEFUN(NCBI_RPATHIFY,
+[ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $2; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    $1="${ncbi_rp_L_flags}$3"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $2; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    $1="${ncbi_rp_L_flags}${ncbi_rp_R_flags}$3"
+ fi])
+
+AC_DEFUN(NCBI_RPATHIFY_COND,
+[if test -z ${$1+set}; then
+    NCBI_RPATHIFY(m4_translit($1, :), [$2], [$3])
+ fi])
+
+# Arguments:
+# 1. variable name
+# 2. command
+# 3. extra sed code (optional)
+dnl
+dnl AC_DEFUN(NCBI_RPATHIFY_OUTPUT,
+dnl [$1=`$2 | sed -e "$3s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`])
+dnl 
+dnl AC_DEFUN(NCBI_RPATHIFY_OUTPUT_COND,
+dnl [: ${$1=`$2 | sed -e "$3s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}])
+
+AC_DEFUN(NCBI_RPATHIFY_OUTPUT,
+[if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    $1=`$2 | sed -e "$3"`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$2 | sed -e "$3"`; do
+       case "$x" in
+          -L*)
+             $1="[$]$1${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             $1="[$]$1${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    $1="[$]$1${ncbi_rp_R_flags}"
+ fi])
+
+AC_DEFUN(NCBI_RPATHIFY_OUTPUT_COND,
+[if test -z ${$1+set}; then
+    NCBI_RPATHIFY_OUTPUT(m4_translit($1, :), [$2], [$3])
+ fi])
+
+# Arguments:
 # 1. (3.) Properly-cased library name
 # 2. (4.) Test code.
 # 3. (5.) Extra libraries to put in $2_LIBS.
@@ -195,9 +277,9 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
        if test -n "[$]$2_LIBPATH"; then
           :
        elif test -d "[$]$2_PATH/lib${bit64_sfx}"; then
-          $2_LIBPATH="-L[$]$2_PATH/lib${bit64_sfx} ${CONF_f_runpath}[$]$2_PATH/lib${bit64_sfx}"
+          NCBI_RPATHIFY($2_LIBPATH, [$]$2_PATH/lib${bit64_sfx}, [])
        elif test -d "[$]$2_PATH/lib"; then
-          $2_LIBPATH="-L[$]$2_PATH/lib ${CONF_f_runpath}[$]$2_PATH/lib"
+          NCBI_RPATHIFY($2_LIBPATH, [$]$2_PATH/lib, [])
        fi
        $2_LIBS="[$]$2_LIBPATH -l$3 $5"
     else
@@ -243,7 +325,7 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
     $1_INCLUDE=`[$]$1 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
     $1_LIBPATH=`[$]$1 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
     $1_DEPS=`[$]$1 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    $1_LIBS="-L[$]$1_LIBPATH $CONF_f_runpath[$]$1_LIBPATH -lpython[$]$1_VERSION [$]$1_DEPS"
+    NCBI_RPATHIFY($1_LIBS, [$]$1_LIBPATH, [ ]-lpython[$]$1_VERSION [$]$1_DEPS)
     CPPFLAGS="[$]$1_INCLUDE $orig_CPPFLAGS"
     LIBS="[$]$1_LIBS $orig_LIBS"
     AC_CACHE_CHECK([for usable Python [$]$1_VERSION libraries],

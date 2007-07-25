@@ -3004,6 +3004,13 @@ fi
 
 
 ### Third-party libraries
+
+if test "$OSTYPE" = linux  -a  -d "$NCBI"; then
+   ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
+else
+   ncbi_rpath_sed=
+fi
+
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],
       [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])]])
@@ -3224,10 +3231,10 @@ if test "$with_sybase" != "no" ; then
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
    if test -z "$SYBASE_LCL_PATH" ; then
-      SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
+      NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LIBPATH)
    else
       SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/${sybase_lib}"
-      SYBASE_LPATH="-L$SYBASE_LCL_LIBPATH -L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LCL_LIBPATH:$SYBASE_LIBPATH"
+      NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH)
       SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include $SYBASE_INCLUDE"
    fi
    SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
@@ -3334,9 +3341,9 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_DBLIBS:="-lsybdb -ltds"}
    : ${FTDS_CTLIBS:="-lct -ltds"}
    : ${FTDS_ODBCLIBS:="-ltdsodbc -ltds"}
-   FTDS_DBLIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_DBLIBS"
-   FTDS_CTLIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_CTLIBS"
-   FTDS_ODBCLIBS="-L$FTDS_PATH/lib/odbc ${CONF_f_runpath}$FTDS_PATH/lib/odbc $FTDS_ODBCLIBS"
+   NCBI_RPATHIFY(FTDS_DBLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_DBLIBS)
+   NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
+   NCBI_RPATHIFY(FTDS_ODBCLIBS, $FTDS_PATH/lib/odbc, [ ]$FTDS_ODBCLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS_OLD(8)
    NCBI_LOCAL_FTDS_OLD(63)
@@ -3437,8 +3444,7 @@ if test "$with_mysql" != "no" ; then
       : ${MYSQL_BINPATH=`dirname $mysql_config`}
       # Kill off single quotes, due to later requoting
       : ${MYSQL_INCLUDE=`$mysql_config --cflags | tr -d \'`}
-      : ${MYSQL_LIBS=`$mysql_config --libs |\
-             sed -e "s/'//g; s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      NCBI_RPATHIFY_OUTPUT_COND(MYSQL_LIBS, $mysql_config --libs, [s/'//g; ])
       AC_CACHE_CHECK([whether MySQL works], ncbi_cv_lib_mysql,
          [CPPFLAGS="$MYSQL_INCLUDE $orig_CPPFLAGS"
           LIBS="$MYSQL_LIBS $orig_LIBS"
@@ -3498,7 +3504,7 @@ if test "$with_bdb" != "no" ; then
       done
    fi
    if test -d "$BERKELEYDB_LIBPATH"; then
-      : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
+      NCBI_RPATHIFY_COND(BERKELEYDB_LIBS:, ${BERKELEYDB_LIBPATH}, [ -ldb])
    else
       : ${BERKELEYDB_LIBS:="-ldb"}
    fi
@@ -3557,7 +3563,8 @@ else
    AC_DEFINE(HAVE_BERKELEY_DB, 1,
              [Define to 1 if Berkeley DB libraries are available.])
    if test -d "$BERKELEYDB_LIBPATH"; then
-      : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+      NCBI_RPATHIFY_COND(BERKELEYDB_CXX_LIBS:, ${BERKELEYDB_LIBPATH},
+          [ -ldb_cxx -ldb])
    else
       : ${BERKELEYDB_CXX_LIBS:="-ldb_cxx -ldb"}
    fi
@@ -3599,7 +3606,7 @@ case "$ODBC_PATH" in
  *)
    ODBC_INCLUDE="-I$ODBC_PATH/include"
    ODBC_LIBPATH="${ODBC_PATH}/lib"
-   ODBC_LIBS="-L${ODBC_LIBPATH} ${CONF_f_runpath}${ODBC_LIBPATH} -lodbc -lodbcinst"
+   NCBI_RPATHIFY(ODBC_LIBS, ${ODBC_LIBPATH}, [ -lodbc -lodbcinst])
    CPPFLAGS="$ODBC_INCLUDE $orig_CPPFLAGS"
    LIBS="$ODBC_LIBS $orig_LIBS"
    AC_CACHE_CHECK([for ODBC libraries in $ODBC_PATH], ncbi_cv_lib_odbc,
@@ -3705,8 +3712,8 @@ if test "$with_cppunit" != "no" ; then
    AC_CACHE_CHECK([for CPPUNIT in $CPPUNIT_ARCH_PATH], ncbi_cv_lib_cppunit,
       [if test -x "$CPPUNIT_BINPATH/cppunit-config" ; then
           CPPUNIT_INCLUDE=`$CPPUNIT_BINPATH/cppunit-config --cflags`
-          CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs |\
-             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+          NCBI_RPATHIFY_OUTPUT(CPPUNIT_LIBS,
+               $CPPUNIT_BINPATH/cppunit-config --libs)
 
           CPPFLAGS="$CPPUNIT_INCLUDE $orig_CPPFLAGS"
           LIBS="$CPPUNIT_LIBS $orig_LIBS"
@@ -3739,8 +3746,7 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$CPPUNIT_INCLUDE"; then
       CPPUNIT_INCLUDE=`$CPPUNIT_CONFIG --cflags`
-      CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs |\
-         sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+      NCBI_RPATHIFY_OUTPUT(CPPUNIT_LIBS, $CPPUNIT_CONFIG --libs)
    fi
    AC_DEFINE(HAVE_CPPUNIT, 1, [Define to 1 if CPPUNIT libraries are available.])
 fi
@@ -3755,7 +3761,7 @@ if test "$with_boost" != "no"; then
    fi
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
-   : ${BOOST_LIBPATH="-L$BOOST_LIBPATH_ ${CONF_f_runpath}$BOOST_LIBPATH_"}
+   NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
       AC_CACHE_CHECK([Boost version],
          ncbi_cv_lib_boost_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
@@ -4039,7 +4045,7 @@ if test "$with_opengl" != "no"; then
          fi
          if test -d "$with_opengl/lib$ogl_lib_sfx"; then
             l=$with_opengl/lib$ogl_lib_sfx
-            X_LIBS="-L$l ${CONF_f_runpath}$l $X_LIBS"
+            NCBI_RPATHIFY(X_LIBS, $l, [ ]$X_LIBS)
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
@@ -4084,7 +4090,7 @@ else
       fi
       if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
          OSMESA_INCLUDE=-I$with_mesa/include
-         OSMESA_LDFLAGS="-L$with_mesa/lib ${CONF_f_runpath}$with_mesa/lib"
+         NCBI_RPATHIFY(OSMESA_LDFLAGS, $with_mesa/lib)
       fi
       LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
       AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
@@ -4101,7 +4107,7 @@ else
       fi
       if test -n "$with_glut" -a "$with_glut" != "yes"; then
          GLUT_INCLUDE=-I$with_glut/include
-         GLUT_LDFLAGS="-L$with_glut/lib ${CONF_f_runpath}$with_glut/lib"
+         NCBI_RPATHIFY(GLUT_LDFLAGS, $with_glut/lib)
       fi
       LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
       AC_CHECK_LIB(glut, glutInit,
@@ -4331,8 +4337,7 @@ if test "$with_wxwidgets" != "no" ; then
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-          WXWIDGETS_LIBS=`$wxconf --libs |\
-             sed -e "$libsed; s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+          NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, $wxconf --libs, [$libsed; ])
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -4364,8 +4369,7 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-      WXWIDGETS_LIBS=`$wxconf --libs |\
-         sed -e "$libsed; s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+      NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, $wxconf --libs, [$libsed; ])
    fi
    WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
@@ -4599,10 +4603,10 @@ if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
       : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
-      : ${ORBACUS_LIBPATH="-L$fullpath/lib ${CONF_f_runpath}${fullpath}/lib"}
+      NCBI_RPATHIFY_COND(ORBACUS_LIBPATH, $fullpath/lib)
    elif test -f ${ORBACUS_PATH}/include/OB/Config.h ; then
      : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
-     : ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
+     NCBI_RPATHIFY_COND(ORBACUS_LIBPATH, $ORBACUS_PATH/lib)
    fi
    case "$host_os:$with_mt" in
        linux*:no) LIBJTC="-lJTC -pthread" ;;
@@ -4680,8 +4684,7 @@ if test "$with_icu" != "no" ; then
       [ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir 2>/dev/null`/icu-config
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
-          ICU_LIBS=`$ICU_CONFIG --ldflags |\
-             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+          NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags)
 
           CPPFLAGS="$ICU_INCLUDE $orig_CPPFLAGS"
           LIBS="$ICU_LIBS $orig_LIBS"
@@ -4708,8 +4711,7 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$ICU_INCLUDE"; then
       ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
-      ICU_LIBS=`$ICU_CONFIG --ldflags |\
-         sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+      NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags)
    fi
    ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags | sed -e 's/-licu/-lsicu/g'`
    AC_DEFINE(HAVE_ICU, 1, [Define to 1 if ICU libraries are available.])
@@ -4764,7 +4766,7 @@ if test "$with_libxml" != "no"; then
       elif test -d "$LIBXML_PATH/lib"; then
          LIBXML_LIBPATH_="$LIBXML_PATH/lib"
       fi
-      : ${LIBXML_LIBPATH="-L$LIBXML_LIBPATH_ ${CONF_f_runpath}$LIBXML_LIBPATH_"}
+      NCBI_RPATHIFY_COND(LIBXML_LIBPATH, $LIBXML_LIBPATH_)
       LIBXML_LIBS="$LIBXML_LIBPATH -lxml2"
    else
       LIBXML_INCLUDE="-I/usr/include/libxml2"
@@ -4845,7 +4847,7 @@ if test "$with_xerces" != no; then
    else
       in_path=''
    fi
-   XERCES_LIBPATH_="-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH"
+   NCBI_RPATHIFY(XERCES_LIBPATH_, $XERCES_LIBPATH)
    XERCES_LIBS="$XERCES_LIBPATH_ -lxerces-c"
    AC_CACHE_CHECK([for Xerces-C++$in_path], ncbi_cv_lib_xerces_c,
       [CPPFLAGS="$XERCES_INCLUDE $orig_CPPFLAGS"
@@ -4905,7 +4907,7 @@ if test "$with_xalan" != no; then
    else
       in_path=''
    fi
-   XALAN_LIBPATH_="-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH"
+   NCBI_RPATHIFY(XALAN_LIBPATH_, $XALAN_LIBPATH)
    XALAN_LIBS="$XALAN_LIBPATH_ -lxalan-c -lxalanMsg"
    AC_CACHE_CHECK([for Xalan-C++$in_path], ncbi_cv_lib_xalan_c,
       [CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
@@ -4949,7 +4951,8 @@ if test -d "$SQLITE3_PATH"; then
    NCBI_FIX_DIR(SQLITE3_PATH)
 fi
 if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
-   SQLITE3_LIBPATH="-L$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib ${CONF_f_runpath}$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"
+   NCBI_RPATHIFY(SQLITE3_LIBPATH,
+       $SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
  AC_LANG_PROGRAM([#include <sqlite3.h>],
@@ -5032,8 +5035,7 @@ if test "$with_freetype" != "no" ; then
    if test -n "$freetype_config" ; then
       : ${FREETYPE_BINPATH=`dirname $freetype_config`}
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
-      : ${FREETYPE_LIBS=`$freetype_config --libs |\
-             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      NCBI_RPATHIFY_OUTPUT_COND(FREETYPE_LIBS, $freetype_config --libs)
       AC_CACHE_CHECK([whether FREETYPE_INCLUDE needs doctoring],
                      ncbi_cv_lib_freetype_fix_include,
          [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"

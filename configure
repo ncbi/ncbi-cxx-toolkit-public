@@ -19204,6 +19204,13 @@ fi
 
 
 ### Third-party libraries
+
+if test "$OSTYPE" = linux  -a  -d "$NCBI"; then
+   ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/$NCBI_PLATFORM_BITS/\\1:&,"
+else
+   ncbi_rpath_sed=
+fi
+
 if test "$with_z" != "no"; then
     case "$with_z" in
        yes | "" ) ;;
@@ -19217,9 +19224,47 @@ if test "$with_z" != "no"; then
        if test -n "$Z_LIBPATH"; then
           :
        elif test -d "$Z_PATH/lib${bit64_sfx}"; then
-          Z_LIBPATH="-L$Z_PATH/lib${bit64_sfx} ${CONF_f_runpath}$Z_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $Z_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    Z_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $Z_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    Z_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$Z_PATH/lib"; then
-          Z_LIBPATH="-L$Z_PATH/lib ${CONF_f_runpath}$Z_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $Z_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    Z_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $Z_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    Z_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        Z_LIBS="$Z_LIBPATH -lz "
     else
@@ -19329,9 +19374,47 @@ if test "$with_bz2" != "no"; then
        if test -n "$BZ2_LIBPATH"; then
           :
        elif test -d "$BZ2_PATH/lib${bit64_sfx}"; then
-          BZ2_LIBPATH="-L$BZ2_PATH/lib${bit64_sfx} ${CONF_f_runpath}$BZ2_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $BZ2_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BZ2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $BZ2_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BZ2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$BZ2_PATH/lib"; then
-          BZ2_LIBPATH="-L$BZ2_PATH/lib ${CONF_f_runpath}$BZ2_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $BZ2_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BZ2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $BZ2_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BZ2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        BZ2_LIBS="$BZ2_LIBPATH -lbz2 "
     else
@@ -19463,9 +19546,47 @@ if test "$with_lzo2" != "no"; then
        if test -n "$LZO2_LIBPATH"; then
           :
        elif test -d "$LZO2_PATH/lib${bit64_sfx}"; then
-          LZO2_LIBPATH="-L$LZO2_PATH/lib${bit64_sfx} ${CONF_f_runpath}$LZO2_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LZO2_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LZO2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LZO2_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LZO2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$LZO2_PATH/lib"; then
-          LZO2_LIBPATH="-L$LZO2_PATH/lib ${CONF_f_runpath}$LZO2_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LZO2_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LZO2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LZO2_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LZO2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        LZO2_LIBS="$LZO2_LIBPATH -llzo2 "
     else
@@ -19580,9 +19701,47 @@ if test "$with_lzo2" = "no"; then
        if test -n "$LZO_LIBPATH"; then
           :
        elif test -d "$LZO_PATH/lib${bit64_sfx}"; then
-          LZO_LIBPATH="-L$LZO_PATH/lib${bit64_sfx} ${CONF_f_runpath}$LZO_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LZO_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LZO_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LZO_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LZO_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$LZO_PATH/lib"; then
-          LZO_LIBPATH="-L$LZO_PATH/lib ${CONF_f_runpath}$LZO_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LZO_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LZO_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LZO_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LZO_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        LZO_LIBS="$LZO_LIBPATH -llzo "
     else
@@ -19693,9 +19852,47 @@ if test "$with_pcre" != "no"; then
        if test -n "$PCRE_LIBPATH"; then
           :
        elif test -d "$PCRE_PATH/lib${bit64_sfx}"; then
-          PCRE_LIBPATH="-L$PCRE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PCRE_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PCRE_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PCRE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PCRE_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PCRE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$PCRE_PATH/lib"; then
-          PCRE_LIBPATH="-L$PCRE_PATH/lib ${CONF_f_runpath}$PCRE_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PCRE_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PCRE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PCRE_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PCRE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        PCRE_LIBS="$PCRE_LIBPATH -lpcre "
     else
@@ -19817,9 +20014,47 @@ if test "$with_gnutls" != "no"; then
        if test -n "$GNUTLS_LIBPATH"; then
           :
        elif test -d "$GNUTLS_PATH/lib${bit64_sfx}"; then
-          GNUTLS_LIBPATH="-L$GNUTLS_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GNUTLS_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GNUTLS_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GNUTLS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GNUTLS_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GNUTLS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$GNUTLS_PATH/lib"; then
-          GNUTLS_LIBPATH="-L$GNUTLS_PATH/lib ${CONF_f_runpath}$GNUTLS_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GNUTLS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GNUTLS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GNUTLS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GNUTLS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        GNUTLS_LIBS="$GNUTLS_LIBPATH -lgnutls "
     else
@@ -19917,9 +20152,47 @@ if test "$with_openssl" != "no"; then
        if test -n "$OPENSSL_LIBPATH"; then
           :
        elif test -d "$OPENSSL_PATH/lib${bit64_sfx}"; then
-          OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OPENSSL_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENSSL_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENSSL_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$OPENSSL_PATH/lib"; then
-          OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib ${CONF_f_runpath}$OPENSSL_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENSSL_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENSSL_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        OPENSSL_LIBS="$OPENSSL_LIBPATH -lssl -lcrypto"
     else
@@ -20154,10 +20427,48 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
    if test -z "$SYBASE_LCL_PATH" ; then
-      SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
+      ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SYBASE_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SYBASE_LPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SYBASE_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SYBASE_LPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
    else
       SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/${sybase_lib}"
-      SYBASE_LPATH="-L$SYBASE_LCL_LIBPATH -L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LCL_LIBPATH:$SYBASE_LIBPATH"
+      ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SYBASE_LPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SYBASE_LPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
       SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include $SYBASE_INCLUDE"
    fi
    SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
@@ -20381,9 +20692,66 @@ if test "$with_ftds" != "no" ; then
    : ${FTDS_DBLIBS:="-lsybdb -ltds"}
    : ${FTDS_CTLIBS:="-lct -ltds"}
    : ${FTDS_ODBCLIBS:="-ltdsodbc -ltds"}
-   FTDS_DBLIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_DBLIBS"
-   FTDS_CTLIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_CTLIBS"
-   FTDS_ODBCLIBS="-L$FTDS_PATH/lib/odbc ${CONF_f_runpath}$FTDS_PATH/lib/odbc $FTDS_ODBCLIBS"
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $FTDS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    FTDS_DBLIBS="${ncbi_rp_L_flags} $FTDS_DBLIBS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $FTDS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    FTDS_DBLIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $FTDS_DBLIBS"
+ fi
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $FTDS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    FTDS_CTLIBS="${ncbi_rp_L_flags} $FTDS_CTLIBS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $FTDS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    FTDS_CTLIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $FTDS_CTLIBS"
+ fi
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $FTDS_PATH/lib/odbc; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    FTDS_ODBCLIBS="${ncbi_rp_L_flags} $FTDS_ODBCLIBS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $FTDS_PATH/lib/odbc; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    FTDS_ODBCLIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $FTDS_ODBCLIBS"
+ fi
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    d="dbapi/driver/ftds8/freetds"
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
@@ -20630,8 +20998,32 @@ fi
       : ${MYSQL_BINPATH=`dirname $mysql_config`}
       # Kill off single quotes, due to later requoting
       : ${MYSQL_INCLUDE=`$mysql_config --cflags | tr -d \'`}
-      : ${MYSQL_LIBS=`$mysql_config --libs |\
-             sed -e "s/'//g; s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      if test -z ${MYSQL_LIBS+set}; then
+    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    MYSQL_LIBS=`$mysql_config --libs | sed -e "s/'//g; "`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$mysql_config --libs | sed -e "s/'//g; "`; do
+       case "$x" in
+          -L*)
+             MYSQL_LIBS="$MYSQL_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             MYSQL_LIBS="$MYSQL_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    MYSQL_LIBS="$MYSQL_LIBS${ncbi_rp_R_flags}"
+ fi
+ fi
       echo "$as_me:$LINENO: checking whether MySQL works" >&5
 echo $ECHO_N "checking whether MySQL works... $ECHO_C" >&6
 if test "${ncbi_cv_lib_mysql+set}" = set; then
@@ -20757,7 +21149,28 @@ if test "$with_bdb" != "no" ; then
       done
    fi
    if test -d "$BERKELEYDB_LIBPATH"; then
-      : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
+      if test -z ${BERKELEYDB_LIBS:+set}; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in ${BERKELEYDB_LIBPATH}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BERKELEYDB_LIBS="${ncbi_rp_L_flags} -ldb"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in ${BERKELEYDB_LIBPATH}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BERKELEYDB_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -ldb"
+ fi
+ fi
    else
       : ${BERKELEYDB_LIBS:="-ldb"}
    fi
@@ -20880,7 +21293,28 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
    if test -d "$BERKELEYDB_LIBPATH"; then
-      : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+      if test -z ${BERKELEYDB_CXX_LIBS:+set}; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in ${BERKELEYDB_LIBPATH}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BERKELEYDB_CXX_LIBS="${ncbi_rp_L_flags} -ldb_cxx -ldb"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in ${BERKELEYDB_LIBPATH}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BERKELEYDB_CXX_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -ldb_cxx -ldb"
+ fi
+ fi
    else
       : ${BERKELEYDB_CXX_LIBS:="-ldb_cxx -ldb"}
    fi
@@ -20972,7 +21406,26 @@ case "$ODBC_PATH" in
  *)
    ODBC_INCLUDE="-I$ODBC_PATH/include"
    ODBC_LIBPATH="${ODBC_PATH}/lib"
-   ODBC_LIBS="-L${ODBC_LIBPATH} ${CONF_f_runpath}${ODBC_LIBPATH} -lodbc -lodbcinst"
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in ${ODBC_LIBPATH}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ODBC_LIBS="${ncbi_rp_L_flags} -lodbc -lodbcinst"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in ${ODBC_LIBPATH}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ODBC_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lodbc -lodbcinst"
+ fi
    CPPFLAGS="$ODBC_INCLUDE $orig_CPPFLAGS"
    LIBS="$ODBC_LIBS $orig_LIBS"
    echo "$as_me:$LINENO: checking for ODBC libraries in $ODBC_PATH" >&5
@@ -21411,7 +21864,26 @@ fi
     PYTHON_INCLUDE=`$PYTHON -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
     PYTHON_LIBPATH=`$PYTHON -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
     PYTHON_DEPS=`$PYTHON -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    PYTHON_LIBS="-L$PYTHON_LIBPATH $CONF_f_runpath$PYTHON_LIBPATH -lpython$PYTHON_VERSION $PYTHON_DEPS"
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON_VERSION $PYTHON_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON_VERSION $PYTHON_DEPS"
+ fi
     CPPFLAGS="$PYTHON_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON_LIBS $orig_LIBS"
     echo "$as_me:$LINENO: checking for usable Python $PYTHON_VERSION libraries" >&5
@@ -21542,7 +22014,26 @@ fi
     PYTHON23_INCLUDE=`$PYTHON23 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
     PYTHON23_LIBPATH=`$PYTHON23 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
     PYTHON23_DEPS=`$PYTHON23 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    PYTHON23_LIBS="-L$PYTHON23_LIBPATH $CONF_f_runpath$PYTHON23_LIBPATH -lpython$PYTHON23_VERSION $PYTHON23_DEPS"
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON23_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON23_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON23_VERSION $PYTHON23_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON23_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON23_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON23_VERSION $PYTHON23_DEPS"
+ fi
     CPPFLAGS="$PYTHON23_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON23_LIBS $orig_LIBS"
     echo "$as_me:$LINENO: checking for usable Python $PYTHON23_VERSION libraries" >&5
@@ -21673,7 +22164,26 @@ fi
     PYTHON24_INCLUDE=`$PYTHON24 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
     PYTHON24_LIBPATH=`$PYTHON24 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
     PYTHON24_DEPS=`$PYTHON24 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    PYTHON24_LIBS="-L$PYTHON24_LIBPATH $CONF_f_runpath$PYTHON24_LIBPATH -lpython$PYTHON24_VERSION $PYTHON24_DEPS"
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON24_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON24_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON24_VERSION $PYTHON24_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON24_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON24_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON24_VERSION $PYTHON24_DEPS"
+ fi
     CPPFLAGS="$PYTHON24_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON24_LIBS $orig_LIBS"
     echo "$as_me:$LINENO: checking for usable Python $PYTHON24_VERSION libraries" >&5
@@ -21804,7 +22314,26 @@ fi
     PYTHON25_INCLUDE=`$PYTHON25 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
     PYTHON25_LIBPATH=`$PYTHON25 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
     PYTHON25_DEPS=`$PYTHON25 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    PYTHON25_LIBS="-L$PYTHON25_LIBPATH $CONF_f_runpath$PYTHON25_LIBPATH -lpython$PYTHON25_VERSION $PYTHON25_DEPS"
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON25_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON25_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON25_VERSION $PYTHON25_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON25_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON25_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON25_VERSION $PYTHON25_DEPS"
+ fi
     CPPFLAGS="$PYTHON25_INCLUDE $orig_CPPFLAGS"
     LIBS="$PYTHON25_LIBS $orig_LIBS"
     echo "$as_me:$LINENO: checking for usable Python $PYTHON25_VERSION libraries" >&5
@@ -21936,8 +22465,30 @@ if test "${ncbi_cv_lib_cppunit+set}" = set; then
 else
   if test -x "$CPPUNIT_BINPATH/cppunit-config" ; then
           CPPUNIT_INCLUDE=`$CPPUNIT_BINPATH/cppunit-config --cflags`
-          CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs |\
-             sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+          if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs | sed -e ""`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$CPPUNIT_BINPATH/cppunit-config --libs | sed -e ""`; do
+       case "$x" in
+          -L*)
+             CPPUNIT_LIBS="$CPPUNIT_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             CPPUNIT_LIBS="$CPPUNIT_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    CPPUNIT_LIBS="$CPPUNIT_LIBS${ncbi_rp_R_flags}"
+ fi
 
           CPPFLAGS="$CPPUNIT_INCLUDE $orig_CPPFLAGS"
           LIBS="$CPPUNIT_LIBS $orig_LIBS"
@@ -22015,8 +22566,30 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$CPPUNIT_INCLUDE"; then
       CPPUNIT_INCLUDE=`$CPPUNIT_CONFIG --cflags`
-      CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs |\
-         sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+      if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs | sed -e ""`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$CPPUNIT_CONFIG --libs | sed -e ""`; do
+       case "$x" in
+          -L*)
+             CPPUNIT_LIBS="$CPPUNIT_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             CPPUNIT_LIBS="$CPPUNIT_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    CPPUNIT_LIBS="$CPPUNIT_LIBS${ncbi_rp_R_flags}"
+ fi
    fi
 
 cat >>confdefs.h <<\_ACEOF
@@ -22035,7 +22608,28 @@ if test "$with_boost" != "no"; then
    fi
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
-   : ${BOOST_LIBPATH="-L$BOOST_LIBPATH_ ${CONF_f_runpath}$BOOST_LIBPATH_"}
+   if test -z ${BOOST_LIBPATH+set}; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $BOOST_LIBPATH_; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    BOOST_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $BOOST_LIBPATH_; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    BOOST_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+ fi
       echo "$as_me:$LINENO: checking Boost version" >&5
 echo $ECHO_N "checking Boost version... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_version+set}" = set; then
@@ -24181,7 +24775,26 @@ fi
          fi
          if test -d "$with_opengl/lib$ogl_lib_sfx"; then
             l=$with_opengl/lib$ogl_lib_sfx
-            X_LIBS="-L$l ${CONF_f_runpath}$l $X_LIBS"
+            ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $l; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    X_LIBS="${ncbi_rp_L_flags} $X_LIBS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $l; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    X_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} $X_LIBS"
+ fi
          fi
          LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
@@ -24279,7 +24892,26 @@ _ACEOF
       fi
       if test -n "$with_mesa" -a "$with_mesa" != "yes"; then
          OSMESA_INCLUDE=-I$with_mesa/include
-         OSMESA_LDFLAGS="-L$with_mesa/lib ${CONF_f_runpath}$with_mesa/lib"
+         ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $with_mesa/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OSMESA_LDFLAGS="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $with_mesa/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OSMESA_LDFLAGS="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
       fi
       LDFLAGS="$orig_LDFLAGS_X $OSMESA_LDFLAGS"
       echo "$as_me:$LINENO: checking for OSMesaCreateContext in -lOSMesa" >&5
@@ -24366,7 +24998,26 @@ fi
       fi
       if test -n "$with_glut" -a "$with_glut" != "yes"; then
          GLUT_INCLUDE=-I$with_glut/include
-         GLUT_LDFLAGS="-L$with_glut/lib ${CONF_f_runpath}$with_glut/lib"
+         ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $with_glut/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GLUT_LDFLAGS="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $with_glut/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GLUT_LDFLAGS="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
       fi
       LDFLAGS="$orig_LDFLAGS_X $GLUT_LDFLAGS"
       echo "$as_me:$LINENO: checking for glutInit in -lglut" >&5
@@ -24775,8 +25426,30 @@ if test "${ncbi_cv_lib_wxwidgets+set}" = set; then
 else
   if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-          WXWIDGETS_LIBS=`$wxconf --libs |\
-             sed -e "$libsed; s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+          if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    WXWIDGETS_LIBS=`$wxconf --libs | sed -e "$libsed; "`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$wxconf --libs | sed -e "$libsed; "`; do
+       case "$x" in
+          -L*)
+             WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}"
+ fi
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -24853,8 +25526,30 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
       WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
-      WXWIDGETS_LIBS=`$wxconf --libs |\
-         sed -e "$libsed; s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+      if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    WXWIDGETS_LIBS=`$wxconf --libs | sed -e "$libsed; "`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$wxconf --libs | sed -e "$libsed; "`; do
+       case "$x" in
+          -L*)
+             WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_R_flags}"
+ fi
    fi
    WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
@@ -25422,10 +26117,52 @@ if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
       : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
-      : ${ORBACUS_LIBPATH="-L$fullpath/lib ${CONF_f_runpath}${fullpath}/lib"}
+      if test -z ${ORBACUS_LIBPATH+set}; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $fullpath/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ORBACUS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $fullpath/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ORBACUS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+ fi
    elif test -f ${ORBACUS_PATH}/include/OB/Config.h ; then
      : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
-     : ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
+     if test -z ${ORBACUS_LIBPATH+set}; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $ORBACUS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ORBACUS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $ORBACUS_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ORBACUS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+ fi
    fi
    case "$host_os:$with_mt" in
        linux*:no) LIBJTC="-lJTC -pthread" ;;
@@ -25559,8 +26296,30 @@ else
   ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir 2>/dev/null`/icu-config
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
-          ICU_LIBS=`$ICU_CONFIG --ldflags |\
-             sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+          if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    ICU_LIBS=`$ICU_CONFIG --ldflags | sed -e ""`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$ICU_CONFIG --ldflags | sed -e ""`; do
+       case "$x" in
+          -L*)
+             ICU_LIBS="$ICU_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             ICU_LIBS="$ICU_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    ICU_LIBS="$ICU_LIBS${ncbi_rp_R_flags}"
+ fi
 
           CPPFLAGS="$ICU_INCLUDE $orig_CPPFLAGS"
           LIBS="$ICU_LIBS $orig_LIBS"
@@ -25632,8 +26391,30 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$ICU_INCLUDE"; then
       ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
-      ICU_LIBS=`$ICU_CONFIG --ldflags |\
-         sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+      if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    ICU_LIBS=`$ICU_CONFIG --ldflags | sed -e ""`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$ICU_CONFIG --ldflags | sed -e ""`; do
+       case "$x" in
+          -L*)
+             ICU_LIBS="$ICU_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             ICU_LIBS="$ICU_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    ICU_LIBS="$ICU_LIBS${ncbi_rp_R_flags}"
+ fi
    fi
    ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags | sed -e 's/-licu/-lsicu/g'`
 
@@ -25659,9 +26440,47 @@ if test "$with_expat" != "no"; then
        if test -n "$EXPAT_LIBPATH"; then
           :
        elif test -d "$EXPAT_PATH/lib${bit64_sfx}"; then
-          EXPAT_LIBPATH="-L$EXPAT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$EXPAT_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $EXPAT_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    EXPAT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $EXPAT_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    EXPAT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$EXPAT_PATH/lib"; then
-          EXPAT_LIBPATH="-L$EXPAT_PATH/lib ${CONF_f_runpath}$EXPAT_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $EXPAT_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    EXPAT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $EXPAT_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    EXPAT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        EXPAT_LIBS="$EXPAT_LIBPATH -lexpat "
     else
@@ -25766,9 +26585,47 @@ if test "$with_sablot" != "no"; then
        if test -n "$SABLOT_LIBPATH"; then
           :
        elif test -d "$SABLOT_PATH/lib${bit64_sfx}"; then
-          SABLOT_LIBPATH="-L$SABLOT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SABLOT_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SABLOT_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SABLOT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SABLOT_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SABLOT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$SABLOT_PATH/lib"; then
-          SABLOT_LIBPATH="-L$SABLOT_PATH/lib ${CONF_f_runpath}$SABLOT_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SABLOT_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SABLOT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SABLOT_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SABLOT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        SABLOT_LIBS="$SABLOT_LIBPATH -lsablot $EXPAT_LIBS"
     else
@@ -25896,7 +26753,28 @@ if test "$with_libxml" != "no"; then
       elif test -d "$LIBXML_PATH/lib"; then
          LIBXML_LIBPATH_="$LIBXML_PATH/lib"
       fi
-      : ${LIBXML_LIBPATH="-L$LIBXML_LIBPATH_ ${CONF_f_runpath}$LIBXML_LIBPATH_"}
+      if test -z ${LIBXML_LIBPATH+set}; then
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBXML_LIBPATH_; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBXML_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBXML_LIBPATH_; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBXML_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+ fi
       LIBXML_LIBS="$LIBXML_LIBPATH -lxml2"
    else
       LIBXML_INCLUDE="-I/usr/include/libxml2"
@@ -26000,9 +26878,47 @@ if test "$with_libxslt" != "no"; then
        if test -n "$LIBXSLT_LIBPATH"; then
           :
        elif test -d "$LIBXSLT_PATH/lib${bit64_sfx}"; then
-          LIBXSLT_LIBPATH="-L$LIBXSLT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$LIBXSLT_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBXSLT_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBXSLT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBXSLT_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBXSLT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$LIBXSLT_PATH/lib"; then
-          LIBXSLT_LIBPATH="-L$LIBXSLT_PATH/lib ${CONF_f_runpath}$LIBXSLT_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBXSLT_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBXSLT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBXSLT_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBXSLT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        LIBXSLT_LIBS="$LIBXSLT_LIBPATH -lxslt "
     else
@@ -26163,7 +27079,26 @@ if test "$with_xerces" != no; then
    else
       in_path=''
    fi
-   XERCES_LIBPATH_="-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH"
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $XERCES_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    XERCES_LIBPATH_="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $XERCES_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    XERCES_LIBPATH_="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
    XERCES_LIBS="$XERCES_LIBPATH_ -lxerces-c"
    echo "$as_me:$LINENO: checking for Xerces-C++$in_path" >&5
 echo $ECHO_N "checking for Xerces-C++$in_path... $ECHO_C" >&6
@@ -26315,7 +27250,26 @@ if test "$with_xalan" != no; then
    else
       in_path=''
    fi
-   XALAN_LIBPATH_="-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH"
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $XALAN_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    XALAN_LIBPATH_="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $XALAN_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    XALAN_LIBPATH_="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
    XALAN_LIBS="$XALAN_LIBPATH_ -lxalan-c -lxalanMsg"
    echo "$as_me:$LINENO: checking for Xalan-C++$in_path" >&5
 echo $ECHO_N "checking for Xalan-C++$in_path... $ECHO_C" >&6
@@ -26429,9 +27383,47 @@ if test "$with_sqlite" != "no"; then
        if test -n "$SQLITE_LIBPATH"; then
           :
        elif test -d "$SQLITE_PATH/lib${bit64_sfx}"; then
-          SQLITE_LIBPATH="-L$SQLITE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SQLITE_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SQLITE_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SQLITE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SQLITE_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SQLITE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$SQLITE_PATH/lib"; then
-          SQLITE_LIBPATH="-L$SQLITE_PATH/lib ${CONF_f_runpath}$SQLITE_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SQLITE_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SQLITE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SQLITE_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SQLITE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        SQLITE_LIBS="$SQLITE_LIBPATH -lsqlite "
     else
@@ -26534,7 +27526,26 @@ if test -d "$SQLITE3_PATH"; then
  esac
 fi
 if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
-   SQLITE3_LIBPATH="-L$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib ${CONF_f_runpath}$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"
+   ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SQLITE3_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SQLITE3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
 fi
 if test "$with_sqlite3" != "no"; then
     case "$with_sqlite3" in
@@ -26549,9 +27560,47 @@ if test "$with_sqlite3" != "no"; then
        if test -n "$SQLITE3_LIBPATH"; then
           :
        elif test -d "$SQLITE3_PATH/lib${bit64_sfx}"; then
-          SQLITE3_LIBPATH="-L$SQLITE3_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SQLITE3_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SQLITE3_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SQLITE3_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SQLITE3_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SQLITE3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$SQLITE3_PATH/lib"; then
-          SQLITE3_LIBPATH="-L$SQLITE3_PATH/lib ${CONF_f_runpath}$SQLITE3_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SQLITE3_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SQLITE3_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SQLITE3_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SQLITE3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        SQLITE3_LIBS="$SQLITE3_LIBPATH -lsqlite3 "
     else
@@ -26654,9 +27703,47 @@ if test "$with_oechem" != "no"; then
        if test -n "$OECHEM_LIBPATH"; then
           :
        elif test -d "$OECHEM_PATH/lib${bit64_sfx}"; then
-          OECHEM_LIBPATH="-L$OECHEM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OECHEM_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OECHEM_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OECHEM_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OECHEM_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OECHEM_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$OECHEM_PATH/lib"; then
-          OECHEM_LIBPATH="-L$OECHEM_PATH/lib ${CONF_f_runpath}$OECHEM_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OECHEM_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OECHEM_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OECHEM_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OECHEM_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        OECHEM_LIBS="$OECHEM_LIBPATH -loechem -loeiupac -loedepict -loechem -loesystem -loeplatform -lz"
     else
@@ -26762,9 +27849,47 @@ if test "$with_jpeg" != "no"; then
        if test -n "$JPEG_LIBPATH"; then
           :
        elif test -d "$JPEG_PATH/lib${bit64_sfx}"; then
-          JPEG_LIBPATH="-L$JPEG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$JPEG_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $JPEG_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    JPEG_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $JPEG_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    JPEG_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$JPEG_PATH/lib"; then
-          JPEG_LIBPATH="-L$JPEG_PATH/lib ${CONF_f_runpath}$JPEG_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $JPEG_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    JPEG_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $JPEG_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    JPEG_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        JPEG_LIBS="$JPEG_LIBPATH -ljpeg "
     else
@@ -26870,9 +27995,47 @@ if test "$with_png" != "no"; then
        if test -n "$PNG_LIBPATH"; then
           :
        elif test -d "$PNG_PATH/lib${bit64_sfx}"; then
-          PNG_LIBPATH="-L$PNG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PNG_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PNG_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PNG_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PNG_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PNG_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$PNG_PATH/lib"; then
-          PNG_LIBPATH="-L$PNG_PATH/lib ${CONF_f_runpath}$PNG_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PNG_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PNG_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PNG_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PNG_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        PNG_LIBS="$PNG_LIBPATH -lpng $Z_LIBS"
     else
@@ -26973,9 +28136,47 @@ if test "$with_tiff" != "no"; then
        if test -n "$TIFF_LIBPATH"; then
           :
        elif test -d "$TIFF_PATH/lib${bit64_sfx}"; then
-          TIFF_LIBPATH="-L$TIFF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$TIFF_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $TIFF_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    TIFF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $TIFF_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    TIFF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$TIFF_PATH/lib"; then
-          TIFF_LIBPATH="-L$TIFF_PATH/lib ${CONF_f_runpath}$TIFF_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $TIFF_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    TIFF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $TIFF_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    TIFF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        TIFF_LIBS="$TIFF_LIBPATH -ltiff $Z_LIBS"
     else
@@ -27076,9 +28277,47 @@ if test "$with_ungif" != "no"; then
        if test -n "$UNGIF_LIBPATH"; then
           :
        elif test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
-          UNGIF_LIBPATH="-L$UNGIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$UNGIF_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $UNGIF_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $UNGIF_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$UNGIF_PATH/lib"; then
-          UNGIF_LIBPATH="-L$UNGIF_PATH/lib ${CONF_f_runpath}$UNGIF_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $UNGIF_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $UNGIF_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
     else
@@ -27178,9 +28417,47 @@ if test "$with_ungif" = "no"; then
        if test -n "$GIF_LIBPATH"; then
           :
        elif test -d "$GIF_PATH/lib${bit64_sfx}"; then
-          GIF_LIBPATH="-L$GIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GIF_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GIF_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GIF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GIF_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$GIF_PATH/lib"; then
-          GIF_LIBPATH="-L$GIF_PATH/lib ${CONF_f_runpath}$GIF_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GIF_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GIF_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GIF_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        GIF_LIBS="$GIF_LIBPATH -lgif $X_LIBS -lX11"
     else
@@ -27290,9 +28567,47 @@ if test "$with_xpm" != "no"; then
        if test -n "$XPM_LIBPATH"; then
           :
        elif test -d "$XPM_PATH/lib${bit64_sfx}"; then
-          XPM_LIBPATH="-L$XPM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$XPM_PATH/lib${bit64_sfx}"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $XPM_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    XPM_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $XPM_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    XPM_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        elif test -d "$XPM_PATH/lib"; then
-          XPM_LIBPATH="-L$XPM_PATH/lib ${CONF_f_runpath}$XPM_PATH/lib"
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $XPM_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    XPM_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $XPM_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    XPM_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
        fi
        XPM_LIBS="$XPM_LIBPATH -lXpm $X_LIBS -lX11"
     else
@@ -27425,8 +28740,32 @@ fi
    if test -n "$freetype_config" ; then
       : ${FREETYPE_BINPATH=`dirname $freetype_config`}
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
-      : ${FREETYPE_LIBS=`$freetype_config --libs |\
-             sed -e "s/-L\\([^ ]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      if test -z ${FREETYPE_LIBS+set}; then
+    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    FREETYPE_LIBS=`$freetype_config --libs | sed -e ""`
+ else
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$freetype_config --libs | sed -e ""`; do
+       case "$x" in
+          -L*)
+             FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_R_flags}"
+ fi
+ fi
       echo "$as_me:$LINENO: checking whether FREETYPE_INCLUDE needs doctoring" >&5
 echo $ECHO_N "checking whether FREETYPE_INCLUDE needs doctoring... $ECHO_C" >&6
 if test "${ncbi_cv_lib_freetype_fix_include+set}" = set; then
