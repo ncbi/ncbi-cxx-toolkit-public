@@ -63,6 +63,10 @@
 
 #include <boost/current_function.hpp>
 
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
@@ -280,7 +284,7 @@ static void s_LoadSeqAlignsFromFile(CSeq_align_set& aln_all, const string& fname
 /////////////////////////////////////////////////////////////////////////////
 // Actual test cases
 
-BOOST_AUTO_UNIT_TEST(s_TestSimpleFiltering)
+BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
 {
     START;
     
@@ -320,7 +324,7 @@ BOOST_AUTO_UNIT_TEST(s_TestSimpleFiltering)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestDBBasedFiltering)
+BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
 {
     START;
 

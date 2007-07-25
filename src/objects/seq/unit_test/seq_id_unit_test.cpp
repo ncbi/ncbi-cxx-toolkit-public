@@ -54,6 +54,9 @@
 #ifndef BOOST_PARAM_TEST_CASE
 #  include <boost/test/parameterized_test.hpp>
 #endif
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -87,14 +90,14 @@ using boost::unit_test::test_suite;
 
 #define CHECK_THROW_SEQID(s) CHECK_THROW_STD(s, CSeqIdException)
 
-BOOST_AUTO_UNIT_TEST(s_TestDefaultInit)
+BOOST_AUTO_TEST_CASE(s_TestDefaultInit)
 {
     CSeq_id id;
     CHECK_EQUAL(id.Which(), CSeq_id::e_not_set);
     CHECK_THROW(id.GetGi(), CInvalidChoiceSelection);
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromJunk)
+BOOST_AUTO_TEST_CASE(s_TestInitFromJunk)
 {
     CRef<CSeq_id> id;
 
@@ -103,7 +106,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromJunk)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("?!?!")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromGIString)
+BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
 {
     CRef<CSeq_id> id;
 
@@ -117,7 +120,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromGIString)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("9876543210")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromNAcc)
+BOOST_AUTO_TEST_CASE(s_TestInitFromNAcc)
 {
     CRef<CSeq_id> id;
 
@@ -148,7 +151,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromNAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("N20001.9876543210")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromStdAcc)
+BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
 {
     CRef<CSeq_id> id;
 
@@ -171,7 +174,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromStdAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("ABCD12345678901")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromPDBAcc)
+BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
 {
     CRef<CSeq_id> id;
 
@@ -203,7 +206,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPDBAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|AAA")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromSPAcc)
+BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
 {
     CRef<CSeq_id> id;
 
@@ -217,7 +220,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromSPAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("07CQJ0")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromRefSeqAcc)
+BOOST_AUTO_TEST_CASE(s_TestInitFromRefSeqAcc)
 {
     CRef<CSeq_id> id;
 
@@ -234,7 +237,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromRefSeqAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC030000051")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromGpipeAcc)
+BOOST_AUTO_TEST_CASE(s_TestInitFromGpipeAcc)
 {
     CRef<CSeq_id> id;
 
@@ -245,7 +248,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromGpipeAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaLocal)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
 {
     CRef<CSeq_id> id;
     
@@ -268,7 +271,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaLocal)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("lcl|NM_002020|junk")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaObsolete)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaObsolete)
 {
     CRef<CSeq_id> id;
 
@@ -289,7 +292,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaObsolete)
     CHECK_EQUAL(id->GetGiim().GetId(), 123);
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGenbank)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGenbank)
 {
     CRef<CSeq_id> id;
 
@@ -302,7 +305,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGenbank)
     CHECK( !id->GetGenbank().IsSetRelease() );
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaEmbl)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaEmbl)
 {
     CRef<CSeq_id> id;
 
@@ -314,7 +317,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaEmbl)
     CHECK( !id->GetEmbl().IsSetRelease() );
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPir)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPir)
 {
     CRef<CSeq_id> id;
 
@@ -326,7 +329,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPir)
     CHECK( !id->GetPir().IsSetRelease() );
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaSwissprot)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaSwissprot)
 {
     CRef<CSeq_id> id;
 
@@ -347,7 +350,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaSwissprot)
 #endif
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromPatent)
+BOOST_AUTO_TEST_CASE(s_TestInitFromPatent)
 {
     CRef<CSeq_id> id;
 
@@ -385,7 +388,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPatent)
                 string("0238993"));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaRefseq)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaRefseq)
 {
     CRef<CSeq_id> id;
 
@@ -401,7 +404,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaRefseq)
     // supported.
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGeneral)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGeneral)
 {
     CRef<CSeq_id> id;
 
@@ -423,7 +426,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGeneral)
     CHECK_EQUAL(id->GetGeneral().GetTag().GetId(), 9606);
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGI)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGI)
 {
     CRef<CSeq_id> id;
 
@@ -432,7 +435,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGI)
     CHECK_EQUAL(id->GetGi(), 1234);
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaDdbj)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaDdbj)
 {
     CRef<CSeq_id> id;
 
@@ -441,7 +444,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaDdbj)
     CHECK_EQUAL(id->GetDdbj().GetAccession(), string("N00068"));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPrf)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPrf)
 {
     CRef<CSeq_id> id;
 
@@ -449,7 +452,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPrf)
     CHECK(id->IsPrf());
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPdb)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPdb)
 {
     CRef<CSeq_id> id;
 
@@ -473,7 +476,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPdb)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaTpa)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaTpa)
 {
     CRef<CSeq_id> id;
 
@@ -485,7 +488,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaTpa)
     CHECK(id->IsTpd());
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGpipe)
+BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGpipe)
 {
     CRef<CSeq_id> id;
     CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GPC_123456")));
@@ -511,7 +514,7 @@ static CSeq_id* s_NewDbtagId(const string& db, int tag,
     return new CSeq_id(dbtag, set_as_general);
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromDbtag)
+BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
 {
     CRef<CSeq_id> id;
     CDbtag        dbtag;
@@ -565,7 +568,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromDbtag)
     CHECK(id->IsGeneral());
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromInt)
+BOOST_AUTO_TEST_CASE(s_TestInitFromInt)
 {
     CRef<CSeq_id> id;
 
@@ -652,7 +655,7 @@ s_FastaRoundTripRegistrar
 (BOOST_PARAM_TEST_CASE(s_TestFastaRoundTrip, kTestFastaStrings + 0,
                        kTestFastaStrings + kNumFastaStrings));
 
-BOOST_AUTO_UNIT_TEST(s_TestNoStrays)
+BOOST_AUTO_TEST_CASE(s_TestNoStrays)
 {
     CSeq_id id;
     CHECK_NO_THROW(id.SetGiim().SetDb("foo"));
@@ -687,7 +690,7 @@ BOOST_AUTO_UNIT_TEST(s_TestNoStrays)
     CHECK( !id.GetPdb().IsSetRel() );
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestListOps)
+BOOST_AUTO_TEST_CASE(s_TestListOps)
 {
     string merged;
     for (size_t i = 0;  i < kNumFastaStrings;  ++i) {

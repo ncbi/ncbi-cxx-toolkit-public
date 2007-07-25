@@ -49,6 +49,9 @@
 #  include <boost/test/parameterized_test.hpp>
 #endif
 #include <boost/current_function.hpp>
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -404,7 +407,7 @@ static void s_BuildIds(TIdList & ids, const char ** gis)
 // Actual test cases.
 //
 
-BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
+BOOST_AUTO_TEST_CASE(s_NuclBioseqDup)
 {
     int gis[] = {
         78883515, 78883517, 71143095, 24431485, 19110479, 15054463,
@@ -436,7 +439,7 @@ BOOST_AUTO_UNIT_TEST(s_NuclBioseqDup)
                        "raw nucleotide dup");
 }
 
-BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
+BOOST_AUTO_TEST_CASE(s_ProtBioseqDup)
 {
     int gis[] = {
         1477444,  1669609,  1669611,  1669615, 1669617, 7544146,
@@ -468,7 +471,7 @@ BOOST_AUTO_UNIT_TEST(s_ProtBioseqDup)
                        "raw protein dup");
 }
 
-BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
+BOOST_AUTO_TEST_CASE(s_EmptyBioseq)
 {
     CWriteDB fails("failing-db",
                    CWriteDB::eProtein,
@@ -481,7 +484,7 @@ BOOST_AUTO_UNIT_TEST(s_EmptyBioseq)
     CHECK_THROW(fails.Close(), CWriteDBException);
 }
 
-BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
+BOOST_AUTO_TEST_CASE(s_BioseqHandle)
 {
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
@@ -504,7 +507,7 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandle)
     s_WrapUpFiles(files);
 }
 
-BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
+BOOST_AUTO_TEST_CASE(s_BioseqHandleAndSeqVector)
 {
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
@@ -535,7 +538,7 @@ BOOST_AUTO_UNIT_TEST(s_BioseqHandleAndSeqVector)
     s_WrapUpFiles(files);
 }
 
-BOOST_AUTO_UNIT_TEST(s_SetPig)
+BOOST_AUTO_TEST_CASE(s_SetPig)
 {
     string nm = "pigs";
     vector<string> files;
@@ -591,7 +594,7 @@ BOOST_AUTO_UNIT_TEST(s_SetPig)
 
 // Test multiple volume construction and maximum letter limit.
 
-BOOST_AUTO_UNIT_TEST(s_MultiVolume)
+BOOST_AUTO_TEST_CASE(s_MultiVolume)
 {
     CSeqDB nr("nr", CSeqDB::eProtein);
     
@@ -645,7 +648,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
     s_WrapUpFiles(f);
 }
 
-BOOST_AUTO_UNIT_TEST(s_UsPatId)
+BOOST_AUTO_TEST_CASE(s_UsPatId)
 {
     CRef<CSeq_id> seqid(new CSeq_id("pat|us|123|456"));
     vector<string> files;
@@ -687,7 +690,7 @@ BOOST_AUTO_UNIT_TEST(s_UsPatId)
     s_WrapUpFiles(files);
 }
 
-BOOST_AUTO_UNIT_TEST(s_IsamSorting)
+BOOST_AUTO_TEST_CASE(s_IsamSorting)
 {
     // This checks whether the following IDs are fetchable from the
     // given database.  It will fail if either the production blast

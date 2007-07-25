@@ -40,6 +40,10 @@
 #include <objects/entrez2/entrez2_client.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
@@ -111,7 +115,7 @@ private:
 const char* CAutoNcbiConfigFile::kConfigFile = ".ncbirc";
 const char* CAutoNcbiConfigFile::kSavedConfigFile = ".ncbirc.sav";
 
-BOOST_AUTO_UNIT_TEST(RetrieveFromBlastDb_TestSequenceData) 
+BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData) 
 {
     CSeq_loc seqloc;
     seqloc.SetWhole().SetGi(129295);
@@ -131,7 +135,7 @@ BOOST_AUTO_UNIT_TEST(RetrieveFromBlastDb_TestSequenceData)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData) 
+BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData) 
 {
     CSeq_loc seqloc;
     seqloc.SetWhole().SetGi(129295);
@@ -155,7 +159,7 @@ BOOST_AUTO_UNIT_TEST(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(ConfigFileTest_RetrieveFromGenbank_TestSequenceData) 
+BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromGenbank_TestSequenceData) 
 {
     CSeq_loc seqloc;
     seqloc.SetWhole().SetGi(129295);
@@ -180,7 +184,7 @@ BOOST_AUTO_UNIT_TEST(ConfigFileTest_RetrieveFromGenbank_TestSequenceData)
 }
 
 // not the best thing to do, but supported nonetheless...
-BOOST_AUTO_UNIT_TEST(ConfigFileTest_UseNoDataLoaders) 
+BOOST_AUTO_TEST_CASE(ConfigFileTest_UseNoDataLoaders) 
 {
     CSeq_loc seqloc;
     seqloc.SetWhole().SetGi(129295);
@@ -214,16 +218,16 @@ void s_RetrieveSequenceLength(int gi,
     BOOST_CHECK_EQUAL(kExpectedLength, length);
 }
 
-BOOST_AUTO_UNIT_TEST(RetrieveFromBlastDb) {
+BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb) {
     s_RetrieveSequenceLength(129295, "nr", true, 232);
 }
 
 // This gi has been removed from the BLAST databases
-BOOST_AUTO_UNIT_TEST(RetrieveFromGenbank) {
+BOOST_AUTO_TEST_CASE(RetrieveFromGenbank) {
     s_RetrieveSequenceLength(7450545, "nr", true, 443);
 }
 
-BOOST_AUTO_UNIT_TEST(RetrieveFromGenbank_NewlyAddedSequenceToGenbank) {
+BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_NewlyAddedSequenceToGenbank) {
 
     // Get today's date
     CTime t;
@@ -245,7 +249,7 @@ BOOST_AUTO_UNIT_TEST(RetrieveFromGenbank_NewlyAddedSequenceToGenbank) {
     s_RetrieveSequenceLength(results.front(), "nt", false, length);
 }
 
-BOOST_AUTO_UNIT_TEST(RetrieveFromGenbank_NoBlastDbDataLoader) {
+BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_NoBlastDbDataLoader) {
     const CSeq_id seqid(CSeq_id::e_Gi, 7450545);
     CBlastScopeSource scope_source;
     CRef<CScope> scope = scope_source.NewScope();
@@ -254,11 +258,11 @@ BOOST_AUTO_UNIT_TEST(RetrieveFromGenbank_NoBlastDbDataLoader) {
     BOOST_CHECK_EQUAL(kExpectedLength, length);
 }
 
-BOOST_AUTO_UNIT_TEST(RetrieveFromGenbank_IncorrectBlastDbType) {
+BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_IncorrectBlastDbType) {
     s_RetrieveSequenceLength(7450545, "sts", false, 443);
 }
 
-BOOST_AUTO_UNIT_TEST(InvalidBlastDatabase) {
+BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
     // Make sure to post warnings
     SetDiagPostLevel(eDiag_Warning);
     CNcbiOstream* diag_stream = GetDiagStream();

@@ -44,11 +44,15 @@
 #define BOOST_AUTO_TEST_MAIN    // this should only be defined here!
 #include <boost/test/auto_unit_test.hpp>
 
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
-BOOST_AUTO_UNIT_TEST(GenCodeSingleton_Find)
+BOOST_AUTO_TEST_CASE(GenCodeSingleton_Find)
 {
     CAutomaticGenCodeSingleton instance;
 
@@ -71,7 +75,7 @@ BOOST_AUTO_UNIT_TEST(GenCodeSingleton_Find)
     BOOST_CHECK(gc_str != NULL);
 }
 
-BOOST_AUTO_UNIT_TEST(GenCodeSingleton_NonExistentGeneticCode)
+BOOST_AUTO_TEST_CASE(GenCodeSingleton_NonExistentGeneticCode)
 {
     CAutomaticGenCodeSingleton instance;
 

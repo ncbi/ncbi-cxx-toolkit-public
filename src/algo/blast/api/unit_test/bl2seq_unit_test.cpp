@@ -46,12 +46,15 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
-BOOST_AUTO_UNIT_TEST(ProteinBlastInvalidSeqIdSelfHit)
+BOOST_AUTO_TEST_CASE(ProteinBlastInvalidSeqIdSelfHit)
 {
     CRef<CSeq_loc> loc(new CSeq_loc());
     loc->SetWhole().SetGi(-1);

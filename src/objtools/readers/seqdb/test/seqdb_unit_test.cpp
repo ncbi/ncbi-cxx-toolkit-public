@@ -51,6 +51,9 @@
 #  include <boost/test/parameterized_test.hpp>
 #endif
 #include <boost/current_function.hpp>
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
 
 #ifdef NCBI_OS_DARWIN
 #include <corelib/plugin_manager_store.hpp>
@@ -325,7 +328,7 @@ private:
 
 // Test Cases
 
-BOOST_AUTO_UNIT_TEST(ConstructLocal)
+BOOST_AUTO_TEST_CASE(ConstructLocal)
 {
     START;
     
@@ -342,7 +345,7 @@ BOOST_AUTO_UNIT_TEST(ConstructLocal)
     CHECK_EQUAL(num1, num2);
 }
 
-BOOST_AUTO_UNIT_TEST(PathDelimiters)
+BOOST_AUTO_TEST_CASE(PathDelimiters)
 {
     START;
     
@@ -359,7 +362,7 @@ BOOST_AUTO_UNIT_TEST(PathDelimiters)
     CHECK_EQUAL(num1, num2);
 }
 
-BOOST_AUTO_UNIT_TEST(ConstructMissing)
+BOOST_AUTO_TEST_CASE(ConstructMissing)
 {
     START;
     
@@ -384,7 +387,7 @@ BOOST_AUTO_UNIT_TEST(ConstructMissing)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(InvalidSeqType)
+BOOST_AUTO_TEST_CASE(InvalidSeqType)
 {
     START;
     
@@ -401,7 +404,7 @@ BOOST_AUTO_UNIT_TEST(InvalidSeqType)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(ValidPath)
+BOOST_AUTO_TEST_CASE(ValidPath)
 {
     START;
     
@@ -413,7 +416,7 @@ BOOST_AUTO_UNIT_TEST(ValidPath)
     CHECK(num1 >= 1);
 }
 
-BOOST_AUTO_UNIT_TEST(InvalidPath)
+BOOST_AUTO_TEST_CASE(InvalidPath)
 {
     START;
     
@@ -435,7 +438,7 @@ BOOST_AUTO_UNIT_TEST(InvalidPath)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(SummaryDataN)
+BOOST_AUTO_TEST_CASE(SummaryDataN)
 {
     START;
     
@@ -482,7 +485,7 @@ BOOST_AUTO_UNIT_TEST(SummaryDataN)
     CHECK_EQUAL(seq3, seq2 - 1);
 }
 
-BOOST_AUTO_UNIT_TEST(SummaryDataP)
+BOOST_AUTO_TEST_CASE(SummaryDataP)
 {
     START;
     
@@ -510,7 +513,7 @@ BOOST_AUTO_UNIT_TEST(SummaryDataP)
                 localP.GetDate());
 }
 
-BOOST_AUTO_UNIT_TEST(GetAmbigSeqAllocN)
+BOOST_AUTO_TEST_CASE(GetAmbigSeqAllocN)
 {
     START;
     
@@ -541,7 +544,7 @@ BOOST_AUTO_UNIT_TEST(GetAmbigSeqAllocN)
     CHECK_EQUAL(Uint4(3084382219ul), hashval_ncbi);
 }
 
-BOOST_AUTO_UNIT_TEST(GetAmbigSeqAllocP)
+BOOST_AUTO_TEST_CASE(GetAmbigSeqAllocP)
 {
     START;
     
@@ -572,7 +575,7 @@ BOOST_AUTO_UNIT_TEST(GetAmbigSeqAllocP)
     CHECK_EQUAL(Uint4(3219499033ul), hashval_ncbi);
 }
 
-BOOST_AUTO_UNIT_TEST(GetAmbigSeqN)
+BOOST_AUTO_TEST_CASE(GetAmbigSeqN)
 {
     START;
     
@@ -593,7 +596,7 @@ BOOST_AUTO_UNIT_TEST(GetAmbigSeqN)
     CHECK_EQUAL(Uint4(3084382219ul), hashval2);
 }
 
-BOOST_AUTO_UNIT_TEST(GetAmbigSeqP)
+BOOST_AUTO_TEST_CASE(GetAmbigSeqP)
 {
     START;
     
@@ -614,7 +617,7 @@ BOOST_AUTO_UNIT_TEST(GetAmbigSeqP)
     CHECK_EQUAL(Uint4(3219499033ul), hashval2);
 }
 
-BOOST_AUTO_UNIT_TEST(GetBioseqN)
+BOOST_AUTO_TEST_CASE(GetBioseqN)
 {
     START;
     
@@ -659,7 +662,7 @@ BOOST_AUTO_UNIT_TEST(GetBioseqN)
     CHECK_EQUAL(expected, got);
 }
 
-BOOST_AUTO_UNIT_TEST(GetBioseqP)
+BOOST_AUTO_TEST_CASE(GetBioseqP)
 {
     START;
     
@@ -702,7 +705,7 @@ BOOST_AUTO_UNIT_TEST(GetBioseqP)
     CHECK_EQUAL(expected, got);
 }
 
-BOOST_AUTO_UNIT_TEST(GetHdrN)
+BOOST_AUTO_TEST_CASE(GetHdrN)
 {
     START;
     
@@ -725,7 +728,7 @@ BOOST_AUTO_UNIT_TEST(GetHdrN)
     CHECK_EQUAL(expected, got);
 }
 
-BOOST_AUTO_UNIT_TEST(GetHdrP)
+BOOST_AUTO_TEST_CASE(GetHdrP)
 {
     START;
     
@@ -748,7 +751,7 @@ BOOST_AUTO_UNIT_TEST(GetHdrP)
     CHECK_EQUAL(expected, got);
 }
 
-BOOST_AUTO_UNIT_TEST(GetSeqIDsN)
+BOOST_AUTO_TEST_CASE(GetSeqIDsN)
 {
     START;
     
@@ -774,7 +777,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqIDsN)
     CHECK_EQUAL(Uint4(136774894ul), h);
 }
 
-BOOST_AUTO_UNIT_TEST(GetSeqIDsP)
+BOOST_AUTO_TEST_CASE(GetSeqIDsP)
 {
     START;
     
@@ -800,7 +803,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqIDsP)
     CHECK_EQUAL(Uint4(2942938647ul), h);
 }
 
-BOOST_AUTO_UNIT_TEST(GetSeqLength)
+BOOST_AUTO_TEST_CASE(GetSeqLength)
 {
     START;
     
@@ -826,7 +829,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqLength)
     CHECK_EQUAL( (Uint4) 371, (Uint4) dbn.GetSeqLength(70) );
 }
 
-BOOST_AUTO_UNIT_TEST(GetSeqLengthApprox)
+BOOST_AUTO_TEST_CASE(GetSeqLengthApprox)
 {
     START;
     
@@ -874,7 +877,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqLengthApprox)
     CHECK_EQUAL(Uint8(51726), ap_tot);
 }
 
-BOOST_AUTO_UNIT_TEST(GetSequenceN)
+BOOST_AUTO_TEST_CASE(GetSequenceN)
 {
     START;
     
@@ -889,7 +892,7 @@ BOOST_AUTO_UNIT_TEST(GetSequenceN)
     CHECK_EQUAL(Uint4(1128126064ul), hashval);
 }
 
-BOOST_AUTO_UNIT_TEST(GetSequenceP)
+BOOST_AUTO_TEST_CASE(GetSequenceP)
 {
     START;
     
@@ -903,7 +906,7 @@ BOOST_AUTO_UNIT_TEST(GetSequenceP)
     CHECK_EQUAL(Uint4(3219499033ul), hashval);
 }
 
-BOOST_AUTO_UNIT_TEST(NrAndSwissProt)
+BOOST_AUTO_TEST_CASE(NrAndSwissProt)
 {
     START;
     
@@ -965,7 +968,7 @@ BOOST_AUTO_UNIT_TEST(NrAndSwissProt)
     CHECK(nr_cnt > sp_cnt);
 }
 
-BOOST_AUTO_UNIT_TEST(TranslateIdents)
+BOOST_AUTO_TEST_CASE(TranslateIdents)
 {
     START;
     
@@ -1053,7 +1056,7 @@ BOOST_AUTO_UNIT_TEST(TranslateIdents)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(StringIdentSearch)
+BOOST_AUTO_TEST_CASE(StringIdentSearch)
 {
     START;
     
@@ -1224,7 +1227,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(AmbigBioseq)
+BOOST_AUTO_TEST_CASE(AmbigBioseq)
 {
     START;
     
@@ -1371,7 +1374,7 @@ BOOST_AUTO_UNIT_TEST(AmbigBioseq)
     CHECK_EQUAL(int(0), int(num_diffs));
 }
 
-BOOST_AUTO_UNIT_TEST(GetLenHighOID)
+BOOST_AUTO_TEST_CASE(GetLenHighOID)
 {
     START;
     
@@ -1394,7 +1397,7 @@ BOOST_AUTO_UNIT_TEST(GetLenHighOID)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GetLenNegOID)
+BOOST_AUTO_TEST_CASE(GetLenNegOID)
 {
     START;
     
@@ -1414,7 +1417,7 @@ BOOST_AUTO_UNIT_TEST(GetLenNegOID)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GetSeqHighOID)
+BOOST_AUTO_TEST_CASE(GetSeqHighOID)
 {
     START;
     
@@ -1439,7 +1442,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqHighOID)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GetSeqNegOID)
+BOOST_AUTO_TEST_CASE(GetSeqNegOID)
 {
     START;
     
@@ -1461,7 +1464,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqNegOID)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(Offset2OidBadOffset)
+BOOST_AUTO_TEST_CASE(Offset2OidBadOffset)
 {
     START;
     
@@ -1484,7 +1487,7 @@ BOOST_AUTO_UNIT_TEST(Offset2OidBadOffset)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(Offset2OidBadOid)
+BOOST_AUTO_TEST_CASE(Offset2OidBadOid)
 {
     START;
     
@@ -1506,7 +1509,7 @@ BOOST_AUTO_UNIT_TEST(Offset2OidBadOid)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(Offset2OidMonotony)
+BOOST_AUTO_TEST_CASE(Offset2OidMonotony)
 {
     START;
     
@@ -1549,7 +1552,7 @@ BOOST_AUTO_UNIT_TEST(Offset2OidMonotony)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GiLists)
+BOOST_AUTO_TEST_CASE(GiLists)
 {
     START;
     
@@ -1571,7 +1574,7 @@ BOOST_AUTO_UNIT_TEST(GiLists)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(OidRanges)
+BOOST_AUTO_TEST_CASE(OidRanges)
 {
     START;
     
@@ -1695,7 +1698,7 @@ BOOST_AUTO_UNIT_TEST(OidRanges)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GiListOidRange)
+BOOST_AUTO_TEST_CASE(GiListOidRange)
 {
     START;
     
@@ -1781,7 +1784,7 @@ BOOST_AUTO_UNIT_TEST(GiListOidRange)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(EmptyDBList)
+BOOST_AUTO_TEST_CASE(EmptyDBList)
 {
     START;
     
@@ -1798,7 +1801,7 @@ BOOST_AUTO_UNIT_TEST(EmptyDBList)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(BinaryUserGiList)
+BOOST_AUTO_TEST_CASE(BinaryUserGiList)
 {
     START;
     
@@ -1815,7 +1818,7 @@ BOOST_AUTO_UNIT_TEST(BinaryUserGiList)
     CHECK_EQUAL(29, found);
 }
 
-BOOST_AUTO_UNIT_TEST(TextUserGiList)
+BOOST_AUTO_TEST_CASE(TextUserGiList)
 {
     START;
     
@@ -1832,7 +1835,7 @@ BOOST_AUTO_UNIT_TEST(TextUserGiList)
     CHECK_EQUAL(29, found);
 }
 
-BOOST_AUTO_UNIT_TEST(CSeqDBFileGiList_GetGis)
+BOOST_AUTO_TEST_CASE(CSeqDBFileGiList_GetGis)
 {
     START;
     
@@ -1868,7 +1871,7 @@ BOOST_AUTO_UNIT_TEST(CSeqDBFileGiList_GetGis)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(TwoGiListsOneVolume)
+BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
 {
     START;
     
@@ -1907,7 +1910,7 @@ BOOST_AUTO_UNIT_TEST(TwoGiListsOneVolume)
     CHECK(zero_one == gis[2]);
 }
 
-BOOST_AUTO_UNIT_TEST(GetTaxIDs)
+BOOST_AUTO_TEST_CASE(GetTaxIDs)
 {
     START;
     
@@ -1949,7 +1952,7 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDs)
     CHECK_EQUAL(gi2taxid[gi2b],       tax2b);
 }
 
-BOOST_AUTO_UNIT_TEST(GetTaxIDsVector)
+BOOST_AUTO_TEST_CASE(GetTaxIDsVector)
 {
     START;
     
@@ -1993,7 +1996,7 @@ BOOST_AUTO_UNIT_TEST(GetTaxIDsVector)
     CHECK_EQUAL(taxids[2],       tax2b);
 }
 
-BOOST_AUTO_UNIT_TEST(PartialSequences)
+BOOST_AUTO_TEST_CASE(PartialSequences)
 {
     START;
     
@@ -2008,7 +2011,7 @@ BOOST_AUTO_UNIT_TEST(PartialSequences)
     s_TestPartialAmbig(nt, 8885782);
 }
 
-BOOST_AUTO_UNIT_TEST(GiListInOidRangeIteration)
+BOOST_AUTO_TEST_CASE(GiListInOidRangeIteration)
 {
     START;
 
@@ -2049,7 +2052,7 @@ BOOST_AUTO_UNIT_TEST(GiListInOidRangeIteration)
     CHECK_EQUAL(1, (int)oid_list.size());
 }
 
-BOOST_AUTO_UNIT_TEST(SeqidToOid)
+BOOST_AUTO_TEST_CASE(SeqidToOid)
 {
     START;
     
@@ -2076,7 +2079,7 @@ BOOST_AUTO_UNIT_TEST(SeqidToOid)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(TestResetInternalChunkBookmark)
+BOOST_AUTO_TEST_CASE(TestResetInternalChunkBookmark)
 {
     START;
     
@@ -2107,14 +2110,14 @@ BOOST_AUTO_UNIT_TEST(TestResetInternalChunkBookmark)
     CHECK_EQUAL(kLastOid, end);
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertNullConstructor)
+BOOST_AUTO_TEST_CASE(ExpertNullConstructor)
 {
     START;
     
     CSeqDBExpert db;
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertTaxInfo)
+BOOST_AUTO_TEST_CASE(ExpertTaxInfo)
 {
     START;
     
@@ -2130,7 +2133,7 @@ BOOST_AUTO_UNIT_TEST(ExpertTaxInfo)
     CHECK_EQUAL(info.s_kingdom,       string("E"));
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertRawData)
+BOOST_AUTO_TEST_CASE(ExpertRawData)
 {
     START;
     
@@ -2154,7 +2157,7 @@ BOOST_AUTO_UNIT_TEST(ExpertRawData)
     CHECK_EQUAL(exp_hash,    h);
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertRawDataProteinNulls)
+BOOST_AUTO_TEST_CASE(ExpertRawDataProteinNulls)
 {
     START;
     
@@ -2189,7 +2192,7 @@ BOOST_AUTO_UNIT_TEST(ExpertRawDataProteinNulls)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertRawDataLength)
+BOOST_AUTO_TEST_CASE(ExpertRawDataLength)
 {
     START;
     
@@ -2210,7 +2213,7 @@ BOOST_AUTO_UNIT_TEST(ExpertRawDataLength)
     CHECK_EQUAL(20,          alen);
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertIdBounds)
+BOOST_AUTO_TEST_CASE(ExpertIdBounds)
 {
     START;
     
@@ -2246,7 +2249,7 @@ BOOST_AUTO_UNIT_TEST(ExpertIdBounds)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(ExpertIdBoundsNoPig)
+BOOST_AUTO_TEST_CASE(ExpertIdBoundsNoPig)
 {
     START;
     
@@ -2270,7 +2273,7 @@ BOOST_AUTO_UNIT_TEST(ExpertIdBoundsNoPig)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(ResolveDbPath)
+BOOST_AUTO_TEST_CASE(ResolveDbPath)
 {
     START;
     
@@ -2308,7 +2311,7 @@ BOOST_AUTO_UNIT_TEST(ResolveDbPath)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GlobalMemoryBound)
+BOOST_AUTO_TEST_CASE(GlobalMemoryBound)
 {
     START;
     
@@ -2329,7 +2332,7 @@ public:
     }
 };
 
-BOOST_AUTO_UNIT_TEST(IntersectionGiList)
+BOOST_AUTO_TEST_CASE(IntersectionGiList)
 {
     START;
     
@@ -2370,7 +2373,7 @@ BOOST_AUTO_UNIT_TEST(IntersectionGiList)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(SharedMemoryMaps)
+BOOST_AUTO_TEST_CASE(SharedMemoryMaps)
 {
     START;
     
@@ -2425,7 +2428,7 @@ public:
     }
 };
 
-BOOST_AUTO_UNIT_TEST(SeqIdList)
+BOOST_AUTO_TEST_CASE(SeqIdList)
 {
     START;
     
@@ -2473,7 +2476,7 @@ BOOST_AUTO_UNIT_TEST(SeqIdList)
 }
 
 
-BOOST_AUTO_UNIT_TEST(SeqIdListAndGiList)
+BOOST_AUTO_TEST_CASE(SeqIdListAndGiList)
 {
     START;
     
@@ -2613,7 +2616,7 @@ BOOST_AUTO_UNIT_TEST(SeqIdListAndGiList)
 }
 
 
-BOOST_AUTO_UNIT_TEST(EmptyVolume)
+BOOST_AUTO_TEST_CASE(EmptyVolume)
 {
     START;
     
@@ -2763,7 +2766,7 @@ BOOST_AUTO_UNIT_TEST(EmptyVolume)
     CHECK_THROW_SEQDB(db.GetSeqData(0, 10, 20));
 }
 
-BOOST_AUTO_UNIT_TEST(OidRewriting)
+BOOST_AUTO_TEST_CASE(OidRewriting)
 {
     START;
     
@@ -2798,7 +2801,7 @@ BOOST_AUTO_UNIT_TEST(OidRewriting)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(GetSequenceAsString)
+BOOST_AUTO_TEST_CASE(GetSequenceAsString)
 {
     START;
     
@@ -2830,7 +2833,7 @@ BOOST_AUTO_UNIT_TEST(GetSequenceAsString)
     CHECK_EQUAL(pstr, prot_str);
 }
 
-BOOST_AUTO_UNIT_TEST(TotalLengths)
+BOOST_AUTO_TEST_CASE(TotalLengths)
 {
     START;
     
@@ -2896,7 +2899,7 @@ static void s_MapAllGis(CSeqDB       & db,
     }
 }
 
-BOOST_AUTO_UNIT_TEST(NegativeGiList)
+BOOST_AUTO_TEST_CASE(NegativeGiList)
 {
     START;
     
@@ -2995,7 +2998,7 @@ BOOST_AUTO_UNIT_TEST(NegativeGiList)
     CHECK_EQUAL(diff, 2);
 }
 
-BOOST_AUTO_UNIT_TEST(NegativeListNr)
+BOOST_AUTO_TEST_CASE(NegativeListNr)
 {
     START;
     
@@ -3029,7 +3032,7 @@ BOOST_AUTO_UNIT_TEST(NegativeListNr)
 }
 
 
-BOOST_AUTO_UNIT_TEST(NegativeListSwissprot)
+BOOST_AUTO_TEST_CASE(NegativeListSwissprot)
 {
     START;
     

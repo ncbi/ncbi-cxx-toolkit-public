@@ -62,6 +62,9 @@
 #  include <boost/test/parameterized_test.hpp>
 #endif
 #include <boost/current_function.hpp>
+#ifndef BOOST_AUTO_TEST_CASE
+#  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
+#endif
 
 #ifdef NCBI_OS_DARWIN
 #include <corelib/plugin_manager_store.hpp>
@@ -121,7 +124,7 @@ s_DeclareSource(CNcbiIstream& input_file, const CBlastInputConfig& iconfig)
         (new CBlastFastaInputSource(*om, input_file, iconfig));
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadAccession_MismatchNuclProt)
+BOOST_AUTO_TEST_CASE(s_ReadAccession_MismatchNuclProt)
 {
     CNcbiIfstream infile("data/nucl_acc.txt");
     const bool is_protein(true);
@@ -142,7 +145,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadAccession_MismatchNuclProt)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadAccession_MismatchProtNucl)
+BOOST_AUTO_TEST_CASE(s_ReadAccession_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/prot_acc.txt");
     const bool is_protein(false);
@@ -163,7 +166,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadAccession_MismatchProtNucl)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadGi_MismatchNuclProt)
+BOOST_AUTO_TEST_CASE(s_ReadGi_MismatchNuclProt)
 {
     CNcbiIfstream infile("data/gi.txt");
     const bool is_protein(true);
@@ -184,7 +187,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadGi_MismatchNuclProt)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadGi_MismatchProtNucl)
+BOOST_AUTO_TEST_CASE(s_ReadGi_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/prot_gi.txt");
     const bool is_protein(false);
@@ -205,7 +208,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadGi_MismatchProtNucl)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchProtNucl)
+BOOST_AUTO_TEST_CASE(s_ReadFastaWithDefline_MismatchProtNucl)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(false);
@@ -225,7 +228,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchProtNucl)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchNuclProt)
+BOOST_AUTO_TEST_CASE(s_ReadFastaWithDefline_MismatchNuclProt)
 {
     CNcbiIfstream infile("data/nt.555");
     const bool is_protein(true);
@@ -245,7 +248,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDefline_MismatchNuclProt)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineProtein_Single)
+BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProtein_Single)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -274,7 +277,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineProtein_Single)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_UNIT_TEST(s_RawFastaWithSpaces)
+BOOST_AUTO_TEST_CASE(s_RawFastaWithSpaces)
 {
     // this is gi 555, length 624
     CNcbiIfstream infile("data/raw_fasta.na");
@@ -304,7 +307,7 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaWithSpaces)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces)
+BOOST_AUTO_TEST_CASE(s_RawFastaNoSpaces)
 {
     // this is gi 555, length 624
     CNcbiIfstream infile("data/raw_fasta2.na");
@@ -359,7 +362,7 @@ private:
     const char* m_VariableName;
 };
 
-BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
+BOOST_AUTO_TEST_CASE(s_RawFastaNoSpaces_UpperCaseWithN)
 {
     // this has length 682 and contains an 'N' which without the
     // CFastaReader::fNoSplit flag, produces a delta sequence
@@ -418,7 +421,7 @@ BOOST_AUTO_UNIT_TEST(s_RawFastaNoSpaces_UpperCaseWithN)
 #endif
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
+BOOST_AUTO_TEST_CASE(s_ReadGenbankReport)
 {
     CAutoDiagnosticsRedirector dr;
 
@@ -457,7 +460,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadGenbankReport)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadInvalidGi)
+BOOST_AUTO_TEST_CASE(s_ReadInvalidGi)
 {
     const char* fname = "data/invalid_gi.txt";
     const bool is_protein(false);
@@ -480,7 +483,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidGi)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadInvalidSeqId)
+BOOST_AUTO_TEST_CASE(s_ReadInvalidSeqId)
 {
     const char* fname = "data/bad_seqid.txt";
     const bool is_protein(false);
@@ -503,7 +506,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadInvalidSeqId)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
+BOOST_AUTO_TEST_CASE(s_ReadBadUserInput)
 {
     const char* fname = "data/bad_input.txt";
     const bool is_protein(false);
@@ -557,7 +560,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadBadUserInput)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
+BOOST_AUTO_TEST_CASE(s_ReadMultipleGis_WithBadInput)
 {
     const char* fname = "data/gis_bad_input.txt";
     CNcbiIfstream infile(fname);
@@ -620,7 +623,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis_WithBadInput)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
+BOOST_AUTO_TEST_CASE(s_ReadEmptyUserInput)
 {
     const char* fname("/dev/null");
     const bool is_protein(true);
@@ -700,7 +703,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadEmptyUserInput)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadSingleAccession)
+BOOST_AUTO_TEST_CASE(s_ReadSingleAccession)
 {
     CNcbiIfstream infile("data/accession.txt");
     const bool is_protein(false);
@@ -746,7 +749,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadSingleAccession)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadMultipleAccessions)
+BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
 {
     CNcbiIfstream infile("data/accessions.txt");
     const bool is_protein(false);
@@ -799,7 +802,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleAccessions)
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadSingleGi)
+BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
 {
     CNcbiIfstream infile("data/gi.txt");
     const bool is_protein(false);
@@ -842,7 +845,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadSingleGi)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis)
+BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
 {
     CNcbiIfstream infile("data/gis.txt");
     const bool is_protein(false);
@@ -899,7 +902,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleGis)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadMultipleTis)
+BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
 {
     CNcbiIfstream infile("data/tis.txt");
     const bool is_protein(false);
@@ -943,7 +946,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadMultipleTis)
     CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadSingleTi)
+BOOST_AUTO_TEST_CASE(s_ReadSingleTi)
 {
     CNcbiIfstream infile("data/ti.txt");
     const bool is_protein(false);
@@ -990,7 +993,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadSingleTi)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadAccessionsAndGisWithNewLines)
+BOOST_AUTO_TEST_CASE(s_ReadAccessionsAndGisWithNewLines)
 {
     CNcbiIfstream infile("data/accgis_nl.txt");
     const bool is_protein(false);
@@ -1080,7 +1083,7 @@ s_FileContents2String(const char* file_name)
     return retval.release();
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadAccessionNucleotideIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(s_ReadAccessionNucleotideIntoBuffer_Single)
 {
     const char* fname("data/accession.txt");
     auto_ptr<string> user_input(s_FileContents2String(fname));
@@ -1129,7 +1132,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadAccessionNucleotideIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 {
     auto_ptr<string> user_input(new string("    1945386   "));
 
@@ -1174,7 +1177,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 {
     auto_ptr<string> user_input(new string("    u93236 "));
 
@@ -1220,7 +1223,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
+BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
 {
     const char* fname("data/aa.129295");
     auto_ptr<string> user_input(s_FileContents2String(fname));
@@ -1261,7 +1264,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineProteinIntoBuffer_Single)
 
 }
 
-BOOST_AUTO_UNIT_TEST(s_RangeBoth)
+BOOST_AUTO_TEST_CASE(s_RangeBoth)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -1280,7 +1283,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeBoth)
     CHECK_EQUAL(stop, ssl.seqloc->GetStop(eExtreme_Positional));
 }
 
-BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
+BOOST_AUTO_TEST_CASE(s_RangeStartOnly)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -1298,7 +1301,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
     CHECK_EQUAL(length-1, ssl.seqloc->GetStop(eExtreme_Positional));
 }
 
-BOOST_AUTO_UNIT_TEST(s_RangeInvalid_FromGreaterThanTo)
+BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanTo)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -1317,7 +1320,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid_FromGreaterThanTo)
     BOOST_CHECK(false); // should never get here
 }
 
-BOOST_AUTO_UNIT_TEST(s_RangeInvalid_FromGreaterThanSequenceLength)
+BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanSequenceLength)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -1335,7 +1338,7 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid_FromGreaterThanSequenceLength)
     BOOST_CHECK(false); // should never get here
 }
 
-BOOST_AUTO_UNIT_TEST(s_ParseDefline)
+BOOST_AUTO_TEST_CASE(s_ParseDefline)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -1351,7 +1354,7 @@ BOOST_AUTO_UNIT_TEST(s_ParseDefline)
     CHECK_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
 }
 
-BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
+BOOST_AUTO_TEST_CASE(s_BadProtStrand)
 {
     CNcbiIfstream infile("data/aa.129295");
     const bool is_protein(true);
@@ -1371,7 +1374,7 @@ BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
     CHECK(source->End() == true);
 }
 
-BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineNucl_Multiple)
+BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineNucl_Multiple)
 {
     CNcbiIfstream infile("data/nt.cat");
     const bool is_protein(false);
@@ -1405,7 +1408,7 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaWithDeflineNucl_Multiple)
     CHECK(!ssl.mask);
 }
 
-BOOST_AUTO_UNIT_TEST(s_NuclStrand)
+BOOST_AUTO_TEST_CASE(s_NuclStrand)
 {
     const char* fname("data/nt.cat");
     const bool is_protein(false);
@@ -1444,7 +1447,7 @@ BOOST_AUTO_UNIT_TEST(s_NuclStrand)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
+BOOST_AUTO_TEST_CASE(s_NuclLcaseMask)
 {
     CNcbiIfstream infile("data/nt.cat");
     const bool is_protein(false);
@@ -1468,7 +1471,7 @@ BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
     CHECK(ssl.mask->IsNull());
 }
 
-BOOST_AUTO_UNIT_TEST(s_MultiSeq)
+BOOST_AUTO_TEST_CASE(s_MultiSeq)
 {
     CNcbiIfstream infile("data/aa.cat");
     const bool is_protein(true);
@@ -1481,7 +1484,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiSeq)
     CHECK_EQUAL((size_t)19, v.size());
 }
 
-BOOST_AUTO_UNIT_TEST(s_MultiRange)
+BOOST_AUTO_TEST_CASE(s_MultiRange)
 {
     CNcbiIfstream infile("data/aa.cat");
     const bool is_protein(true);
@@ -1502,7 +1505,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiRange)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(s_MultiBatch)
+BOOST_AUTO_TEST_CASE(s_MultiBatch)
 {
     CNcbiIfstream infile("data/aa.cat");
     const bool is_protein(true);
@@ -1538,7 +1541,7 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
     CHECK(source->End());
 }
 
-BOOST_AUTO_UNIT_TEST(s_NoDeflineExpected)
+BOOST_AUTO_TEST_CASE(s_NoDeflineExpected)
 {
     CNcbiIfstream infile("data/tiny.fa");
     const bool is_protein(false);
@@ -1551,7 +1554,7 @@ BOOST_AUTO_UNIT_TEST(s_NoDeflineExpected)
     CHECK_EQUAL((size_t)1, v.size());
 }
 
-BOOST_AUTO_UNIT_TEST(s_NoDeflineUnexpected)
+BOOST_AUTO_TEST_CASE(s_NoDeflineUnexpected)
 {
     CNcbiIfstream infile("data/tiny.fa");
     const bool is_protein(false);
@@ -1639,7 +1642,7 @@ private:
 
 /* Test for the PSI-BLAST command line application arguments */
 
-BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
+BOOST_AUTO_TEST_CASE(PsiBlastAppTestMatrix)
 {
     CPsiBlastAppArgs psiblast_args;
     CString2Args s2a("-matrix BLOSUM80 -db ecoli ");
@@ -1650,7 +1653,7 @@ BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
     CHECK_EQUAL(opts->GetOptions().GetMatrixName(), string("BLOSUM80"));
 }
 
-BOOST_AUTO_UNIT_TEST(CheckMutuallyExclusiveOptions)
+BOOST_AUTO_TEST_CASE(CheckMutuallyExclusiveOptions)
 {
     CString2Args s2a("-remote -num_threads 2");
 
@@ -1670,7 +1673,7 @@ BOOST_AUTO_UNIT_TEST(CheckMutuallyExclusiveOptions)
     }
 }
 
-BOOST_AUTO_UNIT_TEST(CheckDiscoMegablast) {
+BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
     auto_ptr<CArgs> args;
     CBlastnAppArgs blastn_args;
 
@@ -1694,7 +1697,7 @@ BOOST_AUTO_UNIT_TEST(CheckDiscoMegablast) {
     BOOST_CHECK_THROW(opts->Validate(), CBlastException);
 }
 
-BOOST_AUTO_UNIT_TEST(CheckPercentIdentity) {
+BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
     auto_ptr<CArgs> args;
     CBlastxAppArgs blast_args;
 
@@ -1708,7 +1711,7 @@ BOOST_AUTO_UNIT_TEST(CheckPercentIdentity) {
     BOOST_CHECK_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
 }
 
-BOOST_AUTO_UNIT_TEST(CheckNoGreedyExtension) {
+BOOST_AUTO_TEST_CASE(CheckNoGreedyExtension) {
     auto_ptr<CArgs> args;
     CBlastnAppArgs blast_args;
 
@@ -1724,7 +1727,7 @@ BOOST_AUTO_UNIT_TEST(CheckNoGreedyExtension) {
     BOOST_CHECK_THROW(opts->Validate(), CBlastException);
 }
 
-BOOST_AUTO_UNIT_TEST(CheckCulling) {
+BOOST_AUTO_TEST_CASE(CheckCulling) {
     typedef vector< CRef<CBlastAppArgs> > TArgClasses;
     vector< CRef<CBlastAppArgs> > arg_classes;
     arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
@@ -1748,7 +1751,7 @@ BOOST_AUTO_UNIT_TEST(CheckCulling) {
 
 }
 
-BOOST_AUTO_UNIT_TEST(CheckTaskArgs) {
+BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
     set<string> tasks
         (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
     CRef<IBlastCmdLineArgs> arg;
