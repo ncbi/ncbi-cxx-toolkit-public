@@ -190,6 +190,7 @@ int CCgiApplication::Run(void)
     // Logging for statistics
     bool is_stat_log = GetConfig().GetBool("CGI", "StatLog", false,
                                            0, CNcbiRegistry::eReturn);
+    bool skip_stat_log = false;
     auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     // Logging
@@ -299,6 +300,7 @@ int CCgiApplication::Run(void)
                 stat->Reset(start_time, result, &e);
                 msg = stat->Compose();
                 stat->Submit(msg);
+                skip_stat_log = true; // Don't print the same message again
             }
         }}
 
@@ -319,7 +321,7 @@ int CCgiApplication::Run(void)
                   0, start_time, 0, fEnd);
     }
 
-    if ( is_stat_log ) {
+    if ( is_stat_log  &&  !skip_stat_log ) {
         stat->Reset(start_time, result);
         string msg = stat->Compose();
         stat->Submit(msg);
