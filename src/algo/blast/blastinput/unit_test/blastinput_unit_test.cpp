@@ -1748,6 +1748,20 @@ BOOST_AUTO_UNIT_TEST(CheckCulling) {
 
 }
 
+BOOST_AUTO_UNIT_TEST(CheckTaskArgs) {
+    set<string> tasks
+        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
+    CRef<IBlastCmdLineArgs> arg;
+    arg.Reset(new CTaskCmdLineArgs(tasks, "megablast")),
+    arg.Reset(new CTaskCmdLineArgs(tasks, "dc-megablast")),
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastn")),
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastn-short")),
+
+    tasks = CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt);
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
+}
+
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
 class CDummyDLF : public CDataLoaderFactory {

@@ -47,10 +47,14 @@ USING_SCOPE(objects);
 
 CBlastpAppArgs::CBlastpAppArgs()
 {
-    const bool kQueryIsProtein = true;
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("blastp", 
-                                          "Protein-Protein BLAST"));
+    arg.Reset(new CProgramDescriptionArgs("blastp", "Protein-Protein BLAST"));
+    const bool kQueryIsProtein = true;
+    m_Args.push_back(arg);
+
+    set<string> tasks
+        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt));
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
@@ -99,11 +103,6 @@ CBlastpAppArgs::CBlastpAppArgs()
     m_Args.push_back(arg);
 
     arg.Reset(new CCompositionBasedStatsArgs);
-    m_Args.push_back(arg);
-
-    set<string> tasks
-        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt));
-    arg.Reset(new CTaskCmdLineArgs(tasks));
     m_Args.push_back(arg);
 }
 

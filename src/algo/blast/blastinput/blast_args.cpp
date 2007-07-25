@@ -167,16 +167,27 @@ CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                              blast::Version.Print());
 }
 
+CTaskCmdLineArgs::CTaskCmdLineArgs(const set<string>& supported_tasks,
+                                   const string& default_task)
+: m_SupportedTasks(supported_tasks), m_DefaultTask(default_task)
+{
+    _ASSERT( !m_SupportedTasks.empty() );
+    if ( !m_DefaultTask.empty() ) {
+        _ASSERT(m_SupportedTasks.find(m_DefaultTask) != m_SupportedTasks.end());
+    }
+}
+
 void
 CTaskCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    if (m_SupportedTasks.empty()) {
-        return;
-    }
-
     arg_desc.SetCurrentGroup("General search options");
-    arg_desc.AddDefaultKey(kTask, "task_name", "Task to execute", 
-                           CArgDescriptions::eString, "megablast");
+    if ( !m_DefaultTask.empty() ) {
+        arg_desc.AddDefaultKey(kTask, "task_name", "Task to execute", 
+                               CArgDescriptions::eString, m_DefaultTask);
+    } else {
+        arg_desc.AddKey(kTask, "task_name", "Task to execute",
+                        CArgDescriptions::eString);
+    }
     arg_desc.SetConstraint(kTask, new CArgAllowStringSet(m_SupportedTasks));
     arg_desc.SetCurrentGroup("");
    

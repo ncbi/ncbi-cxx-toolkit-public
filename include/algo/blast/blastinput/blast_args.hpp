@@ -147,16 +147,22 @@ class NCBI_XBLAST_EXPORT CTaskCmdLineArgs : public IBlastCmdLineArgs
 public:
     /** Constructor 
      * @param supported_tasks list of supported tasks [in]
+     * @param default_default One of the tasks above, to be displayed as
+     * default in the command line arguments (cannot be empty or absent from
+     * the set above) [in]
      */
-    CTaskCmdLineArgs(const set<string>& supported_tasks)
-        : m_SupportedTasks(supported_tasks) {}
+    CTaskCmdLineArgs(const set<string>& supported_tasks,
+                     const string& default_task);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
 private:
+    /// Set of supported tasks by this command line argument
     const set<string> m_SupportedTasks;
+    /// Default task for this command line argument
+    string m_DefaultTask;
 };
 
 /** Argument class to retrieve and set the window size BLAST algorithm 

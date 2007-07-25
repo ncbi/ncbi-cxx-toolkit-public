@@ -54,12 +54,9 @@ CBlastnAppArgs::CBlastnAppArgs()
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
 
-    set<string> tasks;
-    tasks.insert("megablast");
-    tasks.insert("blastn");
-    tasks.insert("dc-megablast");
-    tasks.insert("blastn-short");
-    arg.Reset(new CTaskCmdLineArgs(tasks));
+    set<string> tasks
+        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
+    arg.Reset(new CTaskCmdLineArgs(tasks, "megablast"));
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
