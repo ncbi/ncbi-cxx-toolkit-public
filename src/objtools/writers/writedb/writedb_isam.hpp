@@ -135,6 +135,9 @@ public:
     /// @return Returns true if the IDs can fit into the volume.
     bool CanFit(int num);
     
+    /// Tests whether the index file is empty (has no entries).
+    bool Empty() const;
+    
 private:
     enum {
         eKeyOffset       = 9*4,  ///< Offset of the key offset table.

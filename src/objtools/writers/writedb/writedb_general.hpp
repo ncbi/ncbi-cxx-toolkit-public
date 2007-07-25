@@ -394,7 +394,7 @@ public:
     void Sort();
     
     /// Return the number of contained entries.
-    int Size()
+    int Size() const
     {
         return m_Size;
     }

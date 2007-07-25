@@ -913,8 +913,20 @@ void CWriteDB_IsamIndex::x_Free()
 
 void CWriteDB_Isam::ListFiles(vector<string> & files) const
 {
-    files.push_back(m_IFile->GetFilename());
-    files.push_back(m_DFile->GetFilename());
+    if (! m_IFile->Empty()) {
+        files.push_back(m_IFile->GetFilename());
+        files.push_back(m_DFile->GetFilename());
+    }
+}
+
+bool CWriteDB_IsamIndex::Empty() const
+{
+    // Also test 'created' bit in case the file data has already
+    // been dumped and cleared.
+    
+    return ! (m_StringSort.Size() ||
+              m_NumberTable.size() ||
+              m_Created);
 }
 
 END_NCBI_SCOPE
