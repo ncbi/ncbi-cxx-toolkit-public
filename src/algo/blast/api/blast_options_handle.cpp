@@ -210,13 +210,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         CBlastNucleotideOptionsHandle* opts = 
              dynamic_cast<CBlastNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eBlastn, locality));
         ASSERT(opts);
-        if (!NStr::CompareNocase(task, "blastn"))
-        {
-             opts->SetMatchReward(2);
-             opts->SetMismatchPenalty(-3);
-             opts->SetMaskAtHash(true);
-        }
-        else
+        if (!NStr::CompareNocase(task, "blastn-short"))
         {
              opts->SetMatchReward(1);
              opts->SetMismatchPenalty(-3);
@@ -228,23 +222,11 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     }
     else if (!NStr::CompareNocase(task, "megablast"))
     {
-        CBlastNucleotideOptionsHandle* opts = 
-             dynamic_cast<CBlastNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eMegablast, locality));
-        ASSERT(opts);
-        opts->SetMatchReward(1);
-        opts->SetMismatchPenalty(-2);
-        opts->SetMaskAtHash(true);
-        retval = opts;
+         retval = CBlastOptionsFactory::Create(eMegablast, locality);
     }
     else if (!NStr::CompareNocase(task, "dc-megablast"))
     {
-        CDiscNucleotideOptionsHandle* opts = 
-             dynamic_cast<CDiscNucleotideOptionsHandle*> (CBlastOptionsFactory::Create(eDiscMegablast, locality));
-        ASSERT(opts);
-        opts->SetMatchReward(2);
-        opts->SetMismatchPenalty(-3);
-        opts->SetMaskAtHash(true);
-        retval = opts;
+         retval = CBlastOptionsFactory::Create(eDiscMegablast, locality);
     }
     else if (!NStr::CompareNocase(task, "blastp") || !NStr::CompareNocase(task, "blastp-short"))
     {
