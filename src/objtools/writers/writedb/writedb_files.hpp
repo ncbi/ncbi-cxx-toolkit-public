@@ -66,14 +66,28 @@ public:
     /// enforced by this class, instead each derived class must do its
     /// own enforcement.
     ///
-    /// @param basename Database base name, shared by all files.
-    /// @param extension File name extension for this file.
-    /// @param index Volume index used in filename.
-    /// @param max_file_size File size limit (in bytes).
+    /// @param basename Database base name, shared by all files. [in]
+    /// @param extension File name extension for this file. [in]
+    /// @param index Volume index used in filename. [in]
+    /// @param max_file_size File size limit (in bytes). [in]
+    /// @param always_create If true the file will be created now. [in]
     CWriteDB_File(const string & basename,
                   const string & extension,
                   int            index,
-                  Uint8          max_file_size);
+                  Uint8          max_file_size,
+                  bool           always_create);
+    
+    /// Create and open the file.
+    ///
+    /// This method must be called before the first time that data is
+    /// written to the file.  If the constructor is passed 'true' for
+    /// always_create, this method will be called during construction.
+    /// It is an error to call this method more than once (including
+    /// via the constructor) or to not call it but to call Write.  The
+    /// rationale for making this explicit is to permit some files to
+    /// be created optionally, such as ISAM files, which should only
+    /// be created if the corresponding ID types are found.
+    void Create();
     
     /// Write contents of a string to the file.
     /// @param data Data to write.
@@ -131,6 +145,9 @@ public:
     }
     
 protected:
+    /// True if the file has already been opened.
+    bool m_Created;
+    
     /// Underlying 'output file' type used here.
     typedef ofstream TFile;
     

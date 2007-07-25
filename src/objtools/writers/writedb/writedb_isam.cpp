@@ -153,7 +153,8 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
     : CWriteDB_File  (dbname,
                       s_IsamExtension(itype, protein, true),
                       index,
-                      0),
+                      0,
+                      false),
       m_Type         (itype),
       m_Sparse       (sparse),
       m_PageSize     (0),
@@ -241,6 +242,8 @@ void CWriteDB_IsamIndex::x_WriteHeader()
 
 void CWriteDB_IsamIndex::x_FlushStringIndex()
 {
+    _ASSERT(m_StringSort.Size());
+    
     // Note: This function can take a noticeable portion of the
     // database dumping time.  For some databases, the length of the
     // data file for the string index competes with the sequence file
@@ -276,7 +279,7 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
     int index = 0;
     
     m_StringSort.Sort();
-    
+
     CWriteDB_PackedSemiTree::Iterator iter = m_StringSort.Begin();
     CWriteDB_PackedSemiTree::Iterator end_iter = m_StringSort.End();
     
@@ -354,6 +357,8 @@ void CWriteDB_IsamIndex::x_FlushStringIndex()
 
 void CWriteDB_IsamIndex::x_FlushNumericIndex()
 {
+    _ASSERT(m_NumberTable.size());
+    
     int row_index = 0;
     
     sort(m_NumberTable.begin(), m_NumberTable.end());
@@ -389,18 +394,23 @@ void CWriteDB_IsamIndex::x_FlushNumericIndex()
 
 void CWriteDB_IsamIndex::x_Flush()
 {
-    // Step 1: Write header data.
-    x_WriteHeader();
-    
-    // Step 2: Flush all data to the data file.
-    //  A. Sort all entries up front with sort.
-    //  B. Pick out periodic samples for the index, every 256 elements
-    //     for numeric and every 64 for string.
-    
-    if (m_Type == eAcc) {
-        x_FlushStringIndex();
-    } else {
-        x_FlushNumericIndex();
+    if (m_NumberTable.size() || m_StringSort.Size()) {
+        Create();
+        m_DataFile->Create();
+        
+        // Step 1: Write header data.
+        x_WriteHeader();
+        
+        // Step 2: Flush all data to the data file.
+        //  A. Sort all entries up front with sort.
+        //  B. Pick out periodic samples for the index, every 256 elements
+        //     for numeric and every 64 for string.
+        
+        if (m_Type == eAcc) {
+            x_FlushStringIndex();
+        } else {
+            x_FlushNumericIndex();
+        }
     }
     
     x_Free();
@@ -877,7 +887,8 @@ CWriteDB_IsamData::CWriteDB_IsamData(EWriteDBIsamType itype,
     : CWriteDB_File (dbname,
                      s_IsamExtension(itype, protein, false),
                      index,
-                     max_file_size)
+                     max_file_size,
+                     false)
 {
 }
 

@@ -100,8 +100,10 @@ USING_SCOPE(std);
 CWriteDB_File::CWriteDB_File(const string & basename,
                              const string & extension,
                              int            index,
-                             Uint8          max_file_size)
-    : m_BaseName   (basename),
+                             Uint8          max_file_size,
+                             bool           always_create)
+    : m_Created    (false),
+      m_BaseName   (basename),
       m_Extension  (extension),
       m_Index      (index),
       m_Offset     (0),
@@ -116,11 +118,22 @@ CWriteDB_File::CWriteDB_File(const string & basename,
     
     m_UseIndex = true;
     x_MakeFileName();
-	m_RealFile.open(m_Fname.c_str(), ios::out | ios::binary);
+    
+    if (always_create) {
+        Create();
+    }
+}
+
+void CWriteDB_File::Create()
+{
+    _ASSERT(! m_Created);
+    m_Created = true;
+    m_RealFile.open(m_Fname.c_str(), ios::out | ios::binary);
 }
 
 int CWriteDB_File::Write(const CTempString & data)
 {
+    _ASSERT(m_Created);
     m_RealFile.write(data.data(), data.length());
     
     m_Offset += data.length();
@@ -154,7 +167,9 @@ void CWriteDB_File::x_MakeFileName()
 void CWriteDB_File::Close()
 {
     x_Flush();
-    m_RealFile.close();
+    if (m_Created) {
+        m_RealFile.close();
+    }
 }
 
 void CWriteDB_File::RenameSingle()
@@ -178,7 +193,8 @@ CWriteDB_IndexFile::CWriteDB_IndexFile(const string & dbname,
     : CWriteDB_File(dbname,
                     protein ? "pin" : "nin",
                     index,
-                    max_file_size),
+                    max_file_size,
+                    true),
       m_Protein   (protein),
       m_Title     (title),
       m_Date      (date),
@@ -210,6 +226,8 @@ int CWriteDB_IndexFile::x_Overhead(const string & T,
 
 void CWriteDB_IndexFile::x_Flush()
 {
+    _ASSERT(m_Created);
+    
     int format_version = 4;
     int seq_type = (m_Protein ? 1 : 0);
     
@@ -270,7 +288,8 @@ CWriteDB_HeaderFile::CWriteDB_HeaderFile(const string & dbname,
     : CWriteDB_File(dbname,
                     protein ? "phr" : "nhr",
                     index,
-                    max_file_size),
+                    max_file_size,
+                    true),
       m_DataSize  (0)
 {
 }
@@ -283,7 +302,8 @@ CWriteDB_SequenceFile::CWriteDB_SequenceFile(const string & dbname,
     : CWriteDB_File(dbname,
                     protein ? "psq" : "nsq",
                     index,
-                    max_file_size),
+                    max_file_size,
+                    true),
       m_Letters  (0),
       m_BaseLimit(max_letters),
       m_Protein  (protein)
