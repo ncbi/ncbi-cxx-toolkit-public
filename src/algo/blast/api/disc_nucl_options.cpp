@@ -58,7 +58,7 @@ CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
     bool defaults_mode = m_Opts->GetDefaultsMode();
     m_Opts->SetDefaultsMode(false);
     SetTemplateType(0);
-    SetTemplateLength(21);
+    SetTemplateLength(18);
     SetWordSize(BLAST_WORDSIZE_NUCL);
     m_Opts->SetDefaultsMode(defaults_mode);
 }
