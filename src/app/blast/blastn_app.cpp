@@ -81,7 +81,7 @@ void CBlastnApp::Init()
 
     // read the command line
 
-    HideStdArgs(fHideLogfile | fHideConffile);
+    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
 }
 
