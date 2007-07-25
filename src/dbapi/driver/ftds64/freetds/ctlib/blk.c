@@ -54,6 +54,7 @@ static CS_RETCODE _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcp
 static CS_RETCODE _rowxfer_in_init(CS_BLKDESC * blkdesc);
 static CS_RETCODE _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
 static CS_RETCODE _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
+static CS_RETCODE _blk_start_new_batch(CS_BLKDESC * blkdesc);
 
 #undef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -242,24 +243,15 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 		/* TODO correct ?? */
 		tds_set_state(tds, TDS_PENDING);
 		if (tds_process_simple_query(tds) != TDS_SUCCEED) {
-			_ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
-			return CS_FAIL;
+                    _ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
+                    return CS_FAIL;
 		}
 		
 		if (outrow)
-			*outrow = tds->rows_affected;
+                    *outrow = tds->rows_affected;
 		
-		tds_submit_query(tds, blkdesc->insert_stmt);
-		if (tds_process_simple_query(tds) != TDS_SUCCEED) {
-			_ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
-			return CS_FAIL;
-		}
-
-		tds->out_flag = TDS_BULK;
-
-		if (IS_TDS7_PLUS(tds)) {
-			_blk_send_colmetadata(blkdesc);
-		}
+                if (_blk_start_new_batch(blkdesc) == CS_FAIL)
+                    return (CS_FAIL);
 
 		break;
 		
@@ -269,8 +261,8 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 		/* TODO correct ?? */
 		tds_set_state(tds, TDS_PENDING);
 		if (tds_process_simple_query(tds) != TDS_SUCCEED) {
-			_ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
-			return CS_FAIL;
+                    _ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
+                    return CS_FAIL;
 		}
 		
 		if (outrow)
@@ -965,7 +957,7 @@ _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred
 
 	TDSSOCKET *tds;
 	TDS_INT each_row;
-    CS_RETCODE rc = CS_SUCCEED;
+        CS_RETCODE rc = CS_SUCCEED;
 
 	if (!blkdesc)
 		return CS_FAIL;
@@ -979,40 +971,64 @@ _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred
 
 	if (blkdesc->xfer_init == 0) {
 
-		/*
-		 * first call the start_copy function, which will
-		 * retrieve details of the database table columns
-		 */
+            /*
+             * first call the start_copy function, which will
+             * retrieve details of the database table columns
+             */
 
-		if (_rowxfer_in_init(blkdesc) == CS_FAIL)
-			return (CS_FAIL);
+            if (_rowxfer_in_init(blkdesc) == CS_FAIL)
+                return (CS_FAIL);
 
 
-		/* set packet type to send bulk data */
-		tds->out_flag = TDS_BULK;
+            if (_blk_start_new_batch(blkdesc) == CS_FAIL)
+                return (CS_FAIL);
 
-		if (IS_TDS7_PLUS(tds)) {
-			_blk_send_colmetadata(blkdesc);
-		}
-
-        if (tds_set_state(tds, TDS_QUERYING) != TDS_QUERYING) {
-            return CS_FAIL;
-        }
-
-		blkdesc->xfer_init = 1;
+            blkdesc->xfer_init = 1;
 	}
 
 	for (each_row = 0; each_row < rows_to_xfer; each_row++ ) {
 
-        rc = _blk_build_bcp_record(blkdesc, each_row);
+            rc = _blk_build_bcp_record(blkdesc, each_row);
 
-		if (rc != CS_SUCCEED) {
-            return rc;
-		}
+            if (rc != CS_SUCCEED) {
+                return rc;
+            }
 	}
 
 	return CS_SUCCEED;
 }
+
+
+static CS_RETCODE
+_blk_start_new_batch(CS_BLKDESC * blkdesc)
+{
+    TDSSOCKET *tds = blkdesc->con->tds_socket;
+
+    tds_submit_query(tds, blkdesc->insert_stmt);
+
+    /*
+     * In TDS 5 we get the column information as a result set from the "insert bulk" command.
+     * We're going to ignore it.
+     */
+    if (tds_process_simple_query(tds) != TDS_SUCCEED) {
+            _ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 5, 1, 140, "");
+            return CS_FAIL;
+    }
+
+    /* set packet type to send bulk data */
+    tds->out_flag = TDS_BULK;
+
+    if (IS_TDS7_PLUS(tds)) {
+        _blk_send_colmetadata(blkdesc);
+    }
+
+    if (tds_set_state(tds, TDS_QUERYING) != TDS_QUERYING) {
+        return CS_FAIL;
+    }
+
+    return CS_SUCCEED;
+}
+
 
 static CS_RETCODE
 _rowxfer_in_init(CS_BLKDESC * blkdesc)
@@ -1073,20 +1089,9 @@ _rowxfer_in_init(CS_BLKDESC * blkdesc)
 		}
 	}
 
-	tds_submit_query(tds, query);
-
 	/* save the statement for later... */
 
 	blkdesc->insert_stmt = query;
-
-	/*
-	 * In TDS 5 we get the column information as a result set from the "insert bulk" command.
-	 * We're going to ignore it.
-	 */
-	if (tds_process_simple_query(tds) != TDS_SUCCEED) {
-		_ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 5, 1, 140, "");
-		return CS_FAIL;
-	}
 
 	/*
 	 * Work out the number of "variable" columns.  These are either nullable or of
