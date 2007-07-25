@@ -4247,6 +4247,13 @@ void CMemoryFile::x_Verify(void) const
     NCBI_THROW(CFileException, eMemoryMap,"CMemoryFile: File is not mapped");
 }
 
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CFileException
+//
+
 const char* CFileException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -4261,10 +4268,17 @@ const char* CFileErrnoException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eFileSystemInfo:  return "eFileSystemInfo";
+    case eFileLock:        return "eFileLock";
     default:               return CException::GetErrCodeString();
     }
 }
 
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Find files
+//
 
 void x_Glob(const string& path,
             const list<string>& parts,
@@ -4357,19 +4371,25 @@ void FindFiles(const string& pattern,
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CFileReader
+//
+
 CFileReader::CFileReader(const string& filename)
     : m_CloseHandle(false)
 {
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     m_Handle = CreateFile(filename.c_str(),
                           GENERIC_READ,
                           FILE_SHARE_READ,
-                          0,
+                          NULL,
                           OPEN_EXISTING,
                           0,
                           NULL);
     bool error = m_Handle == INVALID_HANDLE_VALUE;
-#else
+#elif defined(NCBI_OS_UNIX)
 # ifndef O_BINARY
     int open_mode = O_RDONLY;
 # else
@@ -4396,9 +4416,9 @@ CFileReader::CFileReader(THandle handle)
 CFileReader::~CFileReader()
 {
     if ( m_CloseHandle ) {
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
         CloseHandle(m_Handle);
-#else
+#elif defined(NCBI_OS_UNIX)
         close(m_Handle);
 #endif
     }
@@ -4408,9 +4428,9 @@ CFileReader::~CFileReader()
 IReader* CFileReader::New(const string& filename)
 {
     if ( filename == "-" ) {
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
         THandle handle = GetStdHandle(STD_INPUT_HANDLE);
-#else
+#elif defined(NCBI_OS_UNIX)
         THandle handle = 0;
 #endif
         return new CFileReader(handle);
@@ -4425,7 +4445,7 @@ ERW_Result CFileReader::Read(void*   buf,
                              size_t  count,
                              size_t* bytes_read)
 {
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     DWORD r;
     if ( ReadFile(m_Handle, buf, count, &r, NULL) == 0 ) {
         if ( bytes_read ) {
@@ -4433,7 +4453,7 @@ ERW_Result CFileReader::Read(void*   buf,
         }
         return GetLastError() == ERROR_HANDLE_EOF? eRW_Eof: eRW_Success;
     }
-#else
+#elif defined(NCBI_OS_UNIX)
     ssize_t r = read(int(m_Handle), buf, count);
     if ( r == -1 ) {
         if ( bytes_read ) {
@@ -4452,6 +4472,222 @@ ERW_Result CFileReader::Read(void*   buf,
 ERW_Result CFileReader::PendingCount(size_t* /*count*/)
 {
     return eRW_NotImplemented;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CFileLock
+//
+
+// Clean up an all non-default bits in group if all bits are set
+#define F_CLEAN_REDUNDANT(group) \
+    if (F_ISSET(m_Flags, (group))) \
+        m_Flags &= ~unsigned((group) & ~unsigned(fDefault))
+
+// Platform-dependent structure to store locking information
+struct SLock {
+    SLock(void) {};
+    SLock(off_t off, size_t len) {
+        Reset(off, len);
+    }
+#if defined(NCBI_OS_MSWIN)
+    void Reset(off_t off, size_t len) 
+    {
+        // Locking a region that goes beyond the current EOF position
+        // is not an error.
+        if (len) {
+            length_lo = (DWORD)(len & 0xFFFFFFFF);
+            length_hi = (DWORD)((len >> 32) & 0xFFFFFFFF);
+        } else {
+            length_lo = 0;
+            length_hi = 0xFFFFFFFF;
+        }
+    };
+    DWORD offset_lo;
+    DWORD offset_hi;
+    DWORD length_lo;
+    DWORD length_hi;
+#elif defined(NCBI_OS_UNIX)
+    void Reset(off_t off, size_t len) {
+        offset = off;
+        length = len;
+    }
+    off_t  offset;
+    size_t length;
+#endif
+};
+
+
+CFileLock::CFileLock(const string& filename, TFlags flags, EType type,
+                     off_t offset, size_t length)
+    : m_Handle(kInvalidHandle), m_CloseHandle(true), m_Flags(flags),
+      m_IsLocked(false), m_Lock(0)
+{
+    x_Init(filename.c_str(), type, offset, length);
+}
+
+
+CFileLock::CFileLock(const char* filename, TFlags flags, EType type,
+                     off_t offset, size_t length)
+    : m_Handle(kInvalidHandle), m_CloseHandle(true), m_Flags(flags),
+      m_IsLocked(false), m_Lock(0)
+{
+    x_Init(filename, type, offset, length);
+}
+
+
+CFileLock::CFileLock(TFileHandle handle, TFlags flags, EType type,
+                     off_t offset, size_t length)
+    : m_Handle(handle), m_CloseHandle(true), m_Flags(flags),
+      m_IsLocked(false), m_Lock(0)
+{
+    x_Init(0, type, offset, length);
+}
+
+
+void CFileLock::x_Init(const char* filename, EType type, off_t offset, size_t length)
+{
+    // Reset redundant flags
+    F_CLEAN_REDUNDANT(fLockNow | fLockLater);
+    F_CLEAN_REDUNDANT(fAutoUnlock | fNoAutoUnlock);
+
+    // Open file
+    if (filename) {
+#if defined(NCBI_OS_MSWIN)
+/*
+//???
+        m_Handle = CreateFile(filename,GENERIC_READ | GENERIC_WRITE,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+*/
+        m_Handle = CreateFile(filename,GENERIC_READ,
+                              FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+#elif defined(NCBI_OS_UNIX)
+/*
+//???
+        int open_mode = (type == eShared) ? O_RDONLY : O_RDWR;
+        m_Handle = open(filename, open_mode);
+*/
+        m_Handle = open(filename, O_RDWR);
+#endif
+    }
+    if (m_Handle == kInvalidHandle) {
+        NCBI_THROW(CFileErrnoException, eFileLock,
+                   "Cannot open file " + string(filename));
+    }
+    m_Lock = new SLock;
+
+    // Lock file if necessary
+    if (F_ISSET(m_Flags, fLockNow)) {
+         Lock(type, offset, length);
+    }
+}
+
+
+CFileLock::~CFileLock()
+{
+    if (m_Handle == kInvalidHandle) {
+        return;
+    }
+    try {
+        // Remove lock automaticaly
+        if (F_ISSET(m_Flags, fAutoUnlock)) {
+            Unlock();
+        }
+    } catch(CException& e) {
+        NCBI_REPORT_EXCEPTION("CFileLock destructor: Unlock() failed", e);
+    }
+    delete m_Lock;
+
+    if (m_CloseHandle) {
+#if defined(NCBI_OS_MSWIN)
+        CloseHandle(m_Handle);
+#elif defined(NCBI_OS_UNIX)
+        close(m_Handle);
+#endif
+    }
+    return;
+}
+
+
+void CFileLock::Lock(EType type, off_t offset, size_t length)
+{
+    // Remove previous lock
+    if (m_IsLocked) {
+        Unlock();
+    }
+    // Set new one
+    m_Lock->Reset(offset, length);
+    
+#if defined(NCBI_OS_MSWIN)
+    DWORD flags = LOCKFILE_FAIL_IMMEDIATELY;
+    if (type == eExclusive) {
+        flags |= LOCKFILE_EXCLUSIVE_LOCK;
+    }
+    OVERLAPPED overlapped;
+    overlapped.hEvent     = 0;
+    overlapped.Offset     = m_Lock->offset_lo;
+    overlapped.OffsetHigh = m_Lock->offset_hi;
+    bool res = LockFileEx(m_Handle, flags, 0, 
+                            m_Lock->length_lo, m_Lock->length_hi,
+                            &overlapped) == TRUE;
+#elif defined(NCBI_OS_UNIX)
+    struct flock fl;
+    fl.l_type   = (type == eShared) ? F_RDLCK : F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start  = m_Lock->offset;
+    fl.l_len    = m_Lock->length;   // 0 - lock to EOF 
+    fl.l_pid    = getpid();
+    
+    int err;
+    do {
+        err = fcntl(m_Handle, F_SETLK, &fl);
+    } while (err && (errno == EINTR));
+    bool res = (err == 0);
+
+#endif
+    if (!res) {
+        NCBI_THROW(CFileErrnoException, eFileLock, "Unable to lock a file");
+    }
+    m_IsLocked = true;
+    return;
+}
+
+
+void CFileLock::Unlock(void)
+{
+    if (!m_IsLocked) {
+        return;
+    }
+#if defined(NCBI_OS_MSWIN)
+    OVERLAPPED overlapped;
+    overlapped.hEvent     = 0;
+    overlapped.Offset     = m_Lock->offset_lo;
+    overlapped.OffsetHigh = m_Lock->offset_hi;
+    bool res = UnlockFileEx(m_Handle, 0,
+                            m_Lock->length_lo, m_Lock->length_hi,
+                            &overlapped) == TRUE;
+
+#elif defined(NCBI_OS_UNIX)
+    struct flock fl;
+    fl.l_type   = F_UNLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start  = m_Lock->offset;
+    fl.l_len    = m_Lock->length;
+    fl.l_pid    = getpid();
+    
+    int err;
+    do {
+        err = fcntl(m_Handle, F_SETLK, &fl);
+    } while (err && (errno == EINTR));
+    bool res = (err == 0);
+
+#endif
+    if (!res) {
+        NCBI_THROW(CFileErrnoException, eFileLock, "Unlock() failed");
+    }
+    m_IsLocked = false;
+    return;
 }
 
 
