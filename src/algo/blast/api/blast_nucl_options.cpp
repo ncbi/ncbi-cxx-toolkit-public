@@ -126,6 +126,7 @@ void
 CBlastNucleotideOptionsHandle::SetQueryOptionDefaults()
 {
     SetDustFiltering(true);
+    SetMaskAtHash(true);
     SetStrandOption(objects::eNa_strand_both);
 }
 
@@ -171,8 +172,8 @@ CBlastNucleotideOptionsHandle::SetScoringOptionsDefaults()
     SetMatrixName(NULL);
     SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
     SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
-    SetMatchReward(BLAST_REWARD);
-    SetMismatchPenalty(BLAST_PENALTY);
+    SetMatchReward(2);
+    SetMismatchPenalty(-3);
     SetGappedMode();
 
     // set out-of-frame options to invalid? values
@@ -186,8 +187,8 @@ CBlastNucleotideOptionsHandle::SetMBScoringOptionsDefaults()
     SetMatrixName(NULL);
     SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
     SetGapExtensionCost(BLAST_GAP_EXTN_MEGABLAST);
-    SetMatchReward(BLAST_REWARD);
-    SetMismatchPenalty(BLAST_PENALTY);
+    SetMatchReward(1);
+    SetMismatchPenalty(-2);
     SetGappedMode();
 
     // set out-of-frame options to invalid? values
