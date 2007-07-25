@@ -54,6 +54,14 @@ CBlastnAppArgs::CBlastnAppArgs()
     const bool kQueryIsProtein = false;
     m_Args.push_back(arg);
 
+    set<string> tasks;
+    tasks.insert("megablast");
+    tasks.insert("blastn");
+    tasks.insert("dc-megablast");
+    tasks.insert("blastn-short");
+    arg.Reset(new CTaskCmdLineArgs(tasks));
+    m_Args.push_back(arg);
+
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
@@ -101,11 +109,6 @@ CBlastnAppArgs::CBlastnAppArgs()
     m_RemoteArgs.Reset(new CRemoteArgs);
     arg.Reset(m_RemoteArgs);
     m_Args.push_back(arg);
-
-    set<string> tasks
-        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
-    arg.Reset(new CTaskCmdLineArgs(tasks));
-    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 
@@ -113,20 +116,7 @@ CBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
     CRef<CBlastOptionsHandle> retval;
-    if (args[kArgDMBTemplateType] || args[kArgDMBTemplateLength]) {
-        // the setting of both arguments in the above test is enforced by 
-        // CDiscontiguousMegablastArgs
-        retval.Reset(new CDiscNucleotideOptionsHandle(locality));
-    } else {
-        if (args[kTask]) {
-            const string& task = args[kTask].AsString();
-            retval.Reset(CBlastOptionsFactory::CreateTask(task, locality));
-        } else {
-            CRef<CBlastNucleotideOptionsHandle> oh
-                (new CBlastNucleotideOptionsHandle(locality));
-            retval.Reset(&*oh);
-        }
-    }
+    retval.Reset(CBlastOptionsFactory::CreateTask(args[kTask].AsString(), locality));
     ASSERT(retval.NotEmpty());
     return retval;
 }

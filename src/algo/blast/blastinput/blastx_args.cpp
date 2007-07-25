@@ -66,9 +66,6 @@ CBlastxAppArgs::CBlastxAppArgs()
     arg.Reset(new CGenericSearchArgs( !kQueryIsProtein ));
     m_Args.push_back(arg);
 
-    arg.Reset(new CGeneticCodeArgs(CGeneticCodeArgs::eQuery));
-    m_Args.push_back(arg);
-
     arg.Reset(new CFrameShiftArgs);
     m_Args.push_back(arg);
 
@@ -97,6 +94,9 @@ CBlastxAppArgs::CBlastxAppArgs()
 
     m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CGeneticCodeArgs(CGeneticCodeArgs::eQuery));
     m_Args.push_back(arg);
 
     m_FormattingArgs.Reset(new CFormattingArgs);

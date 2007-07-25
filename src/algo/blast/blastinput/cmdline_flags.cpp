@@ -94,7 +94,7 @@ const string kArgWindowSize("window_size");
 
 const string kArgWordSize("word_size");
 
-const string kArgWordScoreThreshold("min_word_score");
+const string kArgWordScoreThreshold("threshold");
 
 const string kArgEffSearchSpace("searchsp");
 
