@@ -321,6 +321,7 @@ CRef<CBlastOptionsHandle> s_CreateRepeatsSearchOptions()
     CBlastNucleotideOptionsHandle* opts(new CBlastNucleotideOptionsHandle);
     opts->SetTraditionalBlastnDefaults();
     opts->SetMismatchPenalty(REPEATS_SEARCH_PENALTY);
+    opts->SetMatchReward(REPEATS_SEARCH_REWARD);
     opts->SetEvalueThreshold(REPEATS_SEARCH_EVALUE);
     opts->SetGapXDropoffFinal(REPEATS_SEARCH_XDROP_FINAL);
     opts->SetXDropoff(REPEATS_SEARCH_XDROP_UNGAPPED);
