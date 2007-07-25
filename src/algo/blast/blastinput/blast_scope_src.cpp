@@ -83,6 +83,10 @@ CBlastScopeSource::CBlastScopeSource(bool load_proteins /* = true */,
  : m_Config(load_proteins)
 {
     m_ObjMgr.Reset(objmgr ? objmgr : CObjectManager::GetInstance());
+    x_InitBlastDatabaseDataLoader(m_Config.m_BlastDbName, 
+                                  m_Config.m_IsLoadingProteins
+                                  ? CBlastDbDataLoader::eProtein
+                                  : CBlastDbDataLoader::eNucleotide);
     x_InitGenbankDataLoader();
 }
 
