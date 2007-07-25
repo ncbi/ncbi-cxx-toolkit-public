@@ -847,6 +847,7 @@ CBlastOptions::ClearFilterOptions()
     SetDustFiltering(false);
     SetSegFiltering(false);
     SetRepeatFiltering(false);
+    SetMaskAtHash(false);
     return;
 }
 
