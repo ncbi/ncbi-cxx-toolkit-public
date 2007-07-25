@@ -4719,7 +4719,9 @@ fi
 
 
 ### XML/XSL libraries
-: ${EXPAT_PATH=$NCBI/expat}
+if test -d "$NCBI/expat/include"; then
+   : ${EXPAT_PATH=$NCBI/expat}
+fi
 NCBI_CHECK_THIRD_PARTY_LIB(expat,
  AC_LANG_PROGRAM([#include <expat.h>],
     [XML_Parser parser = XML_ParserCreate("utf-8");]))

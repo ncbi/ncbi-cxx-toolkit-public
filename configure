@@ -26426,7 +26426,9 @@ fi
 
 
 ### XML/XSL libraries
-: ${EXPAT_PATH=$NCBI/expat}
+if test -d "$NCBI/expat/include"; then
+   : ${EXPAT_PATH=$NCBI/expat}
+fi
 if test "$with_expat" != "no"; then
     case "$with_expat" in
        yes | "" ) ;;
