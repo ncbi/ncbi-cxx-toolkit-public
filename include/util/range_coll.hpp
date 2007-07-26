@@ -305,7 +305,7 @@ protected:
             pos_from++; // Prevent overflow
         }
         iterator it_begin_m =
-            lower_bound(begin_nc(), end_nc(), pos_from - 1, p);
+            lower_bound(begin_nc(), end_nc(), pos_from - 1, p); /* NCBI_FAKE_WARNING: WorkShop */
         if(it_begin_m != end_nc() && it_begin_m->GetFrom() <= pos_to_open)  { // intersection
             it_begin_m->CombineWith(r);
         
