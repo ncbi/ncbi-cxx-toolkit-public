@@ -1022,9 +1022,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         }
 
         // In case of timeout ...
+        /* Experimental. Based on C-Toolkit and code developed by Eugene
+         * Yaschenko.
         if (msg->msgnumber == 16908863) {
             return HandleConnStatus(con, msg, server_name, user_name);
         }
+        */
 
         // Process the message ...
         switch (msg->severity) {
