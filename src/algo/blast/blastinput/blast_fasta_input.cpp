@@ -341,9 +341,13 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
         NCBI_THROW(CInputException, eInvalidRange, 
                    "Invalid from coordinate (greater than sequence length)");
     }
+    // N.B.: if the to coordinate is greater than or equal to the sequence
+    // length, we fix that silently
+
+
     // set sequence range
     retval->SetInt().SetFrom(from);
-    retval->SetInt().SetTo(to > 0 ? to : (seq_length-1));
+    retval->SetInt().SetTo((to > 0 && to < seq_length) ? to : (seq_length-1));
 
     // set ID
     retval->SetInt().SetId().Assign(*itr->GetId().front());

@@ -1338,6 +1338,54 @@ BOOST_AUTO_TEST_CASE(s_RangeInvalid_FromGreaterThanSequenceLength)
     BOOST_CHECK(false); // should never get here
 }
 
+BOOST_AUTO_TEST_CASE(s_RangeInvalid_ToEqualThanSequenceLength)
+{
+    CNcbiIfstream infile("data/aa.129295");
+    const bool is_protein(true);
+    const TSeqPos length(232);
+    CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRange().SetFrom(10);
+    iconfig.SetRange().SetTo(length);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)10, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+}
+
+BOOST_AUTO_TEST_CASE(s_RangeInvalid_ToGreaterThanSequenceLength)
+{
+    CNcbiIfstream infile("data/aa.129295");
+    const bool is_protein(true);
+    const TSeqPos length(232);
+    CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRange().SetFrom(10);
+    iconfig.SetRange().SetTo(length*2);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+    CHECK_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)10, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+}
+
 BOOST_AUTO_TEST_CASE(s_ParseDefline)
 {
     CNcbiIfstream infile("data/aa.129295");
