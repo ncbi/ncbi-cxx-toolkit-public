@@ -35,8 +35,6 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/structure/cd_utils/cd_guideUtils/cuChildDomain.hpp>
-//#include <algo/structure/cd_utils/cd_guideUtils/cuGuideAlignmentFactory.hpp>
-//#include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -224,7 +222,6 @@ bool CChildDomain::AddParentLink(CLinkToParent* link)
 bool CChildDomain::CreateDomainParent(CLinkToParent* link)
 {
     bool result = true;
-    unsigned int nParentsNow = m_childCD->SetAncestors().size();
     CRef< CDomain_parent > newParent(new CDomain_parent);
 
     newParent->SetParent_type(link->GetType());
@@ -262,7 +259,6 @@ bool CChildDomain::CreateDomainParent(CLinkToParent* link)
 CCdCore* CChildDomain::UpdateParentage(bool keepExistingParents)
 {
     if (!m_childCD) return NULL;
-    unsigned int nParentsNow = m_childCD->SetAncestors().size();
 
     if (keepExistingParents) {
         RollbackAncestors(false);

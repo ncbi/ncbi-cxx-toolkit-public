@@ -110,12 +110,11 @@ bool CRelationshipMaker::SetOverlapPercentage(int overlapPercentage)
 
 void CRelationshipMaker::InstallChild(CCdCore* child)
 {
-    ncbi::cd_utils::CDFamily* family = NULL;
     ncbi::cd_utils::CDFamilyIterator famIt, parentIt;
     string existingParentAcc;
     CCdCore* existingParent;
     CGuideAlignmentFactory gaFactory(m_overlapPercentage, true);  //  for now, always allow a consensus as master
-    CGuideAlignment_Base* guide;
+    CGuideAlignment_Base* guide = NULL;
     bool addedLink;
 
     if (m_childDomain) {

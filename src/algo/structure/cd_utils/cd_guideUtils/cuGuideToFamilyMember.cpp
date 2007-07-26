@@ -71,7 +71,6 @@ bool CGuideToFamilyMember::MakeSameFamily(const SGuideInput& familyMemberInput, 
 bool CGuideToFamilyMember::Make(const SGuideInput& familyMemberInput, const SGuideInput& otherCdInput)
 {
     bool madeGuide = false;
-    CCdCore* commonCd = NULL;
     CCdCore* familyCd = familyMemberInput.cd;
     CCdCore* otherCd = otherCdInput.cd;
     ncbi::cd_utils::CDFamily* family = familyMemberInput.fam;
@@ -106,7 +105,7 @@ bool CGuideToFamilyMember::Make(const SGuideInput& familyMemberInput, const SGui
     //  to produce a guide between the two CDs of interest.
 
     unsigned int i, nInChain;
-    CCdCore* thirdCd;
+    CCdCore* thirdCd = NULL;
     CTwoCDGuideAlignment* guideToThirdCd = NULL;
     CWithinFamilyGuideAlignment* withinFamilyGuide = NULL;
     CDFamilyBase::post_order_iterator famIt = m_family1->begin_post(), famEnd = m_family1->end_post();
