@@ -1340,6 +1340,12 @@ public:
     /// Set log file truncation flag
     static void SetLogTruncate(bool value);
 
+    /// Enable creating log files in /log directory. The function has no
+    /// effect if called after final SetupDiag() by AppMain(). Otherwise
+    /// it will try to switch logging to /log/fallback/UNKNOWN.log until
+    /// the real log name is known.
+    static void SetUseRootLog(void);
+
     /// Application-wide diagnostics setup. Attempts to create log files
     /// or diag streams according to the 'ds' flag. If 'config' is set,
     /// gets name of the log file from the registry.
@@ -1349,6 +1355,9 @@ public:
 
     /// Return process post number (incrementing depends on the flag).
     static int GetProcessPostNumber(EPostNumberIncrement inc);
+
+    /// Internal function, should be used only by CNcbiApplication.
+    static void x_FinalizeSetupDiag(void);
 
 private:
     CDiagContext(const CDiagContext&);

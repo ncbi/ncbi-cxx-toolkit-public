@@ -526,6 +526,8 @@ CCgiApplication::CCgiApplication(void)
    m_RequestTimer(CStopWatch::eStop),
    m_IsResultReady(true)
 {
+    // CGI applications should use /log for logging by default
+    CDiagContext::SetUseRootLog();
     // Disable system popup messages
     SuppressSystemMessageBox();
 

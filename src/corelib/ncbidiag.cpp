@@ -1118,7 +1118,7 @@ string GetDefaultLogLocation(CNcbiApplication& app)
     static const char* kToolkitRcPath = "/etc/toolkitrc";
     static const char* kWebDirToPort = "Web_dir_to_port";
 
-    string log_path = "/log/";
+    string log_path = "/home/grichenk/tmp/log/";
 
     string exe_path = CFile(app.GetProgramExecutablePath()).GetDir();
     CNcbiIfstream is(kToolkitRcPath, ios::binary);
@@ -1198,6 +1198,27 @@ bool OpenLogFileFromConfig(CNcbiRegistry& config)
         return SetLogFile(logname, eDiagFile_All, true);
     }
     return false;
+}
+
+
+static bool s_UseRootLog = true;
+static bool s_FinishedSetupDiag = false;
+
+void CDiagContext::SetUseRootLog(void)
+{
+    if (s_FinishedSetupDiag) {
+        return;
+    }
+    s_UseRootLog = true;
+    // Try to switch to /log/ if available.
+    SetupDiag();
+}
+
+
+void CDiagContext::x_FinalizeSetupDiag(void)
+{
+    _ASSERT(!s_FinishedSetupDiag);
+    s_FinishedSetupDiag = true;
 }
 
 
@@ -1291,22 +1312,25 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             if ( app ) {
                 string log_base =
                     CFile(app->GetProgramExecutablePath()).GetBase() + ".log";
+                string log_name;
                 // Try /log/<port>
-                string log_name = CFile::ConcatPath(
-                    GetDefaultLogLocation(*app), log_base);
-                if ( SetLogFile(log_name, eDiagFile_All) ) {
-                    log_switched = true;
-                    break;
-                }
-                if ( try_root_log_first  &&  OpenLogFileFromConfig(*config) ) {
-                    log_switched = true;
-                    break;
-                }
-                // Try to switch to /log/fallback/
-                log_name = CFile::ConcatPath("/log/fallback/", log_base);
-                if ( SetLogFile(log_name, eDiagFile_All) ) {
-                    log_switched = true;
-                    break;
+                if ( s_UseRootLog ) {
+                    log_name = CFile::ConcatPath(
+                        GetDefaultLogLocation(*app), log_base);
+                    if ( SetLogFile(log_name, eDiagFile_All) ) {
+                        log_switched = true;
+                        break;
+                    }
+                    if (try_root_log_first && OpenLogFileFromConfig(*config)) {
+                        log_switched = true;
+                        break;
+                    }
+                    // Try to switch to /log/fallback/
+                    log_name = CFile::ConcatPath("/log/fallback/", log_base);
+                    if ( SetLogFile(log_name, eDiagFile_All) ) {
+                        log_switched = true;
+                        break;
+                    }
                 }
                 // Try cwd/ for eDS_ToStdlog only
                 if (ds == eDS_ToStdlog) {
@@ -1321,12 +1345,14 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             else {
                 static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
                 // Try to switch to /log/fallback/UNKNOWN
-                if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
-                    log_switched = true;
-                }
-                else {
-                    ERR_POST(Info <<
-                        "Failed to set log file to " << kDefaultFallback);
+                if ( s_UseRootLog ) {
+                    if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
+                        log_switched = true;
+                    }
+                    else {
+                        ERR_POST(Info <<
+                            "Failed to set log file to " << kDefaultFallback);
+                    }
                 }
             }
             if (!log_switched  &&  old_log_name != kLogName_Stderr) {
@@ -1342,12 +1368,19 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         }
     }
 
+    CDiagHandler* handler = GetDiagHandler();
     if (collect == eDCM_Flush) {
-        CDiagHandler* handler = GetDiagHandler();
+        // Flush and discard
         if ( log_switched  &&  handler ) {
             GetDiagContext().FlushMessages(*handler);
         }
         collect = eDCM_Discard;
+    }
+    else if (collect == eDCM_NoChange) {
+        // Flush but don't discard
+        if ( log_switched  &&  handler ) {
+            GetDiagContext().FlushMessages(*handler);
+        }
     }
     if (collect == eDCM_Discard) {
         GetDiagContext().DiscardMessages();

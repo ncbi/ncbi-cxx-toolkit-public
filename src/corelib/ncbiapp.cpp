@@ -405,6 +405,7 @@ int CNcbiApplication::AppMain
             }
 
             CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush);
+            CDiagContext::x_FinalizeSetupDiag();
 
             // Setup the standard features from the config file.
             // Don't call till after LoadConfig()
