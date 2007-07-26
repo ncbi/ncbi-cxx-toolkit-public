@@ -859,16 +859,22 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 string CAlignShadow::s_RunLengthEncode(const string& in)
 {
     string out;
-    const size_t dim = in.size();
+    const size_t dim (in.size());
     if(dim == 0) {
         return kEmptyStr;
     }
-    const char* p = in.c_str();
-    char c0 = p[0];
+
+    const char* p (in.data());
+    char c0 (p[0]);
     out.append(1, c0);
-    size_t count = 1;
-    for(size_t k = 1; k < dim; ++k) {
-        char c = p[k];
+    size_t count (1);
+    for(size_t k (1); k < dim; ++k) {
+
+        char c (p[k]);
+        if(isdigit(c)) { // consider already encoded
+            return in;
+        }
+
         if(c != c0) {
             c0 = c;
             if(count > 1) {
@@ -881,9 +887,11 @@ string CAlignShadow::s_RunLengthEncode(const string& in)
             ++count;
         }
     }
+
     if(count > 1) {
         out += NStr::IntToString(count);
     }
+
     return out;
 }
 
