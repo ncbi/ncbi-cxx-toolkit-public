@@ -1761,6 +1761,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             // This is no longer used.
         } else if (B4Param_MismatchPenalty.Match(p)) {
             bo.SetMismatchPenalty(v.GetInteger());
+        } else if (B4Param_MaskAtHash.Match(p)) {
+            bo.SetMaskAtHash(v.GetBoolean());
         } else {
             found = false;
         }
