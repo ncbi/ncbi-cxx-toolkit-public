@@ -1,7 +1,6 @@
 APP = multisource
 SRC = multisource build_db taxid_set multisource_util
-BLAST_INPUT_LIBS = $(PCRE_LIB)
-LIB = writedb $(BLAST_INPUT_LIBS) $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
+LIB = writedb $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
