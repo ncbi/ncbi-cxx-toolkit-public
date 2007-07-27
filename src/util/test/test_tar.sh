@@ -9,9 +9,7 @@ else
 fi
 test -x "$tar"  ||  exit 0
 
-if [ "`uname | grep -ic '^cygwin'`" != "0" ]; then
-  exe=".exe"
-fi
+test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 
 test_base="/tmp/test_tar.$$"
 mkdir $test_base.1  ||  exit 1
