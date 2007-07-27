@@ -42,6 +42,33 @@
 extern "C" {
 #endif
 
+/** structure used to hold a collection of hits
+    retrieved from the HSPStream */
+typedef struct BlastHSPStreamResultBatch {
+    Int4 num_hsplists;          /**< number of lists of HSPs returned */
+    BlastHSPList **hsplist_array;  /**< array of HSP lists returned */
+} BlastHSPStreamResultBatch;
+
+/** create a new batch to hold HSP results 
+ * @param num_hsplists Maximum number of results to hold
+ * @return Pointer to newly allocated structure
+ */
+BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchInit(
+                                            Int4 num_hsplists);
+
+/** free a batch of HSP results. Note that the HSPLists
+ * themselves are not freed
+ * @param batch Structure to free
+ * @return Always NULL
+ */
+BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchFree(
+                                  BlastHSPStreamResultBatch *batch);
+
+/** free the list of HSPLists within a batch
+ * @param batch Structure to reset
+ */
+void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch);
+
 /** The BlastHSPStream ADT is an opaque data type that defines a thread-safe
  *  interface which is used by the core BLAST code to save lists of HSPs.
  *  The interface currently provides the following services:
@@ -72,6 +99,13 @@ typedef BlastHSPStream* (*BlastHSPStreamDestructor) (BlastHSPStream*);
  * second argument is the list of HSPs to be saved/read (reading assumes
  * ownership, writing releases ownership) */
 typedef int (*BlastHSPStreamMethod) (BlastHSPStream*, BlastHSPList**);
+
+/** Function pointer typedef to implement the batch read functionality of the
+ * BlastHSPStream. The first argument is the BlastHSPStream structure used, 
+ * second argument is the list of HSP listss that are read (reading assumes
+ * ownership) */
+typedef int (*BlastHSPStreamBatchReadMethod) (BlastHSPStream*, 
+                                              BlastHSPStreamResultBatch*);
 
 /** Function pointer typedef to implement the merge functionality of the
  * BlastHSPStream. The first argument is the BlastHSPStream structure to merge, 
@@ -165,12 +199,24 @@ int BlastHSPStreamWrite(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
  * implementation.
  * @param hsp_stream The BlastHSPStream object [in]
  * @param hsp_list List of HSPs for the HSPStream to return. The caller
- * acquires ownership of the hsp_list [in]
+ * acquires ownership of the hsp_list [out]
  * @return kBlastHSPStream_Success on success, kBlastHSPStream_Error, or
  * kBlastHSPStream_Eof on end of stream
  */
 NCBI_XBLAST_EXPORT
 int BlastHSPStreamRead(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
+
+/** Invokes the user-specified batch read function for this BlastHSPStream
+ * implementation.
+ * @param hsp_stream The BlastHSPStream object [in]
+ * @param batch List of HSP listss for the HSPStream to return. The caller
+ * acquires ownership of all HSP lists returned [out]
+ * @return kBlastHSPStream_Success on success, kBlastHSPStream_Error, or
+ * kBlastHSPStream_Eof on end of stream
+ */
+NCBI_XBLAST_EXPORT
+int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream, 
+                            BlastHSPStreamResultBatch* batch);
 
 /*****************************************************************************/
 /* The following enumeration and function are only of interest to implementors
@@ -181,6 +227,7 @@ typedef enum EMethodName {
     eConstructor,       /**< Constructor for a BlastHSPStream implementation */
     eDestructor,        /**< Destructor for a BlastHSPStream implementation */
     eRead,              /**< Read from the BlastHSPStream */
+    eBatchRead,         /**< Batch read from the BlastHSPStream */
     eWrite,             /**< Write to the BlastHSPStream */
     eMerge,             /**< Merge with a second BlastHSPStream */
     eClose,             /**< Close the BlastHSPStream for writing */ 
@@ -201,6 +248,9 @@ typedef union BlastHSPStreamFunctionPointerTypes {
 
    /** Use for merge function pointer */
    BlastHSPStreamMergeFnType mergeFn;
+
+   /** Use for merge function pointer */
+   BlastHSPStreamBatchReadMethod batch_read;
 
    /** Use for close function pointer */
    BlastHSPStreamCloseFnType closeFn;

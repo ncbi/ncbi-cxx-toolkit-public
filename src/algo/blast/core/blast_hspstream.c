@@ -48,6 +48,8 @@ struct BlastHSPStream {
    BlastHSPStreamMethod      WriteFnPtr;  /**< Write to BlastHSPStream */
    BlastHSPStreamMethod      ReadFnPtr;   /**< Read from BlastHSPStream */
    BlastHSPStreamMergeFnType MergeFnPtr;  /**< Merge two BlastHSPStreams */
+   BlastHSPStreamBatchReadMethod  BatchReadFnPtr;  /**< Batch read from 
+                                                     BlastHSPStream */
    BlastHSPStreamCloseFnType CloseFnPtr;  /**< Close BlastHSPStream for
                                              writing */
    void* DataStructure;                   /**< ADT holding HSPStream */
@@ -120,6 +122,54 @@ int BlastHSPStreamMerge(SSplitQueryBlk *squery_blk,
 
     return (*merge_fnptr)(squery_blk, chunk_num, 
                           hsp_stream, combined_hsp_stream);
+}
+
+
+BlastHSPStreamResultBatch * 
+Blast_HSPStreamResultBatchInit(Int4 num_hsplists)
+{
+    BlastHSPStreamResultBatch *retval = (BlastHSPStreamResultBatch *)
+                             calloc(1, sizeof(BlastHSPStreamResultBatch));
+
+    retval->hsplist_array = (BlastHSPList **)calloc((size_t)num_hsplists,
+                                               sizeof(BlastHSPList *));
+    return retval;
+}
+
+BlastHSPStreamResultBatch * 
+Blast_HSPStreamResultBatchFree(BlastHSPStreamResultBatch *batch)
+{
+    if (batch != NULL) {
+        sfree(batch->hsplist_array);
+        sfree(batch);
+    }
+    return NULL;
+}
+
+void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch)
+{
+    Int4 i;
+    for (i = 0; i < batch->num_hsplists; i++) {
+        sfree(batch->hsplist_array[i]);
+    }
+    batch->num_hsplists = 0;
+}
+
+int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
+                            BlastHSPStreamResultBatch *batch)
+{
+    BlastHSPStreamBatchReadMethod batch_read = NULL;
+
+    if (!hsp_stream || !batch)
+       return kBlastHSPStream_Error;
+
+    /** Batch read functionality is optional. If batch read 
+        function is not provided, just do nothing. */
+    if ( !(batch_read = (*hsp_stream->BatchReadFnPtr))) {
+       return kBlastHSPStream_Success;
+    }
+
+    return (*batch_read)(hsp_stream, batch);
 }
 
 void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
@@ -236,6 +286,10 @@ int SetMethod(BlastHSPStream* hsp_stream,
 
     case eRead:
         hsp_stream->ReadFnPtr = fnptr_type.method;
+        break;
+
+    case eBatchRead:
+        hsp_stream->BatchReadFnPtr = fnptr_type.batch_read;
         break;
 
     case eWrite:

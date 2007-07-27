@@ -205,6 +205,10 @@ BlastHSPListCQueueNew(BlastHSPStream* hsp_stream, void* args)
     SetMethod(hsp_stream, eWrite, fnptr);
     fnptr.closeFn = &BlastHSPListCQueueClose;
     SetMethod(hsp_stream, eClose, fnptr);
+    fnptr.mergeFn = NULL;
+    SetMethod(hsp_stream, eMerge, fnptr);
+    fnptr.batch_read = NULL;
+    SetMethod(hsp_stream, eBatchRead, fnptr);
 
     SetData(hsp_stream, args);
     return hsp_stream;

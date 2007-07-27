@@ -292,13 +292,11 @@ CSetupFactory::x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
         return Blast_HSPListCollectorInitMT(opts_memento->m_ProgramType,
                                             blast_hit_params,
                                             number_of_queries,
-                                            true,
                                             Blast_CMT_LOCKInit());
     } else {
         return Blast_HSPListCollectorInit(opts_memento->m_ProgramType,
                                           blast_hit_params,
-                                          number_of_queries,
-                                          true);
+                                          number_of_queries);
     }
 }
 

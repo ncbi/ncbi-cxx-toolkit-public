@@ -300,7 +300,7 @@ CBl2Seq::RunFullSearch()
        results should not be sorted for reading from the stream. */
     AutoPtr<BlastHSPStream> hsp_stream(
         Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
-                                   mi_clsQueryInfo->num_queries, FALSE));
+                                   mi_clsQueryInfo->num_queries));
                   
     SBlastProgressReset(m_ProgressMonitor);
     Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),

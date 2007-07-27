@@ -242,6 +242,9 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
     if (rm_hsps) {
         *rm_hsps = removed_hsps == FALSE ? false : true;
     }
+    // applications assume the HSPLists in the HSPResults are
+    // sorted in order of worsening best e-value
+    Blast_HSPResultsSortByEvalue(retval);
     return retval;
 }
 

@@ -1168,31 +1168,43 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                   score_params, ext_params, hit_params, 
                                   psi_options, results);
    } else {
+      Int4 i;
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
       Boolean perform_traceback = score_params->options->gapped_calculation;
       const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
+      BlastHSPStreamResultBatch *batch = 
+                      Blast_HSPStreamResultBatchInit(query_info->num_queries);
+      const Boolean kSubjectRanges = !(hit_params->restricted_align ||
+                                     score_params->options->is_ooframe ||
+                                     ext_params->options->eTbackExt == 
+                                                     eSmithWatermanTbck);
 
       memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
-      /* Retrieve all HSP lists from the HSPStream. */
-      while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
+      /* Retrieve all HSP lists from the HSPStream that contain
+         hits to the next subject OID. */
+      while (BlastHSPStreamBatchRead(hsp_stream, batch) 
              != kBlastHSPStream_Eof) {
 
          /* check for interrupt */
          if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
-             hsp_list = Blast_HSPListFree(hsp_list);
+             Blast_HSPStreamResultBatchReset(batch);
              status = BLASTERR_INTERRUPTED;
              break;
          }
 
-         /* Perform traceback here, if necessary. */
+         /* traceback will require fetching the subject sequence */
+
          if (perform_traceback) {
-            seq_arg.oid = hsp_list->oid;
+            seq_arg.oid = batch->hsplist_array[0]->oid;
             seq_arg.encoding = encoding;
+            seq_arg.enable_ranges = kSubjectRanges;
             BlastSequenceBlkClean(seq_arg.seq);
-            if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
+            if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0) {
+               Blast_HSPStreamResultBatchReset(batch);
                continue;
+            }
 
             /* If the subject is translated and the BlastSeqSrc implementation
              * doesn't provide a genetic code string, use the default genetic
@@ -1218,72 +1230,91 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
                                 seq_arg.seq->length, score_params->options, 
                                 query_info, sbp, hit_params, 
-                                NULL, eff_len_params)) != 0)
-                  return status;
+                                NULL, eff_len_params)) != 0) {
+                  Blast_HSPStreamResultBatchReset(batch);
+                  break;
+               }
             }
+         }
 
-            if (kPhiBlast) {
-                s_PHITracebackFromHSPList(program_number, hsp_list, query, 
-                                          seq_arg.seq, gap_align, sbp, 
-                                          score_params, hit_params, 
-                                          query_info, pattern_blk);
+         /* process all the hits to this subject sequence, one
+            list at a time */
+
+         for (i = 0; i < batch->num_hsplists; i++) {
+
+            hsp_list = batch->hsplist_array[i];
+
+            if (perform_traceback) {
+               if (kPhiBlast) {
+                  s_PHITracebackFromHSPList(program_number, hsp_list, query, 
+                                            seq_arg.seq, gap_align, sbp, 
+                                            score_params, hit_params, 
+                                            query_info, pattern_blk);
+               } else {
+                  Boolean fence_hit = FALSE;
+                  Boolean * fence_hit_ptr = NULL;
+                    
+                  /* prepare to deal with partial subject sequence
+                     ranges, if these are configured and a previous
+                     HSP list has not turned them off */
+                  if (seq_arg.enable_ranges == TRUE)
+                     fence_hit_ptr = &fence_hit;
+                    
+                  Blast_TracebackFromHSPList(program_number, hsp_list, query,
+                                             seq_arg.seq, query_info, 
+                                             gap_align, sbp, score_params,
+                                             ext_params->options, hit_params,
+                                             seq_arg.seq->gen_code_string,
+                                             fence_hit_ptr);
+                    
+                  if (fence_hit) {
+                     /* Disable range support and refetch the 
+                        (whole) subject sequence */
+                        
+                     seq_arg.enable_ranges = FALSE;
+                     BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
+                     BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
+                        
+                     /* Retry the alignment */
+                       
+                     Blast_TracebackFromHSPList(program_number, hsp_list, 
+                                                query, seq_arg.seq, 
+                                                query_info, gap_align,
+                                                sbp, score_params, 
+                                                ext_params->options, 
+                                                hit_params, 
+                                                seq_arg.seq->gen_code_string,
+                                                NULL);
+                  } /* fence_hit */
+               }    /* !phi_blast */
+
             } else {
-                Boolean fence_hit = FALSE;
-                Boolean * fence_hit_ptr = NULL;
-                
-                if (! (hit_params->restricted_align ||
-                       score_params->options->is_ooframe ||
-                       ext_params->options->eTbackExt == eSmithWatermanTbck)) {
-                    
-                    seq_arg.enable_ranges = TRUE;
-                    fence_hit_ptr = & fence_hit;
-                }
-                
-                Blast_TracebackFromHSPList(program_number, hsp_list, query,
-                                           seq_arg.seq, query_info, gap_align,
-                                           sbp, score_params,
-                                           ext_params->options, hit_params, 
-                                           seq_arg.seq->gen_code_string,
-                                           fence_hit_ptr);
-                
-                if (fence_hit) {
-                    /* Disable range support. */
-                    
-                    seq_arg.enable_ranges = FALSE;
-                    
-                    /* Refetch the (whole) sequence. */
-                    
-                    BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
-                    BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
-                    
-                    /* Retry the alignment */
-                    
-                    Blast_TracebackFromHSPList(program_number, hsp_list, query, 
-                                               seq_arg.seq, query_info, gap_align,
-                                               sbp, score_params, 
-                                               ext_params->options, hit_params, 
-                                               seq_arg.seq->gen_code_string,
-                                               NULL);
-                }
-            }
-            
-            BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
-         } else if (! score_params->options->gapped_calculation) {
-             /* Compute bit scores for searches where the traceback
-                phase is seperated from the preliminary search. */
+               /* traceback skipped; compute bit scores for searches 
+                  where the traceback phase is seperated from the 
+                  preliminary search. */
              
-             Blast_HSPListGetBitScores(hsp_list, FALSE, sbp);
-         }
+               Blast_HSPListGetBitScores(hsp_list, FALSE, sbp);
+            }
          
-         /* Free HSP list structure if all HSPs have been deleted. */
-         if (hsp_list->hspcnt == 0) {
-             hsp_list = Blast_HSPListFree(hsp_list);
-             continue;
+            /* Free HSP list if all HSPs have been deleted. */
+
+            batch->hsplist_array[i] = NULL;
+            if (hsp_list->hspcnt == 0) {
+               hsp_list = Blast_HSPListFree(hsp_list);
+            }
+            else {
+               Blast_HSPResultsInsertHSPList(results, hsp_list, 
+                                          hit_params->options->hitlist_size);
+            }
+         }      /* loop over one HSPList batch */
+
+         if (perform_traceback) {
+            BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
          }
 
-         Blast_HSPResultsInsertHSPList(results, hsp_list, 
-                                       hit_params->options->hitlist_size);
-      }
+      }         /* loop over all batches */
+
+      Blast_HSPStreamResultBatchFree(batch);
       BlastSequenceBlkFree(seq_arg.seq);
    }
 
