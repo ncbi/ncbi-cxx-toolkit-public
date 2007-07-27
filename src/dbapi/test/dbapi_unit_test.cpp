@@ -8045,6 +8045,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.IsBCPAvailable()
+        && args.GetDriverName() != "odbc"
         && !(args.GetDriverName() == "ftds"
             && args.GetServerType() == CTestArguments::eSybase)           
         && !(args.GetDriverName() == "ftds64_dblib"
@@ -8279,6 +8280,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.IsBCPAvailable()
+         && args.GetDriverName() != "odbc"
          && !(args.GetDriverName() == "ftds"
            && args.GetServerType() == CTestArguments::eSybase)
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
@@ -8291,6 +8293,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! There are still problems ...
     if (args.IsBCPAvailable()
+        && args.GetDriverName() != "odbc"
         && args.GetDriverName() != "ftds64"
         && args.GetDriverName() != "ctlib"
         )
