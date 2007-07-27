@@ -242,9 +242,9 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGpipeAcc)
     CRef<CSeq_id> id;
 
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_12345")));
-    CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456.1")));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_123456.1")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456789.1")));
     CHECK(id->IsGpipe());
-    CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456789")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
 }
 
@@ -491,7 +491,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaTpa)
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaGpipe)
 {
     CRef<CSeq_id> id;
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GPC_123456")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GPC_123456789")));
     CHECK(id->IsGpipe());
 }
 
@@ -619,7 +619,7 @@ static const char* kTestFastaStrings[] = {
     "tpg|BK003456|",
     "tpe|BN000123|",
     "tpd|FAA00017|",
-    "gpp|GPC_123456|",
+    "gpp|GPC_123456789|",
     /* Must be last due to special-cased greedy parsing */
     "gnl|dbSNP|rs31251_allelePos=201totallen=401|taxid=9606"
     "|snpClass=1|alleles=?|mol=?|build=?"
