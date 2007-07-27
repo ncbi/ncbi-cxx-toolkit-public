@@ -8543,6 +8543,7 @@ CTestArguments::IsBCPAvailable(void) const
         return false;
     } else if ( GetDriverName() == "ftds64_odbc"
          || GetDriverName() == "odbcw"
+         || GetDriverName() == "msdblib"
          ) {
         return false;
     }
