@@ -121,8 +121,8 @@ void CBDB_Volumes::Open(const string& dir_path)
                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
     }
-    m_Env->SetDirectDB(true);
-    m_Env->SetDirectLog(true);
+    //m_Env->SetDirectDB(true);
+    //m_Env->SetDirectLog(true);
     m_Env->SetLogAutoRemove(true);
 
     m_Env->SetLockTimeout(30 * 1000000); // 30 sec
