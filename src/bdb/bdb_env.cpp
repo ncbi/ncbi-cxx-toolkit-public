@@ -856,7 +856,14 @@ void CBDB_Env::PrintMemStat(CNcbiOstream & out)
 #endif
         ;
 
-        int max_write, max_write_sleep;
+        int max_write;
+#if (DB_VERSION_MINOR == 5)
+        int max_write_sleep;
+#elif (DB_VERSION_MINOR >= 6)
+        db_timeout_t max_write_sleep;
+#else
+#error Incompatible berkeleydb version
+#endif
         ret =
             m_Env->get_mp_max_write(m_Env, &max_write, &max_write_sleep);
         BDB_CHECK(ret, "DB_ENV::get_mp_max_write");
