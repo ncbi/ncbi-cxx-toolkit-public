@@ -20998,7 +20998,7 @@ fi
       : ${MYSQL_BINPATH=`dirname $mysql_config`}
       # Kill off single quotes, due to later requoting
       : ${MYSQL_INCLUDE=`$mysql_config --cflags | tr -d \'`}
-      if test -z ${MYSQL_LIBS+set}; then
+      if test -z "${MYSQL_LIBS+set}"; then
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     MYSQL_LIBS=`$mysql_config --libs | sed -e "s/'//g; "`
  else
@@ -21149,7 +21149,7 @@ if test "$with_bdb" != "no" ; then
       done
    fi
    if test -d "$BERKELEYDB_LIBPATH"; then
-      if test -z ${BERKELEYDB_LIBS:+set}; then
+      if test -z "${BERKELEYDB_LIBS:+set}"; then
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -21293,7 +21293,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
    if test -d "$BERKELEYDB_LIBPATH"; then
-      if test -z ${BERKELEYDB_CXX_LIBS:+set}; then
+      if test -z "${BERKELEYDB_CXX_LIBS:+set}"; then
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -22608,7 +22608,7 @@ if test "$with_boost" != "no"; then
    fi
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
-   if test -z ${BOOST_LIBPATH+set}; then
+   if test -z "${BOOST_LIBPATH+set}"; then
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -26117,7 +26117,7 @@ if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
       : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
-      if test -z ${ORBACUS_LIBPATH+set}; then
+      if test -z "${ORBACUS_LIBPATH+set}"; then
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -26141,7 +26141,7 @@ if test "$with_orbacus" != no; then
  fi
    elif test -f ${ORBACUS_PATH}/include/OB/Config.h ; then
      : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
-     if test -z ${ORBACUS_LIBPATH+set}; then
+     if test -z "${ORBACUS_LIBPATH+set}"; then
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -26755,7 +26755,7 @@ if test "$with_libxml" != "no"; then
       elif test -d "$LIBXML_PATH/lib"; then
          LIBXML_LIBPATH_="$LIBXML_PATH/lib"
       fi
-      if test -z ${LIBXML_LIBPATH+set}; then
+      if test -z "${LIBXML_LIBPATH+set}"; then
     ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -28742,7 +28742,7 @@ fi
    if test -n "$freetype_config" ; then
       : ${FREETYPE_BINPATH=`dirname $freetype_config`}
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
-      if test -z ${FREETYPE_LIBS+set}; then
+      if test -z "${FREETYPE_LIBS+set}"; then
     if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     FREETYPE_LIBS=`$freetype_config --libs | sed -e ""`
  else

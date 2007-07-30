@@ -207,7 +207,7 @@ AC_DEFUN(NCBI_RPATHIFY,
  fi])
 
 AC_DEFUN(NCBI_RPATHIFY_COND,
-[if test -z ${$1+set}; then
+[if test -z "${$1+set}"; then
     NCBI_RPATHIFY(m4_translit($1, :), [$2], [$3])
  fi])
 
@@ -249,7 +249,7 @@ AC_DEFUN(NCBI_RPATHIFY_OUTPUT,
  fi])
 
 AC_DEFUN(NCBI_RPATHIFY_OUTPUT_COND,
-[if test -z ${$1+set}; then
+[if test -z "${$1+set}"; then
     NCBI_RPATHIFY_OUTPUT(m4_translit($1, :), [$2], [$3])
  fi])
 
