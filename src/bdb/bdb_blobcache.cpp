@@ -4296,6 +4296,16 @@ bool CBDB_Cache::IsLocked(unsigned blob_id)
     return m_LockVector.IsLocked(blob_id);
 }
 
+bool CBDB_Cache::IsLocked(const string&  key,
+                          int            version,
+                          const string&  subkey)
+{
+    unsigned blob_id = GetBlobId(key, 0, kEmptyStr);
+    bool locked = IsLocked(blob_id);
+    return locked;
+}
+
+
 CBDB_Cache::EBlobCheckinRes 
 CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
                         const string&    key,

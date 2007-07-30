@@ -640,6 +640,10 @@ public:
     /// Check if BLOB is locked
     bool IsLocked(unsigned blob_id);
 
+    bool IsLocked(const string&  key,
+                  int            version,
+                  const string&  subkey);
+
 protected:
     void KillBlob(const string&  key,
                   int            version,

@@ -941,6 +941,11 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
     }
 
     if (req.no_lock) {
+        bool locked = m_Cache->IsLocked(req_id, 0, kEmptyStr);
+        if (locked) {
+            WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
+            return;
+        }
 /*
         bool lock_accuired = guard.Lock(req_id, 0);
         if (!lock_accuired) {  // BLOB is locked by someone else
@@ -1076,6 +1081,11 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
 
 //    CIdBusyGuard guard(&m_UsedIds);
     if (req.no_lock) {
+        bool locked = m_Cache->IsLocked(req_id, 0, kEmptyStr);
+        if (locked) {
+            WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
+            return;
+        }
 /*
         bool lock_accuired = guard.Lock(req_id, 0);
         if (!lock_accuired) {  // BLOB is locked by someone else
