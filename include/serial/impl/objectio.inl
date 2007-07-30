@@ -60,6 +60,13 @@ const CObjectTypeInfo& COStreamContainer::GetContainerType(void) const
 }
 
 inline
+void COStreamContainer::WriteElement(CObjectStreamCopier& copier,
+                                     CIStreamContainerIterator& in)
+{
+    in.CopyElement(copier, *this);
+}
+
+inline
 bool CIStreamClassMemberIterator::HaveMore(void) const
 {
     return m_MemberIndex != kInvalidMember;

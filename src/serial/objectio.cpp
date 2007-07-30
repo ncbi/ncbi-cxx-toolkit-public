@@ -368,6 +368,9 @@ void CIStreamContainerIterator::NextElement(void)
             GetStream().PopFrame();
         }
     }
+    if (m_State != eNoMoreElements) {
+        m_State = eElementEnd;
+    }
 }
 
 inline
@@ -389,9 +392,6 @@ void CIStreamContainerIterator::ReadElement(const CObjectInfo& element)
     BeginElementData(element);
     GetStream().ReadSeparateObject(element);
     NextElement();
-    if (m_State != eNoMoreElements) {
-        m_State = eElementEnd;
-    }
 }
 
 void CIStreamContainerIterator::SkipElement(const CObjectTypeInfo& elementType)
@@ -399,9 +399,6 @@ void CIStreamContainerIterator::SkipElement(const CObjectTypeInfo& elementType)
     BeginElementData(elementType);
     GetStream().SkipObject(elementType.GetTypeInfo());
     NextElement();
-    if (m_State != eNoMoreElements) {
-        m_State = eElementEnd;
-    }
 }
 
 void CIStreamContainerIterator::SkipElement(void)
@@ -409,9 +406,20 @@ void CIStreamContainerIterator::SkipElement(void)
     BeginElementData();
     GetStream().SkipObject(m_ElementTypeInfo);
     NextElement();
-    if (m_State != eNoMoreElements) {
-        m_State = eElementEnd;
-    }
+}
+
+void CIStreamContainerIterator::CopyElement(CObjectStreamCopier& copier,
+                                            COStreamContainer& out)
+{
+    BeginElementData();
+
+    out.GetStream().BeginContainerElement(m_ElementTypeInfo);
+
+    copier.CopyObject(m_ElementTypeInfo);
+
+    out.GetStream().EndContainerElement();
+
+    NextElement();
 }
 
 CIStreamContainerIterator& CIStreamContainerIterator::operator++(void)
@@ -480,6 +488,16 @@ void COStreamContainer::WriteElement(const CConstObjectInfo& element)
     GetStream().BeginContainerElement(m_ElementTypeInfo);
 
     GetStream().WriteSeparateObject(element);
+
+    GetStream().EndContainerElement();
+}
+
+void COStreamContainer::WriteElement(CObjectStreamCopier& copier,
+                                     CObjectIStream& in)
+{
+    GetStream().BeginContainerElement(m_ElementTypeInfo);
+
+    copier.CopyObject(m_ElementTypeInfo);
 
     GetStream().EndContainerElement();
 }

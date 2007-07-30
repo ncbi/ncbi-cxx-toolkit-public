@@ -44,6 +44,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class COStreamContainer;
+
 class NCBI_XSERIAL_EXPORT COStreamFrame
 {
 public:
@@ -178,6 +180,9 @@ public:
     void SkipElement(const CObjectTypeInfo& elementType);
     void SkipElement(void);
 
+    void CopyElement(CObjectStreamCopier& copier,
+                     COStreamContainer& out);
+
 private:
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
 
@@ -235,6 +240,10 @@ public:
     const CObjectTypeInfo& GetContainerType(void) const;
 
     void WriteElement(const CConstObjectInfo& element);
+    void WriteElement(CObjectStreamCopier& copier,
+                      CIStreamContainerIterator& in);
+    void WriteElement(CObjectStreamCopier& copier,
+                      CObjectIStream& in);
 
 private:
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
