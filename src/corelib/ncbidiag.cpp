@@ -1118,7 +1118,7 @@ string GetDefaultLogLocation(CNcbiApplication& app)
     static const char* kToolkitRcPath = "/etc/toolkitrc";
     static const char* kWebDirToPort = "Web_dir_to_port";
 
-    string log_path = "/home/grichenk/tmp/log/";
+    string log_path = "/log/";
 
     string exe_path = CFile(app.GetProgramExecutablePath()).GetDir();
     CNcbiIfstream is(kToolkitRcPath, ios::binary);
