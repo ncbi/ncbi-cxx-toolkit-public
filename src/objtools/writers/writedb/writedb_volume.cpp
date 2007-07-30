@@ -79,7 +79,8 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                           max_letters));
     
     if (m_Indices != CWriteDB::eNoIndex) {
-        bool sparse = (m_Indices & CWriteDB::eSparseIndex) == eSparseIndex;
+        bool sparse =
+            (m_Indices & CWriteDB::eSparseIndex) == CWriteDB::eSparseIndex;
         
         if (m_Protein) {
             m_PigIsam.Reset(new CWriteDB_Isam(ePig,

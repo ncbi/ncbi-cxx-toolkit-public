@@ -814,10 +814,6 @@ CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
     
     CRef<CBioseq> bs(& entry->SetSeq());
     
-    cout << "SEQUENCE:" << endl;
-    cout << MSerial_AsnText << *bs;
-    cout << "\nDONE" << endl;
-    
     return bs;
 }
 
