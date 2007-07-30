@@ -66,15 +66,21 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 #endif
 #if CHECK_INSTREAM_LIMITS
     // check for all bytes read
-    if ( m_CurrentTagLimit != 0 &&
-         m_Input.GetStreamPosAsInt8() != m_CurrentTagLimit ) {
+    if ( m_CurrentTagLimit != 0 ) {
+        if ( m_Input.GetStreamPosAsInt8() != m_CurrentTagLimit ) {
             ThrowError(fIllegalCall,
                        "illegal EndOfTag call: not all data bytes read");
+        }
+        // restore tag limit from stack
+        if ( m_Limits.empty() ) {
+            m_CurrentTagLimit = 0;
+        }
+        else {
+            m_CurrentTagLimit = m_Limits.top();
+            m_Limits.pop();
+        }
+        _ASSERT(m_CurrentTagLimit == 0);
     }
-    // restore tag limit from stack
-    m_CurrentTagLimit = m_Limits.top();
-    m_Limits.pop();
-    _ASSERT(m_CurrentTagLimit == 0);
 #endif
     m_CurrentTagLength = 0;
 }

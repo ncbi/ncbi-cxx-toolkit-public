@@ -259,7 +259,9 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
     _ASSERT(m_CurrentTagLimit == 0);
     // save tag limit
     // tag limit is not changed
-    m_Limits.push(m_CurrentTagLimit);
+    if ( m_CurrentTagLimit != 0 ) {
+        m_Limits.push(m_CurrentTagLimit);
+    }
 #endif
     if ( FlushTag() != eIndefiniteLengthByte ) {
         ThrowError(fFormatError, "indefinite length is expected");
@@ -277,9 +279,14 @@ size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
     Int8 cur_pos = m_Input.GetStreamPosAsInt8();
     Int8 newLimit = cur_pos + length;
     _ASSERT(newLimit >= cur_pos);
+    _ASSERT(newLimit != 0);
     Int8 currentLimit = m_CurrentTagLimit;
-    _ASSERT(currentLimit == 0 || newLimit <= currentLimit);
-    m_Limits.push(currentLimit);
+    if ( currentLimit != 0 ) {
+        if ( newLimit > currentLimit ) {
+            ThrowError(fOverflow, "nested data length overflow");
+        }
+        m_Limits.push(currentLimit);
+    }
     m_CurrentTagLimit = newLimit;
 #endif
 #if CHECK_INSTREAM_STATE
@@ -347,11 +354,18 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
         ThrowError(eFormatError, "end of content expected");
     }
 #if CHECK_INSTREAM_LIMITS
-    _ASSERT(m_CurrentTagLimit == 0);
     // restore tag limit from stack
-    m_CurrentTagLimit = m_Limits.top();
-    m_Limits.pop();
     _ASSERT(m_CurrentTagLimit == 0);
+    if ( m_CurrentTagLimit != 0 ) {
+        if ( m_Limits.empty() ) {
+            m_CurrentTagLimit = 0;
+        }
+        else {
+            m_CurrentTagLimit = m_Limits.top();
+            m_Limits.pop();
+        }
+        _ASSERT(m_CurrentTagLimit == 0);
+    }
 #endif
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
@@ -723,7 +737,7 @@ void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 void CObjectIStreamAsnBinary::ReadStringStore(string& s)
 {
     ExpectSysTagByte(MakeTagByte(eApplication, ePrimitive, eStringStore));
-    ReadStringValue(ReadLength(), s, m_FixMethod);
+    ReadStringValue(ReadLength(), s, eFNP_Allow);
 }
 
 void CObjectIStreamAsnBinary::ReadStringValue(size_t length,
@@ -1192,7 +1206,9 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     //    eApplication, !constructed, eObjectReference  -> object reference
     // any other -> this class
     if ( byte == MakeTagByte(eUniversal, ePrimitive, eNull) ) {
+#if CHECK_INSTREAM_STATE
         m_CurrentTagState = eTagParsed;
+#endif
         m_CurrentTagLength = 1;
         ExpectShortLength(0);
         EndOfTag();

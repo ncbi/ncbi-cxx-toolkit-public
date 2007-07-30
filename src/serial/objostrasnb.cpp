@@ -726,18 +726,20 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
 
 void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in)
 {
+    // do we need to check symbols while copying?
+    bool checkVisible = false; // m_FixMethod != eFNP_Allow
     WriteSysTag(eVisibleString);
     if ( in.GetDataFormat() == eSerial_AsnBinary ) {
         CObjectIStreamAsnBinary& bIn =
             *CTypeConverter<CObjectIStreamAsnBinary>::SafeCast(&in);
         bIn.ExpectSysTag(eVisibleString);
-        CopyStringValue(bIn, true);
+        CopyStringValue(bIn, checkVisible);
     }
     else {
         string str;
         in.ReadStd(str);
         size_t length = str.size();
-        if ( m_FixMethod != eFNP_Allow ) {
+        if ( checkVisible ) {
             // Check the string for non-printable characters
             NON_CONST_ITERATE(string, i, str) {
                 FixVisibleChar(*i, m_FixMethod);
