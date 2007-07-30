@@ -971,7 +971,7 @@ string ddAlignInfo(TDendiag * pGuideDD)
                 CRef<CSeq_id> GuideMasterSeqID=*(pid);
                 CRef<CSeq_id> GuideSeqID=*(++pid);
                 
-                sprintf(buf,"[%s]/[%s](%d)  ",GetSeqIDStr(GuideMasterSeqID).c_str(),GetSeqIDStr(GuideSeqID).c_str(),pGuideDD->size());
+                sprintf(buf,"[%s]/[%s](%d)  ",GetSeqIDStr(GuideMasterSeqID).c_str(),GetSeqIDStr(GuideSeqID).c_str(),(int)pGuideDD->size());
                 if(!iDst){
                     ret+=buf;
                 }
