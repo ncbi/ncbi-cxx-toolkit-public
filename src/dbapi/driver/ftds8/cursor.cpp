@@ -84,7 +84,7 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
     SetHasFailed(!x_AssignParams());
     CHECK_DRIVER_ERROR(
         HasFailed(),
-        "cannot assign params",
+        "cannot assign params" + GetDbgInfo(),
         222003 );
 
 
@@ -113,7 +113,7 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
         cmd->Send();
         cmd->DumpResults();
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 222001 );
+        DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor" + GetDbgInfo(), 222001 );
     }
 
     SetCursorDeclared();
@@ -128,7 +128,7 @@ CDB_Result* CTDS_CursorCmd::OpenCursor()
         cmd->Send();
         cmd->DumpResults();
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 222002 );
+        DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor" + GetDbgInfo(), 222002 );
     }
 
     SetCursorOpen();
@@ -168,7 +168,7 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
         }
 #endif
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "update failed", 222004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed" + GetDbgInfo(), 222004 );
     }
 
     return true;
@@ -255,7 +255,7 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
     } catch ( const CDB_Exception& e ) {
         if (cmd)
             delete cmd;
-        DATABASE_DRIVER_ERROR_EX( e, "update failed", 222004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed" + GetDbgInfo(), 222004 );
     }
 
     return true;
@@ -303,7 +303,7 @@ bool CTDS_CursorCmd::CloseCursor()
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 222003 );
+            DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor" + GetDbgInfo(), 222003 );
         }
 
         SetCursorOpen(false);
@@ -332,7 +332,7 @@ bool CTDS_CursorCmd::CloseCursor()
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 222003 );
+            DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor" + GetDbgInfo(), 222003 );
         }
 
         SetCursorDeclared(false);

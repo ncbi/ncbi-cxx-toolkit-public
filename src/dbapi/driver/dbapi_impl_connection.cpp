@@ -119,6 +119,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
 {
+    SetExecCntxInfo("SERVER: '" + GetServerName() + "' USER: '" + GetUserName() + "'");
 }
 
 CConnection::~CConnection(void)

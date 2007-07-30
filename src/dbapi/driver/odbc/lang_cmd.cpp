@@ -81,7 +81,7 @@ bool CODBC_LangCmd::Send(void)
             ResetParams();
             SetHasFailed();
 
-            string err_message = "cannot assign params" + GetDiagnosticInfo();
+            string err_message = "cannot assign params" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420003 );
         }
     }
@@ -110,7 +110,7 @@ bool CODBC_LangCmd::Send(void)
         ResetParams();
         SetHasFailed();
         {
-            string err_message = "SQLExecDirect failed" + GetDiagnosticInfo();
+            string err_message = "SQLExecDirect failed" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420001 );
         }
 
@@ -124,14 +124,14 @@ bool CODBC_LangCmd::Send(void)
         ResetParams();
         SetHasFailed();
         {
-            string err_message = "Some other query is executing on this connection" + GetDiagnosticInfo();
+            string err_message = "Some other query is executing on this connection" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420002 );
         }
 
     case SQL_INVALID_HANDLE:
         SetHasFailed();
         {
-            string err_message = "The statement handler is invalid (memory corruption suspected)" + GetDiagnosticInfo();
+            string err_message = "The statement handler is invalid (memory corruption suspected)" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420004 );
         }
 
@@ -140,7 +140,7 @@ bool CODBC_LangCmd::Send(void)
         ResetParams();
         SetHasFailed();
         {
-            string err_message = "Unexpected error" + GetDiagnosticInfo();
+            string err_message = "Unexpected error" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420005 );
         }
 
@@ -182,7 +182,7 @@ CDB_Result* CODBC_LangCmd::Result()
     }
 
     if ( !WasSent() ) {
-        string err_message = "a command has to be sent first" + GetDiagnosticInfo();
+        string err_message = "a command has to be sent first" + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 420010 );
     }
 
@@ -278,12 +278,12 @@ bool CODBC_LangCmd::xCheck4MoreResults()
         {
             ReportErrors();
 
-            string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
+            string err_message = "SQLMoreResults failed" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420014 );
         }
     default:
         {
-            string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDiagnosticInfo();
+            string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420015 );
         }
     }

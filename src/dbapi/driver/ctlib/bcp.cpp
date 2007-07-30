@@ -495,7 +495,7 @@ bool CTL_BCPInCmd::Send(void)
             CHECK_DRIVER_ERROR(
                 HasFailed(),
                 "blk_describe failed (check the number of "
-                "columns in a table)",
+                "columns in a table)" + GetDbgInfo(),
                 123002 );
 
             // It is a fake binding ...
@@ -510,7 +510,7 @@ bool CTL_BCPInCmd::Send(void)
                                          &indicator)) != CS_SUCCEED));
             CHECK_DRIVER_ERROR(
                 HasFailed(),
-                "blk_bind failed for default value",
+                "blk_bind failed for default value" + GetDbgInfo(),
                 123003 );
 
             // GetParams().SetParamStatus(i, CDB_Params::fSet);
@@ -519,7 +519,7 @@ bool CTL_BCPInCmd::Send(void)
 
 
     SetHasFailed(!x_AssignParams());
-    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params", 123004 );
+    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params" + GetDbgInfo(), 123004 );
 
     switch ( Check(blk_rowxfer(x_GetSybaseCmd())) ) {
     case CS_BLK_HAS_TEXT:
@@ -572,7 +572,7 @@ bool CTL_BCPInCmd::Send(void)
 
                     CHECK_DRIVER_ERROR(
                         HasFailed(),
-                        "blk_textxfer failed for the text/image field", 123005
+                        "blk_textxfer failed for the text/image field" + GetDbgInfo(), 123005
                         );
 
                     if (valid_len < len) {
@@ -589,7 +589,7 @@ bool CTL_BCPInCmd::Send(void)
 
                     CHECK_DRIVER_ERROR(
                         HasFailed(),
-                        "blk_textxfer failed for the text/image field", 123005
+                        "blk_textxfer failed for the text/image field" + GetDbgInfo(), 123005
                         );
                 }
             } else {
@@ -601,7 +601,7 @@ bool CTL_BCPInCmd::Send(void)
         return true;
     default:
         SetHasFailed();
-        CHECK_DRIVER_ERROR( HasFailed(), "blk_rowxfer failed", 123007 );
+        CHECK_DRIVER_ERROR( HasFailed(), "blk_rowxfer failed" + GetDbgInfo(), 123007 );
     }
 
     return false;
@@ -631,7 +631,7 @@ bool CTL_BCPInCmd::CommitBCPTrans(void)
         return (outrow > 0);
     case CS_FAIL:
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
+        DATABASE_DRIVER_ERROR( "blk_done failed" + GetDbgInfo(), 123020 );
     default:
         return false;
     }

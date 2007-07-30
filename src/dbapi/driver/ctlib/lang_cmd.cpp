@@ -70,7 +70,7 @@ CTL_Cmd::CTL_Cmd(CTL_Connection& conn)
 , m_Res(NULL)
 {
     CHECK_DRIVER_ERROR(!GetConnection().IsAlive() || !GetConnection().IsOpen(),
-                       "Connection is not open or already dead.",
+                       "Connection is not open or already dead." + GetDbgInfo() + GetDbgInfo(),
                        110003 );
 
     CheckSFB_Internal(
@@ -491,7 +491,7 @@ CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 //
 //     CHECK_DRIVER_ERROR(
 //        !WasSent(),
-//         "you need to send a command first",
+//         "you need to send a command first" + GetDbgInfo(),
 //         120010 );
 //
 //     for (;;) {
@@ -504,7 +504,7 @@ CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 //             SetHasFailed();
 //             Cancel();
 //
-//             DATABASE_DRIVER_ERROR_EX(ex, "ct_result failed", 120013);
+//             throw;
 //         }
 //
 //         switch (rc) {
@@ -516,16 +516,16 @@ CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 //         case CS_FAIL:
 //             SetHasFailed();
 //             Cancel();
-//             DATABASE_DRIVER_ERROR("ct_result failed", 120013);
+//             DATABASE_DRIVER_ERROR("ct_result failed" + GetDbgInfo(), 120013);
 //         case CS_CANCELED:
 //             SetWasSent(false);
-//             DATABASE_DRIVER_ERROR("your command has been canceled", 120011);
+//             DATABASE_DRIVER_ERROR("your command has been canceled" + GetDbgInfo(), 120011);
 // #ifdef CS_BUSY
 //         case CS_BUSY:
-//             DATABASE_DRIVER_ERROR("connection has another request pending", 120014);
+//             DATABASE_DRIVER_ERROR("connection has another request pending" + GetDbgInfo(), 120014);
 // #endif
 //         default:
-//             DATABASE_DRIVER_ERROR("your request is pending", 120015);
+//             DATABASE_DRIVER_ERROR("your request is pending" + GetDbgInfo(), 120015);
 //         }
 //
 //         switch ( res_type ) {
@@ -574,7 +574,7 @@ CTL_LRCmd::MakeResult(void)
 
     CHECK_DRIVER_ERROR(
         !m_WasSent,
-        "you need to send a command first",
+        "you need to send a command first" + GetDbgInfo(),
         120010 );
 
     for (;;) {
@@ -592,20 +592,20 @@ CTL_LRCmd::MakeResult(void)
                 // we need to close this connection
                 DATABASE_DRIVER_ERROR(
                     "Unrecoverable crash of ct_result. "
-                    "Connection must be closed",
+                    "Connection must be closed" + GetDbgInfo(),
                     120012 );
             }
             m_WasSent = false;
-            DATABASE_DRIVER_ERROR( "ct_result failed", 120013 );
+            DATABASE_DRIVER_ERROR( "ct_result failed" + GetDbgInfo(), 120013 );
         case CS_CANCELED:
             m_WasSent = false;
-            DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
+            DATABASE_DRIVER_ERROR( "your command has been canceled" + GetDbgInfo(), 120011 );
 #ifdef CS_BUSY
         case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 120014 );
+            DATABASE_DRIVER_ERROR( "connection has another request pending" + GetDbgInfo(), 120014 );
 #endif
         default:
-            DATABASE_DRIVER_ERROR( "your request is pending", 120015 );
+            DATABASE_DRIVER_ERROR( "your request is pending" + GetDbgInfo(), 120015 );
         }
 
         switch ( res_type ) {
@@ -642,7 +642,6 @@ CTL_LRCmd::MakeResult(void)
             DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
         }
 
-//         return CTL_Cmd::CreateResult();
         return Create_Result(static_cast<impl::CResult&>(GetResult()));
     }
 }
@@ -660,10 +659,10 @@ CTL_LRCmd::Cancel(void)
                 SetWasSent(false);
                 return true;
             case CS_FAIL:
-                DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
+                DATABASE_DRIVER_ERROR( "ct_cancel failed" + GetDbgInfo(), 120008 );
 #ifdef CS_BUSY
             case CS_BUSY:
-                DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
+                DATABASE_DRIVER_ERROR( "connection has another request pending" + GetDbgInfo(), 120009 );
 #endif
             default:
                 return false;
@@ -705,7 +704,7 @@ bool CTL_LangCmd::Send()
 
 
     SetHasFailed(!x_AssignParams());
-    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params", 120003 );
+    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params" + GetDbgInfo(), 120003 );
 
     switch ( Check(ct_send(x_GetSybaseCmd())) ) {
     case CS_SUCCEED:
@@ -713,12 +712,12 @@ bool CTL_LangCmd::Send()
     case CS_FAIL:
         SetHasFailed();
         Cancel();
-        DATABASE_DRIVER_ERROR( "ct_send failed", 120005 );
+        DATABASE_DRIVER_ERROR( "ct_send failed" + GetDbgInfo(), 120005 );
     case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 120006 );
+        DATABASE_DRIVER_ERROR( "command was canceled" + GetDbgInfo(), 120006 );
 #ifdef CS_BUSY
     case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 120007 );
+        DATABASE_DRIVER_ERROR( "connection has another request pending" + GetDbgInfo(), 120007 );
 #endif
     case CS_PENDING:
     default:
@@ -747,12 +746,6 @@ int CTL_LangCmd::RowCount() const
     return m_RowCount;
 }
 
-
-// CDB_Result*
-// CTL_LangCmd::CreateResult(impl::CResult& result)
-// {
-//     return Create_Result(result);
-// }
 
 CTL_LangCmd::~CTL_LangCmd()
 {

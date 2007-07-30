@@ -411,6 +411,11 @@ protected:
         GetNativeConnection().SetDead(flag);
     }
 
+    string GetDbgInfo(void) const
+    {
+        return " " + GetExecCntxInfo();
+    }
+
 private:
     void x_CmdAlloc(CS_COMMAND** cmd);
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
@@ -476,6 +481,11 @@ protected:
         GetConnection().SetDead(flag);
     }
 
+    string GetDbgInfo(void) const
+    {
+        return " " + GetExecCntxInfo() + " " + GetConnection().GetExecCntxInfo();
+    }
+
 protected:
     int             m_RowCount;
     string          m_ExecCntxInfo;
@@ -536,6 +546,7 @@ protected:
     CS_RETCODE CheckSFB_Internal(CS_RETCODE rc,
                                  const char* msg,
                                  unsigned int msg_num);
+
 protected:
     void DropSybaseCmd(void);
 
@@ -800,6 +811,24 @@ protected:
     {
         _ASSERT(m_Connect);
         return m_Connect->Check(rc);
+    }
+
+    //
+    CTL_Connection& GetConnection(void)
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+    const CTL_Connection& GetConnection(void) const
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+
+    //
+    string GetDbgInfo(void) const
+    {
+        return " " + GetConnection().GetExecCntxInfo();
     }
 
 protected:

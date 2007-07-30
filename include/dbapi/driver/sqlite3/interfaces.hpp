@@ -190,6 +190,11 @@ protected:
     virtual int         RowCount(void) const;
     long long int       LastInsertId(void) const;
 
+    string GetDbgInfo(void) const
+    {
+        return " " + GetConnection().GetExecCntxInfo();
+    }
+
 private:
     bool x_AssignParams(void);
     bool AssignCmdParam(CDB_Object& param,

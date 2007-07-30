@@ -352,7 +352,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     return NULL; // not implemented yet
 #else
     if ( !IsBCPable() ) {
-        string err_message = "No bcp on this connection" + GetDiagnosticInfo();
+        string err_message = "No bcp on this connection" + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410003 );
     }
 
@@ -412,7 +412,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
 
     if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
        (!ODBC_xSendDataGetId(stmt, &p ))) {
-        string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
+        string err_message = "Cannot prepare a command" + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
@@ -431,7 +431,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
 
     if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
        (!ODBC_xSendDataGetId(stmt, &p))) {
-        string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
+        string err_message = "Cannot prepare a command" + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
@@ -491,7 +491,7 @@ bool CODBC_Connection::Close(void)
             break;
         default:
             {
-                string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDiagnosticInfo();
+                string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410009 );
             }
         }
@@ -687,7 +687,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     }
 
     if (invalid_len > 0) {
-        DATABASE_DRIVER_ERROR( "Invalid encoding of a text string.", 410055 );
+        DATABASE_DRIVER_ERROR( "Invalid encoding of a text string." + GetDbgInfo(), 410055 );
     }
 
     switch(SQLParamData(stmt.GetHandle(), (SQLPOINTER*)&len)) {
@@ -696,13 +696,13 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     case SQL_NO_DATA:           return true;
     case SQL_NEED_DATA:
         {
-            string err_message = "Not all the data were sent" + GetDiagnosticInfo();
+            string err_message = "Not all the data were sent" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 410044 );
         }
     case SQL_ERROR:             stmt.ReportErrors();
     default:
         {
-            string err_message = "SQLParamData failed" + GetDiagnosticInfo();
+            string err_message = "SQLParamData failed" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 410045 );
         }
     }
@@ -715,12 +715,12 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
         case SQL_ERROR:
             {
                 stmt.ReportErrors();
-                string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
+                string err_message = "SQLMoreResults failed" + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410014 );
             }
         default:
             {
-                string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDiagnosticInfo();
+                string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410015 );
             }
         }
@@ -784,7 +784,7 @@ CStatementBase::CheckRC(int rc) const
         break;
     case SQL_INVALID_HANDLE:
         {
-            string err_message = "Invalid handle" + GetDiagnosticInfo();
+            string err_message = "Invalid handle" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 0 );
         }
         break;
@@ -806,7 +806,7 @@ CStatementBase::CheckSIE(int rc, const char* msg, unsigned int msg_num) const
     case SQL_ERROR:
         ReportErrors();
         {
-            string err_message = msg + GetDiagnosticInfo();
+            string err_message = msg + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, msg_num );
         }
     default:
@@ -815,7 +815,7 @@ CStatementBase::CheckSIE(int rc, const char* msg, unsigned int msg_num) const
 
             err_message.append(msg);
             err_message.append(" (memory corruption suspected)");
-            err_message.append(GetDiagnosticInfo());
+            err_message.append(GetDbgInfo());
 
             DATABASE_DRIVER_ERROR( err_message, 420001 );
         }
@@ -837,7 +837,7 @@ CStatementBase::CheckSIENd(int rc, const char* msg, unsigned int msg_num) const
     case SQL_ERROR:
         ReportErrors();
         {
-            string err_message = msg + GetDiagnosticInfo();
+            string err_message = msg + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, msg_num );
         }
     default:
@@ -846,7 +846,7 @@ CStatementBase::CheckSIENd(int rc, const char* msg, unsigned int msg_num) const
 
             err_message.append(msg);
             err_message.append(" (memory corruption suspected)");
-            err_message.append(GetDiagnosticInfo());
+            err_message.append(GetDbgInfo());
 
             DATABASE_DRIVER_ERROR( err_message, 420001 );
         }
@@ -1297,7 +1297,7 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection& conn,
                               false, logit, p, &m_ParamPH)) ||
        (!ODBC_xSendDataGetId(*this, &p))) {
 
-        string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
+        string err_message = "Cannot prepare a command" + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 }
@@ -1317,7 +1317,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
                                                     nof_bytes);
 
         if (valid_len == 0) {
-            DATABASE_DRIVER_ERROR( "Invalid encoding of a text string.", 410055 );
+            DATABASE_DRIVER_ERROR( "Invalid encoding of a text string." + GetDbgInfo(), 410055 );
         }
 
         // Encoding is always eEncoding_UTF8 in here.
@@ -1363,13 +1363,13 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     case SQL_NO_DATA:           break;
     case SQL_NEED_DATA:
         {
-            string err_message = "Not all the data were sent" + GetDiagnosticInfo();
+            string err_message = "Not all the data were sent" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 410044 );
         }
     case SQL_ERROR:             ReportErrors();
     default:
         {
-            string err_message = "SQLParamData failed" + GetDiagnosticInfo();
+            string err_message = "SQLParamData failed" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 410045 );
         }
     }
@@ -1382,12 +1382,12 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         case SQL_ERROR:
             {
                 ReportErrors();
-                string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
+                string err_message = "SQLMoreResults failed" + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410014 );
             }
         default:
             {
-                string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDiagnosticInfo();
+                string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410015 );
             }
         }

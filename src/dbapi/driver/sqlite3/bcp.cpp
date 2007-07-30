@@ -105,12 +105,12 @@ void CSL3_BCPInCmd::ExecuteSQL(const string& sql)
     case SQLITE_MISUSE:
         Check(sqlite3_finalize(stmt));
         CHECK_DRIVER_ERROR(rc != SQLITE_OK,
-                           "Failed to execute a statement",
+                           "Failed to execute a statement" + GetDbgInfo(),
                            100000);
         break;
     default:
         Check(sqlite3_finalize(stmt));
-        DATABASE_DRIVER_ERROR("Invalid return code.", 100000);
+        DATABASE_DRIVER_ERROR("Invalid return code." + GetDbgInfo(), 100000);
     }
 
     Check(sqlite3_finalize(stmt));

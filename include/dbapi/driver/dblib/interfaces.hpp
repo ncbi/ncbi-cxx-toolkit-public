@@ -347,6 +347,12 @@ private:
     void TDS_SetTimeout(void);
 #endif
 
+    string GetDbgInfo(void) const
+    {
+        return " " + GetExecCntxInfo();
+    }
+
+private:
     DBPROCESS*              m_Link;
 };
 
@@ -378,6 +384,12 @@ public:
         _ASSERT(m_Connect);
         return *m_Connect;
     }
+    const CDBL_Connection& GetConnection(void) const
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+
     DBPROCESS* GetCmd(void) const
     {
         _ASSERT(m_Cmd);
@@ -400,6 +412,11 @@ public:
     const string& GetExecCntxInfo(void) const
     {
         return m_ExecCntxInfo;
+    }
+
+    string GetDbgInfo(void) const
+    {
+        return " " + GetExecCntxInfo() + " " + GetConnection().GetExecCntxInfo();
     }
 
 protected:
@@ -670,6 +687,11 @@ protected:
                            SDBL_ColDescr* fmt,
                            CDB_Object* item_buff);
 
+    string GetDbgInfo(void) const
+    {
+        return " " + GetConnection().GetExecCntxInfo();
+    }
+
 private:
     CDBL_Connection* m_Connect;
     DBPROCESS*       m_Cmd;
@@ -681,8 +703,8 @@ private:
 ///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult :
-public CDBL_Result,
-public impl::CResult
+    public CDBL_Result,
+    public impl::CResult
 {
     friend class CDBL_LangCmd;
     friend class CDBL_RPCCmd;

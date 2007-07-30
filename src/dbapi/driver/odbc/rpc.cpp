@@ -53,7 +53,7 @@ CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection& conn,
     m_Res(0)
 {
     string extra_msg = "Procedure Name: " + proc_name;
-    SetDiagnosticInfo( extra_msg );
+    SetDbgInfo( extra_msg );
 
     return;
 }
@@ -83,7 +83,7 @@ bool CODBC_RPCCmd::Send()
             ResetParams();
             SetHasFailed();
 
-            string err_message = "cannot assign params" + GetDiagnosticInfo();
+            string err_message = "cannot assign params" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420003 );
         }
     }
@@ -111,7 +111,7 @@ bool CODBC_RPCCmd::Send()
         ResetParams();
         SetHasFailed();
         {
-            string err_message = "SQLExecDirect failed" + GetDiagnosticInfo();
+            string err_message = "SQLExecDirect failed" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420001 );
         }
 
@@ -126,7 +126,7 @@ bool CODBC_RPCCmd::Send()
         SetHasFailed();
         {
             string err_message = "Some other query is executing on this connection" +
-                GetDiagnosticInfo();
+                GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420002 );
         }
 
@@ -134,7 +134,7 @@ bool CODBC_RPCCmd::Send()
         SetHasFailed();
         {
             string err_message = "The statement handler is invalid (memory corruption suspected)" +
-                GetDiagnosticInfo();
+                GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420004 );
         }
 
@@ -143,7 +143,7 @@ bool CODBC_RPCCmd::Send()
         ResetParams();
         SetHasFailed();
         {
-            string err_message = "Unexpected error" + GetDiagnosticInfo();
+            string err_message = "Unexpected error" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420005 );
         }
 
@@ -187,7 +187,7 @@ CDB_Result* CODBC_RPCCmd::Result()
     }
 
     if ( !WasSent() ) {
-        string err_message = "a command has to be sent first" + GetDiagnosticInfo();
+        string err_message = "a command has to be sent first" + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 420010 );
     }
 
@@ -338,13 +338,13 @@ bool CODBC_RPCCmd::xCheck4MoreResults()
     case SQL_ERROR:
         ReportErrors();
         {
-            string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
+            string err_message = "SQLMoreResults failed" + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420014 );
         }
     default:
         {
             string err_message = "SQLMoreResults failed (memory corruption suspected)" +
-                GetDiagnosticInfo();
+                GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 420015 );
         }
     }

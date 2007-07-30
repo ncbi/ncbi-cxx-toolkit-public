@@ -115,6 +115,11 @@ public:
         return Password();
     }
 
+    const string& GetExecCntxInfo(void) const
+    {
+        return m_ExecCntxInfo;
+    }
+
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -270,6 +275,12 @@ protected:
         return m_SecureLogin;
     }
 
+    void SetExecCntxInfo(const string& info)
+    {
+        m_ExecCntxInfo = info;
+    }
+
+
 private:
     typedef deque<impl::CCommand*>  TCommandList;
 
@@ -286,6 +297,7 @@ private:
     bool    m_Reusable;
     bool    m_BCPable;
     bool    m_SecureLogin;
+    string  m_ExecCntxInfo;
 };
 
 } // namespace impl

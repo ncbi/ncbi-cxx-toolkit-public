@@ -291,7 +291,7 @@ protected:
     }
 
 protected:
-    string GetDiagnosticInfo(void) const
+    string GetDbgInfo(void) const
     {
         return m_Reporter.GetExtraMsg();
     }
@@ -342,11 +342,11 @@ public:
     }
 
 public:
-    void SetDiagnosticInfo(const string& msg)
+    void SetDbgInfo(const string& msg)
     {
         m_Reporter.SetExtraMsg( msg );
     }
-    string GetDiagnosticInfo(void) const
+    string GetDbgInfo(void) const
     {
         return m_Reporter.GetExtraMsg();
     }
@@ -726,9 +726,9 @@ protected:
     {
         GetStatementBase().ReportErrors();
     }
-    string GetDiagnosticInfo(void) const
+    string GetDbgInfo(void) const
     {
-        return GetStatementBase().GetDiagnosticInfo();
+        return GetStatementBase().GetDbgInfo();
     }
     void Close(void)
     {
@@ -823,9 +823,9 @@ protected:
     virtual bool            SkipItem(void);
 
 protected:
-    string GetDiagnosticInfo(void) const
+    string GetDbgInfo(void) const
     {
-        return m_Cmd->GetDiagnosticInfo();
+        return m_Cmd->GetDbgInfo();
     }
     CDB_Result* GetCDBResultPtr(void) const
     {
