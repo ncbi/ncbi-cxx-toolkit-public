@@ -458,9 +458,6 @@ BOOST_AUTO_TEST_CASE(SummaryDataN)
     CHECK_EQUAL(string("Another test DB for CPPUNIT, SeqDB."),
                 localN.GetTitle());
     
-    CHECK_EQUAL(string("Oct 30, 2006  1:34 PM"),
-                localN.GetDate());
-    
     Uint8 vol1(0);
     int seq1(0);
     localN.GetTotals(CSeqDB::eFilteredRange, & seq1, & vol1);
@@ -508,9 +505,6 @@ BOOST_AUTO_TEST_CASE(SummaryDataP)
     
     CHECK_EQUAL(string("Test database for BLAST unit tests"),
                 localP.GetTitle());
-    
-    CHECK_EQUAL(string("Jul 11, 2007  4:21 PM"),
-                localP.GetDate());
 }
 
 BOOST_AUTO_TEST_CASE(GetAmbigSeqAllocN)
