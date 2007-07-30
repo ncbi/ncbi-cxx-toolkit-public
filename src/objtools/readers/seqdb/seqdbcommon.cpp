@@ -1470,7 +1470,7 @@ unsigned SeqDB_SequenceHash(const CBioseq & sequence)
             is_protein = true;
             coding = CSeqUtil::e_Ncbieaa;
             sp = & si.GetSeq_data().GetNcbieaa().Get();
-            input_data.assign(& (*sp)[0], sp->size());
+            input_data.assign(sp->data(), sp->size());
             break;
             
         case CSeq_data::e_Iupacaa:
@@ -1478,7 +1478,7 @@ unsigned SeqDB_SequenceHash(const CBioseq & sequence)
             is_protein = true;
             coding = CSeqUtil::e_Iupacaa;
             sp = & si.GetSeq_data().GetIupacaa().Get();
-            input_data.assign(& (*sp)[0], sp->size());
+            input_data.assign(sp->data(), sp->size());
             break;
             
         case CSeq_data::e_Ncbi8aa:
@@ -1496,7 +1496,7 @@ unsigned SeqDB_SequenceHash(const CBioseq & sequence)
             is_protein = false;
             coding = CSeqUtil::e_Iupacna;
             sp = & si.GetSeq_data().GetIupacna().Get();
-            input_data.assign(& (*sp)[0], sp->size());
+            input_data.assign(sp->data(), sp->size());
             break;
             
         case CSeq_data::e_Ncbi2na:
