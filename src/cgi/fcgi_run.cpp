@@ -505,7 +505,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 try {
                     m_Cache.reset( GetCacheStorage() );
                 } catch( exception& ex ) {
-                    ERR_POST( "Couldn't create cache : " << ex.what());
+                    NCBI_REPORT_EXCEPTION( "Couldn't create cache" << ex);
                 }
 
                 bool skip_process_request = false;
