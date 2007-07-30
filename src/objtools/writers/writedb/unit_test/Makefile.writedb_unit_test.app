@@ -7,7 +7,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-LIB = seqdb writedb xobjutil blastdb $(OBJMGR_LIBS)
+LIB = seqdb writedb xobjutil xobjread creaders blastdb $(OBJMGR_LIBS)
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
