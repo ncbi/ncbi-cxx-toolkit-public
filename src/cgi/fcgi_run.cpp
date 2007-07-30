@@ -504,9 +504,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             try {
                 try {
                     m_Cache.reset( GetCacheStorage() );
-                } catch( exception& ex ) {
-                    NCBI_REPORT_EXCEPTION( "Couldn't create cache" << ex);
-                }
+                } NCBI_CATCH_ALL("Couldn't create cache")
 
                 bool skip_process_request = false;
                 bool caching_needed = IsCachingNeeded(m_Context->GetRequest());
