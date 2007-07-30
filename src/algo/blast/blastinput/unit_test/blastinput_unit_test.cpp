@@ -566,6 +566,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis_WithBadInput)
     CNcbiIfstream infile(fname);
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
 
     vector< pair<long, long> > gi_length;
     gi_length.push_back(make_pair(89161185L, 247249719L));
@@ -616,7 +617,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis_WithBadInput)
         CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
         CHECK_EQUAL(gi_length[0].first, b.GetId().front()->GetGi());
         CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-        CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+        BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
         CHECK_EQUAL((long)gi_length[0].second, (long)b.GetInst().GetLength());
         ++itr;
         CHECK(itr == end);
@@ -708,6 +709,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleAccession)
     CNcbiIfstream infile("data/accession.txt");
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     CHECK(source->End() == false);
@@ -745,7 +747,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleAccession)
     CHECK_EQUAL(CSeq_id::e_Other, b.GetId().front()->Which());
     CHECK_EQUAL(accession, b.GetId().front()->GetOther().GetAccession());
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
@@ -754,6 +756,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
     CNcbiIfstream infile("data/accessions.txt");
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     vector< pair<string, long> > accession_lengths;
@@ -807,6 +810,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
     CNcbiIfstream infile("data/gi.txt");
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     CHECK(source->End() == false);
@@ -841,7 +845,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleGi)
     CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
     CHECK_EQUAL(gi, b.GetId().front()->GetGi());
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
@@ -850,6 +854,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
     CNcbiIfstream infile("data/gis.txt");
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     vector< pair<long, long> > gi_length;
@@ -897,7 +902,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
         CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
         CHECK_EQUAL(gi_length[i].first, b.GetId().front()->GetGi());
         CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-        CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+        BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
         CHECK_EQUAL((long)gi_length[i].second, (long)b.GetInst().GetLength());
     }
 }
@@ -907,6 +912,7 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
     CNcbiIfstream infile("data/tis.txt");
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     CHECK(source->End() == false);
@@ -971,7 +977,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleTi)
 
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_General, ssl.seqloc->GetInt().GetId().Which());
-    const string db("ti");
+    const string db("TRACE");
     CHECK_EQUAL(db, ssl.seqloc->GetInt().GetId().GetGeneral().GetDb());
     CHECK(ssl.seqloc->GetInt().GetId().GetGeneral().GetTag().IsId());
     const int ti(12345);
@@ -989,7 +995,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSingleTi)
     CHECK_EQUAL(db, b.GetId().front()->GetGeneral().GetDb());
     CHECK_EQUAL(ti, b.GetId().front()->GetGeneral().GetTag().GetId());
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
@@ -998,6 +1004,7 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionsAndGisWithNewLines)
     CNcbiIfstream infile("data/accgis_nl.txt");
     const bool is_protein(false);
     CBlastInputConfig iconfig(is_protein);
+    iconfig.SetRetrieveSequenceData(false);
     CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
 
     vector< pair<string, long> > gi_accessions;
@@ -1090,6 +1097,7 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNucleotideIntoBuffer_Single)
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputConfig iconfig(false);
+    iconfig.SetRetrieveSequenceData(false);
     CBlastFastaInputSource source(*om, *user_input, iconfig);
 
     CHECK(source.End() == false);
@@ -1127,7 +1135,7 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNucleotideIntoBuffer_Single)
     CHECK_EQUAL(CSeq_id::e_Other, b.GetId().front()->Which());
     CHECK_EQUAL(accession, b.GetId().front()->GetOther().GetAccession());
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 
 }
@@ -1172,7 +1180,7 @@ BOOST_AUTO_TEST_CASE(s_ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
     CHECK_EQUAL(gi, b.GetId().front()->GetGi());
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 
 }
@@ -1204,8 +1212,8 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     CHECK(ssl.seqloc->GetInt().IsSetId() == true);
     CHECK_EQUAL(CSeq_id::e_Genbank, ssl.seqloc->GetInt().GetId().Which());
     const string accession("u93236");
-    CHECK_EQUAL(accession,
-                ssl.seqloc->GetInt().GetId().GetGenbank().GetAccession());
+    CHECK_EQUAL(NStr::CompareNocase(accession,
+                ssl.seqloc->GetInt().GetId().GetGenbank().GetAccession()), 0);
 
     CHECK(!ssl.mask);
 
@@ -1216,9 +1224,10 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     CHECK(b.IsNa());
     CHECK_EQUAL(CSeq_id::e_Genbank, b.GetId().front()->Which());
-    CHECK_EQUAL(accession, b.GetId().front()->GetGenbank().GetAccession());
+    CHECK_EQUAL(NStr::CompareNocase(accession,
+                b.GetId().front()->GetGenbank().GetAccession()), 0);
     CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
-    CHECK_EQUAL(CSeq_inst::eMol_dna, b.GetInst().GetMol());
+    BOOST_CHECK(CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 
 }

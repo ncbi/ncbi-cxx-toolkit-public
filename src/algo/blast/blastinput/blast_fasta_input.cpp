@@ -66,14 +66,17 @@ public:
     /// instantiate a CScope object to fetch the length of the IDs read by
     /// this class (otherwise it is ignored) [in]
     /// @param read_proteins are we expecting to read proteins? [in]
+    /// @param retrieve_seq_data Should the sequence data be fetched by this
+    /// library? [in]
     /// @param reader line reader argument for parent class [in]
     /// @param flags flags for parent class [in]
     CBlastInputReader(const SDataLoaderConfig& dlconfig,
                       bool read_proteins,
+                      bool retrieve_seq_data,
                       ILineReader& reader, 
                       CFastaReader::TFlags flags = 0)
         : CFastaReader(reader, flags), m_DLConfig(dlconfig),
-          m_ReadProteins(read_proteins) {}
+          m_ReadProteins(read_proteins), m_RetrieveSeqData(retrieve_seq_data) {}
 
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(void) {
@@ -124,17 +127,19 @@ private:
     /// Configuration options for the CBlastScopeSource
     const SDataLoaderConfig& m_DLConfig;
     /// Scope used to retrieve the sequence length
-    CRef<CScope> m_LengthRetriever;
+    CRef<CScope> m_InputScope;
     /// True if we're supposed to be reading proteins, else false
     bool m_ReadProteins;
+    /// True if the sequence data must be fetched
+    bool m_RetrieveSeqData;
 
     /// Performs sanity checks to make sure that the sequence requested is of
     /// the expected type. If the tests fail, an exception is thrown.
     /// @param id Sequence id for this sequence [in]
     void x_ValidateMoleculeType(CConstRef<CSeq_id> id) 
     {
-        ASSERT(m_LengthRetriever.NotEmpty());
-        CBioseq_Handle bh = m_LengthRetriever->GetBioseqHandle(*id);
+        ASSERT(m_InputScope.NotEmpty());
+        CBioseq_Handle bh = m_InputScope->GetBioseqHandle(*id);
         if (bh.IsNucleotide() && m_ReadProteins) {
             NCBI_THROW(CInputException, eSequenceMismatch,
                "Gi/accession mismatch: requested protein, found nucleotide");
@@ -150,14 +155,14 @@ private:
     /// @param id Sequence id for this bioseq [in]
     CRef<CBioseq> x_CreateBioseq(CRef<CSeq_id> id)
     {
-        if (m_LengthRetriever.Empty()) {
+        if (m_InputScope.Empty()) {
             CBlastScopeSource scope_src(m_DLConfig);
-            m_LengthRetriever = scope_src.NewScope();
+            m_InputScope = scope_src.NewScope();
         }
 
         // N.B.: this call fetches the Bioseq into the scope from its
         // data sources (should be BLAST DB first, then Genbank)
-        TSeqPos len = sequence::GetLength(*id, m_LengthRetriever);
+        TSeqPos len = sequence::GetLength(*id, m_InputScope);
         if (len == numeric_limits<TSeqPos>::max()) {
             NCBI_THROW(CInputException, eSeqIdNotFound,
                        "Sequence ID not found: '" + 
@@ -166,13 +171,19 @@ private:
 
         x_ValidateMoleculeType(id);
 
-        CRef<CBioseq> retval(new CBioseq());
-        retval->SetId().push_back(id);
-        retval->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-        retval->SetInst().SetMol(m_ReadProteins 
-                                 ? CSeq_inst::eMol_aa
-                                 : CSeq_inst::eMol_dna);
-        retval->SetInst().SetLength(len);
+        CRef<CBioseq> retval;
+        if (m_RetrieveSeqData) {
+            CBioseq_Handle bh = m_InputScope->GetBioseqHandle(*id);
+            retval.Reset(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
+        } else {
+            retval.Reset(new CBioseq());
+            retval->SetId().push_back(id);
+            retval->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+            retval->SetInst().SetMol(m_ReadProteins 
+                                     ? CSeq_inst::eMol_aa
+                                     : CSeq_inst::eMol_dna);
+            retval->SetInst().SetLength(len);
+        }
         return retval;
     }
 
@@ -232,7 +243,8 @@ CBlastFastaInputSource::CBlastFastaInputSource(objects::CObjectManager& objmgr,
       m_ReadProteins(iconfig.IsProteinInput())
 {
     if (user_input.empty()) {
-        NCBI_THROW(CInputException, eEmptyUserInput, "No sequence input was provided");
+        NCBI_THROW(CInputException, eEmptyUserInput, 
+                   "No sequence input was provided");
     }
     m_LineReader.Reset(new CMemoryLineReader(user_input.c_str(), 
                                              user_input.size()));
@@ -256,7 +268,9 @@ CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
     if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
         m_InputReader.reset
             (new CBlastInputReader(m_Config.GetDataLoaderConfig(), 
-                                   m_ReadProteins, *m_LineReader, flags));
+                                   m_ReadProteins, 
+                                   m_Config.RetrieveSequenceData(),
+                                   *m_LineReader, flags));
     } else {
         m_InputReader.reset(new CFastaReader(*m_LineReader, flags));
     }

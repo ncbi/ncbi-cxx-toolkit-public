@@ -50,9 +50,11 @@ CBlastInputConfig::CBlastInputConfig(const SDataLoaderConfig& dlconfig,
                                      objects::ENa_strand strand,
                                      bool lowercase,
                                      bool believe_defline,
-                                     TSeqRange range)
+                                     TSeqRange range,
+                                     bool retrieve_seqs)
 : m_Strand(strand), m_LowerCaseMask(lowercase), 
-  m_BelieveDeflines(believe_defline), m_Range(range), m_DLConfig(dlconfig)
+  m_BelieveDeflines(believe_defline), m_Range(range), m_DLConfig(dlconfig),
+  m_RetrieveSeqData(retrieve_seqs)
 {}
 
 TSeqLocVector

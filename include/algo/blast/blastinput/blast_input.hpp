@@ -60,13 +60,16 @@ public:
     /// @param believe_defline If true, all sequences ID's are parsed;
     ///                 otherwise all sequences receive a local ID set
     ///                 to a monotonically increasing count value [in]
+    /// @param retrieve_seq_data Should the sequence data be fetched by this
+    /// library? [in]
     /// @param range Range restriction for all sequences (default means no
     ///                 restriction) [in]
     CBlastInputConfig(const SDataLoaderConfig& dlconfig,
                       objects::ENa_strand strand = objects::eNa_strand_other,
-                     bool lowercase = false,
-                     bool believe_defline = false,
-                     TSeqRange range = TSeqRange());
+                      bool lowercase = false,
+                      bool believe_defline = false,
+                      TSeqRange range = TSeqRange(),
+                      bool retrieve_seq_data = true);
 
     /// Destructor
     ///
@@ -118,12 +121,19 @@ public:
     /// Determine if this object is for configuring reading protein sequences
     bool IsProteinInput() const { return m_DLConfig.m_IsLoadingProteins; }
 
+    /// True if the sequence data must be fetched
+    bool RetrieveSequenceData() const { return m_RetrieveSeqData; }
+    /// Turn on or off the retrieval of sequence data
+    /// @param value true to turn on, false to turn off [in]
+    void SetRetrieveSequenceData(bool value) { m_RetrieveSeqData = value; }
+
 private:
     objects::ENa_strand m_Strand;  ///< strand to assign to sequences
     bool m_LowerCaseMask;          ///< whether to save lowercase mask locs
     bool m_BelieveDeflines;        ///< whether to parse sequence IDs
     TSeqRange m_Range;             ///< sequence range
-    SDataLoaderConfig m_DLConfig;  ///< Configuration object for data loaders
+    SDataLoaderConfig m_DLConfig;  ///< Configuration object for data loaders, used by CBlastInputReader
+    bool m_RetrieveSeqData;        ///< Configuration for CBlastInputReader
 };
 
 
