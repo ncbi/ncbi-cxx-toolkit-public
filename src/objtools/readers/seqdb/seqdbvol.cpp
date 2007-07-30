@@ -129,6 +129,17 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
     }
     catch(CSeqDBException &) {
     }
+    
+    try {
+        m_IsamHash =
+            new CSeqDBIsam(m_Atlas,
+                           name,
+                           prot_nucl,
+                           'h',
+                           CSeqDBIsam::eHashId);
+    }
+    catch(CSeqDBException &) {
+    }
 }
 
 char CSeqDBVol::GetSeqType() const
@@ -1682,6 +1693,72 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
     return base_length;
 }
 
+void SeqDB_UnpackAmbiguities(const CTempString & sequence,
+                             const CTempString & ambiguities,
+                             string            & result)
+{
+    result.resize(0);
+    
+    // The code in this block is derived from GetBioseq() and
+    // s_SeqDBWriteSeqDataNucl().
+    
+    // Get the length and the (probably mmapped) data.
+    
+    if (sequence.length() == 0) {
+        NCBI_THROW(CSeqDBException, eFileErr,
+                   "Error: packed sequence data is not valid.");
+    }
+    
+    const char * seq_buffer = sequence.data();
+    
+    int whole_bytes = sequence.length() - 1;
+    int remainder = sequence[whole_bytes] & 3;
+    int base_length = (whole_bytes * 4) + remainder;
+    
+    if (base_length == 0) {
+        return;
+    }
+    
+    // Get ambiguity characters.
+    
+    vector<Int4> ambchars;
+    ambchars.reserve(ambiguities.length()/4);
+    
+    for(size_t i = 0; i < ambiguities.length(); i+=4) {
+        Int4 A = SeqDB_GetStdOrd((int*) (ambiguities.data() + i));
+        ambchars.push_back(A);
+    }
+    
+    // Combine and translate to 4 bits-per-character encoding.
+    
+    char * buffer_na8 = (char*) malloc(base_length);
+    
+    try {
+        SSeqDBSlice range(0, base_length);
+        
+        s_SeqDBMapNA2ToNA8(seq_buffer,
+                           buffer_na8,
+                           buffer_na8 + base_length,
+                           false,
+                           range);
+        
+        s_SeqDBRebuildDNA_NA8(buffer_na8,
+                              base_length,
+                              ambchars,
+                              false,
+                              range);
+    }
+    catch(...) {
+        free(buffer_na8);
+        throw;
+    }
+    
+    result.assign(buffer_na8, base_length);
+    
+    free(buffer_na8);
+}
+
+
 int CSeqDBVol::x_GetSequence(int              oid,
                              const char    ** buffer,
                              bool             keep,
@@ -2312,6 +2389,12 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
         // Converted to OID directly.
         oids.push_back(ident);
         break;
+        
+    case CSeqDBIsam::eHashId:
+        _ASSERT(0);
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Internal error: hashes are not Seq-ids.");
     }
     
     if ((! fits_in_four) && needs_four) {
@@ -2383,6 +2466,12 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
         // Converted to OID directly.
         oids.push_back(ident);
         break;
+        
+    case CSeqDBIsam::eHashId:
+        _ASSERT(0);
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Internal error: hashes are not Seq-ids.");
     }
     
     if ((! fits_in_four) && needs_four) {
@@ -2810,6 +2899,28 @@ void CSeqDBVol::OptimizeGiLists() const
     // in the volume GI list.
     
     m_UserGiList.Reset();
+}
+
+void CSeqDBVol::HashToOids(unsigned         hash,
+                           vector<int>    & oids,
+                           CSeqDBLockHold & locked) const
+{
+    // It has not been decided whether sequence hash lookups are of
+    // long term interest or whether standard databases will be built
+    // with these indices, but it should not cause any harm to support
+    // them for databases where the files do exist.
+    
+    // Since it is normal for a hash lookup to fail (the user of this
+    // feature generally does not know if the sequence will be found),
+    // the lack of hash indexing is reported by throwing an exception.
+    
+    if (m_IsamHash.Empty()) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Hash lookup requested but no hash ISAM file found.");
+    }
+    
+    m_IsamHash->HashToOids(hash, oids, locked);
 }
 
 

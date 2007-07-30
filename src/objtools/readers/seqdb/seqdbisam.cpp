@@ -1431,6 +1431,7 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
         break;
         
     case eStringId:
+    case eHashId:
         m_Type = eString;
         break;
         
@@ -2169,6 +2170,49 @@ void CSeqDBIsam::GetIdBounds(string         & low_id,
     low_id = m_FirstKey.GetString();
     high_id = m_LastKey.GetString();
     count = m_NumTerms;
+}
+
+void CSeqDBIsam::HashToOids(unsigned         hash,
+                            vector<TOid>   & oids,
+                            CSeqDBLockHold & locked)
+{
+    _ASSERT(m_IdentType == eHashId);
+    
+    m_Atlas.Lock(locked);
+    
+    if(m_Initialized == false) {
+        if (eNoError != x_InitSearch(locked)) {
+            return;
+        }
+    }
+    
+    bool found = false;
+    
+    string key(NStr::UIntToString(hash));
+    
+    EErrorCode err = eNoError;
+    
+    vector<string> keys_out;
+    vector<string> data_out;
+    vector<TIndx>  indices_out;
+    
+    if ((err = x_StringSearch(key,
+                              keys_out,
+                              data_out,
+                              indices_out,
+                              locked)) < 0) {
+        return;
+    }
+    
+    if (err != eNotFound) {
+        found = true;
+    }
+    
+    if (found) {
+        ITERATE(vector<string>, iter, data_out) {
+            oids.push_back(atoi(iter->c_str()));
+        }
+    }
 }
 
 END_NCBI_SCOPE

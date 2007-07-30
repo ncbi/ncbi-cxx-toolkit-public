@@ -399,6 +399,7 @@ int CSeqDB::GetAmbigSeq(int           oid,
                                  nucl_code,
                                  & region,
                                  (ESeqDBAllocType) 0);
+    
     m_Impl->Verify();
     
     return rv;

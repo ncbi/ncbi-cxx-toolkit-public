@@ -714,6 +714,30 @@ public:
                          bool               cache_data,
                          CSeqDBLockHold   & locked) const;
     
+    /// Get the sequence hash for a given OID.
+    ///
+    /// The sequence data is fetched and the sequence hash is
+    /// computed and returned.
+    ///
+    /// @param oid The sequence to compute the hash of. [in]
+    /// @return The sequence hash.
+    unsigned GetSequenceHash(int oid);
+    
+    /// Get the OIDs for a given sequence hash.
+    ///
+    /// The OIDs corresponding to a hash value (if any) are found and
+    /// returned.  If none are found, the vector will be empty.  If
+    /// the index does not exist for this volume, an exception will be
+    /// thrown.  Some false positives may be returned due to hash
+    /// value collisions.
+    ///
+    /// @param hash The sequence hash to look up. [in]
+    /// @param oids OIDs of sequences with this hash. [out]
+    /// @param locked Lock holder object for this thread. [in|out]
+    void HashToOids(unsigned         hash,
+                    vector<int>    & oids,
+                    CSeqDBLockHold & locked) const;
+    
 private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
@@ -1157,6 +1181,9 @@ private:
     
     /// Handles translation of TI (trace ids) to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamTi;
+    
+    /// Handles translation of sequence hash value to OIDs.
+    mutable CRef<CSeqDBIsam> m_IsamHash;
     
     /// This cache allows CBioseqs to share taxonomic objects.
     mutable CSeqDBSimpleCache< int, CRef<CSeqdesc> > m_TaxCache;

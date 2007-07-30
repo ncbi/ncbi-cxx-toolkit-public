@@ -214,9 +214,42 @@ public:
                          bool               append_ranges,
                          bool               cache_data);
     
+    /// Get the sequence hash for a given OID.
+    ///
+    /// The sequence data is fetched and the sequence hash is
+    /// computed and returned.
+    ///
+    /// @param oid The sequence to compute the hash of. [in]
+    /// @return The sequence hash.
+    unsigned GetSequenceHash(int oid);
+    
+    /// Get the OIDs for a given sequence hash.
+    ///
+    /// The OIDs corresponding to a hash value are found and returned.
+    ///
+    /// @param hash The sequence hash to look up. [in]
+    /// @param oids OIDs of sequences with this hash. [out]
+    /// @return True if the hash value was found, false otherwise.
+    void HashToOids(unsigned hash, vector<int> & oids);
+    
     /// Verify internal SeqDB data structures for consistency.
     void Verify();
 };
+
+/// Unpack an ambiguous nucleotide sequence.
+///
+/// This method provides a way to unpack nucleotide sequence data that
+/// has been packed in blast database format.  One source of such data
+/// is the GetRawSeqAndAmbig() method in the CSeqDBExpert class.  The
+/// output format is ncbi8na.
+///
+/// @param sequence Sequence data in NA2 format with encoded length. [in]
+/// @param ambiguities Sequence ambiguities packed in blastdb format. [in]
+/// @param result Unpacked sequence in Ncbi NA8 format. [out]
+
+void SeqDB_UnpackAmbiguities(const CTempString & sequence,
+                             const CTempString & ambiguities,
+                             string            & result);
 
 END_NCBI_SCOPE
 

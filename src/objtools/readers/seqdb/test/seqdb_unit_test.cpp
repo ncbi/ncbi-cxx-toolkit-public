@@ -3025,7 +3025,6 @@ BOOST_AUTO_TEST_CASE(NegativeListNr)
     CHECK_EQUAL(count_w, (count_wo+1));
 }
 
-
 BOOST_AUTO_TEST_CASE(NegativeListSwissprot)
 {
     START;
@@ -3059,6 +3058,52 @@ BOOST_AUTO_TEST_CASE(NegativeListSwissprot)
     int count_w = (int) gis_w.size();
     int count_wo = (int) gis_wo.size();
     CHECK_EQUAL(count_w, (count_wo+1));
+}
+
+BOOST_AUTO_TEST_CASE(HashToOid)
+{
+    START;
+    
+    CSeqDBExpert seqp("data/seqp", CSeqDB::eProtein);
+    CSeqDBExpert seqn("data/seqn", CSeqDB::eNucleotide);
+    
+    int oid(0);
+    
+    for(oid = 0; oid < 10 && seqp.CheckOrFindOID(oid); oid++) {
+        unsigned h = seqp.GetSequenceHash(oid);
+        
+        vector<int> oids;
+        seqp.HashToOids(h, oids);
+        
+        bool found = false;
+        
+        ITERATE(vector<int>, iter, oids) {
+            if (*iter == oid) {
+                found = true;
+                break;
+            }
+        }
+        
+        CHECK(found);
+    }
+    
+    for(oid = 0; oid < 10 && seqn.CheckOrFindOID(oid); oid++) {
+        unsigned h = seqn.GetSequenceHash(oid);
+        
+        vector<int> oids;
+        seqn.HashToOids(h, oids);
+        
+        bool found = false;
+        
+        ITERATE(vector<int>, iter, oids) {
+            if (*iter == oid) {
+                found = true;
+                break;
+            }
+        }
+        
+        CHECK(found);
+    }
 }
 
 

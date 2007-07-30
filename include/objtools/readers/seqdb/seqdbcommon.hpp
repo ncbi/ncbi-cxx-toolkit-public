@@ -871,6 +871,27 @@ struct SSeqDBTaxInfo {
 NCBI_XOBJREAD_EXPORT
 string SeqDB_ResolveDbPath(const string & filename);
 
+/// Sequence Hashing
+///
+/// This computes a hash of a sequence.  The sequence is expected to
+/// be in either ncbistdaa format (for protein) or ncbi8na format (for
+/// nucleotide).  These formats are produced by CSeqDB::GetAmbigSeq()
+/// if the kSeqDBNuclNcbiNA8 encoding is selected.
+///
+/// @param sequence A pointer to the sequence data. [in]
+/// @param length The length of the sequence in bases. [in]
+/// @return The 32 bit hash value.
+unsigned SeqDB_SequenceHash(const char * sequence,
+                            int          length);
+
+/// Sequence Hashing For a CBioseq
+///
+/// This computes a hash of a sequence expressed as a CBioseq.
+///
+/// @param sequence The sequence. [in]
+/// @return The 32 bit hash value.
+unsigned SeqDB_SequenceHash(const CBioseq & sequence);
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBCOMMON_HPP

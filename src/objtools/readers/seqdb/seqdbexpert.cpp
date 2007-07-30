@@ -119,5 +119,21 @@ void CSeqDBExpert::Verify()
     m_Impl->Verify();
 }
 
+unsigned CSeqDBExpert::GetSequenceHash(int oid)
+{
+    m_Impl->Verify();
+    unsigned h = m_Impl->GetSequenceHash(oid);
+    m_Impl->Verify();
+    
+    return h;
+}
+
+void CSeqDBExpert::HashToOids(unsigned hash, vector<int> & oids)
+{
+    m_Impl->Verify();
+    m_Impl->HashToOids(hash, oids);
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 

@@ -68,6 +68,7 @@ public:
         eTiId,     /// Trace ID is a numeric identifier for Trace sequences.
         ePigId,    /// Each PIG identifier refers to exactly one protein sequence.
         eStringId, /// Some sequence sources uses string identifiers.
+        eHashId,   /// Lookup from sequence hash values to OIDs.
         eOID       /// The ordinal id indicates the order of the data in the volume's index file.
     };
     
@@ -105,15 +106,15 @@ public:
     /// relative to a particular database volume.
     /// 
     /// @param atlas
-    ///   The memory management object.
+    ///   The memory management object. [in]
     /// @param dbname
-    ///   The name of the volume's files (minus the extension).
+    ///   The name of the volume's files (minus the extension). [in]
     /// @param prot_nucl
-    ///   Whether the sequences are protein or nucleotide.
+    ///   Whether the sequences are protein or nucleotide. [in]
     /// @param file_ext_char
-    ///   This is 's', 'n', or 'p', for string, GI, or PIG, respectively.
+    ///   This is 's', 'n', or 'p', for string, GI, or PIG, respectively. [in]
     /// @param ident_type
-    ///   The type of identifiers this database translates.
+    ///   The type of identifiers this database translates. [in]
     CSeqDBIsam(CSeqDBAtlas  & atlas,
                const string & dbname,
                char           prot_nucl,
@@ -134,11 +135,11 @@ public:
     /// changed.
     /// 
     /// @param pig
-    ///   The PIG to look up.
+    ///   The PIG to look up. [in]
     /// @param oid
-    ///   The returned oid.
+    ///   The returned oid. [out]
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock hold object for this thread. [in|out]
     /// @return
     ///   true if the PIG was found
     bool PigToOid(TPig pig, TOid & oid, CSeqDBLockHold & locked)
@@ -156,11 +157,11 @@ public:
     /// TIs are usually unique.
     /// 
     /// @param id
-    ///   The GI or TI to look up.
+    ///   The GI or TI to look up. [in]
     /// @param oid
-    ///   The returned oid.
+    ///   The returned oid. [out]
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock hold object for this thread. [in|out]
     /// @return
     ///   true if the GI was found
     bool IdToOid(Int8 id, TOid & oid, CSeqDBLockHold & locked)
@@ -178,13 +179,13 @@ public:
     /// will normally be called once for each volume.
     ///
     /// @param vol_start
-    ///   The starting OID of this volume.
+    ///   The starting OID of this volume. [in]
     /// @param vol_end
-    ///   The fist OID past the end of this volume.
+    ///   The fist OID past the end of this volume. [in]
     /// @param ids
-    ///   The set of GI-OID or TI-OID pairs.
+    ///   The set of GI-OID or TI-OID pairs. [in|out]
     /// @param locked
-    ///   The lock holder object for this thread
+    ///   The lock holder object for this thread. [in|out]
     void IdsToOids(int              vol_start,
                    int              vol_end,
                    CSeqDBGiList   & ids,
@@ -208,13 +209,13 @@ public:
     /// identifier type or an exception will be thrown.
     ///
     /// @param vol_start
-    ///   The starting OID of this volume.
+    ///   The starting OID of this volume. [in]
     /// @param vol_end
-    ///   The fist OID past the end of this volume.
+    ///   The fist OID past the end of this volume. [in]
     /// @param ids
-    ///   The set of GI-OID pairs.
+    ///   The set of GI-OID pairs. [in|out]
     /// @param locked
-    ///   The lock holder object for this thread
+    ///   The lock holder object for this thread. [in|out]
     void IdsToOids(int                  vol_start,
                    int                  vol_end,
                    CSeqDBNegativeList & ids,
@@ -233,13 +234,13 @@ public:
     /// simplification routines were able to recognize the sequence.
     /// 
     /// @param acc
-    ///   The string to look up.
+    ///   The string to look up. [in]
     /// @param oids
-    ///   The returned oids.
+    ///   The returned oids. [out]
     /// @param adjusted
-    ///   Whether the simplification routines adjusted the string.
+    ///   Whether the simplification adjusted the string. [in|out]
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock hold object for this thread. [in|out]
     void StringToOids(const string   & acc,
                       vector<TOid>   & oids,
                       bool             adjusted,
@@ -253,12 +254,31 @@ public:
     /// possible.
     /// 
     /// @param acc
-    ///   A string containing the Seq-id.
+    ///   A string containing the Seq-id. [in]
     /// @param oid
-    ///   The returned oid.
+    ///   The returned oid. [out]
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock hold object for this thread. [in|out]
     bool SeqidToOid(const string & acc, TOid & oid, CSeqDBLockHold & locked);
+    
+    /// Sequence hash lookup
+    /// 
+    /// This methods tries to find sequences associated with a given
+    /// sequence hash value.  The provided value is numeric but the
+    /// ISAM file uses a string format, because string searches can
+    /// return multiple results per key, and there may be multiple
+    /// OIDs for a given hash value due to identical sequences and
+    /// collisions.
+    /// 
+    /// @param hash
+    ///   The sequence hash value to look up. [in]
+    /// @param oids
+    ///   The returned oids. [out]
+    /// @param locked
+    ///   The lock hold object for this thread. [in|out]
+    void HashToOids(unsigned         hash,
+                    vector<TOid>   & oids,
+                    CSeqDBLockHold & locked);
     
     /// String id simplification.
     /// 
@@ -269,13 +289,13 @@ public:
     /// the purpose of lookup in the string ISAM file.
     /// 
     /// @param acc
-    ///   The string to look up.
+    ///   The string to look up. [in]
     /// @param num_id
-    ///   The returned identifier, if numeric.
+    ///   The returned identifier, if numeric. [out]
     /// @param str_id
-    ///   The returned identifier, if a string.
+    ///   The returned identifier, if a string. [out]
     /// @param simpler
-    ///   Whether an adjustment was done at all.
+    ///   Whether an adjustment was done at all. [out]
     /// @return
     ///   The resulting identifier type.
     static EIdentType
@@ -299,15 +319,15 @@ public:
     /// mechanism will try to use the original string.
     /// 
     /// @param bestid
-    ///   The Seq-id to look up.
+    ///   The Seq-id to look up. [in]
     /// @param acc
-    ///   The original string the Seq-id was created from (or NULL).
+    ///   The original string the Seq-id was created from (or NULL). [in]
     /// @param num_id
-    ///   The returned identifier, if numeric.
+    ///   The returned identifier, if numeric. [out]
     /// @param str_id
-    ///   The returned identifier, if a string.
+    ///   The returned identifier, if a string. [out]
     /// @param simpler
-    ///   Whether an adjustment was done at all.
+    ///   Whether an adjustment was done at all. [out]
     /// @return
     ///   The resulting identifier type.
     static EIdentType

@@ -1411,5 +1411,57 @@ void CSeqDBImpl::SetDefaultMemoryBound(Uint8 bytes)
     CSeqDBAtlas::SetDefaultMemoryBound(bytes);
 }
 
+unsigned CSeqDBImpl::GetSequenceHash(int oid)
+{
+    char * datap(0);
+    int base_len = GetAmbigSeq(oid,
+                               & datap,
+                               kSeqDBNuclNcbiNA8,
+                               0,
+                               (ESeqDBAllocType) 0);
+    
+    unsigned h = SeqDB_SequenceHash(datap, base_len);
+    
+    RetSequence(const_cast<const char**>(& datap));
+    
+    return h;
+}
+
+void CSeqDBImpl::HashToOids(unsigned hash, vector<int> & oids)
+{
+    // Find all OIDs in all volumes that match this hash.
+    
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    
+    oids.clear();
+    
+    vector<int> vol_oids;
+    
+    for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        // Append any additional OIDs from this volume's indices.
+        m_VolSet.GetVol(vol_idx)->HashToOids(hash, vol_oids, locked);
+        
+        if (vol_oids.empty()) {
+            continue;
+        }
+        
+        int vol_start = m_VolSet.GetVolOIDStart(vol_idx);
+        
+        ITERATE(vector<int>, iter, vol_oids) {
+            int oid1 = (*iter) + vol_start;
+            int oid2 = oid1;
+            
+            // Filter out any oids not in the virtual oid bitmaps.
+            
+            if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
+                oids.push_back(oid1);
+            }
+        }
+        
+        vol_oids.clear();
+    }
+}
+
 END_NCBI_SCOPE
 

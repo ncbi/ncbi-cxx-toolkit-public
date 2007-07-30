@@ -738,6 +738,23 @@ public:
     /// will be selected based on system information.
     static void SetDefaultMemoryBound(Uint8 bytes);
     
+    /// Get the sequence hash for a given OID.
+    ///
+    /// The sequence data is fetched and the sequence hash is
+    /// computed and returned.
+    ///
+    /// @param oid The sequence to compute the hash of. [in]
+    /// @return The sequence hash.
+    unsigned GetSequenceHash(int oid);
+    
+    /// Get the OIDs for a given sequence hash.
+    ///
+    /// The OIDs corresponding to a hash value are found and returned.
+    ///
+    /// @param hash The sequence hash to look up. [in]
+    /// @param oids OIDs of sequences with this hash. [out]
+    void HashToOids(unsigned hash, vector<int> & oids);
+    
 private:
     CLASS_MARKER_FIELD("IMPL")
     
