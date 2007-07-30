@@ -145,7 +145,7 @@ public:
     TScore        GetScore(void) const;
 
     size_t        GetSpaceLimit(void) const {  return m_MaxMem; }
-    static size_t GetDefaultSpaceLimit(void) { return 2u * 1024 * 1024 * 1024; }
+    static size_t GetDefaultSpaceLimit(void) { return 1024u * 1024u * (512u + 2u * 1024u); }
     
     // alignment transcript
     enum ETranscriptSymbol {
