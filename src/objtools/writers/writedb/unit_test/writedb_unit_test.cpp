@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE(s_IsamSorting)
                        "test of string ISAM sortedness");
 }
 
-BOOST_AUTO_UNIT_TEST(HashToOid)
+BOOST_AUTO_TEST_CASE(HashToOid)
 {
     CSeqDBExpert nr("nr", CSeqDB::eProtein);
     CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
