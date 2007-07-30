@@ -196,7 +196,7 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 
     const Blast_KarlinBlk *kbp_gap = summary.GetGappedKarlinBlk();
     m_Outfile << endl;
-    if (kbp_ungap) {
+    if (kbp_gap) {
         CBlastFormatUtil::PrintKAParameters(kbp_gap->Lambda, 
                                             kbp_gap->K, kbp_gap->H,
                                             kFormatLineLength, m_Outfile,
