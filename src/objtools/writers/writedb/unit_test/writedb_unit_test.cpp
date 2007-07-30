@@ -37,6 +37,9 @@
 #include <objmgr/seq_vector.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
+#include <objtools/readers/fasta.hpp>
+
+#include <sstream>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
@@ -729,5 +732,88 @@ BOOST_AUTO_TEST_CASE(s_IsamSorting)
                        "nr",
                        "w-isam-sort-bs",
                        "test of string ISAM sortedness");
+}
+
+CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
+{
+    istrstream istr(str.data(), str.size());
+    
+    CRef<ILineReader> lr(new CStreamLineReader(istr));
+    
+    typedef CFastaReader::EFlags TFlags;
+    
+    TFlags flags = (TFlags) (CFastaReader::fAllSeqIds |
+                             (protein
+                              ? CFastaReader::fAssumeProt
+                              : CFastaReader::fAssumeNuc));
+    
+    CFastaReader fr(*lr, flags);
+    
+    CHECK(! lr->AtEOF());
+    CRef<CSeq_entry> entry = fr.ReadOneSeq();
+    
+    CHECK(! entry.Empty());
+    CHECK(entry->IsSeq());
+    
+    CRef<CBioseq> bs(& entry->SetSeq());
+    
+    cout << "SEQUENCE:" << endl;
+    cout << MSerial_AsnText << *bs;
+    cout << "\nDONE" << endl;
+    
+    return bs;
+}
+
+BOOST_AUTO_TEST_CASE(s_FastaReaderBioseq)
+{
+    vector<string> files;
+    
+    string title = "from-fasta-reader";
+    
+    string
+        I1("gi|123"), T1("One two three."),
+        I2("gi|124"), T2("One two four.");
+    
+    {
+        CRef<CWriteDB> wr(new CWriteDB(title,
+                                       CWriteDB::eProtein,
+                                       "title",
+                                       CWriteDB::eFullIndex));
+        
+        // Build a multi-defline bioseq and read it with CFastaReader.
+        
+        string str =
+            ">"    + I1 + " " + T1 +
+            "\001" + I2 + " " + T2 + "\n" +
+            "ELVISLIVES\n";
+        
+        CRef<CBioseq> bs = s_FastaStringToBioseq(str, true);
+        
+        wr->AddSequence(*bs);
+        wr->Close();
+        
+        // Clean up.
+        
+        wr->ListFiles(files);
+    }
+    
+    {
+        CSeqDB rd("from-fasta-reader", CSeqDB::eProtein);
+        CHECK(rd.GetNumOIDs() == 1);
+        
+        CRef<CBlast_def_line_set> bdls =
+            rd.GetHdr(0);
+        
+        CHECK(bdls->Get().size() == 2);
+        CHECK(bdls->Get().front()->GetTitle() == T1);
+        CHECK(bdls->Get().front()->GetSeqid().size() == 1);
+        CHECK(bdls->Get().front()->GetSeqid().front()->AsFastaString() == I1);
+        
+        CHECK(bdls->Get().back()->GetTitle() == T2);
+        CHECK(bdls->Get().back()->GetSeqid().size() == 1);
+        CHECK(bdls->Get().back()->GetSeqid().front()->AsFastaString() == I2);
+   }
+    
+    s_WrapUpFiles(files);
 }
 

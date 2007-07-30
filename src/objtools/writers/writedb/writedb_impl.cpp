@@ -209,7 +209,7 @@ void CWriteDB_Impl::x_GetBioseqBinaryHeader(const CBioseq & bioseq,
             
             if (oi.IsStr() && oi.GetStr() == binkey) {
                 if (uo.CanGetData()) {
-                    vector< CRef< CUser_field > > D = uo.GetData();
+                    const vector< CRef< CUser_field > > & D = uo.GetData();
                     
                     if (D.size() &&
                         D[0].NotEmpty() &&
@@ -440,6 +440,15 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
         }
         
         if (bin_hdr.empty()) {
+            x_GetFastaReaderDeflines(*bioseq,
+                                     deflines,
+                                     membbits,
+                                     linkouts,
+                                     pig,
+                                     false);
+        }
+        
+        if (bin_hdr.empty() && deflines.Empty()) {
             x_BuildDeflinesFromBioseq(*bioseq,
                                       deflines,
                                       membbits,
@@ -852,4 +861,164 @@ void CWriteDB_Impl::ListFiles(vector<string> & files)
     }
 }
 
+// We only unescape control-A.  For now I'll just pass all other
+// characters through untouched.
+
+static void s_UnescapeControlA(const string & inp, string & outp)
+{
+    bool debug = true;
+    
+    outp.reserve(inp.size());
+    outp.resize(0);
+    
+    bool esc = false;
+    
+    for(size_t i = 0; i < inp.size(); i++) {
+        char ch = inp[i];
+        
+        if (esc) {
+            switch(ch) {
+            case '1':
+                outp.append("\001");
+                break;
+                
+            default:
+                if (debug) {
+                    cout << "Unknown escape character: [" << int(ch) << "]" << endl;
+                }
+                outp.append(& ch, 1);
+                break;
+            }
+            
+            esc = false;
+        } else if (ch == '\\') {
+            esc = true;
+        } else {
+            outp.append(& ch, 1);
+        }
+    }
+}
+
+void CWriteDB_Impl::
+x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
+                         CConstRef<CBlast_def_line_set> & deflines,
+                         const vector< vector<int> >    & membits,
+                         const vector< vector<int> >    & linkout,
+                         int                              pig,
+                         bool                             accept_gt)
+{
+    if (! bioseq.CanGetDescr()) {
+        return;
+    }
+    
+    string fasta;
+    
+    // Scan the CBioseq for the CFastaReader user object.
+    
+    ITERATE(list< CRef< CSeqdesc > >, iter, bioseq.GetDescr().Get()) {
+        const CSeqdesc & desc = **iter;
+        
+        if (desc.IsUser() &&
+            desc.GetUser().CanGetType() &&
+            desc.GetUser().GetType().IsStr() &&
+            desc.GetUser().GetType().GetStr() == "CFastaReader" &&
+            desc.GetUser().CanGetData()) {
+            
+            const vector< CRef< CUser_field > > & D = desc.GetUser().GetData();
+            
+            ITERATE(vector< CRef< CUser_field > >, iter, D) {
+                const CUser_field & f = **iter;
+                
+                if (f.CanGetLabel() &&
+                    f.GetLabel().IsStr() &&
+                    f.GetLabel().GetStr() == "DefLine" &&
+                    f.CanGetData() &&
+                    f.GetData().IsStr()) {
+                    
+                    s_UnescapeControlA(f.GetData().GetStr(), fasta);
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (fasta.empty())
+        return;
+    
+    // The bioseq has a field contianing the ids for the first
+    // defline.  The title string contains the title for the first
+    // defline, plus all the other defline titles and ids.  This code
+    // unpacks them and builds a normal blast defline set.
+    
+    unsigned mship_i(0), links_i(0);
+    bool used_pig(false);
+    
+    // Build the deflines.
+    
+    CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
+    CRef<CBlast_def_line> defline;
+    
+    int skip = 1;
+    
+    while(fasta.size()) {
+        size_t id_start = skip;
+        size_t pos_title = fasta.find(" ", skip);
+        size_t pos_next = fasta.find("\001", skip);
+        skip = 1;
+        
+        if (pos_next == fasta.npos) {
+            if (accept_gt) {
+                pos_next = fasta.find(" >");
+                skip = 2;
+            }
+        } else {
+            // If there is a ^A, turn off GT checking.
+            accept_gt = false;
+        }
+        
+        if (pos_next == fasta.npos) {
+            pos_next = fasta.size();
+            skip = 0;
+        }
+        
+        string ids(fasta, id_start, pos_title - id_start);
+        string title(fasta, pos_title + 1, pos_next-pos_title - 1);
+        string remaining(fasta, pos_next, fasta.size() - pos_next);
+        fasta.swap(remaining);
+        
+        // Parse '|' seperated ids.
+        list< CRef<CSeq_id> > seqids;
+        CSeq_id::ParseFastaIds(seqids, ids);
+        
+        // Build the actual defline.
+        
+        defline.Reset(new CBlast_def_line);
+        defline->SetSeqid().swap(seqids);
+        defline->SetTitle(title);
+        
+        if (mship_i < membits.size()) {
+            const vector<int> & V = membits[mship_i++];
+            defline->SetMemberships().assign(V.begin(), V.end());
+        }
+        
+        if (links_i < linkout.size()) {
+            const vector<int> & V = linkout[mship_i++];
+            defline->SetLinks().assign(V.begin(), V.end());
+        }
+        
+        if ((! used_pig) && pig) {
+            defline->SetOther_info().push_back(pig);
+            used_pig = true;
+        }
+        
+        bdls->Set().push_back(defline);
+    }
+    
+    s_CheckEmptyLists(bdls, true);
+    deflines = bdls;
+}
+
+
 END_NCBI_SCOPE
+
+

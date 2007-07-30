@@ -324,6 +324,29 @@ private:
     static void
     x_SetDeflinesFromBinary(const string                   & bin_hdr,
                             CConstRef<CBlast_def_line_set> & deflines);
+
+    /// Extract a defline set from a CFastaReader generated CBioseq.
+    ///
+    /// CBioseq objects produced by CFastaReader have an internal
+    /// 'user' field that contains the original FASTA, which can be
+    /// used to build blast deflines.  If the original FASTA deflines
+    /// were delimited with control-A characters, then those will be
+    /// found here too.  If the caller wishes to accept '>' as an
+    /// alternate delimiter, then accept_gt should be specified.
+    ///
+    /// @param bin_hdr Binary ASN.1 encoding of defline set. [in]
+    /// @param deflines Defline set. [out]
+    /// @param membits Membership bits for each defline. [in]
+    /// @param linkout Linkout bits for each defline. [in]
+    /// @param pig PIG to attach to a protein sequence. [in]
+    /// @param accept_gt Whether greater-than is a delimiter. [in]
+    static void
+    x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
+                             CConstRef<CBlast_def_line_set> & deflines,
+                             const vector< vector<int> >    & membits,
+                             const vector< vector<int> >    & linkout,
+                             int                              pig,
+                             bool                             accept_gt);
     
     /// Returns true if we have unwritten sequence data.
     bool x_HaveSequence() const;
