@@ -48,16 +48,13 @@ using namespace std;
 CWriteDB::CWriteDB(const string       & dbname,
                    CWriteDB::ESeqType   seqtype,
                    const string       & title,
-                   EIndexType           indices)
+                   int                 indices)
     : m_Impl(0)
 {
-    bool trace_index = indices == eFullWithTrace;
-    
     m_Impl = new CWriteDB_Impl(dbname,
                                seqtype == CWriteDB::eProtein,
                                title,
-                               indices,
-                               trace_index);
+                               (EIndexType)indices);
 }
 
 CWriteDB::~CWriteDB()

@@ -60,7 +60,10 @@ enum EWriteDBIsamType {
     eGi,
     
     /// Trace ID Index.
-    eTrace
+    eTrace,
+    
+    /// Hash Index.
+    eHash
 };
 
 /// Forward definition for CWriteDB_IsamData class.
@@ -120,6 +123,16 @@ public:
     /// @param oid OID of the sequence.
     /// @param pig PIG identifier for this sequence.
     void AddPig(int oid, int pig);
+    
+    /// Set a sequence's hash value.
+    ///
+    /// The sequence hash is a hash of a sequence.  This adds that
+    /// hash for the purpose of building an ISAM file mapping hash
+    /// values to OIDs.
+    ///
+    /// @param oid OID of the sequence.
+    /// @param hash Sequence hash for this sequence.
+    void AddHash(int oid, int hash);
     
     /// Tests whether there is room for a given number of IDs.
     /// 
@@ -468,6 +481,16 @@ public:
     /// @param oid OID of the sequence.
     /// @param pig PIG identifier for this sequence.
     void AddPig(int oid, int pig);
+    
+    /// Set a sequence's hash value.
+    ///
+    /// The sequence hash is a hash of a sequence.  This adds that
+    /// hash for the purpose of building an ISAM file mapping hash
+    /// values to OIDs.
+    ///
+    /// @param oid OID of the sequence.
+    /// @param hash Sequence hash for this sequence.
+    void AddHash(int oid, int hash);
     
     /// Rename files to single-volume names.
     /// 

@@ -33,6 +33,8 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/writers/writedb/writedb_error.hpp>
+#include <objtools/readers/seqdb/seqdbexpert.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -52,8 +54,7 @@ USING_SCOPE(std);
 CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              bool           protein,
                              const string & title,
-                             EIndexType     indices,
-                             bool           trace_index)
+                             EIndexType     indices)
     : m_Dbname           (dbname),
       m_Protein          (protein),
       m_Title            (title),
@@ -61,8 +62,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_MaxVolumeLetters (0),
       m_Indices          (indices),
       m_Closed           (false),
-      m_TraceIndex       (trace_index),
       m_Pig              (0),
+      m_Hash             (0),
       m_HaveSequence     (false)
 {
     CTime now(CTime::eCurrent);
@@ -91,6 +92,7 @@ void CWriteDB_Impl::x_ResetSequenceData()
     m_Linkouts.clear();
     m_Memberships.clear();
     m_Pig = 0;
+    m_Hash = 0;
     
     m_Sequence.erase();
     m_Ambig.erase();
@@ -109,6 +111,10 @@ void CWriteDB_Impl::AddSequence(const CTempString & seq,
     m_Sequence.assign(seq.data(), seq.length());
     m_Ambig.assign(ambig.data(), ambig.length());
     
+    if (m_Indices & CWriteDB::eAddHash) {
+        x_ComputeHash(seq, ambig);
+    }
+    
     x_SetHaveSequence();
 }
 
@@ -121,6 +127,10 @@ void CWriteDB_Impl::AddSequence(const CBioseq & bs)
     x_ResetSequenceData();
     
     m_Bioseq.Reset(& bs);
+    
+    if (m_Indices & CWriteDB::eAddHash) {
+        x_ComputeHash(bs);
+    }
     
     x_SetHaveSequence();
 }
@@ -701,7 +711,8 @@ void CWriteDB_Impl::x_Publish()
                                        m_Ambig,
                                        m_BinHdr,
                                        m_Ids,
-                                       m_Pig);
+                                       m_Pig,
+                                       m_Hash);
     }
     
     if (! done) {
@@ -719,8 +730,7 @@ void CWriteDB_Impl::x_Publish()
                                                index,
                                                m_MaxFileSize,
                                                m_MaxVolumeLetters,
-                                               m_Indices,
-                                               m_TraceIndex));
+                                               m_Indices));
             
             m_VolumeList.push_back(m_Volume);
         }
@@ -729,7 +739,8 @@ void CWriteDB_Impl::x_Publish()
                                        m_Ambig,
                                        m_BinHdr,
                                        m_Ids,
-                                       m_Pig);
+                                       m_Pig,
+                                       m_Hash);
         
         if (! done) {
             NCBI_THROW(CWriteDBException,
@@ -786,6 +797,7 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs)
 void CWriteDB_Impl::SetMaskedLetters(const string & masked)
 {
     // Only supported for protein.
+    
     if (! m_Protein) {
         NCBI_THROW(CWriteDBException,
                    eArgErr,
@@ -859,6 +871,40 @@ void CWriteDB_Impl::ListFiles(vector<string> & files)
     if (m_VolumeList.size() > 1) {
         files.push_back(x_MakeAliasName());
     }
+}
+
+/// Compute the hash of a (raw) sequence.
+///
+/// The hash of the provided sequence will be computed and assigned to
+/// the m_Hash field.  For protein, the sequence is in the Ncbistdaa
+/// format.  For nucleotide, the sequence and optional ambiguities are
+/// in 'raw' format, meaning they are packed just as sequences are
+/// packed in nsq files.
+///
+/// @param sequence The sequence data. [in]
+/// @param ambiguities Nucleotide ambiguities are provided here. [in]
+void CWriteDB_Impl::x_ComputeHash(const CTempString & sequence,
+                                  const CTempString & ambig)
+{
+    if (m_Protein) {
+        m_Hash = SeqDB_SequenceHash(sequence.data(), sequence.size());
+    } else {
+        string na8;
+        SeqDB_UnpackAmbiguities(sequence, ambig, na8);
+        m_Hash = SeqDB_SequenceHash(na8.data(), na8.size());
+    }
+}
+
+/// Compute the hash of a (Bioseq) sequence.
+///
+/// The hash of the provided sequence will be computed and
+/// assigned to the m_Hash member.  The sequence is packed as a
+/// CBioseq.
+///
+/// @param sequence The sequence as a CBioseq. [in]
+void CWriteDB_Impl::x_ComputeHash(const CBioseq & sequence)
+{
+    m_Hash = SeqDB_SequenceHash(sequence);
 }
 
 // We only unescape control-A.  For now I'll just pass all other

@@ -79,8 +79,14 @@ s_IsamExtension(EWriteDBIsamType itype,
         type_ch = 't';
         break;
         
+    case eHash:
+        type_ch = 'h';
+        break;
+        
     default:
-        NCBI_THROW(CWriteDBException, eArgErr, "Not implemented.");
+        NCBI_THROW(CWriteDBException,
+                   eArgErr,
+                   "Not implemented.");
     }
     
     string extn("???");
@@ -131,6 +137,11 @@ void CWriteDB_Isam::AddPig(int oid, int pig)
     m_IFile->AddPig(oid, pig);
 }
 
+void CWriteDB_Isam::AddHash(int oid, int hash)
+{
+    m_IFile->AddHash(oid, hash);
+}
+
 void CWriteDB_Isam::Close()
 {
     // Index must be closed first.
@@ -168,7 +179,7 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
     // if there are less than (about) 9 entries; at that size I'm not
     // concerned about the byte limits.
     
-    if (itype == eAcc) {
+    if (itype == eAcc || itype == eHash) {
         // If there is a maximum string size it's something large like
         // 4k per table line.  In practice, string table rows tend to
         // be less than 50 characters, with the median probably around
@@ -211,6 +222,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
         break;
         
     case eAcc:
+    case eHash:
         isam_type = eIsamStringType; // string w/ data
         max_line_size = eMaxStringLine;
         num_terms = m_StringSort.Size();
@@ -406,7 +418,7 @@ void CWriteDB_IsamIndex::x_Flush()
         //  B. Pick out periodic samples for the index, every 256 elements
         //     for numeric and every 64 for string.
         
-        if (m_Type == eAcc) {
+        if (m_Type == eAcc || m_Type == eHash) {
             x_FlushStringIndex();
         } else {
             x_FlushNumericIndex();
@@ -427,7 +439,7 @@ void CWriteDB_IsamIndex::AddIds(int oid, const TIdList & idlist)
     } else {
         NCBI_THROW(CWriteDBException,
                    eArgErr,
-                   "Cannot call AddIds() for PIG index.");
+                   "Cannot call AddIds() for this index type.");
     }
 }
 
@@ -436,6 +448,14 @@ void CWriteDB_IsamIndex::AddPig(int oid, int pig)
     SIdOid row(pig, oid);
     m_NumberTable.push_back(row);
     m_DataFileSize += 8;
+}
+
+void CWriteDB_IsamIndex::AddHash(int oid, int hash)
+{
+    char buf[256];
+    int sz = sprintf(buf, "%u", (unsigned)hash);
+    
+    x_AddStringData(oid, buf, sz);
 }
 
 void CWriteDB_IsamIndex::x_AddGis(int oid, const TIdList & idlist)

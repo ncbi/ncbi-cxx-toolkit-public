@@ -128,7 +128,7 @@ typedef vector< CRef<CSeq_id> > TIdList;
 
 static void
 s_DupIdsBioseq(CWriteDB      & w,
-               CSeqDBExpert  & s,
+               CSeqDB        & s,
                const TIdList & ids)
 {
     ITERATE(TIdList, iter, ids) {
@@ -307,14 +307,25 @@ string s_ExtractLast(const string & data, const string & delim)
 //
 // nsd/psd: Check that the file is in sorted order
 
-void s_CheckFiles(const vector<string> & files)
+void s_CheckFiles(const vector<string> & files,
+                  bool                   need_hash = false)
 {
+    bool found_hash = false;
+    
     for(unsigned i = 0; i < files.size(); i++) {
         string ext = s_ExtractLast(files[i], ".");
         
         if (ext == "nsd" || ext == "psd") {
             s_CheckSorted(files[i]);
         }
+        if (ext == "nhd" || ext == "phd") {
+            s_CheckSorted(files[i]);
+            found_hash = true;
+        }
+    }
+    
+    if (need_hash) {
+        CHECK(found_hash);
     }
 }
 
@@ -732,6 +743,52 @@ BOOST_AUTO_TEST_CASE(s_IsamSorting)
                        "nr",
                        "w-isam-sort-bs",
                        "test of string ISAM sortedness");
+}
+
+BOOST_AUTO_UNIT_TEST(HashToOid)
+{
+    CSeqDBExpert nr("nr", CSeqDB::eProtein);
+    CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
+    
+    int prot_gis[] = { 129295, 129296, 129297, 0 };
+    int nucl_gis[] = { 555, 556, 405832, 0 };
+    
+    TIdList prot_ids, nucl_ids;
+    s_BuildIds(prot_ids, prot_gis);
+    s_BuildIds(nucl_ids, nucl_gis);
+    
+    typedef CWriteDB::EIndexType TType;
+    
+    TType itype = TType(CWriteDB::eFullWithTrace |
+                        CWriteDB::eAddHash);
+    
+    CRef<CWriteDB> prot(new CWriteDB("w-prot-hash",
+                                     CWriteDB::eProtein,
+                                     "test of hash ISAMs (P)",
+                                     itype));
+    
+    CRef<CWriteDB> nucl(new CWriteDB("w-nucl-hash",
+                                     CWriteDB::eNucleotide,
+                                     "test of hash ISAMs (N)",
+                                     itype));
+    
+    s_DupIdsBioseq(*prot, nr, prot_ids);
+    s_DupIdsBioseq(*nucl, nt, nucl_ids);
+    
+    prot->Close();
+    nucl->Close();
+    
+    vector<string> files;
+    prot->ListFiles(files);
+    s_CheckFiles(files, true);
+    s_RemoveFiles(files);
+    prot.Reset();
+    
+    files.resize(0);
+    nucl->ListFiles(files);
+    s_CheckFiles(files, true);
+    s_RemoveFiles(files);
+    nucl.Reset();
 }
 
 CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)

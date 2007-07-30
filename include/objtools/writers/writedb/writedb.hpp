@@ -79,16 +79,25 @@ public:
     /// Whether and what kind of indices to build.
     enum EIndexType {
         /// Build a database without any indices.
-        eNoIndex,
+        eNoIndex = 0,
         
         /// Use only simple accessions in the string index.
-        eSparseIndex,
+        eSparseIndex = 0x1,
         
         /// Use several forms of each Seq-id in the string index.
-        eFullIndex,
+        eFullIndex = 0x2,
+        
+        /// OR this in to add an index for trace IDs.
+        eAddTrace = 0x4,
         
         /// Like eFullIndex but also build a numeric Trace ID index.
-        eFullWithTrace
+        eFullWithTrace = eFullIndex | eAddTrace,
+        
+        
+        // Specialized ISAMs; these can be ORred into the above.
+        
+        /// Add an index from sequence hash to OID.
+        eAddHash = 0x100
     };
     
     //
@@ -110,7 +119,7 @@ public:
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
-             EIndexType     itype = eFullWithTrace);
+             int            itype = eFullWithTrace);
     
     /// Destructor.
     ///

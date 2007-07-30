@@ -70,8 +70,7 @@ public:
     CWriteDB_Impl(const string & dbname,
                   bool           protein,
                   const string & title,
-                  EIndexType     indices,
-                  bool           trace_index);
+                  EIndexType     indices);
     
     /// Destructor.
     ~CWriteDB_Impl();
@@ -379,6 +378,27 @@ private:
                                   const vector< vector<int> >    & linkouts,
                                   int                              pig);
     
+    /// Compute the hash of a (raw) sequence.
+    ///
+    /// The hash of the provided sequence will be computed and
+    /// assigned to the m_Hash member.  The sequence and optional
+    /// ambiguities are 'raw', meaning they are packed just as
+    /// sequences are packed in nsq and psq files.
+    ///
+    /// @param sequence The sequence data. [in]
+    /// @param ambiguities Nucleotide ambiguities are provided here. [in]
+    void x_ComputeHash(const CTempString & sequence,
+                       const CTempString & ambiguities);
+    
+    /// Compute the hash of a (Bioseq) sequence.
+    ///
+    /// The hash of the provided sequence will be computed and
+    /// assigned to the m_Hash member.  The sequence is packed as a
+    /// CBioseq.
+    ///
+    /// @param sequence The sequence as a CBioseq. [in]
+    void x_ComputeHash(const CBioseq & sequence);
+    
     //
     // Accumulated sequence data.
     //
@@ -403,6 +423,9 @@ private:
     
     /// PIG to attach to headers for protein sequences.
     int m_Pig;
+    
+    /// Sequence hash for this sequence.
+    int m_Hash;
     
     /// True if we have a sequence to write.
     bool m_HaveSequence;

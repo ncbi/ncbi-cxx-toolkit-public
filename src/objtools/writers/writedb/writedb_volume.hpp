@@ -79,8 +79,7 @@ public:
                     int            index,
                     Uint8          max_file_size,
                     Uint8          max_letters,
-                    EIndexType     indices,
-                    bool           trace_index);
+                    EIndexType     indices);
     
     /// Destructor.
     ///
@@ -97,11 +96,13 @@ public:
     /// @param binhdr Binary headers (blast deflines in binary ASN.1).
     /// @param ids List of identifiers for ISAM construction.
     /// @param pig PIG protein identifier (zero if not available.)
+    /// @param hash Sequence Hash (zero if not available.)
     bool WriteSequence(const string  & seq,
                        const string  & ambig,
                        const string  & binhdr,
                        const TIdList & ids,
-                       int             pig);
+                       int             pig,
+                       int             hash);
     
     /// Rename all volumes files to single-volume names.
     /// 
@@ -164,6 +165,7 @@ private:
     CRef<CWriteDB_Isam> m_GiIsam;    ///< GI index (pni+pnd / nni+nnd).
     CRef<CWriteDB_Isam> m_PigIsam;   ///< PIG index (ppi+ppd, protein only).
     CRef<CWriteDB_Isam> m_TraceIsam; ///< Trace ID index (pti+ptd or nti+ntd).
+    CRef<CWriteDB_Isam> m_HashIsam;  ///< Hash index (phi+phd or nhi+nhd).
     
     // Functions
     

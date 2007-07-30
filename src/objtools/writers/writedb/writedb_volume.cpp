@@ -48,8 +48,7 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                  int            index,
                                  Uint8          max_file_size,
                                  Uint8          max_letters,
-                                 EIndexType     indices,
-                                 bool           trace_index)
+                                 EIndexType     indices)
     : m_DbName      (dbname),
       m_Protein     (protein),
       m_Title       (title),
@@ -80,7 +79,7 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                           max_letters));
     
     if (m_Indices != CWriteDB::eNoIndex) {
-        bool sparse = (m_Indices == CWriteDB::eSparseIndex);
+        bool sparse = (m_Indices & CWriteDB::eSparseIndex) == eSparseIndex;
         
         if (m_Protein) {
             m_PigIsam.Reset(new CWriteDB_Isam(ePig,
@@ -105,13 +104,22 @@ CWriteDB_Volume::CWriteDB_Volume(const string & dbname,
                                           max_file_size,
                                           sparse));
         
-        if (trace_index) {
+        if (m_Indices & CWriteDB::eAddTrace) {
             m_TraceIsam.Reset(new CWriteDB_Isam(eTrace,
                                                 dbname,
                                                 protein,
                                                 index,
                                                 max_file_size,
-                                                sparse));
+                                                false));
+        }
+        
+        if (m_Indices & CWriteDB::eAddHash) {
+            m_HashIsam.Reset(new CWriteDB_Isam(eHash,
+                                               dbname,
+                                               protein,
+                                               index,
+                                               max_file_size,
+                                               false));
         }
     }
 }
@@ -127,8 +135,14 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
                                     const string  & ambig,
                                     const string  & binhdr,
                                     const TIdList & idlist,
-                                    int             pig)
+                                    int             pig,
+                                    int             hash)
 {
+    // Zero is a legal hash value, but we should not be computing the
+    // hash value if there is no corresponding ISAM file.
+    
+    _ASSERT((! hash) || m_HashIsam.NotEmpty());
+    
     if (! (seq.size() && binhdr.size())) {
             NCBI_THROW(CWriteDBException,
                        eArgErr,
@@ -158,7 +172,11 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
             overfull = true;
         }
         
-        if (m_Protein && (! m_PigIsam->CanFit(num))) {
+        if (m_Protein && (! m_PigIsam->CanFit(1))) {
+            overfull = true;
+        }
+        
+        if (m_HashIsam.NotEmpty() && (! m_HashIsam->CanFit(1))) {
             overfull = true;
         }
     }
@@ -191,6 +209,10 @@ bool CWriteDB_Volume::WriteSequence(const string  & seq,
         
         if (m_TraceIsam.NotEmpty()) {
             m_TraceIsam->AddIds(m_OID, idlist);
+        }
+        
+        if (m_HashIsam.NotEmpty()) {
+            m_HashIsam->AddHash(m_OID, hash);
         }
     }
     
@@ -228,6 +250,10 @@ void CWriteDB_Volume::Close()
             if (m_TraceIsam.NotEmpty()) {
                 m_TraceIsam->Close();
             }
+            
+            if (m_HashIsam.NotEmpty()) {
+                m_HashIsam->Close();
+            }
         }
     }
 }
@@ -252,6 +278,10 @@ void CWriteDB_Volume::RenameSingle()
         if (m_TraceIsam.NotEmpty()) {
             m_TraceIsam->RenameSingle();
         }
+        
+        if (m_HashIsam.NotEmpty()) {
+            m_HashIsam->RenameSingle();
+        }
     }
 }
 
@@ -275,6 +305,10 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
     
     if (m_TraceIsam.NotEmpty()) {
         m_TraceIsam->ListFiles(files);
+    }
+    
+    if (m_HashIsam.NotEmpty()) {
+        m_HashIsam->ListFiles(files);
     }
 }
 
