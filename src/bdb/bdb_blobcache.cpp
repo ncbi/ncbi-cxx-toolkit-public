@@ -1522,7 +1522,7 @@ void CBDB_Cache::Close()
             LOG_POST(Info    <<
                         "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
         } else {
-            LOG_POST(Warning << "LC: '" << m_Name
+            LOG_POST(Info    << "LC: '" << m_Name
                                 << "' environment still in use.");
         }
     }
@@ -3634,7 +3634,7 @@ purge_start:
 
         bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
         if (purge_stop) {
-            LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+            LOG_POST(Info << "BDB Cache: Stopping Purge execution.");
             return;
         }
 
