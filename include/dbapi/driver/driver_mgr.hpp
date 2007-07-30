@@ -108,7 +108,7 @@ public:
 NCBI_DBAPIDRIVER_EXPORT
 I_DriverContext*
 Get_I_DriverContext(const string&              driver_name,
-                    const map<string, string>* attr);
+                    const map<string, string>* attr = NULL);
 
 END_NCBI_SCOPE
 
