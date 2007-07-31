@@ -183,7 +183,10 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 
     ITERATE(set<CConstRef<CSeq_loc> >, it, locations) {
         try {
-            weights[*it] = GetProteinWeight(handle, *it);
+            // Split up to ensure that we call [] only if
+            // GetProteinWeight succeeds.
+            double weight = GetProteinWeight(handle, *it);
+            weights[*it] = weight;
         } catch (CObjmgrUtilException) {
             // Silently elide
         }
