@@ -358,6 +358,9 @@ public:
               CBDB_RawFile::EOpenMode   open_mode,
               CBDB_RawFile::EDBType     db_type=CBDB_RawFile::eBtree);
 
+    /// Return true if the split store has been opened
+    bool IsOpen() const;
+
     /// Try to open all storage files in all projections
     /// This is only possible when object de-mux has fixed 
     /// number of projections, if it is not the call is silently ignored
@@ -388,6 +391,11 @@ public:
     /// Turn off reverse splitting on the underlying stores.  This should be
     /// called before opening.
     void RevSplitOff();
+
+    /// Set the priority for this database's pages in the buffer cache
+    /// This is generally a temporary advisement, and works only if an
+    /// environment is used.
+    void SetCachePriority(CBDB_RawFile::ECachePriority);
 
     // ---------------------------------------------------------------
     // Transactional interface
@@ -582,6 +590,7 @@ protected:
     string                  m_StorageName;
     CBDB_RawFile::EOpenMode m_OpenMode;
     CBDB_RawFile::EDBType   m_DB_Type;
+    CBDB_RawFile::ECachePriority m_CachePriority;
 
     /// True when all proj.dbs are pre-open
     bool                    m_AllProjAvail; 
@@ -616,6 +625,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
    m_IdDeMux(new TIdDeMux(2)),
    m_ObjDeMux(de_mux),
    m_DB_Type(CBDB_RawFile::eBtree), 
+   m_CachePriority(CBDB_RawFile::eCache_Default),
    m_AllProjAvail(false),
    m_RevSplitOff(false)
 {
@@ -658,6 +668,14 @@ inline
 void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::RevSplitOff()
 {
     m_RevSplitOff = true;
+}
+
+
+template<class TBV, class TObjDeMux, class TL>
+inline
+void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SetCachePriority(CBDB_RawFile::ECachePriority p)
+{
+    m_CachePriority = p;
 }
 
 
@@ -1207,6 +1225,13 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Open(const string&     storage_name,
 }
 
 template<class TBV, class TObjDeMux, class TL>
+inline bool
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::IsOpen() const
+{
+    return m_DictFile.get() ? true : false;
+}
+
+template<class TBV, class TObjDeMux, class TL>
 inline void 
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::OpenProjections()
 {
@@ -1473,8 +1498,10 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned     vol,
              }
 
              lp->db->Open(fname.c_str(), m_OpenMode);
+             lp->db->SetCachePriority(m_CachePriority);
              if (lp->db_ro.get()) {
                 lp->db_ro->Open(fname.c_str(), CBDB_RawFile::eReadOnly);
+                lp->db_ro->SetCachePriority(m_CachePriority);
              }
              needs_save = true;
          }

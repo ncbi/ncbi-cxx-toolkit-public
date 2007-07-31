@@ -196,6 +196,18 @@ public:
     /// Disable BTREE comparison override
     void DisableCmpOverride() { m_CmpOverride = false; }
 
+    /// Set the priority for this database's pages in the buffer cache
+    /// This is generally a temporary advisement, and works only if an
+    /// environment is used.
+    enum ECachePriority {
+        eCache_Lowest,
+        eCache_Low,
+        eCache_Default,
+        eCache_High,
+        eCache_Highest
+    };
+    void SetCachePriority(ECachePriority priority);
+
     const string& FileName() const;
     const string& Database() const;
 

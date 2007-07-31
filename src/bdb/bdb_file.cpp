@@ -191,6 +191,37 @@ void CBDB_RawFile::SetEnv(CBDB_Env& env)
     m_Env = &env;
 }
 
+void CBDB_RawFile::SetCachePriority(ECachePriority priority)
+{
+    if (m_DB) {
+        DB_MPOOLFILE* mpf = m_DB->get_mpf(m_DB);
+        if (mpf) {
+            DB_CACHE_PRIORITY p = DB_PRIORITY_DEFAULT;
+            switch (priority) {
+            case eCache_Lowest:
+                p = DB_PRIORITY_VERY_LOW;
+                break;
+            case eCache_Low:
+                p = DB_PRIORITY_LOW;
+                break;
+
+            default:
+            case eCache_Default:
+                p = DB_PRIORITY_DEFAULT;
+                break;
+            case eCache_High:
+                p = DB_PRIORITY_HIGH;
+                break;
+            case eCache_Highest:
+                p = DB_PRIORITY_VERY_HIGH;
+                break;
+            }
+
+            mpf->set_priority(mpf, p);
+        }
+    }
+}
+
 DB_TXN* CBDB_RawFile::GetTxn()
 {
     if (m_Trans)
