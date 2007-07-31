@@ -138,7 +138,7 @@ private:
     /// @param id Sequence id for this sequence [in]
     void x_ValidateMoleculeType(CConstRef<CSeq_id> id) 
     {
-        ASSERT(m_InputScope.NotEmpty());
+        _ASSERT(m_InputScope.NotEmpty());
         CBioseq_Handle bh = m_InputScope->GetBioseqHandle(*id);
         if (bh.IsNucleotide() && m_ReadProteins) {
             NCBI_THROW(CInputException, eSequenceMismatch,
@@ -320,7 +320,6 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask)
         NCBI_THROW(CInputException, eSequenceMismatch,
                    "Protein FASTA provided for nucleotide sequence");
     }
-    _ASSERT(m_ReadProteins == itr->IsAa());
 
     // set strand
     if (m_Config.GetStrand() == eNa_strand_other ||
