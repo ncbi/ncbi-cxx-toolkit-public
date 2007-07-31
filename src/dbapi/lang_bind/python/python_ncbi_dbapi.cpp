@@ -384,8 +384,13 @@ CConnection::~CConnection(void)
 
         _ASSERT( m_TransList.empty() );
 
-        m_DM.DestroyDs( m_ConnParam.GetDriverName() );
-        m_DS = NULL;                        // ;-)
+	_ASSERT(m_DS);
+	// DO NOT destroy data source because there is only one data source per
+	// driver in Kholodov's API.
+	// Destroying data source will cause closed and reopened connection to
+	// crash ...
+        // m_DM.DestroyDs(m_DS); 
+	m_DS = NULL;                        // ;-)
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -393,6 +398,7 @@ CConnection::~CConnection(void)
 IConnection*
 CConnection::MakeDBConnection(void) const
 {
+    _ASSERT(m_DS);
     // !!! eTakeOwnership !!!
     IConnection* connection = m_DS->CreateConnection( eTakeOwnership );
 //     connection->SetMode(IConnection::eBulkInsert);
