@@ -155,9 +155,9 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOG(LOG lg);
 
 
 /** Get the log handle which is be used by the core internals.
- *  @li <b>NOTES:</b>  You may not delete the handle (by means of LOG_Delete).
  * @return
  *  LOG handle as set by CORE_SetLOG or NULL if no logging is currently active
+ *  @li <b>NOTE:</b>  You may not delete the handle (by means of LOG_Delete).
  * @sa
  *  CORE_SetLOG, LOG_Create, LOG_Delete
  */
@@ -167,10 +167,24 @@ extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
 /** Standard logging to the specified file stream.
  * @param fp
  *  The file stream to log to
+ * @param cut_off
+ *  Do not post messages with severity levels lower than specified
  * @param auto_close
- *  Do "fclose(fp)" when the LOG is reset/destroyed.
+ *  Do "fclose(fp)" when the LOG is reset/destroyed
  * @sa
- *  CORE_SetLOG
+ *  LOG_ToFILE_Ex, CORE_SetLOG
+ */
+extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE_Ex
+(FILE*       fp,
+ ELOG_Level  cut_off,
+ int/*bool*/ auto_close
+ );
+
+
+/** Same as CORE_SetLOGFILE_Ex() with last parameter passed as 0
+ * (all messages pass).
+ * @sa
+ *   CORE_SetLOGFILE_Ex, CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE
 (FILE*       fp,
@@ -178,17 +192,30 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE
  );
 
 
-/** Same as CORE_SetLOGFILE(fopen(filename, "a"), TRUE).
+/** Same as CORE_SetLOGFILE_Ex(fopen(filename, "a"), cut_off, TRUE).
  * @param filename
  *  Filename to write the log into
+ * @param cut_off
+ *  Do not post messages with severity levels lower than specified
  * @return
  *  Return zero on error, non-zero on success
  * @sa
- *  CORE_SetLOG
+ *  CORE_SetLOGFILE_Ex, CORE_SetLOG
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME_Ex
+(const char* filename,
+ ELOG_Level  cut_off
+ );
+
+
+/** Same as CORE_SetLOGFILE_NAME_Ex with last parameter passed as 0
+ * (all messages pass).
+ * @sa
+ *   CORE_SetLOGFILE_NAME_Ex, CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
 (const char* filename
- );
+);
 
 
 /** LOG formatting flags: what parts of the message to actually appear.
@@ -240,10 +267,25 @@ extern NCBI_XCONNECT_EXPORT char* LOG_ComposeMessage
  *  Created by LOG_Create
  * @param fp
  *  The file stream to log to
+ * @param cut_off
+ *  Do not post messages with severity levels lower than specified
  * @param auto_close
  *  Whether to do "fclose(fp)" when the LOG is reset/destroyed
  * @sa
- *  LOG_Create, LOG_Reset, LOG_ComposeMessage
+ *  LOG_Create, LOG_Reset, LOG_ComposeMessage, LOG_ToFILE
+ */
+extern NCBI_XCONNECT_EXPORT void LOG_ToFILE_Ex
+(LOG         lg,
+ FILE*       fp,
+ ELOG_Level  cut_off,
+ int/*bool*/ auto_close
+ );
+
+
+/** Same as LOG_ToFILEx with "cut_off" parameter passed as 0
+ * (all messages pass).
+ * @sa
+ *   LOG_ToFILE_Ex
  */
 extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
 (LOG         lg,
@@ -310,9 +352,20 @@ extern NCBI_XCONNECT_EXPORT char* MessagePlusErrno
  * If there is an active registry set already, and it is different from
  * the new one, then REG_Delete() is called for the old(replaced) registry.
  * @param rg
- *  
+ *  Registry handle as returned by REG_Create()
+ * @sa
+ *  REG_Create, CORE_GetREG
  */
 extern NCBI_XCONNECT_EXPORT void CORE_SetREG(REG rg);
+
+
+/** Get the registry previously set by CORE_SetREG().
+ * @return
+ *  Registry handle.
+ *  <li>NOTE:</li> You may not delete the handle with REG_Delete().
+ * @sa
+ *  CORE_SetREG
+ */
 extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 
@@ -337,8 +390,8 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
  * @param bufsize
  *  Size of buffer in bytes
  * @return
- *  Return 0 when the user name cannot be determined.
- *  Otherwise, return "buf".
+ *  Return 0 when the user name cannot be determined;
+ *  otherwise, return "buf".
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
 (char*        buf,
@@ -346,8 +399,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
  );
 
 
-/* Obtain virtual memory page size.
- * Return 0 if the page size cannot be determined.
+/** Obtain virtual memory page size.
+ * @return
+ *  0 if the page size cannot be determined.
  */
 extern NCBI_XCONNECT_EXPORT size_t CORE_GetVMPageSize(void);
 

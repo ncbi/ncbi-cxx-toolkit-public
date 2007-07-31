@@ -113,17 +113,29 @@ extern LOG CORE_GetLOG(void)
 }
 
 
-extern void CORE_SetLOGFILE
+extern void CORE_SetLOGFILE_Ex
 (FILE*       fp,
- int/*bool*/ auto_close)
+ ELOG_Level  cut_off,
+ int/*bool*/ auto_close
+ )
 {
     LOG lg = LOG_Create(0, 0, 0, 0);
-    LOG_ToFILE(lg, fp, auto_close);
+    LOG_ToFILE_Ex(lg, fp, cut_off, auto_close);
     CORE_SetLOG(lg);
 }
 
 
-extern int/*bool*/ CORE_SetLOGFILE_NAME(const char* filename)
+extern void CORE_SetLOGFILE
+(FILE*       fp,
+ int/*bool*/ auto_close)
+{
+    CORE_SetLOGFILE_Ex(fp, 0, auto_close);
+}
+
+
+extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
+(const char* filename,
+ ELOG_Level  cut_off)
 {
     FILE* fp = fopen(filename, "a");
     if ( !fp ) {
@@ -131,8 +143,16 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME(const char* filename)
         return 0/*false*/;
     }
 
-    CORE_SetLOGFILE(fp, 1/*true*/);
+    CORE_SetLOGFILE_Ex(fp, cut_off, 1/*true*/);
     return 1/*true*/;
+}
+
+
+extern int/*bool*/ CORE_SetLOGFILE_NAME
+(const char* filename
+ )
+{
+    return CORE_SetLOGFILE_NAME_Ex(filename, 0);
 }
 
 
@@ -365,47 +385,71 @@ extern char* LOG_ComposeMessage
 }
 
 
-/* Callback for LOG_Reset_FILE() */
+typedef struct {
+    FILE*       fp;
+    int/*bool*/ cut_off;
+    int/*bool*/ auto_close;
+} SLogData;
+
+
+/* Callback for LOG_ToFILE[_Ex]() */
 static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
 {
-    FILE* fp = (FILE*) user_data;
+    SLogData* data = (SLogData*) user_data;
+    assert(data  &&  data->fp);
     assert(call_data);
 
-    if ( fp ) {
+    if (call_data->level >= data->cut_off  ||  call_data->level == eLOG_Fatal){
         char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
         if ( str ) {
-            fprintf(fp, "%s\n", str);
-            fflush(fp);
+            fprintf(data->fp, "%s\n", str);
+            fflush(data->fp);
             free(str);
         }
     }
 }
 
 
-/* Callback for LOG_Reset_FILE() */
+/* Callback for LOG_ToFILE[_Ex]() */
 static void s_LOG_FileCleanup(void* user_data)
 {
-    FILE* fp = (FILE*) user_data;
+    SLogData* data = (SLogData*) user_data;
 
-    if ( fp )
-        fclose(fp);
+    assert(data  &&  data->fp);
+    if (data->auto_close)
+        fclose(data->fp);
+    else
+        fflush(data->fp);
+    free(user_data);
+}
+
+
+extern void LOG_ToFILE_Ex
+(LOG         lg,
+ FILE*       fp,
+ ELOG_Level  cut_off,
+ int/*bool*/ auto_close
+ )
+{
+    SLogData* data = (SLogData*)(fp ? malloc(sizeof(*data)) : 0);
+    if ( data ) {
+        data->fp         = fp;
+        data->cut_off    = cut_off;
+        data->auto_close = auto_close;
+        LOG_Reset(lg, data, s_LOG_FileHandler, s_LOG_FileCleanup);
+    } else {
+        LOG_Reset(lg, 0/*data*/, 0/*handler*/, 0/*cleanup*/);
+    }
 }
 
 
 extern void LOG_ToFILE
 (LOG         lg,
  FILE*       fp,
- int/*bool*/ auto_close)
+ int/*bool*/ auto_close
+ )
 {
-    if ( fp ) {
-        if ( auto_close ) {
-            LOG_Reset(lg, fp, s_LOG_FileHandler, s_LOG_FileCleanup);
-        } else {
-            LOG_Reset(lg, fp, s_LOG_FileHandler, 0/*no cleaning up*/);
-        }
-    } else {
-        LOG_Reset(lg, 0/*data*/, 0/*handler*/, 0/*cleanup*/);
-    }
+    LOG_ToFILE_Ex(lg, fp, 0, auto_close);
 }
 
 
