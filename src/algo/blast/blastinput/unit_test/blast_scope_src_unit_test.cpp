@@ -90,16 +90,17 @@ public:
     }
 
     ~CAutoNcbiConfigFile() {
-        CMetaRegistry::SEntry sentry =
-            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-        sentry.registry->Clear();
-
         CFile previous_configuration(kSavedConfigFile);
         if (previous_configuration.Exists()) {
             previous_configuration.Rename(kConfigFile);
         } else {
             CFile(kConfigFile).Remove();
         }
+
+        CMetaRegistry::SEntry sentry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        sentry.registry->Clear();
+        sentry.Reload();
     }
 
 private:
