@@ -122,6 +122,7 @@ public:
     // Test particular methods.
     void MakeTestPreparation(void);
     void TestBasic(void);
+    void TestConnection(void);
     void TestExecute(void);
     void TestFetch(void);
     void TestParameters(void);

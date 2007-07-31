@@ -32,8 +32,6 @@
 
 #include <ncbi_pch.hpp>
 
-// #include <boost/test/unit_test_result.hpp>
-
 #include "python_ncbi_dbapi_test.hpp"
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -150,6 +148,32 @@ CPythonDBAPITest::TestBasic(void)
 
         ExecuteStr("cursor_simple.close()\n");
         ExecuteStr("connection.close()\n");
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+}
+
+void
+CPythonDBAPITest::TestConnection(void)
+{
+    try {
+        string connection_args( m_args.GetDriverName() + "', '" +
+                                m_args.GetServerTypeStr() + "', '" +
+                                m_args.GetServerName() + "', '" +
+                                m_args.GetDatabaseName() + "', '" +
+                                m_args.GetUserName() + "', '" +
+                                m_args.GetUserPassword() );
+
+        string connection_str( "tmp_connection = python_ncbi_dbapi.connect('" +
+                                connection_args +
+                                "', True)\n");
+
+        ExecuteStr( connection_str.c_str() );
+	ExecuteStr( "tmp_connection.close()\n" );
+        ExecuteStr( connection_str.c_str() );
+        ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
+	ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -608,10 +632,15 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     // add member function test cases to a test suite
     boost::shared_ptr<CPythonDBAPITest> DBAPIInstance( new CPythonDBAPITest( args ) );
     boost::unit_test::test_case* tc = NULL;
+
     boost::unit_test::test_case* tc_init =
         BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::MakeTestPreparation, DBAPIInstance);
 
     add(tc_init);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestConnection, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
     if ( ( args.GetDriverName() == "ctlib" && sybase_client_v125) ||
          ( (args.GetDriverName() == "ftds"
