@@ -40,6 +40,12 @@
 #undef verify
 #endif
 
+#if DB_VERSION_MAJOR >= 4 
+    #if DB_VERSION_MINOR >= 4 || DB_VERSION_MAJOR > 4
+        #define HAVE_GET_MPF
+    #endif
+#endif
+
 BEGIN_NCBI_SCOPE
 
 const char CBDB_RawFile::kDefaultDatabase[] = "_table";
@@ -193,6 +199,7 @@ void CBDB_RawFile::SetEnv(CBDB_Env& env)
 
 void CBDB_RawFile::SetCachePriority(ECachePriority priority)
 {
+#ifdef HAVE_GETMPF
     if (m_DB) {
         DB_MPOOLFILE* mpf = m_DB->get_mpf(m_DB);
         if (mpf) {
@@ -220,6 +227,7 @@ void CBDB_RawFile::SetCachePriority(ECachePriority priority)
             mpf->set_priority(mpf, p);
         }
     }
+#endif
 }
 
 DB_TXN* CBDB_RawFile::GetTxn()
