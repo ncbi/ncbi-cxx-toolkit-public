@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <bdb/bdb_types.hpp>
-#include <algo/text/text_util.hpp>
 #include <db.h>
 
 BEGIN_NCBI_SCOPE
@@ -321,7 +320,12 @@ BDB_Hash(DB *, const void *bytes, unsigned length)
 {
     const unsigned char* buf = (const unsigned char*)bytes;
     const unsigned char* buf_end = buf + length;
-    unsigned ha = StringHash17(buf, buf_end);
+    // Copied from include/algo/text/text_util.hpp:StrngHash17
+    // to cut dependency to algo
+    unsigned ha = 0;
+    for (; buf != buf_end; ++buf) {
+        ha = ((ha << 4) + ha) + *buf;
+    }
     return ha;
 }
 

@@ -63,6 +63,8 @@
 #include "job_status.hpp"
 #include "access_list.hpp"
 
+#include "netschedule_version.hpp"
+
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -72,15 +74,10 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSCHEDULED_VERSION "2.10.15"
-
 #define NETSCHEDULED_FULL_VERSION \
     "NCBI NetSchedule server Version " NETSCHEDULED_VERSION \
     " build " __DATE__ " " __TIME__
 
-#define NETSCHEDULED_FEATURES \
-    "fast_status=1;dyn_queues=1;tags=1;version=" NETSCHEDULED_VERSION
-    
 static int s_TokenToInt(const char*tok, int size)
 {
     bool neg = size > 0 && tok[0] == '-';

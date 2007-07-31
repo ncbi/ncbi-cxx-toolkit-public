@@ -1,0 +1,9 @@
+corelib$
+util$
+util/compress$
+util/fileblobstorage$
+util/qparse$
+connect$
+connect/services$
+bdb$
+app/netschedule$
