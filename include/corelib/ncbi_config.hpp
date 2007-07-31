@@ -54,7 +54,8 @@ class NCBI_XNCBI_EXPORT CConfigException : public CCoreException
 {
 public:
     enum EErrCode {
-        eParameterMissing      ///< Missing mandatory parameter
+        eParameterMissing,      ///< Missing mandatory parameter
+        eSynonymDuplicate
     };
 
     /// Translate from the error code value to its string representation.
@@ -114,14 +115,16 @@ public:
     string GetString(const string&  driver_name,
                      const string&  param_name, 
                      EErrAction     on_error,
-                     const string&  default_value);
+                     const string&  default_value,
+                     const list<string>* synonyms = NULL);
 
     /// This version always defaults to the empty string so that it
     /// can safely return a reference.  (default_value may be
     /// temporary in some cases.)
     const string& GetString(const string&  driver_name,
                             const string&  param_name, 
-                            EErrAction     on_error);
+                            EErrAction     on_error,
+                            const list<string>* synonyms = NULL);
     
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -141,7 +144,8 @@ public:
     int GetInt(const string&  driver_name,
                const string&  param_name, 
                EErrAction     on_error,
-               int            default_value);
+               int            default_value,
+               const list<string>* synonyms = NULL);
 
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -162,7 +166,8 @@ public:
     Uint8 GetDataSize(const string&  driver_name,
                       const string&  param_name, 
                       EErrAction     on_error,
-                      unsigned int   default_value);
+                      unsigned int   default_value,
+                      const list<string>* synonyms = NULL);
 
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -182,7 +187,8 @@ public:
     bool GetBool(const string&  driver_name,
                  const string&  param_name, 
                  EErrAction     on_error,
-                 bool           default_value);
+                 bool           default_value,
+                 const list<string>* synonyms = NULL);
 
     const TParamTree* GetTree() const { return m_ParamTree.get(); }
 

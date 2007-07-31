@@ -415,11 +415,12 @@ CConfig::~CConfig()
 string CConfig::GetString(const string&  driver_name,
                           const string&  param_name, 
                           EErrAction     on_error,
-                          const string&  default_value)
+                          const string&  default_value,
+                          const list<string>* synonyms)
 {
     try {
-        return GetString(driver_name, param_name, eErr_Throw);
-    } catch (CConfigException) {
+        return GetString(driver_name, param_name, eErr_Throw, synonyms);
+    } catch (CConfigException&) {
         if (on_error == eErr_NoThrow) {
             return default_value;
         } else {
@@ -430,28 +431,63 @@ string CConfig::GetString(const string&  driver_name,
 
 const string& CConfig::GetString(const string&  driver_name,
                                  const string&  param_name, 
-                                 EErrAction     on_error)
+                                 EErrAction     on_error,
+                                 const list<string>* synonyms)
 {
+    list<const TParamTree*> tns;
     const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
 
-    if (tn == 0 || tn->GetValue().value.empty()) {
+    if (tn && !tn->GetValue().value.empty()) 
+        tns.push_back(tn);
+    if (synonyms) {
+        ITERATE(list<string>, it, *synonyms) {
+            const TParamTree* tn = m_ParamTree->FindSubNode(*it);
+            if (tn && !tn->GetValue().value.empty()) 
+                tns.push_back(tn);
+        }
+    }
+    if (tns.empty()) {
         if (on_error == eErr_NoThrow) {
             return kEmptyStr;
         }
         string msg = "Cannot init plugin " + driver_name +
                      ", missing parameter:" + param_name;
+        if (synonyms) {
+            ITERATE(list<string>, it, *synonyms) {
+                if ( it == synonyms->begin() ) msg += " or ";
+                else msg += ", ";
+                msg += *it;
+            }
+        }
+            
         NCBI_THROW(CConfigException, eParameterMissing, msg);
     }
-    return tn->GetValue().value;
+    if (tns.size() > 1 ) {
+        string msg = "There are more then 1 synonyms paramters ("; 
+        ITERATE(list<const TParamTree*>, it, tns) {
+            if (it != tns.begin()) msg += ", ";
+            msg += (*it)->GetKey();
+        }
+        msg += ") defined";
+        if (on_error == eErr_NoThrow) {
+            msg += " for driver " + driver_name + ". Default value is used.";
+            ERR_POST_ONCE(msg); 
+            return kEmptyStr;
+        } 
+        msg = "Cannot init plugin " + driver_name + ". " + msg;
+        NCBI_THROW(CConfigException, eSynonymDuplicate, msg);
+    }
+    return (*tns.begin())->GetValue().value;
 }
 
 
 int CConfig::GetInt(const string&  driver_name,
                     const string&  param_name, 
                     EErrAction     on_error,
-                    int            default_value)
+                    int            default_value,
+                    const list<string>* synonyms)
 {
-    const string& param = GetString(driver_name, param_name, on_error);
+    const string& param = GetString(driver_name, param_name, on_error, synonyms);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
@@ -468,12 +504,18 @@ int CConfig::GetInt(const string&  driver_name,
     }
     catch (CStringException& ex)
     {
-        if (on_error == eErr_NoThrow) {
+        if (on_error == eErr_Throw) {
             string msg = "Cannot init " + driver_name +
                           ", incorrect parameter format:" +
                           param_name  + " : " + param +
                           " " + ex.what();
             NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            string msg = "Configuration error " + driver_name +
+                          ", incorrect parameter format:" +
+                          param_name  + " : " + param +
+                          " " + ex.what() + ". Default value is used";
+            ERR_POST_ONCE(msg);
         }
     }
     return default_value;
@@ -482,9 +524,10 @@ int CConfig::GetInt(const string&  driver_name,
 Uint8 CConfig::GetDataSize(const string&  driver_name,
                            const string&  param_name, 
                            EErrAction     on_error,
-                           unsigned int   default_value)
+                           unsigned int   default_value,
+                           const list<string>* synonyms)
 {
-    const string& param = GetString(driver_name, param_name, on_error);
+    const string& param = GetString(driver_name, param_name, on_error, synonyms);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
@@ -507,6 +550,12 @@ Uint8 CConfig::GetDataSize(const string&  driver_name,
                          param_name  + " : " + param +
                          " " + ex.what();
             NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            string msg = "Configuration error " + driver_name +
+                          ", incorrect parameter format:" +
+                          param_name  + " : " + param +
+                          " " + ex.what() + ". Default value is used";
+            ERR_POST_ONCE(msg);
         }
     }
     return default_value;
@@ -516,9 +565,10 @@ Uint8 CConfig::GetDataSize(const string&  driver_name,
 bool CConfig::GetBool(const string&  driver_name,
                       const string&  param_name, 
                       EErrAction     on_error,
-                      bool           default_value)
+                      bool           default_value,
+                      const list<string>* synonyms)
 {
-    const string& param = GetString(driver_name, param_name, on_error);
+    const string& param = GetString(driver_name, param_name, on_error, synonyms);
 
     if (param.empty()) {
         if (on_error == eErr_Throw) {
@@ -541,6 +591,12 @@ bool CConfig::GetBool(const string&  driver_name,
                          param_name  + " : " + param +
                          ". " + ex.what();
             NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            string msg = "Configuration error " + driver_name +
+                          ", incorrect parameter format:" +
+                          param_name  + " : " + param +
+                          " " + ex.what() + ". Default value is used";
+            ERR_POST_ONCE(msg);
         }
     }
     return default_value;
@@ -550,6 +606,7 @@ const char* CConfigException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eParameterMissing: return "eParameterMissing";
+    case eSynonymDuplicate: return "eSynonymDuplicate";
     default:                return CException::GetErrCodeString();
     }
 }
