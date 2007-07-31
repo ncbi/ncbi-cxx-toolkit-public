@@ -455,11 +455,12 @@ CMultiAligner::x_AlignProfileProfile(
 
     //-------------------------------
     if (m_Verbose) {
-    printf("constraints: ");
-    for (int i = 0; i < (int)constraint.size(); i+=4) {
-        printf("(seq1 %d seq2 %d)->", constraint[i], constraint[i+2]);
-    }
-    printf("\n");
+        printf("constraints: ");
+        for (int i = 0; i < (int)constraint.size(); i+=4) {
+            printf("(seq1 %d seq2 %d)->", (int)constraint[i], 
+                                        (int)constraint[i+2]);
+        }
+        printf("\n");
     }
     //-------------------------------
     m_Aligner.SetPattern(constraint);
