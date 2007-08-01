@@ -73,7 +73,7 @@ public:
 
     typedef IRegistry::TFlags TRegFlags;
 
-    struct SEntry {
+    struct NCBI_XNCBI_EXPORT SEntry {
         string            actual_name; ///< Either an absolute path or empty.
         TFlags            flags;
         TRegFlags         reg_flags;
