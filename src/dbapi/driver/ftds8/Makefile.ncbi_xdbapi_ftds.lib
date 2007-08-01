@@ -11,4 +11,4 @@ LIB_OR_DLL = both
 # Dependencies for shared library
 DLL_LIB = $(FTDS8_LIB) dbapi_driver
 DLL_DLIB = $(DLL_LIB) xncbi
-LIBS = $(FTDS8_LIBS) $(NETWORK_LIBS) $(ICONV_LIBS) $(ORIG_LIBS)
+LIBS = $(RUNPATH_ORIGIN) $(FTDS8_LIBS) $(NETWORK_LIBS) $(ICONV_LIBS) $(ORIG_LIBS)
