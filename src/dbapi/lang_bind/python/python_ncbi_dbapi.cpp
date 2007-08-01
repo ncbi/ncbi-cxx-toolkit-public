@@ -353,9 +353,11 @@ CConnection::CConnection(
 , m_DefTransaction( NULL )
 , m_ConnectionMode( conn_mode )
 {
-    CFile file(RetrieveModuleFileName());
-    m_ModuleName = file.GetBase();
-    m_DM.AddDllSearchPath(file.GetDir().c_str());
+//--------------------------------------------------
+//     CFile file(RetrieveModuleFileName());
+//     m_ModuleName = file.GetBase();
+//     m_DM.AddDllSearchPath(file.GetDir().c_str());
+//-------------------------------------------------- 
 
     try {
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
@@ -2529,6 +2531,12 @@ void init_common(const string& module_name)
 {
     char* rev_str = "$Revision$";
     PyObject *module;
+
+    // Fix plugin manager ...
+    CFile file(python::RetrieveModuleFileName());
+    string module_dir = file.GetDir() + "python_ncbi_dbapi/1.5";
+    CDriverManager::GetInstance().AddDllSearchPath(module_dir.c_str());
+
 
     pythonpp::CModuleExt::Declare(module_name, python_ncbi_dbapi_methods);
 
