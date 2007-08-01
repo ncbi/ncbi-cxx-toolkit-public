@@ -197,12 +197,13 @@ CODBC_Connection::x_SetConnAttributesBefore(
     }
 
 #ifdef SQL_COPT_SS_BCP
-    if((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+//     if((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+        // Always enable BCP ...
         SQLSetConnectAttr(m_Link,
                           SQL_COPT_SS_BCP,
                           (SQLPOINTER) SQL_BCP_ON,
                           SQL_IS_INTEGER);
-    }
+//     }
 #endif
 }
 

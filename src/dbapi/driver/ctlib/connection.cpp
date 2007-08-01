@@ -178,7 +178,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #endif
 
     CS_BOOL flag = CS_TRUE;
-    if ((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+//     if ((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+        // Enable BCP all the time ...
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_BULK_LOGIN,
@@ -186,7 +187,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                 CS_UNUSED,
                                 NULL));
         SetBCPable(true);
-    }
+//     }
 
     if ((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0) {
         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),

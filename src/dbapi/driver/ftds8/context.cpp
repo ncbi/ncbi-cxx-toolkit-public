@@ -632,7 +632,8 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
         != SUCCEED)
         return 0;
 
-    if (mode & fBcpIn)
+//     if (mode & fBcpIn)
+        // Always enable BCP ...
         BCP_SETL(m_Login, TRUE);
 #if 0
     if (mode & fPasswordEncrypted)

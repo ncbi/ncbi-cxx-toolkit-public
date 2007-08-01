@@ -304,7 +304,7 @@ CODBCContext::CODBCContext(SQLLEN version,
     m_Reporter.SetHandlerStack(GetCtxHandlerStack());
 
     SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
-    // For FreeTDS sake.
+    // For FreeTDS's sake.
     SQLSetEnvAttr(m_Context, SQL_ATTR_OUTPUT_NTS, (SQLPOINTER)SQL_FALSE, 0);
 
     x_AddToRegistry();

@@ -737,7 +737,8 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
         != SUCCEED)
         return 0;
 
-    if (mode & fBcpIn)
+//     if (mode & fBcpIn)
+        // Always enable BCP ...
         BCP_SETL(m_Login, TRUE);
 
 #ifndef MS_DBLIB_IN_USE
