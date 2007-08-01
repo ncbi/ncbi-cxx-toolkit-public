@@ -117,15 +117,6 @@ CCompressionStreambuf::~CCompressionStreambuf()
     // Read processor
     sp = GetStreamProcessor(CCompressionStream::eRead);
     if ( sp ) {
-        if ( sp->m_State == CCompressionStreamProcessor::eActive ) {
-            Finalize(CCompressionStream::eRead);
-            if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-                ERR_COMPRESS(msg_where << msg_overflow);
-            }
-            if ( sp->m_LastStatus == CP::eStatus_Error ) {
-                ERR_COMPRESS(msg_where << msg_error);
-            }
-        }
         sp->m_Processor->End();
         sp->m_State = CCompressionStreamProcessor::eDone;
     }
@@ -252,6 +243,10 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
             _VERIFY(sp->m_State == CCompressionStreamProcessor::eActive);
             sp->m_LastStatus = 
                 sp->m_Processor->Flush(buf, out_size, &out_avail);
+            // No more data -- automaticaly finalize stream
+            if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
+                sp->m_State = CCompressionStreamProcessor::eFinalize;
+            }
         } 
         // Check on error
         if ( sp->m_LastStatus == CP::eStatus_Error ) {
@@ -365,6 +360,10 @@ bool CCompressionStreambuf::ProcessStreamRead()
             if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
                 return false;
             }
+            // No more data -- automaticaly finalize stream
+            if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
+                m_Reader->m_State = CCompressionStreamProcessor::eFinalize;
+            }
             m_Reader->m_LastOutAvail = out_avail;
         } else {
             // Check available space in the output buffer
@@ -425,6 +424,10 @@ bool CCompressionStreambuf::ProcessStreamWrite()
         // Check on error / small output buffer
         if ( m_Writer->m_LastStatus == CP::eStatus_Error ) {
             return false;
+        }
+        // No more data -- automaticaly finalize stream
+        if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
+            m_Writer->m_State = CCompressionStreamProcessor::eFinalize;
         }
         // Update the output buffer pointer
         m_Writer->m_End += out_avail;
