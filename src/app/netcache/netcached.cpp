@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.9  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.10  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1294,9 +1294,18 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         id = CNetCache_Key::GetBlobId(req.req_id);
     }
 
+    auto_ptr<IWriter> iwrt;
+
+    // create the reader up front to guarantee correct BLOB locking
+    // the possible problem (?) here is that we have to do double buffering
+    // of the input stream
+    iwrt.reset(
+        m_Cache->GetWriteStream(id, rid, 0, kEmptyStr, 
+                                req.timeout, tdata.auth));
+
+
     WriteMsg(sock, "ID:", rid);
 
-    auto_ptr<IWriter> iwrt;
     char* buf = tdata.buffer.get();
     size_t buf_size = GetTLS_Size();
 
@@ -1310,12 +1319,21 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
         CStopWatch  sw(CStopWatch::eStart);
 
+        // here we have double bufferting, reading into a TLS memory
+        // and then copy it to IWriter which immediately calls Store
+        // 
         not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
 
         stat.comm_elapsed += sw.Elapsed();
         stat.blob_size += nn_read;
         
 
+        // never happens with the upfront created writer...
+        // 
+        // in the future it's best to create Store function in the writer
+        // (BDB specific writer which will do one call store-flush
+        // (after this call cache writer cannot be re-used again)
+        //
         if (nn_read == 0 && !not_eof && (iwrt.get() == 0)) {
             _ASSERT(id);
             m_Cache->Store(id, rid, 0, kEmptyStr, 
@@ -1324,6 +1342,9 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         }
 
         if (nn_read) {
+            // this branch
+            // never happens with unconditionally upfront created IWriter
+            //
             if (iwrt.get() == 0) { // first read
 
                 if (not_eof == false) { // complete read
