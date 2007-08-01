@@ -8611,7 +8611,7 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
-    if ( (GetDriverName() == "ftds" ||
+    if ( ( // GetDriverName() == "ftds" || // ftds is ftds64 now, which doesn't work well with UTF-8
           GetDriverName() == "ftds63" ||
 //           GetDriverName() == "ftds64" ||
 //           GetDriverName() == "ftds64_odbc"  ||
