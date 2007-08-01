@@ -4300,9 +4300,12 @@ bool CBDB_Cache::IsLocked(const string&  key,
                           int            version,
                           const string&  subkey)
 {
-    unsigned blob_id = GetBlobId(key, 0, kEmptyStr);
-    bool locked = IsLocked(blob_id);
-    return locked;
+    unsigned blob_id = GetBlobId(key, version, subkey);
+    if (blob_id) {
+        bool locked = IsLocked(blob_id);
+        return locked;
+    }
+    return false;
 }
 
 
