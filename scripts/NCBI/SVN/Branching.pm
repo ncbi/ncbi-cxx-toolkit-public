@@ -362,9 +362,9 @@ sub GetTreeContainingSubtree
     return \%Result
 }
 
-sub GetRmCommands
+sub GetPathsToRemove
 {
-    my ($RmCommands, $ExistingStructure, $DirName, $DirContents, $Path) = @_;
+    my ($PathsToRemove, $ExistingStructure, $DirName, $DirContents, $Path) = @_;
 
     my $DirExistingStructure = $ExistingStructure->{$DirName};
 
@@ -373,32 +373,32 @@ sub GetRmCommands
     if (!$DirContents->{'/'}->{rm})
     {
         my $ChildRemoved;
-        my @RmCommands;
+        my @PathsToRemove;
 
         while (my ($Subdir, $Subtree) = each %$DirContents)
         {
             next if $Subdir eq '/';
 
             $ChildRemoved = 1
-                if GetRmCommands(\@RmCommands, $DirExistingStructure,
+                if GetPathsToRemove(\@PathsToRemove, $DirExistingStructure,
                     $Subdir, $Subtree, "$Path/$Subdir")
         }
 
         if (!$ChildRemoved || %$DirExistingStructure)
         {
-            push @$RmCommands, @RmCommands;
+            push @$PathsToRemove, @PathsToRemove;
             return 0
         }
     }
 
     delete $ExistingStructure->{$DirName};
-    push @$RmCommands, 'rm', $Path;
+    push @$PathsToRemove, $Path;
     return 1
 }
 
 sub CreateEntireTree
 {
-    my ($MkdirCommands, $ModTree, $Path) = @_;
+    my ($DirsToCreate, $ModTree, $Path) = @_;
 
     return 0 unless %$ModTree;
 
@@ -411,24 +411,24 @@ sub CreateEntireTree
         {
             $NeedToCreateParent = 1 if $Subtree->{mkparent}
         }
-        elsif (CreateEntireTree($MkdirCommands, $Subtree, "$Path/$Subdir"))
+        elsif (CreateEntireTree($DirsToCreate, $Subtree, "$Path/$Subdir"))
         {
             $NeedToCreateParent = $NeedToCreateThisPath = 1
         }
     }
 
-    unshift @$MkdirCommands, 'mkdir', $Path if $NeedToCreateThisPath;
+    unshift @$DirsToCreate, $Path if $NeedToCreateThisPath;
 
     return $NeedToCreateParent
 }
 
-sub GetMkdirCommands
+sub GetDirsToCreate
 {
-    my ($MkdirCommands, $ExistingStructure, $ModTree, $Path) = @_;
+    my ($DirsToCreate, $ExistingStructure, $ModTree, $Path) = @_;
 
     unless ($ExistingStructure)
     {
-        CreateEntireTree($MkdirCommands, $ModTree, $Path);
+        CreateEntireTree($DirsToCreate, $ModTree, $Path);
         return
     }
 
@@ -436,22 +436,22 @@ sub GetMkdirCommands
     {
         next if $Subdir eq '/';
 
-        GetMkdirCommands($MkdirCommands,
+        GetDirsToCreate($DirsToCreate,
             $ExistingStructure->{$Subdir}, $Subtree, "$Path/$Subdir")
     }
 }
 
 sub ShapeBranch
 {
-    my ($Self, $Action, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $Action, $Force, $RootURL,
+        $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
-    my @RmCommands;
-    my @MkdirCommands;
-    my @CopyCommands;
-    my @PutCommands;
+    my @MUCCCommands;
+
+    my @PathsToRemove;
+    my @DirsToCreate;
 
     my $RewriteBranchList;
-    my $BranchListFN;
 
     # Read branch_list, if it exists.
     my @Branches = eval {$Self->{SVN}->ReadFileLines($RootURL .
@@ -493,21 +493,6 @@ sub ShapeBranch
         }
     }
 
-    # If the current operation affects branch_list, add a MUCC
-    # command to (re-)create branch_list.
-    if ($RewriteBranchList)
-    {
-        my $BranchListFH;
-
-        ($BranchListFH, $BranchListFN) = tempfile();
-
-        print $BranchListFH "$_\n" for @Branches;
-
-        close $BranchListFH;
-
-        push @PutCommands, 'put', $BranchListFN, 'branches/branch_list'
-    }
-
     my %ModTree;
 
     if ($Action eq 'create')
@@ -526,7 +511,7 @@ sub ShapeBranch
             my $TargetPath = "$BranchPath/$Dir";
 
             MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
-            push @CopyCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
+            push @MUCCCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
         }
     }
     elsif ($Action eq 'alter')
@@ -545,7 +530,7 @@ sub ShapeBranch
                 my $TargetPath = "$BranchPath/$Dir";
 
                 MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
-                push @CopyCommands, 'cp', $BranchInfo->{LastSynchRevision},
+                push @MUCCCommands, 'cp', $BranchInfo->{LastSynchRevision},
                     $SourcePath, $TargetPath
             }
         }
@@ -570,26 +555,55 @@ sub ShapeBranch
     {
         next if $Subdir eq '/';
 
-        GetRmCommands(\@RmCommands, $ExistingStructure,
+        GetPathsToRemove(\@PathsToRemove, $ExistingStructure,
             $Subdir, $Subtree, $Subdir)
     }
 
     unless ($Action eq 'remove')
     {
+        if (!$Force && @PathsToRemove)
+        {
+            print STDERR 'WARNING: The requested repository modification ' .
+                "will result in\nthe following path(s) being removed:\n  " .
+                join("\n  ", @PathsToRemove) .
+                "\nRerun with --force to perform the modification anyway.\n";
+
+            return
+        }
+
         while (my ($Subdir, $Subtree) = each %ModTree)
         {
             next if $Subdir eq '/';
 
-            GetMkdirCommands(\@MkdirCommands,
+            GetDirsToCreate(\@DirsToCreate,
                 $ExistingStructure->{$Subdir}, $Subtree, $Subdir)
         }
     }
 
-    my @Commands = (@RmCommands, @MkdirCommands, @CopyCommands, @PutCommands);
+    unshift @MUCCCommands,
+        map({(rm => $_)} @PathsToRemove),
+        map({(mkdir => $_)} @DirsToCreate);
+
+    my $BranchListFN;
+
+    # If the current operation affects branch_list, add a MUCC
+    # command to (re-)create branch_list.
+    if ($RewriteBranchList)
+    {
+        my $BranchListFH;
+
+        ($BranchListFH, $BranchListFN) = tempfile();
+
+        print $BranchListFH "$_\n" for @Branches;
+
+        close $BranchListFH;
+
+        push @MUCCCommands, 'put', $BranchListFN, 'branches/branch_list'
+    }
 
     # Unless there are no changes, (re)shape or remove the branch
     # with a single revision using MUCC.
-    if (@Commands)
+    if (@MUCCCommands)
     {
         my ($VerbING, $VerbED) = $Action eq 'create' ?
             qw(Creating Created) : $Action eq 'alter' ?
@@ -598,7 +612,7 @@ sub ShapeBranch
         print STDERR "$VerbING branch '$BranchPath'...\n";
 
         $Self->{SVN}->RunMUCC('--root-url', $RootURL,
-            '--message', "$VerbED branch '$BranchPath'.", @Commands)
+            '--message', "$VerbED branch '$BranchPath'.", @MUCCCommands)
     }
     else
     {
@@ -610,23 +624,25 @@ sub ShapeBranch
 
 sub Create
 {
-    my ($Self, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $Force, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch('create', $RootURL, $BranchPath, $UpstreamPath, @BranchDirs)
+    $Self->ShapeBranch('create', $Force, $RootURL,
+        $BranchPath, $UpstreamPath, @BranchDirs)
 }
 
 sub Alter
 {
-    my ($Self, $RootURL, $BranchPath, @BranchDirs) = @_;
+    my ($Self, $Force, $RootURL, $BranchPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch('alter', $RootURL, $BranchPath, undef, @BranchDirs)
+    $Self->ShapeBranch('alter', $Force, $RootURL,
+        $BranchPath, undef, @BranchDirs)
 }
 
 sub Remove
 {
-    my ($Self, $RootURL, $BranchPath) = @_;
+    my ($Self, $Force, $RootURL, $BranchPath) = @_;
 
-    $Self->ShapeBranch('remove', $RootURL, $BranchPath)
+    $Self->ShapeBranch('remove', $Force, $RootURL, $BranchPath)
 }
 
 sub SetRawMergeProp

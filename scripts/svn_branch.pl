@@ -118,10 +118,10 @@ sub TooManyArgs
     UsageError(qq(too many arguments for "$Command"))
 }
 
-my $DirList;
-my $RootURL;
+my ($Force, $RootURL, $DirList);
 
 GetOptions('help|h|?' => sub {Help()},
+    'force|f' => \$Force,
     'root-url|root|U=s' => \$RootURL,
     'dirlist|l=s' => \$DirList)
         or UsageError();
@@ -259,19 +259,19 @@ elsif ($Command eq 'create')
     my $BranchPath = ExtractBranchPathArg();
     my $UpstreamPath = ExtractBranchPathArg('upstream_path');
 
-    $Module->Create(RequireRootURL(), $BranchPath,
+    $Module->Create($Force, RequireRootURL(), $BranchPath,
         $UpstreamPath, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'alter')
 {
     my $BranchPath = ExtractBranchPathArg();
 
-    $Module->Alter(RequireRootURL(), $BranchPath,
+    $Module->Alter($Force, RequireRootURL(), $BranchPath,
         GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'remove')
 {
-    $Module->Remove(RequireRootURL(), AcceptOnlyBranchPathArg($Command))
+    $Module->Remove($Force, RequireRootURL(), AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'merge_down')
 {
