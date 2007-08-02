@@ -109,6 +109,12 @@ public:
     STimeout& SetCommunicationTimeout();
     STimeout  GetCommunicationTimeout() const;
 
+    static 
+    void SetDefaultCreateSocketMaxReties(unsigned int retires);
+        
+    void SetCreateSockeMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
+    unsigned int GetCreateSockeMaxRetries() const { return m_MaxRetries; }
+
     void RestoreHostPort();
 
     /// Set socket (connected to the server)
@@ -199,6 +205,7 @@ protected:
     STimeout                m_Timeout;
     string                  m_ClientNameComment;
     string                  m_Tmp;                 ///< Temporary string
+    unsigned int            m_MaxRetries;
 
 private:
     CResourcePool<CSocket>  m_SockPool;

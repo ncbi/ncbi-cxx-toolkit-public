@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 static STimeout s_DefaultCommTimeout = {12, 0};
+static unsigned int s_DefaultMaxRetries = 10;
 
 
 static string  s_GlobalClientName;
@@ -73,7 +74,8 @@ CNetServiceClient::EUseName CNetServiceClient::GetNameUse()
 CNetServiceClient::CNetServiceClient(const string& client_name)
     : m_Sock(0),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_DefaultCommTimeout)
+      m_Timeout(s_DefaultCommTimeout),
+      m_MaxRetries(s_DefaultMaxRetries)
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -90,7 +92,8 @@ CNetServiceClient::CNetServiceClient(const string&  host,
       m_Host(host),
       m_Port(port),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_DefaultCommTimeout)
+      m_Timeout(s_DefaultCommTimeout),
+      m_MaxRetries(s_DefaultMaxRetries)
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -107,7 +110,8 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
       m_Port(0),
       m_OwnSocket(eNoOwnership),
       m_ClientName(client_name),
-      m_Timeout(s_DefaultCommTimeout)
+      m_Timeout(s_DefaultCommTimeout),
+      m_MaxRetries(s_DefaultMaxRetries)
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -129,6 +133,11 @@ CNetServiceClient::~CNetServiceClient()
     }
 }
 
+/* static */
+void CNetServiceClient::SetDefaultCreateSocketMaxReties(unsigned int retires)
+{
+    s_DefaultMaxRetries = retires;
+}
 
 void CNetServiceClient::SetDefaultCommunicationTimeout(const STimeout& to)
 {
@@ -182,6 +191,8 @@ void CNetServiceClient::SetSocket(CSocket* sock, EOwnership own)
     if ((m_Sock=sock) != 0) {
         m_Sock->DisableOSSendDelay();
         m_OwnSocket = own;
+        STimeout zero = {0,0};
+        m_Sock->SetTimeout(eIO_Close,&zero);
         RestoreHostPort();
     }
 }
@@ -256,7 +267,6 @@ void CNetServiceClient::CreateSocket(const string& hostname,
     } //else {
 
     unsigned conn_repeats = 0;
-    const unsigned max_repeats = 10;
     
     do {
         io_st = m_Sock->Connect(hostname, port, &m_Timeout, eOn);
@@ -270,7 +280,7 @@ void CNetServiceClient::CreateSocket(const string& hostname,
                 // (this kernel limitation manifests itself on Linux)
                 //
                 
-                if (++conn_repeats > max_repeats) {
+                if (++conn_repeats > m_MaxRetries) {
                     if ( io_st != eIO_Success) {
                         throw CIO_Exception(DIAG_COMPILE_INFO,
                         0, (CIO_Exception::EErrCode)io_st, 
