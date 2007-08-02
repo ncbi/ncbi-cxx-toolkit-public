@@ -69,17 +69,16 @@ public:
         fTruncateOverlaps = 0x0001, ///< Otherwise put on separate rows
         fAllowMixedStrand = 0x0002, ///< Allow mixed strand on the same row
     };
+    typedef int TMergeFlags;
+    TMergeFlags  m_MergeFlags;
 
     enum EShowUnalignedOption {
         eHideUnaligned,
         eShowFlankingN, // show N residues on each side
         eShowAllUnaligned
     };
-    typedef int TMergeFlags;
 
     objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
-    EMergeAlgo   m_MergeOption;
-    TMergeFlags  m_MergeFlags;
     
     bool    m_ClipAlignment;
     objects::CBioseq_Handle  m_ClipSeq;
@@ -93,7 +92,8 @@ public:
     TPos m_ShowUnalignedN;
 
     CAlnUserOptions()
-    :   m_MergeOption(eQuerySeqMergeOnly),
+    :   m_Direction(eDefaultDirection),
+        m_MergeAlgo(eDefaultMergeAlgo),
         m_MergeFlags(0),
         m_ClipAlignment(false),
         m_ClipStart(0), m_ClipEnd(1),
