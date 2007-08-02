@@ -198,6 +198,10 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     retval->m_InternalData->m_ScoreBlk.Reset
         (new TBlastScoreBlk(sbp, BlastScoreBlkFree));
     if (pssm.NotEmpty()) {
+        if (query_data->GetNumQueries() > 1) {
+            NCBI_THROW(CBlastException, eNotSupported,
+                       "Multiple queries cannot be specified with a PSSM");
+        }
         PsiBlastSetupScoreBlock(sbp, pssm, retval->m_Messages, options);
     }
 
