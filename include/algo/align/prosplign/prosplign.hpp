@@ -190,6 +190,13 @@ public:
     CRef<CSeq_align> FindAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic, 
                                    CProSplignOutputOptions output_options = CProSplignOutputOptions());
 
+    // deprecated internals
+    void SetMode(bool one_stage, bool just_second_stage, bool old);
+    const vector<pair<int, int> >& GetExons() const;
+    vector<pair<int, int> >& SetExons();
+    void GetFlanks(bool& lgap, bool& rgap) const;
+    void SetFlanks(bool lgap, bool rgap);
+
 private:
     struct SImplData;
     auto_ptr<SImplData> m_data;
