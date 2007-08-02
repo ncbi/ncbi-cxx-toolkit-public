@@ -109,7 +109,12 @@ void CNSSubmitRemoveJobApp::Init(void)
 
     arg_desc->AddOptionalKey("tfiles", 
                              "file_names",
-                             "Files for transfer to the remote applicaion side",
+                             "Files for transfer to the remote applicaion side separated by ;",
+                             CArgDescriptions::eString);
+    
+    arg_desc->AddOptionalKey("tags",
+                             "tags_list",
+                             "A list of key=value pairs separated by ;",
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("runtime", 
