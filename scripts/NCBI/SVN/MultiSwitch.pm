@@ -4,11 +4,11 @@ package NCBI::SVN::MultiSwitch;
 
 use strict;
 use warnings;
-use Carp qw(confess);
-
-use IPC::Open2;
 
 use base qw(NCBI::SVN::Base);
+
+use IPC::Open2;
+use Carp qw(confess);
 
 sub SwitchUsingMap
 {
@@ -19,91 +19,67 @@ sub SwitchUsingMap
     $WorkingDir ||= '.';
     $WorkingDir =~ s/^(?:\.\/)+//o;
 
-    my $Repos;
-    my @AlreadySwitched;
+    my @AlreadySwitchedDirs;
 
-    my ($ReadHandle, $WriteHandle);
-
-    my $PID = open2($ReadHandle, $WriteHandle,
-        'svn', 'stat', '--non-interactive', $WorkingDir);
-
-    close($WriteHandle);
-
-    while (<$ReadHandle>)
     {
-        push @AlreadySwitched, $1 if m/^....S..(.*?)[\r\n]*$/os
-    }
+        my $Stream = $Self->{SVN}->Run('stat',
+            '--non-interactive', $WorkingDir);
 
-    close($ReadHandle);
+        my $Line;
 
-    waitpid $PID, 0;
-
-    $PID = open2($ReadHandle, $WriteHandle, 'svn', 'info',
-        '--non-interactive', $WorkingDir, @AlreadySwitched);
-
-    close($WriteHandle);
-
-    my $WorkingDirURL;
-    my %AlreadySwitchedURL;
-    my $Path;
-
-    while (<$ReadHandle>)
-    {
-        if (m/^Path: (.*?)[\r\n]*$/os)
+        while (defined($Line = $Stream->ReadLine()))
         {
-            $Path = $1
-        }
-        elsif (m/^URL: (.*?)[\r\n]*$/os)
-        {
-            if ($Path eq $WorkingDir)
-            {
-                $WorkingDirURL = $1
-            }
-            else
-            {
-                substr($Path, 0, length($WorkingDir) + 1, '')
-                    eq "$WorkingDir/" or die if $WorkingDir ne '.';
-
-                $AlreadySwitchedURL{$Path} = $1
-            }
-        }
-        elsif (!$Repos && m/^Repository Root: (.*?)[\r\n]*$/os)
-        {
-            $Repos = $1
+            push @AlreadySwitchedDirs, $1 if $Line =~ m/^....S..(.*?)[\r\n]*$/os
         }
     }
 
-    close($ReadHandle);
+    my $Info = $Self->{SVN}->ReadInfo('--non-interactive',
+        $WorkingDir, @AlreadySwitchedDirs);
 
-    waitpid $PID, 0;
+    my $WorkingDirInfo = $Info->{$WorkingDir};
 
-    die "$Self->{MyName}\: unable to detect repository URL.\n" unless $Repos;
+    my $Repos = $WorkingDirInfo->{Root}
+        or die "$Self->{MyName}\: unable to detect repository URL.\n";
+
+    my $WorkingDirRepoPath = $WorkingDirInfo->{Path};
+
+    my %AlreadySwitchedRepoPath;
+
+    for my $SwitchedDir (@AlreadySwitchedDirs)
+    {
+        my $RepoPath = $Info->{$SwitchedDir}->{Path};
+
+        substr($SwitchedDir, 0, length($WorkingDir) + 1, '')
+            eq "$WorkingDir/" or die if $WorkingDir ne '.';
+
+        $AlreadySwitchedRepoPath{$SwitchedDir} = $RepoPath
+    }
 
     for (@$SwitchMap)
     {
-        my ($FromDir, $ToDir) = @$_;
+        my ($DirToSwitch, $RepoPathToSwitchTo) = @$_;
 
-        my $AlreadySwitchedURL = delete $AlreadySwitchedURL{$FromDir};
-        my $URL = "$Repos/$ToDir";
+        my $AlreadySwitchedTo = delete $AlreadySwitchedRepoPath{$DirToSwitch};
 
-        if ($AlreadySwitchedURL && $AlreadySwitchedURL eq $URL)
+        if ($AlreadySwitchedTo && $AlreadySwitchedTo eq $RepoPathToSwitchTo)
         {
-            print "Skipping '$FromDir': already switched.\n"
+            print "Skipping '$DirToSwitch': already switched.\n"
         }
         else
         {
-            print "Switching '$FromDir' to '$ToDir'...\n";
+            print "Switching '$DirToSwitch' to '$RepoPathToSwitchTo'...\n";
 
-            $Self->{SVN}->RunSubversion('switch', $URL, "$WorkingDir/$FromDir")
+            $Self->{SVN}->RunSubversion('switch',
+                "$Repos/$RepoPathToSwitchTo", "$WorkingDir/$DirToSwitch")
         }
     }
 
-    for my $Dir (keys %AlreadySwitchedURL)
+    for my $Dir (keys %AlreadySwitchedRepoPath)
     {
         print "Unswitching '$Dir'...\n";
 
         $Self->{SVN}->RunSubversion('switch',
-            "$WorkingDirURL/$Dir", "$WorkingDir/$Dir")
+            "$Repos/$WorkingDirRepoPath/$Dir", "$WorkingDir/$Dir")
     }
 }
 
