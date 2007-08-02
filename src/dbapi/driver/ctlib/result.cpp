@@ -150,6 +150,80 @@ size_t CTL_RowResult::ItemMaxSize(unsigned int item_num) const
 }
 
 
+// New development. Not finished yet ...
+// EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
+// {
+//     if (item_num >= m_NofCols) {
+//         return eDB_UnsupportedType;
+//     }
+//
+//     const CS_DATAFMT& fmt = m_ColFmt[item_num];
+//     switch ( fmt.datatype ) {
+//     case CS_VARBINARY_TYPE:
+//     case CS_BINARY_TYPE:
+//         switch (fmt.usertype) {
+//         case 3:
+//             return eDB_Binary; // BINARY
+//         case 4:
+//             return eDB_VarBinary; // VARBINARY
+//         }
+//     case CS_BIT_TYPE:           return eDB_Bit;
+//     case CS_VARCHAR_TYPE:
+//     case CS_CHAR_TYPE:
+//         switch (fmt.usertype) {
+//         case 1:
+//             return eDB_Char; // CHAR
+//         case 2:
+//             return eDB_VarChar; // VARCHAR
+//         case 18:
+//             return eDB_VarChar; // SYSNAME
+// #if !defined(FTDS_IN_USE)
+//         case 24:
+//             return eDB_Char; // NCHAR
+//         case 23:
+//             return eDB_VarChar; // NVARCHAR
+// #endif
+//         default:
+//             return eDB_VarChar; // Report all user-defined types as VARCHAR ...
+//         }
+//         break;
+//     // Char/Varchar may be longer than 255 characters ...
+// //     case CS_CHAR_TYPE:          return eDB_LongChar;
+//     case CS_DATETIME_TYPE:      return eDB_DateTime;
+//     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
+//     case CS_TINYINT_TYPE:       return eDB_TinyInt;
+//     case CS_SMALLINT_TYPE:      return eDB_SmallInt;
+//     case CS_INT_TYPE:           return eDB_Int;
+//     case CS_LONG_TYPE:          return eDB_BigInt;
+//     case CS_DECIMAL_TYPE:
+//     case CS_NUMERIC_TYPE:       return (fmt.scale == 0  &&  fmt.precision < 20)
+//                                 ? eDB_BigInt : eDB_Numeric;
+// //     case CS_FLOAT_TYPE:         return eDB_Double;
+//     case CS_FLOAT_TYPE:         return eDB_Float;
+//     case CS_REAL_TYPE:          return eDB_Float;
+//     case CS_TEXT_TYPE:          return eDB_Text;
+//     case CS_IMAGE_TYPE:         return eDB_Image;
+//     case CS_LONGCHAR_TYPE:      return eDB_LongChar;
+//     case CS_LONGBINARY_TYPE:    return eDB_LongBinary;
+//
+// #ifdef FTDS_IN_USE
+//     case CS_UNIQUE_TYPE:        return eDB_VarBinary;
+// #endif
+//
+// //     case CS_MONEY_TYPE:
+// //     case CS_MONEY4_TYPE:
+// //     case CS_SENSITIVITY_TYPE:
+// //     case CS_BOUNDARY_TYPE:
+// //     case CS_VOID_TYPE:
+// //     case CS_USHORT_TYPE:
+// //     case CS_UNICHAR_TYPE:
+//     }
+//
+//     return eDB_UnsupportedType;
+// }
+
+
+
 EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
 {
     if (item_num >= m_NofCols) {
@@ -1064,20 +1138,20 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
     // differenly than expected. Fri Jul 13 12:39:12 EDT 2007
 //--------------------------------------------------
 //     int current_item = m_CurrItem;
-// 
+//
 // #if defined(FTDS_IN_USE)
 //     // At the moment ctlib from Sybase will increase m_CurrItemi, but ctlib
 //     // from FreeTDS won't ...
 //     ++ current_item;
 // #endif
-// 
+//
 //     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
 //                                   CS_GET,
 //                                   current_item,
 //                                   &desc->m_Desc))
 //         != CS_SUCCEED);
 //     CHECK_DRIVER_ERROR( rc, "ct_data_info failed" + GetDbgInfo(), 130010 );
-//-------------------------------------------------- 
+//--------------------------------------------------
 
     return desc.release();
 }
