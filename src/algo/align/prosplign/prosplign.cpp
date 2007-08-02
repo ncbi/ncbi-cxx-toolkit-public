@@ -46,6 +46,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
+USING_SCOPE(ncbi::prosplign);
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -288,14 +289,52 @@ int CProSplignOutputOptions::GetStopBonus() const
 
 struct CProSplign::SImplData {
     SImplData(CProSplignScoring scoring) :
-        m_scoring(scoring), m_intronless(false)
+        m_scoring(scoring), m_intronless(false),
+        m_old(false), m_one_stage(false), m_just_second_stage(false),
+        lgap(false), rgap(false)
     {
         CScoring::Init(m_scoring);
     }
 
     CProSplignScaledScoring m_scoring;
     bool m_intronless;
+    bool m_old;
+    bool m_one_stage;
+    bool m_just_second_stage;
+    vector<pair<int, int> > igi;
+    bool lgap;//true if the first one in igi is a gap
+    bool rgap;//true if the last one in igi is a gap
 };
+
+void CProSplign::SetMode(bool one_stage, bool just_second_stage, bool old)
+{
+    m_data->m_old = old;
+    m_data->m_one_stage = one_stage;
+    m_data->m_just_second_stage = just_second_stage;
+}
+
+const vector<pair<int, int> >& CProSplign::GetExons() const
+{
+    return m_data->igi;
+}
+
+vector<pair<int, int> >& CProSplign::SetExons()
+{
+    return m_data->igi;
+}
+
+void CProSplign::GetFlanks(bool& lgap, bool& rgap) const
+{
+    lgap = m_data->lgap;
+    rgap = m_data->rgap;
+}
+
+void CProSplign::SetFlanks(bool lgap, bool rgap)
+{
+    m_data->lgap = lgap;
+    m_data->rgap = rgap;
+}
+
 
 CProSplign::CProSplign( CProSplignScoring scoring) :
     m_data(new SImplData(scoring))
@@ -326,39 +365,67 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
     auto_ptr<CAli> pali;
 
     if (!m_data->m_intronless) {
-        vector<pair<int, int> > igi;
-        bool lgap = false;//true if the first one in igi is a gap
-        bool rgap = false;//true if the last one in igi is a gap
+        if (m_data->m_one_stage) {
+            pali.reset(new CAli(cnseq, protseq));
+            CTBackAlignInfo<CBMode> bi;
+            bi.Init((int)pseq.size(), (int)cnseq.size());//backtracking
+            int friscore = AlignFNog(bi, pseq, cnseq);
+            BackAlignNog(bi, *pali);
+            _ASSERT(CAliUtil::CountIScore(*pali, 2) == friscore);
+        } else {
+            int iscore1 = 0;
+            if (!m_data->m_just_second_stage) {
+                if (m_data->m_old) {
+                    iscore1 = FindIGapIntrons(m_data->igi, pseq, cnseq,
+                               m_data->m_scoring.GetGapOpeningCost(),
+                               m_data->m_scoring.GetGapExtensionCost(),
+                               m_data->m_scoring.GetFrameshiftOpeningCost());
+                    m_data->lgap = !m_data->igi.empty() && m_data->igi.front().first == 0;
+                    m_data->rgap = !m_data->igi.empty() && m_data->igi.back().first + m_data->igi.back().second == int(cnseq.size());
+                } else {
+                    iscore1 = FindFGapIntronNog(m_data->igi, pseq, cnseq, m_data->lgap, m_data->rgap);
+                }
+            }
+            CNSeq cfrnseq;
+            cfrnseq.Init(cnseq, m_data->igi);
+            
+            CBackAlignInfo bi;
+            bi.Init((int)pseq.size(), (int)cfrnseq.size()); //backtracking
         
-        int iscore1 =
-            FindFGapIntronNog(igi, pseq, cnseq, lgap, rgap);
+            int friscore;
+            if (m_data->m_old)
+                friscore = FrAlign(bi, pseq, cfrnseq,
+                               m_data->m_scoring.GetGapOpeningCost(),
+                               m_data->m_scoring.GetGapExtensionCost(),
+                               m_data->m_scoring.GetFrameshiftOpeningCost());
+            else
+                friscore = FrAlignFNog1(bi, pseq, cfrnseq, m_data->m_scoring, m_data->lgap, m_data->rgap);
         
-        CNSeq cfrnseq;
-        cfrnseq.Init(cnseq, igi);
-        
-        CBackAlignInfo bi;
-        bi.Init((int)pseq.size(), (int)cfrnseq.size()); //backtracking
-        
-        int friscore =
-            FrAlignFNog1(bi, pseq, cfrnseq, m_data->m_scoring, lgap, rgap);
-        
-        pali.reset( new CAli(cfrnseq, protseq) );
-        FrBackAlign(bi, *pali);
+            pali.reset( new CAli(cfrnseq, protseq) );
+            FrBackAlign(bi, *pali);
 
-        _ASSERT(CAliUtil::CountFrIScore(*pali, 2 /* new */, lgap, rgap) == friscore);
+//             _ASSERT(CAliUtil::CountFrIScore(*pali, 2 /* new */, m_data->lgap, m_data->rgap) == friscore);
 
-        pali.reset( new CAli(cnseq, protseq, igi, lgap, rgap, *pali) );
+            pali.reset( new CAli(cnseq, protseq, m_data->igi, m_data->lgap, m_data->rgap, *pali) );
 
-        _ASSERT(CAliUtil::CountIScore(*pali, 2 /* new */) == iscore1);
-        _DEBUG_CODE(CAliUtil::CheckValidity(*pali););
+//             _ASSERT(CAliUtil::CountIScore(*pali, 2 /* new */) == iscore1);
+//             _DEBUG_CODE(CAliUtil::CheckValidity(*pali););
+        }
     } else { // flag "no_introns" is set
         pali.reset(new CAli(cnseq, protseq));
         CBackAlignInfo bi;
         bi.Init((int)pseq.size(), (int)cnseq.size());//backtracking
-        int friscore = FrAlignFNog1(bi, pseq, cnseq, m_data->m_scoring);
+        int friscore;
+        if (m_data->m_old)
+            friscore = FrAlign(bi, pseq, cnseq,
+                               m_data->m_scoring.GetGapOpeningCost(),
+                               m_data->m_scoring.GetGapExtensionCost(),
+                               m_data->m_scoring.GetFrameshiftOpeningCost()); 
+        else
+            friscore = FrAlignFNog1(bi, pseq, cnseq, m_data->m_scoring);
         pali->score = friscore/m_data->m_scoring.GetScale();
         FrBackAlign(bi, *pali);
-        _ASSERT(CAliUtil::CountFrIScore(*pali, 2) == friscore);
+//         _ASSERT(CAliUtil::CountFrIScore(*pali, 2) == friscore);
     }
 
     auto_ptr<CPosAli> pposali( new CPosAli(*pali, protein, genomic, output_options) );
