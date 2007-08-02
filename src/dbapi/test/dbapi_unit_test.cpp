@@ -1751,7 +1751,7 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
         {
             CDB_ITDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
             CDB_Text text;
-            
+
             text.Append("test clob data ...");
             conn->SendData(descriptor, text);
         }
@@ -1760,7 +1760,7 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
         {
             CDB_ITDescriptor descriptor(GetTableName(), "text_field", "int_field = 1");
             CDB_Text text;
-            
+
             for(int i = 0; i < 1000; ++i) {
                 string str_value;
 
@@ -1770,7 +1770,7 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
                 text.Append(str_value);
             }
         }
-        
+
         // Read CLOB value back ...
         {
             sql = "SELECT text_field FROM " + GetTableName() + " WHERE int_field = 1";
@@ -1793,7 +1793,7 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
                 char buff[4096];
                 while(rs->Fetch()) {
                     if (rs->ReadItem(buff, sizeof(buff)) < sizeof(buff)) {
-                        break;    
+                        break;
                     };
                 }
             }
@@ -1859,7 +1859,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             // Check inserted data ...
             {
                 int rec_num = GetNumOfRecords(auto_stmt, table_name);
-                BOOST_CHECK_EQUAL(rec_num, (int)record_num); 
+                BOOST_CHECK_EQUAL(rec_num, (int)record_num);
             }
         }
 
@@ -1905,7 +1905,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             // Check inserted data ...
             {
                 int rec_num = GetNumOfRecords(auto_stmt, table_name);
-                BOOST_CHECK_EQUAL(rec_num, int(record_num * batch_num)); 
+                BOOST_CHECK_EQUAL(rec_num, int(record_num * batch_num));
             }
         }
     }
@@ -3585,6 +3585,306 @@ CDBAPIUnitTest::Test_Recordset(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
+CDBAPIUnitTest::Test_MetaData(void)
+{
+    try {
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IResultSet> rs;
+        const IResultSetMetaData* md = NULL;
+
+        // First test ...
+        // Check different data types ...
+        // Check non-empty results ...
+        {
+            // bit
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(bit, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Bit);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // tinyint
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(tinyint, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_TinyInt);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // smallint
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(smallint, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_SmallInt);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // int
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(int, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Int);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // numeric
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // decimal
+            // There is no eDB_Decimal ...
+            if (false) {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // float
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(float(4), 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Float);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // double
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(double precision, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // real
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(real, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Float);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // smallmoney
+            // Unsupported type ...
+            if (false) {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(smallmoney, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // money
+            // Unsupported type ...
+            if (false) {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(money, 1)"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Double);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // smalldatetime
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_SmallDateTime);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // datetime
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_DateTime);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // char
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(char(32), '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // varchar
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // nchar
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Char);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // nvarchar
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_VarChar);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // binary
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(binary(32), '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Binary);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // varbinary
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // text
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(text, '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Text);
+
+                DumpResults(auto_stmt.get());
+            }
+
+            // image
+            {
+                rs.reset(auto_stmt->ExecuteQuery("select convert(image, '12345')"));
+                BOOST_CHECK(rs.get() != NULL);
+                md = rs->GetMetaData();
+                BOOST_CHECK(md);
+
+                EDB_Type curr_type = md->GetType(1);
+                BOOST_CHECK_EQUAL(curr_type, eDB_Image);
+
+                DumpResults(auto_stmt.get());
+            }
+        }
+
+        // Second test ...
+        {
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void
 CDBAPIUnitTest::Test_UserErrorHandler(void)
 {
     try {
@@ -4947,7 +5247,9 @@ CDBAPIUnitTest::Test_NULL(void)
                         BOOST_CHECK( nvc255_field.IsNull() );
                     } else {
                         BOOST_CHECK( !nvc255_field.IsNull() );
-                        BOOST_CHECK_EQUAL( nvc255_field.GetString(),
+                        BOOST_CHECK_EQUAL( NStr::TruncateSpaces(
+                                                nvc255_field.GetString()
+                                                ),
                                            NStr::IntToString(ind) );
                     }
                 }
@@ -7529,6 +7831,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
             auto_stmt->SendSql("waitfor delay '0:00:03'");
             BOOST_CHECK(auto_stmt->HasMoreResults());
         // } catch(const CDB_TimeoutEx&) {
+        // We have to catch CDB_Exception here because of the ftds driver ...
         } catch(const CDB_Exception&) {
             timeout_was_reported = true;
             auto_stmt->Cancel();
@@ -8047,7 +8350,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && args.GetDriverName() != "odbc"
         && !(args.GetDriverName() == "ftds"
-            && args.GetServerType() == CTestArguments::eSybase)           
+            && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == "ftds64_dblib"
           && args.GetServerType() == CTestArguments::eSybase)
         ) {
@@ -8156,7 +8459,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    
+
     if (args.IsBCPAvailable()
         && !(args.GetDriverName() == "ftds" &&
              args.GetServerType() == CTestArguments::eSybase)
@@ -8205,6 +8508,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 add(tc);
             }
 
+            //
+            if (false) {
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MetaData,
+                                           DBAPIInstance);
+                tc->depends_on(tc_init);
+                tc->depends_on(select_stmt_tc);
+                add(tc);
+            }
+
+            //
             if ( (args.GetServerType() == CTestArguments::eMsSql
                   || args.GetServerType() == CTestArguments::eMsSql2005) &&
                  (args.GetDriverName() != "msdblib" &&
@@ -8647,5 +8960,4 @@ init_unit_test_suite( int argc, char * argv[] )
 
     return test;
 }
-
 
