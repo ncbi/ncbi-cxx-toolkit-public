@@ -112,8 +112,8 @@ public:
     static 
     void SetDefaultCreateSocketMaxReties(unsigned int retires);
         
-    void SetCreateSockeMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
-    unsigned int GetCreateSockeMaxRetries() const { return m_MaxRetries; }
+    void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
+    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
 
     void RestoreHostPort();
 
