@@ -509,6 +509,8 @@ void CNetCacheServer::Process(SOCK sock)
 
     CSocket socket;
     socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
+    STimeout zero = {0,0};
+    socket.SetTimeout(eIO_Close,&zero);
 
     try {
         tdata->auth.erase();
