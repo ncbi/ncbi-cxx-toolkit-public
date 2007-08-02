@@ -94,9 +94,11 @@ int CProSplignApp::Run()
     CScope scope(*obj_mgr);
     scope.AddDefaults();
     /* examples
-    NP_002346.1 to NT_009714.16, 1851937 , 1861227 , eNa_strand_minus
-    EAT35703.1 to NW_001262488.1, 10353 , 12115 , eNa_strand_plus
+prosplign_demo -protein NP_002346.1 -genomic NT_009714.16 -start 1851937 -stop 1861227 -reverse
+
+prosplign_demo -protein EAT35703.1 -genomic NW_001262488.1 -start 10353 -stop 12115
     */
+
     CSeq_id protein(args["protein"].AsString());
     CSeq_id genomic(args["genomic"].AsString());
     CSeq_loc seqloc(genomic, args["start"].AsInteger(), args["stop"].AsInteger(),args["reverse"]?eNa_strand_minus:eNa_strand_plus);
