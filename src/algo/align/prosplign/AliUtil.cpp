@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <internal/algo/align/prosplign/prosplign_exception.hpp>
+#include <algo/align/prosplign/prosplign_exception.hpp>
 
 #include "AliUtil.hpp"
 #include "Ali.hpp"
@@ -43,6 +43,7 @@
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 int CAliUtil::CutIntrons(CAli& new_ali, const CAli& ali)
 {
@@ -229,4 +230,5 @@ int CAliUtil::CountFrIScore(const CAli& ali, int mode, bool lgap, bool rgap)
 
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
