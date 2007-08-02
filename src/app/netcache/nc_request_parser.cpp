@@ -413,7 +413,7 @@ void CNetCacheServer::ParseRequestNC(const string& reqstr, SNC_Request* req)
 
         if (strncmp(s, "RMV2", 4) == 0) {
             req->req_type = eRemove2;
-            s += 6;
+            s += 4;
             goto parse_blob_id;
         } // REMOVE
 

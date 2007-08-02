@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.10  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.11  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -354,7 +354,7 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         break;
     case eRemove2:
         stat.req_code = 'R';
-        ProcessRemove(socket, tdata.req);
+        ProcessRemove2(socket, tdata.req);
         break;
     case eLogging:
         stat.req_code = 'L';
