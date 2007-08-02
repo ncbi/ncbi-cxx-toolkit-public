@@ -1040,8 +1040,9 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
 
     /// Which write flags should be output in diagnostic message.
     enum EDiagWriteFlags {
-        fNone   = 0x0,      ///< No flags
-        fNoEndl = 0x01      ///< No end of line
+        fNone     = 0x0,      ///< No flags
+        fNoEndl   = 0x01,     ///< No end of line
+        fNoPrefix = 0x02      ///< No std prefix
     };
 
     typedef int TDiagWriteFlags; /// Binary OR of "EDiagWriteFlags"

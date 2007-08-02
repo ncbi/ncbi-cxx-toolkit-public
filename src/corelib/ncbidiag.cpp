@@ -2350,7 +2350,9 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
 CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
                                        TDiagWriteFlags flags) const
 {
-    GetDiagContext().WriteStdPrefix(os, this);
+    if ((flags & fNoPrefix) == 0) {
+        GetDiagContext().WriteStdPrefix(os, this);
+    }
 
     // Get error code description
     bool have_description = false;
@@ -3488,28 +3490,22 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         err_type += pex->GetErrCodeString();
         CDiagContextThreadData& thr_data =
             CDiagContextThreadData::GetThreadData();
-        SDiagMessage diagmsg(pex->GetSeverity(),
-                             text.c_str(), 
-                             text.size(),
-                             pex->GetFile().c_str(),
-                             pex->GetLine(),
-                             GetPostFlags(),
-                             NULL,
-                             pex->GetErrCode(),
-                             0,
-                             err_type.c_str(),
-                             pex->GetModule().c_str(),
-                             pex->GetClass().c_str(),
-                             pex->GetFunction().c_str(),
-                             CDiagContext::GetPID(),
-                             thr_data.GetTID(),
-                             CDiagContext::GetProcessPostNumber(
-                             ePostNumber_Increment),
-                             thr_data.GetThreadPostNumber(
-                             ePostNumber_Increment),
-                             thr_data.GetRequestId());
+        SDiagMessage diagmsg
+            (pex->GetSeverity(),
+            text.c_str(),
+            text.size(),
+            pex->GetFile().c_str(),
+            pex->GetLine(),
+            GetPostFlags(),
+            NULL,
+            pex->GetErrCode(),
+            0,
+            err_type.c_str(),
+            pex->GetModule().c_str(),
+            pex->GetClass().c_str(),
+            pex->GetFunction().c_str());
         string report;
-        diagmsg.Write(report);
+        diagmsg.Write(report, SDiagMessage::fNoPrefix);
         *this << "    "; // indentation
         *this << report;
     }

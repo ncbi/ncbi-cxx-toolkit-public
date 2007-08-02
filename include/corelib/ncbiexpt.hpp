@@ -866,14 +866,13 @@ public:
 
     /// Report exception using default reporter.
     static void ReportDefault(const CDiagCompileInfo& info,
-                              const string& title, const CException& ex,
+                              const string& title, const exception& ex,
                               TDiagPostFlags flags = eDPF_Trace);
 
-    /// Report exception with _this_ reporter
+    /// Report CException with _this_ reporter
     virtual void Report(const char* file, int line,
                         const string& title, const CException& ex,
                         TDiagPostFlags flags = eDPF_Trace) const = 0;
-
 private:
     static const CExceptionReporter* sm_DefHandler; ///< Default handler
     static bool                      sm_DefEnabled; ///< Default enable flag

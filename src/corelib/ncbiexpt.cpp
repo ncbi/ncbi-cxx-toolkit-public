@@ -310,13 +310,8 @@ void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
         flags, NULL, 0, 0, err_type.c_str(),
         GetModule().c_str(),
         GetClass().c_str(),
-        GetFunction().c_str(),
-        ctx.GetPID(),
-        thr_data.GetTID(),
-        ctx.GetProcessPostNumber(ePostNumber_Increment),
-        thr_data.GetThreadPostNumber(ePostNumber_Increment),
-        thr_data.GetRequestId());
-    diagmsg.Write(out, SDiagMessage::fNoEndl);
+        GetFunction().c_str());
+    diagmsg.Write(out, SDiagMessage::fNoEndl | SDiagMessage::fNoPrefix);
 }
 
 void CException::ReportExtra(ostream& /*out*/) const
@@ -497,20 +492,56 @@ bool CExceptionReporter::EnableDefault(bool enable)
 }
 
 
+class CExceptionWrapper : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    CExceptionWrapper(const CDiagCompileInfo& info,
+                      const exception&        ex);
+
+    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetType(void) const;
+};
+
+
+CExceptionWrapper::CExceptionWrapper(const CDiagCompileInfo& info,
+                                     const exception&        ex)
+    : CException(info, NULL, eUnknown, ex.what())
+{
+}
+
+
+const char* CExceptionWrapper::GetErrCodeString(void) const
+{
+    return kEmptyCStr;
+}
+
+
+const char* CExceptionWrapper::GetType(void) const
+{
+    return "exception";
+}
+
+
 void CExceptionReporter::ReportDefault(const CDiagCompileInfo& info,
-    const string& title,const CException& ex, TDiagPostFlags flags)
+    const string& title,const exception& ex, TDiagPostFlags flags)
 {
     if ( !sm_DefEnabled )
         return;
 
+    const CException* cex = dynamic_cast<const CException*>(&ex);
+    auto_ptr<CException> wrapper;
+    if ( !cex ) {
+        wrapper.reset(new CExceptionWrapper(info, ex));
+        cex = wrapper.get();
+    }
     if ( sm_DefHandler ) {
         sm_DefHandler->Report(info.GetFile(), 
                               info.GetLine(), 
                               title, 
-                              ex, 
+                              *cex, 
                               flags);
     } else {
-        CNcbiDiag(info, ex.GetSeverity(), flags) << title << ex;
+        CNcbiDiag(info, cex->GetSeverity(), flags) << title << *cex;
     }
 }
 
