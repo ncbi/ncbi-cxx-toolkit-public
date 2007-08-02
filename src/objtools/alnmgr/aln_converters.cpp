@@ -39,6 +39,11 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Sparse_seg.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -87,6 +92,8 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
         }
         break;
     case CSeq_align::TSegs::e_Spliced:
+        ConvertSplicedToPairwiseAln(pairwise_aln, segs.GetSpliced(),
+                                    row_1, row_2, direction);
         break;
     case CSeq_align::TSegs::e_Sparse:
         break;
@@ -345,6 +352,139 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
 //                                    true));
 //     }
 }
+
+
+void
+ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
+                            const CSpliced_seg& spliced_seg, ///< input Spliced-seg
+                            CSeq_align::TDim row_1,          ///< which pair of rows 
+                            CDense_seg::TDim row_2,
+                            CAlnUserOptions::EDirection direction) ///< which direction
+{
+    _ASSERT(row_1 == 0  ||  row_1 == 1  &&  row_2 == 0  ||  row_2 == 1);
+
+    bool prot = spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
+
+    ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.GetExons()) {
+
+        const CSpliced_exon& exon = **exon_it;
+            
+        /// Determine strands
+        if (spliced_seg.CanGetProduct_strand()  &&  exon.CanGetProduct_strand()  &&
+            spliced_seg.GetProduct_strand() != exon.GetProduct_strand()) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "Product strands are not consistent.");
+        }
+        bool product_plus = true;
+        if (exon.CanGetProduct_strand()) {
+            product_plus = spliced_seg.GetProduct_strand() != eNa_strand_minus;
+        } else if (spliced_seg.CanGetProduct_strand()) {
+            product_plus = spliced_seg.GetProduct_strand() != eNa_strand_minus;
+        }
+        _ASSERT(prot ? product_plus : true);
+
+        if (spliced_seg.CanGetGenomic_strand()  &&  exon.CanGetGenomic_strand()  &&
+            spliced_seg.GetGenomic_strand() != exon.GetGenomic_strand()) {
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "Genomic strands are not consistent.");
+        }
+        bool genomic_plus = true;
+        if (exon.CanGetGenomic_strand()) {
+            genomic_plus = spliced_seg.GetGenomic_strand() != eNa_strand_minus;
+        } else if (spliced_seg.CanGetGenomic_strand()) {
+            genomic_plus = spliced_seg.GetGenomic_strand() != eNa_strand_minus;
+        }
+        bool direct = product_plus  &&  genomic_plus;
+    
+
+        /// Determine positions
+        TSeqPos product_pos =
+            (prot ?
+             exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1 :
+             (product_plus ?
+              exon.GetProduct_start().GetNucpos() :
+              exon.GetProduct_end().GetNucpos()));
+        
+        TSeqPos genomic_pos = (genomic_plus ? 
+                               exon.GetGenomic_start() :
+                               exon.GetGenomic_end());
+            
+
+        /// Iterate trhough exon chunks
+        ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
+            const CSpliced_exon_chunk& chunk = **chunk_it;
+                
+            TSeqPos product_len = 0;
+            TSeqPos genomic_len = 0;
+            
+            switch (chunk.Which()) {
+            case CSpliced_exon_chunk::e_Match: 
+                product_len = genomic_len = chunk.GetMatch();
+                break;
+            case CSpliced_exon_chunk::e_Diag: 
+                product_len = genomic_len = chunk.GetDiag();
+                break;
+            case CSpliced_exon_chunk::e_Mismatch:
+                break;
+            case CSpliced_exon_chunk::e_Product_ins:
+                product_len = chunk.GetProduct_ins();
+                break;
+            case CSpliced_exon_chunk::e_Genomic_ins:
+                genomic_len = chunk.GetGenomic_ins();
+                break;
+            default:
+                break;
+            }
+            if (row_1 == 0  &&  row_2 == 0) {
+                if (product_len != 0) {
+                    /// insert the range
+                    pairwise_aln.insert
+                        (CPairwiseAln::TAlnRng
+                         (product_plus ? product_pos : product_pos - product_len + 1,
+                          product_plus ? product_pos : product_pos - product_len + 1,
+                          product_len,
+                          true));
+                }
+            } else if (row_1 == 1  &&  row_2 == 1) {
+                if (genomic_len != 0) {
+                    /// insert the range
+                    pairwise_aln.insert
+                        (CPairwiseAln::TAlnRng
+                         (genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                          genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                          genomic_len,
+                          true));
+                }
+            } else {
+                _ASSERT(row_1 != row_2);
+                if (product_len != 0  &&  product_len == genomic_len  &&
+                    direction == CAlnUserOptions::eBothDirections  ||
+                    (direct ?
+                     direction == CAlnUserOptions::eDirect :
+                     direction == CAlnUserOptions::eReverse)) {
+                    /// insert the range
+                    pairwise_aln.insert
+                        (CPairwiseAln::TAlnRng
+                         (product_plus ? product_pos : product_pos - product_len + 1,
+                          genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1,
+                          genomic_len,
+                          direct));
+                }
+            }
+            if (product_plus) {
+                product_pos += product_len;
+            } else {
+                product_pos -= product_len;
+            }
+            if (genomic_plus) {
+                genomic_pos += genomic_len;
+            } else {
+                genomic_pos -= genomic_len;
+            }
+        }
+    }
+}
+
 
 
 // #include <objtools/alnmgr/pairwise_aln.hpp>

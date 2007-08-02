@@ -43,8 +43,10 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
-#include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/seqalign_exception.hpp>
+
+#include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
@@ -245,6 +247,20 @@ public:
 //                     }
 //                     id_vec[row + 1].Reset(sa.GetSecond_id());
 //                 }
+            }
+            break;
+        case TSegs::e_Spliced:
+            {
+                const CSpliced_seg& spliced_seg = segs.GetSpliced();
+                id_vec.resize(2);
+
+                bool prot = spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
+
+                id_vec[0].Reset(new TAlnSeqId(spliced_seg.GetProduct_id()));
+                id_vec[0]->SetBaseWidth(prot ? 3 : 1);
+
+                id_vec[1].Reset(new TAlnSeqId(spliced_seg.GetGenomic_id()));
+                id_vec[1]->SetBaseWidth(1);
             }
             break;
         case TSegs::e_not_set:

@@ -80,6 +80,7 @@ public:
         case TSegs::e_Denseg:
         case TSegs::e_Std:
         case TSegs::e_Packed:
+        case TSegs::e_Spliced:
             return
                 m_AlnSet.insert(CConstRef<CSeq_align>(&seq_align)).first;
             break;

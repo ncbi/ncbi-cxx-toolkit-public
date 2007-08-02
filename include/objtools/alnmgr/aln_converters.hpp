@@ -91,6 +91,15 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,             ///< output
                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
 
 
+NCBI_XALNMGR_EXPORT
+void
+ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,               ///< output
+                            const objects::CSpliced_seg& spliced_seg, ///< input Splice-seg
+                            objects::CSeq_align::TDim row_1,          ///< which pair of rows 
+                            objects::CSeq_align::TDim row_2,
+                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+
+
 /// Create an anchored alignment from Seq-align using hints
 template <class TAlnStats>
 CRef<CAnchoredAln> 
