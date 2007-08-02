@@ -42,6 +42,7 @@
 #include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 USING_SCOPE(ncbi::objects);
 
 CNSeq::CNSeq(void)
@@ -118,9 +119,10 @@ void CNSeq::Init(CScope& scope, const CSeq_loc& genomic)
     convert[8] = nT;
 
     for (CSeqVector_CI i(seq_vec); i; ++i) {
-        seq.push_back(convert[*i]);
+        seq.push_back(convert[*i&0xf]);
     }
 }
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
