@@ -54,67 +54,37 @@ using boost::unit_test::test_suite;
 /// class via this file
 class CAutoNcbiConfigFile {
 public:
-    static const char* kConfigFile;
-    static const char* kSavedConfigFile;
+    static const char* kSection;
+    static const char* kName;
 
     typedef SDataLoaderConfig::EConfigOpts EConfigOpts;
 
     CAutoNcbiConfigFile(EConfigOpts opts = SDataLoaderConfig::eDefault) {
         CMetaRegistry::SEntry sentry =
             CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-        const string blastdb_dir = x_GetBlastDbDir(sentry.registry);
-        sentry.registry->Clear();
 
-        CFile existing_configuration(kConfigFile);
-        if (existing_configuration.Exists()) {
-            existing_configuration.Rename(".ncbirc.sav");
-        } else {
-            ofstream out(kConfigFile);
-            out << "[BLAST]" << endl << "DATA_LOADERS=";
-            if (opts & SDataLoaderConfig::eUseBlastDbDataLoader) {
-                out << "blastdb ";
-            }
-            if (opts & SDataLoaderConfig::eUseGenbankDataLoader) {
-                out << "genbank";
-            }
-            if (opts & SDataLoaderConfig::eUseNoDataLoaders) {
-                out << "none";
-            }
-            out << endl;
-            out << "BLASTDB=" << blastdb_dir << endl;
-            out.close();
+        string value;
+        if (opts & SDataLoaderConfig::eUseBlastDbDataLoader) {
+            value += "blastdb ";
         }
-
-        ifstream in(kConfigFile);
-        sentry.registry->Read(in);
+        if (opts & SDataLoaderConfig::eUseGenbankDataLoader) {
+            value += "genbank";
+        }
+        if (opts & SDataLoaderConfig::eUseNoDataLoaders) {
+            value += "none";
+        }
+        sentry.registry->Set(kSection, kName, value);
     }
 
     ~CAutoNcbiConfigFile() {
-        CFile previous_configuration(kSavedConfigFile);
-        if (previous_configuration.Exists()) {
-            previous_configuration.Rename(kConfigFile);
-        } else {
-            CFile(kConfigFile).Remove();
-        }
-
         CMetaRegistry::SEntry sentry =
             CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-        sentry.registry->Clear();
-        sentry.Reload();
-    }
-
-private:
-    string x_GetBlastDbDir(IRegistry* registry) {
-        if (registry == NULL) {
-            return string();
-        }
-        string blastdb_dir = registry->Get("BLAST", "BLASTDB");
-        return blastdb_dir;
+        sentry.registry->Set(kSection, kName, kEmptyStr);
     }
 };
 
-const char* CAutoNcbiConfigFile::kConfigFile = ".ncbirc";
-const char* CAutoNcbiConfigFile::kSavedConfigFile = ".ncbirc.sav";
+const char* CAutoNcbiConfigFile::kSection = "BLAST";
+const char* CAutoNcbiConfigFile::kName = "DATA_LOADERS";
 
 BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData) 
 {
