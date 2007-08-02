@@ -57,12 +57,12 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
     m_Args.push_back(arg);
 
-    m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
-    arg.Reset(m_StdCmdLineArgs);
-    m_Args.push_back(arg);
-
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     arg.Reset(m_BlastDbArgs);
+    m_Args.push_back(arg);
+
+    m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
+    arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein));

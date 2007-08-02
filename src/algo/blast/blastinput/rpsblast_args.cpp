@@ -54,12 +54,12 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
                                           "Reverse Position Specific BLAST"));
     m_Args.push_back(arg);
 
-    m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
-    arg.Reset(m_StdCmdLineArgs);
-    m_Args.push_back(arg);
-
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, kIsRpsBlast));
     arg.Reset(m_BlastDbArgs);
+    m_Args.push_back(arg);
+
+    m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
+    arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein, kIsRpsBlast));
