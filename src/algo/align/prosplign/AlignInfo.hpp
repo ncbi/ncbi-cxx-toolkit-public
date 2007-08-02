@@ -40,6 +40,7 @@
 #include "IntronChain.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 class CAlignInfo
 {
@@ -87,6 +88,7 @@ private:
     CFindGapIntronRow& operator=(const CFindGapIntronRow& ori);
 };
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif//ALIGNINFO_H

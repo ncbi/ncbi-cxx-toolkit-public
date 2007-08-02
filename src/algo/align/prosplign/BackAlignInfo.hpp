@@ -39,6 +39,7 @@
 #include <limits>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 template <class el>
 class MATR
@@ -86,6 +87,7 @@ public:
 
 typedef CTBackAlignInfo<char> CBackAlignInfo;
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //PROSPLIGN_BACKALIGNINFO_HPP

@@ -39,6 +39,7 @@
 #include"intron.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 int CAnyIntron::ini_nuc_margin = 1;//minimum - 0 
                                    // for versions with no end gap cost at least one required.
@@ -230,4 +231,5 @@ void CFIntron::InitRowScores(CAlignRow *row, vector<int>& prevw, int j)
 }
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE

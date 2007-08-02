@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 CPSeq::CPSeq(CScope& scope, const CSeq_id& protein)
 {
@@ -54,4 +55,5 @@ CPSeq::~CPSeq(void)
 {
 }
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE

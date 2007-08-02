@@ -39,6 +39,7 @@
 #include "Info.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 using namespace objects;
 
 enum EAliPieceType {
@@ -161,6 +162,7 @@ public:
     //    friend CPosAli::CPosAli(CSeq_alignHandle& hali, const CSeq_id& protein,  const CSeq_loc& genomic, const CProSplignOutputOptions& output_options, CNSeq& nseq, CPSeq& pseq, CNSeq& nseq1);
 };
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //PROSPLIGN_ALI_HPP

@@ -37,6 +37,7 @@
 #include "intron.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 CAlignInfo::CAlignInfo(int length)
 {
@@ -94,4 +95,5 @@ CAlignRow::CAlignRow(int length) {
         h3 = &m_h3[0] + CFIntron::lmin + 1;
 }
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE

@@ -46,6 +46,7 @@
 #include "NSeq.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 extern int infinity;
 
@@ -763,6 +764,7 @@ public:
 // ***  END OF FAST INTRON IMPLEMENTATION
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //INTRON_HPP

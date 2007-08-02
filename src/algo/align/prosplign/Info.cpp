@@ -43,6 +43,7 @@
 #include "PSeq.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOptions& options) : CProSplignOutputOptions(options)
 {
@@ -952,4 +953,5 @@ bool CProtPiece::StopInside(void)
     return false;
 }
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE

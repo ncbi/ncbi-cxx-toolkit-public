@@ -43,6 +43,7 @@
 #include <algo/align/prosplign/prosplign.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 class CNSeq;
 
@@ -254,6 +255,7 @@ private:
 };
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //PROSPLIGN_INFO_HPP

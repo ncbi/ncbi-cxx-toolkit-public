@@ -34,6 +34,7 @@
 #include <algo/align/prosplign/prosplign.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 class CProSplignScaledScoring : public CProSplignScoring {
 public:
@@ -61,6 +62,7 @@ public:
     static void Init(const CProSplignScaledScoring& new_scoring);
 };
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 

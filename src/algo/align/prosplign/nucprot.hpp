@@ -44,6 +44,7 @@
 #include "scoring.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 
 enum EWMode {
@@ -159,6 +160,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
 //            int f/*frameshift opening cost*/);
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //NUCPROT_H

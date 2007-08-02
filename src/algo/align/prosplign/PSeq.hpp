@@ -42,6 +42,7 @@ BEGIN_SCOPE(objects)
     class CScope;
     class CSeq_id;
 END_SCOPE(objects)
+BEGIN_SCOPE(prosplign)
 USING_SCOPE(ncbi::objects);
 
 typedef vector<char> PSEQ;
@@ -58,6 +59,7 @@ public:
     PSEQ seq;
 };
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif//PSEQ_H

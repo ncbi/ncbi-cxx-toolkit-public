@@ -41,6 +41,7 @@ BEGIN_SCOPE(objects)
     class CScope;
     class CSeq_loc;
 END_SCOPE(objects)
+BEGIN_SCOPE(prosplign)
 USING_SCOPE(ncbi::objects);
 
 enum Nucleotides { nA, nC, nG, nT, nN };
@@ -78,6 +79,7 @@ private:
     CNSeq operator=(const CNSeq&);
 };
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif//NSEQ_H

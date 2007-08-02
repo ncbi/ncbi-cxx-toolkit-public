@@ -36,6 +36,7 @@
 #include "intron.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 CProSplignScaledScoring::CProSplignScaledScoring(const CProSplignScoring& user_scores) :
     CProSplignScoring(user_scores)
@@ -116,4 +117,5 @@ void CScoring::Init(const CProSplignScaledScoring& new_scoring)
     sm_ICANY = new_scoring.GetNonConsensusIntronCost();
 }
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE

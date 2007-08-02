@@ -40,6 +40,7 @@
 #include "ObjHolder.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 // CIgapIntron represents intron or gap at the beg/end
 //in intron chain
@@ -138,6 +139,7 @@ private:
 
 template<class Owner> CObjHolder<CIgapIntron<Owner> > CIgapIntronChain<Owner>::m_IntrHolder;
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //INTRON_CHAIN_H

@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CScope;
 END_SCOPE(objects)
+BEGIN_SCOPE(prosplign)
 USING_SCOPE(ncbi::objects);
 
 //class CCompart;
@@ -64,6 +65,7 @@ public:
     void SetExonBioEnd(CRef<CSpliced_exon> exon, int nulpos, int nultripos) const;
 };
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif//ALISEQALIGN_H

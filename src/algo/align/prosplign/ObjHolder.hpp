@@ -38,6 +38,7 @@
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 template<class T>
 class CObjHolder
@@ -87,6 +88,7 @@ private:
 
 template<class T> int CObjHolder<T>::m_MaxAllocSize = 1024*1024;
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
 
 #endif //OBJECT_HOLDER_H

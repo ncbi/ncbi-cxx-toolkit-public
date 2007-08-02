@@ -43,6 +43,7 @@
 #include "Info.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 using namespace objects;
 
 CAli::CAli(CNSeq& nseq, CPSeq& pseq)
@@ -520,4 +521,5 @@ int CSeq_alignHandle::GetCompNum(void)
     return -1;
 }
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE

@@ -46,6 +46,7 @@
 #include "scoring.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(prosplign)
 
 int infinity = numeric_limits<int>::min()/3;
 
@@ -1623,4 +1624,5 @@ void BackAlignNog(CTBackAlignInfo<CBMode>& bi, CAli& ali)
 }
 
 
+END_SCOPE(prosplign)
 END_NCBI_SCOPE
