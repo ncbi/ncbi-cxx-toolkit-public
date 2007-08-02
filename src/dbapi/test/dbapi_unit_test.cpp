@@ -388,6 +388,61 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 
 ///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_Unicode_Simple(void)
+{
+    string sql;
+    string str_value;
+
+    try {
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+        auto_ptr<IResultSet> rs;
+        char buff[128];
+        size_t read_bytes = 0;
+
+        sql  = "select 1 as Tag, null as Parent, ";
+        sql += "1 as 'Test!1!id' ";
+        sql += "for xml explicit";
+
+        rs.reset(auto_stmt->ExecuteQuery(sql));
+        BOOST_CHECK(rs.get() != NULL);
+
+//         if (rs->Next()) {
+//             const CVariant& value = rs->GetVariant(1);
+//             str_value = value.GetString();
+//         }
+
+        rs->DisableBind(true);
+        if (rs->Next()) {
+            read_bytes = rs->Read(buff, sizeof(buff));
+            BOOST_CHECK_EQUAL(14, read_bytes);
+        }
+
+        sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
+        rs.reset(auto_stmt->ExecuteQuery(sql));
+        BOOST_CHECK(rs.get() != NULL);
+
+//         if (rs->Next()) {
+//             const CVariant& value = rs->GetVariant(1);
+//             str_value = value.GetString();
+//             str_value = str_value;
+//         }
+
+        rs->DisableBind(true);
+        if (rs->Next()) {
+            read_bytes = rs->Read(buff, sizeof(buff));
+            BOOST_CHECK_EQUAL(11, read_bytes);
+        }
+    }
+    catch(const CDB_Exception& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_Unicode(void)
 {
     string sql;
@@ -8523,10 +8578,19 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                  (args.GetDriverName() != "msdblib" &&
                   args.GetDriverName() != "dblib")
                  ) {
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML,
+                //
+                boost::unit_test::test_case* select_xml_stmt_tc =
+                    BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML,
                                            DBAPIInstance);
                 tc->depends_on(tc_init);
                 tc->depends_on(select_stmt_tc);
+                add(select_xml_stmt_tc);
+
+                //
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode_Simple,
+                                           DBAPIInstance);
+                tc->depends_on(tc_init);
+                tc->depends_on(select_xml_stmt_tc);
                 add(tc);
             }
         }
