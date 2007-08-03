@@ -73,6 +73,17 @@ typedef struct {
 #define kInfiniteTimeout ((const STimeout*)( 0))
 
 
+extern NCBI_XCONNECT_EXPORT unsigned long NcbiTimeoutToMs
+(const STimeout* timeout
+);
+
+
+extern NCBI_XCONNECT_EXPORT STimeout*     NcbiMsToTimeout
+(STimeout*       timeout,
+ unsigned long   ms
+ );
+
+
 /** Aux. enum to set/unset/default various features
  */
 typedef enum {
