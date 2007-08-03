@@ -866,7 +866,7 @@ public:
 
     /// Report exception using default reporter.
     static void ReportDefault(const CDiagCompileInfo& info,
-                              const string& title, const exception& ex,
+                              const string& title, const std::exception& ex,
                               TDiagPostFlags flags = eDPF_Trace);
 
     /// Report CException with _this_ reporter
