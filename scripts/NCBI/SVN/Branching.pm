@@ -270,18 +270,23 @@ use File::Temp qw/tempfile/;
 
 use NCBI::SVN::Wrapper;
 
+sub SimplifyBranchPath
+{
+    my ($BranchPath) = @_;
+
+    $BranchPath =~ s/^branches\///o;
+
+    return $BranchPath
+}
+
 sub List
 {
     my ($Self, $RootURL) = @_;
 
     print "Managed branches in $RootURL\:\n";
 
-    for my $BranchPath ($Self->{SVN}->ReadFileLines($RootURL .
-        '/branches/branch_list'))
-    {
-        $BranchPath =~ s/^branches\///o;
-        print "$BranchPath\n"
-    }
+    print SimplifyBranchPath($_) . "\n"
+        for $Self->{SVN}->ReadFileLines($RootURL . '/branches/branch_list')
 }
 
 sub Info
@@ -612,7 +617,15 @@ sub ShapeBranch
         print STDERR "$VerbING branch '$BranchPath'...\n";
 
         $Self->{SVN}->RunMUCC('--root-url', $RootURL,
-            '--message', "$VerbED branch '$BranchPath'.", @MUCCCommands)
+            '--message', "$VerbED branch '$BranchPath'.", @MUCCCommands);
+
+        unless ($Action eq 'remove' or $Action eq 'create')
+        {
+            print STDERR 'WARNING: The branch has been modified. Please ' .
+                "run\n  $Self->{MyName} update_and_switch " .
+                SimplifyBranchPath($BranchPath) .
+                "\nin all working copies switched to this branch.\n"
+        }
     }
     else
     {
