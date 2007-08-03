@@ -637,9 +637,9 @@ sub ShapeBranch
 
 sub Create
 {
-    my ($Self, $Force, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
 
-    $Self->ShapeBranch('create', $Force, $RootURL,
+    $Self->ShapeBranch('create', undef, $RootURL,
         $BranchPath, $UpstreamPath, @BranchDirs)
 }
 

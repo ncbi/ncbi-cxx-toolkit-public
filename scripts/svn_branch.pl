@@ -259,7 +259,7 @@ elsif ($Command eq 'create')
     my $BranchPath = ExtractBranchPathArg();
     my $UpstreamPath = ExtractBranchPathArg('upstream_path');
 
-    $Module->Create($Force, RequireRootURL(), $BranchPath,
+    $Module->Create(RequireRootURL(), $BranchPath,
         $UpstreamPath, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'alter')
