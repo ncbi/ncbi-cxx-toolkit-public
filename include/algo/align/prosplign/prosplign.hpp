@@ -48,6 +48,7 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 USING_SCOPE(ncbi::objects);
 
+/// Scoring parameters object
 class NCBI_XALGOALIGN_EXPORT CProSplignScoring: public CObject
 {
 public:
@@ -63,23 +64,32 @@ public:
     CProSplignScoring& SetGapOpeningCost(int);
     int GetGapOpeningCost() const;
 
-    CProSplignScoring& SetGapExtensionCost(int); // for one aminoacid (three bases)
+    /// Gap Extension Cost for one aminoacid (three bases)
+    CProSplignScoring& SetGapExtensionCost(int);
     int GetGapExtensionCost() const;
 
     CProSplignScoring& SetFrameshiftOpeningCost(int);
     int GetFrameshiftOpeningCost() const;
 
-    CProSplignScoring& SetGTIntronCost(int); //GT/AG intron opening cost
+    /// GT/AG intron opening cost
+    CProSplignScoring& SetGTIntronCost(int);
     int GetGTIntronCost() const;
-    CProSplignScoring& SetGCIntronCost(int); //GC/AG intron opening cost
+    /// GC/AG intron opening cost
+    CProSplignScoring& SetGCIntronCost(int);
     int GetGCIntronCost() const;
-    CProSplignScoring& SetATIntronCost(int); //AT/AC intron opening cost
+    ///AT/AC intron opening cost
+    CProSplignScoring& SetATIntronCost(int);
     int GetATIntronCost() const;
 
-    CProSplignScoring& SetNonConsensusIntronCost(int); // should not exceed a sum of lowest two intron opening costs,
-    int GetNonConsensusIntronCost() const;             // i.e. intron_non_consensus<=intron_GT+intron_GC
+    /// Non Consensus Intron Cost
+    /// should not exceed a sum of lowest two intron opening costs,
+    /// i.e. intron_non_consensus cost <= intron_GT cost + intron_GC cost
+    CProSplignScoring& SetNonConsensusIntronCost(int);
+    int GetNonConsensusIntronCost() const;            
 
-    CProSplignScoring& SetInvertedIntronExtensionCost(int); // intron_extension cost for 1 base = 1/(inverted_intron_extension*3)
+    /// Inverted Intron Extension Cost 
+    /// intron_extension cost for 1 base = 1/(inverted_intron_extension*3)
+    CProSplignScoring& SetInvertedIntronExtensionCost(int);
     int GetInvertedIntronExtensionCost() const;
 
 public:
@@ -107,6 +117,8 @@ private:
     int inverted_intron_extension;
 };
 
+/// Output filtering parameters
+///
 /// ProSplign always makes a global alignment,
 /// i.e. it aligns the whole protein no matter how bad some parts of this alignment might be.
 /// Usually we don't want the bad pieces and remove them.
@@ -115,36 +127,45 @@ class NCBI_XALGOALIGN_EXPORT CProSplignOutputOptions: public CObject
 {
 public:
     enum EMode {
-        eWithHoles, // default filtering parameters
-        ePassThrough, // all zeroes - no filtering
+        /// default filtering parameters
+        eWithHoles,
+        /// all zeroes - no filtering
+        ePassThrough,
     };
 
     CProSplignOutputOptions(EMode mode = eWithHoles);
 
     bool IsPassThrough() const;
 
-    CProSplignOutputOptions& SetEatGaps(bool); // if possible, do not output frame-preserving gaps, output frameshifts only
+    /// if possible, do not output frame-preserving gaps, output frameshifts only
+    CProSplignOutputOptions& SetEatGaps(bool);
     bool GetEatGaps() const;
 
-    CProSplignOutputOptions& SetFlankPositives(int); // any length flank of a good piece should not be worse than this percentage threshold
+    /// any length flank of a good piece should not be worse than this percentage threshold
+    CProSplignOutputOptions& SetFlankPositives(int);
     int GetFlankPositives() const;
-    CProSplignOutputOptions& SetTotalPositives(int); // good piece total percentage threshold
+    /// good piece total percentage threshold
+    CProSplignOutputOptions& SetTotalPositives(int);
     int GetTotalPositives() const;
 
     /// any part of a good piece longer than max_bad_len should not be worse than min_positives
-    CProSplignOutputOptions& SetMaxBadLen(int); // maximum 'bad' part length (in nucleotide bases) inside 'good' piece
+    CProSplignOutputOptions& SetMaxBadLen(int);
     int GetMaxBadLen() const;
-    CProSplignOutputOptions& SetMinPositives(int); // internal bad part percentage threshold
+    CProSplignOutputOptions& SetMinPositives(int);
     int GetMinPositives() const;
 
-    CProSplignOutputOptions& SetMinFlankingExonLen(int); // minimum number of bases in the first and last exon
+    /// minimum number of bases in the first and last exon
+    CProSplignOutputOptions& SetMinFlankingExonLen(int);
     int GetMinFlankingExonLen() const;
-    CProSplignOutputOptions& SetMinGoodLen(int); // good piece should not be shorter than that 
+    /// good piece should not be shorter than that 
+    CProSplignOutputOptions& SetMinGoodLen(int);
     int GetMinGoodLen() const;
 
-    CProSplignOutputOptions& SetStartBonus(int); // reward (in # of positives?) for start codon match
+    /// reward (in # of positives?) for start codon match. Not implemented yet
+    CProSplignOutputOptions& SetStartBonus(int);
     int GetStartBonus() const;
-    CProSplignOutputOptions& SetStopBonus(int); // reward for stop codon at the end
+    /// reward for stop codon at the end. Not implemented yet
+    CProSplignOutputOptions& SetStopBonus(int);
     int GetStopBonus() const;
 
 public:
@@ -186,11 +207,14 @@ public:
     void SetIntronlessMode(bool intronless);
     bool GetIntronlessMode() const;
 
+    /// Aligns protein to a region on genomic sequence.
+    /// genomic seq_loc should be a continuous region - an interval or a whole sequence
+    ///
     /// Returns Spliced-seg
     CRef<CSeq_align> FindAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic, 
                                    CProSplignOutputOptions output_options = CProSplignOutputOptions());
 
-    // deprecated internals
+    /// deprecated internals
     void SetMode(bool one_stage, bool just_second_stage, bool old);
     const vector<pair<int, int> >& GetExons() const;
     vector<pair<int, int> >& SetExons();
