@@ -3759,6 +3759,7 @@ if test "$with_boost" != "no"; then
    else
       BOOST_PATH=$with_boost
    fi
+   NCBI_FIX_DIR(BOOST_PATH)
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
@@ -4599,6 +4600,7 @@ if test "${with_orbacus:-yes}" = yes; then
 elif test "$with_orbacus" != no; then
     ORBACUS_PATH=$with_orbacus
 fi
+NCBI_FIX_DIR(ORBACUS_PATH)
 if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
@@ -4733,6 +4735,7 @@ fi
 : ${SABLOT_PATH=$NCBI/Sablot}
 vpath="$SABLOT_PATH/${compiler_vpfx}build"
 test -d "$vpath"  &&  SABLOT_PATH=$vpath
+NCBI_FIX_DIR(SABLOT_PATH)
 NCBI_CHECK_THIRD_PARTY_LIB(sablot,
  AC_LANG_PROGRAM([#include <sablot.h>],
     [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
@@ -4976,7 +4979,7 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ### Image libraries
-: ${JPEG_PATH=$NCBI/gd}
+# : ${JPEG_PATH=/usr/sfw}
 # Grr... jpeglib.h isn't especially well-behaved.
 NCBI_CHECK_THIRD_PARTY_LIB(jpeg,
  AC_LANG_PROGRAM([#include <sys/types.h>
@@ -4989,7 +4992,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(jpeg,
      cinfo.err = jpeg_std_error(&jerr);
  ]))
 
-: ${PNG_PATH=$NCBI/gd}
+# : ${PNG_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(png,
  AC_LANG_PROGRAM([#include <png.h>],
     [png_structp png_ptr
