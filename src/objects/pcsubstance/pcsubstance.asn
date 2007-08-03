@@ -297,7 +297,7 @@ PC-Coordinates ::= SEQUENCE {
     aid            SEQUENCE OF INTEGER,                    -- Conformer Atom IDs (vector)
                                                            --   (to be kept synchronized with Conformers)
                                                            --   Note: Atom ID's must be greater than "0"
-    conformers     SEQUENCE OF PC-Conformer,               -- Conformers for this Coordinate Set
+    conformers     SEQUENCE OF PC-Conformer      OPTIONAL, -- Conformers for this Coordinate Set
 
     atomlabels     SEQUENCE OF PC-AtomString     OPTIONAL, -- Atom labels for Conformer Set
 
