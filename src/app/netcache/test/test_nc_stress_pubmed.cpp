@@ -12,6 +12,15 @@
 #include <unistd.h>
 #endif
 
+#ifdef NCBI_OS_UNIX
+#ifdef HAVE_NANOSLEEP
+
+#define USE_UGLY_CODE_INSTEAD
+#include <sys/time.h>
+
+#endif /* HAVE_NANOSLEEP */
+#endif /*NCBI_OS_UNIX */
+
 
 USING_NCBI_SCOPE;
 
@@ -121,16 +130,42 @@ public :
 
 	void WaitMilliSecs(size_t MilliSecs)
 		{
-            SleepMilliSec(MilliSecs);
+#ifdef USE_UGLY_CODE_INSTEAD
+			struct timespec sTS;
+			sTS.tv_sec = MilliSecs / 1000;
+			sTS.tv_nsec = (MilliSecs % 1000) * 1000000;
+
+			nanosleep(&sTS, NULL);
+#else
+            throw runtime_error("That platform does not support!");
+#endif /* USE_UGLY_CODE_INSTEAD */
 		};
 
 	size_t TimeOfDayMilliSecs()
 		{
-            CTime now(CTime::eCurrent, CTime::eGmt);
-            size_t Secs = (now.Second() % EPOCH_V) * 1000;
-            size_t MilliSecs = now.MilliSecond();
-// 
+#ifdef USE_UGLY_CODE_INSTEAD
+			struct timeval sTV;
+			gettimeofday(&sTV, NULL);
+			size_t Secs = (sTV.tv_sec % EPOCH_V) * 1000;
+			size_t MilliSecs = sTV.tv_usec / 1000;
+//
 			return Secs + MilliSecs;
+#else
+            throw runtime_error("That platform does not support!");
+
+//  Nice fix, then. Anyway, that fix will not work.
+//  However, I need amount of seconds from Epoch. CTime
+//  does not provides that method. Ofcourse, I can to generate
+//  those seconds ... but I do not have time for it.
+//  So, throving error, moreother, that test was written for
+//  unix only
+//
+//            CTime now(CTime::eCurrent, CTime::eGmt);
+//            size_t Secs = (now.Second() % EPOCH_V) * 1000;
+//            size_t MilliSecs = now.MilliSecond();
+// 
+//			return Secs + MilliSecs;
+#endif /* USE_UGLY_CODE_INSTEAD */
 		};
 
 private :
@@ -504,6 +539,8 @@ public :
 			size_t IterCnt = 0;
 
 			size_t Pupiter = 0;
+			size_t Puzator = 10000;
+			// size_t Puzator = 100;
 
 			for( ; ; ) {
 				vector < StressoPotam * >::iterator PB =
@@ -527,10 +564,10 @@ public :
 					}
 				}
 
-				if (IterCnt / 10000 != Pupiter) {
+				if (IterCnt / Puzator != Pupiter) {
 					cerr << Stat() << endl;;
 
-					Pupiter = IterCnt / 10000;
+					Pupiter = IterCnt / Puzator;
 				}
 
 				size_t NewT = (IterCnt * 1000) / mPerSec;
