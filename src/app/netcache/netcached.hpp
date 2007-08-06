@@ -391,13 +391,9 @@ private:
     void ProcessPut2(CSocket&              sock, 
                      SNC_Request&          req,
                      SNC_ThreadData&       tdata,
-                     NetCache_RequestStat& stat);
+                     NetCache_RequestStat& stat,
+                     bool                  ok_at_end);
 
-    /// Process "PUT3" request
-    void ProcessPut3(CSocket&              sock, 
-                     SNC_Request&          req,
-                     SNC_ThreadData&       tdata,
-                     NetCache_RequestStat& stat);
 
     /// Process "GET" request
     void ProcessGet(CSocket&              sock, 

@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.11  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.12  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -311,11 +311,11 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         break;
     case ePut2:
         stat.req_code = 'P';
-        ProcessPut2(socket, tdata.req, tdata, stat);
+        ProcessPut2(socket, tdata.req, tdata, stat, false);
         break;
     case ePut3:
         stat.req_code = 'P';
-        ProcessPut3(socket, tdata.req, tdata, stat);
+        ProcessPut2(socket, tdata.req, tdata, stat, true);
         break;
     case eGet:
         stat.req_code = 'G';
@@ -586,7 +586,7 @@ void CNetCacheServer::Process(SOCK sock)
                     // multi-command work, so for now I just break
                     // out of the loop and close the socket
                     // TODO: Needs to be fixed!!!!
-                    break;
+                    //break;
                 }
             } // while
 
@@ -965,14 +965,36 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
     ba_descr.buf = buf;
     ba_descr.buf_size = GetTLS_Size() - 100;
 
-    m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+    unsigned blob_id = CNetCache_Key::GetBlobId(req.req_id);
 
-    if (!ba_descr.blob_found) {
-blob_not_found:
-            string msg = "BLOB not found. ";
-            msg += req_id;
-            WriteMsg(sock, "ERR:", msg);
-            return;
+    for (int repeats = 0; repeats < 1000; ++repeats) {
+        m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+
+        if (!ba_descr.blob_found) {
+            // check if id is locked maybe blob record not
+            // yet commited
+            {{
+                if (m_Cache->IsLocked(blob_id)) {
+                    if (repeats < 999) {
+                        SleepMilliSec(repeats);
+                        continue;
+                    }
+                } else {
+                    m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+                    if (ba_descr.blob_found) {
+                        break;
+                    }
+
+                }
+            }}
+    blob_not_found:
+                string msg = "BLOB not found. ";
+                msg += req_id;
+                WriteMsg(sock, "ERR:", msg);
+                return;
+        } else {
+            break;
+        }
     }
 
     if (ba_descr.blob_size == 0) {
@@ -1105,6 +1127,39 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
     ba_descr.buf = buf;
     ba_descr.buf_size = GetTLS_Size() - 100;
 
+    unsigned blob_id = CNetCache_Key::GetBlobId(req.req_id);
+
+    for (int repeats = 0; repeats < 1000; ++repeats) {
+        m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+
+        if (!ba_descr.blob_found) {
+            // check if id is locked maybe blob record not
+            // yet commited
+            {{
+                if (m_Cache->IsLocked(blob_id)) {
+                    if (repeats < 999) {
+                        SleepMilliSec(repeats);
+                        continue;
+                    }
+                } else {
+                    m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+                    if (ba_descr.blob_found) {
+                        break;
+                    }
+
+                }
+            }}
+    blob_not_found:
+                string msg = "BLOB not found. ";
+                msg += req_id;
+                WriteMsg(sock, "ERR:", msg);
+                return;
+        } else {
+            break;
+        }
+    }
+
+/*
     m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
 
     if (!ba_descr.blob_found) {
@@ -1114,6 +1169,7 @@ blob_not_found:
             WriteMsg(sock, "ERR:", msg);
             return;
     }
+*/
 
     if (ba_descr.blob_size == 0) {
         WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
@@ -1215,7 +1271,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     string& rid = req.req_id;
 
     if (req.req_id.empty()) {
-        unsigned int id = m_Cache->GetNextBlobId();
+        unsigned int id = m_Cache->GetNextBlobId(false);
         CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
 
@@ -1284,16 +1340,27 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 void CNetCacheServer::ProcessPut2(CSocket&              sock, 
                                   SNC_Request&          req,
                                   SNC_ThreadData&       tdata,
-                                  NetCache_RequestStat& stat)
+                                  NetCache_RequestStat& stat,
+                                  bool                  ok_at_end)
 {
     string& rid = req.req_id;
+    bool do_id_lock = true;
 
     unsigned int id = 0;
     if (req.req_id.empty()) {
-        id = m_Cache->GetNextBlobId();
+        id = m_Cache->GetNextBlobId(do_id_lock);
         CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
+        do_id_lock = false;
     } else {
         id = CNetCache_Key::GetBlobId(req.req_id);
+    }
+
+    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
+    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
+
+    // BLOB already locked, it is safe to return BLOB id
+    if (!do_id_lock) {
+        WriteMsg(sock, "ID:", rid);
     }
 
     auto_ptr<IWriter> iwrt;
@@ -1302,19 +1369,20 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
     // the possible problem (?) here is that we have to do double buffering
     // of the input stream
     iwrt.reset(
-        m_Cache->GetWriteStream(id, rid, 0, kEmptyStr, 
+        m_Cache->GetWriteStream(id, rid, 0, kEmptyStr, do_id_lock,
                                 req.timeout, tdata.auth));
 
-
-    WriteMsg(sock, "ID:", rid);
+    if (do_id_lock) {
+        WriteMsg(sock, "ID:", rid);
+    }
 
     char* buf = tdata.buffer.get();
     size_t buf_size = GetTLS_Size();
 
     bool not_eof;
 
-    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
-    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
+//    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
+//    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
 
     do {
         size_t nn_read = 0;
@@ -1325,6 +1393,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         // and then copy it to IWriter which immediately calls Store
         // 
         not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
+cerr << "nn_read=" << nn_read << endl;
 
         stat.comm_elapsed += sw.Elapsed();
         stat.blob_size += nn_read;
@@ -1357,84 +1426,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
                 }
 
                 iwrt.reset(
-                    m_Cache->GetWriteStream(id, rid, 0, kEmptyStr, 
-                                            req.timeout, tdata.auth));
-            }
-            size_t bytes_written;
-            ERW_Result res = 
-                iwrt->Write(buf, nn_read, &bytes_written);
-            if (res != eRW_Success) {
-                WriteMsg(sock, "Err:", "Server I/O error");
-                x_RegisterInternalErr(req.req_type, tdata.auth);
-                return;
-            }
-        } // if (nn_read)
-
-    } while (not_eof);
-
-    if (iwrt.get()) {
-        iwrt->Flush();
-        iwrt.reset(0);
-    }
-}
-
-
-void CNetCacheServer::ProcessPut3(CSocket&              sock, 
-                                  SNC_Request&          req,
-                                  SNC_ThreadData&       tdata,
-                                  NetCache_RequestStat& stat)
-{
-    string& rid = req.req_id;
-
-    unsigned int id = 0;
-    if (req.req_id.empty()) {
-        id = m_Cache->GetNextBlobId();
-        CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
-    } else {
-        id = CNetCache_Key::GetBlobId(req.req_id);
-    }
-
-    WriteMsg(sock, "ID:", rid);
-
-    auto_ptr<IWriter> iwrt;
-    char* buf = tdata.buffer.get();
-    size_t buf_size = GetTLS_Size();
-
-    bool not_eof;
-
-    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
-    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
-
-    do {
-        size_t nn_read = 0;
-
-        CStopWatch  sw(CStopWatch::eStart);
-
-        not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
-
-        stat.comm_elapsed += sw.Elapsed();
-        stat.blob_size += nn_read;
-        
-
-        if (nn_read == 0 && !not_eof && (iwrt.get() == 0)) {
-            _ASSERT(id);
-            m_Cache->Store(id, rid, 0, kEmptyStr, 
-                           buf, nn_read, req.timeout, tdata.auth);
-            break;
-        }
-
-        if (nn_read) {
-            if (iwrt.get() == 0) { // first read
-
-                if (not_eof == false) { // complete read
-                    _ASSERT(id);
-                    m_Cache->Store(id, rid, 0, kEmptyStr, 
-                                   buf, nn_read, req.timeout, tdata.auth);
-                    break;
-                }
-
-                iwrt.reset(
-                    m_Cache->GetWriteStream(id, rid, 0, kEmptyStr, 
+                    m_Cache->GetWriteStream(id, rid, 0, kEmptyStr, false,
                                             req.timeout, tdata.auth));
             }
             size_t bytes_written;
@@ -1454,8 +1446,11 @@ void CNetCacheServer::ProcessPut3(CSocket&              sock,
         iwrt.reset(0);
     }
 
-    WriteMsg(sock, "OK:", "");
+    if (ok_at_end) {
+        WriteMsg(sock, "OK:", "");
+    }
 }
+
 
 
 

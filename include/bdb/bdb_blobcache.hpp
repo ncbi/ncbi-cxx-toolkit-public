@@ -581,6 +581,7 @@ public:
                             const string&    key,
                             int              version,
                             const string&    subkey,
+                            bool             do_id_lock,
                             unsigned int     time_to_live = 0,
                             const string&    owner = kEmptyStr);
 
@@ -635,7 +636,10 @@ public:
     const string& GetName() const { return m_Name; }
 
     /// Get next BLOB id out from the atomic couter
-    unsigned GetNextBlobId();
+    /// @param lock_id
+    ///     When true new id is immediately gets locked
+    ///
+    unsigned GetNextBlobId(bool lock_id);
 
     /// Check if BLOB is locked
     bool IsLocked(unsigned blob_id);

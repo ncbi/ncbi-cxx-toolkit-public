@@ -1759,7 +1759,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
         }} // cursor
 
         if (ret != eBDB_Ok) { // record not found: re-registration
-            unsigned blob_id = GetNextBlobId();
+            unsigned blob_id = GetNextBlobId(false /*no locking*/);
             m_CacheAttrDB->key = key;
             m_CacheAttrDB->version = version;
 	        m_CacheAttrDB->subkey = subkey;
@@ -2988,7 +2988,8 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                                     unsigned int     time_to_live,
                                     const string&    owner)
 {
-    return GetWriteStream(0, key, version, subkey, time_to_live, owner);
+    return GetWriteStream(0, key, version, subkey, true /*lock id*/, 
+                          time_to_live, owner);
 }
 
 
@@ -2996,6 +2997,7 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
                                     const string&    key,
                                     int              version,
                                     const string&    subkey,
+                                    bool             do_id_lock,
                                     unsigned int     time_to_live,
                                     const string&    owner)
 {
@@ -3031,7 +3033,7 @@ IWriter* CBDB_Cache::GetWriteStream(unsigned         blob_id_ext,
         BlobCheckIn(blob_id_ext,
                     key, version, subkey,
                     eBlobCheckIn_Create,
-                    blob_lock, true, // lock the blob
+                    blob_lock, do_id_lock,
                     &coord[0], &coord[1],
                     &overflow);
     _ASSERT(check_res != EBlobCheckIn_NotFound);
@@ -3336,6 +3338,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             bool deleted = DropBlobWithExpCheck(blob_id, trans);
 
             if (deleted) {
+cerr << "Deleted " << blob_id << endl;
                 trans.Commit();
                 if (m_Monitor && m_Monitor->IsActive()) {
                     string msg = 
@@ -4105,12 +4108,18 @@ void CBDB_Cache::x_DropOverflow(const string&  file_path)
     }
 }
 
-unsigned CBDB_Cache::GetNextBlobId()
+unsigned CBDB_Cache::GetNextBlobId(bool lock_id)
 {
     unsigned blob_id = m_BlobIdCounter.Add(1);
     if (blob_id >= kMax_UInt) {
         m_BlobIdCounter.Set(0);
         blob_id = m_BlobIdCounter.Add(1);
+    }
+    if (lock_id) {
+        bool locked = m_LockVector.TryLock(blob_id);
+        if (!locked) {
+            BDB_THROW(eInvalidOperation, "Cannot lock new BLOB ID");
+        }
     }
     return blob_id;
 }
@@ -4364,7 +4373,7 @@ CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
         case eBlobCheckIn_Create:
             {
             if (blob_id_ext == 0) {
-                blob_id = GetNextBlobId();
+                blob_id = GetNextBlobId(false/*do not lock*/);
             } else {
                 blob_id = blob_id_ext;
             }

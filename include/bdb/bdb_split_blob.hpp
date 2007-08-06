@@ -852,12 +852,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned id,
     coord[1] = old_coord[1];
 
     if (!found) {
-        // id not found in demux mapping, but BLOB may exist in the DB
-        SLockedDb& dbp = this->GetDb(old_coord[0], old_coord[1], eGetWrite);
-        TLockGuard lg(*dbp.lock);
-        dbp.db->SetTransaction(GetTransaction());
-        dbp.db->id = id;
-        return dbp.db->UpdateInsert(data, size);
+        return this->Insert(id, data, size, coord);
     }
 
     unsigned slice = m_ObjDeMux->SelectSplit(size);
