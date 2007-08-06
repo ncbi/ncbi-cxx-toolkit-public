@@ -4145,13 +4145,14 @@ if test "$with_fltk" != "no"; then
    FLTK_LIBPATH=${FLTK_LIBPATH:="$FLTK_ARCH_PATH/lib"}
    FLTK_INCLUDE=
    case "$host_os:$compiler" in
-      solaris2.10:GCC ) filter='sed -e s/-lpthread//g' ;;
-      *               ) filter=cat ;;
+      solaris2.10:GCC ) extrased='s/-lpthread//g; ' ;;
+      *               ) extrased= ;;
    esac
    AC_CACHE_CHECK([for FLTK in $FLTK_ARCH_PATH], ncbi_cv_lib_fltk,
       [if test -x "$FLTK_BINPATH/fltk-config" ; then
           FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
-          FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags | $filter`
+          NCBI_RPATHIFY_OUTPUT(FLTK_LIBS, $FLTK_BINPATH/fltk-config --ldflags,
+             $extrased)
 
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
@@ -4178,17 +4179,26 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$FLTK_INCLUDE"; then
       FLTK_INCLUDE=`$FLTK_CONFIG --cxxflags --use-gl`
-      FLTK_LIBS=`$FLTK_CONFIG --ldflags | $filter`
+      NCBI_RPATHIFY_OUTPUT(FLTK_LIBS, $FLTK_BINPATH/fltk-config --ldflags,
+         $extrased)
    fi
-   FLTK_LIBS_GL=`$FLTK_CONFIG --ldflags --use-gl | $filter`
-   FLTK_LIBS_IMAGES=`$FLTK_CONFIG --ldflags --use-images | $filter`
-   FLTK_LIBS_ALL=`$FLTK_CONFIG --ldflags --use-gl --use-images | $filter`
+   NCBI_RPATHIFY_OUTPUT(FLTK_LIBS_GL,
+      $FLTK_BINPATH/fltk-config --ldflags --use-gl, $extrased)
+   NCBI_RPATHIFY_OUTPUT(FLTK_LIBS_IMAGES,
+      $FLTK_BINPATH/fltk-config --ldflags --use-images, $extrased)
+   NCBI_RPATHIFY_OUTPUT(FLTK_LIBS_ALL,
+      $FLTK_BINPATH/fltk-config --ldflags --use-gl --use-images, $extrased)
    # Also supply static versions for use in CGIs to be deployed to servers
    # without access to the shared libraries.
-   FLTK_STATIC_LIBS=`$FLTK_CONFIG --ldstaticflags | $filter`
-   FLTK_STATIC_LIBS_GL=`$FLTK_CONFIG --ldstaticflags --use-gl | $filter`
-   FLTK_STATIC_LIBS_IMAGES=`$FLTK_CONFIG --ldstaticflags --use-images | $filter`
-   FLTK_STATIC_LIBS_ALL=`$FLTK_CONFIG --ldstaticflags --use-gl --use-images | $filter`
+   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS,
+      $FLTK_BINPATH/fltk-config --ldstaticflags, $extrased)
+   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS_GL,
+      $FLTK_BINPATH/fltk-config --ldstaticflags --use-gl, $extrased)
+   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS_IMAGES,
+      $FLTK_BINPATH/fltk-config --ldstaticflags --use-images, $extrased)
+   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS_ALL,
+      $FLTK_BINPATH/fltk-config --ldstaticflags --use-gl --use-images,
+      $extrased)
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
 
@@ -4393,10 +4403,11 @@ if test "$with_fastcgi" != "no" ; then
    fi
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
-      FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"
+      FASTCGI_LIBDIR="$FASTCGI_PATH/lib${bit64_sfx}"
    else
-      FASTCGI_LIBS="-L$FASTCGI_PATH/altlib${bit64_sfx} -lfcgi $NETWORK_LIBS"
+      FASTCGI_LIBDIR="$FASTCGI_PATH/altlib${bit64_sfx}"
    fi
+   NCBI_RPATHIFY(FASTCGI_LIBS, $FASTCGI_LIBDIR, [ -lfcgi $NETWORK_LIBS])
    FASTCGI_OBJS="fcgibuf"
    LIBS="$FASTCGI_LIBS $orig_LIBS"
    AC_CACHE_CHECK([for FastCGI libraries in $FASTCGI_PATH], ncbi_cv_lib_fcgi,
