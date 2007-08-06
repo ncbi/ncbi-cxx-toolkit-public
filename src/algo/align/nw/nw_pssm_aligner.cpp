@@ -301,8 +301,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
     TScore wg1 = m_Wg, ws1 = m_Ws;
 
     // index calculation: [i,j] = i*n2 + j
-    vector<unsigned char> stl_bm (N1*N2);
-    unsigned char* backtrace_matrix = &stl_bm[0];
+    CBacktraceMatrix4 backtrace_matrix (N1 * N2);
 
     // first row
     size_t k;
@@ -310,8 +309,9 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
     for (k = 1; k < N2; k++) {
         rowV[k] = pV[k] + wsleft1;
         rowF[k] = kInfMinus;
-        backtrace_matrix[k] = kMaskE | kMaskEc;
+        backtrace_matrix.SetAt(k, kMaskE | kMaskEc);
     }
+    backtrace_matrix.Purge(k);
     rowV[0] = 0;
 	
     if(m_prg_callback) {
@@ -332,7 +332,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
         
         V = V0 += wsleft2;
         E = kInfMinus;
-        backtrace_matrix[k++] = kMaskFc;
+        backtrace_matrix.SetAt(k++, kMaskFc);
 
         if(i == N1 - 1) {
             wg1 = wg1R;
@@ -388,7 +388,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
                     tracer |= kMaskD;
                 }
             }
-            backtrace_matrix[k] = tracer;
+            backtrace_matrix.SetAt(k, tracer);
         }
 
         pV[j] = V;
@@ -398,9 +398,9 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
             if(m_terminate = m_prg_callback(&m_prg_info)) {
                 break;
             }
-        }
-       
+        }  
     }
+    backtrace_matrix.Purge(k);
 
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);
@@ -489,8 +489,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
     TScore wg1 = m_Wg, ws1 = m_Ws;
 
     // index calculation: [i,j] = i*n2 + j
-    vector<unsigned char> stl_bm (N1*N2);
-    unsigned char* backtrace_matrix = &stl_bm[0];
+    CBacktraceMatrix4 backtrace_matrix (N1 * N2);
 
     // first row
     size_t k = 1;
@@ -499,8 +498,9 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
         for (k = 1; k < N2; k++) {
             rowV[k] = pV[k] + wsleft1;
             rowF[k] = kInfMinus;
-            backtrace_matrix[k] = kMaskE | kMaskEc;
+            backtrace_matrix.SetAt(k, kMaskE | kMaskEc);
         }
+        backtrace_matrix.Purge(k);
     }
     rowV[0] = 0;
 	
@@ -525,7 +525,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
         
         V = V0 += wsleft2;
         E = kInfMinus;
-        backtrace_matrix[k++] = kMaskFc;
+        backtrace_matrix.SetAt(k++, kMaskFc);
 
         if(i == N1 - 1) {
             wg1 = wg1R;
@@ -668,7 +668,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                     tracer |= kMaskD;
                 }
             }
-            backtrace_matrix[k] = tracer;
+            backtrace_matrix.SetAt(k, tracer);
         }
 
         pV[j] = V;
@@ -679,8 +679,8 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                 break;
             }
         }
-       
     }
+    backtrace_matrix.Purge(k);
 
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);

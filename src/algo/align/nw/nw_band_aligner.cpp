@@ -102,11 +102,11 @@ pair<Uint1,size_t> CBandAligner::GetShift(void) const
 // Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
 //
 
-const unsigned char kMaskFc  = 0x01;
-const unsigned char kMaskEc  = 0x02;
-const unsigned char kMaskE   = 0x04;
-const unsigned char kMaskD   = 0x08;
-const unsigned char kVoid    = 0xFF;
+const Uint1 kMaskFc (0x01);
+const Uint1 kMaskEc (0x02);
+const Uint1 kMaskE  (0x04);
+const Uint1 kMaskD  (0x08);
+const Uint1 kVoid   (0xFF);
 
 CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 {
@@ -133,8 +133,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 	}
     }
     
-    vector<Uint1> stl_bm (N1*fullrow, kVoid);
-    Uint1* backtrace_matrix (&stl_bm[0]);
+    CBacktraceMatrix4 backtrace_matrix (N1*fullrow);
 
     TScore V = 0;
     TScore E = kInfMinus, V2 = kInfMinus, G, n0;
@@ -259,8 +258,10 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                     tracer |= kMaskD;
                 }
             }
-            backtrace_matrix[k++] = tracer;
+            backtrace_matrix.SetAt(k++,tracer);
         }
+
+        backtrace_matrix.Purge(k);
 
         pV[j] = V;
 
@@ -343,7 +344,7 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
     }
 }
 
-void CBandAligner::x_DoBackTrace(const Uint1* backtrace,
+void CBandAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                                  CNWAligner::SAlignInOut* data)
 {
     const size_t N1 = data->m_len1;
@@ -395,11 +396,6 @@ void CBandAligner::x_DoBackTrace(const Uint1* backtrace,
         }
 
         Uint1 Key = backtrace[k];
-
-        if(Key == kVoid) {
-            NCBI_THROW(CAlgoAlignException, eInternal, 
-		       g_msg_InvalidBacktraceData);
-        }
 
         if (Key & kMaskD) {
             data->m_transcript.push_back(
