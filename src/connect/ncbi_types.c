@@ -39,12 +39,16 @@
 
 extern unsigned long NcbiTimeoutToMs(const STimeout* timeout)
 {
-    return timeout->sec * 1000 + (timeout->usec + 500) / 1000;
+    return timeout
+        ? timeout->sec * 1000 + (timeout->usec + 500) / 1000
+        : (unsigned long)(-1L);
 }
 
 
 extern STimeout* NcbiMsToTimeout(STimeout* timeout, unsigned long ms)
 {
+    if (ms == (unsigned long)(-1L))
+        return 0;
     timeout->sec  = ms / 1000;
     timeout->usec = ms % 1000;
     return timeout;
