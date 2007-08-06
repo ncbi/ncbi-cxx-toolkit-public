@@ -36,14 +36,40 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netservice_client.hpp>
 #include <connect/services/netservice_api_expt.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <memory>
 
 
 BEGIN_NCBI_SCOPE
 
 
-static STimeout s_DefaultCommTimeout = {12, 0};
-static unsigned int s_DefaultMaxRetries = 10;
+NCBI_PARAM_DECL(double,  service_connector, communication_timeout);
+NCBI_PARAM_DEF (double,  service_connector, communication_timeout, 12.0);
+typedef NCBI_PARAM_TYPE(service_connector, communication_timeout) TServConn_CommTimeout;
+
+NCBI_PARAM_DECL(unsigned int, service_connector, connection_max_retries);
+NCBI_PARAM_DEF (unsigned int, service_connector, connection_max_retries, 10);
+typedef NCBI_PARAM_TYPE(      service_connector, connection_max_retries) TServConn_ConnMaxRetries;
+
+static bool s_DefaultCommTimeout_Initialized = false;
+static STimeout s_DefaultCommTimeout;
+
+static STimeout s_GetDefaultCommTimeout()
+{
+    if (s_DefaultCommTimeout_Initialized)
+        return s_DefaultCommTimeout;
+    double ftm = TServConn_CommTimeout::GetDefault();
+    NcbiMsToTimeout(&s_DefaultCommTimeout, (unsigned long)ftm * 1000.0 + 0.5);
+    s_DefaultCommTimeout_Initialized = true;
+    return s_DefaultCommTimeout;
+}
+static void s_SetDefaultCommTimeout(const STimeout& tm)
+{
+    s_DefaultCommTimeout = tm;
+    s_DefaultCommTimeout_Initialized = true;
+}
+
+//static unsigned int s_DefaultMaxRetries = 10;
 
 
 static string  s_GlobalClientName;
@@ -74,8 +100,8 @@ CNetServiceClient::EUseName CNetServiceClient::GetNameUse()
 CNetServiceClient::CNetServiceClient(const string& client_name)
     : m_Sock(0),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_DefaultCommTimeout),
-      m_MaxRetries(s_DefaultMaxRetries)
+      m_Timeout(s_GetDefaultCommTimeout()),
+      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -92,8 +118,8 @@ CNetServiceClient::CNetServiceClient(const string&  host,
       m_Host(host),
       m_Port(port),
       m_OwnSocket(eNoOwnership),
-      m_Timeout(s_DefaultCommTimeout),
-      m_MaxRetries(s_DefaultMaxRetries)
+      m_Timeout(s_GetDefaultCommTimeout()),
+      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -110,8 +136,8 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
       m_Port(0),
       m_OwnSocket(eNoOwnership),
       m_ClientName(client_name),
-      m_Timeout(s_DefaultCommTimeout),
-      m_MaxRetries(s_DefaultMaxRetries)
+      m_Timeout(s_GetDefaultCommTimeout()),
+      m_MaxRetries(TServConn_ConnMaxRetries::GetDefault())
 {
     if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
         m_ClientName = s_GlobalClientName + "::" + client_name;
@@ -134,14 +160,14 @@ CNetServiceClient::~CNetServiceClient()
 }
 
 /* static */
-void CNetServiceClient::SetDefaultCreateSocketMaxReties(unsigned int retires)
+void CNetServiceClient::SetDefaultCreateSocketMaxReties(unsigned int retries)
 {
-    s_DefaultMaxRetries = retires;
+    TServConn_ConnMaxRetries::SetDefault(retries);
 }
 
 void CNetServiceClient::SetDefaultCommunicationTimeout(const STimeout& to)
 {
-    s_DefaultCommTimeout = to;
+    s_SetDefaultCommTimeout(to);
 }
 
 
