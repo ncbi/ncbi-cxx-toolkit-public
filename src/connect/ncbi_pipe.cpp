@@ -121,8 +121,6 @@ private:
     void   x_Clear(void);
     // Get child's I/O handle.
     HANDLE x_GetHandle(CPipe::EChildIOHandle from_handle) const;
-    // Convert STimeout value to number of milliseconds.
-    long   x_TimeoutToMSec(const STimeout* timeout) const;
     // Trigger blocking mode on specified I/O handle.
     bool   x_SetNonBlockingMode(HANDLE fd, bool nonblock = true) const;
     // Wait on the file descriptors I/O.
@@ -382,8 +380,9 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     if ( GetExitCodeProcess(m_ProcHandle, &x_exitcode) ) {
         if (x_exitcode == STILL_ACTIVE) {
             // Wait for the child process to exit
-            DWORD ws = WaitForSingleObject(m_ProcHandle,
-                                           x_TimeoutToMSec(timeout));
+            DWORD ws = WaitForSingleObject(m_ProcHandle, timeout
+                                           ? NcbiTimeoutToMs(timeout)
+                                           : INFINITE);
             if (ws == WAIT_OBJECT_0) {
                 // Get exit code of child process over again
                 if ( GetExitCodeProcess(m_ProcHandle, &x_exitcode) ) {
@@ -470,7 +469,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
             return eIO_Success;
         }
 
-        DWORD x_timeout   = x_TimeoutToMSec(timeout);
+        DWORD x_timeout   = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_avail = 0;
         DWORD bytes_read  = 0;
 
@@ -546,7 +545,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
             return eIO_Success;
         }
 
-        DWORD x_timeout     = x_TimeoutToMSec(timeout);
+        DWORD x_timeout     = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
 
         // Try to write data into the pipe within specified time.
@@ -643,13 +642,6 @@ HANDLE CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
 }
 
 
-long CPipeHandle::x_TimeoutToMSec(const STimeout* timeout) const
-{
-    return timeout ? timeout->sec * 1000 + (timeout->usec + 500) / 1000 
-                   : INFINITE;
-}
-
-
 bool CPipeHandle::x_SetNonBlockingMode(HANDLE fd, bool nonblock) const
 {
     // Pipe is in the byte-mode.
@@ -665,7 +657,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                                           const STimeout* timeout) const
 {
     CPipe::TChildPollMask poll = 0;
-    DWORD x_timeout = x_TimeoutToMSec(timeout);
+    DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
     // Wait for data from the pipe with timeout.
     // Using a loop and periodicaly try PeekNamedPipe is inefficient,
