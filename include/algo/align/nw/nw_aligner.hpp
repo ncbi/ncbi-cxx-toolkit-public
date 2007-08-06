@@ -145,7 +145,9 @@ public:
     TScore        GetScore(void) const;
 
     size_t        GetSpaceLimit(void) const {  return m_MaxMem; }
-    static size_t GetDefaultSpaceLimit(void) { return 1024u * 1024u * (512u + 2u * 1024u); }
+    static size_t GetDefaultSpaceLimit(void) {
+        return 1024u * 1024u * (512u + 2u * 1024u);
+    }
     
     // alignment transcript
     enum ETranscriptSymbol {
@@ -287,7 +289,44 @@ protected:
     enum { kInfMinus = kMin_Int / 2 };
 
     // backtrace
-    void x_DoBackTrace(const unsigned char* backtrace_matrix,
+
+    // a helper class assuming four bits per backtrace matrix cell
+    class CBacktraceMatrix4 {
+    public:
+
+        CBacktraceMatrix4(size_t dim) {
+            const size_t dim_bytes (dim / 2 + 1);
+            m_Buf = new Uint1 [dim_bytes];
+        }
+
+        ~CBacktraceMatrix4() { delete [] m_Buf; }
+
+        void SetAt(size_t i, Uint1 v) {
+            if(i & 1) {
+                m_Buf[i >> 1] = m_Elem | (v << 4);
+            }
+            else {
+                m_Elem = v;
+            }
+        }
+
+        void Purge(size_t i) {
+            if(i & 1) {
+                m_Buf[i >> 1] = m_Elem;
+            }
+        }
+
+        Uint1 operator[] (size_t i) const {
+            return 0x0F & ((m_Buf[i >> 1]) >> ((i & 1) << 2));
+        }
+
+    private:
+        
+        Uint1 * m_Buf;
+        Uint1   m_Elem;
+    };
+
+    void x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                        SAlignInOut* data);
 
     // retrieve transcript symbol for a one-character diag

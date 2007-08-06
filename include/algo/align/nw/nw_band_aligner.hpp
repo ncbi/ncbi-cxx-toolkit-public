@@ -95,7 +95,7 @@ protected:
     virtual TScore x_Align (CNWAligner::SAlignInOut* data);
 
     // backtrace
-    void           x_DoBackTrace(const unsigned char* backtrace_matrix,
+    void           x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                                  CNWAligner::SAlignInOut* data);
 
     // other
