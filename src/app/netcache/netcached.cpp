@@ -987,11 +987,10 @@ void CNetCacheServer::ProcessGet2(CSocket&               sock,
 
                 }
             }}
-    blob_not_found:
-                string msg = "BLOB not found. ";
-                msg += req_id;
-                WriteMsg(sock, "ERR:", msg);
-                return;
+            string msg = "BLOB not found. ";
+            msg += req_id;
+            WriteMsg(sock, "ERR:", msg);
+            return;
         } else {
             break;
         }
@@ -1049,7 +1048,10 @@ blob_not_found:
 
     auto_ptr<IReader> rdr(ba_descr.reader.release());
     if (!rdr.get()) {
-        goto blob_not_found;
+        string msg = "BLOB not found. ";
+        msg += req_id;
+        WriteMsg(sock, "ERR:", msg);
+        return;
     }
     size_t blob_size = ba_descr.blob_size;
 
@@ -1083,7 +1085,10 @@ blob_not_found:
         }
     } while(1);
     if (!read_flag) {
-        goto blob_not_found;
+        string msg = "BLOB not found. ";
+        msg += req_id;
+        WriteMsg(sock, "ERR:", msg);
+        return;
     }
 }
 
@@ -1149,11 +1154,10 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
 
                 }
             }}
-    blob_not_found:
-                string msg = "BLOB not found. ";
-                msg += req_id;
-                WriteMsg(sock, "ERR:", msg);
-                return;
+            string msg = "BLOB not found. ";
+            msg += req_id;
+            WriteMsg(sock, "ERR:", msg);
+            return;
         } else {
             break;
         }
@@ -1224,7 +1228,10 @@ blob_not_found:
 
     auto_ptr<IReader> rdr(ba_descr.reader.release());
     if (!rdr.get()) {
-        goto blob_not_found;
+        string msg = "BLOB not found. ";
+        msg += req_id;
+        WriteMsg(sock, "ERR:", msg);
+        return;
     }
     size_t blob_size = ba_descr.blob_size;
 
@@ -1258,7 +1265,10 @@ blob_not_found:
         }
     } while(1);
     if (!read_flag) {
-        goto blob_not_found;
+        string msg = "BLOB not found. ";
+        msg += req_id;
+        WriteMsg(sock, "ERR:", msg);
+        return;
     }
 
 }
