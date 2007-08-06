@@ -1,0 +1,16 @@
+# $Id$
+
+DLL = ncbi_pub
+
+HOSTED_LIBS    = biblio  \
+                 medline \
+                 medlars \
+                 mla     \
+                 mlacli  \
+                 pub     \
+                 pubmed
+
+DEPENDENCIES   = ncbi_core ncbi_general
+
+CPPFLAGS = -DNCBI_PUB_EXPORTS
+

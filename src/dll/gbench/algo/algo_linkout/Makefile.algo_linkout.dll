@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_linkout
+
+HOSTED_LIBS    = gui_algo_linkout
+
+DEPENDENCIES   = gui_objects gui_core gui_utils \
+                 ncbi_core ncbi_general ncbi_seq ncbi_seqext
+
+
+

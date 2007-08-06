@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_validator
+
+HOSTED_LIBS    = gui_algo_validator
+
+DEPENDENCIES   = gui_objects gui_core \
+                 ncbi_core ncbi_seq ncbi_seqext ncbi_validator
+
+
+

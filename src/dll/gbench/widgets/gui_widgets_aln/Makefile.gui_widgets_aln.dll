@@ -1,0 +1,15 @@
+# $Id$
+
+DLL = gui_widgets_aln
+
+HOSTED_LIBS    = w_aln_crossaln \
+                 w_aln_multi    \
+                 w_aln_text     \
+                 w_hit_matrix   \
+                 w_aln_table 
+
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_algo ncbi_general \
+                 gui_config gui_utils gui_graph gui_widgets gui_widgets_seq
+
+CPPFLAGS = -DNCBI_GUIWIDGETS_ALN_EXPORTS
+

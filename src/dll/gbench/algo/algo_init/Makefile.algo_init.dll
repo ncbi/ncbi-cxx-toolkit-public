@@ -1,0 +1,14 @@
+# $Id$
+
+DLL = algo_init
+
+HOSTED_LIBS    = gui_ncbi_init
+
+DEPENDENCIES   = gui_objects gui_core gui_widgets gui_utils \
+                 ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext \
+                 ncbi_xloader_genbank ncbi_xloader_lds \
+                 ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 \
+                 ncbi_xreader_pubseqos ncbi_xreader_cache
+
+
+

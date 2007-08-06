@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_cn3d
+
+HOSTED_LIBS    = gui_algo_cn3d
+
+DEPENDENCIES   = gui_objects gui_core gui_utils \
+                 ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb
+
+
+

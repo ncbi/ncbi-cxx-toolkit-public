@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_phylo
+
+HOSTED_LIBS    = gui_algo_phylo
+
+DEPENDENCIES   = gui_objects gui_core gui_utils \
+                 ncbi_algo ncbi_core ncbi_misc ncbi_seq ncbi_seqext
+
+
+

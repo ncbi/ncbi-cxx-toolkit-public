@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = algo_phylo
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

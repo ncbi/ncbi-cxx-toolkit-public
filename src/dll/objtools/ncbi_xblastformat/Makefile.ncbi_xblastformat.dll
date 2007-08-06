@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = ncbi_xblastformat
+
+HOSTED_LIBS    = xblastformat
+
+DEPENDENCIES   = ncbi_core ncbi_algo ncbi_general \
+                 ncbi_seq ncbi_seqext ncbi_xloader_genbank \
+                 ncbi_web
+
+CPPFLAGS = -DNCBI_XBLASTFORMAT_EXPORTS
+

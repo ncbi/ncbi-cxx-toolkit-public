@@ -1,0 +1,12 @@
+# $Id$
+
+DLL = algo_align
+
+HOSTED_LIBS    = gui_algo_align
+
+DEPENDENCIES   = gui_objects gui_core gui_utils gui_widgets \
+                 ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext \
+                 ncbi_xcache_bdb ncbi_bdb ncbi_core
+
+
+

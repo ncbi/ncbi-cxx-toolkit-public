@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xreader_cache
+
+HOSTED_LIBS    = ncbi_xreader_cache
+
+DEPENDENCIES   = ncbi_core ncbi_xreader ncbi_pub ncbi_seq ncbi_seqext
+
+CPPFLAGS = -DNCBI_XREADER_CACHE_EXPORTS
+

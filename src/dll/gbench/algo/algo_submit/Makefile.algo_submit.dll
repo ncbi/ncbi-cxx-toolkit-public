@@ -1,0 +1,9 @@
+# $Id$
+
+DLL = algo_submit
+
+HOSTED_LIBS    = gui_algo_submission
+
+DEPENDENCIES   = gui_objects gui_core gui_widgets ncbi_core ncbi_seq ncbi_seqext
+
+

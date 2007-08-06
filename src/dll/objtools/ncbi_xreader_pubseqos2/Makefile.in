@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = ncbi_xreader_pubseqos2
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

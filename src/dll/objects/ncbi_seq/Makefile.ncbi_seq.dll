@@ -1,0 +1,23 @@
+# $Id$
+
+DLL = ncbi_seq
+
+HOSTED_LIBS    = seq          \
+                 seqset       \
+                 seqcode      \
+                 seqedit      \
+                 seqtable     \
+                 submit       \
+                 scoremat     \
+                 xnetblast    \
+                 xnetblastcli \
+                 blastdb      \
+                 blastxml     \
+                 taxon1       \
+                 seqtest      \
+                 genome_collection
+
+DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub
+
+CPPFLAGS = -DNCBI_SEQ_EXPORTS
+

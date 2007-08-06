@@ -1,0 +1,34 @@
+# $Id$
+
+DLL = ncbi_algo
+
+HOSTED_LIBS    = \
+                 fastme                 \
+                 xalgoalignnw           \
+                 xalgoalignsplign       \
+                 xalgoalignutil         \
+                 xalgoblastdbindex      \
+                 xalgocontig_assembly   \
+                 xalgodustmask          \
+                 xalgognomon            \
+                 xalgophytree           \
+                 xalgoseq               \
+                 xalgoseqqa             \
+                 xalgotext              \
+                 xalgowinmask           \
+                 \
+                 blast                  \
+                 blastinput             \
+                 cobalt                 \
+                 composition_adjustment \
+                 xblast
+
+DEPENDENCIES   = \
+                 ncbi_core ncbi_general ncbi_misc \
+                 ncbi_seq ncbi_misc ncbi_seqext  \
+                 ncbi_xloader_genbank ncbi_xloader_blastdb ncbi_xreader \
+                 ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache \
+                 ncbi_xobjsimple
+
+CPPFLAGS = -DNCBI_XALGO_EXPORTS
+

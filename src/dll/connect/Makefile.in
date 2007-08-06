@@ -1,0 +1,9 @@
+# $Id$
+
+SUB_PROJ =  \
+    ncbi_xblobstorage_netcache \
+    ncbi_xcache_netcache \
+    xconnext
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xblobstorage_file
+
+HOSTED_LIBS    = ncbi_xblobstorage_file
+
+DEPENDENCIES   = ncbi_core
+
+CPPFLAGS = -DNCBI_BLOBSTORAGE_FILE_EXPORTS
+

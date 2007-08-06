@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = view_validator
+
+HOSTED_LIBS    = gui_view_validator
+
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_validator \
+                 gui_objects gui_core gui_utils gui_widgets
+
+
+

@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = algo_web_page
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

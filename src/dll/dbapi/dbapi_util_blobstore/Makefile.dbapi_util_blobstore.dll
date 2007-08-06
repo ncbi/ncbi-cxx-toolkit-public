@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = dbapi_util_blobstore
+
+HOSTED_LIBS    = dbapi_util_blobstore
+
+DEPENDENCIES   = ncbi_core ncbi_dbapi_driver
+
+CPPFLAGS = -DNCBI_DBAPIUTIL_BLOBSTORE_EXPORTS
+

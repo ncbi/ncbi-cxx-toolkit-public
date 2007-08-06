@@ -1,0 +1,10 @@
+# $Id$
+
+SUB_PROJ =  \
+    dload_alignmodel \
+    radar \
+    refseq \
+    view_radar
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

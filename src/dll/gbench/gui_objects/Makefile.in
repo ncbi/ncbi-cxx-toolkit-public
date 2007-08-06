@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = gui_objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

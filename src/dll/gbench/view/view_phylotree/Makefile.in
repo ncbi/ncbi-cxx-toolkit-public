@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = view_phylotree
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

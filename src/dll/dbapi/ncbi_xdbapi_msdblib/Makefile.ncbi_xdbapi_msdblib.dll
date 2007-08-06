@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xdbapi_msdblib
+
+HOSTED_LIBS    = ncbi_xdbapi_msdblib
+
+DEPENDENCIES   = ncbi_core ncbi_dbapi_driver
+
+CPPFLAGS = -DNCBI_DBAPIDRIVER_DBLIB_EXPORTS
+

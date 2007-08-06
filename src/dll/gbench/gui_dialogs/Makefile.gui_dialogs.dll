@@ -1,0 +1,15 @@
+# $Id$
+
+DLL = gui_dialogs
+
+HOSTED_LIBS    = gui_dlg_entry_form \
+                 gui_dlg_edit       \
+                 gui_dlg_seq_feat_edit \
+                 gui_dlg_feat_search \
+                 gui_dlg_seq_goto
+
+DEPENDENCIES   = gui_utils gui_widgets gui_widgets_misc gui_config \
+                 ncbi_core ncbi_general ncbi_seq ncbi_seqext
+
+CPPFLAGS = -DNCBI_GUIDIALOGS_EXPORTS
+

@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xdbapi_odbcw
+
+HOSTED_LIBS    = ncbi_xdbapi_odbcw
+
+DEPENDENCIES   = ncbi_core ncbi_dbapi_driver
+
+CPPFLAGS = -DNCBI_DBAPIDRIVER_ODBC_EXPORTS
+

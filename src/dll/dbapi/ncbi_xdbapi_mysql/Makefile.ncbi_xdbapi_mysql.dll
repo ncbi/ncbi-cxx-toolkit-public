@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = ncbi_xdbapi_mysql
+
+HOSTED_LIBS    = ncbi_xdbapi_mysql
+
+DEPENDENCIES   = ncbi_core ncbi_dbapi_driver
+
+CPPFLAGS = -DNCBI_DBAPIDRIVER_MYSQL_EXPORTS
+

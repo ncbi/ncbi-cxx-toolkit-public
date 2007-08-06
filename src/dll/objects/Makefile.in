@@ -1,0 +1,12 @@
+# $Id$
+
+SUB_PROJ =  \
+    ncbi_general \
+    ncbi_misc \
+    ncbi_mmdb \
+    ncbi_pub \
+    ncbi_seq \
+    ncbi_seqext
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

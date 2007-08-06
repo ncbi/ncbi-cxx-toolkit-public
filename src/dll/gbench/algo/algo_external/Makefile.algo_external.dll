@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_external
+
+HOSTED_LIBS    = gui_algo_external
+
+DEPENDENCIES   = gui_objects gui_core gui_utils \
+                 ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web
+
+
+

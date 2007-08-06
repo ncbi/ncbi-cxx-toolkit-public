@@ -1,0 +1,25 @@
+# $Id$
+
+SUB_PROJ =  \
+    dbapi_util_blobstore \
+    ncbi_dbapi \
+    ncbi_dbapi_driver \
+    ncbi_xcache_dbapi \
+    ncbi_xdbapi_ctlib \
+    ncbi_xdbapi_dblib \
+    ncbi_xdbapi_ftds \
+    ncbi_xdbapi_ftds63 \
+    ncbi_xdbapi_ftds64 \
+    ncbi_xdbapi_ftds64_dblib \
+    ncbi_xdbapi_ftds64_odbc \
+    ncbi_xdbapi_ftds8 \
+    ncbi_xdbapi_ftds_dblib \
+    ncbi_xdbapi_ftds_odbc \
+    ncbi_xdbapi_msdblib \
+    ncbi_xdbapi_mysql \
+    ncbi_xdbapi_odbc \
+    ncbi_xdbapi_odbcw \
+    ncbi_xdbapi_sqlite3
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

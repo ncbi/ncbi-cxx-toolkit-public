@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = ncbi_xdbapi_ftds_dblib
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

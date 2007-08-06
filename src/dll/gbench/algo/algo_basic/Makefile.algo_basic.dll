@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_basic
+
+HOSTED_LIBS    = gui_algo_basic
+
+DEPENDENCIES   = gui_objects gui_core gui_widgets gui_utils \
+                 ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext \
+                 ncbi_xloader_cdd
+
+

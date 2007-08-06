@@ -1,0 +1,20 @@
+# $Id$
+
+SUB_PROJ =  \
+    _ncbi \
+    algo \
+    bdb \
+    connect \
+    dbapi \
+    gbench \
+    ncbi_core \
+    ncbi_sqlite \
+    ncbi_web \
+    ncbi_xgrid2cgi \
+    objects \
+    objtools \
+    util
+
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

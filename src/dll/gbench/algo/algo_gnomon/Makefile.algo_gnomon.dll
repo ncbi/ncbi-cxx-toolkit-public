@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = algo_gnomon
+
+HOSTED_LIBS    = gui_algo_gnomon
+
+DEPENDENCIES   = gui_objects gui_core gui_widgets gui_utils \
+                 ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext
+
+
+

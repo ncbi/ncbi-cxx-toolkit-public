@@ -1,0 +1,11 @@
+# $Id$
+
+DLL = gui_graph
+
+HOSTED_LIBS    = gui_graph
+
+DEPENDENCIES   = gui_utils \
+                 ncbi_core
+
+CPPFLAGS = -DNCBI_GUIGRAPH_EXPORTS
+

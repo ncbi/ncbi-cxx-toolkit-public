@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = ncbi_xgrid2cgi
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

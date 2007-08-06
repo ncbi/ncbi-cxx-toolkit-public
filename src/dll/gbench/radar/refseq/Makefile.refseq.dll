@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = refseq
+
+HOSTED_LIBS    = refseq 
+
+DEPENDENCIES   = connext
+
+CPPFLAGS = -DNCBI_REFSEQ_EXPORTS
+

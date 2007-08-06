@@ -1,0 +1,28 @@
+# $Id$
+
+DLL = ncbi_seqext
+
+HOSTED_LIBS    = xalnmgr   \
+                 xobjmgr   \
+                 xobjread  \
+                 xobjreadex\
+                 xobjwrite \
+                 xobjutil  \
+                 xobjmanip \
+                 xformat   \
+                 seqdb     \
+                 writedb   \
+                 id1       \
+                 id1cli    \
+                 id2       \
+                 id2cli    \
+                 id2_split \
+                 seqsplit  \
+                 xobjedit  \
+                 xcleanup  \
+                 valerr
+
+DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
+
+CPPFLAGS = -DNCBI_SEQEXT_EXPORTS
+

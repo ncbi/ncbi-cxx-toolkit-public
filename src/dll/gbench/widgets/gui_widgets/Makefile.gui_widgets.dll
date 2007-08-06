@@ -1,0 +1,19 @@
+# $Id$
+
+DLL = gui_widgets
+
+HOSTED_LIBS    = w_workspace \
+                 w_fltk     \
+                 w_html     \
+                 w_gl       \
+                 w_flu      \
+                 w_fltable  \
+                 w_config   \
+                 w_controls \
+                 w_data     \
+                 w_aln_data
+
+DEPENDENCIES   = gui_config gui_utils ncbi_seqext ncbi_image ncbi_core ncbi_general
+
+CPPFLAGS = -DNCBI_GUIWIDGETS_EXPORTS
+
