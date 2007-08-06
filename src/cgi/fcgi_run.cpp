@@ -258,11 +258,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         return false;
     }
 
-    // Statistics
-    bool is_stat_log = reg.GetBool("CGI", "StatLog", false, 0,
-                                   CNcbiRegistry::eReturn);
-    auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
-
     // Max. number of the Fast-CGI loop iterations
     unsigned int max_iterations;
     {{
@@ -283,9 +278,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         _TRACE("CCgiApplication::Run: FastCGI limited to "
                << max_iterations << " iterations");
     }}
-
-    // Logging options
-    ELogOpt logopt = GetLogOpt();
 
     // Watcher file -- to allow for stopping the Fast-CGI loop "prematurely"
     auto_ptr<CCgiWatchFile> watcher(0);
@@ -430,17 +422,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             break;
         }
 
-        // Process the request
-        CTime start_time(CTime::eCurrent);
-        bool skip_stat_log = false;
-
         try {            
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
-            if (logopt == eLog) {
-                x_LogPost("CCgiApplication::x_RunFastCGI ",
-                          m_Iteration, start_time, &env, fBegin);
-            }
             PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
 
             CCgiObuffer       obuf(pfout);
@@ -583,34 +567,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 FCGX_SetExitStatus(exit_code, pfout);
             }}
             
-            // Logging
-            {{
-                string msg =
-                    "(FCGI) CCgiApplication::ProcessRequest() failed: ";
-                msg += e.what();
-
-                if (logopt != eNoLog) {
-                    x_LogPost(msg.c_str(), m_Iteration, start_time, 0,
-                              fBegin | fEnd);
-                } else {
-                    ERR_POST(msg);  // Post err notification even if no logging
-                }
-                if ( is_stat_log ) {
-                    stat->Reset(start_time, *result, &e);
-                    msg = stat->Compose();
-                    stat->Submit(msg);
-                    skip_stat_log = true; // Don't print the same message again
-                }
-            }}
-
-            // Exception reporting
-            {{
-                CException* ex = dynamic_cast<CException*> (&e);
-                if ( ex ) {
-                    NCBI_REPORT_EXCEPTION
-                        ("(FastCGI) CCgiApplication::x_RunFastCGI", *ex);
-                }
-            }}
+            NCBI_REPORT_EXCEPTION
+                ("(FastCGI) CCgiApplication::x_RunFastCGI", e);
 
             // (If to) abrupt the FCGI loop on error
             {{
@@ -640,17 +598,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
         FCGX_Finish();
 # endif
-
-        // Logging
-        if (logopt == eLog) {
-            x_LogPost("CCgiApplication::x_RunFastCGI ",
-                      m_Iteration, start_time, 0, fEnd);
-        }
-        if ( is_stat_log  &&  !skip_stat_log ) {
-            stat->Reset(start_time, *result);
-            string msg = stat->Compose();
-            stat->Submit(msg);
-        }
 
         // 
         x_OnEvent(eEndRequest, 121);

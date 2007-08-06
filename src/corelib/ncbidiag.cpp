@@ -3488,8 +3488,6 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         string err_type(pex->GetType());
         err_type += "::";
         err_type += pex->GetErrCodeString();
-        CDiagContextThreadData& thr_data =
-            CDiagContextThreadData::GetThreadData();
         SDiagMessage diagmsg
             (pex->GetSeverity(),
             text.c_str(),

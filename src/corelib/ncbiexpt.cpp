@@ -298,14 +298,11 @@ void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
     string err_type(GetType());
     err_type += "::";
     err_type += GetErrCodeString();
-    CDiagContext& ctx = GetDiagContext();
-    CDiagContextThreadData& thr_data =
-        CDiagContextThreadData::GetThreadData();
     SDiagMessage diagmsg(
-        GetSeverity(), 
-        text.c_str(), 
+        GetSeverity(),
+        text.c_str(),
         text.size(),
-        GetFile().c_str(), 
+        GetFile().c_str(),
         GetLine(),
         flags, NULL, 0, 0, err_type.c_str(),
         GetModule().c_str(),
