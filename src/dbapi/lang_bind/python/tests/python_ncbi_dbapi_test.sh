@@ -40,7 +40,7 @@ RunTest()
 {
   echo
   (
-    $CHECK_EXEC run_sybase_app.sh python_ncbi_dbapi_test $1 > $res_file 2>&1
+    $CHECK_EXEC run_sybase_app.sh python_ncbi_dbapi_test --detect_memory_leak=0 $1 > $res_file 2>&1
   )
   if test $? -eq 0 ; then
       echo "OK:"
