@@ -524,14 +524,14 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
         set_cmd->DumpResults();
     }
 
-    if (m_Attr & eCheckSysobjects) {
+    if (GetAttr() & eCheckSysobjects) {
         auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
         set_cmd->Send();
         set_cmd->DumpResults();
     }
 
     // Go back to the original (master) database ...
-    if (m_Attr & eRestoreDefaultDB) {
+    if (GetAttr() & eRestoreDefaultDB) {
         auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
         set_cmd->Send();
         set_cmd->DumpResults();
