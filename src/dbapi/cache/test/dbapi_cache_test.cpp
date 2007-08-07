@@ -140,7 +140,7 @@ int CDBAPI_CacheTest::Run(void)
                                                "");
 
         int s = strlen(szTest);
-        assert(blob_size == s);
+        assert(blob_size == size_t(s));
 
         char blob_buf[1024] = {0,};
         blob_cache->Read("key_1",
@@ -213,10 +213,10 @@ int CDBAPI_CacheTest::Run(void)
                 r = rdr->Read(buf, sizeof(int), &rd);
                 if (r != eRW_Success)
                     break;
-                if (cnt != buf[0]) {
+                if (cnt != (unsigned int)buf[0]) {
                     cerr << "BLOB comparison error element idx = " << cnt <<
                             " value=" << buf[0] << endl;
-                    assert(cnt == buf[0]);
+                    assert(cnt == (unsigned int)buf[0]);
                 }
                 cnt++;
             } while (rd > 0);
