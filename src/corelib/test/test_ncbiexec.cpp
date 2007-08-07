@@ -187,6 +187,7 @@ int CTest::Run(void)
     LOG_POST("Exit code: " << code);
     assert( code == TEST_RESULT_C );
 
+
     // Spawn with eNoWait, waiting self
 
     TProcessHandle handle;
@@ -204,6 +205,7 @@ int CTest::Run(void)
                              NULL, my_env).GetProcessHandle();
     assert(CExec::Wait(handle) == TEST_RESULT_C);
 
+
     // Spawn with eDetach
 
     CExec::SpawnL  (CExec::eDetach, app_c, "SpawnL_eDetach", NULL);
@@ -214,6 +216,22 @@ int CTest::Run(void)
     CExec::SpawnVP (CExec::eDetach, app_p, args_p);
     CExec::SpawnVE (CExec::eDetach, app_c, args_c, my_env);
     CExec::SpawnVPE(CExec::eDetach, app_c, args_c, my_env);
+
+
+    // Spawn with eWaitGroup
+
+    code = CExec::SpawnL(CExec::eWaitGroup, app_c, "SpawnL_eWaitGroup",
+                         NULL).GetExitCode(); 
+    LOG_POST("Exit code: " << code);
+    assert( code == TEST_RESULT_C );
+
+
+    // Spawn with eNoWaitGroup, waiting self
+
+    handle = CExec::SpawnL(CExec::eNoWaitGroup, app_c, "SpawnL_eNoWaitGroup",
+                           NULL).GetProcessHandle();
+    assert(CExec::Wait(handle) == TEST_RESULT_C );
+
 
     // Spawn with eOverlay
 

@@ -94,7 +94,8 @@ static int s_GetRealMode(CExec::EMode mode)
         P_OVERLAY, P_WAIT, P_NOWAIT, P_DETACH 
     };
 
-    int x_mode = (int) mode;
+    // Translate only master modes and ignore all additional modes on MS Windows.
+    int x_mode = (int) mode & CExec::fModeMask;
     _ASSERT(0 <= x_mode  &&  x_mode < sizeof(s_Mode)/sizeof(s_Mode[0]));
     return s_Mode[x_mode];
 }
@@ -107,7 +108,7 @@ static int s_GetRealMode(CExec::EMode mode)
 enum ESpawnFunc {eV, eVE, eVP, eVPE};
 
 static int 
-s_SpawnUnix(ESpawnFunc func, CExec::EMode mode, 
+s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode, 
             const char *cmdname, const char *const *argv, 
             const char *const *envp = (const char *const*)0)
 {
@@ -116,6 +117,9 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
     if ( !envp ) {
         envp = empty_env;
     }
+
+    // Get master mode
+    CExec::EMode mode = CExec::EMode(full_mode & CExec::fModeMask);
 
     // Replace the current process image with a new process image.
     if (mode == CExec::eOverlay) {
@@ -161,6 +165,10 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
             freopen("/dev/null", "a", stdout);
             freopen("/dev/null", "a", stderr);
             setsid();
+        } 
+        
+        if ((full_mode  &  CExec::fNewGroup) == CExec::fNewGroup) {
+            setpgrp();
         }
         int status =-1;
         switch (func) {
@@ -204,7 +212,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
         errno = n >= sizeof(errcode) ? errcode : 0;        
         return -1;
     }
-        
+
     // The "pid" contains the childs pid
     if ( mode == CExec::eWait ) {
         return CExec::Wait(pid);
@@ -286,7 +294,7 @@ static void s_CheckExecArg(const char* arg)
         NCBI_THROW(CExecException, eSpawn, "CExec::" #func "() failed"); \
     } \
     CResult result; \
-    if (mode == eWait) { \
+    if ((mode & eWait) == eWait) { \
         result.m_Flags = CResult::fExitCode; \
         result.m_Result.exitcode = (TExitCode)status; \
     } else { \
@@ -545,6 +553,9 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
         }
         va_end(vargs);
     }
+
+    // MS Windows: ignore all extra flags.
+    mode = EMode(mode & fModeMask);
 
     // Just check mode parameter
     s_GetRealMode(mode);

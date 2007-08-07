@@ -64,21 +64,49 @@ typedef int TExitCode;
 class NCBI_XNCBI_EXPORT CExec
 {
 public:
+    /// Modification flags for EMode.
+    ///
+    /// @note
+    /// These flags works on UNIX only, and will be ignored on MS Windows.
+    /// Also, they don't work for eOverlay/eDetach modes.
+    enum EModeFlags {
+        /// After fork() move a process to new group (assign new PGID).
+        /// This can be useful if new created process also spawn child
+        /// processes and you wish to control it using signals, or,
+        /// for example, terminate the whole process group at once.
+        fNewGroup  = (1 << 8),
+        /// Mask for all master modes, all EModeFlags must be above it.
+        fModeMask  = 0x0F  // eOverlay | eWait | eNoWait | eDetach
+    };
 
     /// Which exec mode the spawned process is called with.
     enum EMode {
-        eOverlay = 0, ///< Overlays calling process with new process,
-                      ///< destroying calling process. 
-        eWait    = 1, ///< Suspends calling thread until execution of new 
-                      ///< process is complete (synchronous operation).
-        eNoWait  = 2, ///< Continues to execute calling process concurrently 
-                      ///< with new process (asynchronous process).
-        eDetach  = 3  ///< Continues to execute calling process; new process 
-                      ///< is run in background with no access to console or 
-                      ///< keyboard; calls to Wait() against new process will
-                      ///< fail; this is an asynchronous spawn.
+        /// Overlays calling process with new process, destroying calling
+        /// process.
+        eOverlay     = 0, 
+        /// Suspends calling thread until execution of new process
+        /// is complete (synchronous operation).
+        eWait        = 1,
+        /// The same as eWait, but on UNIX platforms new process group
+        /// will be created and calling process become the leader of the new
+        /// process group.
+        eWaitGroup = eWait | fNewGroup,
+        /// Continues to execute calling process concurrently with new
+        /// process (asynchronous process).                      
+        eNoWait      = 2, 
+        /// The same as eNoWait, but on UNIX platforms new process group
+        /// will be created and calling process become the leader of the new
+        /// process group.
+        eNoWaitGroup = eNoWait | fNewGroup, 
+        /// Continues to execute calling process; new process is run in
+        /// background with no access to console or keyboard.
+        /// On UNIX new created process become the leader of the new session,
+        /// the process group leader of the new process group.
+        /// Calls to Wait() against new process will fail on MS Windows,
+        /// but work on UNIX platforms. This is an asynchronous spawn.                      
+        eDetach      = 3
     };
-
+   
     /// The result type for Spawn methods.
     /// 
     /// In the eNoWait and eDetach modes Spawn functions returns a process
@@ -134,7 +162,7 @@ public:
     /// Meaning of the suffix "L" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
     ///   arguments are passed separately as arguments.
-   ///
+    ///
     /// @param mode
     ///   Mode for running the process.
     /// @param cmdname
@@ -477,7 +505,7 @@ public:
 
     /// Run console application in invisible mode.
     ///
-    /// MSWin:
+    /// MS Windows:
     ///    This function try to run a program in invisible mode, without
     ///    visible window. This can be used to run console programm from 
     ///    non-console application. If it runs from console application,
@@ -485,7 +513,8 @@ public:
     ///    Executing non-console program can show theirs windows or not,
     ///    this depends. In eDetach mode the main window/console of
     ///    the running program can be visible, use eNoWait instead.
-    ///    Note, that if the running program cannot self-terminate, that
+    /// @note
+    ///    If the running program cannot self-terminate, that
     ///    it can be never terminated.
     /// Unix:
     ///    In current implementation equal to SpawnL().
@@ -518,10 +547,11 @@ public:
 
     /// Check executable permissions for specified file.
     ///
-    /// Note, this is no guarantee that the file is executable even if
-    /// the function returns TRUE. If possible, it try to get effective
-    /// user permissions for spefified file, but sometimes this is
-    /// not possible.
+    /// @note
+    ///   This is no guarantee that the file is executable even if
+    ///   the function returns TRUE. It try to get effective user
+    ///   permissions for spefified file, but sometimes this
+    ///   is not possible.
     /// @param path
     ///   Path to the file to check.
     /// @return 
