@@ -42,9 +42,12 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_DECL(bool,   service_connector, use_linger2);
+NCBI_PARAM_DEF (bool,   service_connector, use_linger2, false);
+typedef NCBI_PARAM_TYPE(service_connector, use_linger2) TServConn_UserLinger2;
 
-NCBI_PARAM_DECL(double,  service_connector, communication_timeout);
-NCBI_PARAM_DEF (double,  service_connector, communication_timeout, 12.0);
+NCBI_PARAM_DECL(double, service_connector, communication_timeout);
+NCBI_PARAM_DEF (double, service_connector, communication_timeout, 12.0);
 typedef NCBI_PARAM_TYPE(service_connector, communication_timeout) TServConn_CommTimeout;
 
 NCBI_PARAM_DECL(unsigned int, service_connector, connection_max_retries);
@@ -59,7 +62,7 @@ static STimeout s_GetDefaultCommTimeout()
     if (s_DefaultCommTimeout_Initialized)
         return s_DefaultCommTimeout;
     double ftm = TServConn_CommTimeout::GetDefault();
-    NcbiMsToTimeout(&s_DefaultCommTimeout, (unsigned long)ftm * 1000.0 + 0.5);
+    NcbiMsToTimeout(&s_DefaultCommTimeout, (unsigned long)(ftm * 1000.0 + 0.5));
     s_DefaultCommTimeout_Initialized = true;
     return s_DefaultCommTimeout;
 }
@@ -217,8 +220,10 @@ void CNetServiceClient::SetSocket(CSocket* sock, EOwnership own)
     if ((m_Sock=sock) != 0) {
         m_Sock->DisableOSSendDelay();
         m_OwnSocket = own;
-        STimeout zero = {0,0};
-        m_Sock->SetTimeout(eIO_Close,&zero);
+        if ( TServConn_UserLinger2::GetDefault() ) {
+           STimeout zero = {0,0};
+           m_Sock->SetTimeout(eIO_Close,&zero);
+        }
         RestoreHostPort();
     }
 }
@@ -287,8 +292,10 @@ void CNetServiceClient::CreateSocket(const string& hostname,
     EIO_Status io_st;
     if (m_Sock == 0) {
         m_Sock = new CSocket();
-        STimeout zero = {0,0};
-        m_Sock->SetTimeout(eIO_Close,&zero);
+        if ( TServConn_UserLinger2::GetDefault() ) {
+           STimeout zero = {0,0};
+           m_Sock->SetTimeout(eIO_Close,&zero);
+        }
         m_OwnSocket = eTakeOwnership;
     } //else {
 
