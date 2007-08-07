@@ -3338,7 +3338,6 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             bool deleted = DropBlobWithExpCheck(blob_id, trans);
 
             if (deleted) {
-cerr << "Deleted " << blob_id << endl;
                 trans.Commit();
                 if (m_Monitor && m_Monitor->IsActive()) {
                     string msg = 
