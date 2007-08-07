@@ -47,6 +47,8 @@
 #  include <sys/types.h>
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
+#else
+#  error "CProcess is not implemented on this platform"
 #endif
 
 
@@ -100,7 +102,7 @@ public:
     };
 
     /// Default wait time between "soft" and "hard" attempts to terminate
-    // the process.
+    /// the process.
     static const unsigned long kDefaultKillTimeout;
 
     /// Constructor.
@@ -139,15 +141,60 @@ public:
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process. 
-    ///   Note, that on UNIX in case of zero or very small timeout
-    ///   the killing process can be not released and continue to persists
-    ///   as zombie process even after call of this function.
+    /// @note
+    ///   On UNIX in case of zero or very small timeout the killing process
+    ///   can be not released and continue to persists as zombie process
+    ///   even after call of this function.
     /// @return
     ///   TRUE  - if the process did not exist or was successfully terminated.
     ///   FALSE - if the process is still running, cannot be terminated, or
     ///           it is terminating right now (but still not terminated).
+    /// @sa KillGroup
     bool Kill(unsigned long timeout = kDefaultKillTimeout) const;
+  
+    /// Terminate a group of processes.
+    ///
+    /// This method try to terminate all process in the group to which
+    /// process, specified in the constructor, belongs.
+    /// Note: Implemented on UNIX only, on Windows return FALSE.
+    ///
+    /// @timeout
+    ///   Wait time in milliseconds between first "soft" and second "hard"
+    ///   attempts to terminate the process group. 
+    /// @note
+    ///   On UNIX in case of zero or very small timeout the killing process
+    ///   can be not released and continue to persists as zombie process
+    ///   even after call of this function.
+    /// @return
+    ///   TRUE  - if the process group did not exist or was successfully
+    ///           terminated.
+    ///   FALSE - if the process group is still running, cannot be terminated,
+    ///           or it is terminating right now (but still not terminated).
+    /// @sa Kill
+    bool KillGroup(unsigned long timeout = kDefaultKillTimeout) const;
 
+    /// Terminate a group of processes.
+    ///
+    /// Note: Implemented on UNIX only, on Windows return FALSE.
+    /// @pgid
+    ///   Process group ID to terminate.
+    ///   if "pgid" parameter is zero, terminate the process group of
+    ///   the current process
+    /// @timeout
+    ///   Wait time in milliseconds between first "soft" and second "hard"
+    ///   attempts to terminate the process group. 
+    /// @note
+    ///   On UNIX in case of zero or very small timeout the killing process
+    ///   can be not released and continue to persists as zombie process
+    ///   even after call of this function.
+    /// @return
+    ///   TRUE  - if the process group did not exist or was successfully
+    ///           terminated.
+    ///   FALSE - if the process group is still running, cannot be terminated,
+    ///           or it is terminating right now (but still not terminated).
+    /// @sa Kill
+    static bool KillGroup(TPid pgid,
+                          unsigned long timeout = kDefaultKillTimeout);
 
     /// The extended exit information for waited process.
     /// All information about the process available only after Wait() method

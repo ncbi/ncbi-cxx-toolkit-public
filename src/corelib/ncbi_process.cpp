@@ -106,8 +106,6 @@ bool CProcess::CExitInfo::IsExited(void)
 #elif defined(NCBI_OS_MSWIN)
     // The process always terminates with exit code
     return true;
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -123,8 +121,6 @@ bool CProcess::CExitInfo::IsSignaled(void)
 #elif defined(NCBI_OS_MSWIN)
     // The process always terminates with exit code
     return false;
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -138,8 +134,6 @@ int CProcess::CExitInfo::GetExitCode(void)
     return WEXITSTATUS(status);
 #elif defined(NCBI_OS_MSWIN)
     return status;
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -153,8 +147,6 @@ int CProcess::CExitInfo::GetSignal(void)
     return WTERMSIG(status);
 #elif defined(NCBI_OS_MSWIN)
     return -1;
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -234,8 +226,6 @@ TPid CProcess::GetCurrentPid(void)
     return getpid();
 #elif defined(NCBI_OS_MSWIN)
     return GetCurrentProcessId();
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -270,8 +260,6 @@ TPid CProcess::GetParentPid(void)
         CloseHandle(hSnapshot);
     }
     return ppid;
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -312,9 +300,6 @@ bool CProcess::IsAlive(void) const
         CloseHandle(hProcess);
     }
     return status == STILL_ACTIVE;
-
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
@@ -354,7 +339,7 @@ bool CProcess::Kill(unsigned long timeout) const
     waitpid(pid, 0, WNOHANG);
 
     // Check whether the process cannot be killed (most likely due to a kernel problem)
-    return kill(pid, 0) == 0 ? false : true;
+    return kill(pid, 0) != 0;
 
 #elif defined(NCBI_OS_MSWIN)
 
@@ -451,9 +436,58 @@ bool CProcess::Kill(unsigned long timeout) const
         CloseHandle(hProcess);
     }
     return terminated;
+#endif
+}
 
-#else
-#  error "Not implemented on this platform"
+
+bool CProcess::KillGroup(unsigned long timeout) const
+{
+#if defined(NCBI_OS_UNIX)
+    TPid pgid = getpgid((TPid)m_Process);
+    if (pgid == -1) {
+        // TRUE if PID does not match ay process
+        return errno == ESRCH;
+    }
+    return KillGroup(pgid, timeout);
+    
+#elif defined(NCBI_OS_MSWIN)
+    return false;
+#endif
+}
+
+
+bool CProcess::KillGroup(TPid pgid, unsigned long timeout)
+{
+#if defined(NCBI_OS_UNIX)
+
+    // Try to kill the process group with SIGTERM first
+    if (kill(-pgid, SIGTERM) == -1  &&  errno == EPERM) {
+        return false;
+    }
+    // Check process termination within the timeout 
+    for (;;) {
+        if (kill(-pgid, 0) < 0) {
+            return true;
+        }
+        unsigned long x_sleep = kWaitPrecision;
+        if (x_sleep > timeout) {
+            x_sleep = timeout;
+        }
+        if ( !x_sleep ) {
+             break;
+        }
+        SleepMilliSec(x_sleep);
+        timeout -= x_sleep;
+    }
+    // Try harder to kill the stubborn processes -- SIGKILL may not be caught!
+    kill(-pgid, SIGKILL);
+    SleepMilliSec(kWaitPrecision);
+    
+    // Check whether the process cannot be killed (most likely due to a kernel problem)
+    return kill(-pgid, 0) != 0;
+
+#elif defined(NCBI_OS_MSWIN)
+    return false;
 #endif
 }
 
@@ -576,8 +610,6 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         CloseHandle(hProcess);
     }
     return (int)status;
-#else
-#  error "Not implemented on this platform"
 #endif
 }
 
