@@ -149,6 +149,7 @@ CDBDefaultServiceMapper::SetPreference(const string&,
     // Do nothing.
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 CDBServiceMapperCoR::CDBServiceMapperCoR(void)
 {
@@ -307,18 +308,25 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
                 ITERATE(vector<string>, sn_it, server_name) {
                     double tmp_preference = 0;
 
-                    // Parsee server preferences.
+                    // Parse server preferences.
                     TSvrRef cur_server = make_server(*sn_it, tmp_preference);
 
-                    if (tmp_preference > 0) {
-                        non_default_preferences = true;
+                    // Should be raplaced with Add() one day ...
+                    {
+                        if (tmp_preference > 0.01) {
+                            non_default_preferences = true;
+                        }
+
+                        server_list.insert(
+                            TSvrMap::value_type(cur_server, tmp_preference));
+                        service_preferences.insert(
+                            TSvrMap::value_type(cur_server, curr_preference));
                     }
 
-                    server_list.insert(
-                        TSvrMap::value_type(cur_server, tmp_preference));
-                    service_preferences.insert(
-                        TSvrMap::value_type(cur_server, curr_preference));
+//                     Add(service_name, cur_server, tmp_preference);
                 }
+
+                // Should become a part of Add() ...
                 if (non_default_preferences) {
                     ITERATE(TSvrMap, sl_it, server_list) {
                         if (sl_it->second > 0) {
@@ -416,6 +424,51 @@ CDBUDRandomMapper::SetServerPreference(const string& service,
     }
 }
 
+// Implementation below doesn't work correctly at the moment ...
+void
+CDBUDRandomMapper::Add(const string&    service,
+                       const TSvrRef&   server,
+                       double           preference)
+{
+    _ASSERT(false);
+
+    if (service.empty() || server.Empty()) {
+        return;
+    }
+
+    TSvrMap& server_list = m_ServerMap[service];
+    TSvrMap& service_preferences = m_PreferenceMap[service];
+    bool non_default_preferences = false;
+    double curr_preference =
+        static_cast<double>(100 / m_ServerMap.size() + 1);
+
+    if (preference < 0) {
+        preference = 0;
+    } else if (preference > 100) {
+        preference = 100;
+    }
+
+    if (preference > 0.01) {
+        non_default_preferences = true;
+    }
+
+    server_list.insert(
+        TSvrMap::value_type(server, preference));
+    service_preferences.insert(
+        TSvrMap::value_type(server, curr_preference));
+
+    // Recalculate preferences ...
+    if (non_default_preferences) {
+        ITERATE(TSvrMap, sl_it, server_list) {
+            if (sl_it->second > 0) {
+                SetServerPreference(service,
+                                    sl_it->second,
+                                    sl_it->first);
+            }
+        }
+    }
+}
+
 void
 CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
 {
@@ -451,6 +504,13 @@ CDBUDRandomMapper::SetPreference(const string&  service,
     m_ServerMap[service][preferred_server] = preference;
     // Set relative value;
     SetServerPreference(service, preference, preferred_server);
+}
+
+
+IDBServiceMapper*
+CDBUDRandomMapper::Factory(const IRegistry* registry)
+{
+    return new CDBUDRandomMapper(registry);
 }
 
 
@@ -503,26 +563,29 @@ CDBUDPriorityMapper::ConfigureFromRegistry(const IRegistry* registry)
 
             // Replace with new data ...
             if (!server_name.empty()) {
-                TSvrMap& server_list = m_ServerMap[service_name];
-                TServerUsageMap& usage_map = m_ServiceUsageMap[service_name];
+//                 TSvrMap& server_list = m_ServerMap[service_name];
+//                 TServerUsageMap& usage_map = m_ServiceUsageMap[service_name];
 
                 ITERATE(vector<string>, sn_it, server_name) {
                     double tmp_preference = 0;
 
-                    // Parsee server preferences.
+                    // Parse server preferences.
                     TSvrRef cur_server = make_server(*sn_it, tmp_preference);
 
-                    if (tmp_preference < 0) {
-                        tmp_preference = 0;
-                    } else if (tmp_preference > 100) {
-                        tmp_preference = 100;
-                    }
+                    // Replaced with Add()
+//                     if (tmp_preference < 0) {
+//                         tmp_preference = 0;
+//                     } else if (tmp_preference > 100) {
+//                         tmp_preference = 100;
+//                     }
+//
+//                     server_list.insert(
+//                         TSvrMap::value_type(cur_server, tmp_preference));
+//                     usage_map.insert(TServerUsageMap::value_type(
+//                         100 - tmp_preference,
+//                         cur_server));
 
-                    server_list.insert(
-                        TSvrMap::value_type(cur_server, tmp_preference));
-                    usage_map.insert(TServerUsageMap::value_type(
-                        100 - tmp_preference,
-                        cur_server));
+                    Add(service_name, cur_server, tmp_preference);
                 }
             }
         }
@@ -611,6 +674,37 @@ CDBUDPriorityMapper::SetPreference(const string&  service,
     if (pr_it != server_map.end()) {
         pr_it->second = preference;
     }
+}
+
+
+void
+CDBUDPriorityMapper::Add(const string&    service,
+                         const TSvrRef&   server,
+                         double           preference)
+{
+    TSvrMap& server_list = m_ServerMap[service];
+    TServerUsageMap& usage_map = m_ServiceUsageMap[service];
+
+    if (preference < 0) {
+        preference = 0;
+    } else if (preference > 100) {
+        preference = 100;
+    }
+
+    server_list.insert(
+        TSvrMap::value_type(server, preference)
+        );
+    usage_map.insert(TServerUsageMap::value_type(
+        100 - preference,
+        server)
+        );
+}
+
+
+IDBServiceMapper*
+CDBUDPriorityMapper::Factory(const IRegistry* registry)
+{
+    return new CDBUDPriorityMapper(registry);
 }
 
 

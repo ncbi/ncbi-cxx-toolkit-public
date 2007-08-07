@@ -127,6 +127,12 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
+    // Not implemented yet ...
+            void    Add          (const string&    service,
+                                  const TSvrRef&   server,
+                                  double           preference = 0.0);
+
+    static IDBServiceMapper* Factory(const IRegistry* registry);
 
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
@@ -167,6 +173,11 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
+            void    Add          (const string&    service,
+                                  const TSvrRef&   server,
+                                  double           preference = 0.0);
+
+    static IDBServiceMapper* Factory(const IRegistry* registry);
 
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
