@@ -293,7 +293,8 @@ sub Info
 {
     my ($Self, $RootURL, $BranchPath) = @_;
 
-    my $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
+    my $BranchInfo =
+        NCBI::SVN::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -547,7 +548,29 @@ sub ShapeBranch
     }
     elsif ($Action eq 'remove')
     {
-        for (@{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}})
+        my $BranchInfo;
+
+        if ($Force)
+        {
+            $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)
+        }
+        else
+        {
+            $BranchInfo =
+                NCBI::SVN::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
+
+            my $BranchRevisions = $BranchInfo->{BranchRevisions};
+
+            if (@$BranchRevisions > 1 && $BranchRevisions->[0]->{Number} >
+                ($BranchInfo->{MergeUpRevisions}->[0]->[1] || 0))
+            {
+                die "WARNING: Latest modifications in '$BranchPath'\n" .
+                    "were not merged into '$BranchInfo->{UpstreamPath}'.\n" .
+                    "Use --force to remove the branch anyway.\n"
+            }
+        }
+
+        for (@{$BranchInfo->{BranchDirs}})
         {
             MarkPath("$BranchPath/$_", \%ModTree, 'rm')
         }
