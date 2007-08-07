@@ -229,6 +229,10 @@ public:
     {
         return m_DBName;
     }
+    int GetAttr(void) const
+    {
+        return m_Attr;
+    }
 
 private:
     const string m_DBName;
