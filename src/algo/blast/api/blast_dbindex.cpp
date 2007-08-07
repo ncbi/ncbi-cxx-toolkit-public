@@ -322,73 +322,90 @@ static void IndexedDbPreSearch(
 }
 
 //------------------------------------------------------------------------------
-CIndexedDb::CIndexedDb( const string & indexname, BlastSeqSrc * db )
+CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
     : db_( db ), threads_( 1 ), 
       seq_from_index_( false ), index_preloaded_( false )
 {
-    // Parse the indexname as a comma separated list
-    string::size_type start = 0, end = 0;
+    if( !indexnames.empty() ) {
+        vector< string > dbnames;
+        string::size_type start = 0, end = 0;
 
-    if( !indexname.empty() ) {
-        unsigned long start_vol = 0, stop_vol = 99;
-        end = indexname.find_first_of( ",", start );
-        string index_base = indexname.substr( start, end );
-        start = end + 1;
-
-        if( start < indexname.length() && end != string::npos ) {
-            end = indexname.find_first_of( ",", start );
-            string threads_str = indexname.substr( start, end );
-            
-            if( !threads_str.empty() ) {
-                threads_ = atoi( threads_str.c_str() );
-            }
-
+        // Interpret indexname as a space separated list of database names.
+        //
+        while( end != string::npos ) {
+            end = indexnames.find_first_of( " ", start );
+            dbnames.push_back( indexnames.substr( start, end ) );
             start = end + 1;
+            end = indexnames.find_first_not_of( " ", end );
+        }
 
+        for( vector< string >::const_iterator dbni = dbnames.begin();
+                dbni != dbnames.end(); ++dbni ) {
+            const string & indexname = *dbni;
+
+            // Parse the indexname as a comma separated list
+            unsigned long start_vol = 0, stop_vol = 99;
+            start = 0;
+            end = indexname.find_first_of( ",", start );
+            string index_base = indexname.substr( start, end );
+            start = end + 1;
+    
             if( start < indexname.length() && end != string::npos ) {
                 end = indexname.find_first_of( ",", start );
-                string start_vol_str = indexname.substr( start, end );
-
-                if( !start_vol_str.empty() ) {
-                    start_vol = atoi( start_vol_str.c_str() );
+                string threads_str = indexname.substr( start, end );
+                
+                if( !threads_str.empty() ) {
+                    threads_ = atoi( threads_str.c_str() );
                 }
-
+    
                 start = end + 1;
-
+    
                 if( start < indexname.length() && end != string::npos ) {
                     end = indexname.find_first_of( ",", start );
-                    string stop_vol_str = indexname.substr( start, end );
-
-                    if( !stop_vol_str.empty() ) {
-                        stop_vol = atoi( stop_vol_str.c_str() );
+                    string start_vol_str = indexname.substr( start, end );
+    
+                    if( !start_vol_str.empty() ) {
+                        start_vol = atoi( start_vol_str.c_str() );
                     }
-                }
-            }
-        }
-
-        if( threads_ > 0 && start_vol <= stop_vol ) {
-            long last_i = -1;
-
-            for( long i = start_vol; (unsigned long)i <= stop_vol; ++i ) {
-                ostringstream os;
-                os << index_base << "." << setw( 2 ) << setfill( '0' )
-                   << i << ".idx";
-                string name = SeqDB_ResolveDbPath( os.str() );
-
-                if( !name.empty() ){
-                    if( i - last_i > 1 ) {
-                        for( long j = last_i + 1; j < i; ++j ) {
-                            ERR_POST( Error << "Index volume " 
-                                            << j << " not resolved." );
+    
+                    start = end + 1;
+    
+                    if( start < indexname.length() && end != string::npos ) {
+                        end = indexname.find_first_of( ",", start );
+                        string stop_vol_str = indexname.substr( start, end );
+    
+                        if( !stop_vol_str.empty() ) {
+                            stop_vol = atoi( stop_vol_str.c_str() );
                         }
                     }
-
-                    index_names_.push_back( name );
-                    last_i = i;
+                }
+            }
+    
+            if( threads_ == 0 ) threads_ = 1;
+    
+            if( start_vol <= stop_vol ) {
+                long last_i = -1;
+    
+                for( long i = start_vol; (unsigned long)i <= stop_vol; ++i ) {
+                    ostringstream os;
+                    os << index_base << "." << setw( 2 ) << setfill( '0' )
+                       << i << ".idx";
+                    string name = SeqDB_ResolveDbPath( os.str() );
+    
+                    if( !name.empty() ){
+                        if( i - last_i > 1 ) {
+                            for( long j = last_i + 1; j < i; ++j ) {
+                                ERR_POST( Error << "Index volume " 
+                                                << j << " not resolved." );
+                            }
+                        }
+    
+                        index_names_.push_back( name );
+                        last_i = i;
+                    }
                 }
             }
         }
-        else if( threads_ == 0 ) threads_ = 1;
     }
 
     if( index_names_.empty() ) {
