@@ -283,7 +283,7 @@ public:
 
     /// Returns total number of volumes (vertical projection)
     /// If method returns 0 - means there is no hard number: open ended proj
-    unsigned GetVolumeSize() const { return m_Volumes+1; }
+    unsigned GetVolumeSize() const { return m_Volumes; }
 
 private:
     unsigned  m_Volumes;
