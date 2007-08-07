@@ -1288,7 +1288,8 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
-    if (args.Exist(kArgNumThreads)) {
+    if (args.Exist(kArgNumThreads) &&
+        args[kArgNumThreads].HasValue()) {  // could be cancelled by the exclusion in CRemoteArgs
         m_NumThreads = args[kArgNumThreads].AsInteger();
     }
 }

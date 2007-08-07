@@ -479,6 +479,26 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam(B4Param_GapTracebackAlgorithm, v);
         return;
         
+    case eBlastOpt_SegFilteringWindow:
+        x_SetParam(B4Param_SegFilteringWindow, v);
+        return;
+
+    case eBlastOpt_DustFilteringLevel:
+        x_SetParam(B4Param_DustFilteringLevel, v);
+        return;
+
+    case eBlastOpt_DustFilteringWindow:
+        x_SetParam(B4Param_DustFilteringWindow, v);
+        return;
+
+    case eBlastOpt_DustFilteringLinker:
+        x_SetParam(B4Param_DustFilteringLinker, v);
+        return;
+
+    case eBlastOpt_CullingLimit:
+        x_SetParam(B4Param_Culling, v);
+        return;
+
     default:
         break;
     }
@@ -520,6 +540,14 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         //x_SetParam(B4Param_XDropoff, v);
         return;
         
+    case eBlastOpt_SegFilteringLocut:
+        x_SetParam(B4Param_SegFilteringLocut, v);
+        return;
+
+    case eBlastOpt_SegFilteringHicut:
+        x_SetParam(B4Param_SegFilteringHicut, v);
+        return;
+
     default:
         break;
     }

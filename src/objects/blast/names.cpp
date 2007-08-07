@@ -147,6 +147,9 @@ TField B4Param_CutoffScore           ("CutoffScore",           CBlast4_value::e_
 TField B4Param_DbGeneticCode         ("DbGeneticCode",         CBlast4_value::e_Integer);
 TField B4Param_DbLength              ("DbLength",              CBlast4_value::e_Big_integer);
 TField B4Param_DustFiltering         ("DustFiltering",         CBlast4_value::e_Boolean);
+TField B4Param_DustFilteringLevel    ("DustFilteringLevel",    CBlast4_value::e_Integer);
+TField B4Param_DustFilteringWindow   ("DustFilteringWindow",   CBlast4_value::e_Integer);
+TField B4Param_DustFilteringLinker   ("DustFilteringLinker",   CBlast4_value::e_Integer);
 TField B4Param_EffectiveSearchSpace  ("EffectiveSearchSpace",  CBlast4_value::e_Big_integer);
 TField B4Param_EntrezQuery           ("EntrezQuery",           CBlast4_value::e_String);
 TField B4Param_EvalueThreshold       ("EvalueThreshold",       CBlast4_value::e_Cutoff);
@@ -179,6 +182,9 @@ TField B4Param_RepeatFilteringDB     ("RepeatFilteringDB",     CBlast4_value::e_
 TField B4Param_RequiredEnd           ("RequiredEnd",           CBlast4_value::e_Integer);
 TField B4Param_RequiredStart         ("RequiredStart",         CBlast4_value::e_Integer);
 TField B4Param_SegFiltering          ("SegFiltering",          CBlast4_value::e_Boolean);
+TField B4Param_SegFilteringWindow    ("SegFilteringWindow",    CBlast4_value::e_Integer);
+TField B4Param_SegFilteringLocut     ("SegFilteringLocut",     CBlast4_value::e_Real);
+TField B4Param_SegFilteringHicut     ("SegFilteringHicut",     CBlast4_value::e_Real);
 TField B4Param_StrandOption          ("StrandOption",          CBlast4_value::e_Strand_type);
 TField B4Param_UngappedMode          ("UngappedMode",          CBlast4_value::e_Boolean);
 TField B4Param_UseRealDbSize         ("UseRealDbSize",         CBlast4_value::e_Boolean);
