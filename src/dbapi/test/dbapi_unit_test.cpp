@@ -414,7 +414,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
         rs->DisableBind(true);
         if (rs->Next()) {
             read_bytes = rs->Read(buff, sizeof(buff));
-            BOOST_CHECK_EQUAL(14, read_bytes);
+            BOOST_CHECK_EQUAL(size_t(14), read_bytes);
         }
 
         sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
@@ -430,7 +430,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
         rs->DisableBind(true);
         if (rs->Next()) {
             read_bytes = rs->Read(buff, sizeof(buff));
-            BOOST_CHECK_EQUAL(11, read_bytes);
+            BOOST_CHECK_EQUAL(size_t(11), read_bytes);
         }
     }
     catch(const CDB_Exception& ex) {
@@ -5958,7 +5958,307 @@ CDBAPIUnitTest::Test_N_Connections(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void CDBAPIUnitTest::Test_CDB_Object(void)
+void
+CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
+                                IConnValidator& validator)
+{
+    TSvrRef server01(new CDBServer("MS_DEV1"));
+    TSvrRef server02(new CDBServer("MS_DEV2"));
+    const string service_name("TEST_SERVICE_01");
+    auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper());
+    auto_ptr<IConnection> conn;
+
+    mapper->Add(service_name, server01);
+    mapper->Add(service_name, server02);
+    mapper->Add(service_name, server01);
+    mapper->Add(service_name, server01);
+//     mapper->Add(service_name, server01);
+//     mapper->Add(service_name, server01);
+//     mapper->Add(service_name, server01);
+//     mapper->Add(service_name, server01);
+//     mapper->Add(service_name, server01);
+
+    // Install new mapper ...
+    ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(
+        factory(mapper.release())
+    );
+
+    // Create connection ...
+    conn.reset(m_DS->CreateConnection(CONN_OWNERSHIP));
+    BOOST_CHECK(conn.get() != NULL);
+
+    // There are only 3 of server01 ...
+    for (int i = 0; i < 12; ++i) {
+        conn->ConnectValidated(
+            validator,
+            m_args.GetUserName(),
+            m_args.GetUserPassword(),
+            service_name
+            );
+
+        string server_name = conn->GetCDB_Connection()->ServerName();
+//         LOG_POST(Warning << "Connected to: " << server_name);
+        // server02 shouldn't be reported ...
+        BOOST_CHECK_EQUAL(server_name, server01->GetName());
+        conn->Close();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+static
+IDBConnectionFactory*
+CDBConnectionFactoryFactory(IDBServiceMapper* svc_mapper)
+{
+    return new CDBConnectionFactory(svc_mapper);
+}
+
+static
+IDBConnectionFactory*
+CDBRedispatchFactoryFactory(IDBServiceMapper* svc_mapper)
+{
+    return new CDBRedispatchFactory(svc_mapper);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
+{
+    // CTrivialConnValidator ...
+    {
+        // Connection validator to check against DBAPI_Sample ...
+        CTrivialConnValidator validator("DBAPI_Sample");
+
+        Check_Validator(factory_factory, validator);
+    }
+
+    // Same as before but with a customized validator ...
+    {
+        class CValidator : public CTrivialConnValidator
+        {
+        public:
+            CValidator(const string& db_name,
+                       int attr = eDefaultValidateAttr)
+            : CTrivialConnValidator(db_name, attr)
+            {
+            }
+
+            virtual EConnStatus ValidateException(const CDB_Exception& ex)
+            {
+                return eTempInvalidConn;
+            }
+        };
+
+        // Connection validator to check against DBAPI_Sample ...
+        CValidator validator("DBAPI_Sample");
+
+        Check_Validator(factory_factory, validator);
+    }
+
+    // Another customized validator ...
+    {
+        class CValidator : public CTrivialConnValidator
+        {
+        public:
+            CValidator(const string& db_name,
+                       int attr = eDefaultValidateAttr)
+            : CTrivialConnValidator(db_name, attr)
+            {
+            }
+
+        public:
+            virtual IConnValidator::EConnStatus Validate(CDB_Connection& conn)
+            {
+                // Try to change a database ...
+                try {
+                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
+                    set_cmd->Send();
+                    set_cmd->DumpResults();
+                }
+                catch(const CDB_Exception&) {
+                    LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
+                             ", Server name: " << conn.ServerName());
+                    return eTempInvalidConn;
+                    // return eInvalidConn;
+                }
+
+                if (GetAttr() & eCheckSysobjects) {
+                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+                    set_cmd->Send();
+                    set_cmd->DumpResults();
+                }
+
+                // Go back to the original (master) database ...
+                if (GetAttr() & eRestoreDefaultDB) {
+                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
+                    set_cmd->Send();
+                    set_cmd->DumpResults();
+                }
+
+                // All exceptions are supposed to be caught and processed by
+                // CDBConnectionFactory ...
+                return eValidConn;
+            }
+
+            virtual EConnStatus ValidateException(const CDB_Exception& ex)
+            {
+                return eTempInvalidConn;
+            }
+        };
+
+        // Connection validator to check against DBAPI_Sample ...
+        CValidator validator("DBAPI_Sample");
+
+        Check_Validator(factory_factory, validator);
+    }
+
+    // One more ...
+    {
+        class CValidator : public CTrivialConnValidator
+        {
+        public:
+            CValidator(const string& db_name,
+                       int attr = eDefaultValidateAttr)
+            : CTrivialConnValidator(db_name, attr)
+            {
+            }
+
+        public:
+            virtual IConnValidator::EConnStatus Validate(CDB_Connection& conn)
+            {
+                // Try to change a database ...
+                try {
+                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
+                    set_cmd->Send();
+                    set_cmd->DumpResults();
+                }
+                catch(const CDB_Exception&) {
+                    LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
+                             ", Server name: " << conn.ServerName());
+                    return eTempInvalidConn;
+                    // return eInvalidConn;
+                }
+
+                if (GetAttr() & eCheckSysobjects) {
+                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+                    set_cmd->Send();
+                    set_cmd->DumpResults();
+                }
+
+                // Go back to the original (master) database ...
+                if (GetAttr() & eRestoreDefaultDB) {
+                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
+                    set_cmd->Send();
+                    set_cmd->DumpResults();
+                }
+
+                // All exceptions are supposed to be caught and processed by
+                // CDBConnectionFactory ...
+                return eValidConn;
+            }
+
+            virtual EConnStatus ValidateException(const CDB_Exception& ex)
+            {
+                return eInvalidConn;
+            }
+        };
+
+        // Connection validator to check against DBAPI_Sample ...
+        CValidator validator("DBAPI_Sample");
+
+        Check_Validator(factory_factory, validator);
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_ConnFactory(void)
+{
+    enum {num_of_tests = 128};
+
+    try {
+        TSvrRef server01(new CDBServer("MS_DEV1"));
+        TSvrRef server02(new CDBServer("MS_DEV2"));
+        TSvrRef server03(new CDBServer("MSSQL67"));
+
+        // Check CDBUDPriorityMapper ...
+        {
+            const string service_name("TEST_SERVICE_01");
+            auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper());
+
+            mapper->Add(service_name, server01);
+            mapper->Add(service_name, server02);
+            mapper->Add(service_name, server03);
+
+            for (int i = 0; i < num_of_tests; ++i) {
+                BOOST_CHECK(mapper->GetServer(service_name) == server01);
+                BOOST_CHECK(mapper->GetServer(service_name) == server02);
+                BOOST_CHECK(mapper->GetServer(service_name) == server03);
+
+                BOOST_CHECK(mapper->GetServer(service_name) != server02);
+                BOOST_CHECK(mapper->GetServer(service_name) != server03);
+                BOOST_CHECK(mapper->GetServer(service_name) != server01);
+            }
+        }
+
+        // Check CDBUDRandomMapper ...
+        // DBUDRandomMapper is currently brocken ...
+        if (false) {
+            const string service_name("TEST_SERVICE_02");
+            auto_ptr<CDBUDRandomMapper> mapper(new CDBUDRandomMapper());
+
+            mapper->Add(service_name, server01);
+            mapper->Add(service_name, server02);
+            mapper->Add(service_name, server03);
+
+            size_t num_server01 = 0;
+            size_t num_server02 = 0;
+            size_t num_server03 = 0;
+
+            for (int i = 0; i < num_of_tests; ++i) {
+                TSvrRef cur_server = mapper->GetServer(service_name);
+
+                if (cur_server == server01) {
+                    ++num_server01;
+                } else if (cur_server == server02) {
+                    ++num_server02;
+                } else if (cur_server == server03) {
+                    ++num_server03;
+                } else {
+                    BOOST_FAIL("Unknown server.");
+                }
+            }
+
+            BOOST_CHECK_EQUAL(num_server01, num_server02);
+            BOOST_CHECK_EQUAL(num_server02, num_server03);
+            BOOST_CHECK_EQUAL(num_server03, num_server01);
+        }
+
+        // Check CDBConnectionFactory ...
+        CheckConnFactory(CDBConnectionFactoryFactory);
+
+        // Check CDBRedispatchFactory ...
+        CheckConnFactory(CDBRedispatchFactoryFactory);
+
+        // Future development ...
+//         ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(
+//             new CDBConnectionFactory(
+//                 mapper.release()
+//             )
+//         );
+
+        // Restore original state ...
+        DBLB_INSTALL_DEFAULT();
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_CDB_Object(void)
 {
     try {
         // Check for NULL a default constructor ...
@@ -8293,6 +8593,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
+    if (args.GetServerType() == CTestArguments::eMsSql ||
+        args.GetServerType() == CTestArguments::eMsSql2005
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnFactory,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     if (args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != "dblib"

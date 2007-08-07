@@ -54,6 +54,8 @@ class CDriverManager;
 class IDataSource;
 class IConnection;
 class IStatement;
+class IDBConnectionFactory;
+class IDBServiceMapper;
 
 enum ETransBehavior { eNoTrans, eTransCommit, eTransRollback };
 
@@ -221,10 +223,16 @@ public:
     void Test_BlobStore(void);
     void Test_DropConnection(void);
     void Test_N_Connections(void);
+    void Test_ConnFactory(void);
 
 public:
+    typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
+        (IDBServiceMapper* svc_mapper);
     void Test_Exception_Safety(void);
     void ES_01_Internal(IConnection& conn);
+    void Check_Validator(TDBConnectionFactoryFactory factory,
+                         IConnValidator& validator);
+    void CheckConnFactory(TDBConnectionFactoryFactory factory_factory);
 
 public:
     // Not implemented yet ...
