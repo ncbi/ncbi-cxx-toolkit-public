@@ -1211,16 +1211,14 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                     "  2 = query-anchored no identities,\n"
                     "  3 = flat query-anchored, show identities,\n"
                     "  4 = flat query-anchored, no identities,\n"
-                    "  5 = query-anchored no identities and blunt ends,\n"
-                    "  6 = flat query-anchored, no identities and blunt ends,\n"
-                    "  7 = XML Blast output,\n"
-                    "  8 = tabular, \n"
-                    "  9 tabular with comment lines,\n"
-                    "  10 ASN, text,\n"
-                    "  11 ASN, binary\n",
+                    "  5 = XML Blast output,\n"
+                    "  6 = tabular,\n"
+                    "  7 = tabular with comment lines,\n"
+                    "  8 = ASN, text,\n"
+                    "  9 = ASN, binary\n",
                    CArgDescriptions::eInteger,
                    NStr::IntToString(kDfltArgOutputFormat));
-    arg_desc.SetConstraint(kArgOutputFormat, new CArgAllow_Integers(0,11));
+    arg_desc.SetConstraint(kArgOutputFormat, new CArgAllow_Integers(0, 9));
 
     // show GIs in deflines
     arg_desc.AddFlag(kArgShowGIs, "Show NCBI GIs in deflines?", true);

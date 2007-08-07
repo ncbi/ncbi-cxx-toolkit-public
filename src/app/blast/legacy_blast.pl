@@ -273,13 +273,20 @@ sub handle_blastall($)
     }
 
     $retval .= "-out $opt_o "               if (defined $opt_o);
-    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
+    if (defined $opt_m) {
+        if ($opt_m == 5 or $opt_m == 6) {
+            print STDERR "Warning: -m5 or -m6 formatting options ";
+            print STDERR "are not supported!\n";
+        }
+        $opt_m -= 2 if ($opt_m >= 7);
+        $retval .= "-outfmt $opt_m "            
+    }
     if (defined $opt_O) {
         unless ($retval =~ s/-out \S+ /-out $opt_O /) {
             $retval .= "-out $opt_O ";
         }
-        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
-            $retval .= "-outfmt 10 ";
+        unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+            $retval .= "-outfmt 8 ";
         } else {
             print STDERR "Warning: overriding output format\n";
         }
@@ -378,13 +385,20 @@ sub handle_megablast($)
     $retval .= "-gapopen $opt_G "           if (defined $opt_G);
     $retval .= "-gapextend $opt_E "         if (defined $opt_E);
     $retval .= "-out $opt_o "               if (defined $opt_o);
-    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
+    if (defined $opt_m) {
+        if ($opt_m == 5 or $opt_m == 6) {
+            print STDERR "Warning: -m5 or -m6 formatting options ";
+            print STDERR "are not supported!\n";
+        }
+        $opt_m -= 2 if ($opt_m >= 7);
+        $retval .= "-outfmt $opt_m "            
+    }
     if (defined $opt_O) {
         unless ($retval =~ s/-out \S+ /-out $opt_O /) {
             $retval .= "-out $opt_O ";
         }
-        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
-            $retval .= "-outfmt 10 ";
+        unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+            $retval .= "-outfmt 8 ";
         } else {
             print STDERR "Warning: overriding output format\n";
         }
@@ -562,13 +576,20 @@ sub handle_blastpgp($)
     $retval .= "-comp_based_stats $opt_t "  if (defined $opt_t);
     $retval .= "-phi_pattern $opt_k "       if (defined $opt_k);
     $retval .= "-out $opt_o "               if (defined $opt_o);
-    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
+    if (defined $opt_m) {
+        if ($opt_m == 5 or $opt_m == 6) {
+            print STDERR "Warning: -m5 or -m6 formatting options ";
+            print STDERR "are not supported!\n";
+        }
+        $opt_m -= 2 if ($opt_m >= 7);
+        $retval .= "-outfmt $opt_m "            
+    }
     if (defined $opt_O) {
         unless ($retval =~ s/-out \S+ /-out $opt_O /) {
             $retval .= "-out $opt_O ";
         }
-        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
-            $retval .= "-outfmt 10 ";
+        unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+            $retval .= "-outfmt 8 ";
         } else {
             print STDERR "Warning: overriding output format\n";
         }
@@ -706,8 +727,8 @@ sub handle_bl2seq
         unless ($retval =~ s/-out \S+ /-out $opt_a /) {
             $retval .= "-out $opt_a ";
         }
-        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
-            $retval .= "-outfmt 10 ";
+        unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+            $retval .= "-outfmt 8 ";
         } else {
             print STDERR "Warning: overriding output format\n";
         }
@@ -797,7 +818,6 @@ sub handle_rpsblast
     $retval .= "-db \"$opt_d\" "            if (defined $opt_d);
     $retval .= "-evalue $opt_e "            if (defined $opt_e);
     $retval .= "-out $opt_o "               if (defined $opt_o);
-    $retval .= "-outfmt $opt_m "            if (defined $opt_m);
     $retval .= "-xdrop_ungap $opt_y "       if (defined $opt_y);
     $retval .= "-xdrop_gap $opt_X "         if (defined $opt_X);
     $retval .= "-min_raw_gapped_score $opt_N " if (defined $opt_N);
@@ -807,12 +827,20 @@ sub handle_rpsblast
     $retval .= "-dbsize $opt_z "            if (defined $opt_z);
     $retval .= "-searchsp $opt_Y "          if (defined $opt_Y);
     $retval .= "-xdrop_gap_final $opt_Z "   if (defined $opt_Z);
+    if (defined $opt_m) {
+        if ($opt_m == 5 or $opt_m == 6) {
+            print STDERR "Warning: -m5 or -m6 formatting options ";
+            print STDERR "are not supported!\n";
+        }
+        $opt_m -= 2 if ($opt_m >= 7);
+        $retval .= "-outfmt $opt_m "            
+    }
     if (defined $opt_O) {
         unless ($retval =~ s/-out \S+ /-out $opt_O /) {
             $retval .= "-out $opt_O ";
         }
-        unless ($retval =~ s/-outfmt \d+/-outfmt 10/) {
-            $retval .= "-outfmt 10 ";
+        unless ($retval =~ s/-outfmt \d+/-outfmt 8/) {
+            $retval .= "-outfmt 8 ";
         } else {
             print STDERR "Warning: overriding output format\n";
         }
