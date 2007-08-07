@@ -165,6 +165,8 @@ NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UseRealDbSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WordSize;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WordThreshold;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SumStatistics;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_LongestIntronLength;
 
 END_objects_SCOPE // namespace ncbi::objects::
 

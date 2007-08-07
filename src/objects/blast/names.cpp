@@ -191,6 +191,8 @@ TField B4Param_UseRealDbSize         ("UseRealDbSize",         CBlast4_value::e_
 TField B4Param_WindowSize            ("WindowSize",            CBlast4_value::e_Integer);
 TField B4Param_WordSize              ("WordSize",              CBlast4_value::e_Integer);
 TField B4Param_WordThreshold         ("WordThreshold",         CBlast4_value::e_Integer);
+TField B4Param_SumStatistics         ("SumStatistics",         CBlast4_value::e_Boolean);
+TField B4Param_LongestIntronLength   ("LongestIntronLength",   CBlast4_value::e_Integer);
 
 END_objects_SCOPE // namespace ncbi::objects::
 
