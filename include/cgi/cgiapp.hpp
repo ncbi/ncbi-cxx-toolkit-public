@@ -52,6 +52,7 @@
 BEGIN_NCBI_SCOPE
 
 class CCgiServerContext;
+class CCgiStatistics;
 class CCgiWatchFile;
 class ICgiSessionStorage;
 class CCgiSessionParameters;
@@ -64,6 +65,7 @@ class ICache;
 
 class NCBI_XCGI_EXPORT CCgiApplication : public CNcbiApplication
 {
+    friend class CCgiStatistics;
     typedef CNcbiApplication CParent;
 
 public:
@@ -224,6 +226,17 @@ protected:
     virtual void           ConfigureDiagThreshold  (CCgiContext& context);
     virtual void           ConfigureDiagFormat     (CCgiContext& context);
 
+    /// Analyze registry settings ([CGI] Log) and return current logging option
+    enum ELogOpt {
+        eNoLog,
+        eLog,
+        eLogOnError
+    };
+    ELogOpt GetLogOpt(void) const;
+
+    /// Class factory for statistics class
+    virtual CCgiStatistics* CreateStat();
+
     /// Attach cookie affinity service interface. Pointer ownership goes to
     /// the CCgiApplication.
     void SetCafService(CCookieAffinity* caf);
@@ -308,6 +321,53 @@ private:
     CCgiApplication(const CCgiApplication&);
     CCgiApplication& operator=(const CCgiApplication&);
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiStatistics::
+//
+//    CGI statistics information
+//
+
+class NCBI_XCGI_EXPORT CCgiStatistics
+{
+    friend class CCgiApplication;
+public:
+    virtual ~CCgiStatistics();
+
+protected:
+    CCgiStatistics(CCgiApplication& cgi_app);
+
+    // Reset statistics class. Method called only ones for CGI
+    // applications and every iteration if it is FastCGI.
+    virtual void Reset(const CTime& start_time,
+                       int          result,
+                       const std::exception*  ex = 0);
+
+    // Compose message for statistics logging.
+    // This default implementation constructs the message from the fragments
+    // composed with the help of "Compose_Xxx()" methods (see below).
+    // NOTE:  It can return empty string (when time cut-off is engaged).
+    virtual string Compose(void);
+
+    // Log the message
+    virtual void   Submit(const string& message);
+
+protected:
+    virtual string Compose_ProgramName (void);
+    virtual string Compose_Timing      (const CTime& end_time);
+    virtual string Compose_Entries     (void);
+    virtual string Compose_Result      (void);
+    virtual string Compose_ErrMessage  (void);
+
+protected:
+    CCgiApplication& m_CgiApp;     // Reference on the "mother app"
+    string           m_LogDelim;   // Log delimiter
+    CTime            m_StartTime;  // CGI start time
+    int              m_Result;     // Return code
+    string           m_ErrMsg;     // Error message
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////

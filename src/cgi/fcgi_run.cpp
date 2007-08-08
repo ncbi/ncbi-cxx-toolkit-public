@@ -258,6 +258,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         return false;
     }
 
+    // Statistics
+    bool is_stat_log = reg.GetBool("CGI", "StatLog", false, 0,
+                                   CNcbiRegistry::eReturn);
+    auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
+
     // Max. number of the Fast-CGI loop iterations
     unsigned int max_iterations;
     {{
@@ -422,6 +427,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             break;
         }
 
+        // Process the request
+        CTime start_time(CTime::eCurrent);
+        bool skip_stat_log = false;
+
         try {            
             // Initialize CGI context with the new request data
             CNcbiEnvironment env(penv);
@@ -567,6 +576,20 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 FCGX_SetExitStatus(exit_code, pfout);
             }}
             
+            // Logging
+            {{
+                string msg =
+                    "(FCGI) CCgiApplication::ProcessRequest() failed: ";
+                msg += e.what();
+                if ( is_stat_log ) {
+                    stat->Reset(start_time, *result, &e);
+                    msg = stat->Compose();
+                    stat->Submit(msg);
+                    skip_stat_log = true; // Don't print the same message again
+                }
+            }}
+
+            // Exception reporting
             NCBI_REPORT_EXCEPTION
                 ("(FastCGI) CCgiApplication::x_RunFastCGI", e);
 
@@ -598,6 +621,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
         FCGX_Finish();
 # endif
+
+        // Logging
+        if ( is_stat_log  &&  !skip_stat_log ) {
+            stat->Reset(start_time, *result);
+            string msg = stat->Compose();
+            stat->Submit(msg);
+        }
 
         // 
         x_OnEvent(eEndRequest, 121);
