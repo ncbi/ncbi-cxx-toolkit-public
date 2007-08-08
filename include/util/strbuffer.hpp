@@ -140,13 +140,13 @@ public:
         THROWS1((CIOException));
 
     Int4 GetInt4(void)
-        THROWS1((CIOException));
+        THROWS1((CIOException,CUtilException));
     Uint4 GetUint4(void)
-        THROWS1((CIOException));
+        THROWS1((CIOException,CUtilException));
     Int8 GetInt8(void)
-        THROWS1((CIOException));
+        THROWS1((CIOException,CUtilException));
     Uint8 GetUint8(void)
-        THROWS1((CIOException));
+        THROWS1((CIOException,CUtilException));
 
     void StartSubSource(void);
     CRef<CByteSource> EndSubSource(void);
@@ -167,7 +167,11 @@ protected:
     char FillBufferNoEOF(const char* pos);
     bool TryToFillBuffer(void);
 
-    void BadNumber(void);
+    // report number parsing exceptions
+    void BadNumber(void)
+        THROWS1((CUtilException));
+    void NumberOverflow(void)
+        THROWS1((CUtilException));
 
 private:
     CRef<CByteSourceReader> m_Input;

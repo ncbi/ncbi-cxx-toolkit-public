@@ -341,12 +341,10 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
                     return pos;
                 }
                 m_Error = "end of file";
-//                THROW0_TRACE(CEofException());
                 NCBI_THROW(CEofException,eEof,m_Error);
             }
             else {
                 m_Error = "read fault";
-//                THROW1_TRACE(CIOException, "read fault");
                 NCBI_THROW(CIOException,eRead,m_Error);
             }
         }
@@ -493,9 +491,13 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
 void CIStreamBuffer::BadNumber(void)
 {
     m_Error = "bad number";
-//    THROW1_TRACE(runtime_error, "bad number in line " + NStr::UIntToString(GetLine()));
-    NCBI_THROW(CIOException,eRead,
-        "bad number in line " + NStr::UIntToString(GetLine()));
+    NCBI_THROW_FMT(CUtilException, eWrongData, "bad number in line " << GetLine());
+}
+
+void CIStreamBuffer::NumberOverflow(void)
+{
+    m_Error = "number overflow";
+    NCBI_THROW_FMT(CUtilException,eWrongData, "overflow in line " << GetLine());
 }
 
 void CIStreamBuffer::SetStreamOffset(CNcbiStreampos pos)
@@ -542,18 +544,30 @@ Int4 CIStreamBuffer::GetInt4(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
-    Int4 n = c - '0';
+    // overflow limits
+    const Uint4 kMaxBeforeMul = kMax_I4/10;
+    const Uint4 kMax_I4_abs = Uint4(kMax_I4) + (-(kMin_I4+kMax_I4));
+    Uint4 kMaxAfterAdd = sign? kMax_I4_abs: Uint4(kMax_I4);
+
+    Uint4 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
             break;
-
         SkipChar();
-        // TODO: check overflow
+
+        // check multiplication overflow
+        if ( n > kMaxBeforeMul )
+            NumberOverflow();
+
         n = n * 10 + (c - '0');
+
+        // check final overflow
+        if ( n > kMaxAfterAdd )
+            NumberOverflow();
     }
     if ( sign )
-        return -n;
+        return -Int4(n);
     else
         return n;
 }
@@ -566,15 +580,25 @@ Uint4 CIStreamBuffer::GetUint4(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
+    // overflow limits
+    const Uint4 kMaxBeforeMul = kMax_UI4/10;
+
     Uint4 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
             break;
-
         SkipChar();
-        // TODO: check overflow
+
+        // check multiplication overflow
+        if ( n > kMaxBeforeMul )
+            NumberOverflow();
+
         n = n * 10 + (c - '0');
+
+        // check final overflow
+        if ( n < Uint4(c - '0') )
+            NumberOverflow();
     }
     return n;
 }
@@ -600,18 +624,30 @@ Int8 CIStreamBuffer::GetInt8(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
-    Int8 n = c - '0';
+    // overflow limits
+    const Uint8 kMaxBeforeMul = kMax_I8/10;
+    const Uint8 kMax_I8_abs = Uint8(kMax_I8) + (-(kMin_I8+kMax_I8));
+    Uint8 kMaxAfterAdd = sign? kMax_I8_abs: Uint8(kMax_I8);
+
+    Uint8 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
             break;
-
         SkipChar();
-        // TODO: check overflow
+
+        // check multiplication overflow
+        if ( n > kMaxBeforeMul )
+            NumberOverflow();
+
         n = n * 10 + (c - '0');
+
+        // check final overflow
+        if ( n > kMaxAfterAdd )
+            NumberOverflow();
     }
     if ( sign )
-        return -n;
+        return -Int8(n);
     else
         return n;
 }
@@ -625,15 +661,25 @@ Uint8 CIStreamBuffer::GetUint8(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
+    // overflow limits
+    const Uint8 kMaxBeforeMul = kMax_UI8/10;
+
     Uint8 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
             break;
-
         SkipChar();
-        // TODO: check overflow
+
+        // check multiplication overflow
+        if ( n > kMaxBeforeMul )
+            NumberOverflow();
+
         n = n * 10 + (c - '0');
+
+        // check final overflow
+        if ( n < Uint8(c - '0') )
+            NumberOverflow();
     }
     return n;
 }
@@ -698,7 +744,6 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
     if ( count != 0 ) {
         if ( !m_Output.write(m_Buffer, count) ) {
             m_Error = "write fault";
-//            THROW1_TRACE(CIOException, "write fault");
             NCBI_THROW(CIOException,eWrite,m_Error);
         }
         if ( leave != 0 ) {
@@ -823,16 +868,16 @@ void COStreamBuffer::PutInt8(Int8 v)
 #ifdef PRINT_INT8_CHUNK
     // while n doesn't fit in Int4 process it by 9-digit chunks with 32 bits
     while ( n & ~Uint8(Uint4(~0)) ) {
-        Uint4 m = n;
+        Uint4 m = Uint4(n);
         m -= PRINT_INT8_CHUNK*Uint4(n/=Uint8(PRINT_INT8_CHUNK));
         char* end = pos - PRINT_INT8_CHUNK_SIZE;
         do {
-            Uint8 a = '0'+m;
+            Uint4 a = '0'+m;
             *--pos = a-10*(m/=10);
         } while ( pos != end );
     }
     // process all remaining digits in 32-bit number
-    Uint4 m = n;
+    Uint4 m = Uint4(n);
     do {
         Uint4 a = '0'+m;
         *--pos = a-10*(m/=10);
@@ -840,7 +885,7 @@ void COStreamBuffer::PutInt8(Int8 v)
 #else
     do {
         Uint8 a = '0'+n;
-        *--pos = a-10*(n/=Uint8(10));
+        *--pos = char(a-10*(n/=Uint8(10)));
     } while ( n );
 #endif
     if ( v < 0 ) {
@@ -863,16 +908,16 @@ void COStreamBuffer::PutUint8(Uint8 v)
 #ifdef PRINT_INT8_CHUNK
     // while n doesn't fit in Uint4 process it by 9-digit chunks with 32 bits
     while ( n & ~Uint8(Uint4(~0)) ) {
-        Uint4 m = n;
+        Uint4 m = Uint4(n);
         m -= PRINT_INT8_CHUNK*Uint4(n/=Uint8(PRINT_INT8_CHUNK));
         char* end = pos - PRINT_INT8_CHUNK_SIZE;
         do {
-            Uint8 a = '0'+m;
+            Uint4 a = '0'+m;
             *--pos = a-10*(m/=10);
         } while ( pos != end );
     }
     // process all remaining digits in 32-bit number
-    Uint4 m = n;
+    Uint4 m = Uint4(n);
     do {
         Uint4 a = '0'+m;
         *--pos = a-10*(m/=10);
@@ -880,7 +925,7 @@ void COStreamBuffer::PutUint8(Uint8 v)
 #else
     do {
         Uint8 a = '0'+n;
-        *--pos = a-10*(n/=10);
+        *--pos = char(a-10*(n/=10));
     } while ( n );
 #endif
     int len = b + BSIZE - pos;
@@ -979,7 +1024,6 @@ void COStreamBuffer::Write(CByteSourceReader& reader)
             if ( reader.EndOfData() )
                 return;
             else
-//                THROW1_TRACE(CIOException, "buffer read fault");
                 NCBI_THROW(CIOException,eRead,"buffer read fault");
         }
         m_CurrentPos += count;
