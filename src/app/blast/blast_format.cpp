@@ -165,7 +165,7 @@ void
 CBlastFormat::PrintProlog()
 {
     // no header for some output types
-    if (m_FormatType >= 8)
+    if (m_FormatType >= 6)
         return;
 
     CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
@@ -216,25 +216,14 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
     const CSeq_align_set& aln_set = *results.GetSeqAlign();
 
     // ASN.1 formatting is straightforward
-    if (m_FormatType == 10) {
+    if (m_FormatType == 8) {
         m_Outfile << MSerial_AsnText << aln_set;
         return;
     }
-    else if (m_FormatType == 11) {
+    else if (m_FormatType == 9) {
         m_Outfile << MSerial_AsnBinary << aln_set;
         return;
     }
-#if 0
-    if (m_FormatType == 10 || m_FormatType == 11) {
-        CSeq_annot seqannot;
-        seqannot.SetData().SetAlign() = aln_set.Get();
-        if (m_FormatType == 10)
-            m_Outfile << MSerial_AsnText << seqannot;
-        else
-            m_Outfile << MSerial_AsnBinary << aln_set;
-        return;
-    }
-#endif
 
     // other output types will need a bioseq handle
     CBioseq_Handle bhandle = scope.GetBioseqHandle(*results.GetSeqId(),
@@ -242,10 +231,10 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
 
     // tabular formatting just prints each alignment in turn
     // (plus a header)
-    if (m_FormatType == 8 || m_FormatType == 9) {
+    if (m_FormatType == 6 || m_FormatType == 7) {
         CBlastTabularInfo tabinfo(m_Outfile);
 
-        if (m_FormatType == 9)
+        if (m_FormatType == 7)
              tabinfo.PrintHeader(m_Program,
                                  *(bhandle.GetBioseqCore()),
                                  m_DbName, 0);
@@ -322,7 +311,7 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
     if (m_ShowGi)
         flags |= CDisplaySeqalign::eShowGi;
 
-    if (m_FormatType >= 1 && m_FormatType <= 6) {
+    if (m_FormatType >= 1 && m_FormatType <= 4) {
         flags |= CDisplaySeqalign::eMergeAlign;
     }
     else {
@@ -330,7 +319,7 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
                  CDisplaySeqalign::eShowMiddleLine;
     }
 
-    if (m_FormatType == 1 || m_FormatType == 3 || m_FormatType == 5) {
+    if (m_FormatType == 1 || m_FormatType == 3) {
         flags |= CDisplaySeqalign::eShowIdentity;
     }
     if (m_FormatType == 1 || m_FormatType == 2) {
@@ -361,7 +350,7 @@ void
 CBlastFormat::PrintEpilog(const CBlastOptions& options)
 {
     // some output types don't have a footer
-    if (m_FormatType >= 8)
+    if (m_FormatType >= 6)
         return;
 
     m_Outfile << endl << endl;
