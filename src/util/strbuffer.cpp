@@ -489,15 +489,19 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
 }
 
 void CIStreamBuffer::BadNumber(void)
+    THROWS1((CUtilException))
 {
     m_Error = "bad number";
-    NCBI_THROW_FMT(CUtilException, eWrongData, "bad number in line " << GetLine());
+    NCBI_THROW_FMT(CUtilException, eWrongData,
+                   "bad number in line " << GetLine());
 }
 
 void CIStreamBuffer::NumberOverflow(void)
+    THROWS1((CUtilException))
 {
     m_Error = "number overflow";
-    NCBI_THROW_FMT(CUtilException,eWrongData, "overflow in line " << GetLine());
+    NCBI_THROW_FMT(CUtilException, eWrongData,
+                   "number overflow in line " << GetLine());
 }
 
 void CIStreamBuffer::SetStreamOffset(CNcbiStreampos pos)
@@ -525,6 +529,7 @@ void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
 }
 
 Int4 CIStreamBuffer::GetInt4(void)
+    THROWS1((CIOException,CUtilException))
 {
     bool sign;
     char c = GetChar();
@@ -541,30 +546,26 @@ Int4 CIStreamBuffer::GetInt4(void)
         sign = false;
         break;
     }
-    if ( c < '0' || c > '9' )
+    
+    Uint4 n = c - '0';
+    if ( n > 9 )
         BadNumber();
-
+    
     // overflow limits
     const Uint4 kMaxBeforeMul = kMax_I4/10;
-    const Uint4 kMax_I4_abs = Uint4(kMax_I4) + (-(kMin_I4+kMax_I4));
-    Uint4 kMaxAfterAdd = sign? kMax_I4_abs: Uint4(kMax_I4);
-
-    Uint4 n = c - '0';
+    const Uint1 kMaxLimitAdd = Uint1(kMax_I4%10 + sign);
+    
     for ( ;; ) {
-        c = PeekCharNoEOF();
-        if  ( c < '0' || c > '9' )
+        Uint1 d = PeekCharNoEOF() - '0';
+        if  ( d > 9 )
             break;
         SkipChar();
-
+        
         // check multiplication overflow
-        if ( n > kMaxBeforeMul )
+        if ( n > kMaxBeforeMul || n == kMaxBeforeMul && d > kMaxLimitAdd )
             NumberOverflow();
-
-        n = n * 10 + (c - '0');
-
-        // check final overflow
-        if ( n > kMaxAfterAdd )
-            NumberOverflow();
+        
+        n = n * 10 + d;
     }
     if ( sign )
         return -Int4(n);
@@ -573,38 +574,37 @@ Int4 CIStreamBuffer::GetInt4(void)
 }
 
 Uint4 CIStreamBuffer::GetUint4(void)
+    THROWS1((CIOException,CUtilException))
 {
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
-    if ( c < '0' || c > '9' )
-        BadNumber();
-
-    // overflow limits
-    const Uint4 kMaxBeforeMul = kMax_UI4/10;
 
     Uint4 n = c - '0';
+    if ( n > 9 )
+        BadNumber();
+    
+    // overflow limits
+    const Uint4 kMaxBeforeMul = kMax_UI4/10;
+    const Uint1 kMaxLimitAdd = Uint1(kMax_UI4%10);
+    
     for ( ;; ) {
-        c = PeekCharNoEOF();
-        if  ( c < '0' || c > '9' )
+        Uint1 d = PeekCharNoEOF() - '0';
+        if  ( d > 9 )
             break;
         SkipChar();
 
         // check multiplication overflow
-        if ( n > kMaxBeforeMul )
+        if ( n > kMaxBeforeMul || n == kMaxBeforeMul && d > kMaxLimitAdd )
             NumberOverflow();
 
-        n = n * 10 + (c - '0');
-
-        // check final overflow
-        if ( n < Uint4(c - '0') )
-            NumberOverflow();
+        n = n * 10 + d;
     }
     return n;
 }
 
 Int8 CIStreamBuffer::GetInt8(void)
-    THROWS1((CIOException))
+    THROWS1((CIOException,CUtilException))
 {
     bool sign;
     char c = GetChar();
@@ -621,30 +621,26 @@ Int8 CIStreamBuffer::GetInt8(void)
         sign = false;
         break;
     }
-    if ( c < '0' || c > '9' )
-        BadNumber();
-
-    // overflow limits
-    const Uint8 kMaxBeforeMul = kMax_I8/10;
-    const Uint8 kMax_I8_abs = Uint8(kMax_I8) + (-(kMin_I8+kMax_I8));
-    Uint8 kMaxAfterAdd = sign? kMax_I8_abs: Uint8(kMax_I8);
 
     Uint8 n = c - '0';
+    if ( n > 9 )
+        BadNumber();
+    
+    // overflow limits
+    const Uint8 kMaxBeforeMul = kMax_I8/10;
+    const Uint1 kMaxLimitAdd = Uint1(kMax_I8%10 + sign);
+
     for ( ;; ) {
-        c = PeekCharNoEOF();
-        if  ( c < '0' || c > '9' )
+        Uint1 d = PeekCharNoEOF() - '0';
+        if  ( d > 9 )
             break;
         SkipChar();
 
         // check multiplication overflow
-        if ( n > kMaxBeforeMul )
+        if ( n > kMaxBeforeMul || n == kMaxBeforeMul && d > kMaxLimitAdd )
             NumberOverflow();
 
-        n = n * 10 + (c - '0');
-
-        // check final overflow
-        if ( n > kMaxAfterAdd )
-            NumberOverflow();
+        n = n * 10 + d;
     }
     if ( sign )
         return -Int8(n);
@@ -658,27 +654,28 @@ Uint8 CIStreamBuffer::GetUint8(void)
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
-    if ( c < '0' || c > '9' )
+    Uint1 d = c - '0';
+    if ( d > 9 )
         BadNumber();
-
+    
+    Uint8 n = d;
+    
     // overflow limits
     const Uint8 kMaxBeforeMul = kMax_UI8/10;
-
-    Uint8 n = c - '0';
+    
     for ( ;; ) {
-        c = PeekCharNoEOF();
-        if  ( c < '0' || c > '9' )
+        d = PeekCharNoEOF() - '0';
+        if  ( d > 9 )
             break;
         SkipChar();
 
         // check multiplication overflow
         if ( n > kMaxBeforeMul )
             NumberOverflow();
-
-        n = n * 10 + (c - '0');
-
-        // check final overflow
-        if ( n < Uint8(c - '0') )
+        
+        n = n * 10 + d;
+        
+        if ( n < d )
             NumberOverflow();
     }
     return n;
