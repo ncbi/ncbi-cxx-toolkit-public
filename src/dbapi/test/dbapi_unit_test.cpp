@@ -6019,6 +6019,109 @@ CDBRedispatchFactoryFactory(IDBServiceMapper* svc_mapper)
     return new CDBRedispatchFactory(svc_mapper);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+class CValidator01 : public CTrivialConnValidator
+{
+public:
+    CValidator01(const string& db_name,
+                int attr = eDefaultValidateAttr)
+    : CTrivialConnValidator(db_name, attr)
+    {
+    }
+
+public:
+    virtual IConnValidator::EConnStatus Validate(CDB_Connection& conn)
+    {
+        // Try to change a database ...
+        try {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd(string("use ") + GetDBName()));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+        catch(const CDB_Exception&) {
+            LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
+                        ", Server name: " << conn.ServerName());
+            return eTempInvalidConn;
+            // return eInvalidConn;
+        }
+
+        if (GetAttr() & eCheckSysobjects) {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+
+        // Go back to the original (master) database ...
+        if (GetAttr() & eRestoreDefaultDB) {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+
+        // All exceptions are supposed to be caught and processed by
+        // CDBConnectionFactory ...
+        return eValidConn;
+    }
+
+    virtual EConnStatus ValidateException(const CDB_Exception& ex)
+    {
+        return eTempInvalidConn;
+    }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+class CValidator02 : public CTrivialConnValidator
+{
+public:
+    CValidator02(const string& db_name,
+                int attr = eDefaultValidateAttr)
+    : CTrivialConnValidator(db_name, attr)
+    {
+    }
+
+public:
+    virtual IConnValidator::EConnStatus Validate(CDB_Connection& conn)
+    {
+        // Try to change a database ...
+        try {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+        catch(const CDB_Exception&) {
+            LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
+                        ", Server name: " << conn.ServerName());
+            return eTempInvalidConn;
+            // return eInvalidConn;
+        }
+
+        if (GetAttr() & eCheckSysobjects) {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+
+        // Go back to the original (master) database ...
+        if (GetAttr() & eRestoreDefaultDB) {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+
+        // All exceptions are supposed to be caught and processed by
+        // CDBConnectionFactory ...
+        return eValidConn;
+    }
+
+    virtual EConnStatus ValidateException(const CDB_Exception& ex)
+    {
+        return eInvalidConn;
+    }
+};
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
@@ -6056,114 +6159,17 @@ CDBAPIUnitTest::CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
 
     // Another customized validator ...
     {
-        class CValidator : public CTrivialConnValidator
-        {
-        public:
-            CValidator(const string& db_name,
-                       int attr = eDefaultValidateAttr)
-            : CTrivialConnValidator(db_name, attr)
-            {
-            }
-
-        public:
-            virtual IConnValidator::EConnStatus Validate(CDB_Connection& conn)
-            {
-                // Try to change a database ...
-                try {
-                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
-                    set_cmd->Send();
-                    set_cmd->DumpResults();
-                }
-                catch(const CDB_Exception&) {
-                    LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
-                             ", Server name: " << conn.ServerName());
-                    return eTempInvalidConn;
-                    // return eInvalidConn;
-                }
-
-                if (GetAttr() & eCheckSysobjects) {
-                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
-                    set_cmd->Send();
-                    set_cmd->DumpResults();
-                }
-
-                // Go back to the original (master) database ...
-                if (GetAttr() & eRestoreDefaultDB) {
-                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
-                    set_cmd->Send();
-                    set_cmd->DumpResults();
-                }
-
-                // All exceptions are supposed to be caught and processed by
-                // CDBConnectionFactory ...
-                return eValidConn;
-            }
-
-            virtual EConnStatus ValidateException(const CDB_Exception& ex)
-            {
-                return eTempInvalidConn;
-            }
-        };
 
         // Connection validator to check against DBAPI_Sample ...
-        CValidator validator("DBAPI_Sample");
+        CValidator01 validator("DBAPI_Sample");
 
         Check_Validator(factory_factory, validator);
     }
 
     // One more ...
     {
-        class CValidator : public CTrivialConnValidator
-        {
-        public:
-            CValidator(const string& db_name,
-                       int attr = eDefaultValidateAttr)
-            : CTrivialConnValidator(db_name, attr)
-            {
-            }
-
-        public:
-            virtual IConnValidator::EConnStatus Validate(CDB_Connection& conn)
-            {
-                // Try to change a database ...
-                try {
-                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
-                    set_cmd->Send();
-                    set_cmd->DumpResults();
-                }
-                catch(const CDB_Exception&) {
-                    LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
-                             ", Server name: " << conn.ServerName());
-                    return eTempInvalidConn;
-                    // return eInvalidConn;
-                }
-
-                if (GetAttr() & eCheckSysobjects) {
-                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
-                    set_cmd->Send();
-                    set_cmd->DumpResults();
-                }
-
-                // Go back to the original (master) database ...
-                if (GetAttr() & eRestoreDefaultDB) {
-                    auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use master"));
-                    set_cmd->Send();
-                    set_cmd->DumpResults();
-                }
-
-                // All exceptions are supposed to be caught and processed by
-                // CDBConnectionFactory ...
-                return eValidConn;
-            }
-
-            virtual EConnStatus ValidateException(const CDB_Exception& ex)
-            {
-                return eInvalidConn;
-            }
-        };
-
         // Connection validator to check against DBAPI_Sample ...
-        CValidator validator("DBAPI_Sample");
+        CValidator02 validator("DBAPI_Sample");
 
         Check_Validator(factory_factory, validator);
     }
