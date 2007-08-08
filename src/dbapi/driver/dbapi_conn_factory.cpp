@@ -232,9 +232,10 @@ CDBConnectionFactory::MakeDBConnection(
         // We probably need to redispatch it ...
         if (GetMaxNumOfDispatches() &&
             GetNumOfDispatches(conn_attr.srv_name) >= GetMaxNumOfDispatches()) {
-
             // We definitely need to redispatch it ...
-            m_DispatchNumMap[conn_attr.srv_name] = 0;
+
+            // Clean previous info ...
+            SetDispatchedServer(conn_attr.srv_name, TSvrRef());
             t_con = DispatchServerName(ctx, conn_attr, validator);
         } else {
             // We do not need to redispatch it ...
@@ -273,7 +274,9 @@ CDBConnectionFactory::MakeDBConnection(
                 // Redispach ...
                 t_con = DispatchServerName(ctx, conn_attr, validator);
             } else {
-                ++m_DispatchNumMap[conn_attr.srv_name];
+                // Dispatched server is already set, but calling of this method
+                // will increase number of succesful dispatches.
+                SetDispatchedServer(conn_attr.srv_name, dsp_srv);
             }
         }
     }
@@ -404,6 +407,12 @@ void
 CDBConnectionFactory::SetDispatchedServer(const string& service_name,
                                           const TSvrRef& server)
 {
+    if (server.Empty()) {
+        m_DispatchNumMap[service_name] = 0;
+    } else {
+        ++m_DispatchNumMap[service_name];
+    }
+
     m_DispatchedSet[service_name] = server;
 }
 
