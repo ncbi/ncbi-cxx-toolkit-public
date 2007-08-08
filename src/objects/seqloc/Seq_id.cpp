@@ -1839,6 +1839,11 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
         fields[1] += NStr::Join(fasta_pieces, "|");
         fasta_pieces.clear();
     }
+
+    // Clear out extra empty pieces
+    while ( !fasta_pieces.empty()  &&  fasta_pieces.front().empty() ) {
+        fasta_pieces.pop_front();
+    }
     
     int ver = 0;
     if (type == e_Patent) {
