@@ -857,30 +857,50 @@ void NStr::IntToString(string& out_str, long svalue,
                        TNumToStringFlags flags, int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
-    if ( base < 1  ||  base > 36 ) {
+    if ( base < 2  ||  base > 36 ) {
         return;
     }
 
-    unsigned long value;
-    if (base == 10) {
-        value = static_cast<unsigned long>(svalue<0?-svalue:svalue);
-    } else {
-        value = static_cast<unsigned long>(svalue);
-    }
+    unsigned long value = static_cast<unsigned long>(svalue);
     
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
+    
+    if ( base == 10 ) {
+        if ( svalue < 0 ) {
+            value = static_cast<unsigned long>(-svalue);
+        }
+        
+        if ( (flags & fWithCommas) ) {
+            int cnt = -1;
+            do {
+                if (++cnt == 3) {
+                    *--pos = ',';
+                    cnt = 0;
+                }
+                unsigned long a = '0'+value;
+                value /= 10;
+                *--pos = a - value*10;
+            } while ( value );
+        }
+        else {
+            do {
+                unsigned long a = '0'+value;
+                value /= 10;
+                *--pos = a - value*10;
+            } while ( value );
+        }
 
-    if ( (base == 10) && (flags & fWithCommas) ) {
-        int cnt = -1;
+        if (svalue < 0)
+            *--pos = '-';
+        else if (flags & fWithSign)
+            *--pos = '+';
+    }
+    else if ( base == 16 ) {
         do {
-            if (++cnt == 3) {
-                *--pos = ',';
-                cnt = 0;
-            }
-            *--pos = s_Hex[value % base];
-            value /= base;
+            *--pos = s_Hex[value % 16];
+            value /= 16;
         } while ( value );
     }
     else {
@@ -888,13 +908,6 @@ void NStr::IntToString(string& out_str, long svalue,
             *--pos = s_Hex[value % base];
             value /= base;
         } while ( value );
-    }
-
-    if (base == 10) {
-        if (svalue < 0)
-            *--pos = '-';
-        else if (flags & fWithSign)
-            *--pos = '+';
     }
 
     out_str.assign(pos, buffer + kBufSize - pos);
@@ -907,7 +920,7 @@ void NStr::UIntToString(string&           out_str,
                         int               base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
-    if ( base < 1  ||  base > 36 ) {
+    if ( base < 2  ||  base > 36 ) {
         return;
     }
 
@@ -915,15 +928,35 @@ void NStr::UIntToString(string&           out_str,
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
-    if ( (base == 10) && (flags & fWithCommas) ) {
-        int cnt = -1;
+    if ( base == 10 ) {
+        if ( (flags & fWithCommas) ) {
+            int cnt = -1;
+            do {
+                if (++cnt == 3) {
+                    *--pos = ',';
+                    cnt = 0;
+                }
+                unsigned long a = '0'+value;
+                value /= 10;
+                *--pos = a - value*10;
+            } while ( value );
+        }
+        else {
+            do {
+                unsigned long a = '0'+value;
+                value /= 10;
+                *--pos = a - value*10;
+            } while ( value );
+        }
+
+        if ( (flags & fWithSign) ) {
+            *--pos = '+';
+        }
+    }
+    else if ( base == 16 ) {
         do {
-            if (++cnt == 3) {
-                *--pos = ',';
-                cnt = 0;
-            }
-            *--pos = s_Hex[value % base];
-            value /= base;
+            *--pos = s_Hex[value % 16];
+            value /= 16;
         } while ( value );
     }
     else {
@@ -932,10 +965,7 @@ void NStr::UIntToString(string&           out_str,
             value /= base;
         } while ( value );
     }
-    
-    if ( (base == 10)  &&  (flags & fWithSign) ) {
-        *--pos = '+';
-    }
+
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
@@ -961,70 +991,92 @@ static char* s_PrintUint8(char*                   pos,
                           NStr::TNumToStringFlags flags,
                           int                     base)
 {
-    if ( (base == 10) && (flags & NStr::fWithCommas) ) {
-        int cnt = -1;
+    if ( base == 10 ) {
+        if ( (flags & NStr::fWithCommas) ) {
+            int cnt = -1;
 #ifdef PRINT_INT8_CHUNK
-        for ( ;; ) {
-            Uint4 chunk = Uint4(value % PRINT_INT8_CHUNK);
-            value /= PRINT_INT8_CHUNK;
-            if ( value ) {
-                for ( int i = 0; i < PRINT_INT8_CHUNK_SIZE; ++i ) {
-                    if (++cnt == 3) {
-                        *--pos = ',';
-                        cnt = 0;
-                    }
-                    *--pos = s_Hex[chunk % base];
-                    chunk /= base;
-                }
-            }
-            else {
+            // while n doesn't fit in Uint4 process the number
+            // by 9-digit chunks within 32-bit Uint4
+            while ( value & ~Uint8(Uint4(~0)) ) {
+                Uint4 chunk = Uint4(value);
+                value /= PRINT_INT8_CHUNK;
+                chunk -= PRINT_INT8_CHUNK*Uint4(value);
+                char* end = pos - PRINT_INT8_CHUNK_SIZE;
                 do {
                     if (++cnt == 3) {
                         *--pos = ',';
                         cnt = 0;
                     }
-                    *--pos = s_Hex[chunk % base];
-                    chunk /= base;
-                } while ( chunk );
-                break;
+                    Uint4 a = '0'+chunk;
+                    chunk /= 10;
+                    *--pos = char(a-10*chunk);
+                } while ( pos != end );
             }
-        }
+            // process all remaining digits in 32-bit number
+            Uint4 chunk = Uint4(value);
+            do {
+                if (++cnt == 3) {
+                    *--pos = ',';
+                    cnt = 0;
+                }
+                Uint4 a = '0'+chunk;
+                chunk /= 10;
+                *--pos = char(a-10*chunk);
+            } while ( chunk );
 #else
-        do {
-            if (++cnt == 3) {
-                *--pos = ',';
-                cnt = 0;
+            do {
+                if (++cnt == 3) {
+                    *--pos = ',';
+                    cnt = 0;
+                }
+                Uint8 a = '0'+value;
+                value /= 10;
+                *--pos = char(a - 10*value);
+            } while ( value );
+#endif
+        }
+        else {
+#ifdef PRINT_INT8_CHUNK
+            // while n doesn't fit in Uint4 process the number
+            // by 9-digit chunks within 32-bit Uint4
+            while ( value & ~Uint8(Uint4(~0)) ) {
+                Uint4 chunk = Uint4(value);
+                value /= PRINT_INT8_CHUNK;
+                chunk -= PRINT_INT8_CHUNK*Uint4(value);
+                char* end = pos - PRINT_INT8_CHUNK_SIZE;
+                do {
+                    Uint4 a = '0'+chunk;
+                    chunk /= 10;
+                    *--pos = char(a-10*chunk);
+                } while ( pos != end );
             }
+            // process all remaining digits in 32-bit number
+            Uint4 chunk = Uint4(value);
+            do {
+                Uint4 a = '0'+chunk;
+                chunk /= 10;
+                *--pos = char(a-10*chunk);
+            } while ( chunk );
+#else
+            do {
+                Uint8 a = '0'+value;
+                value /= 10;
+                *--pos = char(a-10*value);
+            } while ( value );
+#endif
+        }
+    }
+    else if ( base == 16 ) {
+        do {
+            *--pos = s_Hex[value % 16];
+            value /= 16;
+        } while ( value );
+    }
+    else {
+        do {
             *--pos = s_Hex[value % base];
             value /= base;
         } while ( value );
-#endif
-    }
-    else {
-        if ( PRINT_INT8_CHUNK  &&  (base == 10) ) {
-            for ( ;; ) {
-                Uint4 chunk = Uint4(value % PRINT_INT8_CHUNK);
-                value /= PRINT_INT8_CHUNK;
-                if ( value ) {
-                    for ( int i = 0; i < PRINT_INT8_CHUNK_SIZE; ++i ) {
-                        *--pos = s_Hex[chunk % base];
-                        chunk /= base;
-                    }
-                }
-                else {
-                    do {
-                        *--pos = s_Hex[chunk % base];
-                        chunk /= base;
-                    } while ( chunk );
-                    break;
-                }
-            }
-        } else {
-            do {
-                *--pos = s_Hex[value % base];
-                value /= base;
-            } while ( value );
-        }
     }
     return pos;
 }
@@ -1034,7 +1086,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
                         TNumToStringFlags flags, int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
-    if ( base < 1  ||  base > 36 ) {
+    if ( base < 2  ||  base > 36 ) {
         return;
     }
 
@@ -1072,7 +1124,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
                          TNumToStringFlags flags, int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
-    if ( base < 1  ||  base > 36 ) {
+    if ( base < 2  ||  base > 36 ) {
         return;
     }
 
