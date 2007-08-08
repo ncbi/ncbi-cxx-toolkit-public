@@ -499,6 +499,18 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam(B4Param_Culling, v);
         return;
 
+    case eBlastOpt_LongestIntronLength:
+        x_SetParam(B4Param_LongestIntronLength, v);
+        return;
+
+    case eBlastOpt_QueryGeneticCode:
+        x_SetParam(B4Param_QueryGeneticCode, v);
+        return;
+
+    case eBlastOpt_DbGeneticCode:
+        x_SetParam(B4Param_DbGeneticCode, v);
+        return;
+
     default:
         break;
     }
@@ -653,6 +665,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         x_SetParam(B4Param_MaskAtHash, v);
         return;
         
+    case eBlastOpt_SumStatisticsMode:
+        x_SetParam(B4Param_MaskAtHash, v);
+        return;
+
 /*  What about this???
     case eBlastOpt_FullByteScan:
         x_SetParam(B4Param_FullByteScan, v);
@@ -1755,8 +1771,10 @@ CBlastOptions::SetEffectiveSearchSpace(const vector<Int8>& eff)
         m_Local->SetEffectiveSearchSpace(eff);
     }
     if (m_Remote) {
-        x_Throwx("Error: GetEffectiveSearchSpace() for multiple search spaces "
-                 "not available.");
+        _ASSERT( !eff.empty() );
+        // This is the best we can do because remote BLAST only accepts one
+        // value for the effective search space
+        m_Remote->SetValue(eBlastOpt_EffectiveSearchSpace, eff.front());
     }
 }
 

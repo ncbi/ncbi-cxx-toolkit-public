@@ -383,8 +383,16 @@ public:
     /// have a concrete type that corresponds to the program+service,
     /// and a locality of "eLocal".
     CRef<CBlastOptionsHandle> GetSearchOptions();
+
+    /// Fetch the search strategy for this object without submitting the search
+    CRef<objects::CBlast4_request> GetSearchStrategy();
     
 private:
+
+    /// Retrieve the request body for a search submission
+    CRef<objects::CBlast4_request_body> x_GetBlast4SearchRequestBody();
+
+
     /// Value list.
     typedef list< CRef<objects::CBlast4_parameter> > TValueList;
     

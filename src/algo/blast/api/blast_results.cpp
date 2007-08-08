@@ -94,6 +94,66 @@ CSearchResults::GetErrors(int min_severity) const
     return errs;
 }
 
+string
+CSearchResults::GetErrorStrings() const
+{
+    if (m_Errors.empty()) {
+        return string();
+    }
+
+    string retval(m_Errors.GetQueryId());
+    if ( !retval.empty() ) {    // in case the query id is not known
+        retval += ": ";
+    }
+    ITERATE(TQueryMessages, iter, m_Errors) {
+        if ((**iter).GetSeverity() >= eBlastSevError) {
+            retval += (*iter)->GetMessage() + " ";
+        }
+    }
+    return retval;
+}
+
+string
+CSearchResults::GetWarningStrings() const
+{
+    if (m_Errors.empty()) {
+        return string();
+    }
+
+    string retval(m_Errors.GetQueryId());
+    if ( !retval.empty() ) {    // in case the query id is not known
+        retval += ": ";
+    }
+    ITERATE(TQueryMessages, iter, m_Errors) {
+        if ((**iter).GetSeverity() == eBlastSevWarning) {
+            retval += (*iter)->GetMessage() + " ";
+        }
+    }
+    return retval;
+}
+
+bool
+CSearchResults::HasErrors() const
+{
+    ITERATE(TQueryMessages, iter, m_Errors) {
+        if ((**iter).GetSeverity() >= eBlastSevError) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool
+CSearchResults::HasWarnings() const
+{
+    ITERATE(TQueryMessages, iter, m_Errors) {
+        if ((**iter).GetSeverity() == eBlastSevWarning) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool
 CSearchResults::HasAlignments() const
 {
@@ -189,7 +249,6 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
         }
     }
     
-    _ASSERT(retval.NotEmpty());
     return retval;
 }
 

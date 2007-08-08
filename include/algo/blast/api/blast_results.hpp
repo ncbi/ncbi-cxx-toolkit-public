@@ -209,6 +209,18 @@ public:
     /// @param min_severity minimum severity to report errors [in]
     TQueryMessages GetErrors(int min_severity = eBlastSevError) const;
 
+    /// Returns true if there are errors among the results for this object
+    bool HasErrors() const;
+    /// Returns true if there are warnings among the results for this object
+    bool HasWarnings() const;
+
+    /// Retrieve a string with the query identifier followed by the errors
+    /// produced, returns a empty string if HasErrors() returns true.
+    string GetErrorStrings() const;
+    /// Retrieve a string with the query identifier followed by the warnings
+    /// produced, returns a empty string if HasErrors() returns true.
+    string GetWarningStrings() const;
+
     /// Retrieve the query regions which were masked by BLAST
     /// @param flt_query_regions the return value [in|out]
     void GetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions) const;

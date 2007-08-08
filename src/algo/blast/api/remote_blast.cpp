@@ -103,27 +103,27 @@ void CRemoteBlast::x_SearchErrors(CRef<objects::CBlast4_reply> reply)
         
         switch((*i)->GetCode()) {
         case eBlast4_error_code_conversion_warning:
-            m_Warn.push_back(string("Warning: conversion_warning") + msg);
+            m_Warn.push_back(string("conversion_warning") + msg);
             break;
             
         case eBlast4_error_code_internal_error:
-            m_Errs.push_back(string("Error: internal_error") + msg);
+            m_Errs.push_back(string("internal_error") + msg);
             break;
             
         case eBlast4_error_code_not_implemented:
-            m_Errs.push_back(string("Error: not_implemented") + msg);
+            m_Errs.push_back(string("not_implemented") + msg);
             break;
             
         case eBlast4_error_code_not_allowed:
-            m_Errs.push_back(string("Error: not_allowed") + msg);
+            m_Errs.push_back(string("not_allowed") + msg);
             break;
             
         case eBlast4_error_code_bad_request:
-            m_Errs.push_back(string("Error: bad_request") + msg);
+            m_Errs.push_back(string("bad_request") + msg);
             break;
             
         case eBlast4_error_code_bad_request_id:
-            m_Errs.push_back(string("Error: bad_request_id") + msg);
+            m_Errs.push_back(string("bad_request_id") + msg);
             break;
         }
     }
@@ -159,6 +159,20 @@ void CRemoteBlast::x_CheckConfig(void)
         
         NCBI_THROW(CRemoteBlastException, eIncompleteConfig, cfg);
     }
+}
+
+CRef<objects::CBlast4_request>
+CRemoteBlast::GetSearchStrategy()
+{
+    CRef<CBlast4_request_body> body(x_GetBlast4SearchRequestBody());
+    x_CheckConfig();
+    string errors(GetErrors());
+    if ( !errors.empty() ) {
+        NCBI_THROW(CRemoteBlastException, eIncompleteConfig, errors);
+    }
+    CRef<CBlast4_request> retval(new CBlast4_request);
+    retval->SetBody(*body);
+    return retval;
 }
 
 CRef<objects::CBlast4_reply>
@@ -509,19 +523,27 @@ CRemoteBlast::EState CRemoteBlast::x_GetState(void)
     return rv;
 }
 
-void CRemoteBlast::x_SubmitSearch(void)
+CRef<objects::CBlast4_request_body>
+CRemoteBlast::x_GetBlast4SearchRequestBody()
 {
+    CRef<CBlast4_request_body> retval;
+
     if (m_QSR.Empty()) {
         m_Errs.push_back("No request exists and no RID was specified.");
-        return;
+        return retval;
     }
     
     x_SetAlgoOpts();
     x_QueryMaskingLocationsToNetwork();
     
-    CRef<CBlast4_request_body> body(new CBlast4_request_body);
-    body->SetQueue_search(*m_QSR);
+    retval.Reset(new CBlast4_request_body);
+    retval->SetQueue_search(*m_QSR);
+    return retval;
+}
 
+void CRemoteBlast::x_SubmitSearch(void)
+{
+    CRef<CBlast4_request_body> body(x_GetBlast4SearchRequestBody());
     CRef<CBlast4_reply> reply;
     
     try {
@@ -2073,8 +2095,14 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
     // Since there is no way to report per-query messages, all
     // warnings and errors are applied to all queries.
     
+    if (R.empty()) {
+        R.resize(1);    // this is required by the CSearchResultSet ctor
+    }
     for(unsigned i = 0; i<R.size(); i++) {
         SM.push_back(QM);
+    }
+    if (eDebug == m_Verbose) {
+        NcbiCout << "Error/Warning messages: '" << SM.ToString() << "'" << endl;
     }
     
     return CRef<CSearchResultSet>(new CSearchResultSet(R, SM));
