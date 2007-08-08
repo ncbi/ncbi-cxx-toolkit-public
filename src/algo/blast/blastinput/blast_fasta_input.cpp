@@ -99,7 +99,8 @@ public:
                 int gi = NStr::StringToLong(line, conv_flags);
                 return x_PrepareBioseqWithGi(gi);
             // Test for accession
-            } else if (regex.Exists(kRegex_Accession, flags)) {
+            } else if (regex.Exists(kRegex_Accession, flags) ||
+                       x_MatchPdb(line)) {
                 return x_PrepareBioseqWithAccession(line);
             // Test for Trace ID
             } else if (regex.Exists(kRegex_Ti, flags)) {
@@ -219,6 +220,15 @@ private:
         CRef<CSeq_entry> retval(new CSeq_entry());
         retval->SetSeq(*bioseq);
         return retval;
+    }
+    
+    /// Check whether an input line qualifies as a PDB accession.
+    /// @param str The input line.
+    /// @return True iff the line is a PDB.
+    bool x_MatchPdb(const string & str)
+    {
+        string s = NStr::TruncateSpaces(str);
+        return CSeq_id::IdentifyAccession(s) == CSeq_id::eAcc_pdb;
     }
 };
 
