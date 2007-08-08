@@ -110,21 +110,6 @@ fi
 revision="{$timestamp}"
 svn_cmd='svn --non-interactive'
 
-# Checkout <path> [-N]
-if test "$export" = "yes" ; then
-    checkout_cmd="$svn_cmd export -r \"$revision\" $REPOS/\$1 \$1 \$2"
-else
-    checkout_cmd="$script_dir/svn_up.pl -r \"$revision\" \$*"
-fi
-
-# This function calls with 2 arguments: <path> [-N]
-# If you change number of arguments please update checkout_cmd above
-Checkout()
-{
-    echo " $*..."
-    eval $checkout_cmd    ||  Usage "$checkout_cmd"
-}
-
 
 if test -d "$target_dir"  ||  test -f "$target_dir" ; then
     Usage "\"$target_dir\" already exists"
@@ -142,130 +127,172 @@ need_cleanup="yes"
 cd "$target_dir"  ||  Usage "Cannot cd to $target_dir"
 target_dir=`pwd`
 
+recursive_dirs=''
+non_recursive_dirs=''
+
+RecursiveCheckout()
+{
+    recursive_dirs="$recursive_dirs $*"
+}
+
+NonRecursiveCheckout()
+{
+    non_recursive_dirs="$non_recursive_dirs $*"
+}
+
 if test "$srctree" = "development" ; then
-  Checkout doc
+  RecursiveCheckout doc
 fi
 
-Checkout src -N
-Checkout src/connect -N
-Checkout src/connect/ext
-Checkout src/connect/services
-Checkout src/connect/test
-Checkout src/corelib
-Checkout src/util
-Checkout src/cgi
-Checkout src/html
-Checkout src/misc
-Checkout src/serial
-Checkout src/app
-Checkout src/algo
-Checkout src/bdb
-Checkout src/sqlite
+NonRecursiveCheckout src \
+    src/connect
+
+RecursiveCheckout src/connect/ext \
+    src/connect/services \
+    src/connect/test \
+    src/corelib \
+    src/util \
+    src/cgi \
+    src/html \
+    src/misc \
+    src/serial \
+    src/app \
+    src/algo \
+    src/bdb \
+    src/sqlite
+
 if test "$with_internal" != "no" ; then
-    Checkout src/internal -N
-    Checkout src/internal/align_model 
-    Checkout src/internal/ID -N
-    Checkout src/internal/ID/utils -N
-    Checkout src/internal/log
+    NonRecursiveCheckout src/internal \
+        src/internal/ID \
+        src/internal/ID/utils
+
+    RecursiveCheckout src/internal/align_model \
+        src/internal/log
 fi
 
-Checkout include -N
-Checkout include/connect -N
-Checkout include/connect/ext
-Checkout include/connect/services
-Checkout include/corelib
-Checkout include/common
-Checkout include/util
-Checkout include/cgi
-Checkout include/html
-Checkout include/misc
-Checkout include/serial
-Checkout include/app
-Checkout include/test
-Checkout include/algo
-Checkout include/bdb
-Checkout include/sqlite
+NonRecursiveCheckout include \
+    include/connect
+
+RecursiveCheckout include/connect/ext \
+    include/connect/services \
+    include/corelib \
+    include/common \
+    include/util \
+    include/cgi \
+    include/html \
+    include/misc \
+    include/serial \
+    include/app \
+    include/test \
+    include/algo \
+    include/bdb \
+    include/sqlite
+
 if test "$with_internal" != "no" ; then
-    Checkout include/internal -N
-    Checkout include/internal/align_model 
-    Checkout include/internal/ID -N
-    Checkout include/internal/ID/utils -N
-    Checkout include/internal/log
+    NonRecursiveCheckout include/internal \
+        include/internal/ID \
+        include/internal/ID/utils
+
+    RecursiveCheckout include/internal/align_model \
+        include/internal/log
 fi
 
 case "$platform" in
   all )
-    Checkout src/dbapi
-    Checkout include/dbapi
-    Checkout src/connect/daemons
-    Checkout include/connect/daemons
-    Checkout compilers
-    Checkout src/check
+    RecursiveCheckout src/dbapi \
+        include/dbapi \
+        src/connect/daemons \
+        include/connect/daemons \
+        compilers \
+        src/check
     ;;
   unix )
-    Checkout src/dbapi
-    Checkout include/dbapi
-    Checkout src/connect/daemons
-    Checkout include/connect/daemons
-    Checkout compilers -N
-    Checkout src/check
+    NonRecursiveCheckout compilers
+
+    RecursiveCheckout src/dbapi \
+        include/dbapi \
+        src/connect/daemons \
+        include/connect/daemons \
+        src/check
     ;;
   msvc )
-    Checkout src/dbapi
-    Checkout include/dbapi
-    Checkout compilers -N
-    Checkout compilers/msvc710_prj
-    Checkout compilers/msvc800_prj
-    Checkout src/check
+    NonRecursiveCheckout compilers
+
+    RecursiveCheckout compilers/msvc710_prj \
+        compilers/msvc800_prj \
+        src/dbapi \
+        include/dbapi \
+        src/check
     ;;
   cygwin)
-    Checkout src/dbapi
-    Checkout include/dbapi
-    Checkout compilers -N
-    Checkout compilers/cygwin
-    Checkout src/check
+    NonRecursiveCheckout compilers
+
+    RecursiveCheckout compilers/cygwin \
+        src/dbapi \
+        include/dbapi \
+        src/check
     ;;
   mac )
-    Checkout src/dbapi -N
-    Checkout src/dbapi/driver -N
-    Checkout include/dbapi -N
-    Checkout include/dbapi/driver -N
-    Checkout include/dbapi/driver/util -N
-    Checkout src/connect/mitsock
-    Checkout compilers -N
-    Checkout compilers/mac_prj
-    Checkout compilers/xCode
+    NonRecursiveCheckout compilers \
+        src/dbapi \
+        src/dbapi/driver \
+        include/dbapi \
+        include/dbapi/driver \
+        include/dbapi/driver/util
+
+    RecursiveCheckout src/connect/mitsock \
+        compilers/mac_prj \
+        compilers/xCode
     ;;
 esac
 
 case "$platform" in
   all | unix | cygwin | mac )
-    Checkout scripts
+    RecursiveCheckout scripts
     ;;
   msvc )
-    Checkout scripts -N
-    Checkout scripts/check
-    Checkout scripts/projects
+    NonRecursiveCheckout scripts
+
+    RecursiveCheckout scripts/check \
+        scripts/projects
     ;;
 esac
 
 if test "$with_objects" != "no" ; then
-    Checkout src/objects
-    Checkout src/objmgr
-    Checkout src/objtools
-    Checkout include/objects
-    Checkout include/objmgr
-    Checkout include/objtools
+    RecursiveCheckout src/objects \
+        src/objmgr \
+        src/objtools \
+        include/objects \
+        include/objmgr \
+        include/objtools
 fi
 
 if test "$with_ctools" != "no" ; then
-    Checkout src/ctools
-    Checkout include/ctools
+    RecursiveCheckout src/ctools \
+        include/ctools
 fi
 
 if test "$with_gui" != "no" ; then
-    Checkout src/gui
-    Checkout include/gui
+    RecursiveCheckout src/gui \
+        include/gui
+fi
+
+if test "$export" = "yes" ; then
+    for dir in $non_recursive_dirs
+    do
+        $svn_cmd export -r "$revision" -N $REPOS/$dir $dir
+    done
+    for dir in $recursive_dirs
+    do
+        $svn_cmd export -r "$revision" $REPOS/$dir $dir
+    done
+else
+    dirs=''
+    for dir in $non_recursive_dirs
+    do
+        dirs="$dirs $dir/"
+    done
+    $script_dir/svn_up.pl $dirs $recursive_dirs
 fi
 
 
