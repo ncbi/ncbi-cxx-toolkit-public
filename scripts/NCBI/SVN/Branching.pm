@@ -683,11 +683,11 @@ sub Remove
 
 sub SetRawMergeProp
 {
-    my ($Self, $Changes, @BranchDirs) = @_;
+    my ($Self, $BranchPath, $Changes, @BranchDirs) = @_;
 
     $Self->{SVN}->RunSubversion('propset', '-R', 'ncbi:raw',
-        qq(Please run "$Self->{MyName} commit_merge" to merge $Changes),
-            @BranchDirs)
+        "Please run \"$Self->{MyName} commit_merge " .
+        SimplifyBranchPath($BranchPath) . "\" to merge $Changes", @BranchDirs)
 }
 
 sub DoMerge
@@ -796,7 +796,7 @@ sub DoMerge
         }
     }
 
-    $Self->SetRawMergeProp("changes up to r$SourceRev from " .
+    $Self->SetRawMergeProp($BranchPath, "changes up to r$SourceRev from " .
         "'$SourcePath' into '$TargetPath'.", @BranchDirs)
 }
 
@@ -853,7 +853,7 @@ sub CommitMerge
             '-m', "Merged $Changes", @BranchDirs)
     };
 
-    $Self->SetRawMergeProp($Changes, @BranchDirs) if $@
+    $Self->SetRawMergeProp($BranchPath, $Changes, @BranchDirs) if $@
 }
 
 sub MergeDiff
