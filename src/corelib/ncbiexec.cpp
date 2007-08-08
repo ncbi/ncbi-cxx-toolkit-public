@@ -168,7 +168,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
         } 
         
         if ((full_mode  &  CExec::fNewGroup) == CExec::fNewGroup) {
-            setpgrp();
+            setpgid(0, 0);
         }
         int status =-1;
         switch (func) {
