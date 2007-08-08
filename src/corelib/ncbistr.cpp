@@ -881,14 +881,14 @@ void NStr::IntToString(string& out_str, long svalue,
                 }
                 unsigned long a = '0'+value;
                 value /= 10;
-                *--pos = a - value*10;
+                *--pos = char(a - value*10);
             } while ( value );
         }
         else {
             do {
                 unsigned long a = '0'+value;
                 value /= 10;
-                *--pos = a - value*10;
+                *--pos = char(a - value*10);
             } while ( value );
         }
 
@@ -938,14 +938,14 @@ void NStr::UIntToString(string&           out_str,
                 }
                 unsigned long a = '0'+value;
                 value /= 10;
-                *--pos = a - value*10;
+                *--pos = char(a - value*10);
             } while ( value );
         }
         else {
             do {
                 unsigned long a = '0'+value;
                 value /= 10;
-                *--pos = a - value*10;
+                *--pos = char(a - value*10);
             } while ( value );
         }
 
