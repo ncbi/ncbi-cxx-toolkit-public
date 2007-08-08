@@ -766,25 +766,23 @@ void COStreamBuffer::PutInt4(Int4 v)
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
+    Int4 n = v;
+    if ( n < 0 ) {
+        n = -n;
+    }
     char* pos = b + BSIZE;
-    if ( v == 0 ) {
-        *--pos = '0';
+    do {
+        Int4 a = '0'+n;
+        *--pos = a-10*(n/=Uint4(10));
+    } while ( n );
+    if ( v < 0 ) {
+        *--pos = '-';
     }
-    else {
-        Uint4 uv = v;
-        bool sign = v < 0;
-        if ( sign )
-            uv = -v;
-        
-        do {
-            *--pos = char('0' + (uv % 10));
-            uv /= 10;
-        } while ( uv );
-        
-        if ( sign )
-            *--pos = '-';
+    int len = b + BSIZE - pos;
+    char* dst = Skip(len);
+    for ( int i = 0; i < len; ++i ) {
+        dst[i] = pos[i];
     }
-    PutString(pos, b + BSIZE - pos);
 }
 
 void COStreamBuffer::PutUint4(Uint4 v)
@@ -792,42 +790,67 @@ void COStreamBuffer::PutUint4(Uint4 v)
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
+    Uint4 n = v;
     char* pos = b + BSIZE;
-    if ( v == 0 ) {
-        *--pos = '0';
+    do {
+        Uint4 a = '0'+n;
+        *--pos = a-10*(n/=Uint4(10));
+    } while ( n );
+    int len = b + BSIZE - pos;
+    char* dst = Skip(len);
+    for ( int i = 0; i < len; ++i ) {
+        dst[i] = pos[i];
     }
-    else {
-        do {
-            *--pos = char('0' + (v % 10));
-            v /= 10;
-        } while ( v );
-    }
-    PutString(pos, b + BSIZE - pos);
 }
+
+// On some platforms division of Int8 is very slow,
+// so will try to optimize it working with chunks.
+// Works only for radix base == 10.
+
+#define PRINT_INT8_CHUNK 1000000000
+#define PRINT_INT8_CHUNK_SIZE 9
 
 void COStreamBuffer::PutInt8(Int8 v)
     THROWS1((CIOException, bad_alloc))
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
+    Int8 n = v;
+    if ( n < 0 ) {
+        n = -n;
+    }
     char* pos = b + BSIZE;
-    if ( v == 0 ) {
-        *--pos = '0';
-    }
-    else {
-        bool sign = v < 0;
-        if ( sign )
-            v = -v;
-        
+#ifdef PRINT_INT8_CHUNK
+    // while n doesn't fit in Int4 process it by 9-digit chunks with 32 bits
+    while ( n & ~Uint8(Uint4(~0)) ) {
+        Uint4 m = n;
+        m -= PRINT_INT8_CHUNK*Uint4(n/=Uint8(PRINT_INT8_CHUNK));
+        char* end = pos - PRINT_INT8_CHUNK_SIZE;
         do {
-            *--pos = char('0' + (v % 10));
-            v /= 10;
-        } while ( v );
-        
-        if ( sign )
-            *--pos = '-';
+            Uint8 a = '0'+m;
+            *--pos = a-10*(m/=10);
+        } while ( pos != end );
     }
-    PutString(pos, b + BSIZE - pos);
+    // process all remaining digits in 32-bit number
+    Uint4 m = n;
+    do {
+        Uint4 a = '0'+m;
+        *--pos = a-10*(m/=10);
+    } while ( m );
+#else
+    do {
+        Uint8 a = '0'+n;
+        *--pos = a-10*(n/=Uint8(10));
+    } while ( n );
+#endif
+    if ( v < 0 ) {
+        *--pos = '-';
+    }
+    int len = b + BSIZE - pos;
+    char* dst = Skip(len);
+    for ( int i = 0; i < len; ++i ) {
+        dst[i] = pos[i];
+    }
 }
 
 void COStreamBuffer::PutUint8(Uint8 v)
@@ -835,17 +858,36 @@ void COStreamBuffer::PutUint8(Uint8 v)
 {
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
+    Uint8 n = v;
     char* pos = b + BSIZE;
-    if ( v == 0 ) {
-        *--pos = '0';
-    }
-    else {
+#ifdef PRINT_INT8_CHUNK
+    // while n doesn't fit in Uint4 process it by 9-digit chunks with 32 bits
+    while ( n & ~Uint8(Uint4(~0)) ) {
+        Uint4 m = n;
+        m -= PRINT_INT8_CHUNK*Uint4(n/=Uint8(PRINT_INT8_CHUNK));
+        char* end = pos - PRINT_INT8_CHUNK_SIZE;
         do {
-            *--pos = char('0' + (v % 10));
-            v /= 10;
-        } while ( v );
+            Uint8 a = '0'+m;
+            *--pos = a-10*(m/=10);
+        } while ( pos != end );
     }
-    PutString(pos, b + BSIZE - pos);
+    // process all remaining digits in 32-bit number
+    Uint4 m = n;
+    do {
+        Uint4 a = '0'+m;
+        *--pos = a-10*(m/=10);
+    } while ( m );
+#else
+    do {
+        Uint8 a = '0'+n;
+        *--pos = a-10*(n/=10);
+    } while ( n );
+#endif
+    int len = b + BSIZE - pos;
+    char* dst = Skip(len);
+    for ( int i = 0; i < len; ++i ) {
+        dst[i] = pos[i];
+    }
 }
 
 void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
