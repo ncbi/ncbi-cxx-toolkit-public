@@ -26022,7 +26022,7 @@ if test "$with_sybase" = "no" ; then
 fi
 
 case "$host_os:$compiler:$compiler_version" in
-   linux*:GCC:34*)
+   linux*:GCC:*)
       : ${with_included_sss=yes}
    ;;
 esac
