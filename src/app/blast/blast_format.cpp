@@ -236,10 +236,20 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
     }
 #endif
 
+    // other output types will need a bioseq handle
+    CBioseq_Handle bhandle = scope.GetBioseqHandle(*results.GetSeqId(),
+                                                  CScope::eGetBioseq_All);
+
     // tabular formatting just prints each alignment in turn
     // (plus a header)
     if (m_FormatType == 8 || m_FormatType == 9) {
         CBlastTabularInfo tabinfo(m_Outfile);
+
+        if (m_FormatType == 9)
+             tabinfo.PrintHeader(m_Program,
+                                 *(bhandle.GetBioseqCore()),
+                                 m_DbName, 0);
+                                 
         ITERATE(CSeq_align_set::Tdata, itr, aln_set.Get()) {
                 const CSeq_align& s = **itr;
                 tabinfo.SetFields(s, scope);
@@ -252,9 +262,6 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
         m_Outfile << "Results from round " << itr_num << NcbiEndl;
     }
 
-    // other output types will need a bioseq handle
-    CBioseq_Handle bhandle = scope.GetBioseqHandle(*results.GetSeqId(),
-                                                  CScope::eGetBioseq_All);
     CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
 
     // print the preamble for this query
