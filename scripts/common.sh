@@ -137,13 +137,15 @@ COMMON_ExecRB()
 #
 #  Return size of output file in Kbytes or zero on error.
 #
+# Some 'head' command implementations have '-c' parameter to limit
+# size of output in bytes, but not all. 
 
 COMMON_LimitTextFileSize()
 {
     file_in="$1"
     file_out="$2"
     maxsize="${3:-0}"
-
+    
     test $maxsize -lt 1  &&  return 0
     cp $file_in $file_out 1>&2
     test $? -ne 0  &&  return 0
@@ -151,18 +153,16 @@ COMMON_LimitTextFileSize()
     size=`wc -c < $file_out`
     size=`expr $size / 1024`
     test $size -lt $maxsize  &&  return $size
-
+    
     lines=`wc -l < $file_out`
-    sysdep="${NCBI:-/netopt/ncbi_tools}/c++.metastable/Release/build/sysdep.sh"
- 
     while [ $size -ge $maxsize ]; do
         lines=`expr $lines / 2`
+        head -n $lines $file_in > $file_out
         {
-            echo "[The size of output is limited to $maxsize Kb]"
-            echo "..."
             echo
-        } > $file_out
-        $sysdep tl $lines $file_in >> $file_out
+            echo "..."
+            echo "[The size of output is limited to $maxsize Kb]"
+        } >> $file_out
         size=`wc -c < $file_out`
         size=`expr $size / 1024`
         test $lines -eq 1  &&   break
