@@ -67,7 +67,8 @@ public:
         eSubSat_MGC  = 1<<4,
         eSubSat_HPRD = 1<<5,
         eSubSat_STS  = 1<<6,
-        eSubSat_tRNA = 1<<7
+        eSubSat_tRNA = 1<<7,
+        eSubSat_Exon = 1<<9
     };
     typedef int TSubSat;
 

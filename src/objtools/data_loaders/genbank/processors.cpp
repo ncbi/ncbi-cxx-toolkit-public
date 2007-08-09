@@ -1747,6 +1747,7 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id)
     case eSubSat_MGC:
     case eSubSat_tRNA:
     case eSubSat_STS:
+    case eSubSat_Exon:
         return blob_id.GetSat() == eSat_ANNOT;
     case eSubSat_CDD:
         return blob_id.GetSat() == eSat_ANNOT_CDD;
@@ -1830,6 +1831,10 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     case eSubSat_STS:
         type.SetFeatSubtype(CSeqFeatData::eSubtype_STS);
         db_name = "Annot:STS";
+        break;
+    case eSubSat_Exon:
+        type.SetFeatSubtype(CSeqFeatData::eSubtype_exon);
+        db_name = "Annot:Exon";
         break;
     default:
         _ASSERT(0 && "unknown annot type");
