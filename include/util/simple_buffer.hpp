@@ -60,7 +60,7 @@ public:
     typedef T             value_type;
     typedef size_t        size_type;
 public:
-    CSimpleBufferT(size_type size=0) 
+    explicit CSimpleBufferT(size_type size=0) 
     {
         if (size) {
             m_Buffer = new value_type[size];
@@ -73,9 +73,10 @@ public:
 
     CSimpleBufferT(const CSimpleBufferT& sb) 
     {
-        m_Buffer = new value_type[sb.size()];
-        m_Size = m_Capacity = sb.size();
-        memcpy(m_Buffer, sb.data(), m_Size);
+        m_Buffer = new value_type[sb.capacity()];
+        m_Capacity = sb.capacity();
+        m_Size = sb.size();
+        memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
     }
     CSimpleBufferT& operator=(const CSimpleBufferT& sb) 
     {
@@ -84,10 +85,11 @@ public:
                 m_Size = sb.size();
             } else {
                 x_Deallocate();
-                m_Buffer = new value_type[sb.size()];
-                m_Size = m_Capacity = sb.size();
+                m_Buffer = new value_type[sb.capacity()];
+                m_Capacity = sb.capacity();
+                m_Size = sb.size();
             }
-            memcpy(m_Buffer, sb.data(), m_Size);
+            memcpy(m_Buffer, sb.data(), m_Size*sizeof(value_type));
         }
         return *this;
     }
@@ -100,7 +102,7 @@ public:
         if (new_size > m_Capacity) {
             value_type* new_buffer = new value_type[new_size];
             if (m_Size) {
-                memcpy(new_buffer, m_Buffer, m_Size);
+                memcpy(new_buffer, m_Buffer, m_Size*sizeof(value_type));
             }
             x_Deallocate();
             m_Buffer = new_buffer;
@@ -113,14 +115,15 @@ public:
         if (new_size <= m_Capacity) {
             m_Size = new_size;
         } else {
-            new_size = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
-            value_type* new_buffer = new value_type[new_size];
+            size_t new_capacity = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
+            value_type* new_buffer = new value_type[new_capacity];
             if (m_Size) {
-                memcpy(new_buffer, m_Buffer, m_Size);
+                memcpy(new_buffer, m_Buffer, m_Size*sizeof(value_type));
             }
             x_Deallocate();
             m_Buffer = new_buffer;
-            m_Size = m_Capacity = new_size;
+            m_Capacity = new_capacity;
+            m_Size = new_size;
         }
     }
 
@@ -131,9 +134,10 @@ public:
             m_Size = new_size;
         } else {
             x_Deallocate();
-            new_size = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
-            m_Buffer = new value_type[new_size];
-            m_Size = m_Capacity = new_size;
+            size_t new_capacity = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
+            m_Buffer = new value_type[new_capacity];
+            m_Capacity = new_capacity;
+            m_Size = new_size;
         }
     }
 
