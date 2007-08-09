@@ -51,6 +51,7 @@
 
 #include <util/cache/icache_cf.hpp>
 #include <util/cache/icache_clean_thread.hpp>
+#include <util/simple_buffer.hpp>
 
 #include <time.h>
 #include <math.h>
@@ -207,10 +208,31 @@ private:
     CBDB_Cache::TBlobLock       m_BlobLock;
 };
 
+/// Buffer resize strategy, to balance memory reallocs and heap
+/// consumption
+///
+/// @internal
+class CCacheBufferResizeStrategy
+{
+public:
+    static size_t GetNewCapacity(size_t cur_capacity, size_t requested_size) 
+    { 
+        size_t reserve = requested_size / 2;
+        if (reserve > 1 * 1024 * 1024) {
+            reserve = 1 * 1024 * 1024;
+        }
+        return requested_size + reserve; 
+    }
+};
+
 
 /// @internal
 class CBDB_CacheIWriter : public IWriter
 {
+public:
+    typedef 
+        CSimpleBufferT<unsigned char, CCacheBufferResizeStrategy> TBuffer;
+
 public:
     CBDB_CacheIWriter(CBDB_Cache&                bdb_cache,
                       const char*                path,
@@ -231,7 +253,7 @@ public:
       m_SubKey(subkey),
       m_AttrDB(attr_db),
       m_Buffer(0),
-      m_BytesInBuffer(0),
+//      m_BytesInBuffer(0),
       m_OverflowFile(0),
       m_TTL(ttl),
       m_RequestTime(request_time),
@@ -243,7 +265,8 @@ public:
       m_Owner(owner),
       m_BlobLock(blob_lock.GetLockVector(), blob_lock.GetTimeout())
     {
-        m_Buffer = new unsigned char[m_Cache.GetOverflowLimit()];
+//        m_Buffer = new unsigned char[m_Cache.GetOverflowLimit()];
+        m_Buffer.reserve(4 * 1024);
         m_BlobLock.TakeFrom(blob_lock);
     }
 
@@ -251,22 +274,22 @@ public:
     {
         try {
             bool upd_statistics = false;
-		    if (!m_AttrUpdFlag || m_Buffer != 0) {
+		    if (!m_AttrUpdFlag || m_Buffer.size() != 0) {
 
 			    // Dumping the buffer
                 try {
-                    if (m_Buffer) {
+                    if (m_Buffer.size()) {
                         m_Cache.x_Store(m_BlobIdExt,
                                         m_BlobKey,
                                         m_Version,
                                         m_SubKey,
-                                        m_Buffer,
-                                        m_BytesInBuffer,
+                                        m_Buffer.data(),
+                                        m_Buffer.size(), // m_BytesInBuffer,
                                         m_TTL,
                                         m_Owner,
                                         false // do not lock blob
                                         );
-				        delete[] m_Buffer; m_Buffer = 0;
+				        //delete[] m_Buffer; m_Buffer = 0;
                     }
                 } catch (CBDB_Exception& ) {
                     m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 
@@ -292,7 +315,8 @@ public:
             }
 
             // statistics
-            //
+            // FIXME: ideally statistics should not sit on the same main mutex
+            /*
             if (upd_statistics) {
                 try {
                     CFastMutexGuard guard(m_Cache.m_DB_Lock);
@@ -306,12 +330,13 @@ public:
                     // ignore non critical exceptions
                 }
             }
+            */
 
         } catch (exception & ex) {
             ERR_POST("Exception in ~CBDB_CacheIWriter() : " << ex.what()
                      << " " << m_BlobKey);
             // final attempt to avoid leaks
-            delete[] m_Buffer;
+//            delete[] m_Buffer;
             delete   m_OverflowFile;
         }
     }
@@ -332,13 +357,16 @@ public:
         // check BLOB size quota
         if (m_Cache.GetMaxBlobSize()) {
             if (m_BlobSize > m_Cache.GetMaxBlobSize()) {
-                delete m_Buffer; m_Buffer = 0;
+                //delete m_Buffer; m_Buffer = 0;
+                m_Buffer.clear();
                 delete m_OverflowFile; m_OverflowFile = 0;
                 m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 1, 0);
+/* FIXME:
                 {{
                 CFastMutexGuard guard(m_Cache.m_DB_Lock);
                 m_Cache.m_Statistics.AddBlobQuotaError(m_Owner);
                 }}
+*/
                 string msg("BLOB larger than allowed. size=");
                 msg.append(NStr::UIntToString(m_BlobSize));
                 msg.append(" quota=");
@@ -348,11 +376,14 @@ public:
         }
 
 
-        if (m_Buffer) {
-            unsigned int new_buf_length = m_BytesInBuffer + count;
+//        if (m_Buffer.size()) {
+        if (!m_OverflowFile) {
+            unsigned int new_buf_length = m_Buffer.size() + count;
             if (new_buf_length <= m_Cache.GetOverflowLimit()) {
-                ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
-                m_BytesInBuffer = new_buf_length;
+                size_t old_size = m_Buffer.size();
+                m_Buffer.resize(old_size + count);
+                ::memcpy(m_Buffer.data() + old_size, buf, count);
+                //m_BytesInBuffer = new_buf_length;
                 if (bytes_written) {
                     *bytes_written = count;
                 }
@@ -362,25 +393,27 @@ public:
                 // Buffer overflow. Writing to file.
                 OpenOverflowFile();
                 if (m_OverflowFile) {
-                    if (m_BytesInBuffer) {
+                    if (m_Buffer.size()) {
                         try {
-                            x_WriteOverflow((const char*)m_Buffer,
-                                             m_BytesInBuffer);
+                            x_WriteOverflow((const char*)m_Buffer.data(),
+                                             m_Buffer.size());
                         } 
                         catch (exception& ) {
-                            delete[] m_Buffer; m_Buffer = 0;
+                            m_Buffer.clear();
+                            //delete[] m_Buffer; m_Buffer = 0;
                             delete m_OverflowFile; m_OverflowFile = 0;
                             throw;
                         }
                     }
-                    delete[] m_Buffer; m_Buffer = 0; m_BytesInBuffer = 0;
+                    //delete[] m_Buffer; m_Buffer = 0; m_BytesInBuffer = 0;
+                    m_Buffer.clear();
                 }
             }
 
         }
         if (m_OverflowFile) {
 
-            _ASSERT(m_Buffer == 0);
+            _ASSERT(m_Buffer.size() == 0);
 
             x_WriteOverflow((char*)buf, count);
             if (bytes_written) {
@@ -402,7 +435,7 @@ public:
 
         // Dumping the buffer
 
-        if (m_Buffer) {
+        if (m_Buffer.size()) {
 
             _ASSERT(m_OverflowFile == 0);
 
@@ -411,8 +444,8 @@ public:
                                 m_BlobKey,
                                 m_Version,
                                 m_SubKey,
-                                m_Buffer,
-                                m_BytesInBuffer,
+                                m_Buffer.data(),
+                                m_Buffer.size(), // m_BytesInBuffer,
                                 m_TTL,
                                 m_Owner,
                                 false // do not lock blob
@@ -421,18 +454,20 @@ public:
                 return eRW_Success;
             } 
             catch (exception&) {
-    			delete[] m_Buffer; m_Buffer = 0;
+                m_Buffer.clear();
+//    			delete[] m_Buffer; m_Buffer = 0;
                 throw;
             }
 
-			delete[] m_Buffer; m_Buffer = 0;
-            m_BytesInBuffer = 0;
+			//delete[] m_Buffer; m_Buffer = 0;
+            //m_BytesInBuffer = 0;
+            m_Buffer.clear();
             return eRW_Success;
         }
 
         if ( m_OverflowFile ) {
 
-            _ASSERT(m_Buffer == 0);
+            _ASSERT(m_Buffer.size() == 0);
 
             try {
                 m_OverflowFile->flush();
@@ -444,10 +479,10 @@ public:
                 m_Cache.RegisterOverflow(m_BlobKey, m_Version, m_SubKey,
                                          m_TTL, m_Owner);
 
-
+                // FIXME:
+/*
                 {{
                     CFastMutexGuard guard(m_Cache.m_DB_Lock);
-
                     try {
                         m_Cache.m_Statistics.AddStore(m_Owner,
                                                     m_RequestTime,
@@ -459,7 +494,7 @@ public:
                         // ignore
                     }
                 }}
-
+*/
 
             } catch (CBDB_Exception& ) {
                 m_Cache.KillBlob(m_BlobKey, m_Version, m_SubKey, 
@@ -526,8 +561,9 @@ private:
     string                m_SubKey;
     SCache_AttrDB&        m_AttrDB;
 
-    unsigned char*        m_Buffer;
-    unsigned int          m_BytesInBuffer;
+    TBuffer               m_Buffer;
+//    unsigned char*        m_Buffer;
+//    unsigned int          m_BytesInBuffer;
     CNcbiOfstream*        m_OverflowFile;
     string                m_OverflowFilePath;
 
@@ -1667,12 +1703,14 @@ void CBDB_Cache::DropBlob(const string&  key,
                 unsigned read_count = m_CacheAttrDB->read_count;
                 m_CacheAttrDB->owner_name.ToString(m_TmpOwnerName);
 
+                /* FIXME:
                 m_Statistics.AddExplDelete(m_TmpOwnerName);
                 if (0 == read_count) {
                     m_Statistics.AddNeverRead(m_TmpOwnerName);
                 }
                 x_UpdateOwnerStatOnDelete(m_TmpOwnerName, 
-                                          true/*explicit del*/);
+                                          true);//explicit del
+                */
                 cur.Delete();
             }
 
@@ -1852,10 +1890,13 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
     // check BLOB size quota
     // ----------------------------------------------------
     if (GetMaxBlobSize() && size > GetMaxBlobSize()) {
+        // FIXME:
+        /*
         {{
             CFastMutexGuard guard(m_DB_Lock);
             m_Statistics.AddBlobQuotaError(owner);
         }}
+        */
         string msg("BLOB larger than allowed. size=");
         msg.append(NStr::UIntToString(size));
         msg.append(" quota=");

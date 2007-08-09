@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.12  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.13  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1365,9 +1365,6 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         id = CNetCache_Key::GetBlobId(req.req_id);
     }
 
-    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
-    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
-
     // BLOB already locked, it is safe to return BLOB id
     if (!do_id_lock) {
         WriteMsg(sock, "ID:", rid);
@@ -1391,8 +1388,8 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
     bool not_eof;
 
-//    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
-//    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
+    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
+    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
 
     do {
         size_t nn_read = 0;
@@ -1403,7 +1400,6 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         // and then copy it to IWriter which immediately calls Store
         // 
         not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
-cerr << "nn_read=" << nn_read << endl;
 
         stat.comm_elapsed += sw.Elapsed();
         stat.blob_size += nn_read;
