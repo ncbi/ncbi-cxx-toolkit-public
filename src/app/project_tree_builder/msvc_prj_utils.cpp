@@ -31,9 +31,12 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+
+#if NCBI_COMPILER_MSVC
 #include <serial/objostrxml.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
+#endif
 
 
 
