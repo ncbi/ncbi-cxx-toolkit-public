@@ -37,6 +37,8 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+#include <corelib/impl/ncbi_dbsvcmapper.hpp>
+
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
 #  undef numeric_limits
@@ -55,7 +57,6 @@ class IDataSource;
 class IConnection;
 class IStatement;
 class IDBConnectionFactory;
-class IDBServiceMapper;
 
 enum ETransBehavior { eNoTrans, eTransCommit, eTransRollback };
 
@@ -227,7 +228,7 @@ public:
 
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
-        (IDBServiceMapper* svc_mapper);
+                (IDBServiceMapper::TFactory svc_mapper_factory);
     void Test_Exception_Safety(void);
     void ES_01_Internal(IConnection& conn);
     void Check_Validator(TDBConnectionFactoryFactory factory,

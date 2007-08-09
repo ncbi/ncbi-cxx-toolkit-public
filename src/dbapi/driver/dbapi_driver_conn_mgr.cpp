@@ -92,6 +92,13 @@ IConnValidator::ValidateException(const CDB_Exception&)
 }
 
 
+string
+IConnValidator::GetName(void) const
+{
+    return typeid(this).name();
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 IDBConnectionFactory::IDBConnectionFactory(void)
 {

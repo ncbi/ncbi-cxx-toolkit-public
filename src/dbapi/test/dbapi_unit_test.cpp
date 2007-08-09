@@ -187,7 +187,8 @@ CDBAPIUnitTest::TestInit(void)
             // (No problems with the Sybase 12.5.0 client)
             IDataSource* ds = m_DM.CreateDs(
                 m_args.GetDriverName(),
-                &m_args.GetDBParameters());
+                &m_args.GetDBParameters()
+                );
             m_DM.DestroyDs(ds);
         }
 
@@ -5958,15 +5959,15 @@ CDBAPIUnitTest::Test_N_Connections(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void
-CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
-                                IConnValidator& validator)
+static
+IDBServiceMapper*
+MakeCDBUDPriorityMapper01(const IRegistry* registry)
 {
     TSvrRef server01(new CDBServer("MS_DEV1"));
     TSvrRef server02(new CDBServer("MS_DEV2"));
     const string service_name("TEST_SERVICE_01");
-    auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper());
-    auto_ptr<IConnection> conn;
+
+    auto_ptr<CDBUDPriorityMapper> mapper(new CDBUDPriorityMapper(registry));
 
     mapper->Add(service_name, server01);
     mapper->Add(service_name, server02);
@@ -5978,9 +5979,22 @@ CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
 //     mapper->Add(service_name, server01);
 //     mapper->Add(service_name, server01);
 
+    return mapper.release();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
+                                IConnValidator& validator)
+{
+    TSvrRef server01(new CDBServer("MS_DEV1"));
+    const string service_name("TEST_SERVICE_01");
+    auto_ptr<IConnection> conn;
+
     // Install new mapper ...
     ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(
-        factory(mapper.release())
+        factory(MakeCDBUDPriorityMapper01)
     );
 
     // Create connection ...
@@ -6007,16 +6021,16 @@ CDBAPIUnitTest::Check_Validator(TDBConnectionFactoryFactory factory,
 ////////////////////////////////////////////////////////////////////////////////
 static
 IDBConnectionFactory*
-CDBConnectionFactoryFactory(IDBServiceMapper* svc_mapper)
+CDBConnectionFactoryFactory(IDBServiceMapper::TFactory svc_mapper_factory)
 {
-    return new CDBConnectionFactory(svc_mapper);
+    return new CDBConnectionFactory(svc_mapper_factory);
 }
 
 static
 IDBConnectionFactory*
-CDBRedispatchFactoryFactory(IDBServiceMapper* svc_mapper)
+CDBRedispatchFactoryFactory(IDBServiceMapper::TFactory svc_mapper_factory)
 {
-    return new CDBRedispatchFactory(svc_mapper);
+    return new CDBRedispatchFactory(svc_mapper_factory);
 }
 
 

@@ -34,8 +34,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <algorithm>
 
-USING_NCBI_SCOPE;
 
+BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 static
@@ -709,8 +709,8 @@ CDBUDPriorityMapper::Factory(const IRegistry* registry)
 
 
 //////////////////////////////////////////////////////////////////////////////
-CDBUniversalMapper::CDBUniversalMapper(const TMapperConf& ext_mapper,
-                                       const IRegistry* registry)
+CDBUniversalMapper::CDBUniversalMapper(const IRegistry* registry,
+                                       const TMapperConf& ext_mapper)
 {
     if (!ext_mapper.first.empty() && ext_mapper.second != NULL) {
         m_ExtMapperConf = ext_mapper;
@@ -820,4 +820,5 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
     return "UNIVERSAL_NAME_MAPPER";
 }
 
+END_NCBI_SCOPE
 

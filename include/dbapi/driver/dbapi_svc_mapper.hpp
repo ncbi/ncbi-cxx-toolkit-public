@@ -198,12 +198,11 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDBUniversalMapper : public CDBServiceMapperCoR
 {
 public:
-    typedef IDBServiceMapper* (*TMapperFactory)(const IRegistry* registry);
-    typedef pair<string, TMapperFactory> TMapperConf;
+    typedef pair<string, TFactory> TMapperConf;
 
-    CDBUniversalMapper(const TMapperConf& ext_mapper
-                       = TMapperConf(kEmptyStr, NULL),
-                       const IRegistry* registry = NULL);
+    CDBUniversalMapper(const IRegistry* registry = NULL,
+                       const TMapperConf& ext_mapper
+                       = TMapperConf(kEmptyStr, NULL));
     virtual ~CDBUniversalMapper(void);
 
     virtual void Configure(const IRegistry* registry = NULL);
@@ -214,7 +213,6 @@ protected:
 private:
     TMapperConf m_ExtMapperConf;
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Type traits
@@ -256,29 +254,33 @@ public:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+inline
+IDBServiceMapper*
+MakeCDBUniversalMapper(const IRegistry* registry)
+{
+#ifdef HAVE_LIBCONNEXT
+    return new CDBUniversalMapper(
+        registry,
+        CDBUniversalMapper::TMapperConf(
+            CDBServiceMapperTraits<CDBLB_ServiceMapper>::GetName(),
+            &CDBLB_ServiceMapper::Factory
+            )
+        );
+#else
+    return new CDBUniversalMapper(registry);
+#endif
+}
+
 
 /// Easy-to-use macro to install the default DBAPI service mapper
 /// and a user-defined connection factory
-#ifdef HAVE_LIBCONNEXT
 #   define DBLB_INSTALL_FACTORY(factory_name)                                  \
-        ncbi::CDbapiConnMgr::Instance().SetConnectionFactory                   \
-            (new factory_name(                                                 \
-                new ncbi::CDBUniversalMapper(                                  \
-                    ncbi::CDBUniversalMapper::TMapperConf(                     \
-                        ncbi::CDBServiceMapperTraits<                          \
-                            ncbi::CDBLB_ServiceMapper                          \
-                            >::GetName(),                                      \
-                        &ncbi::CDBLB_ServiceMapper::Factory                    \
-                        ))))
-#else
-#   define DBLB_INSTALL_FACTORY(factory_name)                                  \
-        ncbi::CDbapiConnMgr::Instance().SetConnectionFactory                   \
-            (new factory_name(                                                 \
-                new ncbi::CDBUniversalMapper()))
-#endif
+        ncbi::CDbapiConnMgr::Instance().SetConnectionFactory(                  \
+            new factory_name(ncbi::MakeCDBUniversalMapper))
 
 /// Easy-to-use macro to install the default DBAPI service mapper
-#define DBLB_INSTALL_DEFAULT() DBLB_INSTALL_FACTORY(CDBConnectionFactory)
+#define DBLB_INSTALL_DEFAULT() DBLB_INSTALL_FACTORY(ncbi::CDBConnectionFactory)
 
 
 

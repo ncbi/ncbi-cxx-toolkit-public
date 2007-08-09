@@ -72,6 +72,10 @@ public:
     virtual EConnStatus Validate(CDB_Connection& conn) = 0;
     // This method shouldn't rethrow the exception.
     virtual EConnStatus ValidateException(const CDB_Exception& ex);
+    // Return unique name of validator. This name is used to identify a pair of
+    // server and validator in order to validate resource against a particular
+    // validator. Empty name is reserved.
+    virtual string GetName(void) const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

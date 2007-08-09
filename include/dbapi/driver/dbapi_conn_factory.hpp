@@ -55,18 +55,14 @@ enum EDefaultMapping
 class NCBI_DBAPIDRIVER_EXPORT CDBConnectionFactory : public IDBConnectionFactory
 {
 public:
-    /// CDBConnectionFactory will take ownership of svr_name_policy.
     /// CDBConnectionFactory won't take ownership of registry.
-    CDBConnectionFactory(IDBServiceMapper* svc_mapper,
+    CDBConnectionFactory(IDBServiceMapper::TFactory svc_mapper_factory,
                          const IRegistry* registry = NULL,
                          EDefaultMapping def_mapping = eUseDefaultMapper);
     virtual ~CDBConnectionFactory(void);
 
     //
     virtual void Configure(const IRegistry* registry = NULL);
-
-    IDBServiceMapper& GetServiceMapper(void);
-    const IDBServiceMapper& GetServiceMapper(void) const;
 
     //
     unsigned int GetMaxNumOfConnAttempts(void) const;
@@ -88,24 +84,64 @@ public:
     void SetLoginTimeout(unsigned int timeout);
 
 protected:
+    // Data
+    class CRuntimeData
+    {
+    public:
+        CRuntimeData(const CDBConnectionFactory& parent,
+                     const CRef<IDBServiceMapper>& mapper);
+
+    public:
+        //
+        TSvrRef GetDispatchedServer(const string& service_name);
+        void SetDispatchedServer(const string&  service_name,
+                                 const TSvrRef& server);
+
+        //
+        void IncNumOfValidationFailures(const string& server_name,
+                                        const TSvrRef& dsp_srv);
+
+        //
+        unsigned int GetNumOfDispatches(const string& service_name);
+        unsigned int GetNumOfValidationFailures(const string& service_name);
+
+        //
+        IDBServiceMapper& GetDBServiceMapper(void)
+        {
+            return *m_DBServiceMapper;
+        }
+        const IDBServiceMapper& GetDBServiceMapper(void) const
+        {
+            return *m_DBServiceMapper;
+        }
+
+        //
+        const CDBConnectionFactory& GetParent(void) const
+        {
+            return *m_Parent;
+        }
+
+    private:
+        // Data types
+        typedef map<string, TSvrRef>      TDispatchedSet;
+        typedef map<string, unsigned int> TServer2NumMap;
+
+        const CDBConnectionFactory* m_Parent;
+        CRef<IDBServiceMapper>      m_DBServiceMapper;
+        TDispatchedSet              m_DispatchedSet;
+        TServer2NumMap              m_DispatchNumMap;
+        TServer2NumMap              m_ValidationFailureMap;
+    };
+
+    friend class CRuntimeData;
+
+    CRuntimeData& GetRuntimeData(IConnValidator* validator);
+
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
         const I_DriverContext::SConnAttr& conn_attr,
         IConnValidator* validator = NULL);
-
-    //
-    TSvrRef GetDispatchedServer(const string& service_name);
-    void SetDispatchedServer(const string&  service_name,
-                             const TSvrRef& server);
-
-    //
-    void IncNumOfValidationFailures(const string& server_name,
-                                    const TSvrRef& dsp_srv);
-
-    //
-    unsigned int GetNumOfDispatches(const string& service_name);
-    unsigned int GetNumOfValidationFailures(const string& service_name);
 
 private:
     // Methods
@@ -123,29 +159,40 @@ private:
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
 
-    // Data types
-    typedef map<string, TSvrRef>      TDispatchedSet;
-    typedef map<string, unsigned int> TServer2NumMap;
+private:
+    typedef map<string, CRuntimeData> TValidatorSet;
 
-    // Data
-    TDispatchedSet  m_DispatchedSet;
-    TServer2NumMap  m_DispatchNumMap;
-    TServer2NumMap  m_ValidationFailureMap;
+    class CMapperFactory
+    {
+    public:
+        CMapperFactory(IDBServiceMapper::TFactory svc_mapper_factory,
+                       const IRegistry* registry,
+                       EDefaultMapping def_mapping);
+
+    public:
+        IDBServiceMapper* Make(void) const;
+
+    private:
+        const IDBServiceMapper::TFactory    m_SvcMapperFactory;
+        const IRegistry*                    m_Registry;
+        EDefaultMapping                     m_DefMapping;
+    };
 
     mutable CFastMutex m_Mtx;
 
-    auto_ptr<IDBServiceMapper> m_DBServiceMapper;
+    const CMapperFactory        m_MapperFactory;
+    TValidatorSet               m_ValidatorSet;
     // 0 means *none* (even do not try to connect)
-    unsigned int m_MaxNumOfConnAttempts;
+    unsigned int                m_MaxNumOfConnAttempts;
     // 0 means *unlimited*
-    unsigned int m_MaxNumOfValidationAttempts;
+    unsigned int                m_MaxNumOfValidationAttempts;
     // 0 means *none* (even do not try to connect)
     // 1 means *try only one server* (give up strategy)
-    unsigned int m_MaxNumOfServerAlternatives;
+    unsigned int                m_MaxNumOfServerAlternatives;
     // 0 means *unlimited*
-    unsigned int m_MaxNumOfDispatches;
-    unsigned int m_ConnectionTimeout;
-    unsigned int m_LoginTimeout;
+    unsigned int                m_MaxNumOfDispatches;
+    unsigned int                m_ConnectionTimeout;
+    unsigned int                m_LoginTimeout;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -157,7 +204,7 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDBGiveUpFactory : public CDBConnectionFactory
 {
 public:
-    CDBGiveUpFactory(IDBServiceMapper* svc_mapper,
+    CDBGiveUpFactory(IDBServiceMapper::TFactory svc_mapper_factory,
                      const IRegistry* registry = NULL,
                      EDefaultMapping def_mapping = eUseDefaultMapper);
     virtual ~CDBGiveUpFactory(void);
@@ -174,7 +221,7 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDBRedispatchFactory : public CDBConnectionFactory
 {
 public:
-    CDBRedispatchFactory(IDBServiceMapper* svc_mapper,
+    CDBRedispatchFactory(IDBServiceMapper::TFactory svc_mapper_factory,
                          const IRegistry* registry = NULL,
                          EDefaultMapping def_mapping = eUseDefaultMapper);
     virtual ~CDBRedispatchFactory(void);
@@ -242,20 +289,6 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-inline
-IDBServiceMapper&
-CDBConnectionFactory::GetServiceMapper(void)
-{
-    return *m_DBServiceMapper;
-}
-
-inline
-const IDBServiceMapper&
-CDBConnectionFactory::GetServiceMapper(void) const
-{
-    return *m_DBServiceMapper;
-}
-
 inline
 unsigned int
 CDBConnectionFactory::GetMaxNumOfConnAttempts(void) const
