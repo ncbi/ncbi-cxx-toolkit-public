@@ -538,12 +538,28 @@ CConnValidatorCoR::~CConnValidatorCoR(void)
 IConnValidator::EConnStatus
 CConnValidatorCoR::Validate(CDB_Connection& conn)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     NON_CONST_ITERATE(TValidators, vr_it, m_Validators) {
         if ((*vr_it)->Validate(conn) == eInvalidConn) {
             return eInvalidConn;
         }
     }
     return eValidConn;
+}
+
+string
+CConnValidatorCoR::GetName(void) const
+{
+    string result("CConnValidatorCoR");
+
+    CFastMutexGuard mg(m_Mtx);
+
+    ITERATE(TValidators, vr_it, m_Validators) {
+        result += (*vr_it)->GetName();
+    }
+
+    return result;
 }
 
 void
@@ -618,6 +634,17 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
     // All exceptions are supposed to be caught and processed by
     // CDBConnectionFactory ...
     return eValidConn;
+}
+
+string
+CTrivialConnValidator::GetName(void) const
+{
+    string result("CTrivialConnValidator");
+
+    result += (GetAttr() == eCheckSysobjects ? "CSO" : "");
+    result += GetDBName();
+
+    return result;
 }
 
 END_NCBI_SCOPE

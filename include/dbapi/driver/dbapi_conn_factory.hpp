@@ -242,6 +242,7 @@ public:
     virtual ~CConnValidatorCoR(void);
 
     virtual EConnStatus Validate(CDB_Connection& conn);
+    virtual string GetName(void) const;
 
     void Push(const CRef<IConnValidator>& validator);
     void Pop(void);
@@ -271,6 +272,7 @@ public:
     virtual ~CTrivialConnValidator(void);
 
     virtual EConnStatus Validate(CDB_Connection& conn);
+    virtual string GetName(void) const;
 
     const string& GetDBName(void) const
     {
