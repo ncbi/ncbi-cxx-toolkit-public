@@ -37,16 +37,30 @@
 BEGIN_NCBI_SCOPE
 
 
+class CSimpleResizeStrategy
+{
+public:
+    static size_t GetNewCapacity(size_t cur_capacity, size_t requested_size) { return requested_size; }
+};
+class CAgressiveResizeStrategy
+{
+public:
+    static size_t GetNewCapacity(size_t cur_capacity, size_t requested_size) 
+    { return requested_size + requested_size / 2; }
+};
+
 /// Reallocable memory buffer (no memory copy overhead)
 /// Mimics vector<unsigned char>
 ///
-class CSimpleBuffer
+
+template <typename T = unsigned char, typename ResizeStrategy = CSimpleResizeStrategy>
+class CSimpleBufferT
 {
 public:
-    typedef unsigned char value_type;
+    typedef T             value_type;
     typedef size_t        size_type;
 public:
-    CSimpleBuffer(size_type size=0) 
+    CSimpleBufferT(size_type size=0) 
     {
         if (size) {
             m_Buffer = new value_type[size];
@@ -55,15 +69,15 @@ public:
         }
         m_Size = m_Capacity = size;
     }
-    ~CSimpleBuffer() { delete [] m_Buffer; }
+    ~CSimpleBufferT() { delete [] m_Buffer; }
 
-    CSimpleBuffer(const CSimpleBuffer& sb) 
+    CSimpleBufferT(const CSimpleBufferT& sb) 
     {
         m_Buffer = new value_type[sb.size()];
         m_Size = m_Capacity = sb.size();
         memcpy(m_Buffer, sb.data(), m_Size);
     }
-    CSimpleBuffer& operator=(const CSimpleBuffer& sb) 
+    CSimpleBufferT& operator=(const CSimpleBufferT& sb) 
     {
         if (this != &sb) {
             if (sb.size() <= m_Capacity) {
@@ -99,6 +113,7 @@ public:
         if (new_size <= m_Capacity) {
             m_Size = new_size;
         } else {
+            new_size = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
             value_type* new_buffer = new value_type[new_size];
             if (m_Size) {
                 memcpy(new_buffer, m_Buffer, m_Size);
@@ -115,9 +130,9 @@ public:
         if (new_size <= m_Capacity) {
             m_Size = new_size;
         } else {
-            value_type* new_buffer = new value_type[new_size];
             x_Deallocate();
-            m_Buffer = new_buffer;
+            new_size = ResizeStrategy::GetNewCapacity(m_Capacity,new_size);
+            m_Buffer = new value_type[new_size];
             m_Size = m_Capacity = new_size;
         }
     }
@@ -126,9 +141,8 @@ public:
     void reserve_mem(size_type new_size)
     {
         if (new_size > m_Capacity) {
-            value_type* new_buffer = new value_type[new_size];
             x_Deallocate();
-            m_Buffer = new_buffer;
+            m_Buffer = new value_type[new_size];
             m_Capacity = new_size;
         }
     }
@@ -175,7 +189,7 @@ private:
     size_type      m_Capacity;
 };
 
-
+typedef CSimpleBufferT<> CSimpleBuffer;
 
 END_NCBI_SCOPE
 
