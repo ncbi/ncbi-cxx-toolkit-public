@@ -1797,6 +1797,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     // create special external annotations blob
     CAnnotName name;
     SAnnotTypeSelector type;
+    vector<SAnnotTypeSelector> more_types;
     string db_name;
     switch ( blob_id.GetSubSat() ) {
     case eSubSat_SNP:
@@ -1808,6 +1809,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     case eSubSat_CDD:
         name.SetNamed("CDDSearch");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
+        more_types.push_back(SAnnotTypeSelector(CSeqFeatData::eSubtype_site));
         db_name = "Annot:CDD";
         break;
     case eSubSat_SNP_graph:
@@ -1836,14 +1838,19 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     _ASSERT(!db_name.empty());
 
     int gi = blob_id.GetSatKey();
+    CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
     CSeq_id seq_id;
     seq_id.SetGeneral().SetDb(db_name);
     seq_id.SetGeneral().SetTag().SetId(gi);
+    CSeq_id_Handle seh = CSeq_id_Handle::GetHandle(seq_id);
     
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    chunk->x_AddAnnotType(name, type, CSeq_id_Handle::GetGiHandle(gi));
+    chunk->x_AddAnnotType(name, type, gih);
+    ITERATE ( vector<SAnnotTypeSelector>, it, more_types ) {
+        chunk->x_AddAnnotType(name, *it, gih);
+    }
     chunk->x_AddBioseqPlace(0);
-    chunk->x_AddBioseqId(CSeq_id_Handle::GetHandle(seq_id));
+    chunk->x_AddBioseqId(seh);
     blob->GetSplitInfo().AddChunk(*chunk);
 
     SetLoaded(result, blob_id, chunk_id, blob);
