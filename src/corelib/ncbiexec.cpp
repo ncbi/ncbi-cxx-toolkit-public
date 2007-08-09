@@ -119,7 +119,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
     }
 
     // Get master mode
-    CExec::EMode mode = CExec::EMode(full_mode & CExec::fModeMask);
+    CExec::EMode mode = (CExec::EMode)(full_mode & (int)CExec::fModeMask);
 
     // Replace the current process image with a new process image.
     if (mode == CExec::eOverlay) {
@@ -166,8 +166,8 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
             freopen("/dev/null", "a", stderr);
             setsid();
         } 
-        
-        if ((full_mode  &  CExec::fNewGroup) == CExec::fNewGroup) {
+
+        if (((int)full_mode  &  CExec::fNewGroup) == CExec::fNewGroup) {
             setpgid(0, 0);
         }
         int status =-1;

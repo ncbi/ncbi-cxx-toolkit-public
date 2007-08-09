@@ -288,7 +288,7 @@ CTimeFormat& CTimeFormat::operator= (const CTimeFormat& format)
 CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, EType fmt_type)
 {
     // Predefined time formats
-    static char* s_Predefined[][2] =
+    static const char* s_Predefined[][2] =
     {
         {"Y",              "$Y"},
         {"Y-M",            "$Y-$M"},
