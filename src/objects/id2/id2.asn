@@ -452,7 +452,8 @@ ID2-Blob-Id ::= SEQUENCE {
                 mgc         (16),
                 hprd        (32),
                 sts         (64),
-                trna        (128)
+                trna        (128),
+                exon        (512)
         } DEFAULT main,
         sat-key         INTEGER,
         -- version of blob, optional in some requests
