@@ -515,7 +515,7 @@ void CFastaReader::CheckDataLine(const TStr& s)
             ++bad;
         }
     }
-    if (bad >= good / 3  &&  (len > 3  ||  bad > good)) {
+    if (bad >= good / 3  &&  (len > 3  ||  good == 0  ||  bad > good)) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                     "CFastaReader: purported data line fails sanity check",
                     StreamPosition());
