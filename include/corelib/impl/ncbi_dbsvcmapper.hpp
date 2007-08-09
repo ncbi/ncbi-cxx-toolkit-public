@@ -50,30 +50,30 @@ class IRegistry;
 /// IDBServiceMapper
 ///
 
-class CDBServer : public CObject 
+class CDBServer : public CObject
 {
 public:
     CDBServer(void);
-    CDBServer(const string& name, 
-              const string& host = kEmptyStr, 
+    CDBServer(const string& name,
+              const string& host = kEmptyStr,
               Uint2         port = 0);
-    
+
     const string& GetName(void) const { return m_Name; }
     const string& GetHost(void) const { return m_Host; }
     Uint2         GetPort(void) const { return m_Port; }
-    
+
     bool IsValid(void) const
     {
         return !m_Name.empty()  ||  !m_Host.empty();
     }
-    
+
 private:
     string m_Name;
     string m_Host;
     Uint2  m_Port;
 };
 typedef CRef<CDBServer> TSvrRef;
-    
+
 ///////////////////////////////////////////////////////////////////////////////
 /// IDBServiceMapper
 ///
@@ -81,6 +81,8 @@ typedef CRef<CDBServer> TSvrRef;
 class IDBServiceMapper : public CObject
 {
 public:
+    typedef IDBServiceMapper* (*TFactory)(const IRegistry* registry);
+
     struct SDereferenceLess
     {
         template <typename T>
@@ -88,25 +90,25 @@ public:
         {
             _ASSERT(l.NotEmpty());
             _ASSERT(r.NotEmpty());
-            
+
             return *l < *r;
         }
     };
-    
+
     virtual ~IDBServiceMapper    (void) {}
-    
+
     virtual void    Configure    (const IRegistry* registry = NULL) = 0;
     /// Map a service to a server
     virtual TSvrRef GetServer    (const string&    service) = 0;
-    
+
     /// Exclude a server from the mapping for a service
     virtual void    Exclude      (const string&    service,
                                   const TSvrRef&   server)  = 0;
-    
-    
+
+
     /// Set up mapping preferences for a service
-    /// preference - value between 0 and 100 
-    ///      (0 means *no particular preferances*, 100 means *do not choose, 
+    /// preference - value between 0 and 100
+    ///      (0 means *no particular preferances*, 100 means *do not choose,
     ///      just use a given server*)
     /// preferred_server - preferred server
     virtual void    SetPreference(const string&    service,
@@ -135,8 +137,8 @@ public:
 inline
 bool operator== (const CDBServer& l, const CDBServer& r)
 {
-    return (l.GetName() == r.GetName() && 
-            l.GetHost() == r.GetHost() && 
+    return (l.GetName() == r.GetName() &&
+            l.GetHost() == r.GetHost() &&
             l.GetPort() == r.GetPort());
 }
 
