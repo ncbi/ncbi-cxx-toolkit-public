@@ -193,6 +193,7 @@ TField B4Param_WordSize              ("WordSize",              CBlast4_value::e_
 TField B4Param_WordThreshold         ("WordThreshold",         CBlast4_value::e_Integer);
 TField B4Param_SumStatistics         ("SumStatistics",         CBlast4_value::e_Boolean);
 TField B4Param_LongestIntronLength   ("LongestIntronLength",   CBlast4_value::e_Integer);
+TField B4Param_GapTrigger            ("GapTrigger",            CBlast4_value::e_Real);
 
 END_objects_SCOPE // namespace ncbi::objects::
 
