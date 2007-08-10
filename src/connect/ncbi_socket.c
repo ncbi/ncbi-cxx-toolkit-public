@@ -2144,8 +2144,10 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
                 lgr.l_onoff  = 1;
             } else if (tv->tv_sec | tv->tv_usec) {
                 unsigned int tmo = tv->tv_sec + (tv->tv_usec + 500000)/1000000;
-                lgr.l_linger = tmo ? tmo : 1;
-                lgr.l_onoff  = 1;
+                if (tmo) {
+                    lgr.l_linger = tmo;
+                    lgr.l_onoff  = 1;
+                }
             }
             if (lgr.l_onoff
                 &&  setsockopt(sock->sock, SOL_SOCKET, SO_LINGER,
