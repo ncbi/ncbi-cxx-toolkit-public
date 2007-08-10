@@ -89,6 +89,11 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
                 m_ProvidedThing.insert(name);
             }
         }
+        // special case
+        if (IsProvided("BZ2") && IsProvided("LocalBZ2"))
+        {
+            m_NotProvidedThing.insert("BZ2");
+        }
     }
 
     // Lib choices
