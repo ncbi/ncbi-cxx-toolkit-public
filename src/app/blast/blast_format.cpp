@@ -67,13 +67,7 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_IsDbAvailable(dbname.length() > 0),
           m_MatrixSet(false)
 {
-    // blast formatter cannot handle these output types
-    if (format_type == 5 || format_type == 6) {
-        NCBI_THROW(blast::CBlastException, 
-                   eInvalidArgument,
-                   "blunt-end query anchored format not supported");
-    }
-    if (format_type == 7) {
+    if (format_type == 5) {
         NCBI_THROW(blast::CBlastException, 
                    eInvalidArgument,
                    "XML output format not supported");
