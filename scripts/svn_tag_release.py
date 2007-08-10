@@ -17,15 +17,15 @@ def add_path(tree, path_descr):
 
 def get_project(root, project_name):
     url = root + "/trunk/c++/scripts/projects/" + project_name + ".lst"
-#    r,w,e = popen2.popen3("svn cat "+url)
-#    err = e.read()
-#    if err:
-#        print err
-#        return None
-#    dirs = r.read().split('\n')
-    dirs = file("test.lst")
-    inc_tree = 0, {}
-    src_tree = 0, {}
+    r,w,e = popen2.popen3("svn cat "+url)
+    err = e.read()
+    if err:
+        print err
+        return None
+    dirs = r.read().split('\n')
+#    dirs = file("test.lst")
+    inc_tree = FLAG_COPY, {}
+    src_tree = FLAG_COPY, {}
     for line in dirs:
         line = line.strip()
         if not line: continue
@@ -70,9 +70,10 @@ def add_tree(dirlist, url, root, proj_tree):
     for node in nodes:
         dir_node = node[-1] == '/'
         if dir_node: node = node[:-1]
-        if not dir_node: continue
+        if not dir_node and level_flag & FLAG_COPY: continue
         child = children.get(node)
-        if not child or (not child[1] and not child[0] & FLAG_COPY):
+        #TODO: handle all cases: dir/file, present/not
+        if not child:
             dirlist.append(root + '/' + node)
             print root + '/' + node
         else:
@@ -81,6 +82,8 @@ def add_tree(dirlist, url, root, proj_tree):
 def get_list_to_remove(root, proj_tree):
     inc_tree, src_tree = proj_tree
     dirlist = ["doc", "scripts/internal"]
+    # TODO: add dirs/files, required for every build
+    # to inc_tree, src_tree
     url = root + "/trunk/c++"
     add_tree(dirlist, url, "include", inc_tree)
     add_tree(dirlist, url, "src",     src_tree)
@@ -103,13 +106,14 @@ def main(args):
     if not proj_tree:
         return -1
     dirlist = get_list_to_remove(root, proj_tree)
-#    target = "tags/%s/current/c++" % project
-#    mucc_cmd = "svnmucc -U %s" % root
-#    tags = list_url(root+'/tags')
-#    if not project+'/' in tags:
-#        mucc_cmd += " mkdir tags/%s " % project
-#    mucc_cmd += " mkdir tags/%s/current cp %s trunk/c++ %s " % (project, revision, target)
-#    mucc_cmd += " ".join(map(lambda x: "rm %s/%s" % (target, x), dirlist)))
+    target = "tags/%s/current/c++" % project
+    mucc_cmd = "svnmucc -U %s" % root
+    tags = list_url(root+'/tags')
+    if not project+'/' in tags:
+        mucc_cmd += " mkdir tags/%s " % project
+    mucc_cmd += " mkdir tags/%s/current cp %s trunk/c++ %s " % (project, revision, target)
+    mucc_cmd += " ".join(map(lambda x: "rm %s/%s" % (target, x), dirlist))
+    print mucc_cmd
     return 0
 
 if __name__ == "__main__":
