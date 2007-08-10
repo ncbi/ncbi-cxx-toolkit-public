@@ -289,7 +289,8 @@ public :
 								);
 				}
 			}
-			catch( ... ) {
+			catch( exception& ex) {
+                            ERR_POST(ex.what());
 				mWEQty ++;
 				NcKey = "";
 			}
@@ -316,7 +317,8 @@ public :
 						}
 					}
 				}
-				catch( ... ) {
+				catch( exception& ex ) {
+                                    ERR_POST(ex.what());
 					mREQty ++;
 				}
 			}
@@ -365,7 +367,8 @@ public :
 					}
 
 				}
-				catch( ... ) {
+				catch( exception& ex ) {
+                                    ERR_POST(ex.what());
 					mDEQty ++;
 				}
 
