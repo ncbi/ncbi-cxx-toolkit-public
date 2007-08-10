@@ -3,6 +3,7 @@ util$
 util/compress$
 util/fileblobstorage$
 util/qparse$
+util/bitset$ update-only
 connect$
 connect/services$
 bdb$
