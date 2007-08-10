@@ -141,6 +141,9 @@ public:
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process. 
+    ///   If the timeout have zero value, than use unsafe process termination,
+    ///   just try to terminate a process without checks that it is really
+    ///   terminated.
     /// @note
     ///   On UNIX in case of zero or very small timeout the killing process
     ///   can be not released and continue to persists as zombie process
@@ -149,22 +152,29 @@ public:
     ///   TRUE  - if the process did not exist or was successfully terminated.
     ///   FALSE - if the process is still running, cannot be terminated, or
     ///           it is terminating right now (but still not terminated).
-    /// @sa KillGroup
+    /// @sa KillGroup, KillGroupById
     bool Kill(unsigned long timeout = kDefaultKillTimeout) const;
   
     /// Terminate a group of processes.
     ///
     /// This method try to terminate all process in the group to which
     /// process, specified in the constructor, belongs.
-    /// Note: Implemented on UNIX only, on Windows return FALSE.
     ///
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
+    ///   If the timeout have zero value, than use unsafe process termination,
+    ///   just try to terminate a process group without checks that it is
+    ///   really terminated.
     /// @note
     ///   On UNIX in case of zero or very small timeout the killing process
     ///   can be not released and continue to persists as zombie process
     ///   even after call of this function.
+    ///   On MS Windows this method try to terminate the process itself
+    ///   and all its children. But in the case if one of the processes,
+    ///   that should be terminated, spawns a new process in the moment
+    ///   of execution this method, that this new process might be
+    ///   not terminated.
     /// @return
     ///   TRUE  - if the process group did not exist or was successfully
     ///           terminated.
@@ -173,7 +183,7 @@ public:
     /// @sa Kill
     bool KillGroup(unsigned long timeout = kDefaultKillTimeout) const;
 
-    /// Terminate a group of processes.
+    /// Terminate a group of processes with specified ID.
     ///
     /// Note: Implemented on UNIX only, on Windows return FALSE.
     /// @pgid
@@ -183,6 +193,9 @@ public:
     /// @timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
+    ///   If the timeout have zero value, than use unsafe process termination,
+    ///   just try to terminate a process group without checks that it is
+    ///   really terminated.
     /// @note
     ///   On UNIX in case of zero or very small timeout the killing process
     ///   can be not released and continue to persists as zombie process
@@ -193,8 +206,8 @@ public:
     ///   FALSE - if the process group is still running, cannot be terminated,
     ///           or it is terminating right now (but still not terminated).
     /// @sa Kill
-    static bool KillGroup(TPid pgid,
-                          unsigned long timeout = kDefaultKillTimeout);
+    static bool KillGroupById(TPid pgid,
+                              unsigned long timeout = kDefaultKillTimeout);
 
     /// The extended exit information for waited process.
     /// All information about the process available only after Wait() method

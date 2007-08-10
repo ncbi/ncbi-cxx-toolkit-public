@@ -238,10 +238,11 @@ TPid CProcess::GetParentPid(void)
     return getppid();
 #elif defined(NCBI_OS_MSWIN)
     TPid ppid = (TPid)(-1);
-    // open snapshot handle
+    // Open snapshot handle
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
     if (hSnapshot != INVALID_HANDLE_VALUE) {
+
         PROCESSENTRY32 pe;
         DWORD pid = GetCurrentProcessId();
         pe.dwSize = sizeof(PROCESSENTRY32);
@@ -306,6 +307,9 @@ bool CProcess::IsAlive(void) const
 
 bool CProcess::Kill(unsigned long timeout) const
 {
+    // Safe process termination
+    bool safe = (timeout > 0);
+
 #if defined(NCBI_OS_UNIX)
 
     TPid pid = (TPid)m_Process;
@@ -333,12 +337,15 @@ bool CProcess::Kill(unsigned long timeout) const
     }
 
     // Try harder to kill the stubborn process -- SIGKILL may not be caught!
-    kill(pid, SIGKILL);
+    int res = kill(pid, SIGKILL);
+    if ( !safe ) {
+        return res == 0;
+    }
     SleepMilliSec(kWaitPrecision);
     // Rip the zombie (if child) up from the system
     waitpid(pid, 0, WNOHANG);
-
-    // Check whether the process cannot be killed (most likely due to a kernel problem)
+    // Check whether the process cannot be killed (most likely due
+    // to a kernel problem)
     return kill(pid, 0) != 0;
 
 #elif defined(NCBI_OS_MSWIN)
@@ -355,43 +362,111 @@ bool CProcess::Kill(unsigned long timeout) const
     bool   enable_sync = true;
 
     // Get process handle
-    if (m_Type == ePid) {
+    if (m_Type == eHandle) {
+        hProcess = (TProcessHandle)m_Process;
+
+    } else {  // m_Type == ePid
         hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_TERMINATE |
                                SYNCHRONIZE, FALSE, (TPid)m_Process);
         if ( !hProcess ) {
+            // Try to open with minimal access right needed
+            // to terminate process.
             enable_sync = false;
             hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
-            if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
-                return false;
+            if (!hProcess) {
+                if (GetLastError() != ERROR_ACCESS_DENIED) {
+                    return false;
+                }
+                // If we have an administrative rights, that we can try
+                // to terminate the process using SE_DEBUG_NAME privilege,
+                // which system administrators normally have, but it might
+                // be disabled by default. When this privilege is enabled,
+                // the calling thread can open processes with any access
+                // rights regardless of the security descriptor assigned
+                // to the process.
+
+                // Determine OS version
+                OSVERSIONINFO vi;
+                vi.dwOSVersionInfoSize = sizeof(vi);
+                GetVersionEx(&vi);
+                if (vi.dwPlatformId != VER_PLATFORM_WIN32_NT) {
+                    return false;
+                }
+
+                // Get current thread token 
+                HANDLE hToken;
+                if (!OpenThreadToken(GetCurrentThread(), 
+                                     TOKEN_QUERY|TOKEN_ADJUST_PRIVILEGES,
+                                     FALSE, &hToken)) {
+                    if (GetLastError() != ERROR_NO_TOKEN) {
+                        return false;
+                    }
+                    // Rrevert to the process token, if not impersonating
+                    if (!OpenProcessToken(GetCurrentProcess(),
+                                          TOKEN_QUERY|TOKEN_ADJUST_PRIVILEGES,
+                                          &hToken)) {
+                        return false;
+                    }
+                }
+
+                // Try to enable the SE_DEBUG_NAME privilege
+
+                TOKEN_PRIVILEGES tp, tp_prev;
+                DWORD            tp_prev_size = sizeof(tp_prev);
+
+                tp.PrivilegeCount = 1;
+                tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+                LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &tp.Privileges[0].Luid);
+
+                if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(tp),
+                                           &tp_prev, &tp_prev_size)) {
+                    CloseHandle(hToken);
+                    return false;
+                }
+                if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+                    // The AdjustTokenPrivileges function cannot add new
+                    // privileges to the access token. It can only enable or
+                    // disable the token's existing privileges.
+                    CloseHandle(hToken);
+                    return false;
+                }
+
+                // Try to open process handle again
+                hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
+                
+                // Restore original privilege state
+                AdjustTokenPrivileges(hToken, FALSE, &tp_prev, sizeof(tp_prev),
+                                      NULL, NULL);
+                CloseHandle(hToken);
             }
         }
-    } else {
-        hProcess = (TProcessHandle)m_Process;
     }
+
     // Check process handle
     if ( !hProcess  ||  hProcess == INVALID_HANDLE_VALUE ) {
         return true;
     }
-
     // Terminate process
     bool terminated = false;
 
-    // Safe process termination
     CStopWatch timer;
-    timer.Start();
-
-    // (kernel32.dll loaded at same address in each process)
-    FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
-                                    "ExitProcess");
-    if ( exitproc ) {
-        hThread = CreateRemoteThread(hProcess, NULL, 0,
-                                    (LPTHREAD_START_ROUTINE)exitproc,
-                                    0, 0, 0);
+    if ( safe ) {
+        timer.Start();
     }
-    // Wait until process terminated, or timeout expired
-    if ( enable_sync ) {
-        if (WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0){
-            terminated = true;
+    // Safe process termination
+    if ( safe  &&  enable_sync ) {
+        // (kernel32.dll loaded at same address in each process)
+        FARPROC exitproc = GetProcAddress(GetModuleHandle("KERNEL32.DLL"),
+                                        "ExitProcess");
+        if ( exitproc ) {
+            hThread = CreateRemoteThread(hProcess, NULL, 0,
+                                        (LPTHREAD_START_ROUTINE)exitproc,
+                                        0, 0, 0);
+            // Wait until process terminated, or timeout expired
+            if (hThread   &&
+                (WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0)){
+                terminated = true;
+            }
         }
     }
     // Try harder to kill stubborn process
@@ -403,12 +478,12 @@ bool CProcess::Kill(unsigned long timeout) const
             terminated = true;
         }
     }
-    if ( terminated ) {
+    if (safe  &&  terminated) {
         // The process terminating now.
         // Reset flag, and wait for real process termination.
 
         terminated = false;
-        double elapsed = timer.Elapsed();
+        double elapsed = timer.Elapsed() * kMilliSecondsPerSecond;
         unsigned long linger_timeout = (elapsed < timeout) ? 
             (unsigned long)((double)timeout - elapsed) : 0;
 
@@ -432,12 +507,79 @@ bool CProcess::Kill(unsigned long timeout) const
     if ( hThread ) {
         CloseHandle(hThread);
     }
-    if (m_Type == ePid ) {
+    if (m_Type == ePid) {
         CloseHandle(hProcess);
     }
     return terminated;
 #endif
 }
+
+
+#if defined(NCBI_OS_MSWIN)
+
+// MS Windows:
+// A helper function for terminating all processes
+// in the tree within specified timeout.
+
+// If 'timer' is specified we use safe process termination.
+static bool s_KillGroup(DWORD pid,
+                        CStopWatch *timer, unsigned long &timeout)
+{
+    // Open snapshot handle.
+    // We cannot use one shapshot for recursive calls, 
+    // because it is not reentrant.
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    PROCESSENTRY32 pe;
+    pe.dwSize = sizeof(PROCESSENTRY32);
+
+    // Terminate all children first
+    if (!Process32First(hSnapshot, &pe)) {
+        return false;
+    }
+    do {
+        if (pe.th32ParentProcessID == pid) {
+            // Safe termination -- update timeout
+            if ( timer ) {
+                double elapsed = timer->Elapsed() * kMilliSecondsPerSecond;
+                timeout = (elapsed < timeout) ?
+                    (unsigned long)((double)timeout - elapsed) : 0;
+                if ( !timeout ) {
+                    CloseHandle(hSnapshot);
+                    return false;
+                }
+            }
+            bool res = s_KillGroup(pe.th32ProcessID, timer, timeout);
+            if ( !res ) {
+                CloseHandle(hSnapshot);
+                return false;
+            }
+        }
+    }
+    while (Process32Next(hSnapshot, &pe)); 
+
+    // Terminate the specified process
+
+    // Safe termination -- update timeout
+    if ( timer ) {
+        double elapsed = timer->Elapsed() * kMilliSecondsPerSecond;
+        timeout = (elapsed < timeout) ?
+            (unsigned long)((double)timeout - elapsed) : 0;
+        if ( !timeout ) {
+            CloseHandle(hSnapshot);
+            return false;
+        }
+    }
+    bool res = CProcess(pid, CProcess::ePid).Kill(timeout);
+
+    // Close snapshot handle
+    CloseHandle(hSnapshot);
+    return res;
+}
+
+#endif
 
 
 bool CProcess::KillGroup(unsigned long timeout) const
@@ -448,15 +590,34 @@ bool CProcess::KillGroup(unsigned long timeout) const
         // TRUE if PID does not match ay process
         return errno == ESRCH;
     }
-    return KillGroup(pgid, timeout);
+    return KillGroupById(pgid, timeout);
     
 #elif defined(NCBI_OS_MSWIN)
-    return false;
+
+    // Convert the process handle to process ID if needed
+    TPid pid = 0;
+    if (m_Type == eHandle) {
+        pid = GetProcessId((TProcessHandle)m_Process);
+    } else {  // m_Type == ePid
+        pid = (TPid)m_Process;
+    }
+    if (!pid) {
+        return false;
+    }
+    // Use safe process termination if timeout > 0
+    unsigned long x_timeout = timeout;
+    CStopWatch timer;
+    if ( timeout ) {
+        timer.Start();
+    }
+    // Kill process tree
+    bool result = s_KillGroup(pid, (timeout > 0) ? &timer : 0, x_timeout);
+    return result;
 #endif
 }
 
 
-bool CProcess::KillGroup(TPid pgid, unsigned long timeout)
+bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 {
 #if defined(NCBI_OS_UNIX)
 
@@ -465,7 +626,10 @@ bool CProcess::KillGroup(TPid pgid, unsigned long timeout)
         return false;
     }
     // Check process termination within the timeout 
+    bool safe = (timeout > 0);
     for (;;) {
+        // Rip the zombie (if group leader is a child) up from the system
+        waitpid(pgid, 0, WNOHANG);
         if (kill(-pgid, 0) < 0) {
             return true;
         }
@@ -480,13 +644,20 @@ bool CProcess::KillGroup(TPid pgid, unsigned long timeout)
         timeout -= x_sleep;
     }
     // Try harder to kill the stubborn processes -- SIGKILL may not be caught!
-    kill(-pgid, SIGKILL);
+    int res = kill(-pgid, SIGKILL);
+    if ( !safe ) {
+        return res == 0;
+    }
     SleepMilliSec(kWaitPrecision);
-    
-    // Check whether the process cannot be killed (most likely due to a kernel problem)
+    // Rip the zombie (if group leader is a child) up from the system
+    waitpid(pgid, 0, WNOHANG);
+    // Check whether the process cannot be killed
+    // (most likely due to a kernel problem)
     return kill(-pgid, 0) != 0;
 
 #elif defined(NCBI_OS_MSWIN)
+    // Cannot be implemented, use non-static version of KillGroup()
+    // for specified process.
     return false;
 #endif
 }
