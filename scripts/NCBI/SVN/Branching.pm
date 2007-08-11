@@ -54,7 +54,7 @@ sub SetUpstreamAndSynchRev
     }
 }
 
-sub MergeDeletedBranches
+sub MergeDeletedTrees
 {
     my ($ObsoletePathTree, $Subdir, $DeletedNode) = @_;
 
@@ -71,14 +71,14 @@ sub MergeDeletedBranches
     {
         while (my ($Subdir, $Subtree) = each %$DeletedNode)
         {
-            MergeDeletedBranches($ObsoletePathTree, $Subdir, $Subtree)
+            MergeDeletedTrees($ObsoletePathTree, $Subdir, $Subtree)
         }
     }
 
     return 0
 }
 
-sub ClearDeletedBranches
+sub ClearDeletedTree
 {
     my ($ObsoletePathTree, $BranchStructure) = @_;
 
@@ -93,7 +93,7 @@ sub ClearDeletedBranches
 
         if (my $ObsoletePathSubtree = $ObsoletePathTree->{$Subdir})
         {
-            ClearDeletedBranches($ObsoletePathSubtree, $Subtree)
+            ClearDeletedTree($ObsoletePathSubtree, $Subtree)
         }
     }
 
@@ -139,7 +139,7 @@ sub ModelBranchStructure
                     $ObsoletePathTree = ($ObsoletePathTree->{$Subdir} ||= {})
                 }
 
-                MergeDeletedBranches($ObsoletePathTree, $Name, $DeletedNode)
+                MergeDeletedTrees($ObsoletePathTree, $Name, $DeletedNode)
             }
         }
         elsif ($ChangeType eq 'A' && $SourcePath)
@@ -253,9 +253,10 @@ sub new
 
     if ($Self->{ObsoleteBranchPaths})
     {
-        ClearDeletedBranches($Self->{ObsoleteBranchPaths}, \%BranchStructure);
+        ClearDeletedTree($Self->{ObsoleteBranchPaths}, \%BranchStructure);
 
-        $Self->{ObsoleteBranchPaths} = FindPathsInTree($Self->{ObsoleteBranchPaths})
+        $Self->{ObsoleteBranchPaths} =
+            FindPathsInTree($Self->{ObsoleteBranchPaths})
     }
 
     $Self->{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
