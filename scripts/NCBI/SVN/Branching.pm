@@ -21,32 +21,6 @@ package NCBI::SVN::BranchInfo;
 
 use base qw(NCBI::SVN::Base);
 
-sub FindParentNode
-{
-    my ($Tree, $Path) = @_;
-
-    my @Subdirs = split('/', $Path);
-    my $LastSubdir = pop(@Subdirs);
-
-    for my $Subdir (@Subdirs)
-    {
-        $Tree = ($Tree->{$Subdir} ||= {})
-    }
-
-    return ($Tree, $LastSubdir)
-}
-
-sub CutOffCommonTargetPrefix
-{
-    my ($TargetPath, $CommonTarget, $Revision) = @_;
-
-    substr($TargetPath, 0, length($CommonTarget), '') eq $CommonTarget
-        or die "target directory $TargetPath is not " .
-            "under $CommonTarget in r$Revision->{Number}";
-
-    return $TargetPath
-}
-
 sub SetUpstreamAndSynchRev
 {
     my ($Self, $SourcePath, $BranchDir, $SourceRevision, $Revision) = @_;
@@ -80,47 +54,96 @@ sub SetUpstreamAndSynchRev
     }
 }
 
+sub MergeDeletedBranches
+{
+    my ($ObsoletePathTree, $Subdir, $DeletedNode) = @_;
+
+    if (exists $DeletedNode->{'/'})
+    {
+        $ObsoletePathTree->{$Subdir} = {'/' => 1};
+
+        return
+    }
+
+    $ObsoletePathTree = ($ObsoletePathTree->{$Subdir} ||= {});
+
+    unless (exists $ObsoletePathTree->{'/'})
+    {
+        while (my ($Subdir, $Subtree) = each %$DeletedNode)
+        {
+            MergeDeletedBranches($ObsoletePathTree, $Subdir, $Subtree)
+        }
+    }
+
+    return 0
+}
+
+sub ClearDeletedBranches
+{
+    my ($ObsoletePathTree, $BranchStructure) = @_;
+
+    while (my ($Subdir, $Subtree) = each %$BranchStructure)
+    {
+        if ($Subtree->{'/'})
+        {
+            delete $ObsoletePathTree->{$Subdir};
+
+            next
+        }
+
+        if (my $ObsoletePathSubtree = $ObsoletePathTree->{$Subdir})
+        {
+            ClearDeletedBranches($ObsoletePathSubtree, $Subtree)
+        }
+    }
+
+    return 0
+}
+
 sub ModelBranchStructure
 {
     my ($Self, $BranchStructure, $Revision, $CommonTarget) = @_;
 
     for my $Change (@{$Revision->{ChangedPaths}})
     {
-        my ($ChangeType, $TargetPath, $SourcePath, $SourceRevision) = @$Change;
+        my ($ChangeType, $BranchDir, $SourcePath, $SourceRevision) = @$Change;
 
-        if ($ChangeType eq 'D')
+        next if substr($BranchDir, 0, length($CommonTarget), '')
+            ne $CommonTarget;
+
+        if ($ChangeType eq 'D' || $ChangeType eq 'R')
         {
-            my ($ParentNode, $LastSubdir) = FindParentNode($BranchStructure,
-                CutOffCommonTargetPrefix($TargetPath,
-                    $CommonTarget, $Revision));
+            my $ParentNode = $BranchStructure;
 
-            delete $ParentNode->{$LastSubdir}
-        }
-        elsif ($ChangeType eq 'R')
-        {
-            my $BranchDir = CutOffCommonTargetPrefix($TargetPath,
-                $CommonTarget, $Revision);
+            my @Subdirs = split('/', $BranchDir);
+            my $Name = pop(@Subdirs);
 
-            my ($ParentNode, $LastSubdir) = FindParentNode($BranchStructure,
-                $BranchDir);
-
-            unless ($SourcePath)
+            for my $Subdir (@Subdirs)
             {
-                delete $ParentNode->{$LastSubdir}
+                $ParentNode = ($ParentNode->{$Subdir} ||= {})
             }
-            else
+
+            if ($ChangeType eq 'R' && $SourcePath)
             {
-                $ParentNode->{$LastSubdir} = {'/' => 1};
+                $ParentNode->{$Name} = {'/' => 1};
 
                 $Self->SetUpstreamAndSynchRev($SourcePath,
                     $BranchDir, $SourceRevision)
             }
+            elsif (my $DeletedNode = delete $ParentNode->{$Name})
+            {
+                my $ObsoletePathTree = ($Self->{ObsoleteBranchPaths} ||= {});
+
+                for my $Subdir (@Subdirs)
+                {
+                    $ObsoletePathTree = ($ObsoletePathTree->{$Subdir} ||= {})
+                }
+
+                MergeDeletedBranches($ObsoletePathTree, $Name, $DeletedNode)
+            }
         }
         elsif ($ChangeType eq 'A' && $SourcePath)
         {
-            my $BranchDir = CutOffCommonTargetPrefix($TargetPath,
-                $CommonTarget, $Revision);
-
             NCBI::SVN::Branching::Util::FindTreeNode($BranchStructure,
                 $BranchDir)->{'/'} = 1;
 
@@ -130,21 +153,35 @@ sub ModelBranchStructure
     }
 }
 
-sub ExtractBranchDirs
+sub FindPathsInTreeRecursively
 {
-    my ($BranchDirs, $Path, $Contents) = @_;
+    my ($Paths, $Path, $Tree) = @_;
 
-    while (my ($Subdir, $Subtree) = each %$Contents)
+    while (my ($Name, $Subtree) = each %$Tree)
     {
-        unless ($Subdir eq '/')
+        unless ($Name eq '/')
         {
-            ExtractBranchDirs($BranchDirs, "$Path/$Subdir", $Subtree)
+            FindPathsInTreeRecursively($Paths, "$Path/$Name", $Subtree)
         }
-        elsif ($Subtree)
+        else
         {
-            push @$BranchDirs, $Path
+            push @$Paths, $Path
         }
     }
+}
+
+sub FindPathsInTree
+{
+    my ($Tree) = @_;
+
+    my @Paths;
+
+    while (my ($Name, $Subtree) = each %$Tree)
+    {
+        FindPathsInTreeRecursively(\@Paths, $Name, $Subtree)
+    }
+
+    return \@Paths
 }
 
 sub new
@@ -153,13 +190,11 @@ sub new
 
     $MaxBranchRev ||= 'HEAD';
 
-    my @BranchDirs;
     my @BranchRevisions;
     my @MergeDownRevisions;
 
     my $Self = $Class->SUPER::new(
         BranchPath => $BranchPath,
-        BranchDirs => \@BranchDirs,
         BranchRevisions => \@BranchRevisions,
         MergeDownRevisions => \@MergeDownRevisions
     );
@@ -212,12 +247,16 @@ sub new
         }
     }
 
-    while (my ($Dir, $Contents) = each %BranchStructure)
-    {
-        ExtractBranchDirs(\@BranchDirs, $Dir, $Contents)
-    }
+    my @BranchDirs = sort @{FindPathsInTree(\%BranchStructure)};
 
-    @BranchDirs = sort @BranchDirs;
+    $Self->{BranchDirs} = \@BranchDirs;
+
+    if ($Self->{ObsoleteBranchPaths})
+    {
+        ClearDeletedBranches($Self->{ObsoleteBranchPaths}, \%BranchStructure);
+
+        $Self->{ObsoleteBranchPaths} = FindPathsInTree($Self->{ObsoleteBranchPaths})
+    }
 
     $Self->{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
 
