@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-
+# TODO: Use optparse to implement 3 options: -m message_for_svn
+# -f file_for_project and -r revision_to_tag
 import sys, popen2
+
+RELEASE_ROOT="release"
 
 # ORed flags for path part
 FLAG_COPY      = 1
@@ -20,13 +23,13 @@ def get_project(root, project_name):
     r,w,e = popen2.popen3("svn cat "+url)
     err = e.read()
     if err:
-        print err
+        sys.stderr.write(err+'\n')
         return None
-    dirs = r.read().split('\n')
-#    dirs = file("test.lst")
+    filelist = r.read().split('\n')
+#    filelist = file("netschedule.lst")
     inc_tree = FLAG_COPY, {}
     src_tree = FLAG_COPY, {}
-    for line in dirs:
+    for line in filelist:
         line = line.strip()
         if not line: continue
         parts = line.split(' ', 1)
@@ -42,8 +45,6 @@ def get_project(root, project_name):
         path_descr[-1] = last_flag, last_part
         add_path(inc_tree, path_descr)
         if get_src: add_path(src_tree, path_descr)
-    print "Include", inc_tree
-    print "Source", src_tree
     return inc_tree, src_tree
 
 def list_url(url):
@@ -56,7 +57,7 @@ def list_url(url):
         res.append(line)
     err = e.read()
     if err:
-        print err
+        sys.stderr.write(err+'\n')
         return []
     return res
 
@@ -72,18 +73,23 @@ def add_tree(dirlist, url, root, proj_tree):
         if dir_node: node = node[:-1]
         if not dir_node and level_flag & FLAG_COPY: continue
         child = children.get(node)
-        #TODO: handle all cases: dir/file, present/not
         if not child:
             dirlist.append(root + '/' + node)
-            print root + '/' + node
-        else:
+            sys.stderr.write(root + '/' + node + '\n')
+        elif dir_node:
             add_tree(dirlist, url, root + '/' + node, child)
+        # regular file found - do nothing
 
 def get_list_to_remove(root, proj_tree):
     inc_tree, src_tree = proj_tree
+    # add dirs/files, required for every build to inc_tree, src_tree
+    add_path(inc_tree, [(0, "corelib"), (FLAG_COPY, "impl")])
+    add_path(inc_tree, [(0, "corelib"), (FLAG_COPY, "hash_impl")])
+    add_path(inc_tree, [(FLAG_COPY | FLAG_RECURSIVE, "common")])
+    add_path(src_tree, [(0, "app"), (0, "Makefile.in")])
+#    print "Include", inc_tree
+#    print "Source", src_tree
     dirlist = ["doc", "scripts/internal"]
-    # TODO: add dirs/files, required for every build
-    # to inc_tree, src_tree
     url = root + "/trunk/c++"
     add_tree(dirlist, url, "include", inc_tree)
     add_tree(dirlist, url, "src",     src_tree)
@@ -91,7 +97,7 @@ def get_list_to_remove(root, proj_tree):
 
 def main(args):
     if len(args) < 2:
-        print "Usage: svn_tag_release.py svn_root project [revision]"
+        sys.stderr.write("Usage: svn_tag_release.py svn_root project [revision]\n")
         return 1
     root = args[0]
     if root[-1] == '/':
@@ -106,12 +112,13 @@ def main(args):
     if not proj_tree:
         return -1
     dirlist = get_list_to_remove(root, proj_tree)
-    target = "tags/%s/current/c++" % project
+    project_release_root = RELEASE_ROOT + '/' + project
+    target = "%s/current/c++" % project_release_root
     mucc_cmd = "svnmucc -U %s" % root
-    tags = list_url(root+'/tags')
+    tags = list_url(root + '/' + RELEASE_ROOT)
     if not project+'/' in tags:
-        mucc_cmd += " mkdir tags/%s " % project
-    mucc_cmd += " mkdir tags/%s/current cp %s trunk/c++ %s " % (project, revision, target)
+        mucc_cmd += " mkdir " + project_release_root
+    mucc_cmd += " mkdir %s/current cp %s trunk/c++ %s " % (project_release_root, revision, target)
     mucc_cmd += " ".join(map(lambda x: "rm %s/%s" % (target, x), dirlist))
     print mucc_cmd
     return 0
