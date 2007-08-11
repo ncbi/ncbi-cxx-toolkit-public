@@ -1,0 +1,12 @@
+corelib$
+util$
+util/compress
+util/fileblobstorage$
+util/qparse$
+util/bitset$ update-only
+util/cache$ update-only
+util/math$ update-only
+connect$
+connect/services$
+bdb$
+app/netcache$
