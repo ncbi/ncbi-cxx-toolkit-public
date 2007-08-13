@@ -252,7 +252,10 @@ private:
 };
 
 
-/// BLOB demultiplexer implements round-robin volume rotation
+/// BLOB demultiplexer implements round-robin volume rotation.
+///
+/// This demultiplexer sends every new BLOB to a next volume, reducing
+/// locking contention over one BDB database.
 ///
 class CBDB_BlobDeMux_RoundRobin : public CBDB_BlobDeMuxSplit
 {
@@ -292,14 +295,33 @@ private:
 
 
 
+
 /// BLOB storage based on single unsigned integer key
 /// Supports BLOB volumes and different base page size files in the volume
 /// to guarantee the best fit.
+///
+///
+/// Problem.
+/// Berkeley DB shows measurable difference in behavior and performance depending on 
+/// the combination of record size and database page size. 
+/// Differences include amount of disk traffic, locking granularity, 
+/// number of overflow pages, etc.
+///
+/// The most critical here is overflow pages. 
+/// If DB page cannot accommodate 2(sometimes more) records BDB creates overflow pages. 
+/// This is found to be expensive. The typical fix is to increase the page size. 
+/// Large page size is inefficient for dealing with small record 
+/// (you have to load/store 64K (full page) to load small object. 
+/// In transaction environment page access are also locks a lot of records. 
+/// Page size also influences B-Tree depth and number of internal pages. 
+/// Number of internal pages affects database size and retrieval performance.
+///
 ///
 /// Object maintains a matrix of BDB databases.
 /// Every row maintains certain database volume or(and) number of records.
 /// Every column groups BLOBs of certain size together, so class can choose
 /// the best page size to store BLOBs without long chains of overflow pages.
+///
 /// <pre>
 ///                      Page size split:
 ///  Volume 
@@ -314,6 +336,14 @@ private:
 ///
 /// </pre>
 ///
+/// Matrix coordinates picking is implemented using concept called DeMux. 
+/// It maintains BLOB_ID <-> coordinates association. 
+/// Demux implementation(s) use bit-vectors to do the job. BLOB ID must be unique 
+/// across the store. In general DeMux can work with N-dimensional coordinates 
+/// to address  host, partition, volume, slice  (distributed store). 
+/// But current practical implementation uses 2D matrix (volume, slice).
+///
+
 template<class TBV, class TObjDeMux=CBDB_BlobDeMux, class TL=CFastMutex>
 class CBDB_BlobSplitStore : public CThreadLocalTransactional
 {

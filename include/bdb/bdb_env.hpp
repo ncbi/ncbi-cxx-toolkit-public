@@ -357,6 +357,18 @@ public:
     /// @name Background writer
     /// @{
 
+    /// Background work flags
+    ///
+    enum EBackgroundWork {
+        eBackground_MempTrickle     = (1 << 0),
+        eBackground_Checkpoint      = (1 << 1),
+        eBackground_DeadLockDetect  = (1 << 2),
+
+    };
+
+    /// Background work flags (combination of EBackgroundWork)
+    ///
+    typedef unsigned TBackgroundFlags;
 
     /// Schedule background maintenance thread which will do:
     ///    - transaction checkpointing
@@ -365,6 +377,8 @@ public:
     ///
     /// (Call when environment is open)
     ///
+    /// @param flags
+    ///     Flag-mask setting what thread should do
     /// @param thread_delay
     ///     sleep in seconds between every call
     /// @param memp_trickle 
@@ -373,6 +387,12 @@ public:
     ///     Max.tolerable number of errors (when exceeded - thread stops)
     ///     0 - unrestricted
     ///
+    void RunBackgroundWriter(TBackgroundFlags flags, 
+                             unsigned thread_delay = 30,
+                             int memp_trickle = 0,
+                             unsigned err_max = 0);
+
+    /// Deprecated version of RunBackgroundWriter
     void RunCheckpointThread(unsigned thread_delay = 30,
                              int memp_trickle = 0,
                              unsigned err_max = 0);

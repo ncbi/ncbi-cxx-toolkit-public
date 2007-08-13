@@ -49,7 +49,11 @@ CBDB_CheckPointThread::CBDB_CheckPointThread(CBDB_Env& env,
     m_MempTrickle(memp_trickle),
     m_ErrCnt(0),
     m_MaxErrors(100)
-{}
+{
+    m_Flags = CBDB_Env::eBackground_MempTrickle |
+              CBDB_Env::eBackground_Checkpoint  |
+              CBDB_Env::eBackground_DeadLockDetect;
+}
 
 void CBDB_CheckPointThread::SetMaxErrors(unsigned max_err)
 {
@@ -59,11 +63,13 @@ void CBDB_CheckPointThread::SetMaxErrors(unsigned max_err)
 void CBDB_CheckPointThread::DoJob(void)
 {
     try {
-        if (m_Env.IsTransactional()) {
+        if (m_Env.IsTransactional() && 
+           (m_Flags & CBDB_Env::eBackground_Checkpoint)) {
             m_Env.TransactionCheckpoint();
         }
 
-        if (m_MempTrickle) {
+        if (m_MempTrickle && 
+           (m_Flags & CBDB_Env::eBackground_MempTrickle)) {
             int nwrotep = 0;
             m_Env.MempTrickle(m_MempTrickle, &nwrotep);
             if (nwrotep) {
@@ -71,7 +77,9 @@ void CBDB_CheckPointThread::DoJob(void)
                          << nwrotep << " pages");
             }
         }
-        m_Env.DeadLockDetect();
+        if (m_Flags & CBDB_Env::eBackground_DeadLockDetect) {
+            m_Env.DeadLockDetect();
+        }
     } 
     catch (CBDB_ErrnoException& ex)
     {

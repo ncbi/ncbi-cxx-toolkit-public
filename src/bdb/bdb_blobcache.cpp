@@ -278,7 +278,8 @@ public:
 
 			    // Dumping the buffer
                 try {
-                    if (m_Buffer.size()) {
+                    //if (m_Buffer.size()) {
+                    if (!m_OverflowFile) {
                         m_Cache.x_Store(m_BlobIdExt,
                                         m_BlobKey,
                                         m_Version,
@@ -435,9 +436,8 @@ public:
 
         // Dumping the buffer
 
-        if (m_Buffer.size()) {
-
-            _ASSERT(m_OverflowFile == 0);
+//        if (m_Buffer.size()) {
+        if (!m_OverflowFile) {
 
             try {
                 m_Cache.x_Store(m_BlobIdExt,
@@ -1363,8 +1363,8 @@ void CBDB_Cache::Open(const string& cache_path,
         if (m_Timeout) {
             timeline_precision = m_Timeout / 10;
         }
-        if (timeline_precision > (30 * 60)) {
-            timeline_precision = 30 * 60;
+        if (timeline_precision > (10 * 60)) { // 10 min max.
+            timeline_precision = 10 * 60;
         }
         if (timeline_precision < (2 * 60)) {
             timeline_precision = 2 * 60;

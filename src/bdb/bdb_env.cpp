@@ -987,8 +987,9 @@ void CBDB_Env::DeadLockDetect()
     BDB_CHECK(ret, "lock_detect");
 }
 
-void CBDB_Env::RunCheckpointThread(unsigned thread_delay, 
-                                   int      memp_trickle,
+void CBDB_Env::RunBackgroundWriter(TBackgroundFlags flags, 
+                                   unsigned thread_delay,
+                                   int memp_trickle,
                                    unsigned err_max)
 {
 # ifdef NCBI_THREADS
@@ -996,11 +997,24 @@ void CBDB_Env::RunCheckpointThread(unsigned thread_delay,
     m_CheckThread.Reset(
         new CBDB_CheckPointThread(*this, memp_trickle, thread_delay, 5));
     m_CheckThread->SetMaxErrors(err_max);
+    m_CheckThread->SetWorkFlag(flags);
     m_CheckThread->Run();
 # else
     LOG_POST(Warning <<
      "Cannot run BDB transaction checkpoint thread in non-MT configuration.");
 # endif
+}
+
+
+void CBDB_Env::RunCheckpointThread(unsigned thread_delay, 
+                                   int      memp_trickle,
+                                   unsigned err_max)
+{
+    TBackgroundFlags flags = CBDB_Env::eBackground_MempTrickle |
+                             CBDB_Env::eBackground_Checkpoint  |
+                             CBDB_Env::eBackground_DeadLockDetect;
+    
+    RunBackgroundWriter(flags, thread_delay, memp_trickle, err_max);
 }
 
 void CBDB_Env::StopCheckpointThread()

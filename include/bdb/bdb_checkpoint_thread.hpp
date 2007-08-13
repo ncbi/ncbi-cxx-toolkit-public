@@ -34,6 +34,7 @@
  */
 
 #include <util/thread_nonstop.hpp>
+#include <bdb/bdb_env.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,6 +59,8 @@ public:
 
     virtual void DoJob(void);
 
+    void SetWorkFlag(CBDB_Env::TBackgroundFlags flags) { m_Flags = flags; }
+
     /// Set maximum number of errors this thread tolerates
     /// 0 - unlimited
     ///
@@ -67,10 +70,11 @@ private:
     CBDB_CheckPointThread(const CBDB_CheckPointThread&);
     CBDB_CheckPointThread& operator=(const CBDB_CheckPointThread&);
 private:
-    CBDB_Env&        m_Env;
-    int              m_MempTrickle;
-    unsigned         m_ErrCnt;
-    unsigned         m_MaxErrors;
+    CBDB_Env&                   m_Env;
+    CBDB_Env::TBackgroundFlags  m_Flags;
+    int                         m_MempTrickle;
+    unsigned                    m_ErrCnt;
+    unsigned                    m_MaxErrors;
 };
 
 /* @} */
