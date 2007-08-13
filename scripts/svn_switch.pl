@@ -23,22 +23,24 @@ Usage:
     $ScriptName <switch_map_file>
 
 Where:
-    switch_map_file     The name of file containing directory mappings.
+    switch_map_file  -- file with directory mappings
 
 Description:
     This utility helps to perform multiple switches in a Subversion working
-    directory accordingly to the mapping specified by switch_map_file.
+    directory according to the mapping specified by switch_map_file.
 
-    Each line of a switch map file consists of two whitespace-separated
-    parameters for a switch command. The first parameter is a working copy
-    directory pathname specified relatively to the current working directory.
-    This is the directory that will be switched. The second parameter defines
-    a path within the repository (relatively to the repository root) that
-    the working copy directory defined by the first parameter will be
-    switched to.
+    Each line of the switch_map_file consists of two whitespace-separated
+    arguments for a 'svn switch' command.
+    The first argument is a working copy directory pathname specified
+    relatively to the current working directory. This is the directory
+    that will be switched.
+    The second argument defines a path within the repository (relative
+    to the repository root) that the working copy directory defined by
+    the first argument will be switched to.
 
-    Note that all other "switched" directories under the current working
-    copy directory will be "unswitched" to their original location.
+    NOTE:  All "switched" directories under the current working directory
+           which are not listed in the switch_map_file will be switched
+           back to their original locations.
 
 EOF
 }
