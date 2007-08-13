@@ -908,6 +908,27 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleGis)
     }
 }
 
+// This input file contains very short sequences (1-3 bases) which were product
+// of a sequencing machine
+BOOST_AUTO_TEST_CASE(s_ReadMultipleSequencesFromSequencer)
+{
+    CNcbiIfstream infile("data/DF-1.txt");
+    const bool is_protein(false);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+    const size_t kNumQueries(96);
+
+    CHECK(source->End() == false);
+
+    CBlastInput bi(source);
+    blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
+    CHECK_EQUAL(kNumQueries, query_vector.size());
+
+    /// Validate the data that would be retrieved by blast.cgi
+    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    CHECK_EQUAL(kNumQueries, bioseqs->GetSeq_set().size());
+}
+
 BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
 {
     CNcbiIfstream infile("data/tis.txt");
