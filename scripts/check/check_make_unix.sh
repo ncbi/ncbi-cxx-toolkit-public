@@ -157,7 +157,9 @@ res_list="$x_list"
 res_concat="\$script.out"
 res_concat_err="\$script.out_err"
 
+# Define both senses to accommodate shells lacking !
 is_report_err=false
+no_report_err=true
 signature="$x_signature"
 sendmail=''
 
@@ -261,6 +263,7 @@ case "\$method" in
          exit 0
       fi
       is_report_err=true
+      no_report_err=false
       # See RunTest() below
       ;;
 #----------------------------------------------------------
@@ -326,7 +329,7 @@ count_err=0
 count_absent=0
 count_total=0
 
-if ! \$is_report_err; then
+if \$no_report_err; then
    rm -f "\$res_journal"
    rm -f "\$res_log"
 fi
@@ -527,14 +530,14 @@ EOF_launch
             fi
          done
       else
-         if ! \$is_report_err; then
+         if \$no_report_err; then
             echo "ABS --  \$x_cmd"
             echo "ABS --  \$x_cmd" >> \$res_log
             count_absent=\`expr \$count_absent + 1\`
          fi
       fi
   else
-      if ! \$is_report_err; then
+      if \$no_report_err; then
          # Test application is absent
          echo "ABS -- \$x_work_dir - \$x_test"
          echo "ABS -- \$x_work_dir - \$x_test" >> \$res_log
@@ -641,7 +644,7 @@ done # for x_row in x_tests
 # Write ending code into the script 
 cat >> $x_out <<EOF
 
-if ! \$is_report_err; then
+if \$no_report_err; then
    # Write result of the tests execution
    echo
    echo "Succeeded : \$count_ok"
