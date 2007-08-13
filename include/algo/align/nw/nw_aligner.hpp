@@ -295,8 +295,8 @@ protected:
     public:
 
         CBacktraceMatrix4(size_t dim) {
-            const size_t dim_bytes (dim / 2 + 1);
-            m_Buf = new Uint1 [dim_bytes];
+            m_Buf = new Uint1 [dim / 2 + 1];
+            m_Elem = 0;
         }
 
         ~CBacktraceMatrix4() { delete [] m_Buf; }
