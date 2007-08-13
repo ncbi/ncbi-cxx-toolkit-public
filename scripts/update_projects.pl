@@ -235,6 +235,7 @@ sub ReadProjectListingFile
     while (<FILE>)
     {
         s/\s*$//so;
+        s/\s+update-only$//so;
         s/\$$/\//so;
 
         $Context = "$FileName:$.";
