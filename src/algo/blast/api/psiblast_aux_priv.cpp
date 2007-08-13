@@ -309,7 +309,7 @@ s_AdjustFrequencyRatiosMatrixToMatchScoreMatrix(objects::CPssmWithParameters&
 void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts)
 {
-    CConstRef<CBioseq> query(&pssm->GetPssm().GetQuery().GetSeq());
+    CConstRef<CBioseq> query(&pssm->GetQuery().GetSeq());
     CRef<IQueryFactory> seq_fetcher(new CObjMgrFree_QueryFactory(query));
 
     CRef<ILocalQueryData> query_data(seq_fetcher->MakeLocalQueryData(&opts));
@@ -437,11 +437,11 @@ CPsiBlastValidate::Pssm(const objects::CPssmWithParameters& pssm,
         NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
 
-    if ( !pssm.GetPssm().CanGetQuery() ) {
+    if ( !pssm.HasQuery() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Missing query sequence in PSSM");
     }
-    if ( !pssm.GetPssm().GetQuery().IsSeq() ) {
+    if ( !pssm.GetQuery().IsSeq() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Query sequence in ASN.1 PSSM is not a single Bioseq");
     }
