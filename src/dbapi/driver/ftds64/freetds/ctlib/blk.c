@@ -1258,7 +1258,8 @@ _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcpcol, int first)
 		sprintf(column_type, "varbinary(%d)", bcpcol->column_size);
 		break;
 	case XSYBVARCHAR:
-		sprintf(column_type, "varchar(%d)", bcpcol->column_size);
+                /* ssikorsk */
+		sprintf(column_type, "varchar(%d)", bcpcol->on_server.column_size);
 		break;
         /* case SYBLONGCHAR: */
 	case XSYBBINARY:
@@ -1266,7 +1267,8 @@ _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcpcol, int first)
 		break;
         /* case SYBLONGBINARY: */
 	case XSYBCHAR:
-		sprintf(column_type, "char(%d)", bcpcol->column_size);
+                /* ssikorsk */
+		sprintf(column_type, "char(%d)", bcpcol->on_server.column_size);
 		break;
 	case SYBTEXT:
 		sprintf(column_type, "text");
@@ -1275,10 +1277,12 @@ _blk_build_bulk_insert_stmt(TDS_PBCB * clause, TDSCOLUMN * bcpcol, int first)
 		sprintf(column_type, "image");
 		break;
 	case XSYBNVARCHAR:
-		sprintf(column_type, "nvarchar(%d)", bcpcol->column_size);
+                /* ssikorsk */
+		sprintf(column_type, "nvarchar(%d)", bcpcol->on_server.column_size);
 		break;
 	case XSYBNCHAR:
-		sprintf(column_type, "nchar(%d)", bcpcol->column_size);
+                /* ssikorsk */
+		sprintf(column_type, "nchar(%d)", bcpcol->on_server.column_size);
 		break;
 	case SYBNTEXT:
 		sprintf(column_type, "ntext");
