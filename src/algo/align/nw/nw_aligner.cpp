@@ -157,6 +157,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 	    NCBI_THROW(CAlgoAlignException, eInvalidCharacter, message);
 	}
     }
+
     m_Seq1 = seq1;
     m_SeqLen1 = len1;
     m_Seq2 = seq2;
@@ -238,11 +239,12 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     // index calculation: [i,j] = i*n2 + j
 
     CBacktraceMatrix4 backtrace_matrix (N1 * N2);
+    backtrace_matrix.SetAt(0, 0);
 
     // first row
     size_t k;
     rowV[0] = wgleft1;
-    for (k = 1; k < N2; k++) {
+    for (k = 1; k < N2; ++k) {
         rowV[k] = pV[k] + wsleft1;
         rowF[k] = kInfMinus;
         backtrace_matrix.SetAt(k, kMaskE | kMaskEc);
@@ -256,10 +258,10 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     }
 
     // recurrences
-    TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
-    TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
-    TScore V  = rowV[N2 - 1];
-    TScore V0 = wgleft2;
+    TScore wgleft2 (bFreeGapLeft2? 0: m_Wg);
+    TScore wsleft2 (bFreeGapLeft2? 0: m_Ws);
+    TScore V  (rowV[N2 - 1]);
+    TScore V0 (wgleft2);
     TScore E, G, n0;
     unsigned char tracer;
 
@@ -564,18 +566,19 @@ const
 void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
                                SAlignInOut* data)
 {
-    const size_t N1 = data->m_len1 + 1;
-    const size_t N2 = data->m_len2 + 1;
+    const size_t N1 (data->m_len1 + 1);
+    const size_t N2 (data->m_len2 + 1);
 
     data->m_transcript.clear();
     data->m_transcript.reserve(N1 + N2);
 
-    size_t k = N1*N2 - 1;
-    size_t i1 = data->m_offset1 + data->m_len1 - 1;
-    size_t i2 = data->m_offset2 + data->m_len2 - 1;
+    size_t k  (N1*N2 - 1);
+    size_t i1 (data->m_offset1 + data->m_len1 - 1);
+    size_t i2 (data->m_offset2 + data->m_len2 - 1);
     while (k != 0) {
 
-        unsigned char Key = backtrace[k];
+        unsigned char Key (backtrace[k]);
+
         if (Key & kMaskD) {
 
             data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));

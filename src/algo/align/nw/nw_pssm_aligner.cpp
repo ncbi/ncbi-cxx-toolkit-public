@@ -302,6 +302,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
 
     // index calculation: [i,j] = i*n2 + j
     CBacktraceMatrix4 backtrace_matrix (N1 * N2);
+    backtrace_matrix.SetAt(0, 0);
 
     // first row
     size_t k;

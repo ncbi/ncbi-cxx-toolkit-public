@@ -297,6 +297,7 @@ void CAppNWA::x_RunOnPair() const
         pnwaligner = ba;
     }
 
+
     auto_ptr<CNWAligner> aligner (pnwaligner);
 
     if(psm == NULL) {
@@ -317,7 +318,6 @@ void CAppNWA::x_RunOnPair() const
         aligner_mrna2dna->SetWi (0, args["Wi0"]. AsInteger());
         aligner_mrna2dna->SetWi (1, args["Wi1"]. AsInteger());
         aligner_mrna2dna->SetWi (2, args["Wi2"]. AsInteger());
-        //        aligner_mrna2dna->SetWi (3, args["Wi3"]. AsInteger());
 
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
 

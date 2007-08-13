@@ -184,7 +184,11 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
         }
         
         int j;
-        int k = fullrow * (i - ibeg) + jbeg - jbeg0;
+        int k (fullrow * (i - ibeg) + jbeg - jbeg0);
+        if(k & 1) {
+            backtrace_matrix.SetAt(k - 1, 0);
+        }
+
         for(j = jbeg; j < jend; ++j) {            
 
             if(j > 0) {
