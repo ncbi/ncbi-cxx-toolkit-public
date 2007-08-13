@@ -231,7 +231,7 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
         if (m_FormatType == 7)
              tabinfo.PrintHeader(m_Program,
                                  *(bhandle.GetBioseqCore()),
-                                 m_DbName, 0);
+                                 m_DbName, 0, &aln_set);
                                  
         ITERATE(CSeq_align_set::Tdata, itr, aln_set.Get()) {
                 const CSeq_align& s = **itr;
