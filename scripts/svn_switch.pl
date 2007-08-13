@@ -29,6 +29,17 @@ Description:
     This utility helps to perform multiple switches in a Subversion working
     directory accordingly to the mapping specified by switch_map_file.
 
+    Each line of a switch map file consists of two whitespace-separated
+    parameters for a switch command. The first parameter is a working copy
+    directory pathname specified relatively to the current working directory.
+    This is the directory that will be switched. The second parameter defines
+    a path within the repository (relatively to the repository root) that
+    the working copy directory defined by the first parameter will be
+    switched to.
+
+    Note that all other "switched" directories under the current working
+    copy directory will be "unswitched" to their original location.
+
 EOF
 }
 
