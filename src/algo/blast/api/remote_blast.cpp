@@ -1884,9 +1884,13 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 
 void
 CBlastOptionsBuilder::x_ProcessOptions(CBlastOptionsHandle & opts,
-                                       const TValueList    & L)
+                                       const TValueList    * L)
 {
-    ITERATE(TValueList, iter, L) {
+    if ( !L ) {
+        return;
+    }
+
+    ITERATE(TValueList, iter, *L) {
         CBlast4_parameter & p = *const_cast<CBlast4_parameter*>(& **iter);
         x_ProcessOneOption(opts, p);
     }
@@ -1902,14 +1906,18 @@ void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
 }
 
 EProgram
-CBlastOptionsBuilder::AdjustProgram(const TValueList & L,
+CBlastOptionsBuilder::AdjustProgram(const TValueList * L,
                                     EProgram           program,
                                     const string     & program_string)
 {
     bool problem = false;
     string name;
+
+    if ( !L ) {
+        return program;
+    }
     
-    ITERATE(TValueList, iter, L) {
+    ITERATE(TValueList, iter, *L) {
         CBlast4_parameter & p = const_cast<CBlast4_parameter&>(**iter);
         const CBlast4_value & v = p.GetValue();
         
@@ -1952,20 +1960,21 @@ CBlastOptionsBuilder::AdjustProgram(const TValueList & L,
 }
 
 CRef<CBlastOptionsHandle> CBlastOptionsBuilder::
-GetSearchOptions(const objects::CBlast4_parameters & aopts,
-                 const objects::CBlast4_parameters & popts)
+GetSearchOptions(const objects::CBlast4_parameters * aopts,
+                 const objects::CBlast4_parameters * popts)
 {
     EProgram program = ComputeProgram(m_Program, m_Service);
     
-    program = AdjustProgram(aopts.Get(), program, m_Program);
+    program = AdjustProgram((aopts == NULL ? &aopts->Get() : 0), 
+                            program, m_Program);
     
     // Using eLocal allows more of the options to be returned to the user.
     
     CRef<CBlastOptionsHandle>
         cboh(CBlastOptionsFactory::Create(program, m_Locality));
     
-    x_ProcessOptions(*cboh, aopts.Get());
-    x_ProcessOptions(*cboh, popts.Get());
+    x_ProcessOptions(*cboh, (aopts == NULL ? &aopts->Get() : 0));
+    x_ProcessOptions(*cboh, (popts == NULL ? &popts->Get() : 0));
     
     x_ApplyInteractions(*cboh);
     
@@ -2020,7 +2029,7 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         
         CBlastOptionsBuilder bob(program_s, service_s);
         
-        m_CBOH = bob.GetSearchOptions(*m_AlgoOpts, *m_ProgramOpts);
+        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts);
         
         if (bob.HaveEntrezQuery()) {
             m_EntrezQuery = bob.GetEntrezQuery();

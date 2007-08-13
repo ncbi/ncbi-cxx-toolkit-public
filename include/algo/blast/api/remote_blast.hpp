@@ -704,8 +704,8 @@ public:
     /// @param aopts List of algorithm options.
     /// @param popts List of program options.
     CRef<CBlastOptionsHandle>
-    GetSearchOptions(const objects::CBlast4_parameters & aopts,
-                     const objects::CBlast4_parameters & popts);
+    GetSearchOptions(const objects::CBlast4_parameters * aopts,
+                     const objects::CBlast4_parameters * popts);
     
     /// Check whether an Entrez query is specified.
     bool HaveEntrezQuery();
@@ -761,8 +761,9 @@ public:
     /// @param L The list of options used for this search.
     /// @param program The EProgram suggested by program+service.
     /// @param program_string The program as a string.
-    /// @return The EProgram value as adjusted by options.
-    static EProgram AdjustProgram(const TValueList & L,
+    /// @return The EProgram value as adjusted by options or the argument
+    /// program if L is NULL
+    static EProgram AdjustProgram(const TValueList * L,
                                   EProgram           program,
                                   const string     & program_string);
     
@@ -835,7 +836,7 @@ private:
     /// @param opts The blast options handle.
     /// @param L The list of parameters to add to the options.
     void x_ProcessOptions(CBlastOptionsHandle & opts,
-                          const TValueList    & L);
+                          const TValueList    * L);
     
     /// Program value for blast4 protocol.
     string m_Program;
