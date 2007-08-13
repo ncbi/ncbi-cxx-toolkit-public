@@ -6082,6 +6082,12 @@ public:
     {
         return eTempInvalidConn;
     }
+
+    virtual string GetName(void) const
+    {
+        return "CValidator01" + GetDBName();
+    }
+
 };
 
 
@@ -6132,6 +6138,11 @@ public:
     virtual EConnStatus ValidateException(const CDB_Exception& ex)
     {
         return eInvalidConn;
+    }
+
+    virtual string GetName(void) const
+    {
+        return "CValidator02" + GetDBName();
     }
 };
 
@@ -9318,7 +9329,7 @@ CTestArguments::SetDatabaseParameters(void)
 
     if ( ( // GetDriverName() == "ftds" || // ftds is ftds64 now, which doesn't work well with UTF-8
           GetDriverName() == "ftds63" ||
-//           GetDriverName() == "ftds64" ||
+          GetDriverName() == "ftds64" ||
 //           GetDriverName() == "ftds64_odbc"  ||
           GetDriverName() == "ftds64_dblib")
          && GetServerType() == eMsSql) {
