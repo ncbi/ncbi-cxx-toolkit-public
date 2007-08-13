@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_entry;
+
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SCOREMAT_EXPORT CPssmWithParameters : public CPssmWithParameters_Base
 {
