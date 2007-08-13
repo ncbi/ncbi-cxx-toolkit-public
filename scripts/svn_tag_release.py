@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-# TODO: Use optparse to implement 3 options: -m message_for_svn
-# -f file_for_project and -r revision_to_tag
+# TODO: Use optparse to implement 4 options: -m message_for_svn,
+# -f file_for_project, -r revision_to_tag, and -U root_url (with
+# default NCBI URL)
 import sys, popen2
 
 RELEASE_ROOT="release"
@@ -18,9 +19,9 @@ def add_path(tree, path_descr):
         cur[1][path_part] = new_cur
         cur = new_cur
 
-def get_project(root, project_name):
+def get_project(root, project_name, revision):
     url = root + "/trunk/c++/scripts/projects/" + project_name + ".lst"
-    r,w,e = popen2.popen3("svn cat "+url)
+    r,w,e = popen2.popen3("svn cat -r%s %s" % (revision, url))
     err = e.read()
     if err:
         sys.stderr.write(err+'\n')
@@ -47,9 +48,9 @@ def get_project(root, project_name):
         if get_src: add_path(src_tree, path_descr)
     return inc_tree, src_tree
 
-def list_url(url):
+def list_url(url, revision):
 #    print "svn list "+url
-    r,w,e = popen2.popen3("svn list "+url)
+    r,w,e = popen2.popen3("svn list -r%s %s" % (revision, url))
     res = []
     for line in r:
         line = line.strip()
@@ -61,13 +62,13 @@ def list_url(url):
         return []
     return res
 
-def add_tree(dirlist, url, root, proj_tree):
+def add_tree(dirlist, url, root, proj_tree, revision):
     level_flag, children = proj_tree
     # Should we filter?
     if level_flag & FLAG_RECURSIVE:
         return
     eff_url = url + '/' + root
-    nodes = list_url(eff_url)
+    nodes = list_url(eff_url, revision)
     for node in nodes:
         dir_node = node[-1] == '/'
         if dir_node: node = node[:-1]
@@ -77,22 +78,27 @@ def add_tree(dirlist, url, root, proj_tree):
             dirlist.append(root + '/' + node)
             sys.stderr.write(root + '/' + node + '\n')
         elif dir_node:
-            add_tree(dirlist, url, root + '/' + node, child)
+            add_tree(dirlist, url, root + '/' + node, child, revision)
         # regular file found - do nothing
 
-def get_list_to_remove(root, proj_tree):
+def get_list_to_remove(root, proj_tree, revision):
     inc_tree, src_tree = proj_tree
     # add dirs/files, required for every build to inc_tree, src_tree
+    # TODO: generalize this: keep *impl for every FLAG_COPYed dir in
+    # include tree
     add_path(inc_tree, [(0, "corelib"), (FLAG_COPY, "impl")])
     add_path(inc_tree, [(0, "corelib"), (FLAG_COPY, "hash_impl")])
+    # This one is genuine exception
     add_path(inc_tree, [(FLAG_COPY | FLAG_RECURSIVE, "common")])
+    # TODO: generalize this: every path part in source tree should
+    # preserve Makefile.in
     add_path(src_tree, [(0, "app"), (0, "Makefile.in")])
 #    print "Include", inc_tree
 #    print "Source", src_tree
     dirlist = ["doc", "scripts/internal"]
     url = root + "/trunk/c++"
-    add_tree(dirlist, url, "include", inc_tree)
-    add_tree(dirlist, url, "src",     src_tree)
+    add_tree(dirlist, url, "include", inc_tree, revision)
+    add_tree(dirlist, url, "src",     src_tree, revision)
     return dirlist
 
 def main(args):
@@ -108,14 +114,14 @@ def main(args):
     else:
         revision = "HEAD"
 
-    proj_tree = get_project(root, project)
+    proj_tree = get_project(root, project, revision)
     if not proj_tree:
         return -1
-    dirlist = get_list_to_remove(root, proj_tree)
+    dirlist = get_list_to_remove(root, proj_tree, revision)
     project_release_root = RELEASE_ROOT + '/' + project
     target = "%s/current/c++" % project_release_root
     mucc_cmd = "svnmucc -U %s" % root
-    tags = list_url(root + '/' + RELEASE_ROOT)
+    tags = list_url(root + '/' + RELEASE_ROOT, revision)
     if not project+'/' in tags:
         mucc_cmd += " mkdir " + project_release_root
     mucc_cmd += " mkdir %s/current cp %s trunk/c++ %s " % (project_release_root, revision, target)
