@@ -26,7 +26,7 @@
 ####  ERROR STREAM
 
 err_log="/tmp/check.sh.err.$$"
-exec 2>$err_log
+#exec 2>$err_log
 trap "rm -f $err_log" 1 2 15
 
 # The limit on the sending email size in Kbytes
@@ -212,7 +212,7 @@ fi
 
 # Report check results to authors (Unix only)
 if test "$need_check" = "yes" ; then
-   if test "$NCBI_CHECK_MAILTO_AUTHORS." == 'Y.' ; then
+   if test "$NCBI_CHECK_MAILTO_AUTHORS." = 'Y.' ; then
       $run_script ./check.sh report_err
    fi
 fi
