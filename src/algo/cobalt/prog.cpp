@@ -45,6 +45,10 @@ Contents: Perform a progressive multiple alignment
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Convert one hit into a constraint usable by CPSSMAligner
+/// @param constraint list of previously generated constraints [in][out]
+/// @param hit Constraint to convert [in]
+///
 static void
 x_AddConstraint(vector<size_t>& constraint,
                 CHit *hit)
@@ -55,7 +59,9 @@ x_AddConstraint(vector<size_t>& constraint,
     int seq2_stop = hit->m_SeqRange2.GetTo();
 
     // add the top left corner of the constraint region,
-    // *unless* it is at the beginning of one or both sequences
+    // *unless* it is at the beginning of one or both sequences.
+    // This is a workaround to accomodate the handling of
+    // constraint regions within CPSSMAligner
 
     if (!constraint.empty()) {
         int last = constraint.size();
@@ -70,6 +76,9 @@ x_AddConstraint(vector<size_t>& constraint,
     constraint.push_back(seq2_start);
     constraint.push_back(seq2_start);
     
+    // constraint must be consistent, and be of size > 1
+    // to cause another group of sequence offsets to be added
+
     if (seq1_start >= seq1_stop ||
         seq2_start >= seq2_stop)
         return;
@@ -80,6 +89,10 @@ x_AddConstraint(vector<size_t>& constraint,
     constraint.push_back(seq2_stop);
 }
 
+/// Convert a constraint into a form usable by CPSSMAligner
+/// @param constraint list of previously generated constraints [in][out]
+/// @param hit Constraint to convert [in]
+///
 static void x_HitToConstraints(vector<size_t>& constraint,
                                CHit *hit)
 {
@@ -87,6 +100,8 @@ static void x_HitToConstraints(vector<size_t>& constraint,
         x_AddConstraint(constraint, hit);
     }
     else {
+        // every sub-hit gets its own constraint
+
         NON_CONST_ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
             x_AddConstraint(constraint, *subitr);
         }
@@ -94,23 +109,40 @@ static void x_HitToConstraints(vector<size_t>& constraint,
 }
 
 
+/// Compute the residue frequencies of a collection of sequences
+/// @param freq_data The computed frequencies [out]
+/// @param query_data List of all sequences [in]
+/// @param node_list List of suubset of sequences in query_data 
+///                 that will contribute to the final residue 
+///                 frequencies [in]
+///
 static void
 x_FillResidueFrequencies(double **freq_data,
                     vector<CSequence>& query_data,
                     vector<CTree::STreeLeaf>& node_list)
 {
     double sum = 0.0;
+
+    // sum all the distances from the (implicit) tree root
+    // to all sequences in node_list
+
     for (size_t i = 0; i < node_list.size(); i++) {
         sum += node_list[i].distance;
     }
     _ASSERT(sum >= 0.0);
 
     for (size_t i = 0; i < node_list.size(); i++) {
+
         // update the residue frequencies to include the influence
         // of a new sequence at a leaf in the tree
 
         int index = node_list[i].query_idx;
         double weight = node_list[i].distance / sum;
+
+        // the residue frequencies of the sequence are scaled by
+        // the fraction of 'sum' taken up by sequence i in the list.
+        // Since node_list stores *reciprocal* distances, this penalizes
+        // sequences further away from the tree root
 
         if (node_list[i].distance == 0 && sum == 0)
             weight = 1;
@@ -119,6 +151,8 @@ x_FillResidueFrequencies(double **freq_data,
 
         int size = query_data[index].GetLength();
         CSequence::TFreqMatrix& matrix = query_data[index].GetFreqs();
+
+        // add in the residue frequencies
 
         for (int j = 0; j < size; j++) {
             if (query_data[index].GetLetter(j) == CSequence::kGapChar) {
@@ -158,12 +192,19 @@ x_NormalizeResidueFrequencies(double **freq_data,
     }
 }
 
+/// Convert a sequence range to reflect gaps added to the
+/// underlying sequence
+/// @param range [in][out]
+/// @param seq The sequence [in]
+///
 static void 
 x_ExpandRange(TRange& range,
               CSequence& seq)
 {
     int len = seq.GetLength();
     int i, offset;
+
+    // convert range.From
 
     offset = -1;
     for (i = 0; i < len; i++) {
@@ -174,6 +215,9 @@ x_ExpandRange(TRange& range,
             break;
         }
     }
+
+    // convert range.To
+
     if (offset == range.GetTo()) {
         range.SetTo(i);
         return;
@@ -190,6 +234,18 @@ x_ExpandRange(TRange& range,
 }
 
 
+/// Find the set of constraints to use for a profile-profile
+/// alignment. This routine considers only constraints between
+/// one collection of equal-size sequences and another collection
+/// of equal-size sequences
+/// @param constraint List of compute constraints, in the format
+///               expected by CPSSMAligner [out]
+/// @param alignment Current multiple alignment of sequences [in]
+/// @param node_list1 List of sequences in first collection [in]
+/// @param node_list2 List of sequences in second collection [in]
+/// @param pair_info List of pairwise constraints (between sequences) [in]
+/// @param iteration The iteration number [in]
+///
 void
 CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                  vector<CSequence>& alignment,
@@ -201,6 +257,9 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
     const int kMinAlignLength = 11;
     CHitList profile_hitlist;
 
+    // first collect all of the constraints that pass from
+    // one sequence collection to the other
+
     for (int i = 0; i < (int)node_list1.size(); i++) {
 
         for (int j = 0; j < (int)node_list2.size(); j++) {
@@ -208,11 +267,16 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
             int seq1 = node_list1[i].query_idx;
             int seq2 = node_list2[j].query_idx;
 
+            // for all constraints between seqience i in collection 1
+            // and sequence j in collection 2
+
             for (int k = 0; k < pair_info(seq1, seq2).Size(); k++) {
                 CHit *hit = pair_info(seq1, seq2).GetHit(k);
                 CHit *new_hit = new CHit(seq1, seq2);
                 bool swap_ranges = (seq1 != hit->m_SeqIndex1);
                 
+                // make a temporary hit to represent the constraint
+
                 new_hit->m_Score = hit->m_Score;
                 if (swap_ranges) {
                     new_hit->m_SeqRange1 = hit->m_SeqRange2;
@@ -222,6 +286,11 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                     new_hit->m_SeqRange1 = hit->m_SeqRange1;
                     new_hit->m_SeqRange2 = hit->m_SeqRange2;
                 }
+
+                // add in any sub-hits if this is a domain hit (i.e.
+                // all of the individual blocks of the constraint are
+                // treated together)
+
                 NON_CONST_ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
                     CHit *subhit = *subitr;
                     CHit *new_subhit = new CHit(seq1, seq2);
@@ -243,6 +312,11 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
     if (profile_hitlist.Empty())
         return;
 
+    // convert the range of each constraint into a range on
+    // the aligned sequences, i.e. change each set of bounds
+    // to account for gaps that have since been added to the
+    // sequences
+
     for (int i = 0; i < profile_hitlist.Size(); i++) {
         CHit *hit = profile_hitlist.GetHit(i);
         x_ExpandRange(hit->m_SeqRange1, alignment[hit->m_SeqIndex1]);
@@ -254,6 +328,8 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
             x_ExpandRange(subhit->m_SeqRange2, alignment[subhit->m_SeqIndex2]);
         }
     }
+
+    // put the constraints in canonical order
 
     profile_hitlist.SortByStartOffset();
 
@@ -274,23 +350,45 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
     }
     //--------------------------------------
 
+    // build up a graph of constraints that is derived from
+    // profile_hitlist
+
     vector<SGraphNode> graph;
     for (int j = 0; j < profile_hitlist.Size(); j++) {
         CHit *hit = profile_hitlist.GetHit(j);
+
+        // for the first progressive alignment only, ignore 
+        // constraints that are too small. We do not do this 
+        // in later iterations because the constraints will include
+        // low-scoring pattern hits and conserved columns, which
+        // must be included
+
         if (iteration == 0 && hit->m_Score < 1000 &&
             (hit->m_SeqRange1.GetLength() < kMinAlignLength ||
              hit->m_SeqRange2.GetLength() < kMinAlignLength) )
             continue;
 
+        // find out whether constraint j must override a previous
+        // constraint that was added to the graph
+
         int i;
         for (i = 0; i < (int)graph.size(); i++) {
             CHit *ghit = graph[i].hit;
+
+            // if constraint i in the graph is already consistent with
+            // constraint j, then no overriding is possible
+
             if ((ghit->m_SeqRange1.StrictlyBelow(hit->m_SeqRange1) &&
                  ghit->m_SeqRange2.StrictlyBelow(hit->m_SeqRange2)) ||
                 (hit->m_SeqRange1.StrictlyBelow(ghit->m_SeqRange1) && 
                  hit->m_SeqRange2.StrictlyBelow(ghit->m_SeqRange2)) ) {
                  continue;
             }
+
+            // constraint j overwrites constraint i in the graph if
+            // both of its ranges are 'near' constraint i, 
+            // the two constraints lie on the same diagonal, and 
+            // constraint j has the higher score
 
             if ((abs(ghit->m_SeqRange1.GetFrom() - 
                      hit->m_SeqRange1.GetFrom()) <= kMinAlignLength / 2 ||
@@ -310,6 +408,11 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                 break;
             }
         }
+
+        // constraint j is sufficiently different from the others
+        // in the graph that the graph should expand to include 
+        // constraint j
+
         if (i == graph.size())
             graph.push_back(SGraphNode(hit, j));
     }
@@ -317,17 +420,36 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
     if (graph.empty())
         return;
 
+    // we now have a list of constraints from which a highest-
+    // scoring subset can be selected. First, though, we have to
+    // assign a score to each constraint in the graph
+
     if (iteration == 0) {
+
+        // for the first iteration, the constraints in the graph 
+        // have scores assigned to them based on sequence similarity, 
+        // and it makes sense to reward constraints that are similar
+        // across many different sequences
+
         int num_hits = profile_hitlist.Size();
         vector<int> list1, list2;
         list1.reserve(num_hits);
         list2.reserve(num_hits);
+
+        // for constraint i
 
         for (int i = 0; i < (int)graph.size(); i++) {
             CHit *ghit = graph[i].hit;
             list1.clear();
             list2.clear();
     
+            // the score in the graph for constraint i is the score
+            // for constraint i, scaled by the product of the number of
+            // sequences in each collection that contain constraints
+            // compatible with constraint i. Two constraints are compatible
+            // if the start and end points of both constraints are 'close' 
+            // to each other and lie on the same diagonals
+
             for (int j = 0; j < num_hits; j++) {
                 CHit *hit = profile_hitlist.GetHit(j);
 
@@ -343,6 +465,11 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                      hit->m_SeqRange1.GetFrom() - hit->m_SeqRange2.GetFrom()) &&
                     (ghit->m_SeqRange1.GetTo() - ghit->m_SeqRange2.GetTo() ==
                      hit->m_SeqRange1.GetTo() - hit->m_SeqRange2.GetTo()) ) {
+
+                    // constraint j is compatible with constraint
+                    // i. If constraint j is between a different pair
+                    // of sequences than we've seen so far, it
+                    // constributes to the score of constraint i
 
                     int k;
                     for (k = 0; k < (int)list1.size(); k++) {
@@ -360,15 +487,27 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                         list2.push_back(hit->m_SeqIndex2);
                 }
             }
+
+            // scale the score of constraint i to reward the situation
+            // when multiple different constraints between the two
+            // sequence collection agree with constraint i
+
             graph[i].best_score = graph[i].hit->m_Score * 
                                   list1.size() * list2.size();
         }
     }
     else {
+
+        // iterations beyond the first contain constraints whose
+        // scores were assigned arbitraily. In this case, just
+        // propagate those scores directly to the graph
+
         NON_CONST_ITERATE(vector<SGraphNode>, itr, graph) {
             itr->best_score = itr->hit->m_Score;
         }
     }
+
+    // find the highest-scoring consistent subset of constraints
 
     SGraphNode *best_path = x_FindBestPath(graph);
     while (best_path != 0) {
@@ -384,6 +523,8 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         }
         //--------------------------------------
 
+        // convert the constraint into a form the aligner can use
+
         x_HitToConstraints(constraint, hit);
         best_path = best_path->path_next;
     }
@@ -391,6 +532,16 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
 }
 
 
+/// Align two collections of sequences. All sequences within
+/// a single collection begin with the same size
+/// @param node_list1 List of sequence number in first collection [in]
+/// @param node_list2 List of sequence number in second collection [in]
+/// @param alignment Complete list of aligned sequences (may contain 
+///               sequences that will not be aligned). On output, new gaps
+///               will be propagated to all affected sequences [in][out]
+/// @param pair_info Constraints that may be used in the alignment [in]
+/// @param iteration The iteration number [in]
+///
 void
 CMultiAligner::x_AlignProfileProfile(
                  vector<CTree::STreeLeaf>& node_list1,
@@ -450,6 +601,8 @@ CMultiAligner::x_AlignProfileProfile(
 
     vector<size_t> constraint;
 
+    // determine the list of constraints to use
+
     x_FindConstraints(constraint, alignment, node_list1,
                       node_list2, pair_info, iteration);
 
@@ -465,11 +618,10 @@ CMultiAligner::x_AlignProfileProfile(
     //-------------------------------
     m_Aligner.SetPattern(constraint);
 
-    // if constraints are present, remove end gap penalties
-
-    // scale up the gap penalties, run the aligner, scale
-    // the penalties back down
-
+    // if there is a large length disparity between the two
+    // profiles, reduce or eliminate end gap penalties. Also 
+    // scale up the gap penalties to match those of the score matrix
+    
     m_Aligner.SetWg(m_GapOpen * kScale);
     m_Aligner.SetStartWg(m_EndGapOpen * kScale);
     m_Aligner.SetEndWg(m_EndGapOpen * kScale);
@@ -488,6 +640,8 @@ CMultiAligner::x_AlignProfileProfile(
         m_Aligner.SetEndSpaceFree(true, true, true, true);
     }
 
+    // run the aligner, scale the penalties back down
+
     m_Aligner.Run();
     m_Aligner.SetWg(m_GapOpen);
     m_Aligner.SetStartWg(m_EndGapOpen);
@@ -502,6 +656,7 @@ CMultiAligner::x_AlignProfileProfile(
     delete [] freq2_data;
 
     // Retrieve the traceback information from the alignment
+    // and propagate new gaps to the affected sequences
 
     const CNWAligner::TTranscript t(m_Aligner.GetTranscript(false));
     for (int i = 0; i < (int)node_list1.size(); i++) {
@@ -547,16 +702,30 @@ CMultiAligner::x_AlignProfileProfile(
 }
 
 
+/// Number of 'letters' in the reduced alphabet
 static const int kNumClasses = 10;
+
+/// Background frequencies of the letters in the reduced
+/// alphabet (each is the sum of the Robinson-Robinson
+/// frequencies of the underlying protein letters that
+/// appear in that letter class)
+///
 static const double kDerivedFreqs[kNumClasses] = {
         0.000000, 0.019250, 0.073770, 0.052030, 0.228450,
         0.084020, 0.021990, 0.207660, 0.108730, 0.204100
 };
+
+/// Mapping from protein letters to reduced alphabet letters
 static const int kRes2Class[kAlphabetSize] = {
         0, 7, 9, 1, 9, 9, 5, 2, 6, 4, 8, 4, 4,
         9, 3, 9, 8, 7, 7, 4, 5, 0, 5, 9, 0, 0
 };
 
+/// Calculate the entropy score of one column of a multiple
+/// alignment (see the COBALT papaer for details)
+/// @param align The alignment [in]
+/// @param col the column number to score
+/// @return the computed score
 double
 CMultiAligner::x_GetScoreOneCol(vector<CSequence>& align, int col)
 {
@@ -593,6 +762,10 @@ CMultiAligner::x_GetScoreOneCol(vector<CSequence>& align, int col)
 }
 
 
+/// Compute the entropy score of a multiple alignment
+/// @param align complete multiple alignment [in]
+/// @return the alignment score
+///
 double
 CMultiAligner::x_GetScore(vector<CSequence>& align)
 {
@@ -606,6 +779,16 @@ CMultiAligner::x_GetScore(vector<CSequence>& align)
 }
 
 
+/// Perform a single bipartition on a multiple alignment
+/// @param input_cluster A tree describing sequences that form one half
+///                 of the bipartition [in]
+/// @param alignment A complete multiple alignment, updated with the
+///               the bipartition results if they have a higher score [in][out]
+/// @param pair_info Pairwise constraints on the alignment [in]
+/// @param score Starting alignment score [in]
+/// @param iteration The iteration number [in]
+/// @return The score of the new multiple alignment
+///
 double
 CMultiAligner::x_RealignSequences(
                    const TPhyTreeNode *input_cluster,
@@ -616,8 +799,12 @@ CMultiAligner::x_RealignSequences(
 {
     int num_queries = m_QueryData.size();
 
+    // list all the sequences in the tree
+
     vector<CTree::STreeLeaf> full_seq_list;
     CTree::ListTreeLeaves(GetTree(), full_seq_list, 0.0);
+
+    // list the sequence that form one of the clusters to align
 
     vector<CTree::STreeLeaf> cluster_seq_list;
     CTree::ListTreeLeaves(input_cluster, cluster_seq_list, 0.0);
@@ -636,6 +823,9 @@ CMultiAligner::x_RealignSequences(
     vector<int> other_idx;
     vector<CTree::STreeLeaf> other_seq_list;
     int cluster_size = cluster_seq_list.size();
+
+    // other_seq_list get the OIDs of sequences that do
+    // not participate in cluster_seq_list
 
     for (int i = 0; i < num_queries; i++) {
         int j;
@@ -656,10 +846,16 @@ CMultiAligner::x_RealignSequences(
 
     vector<CSequence> tmp_align = alignment;
 
+    // squeeze out all-gap columns from each cluster, then
+    // realign the two clusters
+
     CSequence::CompressSequences(tmp_align, cluster_idx);
     CSequence::CompressSequences(tmp_align, other_idx);
     x_AlignProfileProfile(cluster_seq_list, other_seq_list,
                           tmp_align, pair_info, iteration);
+
+    // replace the input alignment with the alignment result
+    // if the latter has a higher score
 
     double new_score = x_GetScore(tmp_align);
     if (m_Verbose)
@@ -673,6 +869,15 @@ CMultiAligner::x_RealignSequences(
     return score;
 }
 
+/// Main driver for progressive alignment
+/// @param tree Alignment guide tree [in]
+/// @param query_data The sequences to align. The first call assumes
+///               this list contains the unaligned sequences, and 
+///               intermediate alignment stages will update the list
+///               as alignment progresses. On output query_data contains
+///               the aligned version of all sequences [in][out]
+/// @param pair_info List of alignment constraints [in]
+/// @param iteration The iteration number [in]
 void
 CMultiAligner::x_AlignProgressive(
                  const TPhyTreeNode *tree,
@@ -681,6 +886,8 @@ CMultiAligner::x_AlignProgressive(
                  int iteration)
 {
     TPhyTreeNode::TNodeList_CI child(tree->SubNodeBegin());
+
+    // recursively convert each subtree into a multiple alignment
 
     const TPhyTreeNode *left_child = *child++;
     if (!left_child->IsLeaf())
@@ -692,7 +899,7 @@ CMultiAligner::x_AlignProgressive(
         x_AlignProgressive(right_child, query_data, 
                            pair_info, iteration);
 
-    // align the two children
+    // align the two subtrees
 
     vector<CTree::STreeLeaf> node_list1, node_list2;
     CTree::ListTreeLeaves(left_child, node_list1, 
@@ -704,6 +911,11 @@ CMultiAligner::x_AlignProgressive(
                           query_data, pair_info, iteration);
 }
 
+/// Create a list of constraints that reflect conserved columns
+/// in a multiple alignment
+/// @param new_alignment The multiple alignment to analyze [in]
+/// @param conserved The list of pairwise constraints [out]
+///
 void 
 CMultiAligner::x_FindConservedColumns(
                             vector<CSequence>& new_alignment,
@@ -715,9 +927,15 @@ CMultiAligner::x_FindConservedColumns(
     vector<TRange> chosen_cols;
     int i, j, k, m;
 
+    // find and save the score of each column
+
     for (i = 0; i < align_length; i++) {
         hvec[i] = x_GetScoreOneCol(new_alignment, i);
     }
+
+    // use the above to find all the ranges of consecutive
+    // columns whose score all exceed the cutoff for being conserved.
+
     for (i = 0; i < align_length; i++) {
         if (hvec[i] >= m_ConservedCutoff) {
             if (!chosen_cols.empty() &&
@@ -729,6 +947,9 @@ CMultiAligner::x_FindConservedColumns(
             }
         }
     }
+
+    // A conserved range must be at least 2 columns
+
     for (i = j = 0; j < (int)chosen_cols.size(); j++) {
         if (chosen_cols[j].GetLength() > 1) {
             chosen_cols[i++] = chosen_cols[j];
@@ -736,12 +957,14 @@ CMultiAligner::x_FindConservedColumns(
     }
     chosen_cols.resize(i);
 
+    //-------------------------------------
     if (m_Verbose) {
         for (i = 0; i < (int)chosen_cols.size(); i++) {
             printf("constraint at position %3d - %3d\n",
                 chosen_cols[i].GetFrom(), chosen_cols[i].GetTo());
         }
     }
+    //-------------------------------------
 
     vector<TRange> range_nogap(num_queries);
 
@@ -751,7 +974,13 @@ CMultiAligner::x_FindConservedColumns(
         int start = curr_range.GetFrom();
         int length = curr_range.GetLength();
 
+        // find the coordinates of range i on each of the
+        // unaligned sequences
+
         for (j = 0; j < num_queries; j++) {
+
+            // a sequence that participates in the constraints
+            // cannot have a gap within range i
 
             for (k = 0; k < length; k++) {
                 if (new_alignment[j].GetLetter(start+k) == CSequence::kGapChar)
@@ -761,6 +990,8 @@ CMultiAligner::x_FindConservedColumns(
                 range_nogap[j].SetEmpty();
                 continue;
             }
+
+            // locate the start and end range on sequence j
 
             int offset1 = -1;
             for (m = 0; m <= curr_range.GetFrom(); m++) {
@@ -775,6 +1006,9 @@ CMultiAligner::x_FindConservedColumns(
             }
             range_nogap[j].Set(offset1, offset2);
         }
+
+        // convert range i of conserved columns into an
+        // all-against-all collection of pairwise constraints
 
         for (k = 0; k < num_queries - 1; k++) {
             for (m = k + 1; m < num_queries; m++) {
@@ -800,6 +1034,11 @@ CMultiAligner::x_FindConservedColumns(
     //------------------------------
 }
 
+/// Main driver for the progressive alignment process
+/// @param edges List of tree edges sorted by decreasing edge length [in]
+/// @param cluster_cutoff The minimum distance a tree edge must have
+///                      to be the subject of a bipartition [in]
+///
 void
 CMultiAligner::x_BuildAlignmentIterative(
                          vector<CTree::STreeEdge>& edges,
@@ -811,6 +1050,10 @@ CMultiAligner::x_BuildAlignmentIterative(
     int new_conserved_cols;
     double new_score;
     double best_score = INT4_MIN;
+
+    // the initial list of constraints consists of the
+    // filtered list of blast alignments plus any user-defined
+    // constraints
 
     CNcbiMatrix<CHitList> pair_info(num_queries, num_queries, CHitList());
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
@@ -828,17 +1071,31 @@ CMultiAligner::x_BuildAlignmentIterative(
     conserved_cols = 0;
     vector<CSequence> tmp_aligned = m_QueryData;
 
+    // perform the initial progressive alignment
+
     x_AlignProgressive(GetTree(), tmp_aligned, 
                        pair_info, iteration);
 
     while (1) {
 
+        // compute the previous alignment score
+
         double realign_score = x_GetScore(tmp_aligned);
         if (m_Verbose)
             printf("start score: %f\n", realign_score);
 
+        // repeat the complete bipartition process until
+        // either the best score stops improving or we've done
+        // too many bipartitions
+
         for (int i = 0; i < 5; i++) {
             new_score = realign_score;
+
+            // a single bipartition consists of systematically
+            // breaking the largest edges in the tree and realigning
+            // the subtrees to either side of that edge. Repeat 
+            // until the edges get too small
+
             for (int j = 0; j < (int)edges.size() &&
                            edges[j].distance >= cluster_cutoff; j++) {
 
@@ -848,6 +1105,9 @@ CMultiAligner::x_BuildAlignmentIterative(
                                                new_score, 
                                                iteration);
             }
+
+            // quit if the best score from bipartition i improved 
+            // the score of realignment i-1 by less than 2% 
 
             if (new_score - realign_score <= 0.02 * fabs(realign_score)) {
                 break;
@@ -869,6 +1129,9 @@ CMultiAligner::x_BuildAlignmentIterative(
         //-------------------------------------------------
 
         if (realign_score > best_score) {
+
+            // the current iteration has improved the alignment
+
             if (m_Verbose) {
                 printf("REPLACE ALIGNMENT\n\n");
             }
@@ -879,8 +1142,9 @@ CMultiAligner::x_BuildAlignmentIterative(
                 break;
         }
 
-        // recompute the conserved columns based on the new alignment
-        // first remove the last batch of conserved regions
+        // if iteration is allowed: recompute the conserved 
+        // columns based on the new alignment first remove 
+        // the last batch of conserved regions
 
         for (int i = 0; i < num_queries; i++) {
             for (int j = 0; j < num_queries; j++) {
@@ -890,6 +1154,10 @@ CMultiAligner::x_BuildAlignmentIterative(
         conserved_regions.PurgeAllHits();
 
         x_FindConservedColumns(tmp_aligned, conserved_regions);
+
+        // build up the list of conserved columns again, using
+        // phi-pattern constraints, user-defined constraints and
+        // the current collection of columns marked as conserved
 
         new_conserved_cols = 0;
         for (int i = 0; i < m_PatternHits.Size(); i++) {
@@ -911,6 +1179,9 @@ CMultiAligner::x_BuildAlignmentIterative(
             new_conserved_cols += hit->m_SeqRange1.GetLength();
         }
 
+        // only perform another iteration of the number of
+        // columns participating in constraints has increased
+
         if (new_conserved_cols <= conserved_cols)
             break;
 
@@ -918,9 +1189,13 @@ CMultiAligner::x_BuildAlignmentIterative(
         conserved_cols = new_conserved_cols;
         tmp_aligned = m_QueryData;
 
+        // do the next progressive alignment
+
         x_AlignProgressive(GetTree(), tmp_aligned, 
                            pair_info, iteration);
     }
+
+    // clean up the constraints
 
     for (int i = 0; i < num_queries; i++) {
         for (int j = 0; j < num_queries; j++) {
@@ -951,7 +1226,17 @@ CMultiAligner::BuildAlignment()
     sort(edges.begin(), edges.end(), compare_tree_edge_descending());
     int num_edges = edges.size();
 
+    // choose the maximum number of edges that the bipartition
+    // phase will use; each edge will be split and the subtrees on
+    // either side of the edge will be realigned
+
     int num_internal_edges = min(11, (int)(0.3 * num_edges + 0.5));
+
+
+    // choose the cluster cutoff; this is the first big jump in
+    // the length of tree edges, and marks the limit beyond which
+    // we won't try to bipartition
+
     double cluster_cutoff = INT4_MAX;
     int i;
     for (i = 0; i < num_internal_edges - 1; i++) {
@@ -972,7 +1257,7 @@ CMultiAligner::BuildAlignment()
     }
     //---------------------
 
-    // Progressively align all sequences
+    // progressively align all sequences
 
     x_BuildAlignmentIterative(edges, cluster_cutoff);
 }
