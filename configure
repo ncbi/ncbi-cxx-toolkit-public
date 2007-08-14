@@ -20667,21 +20667,22 @@ SYBASE_LIBPATH=
 ## FreeTDS libraries
 freetds=
 if test "$with_ftds" != "no" ; then
-   ftds_def=8
    ftds8=ftds8
    ftds63=ftds63
    ftds64=ftds64
    try_local=yes
    : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
    case "$with_ftds" in
-      8 | yes | '' )
+      8 )
          with_ftds=8
          ftds8=ftds
          ;;
       63 )
+         with_ftds=63
          ftds63=ftds
          ;;
-      64 )
+      64 | yes | '' )
+         with_ftds=64
          ftds64=ftds
          ;;
       * )
