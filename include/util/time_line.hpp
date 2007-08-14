@@ -109,6 +109,9 @@ public:
     /// Objects inserted into 'tm' are not extracted to provide histeresis.
     void ExtractObjects(time_t tm, TBitVector* objects);
 
+    /// Enumerate all objects registered in the timeline
+    void EnumerateObjects(TBitVector* objects) const;
+
     /// Return head of the timeline
     time_t GetHead() const { return m_TimeLineHead; }
 
@@ -134,6 +137,8 @@ private:
 #define TIMELINE_ITERATE(Var, Cont) \
     for ( typename TTimeLine::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
+#define TIMELINE_CONST_ITERATE(Var, Cont) \
+    for ( typename TTimeLine::const_iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
 template<class BV> 
 CTimeLine<BV>::CTimeLine(unsigned discr_factor, time_t tm)
@@ -238,6 +243,17 @@ void CTimeLine<BV>::RemoveObject(unsigned object_id)
             }
         }
     } // NON_CONST_ITERATE
+}
+
+template<class BV> 
+void CTimeLine<BV>::EnumerateObjects(TBitVector* objects) const
+{
+    TIMELINE_CONST_ITERATE(it, m_TimeLine) {
+        TBitVector* bv = *it;
+        if (bv) {
+            *objects |= *bv;
+        }
+    } // CONST_ITERATE
 }
 
 template<class BV> 
