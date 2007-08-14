@@ -1266,7 +1266,7 @@ void CBDB_Cache::Open(const string& cache_path,
             //
             int cache_num = 1;
             if (cache_ram_size > (500 * 1024 * 1024)) {
-                cache_num = cache_ram_size / (250 * 1024 * 1024);
+                cache_num = (int)((cache_ram_size) / Uint8(250 * 1024 * 1024));
             }
             if (!cache_num) {
                 cache_num = 1;  // paranoid check
@@ -1450,9 +1450,13 @@ void CBDB_Cache::Open(const string& cache_path,
        m_PurgeThread->Run();
 
         if (!m_JoinedEnv) {
-            m_Env->RunCheckpointThread(m_PurgeThreadDelay, m_MempTrickle);
+            CBDB_Env::TBackgroundFlags flags = 
+                CBDB_Env::eBackground_MempTrickle  |
+                CBDB_Env::eBackground_Checkpoint;
+            m_Env->RunBackgroundWriter(flags, 
+                                       m_PurgeThreadDelay, 
+                                       m_MempTrickle);
         }
-
 # else
        LOG_POST(Warning <<
                  "Cannot run background thread in non-MT configuration.");
@@ -2087,7 +2091,8 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         }} // trans
 
         {{
-            time_t exp_time = x_ComputeExpTime(curr, time_to_live, GetTimeout());
+            time_t exp_time = 
+                x_ComputeExpTime(curr, time_to_live, GetTimeout());
 
             CFastMutexGuard guard(m_TimeLine_Lock);
             m_TimeLine->AddObject(exp_time, blob_id);
@@ -2177,7 +2182,7 @@ size_t CBDB_Cache::GetSize(const string&  key,
 
         // check expiration here
         if (m_TimeStampFlag & fCheckExpirationAlways) {
-            if (x_CheckTimestampExpired()) {
+            if (x_CheckTimestampExpired(*m_CacheAttrDB, time(0))) {
                 return 0;
             }
         }
@@ -2255,7 +2260,7 @@ bool CBDB_Cache::HasBlobs(const string&  key,
     }
     blob_id = m_CacheAttrDB->blob_id;
 
-    if (x_CheckTimestampExpired(curr)) {
+    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
         return false;
     }
     }}
@@ -2312,7 +2317,7 @@ bool CBDB_Cache::Read(const string& key,
             ret = cur.Fetch();
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
-                    if (x_CheckTimestampExpired()) {
+                    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
                         return false;
                     }
                 }
@@ -2557,7 +2562,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
             ret = cur.Fetch();
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
-                    if (x_CheckTimestampExpired()) {
+                    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
                         return false;
                     }
                 }
@@ -2766,7 +2771,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
             ret = cur.Fetch();
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
-                    if (x_CheckTimestampExpired()) {
+                    if (x_CheckTimestampExpired(*m_CacheAttrDB, curr)) {
                         return;
                     }
                 }
@@ -3367,6 +3372,11 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
         }
     }}
 
+    unsigned batch_size = m_PurgeBatchSize;
+    if (batch_size < 100) { 
+        batch_size = 100;
+    }
+
     TBitVector::enumerator en(delete_candidates.first());
     unsigned cnt = 0;
     for (; en.valid(); ++en) {
@@ -3388,8 +3398,14 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
                 }
             }
 
-            if (++cnt >= 100) {
-                bool scan_stop = m_PurgeStopSignal.TryWait(0, 0);
+            // BLOB delete part of timeline can be quite expensive, lock
+            // some resources needed by competing threads
+            // so this code introduces delay to give way to others
+            // ideally this delay should be adaptive dictated by current server load
+            if (++cnt >= batch_size) {
+                // get to nanoseconds as CSemaphore::TryWait() needs
+                unsigned delay = m_BatchSleep * 1000000;
+                bool scan_stop = m_PurgeStopSignal.TryWait(0, delay);
                 if (scan_stop) {
                     if (interrupted) {
                         *interrupted = true;
@@ -3459,7 +3475,6 @@ purge_start:
         return;
     }
 
-
     time_t gc_start = time(0); // time when we started GC scan
 
     if (m_NextExpTime) {
@@ -3523,7 +3538,7 @@ purge_start:
                 unsigned blob_id = m_CacheAttrDB_RO2->blob_id;
 
                 time_t exp_time;
-                if (x_CheckTimestampExpired(curr, &exp_time)) {
+                if (x_CheckTimestampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
 
                     unsigned read_count = m_CacheAttrDB_RO2->read_count;
                     m_CacheAttrDB_RO2->owner_name.ToString(m_TmpOwnerName);
@@ -3922,14 +3937,16 @@ CBDB_Cache::x_ComputeExpTime(int time_stamp, unsigned ttl, int timeout)
     return exp_time;
 }
 
-bool CBDB_Cache::x_CheckTimestampExpired(time_t curr, time_t* exp_time)
+bool CBDB_Cache::x_CheckTimestampExpired(SCache_AttrDB& attr_db, 
+                                         time_t  curr, 
+                                         time_t* exp_time)
 {
     int timeout = GetTimeout();
 
     if (timeout) {
 
-        int db_time_stamp = m_CacheAttrDB->time_stamp;
-        unsigned int ttl = m_CacheAttrDB->ttl;
+        int db_time_stamp = attr_db.time_stamp;
+        unsigned int ttl = attr_db.ttl;
 
         if (ttl) {  // individual timeout
             if (m_MaxTimeout && ttl > m_MaxTimeout) {
@@ -3951,14 +3968,6 @@ bool CBDB_Cache::x_CheckTimestampExpired(time_t curr, time_t* exp_time)
         }
     }
     return false;
-
-}
-
-
-bool CBDB_Cache::x_CheckTimestampExpired()
-{
-    time_t curr = time(0);
-    return x_CheckTimestampExpired(curr);
 }
 
 
@@ -4210,6 +4219,95 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
     time_t exp_time;
 
     {{
+        CFastMutexGuard guard(m_CARO2_Lock);
+
+        m_CacheAttrDB_RO2->SetTransaction(0);
+
+        m_CacheAttrDB_RO2->key = key;
+        m_CacheAttrDB_RO2->version = version;
+        m_CacheAttrDB_RO2->subkey = subkey;
+        if (m_CacheAttrDB_RO2->Fetch() != eBDB_Ok) {
+            return false;
+        }
+
+        if (x_CheckTimestampExpired(*m_CacheAttrDB_RO2, curr, &exp_time)) {
+            blob_expired = true;
+            overflow  = m_CacheAttrDB_RO2->overflow;
+            coords[0] = m_CacheAttrDB_RO2->volume_id;
+            coords[1] = m_CacheAttrDB_RO2->split_id;
+            blob_id   = m_CacheAttrDB_RO2->blob_id;
+        } else {
+            blob_expired = false;
+        }
+
+    }} // m_CARO2_Lock
+
+    if (!blob_expired) {
+        {{
+            CFastMutexGuard guard(m_TimeLine_Lock);
+            _ASSERT(exp_time);
+            m_TimeLine->AddObject(exp_time, blob_id);
+        }} // m_TimeLine_Lock
+        return false;
+    }
+
+    // BLOB expired and needs to be deleted
+    //
+
+
+    // Delete the overflow file
+    //
+    if (overflow == 1) {
+        x_DropOverflow(key, version, subkey);
+    }
+
+    // Delete split store
+    //
+    EBDB_ErrCode ret = 
+        m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
+    m_BLOB_SplitStore->SetTransaction(&trans);
+    if (ret == eBDB_Ok) {
+        if (split_coord[0] != coords[0] ||
+            split_coord[1] != coords[1]) {
+            // split coords un-sync: delete de-facto BLOB
+            m_BLOB_SplitStore->Delete(blob_id, 
+                                      CBDB_RawFile::eThrowOnError);
+        }
+    }
+    // Delete BLOB by known coordinates
+    m_BLOB_SplitStore->Delete(blob_id, coords, 
+                              CBDB_RawFile::eThrowOnError);
+
+
+    // Delete BLOB attributes and index
+    //
+    {{
+        CFastMutexGuard guard(m_DB_Lock);
+
+        m_CacheAttrDB->SetTransaction(&trans);
+        m_CacheAttrDB->key     = key;
+        m_CacheAttrDB->version = version;
+        m_CacheAttrDB->subkey  = subkey;
+        if (m_CacheAttrDB->Fetch() != eBDB_Ok) {
+            return false;
+        }
+        m_CacheAttrDB->Delete(CBDB_RawFile::eThrowOnError);
+
+        m_CacheIdIDX->SetTransaction(&trans);
+        m_CacheIdIDX->blob_id = blob_id;
+        m_CacheIdIDX->Delete(CBDB_RawFile::eThrowOnError);
+
+    }} // m_DB_Lock
+
+    return true;
+
+/*
+
+    // TODO: Use read-only channel for expiration evaluation
+    // reshuffle the delete sequence so the attributes table is not getting locked
+    // for a large period of time
+    //
+    {{
         CFastMutexGuard guard(m_DB_Lock);
 
         m_CacheAttrDB->SetTransaction(&trans);
@@ -4270,6 +4368,7 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
                               CBDB_RawFile::eThrowOnError);
 
     return true;
+*/
 }
 
 

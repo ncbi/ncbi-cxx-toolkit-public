@@ -700,12 +700,10 @@ private:
     typedef CTimeLine<TBitVector>                     TTimeLine;
 
 private:
-    /// Return TRUE if cache item expired according to the current timestamp
-    /// prerequisite: attributes record fetched to memory
-    bool x_CheckTimestampExpired();
-
     time_t x_ComputeExpTime(int time_stamp, unsigned ttl, int timeout);
-    bool x_CheckTimestampExpired(time_t  curr, time_t* exp_time=0);
+    bool x_CheckTimestampExpired(SCache_AttrDB& attr_db, 
+                                 time_t         curr, 
+                                 time_t*        exp_time=0);
 
 
     /// access type for "UpdateAccessTime" methods
