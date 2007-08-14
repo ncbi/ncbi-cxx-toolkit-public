@@ -736,16 +736,14 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-const string kDBAPI_FTDS_DriverName("ftds");
-
-class CDbapiFtdsCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CTDSContext>
+class CDbapiFtdsCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CTDSContext>
 {
 public:
     typedef CSimpleClassFactoryImpl<I_DriverContext, CTDSContext> TParent;
 
 public:
-    CDbapiFtdsCF2(void);
-    ~CDbapiFtdsCF2(void);
+    CDbapiFtdsCFBase(const string& driver_name);
+    ~CDbapiFtdsCFBase(void);
 
 public:
     virtual TInterface*
@@ -757,19 +755,19 @@ public:
 
 };
 
-CDbapiFtdsCF2::CDbapiFtdsCF2(void)
-    : TParent( kDBAPI_FTDS_DriverName, 0 )
+CDbapiFtdsCFBase::CDbapiFtdsCFBase(const string& driver_name)
+: TParent(driver_name, 0)
 {
     return ;
 }
 
-CDbapiFtdsCF2::~CDbapiFtdsCF2(void)
+CDbapiFtdsCFBase::~CDbapiFtdsCFBase(void)
 {
     return ;
 }
 
-CDbapiFtdsCF2::TInterface*
-CDbapiFtdsCF2::CreateInstance(
+CDbapiFtdsCFBase::TInterface*
+CDbapiFtdsCFBase::CreateInstance(
     const string& driver,
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
@@ -862,12 +860,41 @@ CDbapiFtdsCF2::CreateInstance(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+class CDbapiFtdsCF_ftds8 : public CDbapiFtdsCFBase
+{
+public:
+    CDbapiFtdsCF_ftds8(void)
+    : CDbapiFtdsCFBase("ftds8")
+    {
+    }
+};
+
+
+class CDbapiFtdsCF_ftds : public CDbapiFtdsCFBase
+{
+public:
+    CDbapiFtdsCF_ftds(void)
+    : CDbapiFtdsCFBase("ftds")
+    {
+    }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 void
 NCBI_EntryPoint_xdbapi_ftds(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CDbapiFtdsCF2>::NCBI_EntryPointImpl( info_list, method );
+    CHostEntryPointImpl<CDbapiFtdsCF_ftds>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+NCBI_EntryPoint_xdbapi_ftds8(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiFtdsCF_ftds8>::NCBI_EntryPointImpl( info_list, method );
 }
 
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
@@ -875,6 +902,7 @@ void
 DBAPI_RegisterDriver_FTDS(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds8 );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -885,8 +913,8 @@ DBAPI_RegisterDriver_FTDS(void)
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
 {
-    mgr.RegisterDriver(NCBI_FTDS_DRV_NAME, FTDS_CreateContext);
-    mgr.RegisterDriver("ftds",             FTDS_CreateContext);
+    mgr.RegisterDriver("ftds",  FTDS_CreateContext);
+    mgr.RegisterDriver("ftds8", FTDS_CreateContext);
     DBAPI_RegisterDriver_FTDS();
 }
 
