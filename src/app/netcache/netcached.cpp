@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.14  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.5.15  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -582,12 +582,54 @@ void CNetCacheServer::Process(SOCK sock)
                     service_req_type = eNCServer_NetCache;
                     ProcessNC(socket, 
                               nc_req_type, tdata->req, *tdata, stat);
-                    // netcache protocol is not tested(and designed) for
-                    // multi-command work, so for now I just break
-                    // out of the loop and close the socket
-                    // TODO: Needs to be fixed!!!!
-                    //break;
                 }
+
+                // Monitoring
+                //
+                if (m_Monitor.IsMonitorActive()) {
+
+                    stat.elapsed = sw.Elapsed();
+
+                    string msg, tmp;
+                    msg += tdata->auth;
+                    msg += "\"";
+                    msg += tdata->request;
+                    msg += "\" ";
+                    msg += stat.peer_address;
+                    msg += "\n\t";
+                    msg += "ConnTime=" + stat.conn_time.AsString();
+                    msg += " BLOB size=";
+                    NStr::UInt8ToString(tmp, stat.blob_size);
+                    msg += tmp;
+                    msg += " elapsed=";
+                    msg += NStr::DoubleToString(stat.elapsed, 5);
+                    msg += " comm.elapsed=";
+                    msg += NStr::DoubleToString(stat.comm_elapsed, 5);
+                    msg += "\n\t";
+                    switch (service_req_type) {
+                    case eNCServer_NetCache:                
+                        msg += "NC:" + tdata->req.req_id;
+                        break;
+                    case eNCServer_Session:
+                        msg += "Session request";
+                        break;
+                    case eNCServer_ICache:
+                        msg + "IC:" + "Cache=\"" + tdata->ic_req.cache_name + "\"";
+                        msg += " key=\"" + tdata->ic_req.key;
+                        msg += "\" version=" + NStr::IntToString(tdata->ic_req.version);
+                        msg += " subkey=\"" + tdata->ic_req.subkey +"\"";
+                        break;
+                    case eNCServer_Unknown:
+                        msg += "UNK?";
+                        break;
+                    default:
+                        _ASSERT(0);
+                    }
+                    msg += "\n";
+
+                    m_Monitor.SendString(msg);
+                }
+
             } // while
 
         }
@@ -613,52 +655,6 @@ void CNetCacheServer::Process(SOCK sock)
             CNetCache_Logger* lg = GetLogger();
             _ASSERT(lg);
             lg->Put(tdata->auth, stat, tdata->req.req_id);
-        }
-        // 
-        // Monitoring
-        //
-        if (m_Monitor.IsMonitorActive()) {
-
-            stat.elapsed = sw.Elapsed();
-
-            string msg, tmp;
-            msg += tdata->auth;
-            msg += "\"";
-            msg += tdata->request;
-            msg += "\" ";
-            msg += stat.peer_address;
-            msg += "\n\t";
-            msg += "ConnTime=" + stat.conn_time.AsString();
-            msg += " BLOB size=";
-            NStr::UInt8ToString(tmp, stat.blob_size);
-            msg += tmp;
-            msg += " elapsed=";
-            msg += NStr::DoubleToString(stat.elapsed, 5);
-            msg += " comm.elapsed=";
-            msg += NStr::DoubleToString(stat.comm_elapsed, 5);
-            msg += "\n\t";
-            switch (service_req_type) {
-            case eNCServer_NetCache:                
-                msg += "NC:" + tdata->req.req_id;
-                break;
-            case eNCServer_Session:
-                msg += "Session request";
-                break;
-            case eNCServer_ICache:
-                msg + "IC:" + "Cache=\"" + tdata->ic_req.cache_name + "\"";
-                msg += " key=\"" + tdata->ic_req.key;
-                msg += "\" version=" + NStr::IntToString(tdata->ic_req.version);
-                msg += " subkey=\"" + tdata->ic_req.subkey +"\"";
-                break;
-            case eNCServer_Unknown:
-                msg += "UNK?";
-                break;
-            default:
-                _ASSERT(0);
-            }
-            msg += "\n";
-
-            m_Monitor.SendString(msg);
         }
     } 
     catch (CNetCacheException &ex)
