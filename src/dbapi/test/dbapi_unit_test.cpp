@@ -140,7 +140,7 @@ CDBAPIUnitTest::~CDBAPIUnitTest(void)
 //     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
 
     m_Conn.reset(NULL);
-    m_DM.DestroyDs(m_args.GetDriverName());
+    m_DM.DestroyDs(m_DS);
     m_DS = NULL;
 }
 
@@ -416,6 +416,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
         if (rs->Next()) {
             read_bytes = rs->Read(buff, sizeof(buff));
             BOOST_CHECK_EQUAL(size_t(14), read_bytes);
+            // cout << string(buff, read_bytes) << endl;
         }
 
         sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
@@ -432,6 +433,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
         if (rs->Next()) {
             read_bytes = rs->Read(buff, sizeof(buff));
             BOOST_CHECK_EQUAL(size_t(11), read_bytes);
+            // cout << string(buff, read_bytes) << endl;
         }
     }
     catch(const CDB_Exception& ex) {
@@ -6054,8 +6056,8 @@ public:
             set_cmd->DumpResults();
         }
         catch(const CDB_Exception&) {
-            LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
-                        ", Server name: " << conn.ServerName());
+            // LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
+            //             ", Server name: " << conn.ServerName());
             return eTempInvalidConn;
             // return eInvalidConn;
         }
@@ -6111,8 +6113,8 @@ public:
             set_cmd->DumpResults();
         }
         catch(const CDB_Exception&) {
-            LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
-                        ", Server name: " << conn.ServerName());
+            // LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
+            //             ", Server name: " << conn.ServerName());
             return eTempInvalidConn;
             // return eInvalidConn;
         }
@@ -9010,7 +9012,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // !!! There are still problems ...
     if (args.IsBCPAvailable()
         && args.GetDriverName() != "odbc"
-        && args.GetDriverName() != "ftds64"
+        && !(args.GetDriverName() == "ftds"
+             && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && args.GetDriverName() != "ctlib"
         )
     {
@@ -9327,7 +9330,7 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
-    if ( ( // GetDriverName() == "ftds" || // ftds is ftds64 now, which doesn't work well with UTF-8
+    if ( (GetDriverName() == "ftds" ||
           GetDriverName() == "ftds63" ||
           GetDriverName() == "ftds64" ||
 //           GetDriverName() == "ftds64_odbc"  ||
