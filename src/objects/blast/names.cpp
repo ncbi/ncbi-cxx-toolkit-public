@@ -143,6 +143,7 @@ typedef CBlast4Field TField;
 
 TField B4Param_CompositionBasedStats ("CompositionBasedStats", CBlast4_value::e_Integer);
 TField B4Param_Culling               ("Culling",               CBlast4_value::e_Boolean);
+TField B4Param_CullingLimit          ("Culling",               CBlast4_value::e_Integer);
 TField B4Param_CutoffScore           ("CutoffScore",           CBlast4_value::e_Cutoff);
 TField B4Param_DbGeneticCode         ("DbGeneticCode",         CBlast4_value::e_Integer);
 TField B4Param_DbLength              ("DbLength",              CBlast4_value::e_Big_integer);

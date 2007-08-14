@@ -1684,6 +1684,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetCompositionBasedStats(adjmode);
         } else if (B4Param_Culling.Match(p)) {
             m_PerformCulling = v.GetBoolean();
+        } else if (B4Param_CullingLimit.Match(p)) {
+            bo.SetCullingLimit(v.GetInteger());
         } else if (B4Param_CutoffScore.Match(p)) {
             opts.SetCutoffScore(v.GetInteger());
         } else {
@@ -1698,6 +1700,12 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             opts.SetDbLength(v.GetBig_integer());
         } else if (B4Param_DustFiltering.Match(p)) {
             bo.SetDustFiltering(v.GetBoolean());
+        } else if (B4Param_DustFilteringLevel.Match(p)) {
+            bo.SetDustFilteringLevel(v.GetInteger());
+        } else if (B4Param_DustFilteringWindow.Match(p)) {
+            bo.SetDustFilteringWindow(v.GetInteger());
+        } else if (B4Param_DustFilteringLinker.Match(p)) {
+            bo.SetDustFilteringLinker(v.GetInteger());
         } else {
             found = false;
         }
@@ -1744,6 +1752,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             m_GiList = v.GetInteger_list();
         } else if (B4Param_GapTracebackAlgorithm.Match(p)) {
             bo.SetGapTracebackAlgorithm((EBlastTbackExt) v.GetInteger());
+        } else if (B4Param_GapTrigger.Match(p)) {
+            bo.SetGapTrigger(v.GetReal());
         } else {
             found = false;
         }
@@ -1754,6 +1764,14 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             opts.SetHitlistSize(v.GetInteger());
         } else if (B4Param_HspRangeMax.Match(p)) {
             m_HspRangeMax = v.GetInteger();
+        } else {
+            found = false;
+        }
+        break;
+
+    case 'I':
+        if (B4Param_InclusionThreshold.Match(p)) {
+            bo.SetInclusionThreshold(v.GetReal());
         } else {
             found = false;
         }
@@ -1836,6 +1854,12 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetStrandOption(strand);
         } else if (B4Param_SegFiltering.Match(p)) {
             bo.SetSegFiltering(v.GetBoolean());
+        } else if (B4Param_SegFilteringWindow.Match(p)) {
+            bo.SetSegFilteringWindow(v.GetInteger());
+        } else if (B4Param_SegFilteringLocut.Match(p)) {
+            bo.SetSegFilteringLocut(v.GetReal());
+        } else if (B4Param_SegFilteringHicut.Match(p)) {
+            bo.SetSegFilteringHicut(v.GetReal());
         } else {
             found = false;
         }

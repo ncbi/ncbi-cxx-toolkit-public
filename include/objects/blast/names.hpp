@@ -117,6 +117,7 @@ private:
 
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CompositionBasedStats;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Culling;
+NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CullingLimit;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CutoffScore;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbGeneticCode;
 NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbLength;
