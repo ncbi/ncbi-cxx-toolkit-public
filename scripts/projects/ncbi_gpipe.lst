@@ -10,6 +10,7 @@ hello
 html
 internal/align_model$
 internal/algo/align/splign
+internal/algo/align/pipeline-tools
 internal/gpipe
 internal/ID/utils$
 misc
