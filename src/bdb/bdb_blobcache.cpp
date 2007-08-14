@@ -1181,7 +1181,7 @@ void CBDB_Cache::Open(const string& cache_path,
 {
     {{
     m_NextExpTime = 0;
-    m_PurgeSkipCnt = 0;
+//    m_PurgeSkipCnt = 0;
     m_LastTimeLineCheck = 0;
 
     Close();
@@ -3379,6 +3379,9 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
 
     TBitVector::enumerator en(delete_candidates.first());
     unsigned cnt = 0;
+    unsigned deleted = 0;
+    unsigned candidates = delete_candidates.count();
+
     for (; en.valid(); ++en) {
         unsigned blob_id = *en;
         try {
@@ -3386,10 +3389,11 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
                                     CBDB_Transaction::eTransASync, // async!
                                     CBDB_Transaction::eNoAssociation);
 
-            bool deleted = DropBlobWithExpCheck(blob_id, trans);
+            bool blob_deleted = DropBlobWithExpCheck(blob_id, trans);
 
-            if (deleted) {
+            if (blob_deleted) {
                 trans.Commit();
+                ++deleted;
                 if (m_Monitor && m_Monitor->IsActive()) {
                     string msg = 
                         "Purge: Timeline DELETE blob id=" + 
@@ -3443,6 +3447,15 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
     if (interrupted) {
         *interrupted = false;
     }
+
+    if (m_Monitor && m_Monitor->IsActive()) {
+        string msg = 
+            "Purge: Timeline deleted=" + NStr::UIntToString(deleted)
+            + " out of candidates=" + NStr::UIntToString(candidates)
+            + "\n";
+        m_Monitor->Send(msg);
+    }
+
 }
 
 void CBDB_Cache::Purge(time_t           access_timeout,
@@ -3478,6 +3491,59 @@ purge_start:
     time_t gc_start = time(0); // time when we started GC scan
 
     if (m_NextExpTime) {
+
+        unsigned precision = m_TimeLine->GetDiscrFactor() * 2;
+
+        //                                 [ precision ]
+        //                                   |
+        //                                   V
+        // -----------*-------------------#<========>---------*-->> time
+        //            *                   #                   ^
+        //            *                   #                   *
+        //           gc_start             { Next Expiration } *
+        //            *                                       *
+        //            *****************************************
+        //
+        // wait until current time goes after next projected expiration, plus
+        // timeline precision, otherwise no need to do scanning
+        //
+        if (gc_start < (m_NextExpTime + precision)) {
+            if (m_Monitor && m_Monitor->IsActive()) {
+                unsigned remains = (m_NextExpTime + precision) - gc_start;
+                unsigned rc = 0;
+                {{
+                    CFastMutexGuard guard(m_CARO2_Lock);
+                    m_CacheAttrDB_RO2->SetTransaction(0);
+                    rc = m_CacheAttrDB_RO2->CountRecs();
+                }}
+
+                TSplitStore::TBitVector bv;
+                m_BLOB_SplitStore->GetIdVector(&bv);
+                unsigned split_store_blobs = bv.count();
+
+                TBitVector timeline_blobs;
+                {{
+                    CFastMutexGuard guard(m_TimeLine_Lock);
+                    m_TimeLine->EnumerateObjects(&timeline_blobs);
+                }}
+                unsigned tl_count = timeline_blobs.count();
+
+                m_Monitor->Send(
+                    "Purge: scan skipped(nothing todo) remains="
+                    + NStr::UIntToString(remains) 
+                    + "s. precision=" + NStr::UIntToString(precision)
+                    + "s. RecCount="  + NStr::UIntToString(rc)
+                    + " SplitCount="+ NStr::UIntToString(split_store_blobs)
+                    + " SplitCount="+ NStr::UIntToString(split_store_blobs)
+                    + " TimeLineCount="+ NStr::UIntToString(tl_count)
+                    + "\n");
+            }
+            return;
+        } else {
+            m_NextExpTime = 0;
+        }
+
+/*
         if (m_PurgeSkipCnt >= 50) { // do not yeild Purge more than N times
             m_PurgeSkipCnt = 0;
         } else {
@@ -3490,6 +3556,7 @@ purge_start:
                 return;
             }
         }
+*/
     }
 
     if (m_Monitor && m_Monitor->IsActive()) {
@@ -3511,6 +3578,7 @@ purge_start:
 
     for (bool flag = true; flag;) {
         unsigned batch_size = GetPurgeBatchSize();
+        unsigned rec_cnt;
         {{
             time_t curr = time(0); // initial timepoint
 
@@ -3524,7 +3592,7 @@ purge_start:
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
 
-            for (unsigned i = 0; i < batch_size; ++i) {
+            for (rec_cnt = 0; rec_cnt < batch_size; ++rec_cnt) {
                 if (cur.Fetch() != eBDB_Ok) {
                     flag = false;
                     break;
@@ -3584,10 +3652,10 @@ purge_start:
                     
 
                 }
-                if (i == 0) { // first record in the batch
+                if (rec_cnt == 0) { // first record in the batch
                     first_key = last_key;
                 } else
-                if (i == (batch_size - 1)) { // last record
+                if (rec_cnt == (batch_size - 1)) { // last record
                     // if batch stops in the same key we increase
                     // the batch size to avoid the infinite loop
                     // when new batch starts with the very same key
@@ -3603,7 +3671,7 @@ purge_start:
 
         if (m_Monitor && m_Monitor->IsActive()) {
             string msg("Purge: Inspected ");
-            msg += NStr::UIntToString(batch_size);
+            msg += NStr::UIntToString(rec_cnt);
             msg += " records.\n";
             
             m_Monitor->Send(msg);

@@ -942,8 +942,6 @@ private:
 
     /// Time of the next blob expiration
     time_t                     m_NextExpTime;
-    /// Number of times Purge skipped
-    unsigned                   m_PurgeSkipCnt;
 
     /// Pointer to monitoring interface
     IServer_Monitor*           m_Monitor;
