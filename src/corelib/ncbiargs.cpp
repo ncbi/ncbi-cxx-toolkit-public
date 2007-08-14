@@ -1923,7 +1923,18 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     bool negative = false;
 
     // Get arg. description
-    TArgsCI it = x_Find(name, &negative);
+    TArgsCI it;
+    try {
+        it = x_Find(name, &negative);
+    } catch (CArgException&) {
+        // Suppress overzealous "invalid argument name" exceptions
+        // in the no-separator case.
+        if (m_NoSeparator.find(name[0]) != NPOS) {
+            it = m_Args.end(); // avoid duplicating the logic below
+        } else {
+            throw;
+        }
+    }
     if (it == m_Args.end()  &&  m_NoSeparator.find(name[0]) != NPOS) {
         it = x_Find(name.substr(0, 1), &negative);
         _ASSERT(it != m_Args.end());
