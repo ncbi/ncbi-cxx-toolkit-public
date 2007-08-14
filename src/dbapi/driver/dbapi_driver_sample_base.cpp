@@ -67,6 +67,7 @@ CDbapiDriverSampleApp::GetServerType(void) const
          GetServerName() == "MOZART" ||
          GetServerName() == "SCHUMANN" ||
          GetServerName() == "OBERON" ||
+         GetServerName() == "TAPER" ||
          NStr::StartsWith(GetServerName(), "BARTOK") ) {
         return eSybase;
     } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
