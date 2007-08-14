@@ -727,12 +727,12 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "odbcw", "gateway", "ftds64", "ftds64_odbc"
+                      "odbcw", "gateway", "ftds64", "ftds64_odbc", "ftds8"
 #else
 #define DEF_SERVER    "TAPER"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds64", "ftds64_odbc"
+                      "ftds64", "ftds64_odbc", "ftds8"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -806,6 +806,9 @@ CTestArguments::SetDatabaseParameters(void)
     } else if ( (GetDriverName() == "ftds") &&
                 GetServerType() == eSybase ) {
         m_DatabaseParameters["version"] = "42";
+    } else if ( (GetDriverName() == "ftds8") &&
+                GetServerType() == eSybase ) {
+        m_DatabaseParameters["version"] = "42";
     } else if ( (GetDriverName() == "ftds63" ||
                  GetDriverName() == "ftds64_dblib") &&
                 GetServerType() == eSybase ) {
@@ -815,7 +818,7 @@ CTestArguments::SetDatabaseParameters(void)
         if (GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "50";
         }
-    } else if (GetDriverName() == "ftds64"  &&
+    } else if (GetDriverName() == "ftds"  &&
                GetServerType() == eSybase) {
         m_DatabaseParameters["version"] = "125";
     }
