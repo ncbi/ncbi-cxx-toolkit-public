@@ -1965,7 +1965,7 @@ GetSearchOptions(const objects::CBlast4_parameters * aopts,
 {
     EProgram program = ComputeProgram(m_Program, m_Service);
     
-    program = AdjustProgram((aopts == NULL ? &aopts->Get() : 0), 
+    program = AdjustProgram((aopts == NULL ? 0 : &aopts->Get()), 
                             program, m_Program);
     
     // Using eLocal allows more of the options to be returned to the user.
@@ -1973,8 +1973,8 @@ GetSearchOptions(const objects::CBlast4_parameters * aopts,
     CRef<CBlastOptionsHandle>
         cboh(CBlastOptionsFactory::Create(program, m_Locality));
     
-    x_ProcessOptions(*cboh, (aopts == NULL ? &aopts->Get() : 0));
-    x_ProcessOptions(*cboh, (popts == NULL ? &popts->Get() : 0));
+    x_ProcessOptions(*cboh, (aopts == NULL ? 0 : &aopts->Get()));
+    x_ProcessOptions(*cboh, (popts == NULL ? 0 : &popts->Get()));
     
     x_ApplyInteractions(*cboh);
     
