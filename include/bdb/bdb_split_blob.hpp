@@ -559,7 +559,7 @@ public:
     /// @param bv
     ///    Vector of IDs stored
     ///
-    void GetIdVector(TBitVector* bv) const { m_IdDeMux->GetIdVector(bv); }
+    void GetIdVector(TBitVector* bv) const;
 
     /// Reclaim unused memory 
     void FreeUnusedMem();
@@ -727,6 +727,14 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::IsSameCoordinates(
 {
     return coords1[0] == coords2[0] && 
            coords1[1] == coords2[1];
+}
+
+template<class TBV, class TObjDeMux, class TL>
+inline void 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetIdVector(TBitVector* bv) const
+{
+    CReadLockGuard lg(m_IdDeMuxLock);
+    m_IdDeMux->GetIdVector(bv);
 }
 
 
