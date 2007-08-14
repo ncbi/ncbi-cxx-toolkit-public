@@ -5,7 +5,7 @@
 ulimit -n 1024 > /dev/null 2>&1
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds ftds63 odbc msdblib ftds64_odbc ftds64" # mysql
+driver_list="ctlib dblib ftds ftds63 odbc msdblib ftds64_odbc ftds8" # mysql
 server_list="MS_DEV1 SCHUMANN"
 server_mssql="MS_DEV1"
 
