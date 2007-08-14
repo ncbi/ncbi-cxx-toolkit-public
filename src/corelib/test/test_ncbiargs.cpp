@@ -216,7 +216,8 @@ static void s_InitTest8(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey
         ("k", "alphaNumericKey",
          "This is an optional argument with default value",
-         CArgDescriptions::eString, "CORELIB");
+         CArgDescriptions::eString, "CORELIB",
+         CArgDescriptions::fOptionalSeparator);
 }
 
 static void s_RunTest8(const CArgs& args, ostream& os)
