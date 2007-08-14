@@ -193,37 +193,50 @@ CDBAPIUnitTest::TestInit(void)
         }
 
         if (m_args.UseGateway()) {
-            m_DS = m_DM.CreateDs("gateway", &m_args.GetDBParameters());
+            m_DS = m_DM.CreateDs(
+                "gateway",
+                &m_args.GetDBParameters()
+                );
         } else {
-            m_DS = m_DM.CreateDs(m_args.GetDriverName(), &m_args.GetDBParameters());
+            m_DS = m_DM.CreateDs(
+                m_args.GetDriverName(),
+                &m_args.GetDBParameters()
+                );
         }
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        if ( m_args.GetDriverName() == "odbc" ||
+        if (m_args.GetDriverName() == "odbc" ||
             m_args.GetDriverName() == "odbcw" ||
-            m_args.GetDriverName() == "ftds64_odbc" ) {
-            drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception_ODBC,
-                                            eTakeOwnership
-                                            );
-            drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception_ODBC,
-                                               eTakeOwnership
-                                               );
+            m_args.GetDriverName() == "ftds64_odbc"
+            ) {
+            drv_context->PushCntxMsgHandler(
+                new CDB_UserHandler_Exception_ODBC,
+                eTakeOwnership
+                );
+            drv_context->PushDefConnMsgHandler(
+                new CDB_UserHandler_Exception_ODBC,
+                eTakeOwnership
+                );
         } else {
-            drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception,
-                                            eTakeOwnership);
-            drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception,
-                                               eTakeOwnership);
+            drv_context->PushCntxMsgHandler(
+                new CDB_UserHandler_Exception,
+                eTakeOwnership
+                );
+            drv_context->PushDefConnMsgHandler(
+                new CDB_UserHandler_Exception,
+                eTakeOwnership
+                );
         }
 
-        m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        BOOST_CHECK( m_Conn.get() != NULL );
+        m_Conn.reset(m_DS->CreateConnection( CONN_OWNERSHIP ));
+        BOOST_CHECK(m_Conn.get() != NULL);
 
         m_Conn->SetMode(IConnection::eBulkInsert);
 
         Connect(m_Conn);
 
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
 
         // Create a test table ...
         string sql;
@@ -9012,8 +9025,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // !!! There are still problems ...
     if (args.IsBCPAvailable()
         && args.GetDriverName() != "odbc"
-        && !(args.GetDriverName() == "ftds"
-             && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        && args.GetDriverName() != "ftds" // Something is completely wrong ...
+        // && !(args.GetDriverName() == "ftds"
+        //      && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && args.GetDriverName() != "ctlib"
         )
     {
