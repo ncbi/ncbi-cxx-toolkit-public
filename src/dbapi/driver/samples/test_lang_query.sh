@@ -6,7 +6,7 @@
 ulimit -n 1536 > /dev/null 2>&1
 
 
-# driver_list="ftds64_dblib odbcw ftds63 ftds64_odbc"
+# driver_list="ftds64_dblib odbcw ftds63 ftds_odbc"
 driver_list="ctlib dblib ftds odbc msdblib ftds8"
 # server_list="MS_DEV2 BARTOK BARTOK_12 MSSQL9 STRAUSS"
 server_list="MS_DEV1 TAPER"
