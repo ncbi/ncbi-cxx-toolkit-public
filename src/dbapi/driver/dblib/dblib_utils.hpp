@@ -85,7 +85,7 @@ NCBI_EntryPoint_xdbapi_ftds63(
 
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void
-NCBI_EntryPoint_xdbapi_ftds64_dblib(
+NCBI_EntryPoint_xdbapi_ftds_dblib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 

@@ -1161,7 +1161,7 @@ class CDbapiFtdsCF64 : public CDbapiFtdsCFBase
 {
 public:
     CDbapiFtdsCF64(void)
-    : CDbapiFtdsCFBase("ftds64_dblib")
+    : CDbapiFtdsCFBase("ftds_dblib")
     {
     }
 };
@@ -1184,7 +1184,7 @@ NCBI_EntryPoint_xdbapi_ftds63(
 }
 
 void
-NCBI_EntryPoint_xdbapi_ftds64_dblib(
+NCBI_EntryPoint_xdbapi_ftds_dblib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
@@ -1197,7 +1197,7 @@ DBAPI_RegisterDriver_FTDS(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds63 );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_dblib );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_dblib );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
