@@ -6,8 +6,8 @@
 ulimit -n 1536 > /dev/null 2>&1
 
 
-# driver_list="ftds64_dblib odbcw ftds63 ftds8 ftds64_odbc"
-driver_list="ctlib dblib ftds odbc msdblib"
+# driver_list="ftds64_dblib odbcw ftds63 ftds64_odbc"
+driver_list="ctlib dblib ftds odbc msdblib ftds8"
 # server_list="MS_DEV2 BARTOK BARTOK_12 MSSQL9 STRAUSS"
 server_list="MS_DEV1 TAPER"
 # server_mssql="MS_DEV2 MSSQL9"
@@ -201,13 +201,13 @@ EOF
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
-            elif test $driver = "ftds8" -a  $server != $server_mssql ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
+#            elif test $driver = "ftds8" -a  $server != $server_mssql ; then
+#                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
+#                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
             else
                 # do not run tests with a boolk copy operations 
                 # on Sybase databases with the "ftds" driver
-                if test $driver = "ftds" -a  $server != $server_mssql ; then
+                if test \( $driver = "ftds" -o $driver = "ftds8" \) -a  $server != $server_mssql ; then
                     sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
                 else
                     cmd="dbapi_bcp -lb random -d $driver -S $server"
