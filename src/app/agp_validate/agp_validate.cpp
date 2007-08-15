@@ -302,7 +302,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       args['#' + NStr::IntToString(i)].CloseFile();
     }
   }
-  // Needed to check if the last line was a gap, or a singleton.
+  // This is needed to check whether the last line was a gap, or a singleton.
   if (m_ValidationType == VT_Context) {
     m_ContextValidator->EndOfObject(true);
   }

@@ -35,7 +35,6 @@
 #include "AltValidator.hpp"
 
 // Objects includes
-// todo: move this to a separate .cpp file with GenBank validator
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -524,7 +523,7 @@ void CAltValidator::ProcessQueue()
           int slen = NStr::StringToInt(docsum_slen);
           if(slen==0) {
             // A workaround for a possible Entrez bug/feature:
-            // 0 taxid and length for repaced seqs
+            // 0 taxid and length for replaced seqs
             CSeq_id seq_id(CSeq_id::e_Gi, it_line->gi);
             CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle(seq_id);
 
