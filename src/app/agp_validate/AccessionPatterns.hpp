@@ -42,7 +42,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 
-#include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,23 +50,18 @@ class CPatternStats;
 class CAccPatternCounter : public map<string, CPatternStats*>
 {
 public:
-  void AddName(const string& name);
-
-  typedef set<string> TStrSet;
-  void AddNames(const TStrSet& names);
+  void AddName(const string& name); // , int times=1
 
   // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#
   // with digits or numerical [ranges].
   static string GetExpandedPattern(value_type* p);
   static int GetCount(value_type* p);
 
-  // >pointer to >value_type vector for sorting
-  typedef vector<value_type*> pv_vector;
-  void GetSortedValues(pv_vector& out);
+  // Export expanded patterns sorted by accession count.
+  typedef multimap<int,string> TMapCountToString;
+  void GetSortedPatterns(TMapCountToString& dst);
 
-private:
-  // For sorting by accession count
-  static int x_byCount( value_type* a, value_type* b );
+  ~CAccPatternCounter();
 };
 
 /* How to use:
@@ -77,7 +72,7 @@ private:
      pc.AddName(...);
   }
 
-  // Print unsorted simple patterns and counts.
+  // Print simple patterns. sorted alphabetically, and counts.
   // Runs of digits are replaced with "#".
   for(CAccPatternCounter::iterator it =
     pc->begin(); it != pc->end(); ++it)
@@ -88,17 +83,16 @@ private:
     );
   }
 
-  // Print expanded patterns and counts; sort by accession count.
+  // Print expanded patterns and counts, most frequent patterns first.
   // Runs of digits are replaced with ranges, or kept as is.
-  CAccPatternCounter::pv_vector pat_cnt;
-  // A vector with sorted pointers to map values
-  objNamePatterns->GetSortedValues(pat_cnt);
+  CAccPatternCounter::TMapCountToString cnt_pat; // multimap<int,string>
+  pc.GetSortedPatterns(cnt_pat);
 
-  for(CAccPatternCounter::pv_vector::iterator it =
-      pat_cnt.begin(); it != pat_cnt.end(); ++it
+  for(CAccPatternCounter::TMapCountToString::reverse_iterator
+      it = cnt_pat.rbegin(); it != cnt_pat.rend(); ++it
   ) {
-    cout<< CAccPatternCounter::GetExpandedPattern(*it) << "\t"
-        << CAccPatternCounter::GetCount(*it) << "\n";
+    // pattern <tab> count
+    cout<< it->second << "\t" << it->first  << "\n";
   }
 
 */

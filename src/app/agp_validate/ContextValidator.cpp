@@ -312,10 +312,10 @@ void CAgpContextValidator::PrintTotals()
   //// Prepare component/gap types and counts for later printing
   string s_comp, s_gap;
 
-  CValuesCount::pv_vector comp_cnt;
+  CValuesCount::TValPtrVec comp_cnt;
   m_TypeCompCnt.GetSortedValues(comp_cnt);
 
-  for(CValuesCount::pv_vector::iterator
+  for(CValuesCount::TValPtrVec::iterator
     it = comp_cnt.begin();
     it != comp_cnt.end();
     ++it
@@ -414,7 +414,13 @@ void CAgpContextValidator::PrintTotals()
   if(m_ObjCount) {
     {
       CAccPatternCounter objNamePatterns;
-      objNamePatterns.AddNames(m_ObjIdSet);
+      //objNamePatterns.AddNames(m_ObjIdSet);
+      for(TObjSet::const_iterator it = m_ObjIdSet.begin();
+          it != m_ObjIdSet.end(); ++it
+      ) {
+        objNamePatterns.AddName(*it);
+      }
+
       x_PrintPatterns(objNamePatterns, "Object names");
     }
   }
@@ -438,30 +444,35 @@ void CAgpContextValidator::x_PrintPatterns(
 {
   const int MaxPatterns=10;
 
-  // Get a vector with sorted pointers to map values
-  CAccPatternCounter::pv_vector pat_cnt;
-  namePatterns.GetSortedValues(pat_cnt);
+  // Sorted by count to print most frequent first
+  CAccPatternCounter::TMapCountToString cnt_pat; // multimap<int,string>
+  namePatterns.GetSortedPatterns(cnt_pat);
+  SIZE_TYPE cnt_pat_size=cnt_pat.size();
+
   cout << "\n";
 
-  // Calculate width of columns 1 (pattern) and 2 (count)
+  // Calculate width of columns 1 (wPattern) and 2 (w, count)
   int w = NStr::IntToString(
-      CAccPatternCounter::GetCount(pat_cnt[0])
+      cnt_pat.rbegin()->first // the biggest count
     ).size()+1;
 
   int wPattern=strHeader.size()-2;
   int totalCount=0;
   int patternsPrinted=0;
-  for(CAccPatternCounter::pv_vector::iterator it =
-      pat_cnt.begin(); it != pat_cnt.end(); ++it
+  for(
+    CAccPatternCounter::TMapCountToString::reverse_iterator
+    it = cnt_pat.rbegin(); it != cnt_pat.rend(); it++
   ) {
-    if( ++patternsPrinted<=MaxPatterns || pat_cnt.size()<=2*MaxPatterns ) {
-      int i = CAccPatternCounter::GetExpandedPattern(*it).size();
+    if( ++patternsPrinted<=MaxPatterns ||
+        cnt_pat_size<=2*MaxPatterns
+    ) {
+      int i = it->second.size();
       if( i > wPattern ) wPattern = i;
     }
     else {
       if(w+15>wPattern) wPattern = w+15;
     }
-    totalCount+=CAccPatternCounter::GetCount(*it);
+    totalCount+=it->first;
   }
 
   // Print the total
@@ -471,24 +482,28 @@ void CAgpContextValidator::x_PrintPatterns(
   // Print the patterns
   patternsPrinted=0;
   int accessionsSkipped=0;
-  for(CAccPatternCounter::pv_vector::iterator it =
-      pat_cnt.begin(); it != pat_cnt.end(); ++it
+  for(
+    CAccPatternCounter::TMapCountToString::reverse_iterator
+    it = cnt_pat.rbegin(); it != cnt_pat.rend(); it++
   ) {
     // Limit the number of lines to MaxPatterns or 2*MaxPatterns
-    if( ++patternsPrinted<=MaxPatterns || pat_cnt.size()<=2*MaxPatterns ) {
+    if( ++patternsPrinted<=MaxPatterns ||
+        cnt_pat_size<=2*MaxPatterns
+    ) {
       cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
-          << CAccPatternCounter::GetExpandedPattern(*it)
-          << ": " << ALIGN_W( CAccPatternCounter::GetCount(*it) )
+          << it->second                   // pattern
+          << ": " << ALIGN_W( it->first ) // : count
           << "\n";
     }
     else {
-      accessionsSkipped += CAccPatternCounter::GetCount(*it);
+      // accessionsSkipped += CAccPatternCounter::GetCount(*it);
+      accessionsSkipped += it->first;
     }
   }
 
   if(accessionsSkipped) {
     string s = "other ";
-    s+=NStr::IntToString(pat_cnt.size() - 10);
+    s+=NStr::IntToString(cnt_pat_size - 10);
     s+=" patterns";
     cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
         << ": " << ALIGN_W( accessionsSkipped )
@@ -499,7 +514,7 @@ void CAgpContextValidator::x_PrintPatterns(
 
 //// class CValuesCount
 
-void CValuesCount::GetSortedValues(pv_vector& out)
+void CValuesCount::GetSortedValues(TValPtrVec& out)
 {
   out.clear(); out.reserve( size() );
   for(iterator it = begin();  it != end(); ++it) {

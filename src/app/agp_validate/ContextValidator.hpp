@@ -51,8 +51,8 @@ public:
   void add(const string& c);
 
   // >pointer to >value_type vector for sorting
-  typedef vector<value_type*> pv_vector;
-  void GetSortedValues(pv_vector& out);
+  typedef vector<value_type*> TValPtrVec;
+  void GetSortedValues(TValPtrVec& out);
 
 private:
   // For sorting by value count

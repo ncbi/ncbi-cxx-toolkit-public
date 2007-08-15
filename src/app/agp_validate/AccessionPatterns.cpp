@@ -62,9 +62,8 @@ public:
   string min_str, max_str;
   int min_val_count, max_val_count, total_count;
 
-  // If these lengths are not equal,
-  // then the following optimization must be suppressed:
-  // AC[00001..0085] -> AC00[01..85]
+  // If these lengths are not equal, we would NOT move zeroes out of [], like
+  //   AC[00001..0085] => AC00[01..85]
   int min_len, max_len;
 
   CRunOfDigits()
@@ -131,14 +130,14 @@ public:
   }
 };
 
-typedef vector<CRunOfDigits> CRunsOfDigits;
+typedef vector<CRunOfDigits> TRunsOfDigits;
 class CPatternStats
 {
 public:
   typedef vector<string> TStrVec;
 
   int acc_count;
-  CRunsOfDigits* runs;
+  TRunsOfDigits* runs;
 
   // runs_count is the number of continuous digit runs,
   // e.g. 2 for "AC01234.5". runs_count is the same
@@ -146,7 +145,7 @@ public:
   CPatternStats(int runs_count)
   {
     acc_count=0;
-    runs = new CRunsOfDigits(runs_count);
+    runs = new TRunsOfDigits(runs_count);
   }
   ~CPatternStats()
   {
@@ -221,13 +220,6 @@ void CAccPatternCounter::AddName(const string& name)
   ps->AddAccRuns(digrun);
 }
 
-void CAccPatternCounter::AddNames(const TStrSet& names)
-{
-  for(TStrSet::const_iterator it = names.begin();  it != names.end(); ++it) {
-    AddName(*it);
-  }
-}
-
 // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#
 // with digits or numerical [ranges].
 // static
@@ -242,24 +234,21 @@ int CAccPatternCounter::GetCount(value_type* p)
   return p->second->acc_count;
 }
 
-// static private: for sorting by accession count
-int CAccPatternCounter::x_byCount( value_type* a, value_type* b )
+void CAccPatternCounter::GetSortedPatterns(CAccPatternCounter::TMapCountToString& dst)
 {
-  if( GetCount(a) != GetCount(b) ){
-    return GetCount(a) > GetCount(b);
-  }
-  return a->first < b->first;
-}
-
-void CAccPatternCounter::GetSortedValues(pv_vector& out)
-{
-  out.clear(); out.reserve( size() );
   for(iterator it = begin();  it != end(); ++it) {
-    out.push_back(&*it);
+    dst.insert(TMapCountToString::value_type(
+      GetCount(&*it),
+      GetExpandedPattern(&*it)
+    ));
   }
-  std::sort( out.begin(), out.end(), x_byCount );
 }
 
-
+CAccPatternCounter::~CAccPatternCounter()
+{
+  for(iterator it = begin();  it != end(); ++it) {
+    delete it->second;
+  }
+}
 END_NCBI_SCOPE
 
