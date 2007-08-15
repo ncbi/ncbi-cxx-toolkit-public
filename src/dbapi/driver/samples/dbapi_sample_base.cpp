@@ -138,20 +138,20 @@ CDbapiSampleApp::Init()
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", \
-                      "gateway", "odbc", "odbcw", "ftds64_odbc", \
-                      "ftds64_dblib", "ftds64", "ftds8"
+                      "gateway", "odbc", "odbcw", "ftds_odbc", \
+                      "ftds64_dblib", "ftds8"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "TAPER"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "odbc", "odbcw", "ftds64_odbc", "ftds64_dblib", \
-                      "ftds64", "ftds8"
+                      "odbc", "odbcw", "ftds_odbc", "ftds64_dblib", \
+                      "ftds8"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ftds", "ftds63", "gateway", \
-                      "odbc", "odbcw", "ftds64_odbc", "ftds64_dblib", \
-                      "ftds64", "ftds8"
+                      "odbc", "odbcw", "ftds_odbc", "ftds64_dblib", \
+                      "ftds8"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -250,7 +250,7 @@ CDbapiSampleApp::Run()
         } else if ( GetDriverName() == "ftds64_dblib" &&
                     GetServerType() == eMsSql ) {
             SetDatabaseParameter("version", "80");
-        } else if ( GetDriverName() == "ftds64_odbc" &&
+        } else if ( GetDriverName() == "ftds_odbc" &&
                     GetServerType() == eSybase ) {
             SetDatabaseParameter("version", "50");
         }
