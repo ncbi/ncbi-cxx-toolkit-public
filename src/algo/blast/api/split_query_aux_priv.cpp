@@ -101,7 +101,7 @@ SplitQuery_GetChunkSize(EBlastProgramType program)
     case eBlastTypeTblastx:
         // N.B.: the splitting is done on the nucleotide query sequences, then
         // each of these chunks is translated
-        retval = 5001;
+        retval = 10002;
         break;
     case eBlastTypeBlastp:
     default:
