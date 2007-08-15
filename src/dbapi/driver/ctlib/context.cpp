@@ -1397,7 +1397,7 @@ CDbapiCtlibCFBase::CreateInstance(
         // Mandatory parameters ....
 #ifdef FTDS_IN_USE
         bool reuse_context = false; // Be careful !!!
-        int  tds_version   = 80; // version 80 doesn't work with MS SQL 2005
+        int  tds_version   = 70; // version 80 doesn't work with MS SQL 2005
 #else
         // Previous behahviour was: reuse_context = true
         bool reuse_context = false;
