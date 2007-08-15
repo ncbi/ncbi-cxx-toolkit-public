@@ -1452,7 +1452,8 @@ void CBDB_Cache::Open(const string& cache_path,
         if (!m_JoinedEnv) {
             CBDB_Env::TBackgroundFlags flags = 
                 CBDB_Env::eBackground_MempTrickle  |
-                CBDB_Env::eBackground_Checkpoint;
+                CBDB_Env::eBackground_Checkpoint   |
+                CBDB_Env::eBackground_DeadLockDetect;
             m_Env->RunBackgroundWriter(flags, 
                                        m_PurgeThreadDelay, 
                                        m_MempTrickle);
@@ -4329,23 +4330,12 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
         x_DropOverflow(key, version, subkey);
     }
 
-    // Delete split store
-    //
-    EBDB_ErrCode ret = 
-        m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
-    m_BLOB_SplitStore->SetTransaction(&trans);
-    if (ret == eBDB_Ok) {
-        if (split_coord[0] != coords[0] ||
-            split_coord[1] != coords[1]) {
-            // split coords un-sync: delete de-facto BLOB
-            m_BLOB_SplitStore->Delete(blob_id, 
-                                      CBDB_RawFile::eThrowOnError);
-        }
-    }
-    // Delete BLOB by known coordinates
-    m_BLOB_SplitStore->Delete(blob_id, coords, 
-                              CBDB_RawFile::eThrowOnError);
-
+    // Important implementation note:
+    // There is a temptation to delete BLOB split store first 
+    // and registration record second to minimize time registration record 
+    // stays locked. We should NOT do it in ONE transaction 
+    // because in other places order of access is different and this may 
+    // create DEADLOCK
 
     // Delete BLOB attributes and index
     //
@@ -4367,76 +4357,24 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
 
     }} // m_DB_Lock
 
-    return true;
-
-/*
-
-    // TODO: Use read-only channel for expiration evaluation
-    // reshuffle the delete sequence so the attributes table is not getting locked
-    // for a large period of time
+    // Delete split store
     //
-    {{
-        CFastMutexGuard guard(m_DB_Lock);
-
-        m_CacheAttrDB->SetTransaction(&trans);
-        m_CacheAttrDB->key = key;
-        m_CacheAttrDB->version = version;
-        m_CacheAttrDB->subkey = subkey;
-        if (m_CacheAttrDB->Fetch() != eBDB_Ok) {
-            return false;
-        }
-        overflow = m_CacheAttrDB->overflow;
-        coords[0] = m_CacheAttrDB->volume_id;
-        coords[1] = m_CacheAttrDB->split_id;
-        blob_id = m_CacheAttrDB->blob_id;
-        
-        if (x_CheckTimestampExpired(curr, &exp_time)) {
-            if (overflow == 1) {
-                x_DropOverflow(key, version, subkey);
-            }
-            m_CacheAttrDB->Delete(CBDB_RawFile::eThrowOnError);
-
-            m_CacheIdIDX->SetTransaction(&trans);
-            m_CacheIdIDX->blob_id = blob_id;
-            m_CacheIdIDX->Delete(CBDB_RawFile::eThrowOnError);
-            blob_expired = true;
-        } else {
-            blob_expired = false;
-        }
-    }} // m_DB_Lock
-
-    if (!blob_expired) {
-        {{
-            CFastMutexGuard guard(m_TimeLine_Lock);
-            _ASSERT(exp_time);
-            m_TimeLine->AddObject(exp_time, blob_id);
-        }} // m_TimeLine_Lock
-        return false;
-    }
-
-    bool delete_split = false;
-    m_BLOB_SplitStore->SetTransaction(&trans);
-
     EBDB_ErrCode ret = 
         m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
+    m_BLOB_SplitStore->SetTransaction(&trans);
     if (ret == eBDB_Ok) {
         if (split_coord[0] != coords[0] ||
             split_coord[1] != coords[1]) {
-            delete_split = true;                    
+            // split coords un-sync: delete de-facto BLOB
+            m_BLOB_SplitStore->Delete(blob_id, 
+                                      CBDB_RawFile::eThrowOnError);
         }
     }
-
-    // delete blob as pointed by de-mux splitter
-    if (delete_split) {
-        m_BLOB_SplitStore->Delete(blob_id, 
-                                  CBDB_RawFile::eThrowOnError);
-    }
-    // delete blob as accounted by meta-information
+    // Delete BLOB by known coordinates
     m_BLOB_SplitStore->Delete(blob_id, coords, 
                               CBDB_RawFile::eThrowOnError);
 
     return true;
-*/
 }
 
 
