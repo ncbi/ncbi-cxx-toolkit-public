@@ -235,6 +235,9 @@ CDbapiSampleApp::Run()
 //             SetDatabaseParameter("version", "100");
         } else if ( GetDriverName() == "ftds" &&
                     GetServerType() == eSybase ) {
+            SetDatabaseParameter("version", "42");
+        } else if ( GetDriverName() == "ftds8" &&
+                    GetServerType() == eSybase ) {
             // ftds forks with Sybase databases using protocol v42 only ...
             SetDatabaseParameter("version", "42");
 //         } else if ( GetDriverName() == "ftds63" &&
@@ -244,8 +247,7 @@ CDbapiSampleApp::Run()
                      GetDriverName() == "ftds64_dblib") &&
                     GetServerType() == eSybase ) {
             SetDatabaseParameter("version", "100");
-        } else if ( (GetDriverName() == "ftds64" ||
-                     GetDriverName() == "ftds64_dblib") &&
+        } else if ( GetDriverName() == "ftds64_dblib" &&
                     GetServerType() == eMsSql ) {
             SetDatabaseParameter("version", "80");
         } else if ( GetDriverName() == "ftds64_odbc" &&
