@@ -103,7 +103,7 @@ EOF
                 continue
             fi
 
-            if test \( $driver = "ftds_odbc" -o $driver = "ftds64" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "ftds_odbc" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
                 continue
             fi
 
