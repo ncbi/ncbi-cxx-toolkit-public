@@ -644,8 +644,8 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     if ( ( args.GetDriverName() == "ctlib" && sybase_client_v125) ||
          ( (args.GetDriverName() == "ftds"
+            || args.GetDriverName() == "ftds8"
             || args.GetDriverName() == "ftds63"
-            || args.GetDriverName() == "ftds64"
             || args.GetDriverName() == "ftds64_odbc"
             ) &&
            args.GetServerType() == CTestArguments::eMsSql )
@@ -727,12 +727,12 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "odbcw", "gateway", "ftds64", "ftds64_odbc", "ftds8"
+                      "odbcw", "gateway", "ftds8", "ftds64_odbc"
 #else
 #define DEF_SERVER    "TAPER"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds64", "ftds64_odbc", "ftds8"
+                      "ftds8", "ftds64_odbc"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -818,9 +818,6 @@ CTestArguments::SetDatabaseParameters(void)
         if (GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "50";
         }
-    } else if (GetDriverName() == "ftds"  &&
-               GetServerType() == eSybase) {
-        m_DatabaseParameters["version"] = "125";
     }
 }
 
