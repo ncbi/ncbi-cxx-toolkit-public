@@ -598,7 +598,7 @@ class CDbapiOdbcCF_ftds64 : public CDbapiOdbcCFBase
 {
 public:
     CDbapiOdbcCF_ftds64(void)
-    : CDbapiOdbcCFBase("ftds64_odbc")
+    : CDbapiOdbcCFBase("ftds_odbc")
     {
     }
 };
@@ -628,7 +628,7 @@ extern "C"
 
     NCBI_DBAPIDRIVER_ODBC_EXPORT
     void
-    NCBI_EntryPoint_xdbapi_ftds64_odbc(
+    NCBI_EntryPoint_xdbapi_ftds_odbc(
         CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
         CPluginManager<I_DriverContext>::EEntryPointRequest method)
     {
@@ -649,7 +649,7 @@ extern "C"
     DBAPI_RegisterDriver_ODBC(void)
     {
         RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
-        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_odbc );
+        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds_odbc );
         RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbcw );
     }
 

@@ -184,7 +184,7 @@ NCBI_EntryPoint_xdbapi_odbc(
 
 NCBI_DBAPIDRIVER_ODBC_EXPORT
 void
-NCBI_EntryPoint_xdbapi_ftds64_odbc(
+NCBI_EntryPoint_xdbapi_ftds_odbc(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 
