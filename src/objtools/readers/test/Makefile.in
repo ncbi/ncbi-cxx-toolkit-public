@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = agp_count
+APP_PROJ = agp_count pacc
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
