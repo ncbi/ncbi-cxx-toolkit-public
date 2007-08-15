@@ -646,7 +646,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
          ( (args.GetDriverName() == "ftds"
             || args.GetDriverName() == "ftds8"
             || args.GetDriverName() == "ftds63"
-            || args.GetDriverName() == "ftds64_odbc"
+            || args.GetDriverName() == "ftds_odbc"
             ) &&
            args.GetServerType() == CTestArguments::eMsSql )
          ) {
@@ -690,7 +690,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     // Do not run this test case for the ODBC driver.
     if ( server_name.compare("ODBC") != 0
          && server_name.compare("ODBCW") != 0
-         && server_name.compare("FTDS64_ODBC") != 0
+         && server_name.compare("FTDS_ODBC") != 0
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteStoredProc, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -727,12 +727,12 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "odbcw", "gateway", "ftds8", "ftds64_odbc"
+                      "odbcw", "gateway", "ftds8", "ftds_odbc"
 #else
 #define DEF_SERVER    "TAPER"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds8", "ftds64_odbc"
+                      "ftds8", "ftds_odbc"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -814,7 +814,7 @@ CTestArguments::SetDatabaseParameters(void)
                 GetServerType() == eSybase ) {
         // ftds work with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "100";
-    } else if (GetDriverName() == "ftds64_odbc") {
+    } else if (GetDriverName() == "ftds_odbc") {
         if (GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "50";
         }

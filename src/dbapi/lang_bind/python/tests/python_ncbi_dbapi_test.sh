@@ -3,7 +3,7 @@
 
 # Declare drivers and servers
 # Tere are problems with ftds63 ...
-driver_list="ctlib dblib ftds odbc odbcw msdblib ftds64_odbc ftds8" # mysql
+driver_list="ctlib dblib ftds odbc odbcw msdblib ftds_odbc ftds8" # mysql
 server_list="MS_DEV1 TAPER"
 server_mssql="MS_DEV1"
 
@@ -116,7 +116,7 @@ EOF
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
-            if test \( $driver = "odbc" -o $driver = "odbcw" -o $driver = "msdblib" -o $driver = "ftds64_odbc" -o $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "odbc" -o $driver = "odbcw" -o $driver = "msdblib" -o $driver = "ftds_odbc" -o $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
                 continue
             fi
 
