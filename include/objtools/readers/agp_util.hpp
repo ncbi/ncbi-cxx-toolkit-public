@@ -31,7 +31,14 @@
  * File Description:
  *     Generic fast AGP stream reader    (CAgpReader),
  *     and even more generic line parser (CAgpRow).
- *     Usage examples in test/agp_*.cpp
+ *     Example: test/agp_*.cpp
+ *
+ *     Accession naming patterns (CAccPatternCounter).
+ *     Find ranges for consequtive digits. Not related to the above.
+ *     Sample input : AC123.1 AC456.1 AC789.1 NC8967.4 NC8967.5
+ *                      ^^^ ^                   ^^^^ ^
+ *     Sample output: AC[123..789].1 3  NC8967.[4,5] 2
+ *     Example: test/pacc.cpp
  */
 
 
@@ -45,10 +52,10 @@ BEGIN_NCBI_SCOPE
 
 class CAgpErr; // full definition below
 
-//// A container for both the original string column values (Get*() methods)
-//// and the values converted to int, char, bool types (member variables).
-//// Detects formatting errors within a single line, checks that
-//// object range length equals gap length or component range length.
+/// A container for both the original string column values (Get*() methods)
+/// and the values converted to int, char, bool types (member variables).
+/// Detects formatting errors within a single line, checks that
+/// object range length equals gap length or component range length.
 class NCBI_XOBJREAD_EXPORT CAgpRow
 {
 public:
@@ -145,8 +152,8 @@ public:
     void SetErrorHandler(CAgpErr* arg);
 };
 
-//// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
-//// Intented as a superclass for more complex readers.
+/// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
+/// Intented as a superclass for more complex readers.
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
@@ -327,6 +334,29 @@ protected:
                                  // also apply to current, and are saved in m_messages instead.
 
     int m_apply_to; // which lines to print before the message(s): previous, current, both, whole file
+};
+
+
+class CPatternStats; // internal for CAccPatternCounter
+/// Accession naming patterns; find ranges for consequtive digits.
+/// Sample input : AC123.1 AC456.1 AC789.1 NC8967.4 NC8967.5
+///                  ^^^ ^                   ^^^^ ^
+/// Sample output: AC[123..789].1 3  NC8967.[4,5] 2
+class CAccPatternCounter : public map<string, CPatternStats*>
+{
+public:
+    void AddName(const string& name);
+
+    // Replace "0"s in a simple pattern like BCM_Spur_v0.0_Scaffold0
+    // (which is a key in this map) with real numbers or [ranges].
+    static string GetExpandedPattern(value_type* p);
+    static int GetCount(value_type* p);
+
+    // Export expanded patterns sorted by accession count.
+    typedef multimap<int,string> TMapCountToString;
+    void GetSortedPatterns(TMapCountToString& dst);
+
+    ~CAccPatternCounter();
 };
 
 END_NCBI_SCOPE
