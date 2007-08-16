@@ -127,7 +127,8 @@ void CDataTool::Init(void)
                       "binary value type (see \"-d\" argument)",
                       CArgDescriptions::eString);
     d->AddOptionalKey("dn", "filename",
-                      "DTD module name in XML header (no extension)",
+                      "DTD module name in XML header (no extension). "
+                      "If empty, omit DOCTYPE line.",
                       CArgDescriptions::eString);
     d->AddFlag("F",
                "read value completely into memory");
@@ -420,7 +421,14 @@ bool CDataTool::ProcessData(void)
                 }
                 // Set DTD file name (default prefix is added in any case)
                 if( const CArgValue& dn = args["dn"] ) {
-                  os->SetDTDFileName(dn.AsString());
+                    const string& name = dn.AsString();
+                    if ( name.empty() ) {
+                        os->SetReferenceDTD(false);
+                    }
+                    else {
+                        os->SetReferenceDTD(true);
+                        os->SetDTDFileName(name);
+                    }
                 }
             }
             out->Write(&value, typeInfo);
@@ -446,7 +454,14 @@ bool CDataTool::ProcessData(void)
                 }
                 // Set DTD file name (default prefix is added in any case)
                 if( const CArgValue& dn = args["dn"] ) {
-                  os->SetDTDFileName(dn.AsString());
+                    const string& name = dn.AsString();
+                    if ( name.empty() ) {
+                        os->SetReferenceDTD(false);
+                    }
+                    else {
+                        os->SetReferenceDTD(true);
+                        os->SetDTDFileName(name);
+                    }
                 }
             }
             CObjectStreamCopier copier(*in, *out);
