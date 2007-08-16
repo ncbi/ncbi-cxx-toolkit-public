@@ -8455,6 +8455,8 @@ CDBAPIUnitTest::Test_Identity(void)
     string sql;
     Int8 table_id = 0;
     Int8 identity_id = 0;
+    EDB_Type curr_type = eDB_UnsupportedType;
+    const IResultSetMetaData* md = NULL;
 
     try {
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
@@ -8480,6 +8482,12 @@ CDBAPIUnitTest::Test_Identity(void)
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
+            
+            md = rs->GetMetaData();
+            BOOST_CHECK(md);
+            curr_type = md->GetType(1);
+            BOOST_CHECK_EQUAL(curr_type, eDB_BigInt);
+
             const CVariant& id_value = rs->GetVariant(1);
             BOOST_CHECK(!id_value.IsNull());
             table_id = id_value.GetInt8();
@@ -8503,8 +8511,28 @@ CDBAPIUnitTest::Test_Identity(void)
             BOOST_CHECK(!rs->Next());
         }
 
-        // !!!!! Doesn't work ... !!!!!!
-        // BOOST_CHECK_EQUAL(table_id, identity_id);
+        BOOST_CHECK_EQUAL(table_id, identity_id);
+
+        // Check identity type ...
+        {
+            sql  = " SELECT @@identity ";
+
+            auto_stmt->SendSql(sql);
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+            BOOST_CHECK(rs->Next());
+            
+            md = rs->GetMetaData();
+            BOOST_CHECK(md);
+            curr_type = md->GetType(1);
+            BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
+
+            BOOST_CHECK(!rs->Next());
+        }
+
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
