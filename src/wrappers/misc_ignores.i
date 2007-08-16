@@ -30,6 +30,11 @@
  */
 
 
+// These use a typedef inherited from std::map, which is not
+// working with SWIG
+%ignore ncbi::CAccPatternCounter::GetExpandedPattern;
+%ignore ncbi::CAccPatternCounter::GetCount;
+
 // Declared in readers.hpp, but the library is not built by a recursive build
 %ignore ncbi::GenBankReaders_Register_Pubseq2;
 
