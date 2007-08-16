@@ -43,6 +43,8 @@ Usage:
 
     $ScriptName svn <branch_path> <svn_command_with_args>
 
+    $ScriptName update <branch_path>
+
     $ScriptName switch <branch_path>
 
     $ScriptName unswitch <branch_path>
@@ -86,6 +88,9 @@ Commands:
 
     svn                 Executes an arbitrary Subversion command with branch
                         directory names as its arguments.
+
+    update              Updates working copy directories of the branch
+                        identified by <branch_path>.
 
     switch              Switches working copy directories to the branch
                         identified by <branch_path>.
@@ -292,6 +297,10 @@ elsif ($Command eq 'merge_diff')
 elsif ($Command eq 'merge_stat')
 {
     $Module->MergeStat(AcceptOnlyBranchPathArg($Command))
+}
+elsif ($Command eq 'update')
+{
+    $Module->Update(AcceptOnlyBranchPathArg($Command))
 }
 elsif ($Command eq 'switch')
 {

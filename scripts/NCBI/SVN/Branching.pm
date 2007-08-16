@@ -685,7 +685,7 @@ sub ShapeBranch
         unless ($Action eq 'remove' or $Action eq 'create')
         {
             print STDERR 'WARNING: The branch has been modified. Please ' .
-                "run\n  $Self->{MyName} update_and_switch " .
+                "run\n  $Self->{MyName} update " .
                 SimplifyBranchPath($BranchPath) .
                 "\nin all working copies switched to this branch.\n"
         }
@@ -1018,6 +1018,128 @@ sub Switch
 sub Unswitch
 {
     DoSwitchUnswitch(@_, 0)
+}
+
+sub Update
+{
+    my ($Self, $BranchPath) = @_;
+
+    my $RootURL = $Self->{SVN}->GetRootURL() ||
+        die "$Self->{MyName}: not in a working copy\n";
+
+    my $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath);
+
+    print STDERR "Updating working copy directories of '$BranchPath'...\n";
+
+    my ($BranchDirs, $UpstreamPath, $ObsoleteBranchPaths) =
+        @$BranchInfo{qw(BranchDirs UpstreamPath ObsoleteBranchPaths)};
+
+    my @AffectedPaths = @$BranchDirs;
+
+    push @AffectedPaths, @$ObsoleteBranchPaths if $ObsoleteBranchPaths;
+
+    my $AffectedPathInfo = $Self->{SVN}->ReadInfo(@AffectedPaths);
+
+    my $SwitchedToBranch;
+
+    my @UpdateNonExisting;
+
+    my @RecursiveUpdate;
+    my @PathsToSwtich;
+
+    for my $Path (@$BranchDirs)
+    {
+        my $Info = $AffectedPathInfo->{$Path};
+
+        unless (-e $Path || !$Info)
+        {
+            push @UpdateNonExisting, $Path
+        }
+        elsif ($SwitchedToBranch)
+        {
+            if ($Info->{Path} eq "$BranchPath/$Path")
+            {
+                push @RecursiveUpdate, $Path
+            }
+            elsif ($Info->{Path} eq "$UpstreamPath/$Path")
+            {
+                push @PathsToSwtich, $Path
+            }
+            else
+            {
+                die "$Self->{MyName}: inconsistent working copy ($Path)\n";
+            }
+        }
+        else
+        {
+            if ($Info->{Path} eq "$UpstreamPath/$Path")
+            {
+                push @RecursiveUpdate, $Path
+            }
+            elsif ($Info->{Path} eq "$BranchPath/$Path")
+            {
+                $SwitchedToBranch = 1;
+                @PathsToSwtich = @RecursiveUpdate;
+                @RecursiveUpdate = ($Path)
+            }
+            else
+            {
+                die "$Self->{MyName}: inconsistent working copy ($Path)\n";
+            }
+        }
+    }
+
+    if (@UpdateNonExisting)
+    {
+        my %NonExistingTree;
+
+        for my $NonExistingPath (@UpdateNonExisting)
+        {
+            my @PathComponents = split('/', $NonExistingPath);
+
+            if ($SwitchedToBranch)
+            {
+                push @PathsToSwtich, $NonExistingPath
+            }
+            else
+            {
+                push @RecursiveUpdate, $NonExistingPath;
+                pop @PathComponents
+            }
+
+            my $Path = '.';
+            my $PathExists = 1;
+            my $Tree = \%NonExistingTree;
+
+            for my $PathComponent (@PathComponents)
+            {
+                $Tree = ($Tree->{$PathComponent} ||= {});
+
+                $Tree->{'/'} = 1
+                    unless $PathExists &&= -e ($Path .= '/' . $PathComponent)
+            }
+        }
+
+        @UpdateNonExisting = sort @{FindPathsInTree(\%NonExistingTree)};
+
+        $Self->{SVN}->RunSubversion('update', '-N', @UpdateNonExisting)
+            if @UpdateNonExisting
+    }
+
+    if (@PathsToSwtich)
+    {
+        my $RootURL = $Self->{SVN}->GetRootURL() ||
+            die "$Self->{MyName}: not in a working copy\n";
+
+        my $BaseURL = "$RootURL/$BranchPath/";
+
+        for (@PathsToSwtich)
+        {
+            $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
+        }
+    }
+
+    $Self->{SVN}->RunSubversion('update', @RecursiveUpdate) if @RecursiveUpdate
 }
 
 1
