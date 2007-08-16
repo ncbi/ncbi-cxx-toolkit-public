@@ -486,6 +486,89 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,      ///< output
 }
 
 
+void
+ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
+                            const objects::CSeq_loc& loc_1,
+                            const objects::CSeq_loc& loc_2,
+                            CAlnUserOptions::EDirection direction)
+{
+    // Make sure each seq-loc contains just one seq-id
+    _ASSERT(loc_1.GetId());
+    _ASSERT(loc_2.GetId());
+
+    // Rough check if strands are the same (may be false-positive if
+    // there are multiple strands).
+    bool direct = 
+        loc_1.IsReverseStrand() == loc_2.IsReverseStrand();
+
+    if (direction != CAlnUserOptions::eBothDirections  &&
+        (direct ?
+            direction != CAlnUserOptions::eDirect :
+            direction != CAlnUserOptions::eReverse)) {
+        return;
+    }
+
+    TSeqPos wid1 = aln.GetFirstBaseWidth();
+    if ( !wid1 ) {
+        wid1 = 1;
+    }
+    TSeqPos wid2 = aln.GetSecondBaseWidth();
+    if ( !wid2 ) {
+        wid2 = 1;
+    }
+
+    CSeq_loc_CI it1(loc_1);
+    CSeq_loc_CI it2(loc_2);
+    TSeqPos lshift1 = 0;
+    TSeqPos lshift2 = 0;
+    TSeqPos rshift1 = 0;
+    TSeqPos rshift2 = 0;
+    while (it1  &&  it2) {
+        if (it1.IsEmpty()) {
+            ++it1;
+            continue;
+        }
+        if (it2.IsEmpty()) {
+            ++it2;
+            continue;
+        }
+        bool rev1 = IsReverse(it1.GetStrand());
+        bool rev2 = IsReverse(it2.GetStrand());
+        TSeqPos len1 = (it1.GetRange().GetLength() - lshift1 - rshift1)*wid1;
+        TSeqPos len2 = (it2.GetRange().GetLength() - lshift2 - rshift2)*wid2;
+        TSeqPos len = len1 > len2 ? len2 : len1;
+        TSeqPos start1 = (it1.GetRange().GetFrom() + lshift1)*wid1;
+        if ( rev1 ) {
+            start1 += len1 - len;
+        }
+        TSeqPos start2 = (it2.GetRange().GetFrom() + lshift2)*wid2;
+        if ( rev2 ) {
+            start2 += len2 - len;
+        }
+        aln.insert(CPairwiseAln::TAlnRng(start1, start2, len, rev1 == rev2));
+        if ( rev1 ) {
+            rshift1 += len/wid1;
+        }
+        else {
+            lshift1 += len/wid1;
+        }
+        if ( rev2 ) {
+            rshift2 += len/wid2;
+        }
+        else {
+            lshift2 += len/wid2;
+        }
+        if (len1 == len) {
+            ++it1;
+            lshift1 = rshift1 = 0;
+        }
+        if (len2 == len) {
+            ++it2;
+            lshift2 = rshift2 = 0;
+        }
+    }
+}
+
 
 // #include <objtools/alnmgr/pairwise_aln.hpp>
 

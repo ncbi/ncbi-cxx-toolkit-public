@@ -100,6 +100,15 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,               ///< outpu
                             CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
 
 
+/// Build a pairwise alignment from a pair of seq-locs.
+NCBI_XALNMGR_EXPORT
+void
+ConvertSeqLocsToPairwiseAln(CPairwiseAln&            aln,      ///< output
+                            const objects::CSeq_loc& loc_1,    ///< first seq-loc
+                            const objects::CSeq_loc& loc_2,    ///< second seq-loc
+                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+
+
 /// Create an anchored alignment from Seq-align using hints
 template <class TAlnStats>
 CRef<CAnchoredAln> 
