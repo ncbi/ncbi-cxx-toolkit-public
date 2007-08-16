@@ -342,7 +342,7 @@ class CPatternStats; // internal for CAccPatternCounter
 /// Sample input : AC123.1 AC456.1 AC789.1 NC8967.4 NC8967.5
 ///                  ^^^ ^                   ^^^^ ^
 /// Sample output: AC[123..789].1 3  NC8967.[4,5] 2
-class CAccPatternCounter : public map<string, CPatternStats*>
+class NCBI_XOBJREAD_EXPORT CAccPatternCounter : public map<string, CPatternStats*>
 {
 public:
     void AddName(const string& name);
