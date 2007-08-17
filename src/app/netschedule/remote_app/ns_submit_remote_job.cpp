@@ -89,6 +89,14 @@ void CNSSubmitRemoveJobApp::Init(void)
     arg_desc->AddOptionalKey("nc", "service", 
                      "NetCache service addrress (service_name or host:port)", 
                      CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ncprot", "protocol", 
+                     "NetCache client protocol", 
+                     CArgDescriptions::eString);
+    arg_desc->SetConstraint("ncprot", 
+                            &(*new CArgAllow_Strings(NStr::eNocase), 
+                              "simple", "persistent")
+                            );
+
 
     arg_desc->AddOptionalKey("jf",
                              "jobs_file",
@@ -168,34 +176,25 @@ static string s_FindParam(const string& str, const string& par_name)
 int CNSSubmitRemoveJobApp::Run(void)
 {
 
+    const CArgs& args = GetArgs();
     IRWRegistry& reg = GetConfig();
 
-    const CArgs& args = GetArgs();
-    reg.Set(kNetScheduleAPIDriverName, "client_name", "ns_submit_remote_job");
-
     if (args["q"]) {
-        string queue = args["q"].AsString();   
-        reg.Set(kNetScheduleAPIDriverName, "queue_name", queue);
+        reg.Set(kNetScheduleAPIDriverName, "queue_name", args["q"].AsString());
     }
-    string service, host, sport;
     if ( args["ns"]) {
-        service = args["ns"].AsString();
-        reg.Set(kNetScheduleAPIDriverName, "service", service);
+        reg.Set(kNetScheduleAPIDriverName, "client_name", "ns_submit_remote_job");
+        reg.Set(kNetScheduleAPIDriverName, "service", args["ns"].AsString());
         reg.Set(kNetScheduleAPIDriverName, "use_permanent_connection", "true");
         reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
     }
 
 
     if ( args["nc"]) {
-        reg.Set(kNetCacheDriverName, "client_name", "ns_submit_remote_job");
-        service = args["nc"].AsString();
-        if (NStr::SplitInTwo(service, ":", host, sport)) {
-            /*unsigned int port =*/ NStr::StringToUInt(sport);
-            reg.Set(kNetCacheDriverName, "host", host);
-            reg.Set(kNetCacheDriverName, "port", sport);
-        } else {
-            reg.Set(kNetCacheDriverName, "service", service);
-        }
+        reg.Set(kNetCacheAPIDriverName, "client_name", "ns_submit_remote_job");
+        reg.Set(kNetCacheAPIDriverName, "service", args["nc"].AsString());
+	if ( args["ncprot"] )
+	    reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
     }
 
     // Don't forget to call it

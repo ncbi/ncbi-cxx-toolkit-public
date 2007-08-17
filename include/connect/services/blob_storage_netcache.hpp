@@ -34,6 +34,7 @@
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/blob_storage.hpp>
+#include <connect/services/netcache_api.hpp>
 #include <connect/services/netcache_client.hpp>
 
 
@@ -72,6 +73,9 @@ public:
     ///  before they are accessed for read/write.
     /// @param[in[ temp_dir
     ///  Specifies where on a local fs those blobs will be cached
+    CBlobStorage_NetCache(CNetCacheAPI* nc_client, 
+                          TCacheFlags flags = 0x0,
+                          const string& temp_dir = ".");
     CBlobStorage_NetCache(CNetCacheClient* nc_client, 
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
@@ -124,23 +128,9 @@ public:
     /// Close all streams and connections.
     virtual void Reset();
 
-public:
-    static const string sm_InputBlobCachePrefix;
-    static const string sm_OutputBlobCachePrefix;
 private:
-    auto_ptr<CNetCacheClient> m_NCClient;
-    auto_ptr<CNcbiIstream>    m_IStream;
-    auto_ptr<CNcbiOstream>    m_OStream;
-
-    auto_ptr<IReader> x_GetReader(const string& key,
-                                  size_t& blob_size,
-                                  ELockMode lockMode);
-    void x_Check(const string& where);
-
-    TCacheFlags m_CacheFlags;
-    string   m_CreatedBlobId;
-    string   m_TempDir;
-
+    auto_ptr<IBlobStorage> m_Impl;
+    
     CBlobStorage_NetCache(const CBlobStorage_NetCache&);
     CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
 };

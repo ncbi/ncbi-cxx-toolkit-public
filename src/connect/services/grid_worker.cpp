@@ -342,8 +342,7 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_LogRequested(false), m_OnHold(false),
       m_HoldSem(0,10000), m_UseEmbeddedStorage(false),
-      m_CheckStatusPeriod(2),
-      m_WaitServerTimeout(20)
+      m_CheckStatusPeriod(2)
 {
 }
 
@@ -760,7 +759,6 @@ INSCWrapper* CGridWorkerNode::CreateClient()
         m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
         //        m_SharedNSClient->ActivateRequestRateControl(false);
         m_SharedNSClient->SetConnMode(INetServiceAPI::eKeepConnection);
-        m_SharedNSClient->SetWaitServerTimeout(m_WaitServerTimeout);
     }
     return new CNSCWrapperShared(m_SharedNSClient->GetExecuter(), 
                                  m_SharedClientMutex);

@@ -52,9 +52,7 @@ private:
 
 INetServiceAPI::INetServiceAPI(const string& service_name, const string& client_name)
     : m_ServiceName(service_name), m_ClientName(client_name), 
-      m_ConnMode(eCloseConnection), m_LPServices(false), m_RebalanceStrategy(NULL),
-      m_WaitForServerTimeout(20)
-
+      m_ConnMode(eCloseConnection), m_LPServices(false), m_RebalanceStrategy(NULL)
 {
 }
 
@@ -144,7 +142,7 @@ void INetServiceAPI::TrimErr(string& err_msg)
 
 void INetServiceAPI::PrintServerOut(CNetSrvConnector& conn, CNcbiOstream& out) const
 {
-    conn.WaitForServer(m_WaitForServerTimeout);
+    conn.WaitForServer();
     string response;
     while (1) {
         if (!conn.ReadStr(response))
@@ -176,10 +174,14 @@ void INetServiceAPI::ProcessServerError(string& response, ETrimErr trim_err) con
 
 string INetServiceAPI::SendCmdWaitResponse(CNetSrvConnector& conn, const string& cmd) const
 {
-    string tmp = cmd;
-    tmp += "\r\n";
-    conn.WriteStr(tmp);
-    conn.WaitForServer(m_WaitForServerTimeout);
+    conn.WriteStr(cmd + "\r\n");
+    return WaitResponse(conn);
+}
+
+string INetServiceAPI::WaitResponse(CNetSrvConnector& conn) const
+{
+    conn.WaitForServer();
+    string tmp;
     if (!conn.ReadStr(tmp)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
@@ -187,6 +189,25 @@ string INetServiceAPI::SendCmdWaitResponse(CNetSrvConnector& conn, const string&
     CheckServerOK(tmp);
     return tmp;
     
+}
+
+void INetServiceAPI::x_CollectStreamOutput(const string& cmd, ISink& sink, INetServiceAPI::EStreamCollectorType type) const
+{
+    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); 
+         it != GetPoll().end(); ++it) {
+        CNetSrvConnectorHolder ch = *it;
+        if ( type == eSendCmdWaitResponse ) {  
+            CNcbiOstream& os = sink.GetOstream(ch);
+            os << SendCmdWaitResponse(ch, cmd);
+        } else if ( type == ePrintServerOut ) {
+            CNcbiOstream& os = sink.GetOstream(ch);
+            ch->WriteStr(cmd + "\r\n");
+            PrintServerOut(ch, os);
+        } else {
+            _ASSERT(false);
+        }
+        sink.EndOfData(ch);
+    }        
 }
 
 

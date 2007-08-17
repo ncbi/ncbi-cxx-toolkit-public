@@ -37,11 +37,43 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netcache_api.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
 USING_NCBI_SCOPE;
+
+/// Proxy class to open ShutdownServer in CNetCacheClient
+///
+/// @internal
+class CNetCacheClient_Control : public CNetCacheClient 
+{
+public:
+    CNetCacheClient_Control(const string&  host,
+                            unsigned short port)
+      : CNetCacheClient(host, port, "netcache_control")
+    {}
+
+    void ShutdownServer() { CNetCacheClient::ShutdownServer(); }
+    void Logging(bool on_off) { CNetCacheClient::Logging(on_off); }
+    virtual void CheckConnect(const string& key)
+    {
+        CNetCacheClient::CheckConnect(key);
+    }
+    void PrintConfig(CNcbiOstream & out)
+    {
+        CNetCacheClient::PrintConfig(out);
+    }
+    void PrintStat(CNcbiOstream & out)
+    {
+        CNetCacheClient::PrintStat(out);
+    }
+    void Monitor(CNcbiOstream & out)
+    {
+        CNetCacheClient::Monitor(out);
+    }
+    void DropStat() { CNetCacheClient::DropStat(); }
+};
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -68,15 +100,18 @@ void CNetCacheControl::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetCache control.");
     
-    arg_desc->AddPositional("service", 
-                            "NetCache service name.", CArgDescriptions::eString);
+    arg_desc->AddPositional("hostname", 
+                            "NetCache host name.", CArgDescriptions::eString);
 
+    arg_desc->AddPositional("port",
+                            "Port number.", 
+                            CArgDescriptions::eInteger);
 
-    arg_desc->AddFlag("shutdown", "Shutdown server");
-    arg_desc->AddFlag("ver", "Server version");
-    arg_desc->AddFlag("getconf", "Server config");
-    arg_desc->AddFlag("stat", "Server statistics");
-    arg_desc->AddFlag("dropstat", "Drop server statistics");
+    arg_desc->AddFlag("s", "Shutdown server");
+    arg_desc->AddFlag("v", "Server version");
+    arg_desc->AddFlag("c", "Server config");
+    arg_desc->AddFlag("t", "Server statistics");
+    arg_desc->AddFlag("d", "Drop server statistics");
     arg_desc->AddFlag("monitor", "Monitor server");
 
     arg_desc->AddOptionalKey("log",
@@ -84,6 +119,10 @@ void CNetCacheControl::Init(void)
                              "Switch server side logging",
                              CArgDescriptions::eBoolean);
 
+    arg_desc->AddOptionalKey("retry",
+                             "retry",
+                             "Number of re-try attempts if connection failed",
+                             CArgDescriptions::eInteger);
 
     arg_desc->AddOptionalKey("owner",
                              "owner",
@@ -95,37 +134,35 @@ void CNetCacheControl::Init(void)
 }
 
 
-class CSimpleSink : public INetServiceAPI::ISink
-{
-public:
-    CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
-    ~CSimpleSink() {}
-    
-    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
-    {
-        m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
-        return m_Os;
-    }
-    virtual void EndOfData(CNetSrvConnector& conn)
-    {
-        m_Os << endl;
-    }
-private:
-    CNcbiOstream& m_Os;
-};
-
 
 int CNetCacheControl::Run(void)
 {
-    const CArgs& args = GetArgs();
-    const string& service  = args["service"].AsString();
+    CArgs args = GetArgs();
+    const string& host  = args["hostname"].AsString();
+    unsigned short port = args["port"].AsInteger();
 
-    CNetCacheAPI nc_client(service,"netcache_control");
-    CNetCacheAdmin admin = nc_client.GetAdmin();
-    
+    CNetCacheClient_Control nc_client(host, port);
+
+    if (args["retry"]) {
+        int retry = args["retry"].AsInteger();
+        if (retry < 0) {
+            ERR_POST(Error << "Invalid retry count: " << retry);
+        }
+        for (int i = 0; i < retry; ++i) {
+            try {
+                nc_client.CheckConnect(kEmptyStr);
+                break;
+            } 
+            catch (exception&) {
+                SleepMilliSec(5 * 1000);
+            }
+        }
+    }
+
+
     if (args["log"]) {  // logging control
         bool on_off = args["log"].AsBoolean();
-        admin.Logging(on_off);
+        nc_client.Logging(on_off);
         NcbiCout << "Logging turned " 
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
     }
@@ -137,30 +174,32 @@ int CNetCacheControl::Run(void)
     }
 
 
-    if (args["getconf"]) {  // config
-        CSimpleSink sink(NcbiCout);
-        admin.PrintConfig(sink);
+    if (args["c"]) {  // config
+        nc_client.PrintConfig(NcbiCout);
     }
     if (args["monitor"]) {  // monitor
-        admin.Monitor(NcbiCout);
+        nc_client.Monitor(NcbiCout);
     }
 
-    if (args["stat"]) {  // statistics
-        CSimpleSink sink(NcbiCout);
-        admin.PrintStat(sink);
+    if (args["t"]) {  // statistics
+        nc_client.PrintStat(NcbiCout);
     }
-    if (args["dropstat"]) {  // drop stat
-        admin.DropStat();
+    if (args["d"]) {  // drop stat
+        nc_client.DropStat();
         NcbiCout << "Drop statistics request has been sent to server" << NcbiEndl;
     }
 
-    if (args["ver"]) {
-        CSimpleSink sink(NcbiCout);
-        admin.GetServerVersion(sink);
+    if (args["v"]) {
+        string version = nc_client.ServerVersion();
+        if (version.empty()) {
+            NcbiCout << "NetCache server communication error." << NcbiEndl;
+            return 1;
+        }
+        NcbiCout << version << NcbiEndl;
     }
 
-    if (args["shutdown"]) {  // shutdown
-        admin.ShutdownServer();
+    if (args["s"]) {  // shutdown
+        nc_client.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
     }

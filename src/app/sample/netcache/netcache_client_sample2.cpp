@@ -78,15 +78,10 @@ void CSampleNetCacheClient::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NetCache Client Sample");
 
-    arg_desc->AddOptionalKey("service",
-                             "service",
-                             "LBSM service name",
+    arg_desc->AddPositional("service",
+                             "LBSM service name or host:port",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("hostport",
-                             "host_post",
-                             "NetCache server network address (host:port)",
-                             CArgDescriptions::eString);
 
     
     // Setup arg.descriptions for this application
@@ -96,48 +91,13 @@ void CSampleNetCacheClient::Init(void)
 
 int CSampleNetCacheClient::Run(void)
 {
-    auto_ptr<CNetCacheClient> nc_client;
+    auto_ptr<CNetCacheAPI> nc_client;
 
     const CArgs& args = GetArgs();
 
-    if (args["service"]) {
-        // create load balanced client
-        string service_name = args["service"].AsString();
-        nc_client.reset(
-            new CNetCacheClient_LB("nc_client_sample2", service_name));
-    } else {
-        if (args["hostport"]) {
-            // use direct network address
-            string host_port = args["hostport"].AsString();
-            string host, port_str;
-            NStr::SplitInTwo(host_port, ":", host, port_str);
-            if (host.empty()) {
-                ERR_POST("Invalid net address: empty host name");
-                return 1;
-            }
-            if (port_str.empty()) {
-                ERR_POST("Invalid net address: empty port");
-                return 1;
-            }
-            
-            unsigned port = NStr::StringToInt(port_str);
-            if (port == 0) {
-                ERR_POST("Invalid net address: port is zero");
-                return 1;
-            }
-
-            nc_client.reset(
-                new CNetCacheClient(host, port, "nc_client_sample2"));
-
-
-        } else {
-            ERR_POST("Invalid network address. Use -service OR -hostport options.");
-            return 1;
-        }
-    }
-
-
-
+    string service_name = args["service"].AsString();
+    nc_client.reset(
+            new CNetCacheAPI(service_name, "nc_client_sample2"));
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 

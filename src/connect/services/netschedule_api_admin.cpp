@@ -123,60 +123,37 @@ void CNetScheduleAdmin::DropQueue() const
 
 
 ///////////////////????????????????????????/////////////////////////
-void CNetScheduleAdmin::GetServerVersion(ISink& sink) const
+void CNetScheduleAdmin::GetServerVersion(INetServiceAPI::ISink& sink) const
 { 
-    x_SendCmdToAll("VERSION", sink);
+    m_API->x_CollectStreamOutput("VERSION", sink, INetServiceAPI::eSendCmdWaitResponse);
 }
 
 
 
-void CNetScheduleAdmin::DumpQueue(ISink& sink) const
+void CNetScheduleAdmin::DumpQueue(INetServiceAPI::ISink& sink) const
 {
-    x_SendCmdToAll1("DUMP\r\n", sink);
+    m_API->x_CollectStreamOutput("DUMP", sink, INetServiceAPI::ePrintServerOut);
 }
 
 
-void CNetScheduleAdmin::PrintQueue(ISink& sink, CNetScheduleAPI::EJobStatus status) const
+void CNetScheduleAdmin::PrintQueue(INetServiceAPI::ISink& sink, CNetScheduleAPI::EJobStatus status) const
 {
-    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status) + "\r\n";        
-    x_SendCmdToAll1(cmd, sink);
+    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);        
+    m_API->x_CollectStreamOutput(cmd, sink, INetServiceAPI::ePrintServerOut);
 }
 
 
 
-void CNetScheduleAdmin::GetServerStatistics(ISink& sink, 
+void CNetScheduleAdmin::GetServerStatistics(INetServiceAPI::ISink& sink, 
                                             EStatisticsOptions opt) const
 {
     string cmd = "STAT";
     if (opt == eStatisticsAll) {
         cmd += " ALL";
     }
-    cmd += "\r\n";
-    x_SendCmdToAll1(cmd, sink);
+    m_API->x_CollectStreamOutput(cmd, sink, INetServiceAPI::ePrintServerOut);
 }
 
-
-void CNetScheduleAdmin::x_SendCmdToAll(const string& cmd, ISink& sink) const
-{
-    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-         it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        CNcbiOstream& os = sink.GetOstream(ch);
-        os << m_API->SendCmdWaitResponse(ch, cmd);
-        sink.EndOfData(ch);
-    }        
-}
-void CNetScheduleAdmin::x_SendCmdToAll1(const string& cmd, ISink& sink) const
-{
-    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
-        it != m_API->GetPoll().end(); ++it) {
-        CNetSrvConnectorHolder ch = *it;
-        CNcbiOstream& os = sink.GetOstream(ch);
-        ch->WriteStr(cmd);
-        m_API->PrintServerOut(ch, os);
-        sink.EndOfData(ch);
-    }
-}
 
 void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
 {
@@ -188,6 +165,7 @@ void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
     CNetSrvConnectorHolder conn = m_API->x_GetConnector();
     conn->WriteStr("MONI QUIT\r\n");
     conn->Telnet(out);
+    conn->Disconnect();
 }
 
 void CNetScheduleAdmin::Logging(bool on_off) const
@@ -204,9 +182,9 @@ void CNetScheduleAdmin::Logging(bool on_off) const
 }
 
 
-void CNetScheduleAdmin::GetQueueList(ISink& sink) const
+void CNetScheduleAdmin::GetQueueList(INetServiceAPI::ISink& sink) const
 {
-    x_SendCmdToAll("QLST", sink);
+    m_API->x_CollectStreamOutput("QLST", sink, INetServiceAPI::eSendCmdWaitResponse);
 }
 
 

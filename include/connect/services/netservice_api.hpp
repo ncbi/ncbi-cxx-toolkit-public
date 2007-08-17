@@ -73,19 +73,39 @@ public:
     void SetRebalanceStrategy( IRebalanceStrategy* strategy, 
                                EOwnership owner = eTakeOwnership);
 
+    string WaitResponse(CNetSrvConnector& conn) const;
     string SendCmdWaitResponse(CNetSrvConnector& conn, const string& cmd) const;
+
     CNetSrvConnectorPoll& GetPoll();
     CNetSrvConnectorPoll& GetPoll() const;
 
-    void SetWaitServerTimeout(unsigned int sec);
-    unsigned int GetWaitServerTimeout() const;
+    void SetCommunicationTimeout(const STimeout& to) { GetPoll().SetCommunicationTimeout(to); }
+    STimeout GetCommunicationTimeout() const { return GetPoll().GetCommunicationTimeout(); }
+
+    void SetCreateSocketMaxRetries(unsigned int retries) { GetPoll().SetCreateSocketMaxRetries(retries); }
+    unsigned int GetCreateSocketMaxRetries() const { return GetPoll().GetCreateSocketMaxRetries(); }
 
     //protected:
-    void CheckServerOK(string& response) const ;
+    void CheckServerOK(string& response) const;
+
+    //protected:
+    static void TrimErr(string& err_msg);
+
+    
+    class ISink 
+    {
+    public:
+        virtual ~ISink() {};
+        virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn) = 0;
+        virtual void EndOfData(CNetSrvConnector& conn) {}
+    };
+    enum EStreamCollectorType {
+        eSendCmdWaitResponse,
+        ePrintServerOut
+    };
+    void x_CollectStreamOutput(const string& cmd, ISink& sink, EStreamCollectorType type) const;
 
 protected:
-
-    static void TrimErr(string& err_msg);
     enum ETrimErr {
         eNoTrimErr,
         eTrimErr
@@ -96,6 +116,7 @@ protected:
     void PrintServerOut(CNetSrvConnector& conn, CNcbiOstream& out) const;
     
     string GetConnectionInfo(CNetSrvConnector& conn) const;
+
 
 private:
     friend class CNetServiceAuthenticator;
@@ -115,24 +136,11 @@ private:
     bool m_LPServices;
     IRebalanceStrategy* m_RebalanceStrategy;
     auto_ptr<IRebalanceStrategy> m_RebalanceStrategyGuard;
-    unsigned int m_WaitForServerTimeout;
 
     INetServiceAPI(const INetServiceAPI&);
     INetServiceAPI& operator=(const INetServiceAPI&);
 
 };
-
-
-inline 
-void INetServiceAPI::SetWaitServerTimeout(unsigned int sec)
-{
-    m_WaitForServerTimeout = sec;
-}
-inline
-unsigned int INetServiceAPI::GetWaitServerTimeout() const
-{
-    return m_WaitForServerTimeout;
-}
 
 
 END_NCBI_SCOPE

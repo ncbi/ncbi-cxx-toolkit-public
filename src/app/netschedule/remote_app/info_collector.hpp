@@ -118,6 +118,7 @@ class CNSInfoCollector
 public:
     CNSInfoCollector(const string& queue, const string& service_name,
                      CBlobStorageFactory& factory);
+    explicit CNSInfoCollector(CBlobStorageFactory& factory);
 
     template<typename TInfo>
     class IAction {
@@ -143,7 +144,11 @@ private:
     friend class CNSJobInfo;
 
     auto_ptr<CNetScheduleAPI> m_Services;
-    CNetScheduleAPI& x_GetAPI() { return *m_Services; }
+    CNetScheduleAPI& x_GetAPI() { 
+        if (!m_Services.get())
+            throw runtime_error("NetScheduele service is not set");
+        return *m_Services; 
+    }
 
     CRemoteAppRequest_Executer& x_GetRequest();
     CRemoteAppResult& x_GetResult();

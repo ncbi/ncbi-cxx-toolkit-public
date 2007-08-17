@@ -311,11 +311,11 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         break;
     case ePut2:
         stat.req_code = 'P';
-        ProcessPut2(socket, tdata.req, tdata, stat, false);
+        ProcessPut2(socket, tdata.req, tdata, stat);
         break;
     case ePut3:
         stat.req_code = 'P';
-        ProcessPut2(socket, tdata.req, tdata, stat, true);
+        ProcessPut3(socket, tdata.req, tdata, stat);
         break;
     case eGet:
         stat.req_code = 'G';
@@ -327,7 +327,7 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         break;
     case eShutdown:
         stat.req_code = 'S';
-        ProcessShutdown();
+        ProcessShutdown(socket);
         break;
     case eGetConfig:
         stat.req_code = 'C';
@@ -757,9 +757,10 @@ void CNetCacheServer::Process(SOCK sock)
     }
 }
 
-void CNetCacheServer::ProcessShutdown()
+void CNetCacheServer::ProcessShutdown(CSocket& sock)
 {    
     SetShutdownFlag();
+    WriteMsg(sock, "OK:", "");
 }
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const SNC_Request& req)
@@ -815,6 +816,7 @@ void CNetCacheServer::ProcessDropStat(CSocket& sock)
         return;
     }
 	bdb_cache->InitStatistics();
+    WriteMsg(sock, "OK:", "");
 }
 
 
@@ -837,19 +839,7 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
 
 void CNetCacheServer::ProcessRemove2(CSocket& sock, const SNC_Request& req)
 {
-    const string& req_id = req.req_id;
-
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        return;
-    }
-
-    CNetCache_Key blob_id(req_id);
-    if (!x_CheckBlobId(sock, &blob_id, req_id))
-        return;
-
-    m_Cache->Remove(req_id);
-
+    ProcessRemove(sock, req);
     WriteMsg(sock, "OK:", "");
 }
 
@@ -1346,8 +1336,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 void CNetCacheServer::ProcessPut2(CSocket&              sock, 
                                   SNC_Request&          req,
                                   SNC_ThreadData&       tdata,
-                                  NetCache_RequestStat& stat,
-                                  bool                  ok_at_end)
+                                  NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
     bool do_id_lock = true;
@@ -1447,13 +1436,16 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
         iwrt->Flush();
         iwrt.reset(0);
     }
-
-    if (ok_at_end) {
-        WriteMsg(sock, "OK:", "");
-    }
 }
 
-
+void CNetCacheServer::ProcessPut3(CSocket&              sock, 
+                                  SNC_Request&          req,
+                                  SNC_ThreadData&       tdata,
+                                  NetCache_RequestStat& stat)
+{
+    ProcessPut2(sock, req, tdata, stat);
+    WriteMsg(sock, "OK:", "");
+}
 
 
 void CNetCacheServer::ProcessGetBlobOwner(CSocket&           sock, 
@@ -1758,6 +1750,7 @@ void CNetCacheServer::ProcessLog(CSocket&  sock, const SNC_Request&  req)
         CFastMutexGuard guard(x_NetCacheMutex);
         m_LogFlag = false;
     }
+    WriteMsg(sock, "OK:", "");
 }
 
 

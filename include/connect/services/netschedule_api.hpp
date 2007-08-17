@@ -643,15 +643,8 @@ public:
     void ReloadServerConfig() const;
 
     ///////////////////////////////////???????????????///////////////////
-    class ISink 
-    {
-    public:
-        virtual ~ISink() {};
-        virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn) = 0;
-        virtual void EndOfData(CNetSrvConnector& conn) {}
-    };
     /// Print version string
-    void GetServerVersion(ISink& sink) const;
+    void GetServerVersion(INetServiceAPI::ISink& sink) const;
 
     enum EStatisticsOptions 
     {
@@ -659,16 +652,16 @@ public:
         eStaticticsBrief
     };
 
-    void GetServerStatistics(ISink& sink, EStatisticsOptions opt = eStaticticsBrief) const;
+    void GetServerStatistics(INetServiceAPI::ISink& sink, EStatisticsOptions opt = eStaticticsBrief) const;
 
-    void DumpQueue(ISink& sink) const;
+    void DumpQueue(INetServiceAPI::ISink& sink) const;
 
-    void PrintQueue(ISink& sink, CNetScheduleAPI::EJobStatus status) const;
+    void PrintQueue(INetServiceAPI::ISink& sink, CNetScheduleAPI::EJobStatus status) const;
 
     void Monitor(CNcbiOstream& out) const;
 
     /// ";" delimited list of server queues
-    void GetQueueList(ISink& sink) const;
+    void GetQueueList(INetServiceAPI::ISink& sink) const;
     ///////////////////////////////////???????????????///////////////////
 
     /// Query by tags
@@ -685,9 +678,6 @@ public:
 private:
     friend class CNetScheduleAPI;
     CNetScheduleAdmin(const CNetScheduleAPI& api) : m_API(&api) {}
-
-    void x_SendCmdToAll(const string& cmd, ISink& sink) const;
-    void x_SendCmdToAll1(const string& cmd, ISink& sink) const;
 
     typedef map<pair<string,unsigned int>, string> TIDsMap;
     TIDsMap x_QueueIDs(const string& queury) const;

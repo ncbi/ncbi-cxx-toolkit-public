@@ -1,0 +1,235 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Maxim Didenko
+ *
+ * File Description:
+ *   Implementation of net cache client.
+ *
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
+#include <connect/ncbi_socket.hpp>
+#include <connect/services/netcache_rw.hpp>
+#include <connect/services/netcache_api_expt.hpp>
+#include <connect/services/netservice_api.hpp>
+#include <connect/services/srv_connections.hpp>
+
+
+
+BEGIN_NCBI_SCOPE
+
+CNetCacheReader::CNetCacheReader(CNetSrvConnector& connector, bool disconnect, size_t blob_size)
+    : m_Connector(&connector), m_Socket(m_Connector->DetachSocket()),
+      m_Disconnect(disconnect), m_BlobBytesToRead(blob_size)
+{
+    m_Reader.reset(new CSocketReaderWriter(m_Socket));
+}
+
+CNetCacheReader::~CNetCacheReader()
+{
+    try {
+        Close();
+    } NCBI_CATCH_ALL("CNetCacheReader::~CNetCacheReader()");
+}
+
+void CNetCacheReader::Close()
+{
+    if (!m_Connector)
+        return;
+
+    if (m_Disconnect)
+        m_Connector->Disconnect(m_Socket);
+    else {
+        // we need to check if all data has been read.
+        // if it has not then we have to close the connection
+        STimeout to = {0, 0};
+        if (m_Socket->Wait(eIO_Read, &to) == eIO_Success)
+            m_Connector->Disconnect(m_Socket);
+    }
+    m_Connector->AttachSocket(m_Socket);
+    m_Reader.reset();
+    m_Connector = NULL;
+    m_Socket = NULL;
+}
+
+ERW_Result CNetCacheReader::Read(void*   buf,
+                                 size_t  count,
+                                 size_t* bytes_read)
+{
+    if (!m_Reader.get())
+        return eRW_Error;
+
+    ERW_Result res = eRW_Eof;
+    if ( m_BlobBytesToRead == 0) {
+        if ( bytes_read ) {
+            *bytes_read = 0;
+        }
+        return res;
+    }
+    if ( m_BlobBytesToRead < count ) {
+        count = m_BlobBytesToRead;
+    }
+    size_t nn_read = 0;
+    if ( count ) {
+        res = m_Reader->Read(buf, count, &nn_read);
+    }
+    
+    if ( bytes_read ) {
+        *bytes_read = nn_read;
+    }
+    m_BlobBytesToRead -= nn_read;
+    //if (m_BlobBytesToRead == 0) {
+    //    FinishTransmission();
+    //}
+    return res;
+}
+
+ERW_Result CNetCacheReader::PendingCount(size_t* count)
+{
+    if (!m_Reader.get())
+        return eRW_Error;
+
+    if ( m_BlobBytesToRead == 0) {
+        *count = 0;
+        return eRW_Success;
+    }
+    return m_Reader->PendingCount(count);
+}
+
+
+/////////////////////////////////////////////////
+CNetCacheWriter::CNetCacheWriter(CNetCacheAPI& api,CNetSrvConnector& connector, bool disconnect,
+                                  CTransmissionWriter::ESendEofPacket send_eof)
+    : m_API(api), m_Connector(&connector), m_Socket(m_Connector->DetachSocket()),
+      m_Disconnect(disconnect)
+{
+    //m_Socket->DisableOSSendDelay(false);
+    m_Writer.reset(new CTransmissionWriter(new CSocketReaderWriter(m_Socket), 
+                                           eTakeOwnership, send_eof));
+}
+
+CNetCacheWriter::~CNetCacheWriter()
+{
+    try {
+        Close();
+    } NCBI_CATCH_ALL("CNetCacheWriter::~CNetCacheWriter()");
+}
+
+void CNetCacheWriter::Close()
+{
+    if (!m_LastError.empty()) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, m_LastError);
+    }
+
+    if (!m_Writer.get())
+        return;
+
+    try {
+        m_Writer.reset();
+        CNetSrvConnector tmp(*m_Connector, m_Socket);
+        //CStopWatch w(CStopWatch::eStart);
+        m_API.WaitResponse(tmp);
+        //w.Stop();
+        //cerr << string(w) << endl;
+    } catch (...) {
+        x_Shutdown(true);
+        throw;
+    }
+
+    x_Shutdown(m_Disconnect);
+}
+
+ERW_Result CNetCacheWriter::Write(const void* buf,
+                                  size_t      count,
+                                  size_t*     bytes_written)
+{
+    if (!m_Writer.get())
+        return eRW_Error;
+
+    ERW_Result res = m_Writer->Write(buf, count, bytes_written);
+    if (res == eRW_Success) {
+        if ( !x_IsStreamOk() ) 
+            return eRW_Error;
+    }
+    return res;
+}
+ 
+ERW_Result CNetCacheWriter::Flush(void)
+{
+    if (!m_Writer.get())
+        return eRW_Error;
+
+    ERW_Result res = m_Writer->Flush();
+    if (res == eRW_Success) {
+        if ( !x_IsStreamOk() ) 
+            return eRW_Error;
+    }
+    return res;
+}
+
+bool CNetCacheWriter::x_IsStreamOk()
+{
+    STimeout to = {0, 0};
+    EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
+    string msg;
+    switch (io_st) {
+    case eIO_Success:
+        {
+            io_st = m_Socket->ReadLine(msg);
+            if (io_st == eIO_Closed) {
+                m_LastError = "Server closed communication channel (timeout?)";
+            } else  if (!msg.empty()) {
+                INetServiceAPI::TrimErr(msg);
+                m_LastError = msg;
+            } else {
+            }
+        }
+        break;
+    case eIO_Closed:
+        m_LastError = "Server closed communication channel (timeout?)";
+    default:
+        break;
+    }
+    if (!m_LastError.empty()) {
+        x_Shutdown(true);
+        return false;
+    }
+    return true;
+}
+
+void CNetCacheWriter::x_Shutdown(bool disconnect)
+{
+    //m_Socket->DisableOSSendDelay();
+    if (disconnect)
+        m_Connector->Disconnect(m_Socket);
+    m_Connector->AttachSocket(m_Socket);
+    m_Writer.reset();
+    m_Connector = NULL;
+    m_Socket = NULL;
+}
+
+END_NCBI_SCOPE

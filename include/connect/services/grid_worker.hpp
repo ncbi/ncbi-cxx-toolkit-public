@@ -534,7 +534,6 @@ public:
     bool IsEmeddedStorageUsed() const { return m_UseEmbeddedStorage; }
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
     void SetCheckStatusPeriod(unsigned int sec) { m_CheckStatusPeriod = sec; }
-    void SetWaitServerTimeout(unsigned int sec) { m_WaitServerTimeout = sec; }
     size_t GetServerOutputSize() const;
     /// Start jobs execution.
     ///
@@ -589,7 +588,6 @@ private:
     mutable CFastMutex           m_HoldMutex;
     bool                         m_UseEmbeddedStorage;
     unsigned int                 m_CheckStatusPeriod;
-    unsigned int                 m_WaitServerTimeout;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()

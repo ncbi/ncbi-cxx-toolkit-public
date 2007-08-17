@@ -1160,6 +1160,13 @@ public:
                 conf.GetString(m_DriverName, 
                                "service", CConfig::eErr_NoThrow, kEmptyStr);
             NStr::TruncateSpacesInPlace(service);
+            string sport, host;
+	    unsigned int port;
+            if ( NStr::SplitInTwo(service, ":", host, sport) ) {
+               port = NStr::StringToInt(sport);
+	       service = kEmptyStr;
+	    }
+
 
             if (!service.empty()) {
                 unsigned int rebalance_time = conf.GetInt(m_DriverName, 
@@ -1175,23 +1182,29 @@ public:
                                              rebalance_time, 
                                              rebalance_requests,
                                              rebalance_bytes );
+		
             } else { // non lb client
-                string host = 
-                    conf.GetString(m_DriverName, 
+		if (host.empty()) {
+		   host = 
+                       conf.GetString(m_DriverName, 
                                   "host", CConfig::eErr_Throw, kEmptyStr);
-                NStr::TruncateSpacesInPlace(host);
-                if( host.empty()) {
-                    string msg = "Cannot init plugin " + m_DriverName +
-                     ", missing parameter: host or service";
-                    NCBI_THROW(CConfigException, eParameterMissing, msg);
-                }
-
-                unsigned int port = conf.GetInt(m_DriverName,
+                   NStr::TruncateSpacesInPlace(host);
+                   if( host.empty()) {
+                       string msg = "Cannot init plugin " + m_DriverName +
+                        ", missing parameter: host or service";
+                       NCBI_THROW(CConfigException, eParameterMissing, msg);
+                   }
+                   port = conf.GetInt(m_DriverName,
                                                "port",
                                                CConfig::eErr_Throw, 9001);
-
+		}
                 drv = new CNetCacheClient(host, port, client_name);
             }
+	    unsigned int communication_timeout = conf.GetInt(m_DriverName,
+                                                       "communication_timeout",
+                                                       CConfig::eErr_NoThrow, 12);
+            STimeout tm = { communication_timeout, 0 };
+	    drv->SetCommunicationTimeout(tm);
             }                               
         }
         return drv;

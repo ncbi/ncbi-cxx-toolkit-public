@@ -228,9 +228,15 @@ void CCgiSampleApplication::x_LookAtArgs()
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 //
+extern "C"
+{
+void BlobStorage_RegisterDriver_NetCache(void);
+}
 
 int main(int argc, const char* argv[])
 {
+    BlobStorage_RegisterDriver_NetCache();
+
     int result = CCgiSampleApplication().AppMain(argc, argv);
     return result;
 }

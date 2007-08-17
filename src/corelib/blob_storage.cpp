@@ -89,7 +89,10 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
             storage_tree = m_Params->FindSubNode(driver_name);
         }
     } else
+        storage_tree = m_Params->FindSubNode("netcache_api");
+    if (!storage_tree)
         storage_tree = m_Params->FindSubNode("netcache_client");
+
         
     try {
         drv = cache_manager->CreateInstance(

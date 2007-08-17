@@ -381,9 +381,16 @@ public:
                 unsigned int rebalance_requests = conf.GetInt(m_DriverName,
                                                               "rebalance_requests",
                                                               CConfig::eErr_NoThrow, 100);
+                unsigned int communication_timeout = conf.GetInt(m_DriverName,
+                                                              "communication_timeout",
+                                                              CConfig::eErr_NoThrow, 12);
+
                 drv.reset(new CNetScheduleAPI(service,
                                               client_name, 
                                               queue_name) );
+                STimeout tm = { communication_timeout, 0 };
+                drv->SetCommunicationTimeout(tm);
+
                 drv->SetRebalanceStrategy(
                                new CSimpleRebalanceStrategy(rebalance_requests,
                                                             rebalance_time),

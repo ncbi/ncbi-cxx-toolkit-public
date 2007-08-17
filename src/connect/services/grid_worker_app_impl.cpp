@@ -513,8 +513,9 @@ int CGridWorkerApp_Impl::Run()
     unsigned int check_status_period = 
         reg.GetInt(kServerSec,"check_status_period",2,0,IRegistry::eReturn);
 
-    unsigned int wait_server_timeout = 
-        reg.GetInt(kServerSec,"wait_server_timeout",20,0,IRegistry::eReturn);
+    if (reg.HasEntry(kServerSec,"wait_server_timeout"))
+       ERR_POST("[" + kServerSec + "] \"wait_server_timeout\" is not used anymore.\n"
+	      "Use [" + kNetScheduleAPIDriverName + "] \"communication_timeout\" paramter instead.");
 
     bool use_embedded_input = false;
     if (reg.HasEntry(kNetScheduleAPIDriverName, "use_embedded_storage"))
@@ -525,7 +526,6 @@ int CGridWorkerApp_Impl::Run()
         use_embedded_input = reg.
             GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
                     CNcbiRegistry::eReturn);
-
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
@@ -578,7 +578,6 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
     m_WorkerNode->SetCheckStatusPeriod(check_status_period);
-    m_WorkerNode->SetWaitServerTimeout(wait_server_timeout);
 
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);

@@ -51,6 +51,18 @@ CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf)
     CBlobStorageFactory factory(conf);
     m_Storage.reset(factory.CreateInstance());
 }
+/*
+CCgiSession_NetCache::CCgiSession_NetCache(CNetCacheClient* nc_client, 
+                                           CBlobStorage_NetCache::TCacheFlags flags,
+                                           const string& temp_dir)
+    : m_Dirty(false), m_Loaded(false)
+{
+    m_Storage.reset(new CBlobStorage_NetCache(nc_client,
+                                              flags,
+                                              temp_dir));
+}
+
+*/
 
 CCgiSession_NetCache::~CCgiSession_NetCache()
 {

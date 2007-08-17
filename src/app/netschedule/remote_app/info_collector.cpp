@@ -176,8 +176,13 @@ CNSInfoCollector::CNSInfoCollector(const string& queue,
     m_Services->SetConnMode(INetServiceAPI::eKeepConnection);
 }
 
+CNSInfoCollector::CNSInfoCollector(CBlobStorageFactory& factory)
+    : m_Factory(factory)
+{
+}
 
-class ISimpleSink : public CNetScheduleAdmin::ISink
+
+class ISimpleSink : public INetServiceAPI::ISink
 {
 public:
     ISimpleSink() : m_Str(new CNcbiStrstream) {}
@@ -235,7 +240,7 @@ void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status,
                                     IAction<CNSJobInfo>& action)
 {
     CJobsSink sink(action, *this);
-    m_Services->GetAdmin().PrintQueue(sink, status);
+    x_GetAPI().GetAdmin().PrintQueue(sink, status);
 }
 
 CNSJobInfo* CNSInfoCollector::CreateJobInfo(const string& job_id)
@@ -292,7 +297,7 @@ private:
 void CNSInfoCollector::GetQueues(TQueueCont& queues)
 {
     CQueuesSink sink(queues);
-    m_Services->GetAdmin().GetQueueList(sink);
+    x_GetAPI().GetAdmin().GetQueueList(sink);
 }
 
 
@@ -361,12 +366,12 @@ private:
 void CNSInfoCollector::TraverseNodes(IAction<CWNodeInfo>& action)
 {
     CNodesSink sink(action,*this);
-    m_Services->GetAdmin().GetServerStatistics(sink, CNetScheduleAdmin::eStaticticsBrief);
+    x_GetAPI().GetAdmin().GetServerStatistics(sink, CNetScheduleAdmin::eStaticticsBrief);
 }
 
 void CNSInfoCollector::DropQueue()
 {
-    m_Services->GetAdmin().DropQueue();
+    x_GetAPI().GetAdmin().DropQueue();
 }
 
 

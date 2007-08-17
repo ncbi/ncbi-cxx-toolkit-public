@@ -42,7 +42,8 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_api.hpp>
+#include <util/simple_buffer.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -66,8 +67,8 @@ public:
 
 void CSampleNetCacheClient::Init(void)
 {
-    SetDiagPostFlag(eDPF_Trace);
-    SetDiagPostLevel(eDiag_Info);
+    //SetDiagPostFlag(eDPF_Trace);
+    //SetDiagPostLevel(eDiag_Info);
     
     // Setup command line arguments and parameters
 
@@ -92,19 +93,18 @@ void CSampleNetCacheClient::Init(void)
 
 int CSampleNetCacheClient::Run(void)
 {
-    auto_ptr<CNetCacheClient> nc_client;
+    auto_ptr<CNetCacheAPI> nc_client;
 
     const CArgs& args = GetArgs();
 
     if (args["service"]) {
         // create load balanced client
         string service_name = args["service"].AsString();
-        nc_client.reset(
-            new CNetCacheClient_LB("nc_client_sample1", service_name));
+        nc_client.reset(new CNetCacheAPI(service_name, "nc_client_sample1"));
     } 
     else {
-            ERR_POST("Invalid network address. Use -service option.");
-            return 1;
+        ERR_POST("Invalid network address. Use -service option.");
+        return 1;
     }
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
@@ -118,14 +118,14 @@ int CSampleNetCacheClient::Run(void)
 
 
     // retrieve BLOB
-    CNetCacheClient::SBlobData bdata;
-    CNetCacheClient::EReadResult rres = nc_client->GetData(key, bdata);
-    if (rres == CNetCacheClient::eNotFound) {
+    CSimpleBuffer bdata;
+    CNetCacheAPI::EReadResult rres = nc_client->GetData(key, bdata);
+    if (rres == CNetCacheAPI::eNotFound) {
         ERR_POST("Blob not found");
         return 1;
     }
 
-    NcbiCout << bdata.blob.get() << NcbiEndl;
+    NcbiCout << bdata.data() << NcbiEndl;
 
     return 0;
 }

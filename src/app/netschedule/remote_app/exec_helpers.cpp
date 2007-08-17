@@ -91,7 +91,10 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
                     CNcbiRegistry::eReturn);
 
     if (m_RunInSeparateDir) {
-        m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
+	if (reg.HasEntry(sec_name, "tmp_dir"))
+	    m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
+	else
+           m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
         if (!CDirEntry::IsAbsolutePath(m_TempDir)) {
             string tmp = CDir::GetCwd() 
                 + CDirEntry::GetPathSeparator() 

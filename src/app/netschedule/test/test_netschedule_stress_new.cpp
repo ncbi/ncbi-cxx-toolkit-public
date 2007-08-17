@@ -288,7 +288,7 @@ void TestBatchSubmit(const string& service,
 }
 
 
-class CSimpleSink : public CNetScheduleAdmin::ISink
+class CSimpleSink : public INetServiceAPI::ISink
 {
 public:
     CSimpleSink(CNcbiOstream& os) : m_Os(os) {}

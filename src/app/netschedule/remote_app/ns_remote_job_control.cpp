@@ -78,6 +78,13 @@ void CNSRemoveJobControlApp::Init(void)
     arg_desc->AddOptionalKey("nc", "service", 
                      "NetCache service addrress (service_name or host:port)", 
                      CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ncprot", "protocol", 
+                     "NetCache client protocol", 
+                     CArgDescriptions::eString);
+    arg_desc->SetConstraint("ncprot", 
+                            &(*new CArgAllow_Strings(NStr::eNocase), 
+                              "simple", "persistent")
+                            );
 
     arg_desc->AddOptionalKey("jlist",
                              "status",
@@ -167,32 +174,11 @@ private:
 };
 
 
-static void s_FillReg(IRWRegistry& reg, const string& section, const string& value)
-{
-    string host, sport;
-    if (NStr::SplitInTwo(value, ":", host, sport)) {
-        reg.Set(section, "host", host);
-        reg.Set(section, "port", sport);
-        reg.Set(section, "service", " ");
-    } else {
-        reg.Set(section, "service", value);
-        reg.Set(section, "host", " ");
-        reg.Set(section, "port", " ");
-    }
- }
 int CNSRemoveJobControlApp::Run(void)
 {
 
     const CArgs& args = GetArgs();
-   
-    auto_ptr<CNSInfoCollector> info_collector;
-    
     IRWRegistry& reg = GetConfig();
-
-    if ( args["nc"]) {
-        reg.Set(kNetCacheDriverName, "client_name", "ns_remote_job_control");
-        s_FillReg(reg, kNetCacheDriverName, args["nc"].AsString());
-    }
 
     if (args["q"]) {
         string queue = args["q"].AsString();   
@@ -206,8 +192,15 @@ int CNSRemoveJobControlApp::Run(void)
         reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
     }
 
+    if ( args["nc"]) {
+        reg.Set(kNetCacheAPIDriverName, "client_name", "ns_remote_job_control");
+        reg.Set(kNetCacheAPIDriverName, "service", args["nc"].AsString());
+	if ( args["ncprot"] )
+	    reg.Set(kNetCacheAPIDriverName, "protocol", args["ncprot"].AsString());
+    }
 
 
+    auto_ptr<CNSInfoCollector> info_collector;
     CNcbiOstream* out = &NcbiCout;
     if (args["of"]) {
         out = &args["of"].AsOutputFile();
@@ -223,12 +216,22 @@ int CNSRemoveJobControlApp::Run(void)
         writer.reset(new CTextTagWriter(*out));
 
     try {
+
+    CBlobStorageFactory factory(reg);
+    if (args["bid"]) {
+        info_collector.reset(new CNSInfoCollector(factory));
+        auto_ptr<CNSInfoRenderer> renderer(new CNSInfoRenderer(*writer, *info_collector));
+        string id = args["bid"].AsString();
+        renderer->RenderBlob(id);
+        return 0;
+    }
+
     auto_ptr<CConfig::TParamTree> ptree(CConfig::ConvertRegToTree(reg));
     const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleAPIDriverName);
     if (!ns_tree) 
         NCBI_THROW(CArgException, eInvalidArg,
                    "Could not find \"" + string(kNetScheduleAPIDriverName) + "\" section");
-
+    
     CConfig ns_conf(ns_tree);
     string queue = ns_conf.GetString(kNetScheduleAPIDriverName, "queue_name", CConfig::eErr_NoThrow, "");
     NStr::TruncateSpacesInPlace(queue);
@@ -244,7 +247,6 @@ int CNSRemoveJobControlApp::Run(void)
                    "\"service\" parameter is not set "
                    "neither in config file nor in cmd line");
 
-    CBlobStorageFactory factory(reg);
     info_collector.reset(new CNSInfoCollector(queue, service, factory));
 
     CNSInfoRenderer::TFlags flags = 0;
@@ -295,9 +297,6 @@ int CNSRemoveJobControlApp::Run(void)
     } else if (args["jid"]) {
         string jid = args["jid"].AsString();
         renderer->RenderJob(jid, flags);
-    } else if (args["bid"]) {
-        string id = args["bid"].AsString();
-        renderer->RenderBlob(id);
     } else if (args["wnlist"]) {
         renderer->RenderWNodes(flags);
     } else if (args["qlist"]) {

@@ -61,6 +61,20 @@ class NCBI_XGRIDCGI_EXPORT CCgiSession_NetCache : public ICgiSessionStorage
 public:
     /// Create Session Storage from the registry
     CCgiSession_NetCache(const IRegistry&);
+    /*
+    /// Create Session Storage 
+    /// @param[in] nc_client
+    ///  NetCache client. Session Storage will delete it when
+    ///  it goes out of scope.
+    /// @param[in] flags
+    ///  Specifies if blobs should be cached on a local fs
+    ///  before/after they are accessed for read/write.
+    /// @param[in[ temp_dir
+    ///  Specifies where on a local fs those blobs will be cached
+    CCgiSession_NetCache(CNetCacheClient* nc_client, 
+                         CBlobStorage_NetCache::TCacheFlags flags = 0x0,
+                         const string& temp_dir = ".");
+    */
     virtual ~CCgiSession_NetCache();
 
     /// Create a new empty session. 

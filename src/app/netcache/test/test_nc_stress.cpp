@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_api.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -92,7 +92,7 @@ private:
                        bool                   random,
                        unsigned               count);
 
-    CNetCacheClient*  CreateClient() const;
+    CNetCacheAPI*  CreateClient() const;
 
     unsigned char* AllocateTestBlob(size_t blob_size) const;
 
@@ -100,13 +100,11 @@ private:
 
     void CheckGetBlob(const STransactionInfo& ti, 
                       unsigned char*          buf,
-                      CNetCacheClient*        cl);
+                      CNetCacheAPI*        cl);
     void AddToAppLog(const TTransactionLog& tlog);
 
 private:
-    string         m_Host;
     string         m_ServiceName;
-    unsigned short m_Port;
     int            m_Count;
 
     TTransactionLog m_Log;
@@ -131,15 +129,15 @@ void CTestNetCacheStress::StressTestPutGet(size_t           blob_size,
 
 void CTestNetCacheStress::CheckGetBlob(const STransactionInfo& ti, 
                                        unsigned char*          buf,
-                                       CNetCacheClient*        cl)
+                                       CNetCacheAPI*        cl)
 {
     try {
         size_t n_read, bsize;
 
-        CNetCacheClient::EReadResult rres = 
+        CNetCacheAPI::EReadResult rres = 
             cl->GetData(ti.key, buf, ti.blob_size, &n_read, &bsize);
 
-        if (rres == CNetCacheClient::eNotFound && ti.deleted == false) {
+        if (rres == CNetCacheAPI::eNotFound && ti.deleted == false) {
             LOG_POST(Error << "BLOB not found: " 
                             << ti.key << " " 
                             << ti.blob_size << " " 
@@ -147,14 +145,14 @@ void CTestNetCacheStress::CheckGetBlob(const STransactionInfo& ti,
             return;
         }
 
-        if (ti.deleted && rres != CNetCacheClient::eNotFound) {
+        if (ti.deleted && rres != CNetCacheAPI::eNotFound) {
             LOG_POST(Error << "Deleted BLOB found: " 
                             << ti.key << " " 
                             << bsize << " " 
                             << ti.time_stamp);
             return;
         }
-        if (rres == CNetCacheClient::eNotFound) {
+        if (rres == CNetCacheAPI::eNotFound) {
             return;
         }
         
@@ -206,7 +204,7 @@ void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
                                         bool                   random,
                                         unsigned               count)
 {
-    auto_ptr<CNetCacheClient> cl(CreateClient());
+    auto_ptr<CNetCacheAPI> cl(CreateClient());
 
     size_t   buf_size = 0;
     unsigned char* buf = 0;
@@ -276,7 +274,7 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
                                         unsigned         bcount,
                                         TTransactionLog* tlog)
 {
-    auto_ptr<CNetCacheClient> cl(CreateClient());
+    auto_ptr<CNetCacheAPI> cl(CreateClient());
 
     unsigned char* buf = AllocateTestBlob(blob_size);
     CheckBlob(buf, blob_size); // just in case
@@ -321,7 +319,7 @@ void CTestNetCacheStress::DeleteRandomBlobs(TTransactionLog* tlog,
     if (!bcount)
         return;
 
-    auto_ptr<CNetCacheClient> cl(CreateClient());
+    auto_ptr<CNetCacheAPI> cl(CreateClient());
 
     for (unsigned i = 0; i < bcount; ++i) {
         unsigned idx = rand() % bcount;
@@ -350,10 +348,11 @@ void CTestNetCacheStress::DeleteRandomBlobs(TTransactionLog* tlog,
 }
 
 
-CNetCacheClient*  CTestNetCacheStress::CreateClient() const
+CNetCacheAPI*  CTestNetCacheStress::CreateClient() const
 {
-    auto_ptr<CNetCacheClient> 
-        cl(new CNetCacheClient(m_Host, m_Port, "stress_test"));
+    auto_ptr<CNetCacheAPI> 
+        cl(new CNetCacheAPI(m_ServiceName, "stress_test"));
+    cl->SetConnMode(INetServiceAPI::eKeepConnection);
     STimeout to = {120, 0};
     cl->SetCommunicationTimeout(to);
     return cl.release();
@@ -418,8 +417,8 @@ void CTestNetCacheStress::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Net cache client");
     
-    arg_desc->AddPositional("host_port", 
-        "NetCache host and port (host:port) or service name.", 
+    arg_desc->AddPositional("service", 
+        "NetCache service name or host:port", 
         CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("count", 
@@ -430,7 +429,7 @@ void CTestNetCacheStress::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    //    SetDiagPostLevel(eDiag_Info);
+    //SetDiagPostLevel(eDiag_Info);
     //SetDiagTrace(eDT_Enable);
 }
 
@@ -438,24 +437,31 @@ void CTestNetCacheStress::Init(void)
 
 int CTestNetCacheStress::Run(void)
 {
-    CArgs args = GetArgs();
-    const string& host  = args["host_port"].AsString();
+    const CArgs& args = GetArgs();
+    m_ServiceName = args["service"].AsString();
 
-    string port_num;
-    NStr::SplitInTwo(host, ":", m_Host, port_num);
+/*    
+    char buff[512];
+    auto_ptr<CNetCacheAPI> cln(CreateClient());
 
-    if (m_Host.empty() || port_num.empty()) {
-        NcbiCerr << "Invalid server address" << host << NcbiEndl;
-        return 1;
+    string key;
+    //key = cln->PutData("fsdfs", 5);
+//    for (int i = 0; i < 10; i++)
+    {
+        auto_ptr<CWStream> os(new CWStream(cln->PutData(&key), 0,0, 
+                                           CRWStreambuf::fOwnWriter));
+        os->write("TESTEEEE",9);
+
     }
 
-    m_Port = atoi(port_num.c_str());
+    cln->Remove(key);
+    cln->GetData(key,buff,512);
 
-    if (m_Port == 0) {
-        NcbiCerr << "Invalid port number" << m_Port << NcbiEndl;
-        return 1;
-    }
+    cout << buff << endl;
 
+
+    return 0;
+*/
     m_Count = 0;
     if (args["count"]) {
         m_Count = args["count"].AsInteger();
@@ -473,7 +479,7 @@ int CTestNetCacheStress::Run(void)
         for (unsigned i = 0; i < bins; ++i) {
             TTransactionLog tlog;
             StressTestPutGet(bsizes[i], bin_count, &tlog);
-            SleepMilliSec(1000);
+            //SleepMilliSec(1000);
             AddToAppLog(tlog);
             count += bin_count;
             if (count >= m_Count) {
@@ -487,7 +493,7 @@ int CTestNetCacheStress::Run(void)
 
 
     NcbiCout << "Waiting...." << NcbiEndl;
-    SleepMilliSec(10 * 1000);
+    //SleepMilliSec(10 * 1000);
 
     NcbiCout << "Random delete...." << NcbiEndl;
     DeleteRandomBlobs(&m_Log, m_Log.size()/10);

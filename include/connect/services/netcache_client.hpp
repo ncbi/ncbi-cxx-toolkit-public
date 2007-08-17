@@ -39,7 +39,7 @@
 
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netservice_client.hpp>
-#include <connect/services/netservice_api_expt.hpp>
+#include <connect/services/netcache_api_expt.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/version.hpp>
 #include <util/transmissionrw.hpp>
@@ -460,42 +460,6 @@ private:
 };
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetCacheClient,  "xnetcache", 1, 1, 0);
-
-
-/// NetCache internal exception
-///
-class CNetCacheException : public CNetServiceException
-{
-public:
-    typedef CNetServiceException TParent;
-    enum EErrCode {
-        ///< If client is not allowed to run this operation
-        eAuthenticationError,
-        ///< BLOB key corruption or version mismatch
-        eKeyFormatError,
-        ///< Server side error
-        eServerError,
-        ///< BLOB is locked by another client
-        eBlobLocked,
-        ///< Cache name unknown
-        eUnknnownCache
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eAuthenticationError: return "eAuthenticationError";
-        case eKeyFormatError:      return "eKeyFormatError";
-        case eServerError:         return "eServerError";
-        case eBlobLocked:          return "eBlobLocked";
-        case eUnknnownCache:       return "eUnknnownCache";
-        default:                   return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetCacheException, CNetServiceException);
-};
 
 
 /// Meaningful information encoded in the NetCache key

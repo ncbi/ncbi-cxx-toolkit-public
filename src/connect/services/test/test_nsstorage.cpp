@@ -34,7 +34,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <connect/services/blob_storage_netcache.hpp>
+#include <corelib/blob_storage.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -69,41 +69,43 @@ void CTestNSStorage::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NetSchedule storage");
     
-    arg_desc->AddPositional("hostname", 
-                            "NetCache host name.", CArgDescriptions::eString);
+    arg_desc->AddPositional("service", 
+                            "NetCache service name.", CArgDescriptions::eString);
 
-    arg_desc->AddPositional("port",
-                            "Port number.", 
-                            CArgDescriptions::eInteger);
-    
+    arg_desc->AddOptionalKey("protocol",
+                             "protocol",
+                             "NetCache client protocl",
+                             CArgDescriptions::eString);
+    arg_desc->SetConstraint("protocol", 
+                            &(*new CArgAllow_Strings(NStr::eNocase), 
+                              "simple", "persistent")
+                            );
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
 //    CONNECT_Init(&GetConfig());
 
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagTrace(eDT_Enable);
+//    SetDiagPostLevel(eDiag_Info);
+//    SetDiagTrace(eDT_Enable);
 }
 
-
+const string kDriverName = "netcache_client";
 
 int CTestNSStorage::Run(void)
 {
-    CArgs args = GetArgs();
-    const string& host  = args["hostname"].AsString();
-    unsigned short port = args["port"].AsInteger();
+    const CArgs& args = GetArgs();
+    const string& service  = args["service"].AsString();
 
-    auto_ptr<IBlobStorage> storage1(
-                   new CBlobStorage_NetCache( 
-                          new CNetCacheClient( host, port, "client1" )
-                          )
-                   );
+    CNcbiRegistry reg;
+    reg.Set(kDriverName, "service", service);
+    reg.Set(kDriverName, "client_name", "test_blobstorage_netcache");
+    if (args["protocol"])
+	reg.Set(kDriverName, "protocol", args["protocol"].AsString());
 
-    auto_ptr<IBlobStorage> storage2(
-                   new CBlobStorage_NetCache( 
-                          new CNetCacheClient( host, port, "client2" )
-                          )
-                   );
+    CBlobStorageFactory factory(reg);
+    auto_ptr<IBlobStorage> storage1(factory.CreateInstance()); 
+    auto_ptr<IBlobStorage> storage2(factory.CreateInstance());
 
     string blobid;
     CNcbiOstream& os = storage1->CreateOStream(blobid);
@@ -113,6 +115,7 @@ int CTestNSStorage::Run(void)
     try {
         /*CNcbiIstream& is = */storage2->GetIStream(blobid, &blobsize,
                                IBlobStorage::eLockNoWait );
+	throw runtime_error("The blob \"" + blobid + "\" must be locked. Server error.");
     } catch( CBlobStorageException& ex ) {
         if( ex.GetErrCode() == CBlobStorageException::eBlocked ) {
             cout << "Blob : " << blobid << " is blocked" << endl;
@@ -129,13 +132,19 @@ int CTestNSStorage::Run(void)
     CNcbiIstream& is = storage2->GetIStream(blobid, &blobsize);
     string res;
     is >> res;
-    cout << res;
+    cout << res << endl;
 
     return 0;
 }
 
 
+extern "C"
+{
+void BlobStorage_RegisterDriver_NetCache(void);
+}
+
 int main(int argc, const char* argv[])
 {
+    BlobStorage_RegisterDriver_NetCache();
     return CTestNSStorage().AppMain(argc, argv);
 }

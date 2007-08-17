@@ -40,6 +40,8 @@
 #include <connect/connect_export.h>
 #include <connect/ncbi_socket.hpp>
 
+#include <util/resource_pool.hpp>
+
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -51,6 +53,11 @@ void DiscoverLBServices(const string& service_name,
 
 
 /******************************************************************/
+struct CSocketFactory
+{
+    static CSocket* Create(); 
+    static void Delete(CSocket* v) { delete v; }    
+};
 
 class NCBI_XCONNECT_EXPORT CNetSrvConnector
 {
@@ -75,7 +82,8 @@ public:
     bool ReadStr(string& str);
     void WriteStr(const string& str);
     void WriteBuf(const void* buf, size_t len);
-    void WaitForServer(unsigned int wait_sec = 20);
+    // if wait_sec is set to 0 m_Timeout will be used
+    void WaitForServer(unsigned int wait_sec = 0);
 
     class IStringProcessor {
     public:
@@ -85,10 +93,25 @@ public:
     };
     void Telnet(CNcbiOstream& out, IStringProcessor* processor = NULL);
 
-    void Disconnect();
+    // if socket is not NULL the temporary connector with the given socket
+    // will be create and its disconnect method will be called. This is used
+    // for detached socket
+    void Disconnect(CSocket* socket = NULL);
+
+    CSocket* DetachSocket();
+    void AttachSocket(CSocket* socket);
+
+    static void SetDefaultCommunicationTimeout(const STimeout& to);
+    void SetCommunicationTimeout(const STimeout& to);
+    STimeout GetCommunicationTimeout() const { return m_Timeout; }
+
+    static void SetDefaultCreateSocketMaxReties(unsigned int retires);
+    void SetCreateSocketMaxRetries(unsigned int retries) { m_MaxRetries = retries; }
+    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
+
 private:
 
-    CNetSrvConnector(const CNetSrvConnector&);
+    CNetSrvConnector(const CNetSrvConnector& other);
     CNetSrvConnector& operator=(const CNetSrvConnector&);
 
     bool x_IsConnected();
@@ -98,7 +121,20 @@ private:
     unsigned short     m_Port;
     auto_ptr<CSocket>  m_Socket;
     STimeout           m_Timeout;
-    IEventListener*    m_EventListener; 
+    IEventListener*    m_EventListener;
+    bool               m_ReleaseSocket;
+    unsigned int       m_MaxRetries;
+
+    typedef CResourcePool<CSocket, CNoLock, CSocketFactory> TResourcePool;
+    TResourcePool m_SocketPool;
+
+public:
+    // !!Special perpose constructor. Use it only if you know what you
+    // are doing. Copies all member but m_Socket from 'other' and sets m_Socket
+    // with 'socket'. 'socket' will not be deleted after connector 
+    // distruction
+    CNetSrvConnector(const CNetSrvConnector& other, CSocket* socket);
+
 };
 
 class CNetSrvConnectorHolder
@@ -128,6 +164,7 @@ public:
     operator CNetSrvConnector& () const  { return *m_Conn; }
     CNetSrvConnector* operator->() const { return m_Conn; }
 
+    bool NeedDisconnect() const { return m_Disconnect; }
 private:
     CNetSrvConnector* m_Conn;
     mutable bool m_Disconnect;
@@ -286,13 +323,14 @@ public:
         m_RebalanceStrategy = strategy;
     }
 
+    void SetCommunicationTimeout(const STimeout& to);
+    STimeout GetCommunicationTimeout() const { return m_Timeout; }
+
+    void SetCreateSocketMaxRetries(unsigned int retries);
+    unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
+    
 private:
     friend class iterator;
-
-    CNetSrvConnectorPoll(const CNetSrvConnectorPoll&);
-    CNetSrvConnectorPoll& operator=(const CNetSrvConnectorPoll&);
-
-
 
     CNetSrvConnector* x_FindOrCreateConnector(const TService& srv) const;
     void x_Rebalance();
@@ -305,6 +343,12 @@ private:
     bool                m_DiscoverLowPriorityServers;
     CNetSrvConnector::IEventListener* m_EventListener;
     bool                m_PermConn;
+    STimeout            m_Timeout;
+    unsigned int        m_MaxRetries; 
+
+    CNetSrvConnectorPoll(const CNetSrvConnectorPoll&);
+    CNetSrvConnectorPoll& operator=(const CNetSrvConnectorPoll&);
+
 };
 
 
@@ -317,7 +361,8 @@ public:
     enum EErrCode {
         eReadTimeout,
         eResponseTimeout,
-        eLBNameNotFound
+        eLBNameNotFound,
+        eSrvListEmpty
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -327,6 +372,7 @@ public:
         case eReadTimeout:        return "eReadTimeout";
         case eResponseTimeout:    return "eResponseTimeout";
         case eLBNameNotFound:     return "eLBNameNotFound";
+        case eSrvListEmpty:       return "eSrvListEmpty";
         default:                  return CException::GetErrCodeString();
         }
     }

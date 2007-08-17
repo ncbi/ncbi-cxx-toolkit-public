@@ -58,7 +58,7 @@ public:
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 private:
-    static CNetCacheClient* x_CreateNCClient(const string& service);
+    static CNetCacheAPI* x_CreateNCClient(const string& service);
     static CNetScheduleAPI* x_CreateNSClient(const string& service, 
                                                 const string& qname);
 
@@ -225,14 +225,9 @@ void CRemoteAppDispatcher::x_CancelJob(CGridClient& grid, const string& jid, CNc
 }
 
 /* static */
-CNetCacheClient* CRemoteAppDispatcher::x_CreateNCClient(const string& service)
+CNetCacheAPI* CRemoteAppDispatcher::x_CreateNCClient(const string& service)
 {
-    string host, sport;
-    if (NStr::SplitInTwo(service, ":", host, sport)) {
-        unsigned int port = NStr::StringToUInt(sport);
-        return new CNetCacheClient(host, port, "remote_app_dispatcher");
-    }
-    return new CNetCacheClient_LB("remote_app_dispatcher", service);
+    return new CNetCacheAPI("remote_app_dispatcher", service);
 }
 /* static */
 CNetScheduleAPI* CRemoteAppDispatcher::x_CreateNSClient(const string& service, 
