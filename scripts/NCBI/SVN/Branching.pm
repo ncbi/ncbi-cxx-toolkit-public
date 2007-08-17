@@ -28,7 +28,7 @@ sub Info
     my ($Self, $RootURL, $BranchPath) = @_;
 
     my $BranchInfo =
-        NCBI::SVN::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
+        NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
 
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -256,7 +256,8 @@ sub ShapeBranch
     }
     elsif ($Action eq 'alter')
     {
-        my $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath);
+        my $BranchInfo =
+            NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
 
         $UpstreamPath = $BranchInfo->{UpstreamPath};
 
@@ -286,12 +287,14 @@ sub ShapeBranch
 
         if ($Force)
         {
-            $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)
+            $BranchInfo =
+                NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath)
         }
         else
         {
             $BranchInfo =
-                NCBI::SVN::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
+                NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
+                    $BranchPath);
 
             my $BranchRevisions = $BranchInfo->{BranchRevisions};
 
@@ -436,14 +439,14 @@ sub DoMerge
 
     if ($Direction eq 'up')
     {
-        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($RootURL,
+        $BranchInfo = NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
             $BranchPath, $SourceRev, undef);
 
         $SourceRev = $BranchInfo->{BranchRevisions}->[0]->{Number}
     }
     else
     {
-        $BranchInfo = NCBI::SVN::BranchAndUpstreamInfo->new($RootURL,
+        $BranchInfo = NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
             $BranchPath, undef, $SourceRev);
 
         my $UpstreamRevisions = $BranchInfo->{UpstreamRevisions};
@@ -556,7 +559,7 @@ sub CommitMerge
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
 
-    my @BranchDirs = @{NCBI::SVN::BranchInfo->new($RootURL,
+    my @BranchDirs = @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
         $BranchPath)->{BranchDirs}};
 
     my $Message;
@@ -599,7 +602,8 @@ sub MergeDiff
         die "$Self->{MyName}: not in a working copy\n";
 
     my $Stream = $Self->{SVN}->Run('diff',
-        @{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}});
+        @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
+            $BranchPath)->{BranchDirs}});
 
     my $Line;
     my $State = 0;
@@ -658,7 +662,8 @@ sub MergeStat
         die "$Self->{MyName}: not in a working copy\n";
 
     my $Stream = $Self->{SVN}->Run('status',
-        @{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}});
+        @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
+            $BranchPath)->{BranchDirs}});
 
     my $Line;
 
@@ -681,7 +686,8 @@ sub Svn
         die "$Self->{MyName}: not in a working copy\n";
 
     exec($Self->{SVN}->GetSvnPathname(), @CommandAndArgs,
-        @{NCBI::SVN::BranchInfo->new($RootURL, $BranchPath)->{BranchDirs}})
+        @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
+            $BranchPath)->{BranchDirs}})
 }
 
 sub DoSwitchUnswitch
@@ -691,7 +697,8 @@ sub DoSwitchUnswitch
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
 
-    my $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath);
+    my $BranchInfo =
+        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
 
     print STDERR ($DoSwitch ? 'Switching to' : 'Unswitching from') .
         " branch '$BranchPath'...\n";
@@ -722,7 +729,8 @@ sub Update
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
 
-    my $BranchInfo = NCBI::SVN::BranchInfo->new($RootURL, $BranchPath);
+    my $BranchInfo =
+        NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
 
     print STDERR "Updating working copy directories of '$BranchPath'...\n";
 

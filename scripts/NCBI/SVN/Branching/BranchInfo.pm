@@ -1,6 +1,6 @@
 # $Id$
 
-package NCBI::SVN::BranchInfo;
+package NCBI::SVN::Branching::BranchInfo;
 
 use strict;
 use warnings;
@@ -250,9 +250,9 @@ sub new
     return $Self
 }
 
-package NCBI::SVN::BranchAndUpstreamInfo;
+package NCBI::SVN::Branching::BranchAndUpstreamInfo;
 
-use base qw(NCBI::SVN::BranchInfo);
+use base qw(NCBI::SVN::Branching::BranchInfo);
 
 sub new
 {
