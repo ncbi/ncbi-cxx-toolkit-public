@@ -146,6 +146,7 @@ bool CTL_RPCCmd::x_AssignParams()
     CS_DATAFMT param_fmt;
     memset(&param_fmt, 0, sizeof(param_fmt));
     param_fmt.namelen = CS_NULLTERM;
+    param_fmt.format = CS_FMT_UNUSED;
 
     for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
 
