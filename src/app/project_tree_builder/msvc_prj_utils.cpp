@@ -600,7 +600,11 @@ void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter,
         } else if (pch_usage.first == eUse) {
             compilerl_tool->SetAttlist().SetPreprocessorDefinitions
                                 (GetApp().GetMetaMakefile().GetPchUsageDefine());
-            compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");
+            if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc800) {
+                compilerl_tool->SetAttlist().SetUsePrecompiledHeader("2");
+            } else {
+                compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");
+            }
             compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
                                                             (pch_usage.second);
         }
