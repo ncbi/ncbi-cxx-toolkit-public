@@ -671,10 +671,23 @@ const
                     exon->SetGenomic_start(smin);
                     exon->SetGenomic_end(smax);
 
-                    CSpliced_exon::TScores::Tdata & data (exon->SetScores().Set());
-                    CRef<CScore> score (new CScore);
-                    score->SetValue().SetReal(seg.m_score);
-                    data.push_back(score);
+                    CSpliced_exon::TScores::Tdata & scores (exon->SetScores().Set());
+
+                    {{
+                        // add dynprog score
+                        CRef<CScore> score (new CScore);
+                        score->SetId().SetStr("splign");
+                        score->SetValue().SetReal(seg.m_score);
+                        scores.push_back(score);
+                    }}
+
+                    {{
+                        // add percent identity
+                        CRef<CScore> score (new CScore);
+                        score->SetId().SetStr("idty");
+                        score->SetValue().SetReal(seg.m_idty);
+                        scores.push_back(score);
+                    }}
 
                     // add 5' (acceptor) residues if available
                     const size_t adim (seg.m_annot.size());

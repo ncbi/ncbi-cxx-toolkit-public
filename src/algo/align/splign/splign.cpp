@@ -687,6 +687,8 @@ void CSplign::Run(THitRefs* phitrefs)
                     ac.m_msg = "Ok";
                     ac.m_cds_start = m_cds_start;
                     ac.m_cds_stop = m_cds_stop;
+                    ac.m_QueryLen = m_mrna.size();
+                    ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0); 
                     m_result.push_back(ac);
                 }
             }
@@ -736,14 +738,16 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
         ac.m_msg = "Ok";
         ac.m_cds_start = m_cds_start;
         ac.m_cds_stop = m_cds_stop;
+        ac.m_QueryLen = m_mrna.size();
+        ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0);
 
-        *result = ac;        
+        *result = ac;
         m_mrna.resize(0);
     }
 
     catch(CAlgoAlignException& e) {
 
-        m_mrna.resize(0);        
+        m_mrna.resize(0);
 
         if(e.GetSeverity() == eDiag_Fatal) {
             throw;
