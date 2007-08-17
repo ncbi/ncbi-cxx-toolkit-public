@@ -3,6 +3,7 @@ abs_saved_config_dir=$1
 build_name=$2
 
 abs_top_srcdir="`cd $abs_saved_config_dir/../../c++ && pwd`"
+abs_config_dir=$abs_top_srcdir/$build_name
 
 mkdir $abs_top_srcdir/$build_name
 mkdir $abs_top_srcdir/$build_name/bin
@@ -23,3 +24,6 @@ sed "
 s|@build_name@|$build_name|g
 s|@saved_config_abs_top_srcdir@|$abs_top_srcdir|g" <$abs_saved_config_dir/config.status.in >$abs_top_srcdir/$build_name/status/config.status
 chmod +x $abs_top_srcdir/$build_name/status/config.status
+
+echo "Configuration restored into $abs_config_dir."
+echo "cd $abs_config_dir/build && ./reconfigure.sh update"

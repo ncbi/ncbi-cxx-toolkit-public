@@ -13,7 +13,21 @@ FLAG_REMOVE    = 4
 # Global
 verbose=False
 
-def add_path(tree, path_descr):
+def add_path(tree, path, is_directory=True):
+    path_parts = path.split('/')
+    if len(path_parts) and len(path_parts[0]) and path_parts[0][0] == '-':
+        path_parts[0] = path_parts[0][1:]
+        last_flag = FLAG_REMOVE
+    else:
+        last_flag = FLAG_COPY
+    path_descr = zip([0] * len(path_parts), path_parts)
+    last_part = path_parts[-1]
+    if last_part[-1] == '$':
+        last_part = last_part[:-1]
+    else:
+        last_flag |= FLAG_RECURSIVE
+    path_descr[-1] = last_flag, last_part
+
     cur = tree
     for flag, path_part in path_descr:
         new_cur = cur[1].get(path_part, (flag, {}))
@@ -39,18 +53,10 @@ def get_project(root, project_name, project_file_name, revision):
         line = line.strip()
         if not line: continue
         parts = line.split(' ', 1)
-        path_parts = parts[0].split('/')
-        path_descr = zip([0] * len(path_parts), path_parts)
-        last_part = path_parts[-1]
-        last_flag = FLAG_COPY
-        if last_part[-1] == '$':
-            last_part = last_part[:-1]
-        else:
-            last_flag |= FLAG_RECURSIVE
-        path_descr[-1] = last_flag, last_part
-        add_path(inc_tree, path_descr)
+        path = parts[0]
+        add_path(inc_tree, path)
         get_src = len(parts) <= 1 or parts[1] != "update-only"
-        if get_src: add_path(src_tree, path_descr)
+        if get_src: add_path(src_tree, path)
     return inc_tree, src_tree
 
 def list_url(url, revision):
@@ -92,13 +98,13 @@ def get_list_to_remove(root, proj_tree, revision):
     # add dirs/files, required for every build to inc_tree, src_tree
     # TODO: generalize this: keep *impl for every FLAG_COPYed dir in
     # include tree
-    add_path(inc_tree, [(0, "corelib"), (FLAG_COPY, "impl")])
-    add_path(inc_tree, [(0, "corelib"), (FLAG_COPY, "hash_impl")])
+    add_path(inc_tree, "corelib/impl$")
+    add_path(inc_tree, "corelib/hash_impl$")
     # This one is genuine exception
-    add_path(inc_tree, [(FLAG_COPY | FLAG_RECURSIVE, "common")])
+    add_path(inc_tree, "common")
     # TODO: generalize this: every path part in source tree should
     # preserve Makefile.in
-    add_path(src_tree, [(0, "app"), (0, "Makefile.in")])
+    add_path(src_tree, "app/Makefile.in", False)
 #    print "Include", inc_tree
 #    print "Source", src_tree
     # TODO: replace following with systematic add_path with FLAG_REMOVE
