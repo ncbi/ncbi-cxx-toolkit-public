@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <util/arg_regexp.hpp>
 #include <util/static_map.hpp>
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
@@ -104,6 +105,13 @@ void CConversionApp::Init(void)
         ("infeat", "InputFile",
          "File from which to read an additional Sequin feature table",
          CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey
+        ("inflags", "Flags",
+         "Format-specific input flags, in C-style decimal, hex, or octal",
+         CArgDescriptions::eString); // eInteger is too strict
+    arg_desc->SetConstraint
+        ("inflags",
+         new CArgAllow_Regexp("^([1-9]\\d*|0[Xx][[:xdigit:]]*|0[0-7]*)$"));
 
     arg_desc->AddDefaultKey("out", "OutputFile", "File to write the object to",
                             CArgDescriptions::eOutputFile, "-");
@@ -184,8 +192,16 @@ int CConversionApp::GetFlatFormat(const string& name)
 
 CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
 {
-    const string& infmt = args["infmt"].AsString();
-    const string& type  = args["type" ].AsString();
+    const string& infmt   = args["infmt"].AsString();
+    const string& type    = args["type" ].AsString();
+    int           inflags = 0;
+
+    if (args["inflags"]) {
+        inflags = NStr::StringToInt(args["inflags"].AsString(), 0, 0);
+    } else if (infmt == "gff") { // set a non-trivial default
+        inflags = (CGFFReader::fGBQuals | CGFFReader::fMergeExons
+                   | CGFFReader::fSetProducts | CGFFReader::fCreateGeneFeats);
+    }
 
     if (infmt == "ID") {
         CSeq_id        id(args["in"].AsString());
@@ -196,14 +212,10 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
     } else if (infmt == "fasta") {
         // return ReadFasta(args["in"].AsInputFile());
         CRef<ILineReader> line_reader(ILineReader::New(args["in"].AsString()));
-        CFastaReader fasta_reader(*line_reader);
+        CFastaReader fasta_reader(*line_reader, inflags);
         return fasta_reader.ReadSet();
     } else if (infmt == "gff") {
-        return CGFFReader().Read(args["in"].AsInputFile(),
-                                 CGFFReader::fGBQuals |
-                                 CGFFReader::fMergeExons |
-                                 CGFFReader::fSetProducts |
-                                 CGFFReader::fCreateGeneFeats);
+        return CGFFReader().Read(args["in"].AsInputFile(), inflags);
     } else if (infmt == "agp") {
         CRef<CBioseq_set> bss = AgpRead(args["in"].AsInputFile());
         if (bss->GetSeq_set().size() == 1) {
@@ -215,7 +227,7 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
         }
     } else if (infmt == "tbl") {
         CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable
-            (args["in"].AsInputFile());
+            (args["in"].AsInputFile(), inflags);
         CRef<CSeq_entry> entry(new CSeq_entry);
         if (type == "Bioseq") {
             CBioseq& seq = entry->SetSeq();
