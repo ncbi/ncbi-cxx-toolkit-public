@@ -2673,6 +2673,60 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
     }
 }
 
+void
+CDBAPIUnitTest::Test_Bulk_Writing2(void)
+{
+    string sql;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE #SbSubs ( \n"
+                "    [sacc] int NOT NULL , \n"
+                "    [sid] int NOT NULL , \n"
+                "    [ver] smallint NOT NULL , \n"
+                "    [live] bit NOT NULL DEFAULT (1), \n"
+                "    [date] datetime NOT NULL DEFAULT (getdate()), \n"
+                "    [rlsdate] smalldatetime NULL, \n"
+                "    [depdate] datetime NOT NULL DEFAULT (getdate()) \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#SbSubs", 3)
+//                     m_Conn->GetBulkInsert("#SbSubs", 1)
+                    );
+
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_Int);
+            CVariant col3(eDB_Int);
+
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
+            bi->Bind(3, &col3);
+
+            col1 = 15001;
+            col2 = 1;
+            col3 = 2;
+            bi->AddRow();
+            bi->Complete();
+        }
+
+
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Variant2(void)
@@ -8530,6 +8584,12 @@ CDBAPIUnitTest::Test_Identity(void)
             curr_type = md->GetType(1);
             BOOST_CHECK_EQUAL(curr_type, eDB_Numeric);
 
+            const CVariant& id_value = rs->GetVariant(1);
+            BOOST_CHECK(!id_value.IsNull());
+            string id_str = rs->GetVariant(1).GetString();
+            string id_num = rs->GetVariant(1).GetNumeric();
+            BOOST_CHECK_EQUAL(id_str, id_num);
+
             BOOST_CHECK(!rs->Next());
         }
 
@@ -8796,6 +8856,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+
+        if (args.GetServerType() == CTestArguments::eMsSql) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
     }
 
 
