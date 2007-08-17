@@ -65,14 +65,14 @@ bool CTDS_LangCmd::Send()
         dbfreebuf(GetCmd());
         CheckFunctCall();
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "cannot assign params" + GetDbgInfo(), 220003 );
+        DATABASE_DRIVER_ERROR( "Cannot assign params." + GetDbgInfo(), 220003 );
     }
 
     if (Check(dbcmd(GetCmd(), (char*)(GetQuery().c_str()))) != SUCCEED) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "dbcmd failed" + GetDbgInfo(), 220001 );
+        DATABASE_DRIVER_ERROR( "dbcmd failed." + GetDbgInfo(), 220001 );
     }
 
 
@@ -81,7 +81,7 @@ bool CTDS_LangCmd::Send()
     SetHasFailed(Check(dbsqlsend(GetCmd())) != SUCCEED);
     CHECK_DRIVER_ERROR(
         HasFailed(),
-        "dbsqlsend failed" + GetDbgInfo(),
+        "dbsqlsend failed." + GetDbgInfo(),
         220005 );
 
     SetWasSent();
@@ -121,7 +121,7 @@ CDB_Result* CTDS_LangCmd::Result()
 
     CHECK_DRIVER_ERROR(
         !WasSent(),
-        "a command has to be sent first" + GetDbgInfo(),
+        "A command has to be sent first." + GetDbgInfo(),
         220010 );
 
     if (m_Status == 0) {
@@ -129,7 +129,7 @@ CDB_Result* CTDS_LangCmd::Result()
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
             SetWasSent(false);
             SetHasFailed();
-            DATABASE_DRIVER_ERROR( "dbsqlok failed" + GetDbgInfo(), 220011 );
+            DATABASE_DRIVER_ERROR( "dbsqlok failed." + GetDbgInfo(), 220011 );
         }
     }
 

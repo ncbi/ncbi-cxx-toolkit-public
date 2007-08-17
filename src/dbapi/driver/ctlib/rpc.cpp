@@ -68,7 +68,7 @@ bool CTL_RPCCmd::Send()
              "ct_command failed", 121001);
 
     SetHasFailed(!x_AssignParams());
-    CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params" + GetDbgInfo(), 121003 );
+    CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 121003 );
 
     switch ( Check(ct_send(x_GetSybaseCmd())) ) {
     case CS_SUCCEED:
@@ -77,15 +77,16 @@ bool CTL_RPCCmd::Send()
         SetHasFailed();
         if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
             // we need to close this connection
-            DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
-                               "Connection must be closed" + GetDbgInfo(), 121004 );
+            DATABASE_DRIVER_ERROR("Unrecoverable crash of ct_send. "
+                                  "Connection must be closed." +
+                                  GetDbgInfo(), 121004 );
         }
-        DATABASE_DRIVER_ERROR( "ct_send failed" + GetDbgInfo(), 121005 );
+        DATABASE_DRIVER_ERROR( "ct_send failed." + GetDbgInfo(), 121005 );
     case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled" + GetDbgInfo(), 121006 );
+        DATABASE_DRIVER_ERROR( "Command was canceled." + GetDbgInfo(), 121006 );
 #ifdef CS_BUSY
     case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "connection has another request pending" + GetDbgInfo(), 121007 );
+        DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 121007 );
 #endif
     case CS_PENDING:
     default:

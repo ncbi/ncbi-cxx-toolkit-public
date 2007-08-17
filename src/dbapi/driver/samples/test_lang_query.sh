@@ -8,9 +8,9 @@ ulimit -n 1536 > /dev/null 2>&1
 
 # driver_list="ftds64_dblib odbcw ftds63 ftds_odbc"
 driver_list="ctlib dblib ftds odbc msdblib ftds8"
-# server_list="MS_DEV2 BARTOK BARTOK_12 MSSQL9 STRAUSS"
+# server_list="MS_DEV2 STRAUSS"
 server_list="MS_DEV1 TAPER"
-# server_mssql="MS_DEV2 MSSQL9"
+# server_mssql="MS_DEV2"
 server_mssql="MS_DEV1"
 
 res_file="/tmp/test_lang_query.sh.$$"

@@ -92,7 +92,7 @@ CDB_Result* CODBC_CursorCmd::OpenCursor(void)
         m_CursCmd.SetCursorName(GetCmdName());
         m_CursCmd.Send();
     } catch (const CDB_Exception& e) {
-        string err_message = "failed to declare cursor" + GetDbgInfo();
+        string err_message = "Failed to declare cursor." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
     }
 
@@ -118,7 +118,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
-        string err_message = "update failed" + GetDbgInfo();
+        string err_message = "Update failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
 
@@ -170,7 +170,7 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
-        string err_message = "update failed" + GetDbgInfo();
+        string err_message = "Update failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
 
@@ -247,7 +247,7 @@ CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
         m_CursCmd.Send();
         m_CursCmd.DumpResults();
     } catch (const CDB_Exception& e) {
-        string err_message = "failed to declare cursor" + GetDbgInfo();
+        string err_message = "Failed to declare cursor." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
     }
 
@@ -259,7 +259,7 @@ CDB_Result* CODBC_CursorCmdExpl::OpenCursor(void)
         stmt->Send();
         stmt->DumpResults();
     } catch (const CDB_Exception& e) {
-        string err_message = "failed to open cursor" + GetDbgInfo();
+        string err_message = "Failed to open cursor." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
     }
 
@@ -286,7 +286,7 @@ bool CODBC_CursorCmdExpl::Update(const string&, const string& upd_query)
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
-        string err_message = "update failed" + GetDbgInfo();
+        string err_message = "Update failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
 
@@ -344,7 +344,7 @@ bool CODBC_CursorCmdExpl::Delete(const string& table_name)
         cmd->Send();
         cmd->DumpResults();
     } catch (const CDB_Exception& e) {
-        string err_message = "update failed" + GetDbgInfo();
+        string err_message = "Update failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
 
@@ -368,7 +368,7 @@ bool CODBC_CursorCmdExpl::CloseCursor()
             cmd->Send();
             cmd->DumpResults();
         } catch (const CDB_Exception& e) {
-            string err_message = "failed to close cursor" + GetDbgInfo();
+            string err_message = "Failed to close cursor." + GetDbgInfo();
             DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
         }
 
@@ -384,7 +384,7 @@ bool CODBC_CursorCmdExpl::CloseCursor()
             cmd->Send();
             cmd->DumpResults();
         } catch (const CDB_Exception& e) {
-            string err_message = "failed to deallocate cursor" + GetDbgInfo();
+            string err_message = "Failed to deallocate cursor." + GetDbgInfo();
             DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
         }
 

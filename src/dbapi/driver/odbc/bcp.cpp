@@ -70,7 +70,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection& conn,
 
     if (bcp_init(cmd, CODBCString(table_name, GetClientEncoding()), 0, 0, DB_IN) != SUCCEED) {
         ReportErrors();
-        string err_message = "bcp_init failed" + GetDbgInfo();
+        string err_message = "bcp_init failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 423001 );
     }
 
@@ -456,14 +456,14 @@ bool CODBC_BCPInCmd::Send(void)
 
     if (!x_AssignParams(param_buff)) {
         SetHasFailed();
-        string err_message = "cannot assign params" + GetDbgInfo();
+        string err_message = "Cannot assign params." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 423004 );
     }
 
     if (bcp_sendrow(GetHandle()) != SUCCEED) {
         SetHasFailed();
         ReportErrors();
-        string err_message = "bcp_sendrow failed" + GetDbgInfo();
+        string err_message = "bcp_sendrow failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 423005 );
     }
     SetWasSent();
@@ -514,9 +514,9 @@ bool CODBC_BCPInCmd::Send(void)
 
                     string err_text;
                     if (param.GetType() == eDB_Text) {
-                        err_text = "bcp_moretext for text failed ";
+                        err_text = "bcp_moretext for text failed.";
                     } else {
-                        err_text = "bcp_moretext for image failed ";
+                        err_text = "bcp_moretext for image failed.";
                     }
                     err_text += GetDbgInfo();
                     DATABASE_DRIVER_ERROR( err_text, 423006 );

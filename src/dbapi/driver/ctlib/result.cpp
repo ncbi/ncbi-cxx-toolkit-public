@@ -65,7 +65,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
                                  CS_UNUSED,
                                  &outlen))
                != CS_SUCCEED);
-    CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_NUMDATA) failed" + GetDbgInfo(), 130001 );
+    CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_NUMDATA) failed." + GetDbgInfo(), 130001 );
 
     m_NofCols = nof_cols;
 
@@ -79,7 +79,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
                                 (CS_INT) nof_items + 1,
                                 &m_ColFmt[nof_items]))
             != CS_SUCCEED);
-        CHECK_DRIVER_ERROR( rc, "ct_describe failed" + GetDbgInfo(), 130002 );
+        CHECK_DRIVER_ERROR( rc, "ct_describe failed." + GetDbgInfo(), 130002 );
 
 #ifdef FTDS_IN_USE
         // Seems like FreeTDS reports the wrong maxlength in
@@ -119,7 +119,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
                               &m_Copied[i],
                               &m_Indicator[i]) )
              != CS_SUCCEED);
-          CHECK_DRIVER_ERROR( rc, "ct_bind failed" + GetDbgInfo(), 130042 );
+          CHECK_DRIVER_ERROR( rc, "ct_bind failed." + GetDbgInfo(), 130042 );
         }
     }
 }
@@ -287,14 +287,16 @@ bool CTL_RowResult::Fetch()
         m_EOR = true;
         return false;
     case CS_ROW_FAIL:
-        DATABASE_DRIVER_ERROR( "error while fetching the row" + GetDbgInfo(), 130003 );
+        DATABASE_DRIVER_ERROR( "Error while fetching the row." + GetDbgInfo(), 130003 );
     case CS_FAIL:
-        DATABASE_DRIVER_ERROR( "ct_fetch has failed. "
-                           "You need to cancel the command" + GetDbgInfo(), 130006 );
+        DATABASE_DRIVER_ERROR("ct_fetch has failed. "
+                              "You need to cancel the command." +
+                              GetDbgInfo(),
+                              130006 );
     case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
     default:
-        DATABASE_DRIVER_ERROR( "the connection is busy" + GetDbgInfo(), 130005 );
+        DATABASE_DRIVER_ERROR( "The connection is busy." + GetDbgInfo(), 130005 );
     }
 }
 
@@ -375,7 +377,8 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
             b_type != eDB_VarChar    &&  b_type != eDB_Char &&
             b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR("Wrong type of CDB_Object." +
+                                  GetDbgInfo(), 130020 );
         }
 
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
@@ -424,17 +427,18 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED:
             if (v != buffer)  delete[] v;
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR("The command has been canceled." +
+                                  GetDbgInfo(), 130004 );
         default:
             if (v != buffer)  delete[] v;
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
 
     case CS_LONGBINARY_TYPE: {
         if (item_buf  &&
             b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
@@ -469,10 +473,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED:
             if (v != buffer)  delete[] v;
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         default:
             if (v != buffer)  delete[] v;
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
 
@@ -480,7 +484,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         if (item_buf  &&
             b_type != eDB_Bit       &&  b_type != eDB_TinyInt  &&
             b_type != eDB_SmallInt  &&  b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_BIT v;
@@ -516,10 +520,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_Bit() : new CDB_Bit((int) v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -530,7 +534,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
             b_type != eDB_VarChar    &&  b_type != eDB_Char &&
             b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         char* v = fmt.maxlength < 2048
@@ -581,11 +585,11 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED: {
             if (v != buffer) delete[] v;
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
             if (v != buffer) delete[] v;
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -593,7 +597,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_LONGCHAR_TYPE: {
         if (item_buf  &&
             b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         char* v = fmt.maxlength < 2048
@@ -632,18 +636,18 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED: {
             if (v != buffer) delete[] v;
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
             if (v != buffer) delete[] v;
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
 
     case CS_DATETIME_TYPE: {
         if (item_buf  &&  b_type != eDB_DateTime) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_DATETIME v;
@@ -671,10 +675,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return val;
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -682,7 +686,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_DATETIME4_TYPE:  {
         if (item_buf  &&
             b_type != eDB_SmallDateTime  &&  b_type != eDB_DateTime) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_DATETIME4 v;
@@ -716,10 +720,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 : new CDB_SmallDateTime(v.days, v.minutes);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -728,7 +732,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         if (item_buf  &&
             b_type != eDB_TinyInt  &&  b_type != eDB_SmallInt  &&
             b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_TINYINT v;
@@ -762,10 +766,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 ? new CDB_TinyInt() : new CDB_TinyInt((Uint1) v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -773,7 +777,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_SMALLINT_TYPE: {
         if (item_buf  &&
             b_type != eDB_SmallInt  &&  b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_SMALLINT v;
@@ -804,17 +808,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 ? new CDB_SmallInt() : new CDB_SmallInt((Int2) v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
 
     case CS_INT_TYPE: {
         if (item_buf  &&  b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_INT v;
@@ -835,17 +839,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_Int() : new CDB_Int((Int4) v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
 
     case CS_LONG_TYPE: {
         if (item_buf  &&  b_type != eDB_BigInt) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         Int8 v;
@@ -866,10 +870,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_BigInt() : new CDB_BigInt(v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -877,7 +881,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_DECIMAL_TYPE:
     case CS_NUMERIC_TYPE: {
         if (item_buf  &&  b_type != eDB_BigInt  &&  b_type != eDB_Numeric) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_NUMERIC v;
@@ -920,17 +924,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             }
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
 
     case CS_FLOAT_TYPE: {
         if (item_buf  &&  b_type != eDB_Double) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_FLOAT v;
@@ -952,17 +956,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 ? new CDB_Double() : new CDB_Double((double) v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
 
     case CS_REAL_TYPE: {
         if (item_buf  &&  b_type != eDB_Float) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CS_REAL v;
@@ -983,10 +987,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_Float() : new CDB_Float((float) v);
         }
         case CS_CANCELED: {
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         }
         default: {
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
         }
     }
@@ -994,7 +998,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_TEXT_TYPE:
     case CS_IMAGE_TYPE: {
        if (item_buf  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
 
         CDB_Stream* val =
@@ -1014,9 +1018,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                     val->Append(buffer, outlen);
                 return val;
             case CS_CANCELED:
-                DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+                DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
             default:
-                DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+                DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
             }
         }
     }
@@ -1030,7 +1034,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 //         CS_VOID_TYPE
 //         CS_USHORT_TYPE
 //         CS_UNICHAR_TYPE
-        DATABASE_DRIVER_ERROR( "unexpected result type" + GetDbgInfo(), 130004 );
+        DATABASE_DRIVER_ERROR( "Unexpected result type." + GetDbgInfo(), 130004 );
     }
     }
 }
@@ -1084,9 +1088,9 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
         // not the last chunk of data for this column.
         break;
     case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
     default:
-        DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+        DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
     }
 
     if ( is_null ) {
@@ -1118,9 +1122,9 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
         case CS_SUCCEED:
             break;
         case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
 
@@ -1132,7 +1136,7 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
                                   m_CurrItem + 1,
                                   &desc->m_Desc))
         != CS_SUCCEED);
-    CHECK_DRIVER_ERROR( rc, "ct_data_info failed" + GetDbgInfo(), 130010 );
+    CHECK_DRIVER_ERROR( rc, "ct_data_info failed." + GetDbgInfo(), 130010 );
 
     // Code below was supposed to be used with ReadItem, which behaves somewhat
     // differenly than expected. Fri Jul 13 12:39:12 EDT 2007
@@ -1150,7 +1154,7 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 //                                   current_item,
 //                                   &desc->m_Desc))
 //         != CS_SUCCEED);
-//     CHECK_DRIVER_ERROR( rc, "ct_data_info failed" + GetDbgInfo(), 130010 );
+//     CHECK_DRIVER_ERROR( rc, "ct_data_info failed." + GetDbgInfo(), 130010 );
 //--------------------------------------------------
 
     return desc.release();
@@ -1244,9 +1248,9 @@ bool CTL_CursorResult::SkipItem()
     case CS_SUCCEED:
         break;
     case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "the command has been canceled" + GetDbgInfo(), 130004 );
+        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
     default:
-        DATABASE_DRIVER_ERROR( "ct_get_data failed" + GetDbgInfo(), 130000 );
+        DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
     }
         return true;
     }

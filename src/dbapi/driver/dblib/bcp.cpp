@@ -57,7 +57,7 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection& conn,
     SetExecCntxInfo("BCP table name: " + table_name);
 
     if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
-        DATABASE_DRIVER_ERROR( "bcp_init failed" + GetDbgInfo(), 223001 );
+        DATABASE_DRIVER_ERROR( "bcp_init failed." + GetDbgInfo(), 223001 );
     }
 
     ++m_RowCount;
@@ -423,13 +423,13 @@ bool CDBL_BCPInCmd::Send(void)
 
     if (!x_AssignParams(param_buff)) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "cannot assign params" + GetDbgInfo(), 223004 );
+        DATABASE_DRIVER_ERROR( "Cannot assign params." + GetDbgInfo(), 223004 );
     }
 
     if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
         Check(bcp_done(GetCmd()));
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "bcp_sendrow failed" + GetDbgInfo(), 223005 );
+        DATABASE_DRIVER_ERROR( "bcp_sendrow failed." + GetDbgInfo(), 223005 );
     }
 
     SetWasSent();
@@ -458,9 +458,9 @@ bool CDBL_BCPInCmd::Send(void)
                     string error;
 
                     if (param.GetType() == eDB_Text) {
-                        error = "bcp_moretext for text failed";
+                        error = "bcp_moretext for text failed.";
                     } else {
-                        error = "bcp_moretext for image failed";
+                        error = "bcp_moretext for image failed.";
                     }
                     DATABASE_DRIVER_ERROR( error + GetDbgInfo(), 223006 );
                 }
@@ -495,7 +495,7 @@ bool CDBL_BCPInCmd::CommitBCPTrans(void)
         DBINT outrow = Check(bcp_batch(GetCmd()));
         if(outrow < 0) {
             SetHasFailed();
-            DATABASE_DRIVER_ERROR( "bcp_batch failed" + GetDbgInfo(), 223020 );
+            DATABASE_DRIVER_ERROR( "bcp_batch failed." + GetDbgInfo(), 223020 );
         }
         return outrow > 0;
     }
@@ -509,7 +509,7 @@ bool CDBL_BCPInCmd::EndBCP(void)
         DBINT outrow = Check(bcp_done(GetCmd()));
         if(outrow < 0) {
             SetHasFailed();
-            DATABASE_DRIVER_ERROR( "bcp_done failed" + GetDbgInfo(), 223020 );
+            DATABASE_DRIVER_ERROR( "bcp_done failed." + GetDbgInfo(), 223020 );
         }
         SetWasSent(false);
         return outrow > 0;

@@ -105,7 +105,7 @@ void CSL3_BCPInCmd::ExecuteSQL(const string& sql)
     case SQLITE_MISUSE:
         Check(sqlite3_finalize(stmt));
         CHECK_DRIVER_ERROR(rc != SQLITE_OK,
-                           "Failed to execute a statement" + GetDbgInfo(),
+                           "Failed to execute a statement." + GetDbgInfo(),
                            100000);
         break;
     default:

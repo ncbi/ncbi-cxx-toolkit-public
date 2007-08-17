@@ -161,7 +161,8 @@ CTL_CursorCmd::OpenCursor()
                 GetQuery().find("SELECT") != string::npos) {
                 // this is a select
                 SetHasFailed(!x_AssignParams(true));
-                CHECK_DRIVER_ERROR( HasFailed(), "cannot declare the params" + GetDbgInfo(), 122003 );
+                CHECK_DRIVER_ERROR( HasFailed(), "Cannot declare the params." +
+                                    GetDbgInfo(), 122003 );
             }
         }
 
@@ -184,7 +185,7 @@ CTL_CursorCmd::OpenCursor()
     if (GetParams().NofParams() > 0) {
         // we do have the parameters
         SetHasFailed(!x_AssignParams(false));
-        CHECK_DRIVER_ERROR( HasFailed(), "cannot assign the params" + GetDbgInfo(), 122003 );
+        CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 122003 );
     }
 
     // send this command
@@ -269,7 +270,7 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 
         CHECK_DRIVER_ERROR(
             rc,
-            "ct_data_info failed" + GetDbgInfo(),
+            "ct_data_info failed." + GetDbgInfo(),
             130010 );
         desc = dsc.release();
     }

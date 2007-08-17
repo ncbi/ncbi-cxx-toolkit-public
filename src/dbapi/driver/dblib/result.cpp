@@ -415,9 +415,9 @@ bool CDBL_RowResult::Fetch()
             m_EOR = true;
             break;
         case FAIL:
-            DATABASE_DRIVER_ERROR( "error in fetching row" + GetDbgInfo(), 230003 );
+            DATABASE_DRIVER_ERROR( "Error in fetching row." + GetDbgInfo(), 230003 );
         case BUF_FULL:
-            DATABASE_DRIVER_ERROR( "buffer is full" + GetDbgInfo(), 230006 );
+            DATABASE_DRIVER_ERROR( "Buffer is full." + GetDbgInfo(), 230006 );
         default:
             *m_ResStatus|= 0x10;
             m_EOR = true;
@@ -590,7 +590,7 @@ bool CDBL_BlobResult::Fetch()
             m_EOR = true;
             return false;
         default:
-            DATABASE_DRIVER_ERROR( "error in fetching row" + GetDbgInfo(), 280003 );
+            DATABASE_DRIVER_ERROR( "Error in fetching row." + GetDbgInfo(), 280003 );
         }
     }
     else {
@@ -601,7 +601,7 @@ bool CDBL_BlobResult::Fetch()
     if (s == NO_MORE_ROWS)
         return false;
     if (s < 0) {
-        DATABASE_DRIVER_ERROR( "error in fetching row" + GetDbgInfo(), 280003 );
+        DATABASE_DRIVER_ERROR( "Error in fetching row." + GetDbgInfo(), 280003 );
     }
     m_BytesInBuffer= s;
     m_ReadedBytes= 0;
@@ -629,7 +629,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
 
     if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 230020 );
+        DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
     }
 
     if (item_buff == 0) {
@@ -662,7 +662,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
         m_CurrItem = 1;
         break;
     default:
-        DATABASE_DRIVER_ERROR( "dbreadtext failed" + GetDbgInfo(), 280003 );
+        DATABASE_DRIVER_ERROR( "dbreadtext failed." + GetDbgInfo(), 280003 );
     }
 
     return item_buff;
@@ -703,7 +703,7 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         m_CurrItem = 1;
         break;
     case -1:
-        DATABASE_DRIVER_ERROR( "dbreadtext failed" + GetDbgInfo(), 280003 );
+        DATABASE_DRIVER_ERROR( "dbreadtext failed." + GetDbgInfo(), 280003 );
     default:
         break;
     }
@@ -740,7 +740,7 @@ bool CDBL_BlobResult::SkipItem()
         m_CurrItem = 1;
         break;
     default:
-        DATABASE_DRIVER_ERROR( "dbreadtext failed" + GetDbgInfo(), 280003 );
+        DATABASE_DRIVER_ERROR( "dbreadtext failed." + GetDbgInfo(), 280003 );
     }
     return true;
 }
@@ -880,11 +880,11 @@ CDBL_ComputeResult::CDBL_ComputeResult(CDBL_Connection& conn,
 {
     m_ComputeId = DBROWTYPE(cmd);
     if (m_ComputeId == REG_ROW || m_ComputeId == NO_MORE_ROWS) {
-        DATABASE_DRIVER_ERROR( "no compute row found" + GetDbgInfo(), 270000 );
+        DATABASE_DRIVER_ERROR( "No compute row found." + GetDbgInfo(), 270000 );
     }
     m_NofCols = Check(dbnumalts(cmd, m_ComputeId));
     if (m_NofCols < 1) {
-        DATABASE_DRIVER_ERROR( "compute id is invalid" + GetDbgInfo(), 270001 );
+        DATABASE_DRIVER_ERROR( "Compute id is invalid." + GetDbgInfo(), 270001 );
     }
     m_CmdNum = DBCURCMD(cmd);
     m_ColFmt = new SDBL_ColDescr[m_NofCols];
@@ -920,9 +920,9 @@ bool CDBL_ComputeResult::Fetch()
         *m_ResStatus ^= 0x10;
         break;
     case FAIL:
-        DATABASE_DRIVER_ERROR( "error in fetching row" + GetDbgInfo(), 270003 );
+        DATABASE_DRIVER_ERROR( "Error in fetching row." + GetDbgInfo(), 270003 );
     case BUF_FULL:
-        DATABASE_DRIVER_ERROR( "buffer is full" + GetDbgInfo(), 270006 );
+        DATABASE_DRIVER_ERROR( "Buffer is full." + GetDbgInfo(), 270006 );
     default:
         break;
     }
@@ -1082,7 +1082,7 @@ CDB_Object* CDBL_StatusResult::GetItem(CDB_Object* item_buff)
         return new CDB_Int(m_Val);
 
     if (item_buff->GetType() != eDB_Int) {
-        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 230020 );
+        DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
     }
 
     CDB_Int* i = (CDB_Int*) item_buff;
@@ -1154,7 +1154,7 @@ CDBL_CursorResult::CDBL_CursorResult(CDBL_Connection& conn, CDB_LangCmd* cmd) :
             }
         }
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to get the results" + GetDbgInfo(), 222010 );
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to get the results." + GetDbgInfo(), 222010 );
     }
 }
 
@@ -1203,7 +1203,7 @@ bool CDBL_CursorResult::Fetch()
 //             ClearResultSet();
             m_Res = NULL;
         } else {
-            DATABASE_DRIVER_ERROR( "Failed to fetch the results" + GetDbgInfo(), 222011 );
+            DATABASE_DRIVER_ERROR( "Failed to fetch the results." + GetDbgInfo(), 222011 );
         }
     }
 
@@ -1229,7 +1229,7 @@ bool CDBL_CursorResult::Fetch()
             FetchAllResultSet();
         }
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results" + GetDbgInfo(), 222011 );
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results." + GetDbgInfo(), 222011 );
     }
     return false;
 }
@@ -1306,7 +1306,7 @@ CDBL_Result(conn, dblink)
 
     CHECK_DRIVER_ERROR(
         res == FAIL,
-        "Cannot get the DBCOLINFO*" + GetDbgInfo(),
+        "Cannot get the DBCOLINFO*." + GetDbgInfo(),
         280000 );
 
     if ( dbcol.TableName && *dbcol.TableName ) {
@@ -1325,7 +1325,7 @@ CDBL_Result(conn, dblink)
 
     CHECK_DRIVER_ERROR(
         col_info == 0,
-        "Cannot get the DBCOLINFO*" + GetDbgInfo(),
+        "Cannot get the DBCOLINFO*." + GetDbgInfo(),
         280000 );
 
     if (!x_MakeObjName(col_info)) {
@@ -1477,7 +1477,7 @@ CDBL_Result::GetItemInternal(int item_no,
                 *((CDB_BigInt*) item_buff)= *v;
               }
               else {
-                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 230020 );
+                DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
               }
             }
             else
@@ -1501,7 +1501,7 @@ CDBL_Result::GetItemInternal(int item_no,
                     *((CDB_BigInt*) item_buff) = numeric_to_longlong
                         ((unsigned int) v->precision, DBNUMERIC_val(v));
                 } else {
-                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 230020 );
+                    DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -1523,7 +1523,7 @@ CDBL_Result::GetItemInternal(int item_no,
                              (unsigned int)   v->scale,
                              (unsigned char*) DBNUMERIC_val(v));
                     } else {
-                        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 230020 );
+                        DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 230020 );
                     }
                 } else
                     item_buff->AssignNULL();
@@ -1538,7 +1538,7 @@ CDBL_Result::GetItemInternal(int item_no,
 
     case eDB_Text: {
         if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
         CDB_Text* v = item_buff ? (CDB_Text*) item_buff : new CDB_Text;
         v->Append((char*) d_ptr, (int) d_len);
@@ -1547,7 +1547,7 @@ CDBL_Result::GetItemInternal(int item_no,
 
     case eDB_Image: {
         if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object" + GetDbgInfo(), 130020 );
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
         }
         CDB_Image* v = item_buff ? (CDB_Image*) item_buff : new CDB_Image;
         v->Append((void*) d_ptr, (int) d_len);
@@ -1555,7 +1555,7 @@ CDBL_Result::GetItemInternal(int item_no,
     }
 
     default:
-        DATABASE_DRIVER_ERROR( "unexpected result type" + GetDbgInfo(), 130004 );
+        DATABASE_DRIVER_ERROR( "Unexpected result type." + GetDbgInfo(), 130004 );
     }
 }
 
@@ -1594,7 +1594,7 @@ CDB_Object* CDBL_Result::RetGetItem(int item_no,
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
                                        b_type, d_ptr, d_len);
     if (!val) {
-        DATABASE_DRIVER_ERROR( "unexpected result type" + GetDbgInfo(), 230004 );
+        DATABASE_DRIVER_ERROR( "Unexpected result type." + GetDbgInfo(), 230004 );
     }
     return val;
 }
@@ -1635,7 +1635,7 @@ CDB_Object* CDBL_Result::AltGetItem(int id,
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
                                        b_type, d_ptr, d_len);
     if (!val) {
-        DATABASE_DRIVER_ERROR( "unexpected result type" + GetDbgInfo(), 130004 );
+        DATABASE_DRIVER_ERROR( "Unexpected result type." + GetDbgInfo(), 130004 );
     }
     return val;
 }

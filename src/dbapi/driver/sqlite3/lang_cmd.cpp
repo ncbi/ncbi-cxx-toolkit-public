@@ -70,11 +70,11 @@ bool CSL3_LangCmd::Send()
                                    &sql_tail
                                    ));
     CHECK_DRIVER_ERROR(rc != SQLITE_OK,
-                       "Failed to prepare a statement" + GetDbgInfo(),
+                       "Failed to prepare a statement." + GetDbgInfo(),
                        100000);
 
     if (!x_AssignParams()) {
-        DATABASE_DRIVER_ERROR( "cannot assign params" + GetDbgInfo(), 220003 );
+        DATABASE_DRIVER_ERROR( "Cannot assign params." + GetDbgInfo(), 220003 );
     }
 
     m_RC = sqlite3_step(m_SQLite3stmt);
@@ -92,7 +92,7 @@ bool CSL3_LangCmd::Send()
     case SQLITE_MISUSE:
         m_HasMoreResults = false;
         CHECK_DRIVER_ERROR(rc != SQLITE_OK,
-                           "Failed to execute a statement" + GetDbgInfo(),
+                           "Failed to execute a statement." + GetDbgInfo(),
                            100000);
         break;
     default:

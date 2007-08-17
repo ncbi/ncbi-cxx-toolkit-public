@@ -86,7 +86,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
     SetHasFailed(!x_AssignParams());
     CHECK_DRIVER_ERROR(
         HasFailed(),
-        "cannot assign params" + GetDbgInfo(),
+        "Cannot assign params." + GetDbgInfo(),
         222003 );
 
 
@@ -115,7 +115,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
         cmd->Send();
         cmd->DumpResults();
     } catch ( const CDB_Exception& e) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor" + GetDbgInfo(), 222001 );
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to declare cursor." + GetDbgInfo(), 222001 );
     }
 
     SetCursorDeclared();
@@ -130,7 +130,7 @@ CDB_Result* CDBL_CursorCmd::OpenCursor()
         cmd->Send();
         cmd->DumpResults();
     } catch ( const CDB_Exception& e) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor" + GetDbgInfo(), 222002 );
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to open cursor." + GetDbgInfo(), 222002 );
     }
 
     SetCursorOpen();
@@ -175,7 +175,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
         }
 #endif
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "update failed" + GetDbgInfo(), 222004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed." + GetDbgInfo(), 222004 );
     }
 
     return true;
@@ -271,7 +271,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
         }
 #endif
     } catch ( const CDB_Exception& e ) {
-        DATABASE_DRIVER_ERROR_EX( e, "update failed" + GetDbgInfo(), 222004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed." + GetDbgInfo(), 222004 );
     }
 
     return true;
@@ -313,7 +313,7 @@ bool CDBL_CursorCmd::CloseCursor()
             }
 #endif
         } catch ( const CDB_Exception& e ) {
-            DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor" + GetDbgInfo(), 222003 );
+            DATABASE_DRIVER_ERROR_EX( e, "Failed to close cursor." + GetDbgInfo(), 222003 );
         }
 
         SetCursorOpen(false);
@@ -344,7 +344,7 @@ bool CDBL_CursorCmd::CloseCursor()
             }
 #endif
         } catch ( const CDB_Exception& e) {
-            DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor" + GetDbgInfo(), 222003 );
+            DATABASE_DRIVER_ERROR_EX( e, "Failed to deallocate cursor." + GetDbgInfo(), 222003 );
         }
 
         SetCursorDeclared(false);

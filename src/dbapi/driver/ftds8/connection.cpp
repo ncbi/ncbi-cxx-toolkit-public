@@ -93,7 +93,7 @@ CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& table_name,
                                      unsigned int nof_cols)
 {
     if (!IsBCPable()) {
-        DATABASE_DRIVER_ERROR( "No bcp on this connection" + GetDbgInfo(),  210003 );
+        DATABASE_DRIVER_ERROR( "No bcp on this connection." + GetDbgInfo(),  210003 );
     }
 
     string extra_msg = "BCP Table: " + table_name;
@@ -123,7 +123,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                               size_t data_size, bool log_it)
 {
     if (data_size < 1) {
-        DATABASE_DRIVER_ERROR( "wrong (zero) data size" + GetDbgInfo(), 210092 );
+        DATABASE_DRIVER_ERROR( "Wrong (zero) data size." + GetDbgInfo(), 210092 );
     }
 
     I_ITDescriptor* p_desc= 0;
@@ -151,7 +151,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         Check(dbsqlok(GetDBLibConnection())) != SUCCEED ||
         //        dbresults(GetDBLibConnection()) == FAIL) {
         x_Results(GetDBLibConnection()) == FAIL) {
-        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed" + GetDbgInfo(), 210093 );
+        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed." + GetDbgInfo(), 210093 );
     }
 
     CTDS_SendDataCmd* sd_cmd = new CTDS_SendDataCmd(*this, GetDBLibConnection(), data_size);
@@ -271,7 +271,7 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
                         desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                         log_it ? TRUE : FALSE, (DBINT) s, (BYTE*) buff))
             != SUCCEED) {
-            DATABASE_DRIVER_ERROR( "dbwritetext failed" + GetDbgInfo(), 210030 );
+            DATABASE_DRIVER_ERROR( "dbwritetext failed." + GetDbgInfo(), 210030 );
         }
         return true;
     }
@@ -285,24 +285,24 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
         Check(dbsqlok(GetDBLibConnection())) != SUCCEED ||
         //        dbresults(GetDBLibConnection()) == FAIL) {
         x_Results(GetDBLibConnection()) == FAIL) {
-        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed" + GetDbgInfo(), 210031 );
+        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed." + GetDbgInfo(), 210031 );
     }
 
     while (size > 0) {
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
             Check(dbcancel(GetDBLibConnection()));
-            DATABASE_DRIVER_ERROR( "Text/Image data corrupted" + GetDbgInfo(), 210032 );
+            DATABASE_DRIVER_ERROR( "Text/Image data corrupted." + GetDbgInfo(), 210032 );
         }
         if (Check(dbmoretext(GetDBLibConnection(), (DBINT) s, (BYTE*) buff)) != SUCCEED) {
             Check(dbcancel(GetDBLibConnection()));
-            DATABASE_DRIVER_ERROR( "dbmoretext failed" + GetDbgInfo(), 210033 );
+            DATABASE_DRIVER_ERROR( "dbmoretext failed." + GetDbgInfo(), 210033 );
         }
         size -= s;
     }
 
     if (Check(dbsqlok(GetDBLibConnection())) != SUCCEED || x_Results(GetDBLibConnection()) == FAIL) {
-        DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed" + GetDbgInfo(), 110034 );
+        DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed." + GetDbgInfo(), 110034 );
     }
 
     return true;
@@ -326,7 +326,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
 
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
-        DATABASE_DRIVER_ERROR( "Cannot send the language command" + GetDbgInfo(), 210035 );
+        DATABASE_DRIVER_ERROR( "Cannot send the language command." + GetDbgInfo(), 210035 );
     }
 
     CDB_Result* res;
@@ -501,7 +501,7 @@ CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection& conn,
 size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
     if (!pChunk  ||  !nof_bytes) {
-        DATABASE_DRIVER_ERROR( "wrong (zero) arguments" + GetDbgInfo(), 290000 );
+        DATABASE_DRIVER_ERROR( "Wrong (zero) arguments." + GetDbgInfo(), 290000 );
     }
     if (!GetBytes2Go())
         return 0;
@@ -512,14 +512,14 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (Check(dbmoretext(GetCmd(), static_cast<DBINT>(nof_bytes), (BYTE*) pChunk))
         != SUCCEED) {
         Check(dbcancel(GetCmd()));
-        DATABASE_DRIVER_ERROR( "dbmoretext failed" + GetDbgInfo(), 290001 );
+        DATABASE_DRIVER_ERROR( "dbmoretext failed." + GetDbgInfo(), 290001 );
     }
 
     SetBytes2Go(GetBytes2Go() - nof_bytes);
 
     if (GetBytes2Go() <= 0) {
         if (Check(dbsqlok(GetCmd())) != SUCCEED || GetConnection().x_Results(GetCmd()) == FAIL) {
-            DATABASE_DRIVER_ERROR( "dbsqlok/results failed" + GetDbgInfo(), 290002 );
+            DATABASE_DRIVER_ERROR( "dbsqlok/results failed." + GetDbgInfo(), 290002 );
         }
     }
 

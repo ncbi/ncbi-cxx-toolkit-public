@@ -65,7 +65,7 @@ bool CTDS_RPCCmd::Send()
         dbfreebuf(GetCmd());
         CheckFunctCall();
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "cannot assign the output params" + GetDbgInfo(), 221001 );
+        DATABASE_DRIVER_ERROR( "Cannot assign the output params." + GetDbgInfo(), 221001 );
     }
 
     string cmd= "execute " + GetQuery();
@@ -73,19 +73,19 @@ bool CTDS_RPCCmd::Send()
         dbfreebuf(GetCmd());
         CheckFunctCall();
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "dbcmd failed" + GetDbgInfo(), 221002 );
+        DATABASE_DRIVER_ERROR( "dbcmd failed." + GetDbgInfo(), 221002 );
     }
 
     if (!x_AssignParams()) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "Cannot assign the params" + GetDbgInfo(), 221003 );
+        DATABASE_DRIVER_ERROR( "Cannot assign the params." + GetDbgInfo(), 221003 );
     }
 
     GetConnection().TDS_SetTimeout();
 
     if (Check(dbsqlsend(GetCmd())) != SUCCEED) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "dbsqlsend failed" + GetDbgInfo(), 221005 );
+        DATABASE_DRIVER_ERROR( "dbsqlsend failed." + GetDbgInfo(), 221005 );
     }
 
     SetWasSent();
@@ -120,7 +120,7 @@ CDB_Result* CTDS_RPCCmd::Result()
     }
 
     if (!WasSent()) {
-        DATABASE_DRIVER_ERROR( "you have to send a command first" + GetDbgInfo(), 221010 );
+        DATABASE_DRIVER_ERROR( "You have to send a command first." + GetDbgInfo(), 221010 );
     }
 
     if (m_Status == 0) {
@@ -128,7 +128,7 @@ CDB_Result* CTDS_RPCCmd::Result()
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
             SetWasSent(false);
             SetHasFailed();
-            DATABASE_DRIVER_ERROR( "dbsqlok failed" + GetDbgInfo(), 221011 );
+            DATABASE_DRIVER_ERROR( "dbsqlok failed." + GetDbgInfo(), 221011 );
         }
     }
 

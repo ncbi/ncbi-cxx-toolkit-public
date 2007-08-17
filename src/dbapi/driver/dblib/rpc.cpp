@@ -75,17 +75,17 @@ bool CDBL_RPCCmd::Send()
     if (Check(dbrpcinit(GetCmd(), (char*) GetQuery().c_str(),
                   NeedToRecompile() ? DBRPCRECOMPILE : 0)) != SUCCEED) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "dbrpcinit failed" + GetDbgInfo(), 221001 );
+        DATABASE_DRIVER_ERROR( "dbrpcinit failed." + GetDbgInfo(), 221001 );
     }
 
     char param_buff[2048]; // maximal page size
     if (!x_AssignParams(param_buff)) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "Cannot assign the params" + GetDbgInfo(), 221003 );
+        DATABASE_DRIVER_ERROR( "Cannot assign the params." + GetDbgInfo(), 221003 );
     }
     if (Check(dbrpcsend(GetCmd())) != SUCCEED) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( "dbrpcsend failed" + GetDbgInfo(), 221005 );
+        DATABASE_DRIVER_ERROR( "dbrpcsend failed." + GetDbgInfo(), 221005 );
     }
 
     SetWasSent();
@@ -129,7 +129,7 @@ CDB_Result* CDBL_RPCCmd::Result()
     }
 
     if (!WasSent()) {
-        DATABASE_DRIVER_ERROR( "you have to send a command first" + GetDbgInfo(), 221010 );
+        DATABASE_DRIVER_ERROR( "You have to send a command first." + GetDbgInfo(), 221010 );
     }
 
     if (m_Status == 0) {
@@ -137,7 +137,7 @@ CDB_Result* CDBL_RPCCmd::Result()
         if (Check(dbsqlok(GetCmd())) != SUCCEED) {
             SetWasSent(false);
             SetHasFailed();
-            DATABASE_DRIVER_ERROR( "dbsqlok failed" + GetDbgInfo(), 221011 );
+            DATABASE_DRIVER_ERROR( "dbsqlok failed." + GetDbgInfo(), 221011 );
         }
     }
 

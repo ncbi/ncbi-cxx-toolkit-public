@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
-static const char* wrong_type = "Wrong type of CDB_Object";
+static const char* wrong_type = "Wrong type of CDB_Object.";
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -122,12 +122,12 @@ CODBC_RowResult::CODBC_RowResult(
         case SQL_ERROR:
             ReportErrors();
             {
-                string err_message = "SQLDescribeCol failed" + GetDbgInfo();
+                string err_message = "SQLDescribeCol failed." + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420020 );
             }
         default:
             {
-                string err_message = "SQLDescribeCol failed (memory corruption suspected)" + GetDbgInfo();
+                string err_message = "SQLDescribeCol failed (memory corruption suspected)." + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420021 );
             }
        }
@@ -186,12 +186,12 @@ bool CODBC_RowResult::Fetch()
         case SQL_ERROR:
             ReportErrors();
             {
-                string err_message = "SQLFetch failed" + GetDbgInfo();
+                string err_message = "SQLFetch failed." + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430003 );
             }
         default:
             {
-                string err_message = "SQLFetch failed (memory corruption suspected)" + GetDbgInfo();
+                string err_message = "SQLFetch failed (memory corruption suspected)." + GetDbgInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430004 );
             }
         }
@@ -236,7 +236,7 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed " + GetDbgInfo();
+            string err_message = "SQLGetData failed." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
@@ -280,7 +280,7 @@ bool CODBC_RowResult::CheckSIENoD_Text(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" +
+            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text." +
                 GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430021 );
         }
@@ -324,7 +324,7 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" +
+            string err_message = "SQLGetData failed while retrieving text/image into CDB_Text." +
                 GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430021 );
         }
@@ -355,7 +355,7 @@ bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" +
+            string err_message = "SQLGetData failed while retrieving text/image into CDB_Image." +
                 GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430022 );
         }
@@ -749,7 +749,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         break;
     default:
         {
-            string err_message = "Unsupported column type" + GetDbgInfo();
+            string err_message = "Unsupported column type." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430025 );
         }
 
@@ -934,7 +934,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     }
     default:
         {
-            string err_message = "Unsupported column type" + GetDbgInfo();
+            string err_message = "Unsupported column type." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430025 );
         }
 
@@ -1000,7 +1000,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
         ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed " + GetDbgInfo();
+            string err_message = "SQLGetData failed." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430026 );
         }
     }
@@ -1028,7 +1028,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         return 0;
     default:
         {
-            string err_message = "SQLColAttribute failed" + GetDbgInfo();
+            string err_message = "SQLColAttribute failed." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
@@ -1048,7 +1048,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         return 0;
     default:
         {
-            string err_message = "SQLColAttribute failed" + GetDbgInfo();
+            string err_message = "SQLColAttribute failed." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
@@ -1069,7 +1069,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         return 0;
     default:
         {
-            string err_message = "SQLColAttribute failed" + GetDbgInfo();
+            string err_message = "SQLColAttribute failed." + GetDbgInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
@@ -1189,7 +1189,7 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
             }
         }
     } catch (const CDB_Exception& e) {
-        string err_message = "failed to get the results" + GetDbgInfo();
+        string err_message = "Failed to get the results." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422010 );
     }
 }
@@ -1259,7 +1259,7 @@ bool CODBC_CursorResult::Fetch()
             }
         }
     } catch (const CDB_Exception& e) {
-        string err_message = "Failed to fetch the results" + GetDbgInfo();
+        string err_message = "Failed to fetch the results." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
     }
     return false;
@@ -1382,7 +1382,7 @@ bool CODBC_CursorResultExpl::Fetch(void)
             }
         }
     } catch (const CDB_Exception& e) {
-        string err_message = "Failed to fetch the results" + GetDbgInfo();
+        string err_message = "Failed to fetch the results." + GetDbgInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
     }
     return false;
