@@ -9,7 +9,7 @@ use base qw(NCBI::SVN::Base);
 
 sub SetUpstreamAndSynchRev
 {
-    my ($Self, $SourcePath, $BranchDir, $SourceRevision, $Revision) = @_;
+    my ($Self, $SourcePath, $BranchDir, $SourceRevisionNumber, $Revision) = @_;
 
     my $UpstreamPath = $SourcePath;
 
@@ -29,14 +29,14 @@ sub SetUpstreamAndSynchRev
             if $UpstreamPath ne $SameUpstreamPath
     }
 
-    unless (my $SingleSourceRevision = $Self->{LastSynchRevision})
+    unless (my $SingleSourceRevision = $Self->{LastDownSyncRevisionNumber})
     {
-        $Self->{LastSynchRevision} = $SourceRevision
+        $Self->{LastDownSyncRevisionNumber} = $SourceRevisionNumber
     }
     else
     {
         die "inconsistent source revision numbers in r$Revision->{Number}"
-            if $SourceRevision != $SingleSourceRevision
+            if $SourceRevisionNumber != $SingleSourceRevision
     }
 }
 
@@ -92,7 +92,8 @@ sub ModelBranchStructure
 
     for my $Change (@{$Revision->{ChangedPaths}})
     {
-        my ($ChangeType, $BranchDir, $SourcePath, $SourceRevision) = @$Change;
+        my ($ChangeType, $BranchDir,
+            $SourcePath, $SourceRevisionNumber) = @$Change;
 
         next if substr($BranchDir, 0, length($CommonTarget), '')
             ne $CommonTarget;
@@ -114,7 +115,7 @@ sub ModelBranchStructure
                 $ParentNode->{$Name} = {'/' => 1};
 
                 $Self->SetUpstreamAndSynchRev($SourcePath,
-                    $BranchDir, $SourceRevision)
+                    $BranchDir, $SourceRevisionNumber)
             }
             elsif (my $DeletedNode = delete $ParentNode->{$Name})
             {
@@ -134,7 +135,7 @@ sub ModelBranchStructure
                 $BranchDir)->{'/'} = 1;
 
             $Self->SetUpstreamAndSynchRev($SourcePath,
-                $BranchDir, $SourceRevision)
+                $BranchDir, $SourceRevisionNumber)
         }
     }
 }
@@ -210,7 +211,7 @@ sub new
     }
 
     unless ($Self->{UpstreamPath} &&
-        ($Self->{BranchSourceRevision} = $Self->{LastSynchRevision}))
+        ($Self->{BranchSourceRevision} = $Self->{LastDownSyncRevisionNumber}))
     {
         die 'unable to determine branch source'
     }
@@ -228,8 +229,10 @@ sub new
             m/^Merged changes up to r(\d+) from '.+' into '(.+)'.$/o &&
                 $2 eq $BranchPath)
         {
-            unshift @MergeDownRevisions,
-                [$Revision, $Self->{LastSynchRevision} = $1]
+            $Revision->{SourceRevisionNumber} =
+                $Self->{LastDownSyncRevisionNumber} = $1;
+
+            unshift @MergeDownRevisions, $Revision
         }
     }
 
@@ -278,7 +281,9 @@ sub new
             m/^Merged changes up to r(\d+) from '(.+)' into '.+'.$/o &&
                 $2 eq $BranchPath)
         {
-            push @MergeUpRevisions, [$Revision, $1]
+            $Revision->{SourceRevisionNumber} = $1;
+
+            push @MergeUpRevisions, $Revision
         }
     }
 

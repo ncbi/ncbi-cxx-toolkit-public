@@ -50,17 +50,19 @@ sub Info
     print "Merged from '$UpstreamPath' into '$BranchPath': " .
         Times($BranchInfo->{MergeDownRevisions}) . "\n";
 
-    for my $RevRef (@{$BranchInfo->{MergeDownRevisions}})
+    for my $Revision (@{$BranchInfo->{MergeDownRevisions}})
     {
-        print "  r$RevRef->[0]->{Number} (from $UpstreamPath\@$RevRef->[1])\n"
+        print "  r$Revision->{Number} (from $UpstreamPath" .
+            "\@$Revision->{SourceRevisionNumber})\n"
     }
 
     print "Merged from '$BranchPath' into '$UpstreamPath': " .
         Times($BranchInfo->{MergeUpRevisions}) . "\n";
 
-    for my $RevRef (@{$BranchInfo->{MergeUpRevisions}})
+    for my $Revision (@{$BranchInfo->{MergeUpRevisions}})
     {
-        print "  r$RevRef->[0]->{Number} (from $BranchPath\@$RevRef->[1])\n"
+        print "  r$Revision->{Number} (from $BranchPath" .
+            "\@$Revision->{SourceRevisionNumber})\n"
     }
 }
 
@@ -271,8 +273,9 @@ sub ShapeBranch
                 my $TargetPath = "$BranchPath/$Dir";
 
                 MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
-                push @MUCCCommands, 'cp', $BranchInfo->{LastSynchRevision},
-                    $SourcePath, $TargetPath
+                push @MUCCCommands, 'cp',
+                    $BranchInfo->{LastDownSyncRevisionNumber},
+                        $SourcePath, $TargetPath
             }
         }
 
@@ -299,7 +302,8 @@ sub ShapeBranch
             my $BranchRevisions = $BranchInfo->{BranchRevisions};
 
             if (@$BranchRevisions > 1 && $BranchRevisions->[0]->{Number} >
-                ($BranchInfo->{MergeUpRevisions}->[0]->[1] || 0))
+                ($BranchInfo->{MergeUpRevisions}->[0]->{SourceRevisionNumber} ||
+                    0))
             {
                 die "WARNING: Latest modifications in '$BranchPath'\n" .
                     "were not merged into '$BranchInfo->{UpstreamPath}'.\n" .
@@ -474,7 +478,8 @@ sub DoMerge
             qw(MergeUpRevisions MergeDownRevisions) :
             qw(MergeDownRevisions MergeUpRevisions)};
 
-    my $LastSourceRev = @$MergeRevisions ? $MergeRevisions->[0]->[1] :
+    my $LastSourceRev = @$MergeRevisions ?
+        $MergeRevisions->[0]->{SourceRevisionNumber} :
         $Direction ne 'up' ? $BranchInfo->{BranchSourceRevision} :
             $BranchInfo->{BranchCreationRevision}->{Number};
 
@@ -493,11 +498,9 @@ sub DoMerge
 
     for my $Revision (@$ReverseMergeRevisions)
     {
-        my $RevNumber = $Revision->[0]->{Number};
+        last if $Revision->{Number} <= $LastSourceRev;
 
-        last if $RevNumber <= $LastSourceRev;
-
-        push @ExcludedRevisions, $RevNumber
+        push @ExcludedRevisions, $Revision->{Number}
     }
 
     my @MergePlan;
