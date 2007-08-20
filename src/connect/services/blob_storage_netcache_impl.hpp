@@ -204,7 +204,7 @@ auto_ptr<IReader> CBlobStorage_NetCache_Impl<T>::x_GetReader(const string& key,
     auto_ptr<IReader> reader;
     if (key.empty()) 
         NCBI_THROW(CBlobStorageException,
-                   eBlobNotFound, "Requested blob is not found.");
+                   eBlobNotFound, "Requested blob is not found: " + key);
     int try_count = 0;
     while(1) {
         try {
@@ -215,7 +215,7 @@ auto_ptr<IReader> CBlobStorage_NetCache_Impl<T>::x_GetReader(const string& key,
                 throw;
 
             NCBI_RETHROW(ex1, CBlobStorageException, eBlocked, 
-                       "Requested blob is blocked by another process.");
+                       "Requested blob(" + key + ") is blocked by another process.");
 
         } catch (CNetServiceException& ex) {
             if (ex.GetErrCode() != CNetServiceException::eTimeout) 
@@ -229,7 +229,7 @@ auto_ptr<IReader> CBlobStorage_NetCache_Impl<T>::x_GetReader(const string& key,
     }
     if (!reader.get()) {
         NCBI_THROW(CBlobStorageException,
-                   eBlobNotFound, "Requested blob is not found.");
+                   eBlobNotFound, "Requested blob is not found: " + key);
     }
     return reader;
 }
