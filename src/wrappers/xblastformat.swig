@@ -39,5 +39,6 @@ objtools/blast_format/showdefline.hpp
 objtools/blast_format/blastxml_format.hpp
 objtools/blast_format/tabular.hpp
 objtools/blast_format/vectorscreen.hpp
+objtools/blast_format/seqalignfilter.hpp
 
 %%

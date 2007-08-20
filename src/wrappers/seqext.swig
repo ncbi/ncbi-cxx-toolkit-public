@@ -143,15 +143,33 @@ public:
 // objtools/flat/flat_table_formatter.hpp
 // objtools/flat/flat_text_formatter.hpp
 
+objtools/alnmgr/aln_asn_reader.hpp
+objtools/alnmgr/aln_builders.hpp
+objtools/alnmgr/aln_container.hpp
+objtools/alnmgr/aln_converters.hpp
+objtools/alnmgr/aln_explorer.hpp
+objtools/alnmgr/aln_generators.hpp
+objtools/alnmgr/aln_rng_coll_oper.hpp
+objtools/alnmgr/aln_seqid.hpp
+objtools/alnmgr/aln_stats.hpp
+objtools/alnmgr/aln_tests.hpp
+objtools/alnmgr/aln_user_options.hpp
+objtools/alnmgr/alndiag.hpp
 objtools/alnmgr/alnexception.hpp
 objtools/alnmgr/alnmap.hpp
-objtools/alnmgr/alnmix.hpp
-objtools/alnmgr/alnvec.hpp
 objtools/alnmgr/alnmatch.hpp
 objtools/alnmgr/alnmerger.hpp
+objtools/alnmgr/alnmix.hpp
 objtools/alnmgr/alnpos_ci.hpp
 objtools/alnmgr/alnsegments.hpp
 objtools/alnmgr/alnseq.hpp
+objtools/alnmgr/alnvec.hpp
+objtools/alnmgr/pairwise_aln.hpp
+objtools/alnmgr/seqid_comp.hpp
+objtools/alnmgr/seqids_extractor.hpp
+objtools/alnmgr/sparse_aln.hpp
+objtools/alnmgr/sparse_ci.hpp
+objtools/alnmgr/task_progress.hpp
 
 objmgr/impl/annot_collector.hpp
 objmgr/impl/annot_object.hpp
