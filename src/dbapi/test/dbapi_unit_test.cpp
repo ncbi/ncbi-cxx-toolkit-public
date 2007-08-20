@@ -1976,7 +1976,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
             // Check inserted data ...
             {
                 int rec_num = GetNumOfRecords(auto_stmt, table_name);
-                BOOST_CHECK_EQUAL(rec_num, int(record_num * batch_num));
+                BOOST_CHECK_EQUAL(int(rec_num), int(record_num * batch_num));
             }
         }
     }
@@ -3086,7 +3086,7 @@ CDBAPIUnitTest::Test_Cursor(void)
             BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
         }
 
-        // Check that a cursor can be opened twice ...
+        // Check that cursor can be opened twice ...
         {
             sql = "select int_field from " + GetTableName();
 
@@ -3097,6 +3097,7 @@ CDBAPIUnitTest::Test_Cursor(void)
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
+                    ;
                 }
             }
 
@@ -3107,70 +3108,28 @@ CDBAPIUnitTest::Test_Cursor(void)
                 BOOST_CHECK(rs.get() != NULL);
 
                 while (rs->Next()) {
+                    ;
                 }
             }
         }
 
-        // Test CLOB field update ...
-        // It doesn't work with the ftds driver right now.
-//         {
-//             const char* clob = "abc";
-//
-//             sql = "select text_field from " + GetTableName() + " for update of text_field \n";
-//             auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-//
-//             {
-//                 // blobRs should be destroyed before auto_cursor ...
-//                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-//     //             while(blobRs->Next()) {
-//     //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//     //                 out.write(clob, sizeof(clob) - 1);
-//     //                 out.flush();
-//     //             }
-//
-//                 if (blobRs->Next()) {
-//                     try {
-//                         ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//                     } catch(...)
-//                     {
-//                     }
-//     //                 out.write(clob, sizeof(clob) - 1);
-//     //                 out.flush();
-//                 } else {
-//                     BOOST_FAIL( msg_record_expected );
-//                 }
-//
-// //                 if (blobRs->Next()) {
-// //     //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-// //     //                 out.write(clob, sizeof(clob) - 1);
-// //     //                 out.flush();
-// //                 } else {
-// //                     BOOST_FAIL( msg_record_expected );
-// //                 }
-//             }
-//
-//             // Check record number ...
-//             {
-//                 auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-//                 BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
-//             }
-//
-//             // Another cursor ...
-//             sql  = " select text_field from " + GetTableName();
-//             sql += " where int_field = 1 for update of text_field";
-//
-//             auto_cursor.reset(m_Conn->GetCursor("test02", sql));
-//             {
-//                 // blobRs should be destroyed before auto_cursor ...
-//                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-//                 if ( !blobRs->Next() ) {
-//                     BOOST_FAIL( msg_record_expected );
-//                 }
-//                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-//                 out.write(clob, sizeof(clob) - 1);
-//                 out.flush();
-//             }
-//         }
+
+        // Check cursor with "FOR UPDATE OF" clause ...
+        {
+            sql  = "select int_field from " + GetTableName();
+            sql += " FOR UPDATE OF int_field";
+
+            // Open a cursor for the first time ...
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get() != NULL);
+
+                while (rs->Next()) {
+                    ;
+                }
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -3211,64 +3170,64 @@ CDBAPIUnitTest::Test_Cursor2(void)
 
         // Test CLOB field update ...
         // It doesn't work right now.
-    //     {
-    //         const char* clob = "abc";
-    //
-    //         sql = "select text_field from " + GetTableName() + " for update of text_field \n";
-    //         auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-    //
-    //         {
-    //             // blobRs should be destroyed before auto_cursor ...
-    //             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-    // //             while(blobRs->Next()) {
-    // //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-    // //                 out.write(clob, sizeof(clob) - 1);
-    // //                 out.flush();
-    // //             }
-    //
-    //             if (blobRs->Next()) {
-    //                 try {
-    //                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-    //                 } catch(...)
-    //                 {
-    //                 }
-    // //                 out.write(clob, sizeof(clob) - 1);
-    // //                 out.flush();
-    //             } else {
-    //                 BOOST_FAIL( msg_record_expected );
-    //             }
-    //
-    //             if (blobRs->Next()) {
-    // //                 ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-    // //                 out.write(clob, sizeof(clob) - 1);
-    // //                 out.flush();
-    //             } else {
-    //                 BOOST_FAIL( msg_record_expected );
-    //             }
-    //         }
-    //
-    //         // Check record number ...
-    //         {
-    //             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-    //             BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
-    //         }
-    //
-    //         // Another cursor ...
-    //         sql  = " select text_field from " + GetTableName();
-    //         sql += " where int_field = 1 for update of text_field";
-    //
-    //         auto_cursor.reset(m_Conn->GetCursor("test02", sql));
-    //         {
-    //             // blobRs should be destroyed before auto_cursor ...
-    //             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
-    //             if ( !blobRs->Next() ) {
-    //                 BOOST_FAIL( msg_record_expected );
-    //             }
-    //             ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
-    //             out.write(clob, sizeof(clob) - 1);
-    //             out.flush();
-    //         }
-    //     }
+        {
+            const char* clob = "abc";
+
+            sql = "select text_field from " + GetTableName() + " for update of text_field \n";
+            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+
+            {
+                // blobRs should be destroyed before auto_cursor ...
+                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+//                 while(blobRs->Next()) {
+//                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+//                     out.write(clob, sizeof(clob) - 1);
+//                     out.flush();
+//                 }
+
+                if (blobRs->Next()) {
+                    try {
+                        /*ostream& out =*/ auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+                    } catch(...)
+                    {
+                    }
+//                     out.write(clob, sizeof(clob) - 1);
+//                     out.flush();
+                } else {
+                    BOOST_FAIL( msg_record_expected );
+                }
+
+                if (blobRs->Next()) {
+//                     ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+//                     out.write(clob, sizeof(clob) - 1);
+//                     out.flush();
+                } else {
+                    BOOST_FAIL( msg_record_expected );
+                }
+            }
+
+            // Check record number ...
+            {
+                auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+                BOOST_CHECK_EQUAL(rec_num, GetNumOfRecords(auto_stmt, GetTableName()));
+            }
+
+            // Another cursor ...
+            sql  = " select text_field from " + GetTableName();
+            sql += " where int_field = 1 for update of text_field";
+
+            auto_cursor.reset(m_Conn->GetCursor("test02", sql));
+            {
+                // blobRs should be destroyed before auto_cursor ...
+                auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                if ( !blobRs->Next() ) {
+                    BOOST_FAIL( msg_record_expected );
+                }
+                ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
+                out.write(clob, sizeof(clob) - 1);
+                out.flush();
+            }
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -4900,6 +4859,15 @@ CDBAPIUnitTest::Test_Procedure(void)
                     BOOST_CHECK(rs->Next());
                     DumpResults(auto_stmt.get());
                 }
+            }
+
+            if (false) {
+                auto_ptr<ICallableStatement> auto_stmt(
+                    m_Conn->GetCallableStatement("DBAPI_Sample..TestBigIntProc")
+                    );
+
+                auto_stmt->SetParam(CVariant(Int8(1234567890)), "@num");
+                auto_stmt->ExecuteUpdate();
             }
         }
 
@@ -8536,7 +8504,7 @@ CDBAPIUnitTest::Test_Identity(void)
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
-            
+
             md = rs->GetMetaData();
             BOOST_CHECK(md);
             curr_type = md->GetType(1);
@@ -8578,7 +8546,7 @@ CDBAPIUnitTest::Test_Identity(void)
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             BOOST_CHECK(rs.get() != NULL);
             BOOST_CHECK(rs->Next());
-            
+
             md = rs->GetMetaData();
             BOOST_CHECK(md);
             curr_type = md->GetType(1);
@@ -8897,18 +8865,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
 
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
-        if ((args.GetDriverName() == "ftds8" &&
-            (args.GetServerType() == CTestArguments::eMsSql
-             || args.GetServerType() == CTestArguments::eMsSql2005))
-            || args.GetDriverName() == "ctlib"
-            // || args.GetDriverName() == "dblib" // Code will hang up with dblib for some reason ...
-            || args.GetDriverName() == "ftds63"
-            || args.GetDriverName() == "odbc"
-            || args.GetDriverName() == "odbcw"
-            // || args.GetDriverName() == "msdblib" // doesn't work ...
-            || args.GetDriverName() == "ftds_odbc"
-            || args.GetDriverName() == "ftds"
-            || args.GetDriverName() == "ftds_dblib"
+        if (!(args.GetDriverName() == "ftds8"
+                && args.GetServerType() == CTestArguments::eSybase)
+            && args.GetDriverName() != "dblib" // Code will hang up with dblib for some reason ...
+            && args.GetDriverName() != "msdblib" // doesn't work ...
             ) {
             //
             boost::unit_test::test_case* tc_cursor =
@@ -8918,11 +8878,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_parameters);
             add(tc);
 
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
-                                       DBAPIInstance);
-            tc->depends_on(tc_init);
-            tc->depends_on(tc_parameters);
-            add(tc);
+            if (args.GetDriverName() != "ftds_odbc"
+                && args.GetDriverName() != "ftds8"
+                ) {
+                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
+                                        DBAPIInstance);
+                tc->depends_on(tc_init);
+                tc->depends_on(tc_parameters);
+                add(tc);
+            }
 
             // Does not work with all databases and drivers currently ...
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
@@ -9027,10 +8991,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             }
 
             //
-            if ( (args.GetServerType() == CTestArguments::eMsSql
-                  || args.GetServerType() == CTestArguments::eMsSql2005) &&
-                 (args.GetDriverName() != "msdblib" &&
-                  args.GetDriverName() != "dblib")
+            if ((args.GetServerType() == CTestArguments::eMsSql
+                  || args.GetServerType() == CTestArguments::eMsSql2005) 
+                 && args.GetDriverName() != "msdblib" 
+                 && args.GetDriverName() != "dblib"
                  ) {
                 //
                 boost::unit_test::test_case* select_xml_stmt_tc =
@@ -9041,11 +9005,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 add(select_xml_stmt_tc);
 
                 //
-                tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode_Simple,
-                                           DBAPIInstance);
-                tc->depends_on(tc_init);
-                tc->depends_on(select_xml_stmt_tc);
-                add(tc);
+                if (args.GetDriverName() != "odbc") {
+                    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode_Simple,
+                                            DBAPIInstance);
+                    tc->depends_on(tc_init);
+                    tc->depends_on(select_xml_stmt_tc);
+                    add(tc);
+                }
             }
         }
 
@@ -9142,8 +9108,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // The only problem with this test is that the LINK_OS server is not
     // available from time to time.
-    if (args.GetServerType() == CTestArguments::eSybase 
-        && args.GetDriverName() != "ftds8" 
+    if (args.GetServerType() == CTestArguments::eSybase
+        && args.GetDriverName() != "ftds8"
         && args.GetDriverName() != "ftds"
         && args.GetDriverName() != "ftds_dblib"
         ) {
@@ -9182,7 +9148,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (!(((args.GetDriverName() == "ftds" 
+    if (!(((args.GetDriverName() == "ftds"
                 || args.GetDriverName() == "ftds8"
                 || args.GetDriverName() == "ftds_dblib"
               )
