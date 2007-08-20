@@ -8816,6 +8816,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if (args.IsBCPAvailable()
+        && !Solaris // Requires Sybase client 12.5
         && args.GetDriverName() != "odbc"
         && !((args.GetDriverName() == "ftds8" || args.GetDriverName() == "ftds")
             && args.GetServerType() == CTestArguments::eSybase)
