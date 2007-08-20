@@ -97,14 +97,15 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
     for (ch = is.rdbuf()->sbumpc();  !CT_EQ_INT_TYPE(ch, CT_EOF);
          ch = is.rdbuf()->sbumpc()) {
         i++;
-        if (delims.find(CT_TO_CHAR_TYPE(ch)) != NPOS) {
+        SIZE_TYPE delim_pos = delims.find(CT_TO_CHAR_TYPE(ch));
+        if (delim_pos != NPOS) {
             // Special case -- if two different delimiters are back to
-            // back, treat them as a single delimiter (necessary for
-            // correct handling of DOS-style CRLF endings).
+            // back and in the same order as in delims, treat them as
+            // a single delimiter (necessary for correct handling of
+            // DOS-style CRLF endings).
             CT_INT_TYPE next = is.rdbuf()->sgetc();
             if ( !CT_EQ_INT_TYPE(next, CT_EOF)
-                &&  delims.find(CT_TO_CHAR_TYPE(next)) != NPOS
-                &&  !CT_EQ_INT_TYPE(next, ch) ) {
+                &&  delims.find(CT_TO_CHAR_TYPE(next), delim_pos + 1) != NPOS) {
                 is.rdbuf()->sbumpc();
             }
             break;
