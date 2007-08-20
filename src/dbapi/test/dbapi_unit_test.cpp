@@ -8709,8 +8709,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != "ftds_dblib"
         && args.GetDriverName() != "ftds8"
         && args.GetDriverName() != "ftds"
-        // ctlib on x86_64 requires right Sybase client ...
-        // && args.GetDriverName() != "ctlib" // It stopped working accidentally !!!
+        // ctlib on x86_64 requires appropriate Sybase client ...
+        && args.GetDriverName() != "ctlib" 
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
                                    DBAPIInstance);
