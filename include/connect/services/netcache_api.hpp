@@ -213,7 +213,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////////////
 //
-class CNetCacheAdmin
+class NCBI_XCONNECT_EXPORT CNetCacheAdmin
 {
 public:
     /// Shutdown the server daemon.
