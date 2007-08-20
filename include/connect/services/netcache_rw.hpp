@@ -90,7 +90,7 @@ private:
 class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IWriter
 {
 public:
-    CNetCacheWriter(CNetCacheAPI& api,
+    CNetCacheWriter(const CNetCacheAPI& api,
                     CNetSrvConnector& connector, 
                     bool disconnect,
                     CTransmissionWriter::ESendEofPacket send_eof =
@@ -108,7 +108,7 @@ public:
     void Close();
 
 private:
-    CNetCacheAPI& m_API;
+    const CNetCacheAPI& m_API;
     CNetSrvConnector* m_Connector;
     CSocket* m_Socket;
     bool m_Disconnect;

@@ -70,7 +70,7 @@ CNetCacheAPI::~CNetCacheAPI()
 
 string CNetCacheAPI::PutData(const void*  buf,
                                 size_t       size,
-                                unsigned int time_to_live)
+                                unsigned int time_to_live) const
 {
     return PutData(kEmptyStr, buf, size, time_to_live);
 }
@@ -109,7 +109,7 @@ CNetSrvConnectorHolder CNetCacheAPI::x_PutInitiate(string*   key,
 string  CNetCacheAPI::PutData(const string& key,
                               const void*   buf,
                               size_t        size,
-                              unsigned int  time_to_live)
+                              unsigned int  time_to_live) const
 {
     string k(key);
     CNetSrvConnectorHolder holder = x_PutInitiate(&k, time_to_live);
@@ -133,13 +133,13 @@ string  CNetCacheAPI::PutData(const string& key,
 }
 
 
-IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live)
+IWriter* CNetCacheAPI::PutData(string* key, unsigned int time_to_live) const
 {
     CNetSrvConnectorHolder holder = x_PutInitiate(key, time_to_live);
     return new CNetCacheWriter(*this, holder, holder.NeedDisconnect(),  CTransmissionWriter::eSendEofPacket);
 }
 
-void CNetCacheAPI::Remove(const string& key)
+void CNetCacheAPI::Remove(const string& key) const
 {
     string request = "RMV2 " + key;
 
@@ -154,7 +154,7 @@ void CNetCacheAPI::Remove(const string& key)
 
 
 
-bool CNetCacheAPI::IsLocked(const string& key)
+bool CNetCacheAPI::IsLocked(const string& key) const
 {
 
     string request = "ISLK " + key;
@@ -174,7 +174,7 @@ bool CNetCacheAPI::IsLocked(const string& key)
 }
 
 
-string CNetCacheAPI::GetOwner(const string& key)
+string CNetCacheAPI::GetOwner(const string& key) const
 {
     string request = "GBOW " + key;
 
@@ -191,7 +191,7 @@ string CNetCacheAPI::GetOwner(const string& key)
 
 IReader* CNetCacheAPI::GetData(const string& key, 
                                   size_t*       blob_size,
-                                  ELockMode     lock_mode)
+                                  ELockMode     lock_mode) const
 {
     string request = "GET2 " + key;
 
@@ -236,7 +236,7 @@ CNetCacheAPI::GetData(const string&  key,
                       void*          buf, 
                       size_t         buf_size, 
                       size_t*        n_read,
-                      size_t*        blob_size)
+                      size_t*        blob_size) const
 {
     _ASSERT(buf && buf_size);
 
@@ -253,7 +253,7 @@ CNetCacheAPI::GetData(const string&  key,
 }
 
 CNetCacheAPI::EReadResult 
-CNetCacheAPI::GetData(const string& key, CSimpleBuffer& buffer)
+CNetCacheAPI::GetData(const string& key, CSimpleBuffer& buffer) const
 {
     size_t x_blob_size = 0;
 

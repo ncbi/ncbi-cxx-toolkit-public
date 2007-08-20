@@ -122,7 +122,7 @@ ERW_Result CNetCacheReader::PendingCount(size_t* count)
 
 
 /////////////////////////////////////////////////
-CNetCacheWriter::CNetCacheWriter(CNetCacheAPI& api,CNetSrvConnector& connector, bool disconnect,
+CNetCacheWriter::CNetCacheWriter(const CNetCacheAPI& api,CNetSrvConnector& connector, bool disconnect,
                                   CTransmissionWriter::ESendEofPacket send_eof)
     : m_API(api), m_Connector(&connector), m_Socket(m_Connector->DetachSocket()),
       m_Disconnect(disconnect)

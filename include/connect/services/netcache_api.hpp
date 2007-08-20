@@ -88,7 +88,7 @@ public:
     /// @return NetCache access key
     string PutData(const void*   buf,
                    size_t        size,
-                   unsigned int  time_to_live = 0);
+                   unsigned int  time_to_live = 0) const;
 
     /// Put BLOB to server
     ///
@@ -101,14 +101,14 @@ public:
     /// 
     /// @return
     ///    IReader* (caller must delete this). 
-    IWriter* PutData(string* key, unsigned int  time_to_live = 0);
+    IWriter* PutData(string* key, unsigned int  time_to_live = 0) const;
 
     /// Update an existing BLOB
     ///
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
-                   unsigned int  time_to_live = 0);
+                   unsigned int  time_to_live = 0) const;
 
     /// BLOB locking mode
     enum ELockMode {
@@ -139,7 +139,7 @@ public:
     ///    NULL means that BLOB was not found (expired).
     IReader* GetData(const string& key, 
                      size_t*       blob_size = 0,
-                     ELockMode     lock_mode = eLockWait);
+                     ELockMode     lock_mode = eLockWait) const;
 
     /// Status of GetData() call
     /// @sa GetData
@@ -157,7 +157,7 @@ public:
                         void*          buf, 
                         size_t         buf_size, 
                         size_t*        n_read    = 0,
-                        size_t*        blob_size = 0);
+                        size_t*        blob_size = 0) const;
 
     /// Retrieve BLOB from server by key
     /// This method retrives BLOB size, allocates memory and gets all
@@ -169,7 +169,7 @@ public:
     /// 
     /// @return
     ///    eReadComplete if BLOB found (eNotFound otherwise)
-    EReadResult GetData(const string& key, CSimpleBuffer& buffer);
+    EReadResult GetData(const string& key, CSimpleBuffer& buffer) const;
 
 
     /// NetCache server locks BLOB so only one client can 
@@ -178,16 +178,16 @@ public:
     ///
     /// @return TRUE if BLOB exists and locked by another client
     /// FALSE if BLOB not found or not locked
-    bool IsLocked(const string& key);
+    bool IsLocked(const string& key) const;
 
     /// Retrieve BLOB's owner information as registered by the server
-    string GetOwner(const string& key);
+    string GetOwner(const string& key) const;
 
     /// Remove BLOB by key
-    void Remove(const string& key);
+    void Remove(const string& key) const;
 
 
-    CNetCacheAdmin     GetAdmin();
+    CNetCacheAdmin     GetAdmin() const;
 
 protected:
     virtual void ProcessServerError(string& response, ETrimErr trim_err) const;
@@ -248,7 +248,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-inline CNetCacheAdmin CNetCacheAPI::GetAdmin()
+inline CNetCacheAdmin CNetCacheAPI::GetAdmin() const
 {
     //DiscoverLowPriorityServers(true);
     return CNetCacheAdmin(*this);
