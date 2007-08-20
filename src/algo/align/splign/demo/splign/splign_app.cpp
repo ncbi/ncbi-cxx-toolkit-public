@@ -79,10 +79,10 @@ void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 25, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 26, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.25");
+    string program_name ("Splign v.1.26");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';
@@ -1080,6 +1080,75 @@ void CSplignApp::x_RunSplign(bool raw_hits, THitRefs* phitrefs,
 }
 
 
+// get the number of non-consensus splices in a compartment 
+// with the highest match count
+size_t GetNonConsensusSpliceCount(const CSplign::TResults & splign_results)
+{
+    size_t top_matches (0);
+    size_t rv (0);
+    ITERATE(CSplign::TResults, ii, splign_results) {
+
+        const CSplign::SAlignedCompartment & ac (*ii);
+        size_t matches (0), nc_count(0);
+        typedef CSplign::TSegments::const_iterator TIterator;
+        char dnr [] = {0, 0, 0};
+        char acc [] = {0, 0, 0};
+        size_t exon_count (0);
+        for(TIterator jjb (ac.m_segments.begin()), jje (ac.m_segments.end()), jj(jjb);
+            jj != jje; ++jj)
+        {
+            if(jj->m_exon) {
+
+                const char * p (jj->m_details.data()), * pe (p +jj->m_details.size());
+                int n (-1);
+                for(; p != pe; ++p) {
+                    if(*p == 'M') {
+                        if(n == 0) ++matches; else if(n > 0) matches += n;
+                        n = 0;
+                    }
+                    else if(isdigit(*p) && n >= 0) {
+                        n = n * 10 + *p - '0';
+                    }
+                    else {
+                        if(n == 0) {
+                            ++matches;
+                        }
+                        n = -1;
+                    }
+                }
+                if(n == 0) ++matches; else if(n > 0) matches += n;
+
+                if(exon_count > 0) {
+
+                    if(jj->m_annot[2] == '<') {
+                        acc[0] = jj->m_annot[0];
+                        acc[1] = jj->m_annot[1];
+                        if(!CNWFormatter::SSegment::s_IsConsensusSplice(dnr, acc)) {
+                            ++nc_count;
+                        }
+                    }
+                    acc[0] = acc[1] = 0;
+
+                    const char * p (jj->m_annot.data());
+                    while(*p++ != '>') ++p;
+                    dnr[0] = *p++;
+                    dnr[1] = *p;
+                }
+
+                ++exon_count;
+            }
+        }
+
+        if(matches > top_matches) {
+            rv = nc_count;
+            top_matches = matches;
+        }
+    }
+
+    return rv;
+}
+
+
 void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
                                THit::TCoord smin, THit::TCoord smax)
 {
@@ -1146,8 +1215,35 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
         mid = max(mid_plus, mid_minus);
     }
     else {
-        NCBI_THROW(CSplignAppException, eGeneral, 
-                   "Auto strand not yet implemented");
+
+        THitRefs hits0;
+        ITERATE(THitRefs, ii, hitrefs) {
+            const THitRef & h0 (*ii);
+            THitRef h1 (new THit (*h0));
+            hits0.push_back(h1);
+        }
+
+        static size_t mid (1);
+        size_t mid_plus, mid_minus;
+
+        // align in sense direction
+        m_Splign->SetStrand(true);
+        m_Splign->SetStartModelId(mid);
+        x_RunSplign(raw_hits, &hitrefs, smin, smax, &splign_results);
+        mid_plus = m_Splign->GetNextModelId();
+
+        // if there is a non-consensus splice, also align in antisense
+        const size_t nc_count (GetNonConsensusSpliceCount(splign_results));
+        if(nc_count > 0) {
+            m_Splign->SetStrand(false);
+            m_Splign->SetStartModelId(mid);
+            x_RunSplign(raw_hits, &hits0, smin, smax, &splign_results);
+            mid_minus = m_Splign->GetNextModelId();
+            mid = max(mid_plus, mid_minus);
+        }
+        else {
+            mid = mid_plus;
+        }
     }
     
     cout << m_Formatter->AsExonTable(&splign_results, flags);
