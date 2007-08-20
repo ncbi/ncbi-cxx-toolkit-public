@@ -159,7 +159,6 @@ auto_ptr<ofstream> open_ofstream (const string& filename) {
 
 
 void CAppNWA::x_RunOnPair() const
-    THROWS((CAppNWAException, CAlgoAlignException))
 {
     const CArgs& args = GetArgs();
 
@@ -171,7 +170,6 @@ void CAppNWA::x_RunOnPair() const
     bool   output_type2  ( args["o2"] );
     bool   output_asn    ( args["oasn"] );
     bool   output_fasta  ( args["ofasta"] );
-    bool   output_exons  ( false );
 
     int    band (args["band"].AsInteger());
     int    shift(args["shift"].AsInteger());
