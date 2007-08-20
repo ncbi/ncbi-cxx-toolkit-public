@@ -201,9 +201,9 @@ EOF
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
-#            elif test $driver = "ftds8" -a  $server != $server_mssql ; then
-#                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
-#                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
+            elif test $driver = "msdblib" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
             else
                 # do not run tests with a boolk copy operations 
                 # on Sybase databases with the "ftds" driver
@@ -222,7 +222,9 @@ EOF
             cmd="dbapi_cursor -lb random -d $driver -S $server"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test \( $driver = "ftds8" -o $driver = "ftds" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            elif test $driver = "msdblib" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
+            elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"
