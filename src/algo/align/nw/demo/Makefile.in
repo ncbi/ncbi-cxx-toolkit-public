@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile("NWA demo" project)
-#################################
-
-SUB_PROJ = nwa
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

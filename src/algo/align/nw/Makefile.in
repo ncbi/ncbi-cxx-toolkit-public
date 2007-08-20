@@ -4,7 +4,6 @@
 #################################
 
 LIB_PROJ = xalgoalignnw
-SUB_PROJ = demo
 
 REQUIRES = objects
 
