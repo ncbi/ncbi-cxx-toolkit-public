@@ -3115,6 +3115,7 @@ CDBAPIUnitTest::Test_Cursor(void)
 
 
         // Check cursor with "FOR UPDATE OF" clause ...
+        // First test ...
         {
             sql  = "select int_field from " + GetTableName();
             sql += " FOR UPDATE OF int_field";
@@ -3129,6 +3130,80 @@ CDBAPIUnitTest::Test_Cursor(void)
                     ;
                 }
             }
+        }
+
+        // Second test ...
+        {
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            sql  =
+                " CREATE TABLE #AgpFiles ( \n"
+                "     id   INT IDENTITY, \n"
+                "     submit_id INT, \n"
+                "     file_num  INT, \n"
+                "     \n"
+                "     cr_date   DATETIME DEFAULT getdate(), \n"
+                "     path      VARCHAR(255), \n"
+                "     name      VARCHAR(255), \n"
+                "     notes     VARCHAR(255), \n"
+                "     file_size INT, \n"
+                "     objects INT default 0, \n"
+                "     live_objects INT default 0, \n"
+                "      \n"
+                "     blob_num INT DEFAULT 0, \n"
+                "     data0 IMAGE NULL, \n"
+                "     data1 IMAGE NULL, \n"
+                "     data2 IMAGE NULL, \n"
+                "     data3 IMAGE NULL, \n"
+                "     data4 IMAGE NULL, \n"
+                " )  \n"
+                ;
+            auto_stmt->ExecuteUpdate(sql);
+
+            sql  =
+                " CREATE TABLE #Objects ( \n"
+                "     submit_id    INT, \n"
+                "     file_id      INT, \n"
+                "     rm_file_id   INT DEFAULT 0x7FFFFFF, \n"
+                "     name         VARCHAR(80), \n"
+                "     blob_ofs     INT NOT NULL, \n"
+                "     blob_len     INT NOT NULL, \n"
+                "     obj_len      INT NOT NULL, \n"
+                "      \n"
+                "     comps        INT NOT NULL, \n"
+                "     gaps         INT NOT NULL, \n"
+                "     scaffolds    INT NOT NULL, \n"
+                "     singletons   INT NOT NULL, \n"
+                "     checksum     INT NOT NULL, \n"
+                "      \n"
+                "     chr          SMALLINT DEFAULT -1, \n"
+                "     is_scaffold  BIT, \n"
+                "     is_unlinked  BIT, \n"
+                "      \n"
+                "     line_num     INT, \n"
+                "     PRIMARY KEY(submit_id, file_id, blob_ofs) \n"
+                " ) \n"
+                ;
+            auto_stmt->ExecuteUpdate(sql);
+
+            sql  =
+                "SELECT obj.name, f.name, obj.chr, obj.is_scaffold, obj.is_unlinked \n"
+                "  FROM #Objects obj \n"
+                "  JOIN #AgpFiles f ON obj.file_id = f.id \n"
+                " WHERE obj.rm_file_id=0x7FFFFFF AND obj.submit_id = 1 \n"
+                "   FOR UPDATE OF obj.chr, obj.is_scaffold, obj.is_unlinked"
+                ;
+
+            // Not fixed yet ...
+//             {
+//                 auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+//                 auto_ptr<IResultSet> rs(auto_cursor->Open());
+//                 BOOST_CHECK(rs.get() != NULL);
+//
+//                 while (rs->Next()) {
+//                     ;
+//                 }
+//             }
         }
     }
     catch(const CException& ex) {
@@ -4981,8 +5056,10 @@ void
 CDBAPIUnitTest::Test_Exception_Safety(void)
 {
     // Very first test ...
-    // Try to catch a base class ...
-    BOOST_CHECK_THROW(ES_01_Internal(*m_Conn), CDB_Exception);
+    {
+        // Try to catch a base class ...
+        BOOST_CHECK_THROW(ES_01_Internal(*m_Conn), CDB_Exception);
+    }
 
     // Second test ...
     // Restore after invalid statement ...
@@ -5035,6 +5112,16 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
+    }
+
+    // Third test ...
+    {
+        // Enable MsgToEx ...
+        m_Conn->MsgToEx(true);
+        // Disable MsgToEx ...
+        m_Conn->MsgToEx(false);
+
+        BOOST_CHECK_THROW(ES_01_Internal(*m_Conn), CDB_Exception);
     }
 }
 
@@ -8710,7 +8797,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != "ftds8"
         && args.GetDriverName() != "ftds"
         // ctlib on x86_64 requires appropriate Sybase client ...
-        && args.GetDriverName() != "ctlib" 
+        && args.GetDriverName() != "ctlib"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
                                    DBAPIInstance);
@@ -8993,8 +9080,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
             //
             if ((args.GetServerType() == CTestArguments::eMsSql
-                  || args.GetServerType() == CTestArguments::eMsSql2005) 
-                 && args.GetDriverName() != "msdblib" 
+                  || args.GetServerType() == CTestArguments::eMsSql2005)
+                 && args.GetDriverName() != "msdblib"
                  && args.GetDriverName() != "dblib"
                  ) {
                 //
