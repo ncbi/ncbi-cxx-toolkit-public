@@ -401,7 +401,7 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
             break;
         case eDB_LongChar: {
             CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
-            sprintf(buffer, "varchar(%d)", lc.Size());
+            sprintf(buffer, "varchar(%d)", int(lc.Size()));
             type= buffer;
             break;
         }
@@ -411,7 +411,7 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
             break;
         case eDB_LongBinary: {
             CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
-            sprintf(buffer, "varbinary(%d)", lb.Size());
+            sprintf(buffer, "varbinary(%d)", int(lb.Size()));
             type= buffer;
             break;
         }

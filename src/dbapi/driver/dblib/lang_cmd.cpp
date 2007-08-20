@@ -301,7 +301,7 @@ bool CDBL_LangCmd::x_AssignParams()
             break;
         case eDB_LongChar: {
             CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
-            sprintf(val_buffer, "varchar(%d)", lc.Size());
+            sprintf(val_buffer, "varchar(%d)", int(lc.Size()));
             type= val_buffer;
             break;
         }
@@ -312,7 +312,7 @@ bool CDBL_LangCmd::x_AssignParams()
         case eDB_LongBinary: {
             CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
             if(lb.DataSize()*2 > (sizeof(val_buffer) - 4)) return false;
-            sprintf(val_buffer, "varbinary(%d)", lb.Size());
+            sprintf(val_buffer, "varbinary(%d)", int(lb.Size()));
             type= val_buffer;
             break;
         }
