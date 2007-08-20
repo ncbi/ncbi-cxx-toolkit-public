@@ -278,8 +278,12 @@ connect/services/grid_debug_context.hpp
 connect/services/grid_worker.hpp
 connect/services/grid_worker_app.hpp
 connect/services/grid_worker_app_impl.hpp
+connect/services/netcache_api.hpp
+connect/services/netcache_api_expt.hpp
 connect/services/netcache_client.hpp
 connect/services/neticache_client.hpp
+connect/services/netcache_key.hpp
+connect/services/netcache_rw.hpp
 connect/services/netschedule_api.hpp
 connect/services/netschedule_api_const.hpp
 connect/services/netschedule_api_expt.hpp
