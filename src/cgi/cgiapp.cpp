@@ -1004,9 +1004,11 @@ void CCgiApplication::VerifyCgiContext(CCgiContext& context)
 {
     string x_moz = context.GetRequest().GetRandomProperty("X_MOZ");
     if ( NStr::EqualNocase(x_moz, "prefetch") ) {
-        NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
-            "Prefetch is not allowed for CGIs",
-            CCgiException::e403_Forbidden);
+        NCBI_EXCEPTION_VAR(ex, CCgiRequestException, eData,
+            "Prefetch is not allowed for CGIs");
+        ex.SetStatus(CCgiException::e403_Forbidden);
+        ex.SetSeverity(eDiag_Info);
+        NCBI_EXCEPTION_THROW(ex);
     }
 }
 
