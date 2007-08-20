@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.5.17  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=3.1.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
