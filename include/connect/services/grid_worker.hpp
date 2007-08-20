@@ -643,6 +643,6 @@ private:
 
 END_NCBI_SCOPE
 
-#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 2.2.5)"
+#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 2.3.0)"
 
 #endif //CONNECT_SERVICES__GRID_WOKER_HPP
