@@ -83,4 +83,7 @@ objtools/data_loaders/genbank/readers/id2/reader_id2_entry.hpp
 objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp
 objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq_entry.hpp
 
+objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2.hpp
+objtools/data_loaders/genbank/readers/pubseqos2/reader_pubseq2_entry.hpp
+
 %%
