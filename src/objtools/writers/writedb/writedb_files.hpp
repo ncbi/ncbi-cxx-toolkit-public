@@ -104,6 +104,16 @@ public:
         return m_Offset;
     }
     
+    /// Write an Int8 (in bigendian order) to the file.
+    /// @param data String to write.
+    /// @return File offset after write.
+    int WriteInt8(Int8 data)
+    {
+        s_WriteInt8BE(m_RealFile, data);
+        m_Offset += 8;
+        return m_Offset;
+    }
+    
     /// Write contents of a string to the file, appending a NUL.
     /// @param data String to write.
     /// @return File offset after write.

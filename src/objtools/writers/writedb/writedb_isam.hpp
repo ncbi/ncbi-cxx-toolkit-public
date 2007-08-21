@@ -157,8 +157,9 @@ private:
         eKeyDelim        = 2,    ///< Byte indicating end of key.
         eRecordDelim     = 10,   ///< Byte indicating end of data.
         eMaxStringLine   = 4096, ///< Maximum line size for string.
-        eIsamNumericType = 0,    ///< Code for numeric ISAM files.
-        eIsamStringType  = 2     ///< Code for string ISAM files.
+        eIsamNumericType = 0,    ///< Numeric ISAM file with Int4 key.
+        eIsamStringType  = 2,    ///< String ISAM file.
+        eIsamNumericLong = 5     ///< Numeric ISAM file with Int8 key.
     };
     
     /// Flush index data for a numeric ISAM file.
@@ -366,17 +367,17 @@ private:
     ///
     /// This associates a GI (or PIG) with a given OID.  Deriving from
     /// pair<int,int> provides correct equality and order operators.
-    struct SIdOid : public pair<int, int> {
+    struct SIdOid : public pair<Int8, int> {
         /// Construct an object from oid and ident.
         /// @param i Numeric identifier (GI or PIG).
         /// @param o OID of the sequence.
-        SIdOid(int i, int o)
-            : pair<int,int>(i,o)
+        SIdOid(Int8 i, int o)
+            : pair<Int8,int>(i,o)
         {
         }
         
         /// Return the numeric identifier.
-        int id()  const
+        Int8 id()  const
         {
             return first;
         }
@@ -390,6 +391,8 @@ private:
     
     CWriteDB_PackedSemiTree m_StringSort;  ///< Sorted list of strings.
     vector<SIdOid>          m_NumberTable; ///< Sorted list of numbers.
+    
+    bool m_UseInt8; ///< Use an Int8 table for numeric IDs.
     
     /// The data file associated with this index file.
     CRef<CWriteDB_IsamData> m_DataFile;

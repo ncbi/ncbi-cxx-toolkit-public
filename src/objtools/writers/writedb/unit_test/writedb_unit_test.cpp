@@ -120,6 +120,63 @@ CRef<CSeq_id> s_AccToSeqId(const char * acc)
     return seqid;
 }
 
+// HexDump utility
+string s_HexDumpText(const string & raw, int per, bool use_hex)
+{
+    string visible;
+    
+    string tmp;
+    
+    Uint8 mask = Uint8(Int8(-1));
+    mask >>= (64 - 8*per);
+    
+    for(int i = 0; i < (int)raw.size(); i += per) {
+        int left = raw.size() - i;
+        int per1 = (left < per) ? left : per;
+        
+        string sub(raw, i, per1);
+        
+        // Read a standard order value into x.
+        
+        Uint8 x = 0;
+        
+        for(int by = 0; by < (int)sub.size(); by++) {
+            x = (x << 8) + (sub[by] & 0xFF);
+        }
+        
+        if (visible.size())
+            visible += " ";
+        
+        tmp.resize(0);
+        NStr::UInt8ToString(tmp, x & mask, 0, use_hex ? 16 : 10);
+        
+        visible += tmp;
+    }
+    
+    return visible;
+}
+
+string s_HexDumpFile(const string & fname, int per, bool use_hex)
+{
+    ifstream f(fname.c_str());
+    
+    string raw;
+    
+    while(f && ! f.eof()) {
+        char buf[1024];
+        f.read(buf, 1024);
+        
+        int amt = f.gcount();
+        
+        if (! amt)
+            break;
+        
+        raw.append(buf, amt);
+    }
+    
+    return s_HexDumpText(raw, per, use_hex);
+}
+
 // Copy the sequences listed in 'ids' (integers or FASTA Seq-ids) from
 // the CSeqDB object to the CWriteDB object, using CBioseqs as the
 // intermediate data.
@@ -474,7 +531,7 @@ static void s_UnitTestVerbosity(string s)
 // Actual test cases.
 //
 
-BOOST_AUTO_TEST_CASE(s_NuclBioseqDup)
+BOOST_AUTO_TEST_CASE(NuclBioseqDup)
 {
     START;
     
@@ -508,7 +565,7 @@ BOOST_AUTO_TEST_CASE(s_NuclBioseqDup)
                        "raw nucleotide dup");
 }
 
-BOOST_AUTO_TEST_CASE(s_ProtBioseqDup)
+BOOST_AUTO_TEST_CASE(ProtBioseqDup)
 {
     START;
     
@@ -542,7 +599,7 @@ BOOST_AUTO_TEST_CASE(s_ProtBioseqDup)
                        "raw protein dup");
 }
 
-BOOST_AUTO_TEST_CASE(s_EmptyBioseq)
+BOOST_AUTO_TEST_CASE(EmptyBioseq)
 {
     START;
     
@@ -557,7 +614,7 @@ BOOST_AUTO_TEST_CASE(s_EmptyBioseq)
     CHECK_THROW(fails.Close(), CWriteDBException);
 }
 
-BOOST_AUTO_TEST_CASE(s_BioseqHandle)
+BOOST_AUTO_TEST_CASE(BioseqHandle)
 {
     START;
     
@@ -582,7 +639,7 @@ BOOST_AUTO_TEST_CASE(s_BioseqHandle)
     s_WrapUpFiles(files);
 }
 
-BOOST_AUTO_TEST_CASE(s_BioseqHandleAndSeqVector)
+BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
 {
     START;
     
@@ -615,7 +672,7 @@ BOOST_AUTO_TEST_CASE(s_BioseqHandleAndSeqVector)
     s_WrapUpFiles(files);
 }
 
-BOOST_AUTO_TEST_CASE(s_SetPig)
+BOOST_AUTO_TEST_CASE(SetPig)
 {
     START;
     
@@ -673,7 +730,7 @@ BOOST_AUTO_TEST_CASE(s_SetPig)
 
 // Test multiple volume construction and maximum letter limit.
 
-BOOST_AUTO_TEST_CASE(s_MultiVolume)
+BOOST_AUTO_TEST_CASE(MultiVolume)
 {
     START;
     
@@ -729,7 +786,7 @@ BOOST_AUTO_TEST_CASE(s_MultiVolume)
     s_WrapUpFiles(f);
 }
 
-BOOST_AUTO_TEST_CASE(s_UsPatId)
+BOOST_AUTO_TEST_CASE(UsPatId)
 {
     START;
     
@@ -773,7 +830,7 @@ BOOST_AUTO_TEST_CASE(s_UsPatId)
     s_WrapUpFiles(files);
 }
 
-BOOST_AUTO_TEST_CASE(s_IsamSorting)
+BOOST_AUTO_TEST_CASE(IsamSorting)
 {
     START;
     
@@ -816,7 +873,7 @@ BOOST_AUTO_TEST_CASE(s_IsamSorting)
                        "test of string ISAM sortedness");
 }
 
-BOOST_AUTO_TEST_CASE(s_HashToOid)
+BOOST_AUTO_TEST_CASE(HashToOid)
 {
     START;
     
@@ -864,7 +921,7 @@ BOOST_AUTO_TEST_CASE(s_HashToOid)
     nucl.Reset();
 }
 
-BOOST_AUTO_TEST_CASE(s_FastaReaderBioseq)
+BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
 {
     START;
     
@@ -914,8 +971,47 @@ BOOST_AUTO_TEST_CASE(s_FastaReaderBioseq)
         CHECK(bdls->Get().back()->GetTitle() == T2);
         CHECK(bdls->Get().back()->GetSeqid().size() == 1);
         CHECK(bdls->Get().back()->GetSeqid().front()->AsFastaString() == I2);
-   }
+    }
     
     s_WrapUpFiles(files);
+}
+
+BOOST_AUTO_TEST_CASE(BinaryListBuilder)
+{
+    START;
+    
+    string fn4("test4.til"), fn8("test8.til");
+    
+    {
+        CBinaryListBuilder blb4(CBinaryListBuilder::eTi);
+        CBinaryListBuilder blb8(CBinaryListBuilder::eTi);
+        
+        for(int i = 0; i<10; i++) {
+            blb4.AppendId(Int8(1) << (i*2));
+            blb8.AppendId(Int8(1) << (i*4));
+        }
+        
+        blb4.Write(fn4);
+        blb8.Write(fn8);
+    }
+    
+    string h4 = s_HexDumpFile(fn4, 4, true);
+    string h8 = s_HexDumpFile(fn8, 4, true);
+    
+    // The FF...FD symbol indicates a 4 byte TI list; the FF..FC
+    // symbol is the eight byte version.
+    
+    CHECK(h4 ==
+          "FFFFFFFD A "
+          "1 4 10 40 100 "
+          "400 1000 4000 10000 40000");
+    
+    CHECK(h8 ==
+          "FFFFFFFC A "
+          "0 1 0 10 0 100 0 1000 0 10000 "
+          "0 100000 0 1000000 0 10000000 1 0 10 0");
+    
+    CFile(h4).Remove();
+    CFile(h8).Remove();
 }
 

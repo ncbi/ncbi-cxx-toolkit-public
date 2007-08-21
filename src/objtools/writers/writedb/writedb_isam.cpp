@@ -171,6 +171,7 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
       m_PageSize     (0),
       m_BytesPerElem (0),
       m_DataFileSize (0),
+      m_UseInt8      (false),
       m_DataFile     (datafile)
 {
     // This is the one case where I don't worry about file size; if
@@ -216,7 +217,8 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     case eGi:
     case ePig:
     case eTrace:
-        isam_type = eIsamNumericType; // numeric w/ data
+        // numeric w/ int4 data or numeric w/ int8 data.
+        isam_type = m_UseInt8 ? eIsamNumericLong : eIsamNumericType;
         num_terms = (int) m_NumberTable.size();
         max_line_size = 0;
         break;
@@ -379,29 +381,55 @@ void CWriteDB_IsamIndex::x_FlushNumericIndex()
     
     const SIdOid * prevp = 0;
     
-    for(int i = 0; i < count; i++) {
-        const SIdOid & elem = m_NumberTable[i];
-        
-        if (prevp && (*prevp == elem)) {
-            continue;
-        } else {
-            prevp = & elem;
+    if (m_UseInt8) {
+        for(int i = 0; i < count; i++) {
+            const SIdOid & elem = m_NumberTable[i];
+            
+            if (prevp && (*prevp == elem)) {
+                continue;
+            } else {
+                prevp = & elem;
+            }
+            
+            if ((row_index & (m_PageSize-1)) == 0) {
+                WriteInt8(elem.id());
+                WriteInt4(elem.oid());
+            }
+            
+            m_DataFile->WriteInt8(elem.id());
+            m_DataFile->WriteInt4(elem.oid());
+            row_index ++;
         }
         
-        if ((row_index & (m_PageSize-1)) == 0) {
-            WriteInt4(elem.id());
-            WriteInt4(elem.oid());
+        // 64 bit numeric files end in (max-uint8, 0).
+        
+        WriteInt8(-1);
+        WriteInt4(0);
+    } else {
+        for(int i = 0; i < count; i++) {
+            const SIdOid & elem = m_NumberTable[i];
+            
+            if (prevp && (*prevp == elem)) {
+                continue;
+            } else {
+                prevp = & elem;
+            }
+            
+            if ((row_index & (m_PageSize-1)) == 0) {
+                WriteInt4(elem.id());
+                WriteInt4(elem.oid());
+            }
+            
+            m_DataFile->WriteInt4(elem.id());
+            m_DataFile->WriteInt4(elem.oid());
+            row_index ++;
         }
         
-        m_DataFile->WriteInt4(elem.id());
-        m_DataFile->WriteInt4(elem.oid());
-        row_index ++;
+        // 32 bit numeric files end in (max-uint4, 0).
+        
+        WriteInt4(-1);
+        WriteInt4(0);
     }
-    
-    // Numeric files end in (max-uint, 0).
-    
-    WriteInt4(-1);
-    WriteInt4(0);
 }
 
 void CWriteDB_IsamIndex::x_Flush()
@@ -479,13 +507,26 @@ void CWriteDB_IsamIndex::x_AddTraceIds(int oid, const TIdList & idlist)
         if (seqid.IsGeneral() && seqid.GetGeneral().GetDb() == "ti") {
             const CObject_id & obj = seqid.GetGeneral().GetTag();
             
-            int id = (obj.IsId()
-                      ? obj.GetId()
-                      : NStr::StringToInt(obj.GetStr()));
+            Int8 id = (obj.IsId()
+                       ? obj.GetId()
+                       : NStr::StringToInt8(obj.GetStr()));
             
             SIdOid row(id, oid);
             m_NumberTable.push_back(row);
-            m_DataFileSize += 8;
+            
+            if (m_UseInt8) {
+                m_DataFileSize += 12;
+            } else if (id >= kMax_Int) {
+                // Adjust the data file size to account for the
+                // already-stored IDs.
+                
+                m_UseInt8 = true;
+                m_DataFileSize /= 8;
+                m_DataFileSize *= 12;
+                m_DataFileSize += 12;
+            } else {
+                m_DataFileSize += 8;
+            }
         }
     }
 }
