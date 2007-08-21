@@ -32,6 +32,8 @@
  *
  */
 
+#include <corelib/ncbistd.hpp>
+#include <util/simple_buffer.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -90,6 +92,15 @@ void Encode(const CRawScoreVector<Key, Score>& vec,
 }
 
 template <class Key, class Score>
+void Encode(const CRawScoreVector<Key, Score>& vec,
+            CSimpleBuffer& data)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Encode(): Serialization type unknown");
+}
+
+
+template <class Key, class Score>
 void Decode(const vector<char>& data, CRawScoreVector<Key, Score>& vec)
 {
     NCBI_THROW(CException, eUnknown,
@@ -126,6 +137,15 @@ void Encode(const CScoreVector<Key, Score>& vec,
     NCBI_THROW(CException, eUnknown,
                "Encode(): Serialization type unknown");
 }
+
+template <class Key, class Score>
+void Encode(const CScoreVector<Key, Score>& vec,
+            CSimpleBuffer& data)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Encode(): Serialization type unknown");
+}
+
 
 template <class Key, class Score>
 void Decode(const vector<char>& data, CScoreVector<Key, Score>& vec)
@@ -173,6 +193,9 @@ template<>
 void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
                           vector<char>& data);
 template<>
+void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
+                          CSimpleBuffer& data);
+template<>
 void Decode<Uint4, float>(const vector<unsigned char>& data,
                           CRawScoreVector<Uint4, float>& vec);
 template<>
@@ -196,6 +219,9 @@ void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
 template<>
 void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
                           vector<unsigned char>& data);
+template<>
+void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
+                          CSimpleBuffer& data);
 template<>
 void Decode<Uint4, float>(const vector<char>& data,
                           CScoreVector<Uint4, float>& vec);

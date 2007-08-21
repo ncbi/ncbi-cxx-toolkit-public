@@ -123,6 +123,21 @@ void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
 }
 
 template<>
+void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
+                          CSimpleBuffer& data)
+{
+    data.clear();
+    data.resize(sizeof(Uint4) +
+                sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.size());
+
+    char* p = (char*)&data[0];
+
+    p = s_Write(p, vec.GetId());
+    memcpy(p, &vec.Get()[0],
+           sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size());
+}
+
+template<>
 void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
                           vector<char>& data)
 {
@@ -133,6 +148,14 @@ void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
 template<>
 void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
                           vector<unsigned char>& data)
+{
+    CRawScoreVector<Uint4, float> raw(vec);
+    Encode(raw, data);
+}
+
+template<>
+void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
+                          CSimpleBuffer& data)
 {
     CRawScoreVector<Uint4, float> raw(vec);
     Encode(raw, data);
