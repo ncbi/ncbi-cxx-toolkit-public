@@ -628,14 +628,14 @@ static const char* s_StrError(int error)
         {NO_RECOVERY + DNS_BASE,
                                  "Unrecoverable DNS error"},
 #endif /*NO_RECOVERY*/
-#ifdef NO_DATA
-        {NO_DATA + DNS_BASE,
-                                 "No DNS data of requested type"},
-#endif /*NO_DATA*/
 #ifdef NO_ADDRESS
         {NO_ADDRESS + DNS_BASE,
                                  "No address record found in DNS"},
 #endif /*NO_ADDRESS*/
+#ifdef NO_DATA
+        {NO_DATA + DNS_BASE,
+                                 "No DNS data of requested type"},
+#endif /*NO_DATA*/
 
         /* Last dummy entry - must present */
         {0, 0}
