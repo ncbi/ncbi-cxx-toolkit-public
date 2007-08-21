@@ -37,12 +37,8 @@
 #include <util/static_set.hpp>
 #include <math.h>
 
-#include <objects/general/User_object.hpp>
-#include <objects/general/Object_id.hpp>
-
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
 static string sc_Tokens;
 static string sc_Lower;
