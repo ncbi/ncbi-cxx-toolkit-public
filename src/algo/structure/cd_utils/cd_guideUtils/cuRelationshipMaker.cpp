@@ -110,6 +110,7 @@ bool CRelationshipMaker::SetOverlapPercentage(int overlapPercentage)
 
 void CRelationshipMaker::InstallChild(CCdCore* child)
 {
+    ncbi::cd_utils::CDFamily* family = NULL;
     ncbi::cd_utils::CDFamilyIterator famIt, parentIt;
     string existingParentAcc;
     CCdCore* existingParent;
@@ -416,12 +417,12 @@ CCdCore* CRelationshipMaker::CreateParent(CCdCore* child, const string& parentAc
         //  CreateRelationship methods
         //////////////////////////////////////////////////
 
-int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent)
+int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent, bool degenerate)
 {
     int result = RELMAKER_UNSPECIFIED_ERROR;
 
     if (child && parent) {
-        result = CreateRelationship(child, parent, NULL);
+        result = CreateRelationship(child, parent, NULL, degenerate);
     }
     return result;
 }
@@ -429,22 +430,24 @@ int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent)
 //  From existing parent and child CDs, create a relationship over the indicated
 //  range of the parent's alignment.  On success, child's ancestors are updated.
 //  'false' returned on failure.
-int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent, unsigned int fromOnParentMaster, unsigned int toOnParentMaster)
+int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent, unsigned int fromOnParentMaster, unsigned int toOnParentMaster, bool degenerate)
 {
     int result = RELMAKER_BAD_BLOCK_MODEL_RANGE;
     BlockModel* bm = MakeClippedBlockModelFromMaster(parent, fromOnParentMaster, toOnParentMaster);
     if (bm) {
-        result = CreateRelationship(child, parent, bm);
+        result = CreateRelationship(child, parent, bm, degenerate);
         delete bm;
     }
     return result;
 }
 
-int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent, const BlockModel* blocksOnParentMaster)
+int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent, const BlockModel* blocksOnParentMaster, bool degenerate)
 {
     int result = RELMAKER_UNSPECIFIED_ERROR;
-    CGuideAlignmentFactory gaFactory(m_overlapPercentage, true);  //  for now, always allow a consensus as master
     CDomain_parent::EParent_type type;
+
+    CGuideAlignmentFactory gaFactory(m_overlapPercentage, true);  //  for now, always allow a consensus as master
+    gaFactory.SetMakeDegenerateGuides(degenerate);
 
     //  Step 1:  Try and make a guide alignment between the CDs, using the family when present
     //  and if we are not forcing the parent/child to share a common sequence.
@@ -521,3 +524,4 @@ int CRelationshipMaker::CreateRelationship(CCdCore* child, CCdCore* parent, cons
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
+

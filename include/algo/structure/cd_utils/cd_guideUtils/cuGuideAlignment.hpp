@@ -222,9 +222,51 @@ protected:
             from->CopyBase(to);
     }
 
+    bool IsBMPValid() const;
+
 private:
 
     bool Replace(bool replaceMaster, const CRef< CSeq_align >& seqAlign, bool useFirst);
+
+};
+
+// ==========================================
+//      CDegenerateGuide declaration
+// ==========================================
+
+//  A degenerate version of a 'guide alignment' that only relates a pair of domains
+//  and does not actually specify how they are aligned.  To support cases where
+//  a relationship is desired yet the details are not relevant.  [E.g., traditionally, 
+//  classical parent/child relationships in CDTree do not require a mapping to
+//  be created -- although all validated parent/child pairs in CDD ultimately do
+//  obtain such a mapping.]
+
+class NCBI_CDUTILS_EXPORT CDegenerateGuide : public CGuideAlignment_Base
+{
+public:
+    CDegenerateGuide()  {Initialize();}
+    virtual ~CDegenerateGuide() {
+        Cleanup();
+    }
+
+    //  Subclass instances must be able to duplicate themselves, populating non-base-class members.
+    virtual CGuideAlignment_Base* Copy() const;
+
+    //  Most general case.
+    virtual bool Make(const SGuideInput& guideInput1, const SGuideInput& guideInput2);
+
+    virtual string ToString() const;
+
+    bool IsOK() const {return m_isOK;}
+
+//    const BlockModelPair& GetGuide() const {return m_guideBlockModelPair;}
+//    BlockModelPair GetGuide() {return m_guideBlockModelPair;}
+//    CRef<CSeq_align> GetGuideAsSeqAlign() const {return m_guideBlockModelPair.toSeqAlign();}
+
+protected:
+
+    //  Build the TGuideChain structures:  in this degenerate case, the commonCd is always ignored.
+    virtual void MakeChains(const SGuideInput& guideInput1, const SGuideInput& guideInput2, const CCdCore* commonCd);
 
 };
 

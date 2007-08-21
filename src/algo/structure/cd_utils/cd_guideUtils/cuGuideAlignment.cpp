@@ -311,6 +311,9 @@ void CGuideAlignment_Base::Intersect(const BlockModel& bm, bool basedOnMasterWhe
     set<int> forcedBreaks;
     int lastAlignedGuide, lastAlignedTemplate, maxPos, mappedPos;
 
+    //  This will fail for degenerate guides.
+    if (!IsBMPValid()) return;
+
     //  First, figure out which block model in the pair matches the sequence from 'bm'.
     bool doReverse = false;
     bool bmMatchesMaster, bmMatchesSlave;
@@ -388,6 +391,9 @@ void CGuideAlignment_Base::Intersect(const BlockModel& bm, bool basedOnMasterWhe
 
 void CGuideAlignment_Base::Mask(const BlockModel& mask, bool basedOnMasterWhenSameSeqIdInGuide)
 {
+    //  This will fail for degenerate guides.
+    if (!IsBMPValid()) return;
+
     //  First, figure out which block model in the pair matches the sequence from the mask.
     bool doReverse = false;
     bool maskMatchesMaster, maskMatchesSlave;
@@ -483,7 +489,7 @@ bool CGuideAlignment_Base::ReplaceSlave(const CRef< CSeq_align >& seqAlign, bool
 
 bool CGuideAlignment_Base::Replace(bool replaceMaster, const CRef< CSeq_align >& seqAlign, bool useFirst)
 {
-    bool result = seqAlign.NotEmpty() && m_guideBlockModelPair.isValid();
+    bool result = seqAlign.NotEmpty() && IsBMPValid();   //  m_guideBlockModelPair.isValid();
     int remasteredLen;
 
     if (result) {
@@ -638,6 +644,55 @@ string CGuideAlignment_Base::ToString() const
 
     return s;
 }
+
+bool CGuideAlignment_Base::IsBMPValid() const
+{
+    return (m_guideBlockModelPair.getMaster().getBlocks().size() > 0 && m_guideBlockModelPair.isValid());
+}
+
+// ============================================
+//      CDegenerateGuide implementation
+// ============================================
+
+
+string CDegenerateGuide::ToString() const
+{
+    string s;
+    string masterInfo = "Master CD " + GetMasterCDAcc() + "; row " + NStr::UIntToString(GetMasterCDRow()) + " (" + GetMasterRowIdStr() + ")\n";
+    string slaveInfo  = "Slave  CD " + GetSlaveCDAcc() + "; row " + NStr::UIntToString(GetSlaveCDRow()) + " (" + GetSlaveRowIdStr() + ")\n";
+    string commonInfo;
+    
+    s = masterInfo + slaveInfo + "Degenerate Guide:  No mapping has been specified.\n";
+
+    if (!m_isOK) {
+        s += "    --> warning:  guide alignment is not marked 'OK'.\n";
+    }
+    return s;
+}
+
+CGuideAlignment_Base* CDegenerateGuide::Copy() const {
+    CDegenerateGuide* guideCopy = new CDegenerateGuide();
+    CopyBase(guideCopy);
+    return guideCopy;
+}
+
+bool CDegenerateGuide::Make(const SGuideInput& guideInput1, const SGuideInput& guideInput2)
+{
+    MakeChains(guideInput1, guideInput2, NULL);
+    m_isOK = true;
+    return true;
+}
+
+void CDegenerateGuide::MakeChains(const SGuideInput& guideInput1, const SGuideInput& guideInput2, const CCdCore* commonCd)
+{
+
+    m_chain1.clear();
+    m_chain1.push_back(SGuideAlignmentLink(guideInput1.cd, guideInput1.rowInCd));
+
+    m_chain2.clear();
+    m_chain2.push_back(SGuideAlignmentLink(guideInput2.cd, guideInput2.rowInCd));
+}
+
 
 
 // ============================================

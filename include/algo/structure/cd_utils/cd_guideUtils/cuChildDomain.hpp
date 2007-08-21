@@ -135,7 +135,8 @@ public:
     unsigned int GetNumOriginalAncestors() const { return m_originalAncestors.size();}
     const CCdd::TAncestors& GetOriginalAncestors() const { return m_originalAncestors;}
 
-    //  So that we can construct a guide to an existing parent, if needed.
+    //  So that we can construct a guide to an existing *classical* parent, if needed;
+    //  all other types of parents should already have a guide declared.
     //  Return true when added; false if 'parent' is not a pre-existing parent of m_childCD.
     bool AddLinkToOriginalAncestor(CLinkToParent* link);
 
@@ -181,8 +182,9 @@ protected:
 
 private:
 
-    typedef map<string, CLinkToParent*> TPreExistParentMap;
+    typedef multimap<string, CLinkToParent*> TPreExistParentMap;
     typedef TPreExistParentMap::iterator TPEPIt;
+    typedef TPreExistParentMap::value_type TPEPVT;
 
     CCdCore* m_childCD;
     vector<CLinkToParent*> m_parentLinks;        //  these are links to newly added ancestors

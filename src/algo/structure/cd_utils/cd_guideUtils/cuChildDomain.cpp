@@ -61,14 +61,18 @@ bool CLinkToParent::AddMask(const BlockModel& bm)
 
 bool CLinkToParent::AddMask(unsigned int from, unsigned int to)
 {
-    if (!m_guideAlignment || to < from) return false;
+    bool result = false;
+    if (!m_guideAlignment || to < from) return result;
 
     BlockModel bm;
     Block block(from, to - from + 1);
     CRef<CSeq_id> guideSeqId = m_guideAlignment->GetGuide().getMaster().getSeqId();
-    bm.setSeqId(guideSeqId);
-    bm.addBlock(block);
-    return AddMask(bm);
+    if (guideSeqId.NotEmpty()) {
+        bm.setSeqId(guideSeqId);
+        bm.addBlock(block);
+        result = AddMask(bm);
+    } 
+    return result;
 }
 
 //  Assumes the SeqIds in all input block models are the same so that the block 
@@ -149,10 +153,10 @@ CGuideAlignment_Base* CLinkToParent::GetMaskedGuide() const
 {
     if (!m_guideAlignment) return NULL;
 
-    BlockModel mask = BlockModelUnion(m_maskedRegions, false);
     CGuideAlignment_Base* maskedGuide = m_guideAlignment->Copy();
 
-    if (maskedGuide) {
+    if (maskedGuide && m_maskedRegions.size() > 0) {
+        BlockModel mask = BlockModelUnion(m_maskedRegions, false);
         maskedGuide->Mask(mask);
         if (maskedGuide->GetGuide().getMaster().getTotalBlockLength() <= 0) {
             delete maskedGuide;
@@ -199,7 +203,7 @@ bool CChildDomain::AddLinkToOriginalAncestor(CLinkToParent* link)
     CCdd::TAncestors::iterator ancIt = m_originalAncestors.begin(), ancEnd = m_originalAncestors.end();
     for (; ancIt != ancEnd; ++ancIt) {
         if ((*ancIt).NotEmpty() && (GetDomainParentAccession(**ancIt) == ancestorAcc)) {
-            m_preExistingParents[ancestorAcc] = link;
+            m_preExistingParents.insert(TPEPVT(ancestorAcc, link));
             result = true;
         }
     }
@@ -222,6 +226,7 @@ bool CChildDomain::AddParentLink(CLinkToParent* link)
 bool CChildDomain::CreateDomainParent(CLinkToParent* link)
 {
     bool result = true;
+    unsigned int nParentsNow = m_childCD->SetAncestors().size();
     CRef< CDomain_parent > newParent(new CDomain_parent);
 
     newParent->SetParent_type(link->GetType());
@@ -241,7 +246,7 @@ bool CChildDomain::CreateDomainParent(CLinkToParent* link)
         if (parentAlign.NotEmpty()) {
             newParent->SetSeqannot().SetData().SetAlign().push_back(parentAlign);
         } else {
-            result = false;
+            result = maskedGuide->IsOK();  //  a degenerate guide may have no seqAlign
         }
         delete maskedGuide;
     } else {
@@ -259,6 +264,7 @@ bool CChildDomain::CreateDomainParent(CLinkToParent* link)
 CCdCore* CChildDomain::UpdateParentage(bool keepExistingParents)
 {
     if (!m_childCD) return NULL;
+    unsigned int nParentsNow = m_childCD->SetAncestors().size();
 
     if (keepExistingParents) {
         RollbackAncestors(false);
@@ -281,63 +287,63 @@ void CChildDomain::UpdateAncestorListInChild()
     unsigned int nAdded = m_addedAncestors.size();
     unsigned int nExisting = ancList.size();
 
+    if (nAdded == 0) return;
+
     //  Assume that the pre-existing ancestors were self-consistent and only require
     //  adjustment if extra links were added.
-    if (nAdded > 0) {
+    if (nExisting == 0) {
+        minAdded = 1;
+    } else {
+        minAdded = 0;
 
-        if (nExisting == 0) {
-            minAdded = 1;
-        } else {
-            minAdded = 0;
+        //  Fix up guides for pre-existing ancestors...
+        //  ... although we can only add a guide if pointer to pre-existing parent has been added.
+        //  Only classical ancestors should need a guide alignment.
+        ancEnd = ancList.end();
+        for (ancIt = ancList.begin(); ancIt != ancEnd; ++ancIt) {
+            CRef< CDomain_parent >& parent = *ancIt;
 
-            //  Fix up guides for pre-existing ancestors...
-            //  ... although we can only add a guide if pointer to pre-existing parent has been added.
-            //  Only classical ancestors should need a guide alignment.
-            ancEnd = ancList.end();
-            for (ancIt = ancList.begin(); ancIt != ancEnd; ++ancIt) {
-                CRef< CDomain_parent >& parent = *ancIt;
+            //  Don't touch a domain parent that has an existing guide.
+            if (parent->IsSetSeqannot()) continue;
 
-                //  Don't touch a domain parent that has an existing guide.
-                if (parent->IsSetSeqannot()) continue;
+            ancestorAcc = GetDomainParentAccession(*parent);
+            if (parent->GetParent_type() == CDomain_parent::eParent_type_classical) {
+                //  make classical parents fusion parents for now...
+                parent->SetParent_type(CDomain_parent::eParent_type_fusion);
 
-                ancestorAcc = GetDomainParentAccession(*parent);
-                if (parent->GetParent_type() == CDomain_parent::eParent_type_classical) {
-                    //  make classical parents fusion parents for now...
-                    parent->SetParent_type(CDomain_parent::eParent_type_fusion);
-
-                    //  add a guide aligment, if a link was provided...
-                    pepIt = m_preExistingParents.find(ancestorAcc);
-                    if (pepIt != pepEnd) {
-                        link = pepIt->second;
-                        const CGuideAlignment_Base* guide = (link->HasMask()) ? link->GetMaskedGuide() : link->GetFullGuide();
-                        if (guide) {
-                            CRef<CSeq_align> parentAlign = guide->GetGuideAsSeqAlign();  
-                            if (parentAlign.NotEmpty()) {
-                                parent->ResetSeqannot();
-                                parent->SetSeqannot().SetData().SetAlign().push_back(parentAlign);
-                            }
-
-                            //  Only have ownership if guide was masked.
-                            if (link->HasMask()) delete guide;
+                //  add a guide aligment, if a link was provided...
+                //  ...use the first such link found.
+                pepIt = m_preExistingParents.find(ancestorAcc);
+                if (pepIt != pepEnd) {
+                    link = pepIt->second;
+                    const CGuideAlignment_Base* guide = (link->HasMask()) ? link->GetMaskedGuide() : link->GetFullGuide();
+                    if (guide) {
+                        CRef<CSeq_align> parentAlign = guide->GetGuideAsSeqAlign();  
+                        if (parentAlign.NotEmpty()) {
+                            parent->ResetSeqannot();
+                            parent->SetSeqannot().SetData().SetAlign().push_back(parentAlign);
                         }
+
+                        //  Only have ownership if guide was masked.
+                        if (link->HasMask()) delete guide;
                     }
                 }
             }
         }
+    }
 
-        //  Only need to do anything if more than 'minAdded' ancestors were added.
-        if (nAdded > minAdded) {
-            ancEnd = m_addedAncestors.end();
-            for (ancIt = m_addedAncestors.begin(); ancIt != ancEnd; ++ancIt) {
-                //  make all of them fusion parents for now...
-                CRef< CDomain_parent >& parent = *ancIt;
-                if (parent->GetParent_type() != CDomain_parent::eParent_type_fusion) {
-                    parent->SetParent_type(CDomain_parent::eParent_type_fusion);
-                }
+    //  Only need to do anything if more than 'minAdded' ancestors were added.
+    if (nAdded > minAdded) {
+        ancEnd = m_addedAncestors.end();
+        for (ancIt = m_addedAncestors.begin(); ancIt != ancEnd; ++ancIt) {
+            //  make all of them fusion parents for now...
+            CRef< CDomain_parent >& parent = *ancIt;
+            if (parent->GetParent_type() != CDomain_parent::eParent_type_fusion) {
+                parent->SetParent_type(CDomain_parent::eParent_type_fusion);
             }
         }
-        ancList.insert(ancList.end(), m_addedAncestors.begin(), m_addedAncestors.end());
     }
+    ancList.insert(ancList.end(), m_addedAncestors.begin(), m_addedAncestors.end());
 }
 
 void CChildDomain::PurgeAddedLinks()
@@ -378,3 +384,4 @@ bool CChildDomain::IsParentageValid(bool doUpdateFirst) const
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
+

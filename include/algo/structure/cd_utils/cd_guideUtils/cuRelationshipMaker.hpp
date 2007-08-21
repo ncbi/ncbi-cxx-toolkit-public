@@ -162,9 +162,10 @@ public:
     //  range of the parent's alignment.  Last version tries to use the full span of the parent's 
     //  alignment to define a relationship to the child.  
     //  On success, return value is 0 and child's ancestors are updated.  An ErrorCode > 0 is returned on failure.
-    int CreateRelationship(CCdCore* child, CCdCore* parent, unsigned int fromOnParentMaster, unsigned int toOnParentMaster);
-    int CreateRelationship(CCdCore* child, CCdCore* parent, const BlockModel* blocksOnParentMaster);
-    int CreateRelationship(CCdCore* child, CCdCore* parent);
+    //  When the 'degenerate' parameter is true, creates a relationship w/o a seqAlign.
+    int CreateRelationship(CCdCore* child, CCdCore* parent, unsigned int fromOnParentMaster, unsigned int toOnParentMaster, bool degenerate = false);
+    int CreateRelationship(CCdCore* child, CCdCore* parent, const BlockModel* blocksOnParentMaster, bool degenerate = false);
+    int CreateRelationship(CCdCore* child, CCdCore* parent, bool degenerate = false);
 
     //  Cleans up results of any prior calculation.  
     //  You will need to reset the child/parent families after calling this method, and the rows to copy.
