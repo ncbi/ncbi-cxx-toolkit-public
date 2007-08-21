@@ -417,12 +417,67 @@ static void s_BuildIds(TIdList & ids, const char ** gis)
     }
 }
 
+CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
+{
+    istrstream istr(str.data(), str.size());
+    
+    CRef<ILineReader> lr(new CStreamLineReader(istr));
+    
+    typedef CFastaReader::EFlags TFlags;
+    
+    TFlags flags = (TFlags) (CFastaReader::fAllSeqIds |
+                             (protein
+                              ? CFastaReader::fAssumeProt
+                              : CFastaReader::fAssumeNuc));
+    
+    CFastaReader fr(*lr, flags);
+    
+    CHECK(! lr->AtEOF());
+    CRef<CSeq_entry> entry = fr.ReadOneSeq();
+    
+    CHECK(! entry.Empty());
+    CHECK(entry->IsSeq());
+    
+    CRef<CBioseq> bs(& entry->SetSeq());
+    
+    return bs;
+}
+
+
+// Unit test verbosity support.
+
+static void s_UnitTestVerbosity(string s)
+{
+    static bool enabled = static_cast<bool>(getenv("VERBOSE_UT") != NULL);
+    
+    if (enabled) {
+        cout << "Running test: " << s << endl;
+    }
+}
+
+#define UNIT_TEST_FILTER(s) \
+{ \
+    string nm(s); \
+    string filter(getenv("FILTER_UT") ? getenv("FILTER_UT") : ""); \
+    \
+    if (nm.size() && filter.size() && nm.find(filter) == string::npos) { \
+        cout << "Skipping test: " << s << endl; \
+        return; \
+    } \
+}
+
+#define START UNIT_TEST_FILTER(BOOST_CURRENT_FUNCTION); \
+              s_UnitTestVerbosity(BOOST_CURRENT_FUNCTION)
+
+
 //
 // Actual test cases.
 //
 
 BOOST_AUTO_TEST_CASE(s_NuclBioseqDup)
 {
+    START;
+    
     int gis[] = {
         78883515, 78883517, 71143095, 24431485, 19110479, 15054463,
         15054465, 15054467, 15054469, 15054471, 19570808, 18916476,
@@ -455,6 +510,8 @@ BOOST_AUTO_TEST_CASE(s_NuclBioseqDup)
 
 BOOST_AUTO_TEST_CASE(s_ProtBioseqDup)
 {
+    START;
+    
     int gis[] = {
         1477444,  1669609,  1669611,  1669615, 1669617, 7544146,
         22652804, 1310870,  3114354,  3891778, 3891779, 81294290,
@@ -487,6 +544,8 @@ BOOST_AUTO_TEST_CASE(s_ProtBioseqDup)
 
 BOOST_AUTO_TEST_CASE(s_EmptyBioseq)
 {
+    START;
+    
     CWriteDB fails("failing-db",
                    CWriteDB::eProtein,
                    "title",
@@ -500,6 +559,8 @@ BOOST_AUTO_TEST_CASE(s_EmptyBioseq)
 
 BOOST_AUTO_TEST_CASE(s_BioseqHandle)
 {
+    START;
+    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -523,6 +584,8 @@ BOOST_AUTO_TEST_CASE(s_BioseqHandle)
 
 BOOST_AUTO_TEST_CASE(s_BioseqHandleAndSeqVector)
 {
+    START;
+    
     CWriteDB db("from-loader",
                 CWriteDB::eProtein,
                 "title",
@@ -554,6 +617,8 @@ BOOST_AUTO_TEST_CASE(s_BioseqHandleAndSeqVector)
 
 BOOST_AUTO_TEST_CASE(s_SetPig)
 {
+    START;
+    
     string nm = "pigs";
     vector<string> files;
     
@@ -610,6 +675,8 @@ BOOST_AUTO_TEST_CASE(s_SetPig)
 
 BOOST_AUTO_TEST_CASE(s_MultiVolume)
 {
+    START;
+    
     CSeqDB nr("nr", CSeqDB::eProtein);
     
     CWriteDB db("multivol",
@@ -664,6 +731,8 @@ BOOST_AUTO_TEST_CASE(s_MultiVolume)
 
 BOOST_AUTO_TEST_CASE(s_UsPatId)
 {
+    START;
+    
     CRef<CSeq_id> seqid(new CSeq_id("pat|us|123|456"));
     vector<string> files;
     
@@ -706,6 +775,8 @@ BOOST_AUTO_TEST_CASE(s_UsPatId)
 
 BOOST_AUTO_TEST_CASE(s_IsamSorting)
 {
+    START;
+    
     // This checks whether the following IDs are fetchable from the
     // given database.  It will fail if either the production blast
     // databases (i.e. found at $BLASTDB) are corrupted or if the
@@ -745,8 +816,10 @@ BOOST_AUTO_TEST_CASE(s_IsamSorting)
                        "test of string ISAM sortedness");
 }
 
-BOOST_AUTO_TEST_CASE(HashToOid)
+BOOST_AUTO_TEST_CASE(s_HashToOid)
 {
+    START;
+    
     CSeqDBExpert nr("nr", CSeqDB::eProtein);
     CSeqDBExpert nt("nt", CSeqDB::eNucleotide);
     
@@ -791,34 +864,10 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     nucl.Reset();
 }
 
-CRef<CBioseq> s_FastaStringToBioseq(const string & str, bool protein)
-{
-    istrstream istr(str.data(), str.size());
-    
-    CRef<ILineReader> lr(new CStreamLineReader(istr));
-    
-    typedef CFastaReader::EFlags TFlags;
-    
-    TFlags flags = (TFlags) (CFastaReader::fAllSeqIds |
-                             (protein
-                              ? CFastaReader::fAssumeProt
-                              : CFastaReader::fAssumeNuc));
-    
-    CFastaReader fr(*lr, flags);
-    
-    CHECK(! lr->AtEOF());
-    CRef<CSeq_entry> entry = fr.ReadOneSeq();
-    
-    CHECK(! entry.Empty());
-    CHECK(entry->IsSeq());
-    
-    CRef<CBioseq> bs(& entry->SetSeq());
-    
-    return bs;
-}
-
 BOOST_AUTO_TEST_CASE(s_FastaReaderBioseq)
 {
+    START;
+    
     vector<string> files;
     
     string title = "from-fasta-reader";
