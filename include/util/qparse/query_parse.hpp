@@ -88,6 +88,7 @@ public:
         eFloatConst,       ///< Floating point const
         eBoolConst,        ///< Boolean (TRUE or FALSE)
         eString,           ///< String ("free text")
+        eFunction,         ///< Function
 
         // Operation codes:
         eNot,
@@ -283,6 +284,9 @@ public:
         eSyntaxCheck,      ///< Best possible check for errors
         eSyntaxRelax       ///< Relaxed parsing rules
     };
+    
+    /// List of keywords recognised as functions
+    typedef vector<string> TFunctionNames;
 
     /// Query parser front-end function
     ///
@@ -294,11 +298,14 @@ public:
     ///    Sensitivity to syntax errors
     /// @param verbose
     ///    Debug print switch
+    /// @param functions
+    ///    List of names recognised as functions
     ///
     void Parse(const char*   query_str, 
-               ECase         case_sense   = eCaseInsensitive,
-               ESyntaxCheck  syntax_check = eSyntaxCheck,
-               bool          verbose      = false);
+               ECase         case_sense        = eCaseInsensitive,
+               ESyntaxCheck  syntax_check      = eSyntaxCheck,
+               bool          verbose           = false,
+               const TFunctionNames& functions =  TFunctionNames(0));
 
     
     /// Replace current query tree with the new one.
@@ -329,6 +336,9 @@ public:
                       TNode*                 arg1, 
                       TNode*                 arg2,
                       const string&          orig_text="");
+    /// Create function node
+    virtual 
+    TNode* CreateFuncNode(const string&  func_name);
 
     /// @}
     

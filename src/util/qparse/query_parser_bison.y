@@ -70,10 +70,18 @@ void AddFunc_Arg(void*                   parm,
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
     CQueryParseTree::TNode* in_node = env->GetIN_Context();
+    CQueryParseTree::TNode* func_node = env->GetContext();
+    
+    // function is higher priority 
+    // TODO: (strickly speaking IN and FUNC should be separated)
+    //
+    if (func_node) {
+        func_node->AddNode(node);
+    } else
     if (in_node) {
         in_node->AddNode(node);
-        env->ForgetPoolNodes(node, 0);
     }
+    env->ForgetPoolNodes(node, 0);
 }
 
 %}
@@ -86,6 +94,7 @@ void AddFunc_Arg(void*                   parm,
 %token SELECT
 %token FROM
 %token WHERE
+%token FUNCTION
 
 
 %left AND
@@ -123,12 +132,15 @@ select_clause :
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
 
     /* create a pseudo node to isolate select list in a dedicated subtree */
-    CQueryParseTree::TNode* qnode = 0;
-    qnode = env->QTree().CreateNode(CQueryParseNode::eList, 0, 0, "LIST");    
-    qnode->MoveSubnodes($2);
-    qnode->InsertNode(qnode->SubNodeBegin(), $2);
+    //CQueryParseTree::TNode* qnode = 0;
+    //qnode = env->QTree().CreateNode(CQueryParseNode::eList, 0, 0, "LIST");    
+    //qnode->MoveSubnodes($2);
+    CQueryParseTree::TNode* qnode = env->GetContext();
+    if (qnode) {
+        qnode->InsertNode(qnode->SubNodeBegin(), $2);
+    }
 
-    $1->InsertNode($1->SubNodeBegin(),qnode);                
+    //$1->InsertNode($1->SubNodeBegin(),qnode);                
     
     $1->AddNode($3);
     $3->MoveSubnodes($4);
@@ -144,6 +156,7 @@ select_clause :
     env->ForgetPoolNode($5);
     
     env->SetSELECT_Context(0);
+    env->SetContext(0);
     env->SetFROM_Context(0);
     
     $$ = $1;
@@ -167,20 +180,32 @@ opt_where :
     }
 ;
 
+functional:
+    FUNCTION '(' scalar_list ')'
+    {
+        $$ = $1;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        env->AttachQueryTree($$);    
+        $$->InsertNode($$->SubNodeBegin(), $3);
+        env->SetContext(0);
+        env->ForgetPoolNodes($1, $3);    
+    }  
+;
+
 obj_list:
     scalar_value
     {
         $$ = $1;
-    }    
+    }
     | obj_list ',' scalar_value
     {
         $$ = $1;
-        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);        
-        $$->AddNode($3);
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        AddFunc_Arg(parm, $3);        
+        //$$->AddNode($3);
         env->ForgetPoolNode($3);
     }    
 ;
-
 
 scalar_value :
     /* integer constant */
@@ -195,6 +220,10 @@ scalar_value :
     }    
     /* pure string identifier */
     | IDENT
+    {
+        $$ = $1;         
+    }
+    | functional
     {
         $$ = $1;         
     }
@@ -222,11 +251,16 @@ in_sub_expr:
 exp :
     scalar_value
     {
+        $$ = $1;
+    }
+    /* Function call */
+    |  functional
+    {
+        $$ = $1;
     }    
     /* Field search */
     | STRING IDENT
-    {
-    
+    {    
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
         $$ = env->QTree().CreateNode(CQueryParseNode::eFieldSearch, $1, $2);
         env->AttachQueryTree($$);

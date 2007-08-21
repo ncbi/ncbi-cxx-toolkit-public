@@ -66,6 +66,7 @@ bool s_Compare(const char* p, const char* p_end,
     return !*t  &&  ( !*p  ||  isspace(*p));
 }
 
+
 /// Check if next substring is a function-like expression
 /// "IN (..." or "Function(..."
 ///
@@ -237,9 +238,13 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
     CQueryParseTree::TNode* in_node = env->GetIN_Context();
     CQueryParseTree::TNode* select_node = env->GetSELECT_Context();
     CQueryParseTree::TNode* from_node = env->GetFROM_Context();
+    CQueryParseTree::TNode* ctx_node = env->GetContext();
+    
+    const CQueryParseTree::TFunctionNames* function_names 
+                                            = env->GetFunctions();
     
     // comma works as a token breaker?
-    bool comma_break = in_node || select_node || from_node;
+    bool comma_break = in_node || select_node || ctx_node || from_node;
 
     // skip leading white space
     //
@@ -337,8 +342,16 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         *lvalp = qnode = 
             env->QTree().CreateNode(CQueryParseNode::eSelect, 0, 0,
                                     string(ptr-6, 6));
+                                    
+        /* create a pseudo node to isolate select list in a dedicated subtree */
+        {{
+        CQueryParseTree::TNode* lnode = 0;
+        lnode = env->QTree().CreateNode(CQueryParseNode::eList, 0, 0, "LIST");
+        qnode->AddNode(lnode);
         env->AttachToPool(qnode); 
         env->SetSELECT_Context(qnode);
+        env->SetContext(lnode);
+        }}
         qnode->GetValue().SetLoc(line, line_pos);        
         return SELECT;
     // FROM
@@ -783,8 +796,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         qnode->GetValue().SetLoc(line, line_pos);
         return STRING;
     }
-
-
+    
     // Field search metadata like "[MESH]"
     //
     if (c == '[') {
@@ -812,6 +824,43 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         qnode->GetValue().SetLoc(line, line_pos);
         return IDENT;
     }
+    
+    // Evaluate functions
+    //
+    if (function_names) {
+    
+        ptr = env->GetBufPtr();
+        
+        // scan all functions. maybe it is faster to extract a token
+        // and compare it to sorted function list 
+        // (if there are a LOT of functions)
+        // current implementation seems to be big-O suboptimal
+        //        
+        for (size_t f = 0; f < function_names->size(); ++f) {
+            const string& fname = (*function_names)[f];
+            if (fname.empty()) {
+                continue;
+            }            
+            const char* fn = fname.c_str();
+            if (fn[0] != c) {
+                continue;
+            }
+            ++fn;
+            if (s_LookAheadCmp (ptr, end, fn, case_sense, true)) {
+                *lvalp = qnode = 
+                    env->QTree().CreateFuncNode(fname);
+                env->AddNodeToPool(qnode); 
+                qnode->GetValue().SetLoc(line, line_pos);
+                
+                env->Skip(fname.length()-1);
+                
+                env->SetContext(qnode);
+                
+                return FUNCTION;
+            }
+        } // for f
+    }
+    
 
 
     // the query contains text
@@ -951,6 +1000,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         last_word_ptr = ptr; last_token_end_ptr = token_end;
         
     } // while
+        
 
     // create a node for the text
     //

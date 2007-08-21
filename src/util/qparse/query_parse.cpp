@@ -91,6 +91,7 @@ CQueryParseNode::CQueryParseNode(double val, const string& orig_text)
 
 CQueryParseNode::CQueryParseNode(EType op, const string& orig_text)
 : m_Type(op),
+  m_Value(orig_text),
   m_OrigText(orig_text),
   m_Explicit(true),
   m_Not(false),
@@ -100,9 +101,9 @@ CQueryParseNode::CQueryParseNode(EType op, const string& orig_text)
 
 const string& CQueryParseNode::GetStrValue() const
 {
-    if (m_Type == eIdentifier || m_Type == eString) {
+    if (m_Type == eIdentifier || m_Type == eString || m_Type == eFunction) {
         return m_Value;
-    } else if (m_Type == eIntConst || m_Type == eFloatConst) {
+    } else if (m_Type == eIntConst || m_Type == eFloatConst || m_Type == eList) {
         return m_OrigText;
     }
     NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
@@ -138,7 +139,7 @@ double CQueryParseNode::GetDouble() const
 
 const string& CQueryParseNode::GetIdent() const
 {
-    if (m_Type != eIdentifier) {
+    if (m_Type != eIdentifier || m_Type != eFunction) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
                    "Incorrect query node type");
     }
@@ -227,6 +228,11 @@ CQueryParseTree::CreateNode(CQueryParseNode::EType     op,
    return node.release();
 }
 
+CQueryParseTree::TNode* 
+CQueryParseTree::CreateFuncNode(const string&  func_name)
+{
+    return new TNode(CQueryParseNode(CQueryParseNode::eFunction, func_name));
+}
 
 
 /// Reset query node

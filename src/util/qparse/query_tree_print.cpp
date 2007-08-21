@@ -112,6 +112,9 @@ public:
         case CQueryParseNode::eBoolConst:
             PrintElement(NStr::BoolToString(qnode.GetBool()), qnode);
             break;            
+        case CQueryParseNode::eFunction:
+            PrintElement(qnode.GetStrValue() + "()", qnode);
+            break;
         case CQueryParseNode::eNot:
             PrintElement("NOT", qnode);
             break;

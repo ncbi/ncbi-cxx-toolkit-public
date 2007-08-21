@@ -91,6 +91,8 @@ class CQueryParserEnv
 {
 public:
     typedef CResourcePool<CQueryParseTree::TNode, CFastMutex> TNodePool;
+    /// Parsing context stack
+    typedef vector<CQueryParseTree::TNode*>                   TContextStack;
     
 public:
     CQueryParserEnv(const char* query_str, CQueryParseTree& qtree)
@@ -102,8 +104,9 @@ public:
       m_Case(CQueryParseTree::eCaseInsensitive),
       m_ParseTolerance(CQueryParseTree::eSyntaxCheck),
       m_InNode(0),
-      m_SelectNode(0),
-      m_FromNode(0)
+//      m_SelectNode(0),
+      m_FromNode(0),
+      m_Functions(0)
     {
         m_QueryLen = ::strlen(m_Query);
         m_Line = m_LinePos = 0;
@@ -133,6 +136,12 @@ public:
             delete m_QueryTree; m_QueryTree = 0;
         }
     }
+    
+    /// Register pointer on function names (no ownership transfer)
+    void SetFunctions(const CQueryParseTree::TFunctionNames* func) { m_Functions = func; }
+    /// Get list of registered functions
+    const CQueryParseTree::TFunctionNames* GetFunctions() const { return m_Functions; }
+    
 
     const char*  GetQueryBuffer() const { return m_Query; }
     const char*  GetBufPtr() const { return m_Ptr; }
@@ -247,17 +256,44 @@ public:
     }
     CQueryParseTree::TNode* GetIN_Context() { return m_InNode; }
 
-    void SetSELECT_Context(CQueryParseTree::TNode* select_node)
+    void SetSELECT_Context(CQueryParseTree::TNode* node)
     {
-        m_SelectNode = select_node;
+        if (node) {
+            m_SelectCtxStack.push_back(node);
+        } else {
+            m_SelectCtxStack.pop_back();
+        }
     }
-    CQueryParseTree::TNode* GetSELECT_Context() { return m_SelectNode; }
+    CQueryParseTree::TNode* GetSELECT_Context() 
+    { 
+        if (m_SelectCtxStack.size() == 0) {
+            return 0;
+        }
+        return m_SelectCtxStack[m_SelectCtxStack.size()-1];
+    }
 
     void SetFROM_Context(CQueryParseTree::TNode* from_node)
     {
         m_FromNode = from_node;
     }
     CQueryParseTree::TNode* GetFROM_Context() { return m_FromNode; }
+    
+    void SetContext(CQueryParseTree::TNode* node)
+    {
+        if (node) {
+            m_CtxStack.push_back(node);
+        } else {
+            m_CtxStack.pop_back();
+        }
+    }
+        
+    CQueryParseTree::TNode* GetContext() 
+    { 
+        if (m_CtxStack.size() == 0) {
+            return 0;
+        }
+        return m_CtxStack[m_CtxStack.size()-1];
+    }
 
 private:
     CQueryParseTree& m_QTree;   ///< Base query tree reference
@@ -285,11 +321,18 @@ private:
     /// operator "IN" context pointer
     CQueryParseTree::TNode*             m_InNode;
 
-    /// "SELECT" context pointer
-    CQueryParseTree::TNode*             m_SelectNode;
+    /// "SELECT" parsing context 
+    //CQueryParseTree::TNode*             m_SelectNode;
+    TContextStack                       m_SelectCtxStack;
 
     /// "FROM" context pointer
     CQueryParseTree::TNode*             m_FromNode;
+    
+    /// Common parsing context
+    TContextStack                       m_CtxStack;
+
+    /// Function names 
+    const CQueryParseTree::TFunctionNames*    m_Functions;
 
 };
 
@@ -314,10 +357,11 @@ int ncbi_q_error (const char *s)
 BEGIN_NCBI_SCOPE
 
 
-void CQueryParseTree::Parse(const char*   query_str, 
-                            ECase         case_sense,
-                            ESyntaxCheck  syntax_check,
-                            bool          verbose)
+void CQueryParseTree::Parse(const char*           query_str, 
+                            ECase                 case_sense,
+                            ESyntaxCheck          syntax_check,
+                            bool                  verbose,
+                            const TFunctionNames& functions)
 {
     CQueryParserEnv env(query_str, *this);
 
@@ -331,6 +375,9 @@ void CQueryParseTree::Parse(const char*   query_str,
     env.SetCase(case_sense);
     env.SetVerbose(verbose);
     env.SetParserTolerance(syntax_check);
+    if (functions.size()) {
+        env.SetFunctions(&functions);
+    }
 
     int res = ncbi_q_parse((void*) &env);
     if (res != 0) {

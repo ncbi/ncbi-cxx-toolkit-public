@@ -255,14 +255,22 @@ static
 void TestExpression(const char* q, bool cs = false,
                                    bool relax = false)
 {
+    CQueryParseTree::TFunctionNames fnames;
+    fnames.push_back("MAX");
+    fnames.push_back("AVG");
+    
     CQueryParseTree qtree;
+    
+    
     NcbiCout << "---------------------------------------------------" << endl;
     NcbiCout << "Query:" << "'" << q << "'" << endl << endl;    
     qtree.Parse(q, 
                 cs ? CQueryParseTree::eCaseSensitiveUpper :
                      CQueryParseTree::eCaseInsensitive,
                 relax ? CQueryParseTree::eSyntaxRelax : 
-                     CQueryParseTree::eSyntaxCheck
+                     CQueryParseTree::eSyntaxCheck,
+                false,
+                fnames
                 );
     qtree.Print(NcbiCout);
     NcbiCout << "---------------------------------------------------" << endl;
@@ -346,6 +354,7 @@ int CTestQParse::Run(void)
 {
     {{
     const char* queries[] = {       
+/*   
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
         " 1 AND 0 ",
@@ -385,13 +394,16 @@ int CTestQParse::Run(void)
          "feature IN    \n(\"cds\", gene , snp, \"bio nonsense\")",         
          "binding id NOT     IN   (1, 20)",
          "vitamin C issue not between 1 and 10",
+*/         
          "drug NOT LIKE aspirin",                  
          "db not in (pubmed, gene)",
          "SELECT aaa FROM table1",
          "SELECT aaa,bbbb FROM table1,table2",
          "SELECT aaa,bbbb,cccc,dddd FROM table1 WHERE fld1=10 OR fld2=12",         
-         "SELECT f1,f2,f22 FROM t1,t2 WHERE aaa=1 OR fld2 IN ( SELECT f31,f41 FROM t3 WHERE v=10 )"
-         
+         "SELECT f1,f2,f22 FROM t1,t2 WHERE aaa=1 OR fld2 IN ( SELECT f31,f41 FROM t3 WHERE v=10 )",
+         "referrer like \"entrez/query.fcgi?db=Genome\" AND  db=genomeprj",
+         "SELECT MAX(aaa, bbb),f23, AVG(aaa) FROM Table WHERE AVG(1,2,3) == 2",
+         "MAX(aaa, bbb) = AVG(1,2,MAX(2,3))"
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {
@@ -399,7 +411,7 @@ int CTestQParse::Run(void)
     } // for
     
     }}
-
+return 0;
     NcbiCout << endl << endl;
     NcbiCout << "Misspelled queries.";
     NcbiCout << endl << endl;
