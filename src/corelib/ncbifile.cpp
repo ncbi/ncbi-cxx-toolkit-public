@@ -4260,6 +4260,7 @@ const char* CFileException::GetErrCodeString(void) const
     case eMemoryMap:    return "eMemoryMap";
     case eRelativePath: return "eRelativePath";
     case eNotExists:    return "eNotExists";
+    case eFileIO:       return "eFileIO";
     default:            return CException::GetErrCodeString();
     }
 }
@@ -4269,6 +4270,7 @@ const char* CFileErrnoException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eFileSystemInfo:  return "eFileSystemInfo";
     case eFileLock:        return "eFileLock";
+    case eFileIO:          return "eFileIO";
     default:               return CException::GetErrCodeString();
     }
 }
@@ -4374,48 +4376,151 @@ void FindFiles(const string& pattern,
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// CFileReader
+// CFileIO
 //
 
-CFileReader::CFileReader(const string& filename)
-    : m_CloseHandle(false)
+CFileIO::CFileIO(void)
+    : m_Handle(kInvalidHandle), m_CloseHandle(false)
+{
+    return;
+}
+
+
+CFileIO::~CFileIO()
+{
+    if (m_Handle == kInvalidHandle) {
+        return;
+    }
+    Close();
+}
+
+
+void CFileIO::Open(const string& filename,
+                   EOpenMode     open_mode,
+                   EAccessMode   access_mode,
+                   EShareMode    share_mode)
 {
 #if defined(NCBI_OS_MSWIN)
-    m_Handle = CreateFile(filename.c_str(),
-                          GENERIC_READ,
-                          FILE_SHARE_READ,
-                          NULL,
-                          OPEN_EXISTING,
-                          0,
-                          NULL);
-    bool error = m_Handle == INVALID_HANDLE_VALUE;
+
+    // Translate parameters
+    DWORD dwAccessMode, dwShareMode, dwOpenMode;
+
+    switch (open_mode) {
+        case eCreate:
+            dwOpenMode = CREATE_ALWAYS;
+            break;
+        case eCreateNew:
+            dwOpenMode = CREATE_NEW;
+            break;
+        case eOpen:
+            dwOpenMode = OPEN_EXISTING;
+            break;
+        case eTruncate:
+            dwOpenMode = TRUNCATE_EXISTING;
+            break;
+        default:
+            _TROUBLE;
+    }
+    switch (access_mode) {
+        case eRead:
+            dwAccessMode = GENERIC_READ;
+            break;
+        case eWrite:
+            dwAccessMode = GENERIC_WRITE;
+            break;
+        case eReadWrite:
+            dwAccessMode = GENERIC_READ | GENERIC_WRITE;
+            break;
+        default:
+            _TROUBLE;
+    };
+    switch (share_mode) {
+        case eShareRead:
+            dwShareMode = FILE_SHARE_READ;
+            break;
+        case eShareWrite:
+            dwShareMode = FILE_SHARE_WRITE;
+            break;
+        case eShare:
+            dwShareMode = FILE_SHARE_READ | FILE_SHARE_WRITE;
+            break;
+        case eExclusive:
+            dwShareMode = 0;
+            break;
+        default:
+            _TROUBLE;
+    }
+
+    m_Handle = CreateFile(filename.c_str(), dwAccessMode,
+                          dwShareMode, NULL, dwOpenMode,
+                          FILE_ATTRIBUTE_NORMAL, NULL);
+
 #elif defined(NCBI_OS_UNIX)
-# ifndef O_BINARY
-    int open_mode = O_RDONLY;
+
+    // Translate parameters
+# if defined(O_BINARY)
+    int flags = O_BINARY;
 # else
-    int open_mode = O_RDONLY|O_BINARY;
+    int flags = 0; 
 # endif
-    m_Handle = open(filename.c_str(), open_mode);
-    bool error = m_Handle == -1;
+    mode_t mode = 0;
+
+    switch (open_mode) {
+        case eCreate:
+            flags |= (O_CREAT | O_TRUNC);
+            break;
+        case eCreateNew:
+            if ( CFile(filename).Exists() ) {
+                NCBI_THROW(CFileException, eFileIO,
+                    "Open mode is eCreateNew, but file " +
+                     filename + " already exists" );
+            }
+            flags |= O_CREAT;
+            break;
+        case eOpen:
+            // by default
+            break;
+        case eTruncate:
+            flags |= O_TRUNC;
+            break;
+        default:
+            _TROUBLE;
+    }
+    switch (access_mode) {
+        case eRead:
+            flags |= O_RDONLY;
+            mode  |= S_IREAD;
+            break;
+        case eWrite:
+            flags |= O_WRONLY;
+            mode  |= S_IWRITE;
+            break;
+        case eReadWrite:
+            flags |= O_RDWR;
+            mode  |= (S_IREAD | S_IWRITE);
+            break;
+        default:
+            _TROUBLE;
+    };
+    // -- Ignore 'share_mode' on UNIX.
+    share_mode = eShare;
+
+    // Try to open/create file
+    m_Handle = open(filename.c_str(), flags);
+
 #endif
 
-    if ( error ) {
-        NCBI_THROW(CFileException, eNotExists,
-                   "Unable to construct CFileReader from " + filename);
+    if (m_Handle == kInvalidHandle) {
+        NCBI_THROW(CFileErrnoException, eFileIO,
+                   "Cannot open file " + filename);
     }
     m_CloseHandle = true;
 }
 
 
-CFileReader::CFileReader(THandle handle)
-    : m_Handle(handle), m_CloseHandle(false)
+void CFileIO::Close(void)
 {
-}
-
-
-CFileReader::~CFileReader()
-{
-    if ( m_CloseHandle ) {
+    if (m_CloseHandle) {
 #if defined(NCBI_OS_MSWIN)
         CloseHandle(m_Handle);
 #elif defined(NCBI_OS_UNIX)
@@ -4425,47 +4530,103 @@ CFileReader::~CFileReader()
 }
 
 
-IReader* CFileReader::New(const string& filename)
+ssize_t CFileIO::Read(void* buf, size_t count)
+{
+#if defined(NCBI_OS_MSWIN)
+    DWORD n = 0;
+    if ( ::ReadFile(m_Handle, buf, count, &n, NULL) == 0 ) {
+        return GetLastError() == ERROR_HANDLE_EOF? 0 : -1;
+    }
+#elif defined(NCBI_OS_UNIX)
+    ssize_t n = read(int(m_Handle), buf, count);
+#endif
+    return n;
+}
+
+
+ssize_t CFileIO::Write(const void* buf, size_t count)
+{
+#if defined(NCBI_OS_MSWIN)
+    DWORD n = 0;
+    if ( WriteFile(m_Handle, buf, count, &n, NULL) == 0 ) {
+        return -1;
+    }
+#elif defined(NCBI_OS_UNIX)
+    ssize_t n = write(int(m_Handle), buf, count);
+#endif
+    return n;
+}
+
+
+bool CFileIO::Flush(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    return FlushFileBuffers(m_Handle) == TRUE;
+#elif defined(NCBI_OS_UNIX)
+    return fsync(m_Handle) == 0;
+#endif
+}
+
+
+void CFileIO::SetFileHandle(TFileHandle handle)
+{
+    // Close previous handle if needed
+    Close();
+    // Use given handle for all I/O
+    m_Handle = handle;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CFileReader
+//
+
+CFileReader::CFileReader(const string& filename, EShareMode share_mode)
+{
+    m_File.Open(filename, eOpen, eRead, share_mode);
+}
+
+
+CFileReader::CFileReader(TFileHandle handle)
+{
+    m_File.SetFileHandle(handle);
+    return;
+}
+
+
+IReader* CFileReader::New(const string& filename, EShareMode share_mode)
 {
     if ( filename == "-" ) {
 #if defined(NCBI_OS_MSWIN)
-        THandle handle = GetStdHandle(STD_INPUT_HANDLE);
+        TFileHandle handle = GetStdHandle(STD_INPUT_HANDLE);
 #elif defined(NCBI_OS_UNIX)
-        THandle handle = 0;
+        TFileHandle handle = 0;
 #endif
         return new CFileReader(handle);
     }
     else {
-        return new CFileReader(filename);
+        return new CFileReader(filename, share_mode);
     }
 }
 
 
-ERW_Result CFileReader::Read(void*   buf,
-                             size_t  count,
-                             size_t* bytes_read)
+ERW_Result CFileReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
-#if defined(NCBI_OS_MSWIN)
-    DWORD r;
-    if ( ReadFile(m_Handle, buf, count, &r, NULL) == 0 ) {
-        if ( bytes_read ) {
-            *bytes_read = 0;
-        }
-        return GetLastError() == ERROR_HANDLE_EOF? eRW_Eof: eRW_Success;
+    if ( bytes_read ) {
+        *bytes_read = 0;
     }
-#elif defined(NCBI_OS_UNIX)
-    ssize_t r = read(int(m_Handle), buf, count);
-    if ( r == -1 ) {
-        if ( bytes_read ) {
-            *bytes_read = 0;
-        }
+    if ( !count ) {
+        return eRW_Success;
+    }
+    ssize_t n = m_File.Read(buf, count);
+    if ( n == -1 ) {
         return eRW_Error;
     }
-#endif
     if ( bytes_read ) {
-        *bytes_read = r;
+        *bytes_read = n;
     }
-    return r? eRW_Success: eRW_Eof;
+    return n? eRW_Success : eRW_Eof;
 }
 
 
@@ -4473,6 +4634,147 @@ ERW_Result CFileReader::PendingCount(size_t* /*count*/)
 {
     return eRW_NotImplemented;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CFileWriter
+//
+
+CFileWriter::CFileWriter(const string& filename,
+                         EOpenMode  open_mode,
+                         EShareMode share_mode)
+{
+    m_File.Open(filename, open_mode, eWrite, share_mode);
+}
+
+
+CFileWriter::CFileWriter(TFileHandle handle)
+{
+    m_File.SetFileHandle(handle);
+    return;
+}
+
+
+IWriter* CFileWriter::New(const string& filename,
+                          EOpenMode  open_mode,
+                          EShareMode share_mode)
+{
+    return new CFileWriter(filename, open_mode, share_mode);
+}
+
+
+ERW_Result CFileWriter::Write(const void* buf,
+                              size_t count, size_t* bytes_written)
+{
+    if ( bytes_written ) {
+        *bytes_written = 0;
+    }
+    if ( !count ) {
+        return eRW_Success;
+    }
+    ssize_t n = m_File.Write(buf, count);
+    if ( n == -1 ) {
+        return eRW_Error;
+    }
+    if ( bytes_written ) {
+        *bytes_written = n;
+    }
+    return n? eRW_Success : eRW_Error;
+}
+
+
+ERW_Result CFileWriter::Flush(void)
+{
+    if ( m_File.Flush() ) {
+        return eRW_Success;
+    }
+    return eRW_Error;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CFileReaderWriter
+//
+
+CFileReaderWriter::CFileReaderWriter(const string& filename,
+                                     EOpenMode  open_mode,
+                                     EShareMode share_mode)
+{
+    m_File.Open(filename, open_mode, eReadWrite, share_mode);
+}
+
+
+CFileReaderWriter::CFileReaderWriter(TFileHandle handle)
+{
+    m_File.SetFileHandle(handle);
+    return;
+}
+
+
+IReaderWriter* CFileReaderWriter::New(const string& filename,
+                                      EOpenMode  open_mode,
+                                      EShareMode share_mode)
+{
+    return new CFileReaderWriter(filename, open_mode, share_mode);
+}
+
+
+ERW_Result CFileReaderWriter::Read(void* buf,
+                                   size_t count, size_t* bytes_read)
+{
+    if ( bytes_read ) {
+        *bytes_read = 0;
+    }
+    if ( !count ) {
+        return eRW_Success;
+    }
+    ssize_t n = m_File.Read(buf, count);
+    if ( n == -1 ) {
+        return eRW_Error;
+    }
+    if ( bytes_read ) {
+        *bytes_read = n;
+    }
+    return n? eRW_Success : eRW_Eof;
+}
+
+
+ERW_Result CFileReaderWriter::PendingCount(size_t* /*count*/)
+{
+    return eRW_NotImplemented;
+}
+
+
+ERW_Result CFileReaderWriter::Write(const void* buf,
+                                    size_t count, size_t* bytes_written)
+{
+    if ( bytes_written ) {
+        *bytes_written = 0;
+    }
+    if ( !count ) {
+        return eRW_Success;
+    }
+    ssize_t n = m_File.Write(buf, count);
+    if ( n == -1 ) {
+        return eRW_Error;
+    }
+    if ( bytes_written ) {
+        *bytes_written = n;
+    }
+    return n? eRW_Success : eRW_Error;
+}
+
+
+ERW_Result CFileReaderWriter::Flush(void)
+{
+    if ( m_File.Flush() ) {
+        return eRW_Success;
+    }
+    return eRW_Error;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4555,19 +4857,9 @@ void CFileLock::x_Init(const char* filename, EType type, off_t offset, size_t le
     // Open file
     if (filename) {
 #if defined(NCBI_OS_MSWIN)
-/*
-//???
-        m_Handle = CreateFile(filename,GENERIC_READ | GENERIC_WRITE,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-*/
-        m_Handle = CreateFile(filename,GENERIC_READ,
+        m_Handle = CreateFile(filename, GENERIC_READ,
                               FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 #elif defined(NCBI_OS_UNIX)
-/*
-//???
-        int open_mode = (type == eShared) ? O_RDONLY : O_RDWR;
-        m_Handle = open(filename, open_mode);
-*/
         m_Handle = open(filename, O_RDWR);
 #endif
     }

@@ -125,7 +125,8 @@ public:
     enum EErrCode {
         eMemoryMap,
         eRelativePath,
-        eNotExists
+        eNotExists,
+        eFileIO
     };
 
     /// Translate from an error code value to its string representation.
@@ -150,7 +151,8 @@ public:
     /// Error types
     enum EErrCode {
         eFileSystemInfo,
-        eFileLock
+        eFileLock,
+        eFileIO
     };
     /// Translate from an error code value to its string representation.
     virtual const char* GetErrCodeString(void) const;
@@ -2581,45 +2583,227 @@ void NCBI_XNCBI_EXPORT FindFiles(const string& pattern,
 
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Base class for CFileIO, CFileReader, CFileWriter, CFileReaderWriter.
+///
+/// Defines common types.
+
+class NCBI_XNCBI_EXPORT CFileIO_Base
+{
+public:
+    /// File open mode.
+    enum EOpenMode {
+        ///< Create new file, or truncate existent.
+        eCreate,
+        ///< Create new file, fails if the file already exists.
+        eCreateNew,
+        ///< Open existent file, fails if the file does not exists.
+        eOpen,
+        /// Open existent file, and truncate its size to 0.
+        /// Fails if the file does not exists.
+        eTruncate
+    };
+
+    /// Which I/O operations permitted on the file.
+    enum EAccessMode {
+        eRead,        ///< File can be read.
+        eWrite,       ///< File can be written.
+        eReadWrite    ///< File can be read and written.
+    };
+
+    /// Sharing mode for opened file.
+    /// @note
+    ///   If OS does not support sharing mode for files, that it will be
+    ///   ignored. But you can use CFileLock to lock a file or its part.
+    /// @sa CFileLock
+    enum EShareMode {
+        /// Enables subsequent open operations on the file that request read
+        /// access. Otherwise, other processes cannot open the file for reading. 
+        eShareRead,
+        /// Enables subsequent open operations on the file that request write
+        /// access. Otherwise, other processes cannot open the file for writing. 
+        eShareWrite,
+        /// Combines both eShareRead and eShareWrite modes.
+        eShare,
+        /// Open file for exclusive access. Disables any subsequent open
+        /// operations on the file.
+        eExclusive
+    };
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// File based IReader with low level IO for speed
+/// Class for suppport low level input/output for files.
 ///
+/// Throw CFileException/CFileErrnoException on error.
 
-class CFileReader : public IReader
+class NCBI_XNCBI_EXPORT CFileIO : public CFileIO_Base
+{
+public:
+    /// Default constructor
+    CFileIO(void);
+
+    /// Destruct object closing system handle if necessary
+    ~CFileIO(void);
+
+    /// Open file.
+    void Open(const string& filename, EOpenMode open_mode,
+              EAccessMode access_mode, EShareMode share_mode);
+
+    /// Close file.
+    void Close(void);
+
+    /// Read file.
+    ///
+    /// @return
+    ///   On success, the number of bytes read (zero indicates end of file,
+    ///   or that 'count' is zero). On error, -1 is returned. 
+    ssize_t Read(void* buf, size_t count);
+
+    /// Write file.
+    ///
+    /// @return
+    ///   On success, the number of bytes written (zero indicates nothing
+    ///   was written).  On error, -1 is returned. 
+    ssize_t Write(const void* buf, size_t count);
+
+    /// Flush file buffers.
+    bool Flush(void);
+
+    /// Return system file handle associated with the file.
+    TFileHandle GetFileHandle(void) { return m_Handle; };
+
+    /// Close previous handle if needed and use given handle for all I/O.
+    void SetFileHandle(TFileHandle handle);
+
+protected:
+    TFileHandle  m_Handle;      ///< System file handle.
+    bool         m_CloseHandle; ///< Need to close file handle in destructor.
+
+private:
+    // prevent copying
+    CFileIO(const CFileIO&);
+    void operator=(const CFileIO&);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// File based IReader/IWriter/IReaderWriter with low level IO for speed
+///
+/// Throw CFileException/CFileErrnoException on error.
+
+class NCBI_XNCBI_EXPORT CFileReaderWriter_Base : public CFileIO_Base
+{
+public:
+    /// Default constructor
+    CFileReaderWriter_Base(void) {};
+    /// Return system file handle associated with the file.
+    TFileHandle GetFileHandle(void) { return m_File.GetFileHandle(); };
+protected:
+    CFileIO  m_File;
+private:
+    // prevent copying
+    CFileReaderWriter_Base(const CFileReaderWriter_Base&);
+    void operator=(const CFileReaderWriter_Base&);
+};
+
+
+class NCBI_XNCBI_EXPORT CFileReader : public IReader,
+                                      public CFileReaderWriter_Base
 {
 public:
     /// Construct CFileReader for reading from the file with name 'filename'.
-    /// Throw CFileException if file doesn't exist.
-    CFileReader(const string& filename);
+    /// Throw CFileErrnoException on error.
+    CFileReader(const string& filename,
+                EShareMode share_mode = eShareRead);
 
-    /// Destruct the CFileReader closing system handle if necessary
-    ~CFileReader();
+    /// Construct CFileReader for reading from system handle 'handle'.
+    /// Specified handle should have read access right.
+    CFileReader(TFileHandle handle);
 
     /// Return a new IReader object corresponding to the given
     /// filename, taking "-" (but not "./-") to mean standard input.
-    static IReader* New(const string& filename);
+    static IReader* New(const string& filename, 
+                        EShareMode share_mode = eShareRead);
 
     /// Virtual methods from IReader
-    virtual ERW_Result Read(void* buf, size_t  count, size_t* bytes_read = 0);
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     virtual ERW_Result PendingCount(size_t* count);
 
-protected:
-    typedef TFileHandle THandle;
-
-    /// Construct CFileReader for reading from system handle 'handle'
-    CFileReader(THandle handle);
-
 private:
-    // System IO handle
-    THandle m_Handle;
-    // Close handle in destructor
-    bool m_CloseHandle;
-
-private: // prevent copying
+    // prevent copying
     CFileReader(const CFileReader&);
     void operator=(const CFileReader&);
+};
+
+
+class NCBI_XNCBI_EXPORT CFileWriter : public IWriter,
+                                      public CFileReaderWriter_Base
+{
+public:
+    /// Construct CFileWriter for reading from the file with name 'filename'.
+    /// Throw CFileErrnoException on error.
+    CFileWriter(const string& filename,
+                EOpenMode  open_mode  = eCreate,
+                EShareMode share_mode = eShareRead);
+
+    /// Construct CFileWriter for writing to system handle 'handle'.
+    /// Specified handle should have read/write access rights.
+    CFileWriter(TFileHandle handle);
+
+    /// Return a new IWriter object corresponding to the given
+    /// filename.
+    static IWriter* New(const string& filename,
+                        EOpenMode  open_mode  = eCreate,
+                        EShareMode share_mode = eShareRead);
+
+    /// Virtual methods from IWriter
+    virtual ERW_Result Write(const void* buf, size_t count,
+                             size_t* bytes_written = 0);
+    virtual ERW_Result Flush(void);
+
+private:
+    // prevent copying
+    CFileWriter(const CFileWriter&);
+    void operator=(const CFileWriter&);
+};
+
+
+class NCBI_XNCBI_EXPORT CFileReaderWriter : public IReaderWriter,
+                                            public CFileReaderWriter_Base
+{
+public:
+    /// Construct CFileReaderWriter for reading/writing to/from
+    /// the file with name 'filename'. 
+    /// Throw CFileErrnoException on error.
+    CFileReaderWriter(const string& filename,
+                      EOpenMode  open_mode  = eOpen,
+                      EShareMode share_mode = eShareRead);
+
+    /// Construct CFileReaderWriter for writing to system handle 'handle'.
+    /// Specified handle should have read and write access rights.
+    CFileReaderWriter(TFileHandle handle);
+
+    /// Return a new IReaderWriter object corresponding to the given
+    /// filename.
+    static IReaderWriter* New(const string& filename,
+                              EOpenMode  open_mode  = eOpen,
+                              EShareMode share_mode = eShareRead);
+
+    /// Virtual methods from IReaderWriter
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    virtual ERW_Result PendingCount(size_t* count);
+    virtual ERW_Result Write(const void* buf, size_t count,
+                             size_t* bytes_written = 0);
+    virtual ERW_Result Flush(void);
+
+private:
+    // prevent copying
+    CFileReaderWriter(const CFileReaderWriter&);
+    void operator=(const CFileReaderWriter&);
 };
 
 
@@ -2637,21 +2821,26 @@ private: // prevent copying
 ///    access the file in any way they choose to.
 ///    MS Windows supports only mandatory locks, and operating system fully
 ///    enforces them.
+///
 /// 2) After locking the file you should work with this file using ONLY
 ///    specified file descriptor, or if the constructor with file name was
 ///    used, obtain a file descriptor from CFileLock object using method
-///    GetFileHandle().Because on Unix all locks associated with a file
+///    GetFileHandle(). Because on Unix all locks associated with a file
 ///    for a given process are removed when any file descriptor for that
 ///    file is closed by that process, even if a lock was never requested for
 ///    that file descriptor. On Windows you cannot open the file for
 ///    writing, if it already have an exclusive lock, even established
 ///    by the same process.
+///    So, often is better to open file somewhere else and pass its file
+///    descriptor to CFileLock class. In this case you have more control
+///    over file. But note that lock type should match to the file open mode.
+///
 /// 3) If you close a file that have locks, the locks will be unlocked by
 ///    the operating system. However, the time it takes for the operating
 ///    system to unlock these locks depends upon available system resources.
 ///    Therefore, it is recommended that your process explicitly remove all
 ///    locks, before closing a file. If this is not done, access to file
-///     may be denied if the operating system has not yet unlocked them.
+///    may be denied if the operating system has not yet unlocked them.
 ///  4) Locks are not inherited by a child process.
 ///
 /// All methods of this class except the destructor throw exceptions
