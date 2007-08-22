@@ -1242,47 +1242,13 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
     }
 
-    // indicate any slack space on the left
-    if(segments[0].m_box[0] > 0) {
-
-        segments.push_front(TSegment());
-        TSegment& g = segments.front();
-        g.m_exon = false;
-        g.m_box[0] = 0;
-        g.m_box[1] = segments[0].m_box[0] - 1;
-        g.m_box[2] = 0;
-        g.m_box[3] = segments[0].m_box[2] - 1;
-        g.m_idty = 0;
-        g.m_len = segments[0].m_box[0];
-        g.m_annot = s_kGap;
-        g.m_details.resize(0);
-        g.m_score = 0;
-    }
+    // segment-level postprocessing
 
     const size_t SeqLen2 (m_genomic.size());
     const size_t SeqLen1 (m_polya_start == kMax_UInt?
                           m_mrna.size():
                           m_polya_start);
-
-    // same on the right
-    TSegment& seg_last (segments.back());
-    if(seg_last.m_box[1] + 1 < SeqLen1) {
-        
-        TSegment g;
-        g.m_exon = false;
-        g.m_box[0] = seg_last.m_box[1] + 1;
-        g.m_box[1] = SeqLen1 - 1;
-        g.m_box[2] = seg_last.m_box[3] + 1;
-        g.m_box[3] = SeqLen2 - 1;
-        g.m_idty = 0;
-        g.m_len = g.m_box[1] - g.m_box[0] + 1;
-        g.m_annot = s_kGap;
-        g.m_details.resize(0);
-        g.m_score = 0;
-        segments.push_back(g);
-    }
-
-    // segment-level postprocessing
+    
     m_segments.resize(0);
     while(true) {
 
@@ -1422,6 +1388,45 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
                 gap_prev = false;
             }
+        }
+
+
+        // indicate any slack space on the left
+        if(segments[0].m_box[0] > 0) {
+            
+            segments.push_front(TSegment());
+            TSegment& g = segments.front();
+            g.m_exon = false;
+            g.m_box[0] = 0;
+            g.m_box[1] = segments[0].m_box[0] - 1;
+            g.m_box[2] = 0;
+            g.m_box[3] = segments[0].m_box[2] - 1;
+            g.m_idty = 0;
+            g.m_len = segments[0].m_box[0];
+            g.m_annot = s_kGap;
+            g.m_details.resize(0);
+            g.m_score = 0;
+            ++seg_dim;
+        }
+
+        // same on the right
+        TSegment& seg_last (segments.back());
+
+        if(seg_last.m_box[1] + 1 < SeqLen1) {
+            
+            segments.push_back(TSegment());
+            TSegment& g (segments.front());
+            g.m_exon = false;
+            g.m_box[0] = seg_last.m_box[1] + 1;
+            g.m_box[1] = SeqLen1 - 1;
+            g.m_box[2] = seg_last.m_box[3] + 1;
+            g.m_box[3] = SeqLen2 - 1;
+            g.m_idty = 0;
+            g.m_len = g.m_box[1] - g.m_box[0] + 1;
+            g.m_annot = s_kGap;
+            g.m_details.resize(0);
+            g.m_score = 0;
+            ++seg_dim;
         }
 
         // merge all adjacent gaps
