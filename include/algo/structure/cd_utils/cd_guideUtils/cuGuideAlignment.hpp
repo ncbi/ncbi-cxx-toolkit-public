@@ -322,6 +322,15 @@ public:
     bool SetOverlapPercentage(int percentage, bool firstFamily = true);
     int GetOverlapPercentage(bool firstFamily = true) const { return (firstFamily) ? m_overlapPercentage1 : m_overlapPercentage2;}
 
+    bool IsCleaningUpFamily(bool firstFamily) const { return (firstFamily) ? m_cleanupFamily1 : m_cleanupFamily2;}
+    void SetCleanUpFamily(bool cleanup, bool firstFamily) { 
+        if (firstFamily) { 
+            m_cleanupFamily1 = cleanup;
+        } else {
+            m_cleanupFamily2 = cleanup;
+        }
+    }
+
     static bool InSameFamily(const CCdCore* cd1, const CCdCore* cd2, const CDFamily* family);
 
 protected:
