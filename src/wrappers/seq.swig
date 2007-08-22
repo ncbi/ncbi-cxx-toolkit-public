@@ -340,6 +340,8 @@ objects/blast/Blas_get_searc_resul_reply.hpp
 objects/blast/Blas_get_searc_resul_reply_.hpp
 objects/blast/Blas_get_searc_resul_reque.hpp
 objects/blast/Blas_get_searc_resul_reque_.hpp
+objects/blast/Blast_get_seq_parts_reques.hpp
+objects/blast/Blast_get_seq_parts_reques_.hpp
 
 objects/blast/Blast4_cutoff.hpp
 objects/blast/Blast4_cutoff_.hpp
@@ -369,6 +371,8 @@ objects/blast/Blast4_get_programs_reply.hpp
 objects/blast/Blast4_get_programs_reply_.hpp
 objects/blast/Blast4_get_queries_reply.hpp
 objects/blast/Blast4_get_queries_reply_.hpp
+objects/blast/Blast4_get_seq_parts_reply.hpp
+objects/blast/Blast4_get_seq_parts_reply_.hpp
 objects/blast/Blast4_get_sequenc_request.hpp
 objects/blast/Blast4_get_sequenc_request_.hpp
 objects/blast/Blast4_get_sequences_reply.hpp

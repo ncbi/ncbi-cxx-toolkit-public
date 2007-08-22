@@ -81,8 +81,12 @@ algo/align/nw/nw_spliced_aligner16.hpp
 algo/align/nw/nw_spliced_aligner32.hpp
 algo/align/nw/nw_band_aligner.hpp
 algo/align/nw/nw_pssm_aligner.hpp
+// prosplign not built in public build as of 8/21/07
+//algo/align/prosplign/prosplign.hpp
+//algo/align/prosplign/prosplign_exception.hpp
 algo/align/splign/splign.hpp
 algo/align/splign/splign_formatter.hpp
+algo/align/splign/splign_cmdargs.hpp
 // "temporary" code, has problems
 //algo/align/splign/splign_hit.hpp
 algo/align/splign/splign_simple.hpp
@@ -90,8 +94,12 @@ algo/align/contig_assembly/contig_assembly.hpp
 algo/align/util/algo_align_util_exceptions.hpp
 algo/align/util/align_shadow.hpp
 algo/align/util/blast_tabular.hpp
+// compartment_finder.hpp consists mainly of templates, including problematic
+// nested template class
+//algo/align/util/compartment_finder.hpp
 algo/align/util/hit_comparator.hpp
 algo/align/util/hit_filter.hpp
+algo/align/util/score_builder.hpp
 
 algo/sequence/align_group.hpp
 algo/sequence/annot_compare.hpp
@@ -160,10 +168,22 @@ algo/blast/api/traceback_stage.hpp
 algo/blast/api/uniform_search.hpp
 algo/blast/api/version.hpp
 
+algo/cobalt/base.hpp
+algo/cobalt/cobalt.hpp
+algo/cobalt/dist.hpp
+algo/cobalt/exception.hpp
+algo/cobalt/hit.hpp
+algo/cobalt/hitlist.hpp
+algo/cobalt/resfreq.hpp
+algo/cobalt/seq.hpp
+algo/cobalt/traceback.hpp
+//algo/cobalt/tree.hpp
+
 algo/dustmask/symdust.hpp
 algo/gnomon/gnomon.hpp
 algo/gnomon/gnomon_exception.hpp
 algo/gnomon/gnomon_model.hpp
+
 // next two trouble for Perl?
 //algo/phy_tree/bio_tree.hpp
 //algo/phy_tree/bio_tree_conv.hpp
@@ -203,6 +223,7 @@ algo/winmask/seq_masker_window_pattern_ambig.hpp
 // include/objmgr/*.hpp that should be %included
 algo/seqqa/blastp_tests.hpp
 algo/seqqa/prot_prod_tests.hpp
+algo/seqqa/seq_id_tests.hpp
 algo/seqqa/seqtest.hpp
 algo/seqqa/single_aln_tests.hpp
 algo/seqqa/xcript_tests.hpp
