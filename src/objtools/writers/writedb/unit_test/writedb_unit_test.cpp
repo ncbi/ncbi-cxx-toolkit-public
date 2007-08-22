@@ -120,21 +120,31 @@ CRef<CSeq_id> s_AccToSeqId(const char * acc)
     return seqid;
 }
 
-// HexDump utility
-string s_HexDumpText(const string & raw, int per, bool use_hex)
+// HexDump utility functions
+
+string s_HexDumpText(const string      & raw,
+                     const vector<int> & layout,
+                     int                 base)
 {
-    string visible;
+    CHECK(layout.size());
     
+    string visible;
     string tmp;
     
-    Uint8 mask = Uint8(Int8(-1));
-    mask >>= (64 - 8*per);
+    int layout_i = 0;
+    int width = 0;
     
-    for(int i = 0; i < (int)raw.size(); i += per) {
-        int left = raw.size() - i;
-        int per1 = (left < per) ? left : per;
+    for(int i = 0; i < (int)raw.size(); i += width) {
+        width = layout[layout_i];
+        CHECK(width);
         
-        string sub(raw, i, per1);
+        Uint8 mask = Uint8(Int8(-1));
+        mask >>= (64 - 8*width);
+        
+        int left = raw.size() - i;
+        int width1 = (left < width) ? left : width;
+        
+        string sub(raw, i, width1);
         
         // Read a standard order value into x.
         
@@ -148,15 +158,28 @@ string s_HexDumpText(const string & raw, int per, bool use_hex)
             visible += " ";
         
         tmp.resize(0);
-        NStr::UInt8ToString(tmp, x & mask, 0, use_hex ? 16 : 10);
+        NStr::UInt8ToString(tmp, x & mask, 0, base);
         
         visible += tmp;
+        layout_i = (layout_i + 1) % layout.size();
     }
     
     return visible;
 }
 
-string s_HexDumpFile(const string & fname, int per, bool use_hex)
+string s_HexDumpText(const string & raw, int per, int base)
+{
+    vector<int> layout;
+    layout.push_back(per);
+    
+    return s_HexDumpText(raw, layout, base);
+}
+
+// Overlay version
+
+string s_HexDumpFile(const string      & fname,
+                     const vector<int> & layout,
+                     int                 base)
 {
     ifstream f(fname.c_str());
     
@@ -174,7 +197,17 @@ string s_HexDumpFile(const string & fname, int per, bool use_hex)
         raw.append(buf, amt);
     }
     
-    return s_HexDumpText(raw, per, use_hex);
+    return s_HexDumpText(raw, layout, base);
+}
+
+string s_HexDumpFile(const string & fname,
+                     int            per,
+                     int            base)
+{
+    vector<int> layout;
+    layout.push_back(per);
+    
+    return s_HexDumpFile(fname, layout, base);
 }
 
 // Copy the sequences listed in 'ids' (integers or FASTA Seq-ids) from
@@ -392,6 +425,15 @@ void s_WrapUpFiles(const vector<string> & files)
 {
     s_CheckFiles(files);
     s_RemoveFiles(files);
+}
+
+// Like s_WrapUpFiles but starting with the DB.
+
+void s_WrapUpDb(CWriteDB & db)
+{
+    vector<string> files;
+    db.ListFiles(files);
+    s_WrapUpFiles(files);
 }
 
 // Copy the specified ids (int -> GI, string -> FASTA Seq-id) from the
@@ -633,10 +675,8 @@ BOOST_AUTO_TEST_CASE(BioseqHandle)
     
     // Clean up.
     
-    vector<string> files;
     db.Close();
-    db.ListFiles(files);
-    s_WrapUpFiles(files);
+    s_WrapUpDb(db);
 }
 
 BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
@@ -666,10 +706,8 @@ BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVector)
     
     // Clean up.
     
-    vector<string> files;
     db.Close();
-    db.ListFiles(files);
-    s_WrapUpFiles(files);
+    s_WrapUpDb(db);
 }
 
 BOOST_AUTO_TEST_CASE(SetPig)
@@ -907,18 +945,9 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     
     prot->Close();
     nucl->Close();
-    
-    vector<string> files;
-    prot->ListFiles(files);
-    s_CheckFiles(files, true);
-    s_RemoveFiles(files);
-    prot.Reset();
-    
-    files.resize(0);
-    nucl->ListFiles(files);
-    s_CheckFiles(files, true);
-    s_RemoveFiles(files);
-    nucl.Reset();
+
+    s_WrapUpDb(*prot);
+    s_WrapUpDb(*nucl);
 }
 
 BOOST_AUTO_TEST_CASE(FastaReaderBioseq)
@@ -995,8 +1024,8 @@ BOOST_AUTO_TEST_CASE(BinaryListBuilder)
         blb8.Write(fn8);
     }
     
-    string h4 = s_HexDumpFile(fn4, 4, true);
-    string h8 = s_HexDumpFile(fn8, 4, true);
+    string h4 = s_HexDumpFile(fn4, 4, 16);
+    string h8 = s_HexDumpFile(fn8, 4, 16);
     
     // The FF...FD symbol indicates a 4 byte TI list; the FF..FC
     // symbol is the eight byte version.
@@ -1013,5 +1042,100 @@ BOOST_AUTO_TEST_CASE(BinaryListBuilder)
     
     CFile(h4).Remove();
     CFile(h8).Remove();
+}
+
+BOOST_AUTO_TEST_CASE(FourAndEightByteTis)
+{
+    START;
+    
+    typedef pair<string, string> TPair;
+    vector< TPair > ids48;
+    
+    // Generate gnl|ti# IDs where # is 1234*2^N for db4, and
+    // 1234*1000^N for db8.
+    
+    {
+        Int8 a4(1234), b4(2), a8(1234), b8(1000);
+        
+        string prefix = "gnl|ti|";
+        
+        for(int i = 0; i < 5; i++) {
+            TPair p;
+            p.first = prefix + NStr::Int8ToString(a4);
+            p.second = prefix + NStr::Int8ToString(a8);
+            
+            ids48.push_back(p);
+            Int8 p4(a4), p8(a8);
+            
+            a4 *= b4;
+            a8 *= b8;
+            
+            // Check for overflow.
+            
+            CHECK(a4 > p4);
+            CHECK(a8 > p8);
+        }
+        
+        // Make sure we really do have 32 and 64 bit IDs.
+        
+        CHECK((a4 >> 32) == 0);
+        CHECK((a8 >> 32) != 0);
+    }
+    
+    string dbname4 = "test-db-short-tis";
+    string dbname8 = "test-db-long-tis";
+    
+    CWriteDB db4(dbname4,
+                 CWriteDB::eNucleotide,
+                 dbname4 + " database.",
+                 CWriteDB::eFullWithTrace);
+    
+    CWriteDB db8(dbname8,
+                 CWriteDB::eNucleotide,
+                 dbname8 + " database.",
+                 CWriteDB::eFullWithTrace);
+    
+    string iupac = "GATTACA";
+    
+    ITERATE(vector< TPair >, iter, ids48) {
+        string f4 = string(">") + iter->first + " test\n" + iupac + "\n";
+        string f8 = string(">") + iter->second + " test\n" + iupac + "\n";
+        
+        db4.AddSequence( *s_FastaStringToBioseq(f4, false) );
+        db8.AddSequence( *s_FastaStringToBioseq(f8, false) );
+    }
+    
+    db4.Close();
+    db8.Close();
+    
+    // Use 4 byte dumps for the (mixed field width) index files.
+    
+    string index4 = s_HexDumpFile(dbname4 + ".nti", 4, 16);
+    string index8 = s_HexDumpFile(dbname8 + ".nti", 4, 16);
+    
+    string
+        i4("1 0 28 5 1 100 0 0 0 4D2 0 FFFFFFFF 0"),
+        i8("1 5 3C 5 1 100 0 0 0 0 4D2 0 FFFFFFFF FFFFFFFF 0"),
+        d4("1234 0 2468 1 4936 2 9872 3 19744 4"),
+        d8("1234 0 1234000 1 1234000000 2 1234000000000 3 1234000000000000 4");
+    
+    CHECK(index4 == i4);
+    CHECK(index8 == i8);
+    
+    vector<int> overlay;
+    overlay.push_back(8);
+    overlay.push_back(4);
+    
+    // The 32-bit TI data file is uniformly 4 bytes.  The 8 byte file
+    // alternates between 8 and 4 byte fields.
+    
+    string data4 = s_HexDumpFile(dbname4 + ".ntd", 4, 10);
+    string data8 = s_HexDumpFile(dbname8 + ".ntd", overlay, 10);
+    
+    s_WrapUpDb(db4);
+    s_WrapUpDb(db8);
+    
+    CHECK(data4 == d4);
+    CHECK(data8 == d8);
 }
 
