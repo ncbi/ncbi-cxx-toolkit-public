@@ -1341,7 +1341,7 @@ const char *tds_skip_quoted(const char *s);
 int tds_cursor_declare(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
 int tds_cursor_setrows(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
 int tds_cursor_open(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
-int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor);
+int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_FETCH fetch_type, TDS_INT i_row);
 /* int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_FETCH fetch_type, TDS_INT i_row); 0.95 */
 int tds_cursor_close(TDSSOCKET * tds, TDSCURSOR * cursor);
 int tds_cursor_dealloc(TDSSOCKET * tds, TDSCURSOR * cursor);
