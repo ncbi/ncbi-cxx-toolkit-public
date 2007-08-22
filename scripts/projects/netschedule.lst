@@ -1,5 +1,6 @@
 corelib$
 util$
+util/regexp$
 util/compress
 util/fileblobstorage$
 util/qparse$

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, popen2
+import sys, os, popen2
 from optparse import OptionParser
 
 RELEASE_ROOT="release"
@@ -11,7 +11,8 @@ FLAG_COPY      = 2
 FLAG_REMOVE    = 4
 
 # Global
-verbose=False
+verbose = False
+dry_run = False
 
 def add_path(tree, path, is_directory=True):
     path_parts = path.split('/')
@@ -100,11 +101,20 @@ def get_list_to_remove(root, proj_tree, revision):
     # include tree
     add_path(inc_tree, "corelib/impl$")
     add_path(inc_tree, "corelib/hash_impl$")
-    # This one is genuine exception
-    add_path(inc_tree, "common")
+
     # TODO: generalize this: every path part in source tree should
     # preserve Makefile.in
     add_path(src_tree, "app/Makefile.in", False)
+    # This one is genuine exception
+    add_path(inc_tree, "common")
+    # Project tree builder
+    add_path(inc_tree, "serial$")
+    add_path(inc_tree, "serial/impl$")
+    add_path(inc_tree, "serial/datatool$")
+    add_path(inc_tree, "app/project_tree_builder$") # strange layout!
+    add_path(src_tree, "serial$")
+    add_path(src_tree, "serial/datatool$")
+    add_path(src_tree, "app/project_tree_builder$")
 #    print "Include", inc_tree
 #    print "Source", src_tree
     # TODO: replace following with systematic add_path with FLAG_REMOVE
@@ -117,6 +127,7 @@ def get_list_to_remove(root, proj_tree, revision):
 
 def main():
     global verbose
+    global dry_run
     parser = OptionParser("Usage: %prog [options] project")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose")
@@ -126,32 +137,62 @@ def main():
                       help="Project file (default is SVN project)")
     parser.add_option("-r", "--revision", dest="revision", default="HEAD",
                       help="Use this revision (default HEAD)")
-    parser.add_option("-U", "--root-url", dest="root",
+    parser.add_option("-U", "--root-url", dest="root_url",
                       help="Root repo URL (default NCBI toolkit repo)",
                       default="https://svn.ncbi.nlm.nih.gov/repos/toolkit")
+    parser.add_option("-e", "--release-name", dest="release", default="current",
+                      help="Release name (default \"current\")")
+    parser.add_option("-n", "--dry-run", action="store_true", dest="dry_run")
     options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("Incorrect number of arguments")
-    verbose = options.verbose
-    root = options.root
-    if root[-1] == '/':
-        root = root[:-1]
+    dry_run = options.dry_run
+    if options.dry_run:
+        verbose = True
+    else:
+        verbose = options.verbose
+    root_url = options.root_url
+    if root_url[-1] == '/':
+        root_url = root_url[:-1]
     project = args[0]
 
-    proj_tree = get_project(root, project, options.proj_file, options.revision)
+    proj_tree = get_project(root_url, project, options.proj_file, options.revision)
     if not proj_tree:
         return -1
-    dirlist = get_list_to_remove(root, proj_tree, options.revision)
+    dirlist = get_list_to_remove(root_url, proj_tree, options.revision)
     project_release_root = RELEASE_ROOT + '/' + project
-    target = "%s/current/c++" % project_release_root
-    mucc_cmd = "svnmucc -U %s -m \"%s\"" % (root, options.message)
-    tags = list_url(root + '/' + RELEASE_ROOT, options.revision)
+    release = options.release
+    distr_name = "c++"
+    target = "%s/%s/%s" % (project_release_root, release, distr_name)
+    mucc_cmd = "svnmucc -U %s -m \"%s\"" % (root_url, options.message)
+    tags = list_url(root_url + '/' + RELEASE_ROOT, options.revision)
     if not project+'/' in tags:
         mucc_cmd += " mkdir " + project_release_root
-    mucc_cmd += " mkdir %s/current cp %s trunk/c++ %s " % (project_release_root,
-        options.revision, target)
-    mucc_cmd += " ".join(map(lambda x: "rm %s/%s" % (target, x), dirlist))
-    print mucc_cmd
+    mucc_cmd += " mkdir %s/%s cp %s trunk/c++ %s " % (project_release_root,
+                                                      release,
+                                                      options.revision, target)
+    if dry_run:
+        mucc_cmd += " ".join(map(lambda x: "rm %s/%s" % (target, x), dirlist))
+        print mucc_cmd
+    else:
+        tmpfname = os.tempnam()
+        f = file(tmpfname, "w")
+        for name in dirlist:
+            f.write("rm\n%s/%s\n" % (target, name))
+        f.close()
+        mucc_cmd += "-X " + tmpfname
+        sys.stderr.write("Release created in: %s/%s/%s\n" % (root_url, project_release_root, release))
+        r,w,e = popen2.popen3(mucc_cmd)
+        for line in r:
+            sys.stderr.write(line)
+        err = e.read()
+        r.close()
+        w.close()
+        e.close()
+        os.unlink(tmpfname)
+        if err:
+            sys.stderr.write("Error in svnmucc invokation: %s" % err)
+            return 1
     return 0
 
 if __name__ == "__main__":
