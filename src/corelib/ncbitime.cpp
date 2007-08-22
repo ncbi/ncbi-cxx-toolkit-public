@@ -1420,11 +1420,11 @@ CTime& CTime::Round(ERoundPrecision precision, EDaylight adl)
             m_Data.nanosec = 0;
             break;
         case eRound_Millisecond:
-            m_Data.nanosec = (m_Data.nanosec + kNanoSecondsPerSecond/2000) 
+            m_Data.nanosec = (Int4)(m_Data.nanosec + kNanoSecondsPerSecond/2000) 
                              / 1000000 * 1000000;
             break;
         case eRound_Microsecond:
-            m_Data.nanosec = (m_Data.nanosec + kNanoSecondsPerSecond/2000000) 
+            m_Data.nanosec = (Int4)(m_Data.nanosec + kNanoSecondsPerSecond/2000000) 
                              / 1000 * 1000;
             break;
         default:
