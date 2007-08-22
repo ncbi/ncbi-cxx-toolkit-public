@@ -3974,12 +3974,12 @@ int str_icmp(char* s1, char* s2, int len)
         char c1 = s1[i];
         char c2 = s2[i];
 
-        if (c1 >= 97 && c1 <= 122) {
-            c1 -= 56;
+        if (c1 >= 'a' && c1 <= 'z') {
+            c1 -= 'a'-'A';
         }
 
-        if (c2 >= 97 && c2 <= 122) {
-            c2 -= 56;
+        if (c2 >= 'a' && c2 <= 'z') {
+            c2 -= 'a'-'A';
         }
 
         if (c1 == c2) {
