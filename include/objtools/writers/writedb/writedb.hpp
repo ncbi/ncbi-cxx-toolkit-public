@@ -329,11 +329,13 @@ protected:
     CWriteDB_Impl * m_Impl;
 };
 
+
 /// Binary GI or TI List Builder.
 ///
 /// This class assists in building binary GI or TI lists for use with
 /// BLAST databases and associated software.
-class CBinaryListBuilder {
+class NCBI_XOBJWRITE_EXPORT CBinaryListBuilder
+{
 public:
     /// Identifier types.
     enum EIdType {
@@ -388,6 +390,7 @@ private:
     /// Prevent copy assignment.
     CBinaryListBuilder& operator=(CBinaryListBuilder &);
 };
+
 
 END_NCBI_SCOPE
 
