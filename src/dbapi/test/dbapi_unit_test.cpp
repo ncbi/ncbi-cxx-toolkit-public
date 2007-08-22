@@ -3187,23 +3187,23 @@ CDBAPIUnitTest::Test_Cursor(void)
             auto_stmt->ExecuteUpdate(sql);
 
             sql  =
-                "SELECT obj.name, f.name, obj.chr, obj.is_scaffold, obj.is_unlinked \n"
-                "  FROM #Objects obj \n"
-                "  JOIN #AgpFiles f ON obj.file_id = f.id \n"
-                " WHERE obj.rm_file_id=0x7FFFFFF AND obj.submit_id = 1 \n"
-                "   FOR UPDATE OF obj.chr, obj.is_scaffold, obj.is_unlinked"
+                " SELECT obj.name, f.name, obj.chr, obj.is_scaffold, obj.is_unlinked \n"
+                "   FROM #Objects obj \n"
+                "   JOIN #AgpFiles f ON obj.file_id = f.id \n"
+                "  WHERE obj.rm_file_id=0x7FFFFFF AND obj.submit_id = 1 \n"
+                "    FOR UPDATE OF obj.chr, obj.is_scaffold, obj.is_unlinked"
                 ;
 
             // Not fixed yet ...
-//             {
-//                 auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
-//                 auto_ptr<IResultSet> rs(auto_cursor->Open());
-//                 BOOST_CHECK(rs.get() != NULL);
-//
-//                 while (rs->Next()) {
-//                     ;
-//                 }
-//             }
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get() != NULL);
+
+                while (rs->Next()) {
+                    ;
+                }
+            }
         }
     }
     catch(const CException& ex) {
