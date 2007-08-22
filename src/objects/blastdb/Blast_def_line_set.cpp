@@ -39,6 +39,7 @@
 
 #include <corelib/ncbiutil.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/blastdb/Blast_def_line.hpp>
 
 // generated includes
 #include <objects/blastdb/Blast_def_line_set.hpp>
@@ -156,6 +157,34 @@ CBlast_def_line_set::SortBySeqIdRank(bool is_protein)
 {
     if (CanGet()) {
         Set().sort(is_protein ? s_DeflineCompareAA : s_DeflineCompareNA);
+    }
+}
+
+void
+CBlast_def_line_set::PutTargetGiFirst(int gi)
+{
+    if (gi <= 0) {
+        return;
+    }
+
+    CRef<CBlast_def_line> first_defline;
+
+    NON_CONST_ITERATE(Tdata, defline, Set()) {
+        ITERATE(CBlast_def_line::TSeqid, id, (*defline)->GetSeqid()) {
+            if ((*id)->IsGi() && (*id)->GetGi() == gi) {
+                first_defline = *defline;
+                break;
+            }
+        }
+        if (first_defline) {
+            Set().erase(defline); // remove the item from the list...
+            break;
+        }
+    }
+
+    if (first_defline) {
+        // ... and put it in the front
+        Set().push_front(first_defline);
     }
 }
 

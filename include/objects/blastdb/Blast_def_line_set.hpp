@@ -63,6 +63,11 @@ public:
     /// Seq-ids
     void SortBySeqIdRank(bool is_protein);
 
+    /// Place the CBlast_def_line object which contains the requested gi as the
+    /// first in the list (if found)
+    /// @param gi gi to be placed first [in]
+    void PutTargetGiFirst(int gi);
+
 private:
     // Prohibit copy constructor and assignment operator
     CBlast_def_line_set(const CBlast_def_line_set& value);

@@ -209,10 +209,14 @@ public:
     /// @param defline Defline string, combining all deflines in case of 
     ///                redundant sequences.
     /// @param show_gi Should gi Seq-ids be included? [in]
+    /// @param this_gi_first: if not -1, sort the return value if necessary so
+    /// that the  first element in the list is the requested gi
+    ///
     static void
     GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
                                 list<int>& use_this_gi, string& seqid, 
-                                string& defline, bool show_gi=true);
+                                string& defline, bool show_gi=true,
+                                int this_gi_first = -1);
     
     ///Display defline
     ///@param out: stream to output

@@ -359,12 +359,14 @@ void
 CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
                                                list<int>& use_this_gi,
                                                string& seqid, string& defline, 
-                                               bool show_gi)
+                                               bool show_gi /* = true */,
+                                               int this_gi_first /* = -1 */)
 {
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
-    const CRef<CBlast_def_line_set> bdlRef = 
+    CRef<CBlast_def_line_set> bdlRef = 
         CBlastFormatUtil::GetBlastDefline(handle);
+    bdlRef->PutTargetGiFirst(this_gi_first);
     const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
 
     if (bdl.empty()){
