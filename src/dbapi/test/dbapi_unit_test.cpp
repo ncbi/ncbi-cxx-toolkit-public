@@ -3133,7 +3133,7 @@ CDBAPIUnitTest::Test_Cursor(void)
         }
 
         // Second test ...
-        {
+        if (m_args.GetDriverName() != "ctlib") {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             sql  =
