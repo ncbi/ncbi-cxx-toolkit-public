@@ -1680,8 +1680,8 @@ _ct_fetch_cursor(CS_COMMAND * cmd, CS_INT type, CS_INT offset, CS_INT option, CS
         return CS_FAIL;
     }
 
-    /* if (tds_cursor_fetch(tds, cursor, TDS_CURSOR_FETCH_NEXT, 0) == CS_SUCCEED) { 0.95 */
-    if ( tds_cursor_fetch(tds, cursor) == CS_SUCCEED) {
+    /* if ( tds_cursor_fetch(tds, cursor) == CS_SUCCEED) { ssikorsk */
+    if (tds_cursor_fetch(tds, cursor, TDS_CURSOR_FETCH_NEXT, 0) == CS_SUCCEED) {
         cursor->status.fetch = _CS_CURS_TYPE_SENT;
     }
     else {
@@ -3995,6 +3995,10 @@ ct_cursor(CS_COMMAND * cmd, CS_INT type, CS_CHAR * name, CS_INT namelen, CS_CHAR
         cursor->status.fetch      = _CS_CURS_TYPE_UNACTIONED;
         cursor->status.close      = _CS_CURS_TYPE_UNACTIONED;
         cursor->status.dealloc    = _CS_CURS_TYPE_UNACTIONED;
+
+        /* ssikorsk */
+        cursor->type = 0x1; /* Keyset-driven cursor. */
+        cursor->concurrency = 0x2000 | 0x4; /* Optimistic. Checks timestamps and, when not available, values. */
 
         cmd->cursor = cursor;
         ct_set_command_state(cmd, _CS_COMMAND_READY);
