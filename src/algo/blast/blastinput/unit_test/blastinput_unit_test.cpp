@@ -38,12 +38,16 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/NCBIeaa.hpp>
+
 #include <corelib/ncbienv.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <algo/blast/blastinput/blastp_args.hpp>
 #include <algo/blast/blastinput/blastn_args.hpp>
@@ -306,6 +310,48 @@ BOOST_AUTO_TEST_CASE(s_RawFastaWithSpaces)
     CHECK_EQUAL(CSeq_id::e_Local, ssl.seqloc->GetInt().GetId().Which());
 
     CHECK(!ssl.mask);
+}
+
+BOOST_AUTO_TEST_CASE(s_ReadProteinWithGaps)
+{
+    CNcbiIfstream infile("data/prot_w_gaps.txt");
+    const bool is_protein(true);
+    CBlastInputConfig iconfig(is_protein);
+    CRef<CBlastFastaInputSource> source(s_DeclareSource(infile, iconfig));
+
+    CHECK(source->End() == false);
+    blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+    CHECK(source->End() == true);
+
+    CHECK(ssl.seqloc->IsInt() == true);
+
+    CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    const TSeqPos length(91); // it's actually 103 with gaps
+    CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+    CRef<CScope> scope = ssl.scope;
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*ssl.seqloc);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    for (size_t i = 0; i < sv.size(); i++) {
+        BOOST_CHECK((char)sv[i] != '-');
+    }
+
+    CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+    const CBioseq& bioseq = bioseqs->GetSeq_set().front()->GetSeq();
+    const CSeq_inst& inst = bioseq.GetInst();
+    BOOST_CHECK_EQUAL(inst.GetLength(), length);
+    BOOST_CHECK(inst.IsSetSeq_data());
+    const CSeq_data& seq_data = inst.GetSeq_data();
+    BOOST_CHECK(seq_data.IsNcbieaa());
+    const string& seq = seq_data.GetNcbieaa().Get();
+    for (size_t i = 0; i < seq.size(); i++) {
+        BOOST_CHECK((char)seq[i] != '-');
+    }
 }
 
 BOOST_AUTO_TEST_CASE(s_RawFastaNoSpaces)
@@ -1891,6 +1937,7 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb)
     BOOST_CHECK(! CSeq_inst::IsNa(b.GetInst().GetMol()));
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
+
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)

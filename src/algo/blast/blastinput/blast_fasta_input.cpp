@@ -56,9 +56,26 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+// In BLAST gaps are not accepted, so we create this class to override
+// CFastaReader's behavior when the flag fParseGaps is present, namely to
+// ignore the gaps.
+class CFastaReaderIgnoringGaps : public CFastaReader
+{
+public:
+    /// Constructor, passes all arguments to parent class
+    CFastaReaderIgnoringGaps(ILineReader& reader, 
+                             CFastaReader::TFlags flags = 0)
+        : CFastaReader(reader, flags) {}
+
+    /// Override this method to force the parent class to ignore gaps
+    virtual void x_CloseGap(TSeqPos len) {
+        return;
+    }
+};
+
 /// Class to read non-FASTA sequence input to BLAST programs using the various
 /// data loaders configured in CBlastScopeSource objects
-class CBlastInputReader : public CFastaReader
+class CBlastInputReader : public CFastaReaderIgnoringGaps
 {
 public:
     /// Constructor
@@ -75,7 +92,7 @@ public:
                       bool retrieve_seq_data,
                       ILineReader& reader, 
                       CFastaReader::TFlags flags = 0)
-        : CFastaReader(reader, flags), m_DLConfig(dlconfig),
+        : CFastaReaderIgnoringGaps(reader, flags), m_DLConfig(dlconfig),
           m_ReadProteins(read_proteins), m_RetrieveSeqData(retrieve_seq_data) {}
 
     /// Overloaded method to attempt to read non-FASTA input types
@@ -274,6 +291,9 @@ CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
     if (getenv("BLASTINPUT_GEN_DELTA_SEQ") == NULL) {
         flags += CFastaReader::fNoSplit;
     }
+    // This is necessary to enable the ignoring of gaps in classes derived from
+    // CFastaReader
+    flags += CFastaReader::fParseGaps;
 
     if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
         m_InputReader.reset
@@ -282,7 +302,7 @@ CBlastFastaInputSource::x_InitInputReader(int local_id_counter)
                                    m_Config.RetrieveSequenceData(),
                                    *m_LineReader, flags));
     } else {
-        m_InputReader.reset(new CFastaReader(*m_LineReader, flags));
+        m_InputReader.reset(new CFastaReaderIgnoringGaps(*m_LineReader, flags));
     }
 
     CRef<CSeqIdGenerator> idgen(new CSeqIdGenerator(local_id_counter));
