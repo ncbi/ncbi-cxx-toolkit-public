@@ -180,26 +180,32 @@ CTL_CursorCmd::OpenCursor()
                        m_Used ? CS_RESTORE_OPEN : CS_UNUSED),
              "ct_cursor(open) failed", 122005);
 
-    SetCursorOpen();
-
     if (GetParams().NofParams() > 0) {
         // we do have the parameters
         SetHasFailed(!x_AssignParams(false));
         CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 122003 );
     }
 
-    // send this command
-    CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
-
-    m_Used = true;
+    try {
+        // send this command
+        CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
+    } catch (...) {
+        SetHasFailed();
+        throw;
+    }
 
     // Process results ....
     for (;;) {
         CS_INT res_type;
 
-        if (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
-                       "ct_result failed", 122013) == CS_END_RESULTS) {
-            return NULL;
+        try {
+            if (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
+                        "ct_result failed", 122013) == CS_END_RESULTS) {
+                return NULL;
+            }
+        } catch (...) {
+            SetHasFailed();
+            throw;
         }
 
         switch ( res_type ) {
@@ -207,6 +213,7 @@ CTL_CursorCmd::OpenCursor()
         case CS_CMD_DONE:
             // done with this command -- check the number of affected rows
             GetRowCount(&m_RowCount);
+
             continue;
         case CS_CMD_FAIL:
             // the command has failed -- check the number of affected rows
@@ -218,6 +225,11 @@ CTL_CursorCmd::OpenCursor()
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 122016 );
         case CS_CURSOR_RESULT:
+            // Cursor can be set open only after processing of ct_send, which does
+            // actual job.
+            SetCursorOpen();
+            m_Used = true;
+
             SetResult(MakeCursorResult());
             break;
         default:
@@ -340,10 +352,14 @@ bool CTL_CursorCmd::CloseCursor()
     // send this command
     CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122022);
 
-    SetCursorOpen(false);
-
     // Process results ...
-    return ProcessResults();
+    bool result = ProcessResults();
+
+    // An exception can be thrown in ProcessResults, so, we set the flag after
+    // calling of ProcessResults.
+    SetCursorOpen(!result);
+
+    return result;
 }
 
 
