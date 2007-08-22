@@ -102,16 +102,16 @@ static const string kQuery = "Query";
 static const string kCoverage = "Query coverage";
 
 //psiblast related
-static const string kPsiblastNewSeqGif = "<IMG SRC=\"/blast/images/new.gif\" \
+static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
 WIDTH=30 HEIGHT=15 ALT=\"New sequence mark\">";
 
-static const string kPsiblastNewSeqBackgroundGif = "<IMG SRC=\"/blast/images/\
+static const string kPsiblastNewSeqBackgroundGif = "<IMG SRC=\"images/\
 bg.gif\" WIDTH=30 HEIGHT=15 ALT=\" \">";
 
-static const string kPsiblastCheckedBackgroundGif = "<IMG SRC=\"/blast/images\
+static const string kPsiblastCheckedBackgroundGif = "<IMG SRC=\"images\
 /bg.gif\" WIDTH=15 HEIGHT=15 ALT=\" \">";
 
-static const string kPsiblastCheckedGif = "<IMG SRC=\"/blast/images/checked.g\
+static const string kPsiblastCheckedGif = "<IMG SRC=\"images/checked.g\
 if\" WIDTH=15 HEIGHT=15 ALT=\"Checked mark\">";
 
 static const string kPsiblastEvalueLink = "<a name = Evalue></a>";

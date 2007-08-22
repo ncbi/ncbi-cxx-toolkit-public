@@ -1955,9 +1955,9 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                                        k_DumpGnlUrl, 0);
                                 out<<dumpGnlUrl
                                    <<"<img border=0 height=16 width=16\
- src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the \
-HSP\"></a>";
-}
+                                   src=\"images/D.gif\" alt=\"Download subject sequence spanning the \
+                                   HSP\"></a>";
+                            }
                         }
                     }
                 
