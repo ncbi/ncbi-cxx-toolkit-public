@@ -950,6 +950,8 @@ private:
     TTimeLine*                 m_TimeLine;
     mutable CFastMutex         m_TimeLine_Lock;
     time_t                     m_LastTimeLineCheck;
+    /// BLOB ids deleted by GC
+    TBitVector                 m_GC_Deleted;
 };
 
 

@@ -1328,6 +1328,10 @@ void CBDB_Cache::Open(const string& cache_path,
     m_CacheIdIDX = new SCache_IdIDX();
     m_CacheIdIDX_RO = new SCache_IdIDX();
 
+    m_BLOB_SplitStore->RevSplitOff();
+    m_CacheAttrDB->RevSplitOff();
+    m_CacheIdIDX->RevSplitOff();
+
     m_BLOB_SplitStore->SetEnv(*m_Env);
     m_CacheAttrDB->SetEnv(*m_Env);
     m_CacheAttrDB_RO1->SetEnv(*m_Env);
@@ -1363,11 +1367,11 @@ void CBDB_Cache::Open(const string& cache_path,
         if (m_Timeout) {
             timeline_precision = m_Timeout / 10;
         }
-        if (timeline_precision > (10 * 60)) { // 10 min max.
-            timeline_precision = 10 * 60;
+        if (timeline_precision > (5 * 60)) { // 5 min max.
+            timeline_precision = 5 * 60;
         }
-        if (timeline_precision < (2 * 60)) {
-            timeline_precision = 2 * 60;
+        if (timeline_precision < (1 * 60)) {
+            timeline_precision = 1 * 60;
         }
         m_TimeLine = new TTimeLine(timeline_precision, 0);
     }}
@@ -3359,6 +3363,17 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
 
     if (m_LastTimeLineCheck) {
         if ((curr - m_LastTimeLineCheck) < m_TimeLine->GetDiscrFactor()) {
+            if (m_Monitor && m_Monitor->IsActive()) {
+                string msg = "Purge: Timeline evaluation skiped ";
+                msg += "(early wakeup for this precision) remains=";
+                msg += NStr::UIntToString(m_TimeLine->GetDiscrFactor() - 
+                                       (curr - m_LastTimeLineCheck));
+                msg += " precision=";
+                msg += NStr::UIntToString(m_TimeLine->GetDiscrFactor());
+                msg += "\n";
+                m_Monitor->Send(msg);
+            }
+
             return;
         }
     }
@@ -3369,13 +3384,20 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
         CFastMutexGuard guard(m_TimeLine_Lock);
         m_TimeLine->ExtractObjects(curr, &delete_candidates);
         if (!delete_candidates.any()) {
+            if (m_Monitor && m_Monitor->IsActive()) {
+                string msg = 
+                    "Purge: Timeline evaluation exits "
+                    "(no candidates) \n";
+                m_Monitor->Send(msg);
+            }
+
             return;
         }
     }}
 
     unsigned batch_size = m_PurgeBatchSize;
-    if (batch_size < 100) { 
-        batch_size = 100;
+    if (batch_size < 10) { 
+        batch_size = 10;
     }
 
     TBitVector::enumerator en(delete_candidates.first());
@@ -3383,6 +3405,212 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
     unsigned deleted = 0;
     unsigned candidates = delete_candidates.count();
 
+    delete_candidates -= m_GC_Deleted;
+    unsigned cleaned_candidates = delete_candidates.count();
+    if (cleaned_candidates != candidates) {
+        if (m_Monitor && m_Monitor->IsActive()) {
+            string msg;
+            msg = "Purge: Timeline total timeline candidates=";
+            msg += NStr::UIntToString(candidates);
+            msg += " cleaned_candidates=";
+            msg += NStr::UIntToString(cleaned_candidates);
+            msg += "\n";
+
+            m_Monitor->Send(msg);
+        }
+
+        candidates = cleaned_candidates;
+    } 
+
+    
+    {{
+    double id_trans_time = 0.0;  // id translation time
+    double exp_check_time = 0.0; // expiration check time
+    double del_time = 0.0;       // BLOB delete time
+    unsigned deleted_cnt = 0;    // total number of deleted BLOBs
+
+    vector<unsigned> blob_id_vect(batch_size);
+    vector<SCacheDescr> blob_batch_vect(batch_size);
+    vector<SCacheDescr> blob_exp_vect(batch_size);
+
+    for (;en.valid();) {
+
+        // extract batch of blob ids out of the bit-vector
+        //
+        blob_id_vect.resize(0);
+        for (unsigned i = 0; en.valid() && i < batch_size; ++i) {
+            unsigned blob_id = *en;
+            blob_id_vect.push_back(blob_id);
+            ++en;
+        } // for i
+
+        // Translate IDs to keys
+        //
+        blob_batch_vect.resize(0);
+        if (blob_id_vect.size()) {
+            CStopWatch  sw(CStopWatch::eStart);
+            vector<unsigned>::const_iterator it = blob_id_vect.begin();
+            unsigned blob_id = *it;
+
+            CFastMutexGuard guard(m_IDIDX_Lock_RO);
+            m_CacheIdIDX_RO->SetTransaction(0);
+            CBDB_FileCursor cur(*m_CacheIdIDX_RO);
+            cur.SetCondition(CBDB_FileCursor::eGE);
+            cur.From << blob_id;
+
+            while (true) {
+                if (cur.Fetch() == eBDB_Ok) {
+                    unsigned bid = m_CacheIdIDX_RO->blob_id;
+                    if (blob_id != bid) { // record has been deleted by now
+                        if ((++it) == blob_id_vect.end()) 
+                            break;
+                        cur.SetCondition(CBDB_FileCursor::eGE);
+                        cur.From << (blob_id = *it);
+
+                    } else {
+                        int version = m_CacheIdIDX_RO->version;
+                        const char* key = m_CacheIdIDX_RO->key;
+                        const char* subkey = m_CacheIdIDX_RO->subkey;
+                        blob_batch_vect.push_back(
+                            SCacheDescr(key, version, subkey, 0, blob_id));
+                    }
+                }
+                ++it;
+                if (it == blob_id_vect.end()) {
+                    break;
+                }
+                // check if next blob can be get by fetch or we need to restart
+                // the cursor
+                //
+                if ((blob_id + 1) == *it) {
+                    ++blob_id;
+                } else {
+                    // cursor restart
+                    //
+                    cur.SetCondition(CBDB_FileCursor::eGE);
+                    cur.From << (blob_id = *it);
+                }
+            } // while
+
+            id_trans_time = sw.Elapsed();
+
+        } // if
+        
+        // Check expiration of BLOB keys
+        //
+        if (blob_batch_vect.size()) {
+            time_t curr = time(0); // initial timepoint
+            blob_exp_vect.resize(0);
+            CStopWatch  sw(CStopWatch::eStart);
+
+            {{
+            CFastMutexGuard guard(m_CARO2_Lock);
+
+            m_CacheAttrDB_RO2->SetTransaction(0);
+            CBDB_FileCursor cur(*m_CacheAttrDB_RO2);
+            
+            for (size_t i = 0; i < blob_batch_vect.size(); ++i) {
+                SCacheDescr& blob_descr = blob_batch_vect[i];
+                cur.SetCondition(CBDB_FileCursor::eEQ);
+                cur.From << blob_descr.key 
+                         << blob_descr.version
+                         << blob_descr.subkey;
+                if (cur.Fetch() == eBDB_Ok) {
+                    blob_descr.overflow = m_CacheAttrDB_RO2->overflow;
+                    _ASSERT(blob_descr.blob_id == m_CacheAttrDB_RO2->blob_id);
+                    blob_descr.blob_id = m_CacheAttrDB_RO2->blob_id;
+                    time_t exp_time;
+                    if (x_CheckTimestampExpired(
+                        *m_CacheAttrDB_RO2, curr, &exp_time)) {
+                        
+                         blob_exp_vect.push_back(blob_descr);
+
+                    } else {
+                        {{
+                            CFastMutexGuard guard(m_TimeLine_Lock);
+                            m_TimeLine->AddObject(exp_time, blob_descr.blob_id);
+                        }} // m_TimeLine_Lock
+                    }
+                }
+            } // for
+            }} // m_CARO2_Lock
+
+            exp_check_time = sw.Elapsed();
+        }
+
+        unsigned deleted_batch_cnt = 0;
+        // Delete the batch of expired BLOBs
+        //
+        if (blob_exp_vect.size()) {
+            CStopWatch  sw(CStopWatch::eStart);
+            for (size_t i = 0; i < blob_exp_vect.size(); ++i) {
+                
+                const SCacheDescr& blob_descr = blob_exp_vect[i];
+                CBDB_Transaction trans(*m_Env,
+                                       CBDB_Transaction::eTransASync, // async!
+                                       CBDB_Transaction::eNoAssociation);
+                bool blob_deleted =
+                    DropBlobWithExpCheck(blob_descr.key,
+                                         blob_descr.version,
+                                         blob_descr.subkey,
+                                         trans);
+                trans.Commit();
+                deleted_batch_cnt += blob_deleted;
+/*
+                if (blob_deleted) {
+                    if (m_Monitor && m_Monitor->IsActive()) {
+                        string msg = 
+                            "Purge: Timeline DELETE blob =" + blob_descr.key
+                            "\n";
+                        m_Monitor->Send(msg);
+                    }
+                }
+*/
+                
+            } // for i
+
+            del_time = sw.Elapsed();
+            deleted_cnt += deleted_batch_cnt;
+        }
+
+        if (m_Monitor && m_Monitor->IsActive()) {
+            string msg;
+            msg = "Purge: Timeline deleted_batch_cnt=";
+            msg += NStr::UIntToString(deleted_batch_cnt);
+            msg += " deleted_cnt=";
+            msg += NStr::UIntToString(deleted_cnt);
+            msg += " candidates=";
+            msg += NStr::UIntToString(candidates);            
+
+            msg += " id_trans_time=";
+            msg += NStr::DoubleToString(id_trans_time, 5);
+            msg += " exp_check_time=";
+            msg += NStr::DoubleToString(exp_check_time, 5);
+            msg += " del_time=";
+            msg += NStr::DoubleToString(del_time, 5);
+            msg += "\n";
+
+            m_Monitor->Send(msg);
+        }
+
+        m_GC_Deleted.optimize();
+
+        // check for shutdown signal
+        {{
+            unsigned delay = m_BatchSleep * 1000000;
+            bool scan_stop = m_PurgeStopSignal.TryWait(0, delay);
+            if (scan_stop) {
+                if (interrupted) {
+                    *interrupted = true;
+                    return;
+                }
+            }
+        }}
+
+    } // for en
+    }}
+
+/*
     for (; en.valid(); ++en) {
         unsigned blob_id = *en;
         try {
@@ -3456,7 +3684,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
             + "\n";
         m_Monitor->Send(msg);
     }
-
+*/
 }
 
 void CBDB_Cache::Purge(time_t           access_timeout,
@@ -3493,7 +3721,8 @@ purge_start:
 
     if (m_NextExpTime) {
 
-        unsigned precision = m_TimeLine->GetDiscrFactor() * 2;
+        // Mutiply to give new GC chance to kill first
+        unsigned precision = m_TimeLine->GetDiscrFactor() * 3;
 
         //                                 [ precision ]
         //                                   |
@@ -3534,7 +3763,6 @@ purge_start:
                     + NStr::UIntToString(remains) 
                     + "s. precision=" + NStr::UIntToString(precision)
                     + "s. RecCount="  + NStr::UIntToString(rc)
-                    + " SplitCount="+ NStr::UIntToString(split_store_blobs)
                     + " SplitCount="+ NStr::UIntToString(split_store_blobs)
                     + " TimeLineCount="+ NStr::UIntToString(tl_count)
                     + "\n");
@@ -4232,6 +4460,7 @@ unsigned CBDB_Cache::GetNextBlobId(bool lock_id)
     if (blob_id >= kMax_UInt) {
         m_BlobIdCounter.Set(0);
         blob_id = m_BlobIdCounter.Add(1);
+        m_GC_Deleted.clear();
     }
     if (lock_id) {
         bool locked = m_LockVector.TryLock(blob_id);
@@ -4373,6 +4602,8 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
     // Delete BLOB by known coordinates
     m_BLOB_SplitStore->Delete(blob_id, coords, 
                               CBDB_RawFile::eThrowOnError);
+
+    m_GC_Deleted.set(blob_id);
 
     return true;
 }
