@@ -268,13 +268,18 @@ objtools/readers/fasta.hpp
 objtools/readers/featuredump.hpp
 objtools/readers/getfeature.hpp
 objtools/readers/gff_reader.hpp
+objtools/readers/glimmer_reader.hpp
 objtools/readers/phrap.hpp
 objtools/readers/reader_exception.hpp
 objtools/readers/readfeat.hpp
 objtools/readers/rm_reader.hpp
 objtools/readers/seqdb/seqdb.hpp
 objtools/readers/seqdb/seqdbcommon.hpp
+objtools/readers/seqdb/seqdbexpert.hpp
 objtools/writers/agp_write.hpp
+objtools/writers/writer_exception.hpp
+objtools/writers/writedb/writedb.hpp
+objtools/writers/writedb/writedb_error.hpp
 objtools/manip/sage_manip.hpp
 
 objtools/format/context.hpp
@@ -312,6 +317,7 @@ objtools/format/items/flat_qual_slots.hpp
 objtools/format/items/flat_seqloc.hpp
 objtools/format/items/gap_item.hpp
 objtools/format/items/genome_item.hpp
+objtools/format/items/genome_project_item.hpp
 objtools/format/items/item.hpp
 objtools/format/items/item_base.hpp
 objtools/format/items/keywords_item.hpp

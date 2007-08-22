@@ -31,6 +31,8 @@
  */
 
 
+%ignore ncbi::CWriteDB::AddDefline;
+
 %ignore ncbi::blast::CBlastOptionsHandle::ClearFilterOptions;
 
 %ignore ncbi::DataLoaders_Register_BlastDB;
