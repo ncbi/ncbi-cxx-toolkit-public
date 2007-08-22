@@ -797,7 +797,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
     
         const size_t mrna_size (m_mrna.size());
-    
+
         if(m_strand == false) {
         
             // adjust the hits
@@ -983,7 +983,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         if(seg_dim == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
-    
+
         // try to extend the last segment into the PolyA area  
         if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
 
@@ -1018,7 +1018,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 m_polya_start += sh;
             }
         }
-    
+
         // look for PolyA in trailing segments:
         // if a segment is mostly 'A's then we add it to PolyA
 
@@ -1026,15 +1026,14 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         for(; j >= 0; --j) {
         
             const TSegment& s (m_segments[j]);
-
             const char* p0 (&m_mrna[qmin] + s.m_box[0]);
             const char* p1 (&m_mrna[qmin] + s.m_box[1] + 1);
             const size_t len_chars (p1 - p0);
             size_t count (0);
-            for(const char* pc (p0); pc != p1; ++pc) {
+            for(const char* pc (p0); pc < p1; ++pc) {
                 if(*pc == 'A') ++count;
             }
-        
+
             double min_a_content (0.799); // min 'A' content in a polyA
             // also check splices
             if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
@@ -1052,7 +1051,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             if(!s.m_exon) {
                 min_a_content = (s.m_len <= 4)? 0.49: 0.599;
             }
-        
+
             if(double(count)/len_chars < min_a_content) {
                 if(s.m_exon && s.m_len > 4) break;
             }
@@ -1114,6 +1113,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 }
             }
         }
+
     } // try
 
     catch(CAlgoAlignException& e) {
@@ -1231,8 +1231,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 #ifdef DUMP_ORIG_SEGS
     cerr << "Orig segments:" << endl;
     ITERATE(TSegmentDeque, ii, segments) {
-        cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
-             << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
+        cerr << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
              << ii->m_annot << '\t' << ii->m_score << endl;
     }
@@ -1368,7 +1367,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         // turn to gaps extra-short exons preceeded/followed by gaps
         bool gap_prev (false);
         for(size_t k (0); k < seg_dim; ++k) {
-            TSegment& s = segments[k];
+
+            TSegment& s (segments[k]);
             if(s.m_exon == false) {
                 gap_prev = true;
             }
@@ -1390,22 +1390,23 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         }
 
-
         // indicate any slack space on the left
         if(segments[0].m_box[0] > 0) {
             
-            segments.push_front(TSegment());
-            TSegment& g = segments.front();
+            TSegment g;
             g.m_exon = false;
             g.m_box[0] = 0;
             g.m_box[1] = segments[0].m_box[0] - 1;
             g.m_box[2] = 0;
             g.m_box[3] = segments[0].m_box[2] - 1;
+
             g.m_idty = 0;
             g.m_len = segments[0].m_box[0];
             g.m_annot = s_kGap;
             g.m_details.resize(0);
             g.m_score = 0;
+
+            segments.push_front(g);
             ++seg_dim;
         }
 
@@ -1414,8 +1415,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         if(seg_last.m_box[1] + 1 < SeqLen1) {
             
-            segments.push_back(TSegment());
-            TSegment& g (segments.front());
+            TSegment g;
             g.m_exon = false;
             g.m_box[0] = seg_last.m_box[1] + 1;
             g.m_box[1] = SeqLen1 - 1;
@@ -1426,6 +1426,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             g.m_annot = s_kGap;
             g.m_details.resize(0);
             g.m_score = 0;
+
+            segments.push_back(g);
             ++seg_dim;
         }
 
@@ -1481,8 +1483,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 #ifdef DUMP_PROCESSED_SEGS
     cerr << "Processed segments:" << endl;
     ITERATE(TSegments, ii, m_segments) {
-        cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
-             << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
+        cerr << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
              << ii->m_annot << '\t' << ii->m_score << endl;
     }
