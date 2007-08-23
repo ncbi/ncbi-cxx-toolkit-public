@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seqalign
+ASN_DEP = seq
 
 SRC = prosplign scoring PSeq NSeq Ali  AliSeqAlign AliUtil Info nucprot intron AlignInfo
 
