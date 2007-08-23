@@ -187,8 +187,10 @@ s_ImportSearchStrategy(CNcbiIstream* in,
             }
 
             if (opts_builder.HaveGiList()) {
-                list<int> gi_list = opts_builder.GetGiList();
-                CSearchDatabase::TGiList limit(gi_list.begin(), gi_list.end());
+                CSearchDatabase::TGiList limit;
+                ITERATE (list<int>, it, opts_builder.GetGiList()) {
+                    limit.push_back(*it);
+                }
                 search_db->SetGiListLimitation(limit);
             }
 
