@@ -130,6 +130,7 @@ s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
     return out_ptr;
 }
 
+/** Signal that a diagonal is invalid */
 static const Int4 kInvalidOffset = -2;
 
 /** During the traceback for a greedy alignment with affine
@@ -298,7 +299,7 @@ s_GetNextNonAffineTback(Int4 **last_seq2_off, Int4 d,
 }
 
 
-/* Find the first mismatch in a pair of sequences
+/** Find the first mismatch in a pair of sequences
  * @param seq1 First sequence (always uncompressed) [in]
  * @param seq2 Second sequence (compressed or uncompressed) [in]
  * @param len1 Length of seq1 [in]

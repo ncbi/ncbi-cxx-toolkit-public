@@ -640,7 +640,7 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
  * represent alignments to the same query sequence
  * @param old_hit_list_ptr Pointer to original HitList, will be NULLed 
  *                          out on return [in|out]
- * @param combined_hsp_list_ptr Pointer to the combined list of HSPs [in|out]
+ * @param combined_hit_list_ptr Pointer to the combined HitList [in|out]
  * @param contexts_per_query The number of different contexts that can
  *             occur in hits from old_hit_list and combined_hit_list [in]
  * @param split_offsets the query offset that marks the boundary between

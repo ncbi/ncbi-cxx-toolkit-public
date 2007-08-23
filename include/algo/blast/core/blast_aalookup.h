@@ -217,7 +217,7 @@ typedef struct BlastCompressedAaLookupTable {
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
-    Int4 pv_array_bts;     /* bit-to-shift value for PV array indicies */
+    Int4 pv_array_bts;     /**< bit-to-shift value for PV array indicies */
     Uint1* compress_table;  /**< translation table (protein->compressed) */
     Int4* scaled_compress_table;  /**< scaled version of compress_table */
     void *scansub_callback;/**< function for scanning subject sequences */
@@ -254,8 +254,11 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
 BlastCompressedAaLookupTable* BlastCompressedAaLookupTableDestruct(
                                       BlastCompressedAaLookupTable* lookup);
 
-/** Compute "high" index for a word
+/** Convert a word to use a compressed alphabet. The letters
+  * in the word are reversed compared to the original order
   * @param wordsize Number of consecutive letters in a word [in]
+  * @param comparessed_alphabet_size Number of letters in compressed
+  *                                     alphabet [in]
   * @param word Sequence in "regular" AA alphabet [in]
   * @param skip If a letter is encountered that cannot be
   *            compressed, the offset from word[] where 
