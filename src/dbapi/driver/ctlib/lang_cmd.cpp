@@ -586,7 +586,7 @@ CTL_LRCmd::MakeResult(void)
     DeleteResult();
 
     CHECK_DRIVER_ERROR(
-        !m_WasSent,
+        !WasSent(),
         "You need to send a command first." + GetDbgInfo(),
         120010 );
 
@@ -597,10 +597,10 @@ CTL_LRCmd::MakeResult(void)
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:
-            m_WasSent = false;
-            return 0;
+            SetWasSent(false);
+            return NULL;
         case CS_FAIL:
-            m_HasFailed = true;
+            SetHasFailed();
             if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
                 // we need to close this connection
                 DATABASE_DRIVER_ERROR(
@@ -609,10 +609,10 @@ CTL_LRCmd::MakeResult(void)
                     GetDbgInfo(),
                     120012 );
             }
-            m_WasSent = false;
+            SetWasSent(false);
             DATABASE_DRIVER_ERROR( "ct_result failed." + GetDbgInfo(), 120013 );
         case CS_CANCELED:
-            m_WasSent = false;
+            SetWasSent(false);
             DATABASE_DRIVER_ERROR( "Your command has been canceled." + GetDbgInfo(), 120011 );
 #ifdef CS_BUSY
         case CS_BUSY:
@@ -631,7 +631,7 @@ CTL_LRCmd::MakeResult(void)
         case CS_CMD_FAIL: // the command has failed
             // check the number of affected rows
             GetRowCount(&m_RowCount);
-            m_HasFailed = true;
+            SetHasFailed();
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 120016 );
         case CS_ROW_RESULT:

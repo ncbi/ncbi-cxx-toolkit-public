@@ -95,11 +95,9 @@ protected:
         return *m_ConnImpl;
     }
 
-    // Temporarily ...
+private:
     impl::CConnection*  m_ConnImpl;
     bool                m_WasSent;
-
-private:
 };
 
 
