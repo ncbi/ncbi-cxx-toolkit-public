@@ -219,6 +219,10 @@ protected:
     // max space to look beyond end hits
     size_t       m_max_genomic_ext;
 
+    // The limiting range as defined by the compartment hits,
+    // if the max compartment hit identity is less than a cut-off.
+    pair<size_t, size_t> m_BoundingRange;
+
     // output per compartment
     TSegments    m_segments;
   
