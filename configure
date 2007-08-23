@@ -4999,7 +4999,7 @@ if test -z "$CONF_f_runpath" ; then
 fi
 case "$host_os" in
     linux*|solaris* ) RUNPATH_ORIGIN="$CONF_f_runpath'\$\$ORIGIN'" ;;
-    * )               RUNPATH_ORIGIN= ;;
+    * )               RUNPATH_ORIGIN="-DNCBI_RPO_SUFFIX_EATER=" ;;
 esac
 
 case "$compiler:$compiler_version:$with_bin_release" in
