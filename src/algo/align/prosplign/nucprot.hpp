@@ -33,10 +33,10 @@
 #ifndef NUCPROT_H
 #define NUCPROT_H
 
+#include <corelib/ncbi_limits.hpp>
+
 #include <algorithm>
-#include <limits>
 #include <sstream>
-#include <fstream>
 
 #include "NSeq.hpp"
 #include "PSeq.hpp"

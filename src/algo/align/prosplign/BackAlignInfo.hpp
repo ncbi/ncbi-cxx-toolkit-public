@@ -34,9 +34,7 @@
 #ifndef PROSPLIGN_BACKALIGNINFO_HPP
 #define PROSPLIGN_BACKALIGNINFO_HPP
 
-#include <corelib/ncbistl.hpp>
-#include <vector>
-#include <limits>
+#include <corelib/ncbi_limits.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)

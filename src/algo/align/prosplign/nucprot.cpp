@@ -31,7 +31,6 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <limits>
 
 #include <corelib/ncbistd.hpp>
 
