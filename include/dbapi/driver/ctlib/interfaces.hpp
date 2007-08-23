@@ -575,6 +575,7 @@ protected:
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
     virtual bool Cancel(void);
+    bool SendInternal(void);
 };
 
 

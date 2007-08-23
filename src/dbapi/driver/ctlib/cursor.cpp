@@ -66,20 +66,22 @@ CS_RETCODE
 CTL_CursorCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
     try {
-        switch (Check(rc)) {
-        case CS_SUCCEED:
-            break;
-        case CS_FAIL:
-            SetHasFailed();
-            DATABASE_DRIVER_ERROR( msg, msg_num );
-#ifdef CS_BUSY
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-#endif
-        }
+        rc = Check(rc);
     } catch (...) {
         SetHasFailed();
         throw;
+    }
+
+    switch (rc) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
     }
 
     return rc;
@@ -90,24 +92,26 @@ CS_RETCODE
 CTL_CursorCmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
     try {
-        switch (Check(rc)) {
-        case CS_SUCCEED:
-            break;
-        case CS_FAIL:
-            SetHasFailed();
-            DATABASE_DRIVER_ERROR( msg, msg_num );
-#ifdef CS_BUSY
-        case CS_BUSY:
-            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-#endif
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
-        case CS_PENDING:
-            DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
-        }
+        rc = Check(rc);
     } catch (...) {
         SetHasFailed();
         throw;
+    }
+
+    switch (rc) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+#endif
+    case CS_CANCELED:
+        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
+    case CS_PENDING:
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
     }
 
     return rc;
@@ -411,7 +415,7 @@ CTL_CursorCmd::CloseForever(void)
                 //throw CDB_ClientEx(eDiag_Error, 122051, "::~CTL_CursorCmd",
                 //                   "the connection is busy");
 #endif
-                Check(ct_cmd_drop(x_GetSybaseCmd()));
+                DropSybaseCmd();
                 return;
             }
 
@@ -432,7 +436,7 @@ CTL_CursorCmd::CloseForever(void)
             case CS_PENDING:
                 // throw CDB_ClientEx(eDiag_Error, 122054, "::~CTL_CursorCmd",
                 //                   "connection has another request pending");
-                Check(ct_cmd_drop(x_GetSybaseCmd()));
+                DropSybaseCmd();
                 return;
             }
 

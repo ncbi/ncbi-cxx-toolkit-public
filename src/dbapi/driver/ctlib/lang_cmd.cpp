@@ -482,16 +482,21 @@ CTL_LRCmd::~CTL_LRCmd(void)
 CS_RETCODE
 CTL_LRCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
+    try {
+        switch (Check(rc)) {
+        case CS_SUCCEED:
+            break;
+        case CS_FAIL:
+            SetHasFailed();
+            DATABASE_DRIVER_ERROR( msg, msg_num );
+    #ifdef CS_BUSY
+        case CS_BUSY:
+            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+    #endif
+        }
+    } catch (...) {
         SetHasFailed();
-        DATABASE_DRIVER_ERROR( msg, msg_num );
-#ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
-#endif
+        throw;
     }
 
     return rc;
@@ -601,14 +606,7 @@ CTL_LRCmd::MakeResult(void)
             return NULL;
         case CS_FAIL:
             SetHasFailed();
-            if (Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL)) != CS_SUCCEED) {
-                // we need to close this connection
-                DATABASE_DRIVER_ERROR(
-                    "Unrecoverable crash of ct_result. "
-                    "Connection must be closed." +
-                    GetDbgInfo(),
-                    120012 );
-            }
+            Cancel();
             SetWasSent(false);
             DATABASE_DRIVER_ERROR( "ct_result failed." + GetDbgInfo(), 120013 );
         case CS_CANCELED:
@@ -689,6 +687,42 @@ CTL_LRCmd::Cancel(void)
     return true;
 }
 
+bool
+CTL_LRCmd::SendInternal(void)
+{
+    CS_RETCODE rc;
+
+    try {
+        rc = Check(ct_send(x_GetSybaseCmd()));
+    } catch (...) {
+        SetHasFailed();
+        Cancel();
+        throw;
+    }
+
+    switch (rc) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        SetHasFailed();
+        Cancel();
+        DATABASE_DRIVER_ERROR( "ct_send failed." + GetDbgInfo(), 121005 );
+    case CS_CANCELED:
+        DATABASE_DRIVER_ERROR( "Command was canceled." + GetDbgInfo(), 121006 );
+#ifdef CS_BUSY
+    case CS_BUSY:
+        DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 121007 );
+#endif
+    case CS_PENDING:
+    default:
+        SetWasSent();
+        return false;
+    }
+
+    SetWasSent();
+    return true;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -720,27 +754,7 @@ bool CTL_LangCmd::Send()
     SetHasFailed(!x_AssignParams());
     CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 120003 );
 
-    switch ( Check(ct_send(x_GetSybaseCmd())) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        SetHasFailed();
-        Cancel();
-        DATABASE_DRIVER_ERROR( "ct_send failed." + GetDbgInfo(), 120005 );
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "Command was canceled." + GetDbgInfo(), 120006 );
-#ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "Connection has another request pending." + GetDbgInfo(), 120007 );
-#endif
-    case CS_PENDING:
-    default:
-        SetWasSent();
-        return false;
-    }
-
-    SetWasSent();
-    return true;
+    return SendInternal();
 }
 
 
