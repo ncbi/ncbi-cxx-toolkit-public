@@ -55,7 +55,6 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection& conn,
 : CTL_Cmd(conn)
 , impl::CBaseCmd(conn, cursor_name, query, nof_params)
 , m_FetchSize(fetch_size)
-, m_Used(false)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
         query + "\"";
@@ -158,7 +157,7 @@ CTL_CursorCmd::OpenCursor()
     // need to close it first
     CloseCursor();
 
-    if (!m_Used) {
+    if (!CursorIsDeclared()) {
         SetHasFailed(false);
 
         CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
@@ -197,14 +196,14 @@ CTL_CursorCmd::OpenCursor()
             ProcessResults();
         }
 
-        m_Used = true;
+        SetCursorDeclared();
     }
 
     SetHasFailed(false);
 
     // open cursor
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
-                       m_Used ? CS_RESTORE_OPEN : CS_UNUSED),
+                       CursorIsDeclared() ? CS_RESTORE_OPEN : CS_UNUSED),
              "ct_cursor(open) failed", 122005);
 
     if (GetParams().NofParams() > 0) {
@@ -397,7 +396,7 @@ CTL_CursorCmd::CloseForever(void)
 
         CloseCursor();
 
-        if ( m_Used ) {
+        if (CursorIsDeclared()) {
             // deallocate the cursor
             switch ( Check(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DEALLOC,
                                0, CS_UNUSED, 0, CS_UNUSED, CS_UNUSED)) ) {

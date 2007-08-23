@@ -683,7 +683,6 @@ private:
 
 private:
     unsigned int      m_FetchSize;
-    bool              m_Used;
 };
 
 
