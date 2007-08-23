@@ -357,6 +357,8 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
     arg_desc.AddFlag(kArgLookupTableMaskingOnly,
                      "Apply filtering locations as soft masks?", true);
+    arg_desc.AddNegatedFlagAlias("no_" + kArgLookupTableMaskingOnly, 
+                                 kArgLookupTableMaskingOnly);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -891,6 +893,9 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                NStr::IntToString(1));
         arg_desc.SetConstraint(kArgPSINumIterations, 
                                new CArgAllowValuesGreaterThanOrEqual(1));
+        arg_desc.SetDependency(kArgPSINumIterations,
+                               CArgDescriptions::eExcludes,
+                               kArgRemote);
         // checkpoint file
         arg_desc.AddOptionalKey(kArgPSIOutputChkPntFile, "checkpoint_file",
 
@@ -1320,7 +1325,8 @@ CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
 #if _DEBUG
     arg_desc.SetCurrentGroup("misc");
-    arg_desc.AddFlag("verbose", "Produce verbose output?", true);
+    arg_desc.AddFlag("verbose", "Produce verbose output (show BLAST options)?",
+                     true);
     arg_desc.AddFlag("remote_verbose", 
                      "Produce verbose output for remote searches?", true);
     arg_desc.SetCurrentGroup("");
