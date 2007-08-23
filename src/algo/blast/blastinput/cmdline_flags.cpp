@@ -83,8 +83,8 @@ const string kArgProduceHtml("html");
 const string kArgGapOpen("gapopen");
 const string kArgGapExtend("gapextend");
 
-const string kArgMismatch("mismatch_penalty");
-const string kArgMatch("match_reward");
+const string kArgMismatch("penalty");
+const string kArgMatch("reward");
 
 const string kArgUngappedXDropoff("xdrop_ungap");
 const string kArgGappedXDropoff("xdrop_gap");
