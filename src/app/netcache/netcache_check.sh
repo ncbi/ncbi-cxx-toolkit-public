@@ -27,19 +27,24 @@ services="
    NC_TraceViewer    \
    NC_Reserve"
 
-hosts="
-   serviceqa:9001   \
-   service1:9001   \
-   service2:9001   \
-   service3:9001   \
-   service0:9005   \
-   serviceqa:9005   \
-   service1:9002   \
-   service2:9002   \
-   service1:9003   \
-   service2:9003   \
-   service1:9009   \
-   netcache:9009"
+be_md_hosts="
+   service0:9005 \
+   service1:9001 \
+   service1:9002 \
+   service1:9003 \
+   service1:9009 \
+   service2:9001 \
+   service2:9002 \
+   service2:9003 \
+   service3:9001 \
+   service3:9002 \
+   service3:9003 \
+   serviceqa:9001 \
+   serviceqa:9002 \
+   serviceqa:9003 \
+   serviceqa:9005"
+
+hosts=`echo "$be_md_hosts" | sed 's%:%.be-md:'%g`
 
 # For Nagios test
 
