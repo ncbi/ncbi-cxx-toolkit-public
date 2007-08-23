@@ -273,18 +273,17 @@ private:
     void AttachTo(CDB_BCPInCmd*     interface);
     void AttachTo(CDB_CursorCmd*    interface);
 
+private:
     CInterfaceHook<CDB_LangCmd>     m_InterfaceLang;
     CInterfaceHook<CDB_RPCCmd>      m_InterfaceRPC;
     CInterfaceHook<CDB_BCPInCmd>    m_InterfaceBCPIn;
     CInterfaceHook<CDB_CursorCmd>   m_InterfaceCursor;
 
-public: // Temporarily ...
-    string              m_Query;
-    CDB_Params          m_Params;
-    bool                m_Recompile; // Temporary. Should be deleted.
-    bool                m_HasFailed;
+    string          m_Query;
+    CDB_Params      m_Params;
+    bool            m_Recompile; // Temporary. Should be deleted.
+    bool            m_HasFailed;
 
-private:
     // Cursor-related data ...
     bool            m_IsOpen;
     bool            m_IsDeclared;
