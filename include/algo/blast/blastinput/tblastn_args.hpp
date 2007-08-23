@@ -48,7 +48,10 @@ public:
 
     /// Get the PSSM
     /// @return non-NULL PSSM if it's psi-tblastn
-    CRef<objects::CPssmWithParameters> GetPssm() const;
+    CRef<objects::CPssmWithParameters> GetInputPssm() const;
+
+    /// Set the PSSM from the saved search strategy 
+    void SetInputPssm(CRef<objects::CPssmWithParameters> pssm);
 
     /// Get the query batch size
     virtual int GetQueryBatchSize() const;

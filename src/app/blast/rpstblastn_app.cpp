@@ -45,6 +45,7 @@ static char const rcsid[] =
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include "blast_app_util.hpp"
 #include "blast_format.hpp"
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -80,8 +81,8 @@ void CRPSTBlastnApp::Init()
 
     // read the command line
 
+    HideStdArgs(fHideLogfile | fHideConffile | fHideDryRun);
     SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
-    HideStdArgs(fHideLogfile | fHideConffile);
 }
 
 int CRPSTBlastnApp::Run(void)
@@ -89,12 +90,16 @@ int CRPSTBlastnApp::Run(void)
     int status = 0;
 
     try {
+        // Limit the amount of memory used by CSeqDB so that the RPS-BLAST
+        // files not managed by it can be opened without problems
+        CSeqDB::SetDefaultMemoryBound(200000000);
 
         // Allow the fasta reader to complain on invalid sequence input
         SetDiagPostLevel(eDiag_Warning);
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
+        RecoverSearchStrategy(args, m_CmdLineArgs);
         CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
@@ -113,10 +118,11 @@ int CRPSTBlastnApp::Run(void)
         /*** Initialize the database ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
-        CRef<CSearchDatabase> search_db;    /* needed for remote searches */
-        if (m_CmdLineArgs->ExecuteRemotely()) {
-            search_db = db_args->GetSearchDatabase();
-        } else {
+        CRef<CSearchDatabase> search_db;    /* needed for remote searches and
+                                               for exporting the search
+                                               strategy */
+        search_db = db_args->GetSearchDatabase();
+        if ( !m_CmdLineArgs->ExecuteRemotely() ) {
             CRef<CSeqDB> seqdb = GetSeqDB(db_args);
             db_adapter.Reset(new CLocalDbAdapter(seqdb));
 
@@ -147,6 +153,9 @@ int CRPSTBlastnApp::Run(void)
             TSeqLocVector query_batch(input.GetNextSeqLocBatch());
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
 
+            SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl, 
+                               search_db);
+
             CRef<CSearchResultSet> results;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
@@ -161,15 +170,17 @@ int CRPSTBlastnApp::Run(void)
                 results = lcl_blast.Run();
             }
 
-            // this assertion is only true for database searches
-            _ASSERT(query_batch.size() == results->size());
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneAlignSet(**result, *fasta.GetScope());
+                formatter.PrintOneResultSet(**result, *fasta.GetScope());
             }
 
         }
 
         formatter.PrintEpilog(opt);
+
+        if (m_CmdLineArgs->ProduceDebugOutput()) {
+            opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
+        }
 
     } catch (const CBlastException& exptn) {
         cerr << exptn.what() << endl;

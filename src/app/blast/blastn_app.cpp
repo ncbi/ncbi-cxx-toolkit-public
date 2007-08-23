@@ -96,6 +96,7 @@ int CBlastnApp::Run(void)
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
+        RecoverSearchStrategy(args, m_CmdLineArgs);
         CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
@@ -116,7 +117,10 @@ int CBlastnApp::Run(void)
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
 
         CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
-        CRef<CSearchDatabase> search_db;    /* needed for remote searches */
+        CRef<CSearchDatabase> search_db;    /* needed for remote searches and
+                                               for exporting the search
+                                               strategy */
+        search_db = db_args->GetSearchDatabase();
 
         CBl2Seq_Runner bl2seq_runner(false, false);  /* nucl. vs nucl. Bl2seq */
 
@@ -139,9 +143,7 @@ int CBlastnApp::Run(void)
         }
         else                                // Database search
         {
-            if (m_CmdLineArgs->ExecuteRemotely()) {
-                search_db = db_args->GetSearchDatabase();
-            } else {
+            if ( !m_CmdLineArgs->ExecuteRemotely() ) {
                 CRef<CSeqDB> seqdb = GetSeqDB(db_args);
                 db_adapter.Reset(new CLocalDbAdapter(seqdb));
 
@@ -193,6 +195,9 @@ int CBlastnApp::Run(void)
                 TSeqLocVector query_batch(input.GetNextSeqLocBatch());
                 CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
 
+                SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl, 
+                                   search_db);
+
                 /*** Update the scope ***/
                 scope_formatter->AddScope(fasta.GetScope().GetObject());
 
@@ -211,17 +216,19 @@ int CBlastnApp::Run(void)
                     results = lcl_blast.Run();
                 }
 
-                // this assertion is only true for database searches
-                _ASSERT(query_batch.size() == results->size());
-
                 /*** Output formatted results ***/
                 ITERATE(CSearchResultSet, result, *results) {
-                        formatter->PrintOneAlignSet(**result, scope_formatter.GetObject());
+                        formatter->PrintOneResultSet(**result, scope_formatter.GetObject());
                 }
+
             }
         }
 
         formatter->PrintEpilog(opt);
+
+        if (m_CmdLineArgs->ProduceDebugOutput()) {
+            opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
+        }
 
     } catch (const CBlastException& exptn) {
         cerr << exptn.what() << endl;

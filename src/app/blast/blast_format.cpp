@@ -65,11 +65,12 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
           m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
           m_IsDbAvailable(dbname.length() > 0),
+          m_IsUngappedSearch(!options.GetGappedMode()),
           m_MatrixSet(false)
 {
+    // blast formatter cannot handle these output types
     if (format_type == 5) {
-        NCBI_THROW(blast::CBlastException, 
-                   eInvalidArgument,
+        NCBI_THROW(blast::CBlastException, eInvalidArgument,
                    "XML output format not supported");
     }
 
@@ -203,20 +204,31 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 }
 
 void
-CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
-                               CScope& scope,
-                               unsigned int itr_num)
+CBlastFormat::PrintOneResultSet(const CSearchResults& results,
+                                CScope& scope,
+                                unsigned int itr_num)
 {
-    const CSeq_align_set& aln_set = *results.GetSeqAlign();
+    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
 
     // ASN.1 formatting is straightforward
     if (m_FormatType == 8) {
-        m_Outfile << MSerial_AsnText << aln_set;
+        if (results.HasAlignments()) {
+            m_Outfile << MSerial_AsnText << *aln_set;
+        }
+        return;
+    } else if (m_FormatType == 9) {
+        if (results.HasAlignments()) {
+            m_Outfile << MSerial_AsnBinary << *aln_set;
+        }
         return;
     }
-    else if (m_FormatType == 9) {
-        m_Outfile << MSerial_AsnBinary << aln_set;
-        return;
+
+    if (results.HasErrors()) {
+        m_Outfile << endl << results.GetErrorStrings() << endl;
+        return; // errors are deemed fatal
+    }
+    if (results.HasWarnings()) {
+        m_Outfile << endl << results.GetWarningStrings() << endl;
     }
 
     // other output types will need a bioseq handle
@@ -231,12 +243,14 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
         if (m_FormatType == 7)
              tabinfo.PrintHeader(m_Program,
                                  *(bhandle.GetBioseqCore()),
-                                 m_DbName, 0, &aln_set);
+                                 m_DbName, 0, aln_set);
                                  
-        ITERATE(CSeq_align_set::Tdata, itr, aln_set.Get()) {
-                const CSeq_align& s = **itr;
-                tabinfo.SetFields(s, scope);
-                tabinfo.Print();
+        if (results.HasAlignments()) {
+            ITERATE(CSeq_align_set::Tdata, itr, aln_set->Get()) {
+                    const CSeq_align& s = **itr;
+                    tabinfo.SetFields(s, scope);
+                    tabinfo.Print();
+            }
         }
         return;
     }
@@ -255,11 +269,16 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
                                             m_IsHTML, false);
 
     // quit early if there are no hits
-    if (aln_set.Get().empty())
-    {
-        m_Outfile << "\n\n ***** No hits found *****\n\n" << endl;
+    if ( !results.HasAlignments() ) {
+        m_Outfile << endl << endl << "***** No hits found *****" << endl 
+                  << endl << endl;
         x_PrintOneQueryFooter(*results.GetAncillaryData());
         return;
+    }
+
+    _ASSERT(results.HasAlignments());
+    if (m_IsUngappedSearch) {
+        aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
     }
 
     // set the alignment flags
@@ -270,7 +289,7 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
     // print 1-line summaries
     m_Outfile << endl;
 
-    CShowBlastDefline showdef(aln_set, scope, 
+    CShowBlastDefline showdef(*aln_set, scope, 
                               kFormatLineLength,
                               m_NumSummary);
 
@@ -293,7 +312,7 @@ CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
 
     TMaskedQueryRegions masklocs;
     results.GetMaskedQueryRegions(masklocs);
-    CDisplaySeqalign display(aln_set, scope, &masklocs, NULL,
+    CDisplaySeqalign display(*aln_set, scope, &masklocs, NULL,
                              m_MatrixSet ? (const int(*)[23])m_Matrix : NULL);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);

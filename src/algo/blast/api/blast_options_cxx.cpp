@@ -560,6 +560,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         x_SetParam(B4Param_SegFilteringHicut, v);
         return;
 
+    case eBlastOpt_GapTrigger:
+        x_SetParam(B4Param_GapTrigger, v);
+        return;
+
     default:
         break;
     }
@@ -666,7 +670,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         return;
         
     case eBlastOpt_SumStatisticsMode:
-        x_SetParam(B4Param_MaskAtHash, v);
+        x_SetParam(B4Param_SumStatistics, v);
         return;
 
 /*  What about this???

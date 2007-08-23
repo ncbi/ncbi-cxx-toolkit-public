@@ -52,10 +52,19 @@ public:
 
     /// Get the number of iterations to perform
     size_t GetNumberOfIterations() const;
-    /// Get the PSSM
-    CRef<objects::CPssmWithParameters> GetPssm() const;
+
+    /// Get the PSSM specified as input from the command line
+    CRef<objects::CPssmWithParameters> GetInputPssm() const;
+
+    /// Set the PSSM from the saved search strategy 
+    void SetInputPssm(CRef<objects::CPssmWithParameters> pssm);
+
     /// Get the query batch size
     virtual int GetQueryBatchSize() const;
+
+    bool SaveCheckpoint() const;
+    CNcbiOstream* GetCheckpointStream() const;
+    
 
 protected:
     /// Create the options handle based on the command line arguments

@@ -7,7 +7,20 @@
 * Remote searches: obtaining BLAST database information for formatter
 * BlastOptions: setting of extra parameters
 
-* config file/saved search strategy support
+* Import search strategy
+Read Blast4-request containing a Blast4-queue-search
+* Support PSSM checkpointing in psiblast
+* Make number of iterations exclusive from remote searches
+
+
+* remote PSI-BLAST
+blast4 issues
+* LongestIntronLength for translated searches
+* DustFilteringparams for blastn
+* SegFilteringWindow
+
+
+Lcl specification of search-space + matrix+gap costs in rpsblast/rpstblastn
 
 * rm c++/src/algo/blast/api/demo?
 

@@ -913,6 +913,9 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 CArgDescriptions::eInputFile);
     }
 
+    arg_desc.SetDependency(kArgPSIInputChkPntFile,
+                           CArgDescriptions::eExcludes,
+                           kArgQuery);
     arg_desc.SetCurrentGroup("");
 }
 
@@ -924,8 +927,10 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         if (args[kArgPSINumIterations]) {
             m_NumIterations = args[kArgPSINumIterations].AsInteger();
         }
-        if (args[kArgPSIOutputChkPntFile]) {
-            m_CheckPointOutputStream = NULL;    /* FIXME */
+        if (args.Exist(kArgPSIOutputChkPntFile) &&
+            args[kArgPSIOutputChkPntFile]) {
+            m_CheckPointOutputStream = 
+                &args[kArgPSIOutputChkPntFile].AsOutputFile(); 
         }
         if (args[ARG_ASCII_MATRIX]) {
             cerr << "Warning: ASCII MATRIX NOT HANDLED\n";
@@ -1212,8 +1217,8 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                     "  5 = XML Blast output,\n"
                     "  6 = tabular,\n"
                     "  7 = tabular with comment lines,\n"
-                    "  8 = ASN, text,\n"
-                    "  9 = ASN, binary\n",
+                    "  8 = Text ASN.1,\n"
+                    "  9 = Binary ASN.1\n",
                    CArgDescriptions::eInteger,
                    NStr::IntToString(kDfltArgOutputFormat));
     arg_desc.SetConstraint(kArgOutputFormat, new CArgAllow_Integers(0, 9));
@@ -1299,10 +1304,6 @@ CRemoteArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            CArgDescriptions::eExcludes,
                            kArgNumThreads);
 
-#if _DEBUG
-    arg_desc.AddFlag("remote_verbose", 
-                     "Produce verbose output for remote searches?", true);
-#endif /* DEBUG */
     arg_desc.SetCurrentGroup("");
 }
 
@@ -1312,9 +1313,26 @@ CRemoteArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts *
     if (args.Exist(kArgRemote)) {
         m_IsRemote = static_cast<bool>(args[kArgRemote]);
     }
+}
 
+void
+CDebugArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
 #if _DEBUG
-    m_DebugOutput = static_cast<bool>(args["remote_verbose"]);
+    arg_desc.SetCurrentGroup("misc");
+    arg_desc.AddFlag("verbose", "Produce verbose output?", true);
+    arg_desc.AddFlag("remote_verbose", 
+                     "Produce verbose output for remote searches?", true);
+    arg_desc.SetCurrentGroup("");
+#endif /* DEBUG */
+}
+
+void
+CDebugArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
+{
+#if _DEBUG
+    m_DebugOutput = static_cast<bool>(args["verbose"]);
+    m_RmtDebugOutput = static_cast<bool>(args["remote_verbose"]);
 #endif /* DEBUG */
 }
 
@@ -1397,23 +1415,6 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 }
 
-#if 0
-CBlastArgs::CBlastArgs(string prog_name,
-                       string prog_desc)
-    : m_ProgName(prog_name),
-      m_ProgDesc(prog_desc)
-{
-}
-
-void
-CBlastArgs::x_SetArgDescriptions(CArgDescriptions * arg_desc)
-{
-    if ( !arg_desc ) {
-        NCBI_THROW(CBlastException, eInvalidArgument, "NULL description");
-    }
-}
-#endif
-
 void
 CStdCmdLineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
@@ -1438,7 +1439,10 @@ void
 CStdCmdLineArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& /* opt */)
 {
-    m_InputStream = &args[kArgQuery].AsInputFile();
+    if (args.Exist(kArgQuery) && args[kArgQuery].HasValue() &&
+        m_InputStream == NULL) {
+        m_InputStream = &args[kArgQuery].AsInputFile();
+    }
     m_OutputStream = &args[kArgOutput].AsOutputFile();
 }
 
@@ -1447,7 +1451,9 @@ CStdCmdLineArgs::GetInputStream() const
 {
     // programmer must ensure the ExtractAlgorithmOptions method is called
     // before this method is invoked
-    _ASSERT(m_InputStream); 
+    if ( !m_InputStream ) {
+        abort();
+    }
     return *m_InputStream;
 }
 
@@ -1458,6 +1464,13 @@ CStdCmdLineArgs::GetOutputStream() const
     // before this method is invoked
     _ASSERT(m_OutputStream);
     return *m_OutputStream;
+}
+
+void
+CStdCmdLineArgs::SetInputStream(CRef<CTmpFile> input_file)
+{
+    m_QueryTmpInputFile = input_file;
+    m_InputStream = &input_file->AsInputFile();
 }
 
 void
@@ -1486,9 +1499,30 @@ CSearchStrategyArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
 {
 }
 
+CNcbiIstream* 
+CSearchStrategyArgs::GetImportStream(const CArgs& args) const
+{
+    CNcbiIstream* retval = NULL;
+    if (args[kArgInputSearchStrategy].HasValue()) {
+        retval = &args[kArgInputSearchStrategy].AsInputFile();
+    }
+    return retval;
+}
+
+CNcbiOstream* 
+CSearchStrategyArgs::GetExportStream(const CArgs& args) const
+{
+    CNcbiOstream* retval = NULL;
+    if (args[kArgOutputSearchStrategy].HasValue()) {
+        retval = &args[kArgOutputSearchStrategy].AsOutputFile();
+    }
+    return retval;
+}
+
 CBlastAppArgs::CBlastAppArgs()
 {
-    m_Args.push_back(CRef<IBlastCmdLineArgs>(new CSearchStrategyArgs));
+    m_SearchStrategyArgs.Reset(new CSearchStrategyArgs);
+    m_Args.push_back(CRef<IBlastCmdLineArgs>(&*m_SearchStrategyArgs));
 }
 
 CArgDescriptions*
@@ -1500,10 +1534,28 @@ CBlastAppArgs::SetCommandLine()
 CRef<CBlastOptionsHandle>
 CBlastAppArgs::SetOptions(const CArgs& args)
 {
-    const CBlastOptions::EAPILocality locality = 
+    if (m_OptsHandle.NotEmpty()) {
+        CBlastOptions& opts = m_OptsHandle->SetOptions();
+        // invoke ExtractAlgorithmOptions on certain argument classes
+        m_FormattingArgs->ExtractAlgorithmOptions(args, opts);
+        m_QueryOptsArgs->ExtractAlgorithmOptions(args, opts);
+        m_StdCmdLineArgs->ExtractAlgorithmOptions(args, opts);
+        m_RemoteArgs->ExtractAlgorithmOptions(args, opts);
+        m_DebugArgs->ExtractAlgorithmOptions(args, opts);
+        return m_OptsHandle;
+    }
+
+    CBlastOptions::EAPILocality locality = 
         (args.Exist(kArgRemote) && args[kArgRemote]) 
         ? CBlastOptions::eRemote 
         : CBlastOptions::eLocal;
+
+    // This is needed as a CRemoteBlast object and its options are instantiated
+    // to create the search strategy
+    if (GetExportSearchStrategyStream(args)) {
+        locality = CBlastOptions::eBoth;
+    }
+
     CRef<CBlastOptionsHandle> handle(x_CreateOptionsHandle(locality, args));
     CBlastOptions& opts = handle->SetOptions();
     NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {

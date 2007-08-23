@@ -42,6 +42,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
+#include <algo/blast/blastinput/tmpfile.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -115,10 +116,16 @@ public:
     CNcbiIstream& GetInputStream() const;
     /** Get the output stream for a command line application */
     CNcbiOstream& GetOutputStream() const;
+    /** Set the input stream if read from a saved search strategy */
+    void SetInputStream(CRef<CTmpFile> input_file);
 
 private:
     CNcbiIstream* m_InputStream;    ///< Application's input stream
     CNcbiOstream* m_OutputStream;   ///< Application's output stream
+
+    /// ASN.1 specification of query sequences when read from a saved search
+    /// strategy
+    CRef<CTmpFile> m_QueryTmpInputFile;
 };
 
 /** Argument class to populate an application's name and description */
@@ -403,6 +410,11 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
+
+    /// Get the input stream for the search strategy
+    CNcbiIstream* GetImportStream(const CArgs& args) const;
+    /// Get the output stream for the search strategy
+    CNcbiOstream* GetExportStream(const CArgs& args) const;
 };
 
 /// Argument class to collect options specific to PSI-BLAST
@@ -423,19 +435,13 @@ public:
     CPsiBlastArgs(ETargetDatabase db_target = eProteinDb) 
         : m_DbTarget(db_target), m_NumIterations(1),
         m_CheckPointOutputStream(0), m_AsciiMatrixOutputStream(0),
-        m_CheckPointInputStream(0), m_MSAInputStream(0)
+        m_MSAInputStream(0)
     {};
 
     /// Our virtual destructor
     virtual ~CPsiBlastArgs() {
-        if (m_CheckPointOutputStream) {
-            delete m_CheckPointOutputStream;
-        }
         if (m_AsciiMatrixOutputStream) {
             delete m_AsciiMatrixOutputStream;
-        }
-        if (m_CheckPointInputStream) {
-            delete m_CheckPointInputStream;
         }
         if (m_MSAInputStream) {
             delete m_MSAInputStream;
@@ -464,15 +470,15 @@ public:
     CNcbiIstream* GetMSAInputFile() const { 
         return m_MSAInputStream; 
     }
-    /// Get the checkpoint file input stream
-    /// @note this is valid in both eProteinDb and eNucleotideDb
-    CNcbiIstream* GetCheckPointInputStream() const { 
-        return m_CheckPointInputStream; 
-    }
 
     /// Get the PSSM read from checkpoint file
-    CRef<objects::CPssmWithParameters> GetPssm() const {
+    CRef<objects::CPssmWithParameters> GetInputPssm() const {
         return m_Pssm;
+    }
+
+    /// Set the PSSM read from saved search strategy
+    void SetInputPssm(CRef<objects::CPssmWithParameters> pssm) {
+        m_Pssm = pssm;
     }
 
 private:
@@ -484,8 +490,6 @@ private:
     CNcbiOstream* m_CheckPointOutputStream;
     /// ASCII matrix output file
     CNcbiOstream* m_AsciiMatrixOutputStream;
-    /// checkpoint input file
-    CNcbiIstream* m_CheckPointInputStream;
     /// multiple sequence alignment input file
     CNcbiIstream* m_MSAInputStream;
     /// PSSM
@@ -584,6 +588,10 @@ public:
 
     /// Retrieve the search database information
     CRef<CSearchDatabase> GetSearchDatabase() const { return m_SearchDb; }
+    /// Set the search database information
+    void SetSearchDatabase(CRef<CSearchDatabase> search_db) {
+        m_SearchDb = search_db;
+    }
 
     /// Is subject sequence provided instead of a database?
     bool IsSubjectProvided() const {return m_IsSubjectProvided;}
@@ -677,7 +685,7 @@ private:
 class NCBI_XBLAST_EXPORT CRemoteArgs : public IBlastCmdLineArgs
 {
 public:
-    CRemoteArgs() : m_IsRemote(false), m_DebugOutput(false) {}
+    CRemoteArgs() : m_IsRemote(false) {}
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -686,15 +694,36 @@ public:
 
     /// Return whether the search should be executed remotely or not
     bool ExecuteRemotely() const { return m_IsRemote; }
-    /// Return whether debug (verbose) output should be produced on remote
-    /// searches (only available when compiled with _DEBUG)
-    bool ProduceDebugRemoteOutput() const { return m_DebugOutput; }
-private:
 
+private:
     /// Should the search be executed remotely?
     bool m_IsRemote;
+};
+
+/// Argument class to collect debugging options.
+/// Only show in command line if compiled with _DEBUG
+class NCBI_XBLAST_EXPORT CDebugArgs : public IBlastCmdLineArgs
+{
+public:
+    CDebugArgs() : m_DebugOutput(false), m_RmtDebugOutput(false) {}
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+
+    /// Return whether debug (verbose) output should be produced on remote
+    /// searches (only available when compiled with _DEBUG)
+    bool ProduceDebugRemoteOutput() const { return m_RmtDebugOutput; }
+    /// Return whether debug (verbose) output should be produced
+    /// (only available when compiled with _DEBUG)
+    bool ProduceDebugOutput() const { return m_DebugOutput; }
+private:
+
     /// Should debugging (verbose) output be printed
     bool m_DebugOutput;
+    /// Should debugging (verbose) output be printed for remote BLAST
+    bool m_RmtDebugOutput;
 };
 
 /// Argument class to retrieve calling options
@@ -739,9 +768,19 @@ public:
     /// @param args Commad line arguments [in]
     CRef<CBlastOptionsHandle> SetOptions(const CArgs& args);
 
+    /// Setter for the BLAST options handle, this is used if the options are
+    /// recovered from a saved BLAST search strategy
+    void SetOptionsHandle(CRef<CBlastOptionsHandle> opts_hndl) {
+        m_OptsHandle = opts_hndl;
+    }
+
     /// Get the BLAST database arguments
     CRef<CBlastDatabaseArgs> GetBlastDatabaseArgs() const {
         return m_BlastDbArgs;
+    }
+    /// Set the BLAST database arguments
+    void SetBlastDatabaseArgs(CRef<CBlastDatabaseArgs> args) {
+        m_BlastDbArgs = args;
     }
 
     /// Get the options for the query sequence(s)
@@ -768,6 +807,19 @@ public:
         return m_StdCmdLineArgs->GetOutputStream();
     }
 
+    void SetInputStream(CRef<CTmpFile> input_file) {
+        m_StdCmdLineArgs->SetInputStream(input_file);
+    }
+
+    /// Get the input stream for the search strategy
+    CNcbiIstream* GetImportSearchStrategyStream(const CArgs& args) {
+        return m_SearchStrategyArgs->GetImportStream(args);
+    }
+    /// Get the output stream for the search strategy
+    CNcbiOstream* GetExportSearchStrategyStream(const CArgs& args) {
+        return m_SearchStrategyArgs->GetExportStream(args);
+    }
+
     /// Determine whether the search should be executed remotely or not
     bool ExecuteRemotely() const {
         return m_RemoteArgs->ExecuteRemotely();
@@ -776,7 +828,13 @@ public:
     /// Return whether debug (verbose) output should be produced on remote
     /// searches (only available when compiled with _DEBUG)
     bool ProduceDebugRemoteOutput() const { 
-        return m_RemoteArgs->ProduceDebugRemoteOutput();
+        return m_DebugArgs->ProduceDebugRemoteOutput();
+    }
+
+    /// Return whether debug (verbose) output should be produced on remote
+    /// searches (only available when compiled with _DEBUG)
+    bool ProduceDebugOutput() const { 
+        return m_DebugArgs->ProduceDebugOutput();
     }
 
     /// Get the query batch size
@@ -797,6 +855,13 @@ protected:
     CRef<CRemoteArgs> m_RemoteArgs;
     /// standard command line arguments class
     CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
+    /// arguments for dealing with search strategies
+    CRef<CSearchStrategyArgs> m_SearchStrategyArgs;
+    /// Debugging arguments
+    CRef<CDebugArgs> m_DebugArgs;
+    /// The BLAST options handle, only non-NULL if assigned via
+    /// SetOptionsHandle, i.e.: from a saved search strategy
+    CRef<CBlastOptionsHandle> m_OptsHandle;
 
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely

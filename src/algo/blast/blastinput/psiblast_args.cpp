@@ -120,6 +120,10 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 
     arg.Reset(new CPhiBlastArgs);
     m_Args.push_back(arg);
+
+    m_DebugArgs.Reset(new CDebugArgs);
+    arg.Reset(m_DebugArgs);
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle>
@@ -136,15 +140,33 @@ CPsiBlastAppArgs::GetNumberOfIterations() const
 }
 
 CRef<CPssmWithParameters>
-CPsiBlastAppArgs::GetPssm() const
+CPsiBlastAppArgs::GetInputPssm() const
 {
-    return m_PsiBlastArgs->GetPssm();
+    return m_PsiBlastArgs->GetInputPssm();
+}
+
+void
+CPsiBlastAppArgs::SetInputPssm(CRef<CPssmWithParameters> pssm)
+{
+    m_PsiBlastArgs->SetInputPssm(pssm);
 }
 
 int 
 CPsiBlastAppArgs::GetQueryBatchSize() const
 {
     return blast::GetQueryBatchSize("psiblast");
+}
+
+bool
+CPsiBlastAppArgs::SaveCheckpoint() const
+{
+    return static_cast<bool>(m_PsiBlastArgs->GetCheckPointOutputStream());
+}
+
+CNcbiOstream*
+CPsiBlastAppArgs::GetCheckpointStream() const
+{
+    return m_PsiBlastArgs->GetCheckPointOutputStream();
 }
 
 END_SCOPE(blast)

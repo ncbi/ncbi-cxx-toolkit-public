@@ -1,6 +1,7 @@
 # $Id$
 
 SRC_CXX = \
+tmpfile \
 blast_input \
 blast_fasta_input \
 blast_scope_src \

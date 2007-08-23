@@ -104,6 +104,10 @@ CBlastpAppArgs::CBlastpAppArgs()
 
     arg.Reset(new CCompositionBasedStatsArgs);
     m_Args.push_back(arg);
+
+    m_DebugArgs.Reset(new CDebugArgs);
+    arg.Reset(m_DebugArgs);
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 

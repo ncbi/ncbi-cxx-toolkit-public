@@ -38,11 +38,29 @@
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 
+#include <objects/blast/Blast4_request.hpp>
+#include <algo/blast/api/uniform_search.hpp>
+
 BEGIN_NCBI_SCOPE
 
 CRef<CSeqDB> GetSeqDB(CRef<blast::CBlastDatabaseArgs> db_args);
 string RegisterOMDataLoader(CRef<objects::CObjectManager> objmgr, 
                             CRef<CSeqDB> db_handle);
+
+/// Recover search strategy from input file
+/// @param cmdline_args command line arguments. Will have the database
+/// arguments set, as well as options handle [in|out]
+void
+RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args);
+
+/// Save the search strategy corresponding to the current command line search
+void
+SaveSearchStrategy(const CArgs& args,
+                   blast::CBlastAppArgs* cmdline_args,
+                   CRef<blast::IQueryFactory> queries,
+                   CRef<blast::CBlastOptionsHandle> opts_hndl,
+                   CRef<blast::CSearchDatabase> search_db,
+                   objects::CPssmWithParameters* pssm = NULL);
 
 END_NCBI_SCOPE
 

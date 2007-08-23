@@ -102,12 +102,13 @@ public:
     /// Print the header of the blast report
     void PrintProlog();
 
-    /// Print all alignment information for a single query sequence
+    /// Print all alignment information for a single query sequence along with
+    /// any errors or warnings (errors are deemed fatal)
     /// @param results Object containing alignments, mask regions, and
     ///                ancillary data to be output [in]
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
-    void PrintOneAlignSet(const blast::CSearchResults& results,
+    void PrintOneResultSet(const blast::CSearchResults& results,
                           objects::CScope& scope,
                           unsigned int itr_num =
                           numeric_limits<unsigned int>::max());
@@ -131,6 +132,7 @@ private:
     bool m_ShowGi;              ///< add GI number of database sequence IDs
     bool m_ShowLinkedSetSize;   ///< show size of linked set in 1-line summary
     bool m_IsDbAvailable;       ///< true if a database is available
+    bool m_IsUngappedSearch;    ///< true if the search was ungapped
 
     /// True if a user-specified score matrix is required
     /// for formatting

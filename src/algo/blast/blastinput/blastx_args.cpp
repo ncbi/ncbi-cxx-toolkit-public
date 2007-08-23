@@ -110,6 +110,10 @@ CBlastxAppArgs::CBlastxAppArgs()
     m_RemoteArgs.Reset(new CRemoteArgs);
     arg.Reset(m_RemoteArgs);
     m_Args.push_back(arg);
+
+    m_DebugArgs.Reset(new CDebugArgs);
+    arg.Reset(m_DebugArgs);
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 

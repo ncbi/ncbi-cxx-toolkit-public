@@ -1783,6 +1783,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             // probably be removed from blast4.  The server provides
             // the filter string as well, so this boolean is redundant
             // and can be ignored safely.
+        } else if (B4Param_LongestIntronLength.Match(p)) {
+            bo.SetLongestIntronLength(v.GetInteger());
         } else {
             found = false;
         }
@@ -1860,6 +1862,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetSegFilteringLocut(v.GetReal());
         } else if (B4Param_SegFilteringHicut.Match(p)) {
             bo.SetSegFilteringHicut(v.GetReal());
+        } else if (B4Param_SumStatistics.Match(p)) {
+            bo.SetSumStatisticsMode(v.GetBoolean());
         } else {
             found = false;
         }

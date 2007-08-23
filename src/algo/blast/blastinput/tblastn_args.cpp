@@ -114,6 +114,10 @@ CTblastnAppArgs::CTblastnAppArgs()
     m_PsiBlastArgs.Reset(new CPsiBlastArgs(CPsiBlastArgs::eNucleotideDb));
     arg.Reset(m_PsiBlastArgs);
     m_Args.push_back(arg);
+
+    m_DebugArgs.Reset(new CDebugArgs);
+    arg.Reset(m_DebugArgs);
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 
@@ -124,9 +128,15 @@ CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 }
 
 CRef<CPssmWithParameters>
-CTblastnAppArgs::GetPssm() const
+CTblastnAppArgs::GetInputPssm() const
 {
-    return m_PsiBlastArgs->GetPssm();
+    return m_PsiBlastArgs->GetInputPssm();
+}
+
+void
+CTblastnAppArgs::SetInputPssm(CRef<CPssmWithParameters> pssm)
+{
+    m_PsiBlastArgs->SetInputPssm(pssm);
 }
 
 int

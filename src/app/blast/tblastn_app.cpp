@@ -95,33 +95,45 @@ int CTblastnApp::Run(void)
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
+        RecoverSearchStrategy(args, m_CmdLineArgs);
         CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
-
-        /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
-        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        CBlastInputConfig iconfig(dlconfig, query_opts->GetStrand(),
-                                     query_opts->UseLowercaseMasks(),
-                                     query_opts->BelieveQueryDefline(),
-                                     query_opts->GetRange());
-        CBlastFastaInputSource fasta(*m_ObjMgr, m_CmdLineArgs->GetInputStream(),
-                                     iconfig);
-        CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
+
+        /*** Get the query sequence(s) or PSSM (these two options are mutually
+         * exclusive) ***/
+        CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
+        CRef<CBlastFastaInputSource> fasta;
+        CRef<CBlastInput> input;
+        if (pssm.Empty()) {
+            SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
+            CBlastInputConfig iconfig(dlconfig, query_opts->GetStrand(),
+                                         query_opts->UseLowercaseMasks(),
+                                         query_opts->BelieveQueryDefline(),
+                                         query_opts->GetRange());
+            fasta.Reset(new CBlastFastaInputSource(*m_ObjMgr, 
+                                         m_CmdLineArgs->GetInputStream(),
+                                         iconfig));
+            input.Reset(new CBlastInput(&*fasta,
+                                        m_CmdLineArgs->GetQueryBatchSize()));
+        } else {
+            throw runtime_error("PSI-TBLASTN is not implemented");
+        }
 
         /*** Initialize the database ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
-        CRef<CSearchDatabase> search_db;    /* needed for remote searches */
-        if (m_CmdLineArgs->ExecuteRemotely()) {
-            search_db = db_args->GetSearchDatabase();
-        } else {
+        CRef<CSearchDatabase> search_db;    /* needed for remote searches and
+                                               for exporting the search
+                                               strategy */
+        search_db = db_args->GetSearchDatabase();
+        if ( !m_CmdLineArgs->ExecuteRemotely() ) {
             CRef<CSeqDB> seqdb = GetSeqDB(db_args);
             db_adapter.Reset(new CLocalDbAdapter(seqdb));
 
             const string loader_name = RegisterOMDataLoader(m_ObjMgr, seqdb);
-            fasta.GetScope()->AddDataLoader(loader_name); 
+            fasta->GetScope()->AddDataLoader(loader_name); 
         }
 
         /*** Get the formatting options ***/
@@ -141,16 +153,14 @@ int CTblastnApp::Run(void)
                                opt.GetSumStatisticsMode());
         formatter.PrintProlog();
 
-        CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetPssm();
-        if (pssm.NotEmpty()) {
-            throw runtime_error("PSI-TBLASTN is not implemented");
-        }
-
         /*** Process the input ***/
-        while ( !fasta.End() ) {
+        while ( !fasta->End() ) {
 
-            TSeqLocVector query_batch(input.GetNextSeqLocBatch());
+            TSeqLocVector query_batch(input->GetNextSeqLocBatch());
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
+
+            SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl, 
+                               search_db);
 
             CRef<CSearchResultSet> results;
 
@@ -166,15 +176,16 @@ int CTblastnApp::Run(void)
                 results = lcl_blast.Run();
             }
 
-            // this assertion is only true for database searches
-            _ASSERT(query_batch.size() == results->size());
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneAlignSet(**result, *fasta.GetScope());
+                formatter.PrintOneResultSet(**result, *fasta->GetScope());
             }
-
         }
 
         formatter.PrintEpilog(opt);
+
+        if (m_CmdLineArgs->ProduceDebugOutput()) {
+            opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
+        }
 
     } catch (const CBlastException& exptn) {
         cerr << exptn.what() << endl;

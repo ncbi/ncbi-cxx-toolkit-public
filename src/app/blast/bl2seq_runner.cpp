@@ -107,7 +107,7 @@ void CBl2Seq_Runner::RunAndFormat(CBlastFastaInputSource* fasta_query,
 
         /*** Output formatted results ***/
         ITERATE(CSearchResultSet, result, *results) {
-                formatter->PrintOneAlignSet(**result, *scope_formatter);
+                formatter->PrintOneResultSet(**result, *scope_formatter);
         }
     }
 }

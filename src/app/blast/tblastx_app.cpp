@@ -95,6 +95,7 @@ int CTblastxApp::Run(void)
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
+        RecoverSearchStrategy(args, m_CmdLineArgs);
         CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
@@ -113,10 +114,11 @@ int CTblastxApp::Run(void)
         /*** Initialize the database ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;   /* needed for local searches */
-        CRef<CSearchDatabase> search_db;    /* needed for remote searches */
-        if (m_CmdLineArgs->ExecuteRemotely()) {
-            search_db = db_args->GetSearchDatabase();
-        } else {
+        CRef<CSearchDatabase> search_db;    /* needed for remote searches and
+                                               for exporting the search
+                                               strategy */
+        search_db = db_args->GetSearchDatabase();
+        if ( !m_CmdLineArgs->ExecuteRemotely() ) {
             CRef<CSeqDB> seqdb = GetSeqDB(db_args);
             db_adapter.Reset(new CLocalDbAdapter(seqdb));
 
@@ -147,6 +149,9 @@ int CTblastxApp::Run(void)
             TSeqLocVector query_batch(input.GetNextSeqLocBatch());
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_batch));
 
+            SaveSearchStrategy(args, m_CmdLineArgs, queries, opts_hndl, 
+                               search_db);
+
             CRef<CSearchResultSet> results;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
@@ -161,15 +166,16 @@ int CTblastxApp::Run(void)
                 results = lcl_blast.Run();
             }
 
-            // this assertion is only true for database searches
-            _ASSERT(query_batch.size() == results->size());
             ITERATE(CSearchResultSet, result, *results) {
-                formatter.PrintOneAlignSet(**result, *fasta.GetScope());
+                formatter.PrintOneResultSet(**result, *fasta.GetScope());
             }
-
         }
 
         formatter.PrintEpilog(opt);
+
+        if (m_CmdLineArgs->ProduceDebugOutput()) {
+            opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
+        }
 
     } catch (const CBlastException& exptn) {
         cerr << exptn.what() << endl;
