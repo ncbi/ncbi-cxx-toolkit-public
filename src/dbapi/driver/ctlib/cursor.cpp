@@ -66,16 +66,21 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection& conn,
 CS_RETCODE
 CTL_CursorCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        SetHasFailed();
-        DATABASE_DRIVER_ERROR( msg, msg_num );
+    try {
+        switch (Check(rc)) {
+        case CS_SUCCEED:
+            break;
+        case CS_FAIL:
+            SetHasFailed();
+            DATABASE_DRIVER_ERROR( msg, msg_num );
 #ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+        case CS_BUSY:
+            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
 #endif
+        }
+    } catch (...) {
+        SetHasFailed();
+        throw;
     }
 
     return rc;
@@ -85,20 +90,25 @@ CTL_CursorCmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 CS_RETCODE
 CTL_CursorCmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
-    switch (Check(rc)) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        SetHasFailed();
-        DATABASE_DRIVER_ERROR( msg, msg_num );
+    try {
+        switch (Check(rc)) {
+        case CS_SUCCEED:
+            break;
+        case CS_FAIL:
+            SetHasFailed();
+            DATABASE_DRIVER_ERROR( msg, msg_num );
 #ifdef CS_BUSY
-    case CS_BUSY:
-        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
+        case CS_BUSY:
+            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
 #endif
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
-    case CS_PENDING:
-        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
+        case CS_CANCELED:
+            DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
+        case CS_PENDING:
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
+        }
+    } catch (...) {
+        SetHasFailed();
+        throw;
     }
 
     return rc;
@@ -127,7 +137,10 @@ CTL_CursorCmd::ProcessResults(void)
             continue;
         case CS_CMD_FAIL: // the command has failed
             SetHasFailed();
-            while(Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED);
+            while(Check(ct_results(x_GetSybaseCmd(), &res_type)) == CS_SUCCEED)
+            {
+                continue;
+            }
             DATABASE_DRIVER_WARNING( "The server encountered an error while "
                                "executing a command", 122049 );
         default:
@@ -177,30 +190,11 @@ CTL_CursorCmd::OpenCursor()
         // command. So, error processing can be done only after CS_CURSOR_OPEN
         // was sent.
         {
-            // Send command ...
-            try {
-                // send this command
-                CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
-            } catch (...) {
-                SetHasFailed();
-                throw;
-            }
+            // send this command
+            CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
 
             // Check results of send ...
-            CS_INT res_type;
-            try {
-                while (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
-                                  "ct_result failed", 122013) == CS_SUCCEED) {
-                    continue;
-                }
-            } catch (...) {
-                SetHasFailed();
-                // We have to fech out all pending  results ...
-                while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
-                    continue;
-                }
-                throw;
-            }
+            ProcessResults();
         }
 
         m_Used = true;
@@ -208,24 +202,19 @@ CTL_CursorCmd::OpenCursor()
 
     SetHasFailed(false);
 
-    // open the cursor
+    // open cursor
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_OPEN, 0, CS_UNUSED, 0, CS_UNUSED,
                        m_Used ? CS_RESTORE_OPEN : CS_UNUSED),
              "ct_cursor(open) failed", 122005);
 
     if (GetParams().NofParams() > 0) {
-        // we do have the parameters
+        // we do have parameters
         SetHasFailed(!x_AssignParams(false));
         CHECK_DRIVER_ERROR( HasFailed(), "Cannot assign the params." + GetDbgInfo(), 122003 );
     }
 
-    try {
-        // send this command
-        CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
-    } catch (...) {
-        SetHasFailed();
-        throw;
-    }
+    // send this command
+    CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
 
     // Process results ....
     for (;;) {
@@ -237,7 +226,6 @@ CTL_CursorCmd::OpenCursor()
                 return NULL;
             }
         } catch (...) {
-            SetHasFailed();
             // We have to fech out all pending  results ...
             while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
                 continue;
@@ -292,7 +280,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
     // send this command
     CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122032);
 
-    // process the results
+    // process results
     return ProcessResults();
 }
 
