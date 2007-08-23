@@ -366,9 +366,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     // save each hit longer than the minimum and test whether the hit is perfect
     vector<size_t> pattern0;
     vector<pair<bool,double> > imperfect;
-    for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
+    double max_idty (0.0);
+    for(size_t i (0), n (phitrefs->size()); i < n; ++i) {
 
-        const THitRef& h = (*phitrefs)[i];
+        const THitRef & h ((*phitrefs)[i]);
         const bool valid (true);
         if(valid) {
 
@@ -379,7 +380,17 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             const double idty (h->GetIdentity());
             const bool imprf  (idty < 1.00 || h->GetQuerySpan() != h->GetSubjSpan());
             imperfect.push_back(pair<bool,double>(imprf, idty));
+            if(idty > max_idty) {
+                max_idty = idty;
+            }
         }
+    }
+
+    if(max_idty < .85) {
+        m_BoundingRange = pair<size_t, size_t>(pattern0[2], pattern0.back());
+    }
+    else {
+        m_BoundingRange = pair<size_t, size_t>(0, 0);
     }
 
     const size_t dim (pattern0.size());
@@ -855,7 +866,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                                   CHitFilter<THit>::s_PNullRef),
                         phitrefs->end());
 
-
         if(phitrefs->size() == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment,
                        g_msg_NoHitsAfterFiltering);
@@ -1247,6 +1257,23 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     const size_t SeqLen1 (m_polya_start == kMax_UInt?
                           m_mrna.size():
                           m_polya_start);
+
+    // if the limiting range is set, clear all segments beyond the range
+    if(m_BoundingRange.second > 0) {
+
+        NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+            if(ii->m_exon  &&
+               (ii->m_box[3] < m_BoundingRange.first
+                || ii->m_box[2] > m_BoundingRange.second))
+            {
+                ii->m_exon = false;
+                ii->m_idty = 0;
+                ii->m_details.resize(0);
+                ii->m_annot = s_kGap;
+                ii->m_score = 0;
+            }
+        }
+    }
     
     m_segments.resize(0);
     while(true) {
