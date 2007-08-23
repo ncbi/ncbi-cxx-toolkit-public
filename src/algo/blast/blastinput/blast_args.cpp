@@ -494,18 +494,16 @@ CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("General search options");
     // blastn mismatch penalty
-    arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
+    arg_desc.AddOptionalKey(kArgMismatch, "penalty", 
                            "Penalty for a nucleotide mismatch", 
-                           CArgDescriptions::eInteger,
-                           NStr::IntToString(BLAST_PENALTY));
+                           CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgMismatch, 
                            new CArgAllowValuesLessThanOrEqual(0));
 
     // blastn match reward
-    arg_desc.AddDefaultKey(kArgMatch, "reward", 
+    arg_desc.AddOptionalKey(kArgMatch, "reward", 
                            "Reward for a nucleotide match", 
-                           CArgDescriptions::eInteger, 
-                           NStr::IntToString(BLAST_REWARD));
+                           CArgDescriptions::eInteger); 
     arg_desc.SetConstraint(kArgMatch, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
