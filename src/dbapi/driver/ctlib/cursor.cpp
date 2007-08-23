@@ -171,6 +171,39 @@ CTL_CursorCmd::OpenCursor()
                                0, CS_UNUSED, (CS_INT) m_FetchSize),
                      "ct_cursor(ROWS) failed", 122004);
         }
+
+        // Execute command ...
+        // Current inplementation of FreeTDS ctlib won't send CS_CURSOR_DECLARE
+        // command. So, error processing can be done only after CS_CURSOR_OPEN
+        // was sent.
+        {
+            // Send command ...
+            try {
+                // send this command
+                CheckSFBCP(ct_send(x_GetSybaseCmd()), "ct_send failed", 122006);
+            } catch (...) {
+                SetHasFailed();
+                throw;
+            }
+
+            // Check results of send ...
+            CS_INT res_type;
+            try {
+                while (CheckSFBCP(ct_results(x_GetSybaseCmd(), &res_type),
+                                  "ct_result failed", 122013) == CS_SUCCEED) {
+                    continue;
+                }
+            } catch (...) {
+                SetHasFailed();
+                // We have to fech out all pending  results ...
+                while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
+                    continue;
+                }
+                throw;
+            }
+        }
+
+        m_Used = true;
     }
 
     SetHasFailed(false);
@@ -205,6 +238,10 @@ CTL_CursorCmd::OpenCursor()
             }
         } catch (...) {
             SetHasFailed();
+            // We have to fech out all pending  results ...
+            while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
+                continue;
+            }
             throw;
         }
 
@@ -228,7 +265,6 @@ CTL_CursorCmd::OpenCursor()
             // Cursor can be set open only after processing of ct_send, which does
             // actual job.
             SetCursorOpen();
-            m_Used = true;
 
             SetResult(MakeCursorResult());
             break;
