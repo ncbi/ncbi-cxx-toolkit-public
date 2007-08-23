@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = objects dbapi bdb
+REQUIRES = objects bdb
 
 APP = lds_sample
 SRC = lds_sample
@@ -12,7 +12,7 @@ SRC = lds_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = ncbi_xloader_lds lds xobjread bdb xobjutil $(OBJMGR_LIBS)
+LIB = ncbi_xloader_lds lds xobjread bdb xobjutil $(SOBJMGR_LIBS)
 
-LIBS = $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(BERKELEYDB_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS

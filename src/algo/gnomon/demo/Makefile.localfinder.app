@@ -4,8 +4,8 @@
 SRC = local_finder
 APP = localfinder
 
-LIB = xalgognomon xobjutil $(OBJMGR_LIBS)
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB = xalgognomon xobjutil $(SOBJMGR_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 # These are necessary to avoid build errors in some configurations
 # (notably 32-bit SPARC WorkShop Release).

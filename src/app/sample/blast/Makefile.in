@@ -1,5 +1,7 @@
 # $Id$
 
+REQUIRES = dbapi objects
+
 APP_PROJ = blast_sample blast_demo remote_blast_demo
 
 srcdir = @srcdir@

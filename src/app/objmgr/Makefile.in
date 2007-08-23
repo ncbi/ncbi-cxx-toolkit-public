@@ -3,7 +3,7 @@
 # Miscellaneous objmgr applications
 #################################
 
-REQUIRES = objects dbapi
+REQUIRES = objects
 
 SUB_PROJ = demo split_demo
 

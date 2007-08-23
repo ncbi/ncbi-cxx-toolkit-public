@@ -6,10 +6,10 @@
 APP = nmer_repeats
 SRC = nmer_repeats
 LIB = xalgoseq xalnmgr tables xregexp $(PCRE_LIB) xobjread creaders xobjutil \
-      taxon1 $(OBJMGR_LIBS)
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+      taxon1 xconnect $(SOBJMGR_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-REQUIRES = objects dbapi
+REQUIRES = objects

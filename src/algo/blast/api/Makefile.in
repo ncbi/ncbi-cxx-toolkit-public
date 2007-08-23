@@ -3,6 +3,8 @@
 # Meta-makefile("ALGO" project)
 #################################
 
+REQUIRES = dbapi
+
 LIB_PROJ = xblast
 SUB_PROJ = unit_test 
 

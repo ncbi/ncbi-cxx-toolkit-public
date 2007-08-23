@@ -1,5 +1,7 @@
 # $Id$
 
+REQUIRES = dbapi
+
 APP_PROJ = alnvwr alnmrg aln_build
 SUB_PROJ =
 

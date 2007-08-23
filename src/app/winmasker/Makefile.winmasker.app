@@ -1,5 +1,7 @@
 # $Id$
 
+REQUIRES = dbapi objects
+
 ASN_DEP = seq
 
 APP = windowmasker

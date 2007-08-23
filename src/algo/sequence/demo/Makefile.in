@@ -5,7 +5,7 @@
 
 APP_PROJ = cpgdemo regexplocdemo
 
-REQUIRES = objects
+REQUIRES = dbapi
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

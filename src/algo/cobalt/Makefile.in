@@ -3,6 +3,8 @@
 # Meta-makefile("ALGO" project)
 #################################
 
+REQUIRES = dbapi
+
 LIB_PROJ = cobalt
 SUB_PROJ = demo
 

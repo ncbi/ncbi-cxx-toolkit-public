@@ -6,8 +6,6 @@
 # Build object manager test application "test_objmgr_mt"
 #################################
 
-REQUIRES = dbapi
-
 APP = test_objmgr_mt
 SRC = test_objmgr_mt test_helper
 LIB = test_mt $(SOBJMGR_LIBS)

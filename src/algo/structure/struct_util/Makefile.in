@@ -3,6 +3,8 @@
 # Meta-makefile ("xstruct_util" library)
 #################################
 
+REQUIRES = dbapi
+
 LIB_PROJ = xstruct_util
 SUB_PROJ = demo
 

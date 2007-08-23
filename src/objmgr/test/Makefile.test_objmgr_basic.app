@@ -2,8 +2,6 @@
 # $Id$
 #################################
 
-REQUIRES = dbapi
-
 APP = test_objmgr_basic
 SRC = test_objmgr_basic
 LIB = $(SOBJMGR_LIBS)

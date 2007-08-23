@@ -6,7 +6,7 @@
 # Build application for splitting blobs withing ID1 cache
 #################################
 
-REQUIRES = bdb BerkeleyDB -Cygwin
+REQUIRES = bdb BerkeleyDB dbapi -Cygwin
 
 APP = split_cache
 SRC = split_cache

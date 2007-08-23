@@ -3,6 +3,8 @@
 # Meta-makefile("APP" project)
 #################################
 
+REQUIRES = dbapi objects
+
 APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx multisource
 
 srcdir = @srcdir@
