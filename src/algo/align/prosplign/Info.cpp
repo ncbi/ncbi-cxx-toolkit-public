@@ -43,13 +43,14 @@
 #include "PSeq.hpp"
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(prosplign)
 
 CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOptions& options) : CProSplignOutputOptions(options)
 {
     drop = GetTotalPositives() - GetFlankPositives();
     splice_cost = GetFlankPositives()?((100 - GetFlankPositives())*GetMinFlankingExonLen())/GetFlankPositives():0;
 }
+
+BEGIN_SCOPE(prosplign)
 
 bool CInfo::full = true;
 bool CInfo::eat_gaps = true;
