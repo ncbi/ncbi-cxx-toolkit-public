@@ -617,6 +617,10 @@ struct CAnnotObject_Less
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
         {
+            if ( x == y ) { // small speedup
+                return false;
+            }
+
             TSeqPos x_from = x.GetMappingInfo().GetFrom();
             TSeqPos y_from = y.GetMappingInfo().GetFrom();
             TSeqPos x_to = x.GetMappingInfo().GetToOpen();
@@ -647,6 +651,10 @@ struct CAnnotObject_LessReverse
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
         {
+            if ( x == y ) { // small speedup
+                return false;
+            }
+
             {
                 // largest right extreme first
                 TSeqPos x_to = x.GetMappingInfo().GetToOpen();
