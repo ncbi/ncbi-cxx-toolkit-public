@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-class CTmpFile : public CObject
+class NCBI_XBLAST_EXPORT CTmpFile : public CObject
 {
 public:
     CTmpFile(bool delete_file = true);
