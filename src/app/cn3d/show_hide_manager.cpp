@@ -297,7 +297,7 @@ void ShowHideManager::ConstructShowHideArray(const StructureSet *structureSet)
                     StructureObject::DomainMap::const_iterator d, de = (*o)->domainMap.end();
                     for (d=(*o)->domainMap.begin(); d!=de; ++d) {
                         if (d->second == m->second) {
-                            info = new ShowHideDomain(m->second, d->first, ++nDom);
+                            info = new ShowHideDomain(m->second, d->first, nDom++);
                             info->parentIndexes.push_back(objectIndex);
                             info->parentIndexes.push_back(moleculeIndex);
                             structureInfo.push_back(info);
