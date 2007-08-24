@@ -35,7 +35,9 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/tmpfile.hpp>
 #include <corelib/ncbifile.hpp>
-#include <unistd.h>
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
