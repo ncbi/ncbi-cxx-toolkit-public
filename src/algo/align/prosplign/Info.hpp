@@ -47,40 +47,7 @@ BEGIN_SCOPE(prosplign)
 
 class CNSeq;
 
-class CNPiece {//AKA 'good hit'
-public:
-    int beg, end;  //represents [beg, end) interval IN ALIGNMENT COORD.
-    int posit, efflen;
-
-    CNPiece(string::size_type obeg, string::size_type oend, int oposit, int oefflen);
-
-//     static int perc;//minimum percentage for 'good hit'
-//     static int drop;//maximum drop of percentage when extend 'good hit seeds'
-//     static int lmin;//minimum length of 'good hit'
-//     static int gmax;//maximum length of 'bad region'
-//     static int endmin;//minimum number of bases of the  exon at the end/begining
-//     static int splcost;//penalty for splice when joining hits
-//     static int CNPiece::start_bonus;//reward for start when joining hits
-//     static int CNPiece::stop_bonus;//reward for stop when joining hits
-
-};
-
 class CAli;
-
-class CProSplignOutputOptionsExt : public CProSplignOutputOptions {
-public:
-    CProSplignOutputOptionsExt(const CProSplignOutputOptions& options);
-
-    int drop;
-    int splice_cost;
-
-    bool Dropof(int efflen, int posit, list<CNPiece>::iterator it);
-    void Join(list<CNPiece>::iterator it, list<CNPiece>::iterator last);
-    bool Perc(list<CNPiece>::iterator it, int efflen, int posit, list<CNPiece>::iterator last);
-    bool Bad(list<CNPiece>::iterator it);
-    bool ForwCheck(list<CNPiece>::iterator it1, list<CNPiece>::iterator it2);
-    bool BackCheck(list<CNPiece>::iterator it1, list<CNPiece>::iterator it2);
-};
 
 class CInfo
 {

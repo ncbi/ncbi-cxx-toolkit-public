@@ -405,31 +405,32 @@ CNPiece::CNPiece(string::size_type obeg, string::size_type oend, int oposit, int
         posit = oposit;
         efflen = oefflen;
     }
+END_SCOPE(prosplign)
 
-bool CProSplignOutputOptionsExt::Bad(list<CNPiece>::iterator it)
+    bool CProSplignOutputOptionsExt::Bad(list<prosplign::CNPiece>::iterator it)
 {
     if(it->efflen > GetMaxBadLen()) return true;
     return false;
 }
 
-bool CProSplignOutputOptionsExt::Dropof(int efflen, int posit, list<CNPiece>::iterator it)
+bool CProSplignOutputOptionsExt::Dropof(int efflen, int posit, list<prosplign::CNPiece>::iterator it)
 {
     if((GetTotalPositives()-drop)*(efflen+it->efflen) > 100*(posit+it->posit)) return true;
     return false;
 }
 
-bool CProSplignOutputOptionsExt::Perc(list<CNPiece>::iterator add, int efflen, int posit, list<CNPiece>::iterator cur)
+bool CProSplignOutputOptionsExt::Perc(list<prosplign::CNPiece>::iterator add, int efflen, int posit, list<prosplign::CNPiece>::iterator cur)
 {
     if(Dropof(efflen, posit, add)) return false;
     if(GetTotalPositives()*(efflen+cur->efflen+add->efflen) > 100*(posit+cur->posit+add->posit)) return false;
     return true;
 }
 
-void CProSplignOutputOptionsExt::Join(list<CNPiece>::iterator it, list<CNPiece>::iterator last)
+void CProSplignOutputOptionsExt::Join(list<prosplign::CNPiece>::iterator it, list<prosplign::CNPiece>::iterator last)
 {
     int posit = last->posit;
     int efflen = last->efflen;
-    for(list<CNPiece>::iterator it1 = it; it1 != last; ++it1) {
+    for(list<prosplign::CNPiece>::iterator it1 = it; it1 != last; ++it1) {
         posit += it1->posit;
         efflen += it1->efflen;
     }
@@ -438,7 +439,7 @@ void CProSplignOutputOptionsExt::Join(list<CNPiece>::iterator it, list<CNPiece>:
     last->beg = it->beg;
 }
 
-bool CProSplignOutputOptionsExt::ForwCheck(list<CNPiece>::iterator it1, list<CNPiece>::iterator it2)
+bool CProSplignOutputOptionsExt::ForwCheck(list<prosplign::CNPiece>::iterator it1, list<prosplign::CNPiece>::iterator it2)
 {
     int efflen = it1->efflen;
     int pos = it1->posit;
@@ -454,7 +455,7 @@ bool CProSplignOutputOptionsExt::ForwCheck(list<CNPiece>::iterator it1, list<CNP
     return true;
 }
 
-bool CProSplignOutputOptionsExt::BackCheck(list<CNPiece>::iterator it1, list<CNPiece>::iterator it2)
+bool CProSplignOutputOptionsExt::BackCheck(list<prosplign::CNPiece>::iterator it1, list<prosplign::CNPiece>::iterator it2)
 {
     int efflen = it2->efflen;
     int pos = it2->posit;
@@ -470,6 +471,8 @@ bool CProSplignOutputOptionsExt::BackCheck(list<CNPiece>::iterator it1, list<CNP
     return true;
 }
 
+
+BEGIN_SCOPE(prosplign)
 
 bool CInfo::IsFV(int n)
 {
