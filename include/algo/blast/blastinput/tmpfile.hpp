@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/core/blast_export.h>
 #include <string>
 #include <memory>
 
