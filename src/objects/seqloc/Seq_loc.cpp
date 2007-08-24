@@ -363,8 +363,10 @@ CSeq_loc::TRange CSeq_loc::x_UpdateTotalRange(void) const
     TRange range = m_TotalRangeCache;
     if ( range.GetFrom() == TSeqPos(kDirtyCache) ) {
         const CSeq_id* id = 0;
-        range = m_TotalRangeCache = x_CalculateTotalRangeCheckId(id);
+        range = x_CalculateTotalRangeCheckId(id);
         m_IdCache = id;
+        m_TotalRangeCache.SetToOpen(range.GetToOpen());
+        m_TotalRangeCache.SetFrom(range.GetFrom());
     }
     return range;
 }
