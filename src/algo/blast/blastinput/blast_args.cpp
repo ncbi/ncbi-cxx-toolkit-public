@@ -293,12 +293,22 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetEvalueThreshold(args[kArgEvalue].AsDouble());
     }
 
+    int gap_open=0, gap_extend=0;
+    if (args[kArgMatrixName])
+         BLAST_GetProteinGapExistenceExtendParams(args[kArgMatrixName].AsString().c_str(), &gap_open, &gap_extend);
+
     if (args.Exist(kArgGapOpen) && args[kArgGapOpen]) {
         opt.SetGapOpeningCost(args[kArgGapOpen].AsInteger());
+    }
+    else if (args[kArgMatrixName]) {
+        opt.SetGapOpeningCost(gap_open);
     }
 
     if (args.Exist(kArgGapExtend) && args[kArgGapExtend]) {
         opt.SetGapExtensionCost(args[kArgGapExtend].AsInteger());
+    }
+    else if (args[kArgMatrixName]) {
+        opt.SetGapExtensionCost(gap_extend);
     }
 
     if (args[kArgUngappedXDropoff]) {
