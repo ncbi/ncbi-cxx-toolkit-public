@@ -41,6 +41,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/reader_writer.hpp>
 #include <memory>
 
@@ -126,7 +127,8 @@ public:
         eMemoryMap,
         eRelativePath,
         eNotExists,
-        eFileIO
+        eFileIO,
+        eTmpFile
     };
 
     /// Translate from an error code value to its string representation.
@@ -1128,6 +1130,12 @@ public:
 
     /// Get temporary file name.
     ///
+    /// This class generate temporary file name in the temporary directory
+    /// specified by OS. But this behaviour can be changed, just set desired
+    /// temporary directory using global parameter (see CParam class decription)
+    /// in the registry or environment (section 'NCBI', name 'TmpDir') and it
+    /// will used by default in this class.
+    ///
     /// @param mode
     ///   Temporary file creation mode.
     /// @return
@@ -1141,9 +1149,10 @@ public:
     ///
     /// @param dir
     ///   Directory in which temporary file is to be created;
-    ///   default of kEmptyStr means that system temporary directory will
-    ///   be used or current, if a system temporary directory cannot
-    ///   be determined.
+    ///   default of kEmptyStr means that function try to get application 
+    ///   specific temporary directory name from global parameter (see
+    ///   GetTmpName description), then it try to get system temporary
+    ///   directory, and all of this fails - current directory will be used.
     /// @param prefix
     ///   Temporary file name will be prefixed by value of this parameter;
     ///   default of kEmptyStr means that, effectively, no prefix value will
@@ -1155,7 +1164,7 @@ public:
     ///   is no longer needed. On some platforms "eTmpFileCreate" mode is 
     ///   equal to "eTmpFileGetName".
     ///   If set to "eTmpFileGetName", returns only the name of the temporary
-    ///   file, without creating it. This method is faster but it have
+    ///   file, without creating it. This method can be faster, but it have
     ///   potential race condition, when other process can leave as behind and
     ///   create file with the same name first.
     /// @return
@@ -1670,6 +1679,83 @@ public:
     static const CFileDeleteList& GetDeleteList();
     /// Set the underlying static CFileDeleteList object
     static void SetDeleteList(CFileDeleteList& list);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CTmpFile --
+///
+/// Define class to generate temporary file name (or use specified), which
+/// can be automaticaly removed on the object destruction.
+///
+/// This class generate temporary file name in the temporary directory
+/// specified by OS. But this behaviour can be changed, just set desired
+/// temporary directory using global parameter (see CParam class decription)
+/// in the registry or environment (section 'NCBI', name 'TmpDir') and it
+/// will used by default in this class.
+/// @note
+///   The files created this way are not really temporary. If application
+///   terminates abnormally, that such files can be left on the file system.
+///   To avoid this you can use CFile::CreateTmpFile().
+/// @sa CFile::CreateTmpFile, CFile::GetTmpName, CParam
+
+class CTmpFile : public CObject
+{
+public:
+    /// What to do with the file on object destruction.
+    enum ERemoveMode {
+        eRemove,    ///< Remove file
+        eNoRemove   ///< Do not remove file
+    };
+
+    /// Default constructor.
+    ///
+    /// Automaticaly generate temporary file name.
+    CTmpFile(ERemoveMode remove_file = eRemove);
+
+    /// Constructor.
+    ///
+    /// Use given temporary file name.
+    CTmpFile(const string& file_name, ERemoveMode remove_file = eRemove);
+
+    /// Destructor.
+    ~CTmpFile(void);
+
+    /// What to do if stream already exists in the AsInputFile/AsOutputFile.
+    enum EIfExists {
+        /// You can make call of AsInputFile/AsOutputFile only once,
+        /// on each following call throws CFileException exception.
+        eIfExists_Throw,
+        /// Delete previous stream and return reference to new object.
+        /// Invalidate all previously returned references.
+        eIfExists_Reset,
+        /// Return reference to current stream, create new one if it
+        /// does not exists yet.
+        eIfExists_ReturnCurrent
+    };
+
+    /// Create I/O stream on the base of our file.
+    CNcbiIstream& AsInputFile (EIfExists if_exists,
+                               IOS_BASE::openmode mode = IOS_BASE::in);
+    CNcbiOstream& AsOutputFile(EIfExists if_exists,
+                               IOS_BASE::openmode mode = IOS_BASE::out);
+
+    /// Return used file name (generated or given in the constructor).
+    const string& GetFileName(void) const;
+
+private:
+    string      m_FileName;            ///< Name of temporary file.
+    ERemoveMode m_RemoveOnDestruction; ///< Remove file on destruction
+
+    // Automatic pointers to store I/O srreams.
+    auto_ptr<CNcbiIstream> m_InFile;
+    auto_ptr<CNcbiOstream> m_OutFile;
+
+private:
+    // prevent copying
+    CTmpFile(const CTmpFile&);
+    CTmpFile& operator=(const CTmpFile&);
 };
 
 
@@ -3222,7 +3308,6 @@ void CFileDeleteList::SetNames(CFileDeleteList::TNames& names)
 {
     m_Names = names;
 }
-
 
 
 // CMemoryFileSegment

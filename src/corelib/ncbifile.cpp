@@ -117,6 +117,16 @@ const size_t kDefaultBufferSize = 32*1024;
 static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 
 
+// Declare the parameter to get directory for temporary files.
+// Registry file:
+//     [NCBI]
+//     TmpDir = ...
+// Environment variable:
+//     NCBI_CONFIG__TmpDir
+//
+NCBI_PARAM_DECL(string, NCBI, TmpDir); 
+NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -2136,7 +2146,7 @@ string CFile::GetTmpName(ETmpFileCreationMode mode)
     return GetTmpNameEx(kEmptyStr, kEmptyStr, mode);
 #else
     if (mode == eTmpFileCreate) {
-        ERR_POST(Warning << "CFile::GetTmpNameEx: "
+        ERR_POST(Warning << 
                  "The temporary file cannot be auto-created on this " \
                  "platform, so return its name only");
     }
@@ -2338,12 +2348,16 @@ string CFile::GetTmpNameEx(const string&        dir,
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     string x_dir = dir;
     if ( x_dir.empty() ) {
-        x_dir = CDir::GetTmpDir();
+        // Get application specific temporary directory name (see CParam)
+        x_dir = NCBI_PARAM_TYPE(NCBI,TmpDir)::GetThreadDefault();
+        if ( x_dir.empty() ) {
+            // Use default TMP directory specified by OS
+            x_dir = CDir::GetTmpDir();
+        }
     }
     if ( !x_dir.empty() ) {
         x_dir = AddTrailingPathSeparator(x_dir);
     }
-
     string fn;
 
 #  if defined(NCBI_OS_UNIX)
@@ -2357,32 +2371,27 @@ string CFile::GetTmpNameEx(const string&        dir,
     fn = filename.get();
 
 #  elif defined(NCBI_OS_MSWIN)
-    if (mode == eTmpFileGetName) {
-        fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
-    } else {
-        char   buffer[MAX_PATH];
-        HANDLE hFile = INVALID_HANDLE_VALUE;
+    char buffer[MAX_PATH];
+    HANDLE hFile = INVALID_HANDLE_VALUE;
+    srand((unsigned)time(0));
+    unsigned long ofs = rand();
 
-        srand((unsigned)time(0));
-        unsigned long ofs = rand();
-
-        while ( ofs < numeric_limits<unsigned long>::max() ) {
-            _ultoa((unsigned long)ofs, buffer, 24);
-            fn = x_dir + prefix + buffer;
-            hFile = CreateFile(fn.c_str(), GENERIC_ALL, 0, NULL,
-                               CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-            if (hFile != INVALID_HANDLE_VALUE) {
-                break;
-            }
-            ofs++;
+    while ( ofs < numeric_limits<unsigned long>::max() ) {
+        _ultoa((unsigned long)ofs, buffer, 24);
+        fn = x_dir + prefix + buffer;
+        hFile = CreateFile(fn.c_str(), GENERIC_ALL, 0, NULL,
+                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
+        if (hFile != INVALID_HANDLE_VALUE) {
+            break;
         }
-        CloseHandle(hFile);
-        if (ofs == numeric_limits<unsigned long>::max() ) {
-            return kEmptyStr;
-        }
-        if (mode != eTmpFileCreate) {
-            remove(fn.c_str());
-        }
+        ofs++;
+    }
+    CloseHandle(hFile);
+    if (ofs == numeric_limits<unsigned long>::max() ) {
+        return kEmptyStr;
+    }
+    if (mode != eTmpFileCreate) {
+        remove(fn.c_str());
     }
 
 #  endif
@@ -3530,6 +3539,104 @@ void CFileDeleteAtExit::SetDeleteList(CFileDeleteList& list)
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// CTmpFile
+//
+
+
+CTmpFile::CTmpFile(ERemoveMode remove_file)
+{
+    m_FileName = CFile::GetTmpName();
+    if ( m_FileName.empty() ) {
+        NCBI_THROW(CFileException, eTmpFile, 
+            "Cannot generate temporary file name");
+    }
+    m_RemoveOnDestruction = remove_file;
+}
+
+CTmpFile::CTmpFile(const string& file_name, ERemoveMode remove_file)
+    : m_FileName(file_name), 
+      m_RemoveOnDestruction(remove_file)
+{
+    return;
+}
+
+CTmpFile::~CTmpFile()
+{
+    // First, close and delete created streams.
+    m_InFile.reset();
+    m_OutFile.reset();
+
+    // Remove file if specified
+    if (m_RemoveOnDestruction == eRemove) {
+        unlink(m_FileName.c_str());
+    }
+}
+
+    enum EIfExists {
+        /// You can make call of AsInputFile/AsOutputFile only once,
+        /// on each following call throws CFileException exception.
+        eIfExists_Throw,
+        /// Delete previous stream and return reference to new object.
+        eIfExists_Reset,
+        /// Return reference to current stream, or new if this is first call.
+        eIfExists_ReturnCurrent
+    };
+
+    // CTmpFile
+
+const string& CTmpFile::GetFileName(void) const
+{
+    return m_FileName;
+}
+
+
+CNcbiIstream& CTmpFile::AsInputFile(EIfExists if_exists,
+                                    IOS_BASE::openmode mode)
+{
+    if ( m_InFile.get() ) {
+        switch (if_exists) {
+            case eIfExists_Throw:
+                NCBI_THROW(CFileException, eTmpFile, 
+                    "AsInputFile() is already called");
+                break;
+            case eIfExists_Reset:
+                // see below
+                break;
+            case eIfExists_ReturnCurrent:
+                return *m_InFile;
+                break;
+        }
+    }
+    mode |= IOS_BASE::in;
+    m_InFile.reset(new CNcbiIfstream(m_FileName.c_str()));
+    return *m_InFile;
+}
+
+
+CNcbiOstream& CTmpFile::AsOutputFile(EIfExists if_exists,
+                                     IOS_BASE::openmode mode)
+{
+    if ( m_OutFile.get() ) {
+        switch (if_exists) {
+            case eIfExists_Throw:
+                NCBI_THROW(CFileException, eTmpFile, 
+                    "AsOutputFile() is already called");
+                break;
+            case eIfExists_Reset:
+                // see below
+                break;
+            case eIfExists_ReturnCurrent:
+                return *m_OutFile;
+                break;
+        }
+    }
+    mode |= IOS_BASE::out;
+    m_OutFile.reset(new CNcbiOfstream(m_FileName.c_str()));
+    return *m_OutFile;
+}
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -4261,6 +4368,7 @@ const char* CFileException::GetErrCodeString(void) const
     case eRelativePath: return "eRelativePath";
     case eNotExists:    return "eNotExists";
     case eFileIO:       return "eFileIO";
+    case eTmpFile:      return "eTmpFile";
     default:            return CException::GetErrCodeString();
     }
 }
