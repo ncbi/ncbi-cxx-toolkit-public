@@ -1700,7 +1700,7 @@ public:
 ///   To avoid this you can use CFile::CreateTmpFile().
 /// @sa CFile::CreateTmpFile, CFile::GetTmpName, CParam
 
-class CTmpFile : public CObject
+class NCBI_XNCBI_EXPORT CTmpFile : public CObject
 {
 public:
     /// What to do with the file on object destruction.
