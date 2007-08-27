@@ -119,12 +119,6 @@ public:
     //  Subclasses will typically need to override the default implementation:  two CDs, no family information.
     virtual bool Make(const CCdCore* cd1, const CCdCore* cd2);
 
-    //  Default implementation:  single hierarchy, use masters to generate a guide.
-//    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2, CDFamily* family);
-
-    //  Default implementation:  two hierarchies, use masters to generate a guide.
-//    virtual bool Make(const CCdCore* cd1, CDFamily* family1, const CCdCore* cd2, CDFamily* family2);
-
     virtual string ToString() const;
 
     /// Reset the whole object
@@ -254,6 +248,11 @@ public:
 
     //  Most general case.
     virtual bool Make(const SGuideInput& guideInput1, const SGuideInput& guideInput2);
+
+    //  Keep Workshop compiler happy...
+    virtual bool Make(const CCdCore* cd1, const CCdCore* cd2) {
+        return CGuideAlignment_Base::Make(cd1, cd2);
+    }
 
     virtual string ToString() const;
 

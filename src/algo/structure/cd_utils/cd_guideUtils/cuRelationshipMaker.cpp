@@ -110,7 +110,6 @@ bool CRelationshipMaker::SetOverlapPercentage(int overlapPercentage)
 
 void CRelationshipMaker::InstallChild(CCdCore* child)
 {
-    ncbi::cd_utils::CDFamily* family = NULL;
     ncbi::cd_utils::CDFamilyIterator famIt, parentIt;
     string existingParentAcc;
     CCdCore* existingParent;
