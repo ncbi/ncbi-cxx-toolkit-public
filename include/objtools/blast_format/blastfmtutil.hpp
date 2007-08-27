@@ -324,7 +324,7 @@ public:
     ///@param new_aln: the new alnset
     ///@param num: the specified number
     ///
-    static void PruneSeqalign(CSeq_align_set& source_aln, 
+    static void PruneSeqalign(const CSeq_align_set& source_aln, 
                               CSeq_align_set& new_aln,
                               unsigned int num = blast::kDfltArgNumAlignments);
 
