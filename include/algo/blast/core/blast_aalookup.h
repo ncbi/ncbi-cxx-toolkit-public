@@ -257,7 +257,7 @@ BlastCompressedAaLookupTable* BlastCompressedAaLookupTableDestruct(
 /** Convert a word to use a compressed alphabet. The letters
   * in the word are reversed compared to the original order
   * @param wordsize Number of consecutive letters in a word [in]
-  * @param comparessed_alphabet_size Number of letters in compressed
+  * @param compressed_alphabet_size Number of letters in compressed
   *                                     alphabet [in]
   * @param word Sequence in "regular" AA alphabet [in]
   * @param skip If a letter is encountered that cannot be

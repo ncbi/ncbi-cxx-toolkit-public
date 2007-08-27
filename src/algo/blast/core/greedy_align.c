@@ -303,7 +303,7 @@ s_GetNextNonAffineTback(Int4 **last_seq2_off, Int4 d,
  * @param seq1 First sequence (always uncompressed) [in]
  * @param seq2 Second sequence (compressed or uncompressed) [in]
  * @param len1 Length of seq1 [in]
- * @param len1 Length of seq2 [in]
+ * @param len2 Length of seq2 [in]
  * @param seq1_index Starting offset in seq1 [in]
  * @param seq2_index Starting offset in seq2 [in]
  * @param fence_hit Set to TRUE if an end-of-initialized-data sentinel
