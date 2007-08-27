@@ -280,6 +280,10 @@ public:
 
     EIO_Status Abort(void);
 
+    /// @param byte_order
+    ///
+    unsigned short GetLocalPort(ENH_ByteOrder byte_order) const;
+
     /// @li  <b>NOTE 1:</b>  either of "host", "port" can be NULL to opt out
     ///          from obtaining the corresponding value;
     /// @li  <b>NOTE 2:</b> both "*host" and "*port" come out in the same
@@ -291,9 +295,9 @@ public:
     ///
     /// @param byte_order
     ///
-     void GetPeerAddress(unsigned int*      host,
-                         unsigned short*    port,
-                         ENH_ByteOrder      byte_order) const;
+    void GetPeerAddress(unsigned int*      host,
+                        unsigned short*    port,
+                        ENH_ByteOrder      byte_order) const;
     /// @return
     ///  Textual string representing the peer's address
     string GetPeerAddress(void) const;
@@ -752,6 +756,12 @@ inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
 inline EIO_Status CSocket::Abort(void)
 {
     return m_Socket ? SOCK_Abort(m_Socket) : eIO_Closed;
+}
+
+
+inline unsigned short CSocket::GetLocalPort(ENH_ByteOrder byte_order) const
+{
+    return m_Socket ? SOCK_GetLocalPort(m_Socket, byte_order) : 0;
 }
 
 
