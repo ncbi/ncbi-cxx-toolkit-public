@@ -190,6 +190,51 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
     return retval;
 }
 
+string
+CBlastOptionsFactory::GetDocumentation(const string& task_name)
+{
+    string task(task_name);
+    NStr::ToLower(task);
+    string retval;
+
+    if (task == "blastn") {
+        retval.assign("Traditional BLASTN requiring an exact match of 11");
+    } else if (task == "blastn-short") {
+        retval.assign("BLASTN program optimized for sequences shorter than ");
+        retval += "50 bases";
+    } else if (task == "blastp") {
+        retval.assign("Traditional BLASTP to compare a protein query to a ");
+        retval += "protein database";
+    } else if (task == "blastp-short") {
+        retval.assign("BLASTP optimized for queries shorter than 30 residues");
+    } else if (task == "blastx") {
+        retval.assign("Search of a (translated) nucleotide query against a ");
+        retval += "protein database";
+    } else if (task == "dc-megablast") {
+        retval.assign("Discontiguous megablast used to find more distant ");
+        retval += "(e.g., interspecies) sequences";
+    } else if (task == "megablast") {
+        retval.assign("Traditional megablast used to find very similar ");
+        retval += "(e.g., intraspecies or closely related species) sequences";
+    } else if (task == "phiblast") {
+        retval.assign("Limits BLASTP search to those subjects with a ");
+        retval += "pattern matching one in the query";
+    } else if (task == "psiblast") {
+        retval.assign("PSIBLAST that searches a (protein) profile against ");
+        retval += "a protein database";
+    } else if (task == "rpsblast") {
+        retval.assign("Search of a protein query against a database of motifs");
+    } else if (task == "tblastn") {
+        retval.assign("Search of a protein query against a (translated) ");
+        retval += "nucleotide database";
+    } else if (task == "tblastx") {
+        retval.assign("Search of a (translated) nucleotide query against ");
+        retval += "a (translated) nucleotide database";
+    } else {
+        retval.assign("Unknown task");
+    }
+    return retval;
+}
 
 CBlastOptionsHandle*
 CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)

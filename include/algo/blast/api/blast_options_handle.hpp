@@ -114,6 +114,10 @@ public:
     /// Retrieve the set of supported tasks
     static set<string> GetTasks(ETaskSets choice = eAll);
 
+    /// Return the documentation for the provided task
+    /// @param task_name Taks name task for which to provide documentation [in]
+    static string GetDocumentation(const string& task_name);
+
 private:
     /// Private c-tor
     CBlastOptionsFactory();
