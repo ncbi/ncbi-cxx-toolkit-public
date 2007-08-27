@@ -7,8 +7,9 @@
 * Remote searches: obtaining BLAST database information for formatter
 * BlastOptions: setting of extra parameters
 
-* Support PSSM checkpointing in psiblast
-* Make number of iterations exclusive from remote searches
+* Support PSSM checkpointing in psiblast (+tests)
+* Make sure that proper error checking is done when recovering from saved
+  search strategies, ie.: blastn search strategy provided to blastp
 
 * remote PSI-BLAST
 blast4 issues
@@ -17,9 +18,6 @@ blast4 issues
 * SegFilteringWindow
 
 
-Lcl specification of search-space + matrix+gap costs in rpsblast/rpstblastn
-
-* rm c++/src/algo/blast/api/demo?
 
 Deferred items
 * Should C toolkit checkpoint files be accepted? Provide conversion tool?

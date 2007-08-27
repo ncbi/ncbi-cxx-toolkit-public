@@ -239,7 +239,7 @@ s_ImportSearchStrategy(CNcbiIstream* in,
 
             ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
                 CBioseq_Handle bh = scope->GetBioseqHandle(**itr);
-                CBioseq_Handle::TBioseqCore bioseq = bh.GetBioseqCore();
+                CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
                 out.Write(*bioseq);
             }
 
@@ -268,7 +268,9 @@ RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
 }
 
 // Process search strategies
-// FIXME: save program options
+// FIXME: save program options,
+// Save task if provided, no other options (only those in the cmd line) should
+// be saved
 void
 SaveSearchStrategy(const CArgs& args,
                    blast::CBlastAppArgs* cmdline_args,
