@@ -55,38 +55,38 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     const CCgiRequest& request = ctx.GetRequest();
     CCgiResponse&      reply   = ctx.GetResponse();
 
-    try {
-        bool is_found;
-        string key = request.GetEntry("key", &is_found);
-        if (key.empty() || !is_found) {
-            return 0;
-        }
-        string fmt = request.GetEntry("fmt", &is_found);
-        if (fmt.empty() || !is_found) {
-            fmt = "image/png";
-        }
-
-        reply.SetContentType(fmt);
-        reply.WriteHeader();
-
-        CNetCacheClient cli("ncfetch");
-        CNetCacheClient::SBlobData blob;
-        CNetCacheClient::EReadResult res = cli.GetData(key, blob);
-        if (res == CNetCacheClient::eNotFound) {
-            return 0;
-        }
-
-        const char* data = (const char*)(blob.blob.get());
-        reply.out().write(data, blob.blob_size);
+    bool is_found;
+    string key = request.GetEntry("key", &is_found);
+    if (key.empty() || !is_found) {
+        return 0;
     }
-    catch (CException&) {
+    string fmt = request.GetEntry("fmt", &is_found);
+    if (fmt.empty() || !is_found) {
+        fmt = "image/png";
     }
+
+    reply.SetContentType(fmt);
+    reply.WriteHeader();
+
+    CNetCacheClient cli("ncfetch");
+    CNetCacheClient::SBlobData blob;
+    CNetCacheClient::EReadResult res = cli.GetData(key, blob);
+    if (res == CNetCacheClient::eNotFound) {
+        return 0;
+    }
+
+    const char* data = (const char*)(blob.blob.get());
+    reply.out().write(data, blob.blob_size);
+    LOG_POST(Info << "retrieved data: " << blob.blob_size << " bytes");
 
     return 0;
 }
 
 int main(int argc, const char* argv[])
 {
+    SetSplitLogFile(true);
+    GetDiagContext().SetOldPostFormat(false);
+
     return CNetCacheBlobFetchApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
