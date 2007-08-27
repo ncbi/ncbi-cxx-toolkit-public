@@ -222,6 +222,10 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
     }
 
     ///Display top num seqalign
+    ///Note this only limit the number of seqalign regardless
+    ///of the seqids.  This won't work if you want to limit the 
+    ///number of hits (or nmuber of database seqeunces) as in blast display.
+    ///
     ///@param num: number desired
     ///
     void SetNumAlignToShow(int num) {
