@@ -103,7 +103,6 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_pub.dll              \
         $(GBENCH)\bin\ncbi_seq.dll              \
         $(GBENCH)\bin\ncbi_seqext.dll           \
-        $(GBENCH)\bin\ncbi_sqlite.dll           \
         $(GBENCH)\bin\ncbi_validator.dll        \
         $(GBENCH)\bin\ncbi_web.dll              \
         $(GBENCH)\bin\ncbi_xcache_bdb.dll       \
@@ -118,7 +117,6 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xloader_cdd.dll      \
         $(GBENCH)\bin\ncbi_xloader_genbank.dll  \
         $(GBENCH)\bin\ncbi_xloader_lds.dll      \
-        $(GBENCH)\bin\ncbi_xloader_table.dll    \
         $(GBENCH)\bin\ncbi_xobjsimple.dll       \
         $(GBENCH)\bin\ncbi_xreader.dll          \
         $(GBENCH)\bin\ncbi_xreader_cache.dll    \
