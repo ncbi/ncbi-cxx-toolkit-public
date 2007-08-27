@@ -2229,6 +2229,7 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
 
     /* return */
     sock->sock = SOCK_INVALID;
+    sock->myport = 0;
     return status;
 }
 
@@ -3834,6 +3835,29 @@ extern EIO_Status SOCK_Status(SOCK      sock,
 
     return (sock->sock == SOCK_INVALID ? eIO_Closed :
             sock->pending ? eIO_Timeout : s_Status(sock, direction));
+}
+
+
+extern unsigned short SOCK_GetLocalPort(SOCK          sock,
+                                        ENH_ByteOrder byte_order)
+{
+    if (sock->sock == SOCK_INVALID)
+        return 0;
+
+    if (!sock->myport) {
+        struct sockaddr_in addr;
+        SOCK_socklen_t addrlen = sizeof(addr);
+        memset(&addr, 0, addrlen);
+#  ifdef HAVE_SIN_LEN
+        addr.sin_len = addrlen;
+#  endif /*HAVE_SIN_LEN*/
+        if (getsockname(sock->sock,
+                        (struct sockaddr*) &addr, &addrlen) == 0) {
+            assert(addr.sin_family == AF_INET);
+            sock->myport = ntohs(addr.sin_port);
+        }
+    }
+    return byte_order != eNH_HostByteOrder? htons(sock->myport) : sock->myport;
 }
 
 

@@ -75,6 +75,7 @@
  *  SOCK_Status
  *  SOCK_Write
  *  SOCK_Abort
+ *  SOCK_GetLocalPort
  *  SOCK_GetPeerAddress
  *  SOCK_GetPeerAddressString
  *
@@ -1079,6 +1080,21 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
 (SOCK sock
+ );
+
+
+/** Get local port of the socket.
+ * @param sock
+ *  [in] socket handle 
+ * @param byte_order
+ *  [in] port byte order
+ * @return
+ *  If "network_byte_order" is true(non-zero) then return the port in the
+ *  network byte order; otherwise return it in the local host byte order.
+ */
+extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPort
+(SOCK            sock,
+ ENH_ByteOrder   byte_order          
  );
 
 
