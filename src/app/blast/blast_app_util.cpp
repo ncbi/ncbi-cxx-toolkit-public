@@ -226,14 +226,14 @@ s_ImportSearchStrategy(CNcbiIstream* in,
 
     } else {
 
-        CRef<CTmpFile> tmpfile(new CTmpFile(false));
+        CRef<CTmpFile> tmpfile(new CTmpFile(CTmpFile::eNoRemove));
 
         // Stuff the query bioseq or seqloc list in the input stream of the
         // cmdline_args
         if (queries.IsSeq_loc_list()) {
             const CBlast4_queries::TSeq_loc_list& seqlocs =
                 queries.GetSeq_loc_list();
-            CFastaOstream out(tmpfile->AsOutputFile());
+            CFastaOstream out(tmpfile->AsOutputFile(CTmpFile::eIfExists_Throw));
             CBlastScopeSource scope_src(Blast_QueryIsProtein(prog));
             CRef<CScope> scope(scope_src.NewScope());
 
@@ -247,13 +247,13 @@ s_ImportSearchStrategy(CNcbiIstream* in,
             _ASSERT(queries.IsBioseq_set());
             const CBlast4_queries::TBioseq_set& bioseqs =
                 queries.GetBioseq_set();
-            CFastaOstream out(tmpfile->AsOutputFile());
+            CFastaOstream out(tmpfile->AsOutputFile(CTmpFile::eIfExists_Throw));
             ITERATE(CBioseq_set::TSeq_set, seq_entry, bioseqs.GetSeq_set()) {
                 out.Write(**seq_entry);
             }
         }
 
-        const string fname = tmpfile->GetFileName();
+        const string& fname = tmpfile->GetFileName();
         tmpfile.Reset(new CTmpFile(fname));
         cmdline_args->SetInputStream(tmpfile);
     }

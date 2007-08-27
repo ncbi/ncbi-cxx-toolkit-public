@@ -42,7 +42,6 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/setup_factory.hpp> // for CThreadable
 #include <algo/blast/blastinput/cmdline_flags.hpp>
-#include <algo/blast/blastinput/tmpfile.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>

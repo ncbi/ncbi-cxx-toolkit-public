@@ -1486,7 +1486,7 @@ void
 CStdCmdLineArgs::SetInputStream(CRef<CTmpFile> input_file)
 {
     m_QueryTmpInputFile = input_file;
-    m_InputStream = &input_file->AsInputFile();
+    m_InputStream = &input_file->AsInputFile(CTmpFile::eIfExists_Throw);
 }
 
 void
