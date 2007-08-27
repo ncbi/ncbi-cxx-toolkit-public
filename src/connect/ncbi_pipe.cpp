@@ -1084,7 +1084,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         if (n > 0) {
             // Child could not run -- rip it and exit with error
-            errno = n >= sizeof(errcode) ? errcode : 0;
+            errno = (size_t) n >= sizeof(errcode) ? errcode : 0;
             waitpid(m_Pid, 0, 0);
             string errmsg = "Failed to execute programm";
             if (errno) {
