@@ -559,7 +559,7 @@ void CBlastFormatUtil::GetScoreString(double evalue,
 }
 
 
-void CBlastFormatUtil::PruneSeqalign(CSeq_align_set& source_aln, 
+void CBlastFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln, 
                                      CSeq_align_set& new_aln,
                                      unsigned int number)
 {
