@@ -169,8 +169,9 @@ Cdd-descr ::= CHOICE {
   readonly-status INTEGER { unassigned(0),    -- to record read-only status
                             readonly (1),     -- when CD is checked out from
                             readwrite (2),    -- the tracking database, for
-                            other (255) },     -- use within curation software
-  book-ref      Cdd-book-ref
+                            other (255) },    -- use within curation software
+  book-ref      Cdd-book-ref,                 -- links to Entrez/books
+  attribution   Pub                           -- add citations and/or author names
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
@@ -276,8 +277,9 @@ Align-annot ::= SEQUENCE {
                                         -- "Heme binding site" or "catalytic
                                         -- triad" etc., something that should
                                         -- be used for labels in visualization
-  evidence      SEQUENCE OF Feature-evidence OPTIONAL -- evidence we can
-                                                      -- compute with
+  evidence      SEQUENCE OF Feature-evidence OPTIONAL,  -- evidence we can
+                                                        -- compute with
+  type          INTEGER OPTIONAL        -- for typing annotated features
 }
 
 Align-annot-set ::= SEQUENCE OF Align-annot
@@ -363,7 +365,14 @@ Algorithm-type ::= SEQUENCE {
   gapExtend         INTEGER OPTIONAL,
   gapScaleFactor    INTEGER OPTIONAL,
   nTerminalExt      INTEGER OPTIONAL,
-  cTerminalExt      INTEGER OPTIONAL
+  cTerminalExt      INTEGER OPTIONAL,
+  tree-scope        INTEGER { allDescendants       (0),
+		                  immediateChildrenOnly(1),
+		                  selfOnly             (2),
+		                  other              (255) } OPTIONAL,
+  coloring-scope    INTEGER { allDescendants        (0),
+		                  immediateChildrenOnly (1),
+		                  other               (255) } OPTIONAL
 }
 
 Node-annotation ::= SEQUENCE {
