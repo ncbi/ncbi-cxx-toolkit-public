@@ -226,6 +226,7 @@ public:
     void Test_DropConnection(void);
     void Test_N_Connections(void);
     void Test_ConnFactory(void);
+    void Test_ConnPool(void);
 
 public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)

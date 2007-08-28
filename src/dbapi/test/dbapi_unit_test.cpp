@@ -6483,6 +6483,68 @@ CDBAPIUnitTest::Test_ConnFactory(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 void
+CDBAPIUnitTest::Test_ConnPool(void)
+{
+
+    const string pool_name("test_pool");
+    string sql;
+
+    try {
+        // Create pooled connection ...
+        {
+            auto_ptr<CDB_Connection> auto_conn(
+                m_DS->GetDriverContext()->Connect(
+                    m_args.GetServerName(),
+                    m_args.GetUserName(),
+                    m_args.GetUserPassword(),
+                    0,
+                    true, // reusable
+                    pool_name
+                    )
+                );
+            BOOST_CHECK( auto_conn.get() != NULL );
+
+            sql  = "select @@version";
+
+            auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+            BOOST_CHECK( auto_stmt.get() != NULL );
+
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+            auto_stmt->DumpResults();
+        }
+
+        // Get pooled connection ...
+        {
+            auto_ptr<CDB_Connection> auto_conn(
+                m_DS->GetDriverContext()->Connect(
+                    "",
+                    "",
+                    "",
+                    0,
+                    true, // reusable
+                    pool_name
+                    )
+                );
+            BOOST_CHECK( auto_conn.get() != NULL );
+
+            sql  = "select @@version";
+
+            auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+            BOOST_CHECK( auto_stmt.get() != NULL );
+
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+            auto_stmt->DumpResults();
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
 CDBAPIUnitTest::Test_CDB_Object(void)
 {
     try {
@@ -8860,6 +8922,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+
+    if (!(args.GetDriverName() == "ftds" 
+          && args.GetServerType() == CTestArguments::eSybase)
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnPool,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
 
     if (args.GetServerType() == CTestArguments::eSybase
         && args.GetDriverName() != "dblib"
