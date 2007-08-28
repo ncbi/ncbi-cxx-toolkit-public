@@ -53,6 +53,7 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
                  int format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
                  int num_summary, 
+                 int num_alignments, 
                  const char *matrix_name,
                  bool show_gi, bool is_html,
                  int qgencode, int dbgencode,
@@ -60,6 +61,7 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_is_aa), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
+          m_NumAlignments(num_alignments),
           m_Program(Blast_ProgramNameFromType(options.GetProgramType())), 
           m_DbName(dbname),
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
@@ -312,7 +314,11 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
 
     TMaskedQueryRegions masklocs;
     results.GetMaskedQueryRegions(masklocs);
-    CDisplaySeqalign display(*aln_set, scope, &masklocs, NULL,
+
+    CSeq_align_set copy_aln_set;
+    CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
+
+    CDisplaySeqalign display(copy_aln_set, scope, &masklocs, NULL,
                              m_MatrixSet ? (const int(*)[23])m_Matrix : NULL);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
