@@ -60,7 +60,7 @@ class CBlastOptions;
 class CPSIBlastOptionsHandle;
 
 /// Implements the object manager dependant version of the IBlastQuerySource
-class CBlastQuerySourceOM : public IBlastQuerySource {
+class NCBI_XBLAST_EXPORT CBlastQuerySourceOM : public IBlastQuerySource {
 public:
     /// Constructor which takes a TSeqLocVector
     /// 
@@ -189,6 +189,7 @@ private:
  * during the search [in]
  * @param qinfo Allocated query info structure [out]
  */
+NCBI_XBLAST_EXPORT
 void
 SetupQueryInfo(TSeqLocVector& queries, 
                EBlastProgramType prog,
@@ -207,6 +208,7 @@ SetupQueryInfo(TSeqLocVector& queries,
  * during the search [in]
  * @param qinfo Allocated query info structure [out]
  */
+NCBI_XBLAST_EXPORT
 void
 SetupQueryInfo(const CBlastQueryVector & queries, 
                EBlastProgramType prog,
@@ -225,6 +227,7 @@ SetupQueryInfo(const CBlastQueryVector & queries,
 /// actual CSeq_locs in the TSeqLocVector dictate which strand to use
 /// during the search [in]
 
+NCBI_XBLAST_EXPORT
 void
 SetupQueries(TSeqLocVector& queries,
              BlastQueryInfo* qinfo, 
@@ -245,6 +248,7 @@ SetupQueries(TSeqLocVector& queries,
  * @param seqblk_vec Vector of subject sequence data structures [out]
  * @param max_subjlen Maximal length of the subject sequences [out]
  */
+NCBI_XBLAST_EXPORT
 void
 SetupSubjects(TSeqLocVector& subjects, 
               EBlastProgramType program,
@@ -273,6 +277,7 @@ SetupSubjects(TSeqLocVector& subjects,
  * @throws CBlastException, CSeqVectorException, CException
  * @return pair containing the buffer and its length. 
  */
+NCBI_XBLAST_EXPORT
 SBlastSequence
 GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding, 
             objects::CScope* scope,
@@ -286,6 +291,7 @@ GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding,
  * @param sequences data to convert from [in]
  * @return CPacked_seqint containing data from previous sequences
  */
+NCBI_XBLAST_EXPORT
 CRef<objects::CPacked_seqint>
 TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences);
 
@@ -305,6 +311,7 @@ TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences);
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
+NCBI_XBLAST_EXPORT
 TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
                         EBlastProgramType prog,
@@ -324,6 +331,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
+NCBI_XBLAST_EXPORT
 TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
                         EBlastProgramType prog,
@@ -342,6 +350,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
 /// @param query Query Seq-loc, wrapped in a TSeqLocVector [in]
 /// @param seqinfo_src Source of subject sequence information [in]
 /// @param pattern_info Information about query pattern occurrences [in]
+NCBI_XBLAST_EXPORT
 TSeqAlignVector 
 PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
                            EBlastProgramType        prog,
@@ -359,6 +368,7 @@ PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
 /// @param query Query Seq-loc, wrapped in a CBlastQueryVector [in]
 /// @param seqinfo_src Source of subject sequence information [in]
 /// @param pattern_info Information about query pattern occurrences [in]
+NCBI_XBLAST_EXPORT
 TSeqAlignVector 
 PHIBlast_Results2CSeqAlign(const BlastHSPResults   * results,
                            EBlastProgramType         prog,

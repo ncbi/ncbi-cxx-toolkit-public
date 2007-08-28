@@ -59,7 +59,7 @@ class CBlastOptions;
 /// Structure to store sequence data and its length for use in the CORE
 /// of BLAST (it's a malloc'ed array of Uint1 and its length)
 /// FIXME: do not confuse with blast_seg.c's SSequence
-struct SBlastSequence {
+struct NCBI_XBLAST_EXPORT SBlastSequence {
     // AutoPtr<Uint1, CDeleter<Uint1> > == TAutoUint1Ptr
     TAutoUint1Ptr   data;       /**< Sequence data */
     TSeqPos         length;     /**< Length of the buffer above (not
@@ -97,7 +97,7 @@ enum ESentinelType {
 
 /// Lightweight wrapper around an indexed sequence container. These sequences
 /// are then used to set up internal BLAST data structures for sequence data
-class IBlastQuerySource : public CObject 
+class NCBI_XBLAST_EXPORT IBlastQuerySource : public CObject 
 {
 public:
     /// Our no-op virtual destructor
@@ -158,6 +158,7 @@ public:
 /// @param query_seqloc Seq-loc corresponding to a given query sequence [in]
 /// @param program program type from the CORE's point of view [in]
 /// @param strand_option strand as specified by the BLAST options [in]
+NCBI_XBLAST_EXPORT
 objects::ENa_strand
 BlastSetup_GetStrand(const objects::CSeq_loc& query_seqloc,
                      EBlastProgramType program,
@@ -165,7 +166,7 @@ BlastSetup_GetStrand(const objects::CSeq_loc& query_seqloc,
 
 /// Lightweight wrapper around sequence data which provides a CSeqVector-like
 /// interface to the data
-class IBlastSeqVector {
+class NCBI_XBLAST_EXPORT IBlastSeqVector {
 public:
     /// Our no-op virtual destructor
     virtual ~IBlastSeqVector() {}
@@ -233,6 +234,7 @@ protected:
  * during the search [in]
  * @param qinfo Allocated query info structure [out]
  */
+NCBI_XBLAST_EXPORT
 void
 SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                    EBlastProgramType prog,
@@ -250,6 +252,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 /// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
 /// during the search [in]
 
+NCBI_XBLAST_EXPORT
 void
 SetupQueries_OMF(IBlastQuerySource& queries,
                  BlastQueryInfo* qinfo, 
@@ -264,6 +267,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
  * @param seqblk_vec Vector of subject sequence data structures [out]
  * @param max_subjlen Maximal length of the subject sequences [out]
  */
+NCBI_XBLAST_EXPORT
 void
 SetupSubjects_OMF(IBlastQuerySource& subjects,
                   EBlastProgramType program,
@@ -271,6 +275,7 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
                   unsigned int* max_subjlen);
 
 /** Object manager free version of GetSequence */
+NCBI_XBLAST_EXPORT
 SBlastSequence
 GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding, 
             objects::ENa_strand strand, 
@@ -290,6 +295,7 @@ GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding,
  *        If the sequence_length is 0, the return value will be 0 too
  * @throws CBlastException in case of unsupported encoding
  */
+NCBI_XBLAST_EXPORT
 TSeqPos
 CalculateSeqBufferLength(TSeqPos sequence_length, EBlastEncoding encoding,
                          objects::ENa_strand strand =
@@ -304,6 +310,7 @@ CalculateSeqBufferLength(TSeqPos sequence_length, EBlastEncoding encoding,
 /// @return compressed version of the input
 /// @throws CBlastException in case of memory allocation failure
 /// @todo use CSeqConvert::Pack?
+NCBI_XBLAST_EXPORT
 SBlastSequence CompressNcbi2na(const SBlastSequence& source);
 
 /** Convenience function to centralize the knowledge of which sentinel bytes we
@@ -314,28 +321,15 @@ SBlastSequence CompressNcbi2na(const SBlastSequence& source);
  * @return sentinel byte
  * @throws CBlastException in case of unsupported encoding
  */
+NCBI_XBLAST_EXPORT
 Uint1 GetSentinelByte(EBlastEncoding encoding) THROWS((CBlastException));
-
-#if 0
-// not used right now
-/** Translates nucleotide query sequences to protein in the requested frame
- * @param nucl_seq forward (plus) strand of the nucleotide sequence [in]
- * @param nucl_seq_rev reverse (minus) strand of the nucleotide sequence [in]
- * @param nucl_length length of a single strand of the nucleotide sequence [in]
- * @param frame frame to translate, allowed values: 1,2,3,-1,-2,-3 [in]
- * @param translation buffer to hold the translation, should be allocated
- * outside this function [out]
- */
-void
-BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev, 
-                    const int nucl_length, const short frame, Uint1* translation);
-#endif
 
 /** Returns the path (including a trailing path separator) to the location
  * where the BLAST database can be found.
  * @param dbname Database to search for
  * @param is_prot true if this is a protein matrix
  */
+NCBI_XBLAST_EXPORT
 string
 FindBlastDbPath(const char* dbname, bool is_prot);
 
@@ -343,6 +337,7 @@ FindBlastDbPath(const char* dbname, bool is_prot);
  * @sa BLAST_GetNumberOfContexts
  * @param p program 
  */
+NCBI_XBLAST_EXPORT
 unsigned int 
 GetNumberOfContexts(EBlastProgramType p);
 
@@ -350,6 +345,7 @@ GetNumberOfContexts(EBlastProgramType p);
 /// Returns the encoding for the sequence data used in BLAST for the query
 /// @param program program type [in]
 /// @throws CBlastException in case of unsupported program
+NCBI_XBLAST_EXPORT
 EBlastEncoding
 GetQueryEncoding(EBlastProgramType program);
 
@@ -357,6 +353,7 @@ GetQueryEncoding(EBlastProgramType program);
 /// the subject
 /// @param program program type [in]
 /// @throws CBlastException in case of unsupported program
+NCBI_XBLAST_EXPORT
 EBlastEncoding
 GetSubjectEncoding(EBlastProgramType program);
 
@@ -365,6 +362,7 @@ GetSubjectEncoding(EBlastProgramType program);
 /// @param options BLAST algorithm options [in]
 /// @param query_info BlastQueryInfo structure [in|out]
 /// @param messages error/warning messages are returned here [in|out]
+NCBI_XBLAST_EXPORT
 BLAST_SequenceBlk*
 SafeSetupQueries(IBlastQuerySource& queries,
                  const CBlastOptions* options,
@@ -374,6 +372,7 @@ SafeSetupQueries(IBlastQuerySource& queries,
 /// Wrapper around SetupQueryInfo
 /// @param queries interface to obtain query data [in]
 /// @param options BLAST algorithm options [in]
+NCBI_XBLAST_EXPORT
 BlastQueryInfo*
 SafeSetupQueryInfo(const IBlastQuerySource& queries, 
                    const CBlastOptions* options);
@@ -385,6 +384,7 @@ SafeSetupQueryInfo(const IBlastQuerySource& queries,
 /// @param matrix_name matrix name (e.g., BLOSUM62) [in]
 /// @param is_prot matrix is for proteins if TRUE [in]
 /// @return path to matrix, should be deallocated by user.
+NCBI_XBLAST_EXPORT
 char*
 BlastFindMatrixPath(const char* matrix_name, Boolean is_prot);
 
@@ -397,7 +397,7 @@ BlastFindMatrixPath(const char* matrix_name, Boolean is_prot);
 /// designed to handle some of that complexity, and guard against some
 /// of those possible errors.
 
-class CBlastQueryFilteredFrames : public CObject {
+class NCBI_XBLAST_EXPORT CBlastQueryFilteredFrames : public CObject {
 public:
     /// Data type for frame value, however inputs to methods use "int"
     /// instead of this type for readability and brevity.
