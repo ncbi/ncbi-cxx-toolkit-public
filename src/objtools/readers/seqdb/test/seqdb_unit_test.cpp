@@ -3106,6 +3106,42 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     }
 }
 
+BOOST_AUTO_TEST_CASE(FilteredHeaders)
+{
+    START;
+    
+    CSeqDB p1("nr", CSeqDB::eProtein);
+    CSeqDB p2("refseq_protein", CSeqDB::eProtein);
+    
+    // Use a pig in case of GI evaporation.
+    
+    int pig = 1401930;
+    
+    int oid1(-1), oid2(-1);
+    bool okay1 = p1.PigToOid(pig, oid1);
+    bool okay2 = p2.PigToOid(pig, oid2);
+    
+    CHECK(okay1);
+    CHECK(okay2);
+    CHECK(oid1 > 0);
+    CHECK(oid2 > 0);
+    CHECK(oid1 == oid2); // same underlying volumes -> same OID
+    
+    int size1 = p1.GetHdr(oid1)->Get().size();
+    int size2 = p2.GetHdr(oid2)->Get().size();
+    
+    // Currently there are 15 matching GIs in nr, and only one in
+    // refseq_protein.  This can drift over time (in either direction)
+    // so the criteria here are less strict; I'm assuming we will gain
+    // at least one redundant GI for each GI that evaporates.  I'm
+    // also assuming that at least 5 more redundant GIs will exist
+    // than we have proteins in refseq for this PIG.
+    
+    CHECK(size1);
+    CHECK(size2);
+    CHECK(size1 >= 14);
+    CHECK(size1 > (size2 + 5));
+}
 
 
 #ifdef NCBI_OS_DARWIN

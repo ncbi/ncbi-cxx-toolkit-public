@@ -784,6 +784,10 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked) const
     
     int vol_oid = 0;
     
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+    
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         bool have_oidlist = m_OIDList.NotEmpty();
         Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
