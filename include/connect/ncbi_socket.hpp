@@ -624,19 +624,19 @@ public:
     /// Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     /// @param read_on_write
     ///
-    static ESwitch SetReadOnWrite       (ESwitch read_on_write);
+    static ESwitch SetReadOnWrite(ESwitch read_on_write);
 
     /// @param log
     ///
-    static ESwitch SetDataLogging       (ESwitch log);
+    static ESwitch SetDataLogging(ESwitch log);
 
     /// @param interrupt
     ///
-    static ESwitch SetInterruptOnSignal (ESwitch interrupt);
+    static ESwitch SetInterruptOnSignal(ESwitch interrupt);
 
     /// @param reuse
     ///
-    static ESwitch SetReuseAddress      (ESwitch reuse);
+    static ESwitch SetReuseAddress(ESwitch reuse);
 
     /// @li <b>NOTE:</b>  use CSocket::Wait() to wait for I/O event(s) on a
     /// single socket
@@ -661,9 +661,11 @@ public:
 
     /// Misc  (mostly BSD-like); "host" ought to be in network byte order
     /// empty str on err
-    static string       gethostname  (void);
-    static string       ntoa         (unsigned int  host);
-    bool                isip         (const string& host);
+    static string gethostname(void);
+
+    static string ntoa(unsigned int  host);
+    bool          isip(const string& host);
+
     /// empty str on err
     static string       gethostbyaddr(unsigned int  host);
     /// 0 on error
@@ -681,8 +683,8 @@ public:
     static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
 
     /// See SOCK_HostPortToString()
-    static string         HostPortToString(unsigned int    host,
-                                           unsigned short  port);
+    static string         HostPortToString(unsigned int   host,
+                                           unsigned short port);
 
     /// Return position past the end of parsed portion, NPOS on error
     static SIZE_TYPE      StringToHostPort(const string&   str,
