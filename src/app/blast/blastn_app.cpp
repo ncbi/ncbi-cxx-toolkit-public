@@ -170,6 +170,7 @@ int CBlastnApp::Run(void)
                     query_opts->BelieveQueryDefline(),
                     m_CmdLineArgs->GetOutputStream(),
                     fmt_args->GetNumDescriptions(),
+                    fmt_args->GetNumAlignments(),
                     opt.GetMatrixName(),
                     fmt_args->ShowGis(),
                     fmt_args->DisplayHtmlOutput(),

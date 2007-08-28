@@ -225,6 +225,7 @@ int CPsiBlastApp::Run(void)
                                query_opts->BelieveQueryDefline(),
                                out_stream,
                                fmt_args->GetNumDescriptions(),
+                               fmt_args->GetNumAlignments(),
                                opt.GetMatrixName(),
                                fmt_args->ShowGis(),
                                fmt_args->DisplayHtmlOutput(),
