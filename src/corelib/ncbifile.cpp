@@ -4642,7 +4642,10 @@ ssize_t CFileIO::Read(void* buf, size_t count)
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD n = 0;
-    if ( ::ReadFile(m_Handle, buf, count, &n, NULL) == 0 ) {
+    if (count > ULONG_MAX) {
+        count = ULONG_MAX;
+    }
+    if ( ::ReadFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
         return GetLastError() == ERROR_HANDLE_EOF? 0 : -1;
     }
 #elif defined(NCBI_OS_UNIX)
@@ -4656,7 +4659,10 @@ ssize_t CFileIO::Write(const void* buf, size_t count)
 {
 #if defined(NCBI_OS_MSWIN)
     DWORD n = 0;
-    if ( WriteFile(m_Handle, buf, count, &n, NULL) == 0 ) {
+    if (count > ULONG_MAX) {
+        count = ULONG_MAX;
+    }
+    if ( WriteFile(m_Handle, buf, (DWORD)count, &n, NULL) == 0 ) {
         return -1;
     }
 #elif defined(NCBI_OS_UNIX)
@@ -4908,7 +4914,7 @@ struct SLock {
         // is not an error.
         if (len) {
             length_lo = (DWORD)(len & 0xFFFFFFFF);
-            length_hi = (DWORD)((len >> 32) & 0xFFFFFFFF);
+            length_hi = (DWORD)(Int8(len >> 32) & 0xFFFFFFFF);
         } else {
             length_lo = 0;
             length_hi = 0xFFFFFFFF;
