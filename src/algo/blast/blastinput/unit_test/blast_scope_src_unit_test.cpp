@@ -44,6 +44,8 @@
 #  define BOOST_AUTO_TEST_CASE BOOST_AUTO_UNIT_TEST
 #endif
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
@@ -251,3 +253,5 @@ BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
     // restore the diagnostic stream
     SetDiagStream(diag_stream);
 }
+
+#endif /* SKIP_DOXYGEN_PROCESSING */

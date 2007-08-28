@@ -139,14 +139,14 @@ CPsiBlastAppArgs::GetNumberOfIterations() const
     return m_PsiBlastArgs->GetNumberOfIterations();
 }
 
-CRef<CPssmWithParameters>
+CRef<objects::CPssmWithParameters>
 CPsiBlastAppArgs::GetInputPssm() const
 {
     return m_PsiBlastArgs->GetInputPssm();
 }
 
 void
-CPsiBlastAppArgs::SetInputPssm(CRef<CPssmWithParameters> pssm)
+CPsiBlastAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 {
     m_PsiBlastArgs->SetInputPssm(pssm);
 }

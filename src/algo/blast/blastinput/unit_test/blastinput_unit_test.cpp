@@ -79,6 +79,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -1956,3 +1957,5 @@ void s_ForceSymbolDefinitions(CReadDispatcher& rd)
     CPluginManagerGetterImpl::GetBase(kEmptyStr);
 }
 #endif
+
+#endif /* SKIP_DOXYGEN_PROCESSING */

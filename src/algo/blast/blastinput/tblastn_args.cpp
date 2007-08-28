@@ -127,14 +127,14 @@ CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
 }
 
-CRef<CPssmWithParameters>
+CRef<objects::CPssmWithParameters>
 CTblastnAppArgs::GetInputPssm() const
 {
     return m_PsiBlastArgs->GetInputPssm();
 }
 
 void
-CTblastnAppArgs::SetInputPssm(CRef<CPssmWithParameters> pssm)
+CTblastnAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 {
     m_PsiBlastArgs->SetInputPssm(pssm);
 }

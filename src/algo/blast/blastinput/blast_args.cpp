@@ -112,7 +112,7 @@ private:
  * 
  * @param ClassName Name of the class to be created [in]
  * @param DataType data type of the allowed arguments [in]
- * @param ConversionFnx Conversion function from a string to DataType [in]
+ * @param String2DataTypeFn Conversion function from a string to DataType [in]
  */
 #define DEFINE_CARGALLOW_SET_CLASS(ClassName, DataType, String2DataTypeFn)  \
 class ClassName : public CArgAllow                                          \
@@ -151,8 +151,10 @@ private:                                                                    \
     set<DataType> m_AllowedValues;                                          \
 }
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 DEFINE_CARGALLOW_SET_CLASS(CArgAllowIntegerSet, int, NStr::StringToInt);
 DEFINE_CARGALLOW_SET_CLASS(CArgAllowStringSet, string, string);
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 CProgramDescriptionArgs::CProgramDescriptionArgs(const string& program_name, 
                                                  const string& program_desc)
