@@ -1250,7 +1250,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                  CArgDescriptions::eInteger,
                  NStr::IntToString(kDfltArgNumDescriptions));
     arg_desc.SetConstraint(kArgNumDescriptions, 
-                           new CArgAllowValuesGreaterThanOrEqual(1));
+                           new CArgAllowValuesGreaterThanOrEqual(0));
 
     // number of alignments per DB sequence
     arg_desc.AddDefaultKey(kArgNumAlignments, "int_value",
@@ -1258,7 +1258,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                  CArgDescriptions::eInteger, 
                  NStr::IntToString(kDfltArgNumAlignments));
     arg_desc.SetConstraint(kArgNumAlignments, 
-                           new CArgAllowValuesGreaterThanOrEqual(1));
+                           new CArgAllowValuesGreaterThanOrEqual(0));
 
     // Produce HTML?
     arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
@@ -1268,7 +1268,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
 void
 CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
-                                         CBlastOptions& /* opt */)
+                                         CBlastOptions& opt)
 {
     if (args[kArgOutputFormat]) {
         m_FormattedOutputChoice = args[kArgOutputFormat].AsInteger();
@@ -1283,6 +1283,13 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args[kArgNumAlignments]) {
         m_NumAlignments = args[kArgNumAlignments].AsInteger();
     }
+
+    if (m_NumDescriptions == 0 && m_NumAlignments == 0) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                     "Either -num_descriptions or -num_alignments must be non-zero");
+    }
+    else
+        opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
 
     m_Html = static_cast<bool>(args[kArgProduceHtml]);
 }
