@@ -310,12 +310,12 @@ CDBConnectionFactory::DispatchServerName(
             if (dsp_srv.Empty()) {
                 return NULL;
             }
+
+            curr_conn_attr.srv_name = dsp_srv->GetName();
         } else if (conn_attr.pool_name.empty()) {
             DATABASE_DRIVER_ERROR
                 ("Neither server name nor pool name provided.", 111000);
         }
-
-        curr_conn_attr.srv_name = dsp_srv->GetName();
 
         // Try to connect up to a given number of attempts ...
         unsigned int attepmpts = GetMaxNumOfConnAttempts();
