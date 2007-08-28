@@ -202,6 +202,12 @@ typedef struct BlastSeqSrcGetSeqArg {
      * TRUE to disable ranges, FALSE to use them if they exist [in] */
     Boolean enable_ranges;
 
+    /** Check whether an OID is excluded due to overlapping filtering.
+     * The disease is rare, and the test for it is somewhat expensive,
+     * so it is deferred to the traceback stage.
+     * TRUE to disable ranges, FALSE to use them if they exist [in] */
+    Boolean check_oid_exclusion;
+
     /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr
      * (using BlastSeqBlkNew or BlastSetUp_SeqBlkNew), else its contents are 
      * freed (using BlastSequenceBlkClean) and the structure is reused [out]*/

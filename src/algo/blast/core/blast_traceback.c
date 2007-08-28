@@ -1200,6 +1200,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
             seq_arg.oid = batch->hsplist_array[0]->oid;
             seq_arg.encoding = encoding;
             seq_arg.enable_ranges = kSubjectRanges;
+            seq_arg.check_oid_exclusion = TRUE;
+            
             BlastSequenceBlkClean(seq_arg.seq);
             if (BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0) {
                Blast_HSPStreamResultBatchReset(batch);

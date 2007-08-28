@@ -162,17 +162,31 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     Int4 oid = -1, len = 0;
     Boolean has_sentinel_byte;
     Boolean buffer_allocated;
-
+    
     if (!seqdb || !seqdb_args)
         return BLAST_SEQSRC_ERROR;
-
+    
     oid = seqdb_args->oid;
+    
+    // If we are asked to check for OID exclusion, and if the database
+    // has a GI list, then we check whether all the seqids have been
+    // removed by filtering.  If so we return an error.  The traceback
+    // code will exclude this HSP list.
+    
+    if (seqdb_args->check_oid_exclusion && (**seqdb).GetGiList() == NULL) {
+        list< CRef<CSeq_id> > seqids = (**seqdb).GetSeqIDs(oid);
+        
+        if (seqids.empty()) {
+            return BLAST_SEQSRC_ERROR;
+        }
+    }
+    
     EBlastEncoding encoding = seqdb_args->encoding;
     has_sentinel_byte = (encoding == eBlastEncodingNucleotide);
-
+    
     buffer_allocated = 
        (encoding == eBlastEncodingNucleotide || encoding == eBlastEncodingNcbi4na);
-
+    
     /* free buffers if necessary */
     if (seqdb_args->seq)
         BlastSequenceBlkClean(seqdb_args->seq);
@@ -194,10 +208,10 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     } else {
         len = (*seqdb)->GetAmbigSeq(oid, &buf, has_sentinel_byte);
     }
-
+    
     if (len <= 0)
         return BLAST_SEQSRC_ERROR;
-
+    
     BlastSetUp_SeqBlkNew((Uint1*)buf, len, &seqdb_args->seq, 
                          buffer_allocated);
     
@@ -206,16 +220,16 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
        position as "sequence_start". */
     if (buffer_allocated && !has_sentinel_byte)
        seqdb_args->seq->sequence = seqdb_args->seq->sequence_start;
-
+    
     /* For preliminary stage, even though sequence buffer points to a memory
        mapped location, we still need to call ReleaseSequence. This can only be
        guaranteed by making the engine believe tat sequence is allocated.
     */
     if (!buffer_allocated)
         seqdb_args->seq->sequence_allocated = TRUE;
-
+    
     seqdb_args->seq->oid = oid;
-
+    
     return BLAST_SEQSRC_SUCCESS;
 }
 
