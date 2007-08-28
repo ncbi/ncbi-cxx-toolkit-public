@@ -74,12 +74,16 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
     bool buff_is_full = false;
 
     m_ColFmt = AutoArray<CS_DATAFMT>(m_NofCols);
+    m_NullValue = AutoArray<ENullValue>(m_NofCols);
+
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
         rc = (Check(ct_describe(x_GetSybaseCmd(),
                                 (CS_INT) nof_items + 1,
                                 &m_ColFmt[nof_items]))
             != CS_SUCCEED);
         CHECK_DRIVER_ERROR( rc, "ct_describe failed." + GetDbgInfo(), 130002 );
+
+        m_NullValue[nof_items] == eNullUnknown;
 
 #ifdef FTDS_IN_USE
         // Seems like FreeTDS reports the wrong maxlength in
@@ -311,13 +315,24 @@ int CTL_RowResult::GetColumnNum(void) const
     return static_cast<int>(m_NofCols);
 }
 
-CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
+CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
+                                         CS_INT item,
                                          CS_VOID* buffer,
-                                         CS_INT buflen, CS_INT *outlen)
+                                         CS_INT buflen,
+                                         CS_INT *outlen,
+                                         bool& is_null)
 {
+    is_null = false;
+
     if(item > m_BindedCols) {
         // Not bound ...
-        return Check(ct_get_data(cmd, item, buffer, buflen, outlen));
+        CS_RETCODE rc = Check(ct_get_data(cmd, item, buffer, buflen, outlen));
+        if ((rc == CS_END_ITEM || rc == CS_END_DATA)) {
+            if (outlen) {
+                is_null = (*outlen == 0);
+            }
+        }
+        return rc;
     }
 
     // Bound ...
@@ -331,6 +346,8 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
     //   if((m_Indicator[item] < 0) || ((CS_INT)m_Indicator[item] >= m_Copied[item])) {
     if(indicator < 0) {
         // Value is NULL ...
+        is_null = true;
+
         if(outlen) {
             *outlen = 0;
         }
@@ -366,6 +383,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     CS_INT outlen = 0;
     char buffer[2048];
     EDB_Type b_type = item_buf ? item_buf->GetType() : eDB_UnsupportedType;
+    bool is_null = false;
 
     switch ( fmt.datatype ) {
 #ifdef FTDS_IN_USE
@@ -384,7 +402,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
             ? buffer : new char[fmt.maxlength + 1];
 
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -419,7 +437,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            CDB_VarBinary* val = (outlen == 0)
+            CDB_VarBinary* val = is_null
                 ? new CDB_VarBinary() : new CDB_VarBinary(v, outlen);
 
             if ( v != buffer)  delete[] v;
@@ -444,7 +462,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
             ? buffer : new char[fmt.maxlength + 1];
 
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -464,7 +482,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            CDB_LongBinary* val = (outlen == 0)
+            CDB_LongBinary* val = is_null
                 ? new CDB_LongBinary(fmt.maxlength) :
                   new CDB_LongBinary(fmt.maxlength, v, outlen);
 
@@ -472,10 +490,14 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return val;
         }
         case CS_CANCELED:
-            if (v != buffer)  delete[] v;
+            if (v != buffer)  {
+                delete[] v;
+            }
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         default:
-            if (v != buffer)  delete[] v;
+            if (v != buffer)  {
+                delete[] v;
+            }
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -488,12 +510,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_BIT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -517,14 +539,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0) ? new CDB_Bit() : new CDB_Bit((int) v);
+            return is_null ? new CDB_Bit() : new CDB_Bit((int) v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -539,13 +559,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
         char* v = fmt.maxlength < 2048
             ? buffer : new char[fmt.maxlength + 1];
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             v[outlen] = '\0';
             if ( item_buf) {
-                if ( outlen <= 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -577,20 +597,22 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            CDB_VarChar* val = (outlen == 0)
+            CDB_VarChar* val = is_null
                 ? new CDB_VarChar() : new CDB_VarChar(v, (size_t) outlen);
 
             if (v != buffer) delete[] v;
             return val;
         }
-        case CS_CANCELED: {
-            if (v != buffer) delete[] v;
+        case CS_CANCELED: 
+            if (v != buffer) {
+                delete[] v;
+            }
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
-            if (v != buffer) delete[] v;
+        default: 
+            if (v != buffer) {
+                delete[] v;
+            }
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -602,13 +624,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
         char* v = fmt.maxlength < 2048
             ? buffer : new char[fmt.maxlength + 1];
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             v[outlen] = '\0';
             if ( item_buf) {
-                if ( outlen <= 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -628,20 +650,22 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            CDB_LongChar* val = (outlen == 0)
+            CDB_LongChar* val = is_null
                 ? new CDB_LongChar(fmt.maxlength) : new CDB_LongChar((size_t) outlen, v);
 
             if (v != buffer) delete[] v;
             return val;
         }
-        case CS_CANCELED: {
-            if (v != buffer) delete[] v;
+        case CS_CANCELED: 
+            if (v != buffer) {
+                delete[] v;
+            }
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
-            if (v != buffer) delete[] v;
+        default: 
+            if (v != buffer) {
+                delete[] v;
+            }
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -651,12 +675,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_DATETIME v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf) {
-                if ( outlen > 0) {
+                if (!is_null) {
                     ((CDB_DateTime*)item_buf)->Assign(v.dtdays, v.dttime);
                 }
                 else {
@@ -666,7 +690,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             }
 
             CDB_DateTime* val;
-            if ( outlen > 0) {
+            if (!is_null) {
                 val = new CDB_DateTime(v.dtdays, v.dttime);
             } else {
                 val = new CDB_DateTime;
@@ -674,12 +698,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             return val;
         }
-        case CS_CANCELED: {
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -690,12 +712,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_DATETIME4 v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf) {
-                if (outlen > 0) {
+                if (!is_null) {
                     switch ( b_type ) {
                     case eDB_SmallDateTime:
                         ((CDB_SmallDateTime*) item_buf)->Assign
@@ -715,16 +737,14 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen <= 0)
+            return is_null
                 ? new CDB_SmallDateTime
                 : new CDB_SmallDateTime(v.days, v.minutes);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -736,12 +756,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_TINYINT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -762,15 +782,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0)
+            return is_null
                 ? new CDB_TinyInt() : new CDB_TinyInt((Uint1) v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -781,12 +799,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_SMALLINT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -804,15 +822,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0)
+            return is_null
                 ? new CDB_SmallInt() : new CDB_SmallInt((Int2) v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -822,12 +838,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_INT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -836,14 +852,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0) ? new CDB_Int() : new CDB_Int((Int4) v);
+            return is_null ? new CDB_Int() : new CDB_Int((Int4) v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -853,12 +867,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         Int8 v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -867,14 +881,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0) ? new CDB_BigInt() : new CDB_BigInt(v);
+            return is_null ? new CDB_BigInt() : new CDB_BigInt(v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -885,7 +897,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_NUMERIC v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -893,8 +905,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 if (outlen < 3) { /* it used to be == 0 but ctlib on windows
                      returns 2 even for NULL numeric */
                     item_buf->AssignNULL();
-                }
-                else {
+                } else if (is_null) {
+                    item_buf->AssignNULL();
+                } else {
                     if (b_type == eDB_Numeric) {
                         ((CDB_Numeric*) item_buf)->Assign
                             ((unsigned int)         v.precision,
@@ -916,19 +929,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                     : new CDB_BigInt(numeric_to_longlong((unsigned int)
                                                          v.precision,v.array));
             } else {
-                return  (outlen == 0)
+                return  is_null
                     ? new CDB_Numeric
                     : new CDB_Numeric((unsigned int)         v.precision,
                                       (unsigned int)         v.scale,
                                       (const unsigned char*) v.array);
             }
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -938,12 +949,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_FLOAT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -952,15 +963,13 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0)
+            return is_null
                 ? new CDB_Double() : new CDB_Double((double) v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -970,12 +979,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
 
         CS_REAL v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (is_null) {
                     item_buf->AssignNULL();
                 }
                 else {
@@ -984,14 +993,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 return item_buf;
             }
 
-            return (outlen == 0) ? new CDB_Float() : new CDB_Float((float) v);
+            return is_null ? new CDB_Float() : new CDB_Float((float) v);
         }
-        case CS_CANCELED: {
+        case CS_CANCELED: 
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        }
-        default: {
+        default: 
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
         }
     }
 
@@ -1007,7 +1014,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             :                                  (CDB_Stream*) new CDB_Image;
 
         for (;;) {
-            switch ( my_ct_get_data(cmd, item_no, buffer, 2048, &outlen) ) {
+            switch ( my_ct_get_data(cmd, item_no, buffer, 2048, &outlen, is_null) ) {
             case CS_SUCCEED:
                 if (outlen != 0)
                     val->Append(buffer, outlen);
@@ -1067,25 +1074,34 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
         buffer= (void*)(&buffer_size);
     }
 
+    bool is_null_tmp;
     switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, buffer, (CS_INT) buffer_size,
-                         &outlen) ) {
+                         &outlen, is_null_tmp) ) {
 #ifdef FTDS_IN_USE
     case CS_END_ITEM:
         // This is not the last column in the row.
-        break;
     case CS_END_DATA:
         // This is the last column in the row.
+        if (m_NullValue[m_CurrItem] == eNullUnknown) {
+            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
+        }
         break;
 #else
     case CS_END_ITEM:
         // This is not the last column in the row.
     case CS_END_DATA:
         // This is the last column in the row.
+        if (m_NullValue[m_CurrItem] == eNullUnknown) {
+            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
+        }
         ++m_CurrItem; // That won't work with the ftds64 driver
 #endif
     case CS_SUCCEED:
         // ct_get_data successfully retrieved a chunk of data that is
         // not the last chunk of data for this column.
+        if (m_NullValue[m_CurrItem] == eNullUnknown) {
+            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
+        }
         break;
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
@@ -1093,8 +1109,12 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
         DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
     }
 
-    if ( is_null ) {
-        *is_null = (outlen == 0);
+    if (is_null) {
+        if (m_NullValue[m_CurrItem] != eNullUnknown) {
+            *is_null = (m_NullValue[m_CurrItem] == eIsNull);
+        } else {
+            *is_null = (outlen == 0);
+        }
     }
 
     return (size_t) outlen;
@@ -1109,13 +1129,15 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 
     // Code, which is almost the same as in ReadItem.
     {
+        bool is_null = false;
+
         if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
             return 0;
         }
 
         char dummy[4];
 
-        switch (my_ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
+        switch (my_ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0, is_null) ) {
         // switch ( ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
         case CS_END_ITEM:
         case CS_END_DATA:
@@ -1241,17 +1263,20 @@ bool CTL_CursorResult::SkipItem()
 {
     if (m_CurrItem < (int) m_NofCols) {
         ++m_CurrItem;
-    char dummy[4];
-    switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem, dummy, 0, 0) ) {
-    case CS_END_ITEM:
-    case CS_END_DATA:
-    case CS_SUCCEED:
-        break;
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-    default:
-        DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-    }
+        char dummy[4];
+        bool is_null = false;
+
+        switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem, dummy, 0, 0, is_null) ) {
+        case CS_END_ITEM:
+        case CS_END_DATA:
+        case CS_SUCCEED:
+            break;
+        case CS_CANCELED:
+            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
+        default:
+            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+        }
+
         return true;
     }
 

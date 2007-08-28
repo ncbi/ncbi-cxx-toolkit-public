@@ -801,9 +801,12 @@ protected:
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
     virtual bool            SkipItem(void);
 
-    CS_RETCODE my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
+    CS_RETCODE my_ct_get_data(CS_COMMAND* cmd,
+                              CS_INT item,
                               CS_VOID* buffer,
-                              CS_INT buflen, CS_INT *outlen);
+                              CS_INT buflen,
+                              CS_INT *outlen,
+                              bool& is_null);
     CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
                           CDB_Object* item_buf);
     CS_COMMAND* x_GetSybaseCmd(void) const { return m_Cmd; }
@@ -832,6 +835,8 @@ protected:
     }
 
 protected:
+    enum ENullValue {eNullUnknown, eIsNull, eIsNotNull};
+
     // data
     CTL_Connection*         m_Connect;
     CS_COMMAND*             m_Cmd;
@@ -843,6 +848,7 @@ protected:
     AutoArray<CS_VOID*>     m_BindItem;
     AutoArray<CS_INT>       m_Copied;
     AutoArray<CS_SMALLINT>  m_Indicator;
+    AutoArray<ENullValue>   m_NullValue;
     unsigned char           m_BindBuff[2048];
 
 };
