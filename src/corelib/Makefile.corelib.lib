@@ -11,7 +11,7 @@ UNIX_SRC = ncbi_os_unix
 
 LIB = xncbi
 
-LIBS = $(DL_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 # Special build rules for WorkShop
 ncbicntr_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbicntr_workshop.cpp
