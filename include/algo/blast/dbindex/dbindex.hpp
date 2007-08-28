@@ -261,13 +261,15 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 */
                 bool CheckResults( TSeqNum subj ) const
                 {
-                    if( subj >= map_.size() ) return false;
+                    if( subj >= map_.size() - 1 ) return false;
                     bool res = false;
+
+                    TSeqNum start = MapSubject( subj, 0 );
+                    TSeqNum end   = MapSubject( subj + 1, 0 );
+                    if( end == 0 ) end = start_ + results_.size() + 1;
                     
-                    for( TSeqNum chunk = 0; ; ++chunk ) {
-                        TSeqNum seq = MapSubject( subj, chunk );
-                        if( seq == 0 || seq - start_ - 1 >= results_.size() ) break;
-                        if( GetResults( seq ) != 0 ) {
+                    for( TSeqNum chunk = start; chunk < end; ++chunk ) {
+                        if( GetResults( chunk ) != 0 ) {
                             res = true;
                             break;
                         }
