@@ -1694,7 +1694,7 @@ CDBAPIUnitTest::Test_LOB(void)
                             result += string(buff, read_bytes);
                         }
 
-                        BOOST_CHECK_EQUAL(result, clob_value);
+                        BOOST_CHECK_EQUAL(result, string(clob_value));
                     }
                 }
             }
@@ -1732,7 +1732,7 @@ CDBAPIUnitTest::Test_LOB(void)
                     }
 
                     BOOST_CHECK(!is_null);
-                    BOOST_CHECK_EQUAL(result, clob_value);
+                    BOOST_CHECK_EQUAL(result, string(clob_value));
                 }
 
             }
