@@ -4914,7 +4914,7 @@ struct SLock {
         // is not an error.
         if (len) {
             length_lo = (DWORD)(len & 0xFFFFFFFF);
-            length_hi = (DWORD)(Int8(len >> 32) & 0xFFFFFFFF);
+            length_hi = (DWORD)((Int8(len) >> 32) & 0xFFFFFFFF);
         } else {
             length_lo = 0;
             length_hi = 0xFFFFFFFF;
