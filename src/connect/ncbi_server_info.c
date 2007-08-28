@@ -198,6 +198,9 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
             return 0;
         while (*str && isspace((unsigned char)(*str)))
             str++;
+    } else {
+        host = 0;
+        port = 0;
     }
     /* read server-specific info according to the detected type */
     info = s_GetAttrByType(type)->vtable.Read(&str, name ? strlen(name)+1 : 0);
