@@ -1334,8 +1334,10 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     string node_path = 
         CDirEntry::ConcatPath(dir_name, 
                               GetApp().GetProjectTreeInfo().m_TreeNode);
-    if ( !CDirEntry(node_path).Exists() )
+    if ( !CDirEntry(node_path).Exists() ) {
+        LOG_POST(Warning << "NOT FOUND: " << node_path);
         return;
+    }
     if (!is_root &&
         CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
         // on UNIX the build tree is already configured,
