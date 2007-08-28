@@ -140,7 +140,6 @@ public:
             const STimeout* timeout = kInfiniteTimeout,
             ESwitch         log     = eDefault);
 
-
     /// Variant of the above, which takes host as a binary value in 
     /// network b.o.
     /// @param host
@@ -226,8 +225,8 @@ public:
     ///
     /// @param timeout
     ///
-    EIO_Status      SetTimeout(EIO_Event        event,
-                               const STimeout*  timeout);
+    EIO_Status      SetTimeout(EIO_Event       event,
+                               const STimeout* timeout);
     const STimeout* GetTimeout(EIO_Event event) const;
 
     /// @param buf
@@ -238,10 +237,10 @@ public:
     ///
     /// @param how
     ///
-    EIO_Status Read(void*           buf,
-                    size_t          size,
-                    size_t*         n_read = 0,
-                    EIO_ReadMethod  how = eIO_ReadPlain);
+    EIO_Status Read(void*          buf,
+                    size_t         size,
+                    size_t*        n_read = 0,
+                    EIO_ReadMethod how = eIO_ReadPlain);
 
     /// Read up to '\r\n', '\n' or '\0', discarding any of the EOLs
     /// @param str
@@ -254,16 +253,16 @@ public:
     ///
     /// @param n_read
     ///
-    EIO_Status ReadLine(char*     buf,
-                        size_t    size,
-                        size_t*   n_read = 0);
+    EIO_Status ReadLine(char*   buf,
+                        size_t  size,
+                        size_t* n_read = 0);
 
     /// @param buf
     ///
     /// @param size
     ///
-    EIO_Status PushBack(const void*  buf,
-                        size_t       size);
+    EIO_Status PushBack(const void* buf,
+                        size_t      size);
 
     /// @param buf
     ///
@@ -273,10 +272,10 @@ public:
     ///
     /// @param how
     ///
-    EIO_Status Write(const void*      buf,
-                     size_t           size,
-                     size_t*          n_written = 0,
-                     EIO_WriteMethod  how = eIO_WritePersist);
+    EIO_Status Write(const void*     buf,
+                     size_t          size,
+                     size_t*         n_written = 0,
+                     EIO_WriteMethod how = eIO_WritePersist);
 
     EIO_Status Abort(void);
 
@@ -295,9 +294,9 @@ public:
     ///
     /// @param byte_order
     ///
-    void GetPeerAddress(unsigned int*      host,
-                        unsigned short*    port,
-                        ENH_ByteOrder      byte_order) const;
+    void GetPeerAddress(unsigned int*   host,
+                        unsigned short* port,
+                        ENH_ByteOrder   byte_order) const;
     /// @return
     ///  Textual string representing the peer's address
     string GetPeerAddress(void) const;
@@ -316,8 +315,8 @@ public:
     ///
     /// @param handle_size
     ///
-    virtual EIO_Status GetOSHandle(void*    handle_buf,
-                                   size_t   handle_size) const;
+    virtual EIO_Status GetOSHandle(void*  handle_buf,
+                                   size_t handle_size) const;
 
     /// @li <b>NOTE:</b>  use CSocketAPI::SetReadOnWrite() to set the default
     /// value
