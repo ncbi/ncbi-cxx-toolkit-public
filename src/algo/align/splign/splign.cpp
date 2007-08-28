@@ -332,11 +332,11 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     // check that no two consecutive hits are farther than the max intron
     // (extra short hits skipped)
-    const size_t max_intron = 1048575; // 2^20
-    size_t prev = 0;
+    const size_t max_intron (1u << 19);
+    size_t prev (0);
     NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
-        THitRef& h = *ii;
+        THitRef& h (*ii);
 
         if(h->GetQuerySpan() < m_MinPatternHitLength) {
             h.Reset(0);
@@ -344,14 +344,14 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         }
 
         if(prev > 0) {
-
-            const bool consistent = h->GetSubjStrand()?
-                (h->GetSubjStart() < prev + max_intron):
-                (h->GetSubjStart() + max_intron > prev);
+            
+            const bool consistent (h->GetSubjStrand()?
+                                  (h->GetSubjStart() < prev + max_intron):
+                                  (h->GetSubjStart() + max_intron > prev));
 
             if(!consistent) {
-                const string errmsg = g_msg_CompartmentInconsistent
-                    + string(" (extra long introns)");
+                const string errmsg (g_msg_CompartmentInconsistent
+                                     + string(" (extra long introns)"));
                 NCBI_THROW(CAlgoAlignException, eNoAlignment, errmsg);
             }
         }
@@ -361,7 +361,6 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     phitrefs->erase(remove_if(phitrefs->begin(), phitrefs->end(),
                               CHitFilter<THit>::s_PNullRef),
                     phitrefs->end());
-
 
     // save each hit longer than the minimum and test whether the hit is perfect
     vector<size_t> pattern0;
@@ -386,7 +385,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         }
     }
 
-    if(max_idty < .85) {
+    if(max_idty < .85 && pattern0.size() >= 4) {
         m_BoundingRange = pair<size_t, size_t>(pattern0[2], pattern0.back());
     }
     else {
