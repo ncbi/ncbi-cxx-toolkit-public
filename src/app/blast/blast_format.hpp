@@ -89,6 +89,7 @@ public:
                  int format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
                  int num_summary, 
+                 int num_alignments, 
                  const char *matrix_name = BLAST_DEFAULT_MATRIX,
                  bool show_gi = false, 
                  bool is_html = false, 
@@ -125,6 +126,7 @@ private:
     bool m_BelieveQuery;        ///< true if query sequence IDs are parsed
     CNcbiOstream& m_Outfile;    ///< stream to receive output
     int m_NumSummary;           ///< number of 1-line summaries
+    int m_NumAlignments;        ///< number of database sequences to present alignments for.
     string m_Program;           ///< blast program
     string m_DbName;            ///< name of blast database
     int m_QueryGenCode;         ///< query genetic code
