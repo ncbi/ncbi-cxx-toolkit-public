@@ -281,7 +281,7 @@ RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/Makefile.meta.in
 	@if test -n "$(PROJECTS)" -a -s "$(PROJECTS)"; then \
 	    sed -e '/ update-only$$/d; /^$$/d; /^-/d; s@^@build/@' \
-	        -e 's:\([^$$/\\]\)\(\$$\)*$$:\1/\2:' \
+	        -e 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:' \
 	      $(PROJECTS); \
 	else \
 	    echo '.*'; \
@@ -291,7 +291,7 @@ IRRELEVANT_FILE = $(builddir)/irrelevant.patterns
 $(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/Makefile.meta.in
 	@if test -n "$(PROJECTS)" ; then \
 	    echo '# Dummy line to avoid empty file'; \
-	    sed -ne 's:\([^$$/\\]\)\(\$$\)*$$:\1/\2:; s@^-@build/@p' \
+	    sed -ne 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:; s@^-@build/@p' \
 	      $(PROJECTS); \
 	else \
 	    echo '^$$'; \
