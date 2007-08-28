@@ -1669,6 +1669,75 @@ CDBAPIUnitTest::Test_LOB(void)
                 }
             }
         }
+        
+        // Read blob via Read method ...
+        {
+            string result;
+            char buff[3];
+
+            sql = "SELECT text_field FROM "+ GetTableName();
+
+            auto_stmt->SendSql( sql );
+            while( auto_stmt->HasMoreResults() ) {
+                if( auto_stmt->HasRows() ) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                    rs->BindBlobToVariant(true);
+
+                    while ( rs->Next() ) {
+                        const CVariant& value = rs->GetVariant(1);
+
+
+                        BOOST_CHECK( !value.IsNull() );
+                        size_t read_bytes = 0;
+                        while (read_bytes = value.Read(buff, sizeof(buff))) {
+                            result += string(buff, read_bytes);
+                        }
+
+                        BOOST_CHECK_EQUAL(result, clob_value);
+                    }
+                }
+            }
+        }
+        
+        // Read Blob
+        if (m_args.GetDriverName() != "ftds8") {
+            string result;
+            char buff[3];
+
+            sql = "SELECT text_field FROM "+ GetTableName();
+
+            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while(auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL) {
+                    continue;
+                }
+
+                if (rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while(rs->Fetch()) {
+                    size_t read_bytes = 0;
+                    bool is_null = true;
+
+                    while (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                        result += string(buff, read_bytes);
+                    }
+
+                    BOOST_CHECK(!is_null);
+                    BOOST_CHECK_EQUAL(result, clob_value);
+                }
+
+            }
+        }
+
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -3133,7 +3202,8 @@ CDBAPIUnitTest::Test_Cursor(void)
         }
 
         // Second test ...
-        if (m_args.GetDriverName() != "ctlib") {
+        if (m_args.GetDriverName() != "ctlib") 
+        {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             sql  =
