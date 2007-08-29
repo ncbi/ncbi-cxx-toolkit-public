@@ -278,7 +278,7 @@ $(PROJECTS): $(builddir)/projects.pseudo.c
 # This file contains the actual patterns to grep for, formed by
 # prepending "build/" to each original pattern as an anchor.
 RELEVANT_FILE = $(builddir)/relevant.patterns
-$(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/Makefile.meta.in
+$(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 	@if test -n "$(PROJECTS)" -a -s "$(PROJECTS)"; then \
 	    sed -e '/ update-only$$/d; /^$$/d; /^-/d; s@^@build/@' \
 	        -e 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:' \
@@ -288,7 +288,7 @@ $(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/Makefile.meta.in
 	fi > $(RELEVANT_FILE)
 
 IRRELEVANT_FILE = $(builddir)/irrelevant.patterns
-$(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/Makefile.meta.in
+$(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 	@if test -n "$(PROJECTS)" ; then \
 	    echo '# Dummy line to avoid empty file'; \
 	    sed -ne 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:; s@^-@build/@p' \
