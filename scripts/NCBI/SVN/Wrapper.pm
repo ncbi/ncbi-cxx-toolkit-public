@@ -74,7 +74,7 @@ sub FindSubversion
     my ($Self) = @_;
 
     my ($SvnMUCCName, $MUCCName, @SvnNames) =
-        $^O ne 'MSWin32' && $^O ne 'cygwin' ? qw(svnmucc mucc svn) :
+        !$Self->{Windows} ? qw(svnmucc mucc svn) :
             qw(svnmucc.exe mucc.exe svn.bat svn.exe);
 
     my ($SvnPathname, $SvnMUCCPathname, $MUCCPathname);
@@ -99,6 +99,8 @@ sub new
     my ($Class, @Params) = @_;
 
     my $Self = bless {@Params}, $Class;
+
+    $Self->{Windows} = 1 if $^O eq 'MSWin32' || $^O eq 'cygwin';
 
     $Self->FindSubversion() unless $Self->{SvnPathname};
 
@@ -213,7 +215,8 @@ sub ReadInfo
 
         if ($Line =~ m/^Path: (.*?)$/os)
         {
-            $Path = $1
+            $Path = $1;
+            $Path =~ s/\\/\//gso if $Self->{Windows}
         }
         elsif ($Line =~ m/^URL: (.*?)$/os)
         {
