@@ -158,8 +158,8 @@ done
 
 echo "Making the \"configurables\" target a no-op."
 sed -e 's/\(Makefile\.configurables\)\.real/\1.null/' \
-    $top_srcdir/src/Makefile.configurables \
-    > $install_dir/src/Makefile.configurables
+    $top_srcdir/src/build-system/Makefile.configurables \
+    > $install_dir/src/build-system/Makefile.configurables
 
 
 # Done

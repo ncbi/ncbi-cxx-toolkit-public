@@ -273,7 +273,7 @@ PACKAGE_VERSION='0.0'
 PACKAGE_STRING='ncbi-tools++ 0.0'
 PACKAGE_BUGREPORT='cpp-core@ncbi.nlm.nih.gov'
 
-ac_unique_file="src/Makefile.mk.in"
+ac_unique_file="src/build-system/Makefile.mk.in"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -2406,7 +2406,7 @@ for x_arg in "$@" ; do
    fi
 
    case "$x_arg" in
-      --with-extra-action= | --exec-prefix= | --with-projects= \
+      --with-extra-action= | --exec-prefix= | --with-projects= | --srcdir= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
       { { echo "$as_me:$LINENO: error: $x_arg:  requires value;  use --help to show usage" >&5
 echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
@@ -2417,7 +2417,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --with-universal=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
-      | --libdir=* | --bindir=* | --includedir=* \
+      | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [A-Z]*=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* | --with-lzo2=* \
       | --with-pcre=* \
@@ -2550,7 +2550,7 @@ _ACEOF
 
 #### Get the running host's properties
 ac_aux_dir=
-for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
+for ac_dir in src/build-system $srcdir/src/build-system; do
   if test -f $ac_dir/install-sh; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -2566,8 +2566,8 @@ for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&5
-echo "$as_me: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&2;}
+  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in src/build-system $srcdir/src/build-system" >&5
+echo "$as_me: error: cannot find install-sh or install.sh in src/build-system $srcdir/src/build-system" >&2;}
    { (exit 1); exit 1; }; }
 fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"
@@ -29708,13 +29708,13 @@ case "$CXX"    in compilers/*)    CXX="\$(top_srcdir)/$CXX"    ;; esac
 case "$CXXCPP" in compilers/*) CXXCPP="\$(top_srcdir)/$CXXCPP" ;; esac
 case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 
-### Get Insure++ to honor the top-level .psrc file
+### Get Insure++ to honor the Toolkit's psrc file
 case "$CC" in
    */insure*)
-      CC="$CC -Zop \$(top_srcdir)/.psrc -D__INSURE__"
-      CXX="$CXX -Zop \$(top_srcdir)/.psrc -D__INSURE__"
-      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc -D__INSURE__"
-      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/.psrc:'`
+      CC="$CC -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
+      CXX="$CXX -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
+      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/etc/psrc:'`
    ;;
 esac
 
@@ -29730,7 +29730,7 @@ echo "$as_me: looking for configurables below $real_srcdir..." >&6;}
 excl_file="`pwd`/config.tmp.$$"
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
-configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(/build-system\)*\(.*\)\.in%$builddir\2:./src\1\2.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
@@ -29995,13 +29995,13 @@ ncbicfg="$builddir/corelib/ncbicfg.c"
 test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 
 ## Configure the compiler/flag-dependent header
-          ac_config_headers="$ac_config_headers ${ncbiconf}:config.h.in"
+          ac_config_headers="$ac_config_headers ${ncbiconf}:$srcdir/src/build-system/config.h.in"
 
 
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-                    ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:Makefile.in"
+                    ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:$srcdir/src/build-system/Makefile.in.top"
 
 
           ac_config_commands="$ac_config_commands default"
@@ -30566,9 +30566,9 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "$configurables" ) CONFIG_FILES="$CONFIG_FILES $configurables" ;;
-  "$srcdir/./Makefile" ) CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:Makefile.in" ;;
+  "$srcdir/./Makefile" ) CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:$srcdir/src/build-system/Makefile.in.top" ;;
   "default" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
-  "${ncbiconf}" ) CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:config.h.in" ;;
+  "${ncbiconf}" ) CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:$srcdir/src/build-system/config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;

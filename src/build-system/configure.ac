@@ -58,7 +58,7 @@ fi
 AC_DIVERT_POP
 
 AC_INIT([ncbi-tools++],[0.0],[cpp-core@ncbi.nlm.nih.gov])
-AC_CONFIG_SRCDIR(src/Makefile.mk.in)
+AC_CONFIG_SRCDIR(src/build-system/Makefile.mk.in)
 
 
 
@@ -403,7 +403,7 @@ for x_arg in "$@" ; do
    fi
 
    case "$x_arg" in
-      --with-extra-action= | --exec-prefix= | --with-projects= \
+      --with-extra-action= | --exec-prefix= | --with-projects= | --srcdir= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
       AC_MSG_ERROR([$x_arg:  requires value;  use --help to show usage])
       ;;
@@ -412,7 +412,7 @@ for x_arg in "$@" ; do
       | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --with-universal=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
-      | --libdir=* | --bindir=* | --includedir=* \
+      | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* | --with-lzo2=* \
       | --with-pcre=* \
@@ -474,6 +474,7 @@ AC_DEFINE(NCBI_CXX_TOOLKIT, 1, [This is the NCBI C++ Toolkit.])
 
 
 #### Get the running host's properties
+AC_CONFIG_AUX_DIR(src/build-system)
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(HOST,        "$host",        [Full GNU-style system type])
 AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu",    [CPU type only])
@@ -5554,13 +5555,13 @@ case "$CXX"    in compilers/*)    CXX="\$(top_srcdir)/$CXX"    ;; esac
 case "$CXXCPP" in compilers/*) CXXCPP="\$(top_srcdir)/$CXXCPP" ;; esac
 case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 
-### Get Insure++ to honor the top-level .psrc file
+### Get Insure++ to honor the Toolkit's psrc file
 case "$CC" in
    */insure*)
-      CC="$CC -Zop \$(top_srcdir)/.psrc -D__INSURE__"
-      CXX="$CXX -Zop \$(top_srcdir)/.psrc -D__INSURE__"
-      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc -D__INSURE__"
-      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/.psrc:'`
+      CC="$CC -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
+      CXX="$CXX -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/etc/psrc -D__INSURE__"
+      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/etc/psrc:'`
    ;;
 esac
 
@@ -5577,7 +5578,7 @@ changequote(<<, >>)dnl
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
 changequote([, ])dnl
-configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(/build-system\)*\(.*\)\.in%$builddir\2:./src\1\2.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
@@ -5842,12 +5843,12 @@ ncbicfg="$builddir/corelib/ncbicfg.c"
 test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 
 ## Configure the compiler/flag-dependent header
-AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
+AC_CONFIG_HEADER(${ncbiconf}:$srcdir/src/build-system/config.h.in)
 
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-AC_CONFIG_FILES($configurables $srcdir/./Makefile:Makefile.in)
+AC_CONFIG_FILES($configurables $srcdir/./Makefile:$srcdir/src/build-system/Makefile.in.top)
 
 AC_CONFIG_COMMANDS([default], [
 dnl make all shell scripts *.sh be executable

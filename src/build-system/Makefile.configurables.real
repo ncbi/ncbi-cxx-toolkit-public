@@ -15,11 +15,13 @@ UPDATE_CONFIGURABLE = $(abs_top_srcdir)/scripts/update_configurable.sh $(build_r
 
 config_status = $(build_root)/status/config.status
 
+build_sys_dir = $(abs_top_srcdir)/src/build-system
+
 configurables: $(CONFIGURABLES)
 
 # If this is just a normal single-colon rule, gmake ignores it for
 # some targets (such as ncbicfg.c).
-%:: $(srcdir)/%.in $(config_status)
+%:: $(srcdir)$(bspath)/%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
 # Meanwhile, Solaris make ignores the above rule for the local Makefile
@@ -36,16 +38,22 @@ $(SUB_MF_IN):
 	@-cd $(srcdir)  &&  test -d CVS  &&  \
 	    cvs upd -A `basename \`dirname $@\``/Makefile.in
 	mkdir -p `dirname $@`
-	test -f $@  ||  cp -p $(abs_top_srcdir)/src/Makefile.in.skel $@
+	test -f $@  ||  cp -p $(build_sys_dir)/Makefile.in.skel $@
+
+$(builddir)/Makefile%: $(build_sys_dir)/Makefile%.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
+
+$(builddir)/%.sh: $(build_sys_dir)/%.sh.in $(config_status)
+	$(UPDATE_CONFIGURABLE) $@
 
 $(builddir)/%: $(abs_top_srcdir)/src/%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
 # Some versions of Solaris make seem to need an explicit rule here too.
-$(builddir)/Makefile.meta: $(abs_top_srcdir)/src/Makefile.meta.in $(config_status)
+$(builddir)/Makefile.meta: $(build_sys_dir)/Makefile.meta.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
-$(config_status): $(abs_top_srcdir)/configure $(abs_top_srcdir)/config.h.in
+$(config_status): $(abs_top_srcdir)/configure $(build_sys_dir)/config.h.in
 	$(abs_top_srcdir)/scripts/maybe_reconfigure.sh $(builddir)
 
 .PHONY: configurables

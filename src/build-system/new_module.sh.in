@@ -33,7 +33,10 @@ done
 # here $p is root directory, $mp is module path so $p/src/$mp is current dir
 
 for d in $p $top_srcdir $NCBI/c++; do
-    if test -f $d/src/Makefile.module; then
+    if test -f $d/src/build-system/Makefile.module; then
+        makemodule=$d/src/build-system/Makefile.module
+        break
+    elif test -f $d/src/Makefile.module; then
         makemodule=$d/src/Makefile.module
         break
     fi

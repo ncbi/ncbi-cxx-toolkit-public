@@ -345,7 +345,7 @@ check_add_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
 
-include $(top_srcdir)/src/Makefile.configurables
+include $(top_srcdir)/src/build-system/Makefile.configurables
 
 .PHONY: all        clean        purge        check        check_add
 .PHONY: all.real   clean.real   purge.real   check.real   check_add.real

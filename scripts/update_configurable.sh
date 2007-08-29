@@ -52,8 +52,16 @@ EOF
     exit 0
 fi
 
+case $otail in
+    */* | Makefile )
+        CONFIG_FILES=$builddir/$otail:./src/$otail.in
+        ;;
+    * )
+        CONFIG_FILES=$builddir/$otail:./src/build-system/$otail.in
+        ;;
+esac
+
 cd $top_srcdir
-CONFIG_FILES=$builddir/$otail:./src/$otail.in
 CONFIG_HEADERS=
 CONFIG_LINKS=
 CONFIG_COMMANDS=
