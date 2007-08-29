@@ -183,7 +183,7 @@ CSearchResultSet::GetResults(size_type qi, size_type si)
 const CSearchResults&
 CSearchResultSet::GetResults(size_type qi, size_type si) const
 {
-    return const_cast<CSearchResults&>(GetResults(qi, si));
+    return const_cast<CSearchResultSet*>(this)->GetResults(qi, si);
 }
 
 CConstRef<CSearchResults>
