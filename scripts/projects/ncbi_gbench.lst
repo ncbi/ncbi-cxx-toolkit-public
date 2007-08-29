@@ -1,11 +1,4 @@
-algo/align
-algo/blast
-algo/dustmask
-algo/gnomon
-algo/phy_tree
-algo/seqqa
-algo/sequence
-algo/winmask
+algo
 app/netcache
 app/project_tree_builder
 bdb
@@ -25,6 +18,7 @@ objmgr
 objtools
 serial
 util
+-algo/structure
 -algo/demo
 -algo/test
 -bdb/demo
@@ -49,6 +43,8 @@ util
 -objmgr/.*/test
 -objtools/.*/demo
 -objtools/.*/test
+-objtools/demo
+-objtools/test
 -serial/.*/demo
 -serial/.*/test
 -serial/demo
