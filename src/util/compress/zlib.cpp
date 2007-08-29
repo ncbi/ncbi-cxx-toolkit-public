@@ -679,6 +679,9 @@ long CZipCompressionFile::Read(void* buf, size_t len)
         NCBI_THROW(CCompressionException, eCompressionFile, 
             "[CZipCompressionFile::Read]  File must be opened for reading");
     }
+    if ( !m_Zip->good() ) {
+        return 0;
+    }
     m_Zip->read((char*)buf, len);
     // Check decompression processor status
     if ( m_Zip->GetStatus(CCompressionStream::eRead) 

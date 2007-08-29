@@ -867,6 +867,9 @@ long CLZOCompressionFile::Read(void* buf, size_t len)
         NCBI_THROW(CCompressionException, eCompressionFile, 
             "[CLZOCompressionFile::Read]  File must be opened for reading");
     }
+    if ( !m_Stream->good() ) {
+        return 0;
+    }
     m_Stream->read((char*)buf, len);
     // Check decompression processor status
     if ( m_Stream->GetStatus(CCompressionStream::eRead) 
