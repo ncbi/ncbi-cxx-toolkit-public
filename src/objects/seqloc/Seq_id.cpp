@@ -1145,21 +1145,17 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         return eAcc_unknown;
     } else {
         SIZE_TYPE non_dig_pos = acc.find_first_not_of(kDigits, digit_pos);
+        const unsigned char* ucdata = (const unsigned char*)acc.data();
         if (non_dig_pos != NPOS  &&  non_dig_pos != main_size) {
-            if (main_size != acc.size()) {
-                return eAcc_unknown; // these should all be unversioned
-            }
-            if (digit_pos == 0  &&  main_size >= 4
-                &&  (main_size <= 5
-                     ||  (ispunct((unsigned char)acc[4])  &&  acc[4] != '.'))) {
-                return eAcc_pdb;
+            if (digit_pos == 0  &&  main_size >= 4  &&  main_size == acc.size()
+                &&  (main_size <= 5  ||  ispunct(ucdata[4]))) {
+                return eAcc_pdb; // must be unversioned
             } else if (digit_pos == 1  &&  main_size == 6
-                       &&  (pfx[0] == 'O' || pfx[0] == 'P' || pfx[0] == 'Q')
-                       &&  isdigit((unsigned char)acc[1])
-                       &&  isalnum((unsigned char)acc[2])
-                       &&  isalnum((unsigned char)acc[3])
-                       &&  isalnum((unsigned char)acc[4])
-                       &&  isdigit((unsigned char)acc[5])) {
+                       &&  (pfx[0] == 'O'  ||  pfx[0] == 'P'  ||  pfx[0] == 'Q'
+                            ||  isalpha(ucdata[2]))
+                       &&  isdigit(ucdata[1]) &&  isalnum(ucdata[2])
+                       &&  isalnum(ucdata[3]) &&  isalnum(ucdata[4])
+                       &&  isdigit(ucdata[5])) {
                 return eAcc_swissprot;
             } else {
                 return eAcc_unknown;
