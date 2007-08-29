@@ -62,6 +62,7 @@ typedef struct LookupTableWrap {
  * @param rps_info Structure containing RPS blast setup information [in]
  * @param error_msg message with warning or errors [in|out]
  */
+NCBI_XBLAST_EXPORT
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
@@ -69,6 +70,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         Blast_Message* *error_msg);
 
 /** Deallocate memory for the lookup table */
+NCBI_XBLAST_EXPORT
 LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup);
 
 /** Default size of offset arrays filled in a single ScanSubject call. */
@@ -77,6 +79,7 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup);
 /** Determine the size of the offsets arrays to be filled by
  * the ScanSubject function.
  */
+NCBI_XBLAST_EXPORT
 Int4 GetOffsetArraySize(LookupTableWrap* lookup);
 
 #ifdef __cplusplus
