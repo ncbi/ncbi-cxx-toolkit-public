@@ -83,7 +83,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
             != CS_SUCCEED);
         CHECK_DRIVER_ERROR( rc, "ct_describe failed." + GetDbgInfo(), 130002 );
 
-        m_NullValue[nof_items] == eNullUnknown;
+        m_NullValue[nof_items] = eNullUnknown;
 
 #ifdef FTDS_IN_USE
         // Seems like FreeTDS reports the wrong maxlength in
