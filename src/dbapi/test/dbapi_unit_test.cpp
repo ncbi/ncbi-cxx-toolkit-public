@@ -1389,6 +1389,8 @@ CDBAPIUnitTest::Test_DateTime(void)
 void
 CDBAPIUnitTest::Test_DateTimeBCP(void)
 {
+    string table_name("#test_bcp_datetime");
+    // string table_name("test_bcp_datetime");
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     CVariant value(eDB_DateTime);
@@ -1400,7 +1402,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
         // Initialization ...
         {
             sql =
-                "CREATE TABLE #test_bcp_datetime ( \n"
+                "CREATE TABLE " + table_name + " ( \n"
                 "   id INT, \n"
                 "   dt_field DATETIME NULL \n"
                 ") \n";
@@ -1417,10 +1419,10 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_DateTime);
 
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
+                auto_stmt->ExecuteUpdate( "DELETE FROM " + table_name);
 
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
+                    m_Conn->GetBulkInsert(table_name, 2)
                     );
 
                 bi->Bind(1, &col1);
@@ -1432,14 +1434,14 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 bi->AddRow();
                 bi->Complete();
 
-                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
+                auto_stmt->ExecuteUpdate("SELECT * FROM " + table_name);
                 int nRows = auto_stmt->GetRowCount();
                 BOOST_CHECK_EQUAL(nRows, 1);
             }
 
             // Retrieve data ...
             {
-                sql = "SELECT * FROM #test_bcp_datetime";
+                sql = "SELECT * FROM " + table_name;
 
                 // !!! Do not forget to clear a parameter list ....
                 // Workaround for the ctlib driver ...
@@ -1478,10 +1480,10 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_DateTime);
 
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
+                auto_stmt->ExecuteUpdate("DELETE FROM " + table_name);
 
                 auto_ptr<IBulkInsert> bi(
-                    m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
+                    m_Conn->GetBulkInsert(table_name, 2)
                     );
 
                 bi->Bind(1, &col1);
@@ -1492,14 +1494,14 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
                 bi->AddRow();
                 bi->Complete();
 
-                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
+                auto_stmt->ExecuteUpdate("SELECT * FROM " + table_name);
                 int nRows = auto_stmt->GetRowCount();
                 BOOST_CHECK_EQUAL(nRows, 1);
             }
 
             // Retrieve data ...
             {
-                sql = "SELECT * FROM #test_bcp_datetime";
+                sql = "SELECT * FROM " + table_name;
 
                 // !!! Do not forget to clear a parameter list ....
                 // Workaround for the ctlib driver ...
