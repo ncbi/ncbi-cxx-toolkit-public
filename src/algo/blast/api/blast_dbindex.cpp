@@ -217,13 +217,10 @@ class CIndexedDb : public CObject
         */
         bool CheckOid( Int4 oid ) const
         {
-            return true;
-            /*
             TSeqMap::size_type i = LocateIndex( oid );
             const CConstRef< CDbIndex::CSearchResults > & results = results_[i];
             if( i > 0 ) oid -= seqmap_[i-1];
             return results->CheckResults( oid );
-            */
         }
 
         /** Invoke the seed search procedure on each of the loaded indices.

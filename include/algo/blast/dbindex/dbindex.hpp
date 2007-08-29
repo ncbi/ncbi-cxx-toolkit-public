@@ -261,7 +261,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 */
                 bool CheckResults( TSeqNum subj ) const
                 {
-                    if( subj >= map_.size() - 1 ) return false;
+                    if( subj >= map_.size() ) return false;
                     bool res = false;
 
                     TSeqNum start = MapSubject( subj, 0 );
