@@ -11,4 +11,3 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CHECK_CMD     = netcache_check.sh
 CHECK_COPY    = netcache_check.sh
 CHECK_TIMEOUT = 250
-CHECK_AUTHORS = ivanov
