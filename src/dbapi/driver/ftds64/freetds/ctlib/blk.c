@@ -762,7 +762,13 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
                 }
 
 #if WORDS_BIGENDIAN
-                tds_swap_datatype(bindcol->on_server.column_type, bindcol->bcp_column_data->data);
+                tds_swap_datatype(
+                        tds_get_conversion_type(
+                            bindcol->on_server.column_type, 
+                            bindcol->on_server.column_size 
+                            ),
+                        bindcol->bcp_column_data->data
+                        );
 #endif
             }
 
@@ -1534,7 +1540,13 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
                     }
 
 #if WORDS_BIGENDIAN
-                    tds_swap_datatype(bindcol->on_server.column_type, bindcol->bcp_column_data->data);
+                    tds_swap_datatype(
+                            tds_get_conversion_type(
+                                bindcol->on_server.column_type, 
+                                bindcol->on_server.column_size 
+                                ),
+                            bindcol->bcp_column_data->data
+                            );
 #endif
 
                     if (is_numeric_type(bindcol->on_server.column_type)) {
