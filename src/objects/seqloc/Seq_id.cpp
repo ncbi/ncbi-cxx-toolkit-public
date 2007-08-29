@@ -441,7 +441,8 @@ static const TChoiceMapEntry sc_ChoiceArray[] = {
     TChoiceMapEntry("swissprot",    CSeq_id::e_Swissprot),
     TChoiceMapEntry("tpd",          CSeq_id::e_Tpd),
     TChoiceMapEntry("tpe",          CSeq_id::e_Tpe),
-    TChoiceMapEntry("tpg",          CSeq_id::e_Tpg)
+    TChoiceMapEntry("tpg",          CSeq_id::e_Tpg),
+    TChoiceMapEntry("tr",           CSeq_id::e_Swissprot)
 };
 typedef CStaticArrayMap<const char*, CSeq_id::E_Choice, PNocase_CStr> TChoiceMap;
 DEFINE_STATIC_ARRAY_MAP(TChoiceMap, sc_ChoiceMap, sc_ChoiceArray);
@@ -457,7 +458,7 @@ static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
     "gb",   // genbank = gb|accession|locus
     "emb",  // embl = emb|accession|locus
     "pir",  // pir = pir|accession|name
-    "sp",   // swissprot = sp|accession|name
+    "sp",   // swissprot = sp|accession|name *OR* tr|accession|name
     "pat",  // patent = pat|country|patent number (string)|seq number (integer)
             //     *OR* pgp|country|application number|seq number
     "ref",  // other = ref|accession|name|release - changed from oth to ref
@@ -1442,6 +1443,11 @@ void CSeq_id::WriteAsFasta(ostream& out)
 
     if (IsPatent()  &&  !GetPatent().GetCit().GetId().IsNumber() ) {
         out << "pgp|";
+#if 0 // not yet enabled
+    } else if (IsSwissprot()  &&  GetSwissprot().IsSetRelease()
+               &&  NStr::EqualNocase(GetSwissprot().GetRelease(), "prelim")) {
+        out << "tr|";
+#endif
     } else {
         out << s_TextId[the_type] << '|';
     }
@@ -1844,8 +1850,18 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
     }
     
     int ver = 0;
-    if (type == e_Patent) {
-        // actually sequence number within patent, but whatever...
+    switch (type) {
+    case e_Swissprot:
+        if (NStr::EqualNocase(typestr, "tr")) {
+            fields[2] = "prelim";
+        } else {
+            _ASSERT(NStr::EqualNocase(typestr, "sp"));
+            fields[2] = "standard";
+        }
+        break;
+
+    case e_Patent:
+        // "version" actually sequence number within patent, but whatever...
         ver = NStr::StringToNumeric(fields[2]);
         if (ver <= 0) {
             NCBI_THROW(CSeqIdException, eFormat,
@@ -1855,6 +1871,10 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
         // to distinguish applications from granted patents; the numeric
         // content has already made its way into ver.
         fields[2] = typestr;
+        break;
+
+    default:
+        break; // avoid compiler warnings
     }
 
     Set(type, fields[0] /* acc */, fields[1] /* name */, ver,

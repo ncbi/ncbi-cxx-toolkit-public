@@ -339,16 +339,15 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaSwissprot)
     CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
     CHECK_EQUAL(id->GetSwissprot().GetName(), string("RS22_SALTY"));
     CHECK( !id->GetSwissprot().IsSetVersion() );
-    CHECK( !id->GetSwissprot().IsSetRelease() );
+    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("standard"));
 
-#if 0
-    CHECK_THROW_SEQID(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
-#else
+    CHECK_NO_THROW(id.Reset(new CSeq_id("tr|Q90RT2|Q90RT2_9HIV1")));
+    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("prelim"));
+
     CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
     CHECK(id->IsSwissprot());
     CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0.1"));
     CHECK( !id->GetSwissprot().IsSetVersion() );
-#endif
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPatent)
@@ -603,6 +602,7 @@ static const char* kTestFastaStrings[] = {
     "emb|AL123456|MTBH37RV",
     "pir||S16356",
     "sp|Q7CQJ0|RS22_SALTY",
+    // "tr|Q90RT2|Q90RT2_9HIV1",
     "sp|Q7CQJ0.1|",
     "pat|US|RE33188|1",
     "pgp|EP|0238993|7",
