@@ -29727,11 +29727,17 @@ esac
 
 { echo "$as_me:$LINENO: looking for configurables below $real_srcdir..." >&5
 echo "$as_me: looking for configurables below $real_srcdir..." >&6;}
-excl_file="`pwd`/config.tmp.$$"
-echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
-^\\./\1/%g' > $excl_file
-configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(/build-system\)*\(.*\)\.in%$builddir\2:./src\1\2.in%g"`
-rm $excl_file
+tmp_sed="`pwd`/config.tmp.$$"
+for x in $NoConfProjects; do
+   echo "/^\\.\\/$x/d"
+done > $tmp_sed
+cat >>$tmp_sed <<EOF
+s%^.\\(/build-system\\)\\(/.*\\)\\.in\$%$builddir\\2:./src\\1\\2\\.in%
+s%^.\\(/[^:]*\\)\\.in\$%$builddir\\1:./src\\1\\.in%
+EOF
+cat $tmp_sed >&5
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | sed -f $tmp_sed`
+rm $tmp_sed
 
 if test -z "$configurables" ; then
   { { echo "$as_me:$LINENO: error: cannot find any configurables below \"${real_srcdir}\"!" >&5

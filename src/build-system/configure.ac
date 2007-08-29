@@ -5573,13 +5573,17 @@ esac
 ### Configure
 
 AC_MSG_NOTICE([looking for configurables below $real_srcdir...])
-excl_file="`pwd`/config.tmp.$$"
-changequote(<<, >>)dnl
-echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
-^\\./\1/%g' > $excl_file
-changequote([, ])dnl
-configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(/build-system\)*\(.*\)\.in%$builddir\2:./src\1\2.in%g"`
-rm $excl_file
+tmp_sed="`pwd`/config.tmp.$$"
+for x in $NoConfProjects; do
+   echo "/^\\.\\/$x/d"
+done > $tmp_sed
+cat >>$tmp_sed <<EOF
+s%^.\\(/build-system\\)\\(/.*\\)\\.in\$%$builddir\\2:./src\\1\\2\\.in%
+s%^.\\(/[[^:]]*\\)\\.in\$%$builddir\\1:./src\\1\\.in%
+EOF
+cat $tmp_sed >&AS_MESSAGE_LOG_FD
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | sed -f $tmp_sed`
+rm $tmp_sed
 
 if test -z "$configurables" ; then
   AC_MSG_ERROR([cannot find any configurables below "${real_srcdir}"!])
