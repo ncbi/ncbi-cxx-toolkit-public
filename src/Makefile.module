@@ -1,1 +1,1 @@
-include $(top_srcdir)/src/build-system/Maefile.module
+include $(top_srcdir)/src/build-system/Makefile.module
