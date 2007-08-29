@@ -51,7 +51,6 @@
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -565,6 +564,78 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
         if (len2 == len) {
             ++it2;
             lshift2 = rshift2 = 0;
+        }
+    }
+}
+
+
+typedef map<CSeq_id_Handle, CRef<CPairwiseAln> > TAlnMap;
+typedef map<CSeq_id_Handle, CSeq_id_Handle> TSynonymsMap;
+
+CSeq_id_Handle s_GetBestSynonym(const CSeq_id_Handle& idh,
+                                TSynonymsMap& syn_map,
+                                const CSeq_loc_Mapper_Base& mapper)
+{
+    TSynonymsMap::const_iterator best_it = syn_map.find(idh);
+    if (best_it != syn_map.end()) {
+        return best_it->second;
+    }
+    // Add all synonyms for the new id handle
+    CSeq_loc_Mapper_Base::TSynonyms syn_set;
+    mapper.CollectSynonyms(idh, syn_set);
+    CSeq_id_Handle best_id = idh;
+    int best_score = idh.GetSeqId()->BestRankScore();
+    ITERATE(CSeq_loc_Mapper_Base::TSynonyms, it, syn_set) {
+        int score = it->GetSeqId()->BestRankScore();
+        if (score < best_score) {
+            best_id = *it;
+            best_score = score;
+        }
+    }
+    ITERATE(CSeq_loc_Mapper_Base::TSynonyms, it, syn_set) {
+        syn_map[*it] = best_id;
+    }
+    return best_id;
+}
+
+
+void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
+                                  TPairwiseAlnList&                    aligns)
+{
+    aligns.clear();
+    TSynonymsMap synonyms;
+
+    const CMappingRanges& mappings = mapper.GetMappingRanges();
+    ITERATE(CMappingRanges::TIdMap, id_it, mappings.GetIdMap()) {
+        CSeq_id_Handle src_idh =
+            s_GetBestSynonym(id_it->first, synonyms, mapper);
+        if (src_idh != id_it->first) {
+            continue; // skip synonyms
+        }
+        TAlnSeqIdIRef src_id(Ref(new CAlnSeqId(*src_idh.GetSeqId())));
+        src_id->SetBaseWidth(mapper.GetWidthById(src_idh));
+        TAlnMap aln_map;
+        ITERATE(CMappingRanges::TRangeMap, rg_it, id_it->second) {
+            const CMappingRange& mrg = *rg_it->second;
+            CSeq_id_Handle dst_idh =
+                s_GetBestSynonym(mrg.GetDstIdHandle(), synonyms, mapper);
+            if (dst_idh == src_idh) {
+                continue; // skip self-mappings
+            }
+            TAlnMap::iterator aln_it = aln_map.find(dst_idh);
+            CRef<CPairwiseAln> aln;
+            if (aln_it == aln_map.end()) {
+                TAlnSeqIdIRef dst_id(Ref(new CAlnSeqId(*dst_idh.GetSeqId())));
+                dst_id->SetBaseWidth(mapper.GetWidthById(dst_idh));
+                aln = new CPairwiseAln(src_id, dst_id);
+                aln_map[dst_idh] = aln;
+                aligns.push_back(aln);
+            }
+            else {
+                aln = aln_it->second;
+            }
+            aln->insert(CPairwiseAln::TAlnRng(mrg.GetSrc_from(),
+                mrg.GetDst_from(), mrg.GetLength(), mrg.GetReverse()));
         }
     }
 }

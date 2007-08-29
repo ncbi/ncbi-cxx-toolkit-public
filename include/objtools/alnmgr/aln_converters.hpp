@@ -38,6 +38,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seq/seq_loc_mapper_base.hpp>
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
@@ -107,6 +108,13 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln&            aln,      ///< output
                             const objects::CSeq_loc& loc_1,    ///< first seq-loc
                             const objects::CSeq_loc& loc_2,    ///< second seq-loc
                             CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
+
+
+typedef list< CRef<CPairwiseAln> > TPairwiseAlnList;
+
+NCBI_XALNMGR_EXPORT
+void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
+                                  TPairwiseAlnList&                    aligns);
 
 
 /// Create an anchored alignment from Seq-align using hints

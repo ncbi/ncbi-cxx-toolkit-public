@@ -916,7 +916,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 
 
 void CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id,
-                                           TSynonyms&            synonyms)
+                                           TSynonyms& synonyms) const
 {
     synonyms.push_back(id);
 }

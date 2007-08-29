@@ -313,7 +313,7 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
 
 
 void CSeq_loc_Mapper::CollectSynonyms(const CSeq_id_Handle& id,
-                                      TSynonyms&            synonyms)
+                                      TSynonyms&            synonyms) const
 {
     if ( m_Scope.IsSet() ) {
         CConstRef<CSynonymsSet> syns =

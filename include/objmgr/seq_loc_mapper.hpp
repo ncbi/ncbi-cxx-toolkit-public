@@ -163,11 +163,11 @@ public:
 
     ~CSeq_loc_Mapper(void);
 
-protected:
     // Collect synonyms for the given seq-id
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
-                                 TSynonyms&            synonyms);
+                                 TSynonyms&            synonyms) const;
 
+protected:
     // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
     virtual int CheckSeqWidth(const CSeq_id& id,
                               int            width,

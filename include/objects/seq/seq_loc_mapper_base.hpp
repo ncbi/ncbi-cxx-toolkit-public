@@ -116,6 +116,12 @@ private:
     //friend class CSeq_align_Mapper;
     friend struct CMappingRangeRef_Less;
     friend struct CMappingRangeRef_LessRev;
+public:
+    // Interface for CPairwiseAln converter
+    TSeqPos GetSrc_from(void) const { return m_Src_from; }
+    TSeqPos GetDst_from(void) const { return m_Dst_from; }
+    TSeqPos GetLength(void) const { return m_Src_to - m_Src_from; }
+    bool GetReverse(void) const { return m_Reverse; }
 };
 
 
@@ -259,15 +265,15 @@ public:
     /// Check if the last mapping resulted in partial location
     bool             LastIsPartial(void);
 
-protected:
     typedef vector<CSeq_id_Handle>        TSynonyms;
-
-    // Initialize the mapper with default values
-    CSeq_loc_Mapper_Base(void);
 
     // Collect synonyms for the given seq-id
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
-                                 TSynonyms&            synonyms);
+                                 TSynonyms&            synonyms) const;
+
+protected:
+    // Initialize the mapper with default values
+    CSeq_loc_Mapper_Base(void);
 
     // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
     virtual int CheckSeqWidth(const CSeq_id& id,
@@ -439,6 +445,12 @@ protected:
     CRef<CMappingRanges> m_Mappings;
     CRef<CSeq_loc>       m_Dst_loc;
     TDstStrandMap        m_DstRanges;
+
+public:
+    // Methods for getting widths and mappings
+    int GetWidthById(const CSeq_id_Handle& idh) const;
+    int GetWidthById(const CSeq_id& id) const;
+    const CMappingRanges& GetMappingRanges(void) const { return *m_Mappings; }
 };
 
 
@@ -607,6 +619,21 @@ CRef<CSeq_align> CSeq_loc_Mapper_Base::Map(const CSeq_align& src_align,
                                            size_t            row)
 {
     return x_MapSeq_align(src_align, &row);
+}
+
+
+inline
+int CSeq_loc_Mapper_Base::GetWidthById(const CSeq_id_Handle& idh) const
+{
+    TWidthById::const_iterator it = m_Widths.find(idh);
+    return (it->second & fWidthProtToNuc) ? 3 : 1;
+}
+
+
+inline
+int CSeq_loc_Mapper_Base::GetWidthById(const CSeq_id& id) const
+{
+    return CSeq_id_Handle::GetHandle(id);
 }
 
 
