@@ -283,6 +283,11 @@ bool CTL_RowResult::Fetch()
         return false;
     }
 
+    // Reset NullValue flags ...
+    for (unsigned int nof_items = 0;  nof_items < m_NofCols;  ++nof_items) {
+        m_NullValue[nof_items] = eNullUnknown;
+    }
+
     switch ( Check(ct_fetch(x_GetSybaseCmd(), CS_UNUSED, CS_UNUSED, CS_UNUSED, 0)) ) {
     case CS_SUCCEED:
         m_CurrItem = 0;
