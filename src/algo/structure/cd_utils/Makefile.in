@@ -3,7 +3,5 @@
 
 LIB_PROJ = xcd_utils
 
-EXPENDABLE_SUB_PROJ = cd_guideUtils
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
