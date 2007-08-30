@@ -1,4 +1,4 @@
-APP_PROJ = ncfetch
+APP_PROJ = ncfetch save_to_nc
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 

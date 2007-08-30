@@ -36,7 +36,9 @@
 #include <ncbi_pch.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/netcache_api.hpp>
+#include <corelib/reader_writer.hpp>
+#include <corelib/rwstream.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -68,16 +70,17 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     reply.SetContentType(fmt);
     reply.WriteHeader();
 
-    CNetCacheClient cli("ncfetch");
-    CNetCacheClient::SBlobData blob;
-    CNetCacheClient::EReadResult res = cli.GetData(key, blob);
-    if (res == CNetCacheClient::eNotFound) {
+    CNetCacheAPI cli("ncfetch");
+    size_t blob_size = 0;
+    auto_ptr<IReader> reader(cli.GetData(key, &blob_size));
+    if (!reader.get()) {
         return 0;
     }
-
-    const char* data = (const char*)(blob.blob.get());
-    reply.out().write(data, blob.blob_size);
-    LOG_POST(Info << "retrieved data: " << blob.blob_size << " bytes");
+    LOG_POST(Info << "retrieved data: " << blob_size << " bytes");
+    
+    CRStream strm(reader.get());
+    reply.out() << strm.rdbuf();
+    
 
     return 0;
 }
