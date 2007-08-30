@@ -1390,7 +1390,7 @@ void
 CDBAPIUnitTest::Test_DateTimeBCP(void)
 {
     string table_name("#test_bcp_datetime");
-    // string table_name("test_bcp_datetime");
+    // string table_name("DBAPI_Sample..test_bcp_datetime");
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     CVariant value(eDB_DateTime);
@@ -1740,6 +1740,172 @@ CDBAPIUnitTest::Test_LOB(void)
             }
         }
 
+        // Test NULL values ...
+        {
+            enum {rec_num = 10};
+
+            // Insert records ...
+            {
+                // Drop all records ...
+                sql  = " DELETE FROM " + GetTableName();
+                auto_stmt->ExecuteUpdate(sql);
+
+                // Insert data ...
+                for (long ind = 0; ind < rec_num; ++ind) {
+                    auto_stmt->SetParam(CVariant( Int4(ind) ), "@int_field");
+
+                    if (ind % 2 == 0) {
+                        sql  = " INSERT INTO " + GetTableName() +
+                            "(int_field, text_field) VALUES(@int_field, '')";
+                    } else {
+                        sql  = " INSERT INTO " + GetTableName() +
+                            "(int_field, text_field) VALUES(@int_field, NULL)";
+                    }
+
+                    // Execute a statement with parameters ...
+                    auto_stmt->ExecuteUpdate(sql);
+
+                    // !!! Do not forget to clear a parameter list ....
+                    // Workaround for the ctlib driver ...
+                    auto_stmt->ClearParamList();
+
+                    if (false) {
+                        // Use cursor with parameters.
+                        // Unfortunately that doesn't work with the new ftds
+                        // driver ....
+                        sql  = " SELECT text_field FROM " + GetTableName();
+                        sql += " WHERE int_field = @int_field ";
+
+                        if (ind % 2 == 0) {
+                            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+                            auto_cursor->SetParam(CVariant(Int4(ind)), "@int_field");
+
+                            // blobRs should be destroyed before auto_cursor ...
+                            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                            while(blobRs->Next()) {
+                                ostream& out = auto_cursor->GetBlobOStream(1,
+                                        sizeof(clob_value) - 1,
+                                        eDisableLog);
+                                out.write(clob_value, sizeof(clob_value) - 1);
+                                out.flush();
+                            }
+                        }
+                    } else {
+                        sql  = " SELECT text_field FROM " + GetTableName();
+                        sql += " WHERE int_field = " + NStr::IntToString(ind);
+
+                        if (ind % 2 == 0) {
+                            auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+
+                            // blobRs should be destroyed before auto_cursor ...
+                            auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+                            while(blobRs->Next()) {
+                                ostream& out = auto_cursor->GetBlobOStream(1,
+                                        sizeof(clob_value) - 1,
+                                        eDisableLog);
+                                out.write(clob_value, sizeof(clob_value) - 1);
+                                out.flush();
+                            }
+                        }
+                    }
+                }
+
+                // Check record number ...
+                BOOST_CHECK_EQUAL(int(rec_num),
+                                  GetNumOfRecords(auto_stmt, GetTableName())
+                                  );
+            }
+            
+            // Read blob via Read method ...
+            if (m_args.GetDriverName() != "ftds_odbc") {
+                char buff[3];
+
+                sql = "SELECT text_field FROM "+ GetTableName();
+                sql += " ORDER BY id";
+
+                auto_stmt->SendSql( sql );
+                while( auto_stmt->HasMoreResults() ) {
+                    if( auto_stmt->HasRows() ) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                        rs->BindBlobToVariant(true);
+
+                        for (long ind = 0; ind < rec_num; ++ind) {
+                            BOOST_CHECK(rs->Next());
+
+                            const CVariant& value = rs->GetVariant(1);
+                            string result;
+
+                            if (ind % 2 == 0) {
+                                BOOST_CHECK(!value.IsNull());
+                                size_t read_bytes = 0;
+                                while (read_bytes = value.Read(buff, sizeof(buff))) {
+                                    result += string(buff, read_bytes);
+                                }
+
+                                BOOST_CHECK_EQUAL(result, string(clob_value));
+                            } else {
+                                BOOST_CHECK(value.IsNull());
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Read Blob
+            if (m_args.GetDriverName() != "ftds8"
+                && m_args.GetDriverName() != "ftds_odbc"
+                && m_args.GetDriverName() != "ctlib"
+                ) {
+                char buff[3];
+
+                sql = "SELECT text_field FROM "+ GetTableName();
+
+                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while(auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL) {
+                        continue;
+                    }
+
+                    if (rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    for (long ind = 0; ind < rec_num; ++ind) {
+                        BOOST_CHECK(rs->Fetch());
+                        string result;
+
+                        if (ind % 2 == 0) {
+                            size_t read_bytes = 0;
+                            bool is_null = true;
+
+                            while (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                                result += string(buff, read_bytes);
+                            }
+
+                            BOOST_CHECK(!is_null);
+                            BOOST_CHECK_EQUAL(result, string(clob_value));
+                        } else {
+                            size_t read_bytes = 0;
+                            bool is_null = true;
+
+                            while (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                                result += string(buff, read_bytes);
+                            }
+
+                            BOOST_CHECK(is_null);
+                        }
+                    }
+
+                }
+            } // Read Blob
+        } // Test NULL values ...
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
