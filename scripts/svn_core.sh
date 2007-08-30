@@ -258,6 +258,13 @@ case "$platform" in
     ;;
 esac
 
+case "$platform" in
+  all | unix | cygwin )
+    RecursiveCheckout src/build-system
+    ;;
+esac
+
+
 if test "$with_objects" != "no" ; then
     RecursiveCheckout src/objects \
         src/objmgr \
