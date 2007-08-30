@@ -319,6 +319,10 @@ PC-Conformer ::= SEQUENCE {
 }
 
 
+-- Holder for groups of Conformers
+PC-Conformers ::= SEQUENCE OF PC-Conformer
+
+
 -- Coordinate Set Type Distinctions
 PC-CoordinateType ::= INTEGER {
         twod                (1),  -- 2D Coordinates
