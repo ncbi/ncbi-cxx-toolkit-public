@@ -147,6 +147,7 @@ PLUGINS = \
         $(GBENCH)\plugins\view_table.dll        \
         $(GBENCH)\plugins\view_taxplot.dll      \
         $(GBENCH)\plugins\view_text.dll         \
+        $(GBENCH)\plugins\view_snp.dll          \
         $(GBENCH)\plugins\view_validator.dll
 
 INTERNAL_PLUGINS = \
