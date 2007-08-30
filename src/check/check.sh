@@ -41,9 +41,6 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 . ${script_dir}/../../scripts/common.sh
 
 
-# for test purposes -- will be removed soon
-env
-
 ####  MISC
 
 script_name=`basename $0`
