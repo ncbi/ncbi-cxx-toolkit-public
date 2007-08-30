@@ -811,7 +811,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         if(m_strand == false) {
         
             // adjust the hits
-            for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
+            for(size_t i (0), n (phitrefs->size()); i < n; ++i) {
 
                 THitRef& h ((*phitrefs)[i]);
                 THit::TCoord a0 (mrna_size - h->GetQueryMin() - 1);
@@ -1354,7 +1354,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         // turn to gaps short weak terminal exons
         {{
             // find the two leftmost exons
-            size_t exon_count = 0;
+            size_t exon_count (0);
             TSegment* term_segs[] = {0, 0};
             for(size_t i = 0; i < seg_dim; ++i) {
                 TSegment& s = segments[i];
@@ -1373,7 +1373,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         {{
             // find the two rightmost exons
-            size_t exon_count = 0;
+            size_t exon_count (0);
             TSegment* term_segs[] = {0, 0};
             for(int i = seg_dim - 1; i >= 0; --i) {
                 TSegment& s = segments[i];
@@ -1585,13 +1585,13 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
 
 void CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
 {            
-    const size_t exon_size = 1 + term_segs[0]->m_box[1] -
-        term_segs[0]->m_box[0];
-
+    const size_t exon_size (1 + term_segs[0]->m_box[1] -
+                            term_segs[0]->m_box[0]);
+    
     if(exon_size < kMinTermExonSize) {
 
-        bool turn2gap = false;
-        const double idty = term_segs[0]->m_idty;
+        bool turn2gap (false);
+        const double idty (term_segs[0]->m_idty);
         if(idty < kMinTermExonIdty) {
             turn2gap = true;
         }
@@ -1614,19 +1614,25 @@ void CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
                 acc = term_segs[0]->GetAcceptor();
             }
 
-            const size_t intron_len = b - a;
+            const size_t intron_len (b - a);
 
-            const bool consensus = TSegment::s_IsConsensusSplice(dnr, acc);
+            const bool consensus (TSegment::s_IsConsensusSplice(dnr, acc));
 
-            const size_t max_ext = (idty < .96 || !consensus || exon_size < 16)? 
-                m_max_genomic_ext: (5000 *  kMinTermExonSize);
+            size_t max_ext ((idty < .96 || !consensus || exon_size < 16)? 
+                            m_max_genomic_ext:
+                            (5000 *  kMinTermExonSize));
 
-            const size_t max_intron_len = x_GetGenomicExtent(exon_size, max_ext);
+            if(!consensus && exon_size < 10) {
+                max_ext = 1;
+            }
+
+            const size_t max_intron_len (x_GetGenomicExtent(exon_size, max_ext));
+
             if(intron_len > max_intron_len) {
                 turn2gap = true;
             }
         }
-        
+      
         if(turn2gap) {
 
             // turn the segment into a gap
