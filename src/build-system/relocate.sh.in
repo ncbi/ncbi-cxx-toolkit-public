@@ -58,7 +58,7 @@ for f in $files ; do
       s%^\(abs_top_srcdir *= *\).*%\1'$src_tree'%;
       s%^\(old_srcdir='\''\).*\('\''\) *$%\1'$src_tree'\2%
       s%^\(status_dir *= *\).*%\1'$status_dir'%;
-      s%.*/lnx\([0-9]*\)_netopt/ncbi_tools/%/netopt/ncbi_tools\1/%g;
+      s%/net/[^ =]*/lnx\([0-9]*\)_netopt/ncbi_tools/%/netopt/ncbi_tools\1/%g;
       s%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g;
       s%^ *BINCOPY *=.*%BINCOPY = @:%;
       s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
