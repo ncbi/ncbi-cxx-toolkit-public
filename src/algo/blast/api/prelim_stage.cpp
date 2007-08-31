@@ -161,6 +161,14 @@ CBlastPrelimSearch::Run()
 
     auto_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
+
+    BlastSeqSrc * seqsrc = m_InternalData->m_SeqSrc->GetPointer();
+    BLAST_SequenceBlk* queries = m_InternalData->m_Queries;
+    LookupTableOptions * lut_options = opts_memento->m_LutOpts;
+    BlastInitialWordOptions * word_options = opts_memento->m_InitWordOpts;
+
+    GetDbIndexSetNumThreadsFn()( seqsrc, GetNumberOfThreads() );
+
     if (m_QuerySplitter->IsQuerySplit()) {
 
         CRef<CSplitQueryBlk> split_query_blk = m_QuerySplitter->Split();
@@ -175,6 +183,14 @@ CBlastPrelimSearch::Run()
                     SplitQuery_CreateChunkData(chunk_qf, m_Options,
                                                m_InternalData,
                                                IsMultiThreaded());
+
+                CRef<ILocalQueryData> query_data(
+                        chunk_qf->MakeLocalQueryData( &*m_Options ) );
+                BLAST_SequenceBlk * chunk_queries = 
+                    query_data->GetSequenceBlk();
+                GetDbIndexRunSearchFn()( 
+                        seqsrc, chunk_queries, lut_options, word_options );
+
                 if (IsMultiThreaded()) {
                      x_LaunchMultiThreadedSearch(*chunk_data);
                 } else {
@@ -207,6 +223,11 @@ CBlastPrelimSearch::Run()
         }
 
     } else {
+        BlastSeqSrc * seqsrc = m_InternalData->m_SeqSrc->GetPointer();
+
+        GetDbIndexRunSearchFn()( 
+                seqsrc, queries, lut_options, word_options );
+
         if (IsMultiThreaded()) {
              x_LaunchMultiThreadedSearch(*m_InternalData);
         } else {

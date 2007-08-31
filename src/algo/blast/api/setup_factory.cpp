@@ -178,13 +178,15 @@ LookupTableWrap*
 CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
                                  const CBlastOptionsMemento* opts_memento,
                                  BlastScoreBlk* score_blk,
-                                 BlastSeqLoc* lookup_segments,
+                                 CRef< CBlastSeqLocWrap > lookup_segments_wrap,
                                  const CBlastRPSInfo* rps_info,
                                  BlastSeqSrc* seqsrc)
 {
     BLAST_SequenceBlk* queries = query_data->GetSequenceBlk();
     CBlast_Message blast_msg;
     LookupTableWrap* retval(0);
+
+    BlastSeqLoc * lookup_segments = lookup_segments_wrap->getLocs();
 
     Int2 status = LookupTableWrapInit(queries,
                                       opts_memento->m_LutOpts,
@@ -236,14 +238,7 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
     }
 
     if (seqsrc) {
-        GetDbIndexPreSearchFn()(
-                seqsrc,
-                retval,
-                queries,
-                lookup_segments,
-                opts_memento->m_LutOpts,
-                opts_memento->m_InitWordOpts
-        );
+        GetDbIndexSetQueryInfoFn()( seqsrc, retval, lookup_segments_wrap);
     }
 
     return retval;

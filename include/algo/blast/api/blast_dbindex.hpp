@@ -36,6 +36,9 @@
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include <algo/blast/core/lookup_wrap.h>
+#include <algo/blast/core/blast_filter.h>
+
+#include <algo/blast/api/blast_types.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -115,6 +118,50 @@ class CIndexedDbException : public CException
 
         NCBI_EXCEPTION_DEFAULT( CIndexedDbException, CException );
 };
+
+//------------------------------------------------------------------------------
+/// Type of a callback to set the query information in the index structure.
+/// @param seq_src sequence source (index)
+/// @param lt_wrap lookup table wrapper object
+/// @param locs_wrap lookup (unmasked) segments
+typedef void (*DbIndexSetQueryInfoFnType)( 
+        BlastSeqSrc * seq_src, 
+        LookupTableWrap * lt_wrap, 
+        CRef< CBlastSeqLocWrap > locs_wrap );
+
+/// Return the appropriate callback to set query information in the index. 
+/// @return No-op function if indexing is not being used;
+///         otherwise - the appropriate callback.
+extern DbIndexSetQueryInfoFnType GetDbIndexSetQueryInfoFn();
+
+//------------------------------------------------------------------------------
+/// Type of a callback to run the indexed seed search.
+/// @param seq_src sequence source (index)
+/// @param queries query information structure
+/// @param lut_options lookup table parameters
+/// @param word_options word options
+typedef void (*DbIndexRunSearchFnType)( 
+        BlastSeqSrc * seq_src, BLAST_SequenceBlk * queries, 
+        LookupTableOptions * lut_options, 
+        BlastInitialWordOptions * word_options );
+
+/// Return the appropriate callback to run indexed seed search.
+/// @return No-op function if indexing is not being used;
+///         otherwise - the appropriate callback.
+extern DbIndexRunSearchFnType GetDbIndexRunSearchFn();
+
+//------------------------------------------------------------------------------
+/// Type of a callback to set the number of threads for indexed seed search.
+/// @param seq_src sequence source (index)
+/// @param n_threads number of threads
+typedef void (*DbIndexSetNumThreadsFnType)( 
+        BlastSeqSrc * seq_src, size_t n_threads );
+
+/// Return the appropriate callback to set the number of threads for indexed
+/// seed search.
+/// @return No-op function if indexing is not being used;
+///         otherwise - the appropriate callback.
+extern DbIndexSetNumThreadsFnType GetDbIndexSetNumThreadsFn();
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

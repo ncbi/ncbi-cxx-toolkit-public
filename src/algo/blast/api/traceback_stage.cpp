@@ -206,15 +206,16 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
     if (kIsPhiBlast) {
         _ASSERT(lookup_segments);
         _ASSERT(m_InternalData->m_RpsData == NULL);
+        CRef< CBlastSeqLocWrap > lookup_segments_wrap( 
+                new CBlastSeqLocWrap( lookup_segments ) );
         int num_pat_occurrences_in_db = 0;
         if (m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern)
            num_pat_occurrences_in_db = m_DBscanInfo->m_NumPatOccurInDB;
         LookupTableWrap* lut =
             CSetupFactory::CreateLookupTable(query_data, m_OptsMemento,
-                 m_InternalData->m_ScoreBlk->GetPointer(), lookup_segments);
+                 m_InternalData->m_ScoreBlk->GetPointer(), lookup_segments_wrap);
         m_InternalData->m_LookupTable.Reset
             (new TLookupTableWrap(lut, LookupTableWrapFree));
-        lookup_segments = BlastSeqLocFree(lookup_segments);
     }
 
     // 5. Create diagnostics

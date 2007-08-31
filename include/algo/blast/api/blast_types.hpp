@@ -38,6 +38,8 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_message.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_filter.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -255,6 +257,27 @@ CSearchMessage::operator<(const CSearchMessage& rhs) const
         return false;
     }
 }
+
+/// Wrapper for BlastSeqLoc structure.
+class CBlastSeqLocWrap : public CObject
+{
+    public:
+
+        /// Instance constructor.
+        /// @param locs pointer to the object to hold
+        CBlastSeqLocWrap( BlastSeqLoc * locs ) : locs_( locs ) {}
+
+        /// Instance destructor.
+        virtual ~CBlastSeqLocWrap() { BlastSeqLocFree( locs_ ); }
+
+        /// Get access to the held object.
+        /// @return pointer storred by the wrapping object
+        BlastSeqLoc * getLocs() const { return locs_; }
+
+    private:
+
+        BlastSeqLoc * locs_;    ///< Wrapped pointer.
+};
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

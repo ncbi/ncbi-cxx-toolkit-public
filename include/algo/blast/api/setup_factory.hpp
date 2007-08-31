@@ -37,6 +37,7 @@
 
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/rps_aux.hpp>           // for CBlastRPSInfo
+#include <algo/blast/api/blast_dbindex.hpp>
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/pattern.h>
 #include <objtools/readers/seqdb/seqdb.hpp>
@@ -224,7 +225,7 @@ public:
     CreateLookupTable(CRef<ILocalQueryData> query_data,
                       const CBlastOptionsMemento* opts_memento,
                       BlastScoreBlk* score_blk,
-                      BlastSeqLoc* lookup_segments,
+                      CRef< CBlastSeqLocWrap > lookup_segments,
                       const CBlastRPSInfo* rps_info = NULL,
                       BlastSeqSrc* seqsrc = NULL);
 

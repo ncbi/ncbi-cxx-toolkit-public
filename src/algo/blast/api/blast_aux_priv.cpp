@@ -195,6 +195,8 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                                         &lookup_segments, retval->m_Messages, 
                                         &retval->m_Masks, 
                                         retval->m_InternalData->m_RpsData);
+    CRef< CBlastSeqLocWrap > lookup_segments_wrap( 
+            new CBlastSeqLocWrap( lookup_segments ) );
     retval->m_InternalData->m_ScoreBlk.Reset
         (new TBlastScoreBlk(sbp, BlastScoreBlkFree));
     if (pssm.NotEmpty()) {
@@ -209,14 +211,12 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     if ( !retval->m_QuerySplitter->IsQuerySplit() ) {
         LookupTableWrap* lut =
             CSetupFactory::CreateLookupTable(query_data, opts_memento.get(),
-                                             sbp, lookup_segments,
+                                             sbp, lookup_segments_wrap,
                                              retval->m_InternalData->m_RpsData,
                                              seqsrc);
         retval->m_InternalData->m_LookupTable.Reset
             (new TLookupTableWrap(lut, LookupTableWrapFree));
     }
-    lookup_segments = BlastSeqLocFree(lookup_segments);
-    _ASSERT(lookup_segments == NULL);
 
     // 6. Create diagnostics
     BlastDiagnostics* diags = is_multi_threaded

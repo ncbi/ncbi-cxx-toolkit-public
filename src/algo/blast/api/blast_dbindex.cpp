@@ -93,9 +93,11 @@ BEGIN_SCOPE( blast )
 USING_SCOPE( ncbi::objects );
 USING_SCOPE( ncbi::blastdbindex );
 
+/// Get the minimum acceptable word size to use with indexed search.
+/// @return the minimum acceptable word size
 int MinIndexWordSize() { return 16; }
 
-/** No-op presearch function. Used when index search is not enables.
+/** No-op presearch function. Used when index search is not enabled.
     @sa DbIndexPreSearchFnType()
 */
 static void NullPreSearch( 
@@ -103,10 +105,46 @@ static void NullPreSearch(
         BLAST_SequenceBlk *, BlastSeqLoc *,
         LookupTableOptions *, BlastInitialWordOptions * ) {}
 
+/** No-op callback for setting query info. Used when index search is not enabled.
+    @sa DbIndexSetQueryInfoFnType()
+*/
+static void NullSetQueryInfo(
+        BlastSeqSrc * , 
+        LookupTableWrap * , 
+        CRef< CBlastSeqLocWrap > ) {}
+
+/** No-op callback to run indexed search. Used when index search is not enabled.
+    @sa DbIndexRunSearchFnType()
+*/
+static void NullRunSearch(
+        BlastSeqSrc * , BLAST_SequenceBlk * , 
+        LookupTableOptions * , BlastInitialWordOptions * ) {}
+
+/** No-op callback to set the number of threads for indexed search. 
+    Used when index search is not enabled.
+    @sa DbIndexSetNumThreadsFnType()
+*/
+static void NullSetNumThreads( BlastSeqSrc * seq_src, size_t ) {}
+
 /** Global pointer to the appropriate pre-search function, based
     on whether or not index search is enabled.
 */
 static DbIndexPreSearchFnType PreSearchFn = &NullPreSearch;
+
+/** Global pointer to the appropriate callback to set query info, based
+    on whether or not index search is enabled.
+*/
+static DbIndexSetQueryInfoFnType SetQueryInfoFn = &NullSetQueryInfo;
+
+/** Global pointer to the appropriate callback to run indexed search, based
+    on whether or not index search is enabled.
+*/
+static DbIndexRunSearchFnType RunSearchFn = &NullRunSearch;
+
+/** Global pointer to the appropriate to set number of threads for indexed search, 
+    based on whether or not index search is enabled.
+*/
+static DbIndexSetNumThreadsFnType SetNumThreadsFn = &NullSetNumThreads;
     
 //------------------------------------------------------------------------------
 /** This structure is used to transfer arguments to s_IDbSrcNew(). */
@@ -165,12 +203,14 @@ class CIndexedDb : public CObject
                                      that database index. */
 
         unsigned long threads_;         /**< Number of threads to use for seed search. */
+        bool threads_set_;              /**< True if number of threads was explicitly set by index name. */
         vector< string > index_names_;  /**< List of index volume names. */
         bool seq_from_index_;   /**< Indicates if it is OK to serve sequence data
                                      directly from the index. */
         bool index_preloaded_;  /**< True if indices are preloaded in constructor. */
         TIndexSet indices_;     /**< Currently loaded indices. */
 
+        CRef< CBlastSeqLocWrap > locs_wrap_; /**< Current set of unmasked query locations. */
 
     public:
 
@@ -238,6 +278,31 @@ class CIndexedDb : public CObject
                 LookupTableOptions * lut_options,
                 BlastInitialWordOptions *  word_options );
 
+        /** Wrapper around PreSearch().
+            Runs PreSearch() and then frees locs_wrap_.
+        */
+        void RunSearch( 
+                BLAST_SequenceBlk * queries, 
+                LookupTableOptions * lut_options,
+                BlastInitialWordOptions *  word_options )
+        {
+            PreSearch( 
+                    queries, locs_wrap_->getLocs(), 
+                    lut_options, word_options );
+            locs_wrap_.Release();
+        }
+
+        /** Set the current set of unmasked query segments.
+            @param locs_wrap unmasked query segments
+        */
+        void SetQueryInfo( CRef< CBlastSeqLocWrap > locs_wrap )
+        { locs_wrap_ = locs_wrap; }
+
+        /** Set the number of threads for indexed search.
+            @param n_threads target number of threads
+        */
+        void SetNumThreads( size_t n_threads );
+
         /** Return results corresponding to a given subject sequence and chunk.
 
             @param oid          [I]   The subject sequence id.
@@ -284,6 +349,95 @@ class CIndexedDb : public CObject
 CIndexedDb::TThreadDataSet CIndexedDb::Thread_Data_Set; 
 
 //------------------------------------------------------------------------------
+/// Set the number of treads for indexed search.
+/// @param seq_src pointer to index structure
+/// @param n_threads target number of threads
+static void IndexedDbSetNumThreads( BlastSeqSrc * seq_src, size_t n_threads )
+{
+    CIndexedDb::TThreadLocal * idb_tl = 
+        static_cast< CIndexedDb::TThreadLocal * >(
+                _BlastSeqSrcImpl_GetDataStructure( seq_src ) );
+    bool found = false;
+
+    for( CIndexedDb::TThreadDataSet::iterator i = 
+            CIndexedDb::Thread_Data_Set.begin();
+         i != CIndexedDb::Thread_Data_Set.end(); ++i ) {
+        if( *i == idb_tl ) {
+            found = true;
+            break;
+        }
+    }
+
+    if( !found ) return;
+
+    CIndexedDb * idb = idb_tl->idb_.GetPointerOrNull();
+    idb->SetNumThreads( n_threads );
+}
+
+//------------------------------------------------------------------------------
+/// Run indexed search.
+/// @param seq_src pointer to the index structure
+/// @param queries query data
+/// @param lut_options lookup table parameters
+/// @param word_options word parameters
+static void IndexedDbRunSearch(
+        BlastSeqSrc * seq_src, BLAST_SequenceBlk * queries, 
+        LookupTableOptions * lut_options, 
+        BlastInitialWordOptions * word_options )
+{
+    CIndexedDb::TThreadLocal * idb_tl = 
+        static_cast< CIndexedDb::TThreadLocal * >(
+                _BlastSeqSrcImpl_GetDataStructure( seq_src ) );
+    bool found = false;
+
+    for( CIndexedDb::TThreadDataSet::iterator i = 
+            CIndexedDb::Thread_Data_Set.begin();
+         i != CIndexedDb::Thread_Data_Set.end(); ++i ) {
+        if( *i == idb_tl ) {
+            found = true;
+            break;
+        }
+    }
+
+    if( !found ) return;
+
+    CIndexedDb * idb = idb_tl->idb_.GetPointerOrNull();
+    idb->RunSearch( queries, lut_options, word_options );
+}
+
+//------------------------------------------------------------------------------
+/// Set information about unmasked query segments.
+/// @param seq_src pointer to index structure
+/// @param lt_wrap lookup table information to update
+/// @param locs_wrap set of unmasked query segments
+static void IndexedDbSetQueryInfo(
+        BlastSeqSrc * seq_src, 
+        LookupTableWrap * lt_wrap, 
+        CRef< CBlastSeqLocWrap > locs_wrap )
+{
+    CIndexedDb::TThreadLocal * idb_tl = 
+        static_cast< CIndexedDb::TThreadLocal * >(
+                _BlastSeqSrcImpl_GetDataStructure( seq_src ) );
+    bool found = false;
+
+    for( CIndexedDb::TThreadDataSet::iterator i = 
+            CIndexedDb::Thread_Data_Set.begin();
+         i != CIndexedDb::Thread_Data_Set.end(); ++i ) {
+        if( *i == idb_tl ) {
+            found = true;
+            break;
+        }
+    }
+
+    if( !found ) return;
+
+    CIndexedDb * idb = idb_tl->idb_.GetPointerOrNull();
+    lt_wrap->lut = (void *)idb;
+    lt_wrap->read_indexed_db = (void *)(&s_MB_IdbGetResults);
+    idb->SetQueryInfo( locs_wrap );
+}
+
+//------------------------------------------------------------------------------
 /** Callback that is called for index based seed search.
     @sa For the meaning of parameters see DbIndexPreSearchFnType.
 */
@@ -323,7 +477,7 @@ static void IndexedDbPreSearch(
 
 //------------------------------------------------------------------------------
 CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
-    : db_( db ), threads_( 1 ), 
+    : db_( db ), threads_( 1 ), threads_set_( false ),
       seq_from_index_( false ), index_preloaded_( false )
 {
     if( !indexnames.empty() ) {
@@ -355,7 +509,9 @@ CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
                 string threads_str = indexname.substr( start, end );
                 
                 if( !threads_str.empty() ) {
-                    threads_ = atoi( threads_str.c_str() );
+                    threads_set_ = true;
+                    unsigned long th_tmp = atoi( threads_str.c_str() );
+                    if( th_tmp > threads_ ) threads_ = th_tmp;
                 }
     
                 start = end + 1;
@@ -414,7 +570,40 @@ CIndexedDb::CIndexedDb( const string & indexnames, BlastSeqSrc * db )
     }
 
     PreSearchFn = &IndexedDbPreSearch;
+    SetQueryInfoFn = &IndexedDbSetQueryInfo;
+    RunSearchFn = &IndexedDbRunSearch;
+    SetNumThreadsFn = &IndexedDbSetNumThreads;
     
+    /*
+    if( threads_ >= index_names_.size() ) {
+        seq_from_index_ = true;
+        index_preloaded_ = true;
+
+        for( vector< string >::size_type ind = 0; 
+                ind < index_names_.size(); ++ind ) {
+            CRef< CDbIndex > index = CDbIndex::Load( index_names_[ind] );
+
+            if( index == 0 ) {
+                throw std::runtime_error(
+                        (string( "CIndexedDb: could not load index" ) 
+                        + index_names_[ind]).c_str() );
+            }
+
+            if( index->Version() != 5 ) seq_from_index_ = false;
+            indices_.push_back( index );
+            results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
+            CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
+            seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
+        }
+    }
+    */
+}
+
+//------------------------------------------------------------------------------
+void CIndexedDb::SetNumThreads( size_t n_threads )
+{
+    if( !threads_set_ && n_threads > 0 ) threads_ = n_threads;
+
     if( threads_ >= index_names_.size() ) {
         seq_from_index_ = true;
         index_preloaded_ = true;
@@ -617,6 +806,9 @@ void CloneSeqSrc( BlastSeqSrc * dst, BlastSeqSrc * src )
 
 //------------------------------------------------------------------------------
 DbIndexPreSearchFnType GetDbIndexPreSearchFn() { return PreSearchFn; }
+DbIndexSetQueryInfoFnType GetDbIndexSetQueryInfoFn() { return SetQueryInfoFn; }
+DbIndexRunSearchFnType GetDbIndexRunSearchFn() { return RunSearchFn; }
+DbIndexSetNumThreadsFnType GetDbIndexSetNumThreadsFn() { return SetNumThreadsFn; }
 
 END_SCOPE( blast )
 END_NCBI_SCOPE
