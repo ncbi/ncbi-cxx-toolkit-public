@@ -32,14 +32,15 @@ while true; do
 done
 # here $p is root directory, $mp is module path so $p/src/$mp is current dir
 
-for d in $p $top_srcdir $NCBI/c++; do
-    if test -f $d/src/build-system/Makefile.module; then
-        makemodule=$d/src/build-system/Makefile.module
-        break
-    elif test -f $d/src/Makefile.module; then
-        makemodule=$d/src/Makefile.module
-        break
-    fi
+makemodule=
+for f in build-system/Makefile.module Makefile.module; do
+    for d in $p $top_srcdir $NCBI/c++; do
+        if test -f $d/src/$f; then
+            makemodule=$d/src/$f
+            break
+        fi
+    done
+    test -z "$makemodule"  ||  break
 done
 
 if test -z "$makemodule"; then
