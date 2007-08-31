@@ -159,7 +159,8 @@ RecursiveCheckout src/connect/ext \
     src/app \
     src/algo \
     src/bdb \
-    src/sqlite
+    src/sqlite \
+    src/build-system
 
 if test "$with_internal" != "no" ; then
     NonRecursiveCheckout src/internal \
@@ -257,13 +258,6 @@ case "$platform" in
         scripts/projects
     ;;
 esac
-
-case "$platform" in
-  all | unix | cygwin )
-    RecursiveCheckout src/build-system
-    ;;
-esac
-
 
 if test "$with_objects" != "no" ; then
     RecursiveCheckout src/objects \
