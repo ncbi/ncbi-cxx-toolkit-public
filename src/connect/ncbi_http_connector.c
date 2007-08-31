@@ -359,7 +359,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                 else if (tmo->sec | tmo->usec)
                     level = eLOG_Warning;
                 else
-#if defined(NCBI_CXX_TOOLKIT)  ||  defined(_DEBUG)
+#if defined(NCBI_CXX_TOOLKIT)  &&  defined(_DEBUG)
                     level = eLOG_Trace;
 #else
                     return status;
