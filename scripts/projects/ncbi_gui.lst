@@ -41,7 +41,7 @@ util
 -corelib/test
 -dbapi/.*/demo
 -dbapi/.*/samples
--dbapi/.*/test
+-dbapi/.*/test.*
 -dbapi/demo
 -dbapi/samples
 -dbapi/test
