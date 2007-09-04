@@ -159,7 +159,6 @@ RecursiveCheckout src/connect/ext \
     src/app \
     src/algo \
     src/bdb \
-    src/sqlite \
     src/build-system
 
 if test "$with_internal" != "no" ; then
@@ -186,8 +185,7 @@ RecursiveCheckout include/connect/ext \
     include/app \
     include/test \
     include/algo \
-    include/bdb \
-    include/sqlite
+    include/bdb
 
 if test "$with_internal" != "no" ; then
     NonRecursiveCheckout include/internal \

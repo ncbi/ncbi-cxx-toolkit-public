@@ -18,5 +18,4 @@ objects
 objmgr
 objtools
 serial
-sqlite
 util
