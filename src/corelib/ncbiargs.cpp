@@ -1070,8 +1070,9 @@ string CArgDesc_KeyDef::GetUsageSynopsis(bool name_only) const
 //  CArgDesc_Alias::
 
 CArgDesc_Alias::CArgDesc_Alias(const string& alias,
-                               const string& arg_name)
-    : CArgDesc(alias, kEmptyStr),
+                               const string& arg_name,
+                               const string& comment)
+    : CArgDesc(alias, comment),
       m_ArgName(arg_name),
       m_NegativeFlag(false)
 {
@@ -1586,7 +1587,8 @@ void CArgDescriptions::AddExtra
 void CArgDescriptions::AddAlias(const string& alias,
                                 const string& arg_name)
 {
-    auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name));
+    auto_ptr<CArgDesc_Alias> arg(
+        new CArgDesc_Alias(alias, arg_name, kEmptyStr));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1594,7 +1596,8 @@ void CArgDescriptions::AddAlias(const string& alias,
 
 
 void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
-                                              const string& arg_name)
+                                           const string& arg_name,
+                                           const string& comment)
 {
     // Make sure arg_name describes a flag
     TArgsCI orig = x_Find(arg_name);
@@ -1603,7 +1606,7 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
             "Attempt to negate a non-flag argument: "+ arg_name);
     }
 
-    auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name));
+    auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name, comment));
     arg->SetNegativeFlag(true);
 
     x_AddDesc(*arg);
@@ -2366,7 +2369,11 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
                 string(indent + 2, ' '), kEmptyStr);
 
         // Print description
-        s_PrintCommentBody(arr, "Negative for " + arg.GetName(), width);
+        string neg_comment = arg.GetComment();
+        if ( neg_comment.empty() ) {
+            neg_comment = "Negative for " + arg.GetName();
+        }
+        s_PrintCommentBody(arr, neg_comment, width);
     }
 }
 

@@ -689,7 +689,9 @@ public:
     /// a flag argument, an exception is thrown.
     /// @sa
     ///   AddAlias()
-    void AddNegatedFlagAlias(const string& alias, const string& arg_name);
+    void AddNegatedFlagAlias(const string& alias,
+                             const string& arg_name,
+                             const string& comment = kEmptyStr);
 
     /// Flag to invert constraint logically
     enum EConstraintNegate {

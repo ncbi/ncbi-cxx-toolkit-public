@@ -425,7 +425,9 @@ public:
     // alias is a new name for the existing argument, arg_name is
     // its original name. Any search functions will return the original
     // argument rather than the alias.
-    CArgDesc_Alias(const string& alias, const string& arg_name);
+    CArgDesc_Alias(const string& alias,
+                   const string& arg_name,
+                   const string& comment);
     virtual ~CArgDesc_Alias(void);
 
     const string& GetAliasedName(void) const;
