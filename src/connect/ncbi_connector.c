@@ -51,9 +51,10 @@ extern EIO_Status METACONN_Remove
     if (connector) {
         CONNECTOR x_conn;
         
-        for (x_conn = meta->list; x_conn; x_conn = x_conn->next)
+        for (x_conn = meta->list;  x_conn;  x_conn = x_conn->next) {
             if (x_conn == connector)
                 break;
+        }
         if (!x_conn) {
             EIO_Status status = eIO_Unknown;
             METACONN_LOG(eLOG_Error,
@@ -84,7 +85,7 @@ extern EIO_Status METACONN_Add
 {
     assert(connector && meta);
 
-    if (connector->next || !connector->setup) {
+    if (connector->next  ||  !connector->setup) {
         EIO_Status status = eIO_Unknown;
         METACONN_LOG(eLOG_Error,
                      "[METACONN_Add]  Input connector is in use/uninitable");

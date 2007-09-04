@@ -82,10 +82,11 @@ typedef enum ECONN_StateTag {
 } ECONN_State;
 
 
-/* Connection internal data
+/* Connection internal data:  meta *must* come first
  */
 typedef struct SConnectionTag {
     SMetaConnector         meta;       /* VTable of operations and list      */
+
     BUF                    buf;        /* storage for the Peek'd data        */
 #ifdef IMPLEMENTED__CONN_WaitAsync
     SConnectorAsyncHandler async_data; /* info of curr. async event handler  */
