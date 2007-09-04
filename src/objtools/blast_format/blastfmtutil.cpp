@@ -1619,7 +1619,7 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
     
     if (linkout & eUnigene) {
         sprintf(buf, kUnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
-                is_na ? "nucleotide" : "protein", gi);
+                is_na ? "nucleotide" : "protein", gi, rid.c_str());
         linkout_list.push_back(buf);
     }
     if (linkout & eStructure){
@@ -1631,11 +1631,11 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
         linkout_list.push_back(buf);
     }
     if (linkout & eGeo){
-        sprintf(buf, kGeoUrl.c_str(), gi);
+        sprintf(buf, kGeoUrl.c_str(), gi, rid.c_str());
         linkout_list.push_back(buf);
     }
     if(linkout & eGene){
-        sprintf(buf, kGeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID");
+        sprintf(buf, kGeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID", rid.c_str());
         linkout_list.push_back(buf);
     }
 

@@ -1040,7 +1040,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
             
             sprintf(urlBuf, kEntrezUrl.c_str(), 
                     (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
-                    temp_class_info.c_str() : "", db, gi, dopt, 
+                    temp_class_info.c_str() : "", db, gi, dopt, m_Rid.c_str(),
                     (m_AlignOption & eNewTargetWindow) ? 
                     "TARGET=\"EntrezView\"" : "");
             urlLink = urlBuf;
@@ -1053,7 +1053,7 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
                     sprintf(urlBuf, kTraceUrl.c_str(),
                             (m_AlignOption & eShowInfoOnMouseOverSeqid) ?
                             temp_class_info.c_str() : "",
-                            wid->GetSeqIdString().c_str());
+                            wid->GetSeqIdString().c_str(), m_Rid.c_str());
                     urlLink = urlBuf;
                 } else { //future use
                     
@@ -1086,7 +1086,8 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
             if ((*iter) & eUnigene) {
                 sprintf(buf, kUnigeneUrl.c_str(), 
                         !cbsp.IsAa() ? "nucleotide" : "protein", 
-                        !cbsp.IsAa() ? "nucleotide" : "protein", gi);
+                        !cbsp.IsAa() ? "nucleotide" : "protein", gi,
+                        m_Rid.c_str());
                 out << buf;
             }
             if ((*iter) & eStructure){
@@ -1097,12 +1098,12 @@ void CDisplaySeqalign::x_AddLinkout(const CBioseq& cbsp,
                 out << buf;
             }
             if ((*iter) & eGeo){
-                sprintf(buf, kGeoUrl.c_str(), gi);
+                sprintf(buf, kGeoUrl.c_str(), gi, m_Rid.c_str());
                 out << buf;
             }
             if((*iter) & eGene){
                 sprintf(buf, kGeneUrl.c_str(), gi, cbsp.IsAa() ? 
-                        "PUID" : "NUID");
+                        "PUID" : "NUID", m_Rid.c_str());
                 out << buf;
             }
         }
@@ -2921,7 +2922,8 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
             if(m_AlignOption&eHtml && subject_gi > 0){
                 sprintf(urlBuf, kEntrezSubseqUrl.c_str(), subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        (*iter)->range.GetFrom() +1 , (*iter)->range.GetTo() + 1 );
+                        (*iter)->range.GetFrom() +1 , (*iter)->range.GetTo() + 1,
+                        m_Rid.c_str());
                 out << urlBuf;
             }  
             out << (*iter)->feat_str;
@@ -2939,7 +2941,8 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
             if(m_AlignOption&eHtml && subject_gi > 0){
                 sprintf(urlBuf, kEntrezSubseqUrl.c_str(), subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        feat5->range.GetFrom() + 1 , feat5->range.GetTo() + 1 );
+                        feat5->range.GetFrom() + 1 , feat5->range.GetTo() + 1,
+                        m_Rid.c_str());
                 out << urlBuf;
             }  
             out << actual_range.GetFrom() - feat5->range.GetTo() 
@@ -2954,7 +2957,8 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out)
             if(m_AlignOption&eHtml && subject_gi > 0){
                 sprintf(urlBuf, kEntrezSubseqUrl.c_str(), subject_gi,
                         m_IsDbNa ? "Nucleotide" : "Protein",  
-                        feat3->range.GetFrom() + 1 , feat3->range.GetTo() + 1);
+                        feat3->range.GetFrom() + 1 , feat3->range.GetTo() + 1,
+                        m_Rid.c_str());
                 out << urlBuf;
             }
             out << feat3->range.GetFrom() - actual_range.GetTo() 
