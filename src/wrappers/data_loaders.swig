@@ -44,11 +44,6 @@ objtools/data_loaders/lds/lds_dataloader.hpp
 
 objtools/data_loaders/patcher/loaderpatcher.hpp
 
-objtools/data_loaders/table/sage_dload.hpp
-objtools/data_loaders/table/sqlite_table.hpp
-objtools/data_loaders/table/user_feature_dload.hpp
-objtools/data_loaders/table/table.hpp
-
 objtools/data_loaders/trace/trace_chgr.hpp
 
 objtools/data_loaders/genbank/blob_id.hpp

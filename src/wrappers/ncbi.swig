@@ -314,7 +314,6 @@ objtools/simple/simple_om.hpp
 
 %ifndef WINDOWS %include pub_chem.swig
 %include web.swig
-%include sqlite.swig
 %include bdb.swig
 %include validator.swig
 %include dbapi.swig
