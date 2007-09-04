@@ -343,9 +343,9 @@ streamsize CConn_Streambuf::showmanyc(void)
 
     static const STimeout kZero = {0, 0};
     const STimeout* timeout = CONN_GetTimeout(m_Conn, eIO_Read);
-    
-    for (int n = !timeout  ||  timeout == kDefaultTimeout  ||
-             timeout->sec  ||  timeout->usec ? 0 : 1; n < 2; n++) {
+
+    for (int n = timeout  &&  timeout != kDefaultTimeout
+             &&  !(timeout->sec | timeout->usec);  n < 2;  n++) {
         const STimeout* tmo = n ? timeout : &kZero;
         switch (CONN_Wait(m_Conn, eIO_Read, tmo)) {
         case eIO_Success:
