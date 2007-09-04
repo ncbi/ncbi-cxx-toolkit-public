@@ -1939,6 +1939,63 @@ BOOST_AUTO_TEST_CASE(s_ReadSinglePdb)
     CHECK_EQUAL(length, b.GetInst().GetLength());
 }
 
+BOOST_AUTO_TEST_CASE(s_ReadSinglePdb_InDifferentFormats)
+{
+    string pdb_mol("1IQR");
+    string pdb_chain("A");
+
+    for (int i = 0; i < 2; i++) {
+
+        string pdb;
+        if (i == 0) {
+            pdb.assign(pdb_mol + pdb_chain);
+        } else {
+            pdb.assign(pdb_mol + "_" + pdb_chain);
+        }
+        istringstream instream(pdb);
+        
+        const bool is_protein(true);
+        CBlastInputConfig iconfig(is_protein);
+        iconfig.SetRetrieveSequenceData(false);
+        CRef<CBlastFastaInputSource> source(s_DeclareSource(instream, iconfig));
+        
+        CHECK(source->End() == false);
+        blast::SSeqLoc ssl = source->GetNextSSeqLoc();
+        CHECK(source->End() == true);
+        
+        CHECK(ssl.seqloc->IsInt() == true);
+        
+        CHECK(ssl.seqloc->GetInt().IsSetStrand() == true);
+        CHECK_EQUAL(eNa_strand_unknown, ssl.seqloc->GetInt().GetStrand());
+
+        CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+        CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+        CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+        const TSeqPos length(420);
+        CHECK_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
+
+        CHECK(ssl.seqloc->GetInt().IsSetId() == true);
+        CHECK_EQUAL(CSeq_id::e_Pdb, ssl.seqloc->GetInt().GetId().Which());
+        
+        CHECK_EQUAL(pdb_mol, 
+                    ssl.seqloc->GetInt().GetId().GetPdb().GetMol().Get());
+        
+        CHECK(!ssl.mask);
+        
+        /// Validate the data that would be retrieved by blast.cgi
+        CRef<CBioseq_set> bioseqs = source->GetBioseqs();
+        CHECK_EQUAL((size_t)1, bioseqs->GetSeq_set().size());
+        CHECK(bioseqs->GetSeq_set().front()->IsSeq());
+        const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
+        CHECK(! b.IsNa());
+        CHECK_EQUAL(CSeq_id::e_Pdb, b.GetId().front()->Which());
+        CHECK_EQUAL(pdb_mol, b.GetId().front()->GetPdb().GetMol().Get());
+        CHECK_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
+        BOOST_CHECK(! CSeq_inst::IsNa(b.GetInst().GetMol()));
+        CHECK_EQUAL(length, b.GetInst().GetLength());
+    }
+}
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
