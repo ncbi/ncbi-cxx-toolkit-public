@@ -58,11 +58,11 @@ const static string kClassInfo = "class=\"info\"";
 
 ///entrez
 const string kEntrezUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/entre\
-z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
+z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s&RID=%s\" %s>";
 
 ///trace db
 const string kTraceUrl = "<a %shref=\"http://www.ncbi.nlm.nih.gov/Traces\
-/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
+/trace.cgi?cmd=retrieve&dopt=fasta&val=%s&RID=%s\">";
 
 ///genome button
 const string kGenomeButton = "<table border=0 width=600 cellpadding=8>\
@@ -73,7 +73,7 @@ const string kGenomeButton = "<table border=0 width=600 cellpadding=8>\
 using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
-const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d\"><img border=0 h\
+const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=%s&cmd=Display&dopt=%s_unigene&from_uid=%d&RID=%s\"><img border=0 h\
 eight=16 width=16 src=\"images/U.gif\" alt=\"UniGene info\"></a>";
 
 ///structure
@@ -90,23 +90,23 @@ RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
 ///Geo
 const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\
+query.fcgi?db=geo&term=%d[gi]&RID=%s\"><img border=0 height=16 width=16 src=\
 \"images/E.gif\" alt=\"Geo\"></a>";
 
 ///Gene
 const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
-query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 \
+query.fcgi?db=gene&cmd=search&term=%d[%s]&RID=%s\"><img border=0 height=16 width=16 \
 src=\"images/G.gif\" alt=\"Gene info\"></a>";
 
 ///mapviewer linkout
 /*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
   src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";*/
-const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d\"><img border=0 height=16 width=16 \
+const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&RID=%s\"><img border=0 height=16 width=16 \
 src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";
 
 ///Sub-sequence
 const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\
-gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts\">";
+gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts&RID=%s\">";
 
 ///Bl2seq 
 const string kBl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/\
