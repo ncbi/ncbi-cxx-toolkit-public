@@ -247,11 +247,11 @@ typedef void (*FDestroy)
 /* Connector specification.
  */
 typedef struct SConnectorTag {
-    void*                handle;    /* data handle of the connector */
-    CONNECTOR            next;      /* linked list                  */
     SMetaConnector*      meta;      /* back link to CONNECTION      */
     FSetupVTable         setup;     /* used in CONNECTION init      */
     FDestroy             destroy;   /* destroys handle, can be NULL */
+    void*                handle;    /* data handle of the connector */
+    CONNECTOR            next;      /* linked list                  */
 } SConnector;
 
 
