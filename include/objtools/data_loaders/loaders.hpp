@@ -39,8 +39,6 @@ extern void DataLoaders_Register_GenBank    (void);
 extern void DataLoaders_Register_BlastDB    (void);
 extern void DataLoaders_Register_CDD        (void);
 extern void DataLoaders_Register_LDS        (void);
-extern void DataLoaders_Register_Sage       (void);
-extern void DataLoaders_Register_UsrFeat    (void);
 extern void DataLoaders_Register_Trace      (void);
 
 
