@@ -133,6 +133,7 @@ corelib/metareg.hpp
 corelib/ncbi_bswap.hpp
 corelib/ncbi_limits.hpp
 //corelib/ncbi_os_mswin.hpp
+corelib/ncbi_param.hpp
 corelib/ncbi_process.hpp
 corelib/ncbi_safe_static.hpp
 corelib/ncbi_stack.hpp
