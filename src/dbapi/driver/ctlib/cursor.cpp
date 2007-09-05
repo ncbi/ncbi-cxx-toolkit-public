@@ -491,6 +491,229 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
     return true;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_CursorCmdExpl::
+//
+
+CTL_CursorCmdExpl::CTL_CursorCmdExpl(CTL_Connection& conn,
+        const string& cursor_name,
+        const string& query,
+        unsigned int nof_params,
+        unsigned int fetch_size
+        )
+: CTL_Cmd(conn)
+, impl::CBaseCmd(conn, cursor_name, query, nof_params)
+, m_FetchSize(fetch_size)
+{
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
+    SetExecCntxInfo(extra_msg);
+
+    m_CursSql =
+        "declare " + cursor_name + " cursor for " + query
+        ;
+}
+
+
+CDB_Result*
+CTL_CursorCmdExpl::OpenCursor()
+{
+    // need to close it first
+    CloseCursor();
+
+    SetHasFailed(false);
+
+    // declare the cursor
+    try {
+        auto_ptr<CDB_LangCmd> stmt(GetConnection().LangCmd(m_CursSql));
+
+        stmt->Send();
+        stmt->DumpResults();
+    } catch (const CDB_Exception& e) {
+        string err_message = "Failed to declare cursor." + GetDbgInfo();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
+    }
+
+    SetCursorDeclared();
+
+    try {
+        auto_ptr<CDB_LangCmd> stmt(GetConnection().LangCmd("open " + GetCmdName()));
+
+        stmt->Send();
+        stmt->DumpResults();
+    } catch (const CDB_Exception& e) {
+        string err_message = "Failed to open cursor." + GetDbgInfo();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
+    }
+
+    SetCursorOpen();
+
+    m_LCmd.reset(GetConnection().xLangCmd("fetch " + GetCmdName()));
+    m_Res.reset(new CTL_CursorResultExpl(*m_LCmd));
+
+    return Create_Result(*m_Res);
+}
+
+
+bool CTL_CursorCmdExpl::Update(const string& table_name, const string& upd_query)
+{
+    if (!CursorIsOpen())
+        return false;
+
+    try {
+        m_LCmd->Cancel();
+
+        string buff = upd_query + " where current of " + GetCmdName();
+
+        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
+        cmd->Send();
+        cmd->DumpResults();
+    } catch (const CDB_Exception& e) {
+        string err_message = "Update failed." + GetDbgInfo();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
+    }
+
+    return true;
+}
+
+I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
+{
+    if(!CursorIsOpen() || m_Res.get() == 0 || m_LCmd.get() == 0) {
+        return NULL;
+    }
+
+    string cond = "current of " + GetCmdName();
+
+    // Not ready yet ...
+    // return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
+    return NULL;
+}
+
+bool CTL_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
+                    bool log_it)
+{
+    // Not ready yet ...
+    // CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
+    CDB_ITDescriptor* desc = NULL; 
+
+    if(desc == NULL) {
+        return false;
+    }
+
+    auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
+
+    m_LCmd->Cancel();
+
+    return (data.GetType() == eDB_Text)?
+        GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
+        GetConnection().SendData(*desc, (CDB_Image&)data, log_it);
+}
+
+CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t size,
+                        bool log_it)
+{
+    // Not ready yet ...
+    // CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
+    CDB_ITDescriptor* desc = NULL; 
+
+    if(desc == NULL) {
+        return NULL;
+    }
+
+    auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
+
+    m_LCmd->Cancel();
+
+    return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
+}
+
+bool CTL_CursorCmdExpl::Delete(const string& table_name)
+{
+    if (!CursorIsOpen())
+        return false;
+
+    try {
+        m_LCmd->Cancel();
+
+        string buff = "delete " + table_name + " where current of " + GetCmdName();
+
+        auto_ptr<CDB_LangCmd> cmd(GetConnection().LangCmd(buff));
+        cmd->Send();
+        cmd->DumpResults();
+    } catch (const CDB_Exception& e) {
+        string err_message = "Update failed." + GetDbgInfo();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
+    }
+
+    return true;
+}
+
+
+int CTL_CursorCmdExpl::RowCount() const
+{
+    return m_RowCount;
+}
+
+
+bool CTL_CursorCmdExpl::CloseCursor()
+{
+    if (!CursorIsOpen())
+        return false;
+
+    m_Res.reset();
+    m_LCmd.reset();
+
+    if (CursorIsOpen()) {
+        string buff = "close " + GetCmdName();
+        try {
+            auto_ptr<CTL_LangCmd> cmd(GetConnection().xLangCmd(buff));
+
+            cmd->Send();
+            cmd->DumpResults();
+        } catch (const CDB_Exception& e) {
+            string err_message = "Failed to close cursor." + GetDbgInfo();
+            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
+        }
+
+        SetCursorOpen(false);
+    }
+
+    if (CursorIsDeclared()) {
+        string buff = "deallocate " + GetCmdName();
+
+        try {
+            auto_ptr<CTL_LangCmd> cmd(GetConnection().xLangCmd(buff));
+
+            cmd->Send();
+            cmd->DumpResults();
+        } catch (const CDB_Exception& e) {
+            string err_message = "Failed to deallocate cursor." + GetDbgInfo();
+            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
+        }
+
+        SetCursorDeclared(false);
+    }
+
+    return true;
+}
+
+
+CTL_CursorCmdExpl::~CTL_CursorCmdExpl()
+{
+    try {
+        DetachInterface();
+
+        DropCmd(*this);
+
+        // CloseForever();
+        CloseCursor();
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+}
+
+
 #ifdef FTDS_IN_USE
 } // namespace ftds64_ctlib
 #endif

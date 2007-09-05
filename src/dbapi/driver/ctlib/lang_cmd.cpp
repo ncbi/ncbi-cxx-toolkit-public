@@ -597,8 +597,24 @@ CTL_LRCmd::MakeResult(void)
 
     for (;;) {
         CS_INT res_type;
+        CS_RETCODE rc = 0;
 
-        switch ( Check(ct_results(x_GetSybaseCmd(), &res_type)) ) {
+        try {
+            rc = Check(ct_results(x_GetSybaseCmd(), &res_type));
+        } catch (...) {
+            // We have to fech out all pending  results ...
+            // while (ct_results(x_GetSybaseCmd(), &res_type) == CS_SUCCEED) {
+            //     continue;
+            // }
+
+            SetHasFailed();
+            Cancel();
+            SetWasSent(false);
+
+            throw;
+        }
+
+        switch (rc) {
         case CS_SUCCEED:
             break;
         case CS_END_RESULTS:

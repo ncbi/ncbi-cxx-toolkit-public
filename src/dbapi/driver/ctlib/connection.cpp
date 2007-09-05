@@ -421,6 +421,18 @@ CTL_Connection::~CTL_Connection()
 }
 
 
+CTL_LangCmd* 
+CTL_Connection::xLangCmd(const string& lang_query,
+                         unsigned int  nof_params)
+{
+    string extra_msg = "SQL Command: \"" + lang_query + "\"";
+    SetExtraMsg( extra_msg );
+
+    CTL_LangCmd* lcmd = new CTL_LangCmd(*this, lang_query, nof_params);
+    return lcmd;
+}
+
+
 // bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
 //                                 CDB_Stream& img,
 //                                 bool log_it)

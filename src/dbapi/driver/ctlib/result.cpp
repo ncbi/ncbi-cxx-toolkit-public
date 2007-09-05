@@ -546,9 +546,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             return is_null ? new CDB_Bit() : new CDB_Bit((int) v);
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -608,12 +608,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             if (v != buffer) delete[] v;
             return val;
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             if (v != buffer) {
                 delete[] v;
             }
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             if (v != buffer) {
                 delete[] v;
             }
@@ -661,12 +661,12 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             if (v != buffer) delete[] v;
             return val;
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             if (v != buffer) {
                 delete[] v;
             }
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             if (v != buffer) {
                 delete[] v;
             }
@@ -748,7 +748,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -790,7 +790,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return is_null
                 ? new CDB_TinyInt() : new CDB_TinyInt((Uint1) v);
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
         default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
@@ -859,9 +859,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             return is_null ? new CDB_Int() : new CDB_Int((Int4) v);
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -888,9 +888,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             return is_null ? new CDB_BigInt() : new CDB_BigInt(v);
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -941,9 +941,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                                       (const unsigned char*) v.array);
             }
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -971,9 +971,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return is_null
                 ? new CDB_Double() : new CDB_Double((double) v);
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -1000,9 +1000,9 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             return is_null ? new CDB_Float() : new CDB_Float((float) v);
         }
-        case CS_CANCELED: 
+        case CS_CANCELED:
             DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default: 
+        default:
             DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
         }
     }
@@ -1185,8 +1185,15 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 //--------------------------------------------------
 
     return desc.release();
+    return GetImageOrTextDescriptor(m_CurrItem);
 }
 
+
+I_ITDescriptor*
+CTL_RowResult::GetImageOrTextDescriptor(int item_num)
+{
+    return NULL;
+}
 
 bool CTL_RowResult::SkipItem()
 {
@@ -1323,6 +1330,77 @@ int CTL_ITDescriptor::DescriptorType() const
 CTL_ITDescriptor::~CTL_ITDescriptor()
 {
     return;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd& cmd) :
+    CTL_CursorResult(cmd.x_GetSybaseCmd(), cmd.GetConnection())
+{
+}
+
+CTL_CursorResultExpl::~CTL_CursorResultExpl(void)
+{
+}
+
+
+bool CTL_CursorResultExpl::Fetch(void)
+{
+/* Not ready yet ...
+    if( m_EOR ) {
+        return false;
+    }
+
+    try {
+        if (m_Res && m_Res->Fetch()) {
+            return true;
+        }
+    } catch ( const CDB_Exception& ) {
+        delete m_Res;
+        m_Res = 0;
+    }
+
+    try {
+        // finish this command
+        m_EOR = true;
+        if( m_Res ) {
+            delete m_Res;
+            m_Res = 0;
+            while (m_Cmd->HasMoreResults()) {
+                m_Res = m_Cmd->Result();
+                if (m_Res) {
+                    while (m_Res->Fetch()) {
+                        continue;
+                    }
+                    delete m_Res;
+                    m_Res = 0;
+                }
+            }
+        }
+
+        // send the another "fetch cursor_name" command
+        m_Cmd->Send();
+        while (m_Cmd->HasMoreResults()) {
+            m_Res = m_Cmd->Result();
+            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
+                m_EOR = false;
+                return m_Res->Fetch();
+            }
+            if ( m_Res ) {
+                while (m_Res->Fetch()) {
+                    continue;
+                }
+                delete m_Res;
+                m_Res = 0;
+            }
+        }
+    } catch (const CDB_Exception& e) {
+        string err_message = "Failed to fetch the results." + GetDbgInfo();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
+    }
+    return false;
+*/
+    return false;
 }
 
 

@@ -164,6 +164,7 @@ private:
     bool            m_IsDead;
 };
 
+////////////////////////////////////////////////////////////////////////////////
 class Command
 {
 public:
@@ -328,6 +329,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
     friend class CTL_Cmd;
     friend class CTL_CmdBase;
     friend class CTL_SendDataCmd;
+    friend class CTL_CursorCmdExpl;
 
 protected:
     CTL_Connection(CTLibContext& cntx,
@@ -386,6 +388,10 @@ protected:
                           bool log_it = true);
     virtual bool Refresh(void);
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
+
+    // This method is required for CTL_CursorCmdExpl only ...
+    CTL_LangCmd* xLangCmd(const string&   lang_query,
+                          unsigned int    nof_params = 0);
 
     // abort the connection
     // Attention: it is not recommended to use this method unless you absolutely have to.
@@ -502,6 +508,9 @@ private:
 
 class CTL_Cmd : public CTL_CmdBase
 {
+    friend class CTL_CursorCmdExpl;
+    friend class CTL_CursorResultExpl;
+
 public:
     CTL_Cmd(CTL_Connection& conn);
     virtual ~CTL_Cmd(void);
@@ -524,9 +533,6 @@ protected:
     inline CTL_RowResult& GetResult(void);
     inline void DeleteResult(void);
     inline void DeleteResultInternal(void);
-
-    // Temporarily ...
-//     virtual CDB_Result* CreateResult(impl::CResult& result) = 0;
 
     inline bool HaveResult(void) const;
     void SetResult(CTL_RowResult* result)
@@ -570,11 +576,11 @@ public:
 
 public:
     CDB_Result* MakeResult(void);
+    virtual bool Cancel(void);
 
 protected:
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
-    virtual bool Cancel(void);
     bool SendInternal(void);
 };
 
@@ -584,9 +590,11 @@ protected:
 //  CTL_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : CTL_LRCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public CTL_LRCmd
 {
     friend class CTL_Connection;
+    friend class CTL_CursorCmdExpl;
+    friend class auto_ptr<CTL_LangCmd>;
 
 protected:
     CTL_LangCmd(CTL_Connection& conn,
@@ -687,6 +695,47 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_CursorCmdExpl::
+//  Explicit cursor (based on T-SQL)
+
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmdExpl :
+    CTL_Cmd,
+    public impl::CBaseCmd
+{
+    friend class CTL_Connection;
+
+protected:
+    CTL_CursorCmdExpl(CTL_Connection& conn,
+            const string& cursor_name,
+            const string& query,
+            unsigned int nof_params,
+            unsigned int fetch_size
+            );
+    virtual ~CTL_CursorCmdExpl(void);
+
+protected:
+    virtual CDB_Result* OpenCursor(void);
+    virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
+                 bool log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
+                     bool log_it = true);
+    virtual bool Delete(const string& table_name);
+    virtual int  RowCount(void) const;
+    virtual bool CloseCursor(void);
+
+private:
+    I_ITDescriptor*   x_GetITDescriptor(unsigned int item_num);
+
+private:
+    unsigned int            m_FetchSize;
+    string                  m_CursSql;
+    auto_ptr<CTL_LangCmd>   m_LCmd;
+    auto_ptr<impl::CResult> m_Res;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -779,6 +828,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public impl::CResult
     friend class CTL_Connection;
     friend class CTL_Cmd;
     friend class CTL_CursorCmd;
+    friend class CTL_CursorCmdExpl;
 
 protected:
     CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn);
@@ -800,6 +850,8 @@ protected:
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
     virtual bool            SkipItem(void);
+
+    I_ITDescriptor*         GetImageOrTextDescriptor(int item_num);
 
     CS_RETCODE my_ct_get_data(CS_COMMAND* cmd,
                               CS_INT item,
@@ -863,6 +915,7 @@ protected:
 //  CTL_CursorResult::
 //
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ParamResult : public CTL_RowResult
 {
     friend class CTL_Connection;
@@ -879,6 +932,7 @@ protected:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ComputeResult : public CTL_RowResult
 {
     friend class CTL_Connection;
@@ -895,6 +949,7 @@ protected:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_StatusResult :  public CTL_RowResult
 {
     friend class CTL_Connection;
@@ -911,6 +966,7 @@ protected:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResult :  public CTL_RowResult
 {
     friend class CTL_Cmd;
@@ -925,6 +981,19 @@ protected:
 protected:
     virtual EDB_ResType ResultType(void) const;
     virtual bool        SkipItem(void);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResultExpl : public CTL_CursorResult
+{
+    friend class CTL_CursorCmdExpl;
+
+protected:
+    CTL_CursorResultExpl(CTL_LangCmd& cmd);
+    virtual ~CTL_CursorResultExpl(void);
+
+protected:
+    virtual bool Fetch(void);
 };
 
 
@@ -1081,6 +1150,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
     friend class CTL_RowResult;
     friend class CTL_Connection;
     friend class CTL_CursorCmd;
+    friend class CTL_CursorCmdExpl;
     friend class CTL_SendDataCmd;
 
 public:
