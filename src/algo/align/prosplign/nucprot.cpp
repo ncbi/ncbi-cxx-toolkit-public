@@ -295,7 +295,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
   int wmax = 0;//max score in the last column
   int imax = 0;//row number for wmax
   int jmax = jlen - 1;//column number for wmax
-  CIgapIntronChain<CFindGapIntronRow> lsb((CFindGapIntronRow *)&wmax); //last column best, corresponds to wmax
+  CIgapIntronChain lsb(&wmax); //last column best, corresponds to wmax
   lsb.Creat(0, jmax);
 
   CFastIScore fiscore;
@@ -494,8 +494,6 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             imax = i;
             lsb.Clear();
             lsb.Copy(crow->wis[jlen - 1]);
-        } else {
-            lsb.RegainOwner();
         }
       }
     //at this point wmax - best from the last column
@@ -508,12 +506,12 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         }
     }
     igi.clear();
-    CIgapIntron<CFindGapIntronRow> *tmp;
+    CIgapIntron *tmp;
     if(jmax<jlen-1) {//there is an end gap
         right_gap = true;
         igi.push_back(make_pair(jmax, jlen - jmax - 1));
         tmp = crow->wis[jmax].m_Top;
-     } else tmp = lsb.m_Top;
+    } else tmp = lsb.m_Top;
      while(tmp) {
         if(tmp->m_Len > 0) igi.push_back(make_pair(tmp->m_Beg, tmp->m_Len));
         else left_gap = true;
@@ -689,7 +687,7 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
   }
   igi.clear();
   if(jmax<jlen-1) igi.push_back(make_pair(jmax, jlen - jmax - 1));
-  CIgapIntron<CAlignInfo> *tmp = crow->wis[jmax].m_Top;
+  CIgapIntron *tmp = crow->wis[jmax].m_Top;
   while(tmp) {
       if(tmp->m_Len > 0) igi.push_back(make_pair(tmp->m_Beg, tmp->m_Len));
       tmp = tmp->m_Prev;

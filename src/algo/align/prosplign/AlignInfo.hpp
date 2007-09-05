@@ -49,7 +49,7 @@ public:
     void ClearIIC(void);
 public:
     vector<int> w, h, v, fh, fv;
-    vector<CIgapIntronChain<CAlignInfo> > wis, his, vis, fhis, fvis;
+    vector<CIgapIntronChain > wis, his, vis, fhis, fvis;
 private:
     CAlignInfo(const CAlignInfo& ori);
     CAlignInfo& operator=(const CAlignInfo& ori);
@@ -82,7 +82,7 @@ public:
     CFindGapIntronRow(int length);
     void ClearIIC(void);
 public:
-    vector<CIgapIntronChain<CFindGapIntronRow> > wis, vis, h1is, h2is, h3is;
+    vector<CIgapIntronChain > wis, vis, h1is, h2is, h3is;
 private:
     CFindGapIntronRow(const CFindGapIntronRow& ori);
     CFindGapIntronRow& operator=(const CFindGapIntronRow& ori);

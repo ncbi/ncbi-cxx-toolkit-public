@@ -55,7 +55,7 @@ CAlignInfo::CAlignInfo(int length)
 
 void CAlignInfo::ClearIIC(void)
 {
-    vector<CIgapIntronChain<CAlignInfo> >::iterator it;
+    vector<CIgapIntronChain >::iterator it;
     for(it=wis.begin(); it != wis.end(); ++it) it->Clear();
     for(it=his.begin(); it != his.end(); ++it) it->Clear();
     for(it=vis.begin(); it != vis.end(); ++it) it->Clear();
@@ -74,7 +74,7 @@ CFindGapIntronRow::CFindGapIntronRow(int length): CAlignRow(length)
 
 void CFindGapIntronRow::ClearIIC(void)
 {
-    vector<CIgapIntronChain<CFindGapIntronRow> >::iterator it;
+    vector<CIgapIntronChain >::iterator it;
     for(it=wis.begin(); it != wis.end(); ++it) it->Clear();
     for(it=vis.begin(); it != vis.end(); ++it) it->Clear();
     for(it=h1is.begin(); it != h1is.end(); ++it) it->Clear();
