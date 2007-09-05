@@ -117,7 +117,7 @@ protected:
 
 
     void x_DoIncremental(void);
-    void x_DoBatch2(void);
+    void x_DoBatch3(void);
 
     CRef<objects::CSeq_id> x_ReadFastaSetId(const CArgValue& argval,
                                             CRef<objects::CScope>);
