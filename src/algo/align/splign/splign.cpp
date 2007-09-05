@@ -550,49 +550,71 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 }
 
 
-void CSplign::x_InitCDS(const THit::TId& id_query)
+CSplign::TOrfPair CSplign::GetCds(const THit::TId& id, const vector<char> * seq_data)
 {
-    m_cds_start = m_cds_stop = 0;
+    TOrfPair rv (TOrf(0, 0), TOrf(0, 0));
 
-    // attempt to find CDS in cache
-    TStrIdToCDS::const_iterator ie = m_CdsMap.end();
-    const string strid = id_query->AsFastaString();
-    TStrIdToCDS::const_iterator ii = m_CdsMap.find(strid);
+    TStrIdToOrfs::const_iterator ie (m_OrfMap.end());
+    const string strid (id->AsFastaString());
+    TStrIdToOrfs::const_iterator ii (m_OrfMap.find(strid));
 
-    if(ii == ie) {
-            
+    if(ii != ie) {
+        rv = ii->second;
+    }
+    else {
+
+        USING_SCOPE(objects);
+
+        vector<char> seq;
+        if(seq_data == 0) {
+            x_LoadSequence(&seq, *id, 0, numeric_limits<THit::TCoord>::max(),false);
+            seq_data = & seq;
+        }
+
         // Assign CDS to the max ORF longer than 90 bps and starting from ATG
         //
-        USING_SCOPE(objects);
         vector<CRef<CSeq_loc> > orfs;
         vector<string> start_codon;
         start_codon.push_back("ATG");
-        COrf::FindOrfs(m_mrna, orfs, 90, 1, start_codon);
-        TSeqPos max_len = 0;
-        TSeqPos max_from = 0;
-        TSeqPos max_to = 0;
+
+        COrf::FindOrfs(*seq_data, orfs, 90, 1, start_codon);
+        TSeqPos max_len_plus  (0), max_len_minus  (0);
+        TSeqPos max_from_plus (0), max_from_minus (0);
+        TSeqPos max_to_plus   (0), max_to_minus   (0);
         ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
-            TSeqPos len = sequence::GetLength(**orf, NULL);
-            ENa_strand orf_strand ((*orf)->GetInt().GetStrand());
-            if (orf_strand != eNa_strand_minus) {
-                if (len > max_len) {
-                    max_len = len;
-                    max_from = (*orf)->GetInt().GetFrom();
-                    max_to = (*orf)->GetInt().GetTo();
+
+            const TSeqPos len           (sequence::GetLength(**orf, NULL));
+            const ENa_strand orf_strand ((*orf)->GetInt().GetStrand());
+            const bool antisense        (orf_strand == eNa_strand_minus);
+        
+            if(antisense) {
+                if(len > max_len_minus) {
+                    max_len_minus    = len;
+                    max_from_minus   = (*orf)->GetInt().GetTo();
+                    max_to_minus     = (*orf)->GetInt().GetFrom();
+                }
+            }
+            else {
+                if(len > max_len_plus) {
+                    max_len_plus    = len;
+                    max_from_plus   = (*orf)->GetInt().GetFrom();
+                    max_to_plus     = (*orf)->GetInt().GetTo();
                 }
             }
         }
 
-        // save to cache
-        if(max_len > 0) {
-            TCDS cds (m_cds_start = max_from, m_cds_stop = max_to);
-            m_CdsMap[strid] = cds;
+        if(max_len_plus > 0) {
+            rv.first = TOrf(max_from_plus, max_to_plus);
         }
+
+        if(max_len_minus > 0) {
+            rv.second = TOrf(max_from_minus, max_to_minus);
+        }
+
+        m_OrfMap[strid] = rv;
     }
-    else {
-        m_cds_start = ii->second.first;
-        m_cds_stop = ii->second.second;
-    }
+
+    return rv;
 }
 
 
@@ -652,13 +674,21 @@ void CSplign::Run(THitRefs* phitrefs)
         x_LoadSequence(&m_mrna, *id_query, 0, 
                        numeric_limits<THit::TCoord>::max(), false);
 
+        const TOrfPair orfs (GetCds(id_query, & m_mrna));
+        if(m_strand) {
+            m_cds_start  = orfs.first.first;
+            m_cds_stop = orfs.first.second;
+        }
+        else {
+            m_cds_start  = orfs.second.first;
+            m_cds_stop = orfs.second.second;
+        }
+
         if(!m_strand) {
             // make a reverse complimentary
             reverse (m_mrna.begin(), m_mrna.end());
             transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
         }
-
-        x_InitCDS(id_query); // init m_cds_start, m_cds_stop
 
         // compartments share the space between them
         size_t smin (0), smax (kMax_UInt);
@@ -730,12 +760,20 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     x_LoadSequence(&m_mrna, *id_query, 0, 
                    numeric_limits<THit::TCoord>::max(), false);
 
+    const TOrfPair orfs (GetCds(id_query, & m_mrna));
+    if(m_strand) {
+        m_cds_start  = orfs.first.first;
+        m_cds_stop   = orfs.first.second;
+    }
+    else {
+        m_cds_start  = orfs.second.first;
+        m_cds_stop   = orfs.second.second;
+    }
+
     if(!m_strand) {
         reverse (m_mrna.begin(), m_mrna.end());
         transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
     }
-
-    x_InitCDS(id_query);
 
     bool rv (true);
     try {
@@ -1201,7 +1239,12 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         // setup esf
         m_aligner->SetPattern(pattern);
         m_aligner->SetEndSpaceFree(true, true, true, true);
-        m_aligner->SetCDS(m_cds_start, m_cds_stop);
+        if(m_strand) {
+            m_aligner->SetCDS(m_cds_start, m_cds_stop);
+        }
+        else {
+            m_aligner->SetCDS(len1 - m_cds_start - 1, len1 - m_cds_stop - 1);
+        }
         m_aligner->Run();
 
 //#define DBG_DUMP_TYPE2

@@ -686,7 +686,7 @@ void CSplignApp::x_DoIncremental(void)
 }
 
 
-void CSplignApp::x_DoBatch2(void)
+void CSplignApp::x_DoBatch3(void)
 {
     USING_SCOPE(objects);
     USING_SCOPE(blast);
@@ -974,7 +974,7 @@ int CSplignApp::Run()
         x_DoIncremental();
     }
     else if(run_mode == eBatch3) {
-        x_DoBatch2();
+        x_DoBatch3();
     }
     else {
         NCBI_THROW(CSplignAppException,
@@ -1001,7 +1001,7 @@ int CSplignApp::Run()
     }
     else if (run_mode == eBatch2) {
 
-        CNcbiIstream& hit_stream = args["comps"].AsInputFile();
+        CNcbiIstream& hit_stream (args["comps"].AsInputFile());
         THitRefs hitrefs;
         THit::TCoord subj_min, subj_max;
 
@@ -1094,9 +1094,11 @@ size_t GetNonConsensusSpliceCount(const CSplign::TResults & splign_results)
         char dnr [] = {0, 0, 0};
         char acc [] = {0, 0, 0};
         size_t exon_count (0);
+
         for(TIterator jjb (ac.m_segments.begin()), jje (ac.m_segments.end()), jj(jjb);
             jj != jje; ++jj)
         {
+
             if(jj->m_exon) {
 
                 const char * p (jj->m_details.data()), * pe (p +jj->m_details.size());
@@ -1121,19 +1123,21 @@ size_t GetNonConsensusSpliceCount(const CSplign::TResults & splign_results)
                 if(exon_count > 0) {
 
                     if(jj->m_annot[2] == '<') {
+
                         acc[0] = jj->m_annot[0];
                         acc[1] = jj->m_annot[1];
+
                         if(!CNWFormatter::SSegment::s_IsConsensusSplice(dnr, acc)) {
                             ++nc_count;
                         }
                     }
                     acc[0] = acc[1] = 0;
-
-                    const char * p (jj->m_annot.data());
-                    while(*p++ != '>') ++p;
-                    dnr[0] = *p++;
-                    dnr[1] = *p;
                 }
+
+                p = jj->m_annot.data();
+                while(*p++ != '>');
+                dnr[0] = *p++;
+                dnr[1] = *p;
 
                 ++exon_count;
             }
@@ -1216,6 +1220,8 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     }
     else {
 
+        // when in doubt - align both directions
+
         THitRefs hits0;
         ITERATE(THitRefs, ii, hitrefs) {
             const THitRef & h0 (*ii);
@@ -1223,26 +1229,33 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
             hits0.push_back(h1);
         }
 
+        // determine the direction with the longest ORF
+        const CSplign::TOrfPair orfs (m_Splign->GetCds(hitrefs.front()->GetQueryId()));
+        const size_t orf_sense (orfs.first.second - orfs.first.first);
+        const size_t orf_antisense (orfs.second.first - orfs.second.second);
+        const bool sense_first (orf_sense >= orf_antisense);
+        
         static size_t mid (1);
-        size_t mid_plus, mid_minus;
+        size_t mid_first, mid_second;
 
         // align in sense direction
-        m_Splign->SetStrand(true);
+        m_Splign->SetStrand(sense_first);
         m_Splign->SetStartModelId(mid);
         x_RunSplign(raw_hits, &hitrefs, smin, smax, &splign_results);
-        mid_plus = m_Splign->GetNextModelId();
+        mid_first = m_Splign->GetNextModelId();
 
-        // if there is a non-consensus splice, also align in antisense
+        // if there is a non-consensus splice, also align the opposite direction
         const size_t nc_count (GetNonConsensusSpliceCount(splign_results));
+
         if(nc_count > 0) {
-            m_Splign->SetStrand(false);
+            m_Splign->SetStrand(!sense_first);
             m_Splign->SetStartModelId(mid);
             x_RunSplign(raw_hits, &hits0, smin, smax, &splign_results);
-            mid_minus = m_Splign->GetNextModelId();
-            mid = max(mid_plus, mid_minus);
+            mid_second = m_Splign->GetNextModelId();
+            mid = max(mid_first, mid_second);
         }
         else {
-            mid = mid_plus;
+            mid = mid_first;
         }
     }
     
