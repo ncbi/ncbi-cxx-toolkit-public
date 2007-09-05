@@ -166,6 +166,10 @@ public:
     // clear sequence vectors and scope - use with caution
     void ClearMem(void);
 
+    typedef pair<size_t,size_t>   TOrf;
+    typedef pair<TOrf,TOrf>       TOrfPair;
+    TOrfPair GetCds(const THit::TId & id, const vector<char> * seq_data = 0);
+
 protected:
 
     // active ingredient :-)
@@ -200,9 +204,8 @@ protected:
     };
     vector<SAlnMapElem> m_alnmap;
 
-    typedef pair<size_t,size_t> TCDS;
-    typedef map<string,TCDS> TStrIdToCDS;
-    TStrIdToCDS m_CdsMap;
+    typedef map<string,TOrfPair>  TStrIdToOrfs;
+    TStrIdToOrfs  m_OrfMap;
 
     // query sequence
     vector<char> m_mrna;
@@ -249,8 +252,6 @@ protected:
                           THit::TCoord start,
                           THit::TCoord finish,
                           bool retain);
-
-    void x_InitCDS(const THit::TId& id);
 
     /// forbidden
     CSplign(const CSplign&);
