@@ -241,7 +241,7 @@ protected:
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
     void   x_SetPattern(THitRefs* hitrefs);
-    void   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
+    bool   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
 
     void   x_LoadSequence(vector<char>* seq, 
