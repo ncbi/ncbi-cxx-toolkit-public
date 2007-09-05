@@ -1583,14 +1583,15 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
 }
 
 
-void CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
+bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
 {            
+    bool turn2gap (false);
+
     const size_t exon_size (1 + term_segs[0]->m_box[1] -
                             term_segs[0]->m_box[0]);
-    
+
     if(exon_size < kMinTermExonSize) {
 
-        bool turn2gap (false);
         const double idty (term_segs[0]->m_idty);
         if(idty < kMinTermExonIdty) {
             turn2gap = true;
@@ -1619,15 +1620,13 @@ void CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
             const bool consensus (TSegment::s_IsConsensusSplice(dnr, acc));
 
             size_t max_ext ((idty < .96 || !consensus || exon_size < 16)? 
-                            m_max_genomic_ext:
-                            (5000 *  kMinTermExonSize));
+                            m_max_genomic_ext: (5000 *  kMinTermExonSize));
 
             if(!consensus && exon_size < 10) {
                 max_ext = 1;
             }
 
             const size_t max_intron_len (x_GetGenomicExtent(exon_size, max_ext));
-
             if(intron_len > max_intron_len) {
                 turn2gap = true;
             }
@@ -1645,6 +1644,8 @@ void CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
             s.m_score = 0;
         }
     }
+
+    return turn2gap;
 }
 
 
