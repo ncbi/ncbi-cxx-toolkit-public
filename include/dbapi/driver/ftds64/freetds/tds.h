@@ -1345,7 +1345,8 @@ int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_FETCH fetch
 /* int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_FETCH fetch_type, TDS_INT i_row); 0.95 */
 int tds_cursor_close(TDSSOCKET * tds, TDSCURSOR * cursor);
 int tds_cursor_dealloc(TDSSOCKET * tds, TDSCURSOR * cursor);
-int tds_cursor_update(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_OPERATION op, TDS_INT i_row);
+/* int tds_cursor_update(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_OPERATION op, TDS_INT i_row); */
+int tds_cursor_update(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_OPERATION op, TDS_INT i_row, TDSPARAMINFO *params);
 int tds_cursor_setname(TDSSOCKET * tds, TDSCURSOR * cursor);
 
 int tds_multiple_init(TDSSOCKET *tds, TDSMULTIPLE *multiple, TDS_MULTIPLE_TYPE type);
