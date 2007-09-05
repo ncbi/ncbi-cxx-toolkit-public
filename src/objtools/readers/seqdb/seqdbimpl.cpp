@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include "seqdbimpl.hpp"
 #include <iostream>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -972,6 +973,12 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<int> & oids) const
         ITERATE(vector<int>, iter, vol_oids) {
             int oid1 = ((*iter) + vol_start);
             int oid2 = oid1;
+            
+            // Remove OIDs already found in OIDs.
+            
+            if (find(oids.begin(), oids.end(), oid1) != oids.end()) {
+                continue;
+            }
             
             // Filter out any oids not in the virtual oid bitmaps.
             
