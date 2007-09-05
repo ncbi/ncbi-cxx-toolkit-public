@@ -1350,7 +1350,7 @@ bool CObjectIStreamXml::ThisTagIsSelfClosed(void)
 void
 CObjectIStreamXml::BeginContainer(const CContainerTypeInfo*  containerType)
 {
-    if (!x_IsStdXml()) {
+    if (!m_StdXml) {
         if (TopFrame().GetFrameType() == CObjectStackFrame::eFrameArray &&
             FetchFrameFromTop(1).GetFrameType() == CObjectStackFrame::eFrameNamed) {
             const CClassTypeInfo* clType =
@@ -1366,7 +1366,7 @@ CObjectIStreamXml::BeginContainer(const CContainerTypeInfo*  containerType)
 
 void CObjectIStreamXml::EndContainer(void)
 {
-    if (!x_IsStdXml() && !TopFrame().GetNotag()) {
+    if (!m_StdXml && !TopFrame().GetNotag()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
 }

@@ -965,7 +965,7 @@ void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
 void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
     bool needNs = x_ProcessTypeNamespace(containerType);
-    if (!x_IsStdXml()) {
+    if (!m_StdXml) {
         if (TopFrame().GetFrameType() == CObjectStackFrame::eFrameArray &&
             FetchFrameFromTop(1).GetFrameType() == CObjectStackFrame::eFrameNamed) {
             const CClassTypeInfo* clType =
@@ -984,7 +984,7 @@ void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 
 void CObjectOStreamXml::EndContainer(void)
 {
-    if (!x_IsStdXml() && !TopFrame().GetNotag()) {
+    if (!m_StdXml && !TopFrame().GetNotag()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
     x_EndTypeNamespace();
