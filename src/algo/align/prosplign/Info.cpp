@@ -52,9 +52,6 @@ CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOpt
 
 BEGIN_SCOPE(prosplign)
 
-bool CInfo::full = true;
-bool CInfo::eat_gaps = true;
-
 CInfo::CInfo(const CAli& ali, CProSplignOutputOptionsExt output_options) :
     m_Ali(ali), nseq(*ali.cnseq), m_options(output_options)
 {

@@ -125,9 +125,9 @@ public:
         return false;
     }
 
-    static bool full;//do not search for 'good pieces', output full alignment in info file
+    bool full;//do not search for 'good pieces', output full alignment in info file
 //    static bool info_only;   //true - info only, false - alignment output
-    static bool eat_gaps;//do not show regular gaps in short output (info)
+    bool eat_gaps;//do not show regular gaps in short output (info)
     //deletions at the beginning/end for 'full' output
     int beg_del, end_del;
 };
