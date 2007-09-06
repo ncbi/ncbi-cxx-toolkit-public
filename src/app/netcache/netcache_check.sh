@@ -25,7 +25,29 @@ services="
    NC_test           \
    NC_TraceAssmV     \
    NC_TraceViewer    \
-   NC_Reserve"
+   NC_Reserve        \
+   NC_AppLogCGI      \
+   NC_FluAnnot       \
+   NC_FrameShifts    \
+   NC_GBSubmission   \
+   NC_GeneMark       \
+   NC_GeoSubmission_Dev \
+   NC_GeoSubmission_Test \
+   NC_Glimmer        \
+   NC_IgBlast        \
+   NC_Influenza      \
+   NC_Influenza_Dev  \
+   NC_Influenza_QA   \
+   NC_Influenza_Test \
+   NC_MapView_Dev    \
+   NC_QMBP           \
+   NC_QMBP_Dev       \
+   NC_SeqComp        \
+   NC_TreeBuilder    \
+   NC_TreeBuilder_Dev \
+   NC_TreeBuilder_QA \
+   NC_TreeBuilder_Test \
+   NC_WebLog"
 
 be_md_hosts="
    service0:9005 \
@@ -93,10 +115,11 @@ sum_list=''
 
 os=`env | grep "OS=" | grep -i "Windows"`
 if test $? -ne 0; then
-    service_machines="service0 service1 service2 service3"
+    service_machines="service0 service1 service2 service3 serviceqa"
     mask="NC_.*"
     for s in $service_machines ; do
-       list=`$lbsmc -g $s 0 2>&1 | tail +7 | cut -f1 -d' ' | sed '/-/{x;q;}' | grep -s "$mask"`
+       list=`lbsmc -a -h $s 0 2>&1 | sed 's/  */ /g' | cut -f1 -d' ' | sed '1,/^Service/d' | sed 'g;N;/[*]/{x;q;}' | grep -si "^$mask"`
+       #list=`$lbsmc -g $s 0 2>&1 | tail +7 | cut -f1 -d' ' | sed '/-/{x;q;}' | grep -s "$mask"`
        test -n list  ||  list=""
        wholelist=`echo $wholelist $list` 
     done

@@ -36,6 +36,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbistre.hpp>
 
 #include <connect/services/netschedule_api.hpp>
 
@@ -70,15 +71,64 @@ void CNetScheduleCheck::Init(void)
         "NetSchedule host or service name. Format: service|host:port", 
         CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("q",
+    arg_desc->AddOptionalKey("qclass",
                              "queue",
-                             "Queue name",
+                             "Queue class name",
                              CArgDescriptions::eString);
 
 
     SetupArgDescriptions(arg_desc.release());
 }
 
+class CQueueFinder : public INetServiceAPI::ISink
+{
+public:
+    typedef map<string, int> TQueueCounter;
+
+    CQueueFinder(const string& requested_queue) 
+        : m_ServerCounter(0), m_RequestedQueue(requested_queue) {}
+    virtual ~CQueueFinder() {}
+
+    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
+    {
+        ++m_ServerCounter;
+        m_Strm.reset(new CNcbiOstrstream);
+        return *m_Strm;
+    }
+    virtual void EndOfData(CNetSrvConnector& conn) 
+    {
+        string squeues = string(CNcbiOstrstreamToString(*m_Strm));
+        m_Strm.release();
+        list<string> queues;
+        NStr::Split(squeues, ";",queues);
+        ITERATE(list<string>, it, queues) {
+            if(m_QueueCounter.find(*it) == m_QueueCounter.end())
+                m_QueueCounter[*it] = 1;
+            else
+                m_QueueCounter[*it]++;
+        }
+    }
+
+    string GetQueueClass() const
+    {
+        TQueueCounter::const_iterator i = m_QueueCounter.find(m_RequestedQueue);  
+        if ( i != m_QueueCounter.end() ) {
+            if ( i->second == m_ServerCounter )
+                return m_RequestedQueue;
+        }
+        ITERATE(TQueueCounter, it, m_QueueCounter) {
+            if (it->second == m_ServerCounter)
+                return it->first;
+        }
+        return kEmptyStr; 
+    }
+
+private: 
+    TQueueCounter m_QueueCounter;
+    auto_ptr<CNcbiOstrstream> m_Strm;
+    int m_ServerCounter;
+    string m_RequestedQueue;
+};
 
 int CNetScheduleCheck::Run(void)
 {
@@ -87,14 +137,30 @@ int CNetScheduleCheck::Run(void)
     const string& service  = args["service"].AsString();
 
     string queue = "test";
-    if (args["q"]) {  
-        queue = args["q"].AsString(); 
+    if (args["qclass"]) {  
+        queue = args["qclass"].AsString(); 
+    }
+    CQueueFinder finder(queue);
+
+
+    CNetScheduleAPI cln1(service, "netschedule_admin", queue);
+    CNetScheduleAdmin admin = cln1.GetAdmin();
+    admin.GetQueueList(finder);
+    string qclass = finder.GetQueueClass();
+    if( qclass.empty()) {
+        ERR_POST("Could not find siutable qclass for the given NetSchedule service: " << service);
+        return 1;
     }
 
-
+    queue = "netschedule_check_queue";
+    admin.CreateQueue(queue, qclass);
+    
     CNetScheduleAPI cln(service, "netschedule_admin", queue);
 
-    return Run(cln);
+    int ret = Run(cln);
+    admin.DeleteQueue(queue);
+
+    return ret;
 }
 
 int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
@@ -108,10 +174,10 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
     submitter.SubmitJob(job);
 
     while ( true ) {
-        SleepSec(1);
+        //SleepSec(1);
         
         CNetScheduleJob job1;
-        bool job_exists = executer.GetJob(job1);
+        bool job_exists = executer.WaitJob(job1,5,9898);
         if (job_exists) {
             if (job1.job_id != job.job_id)
                 executer.ReturnJob(job1.job_id);
@@ -135,7 +201,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
     string err;
     while(check_again) {
         check_again = false;
-        SleepSec(1);
+        //SleepSec(1);
 
         CNetScheduleAPI::EJobStatus status = submitter.GetJobDetails(job);
         switch(status) {
