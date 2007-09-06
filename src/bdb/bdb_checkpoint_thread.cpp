@@ -55,6 +55,12 @@ CBDB_CheckPointThread::CBDB_CheckPointThread(CBDB_Env& env,
               CBDB_Env::eBackground_DeadLockDetect;
 }
 
+CBDB_CheckPointThread::~CBDB_CheckPointThread()
+{
+//    LOG_POST("~CBDB_CheckPointThread()");
+}
+
+
 void CBDB_CheckPointThread::SetMaxErrors(unsigned max_err)
 {
     m_MaxErrors = max_err;

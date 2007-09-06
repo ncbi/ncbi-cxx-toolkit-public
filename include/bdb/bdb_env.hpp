@@ -268,6 +268,9 @@ public:
     /// Reset log sequence number
     void LsnReset(const char* file_name);
 
+    /// Reset log sequence number if environment logs are in memory
+    void LsnResetForMemLog(const char* file_name);
+
     /// Get default syncronicity setting
     CBDB_Transaction::ETransSync GetTransactionSync() const
     {
@@ -391,6 +394,9 @@ public:
                              unsigned thread_delay = 30,
                              int memp_trickle = 0,
                              unsigned err_max = 0);
+
+    /// Stop transaction checkpoint thread
+    void StopBackgroundWriterThread();
 
     /// Deprecated version of RunBackgroundWriter
     void RunCheckpointThread(unsigned thread_delay = 30,

@@ -497,6 +497,13 @@ void CBDB_Env::LsnReset(const char* file_name)
     BDB_CHECK(ret, "DB_ENV::lsn_reset");
 }
 
+void CBDB_Env::LsnResetForMemLog(const char* file_name)
+{
+    if (!m_LogInMemory) return;
+    int ret = m_Env->lsn_reset(m_Env, const_cast<char*>(file_name), 0);
+    BDB_CHECK(ret, "DB_ENV::lsn_reset");
+}
+
 unsigned CBDB_Env::GetMaxLocks()
 {
     if (!m_Env)
@@ -1017,7 +1024,7 @@ void CBDB_Env::RunCheckpointThread(unsigned thread_delay,
     RunBackgroundWriter(flags, thread_delay, memp_trickle, err_max);
 }
 
-void CBDB_Env::StopCheckpointThread()
+void CBDB_Env::StopBackgroundWriterThread()
 {
 # ifdef NCBI_THREADS
     if (!m_CheckThread.Empty()) {
@@ -1029,6 +1036,10 @@ void CBDB_Env::StopCheckpointThread()
 # endif
 }
 
+void CBDB_Env::StopCheckpointThread()
+{
+    StopBackgroundWriterThread();
+}
 
 void BDB_RecoverEnv(const string& path,
                     bool          fatal_recover)

@@ -1328,10 +1328,6 @@ void CBDB_Cache::Open(const string& cache_path,
     m_CacheIdIDX = new SCache_IdIDX();
     m_CacheIdIDX_RO = new SCache_IdIDX();
 
-    m_BLOB_SplitStore->RevSplitOff();
-    m_CacheAttrDB->RevSplitOff();
-    m_CacheIdIDX->RevSplitOff();
-
     m_BLOB_SplitStore->SetEnv(*m_Env);
     m_CacheAttrDB->SetEnv(*m_Env);
     m_CacheAttrDB_RO1->SetEnv(*m_Env);
@@ -1493,10 +1489,6 @@ void CBDB_Cache::StopPurgeThread()
         m_PurgeThread->Join();
         LOG_POST(Info << "Stopped.");
     }
-
-    if (m_Env) {
-        m_Env->StopCheckpointThread();
-    }
 # endif
 }
 
@@ -1541,19 +1533,29 @@ void CBDB_Cache::OpenReadOnly(const string&  cache_path,
 
 void CBDB_Cache::Close()
 {
+    if (!m_Env) {
+        return;
+    }
     StopPurgeThread();
+
+    if (m_Env && !m_JoinedEnv) {
+        m_Env->StopBackgroundWriterThread();
+    }
 
     if (m_BLOB_SplitStore) {
         m_BLOB_SplitStore->Save();
     }
 
     delete m_PidGuard;        m_PidGuard = 0;
-    delete m_BLOB_SplitStore; m_BLOB_SplitStore = 0;
-    delete m_CacheAttrDB;     m_CacheAttrDB = 0;
-    delete m_CacheIdIDX;      m_CacheIdIDX = 0;
+
     delete m_CacheAttrDB_RO1; m_CacheAttrDB_RO1 = 0;
     delete m_CacheAttrDB_RO2; m_CacheAttrDB_RO2 = 0;
     delete m_CacheIdIDX_RO;   m_CacheIdIDX_RO = 0;
+
+    delete m_BLOB_SplitStore; m_BLOB_SplitStore = 0;
+    delete m_CacheAttrDB;     m_CacheAttrDB = 0;
+    delete m_CacheIdIDX;      m_CacheIdIDX = 0;
+
     delete m_TimeLine;        m_TimeLine = 0;
 
     if (m_Env == 0) {

@@ -56,6 +56,7 @@ public:
                           int      memp_trickle,
                           unsigned run_delay,
                           unsigned stop_request_poll = 10);
+    ~CBDB_CheckPointThread();
 
     virtual void DoJob(void);
 

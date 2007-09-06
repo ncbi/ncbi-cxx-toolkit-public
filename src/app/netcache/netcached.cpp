@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=3.1.0  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=3.0.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -2174,6 +2174,9 @@ int CNetCacheDApp::Run(void)
         NcbiCerr << "Running server on port " << port << NcbiEndl;
         LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
+
+        LOG_POST(Info << "Server stopped. Closing storage.");
+        bdb_cache->Close();
     }
     catch (CBDB_ErrnoException& ex)
     {
