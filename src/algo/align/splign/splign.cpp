@@ -332,7 +332,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     // check that no two consecutive hits are farther than the max intron
     // (extra short hits skipped)
-    const size_t max_intron (1u << 19);
+    const size_t max_intron (1u << 20);
     size_t prev (0);
     NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
