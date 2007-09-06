@@ -33,28 +33,26 @@
 BEGIN_NCBI_SCOPE
 
 CPtbRegistry::CPtbRegistry(void)
+    : m_IsEmpty(true)
 {
-    m_Registry = new CNcbiRegistry;
-    m_Autodelete = true;
+    m_Registry.reset(new CMemoryRegistry);
 }
 
-CPtbRegistry::CPtbRegistry(const CNcbiRegistry& reg)
-    : m_Registry(const_cast<CNcbiRegistry*>(&reg)),
-      m_Autodelete(false)
+CPtbRegistry::CPtbRegistry(const IRWRegistry& reg)
+    : m_Registry(const_cast<IRWRegistry*>(&reg), eNoOwnership)
 {
+    m_IsEmpty = reg.Empty();
 }
 
 CPtbRegistry::~CPtbRegistry(void)
 {
-    if (m_Autodelete) {
-        delete m_Registry;
-    }
 }
 
 string CPtbRegistry::GetString(const string& section,
                                const string& name,
                                const string& default_value) const
 {
+    if (m_IsEmpty) {return default_value;}
     string key(section+name);
     map<string,string>::const_iterator i = m_Cache.find(key);
     if (i != m_Cache.end()) {

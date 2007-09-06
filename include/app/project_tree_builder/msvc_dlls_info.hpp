@@ -69,7 +69,10 @@ public:
 
 private:
     CPtbRegistry m_Registry;
-    map<string,string> m_DllHostedLibs;
+    typedef map<string, string> TDllHosting;
+    TDllHosting m_DllHosted_Registry;
+    TDllHosting m_DllHosted_Assigned;
+    list<string> m_DllsList;
 
     //no value-type semantics
     CMsvcDllsInfo(void);

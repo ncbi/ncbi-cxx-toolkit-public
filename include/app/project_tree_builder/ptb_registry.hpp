@@ -35,11 +35,12 @@
    
 BEGIN_NCBI_SCOPE
 
+
 class CPtbRegistry
 {
 public:
     CPtbRegistry(void);
-    CPtbRegistry(const CNcbiRegistry& reg);
+    CPtbRegistry(const IRWRegistry& reg);
     ~CPtbRegistry(void);
 
     string GetString(const string& section,
@@ -49,30 +50,35 @@ public:
     string Get(const string& section,
                const string& name) const
     {
-        return GetString(section,name);
+        return m_IsEmpty ? kEmptyStr : GetString(section,name);
     }
     bool HasEntry(const string& section) const
     {
-        return m_Registry->HasEntry(section);
+        return m_IsEmpty ? false : m_Registry->HasEntry(section);
     }
     void Read(CNcbiIstream& is)
     {
         m_Registry->Read(is);
+        m_IsEmpty = m_Registry->Empty();
     }
     bool Empty(void) const
     {
-        return m_Registry->Empty();
+        return m_IsEmpty;
     }
     void EnumerateEntries(const string& section,
                           list<string>* entries) const
     {
-        m_Registry->EnumerateEntries(section,entries);
+        if (!m_IsEmpty) {m_Registry->EnumerateEntries(section,entries);}
     }
 
 private:
     mutable map<string,string> m_Cache;
-    CNcbiRegistry* m_Registry;
-    bool m_Autodelete;
+    AutoPtr<IRWRegistry> m_Registry;
+    bool m_IsEmpty;
+
+    /// forbidden
+    CPtbRegistry(const CPtbRegistry&);
+    CPtbRegistry& operator=(const CPtbRegistry&);
 };
 
 END_NCBI_SCOPE

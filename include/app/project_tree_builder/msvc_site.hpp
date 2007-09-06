@@ -181,6 +181,11 @@ private:
 
     CSymResolver m_Macros;
 
+    /// cache of directories and their existence
+    typedef map<string, bool> TDirectoryExistenceMap;
+    static TDirectoryExistenceMap sm_DirExists;
+    static bool x_DirExists(const string& dir_name);
+
     /// Prohibited to:
     CMsvcSite(void);
     CMsvcSite(const CMsvcSite&);

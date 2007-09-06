@@ -50,8 +50,21 @@ CMsvcDllsInfo::CMsvcDllsInfo(const string& file_path)
     if (ifs) {
         //read registry
         m_Registry.Read(ifs);
+
+        ncbi::GetDllsList(m_Registry, &m_DllsList);
+
+        ITERATE (list<string>, iter, m_DllsList) {
+            string hosting_str = m_Registry.GetString(*iter, "Hosting");
+            if ( !hosting_str.empty() ) {
+                list<string> tmp;
+                NStr::Split(hosting_str, LIST_SEPARATOR, tmp);
+                ITERATE (list<string>, it, tmp) {
+                    m_DllHosted_Registry[*it] = *iter;
+                }
+            }
+        }
     } else {
-        LOG_POST(Error << file_path << " not found");
+        LOG_POST(Warning << file_path << " not found");
     }
 }
 
@@ -63,7 +76,7 @@ CMsvcDllsInfo::~CMsvcDllsInfo(void)
 
 void CMsvcDllsInfo::GetDllsList(list<string>* dlls_ids) const
 {
-    ncbi::GetDllsList(m_Registry, dlls_ids);
+    *dlls_ids = m_DllsList;
 }
 
 
@@ -122,6 +135,8 @@ bool CMsvcDllsInfo::IsDllHosted(const string& lib_id) const
 
 string CMsvcDllsInfo::GetDllHost(const string& lib_id) const
 {
+
+    /**
     list<string> dll_list;
     GetDllsList(&dll_list);
 
@@ -135,22 +150,34 @@ string CMsvcDllsInfo::GetDllHost(const string& lib_id) const
             return dll_id;
         }
     }
-    map<string,string>::const_iterator i = m_DllHostedLibs.find(lib_id);
-    if ( i != m_DllHostedLibs.end()) {
+    **/
+    //TLibHosting::const_iterator it = m_LibHosting.find(
+    TDllHosting::const_iterator i;
+
+    /// we scan the items in the registry first
+    i = m_DllHosted_Registry.find(lib_id);
+    if ( i != m_DllHosted_Registry.end()) {
         return i->second;
     }
-    return "";
+
+    /// then we scan the items that were explicitly assigned
+    i = m_DllHosted_Assigned.find(lib_id);
+    if ( i != m_DllHosted_Assigned.end()) {
+        return i->second;
+    }
+
+    /// nothing found
+    return kEmptyStr;
 }
 
 void CMsvcDllsInfo::AddDllHostedLib(const string& lib_id, const string& host)
 {
-    m_DllHostedLibs[lib_id] = host;
+    m_DllHosted_Assigned[lib_id] = host;
 }
 
 string CMsvcDllsInfo::GetDllHostedLib(const string& host) const
 {
-    map< string,string >::const_iterator p;
-    for (p = m_DllHostedLibs.begin(); p != m_DllHostedLibs.end(); ++p) {
+    ITERATE (TDllHosting, p, m_DllHosted_Assigned) {
         if (p->second == host) {
             return p->first;
         }

@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+CMsvcSite::TDirectoryExistenceMap CMsvcSite::sm_DirExists;
 
 //-----------------------------------------------------------------------------
 CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
@@ -492,13 +493,24 @@ void CMsvcSite::GetStandardFeatures(list<string>& features) const
 }
 
 //-----------------------------------------------------------------------------
+bool CMsvcSite::x_DirExists(const string& dir_name)
+{
+    TDirectoryExistenceMap::iterator it = sm_DirExists.find(dir_name);
+    if (it == sm_DirExists.end()) {
+        bool exists = CDirEntry(dir_name).Exists();
+        it = sm_DirExists.insert
+            (TDirectoryExistenceMap::value_type(dir_name, exists)).first;
+    }
+    return it->second;
+}
+
 bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
     if ( lib_info.IsEmpty() )
         return false;
     if ( !lib_info.m_IncludeDir.empty() ) {
         ITERATE(list<string>, i, lib_info.m_IncludeDir) {
-            if (!CDirEntry(*i).Exists() ) {
+            if (!x_DirExists(*i) ) {
                 if (!silent) {
                     LOG_POST(Warning << "No LIB INCLUDE: " + *i);
                 }
@@ -507,7 +519,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
         }
     }
     if ( !lib_info.m_LibPath.empty() &&
-         !CDirEntry(lib_info.m_LibPath).Exists() ) {
+         !x_DirExists(lib_info.m_LibPath) ) {
         if (!silent) {
             LOG_POST(Warning << "No LIBPATH: " + lib_info.m_LibPath);
         }
@@ -518,7 +530,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             const string& lib = *p;
             string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
             if ( !lib_path_abs.empty() &&
-                !CDirEntry(lib_path_abs).Exists() ) {
+                 !x_DirExists(lib_path_abs) ) {
                 if (!silent) {
                     LOG_POST(Warning << "No LIB: " + lib_path_abs);
                 }
@@ -532,7 +544,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             if (!CDirEntry::IsAbsolutePath(file)) {
                 file = CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Root, file);
             }
-            if (!CDirEntry(file).Exists()) {
+            if ( !x_DirExists(file) ) {
                 if (!silent) {
                     LOG_POST(Warning << "No FILES: " + file);
                 }
