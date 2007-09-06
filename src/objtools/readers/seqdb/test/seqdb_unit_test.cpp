@@ -3143,6 +3143,20 @@ BOOST_AUTO_TEST_CASE(FilteredHeaders)
     CHECK(size1 > (size2 + 5));
 }
 
+BOOST_AUTO_TEST_CASE(PdbIdWithChain)
+{
+    START;
+    
+    CSeqDB nr("nr", CSeqDB::eProtein);
+    
+    string acc("1QCFA");
+    
+    vector<int> oids;
+    nr.AccessionToOids(acc, oids);
+    
+    CHECK(oids.size());
+}
+
 
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)

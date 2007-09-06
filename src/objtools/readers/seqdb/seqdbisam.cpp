@@ -1580,8 +1580,6 @@ s_SeqDB_ParseSeqIDs(const string              & line,
 {
     // (Derived from s_ParseFastaDefline()).
     
-    // try to parse out IDs
-    
     seqids.clear();
     size_t pos = 0;
     
@@ -1673,6 +1671,34 @@ void CSeqDBIsam::StringToOids(const string   & acc,
                               indices_out,
                               locked)) < 0) {
         return;
+    }
+    
+    if (err != eNotFound) {
+        found = true;
+    }
+    
+    if (! found) {
+        // Use CSeq_id to parse the id string and build a replacement,
+        // FASTA type string.  This allows some IDs, such as PDBs with
+        // chains, such as '1qcfA' to be parsed.
+        
+        string id;
+        
+        try {
+            CSeq_id seqid(acc);
+            id = seqid.AsFastaString();
+        }
+        catch(CSeqIdException & e) {
+        }
+        
+        if (id.size() &&
+            ((err = x_StringSearch(id,
+                                   keys_out,
+                                   data_out,
+                                   indices_out,
+                                   locked)) < 0)) {
+            return;
+        }
     }
     
     if (err != eNotFound) {
