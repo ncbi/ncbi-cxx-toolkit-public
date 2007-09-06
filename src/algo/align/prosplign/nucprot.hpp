@@ -89,7 +89,7 @@ struct SEQUTIL {
     SEQUTIL(string name);  // matrix for proteins
 	
   char matrix[256][256];
-  static string blosum62;
+  static const string blosum62;
     inline int MultScore(int nuc1, int nuc2, int nuc3, char amin, const CProSplignScaledScoring& scoring) { return (int)scoring.sm_koef*matrix[int(amin)][int(nuc2a(nuc1, nuc2, nuc3))]; }
 };
 
@@ -103,16 +103,18 @@ public:
     void SetAmin(char amin, const CProSplignScaledScoring& scoring);//call before GetScore() and/or GetScore(int n1, int n2, int n3)
     void Init(const CNSeq& seq, const CProSplignScaledScoring& scoring);//call before GetScore()
     inline int GetScore() { return *++m_pos; }
-    static inline int GetScore(int n1, int n2, int n3) { return m_gpos[n1*25+n2*5+n3]; }
-    CFastIScore() { m_size = 0; m_scores.resize(1); }
+    inline int GetScore(int n1, int n2, int n3) const { return m_gpos[n1*25+n2*5+n3]; }
+    CFastIScore() :  m_size(0), m_init(false) { m_scores.resize(1); }
 private:
     vector<int> m_scores;
     int *m_pos;
     int m_size;
-    static int *m_gpos;
-    static vector<int> m_gscores;
-    static void Init(const CProSplignScaledScoring& scoring);
-    static bool m_init;
+
+    int *m_gpos;
+    vector<int> m_gscores;
+    void Init(const CProSplignScaledScoring& scoring);
+    bool m_init;
+
     CFastIScore(const CFastIScore&);
     CFastIScore& operator=(const CFastIScore&);
 };

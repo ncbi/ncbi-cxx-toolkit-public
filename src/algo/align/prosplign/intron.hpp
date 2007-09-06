@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
-extern int infinity;
+extern const int infinity;
 
 class CHIntronScore : public pair<int, int> { //score, length / donor position
 public:
@@ -473,23 +473,23 @@ private:
         }
         return eANYa;
     }
-    inline void InitW12s(int j, const CProSplignScaledScoring& scoring) {
+    inline void InitW12s(int j, const CProSplignScaledScoring& scoring, const CFastIScore& fiscore) {
         j -= scoring.lmin + 3;
         if(j<0) return;
         char nuc1 = m_nseq[j];
         char nuc2 = m_nseq[++j];
-        m_w2s[nA] = CFastIScore::GetScore(nuc1, nuc2, nA);
-        m_w2s[nT] = CFastIScore::GetScore(nuc1, nuc2, nT);
-        m_w2s[nG] = CFastIScore::GetScore(nuc1, nuc2, nG);
-        m_w2s[nC] = CFastIScore::GetScore(nuc1, nuc2, nC);
-        m_w2s[nN] = CFastIScore::GetScore(nuc1, nuc2, nN);
+        m_w2s[nA] = fiscore.GetScore(nuc1, nuc2, nA);
+        m_w2s[nT] = fiscore.GetScore(nuc1, nuc2, nT);
+        m_w2s[nG] = fiscore.GetScore(nuc1, nuc2, nG);
+        m_w2s[nC] = fiscore.GetScore(nuc1, nuc2, nC);
+        m_w2s[nN] = fiscore.GetScore(nuc1, nuc2, nN);
         nuc1 = m_nseq[j+=scoring.lmin];
         nuc2 = m_nseq[++j];
-        m_w1s[nA] = CFastIScore::GetScore(nA, nuc1, nuc2);
-        m_w1s[nT] = CFastIScore::GetScore(nT, nuc1, nuc2);
-        m_w1s[nG] = CFastIScore::GetScore(nG, nuc1, nuc2);
-        m_w1s[nC] = CFastIScore::GetScore(nC, nuc1, nuc2);
-        m_w1s[nN] = CFastIScore::GetScore(nN, nuc1, nuc2);
+        m_w1s[nA] = fiscore.GetScore(nA, nuc1, nuc2);
+        m_w1s[nT] = fiscore.GetScore(nT, nuc1, nuc2);
+        m_w1s[nG] = fiscore.GetScore(nG, nuc1, nuc2);
+        m_w1s[nC] = fiscore.GetScore(nC, nuc1, nuc2);
+        m_w1s[nN] = fiscore.GetScore(nN, nuc1, nuc2);
     }
     // Acceptor methods
     inline void BestScAny(const CProSplignScaledScoring& scoring) {
@@ -612,9 +612,9 @@ public:
     void InitRowScores(CAlignRow *row, vector<int>& prevw, int j);
     CFIntron(const CNSeq& nseq, const CProSplignScaledScoring scoring);
 
-    inline const CBestI& Step(int& j, const CProSplignScaledScoring& scoring)
+    inline const CBestI& Step(int& j, const CProSplignScaledScoring& scoring, const CFastIScore& fiscore)
     {
-        InitW12s(j, scoring);
+        InitW12s(j, scoring, fiscore);
         switch((++m_cd)->m_dt2) {
         case eGT :
             AddDon(j, scoring);

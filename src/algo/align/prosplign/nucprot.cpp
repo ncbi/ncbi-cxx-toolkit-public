@@ -47,9 +47,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
-int infinity = numeric_limits<int>::min()/3;
+const int infinity = numeric_limits<int>::min()/3;
 
-string SEQUTIL::blosum62(
+const string SEQUTIL::blosum62(
 "#  Matrix made by matblas from blosum62.iij\n"
 "#  * column uses minimum score\n"
 "#  BLOSUM Clustered Scoring Matrix in 1/2 Bit Units\n"
@@ -167,9 +167,9 @@ void CFastIScore::SetAmin(char amin, const CProSplignScaledScoring& scoring) {
     m_pos = &m_scores[num * m_size];
 }
 
-bool CFastIScore::m_init = false;
-int *CFastIScore::m_gpos;
-vector<int> CFastIScore::m_gscores;
+// bool CFastIScore::m_init = false;
+// int *CFastIScore::m_gpos;
+// vector<int> CFastIScore::m_gscores;
 
 void CFastIScore::Init(const CProSplignScaledScoring& scoring) {
     if(m_init) return;
@@ -355,7 +355,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         pv =  &prow->v[0];
         // *******  INTERNAL LOOP ******************
     	for(j=3;j<jlen_1;++j) {
-            const CBestI& bei = fin.Step(j, scoring);
+            const CBestI& bei = fin.Step(j, scoring, fiscore);
             //rest
             int w1 = *pw3 + fiscore.GetScore();
             int w2 = *pw1 + pe2;
@@ -433,7 +433,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         }
         //the last column !
         if(2 < jlen_1) { //j == jlen_1 
-            const CBestI bei = fin.Step(j, scoring);
+            const CBestI bei = fin.Step(j, scoring, fiscore);
             //rest
             int w1 = *pw3 + fiscore.GetScore();
             int w12 = prow->w[j-1];
@@ -1357,7 +1357,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, 
   // *******  INTERNAL LOOP ******************
 	for(j=3;j<jlen_1;++j) {
         int bb = 0;
-        const CBestI& bei = fin.Step(j, scoring);
+        const CBestI& bei = fin.Step(j, scoring, fiscore);
         //rest
         int w1 = *pw3 + fiscore.GetScore();
         int w2 = *pw1 + pe2;
@@ -1430,7 +1430,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, 
     if(2 < jlen_1) { //j == jlen_1 
         int& bb = bi.b[i-1][j-1].wmode;
         bb = 0;
-        const CBestI bei = fin.Step(j, scoring);
+        const CBestI bei = fin.Step(j, scoring, fiscore);
         //rest
         int w1 = *pw3 + fiscore.GetScore();
         int w12 = prow->w[j-1];
