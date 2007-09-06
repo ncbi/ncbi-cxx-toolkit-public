@@ -59,6 +59,7 @@ struct CSocketFactory
     static void Delete(CSocket* v) { delete v; }    
 };
 
+class CNetSrvConnectorPoll; 
 class NCBI_XCONNECT_EXPORT CNetSrvConnector
 {
 public:
@@ -110,7 +111,7 @@ public:
     unsigned int GetCreateSocketMaxRetries() const { return m_MaxRetries; }
 
 private:
-
+    friend class CNetSrvConnectorPoll; 
     CNetSrvConnector(const CNetSrvConnector& other);
     CNetSrvConnector& operator=(const CNetSrvConnector&);
 
@@ -362,7 +363,9 @@ public:
         eReadTimeout,
         eResponseTimeout,
         eLBNameNotFound,
-        eSrvListEmpty
+        eSrvListEmpty,
+        eConnectionFailure,
+        eWriteFailure
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -373,6 +376,8 @@ public:
         case eResponseTimeout:    return "eResponseTimeout";
         case eLBNameNotFound:     return "eLBNameNotFound";
         case eSrvListEmpty:       return "eSrvListEmpty";
+        case eConnectionFailure:  return "eConntectionFailure";
+        case eWriteFailure:       return "eWriteFailure";
         default:                  return CException::GetErrCodeString();
         }
     }

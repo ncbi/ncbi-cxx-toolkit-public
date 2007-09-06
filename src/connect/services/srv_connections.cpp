@@ -171,7 +171,7 @@ bool CNetSrvConnector::ReadStr(string& str)
         return true;
     case eIO_Timeout:
         NCBI_THROW(CNetSrvConnException, eReadTimeout, 
-                   "Communication timeout reading from server.");
+                   "Communication timeout reading from server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + ".");
         break;
     default: // invalid socket or request, bailing out
         return false;
@@ -192,7 +192,12 @@ void  CNetSrvConnector::WriteBuf(const void* buf, size_t len)
     while (size_to_write) {
         size_t n_written;
         EIO_Status io_st = m_Socket->Write(buf_ptr, size_to_write, &n_written);
-        NCBI_IO_CHECK(io_st);
+        if ( io_st != eIO_Success) {
+            CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
+            NCBI_THROW(CNetSrvConnException, eWriteFailure, 
+                        "Failed to write to server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + 
+                        ". Reason: " + string(io_ex.what()));
+        }
         size_to_write -= n_written;
         buf_ptr       += n_written;
     } // while
@@ -209,7 +214,7 @@ void CNetSrvConnector::WaitForServer(unsigned wait_sec)
         EIO_Status io_st = m_Socket->Wait(eIO_Read, &to);
         if (io_st == eIO_Timeout) {
             NCBI_THROW(CNetSrvConnException, eResponseTimeout, 
-                       "No response from the server");
+                       "No response from the server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + ".");
         }
         else {
             break;
@@ -221,9 +226,7 @@ void CNetSrvConnector::Telnet( CNcbiOstream& out,  CNetSrvConnector::IStringProc
 {
     _ASSERT(x_IsConnected());
 
-    STimeout rto;
-    rto.sec = 1;
-    rto.usec = 0;
+    STimeout rto = {1, 0};
     m_Socket->SetTimeout(eIO_Read, &rto);
 
     string line;
@@ -268,16 +271,20 @@ void CNetSrvConnector::x_CheckConnect()
                 
                 if (++conn_repeats > m_MaxRetries) {
                     if ( io_st != eIO_Success) {
-                        throw CIO_Exception(DIAG_COMPILE_INFO,
-                        0, (CIO_Exception::EErrCode)io_st, 
-                            "IO error. Failed to connect to server.");
+                        CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
+                        NCBI_THROW(CNetSrvConnException, eConnectionFailure, 
+                                "Failed to connect to server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + 
+                                ". Reason: " + string(io_ex.what()));
                     }
                 }
                 // give system a chance to recover
                 
                 SleepMilliSec(1000 * conn_repeats);
             } else {
-                NCBI_IO_CHECK(io_st);
+                CIO_Exception io_ex(DIAG_COMPILE_INFO,  0, (CIO_Exception::EErrCode)io_st,  "IO error.");
+                NCBI_THROW(CNetSrvConnException, eConnectionFailure, 
+                          "Failed to connect to server " + GetHost() + ":" + NStr::UIntToString(GetPort()) + 
+                          ". Reason: " + string(io_ex.what()));
             }
         } else {
             break;
