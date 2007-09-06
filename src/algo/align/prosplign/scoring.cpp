@@ -41,7 +41,7 @@ BEGIN_SCOPE(prosplign)
 CProSplignScaledScoring::CProSplignScaledScoring(const CProSplignScoring& user_scores) :
     CProSplignScoring(user_scores)
 {
-    int scale = GetInvertedIntronExtensionCost() * 3;
+    scale = GetInvertedIntronExtensionCost() * 3;
     SetIntronExtensionCost(1);
     
     SetGapOpeningCost(scale * GetGapOpeningCost());
@@ -54,6 +54,8 @@ CProSplignScaledScoring::CProSplignScaledScoring(const CProSplignScoring& user_s
     SetATIntronCost(scale * GetATIntronCost());
     
     SetNonConsensusIntronCost(scale * GetNonConsensusIntronCost());
+
+    Init();
 }
 
 int CProSplignScaledScoring::GetScale() const
@@ -87,34 +89,35 @@ int CAnyIntron::lmin = CFIntron::lmin;
 // int CScoring::sm_ANY = 34;//should not exceed a sum of two other (different) intron opening costs!
                  // otherwise exons of length zero are possible
 
-int CScoring::sm_koef = 3000;// = gap extention/intron extention ratio
+//int CScoring::sm_koef = 3000;// = gap extention/intron extention ratio
 
 //Iscores (scaled scores)
 int CAnyIntron::ie;//intron extention cost
 int CFIntron::ie;
-int CScoring::sm_Ig;
-int CScoring::sm_If;
-int CScoring::sm_Ine;
-int CScoring::sm_ICGT;
-int CScoring::sm_ICGC;
-int CScoring::sm_ICAT;
-int CScoring::sm_ICANY;
+// int CScoring::sm_Ig;
+// int CScoring::sm_If;
+// int CScoring::sm_Ine;
+// int CScoring::sm_ICGT;
+// int CScoring::sm_ICGC;
+// int CScoring::sm_ICAT;
+// int CScoring::sm_ICANY;
 
-void CScoring::Init(const CProSplignScaledScoring& new_scoring)
+void CProSplignScaledScoring::Init()
 {
 
-    CAnyIntron::lmin = new_scoring.GetMinIntronLen();
-    CAnyIntron::ie = new_scoring.GetIntronExtensionCost();
-    CFIntron::lmin = new_scoring.GetMinIntronLen();
-    CFIntron::ie = new_scoring.GetIntronExtensionCost();
+    CAnyIntron::lmin = GetMinIntronLen();
+    CAnyIntron::ie = GetIntronExtensionCost();
+    CFIntron::lmin = GetMinIntronLen();
+    CFIntron::ie = GetIntronExtensionCost();
     
-    sm_Ig = new_scoring.GetGapOpeningCost();
-    sm_Ine = new_scoring.GetGapExtensionCost();
-    sm_If = new_scoring.GetFrameshiftOpeningCost();
-    sm_ICGT = new_scoring.GetGTIntronCost();
-    sm_ICGC = new_scoring.GetGCIntronCost();
-    sm_ICAT = new_scoring.GetATIntronCost();
-    sm_ICANY = new_scoring.GetNonConsensusIntronCost();
+    sm_koef = GetScale();
+    sm_Ig = GetGapOpeningCost();
+    sm_Ine = GetGapExtensionCost();
+    sm_If = GetFrameshiftOpeningCost();
+    sm_ICGT = GetGTIntronCost();
+    sm_ICGC = GetGCIntronCost();
+    sm_ICAT = GetATIntronCost();
+    sm_ICANY = GetNonConsensusIntronCost();
 }
 
 END_SCOPE(prosplign)

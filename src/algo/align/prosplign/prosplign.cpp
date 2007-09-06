@@ -293,7 +293,6 @@ struct CProSplign::SImplData {
         m_old(false), m_one_stage(false), m_just_second_stage(false),
         lgap(false), rgap(false)
     {
-        CScoring::Init(m_scoring);
     }
 
     CProSplignScaledScoring m_scoring;
@@ -369,9 +368,9 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
             pali.reset(new CAli(cnseq, protseq));
             CTBackAlignInfo<CBMode> bi;
             bi.Init((int)pseq.size(), (int)cnseq.size());//backtracking
-            int friscore = AlignFNog(bi, pseq, cnseq);
+            int friscore = AlignFNog(bi, pseq, cnseq, m_data->m_scoring);
             BackAlignNog(bi, *pali);
-            _ASSERT(CAliUtil::CountIScore(*pali, 2) == friscore);
+//             _ASSERT(CAliUtil::CountIScore(*pali, 2) == friscore);
         } else {
             int iscore1 = 0;
             if (!m_data->m_just_second_stage) {
@@ -379,11 +378,11 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
                     iscore1 = FindIGapIntrons(m_data->igi, pseq, cnseq,
                                m_data->m_scoring.GetGapOpeningCost(),
                                m_data->m_scoring.GetGapExtensionCost(),
-                               m_data->m_scoring.GetFrameshiftOpeningCost());
+                                              m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring);
                     m_data->lgap = !m_data->igi.empty() && m_data->igi.front().first == 0;
                     m_data->rgap = !m_data->igi.empty() && m_data->igi.back().first + m_data->igi.back().second == int(cnseq.size());
                 } else {
-                    iscore1 = FindFGapIntronNog(m_data->igi, pseq, cnseq, m_data->lgap, m_data->rgap);
+                    iscore1 = FindFGapIntronNog(m_data->igi, pseq, cnseq, m_data->lgap, m_data->rgap, m_data->m_scoring);
                 }
             }
             CNSeq cfrnseq;
@@ -397,7 +396,7 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
                 friscore = FrAlign(bi, pseq, cfrnseq,
                                m_data->m_scoring.GetGapOpeningCost(),
                                m_data->m_scoring.GetGapExtensionCost(),
-                               m_data->m_scoring.GetFrameshiftOpeningCost());
+                               m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring);
             else
                 friscore = FrAlignFNog1(bi, pseq, cfrnseq, m_data->m_scoring, m_data->lgap, m_data->rgap);
         
@@ -420,7 +419,7 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
             friscore = FrAlign(bi, pseq, cnseq,
                                m_data->m_scoring.GetGapOpeningCost(),
                                m_data->m_scoring.GetGapExtensionCost(),
-                               m_data->m_scoring.GetFrameshiftOpeningCost()); 
+                               m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring); 
         else
             friscore = FrAlignFNog1(bi, pseq, cnseq, m_data->m_scoring);
         pali->score = friscore/m_data->m_scoring.GetScale();

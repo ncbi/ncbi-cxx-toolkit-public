@@ -108,28 +108,28 @@ void CAnyIntron::AddW1() {
             }
 }
 
-void CAnyIntron::AddW2() {
-            int sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nA, amin);
+void CAnyIntron::AddW2(const CProSplignScaledScoring scoring) {
+            int sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nA, amin, scoring);
             if(sco > sea.first) {
                 sea.first = sco;
                 sea.second = j-lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nT, amin);
+            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nT, amin, scoring);
             if(sco > set.first) {
                 set.first = sco;
                 set.second = j-lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nG, amin);
+            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nG, amin, scoring);
             if(sco > seg.first) {
                 seg.first = sco;
                 seg.second = j-lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nC, amin);
+            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nC, amin, scoring);
             if(sco > sec.first) {
                 sec.first = sco;
                 sec.second = j-lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nN, amin);
+            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nN, amin, scoring);
             if(sco > sen.first) {
                 sen.first = sco;
                 sen.second = j-lmin-1;
@@ -137,12 +137,12 @@ void CAnyIntron::AddW2() {
 }
 
     
-void CAnyIntron::NucStep()
+void CAnyIntron::NucStep(const CProSplignScaledScoring scoring)
 {
     SimpleNucStep();
     if(j - lmin - 3 >= ini_nuc_margin) {
         AddW1();
-        AddW2();
+        AddW2(scoring);
     }//end j > lmin +3 
     sw111.AddDon();
     sfv111.AddDon();

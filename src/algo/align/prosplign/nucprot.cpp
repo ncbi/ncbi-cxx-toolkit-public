@@ -144,8 +144,8 @@ char NucToChar(int n) {
 }
 
 //fast score access implementation
-void CFastIScore::Init(const CNSeq& seq) {
-    Init();
+void CFastIScore::Init(const CNSeq& seq, const CProSplignScaledScoring& scoring) {
+    Init(scoring);
     m_size = seq.size() - 2;
     m_scores.resize( m_size *  SEQUTIL::alphabet.size() + 1);
     int j;
@@ -159,8 +159,8 @@ void CFastIScore::Init(const CNSeq& seq) {
     }
 }
 
-void CFastIScore::SetAmin(char amin) {
-    Init();
+void CFastIScore::SetAmin(char amin, const CProSplignScaledScoring& scoring) {
+    Init(scoring);
     string::size_type num = SEQUTIL::alphabet.find(toupper(amin));
     if(num == string::npos) num = SEQUTIL::alphabet.find('X');
     m_gpos = &m_gscores[num * 125];
@@ -171,7 +171,7 @@ bool CFastIScore::m_init = false;
 int *CFastIScore::m_gpos;
 vector<int> CFastIScore::m_gscores;
 
-void CFastIScore::Init() {
+void CFastIScore::Init(const CProSplignScaledScoring& scoring) {
     if(m_init) return;
     m_init = true;
     m_gscores.resize(125*SEQUTIL::alphabet.size());
@@ -183,7 +183,7 @@ void CFastIScore::Init() {
         char amin = SEQUTIL::alphabet[i];
         for(i1 = 0; i1<5; ++i1) {
             for(i2 = 0; i2<5; ++i2) {
-                for(i3 = 0; i3<5; ++i3) *pos++ = matrix.MultScore(arr[i1], arr[i2], arr[i3], amin);
+                for(i3 = 0; i3<5; ++i3) *pos++ = matrix.MultScore(arr[i1], arr[i2], arr[i3], amin, scoring);
             }
         }
     }
@@ -193,7 +193,7 @@ void CFastIScore::Init() {
 
 
 int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-            int f/*frameshift opening cost*/)
+              int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring)
 {
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
@@ -237,7 +237,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
         h0 = max(h1, h2);
         if(h0 == h2) b += (char)16;
         //rest
-        w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1]);
+        w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1], scoring);
         w2 = prow->w[j-1] - f - 2*e;
         w3 = prow->v[j-1] - (f - g) - 2*e;
         w4 = prow->w[j-2] - f - e;
@@ -280,7 +280,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
   return wmax;
 }
 
-int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap)
+int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring)
 {
   left_gap = false;
   right_gap = false;
@@ -299,14 +299,14 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
   lsb.Creat(0, jmax);
 
   CFastIScore fiscore;
-  fiscore.Init(nseq);
+  fiscore.Init(nseq, scoring);
   CFIntron fin(nseq);
     // ** prepare for main loop
     //penalties
   //    CScoring::Init();
-    int e = CScoring::sm_Ine;
-    int g = CScoring::sm_Ig;
-    int f = CScoring::sm_If;
+    int e = scoring.sm_Ine;
+    int g = scoring.sm_Ig;
+    int f = scoring.sm_If;
     int pev1 =  - g - 3*e;
     int pev2 = - 3*e;
     int pe2 =  - f - 2*e;
@@ -342,7 +342,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         int h3 = infinity;
        //extra init for intron scoring
         fin.InitRowScores(crow, prow->m_w, 3);
-        fiscore.SetAmin(pseq[i-1]);
+        fiscore.SetAmin(pseq[i-1], scoring);
        // pointers
         cv = &crow->v[2];
         ch1 = &crow->h1[2];
@@ -355,7 +355,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         pv =  &prow->v[0];
         // *******  INTERNAL LOOP ******************
     	for(j=3;j<jlen_1;++j) {
-            const CBestI& bei = fin.Step(j);
+            const CBestI& bei = fin.Step(j, scoring);
             //rest
             int w1 = *pw3 + fiscore.GetScore();
             int w2 = *pw1 + pe2;
@@ -367,7 +367,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             int v2 = *++pv1 + pev2;
             if(bei.v > v0 && bei.v > v2) {
                 v0 = bei.v;
-                int len = fin.GetVlen(j);
+                int len = fin.GetVlen(j, scoring);
                 crow->vis[j].Expand(crow->vis[j - len], j - len, len);
             } else if(v2 > v0) {
                 v0 = v2;
@@ -381,7 +381,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             h3 = h2 + pe6;
             if(bei.h3 > h3) {
                 h3 = bei.h3;
-                int len = fin.GetH3len(j);
+                int len = fin.GetH3len(j, scoring);
                 crow->h3is[j].Expand(crow->h3is[j - len], j - len, len);
             } else {
                 crow->h3is[j].Copy(crow->h2is[j - 1]);
@@ -389,7 +389,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             h2 = h1 - e;
             if(bei.h2 > h2) {
                 h2 = bei.h2;
-                int len = fin.GetH2len(j);
+                int len = fin.GetH2len(j, scoring);
                 crow->h2is[j].Expand(crow->h2is[j - len], j - len, len);
             } else {
                 crow->h2is[j].Copy(crow->h1is[j - 1]);
@@ -397,7 +397,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             h1 = *cw + pe4;
             if(bei.h1 > h1 && bei.h1 > h12) {
                 h1 = bei.h1;
-                int len = fin.GetH1len(j);
+                int len = fin.GetH1len(j, scoring);
                 crow->h1is[j].Expand(crow->h1is[j - len], j - len, len);
             } else if(h12 > h1) {
                 h1 = h12;
@@ -420,20 +420,20 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             else if(w0 == w4) crow->wis[j].Copy(prow->wis[j - 2]);
             else if(w0 == w5) crow->wis[j].Copy(prow->vis[j - 2]);
             else if(w0 == bei.w1) {
-                int len = fin.GetW1len(j);
+                int len = fin.GetW1len(j, scoring);
                 crow->wis[j].Expand(prow->wis[j - len - 3], j - len - 2, len);
             } else if(w0 == bei.w2) {
-                int len = fin.GetW2len(j);
+                int len = fin.GetW2len(j, scoring);
                 crow->wis[j].Expand(prow->wis[j - len - 3], j - len - 1, len);
             } else { //w == bei.w
-                int len = fin.GetWlen(j);
+                int len = fin.GetWlen(j, scoring);
                 crow->wis[j].Expand(crow->wis[j - len], j - len, len);
             }
             *++cw = w0;
         }
         //the last column !
         if(2 < jlen_1) { //j == jlen_1 
-            const CBestI bei = fin.Step(j);
+            const CBestI bei = fin.Step(j, scoring);
             //rest
             int w1 = *pw3 + fiscore.GetScore();
             int w12 = prow->w[j-1];
@@ -443,7 +443,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             h3 = h2 + pe6;
             if(bei.h3 > h3) {
                 h3 = bei.h3;
-                int len = fin.GetH3len(j);
+                int len = fin.GetH3len(j, scoring);
                 crow->h3is[j].Expand(crow->h3is[j - len], j - len, len);
             } else {
                 crow->h3is[j].Copy(crow->h2is[j - 1]);
@@ -451,7 +451,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             h2 = h1 - e;
             if(bei.h2 > h2) {
                 h2 = bei.h2;
-                int len = fin.GetH2len(j);
+                int len = fin.GetH2len(j, scoring);
                 crow->h2is[j].Expand(crow->h2is[j - len], j - len, len);
             } else {
                 crow->h2is[j].Copy(crow->h1is[j - 1]);
@@ -459,7 +459,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             h1 = *cw + pe4;
             if(bei.h1 > h1 && bei.h1 > h12) {
                 h1 = bei.h1;
-                int len = fin.GetH1len(j);
+                int len = fin.GetH1len(j, scoring);
                 crow->h1is[j].Expand(crow->h1is[j - len], j - len, len);
             } else if(h12 > h1) {
                 h1 = h12;
@@ -476,13 +476,13 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
             else if(w0 == w12) crow->wis[j].Copy(prow->wis[j - 1]);
             else if(w0 == w13) crow->wis[j].Copy(prow->wis[j - 2]);
             else if(w0 == bei.w1) {
-                int len = fin.GetW1len(j);
+                int len = fin.GetW1len(j, scoring);
                 crow->wis[j].Expand(prow->wis[j - len - 3], j - len - 2, len);
             } else if(w0 == bei.w2) {
-                int len = fin.GetW2len(j);
+                int len = fin.GetW2len(j, scoring);
                 crow->wis[j].Expand(prow->wis[j - len - 3], j - len - 1, len);
             } else { //w == bei.w
-                int len = fin.GetWlen(j);
+                int len = fin.GetWlen(j, scoring);
                 crow->wis[j].Expand(crow->wis[j - len], j - len, len);
             }
             crow->w[j] = w0;
@@ -525,7 +525,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
 }
 
 int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-            int f/*frameshift opening cost*/)
+                    int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring)
 {
     // in matrices letters starts at [1]
  
@@ -561,11 +561,11 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
 
     crow->h[0] = crow->h[1] = crow->h[2] = infinity;
     crow->fh[0] = crow->fh[1] = crow->fh[2] = infinity;
-    CBestIntron chin(/*i, */2, pseq[i-1], *prow, *crow, nseq);
+    CBestIntron chin(/*i, */2, pseq[i-1], *prow, *crow, nseq, scoring);
     CHIntronScore spl101, spl102, spl103, spl104, spl105;
     CHIntronScore dspl101, dspl102, dspl103, dspl104;
 	for(j=3;j<jlen;j++) {
-      chin.NucStep();
+      chin.NucStep(scoring);
 	  int d1, d2, d3, d4, d5, d6;
       int h1, h2;
       int v1, v2;
@@ -574,7 +574,7 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
       int d101, d102, d103, d104, h101, h102, h103, h104, h105, fv101, fv102, fh101, v101, s0;
 	  int d0, v0, h0, fv0, fh0, w0; //maximum values
 
-      dspl101 = chin.GetW1();
+      dspl101 = chin.GetW1(scoring);
       d101 = dspl101.first;
       dspl102 = chin.GetW2();
       d102 = dspl102.first;
@@ -582,7 +582,7 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
       d103 = dspl103.first -f - e;
       dspl104 = chin.Getfv111();
       d104 = dspl104.first - e;
-	  d1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1]);
+	  d1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1], scoring);
 	  d2 = prow->w[j-1] - f - 2*e;
 	  d3 = prow->fv[j-1] - 2*e;
       d4 = prow->v[j-1] - (f - g) - 2*e;
@@ -1147,7 +1147,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
   CFrAlignRow *crow = &row1, *prow = &row2;
   int i, j;
   CFastIScore fiscore;
-  fiscore.Init(nseq);
+  fiscore.Init(nseq, scoring);
   //first row, i.e. i=0
     for(j=0;j<jlen;j++) {
       crow->w[j] = 0;
@@ -1199,7 +1199,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
     pw1 =  &prow->w[2];
     pv1 =  &prow->v[2];
     pv =  &prow->v[0];
-    fiscore.SetAmin(pseq[i-1]);
+    fiscore.SetAmin(pseq[i-1], scoring);
 	for(j=3;j<jlen_1;++j) {
         bb = 0;
         //rest
@@ -1255,7 +1255,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
                 b |= 64;
             }
             //rest
-            int w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1]);
+            int w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1], scoring);
             int w12 = prow->w[j-1];
             int w13 = prow->w[j-2];
             int w0 = max(w1, max(w12, max(w13, max(h1, max(h2, h3)))));
@@ -1293,7 +1293,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
 }
 
 
-int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
+int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring)
 {
   if(nseq.size() < 1) return 0;
   int ilen = (int)pseq.size() + 1;
@@ -1302,7 +1302,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
   CAlignRow *crow = &row1, *prow = &row2;
   int i, j;
   CFastIScore fiscore;
-  fiscore.Init(nseq);
+  fiscore.Init(nseq, scoring);
   CFIntron fin(nseq);
   //first row, i.e. i=0
     for(j=0;j<jlen;j++) {
@@ -1315,9 +1315,9 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
   // ** prepare for main loop
   //penalties
     //    CScoring::Init();
-    int e = CScoring::sm_Ine;
-    int g = CScoring::sm_Ig;
-    int f = CScoring::sm_If;
+    int e = scoring.sm_Ine;
+    int g = scoring.sm_Ig;
+    int f = scoring.sm_If;
   int pev1 =  - g - 3*e;
   int pev2 = - 3*e;
   int pe2 =  - f - 2*e;
@@ -1352,12 +1352,12 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
     pw1 =  &prow->w[2];
     pv1 =  &prow->v[2];
     pv =  &prow->v[0];
-    fiscore.SetAmin(pseq[i-1]);
+    fiscore.SetAmin(pseq[i-1], scoring);
     int jlen_1 = jlen - 1;
   // *******  INTERNAL LOOP ******************
 	for(j=3;j<jlen_1;++j) {
         int bb = 0;
-        const CBestI& bei = fin.Step(j);
+        const CBestI& bei = fin.Step(j, scoring);
         //rest
         int w1 = *pw3 + fiscore.GetScore();
         int w2 = *pw1 + pe2;
@@ -1369,7 +1369,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
         int v2 = *++pv1 + pev2;
         if(bei.v > v0 && bei.v > v2) {
             v0 = bei.v;
-            pb->vlen = fin.GetVlen(j);
+            pb->vlen = fin.GetVlen(j, scoring);
             bb |= 32;
         } else if(v2 > v0) {
             v0 = v2;
@@ -1381,19 +1381,19 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
         h3 = h2 + pe6;
         if(bei.h3 > h3) {
             h3 = bei.h3;
-            pb->h3len = fin.GetH3len(j);
+            pb->h3len = fin.GetH3len(j, scoring);
             bb |= 256;
         }
         h2 = h1 - e;
         if(bei.h2 > h2) {
             h2 = bei.h2;
-            pb->h2len = fin.GetH2len(j);
+            pb->h2len = fin.GetH2len(j, scoring);
             bb |= 128;
         }
         h1 = *cw + pe4;
         if(bei.h1 > h1 && bei.h1 > h12) {
             h1 = bei.h1;
-            pb->h1len = fin.GetH1len(j);
+            pb->h1len = fin.GetH1len(j, scoring);
             bb |= 64;
         } else if(h12 > h1) {
             h1 = h12;
@@ -1415,13 +1415,13 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
         else if(w0 == w5) bb += 7;
         else if(w0 == bei.w1) {
             bb += 21;
-            pb->wlen = fin.GetW1len(j);
+            pb->wlen = fin.GetW1len(j, scoring);
         } else if(w0 == bei.w2) {
             bb += 22;
-            pb->wlen = fin.GetW2len(j);
+            pb->wlen = fin.GetW2len(j, scoring);
         } else { //w == bei.w
             bb += 20;
-            pb->wlen = fin.GetWlen(j);
+            pb->wlen = fin.GetWlen(j, scoring);
         }
         *++cw = w0;
         (pb++)->wmode = bb;
@@ -1430,7 +1430,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
     if(2 < jlen_1) { //j == jlen_1 
         int& bb = bi.b[i-1][j-1].wmode;
         bb = 0;
-        const CBestI bei = fin.Step(j);
+        const CBestI bei = fin.Step(j, scoring);
         //rest
         int w1 = *pw3 + fiscore.GetScore();
         int w12 = prow->w[j-1];
@@ -1440,19 +1440,19 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
         h3 = h2 + pe6;
         if(bei.h3 > h3) {
             h3 = bei.h3;
-            pb->h3len = fin.GetH3len(j);
+            pb->h3len = fin.GetH3len(j, scoring);
             bb |= 256;
         }
         h2 = h1 - e;
         if(bei.h2 > h2) {
             h2 = bei.h2;
-            pb->h2len = fin.GetH2len(j);
+            pb->h2len = fin.GetH2len(j, scoring);
             bb |= 128;
         }
         h1 = *cw + pe4;
         if(bei.h1 > h1 && bei.h1 > h12) {
             h1 = bei.h1;
-            pb->h1len = fin.GetH1len(j);
+            pb->h1len = fin.GetH1len(j, scoring);
             bb |= 64;
         } else if(h12 > h1) {
             h1 = h12;
@@ -1468,13 +1468,13 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq)
         else if(w0 == w13) bb += 13;
         else if(w0 == bei.w1) {
             bb += 21;
-            pb->wlen = fin.GetW1len(j);
+            pb->wlen = fin.GetW1len(j, scoring);
         } else if(w0 == bei.w2) {
             bb += 22;
-            pb->wlen = fin.GetW2len(j);
+            pb->wlen = fin.GetW2len(j, scoring);
         } else { //w == bei.w
             bb += 20;
-            pb->wlen = fin.GetWlen(j);
+            pb->wlen = fin.GetWlen(j, scoring);
         }
         crow->w[j] = w0;
     }

@@ -47,19 +47,22 @@ public:
 private:
     int scale;
     int intron_extention;
-};
+
 
 // original scoring
-class CScoring {
+
 public:
     //regular scores 'DScore'
     //    static int sm_g, sm_e, sm_f, sm_GT, sm_GC, sm_AT, sm_ANY;
     //scores t use in functions 'IScore'
     //scaled to be all integer
-    static int sm_Ig, sm_Ine, sm_If, sm_ICGT, sm_ICGC, sm_ICAT, sm_ICANY;
-    static int sm_koef;//'DScore' = 'IScore' / koef
-public:
-    static void Init(const CProSplignScaledScoring& new_scoring);
+//     static
+    int sm_Ig, sm_Ine, sm_If, sm_ICGT, sm_ICGC, sm_ICAT, sm_ICANY;
+//     static
+    int sm_koef;//'DScore' = 'IScore' / koef
+private:
+//     static
+    void Init();
 };
 
 END_SCOPE(prosplign)

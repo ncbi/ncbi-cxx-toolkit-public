@@ -90,7 +90,7 @@ struct SEQUTIL {
 	
   char matrix[256][256];
   static string blosum62;
-  inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) { return (int)CScoring::sm_koef*matrix[int(amin)][int(nuc2a(nuc1, nuc2, nuc3))]; }
+    inline int MultScore(int nuc1, int nuc2, int nuc3, char amin, const CProSplignScaledScoring& scoring) { return (int)scoring.sm_koef*matrix[int(amin)][int(nuc2a(nuc1, nuc2, nuc3))]; }
 };
 
 extern SEQUTIL matrix;
@@ -100,8 +100,8 @@ extern SEQUTIL matrix;
 class CFastIScore
 {
 public:
-    void SetAmin(char amin);//call before GetScore() and/or GetScore(int n1, int n2, int n3)
-    void Init(const CNSeq& seq);//call before GetScore()
+    void SetAmin(char amin, const CProSplignScaledScoring& scoring);//call before GetScore() and/or GetScore(int n1, int n2, int n3)
+    void Init(const CNSeq& seq, const CProSplignScaledScoring& scoring);//call before GetScore()
     inline int GetScore() { return *++m_pos; }
     static inline int GetScore(int n1, int n2, int n3) { return m_gpos[n1*25+n2*5+n3]; }
     CFastIScore() { m_size = 0; m_scores.resize(1); }
@@ -111,7 +111,7 @@ private:
     int m_size;
     static int *m_gpos;
     static vector<int> m_gscores;
-    static void Init(void);
+    static void Init(const CProSplignScaledScoring& scoring);
     static bool m_init;
     CFastIScore(const CFastIScore&);
     CFastIScore& operator=(const CFastIScore&);
@@ -135,18 +135,18 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, cons
 void FrBackAlign(CBackAlignInfo& bi, CAli& ali);
 
 // *****   versions without gap/frameshift penalty at the beginning/end ONE STAGE, FAST
-int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq);
+int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring);
 void BackAlignNog(CTBackAlignInfo<CBMode>& bi, CAli& ali);
 
 // *****   versions without gap/frameshift penalty at the beginning/end FAST
 int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, 
-                      const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap);
+                      const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring);
 
 //*** mixed gap penalty (OLD, aka version 2)
 int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-            int f/*frameshift opening cost*/);
+            int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring);
 int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-            int f/*frameshift opening cost*/);
+            int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring);
 
 
 
