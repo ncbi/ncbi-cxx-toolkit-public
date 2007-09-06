@@ -444,7 +444,8 @@ BioSource ::= SEQUENCE {
         proplastid (18) ,
         endogenous-virus (19) ,
         hydrogenosome (20) ,
-        chromosome (21)
+        chromosome (21) ,
+        chromatophore (22)
       } DEFAULT unknown ,
     origin INTEGER {
       unknown (0) ,
