@@ -108,7 +108,7 @@ void CAnyIntron::AddW1(const CProSplignScaledScoring scoring) {
             }
 }
 
-void CAnyIntron::AddW2(const CProSplignScaledScoring scoring) {
+void CAnyIntron::AddW2(const CProSplignScaledScoring scoring, const SEQUTIL& matrix) {
             int sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nA, amin, scoring);
             if(sco > sea.first) {
                 sea.first = sco;
@@ -137,12 +137,12 @@ void CAnyIntron::AddW2(const CProSplignScaledScoring scoring) {
 }
 
     
-void CAnyIntron::NucStep(const CProSplignScaledScoring scoring)
+void CAnyIntron::NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix)
 {
     SimpleNucStep(scoring);
     if(j - scoring.lmin - 3 >= scoring.ini_nuc_margin) {
         AddW1(scoring);
-        AddW2(scoring);
+        AddW2(scoring, matrix);
     }//end j > lmin +3 
     sw111.AddDon(scoring);
     sfv111.AddDon(scoring);

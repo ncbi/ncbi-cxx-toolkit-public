@@ -155,11 +155,11 @@ GETANY(Geth021,sh021,3)
     }
 
     void SimpleNucStep(const CProSplignScaledScoring scoring);
-    void NucStep(const CProSplignScaledScoring scoring);
+    void NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix);
     void AddW1(const CProSplignScaledScoring scoring);
-    void AddW2(const CProSplignScaledScoring scoring);
+    void AddW2(const CProSplignScaledScoring scoring, const SEQUTIL& matrix);
             
-    inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring) {
+    inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
         CHIntronScore res(swa);
         res.first += matrix.MultScore(nA, nseq[j-2], nseq[j-1], amin, scoring);
         CHIntronScore tmp(swc);
@@ -258,7 +258,7 @@ inline void SimpleNucStep(const CProSplignScaledScoring scoring) {
     donj2++;
     acsj2++;
 }
-inline void NucStep(const CProSplignScaledScoring scoring)
+inline void NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix)
 {
     SimpleNucStep(scoring);
     if(j - scoring.lmin - 3 >= scoring.ini_nuc_margin) {
@@ -266,7 +266,7 @@ inline void NucStep(const CProSplignScaledScoring scoring)
             AddW1(scoring);
         }
         if(IsDon(j-scoring.lmin-1)) {//new donor
-            AddW2(scoring);
+            AddW2(scoring, matrix);
         }
     }//end j > lmin +3
     if(IsDon(donj0)) {
@@ -307,9 +307,9 @@ MGET(Geth021,acsj1)
 MGET(Getw012,acsj2)
 MGET(Geth012,acsj2)
 //MGET(GetW1,j-2)
-inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring) {
+inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
     if(NotAcs(j-2)) return CHIntronScore();
-    return CAnyIntron::GetW1(scoring);
+    return CAnyIntron::GetW1(scoring, matrix);
 }
 
 MGET(GetW2,j-1)
@@ -346,11 +346,11 @@ public:
         anycost = scoring.sm_ICANY + scoring.lmin*scoring.ie;
       }
 
-      inline void NucStep(const CProSplignScaledScoring scoring) {
-          gt.NucStep(scoring);
-          gc.NucStep(scoring);
-          at.NucStep(scoring);
-          an.NucStep(scoring);
+      inline void NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix) {
+          gt.NucStep(scoring, matrix);
+          gc.NucStep(scoring, matrix);
+          at.NucStep(scoring, matrix);
+          an.NucStep(scoring, matrix);
       }
 
     inline CHIntronScore GetBest(CHIntronScore sgt, CHIntronScore sgc, CHIntronScore sat, CHIntronScore sany) {
@@ -378,7 +378,7 @@ public:
     inline CHIntronScore name() { return GetBest(gt.name(), gc.name(), at.name(), an.name()); }
 
 //FUNC(GetW1)
-inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring) { return GetBest(gt.GetW1(scoring), gc.GetW1(scoring), at.GetW1(scoring), an.GetW1(scoring)); }
+    inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) { return GetBest(gt.GetW1(scoring, matrix), gc.GetW1(scoring, matrix), at.GetW1(scoring, matrix), an.GetW1(scoring, matrix)); }
 
 FUNC(GetW2)
 FUNC(Getw111)

@@ -289,12 +289,13 @@ int CProSplignOutputOptions::GetStopBonus() const
 
 struct CProSplign::SImplData {
     SImplData(CProSplignScoring scoring) :
-        m_scoring(scoring), m_intronless(false),
+        m_matrix("BLOSUM62"), m_scoring(scoring), m_intronless(false),
         m_old(false), m_one_stage(false), m_just_second_stage(false),
         lgap(false), rgap(false)
     {
     }
 
+    SEQUTIL m_matrix;
     CProSplignScaledScoring m_scoring;
     bool m_intronless;
     bool m_old;
@@ -368,7 +369,7 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
             pali.reset(new CAli(cnseq, protseq));
             CTBackAlignInfo<CBMode> bi;
             bi.Init((int)pseq.size(), (int)cnseq.size());//backtracking
-            int friscore = AlignFNog(bi, pseq, cnseq, m_data->m_scoring);
+            int friscore = AlignFNog(bi, pseq, cnseq, m_data->m_scoring, m_data->m_matrix);
             BackAlignNog(bi, *pali);
 //             _ASSERT(CAliUtil::CountIScore(*pali, 2) == friscore);
         } else {
@@ -378,11 +379,11 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
                     iscore1 = FindIGapIntrons(m_data->igi, pseq, cnseq,
                                m_data->m_scoring.GetGapOpeningCost(),
                                m_data->m_scoring.GetGapExtensionCost(),
-                                              m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring);
+                                              m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring, m_data->m_matrix);
                     m_data->lgap = !m_data->igi.empty() && m_data->igi.front().first == 0;
                     m_data->rgap = !m_data->igi.empty() && m_data->igi.back().first + m_data->igi.back().second == int(cnseq.size());
                 } else {
-                    iscore1 = FindFGapIntronNog(m_data->igi, pseq, cnseq, m_data->lgap, m_data->rgap, m_data->m_scoring);
+                    iscore1 = FindFGapIntronNog(m_data->igi, pseq, cnseq, m_data->lgap, m_data->rgap, m_data->m_scoring, m_data->m_matrix);
                 }
             }
             CNSeq cfrnseq;
@@ -396,9 +397,9 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
                 friscore = FrAlign(bi, pseq, cfrnseq,
                                m_data->m_scoring.GetGapOpeningCost(),
                                m_data->m_scoring.GetGapExtensionCost(),
-                               m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring);
+                               m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring, m_data->m_matrix);
             else
-                friscore = FrAlignFNog1(bi, pseq, cfrnseq, m_data->m_scoring, m_data->lgap, m_data->rgap);
+                friscore = FrAlignFNog1(bi, pseq, cfrnseq, m_data->m_scoring, m_data->m_matrix, m_data->lgap, m_data->rgap);
         
             pali.reset( new CAli(cfrnseq, protseq) );
             FrBackAlign(bi, *pali);
@@ -419,15 +420,15 @@ CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein
             friscore = FrAlign(bi, pseq, cnseq,
                                m_data->m_scoring.GetGapOpeningCost(),
                                m_data->m_scoring.GetGapExtensionCost(),
-                               m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring); 
+                               m_data->m_scoring.GetFrameshiftOpeningCost(), m_data->m_scoring, m_data->m_matrix); 
         else
-            friscore = FrAlignFNog1(bi, pseq, cnseq, m_data->m_scoring);
+            friscore = FrAlignFNog1(bi, pseq, cnseq, m_data->m_scoring, m_data->m_matrix);
         pali->score = friscore/m_data->m_scoring.GetScale();
         FrBackAlign(bi, *pali);
 //         _ASSERT(CAliUtil::CountFrIScore(*pali, 2) == friscore);
     }
 
-    auto_ptr<CPosAli> pposali( new CPosAli(*pali, protein, genomic, output_options) );
+    auto_ptr<CPosAli> pposali( new CPosAli(*pali, protein, genomic, output_options, m_data->m_matrix) );
     pali.reset();
 
     CAliToSeq_align cpa(scope, *pposali);

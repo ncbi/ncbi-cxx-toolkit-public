@@ -46,8 +46,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
 class CNSeq;
-
 class CAli;
+class SEQUTIL;
 
 class CInfo
 {
@@ -98,7 +98,7 @@ public:
 // private:
 //     void Out(ostream& out);//new style, call only after PrintAlign
 public:
-    void InitAlign();
+    void InitAlign(const SEQUTIL& matrix);
     //perform initialisation of the members above before output.
     //    void PrintAlign(ostream& out, int width = 100, bool info_only = false);	
 	

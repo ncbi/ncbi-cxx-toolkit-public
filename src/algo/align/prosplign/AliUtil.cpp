@@ -132,7 +132,7 @@ void CAliUtil::CheckValidity(const CAli& ali) //returns if valid, throws otherwi
 //mode 2 : gaps/framshifts at the end have 0 score (default)
 //mode 1 : full scoring for gaps/framshifts in protein, 0 score for H-gaps/framshifts
 //mode 0 : full scoring at the end
-int CAliUtil::CountIScore(const CAli& ali, const CProSplignScaledScoring& scoring, int mode)
+int CAliUtil::CountIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, int mode)
 {
     //    CScoring::Init();
     CheckValidity(ali);
@@ -140,12 +140,12 @@ int CAliUtil::CountIScore(const CAli& ali, const CProSplignScaledScoring& scorin
     CAli tali(tseq, *ali.cpseq);
     //intron score
     int score = CutIntrons(tali, ali, scoring);
-    return score + CountFrIScore(tali, scoring, mode);
+    return score + CountFrIScore(tali, scoring, matrix, mode);
 }
 
 //same as before, version without introns
 //CHECKS THAT THERE ARE NO INTRONS 
-int CAliUtil::CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scoring, int mode, bool lgap, bool rgap)
+int CAliUtil::CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, int mode, bool lgap, bool rgap)
 {
     //    CScoring::Init();
     CheckValidity(ali);

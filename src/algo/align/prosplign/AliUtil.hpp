@@ -44,6 +44,7 @@ class CNSeq;
 class CPSeq;
 class CAliPiece;
 class CProSplignScaledScoring;
+class SEQUTIL;
 
 class CAliUtil {
 public:
@@ -54,11 +55,11 @@ public:
 //mode 2 : gaps/framshifts at the end have 0 score (default)
 //mode 1 : full scoring for gaps/framshifts in protein, 0 score for H-gaps/framshifts
 //mode 0 : full scoring at the end
-    static int CountIScore(const CAli& ali, const CProSplignScaledScoring& scoring, int mode = 2);
+    static int CountIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, int mode = 2);
 
     //same but implies no introns (Fr means no introns)
     //lgap and rgap are for the second stage. if true, score any gap on left (lgap) and/or right (rgap)
-    static int CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scoring, int mode = 2, bool lgap = false, bool rgap = false);
+    static int CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, int mode = 2, bool lgap = false, bool rgap = false);
 
 private:
     //produces new alignment with intron cut out, returns intron 'IScore'

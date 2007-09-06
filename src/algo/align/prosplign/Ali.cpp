@@ -53,12 +53,12 @@ CAli::CAli(CNSeq& nseq, CPSeq& pseq)
 }
 
 //CPosAli::CPosAli(const CAli& ali, const string& nuc, const string& prot) : CAli(ali), m_protid(prot), m_nucid(nuc)
-CPosAli::CPosAli(const CAli& ali, const CSeq_id& protein, const CSeq_loc& genomic, const CProSplignOutputOptions& output_options) : 
+CPosAli::CPosAli(const CAli& ali, const CSeq_id& protein, const CSeq_loc& genomic, const CProSplignOutputOptions& output_options, const SEQUTIL& matrix) : 
     CAli(ali), m_genomic(genomic), m_protein(protein), m_output_options(output_options)
 {
     m_IsFull = m_output_options.IsPassThrough();
     CInfo info(ali,m_output_options);
-    info.InitAlign();
+    info.InitAlign(matrix);
     info.Cut();
     AddPostProcInfo(info.m_AliPiece);
 }
