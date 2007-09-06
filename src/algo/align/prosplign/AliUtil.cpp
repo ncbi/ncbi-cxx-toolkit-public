@@ -70,7 +70,7 @@ int CAliUtil::CutIntrons(CAli& new_ali, const CAli& ali, const CProSplignScaledS
                     && (ali.cnseq->GetNuc(nulpos+it->m_len-2) == nA) && (ali.cnseq->GetNuc(nulpos+it->m_len-1) == nC) ) {
                     score -= scoring.sm_ICAT;
                 } else score -= scoring.sm_ICANY;
-                score -= it->m_len * CAnyIntron::ie;
+                score -= it->m_len * scoring.ie;
                 igi.push_back(make_pair(nulpos, it->m_len));
                 nulpos += it->m_len;
             default :

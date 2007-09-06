@@ -63,7 +63,7 @@ void CAlignInfo::ClearIIC(void)
     for(it=fvis.begin(); it != fvis.end(); ++it) it->Clear();
 }
 
-CFindGapIntronRow::CFindGapIntronRow(int length): CAlignRow(length)
+CFindGapIntronRow::CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring): CAlignRow(length, scoring)
 {
         wis.resize(length, this);
         vis.resize(length, this);
@@ -74,25 +74,27 @@ CFindGapIntronRow::CFindGapIntronRow(int length): CAlignRow(length)
 
 void CFindGapIntronRow::ClearIIC(void)
 {
-    vector<CIgapIntronChain >::iterator it;
-    for(it=wis.begin(); it != wis.end(); ++it) it->Clear();
-    for(it=vis.begin(); it != vis.end(); ++it) it->Clear();
-    for(it=h1is.begin(); it != h1is.end(); ++it) it->Clear();
-    for(it=h2is.begin(); it != h2is.end(); ++it) it->Clear();
-    for(it=h3is.begin(); it != h3is.end(); ++it) it->Clear();
+    size_t size = wis.size();
+    for(size_t i=0; i<size; ++i) {
+        wis[i].Clear();
+        vis[i].Clear();
+        h1is[i].Clear();
+        h2is[i].Clear();
+        h3is[i].Clear();
+    }
 }
 
-CAlignRow::CAlignRow(int length) {
-        m_w.resize(length + CFIntron::lmin + 4, infinity);
-        w = &m_w[0] + CFIntron::lmin + 4;
-        m_v.resize(length + CFIntron::lmin + 1, infinity);
-        v = &m_v[0] + CFIntron::lmin + 1;
-        m_h1.resize(length + CFIntron::lmin + 1, infinity);
-        h1 = &m_h1[0] + CFIntron::lmin + 1;
-        m_h2.resize(length + CFIntron::lmin + 1, infinity);
-        h2 = &m_h2[0] + CFIntron::lmin + 1;
-        m_h3.resize(length + CFIntron::lmin + 1, infinity);
-        h3 = &m_h3[0] + CFIntron::lmin + 1;
+CAlignRow::CAlignRow(int length, const CProSplignScaledScoring& scoring) {
+        m_w.resize(length + scoring.lmin + 4, infinity);
+        w = &m_w[0] + scoring.lmin + 4;
+        m_v.resize(length + scoring.lmin + 1, infinity);
+        v = &m_v[0] + scoring.lmin + 1;
+        m_h1.resize(length + scoring.lmin + 1, infinity);
+        h1 = &m_h1[0] + scoring.lmin + 1;
+        m_h2.resize(length + scoring.lmin + 1, infinity);
+        h2 = &m_h2[0] + scoring.lmin + 1;
+        m_h3.resize(length + scoring.lmin + 1, infinity);
+        h3 = &m_h3[0] + scoring.lmin + 1;
 }
 
 END_SCOPE(prosplign)

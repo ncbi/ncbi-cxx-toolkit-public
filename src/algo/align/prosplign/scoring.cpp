@@ -76,8 +76,8 @@ int CProSplignScaledScoring::GetIntronExtensionCost() const
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int CFIntron::lmin = 30;
-int CAnyIntron::lmin = CFIntron::lmin;
+// int CFIntron::lmin = 30;
+// int CAnyIntron::lmin = CFIntron::lmin;
 
 //regular scores
 // int CScoring::sm_e = 1;//one aminoacid (three nuc bases) gap extention
@@ -92,8 +92,8 @@ int CAnyIntron::lmin = CFIntron::lmin;
 //int CScoring::sm_koef = 3000;// = gap extention/intron extention ratio
 
 //Iscores (scaled scores)
-int CAnyIntron::ie;//intron extention cost
-int CFIntron::ie;
+// int CAnyIntron::ie;//intron extention cost
+// int CFIntron::ie;
 // int CScoring::sm_Ig;
 // int CScoring::sm_If;
 // int CScoring::sm_Ine;
@@ -105,11 +105,10 @@ int CFIntron::ie;
 void CProSplignScaledScoring::Init()
 {
 
-    CAnyIntron::lmin = GetMinIntronLen();
-    CAnyIntron::ie = GetIntronExtensionCost();
-    CFIntron::lmin = GetMinIntronLen();
-    CFIntron::ie = GetIntronExtensionCost();
-    
+    lmin = GetMinIntronLen();
+    ie = GetIntronExtensionCost();
+    ini_nuc_margin = 1;
+
     sm_koef = GetScale();
     sm_Ig = GetGapOpeningCost();
     sm_Ine = GetGapExtensionCost();

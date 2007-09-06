@@ -65,10 +65,12 @@ public:
     vector<int> w, v;
 };
 
+class CProSplignScaledScoring;
+
 class CAlignRow
 {
 public:
-    CAlignRow(int length);
+    CAlignRow(int length, const CProSplignScaledScoring& scoring);
     vector<int> m_w, m_v, m_h1, m_h2, m_h3;
     int *w, *v, *h1, *h2, *h3;
 private:
@@ -79,7 +81,7 @@ private:
 class CFindGapIntronRow : public CAlignRow
 {
 public:
-    CFindGapIntronRow(int length);
+    CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring);
     void ClearIIC(void);
 public:
     vector<CIgapIntronChain > wis, vis, h1is, h2is, h3is;

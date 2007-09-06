@@ -288,7 +288,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
    // in matrices letters starts at [1]
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
-  CFindGapIntronRow row1(jlen), row2(jlen);
+  CFindGapIntronRow row1(jlen, scoring), row2(jlen, scoring);
   CFindGapIntronRow *crow = &row1, *prow = &row2;
 
   int i, j;
@@ -300,7 +300,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
 
   CFastIScore fiscore;
   fiscore.Init(nseq, scoring);
-  CFIntron fin(nseq);
+  CFIntron fin(nseq, scoring);
     // ** prepare for main loop
     //penalties
   //    CScoring::Init();
@@ -1298,12 +1298,12 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, 
   if(nseq.size() < 1) return 0;
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
-  CAlignRow row1(jlen), row2(jlen);
+  CAlignRow row1(jlen, scoring), row2(jlen, scoring);
   CAlignRow *crow = &row1, *prow = &row2;
   int i, j;
   CFastIScore fiscore;
   fiscore.Init(nseq, scoring);
-  CFIntron fin(nseq);
+  CFIntron fin(nseq, scoring);
   //first row, i.e. i=0
     for(j=0;j<jlen;j++) {
       crow->w[j] = 0;

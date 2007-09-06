@@ -41,38 +41,38 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
-int CAnyIntron::ini_nuc_margin = 1;//minimum - 0 
-                                   // for versions with no end gap cost at least one required.
+// int CAnyIntron::ini_nuc_margin = 1;//minimum - 0 
+//                                    // for versions with no end gap cost at least one required.
 
-void CAnyIntron::SimpleNucStep() {
+void CAnyIntron::SimpleNucStep(const CProSplignScaledScoring scoring) {
     j++;
-    swa.first -= ie;
-    swt.first -= ie;
-    swg.first -= ie;
-    swc.first -= ie;
-    swn.first -= ie;
+    swa.first -= scoring.ie;
+    swt.first -= scoring.ie;
+    swg.first -= scoring.ie;
+    swc.first -= scoring.ie;
+    swn.first -= scoring.ie;
 
-    sea.first -= ie;
-    set.first -= ie;
-    seg.first -= ie;
-    sec.first -= ie;
-    sen.first -= ie;
+    sea.first -= scoring.ie;
+    set.first -= scoring.ie;
+    seg.first -= scoring.ie;
+    sec.first -= scoring.ie;
+    sen.first -= scoring.ie;
 
-    ++sw111;
-    ++sfv111;
-    ++sw000;
-    ++sh000;
-    ++sv000;
-    ++sfh000;
-    ++sfv000;
-    ++sw012;
-    ++sh012;
-    ++sw021;
-    ++sh021;
+    sw111.increment(scoring);
+    sfv111.increment(scoring);
+    sw000.increment(scoring);
+    sh000.increment(scoring);
+    sv000.increment(scoring);
+    sfh000.increment(scoring);
+    sfv000.increment(scoring);
+    sw012.increment(scoring);
+    sh012.increment(scoring);
+    sw021.increment(scoring);
+    sh021.increment(scoring);
 }
 
-void CAnyIntron::AddW1() {
-    int jj = j-lmin-2;
+void CAnyIntron::AddW1(const CProSplignScaledScoring scoring) {
+    int jj = j-scoring.lmin-2;
     int sco = esc[jj-1]; 
             switch (nseq[jj-1]) {
                 case nA:
@@ -109,71 +109,71 @@ void CAnyIntron::AddW1() {
 }
 
 void CAnyIntron::AddW2(const CProSplignScaledScoring scoring) {
-            int sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nA, amin, scoring);
+            int sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nA, amin, scoring);
             if(sco > sea.first) {
                 sea.first = sco;
-                sea.second = j-lmin-1;
+                sea.second = j-scoring.lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nT, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nT, amin, scoring);
             if(sco > set.first) {
                 set.first = sco;
-                set.second = j-lmin-1;
+                set.second = j-scoring.lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nG, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nG, amin, scoring);
             if(sco > seg.first) {
                 seg.first = sco;
-                seg.second = j-lmin-1;
+                seg.second = j-scoring.lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nC, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nC, amin, scoring);
             if(sco > sec.first) {
                 sec.first = sco;
-                sec.second = j-lmin-1;
+                sec.second = j-scoring.lmin-1;
             }
-            sco = esc[j-lmin-3] + matrix.MultScore(nseq[j-lmin-3], nseq[j-lmin-2], nN, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nN, amin, scoring);
             if(sco > sen.first) {
                 sen.first = sco;
-                sen.second = j-lmin-1;
+                sen.second = j-scoring.lmin-1;
             }
 }
 
     
 void CAnyIntron::NucStep(const CProSplignScaledScoring scoring)
 {
-    SimpleNucStep();
-    if(j - lmin - 3 >= ini_nuc_margin) {
-        AddW1();
+    SimpleNucStep(scoring);
+    if(j - scoring.lmin - 3 >= scoring.ini_nuc_margin) {
+        AddW1(scoring);
         AddW2(scoring);
     }//end j > lmin +3 
-    sw111.AddDon();
-    sfv111.AddDon();
-    sw000.AddDon();
-    sh000.AddDon();
-    sv000.AddDon();
-    sfh000.AddDon();
-    sfv000.AddDon();
-    sw012.AddDon();
-    sh012.AddDon();
-    sw021.AddDon();
-    sh021.AddDon();
+    sw111.AddDon(scoring);
+    sfv111.AddDon(scoring);
+    sw000.AddDon(scoring);
+    sh000.AddDon(scoring);
+    sv000.AddDon(scoring);
+    sfh000.AddDon(scoring);
+    sfv000.AddDon(scoring);
+    sw012.AddDon(scoring);
+    sh012.AddDon(scoring);
+    sw021.AddDon(scoring);
+    sh021.AddDon(scoring);
 
 }           
 
 //CFIntron implementation
 
-CFIntron::CFIntron(const CNSeq& nseq) : m_nseq(nseq)
+CFIntron::CFIntron(const CNSeq& nseq, const CProSplignScaledScoring scoring) : m_nseq(nseq)
 {
-    if(lmin<4) NCBI_THROW(CProSplignException, eParam, "minimum intron length should exceed 3");
+    if(scoring.lmin<4) NCBI_THROW(CProSplignException, eParam, "minimum intron length should exceed 3");
     CFIntornData cd; 
     int jend = nseq.size() + 1;
     m_data.resize(jend+1);//m_data[0] is a dummy, m_data[1;nseq.size()+1] used
     for(int j=0; j < jend; ++j) {
         //setup for w1, w2
-        if(j - lmin - 3 < 0) {
+        if(j - scoring.lmin - 3 < 0) {
             cd.m_dt1 = cd.m_dt2 = eANY;
             cd.m_at1 = cd.m_at2 = eANYa;
             cd.m_1nuc = cd.m_2nuc = nN;
         } else {
-            int ind = j - lmin - 4;
+            int ind = j - scoring.lmin - 4;
             cd.m_1nuc = (Nucleotides)nseq[++ind];
             char n1 = nseq[++ind];
             char n2 = nseq[++ind];
@@ -189,11 +189,11 @@ CFIntron::CFIntron(const CNSeq& nseq) : m_nseq(nseq)
             cd.m_at2 = GetAccType(n2, n3);
         }
         //setup for w
-        if(j - lmin < 0) {
+        if(j - scoring.lmin < 0) {
             cd.m_dt = eANY;
             cd.m_at = eANYa;
         } else {
-            cd.m_dt = GetDonType(nseq[j-lmin], nseq[j-lmin+1]);
+            cd.m_dt = GetDonType(nseq[j-scoring.lmin], nseq[j-scoring.lmin+1]);
             cd.m_at = GetAccType(nseq[j-2], nseq[j-1]);
         }
         m_data[j+1] = cd;

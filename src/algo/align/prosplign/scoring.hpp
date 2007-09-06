@@ -60,6 +60,12 @@ public:
     int sm_Ig, sm_Ine, sm_If, sm_ICGT, sm_ICGC, sm_ICAT, sm_ICANY;
 //     static
     int sm_koef;//'DScore' = 'IScore' / koef
+
+    int lmin;//minimum intron length
+    int ie;//intron extention cost (scaled)
+    int ini_nuc_margin;//minimum j-index where to check score before.
+                           //in other words we requere ini_nuc_margin nucleotides before start thinking 
+                           //about splice. In old version it is 0 meaning splice can be everywhere
 private:
 //     static
     void Init();
