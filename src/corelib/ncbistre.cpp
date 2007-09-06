@@ -412,21 +412,27 @@ EEncodingForm ReadIntoUtf8(
     input.read(tmp,bom_max);
     int n = input.gcount();
     {
+        int bom_len=0;
         Uchar* uc = reinterpret_cast<Uchar*>(tmp);
         if (n >= 3 && uc[0] == 0xEF && uc[1] == 0xBB && uc[2] == 0xBF) {
-            ef_bom = ef = eEncodingForm_Utf8;
+            ef_bom = eEncodingForm_Utf8;
             uc[0] = uc[3];
-            n -= 3;
+            bom_len=3;
         }
         else if (n >= 2 && (us[0] == 0xFEFF || us[0] == 0xFFFE)) {
             if (us[0] == 0xFEFF) {
-                ef_bom = ef = eEncodingForm_Utf16Native;
+                ef_bom = eEncodingForm_Utf16Native;
             } else {
-                ef_bom = ef = eEncodingForm_Utf16Foreign;
+                ef_bom = eEncodingForm_Utf16Foreign;
             }
             us[0] = us[1];
-            n -= 2;
+            bom_len=2;
         }
+        if (ef == eEncodingForm_Unknown || ef == ef_bom) {
+            ef = ef_bom;
+            n -= bom_len;
+        }
+        // else proceed at user's risk
     }
 
 // keep reading
