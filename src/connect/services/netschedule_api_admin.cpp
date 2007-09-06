@@ -75,7 +75,7 @@ void CNetScheduleAdmin::ReloadServerConfig() const
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
-                                    const string& comment) const
+                                    const string& comment, ECreateQueueFlags flags) const
 {
     string param = "QCRE " + qname + " " + qclass;
     if (!comment.empty()) {
@@ -86,7 +86,13 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
         CNetSrvConnectorHolder ch = *it;
-        m_API->SendCmdWaitResponse(ch, param); 
+        try {
+           m_API->SendCmdWaitResponse(ch, param); 
+        } catch (CNetScheduleException& ex) {
+            if (flags == eIgnoreDuplicateName && ex.GetErrCode() == CNetScheduleException::eDuplicateName)
+                continue;
+            throw;
+        }
     }
 }
 

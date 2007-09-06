@@ -602,13 +602,18 @@ public:
     /// Delete job
     void DropJob(const string& job_key) const;
 
+    enum ECreateQueueFlags {
+        eIgnoreDuplicateName = 0,
+        eErrorOnDublicateName 
+    };
+
     /// Create queue of given queue class
     /// @param qname
     ///    Name of the queue to create
     /// @param qclass
     ///    Parameter set described in config file in qclass_* section
     void CreateQueue(const string& qname, const string& qclass,
-                     const string& comment = kEmptyStr) const;
+                     const string& comment = kEmptyStr, ECreateQueueFlags flags = eIgnoreDuplicateName) const;
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method
