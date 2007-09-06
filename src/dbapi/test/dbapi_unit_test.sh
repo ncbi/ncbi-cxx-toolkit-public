@@ -25,12 +25,15 @@ export PATH
 SYSTEM_NAME=`uname -s`
 SYSTEM_MAJOR_RELEASE=`uname -r | sed -e 's/\..*//'`
 
+BOOST_TEST_DETECT_MEMORY_LEAK=0
+export BOOST_TEST_DETECT_MEMORY_LEAK
+
 # Run one test
 RunTest()
 {
   echo
   (
-    $CHECK_EXEC run_sybase_app.sh dbapi_unit_test --detect_memory_leak=0 $1 > $res_file 2>&1
+    $CHECK_EXEC run_sybase_app.sh dbapi_unit_test $1 > $res_file 2>&1
   )
   if test $? -eq 0 ; then
       echo "OK:"

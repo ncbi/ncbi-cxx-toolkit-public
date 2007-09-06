@@ -34,12 +34,15 @@ n_err=0
 sum_list=""
 driver_status=0
 
+BOOST_TEST_DETECT_MEMORY_LEAK=0
+export BOOST_TEST_DETECT_MEMORY_LEAK
+
 # Run one test
 RunTest()
 {
   echo
   (
-    $CHECK_EXEC run_sybase_app.sh python_ncbi_dbapi_test --detect_memory_leak=0 $1 > $res_file 2>&1
+    $CHECK_EXEC run_sybase_app.sh python_ncbi_dbapi_test $1 > $res_file 2>&1
   )
   if test $? -eq 0 ; then
       echo "OK:"
