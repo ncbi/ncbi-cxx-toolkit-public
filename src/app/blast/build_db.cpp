@@ -610,7 +610,8 @@ bool CBuildDatabase::x_AddFastaSequences(CNcbiIstream & fasta_file)
     TFlags flags = (TFlags) (CFastaReader::fAllSeqIds |
                              (m_IsProtein
                               ? CFastaReader::fAssumeProt
-                              : CFastaReader::fAssumeNuc));
+                              : CFastaReader::fAssumeNuc) |
+                             CFastaReader::fForceType);
     
     CFastaReader fr(*lr, flags);
     
