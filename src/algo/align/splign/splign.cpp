@@ -871,7 +871,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
     
         // keep short terminal hits out of the pattern
         THitRefs::iterator ii (phitrefs->begin()), jj (phitrefs->end() - 1);
-        const size_t min_termhitlen (m_MinPatternHitLength);
+        const size_t min_termhitlen1 (m_MinPatternHitLength);
+        const size_t min_termhitlen2 (2*m_MinPatternHitLength);
         bool b0 (true), b1 (true);
         while(b0 && b1 && ii < jj) {
             
@@ -880,6 +881,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             
             if(ii < jj) {
                 
+                const double hit_idty ((*ii)->GetIdentity());
+                const size_t min_termhitlen (
+                   hit_idty < .9999? min_termhitlen2: min_termhitlen1);
+
                 if((*ii)->GetQuerySpan() < min_termhitlen) {
                     ii++ -> Reset(0);
                 }
@@ -890,6 +895,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             
             if(ii < jj) {
                 
+                const double hit_idty ((*jj)->GetIdentity());
+                const size_t min_termhitlen (
+                   hit_idty < .9999? min_termhitlen2: min_termhitlen1);
+
                 if((*jj)->GetQuerySpan() < min_termhitlen) {
                     jj-- -> Reset(0);
                 }
