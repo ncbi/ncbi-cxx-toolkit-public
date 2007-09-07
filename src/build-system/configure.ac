@@ -4016,8 +4016,8 @@ if test "$with_opengl" != "no"; then
          CPPFLAGS="$orig_CPPFLAGS"
          # Look in /usr/X11R6/lib64 if necessary
          xlib=`ls -d /usr/X11R6/lib$bit64_sfx/libX11.* 2>/dev/null | sed -ne 1p`
-         if test -f "$xlib" -a "${x_libraries-none}" = none \
-           -a "${x_includes-none}" = none; then
+         if test -f "$xlib" -a "${x_libraries-NONE}" = NONE \
+           -a "${x_includes-NONE}" = NONE; then
             base=`basename $xlib`
             cmp -s /usr/X11R6/lib/$base $xlib  || \
                cmp -s /usr/lib/$base $xlib  || \
