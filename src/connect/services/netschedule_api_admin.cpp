@@ -315,7 +315,7 @@ CNetScheduleAdmin::TIDsMap CNetScheduleAdmin::x_QueueIDs(const string& query) co
     string cmd = "QERY ";
     cmd.append("\"");
     cmd.append(NStr::PrintableString(query));
-    cmd.append("\" IDS\r\n");
+    cmd.append("\" IDS");
 
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
