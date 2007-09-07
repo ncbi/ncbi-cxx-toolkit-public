@@ -404,7 +404,8 @@ for x_arg in "$@" ; do
 
    case "$x_arg" in
       --with-extra-action= | --exec-prefix= | --with-projects= | --srcdir= \
-      | --cache-file= | --build= | --host= | --target= | --with-runpath= )
+      | --cache-file= | --build= | --host= | --target= | --with-runpath= \
+      | --x-includes= | --x-libraries= )
       AC_MSG_ERROR([$x_arg:  requires value;  use --help to show usage])
       ;;
 
@@ -427,6 +428,7 @@ for x_arg in "$@" ; do
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* \
+      | --x-includes=* | --x-libraries=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
