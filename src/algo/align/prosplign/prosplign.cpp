@@ -289,14 +289,14 @@ int CProSplignOutputOptions::GetStopBonus() const
 
 struct CProSplign::SImplData {
     SImplData(CProSplignScoring scoring) :
-        m_matrix("BLOSUM62"), m_scoring(scoring), m_intronless(false),
+        m_scoring(scoring), m_matrix("BLOSUM62",m_scoring), m_intronless(false),
         m_old(false), m_one_stage(false), m_just_second_stage(false),
         lgap(false), rgap(false)
     {
     }
 
-    SEQUTIL m_matrix;
     CProSplignScaledScoring m_scoring;
+    CSubstMatrix m_matrix;
     bool m_intronless;
     bool m_old;
     bool m_one_stage;

@@ -132,7 +132,7 @@ void CAliUtil::CheckValidity(const CAli& ali) //returns if valid, throws otherwi
 //mode 2 : gaps/framshifts at the end have 0 score (default)
 //mode 1 : full scoring for gaps/framshifts in protein, 0 score for H-gaps/framshifts
 //mode 0 : full scoring at the end
-int CAliUtil::CountIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, int mode)
+int CAliUtil::CountIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix, int mode)
 {
     //    CScoring::Init();
     CheckValidity(ali);
@@ -145,7 +145,7 @@ int CAliUtil::CountIScore(const CAli& ali, const CProSplignScaledScoring& scorin
 
 //same as before, version without introns
 //CHECKS THAT THERE ARE NO INTRONS 
-int CAliUtil::CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, int mode, bool lgap, bool rgap)
+int CAliUtil::CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix, int mode, bool lgap, bool rgap)
 {
     //    CScoring::Init();
     CheckValidity(ali);
@@ -197,7 +197,7 @@ int CAliUtil::CountFrIScore(const CAli& ali, const CProSplignScaledScoring& scor
                 protpos = nultripos/3;
                 //matches
                 for(j=0;j<i;++j) {
-                    score += matrix.MultScore(ali.cnseq->GetNuc(nulpos), ali.cnseq->GetNuc(nulpos+1), ali.cnseq->GetNuc(nulpos+2), ali.cpseq->seq[protpos++], scoring);
+                    score += matrix.MultScore(ali.cnseq->GetNuc(nulpos), ali.cnseq->GetNuc(nulpos+1), ali.cnseq->GetNuc(nulpos+2), ali.cpseq->seq[protpos++]);
                     nulpos += 3;
                     nultripos += 3;
                     len -= 3;

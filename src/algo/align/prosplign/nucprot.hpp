@@ -73,24 +73,27 @@ struct CBMode {//back tracking for one stage fast version (AlignFNog, BackAlignF
     int wlen, vlen, h1len, h2len, h3len; //splice lengths
 };
 
-int CharToNuc(char c);
-char NucToChar(int n);
-
-extern const char* aa_table;
-
-
 struct SEQUTIL {
+    static const char* aa_table;
     static const string alphabet;
+
+    static int CharToNuc(char c);
+    static char NucToChar(int n);
 
     inline static char nuc2a(int nuc1, int nuc2, int nuc3) {
         return aa_table[nuc1*25+nuc2*5+nuc3];
     }
+};
 
-    SEQUTIL(string name);  // matrix for proteins
-    inline int MultScore(int nuc1, int nuc2, int nuc3, char amin, const CProSplignScaledScoring& scoring) const { return (int)scoring.sm_koef*matrix[int(amin)][int(nuc2a(nuc1, nuc2, nuc3))]; }
+/// Substitution Matrix for Scoring Amino-Acid Alignments
+class CSubstMatrix {
+public:
+    CSubstMatrix(const string& name, const CProSplignScaledScoring& scoring);
 
-  char matrix[256][256];
-  static const string blosum62;
+    inline int MultScore(int nuc1, int nuc2, int nuc3, char amin) const { return scaled_subst_matrix[int(amin)][int(SEQUTIL::nuc2a(nuc1, nuc2, nuc3))]; }
+
+    int scaled_subst_matrix[256][256];
+    static const string blosum62;
 };
 
 
@@ -98,8 +101,8 @@ struct SEQUTIL {
 class CFastIScore
 {
 public:
-    void SetAmin(char amin, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);//call before GetScore() and/or GetScore(int n1, int n2, int n3)
-    void Init(const CNSeq& seq, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);//call before GetScore()
+    void SetAmin(char amin, const CSubstMatrix& matrix);//call before GetScore() and/or GetScore(int n1, int n2, int n3)
+    void Init(const CNSeq& seq, const CSubstMatrix& matrix);//call before GetScore()
     inline int GetScore() { return *++m_pos; }
     inline int GetScore(int n1, int n2, int n3) const { return m_gpos[n1*25+n2*5+n3]; }
     CFastIScore() :  m_size(0), m_init(false) { m_scores.resize(1); }
@@ -110,7 +113,7 @@ private:
 
     int *m_gpos;
     vector<int> m_gscores;
-    void Init(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);
+    void Init(const CSubstMatrix& matrix);
     bool m_init;
 
     CFastIScore(const CFastIScore&);
@@ -130,23 +133,23 @@ class CProSplignScaledScoring;
 
 // *****   versions without gap/frameshift penalty at the beginning/end
 //fast variant of FrAlignNog1
-int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix, bool left_gap = false, bool right_gap = false);
+int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix, bool left_gap = false, bool right_gap = false);
 //**** good  for FrAlignNog, FrAlignNog1, FrAlign and FrAlignFNog1
 void FrBackAlign(CBackAlignInfo& bi, CAli& ali);
 
 // *****   versions without gap/frameshift penalty at the beginning/end ONE STAGE, FAST
-int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);
+int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 void BackAlignNog(CTBackAlignInfo<CBMode>& bi, CAli& ali);
 
 // *****   versions without gap/frameshift penalty at the beginning/end FAST
 int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, 
-                      const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);
+                      const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 
 //*** mixed gap penalty (OLD, aka version 2)
 int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-            int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);
+            int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-            int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix);
+            int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 
 
 

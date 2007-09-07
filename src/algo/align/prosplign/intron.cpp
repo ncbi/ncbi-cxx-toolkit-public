@@ -108,28 +108,28 @@ void CAnyIntron::AddW1(const CProSplignScaledScoring scoring) {
             }
 }
 
-void CAnyIntron::AddW2(const CProSplignScaledScoring scoring, const SEQUTIL& matrix) {
-            int sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nA, amin, scoring);
+void CAnyIntron::AddW2(const CProSplignScaledScoring scoring, const CSubstMatrix& matrix) {
+            int sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nA, amin);
             if(sco > sea.first) {
                 sea.first = sco;
                 sea.second = j-scoring.lmin-1;
             }
-            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nT, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nT, amin);
             if(sco > set.first) {
                 set.first = sco;
                 set.second = j-scoring.lmin-1;
             }
-            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nG, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nG, amin);
             if(sco > seg.first) {
                 seg.first = sco;
                 seg.second = j-scoring.lmin-1;
             }
-            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nC, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nC, amin);
             if(sco > sec.first) {
                 sec.first = sco;
                 sec.second = j-scoring.lmin-1;
             }
-            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nN, amin, scoring);
+            sco = esc[j-scoring.lmin-3] + matrix.MultScore(nseq[j-scoring.lmin-3], nseq[j-scoring.lmin-2], nN, amin);
             if(sco > sen.first) {
                 sen.first = sco;
                 sen.second = j-scoring.lmin-1;
@@ -137,7 +137,7 @@ void CAnyIntron::AddW2(const CProSplignScaledScoring scoring, const SEQUTIL& mat
 }
 
     
-void CAnyIntron::NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix)
+void CAnyIntron::NucStep(const CProSplignScaledScoring scoring, const CSubstMatrix& matrix)
 {
     SimpleNucStep(scoring);
     if(j - scoring.lmin - 3 >= scoring.ini_nuc_margin) {

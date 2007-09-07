@@ -155,24 +155,24 @@ GETANY(Geth021,sh021,3)
     }
 
     void SimpleNucStep(const CProSplignScaledScoring scoring);
-    void NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix);
+    void NucStep(const CProSplignScaledScoring scoring, const CSubstMatrix& matrix);
     void AddW1(const CProSplignScaledScoring scoring);
-    void AddW2(const CProSplignScaledScoring scoring, const SEQUTIL& matrix);
+    void AddW2(const CProSplignScaledScoring scoring, const CSubstMatrix& matrix);
             
-    inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
+    inline CHIntronScore GetW1(const CSubstMatrix& matrix) {
         CHIntronScore res(swa);
-        res.first += matrix.MultScore(nA, nseq[j-2], nseq[j-1], amin, scoring);
+        res.first += matrix.MultScore(nA, nseq[j-2], nseq[j-1], amin);
         CHIntronScore tmp(swc);
-        tmp.first += matrix.MultScore(nC, nseq[j-2], nseq[j-1], amin, scoring);
+        tmp.first += matrix.MultScore(nC, nseq[j-2], nseq[j-1], amin);
         if(tmp.first > res.first) res = tmp;
         tmp = swg;
-        tmp.first += matrix.MultScore(nG, nseq[j-2], nseq[j-1], amin, scoring);
+        tmp.first += matrix.MultScore(nG, nseq[j-2], nseq[j-1], amin);
         if(tmp.first > res.first) res = tmp;
         tmp = swt;
-        tmp.first += matrix.MultScore(nT, nseq[j-2], nseq[j-1], amin, scoring);
+        tmp.first += matrix.MultScore(nT, nseq[j-2], nseq[j-1], amin);
         if(tmp.first > res.first) res = tmp;
         tmp = swn;
-        tmp.first += matrix.MultScore(nN, nseq[j-2], nseq[j-1], amin, scoring);
+        tmp.first += matrix.MultScore(nN, nseq[j-2], nseq[j-1], amin);
         if(tmp.first > res.first) res = tmp;
 
         res.second = j - 2 - res.second;
@@ -258,7 +258,7 @@ inline void SimpleNucStep(const CProSplignScaledScoring scoring) {
     donj2++;
     acsj2++;
 }
-inline void NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix)
+inline void NucStep(const CProSplignScaledScoring scoring, const CSubstMatrix& matrix)
 {
     SimpleNucStep(scoring);
     if(j - scoring.lmin - 3 >= scoring.ini_nuc_margin) {
@@ -307,19 +307,19 @@ MGET(Geth021,acsj1)
 MGET(Getw012,acsj2)
 MGET(Geth012,acsj2)
 //MGET(GetW1,j-2)
-inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
+inline CHIntronScore GetW1(const CSubstMatrix& matrix) {
     if(NotAcs(j-2)) return CHIntronScore();
-    return CAnyIntron::GetW1(scoring, matrix);
+    return CAnyIntron::GetW1(matrix);
 }
 
 MGET(GetW2,j-1)
 
     CIntron(/*int i,*/ int j, char amin, char don11, char don21, char acs11, char acs21, const CAlignInfo& prev,  const CAlignInfo& cur, const CNSeq& nseq, const CProSplignScaledScoring& scoring)
             : CAnyIntron(/*i, */j, amin, prev, cur, nseq, scoring) {
-            don1 = CharToNuc(don11);
-            don2 = CharToNuc(don21);
-            acs1 = CharToNuc(acs11);
-            acs2 = CharToNuc(acs21);
+            don1 = SEQUTIL::CharToNuc(don11);
+            don2 = SEQUTIL::CharToNuc(don21);
+            acs1 = SEQUTIL::CharToNuc(acs11);
+            acs2 = SEQUTIL::CharToNuc(acs21);
             donj0 = j-scoring.lmin;
             donj1 = donj0 - 1;
             donj2 = donj1 - 1;
@@ -346,7 +346,7 @@ public:
         anycost = scoring.sm_ICANY + scoring.lmin*scoring.ie;
       }
 
-      inline void NucStep(const CProSplignScaledScoring scoring, const SEQUTIL& matrix) {
+      inline void NucStep(const CProSplignScaledScoring scoring, const CSubstMatrix& matrix) {
           gt.NucStep(scoring, matrix);
           gc.NucStep(scoring, matrix);
           at.NucStep(scoring, matrix);
@@ -378,7 +378,7 @@ public:
     inline CHIntronScore name() { return GetBest(gt.name(), gc.name(), at.name(), an.name()); }
 
 //FUNC(GetW1)
-    inline CHIntronScore GetW1(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) { return GetBest(gt.GetW1(scoring, matrix), gc.GetW1(scoring, matrix), at.GetW1(scoring, matrix), an.GetW1(scoring, matrix)); }
+    inline CHIntronScore GetW1(const CSubstMatrix& matrix) { return GetBest(gt.GetW1(matrix), gc.GetW1(matrix), at.GetW1(matrix), an.GetW1(matrix)); }
 
 FUNC(GetW2)
 FUNC(Getw111)

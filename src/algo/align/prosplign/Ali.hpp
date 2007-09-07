@@ -90,6 +90,7 @@ public:
 
 class CSeq_alignHandle;
 class CNPiece;
+class CSubstMatrix;
 
 //interface to convert alignment into CSeq-align
 class CPosAli : public CAli {
@@ -100,7 +101,7 @@ public:
     const CSeq_id& m_protein;
     CProSplignOutputOptionsExt m_output_options;
     //FULL
-	CPosAli(const CAli& ali, const CSeq_id& protein, const CSeq_loc& genomic, const CProSplignOutputOptions& output_options, const SEQUTIL& matrix);
+	CPosAli(const CAli& ali, const CSeq_id& protein, const CSeq_loc& genomic, const CProSplignOutputOptions& output_options, const CSubstMatrix& matrix);
 	//Pieces
 	//CPosAli(const CAli& ali, const string& nuc_id, const string& prot_id, const list<CNPiece>& pcs);
 	//make Pieces

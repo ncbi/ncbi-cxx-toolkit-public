@@ -49,7 +49,7 @@ BEGIN_SCOPE(prosplign)
 
 const int infinity = numeric_limits<int>::min()/3;
 
-const string SEQUTIL::blosum62(
+const string CSubstMatrix::blosum62(
 "#  Matrix made by matblas from blosum62.iij\n"
 "#  * column uses minimum score\n"
 "#  BLOSUM Clustered Scoring Matrix in 1/2 Bit Units\n"
@@ -83,11 +83,11 @@ const string SEQUTIL::blosum62(
 "* -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4 -4  1 \n"
 );
 
-SEQUTIL::SEQUTIL(string name)  // matrix for proteins
+CSubstMatrix::CSubstMatrix(const string& name, const CProSplignScaledScoring& scoring)  // matrix for proteins
 {
     for(int i = 0; i < 256;  ++i) {
         for(int j = 0; j < 256;  ++j) {
-            matrix[i][j] = 0;
+            scaled_subst_matrix[i][j] = 0;
         }
     }
     
@@ -112,20 +112,21 @@ SEQUTIL::SEQUTIL(string name)  // matrix for proteins
             
         int score;
         for(int i = 0; istr >> score; ++i) {
+            score *= scoring.sm_koef;
             int d = letters[i];
-            matrix[c][d] = score;
-            matrix[tolower(c)][tolower(d)] = score;
-            matrix[c][tolower(d)] = score;
-            matrix[tolower(c)][d] = score;
+            scaled_subst_matrix[c][d] = score;
+            scaled_subst_matrix[tolower(c)][tolower(d)] = score;
+            scaled_subst_matrix[c][tolower(d)] = score;
+            scaled_subst_matrix[tolower(c)][d] = score;
         }
     }
 }
 
-const char* aa_table = "KNKNXTTTTTRSRSXIIMIXXXXXXQHQHXPPPPPRRRRRLLLLLXXXXXEDEDXAAAAAGGGGGVVVVVXXXXX*Y*YXSSSSS*CWCXLFLFXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+const char* SEQUTIL::aa_table = "KNKNXTTTTTRSRSXIIMIXXXXXXQHQHXPPPPPRRRRRLLLLLXXXXXEDEDXAAAAAGGGGGVVVVVXXXXX*Y*YXSSSSS*CWCXLFLFXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
 
 const string SEQUTIL::alphabet = "ARNDCQEGHILKMFPSTWYVBZX*";
 
-int CharToNuc(char c) {
+int SEQUTIL::CharToNuc(char c) {
   if(c == 'A' || c == 'a') return nA;
   if(c == 'C' || c == 'c') return nC;
   if(c == 'G' || c == 'g') return nG;
@@ -134,7 +135,7 @@ int CharToNuc(char c) {
   return nN;
 }
 
-char NucToChar(int n) {
+char SEQUTIL::NucToChar(int n) {
     if(n == nA) return 'A';
     if(n == nT) return 'T';
     if(n == nG) return 'G';
@@ -143,8 +144,8 @@ char NucToChar(int n) {
 }
 
 //fast score access implementation
-void CFastIScore::Init(const CNSeq& seq, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
-    Init(scoring, matrix);
+void CFastIScore::Init(const CNSeq& seq, const CSubstMatrix& matrix) {
+    Init(matrix);
     m_size = seq.size() - 2;
     m_scores.resize( m_size *  SEQUTIL::alphabet.size() + 1);
     int j;
@@ -158,8 +159,8 @@ void CFastIScore::Init(const CNSeq& seq, const CProSplignScaledScoring& scoring,
     }
 }
 
-void CFastIScore::SetAmin(char amin, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
-    Init(scoring, matrix);
+void CFastIScore::SetAmin(char amin, const CSubstMatrix& matrix) {
+    Init(matrix);
     string::size_type num = SEQUTIL::alphabet.find(toupper(amin));
     if(num == string::npos) num = SEQUTIL::alphabet.find('X');
     m_gpos = &m_gscores[num * 125];
@@ -170,7 +171,7 @@ void CFastIScore::SetAmin(char amin, const CProSplignScaledScoring& scoring, con
 // int *CFastIScore::m_gpos;
 // vector<int> CFastIScore::m_gscores;
 
-void CFastIScore::Init(const CProSplignScaledScoring& scoring, const SEQUTIL& matrix) {
+void CFastIScore::Init(const CSubstMatrix& matrix) {
     if(m_init) return;
     m_init = true;
     m_gscores.resize(125*SEQUTIL::alphabet.size());
@@ -182,7 +183,7 @@ void CFastIScore::Init(const CProSplignScaledScoring& scoring, const SEQUTIL& ma
         char amin = SEQUTIL::alphabet[i];
         for(i1 = 0; i1<5; ++i1) {
             for(i2 = 0; i2<5; ++i2) {
-                for(i3 = 0; i3<5; ++i3) *pos++ = matrix.MultScore(arr[i1], arr[i2], arr[i3], amin, scoring);
+                for(i3 = 0; i3<5; ++i3) *pos++ = matrix.MultScore(arr[i1], arr[i2], arr[i3], amin);
             }
         }
     }
@@ -192,7 +193,7 @@ void CFastIScore::Init(const CProSplignScaledScoring& scoring, const SEQUTIL& ma
 
 
 int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-              int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix)
+              int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
@@ -236,7 +237,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
         h0 = max(h1, h2);
         if(h0 == h2) b += (char)16;
         //rest
-        w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1], scoring);
+        w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1]);
         w2 = prow->w[j-1] - f - 2*e;
         w3 = prow->v[j-1] - (f - g) - 2*e;
         w4 = prow->w[j-2] - f - e;
@@ -279,7 +280,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
   return wmax;
 }
 
-int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix)
+int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
   left_gap = false;
   right_gap = false;
@@ -298,7 +299,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
   lsb.Creat(0, jmax);
 
   CFastIScore fiscore;
-  fiscore.Init(nseq, scoring, matrix);
+  fiscore.Init(nseq, matrix);
   CFIntron fin(nseq, scoring);
     // ** prepare for main loop
     //penalties
@@ -341,7 +342,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         int h3 = infinity;
        //extra init for intron scoring
         fin.InitRowScores(crow, prow->m_w, 3);
-        fiscore.SetAmin(pseq[i-1], scoring, matrix);
+        fiscore.SetAmin(pseq[i-1], matrix);
        // pointers
         cv = &crow->v[2];
         ch1 = &crow->h1[2];
@@ -524,7 +525,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
 }
 
 int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-                    int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix)
+                    int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
     // in matrices letters starts at [1]
  
@@ -573,7 +574,7 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
       int d101, d102, d103, d104, h101, h102, h103, h104, h105, fv101, fv102, fh101, v101, s0;
 	  int d0, v0, h0, fv0, fh0, w0; //maximum values
 
-      dspl101 = chin.GetW1(scoring, matrix);
+      dspl101 = chin.GetW1(matrix);
       d101 = dspl101.first;
       dspl102 = chin.GetW2();
       d102 = dspl102.first;
@@ -581,7 +582,7 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
       d103 = dspl103.first -f - e;
       dspl104 = chin.Getfv111();
       d104 = dspl104.first - e;
-	  d1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1], scoring);
+	  d1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1]);
 	  d2 = prow->w[j-1] - f - 2*e;
 	  d3 = prow->fv[j-1] - 2*e;
       d4 = prow->v[j-1] - (f - g) - 2*e;
@@ -785,7 +786,7 @@ void FrBackAlign(CBackAlignInfo& bi, CAli& ali) {
 }
 
 
-void CInfo::InitAlign(const SEQUTIL& matrix)
+void CInfo::InitAlign(const CSubstMatrix& matrix)
 {
     //int width, bool info_only    
   vector<char>& gpseq = m_Gpseq;
@@ -935,7 +936,7 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
 
     int j=0;
     for(vector<bool>::iterator rit = gnseq.begin();rit != gnseq.end(); ++rit) {
-        if(*rit) outn += NucToChar(nseq[j++]);
+        if(*rit) outn += SEQUTIL::NucToChar(nseq[j++]);
         else outn += "-";
     }
 
@@ -954,7 +955,7 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
                     outp += toupper(pseq[i++]);
                     len = (int)outp.length();
                     if(outn[len] != '-' && outn[len-1] != '-' && outn[len-2] != '-') {
-                      outr += SEQUTIL::nuc2a(CharToNuc(outn[len-2]), CharToNuc(outn[len-1]), CharToNuc(outn[len]));
+                      outr += SEQUTIL::nuc2a(SEQUTIL::CharToNuc(outn[len-2]), SEQUTIL::CharToNuc(outn[len-1]), SEQUTIL::CharToNuc(outn[len]));
                     } else outr += " ";
                 } else {
                     outp += " ";
@@ -970,7 +971,7 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
                 outp += "-";
                 string::size_type pos = outr.size();
                 if(gl==3) {
-                    int gsplnuc3 = CharToNuc(outn[pos]);
+                    int gsplnuc3 = SEQUTIL::CharToNuc(outn[pos]);
                     gl=0;
                     char gprotr = tolower(SEQUTIL::nuc2a(gsplnuc1, gsplnuc2, gsplnuc3));
                     if(*rit == 't') {
@@ -985,11 +986,11 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
                 else {
                     if(gl==2) {
                         gtranp2 = pos;
-                        gsplnuc2 = CharToNuc(outn[pos]);
+                        gsplnuc2 = SEQUTIL::CharToNuc(outn[pos]);
                     }
                     if(gl==1) {
                         gtranp1 = pos;
-                        gsplnuc1 = CharToNuc(outn[pos]);
+                        gsplnuc1 = SEQUTIL::CharToNuc(outn[pos]);
                     }
                     outr += " ";
                 }
@@ -1005,7 +1006,7 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
                     i++;
                     l=0;
                     if(outn[pos] != '-' && splnuc1 != -1 && splnuc1 != -1) {
-                        int splnuc3 = CharToNuc(outn[pos]);
+                        int splnuc3 = SEQUTIL::CharToNuc(outn[pos]);
                         char protr = tolower(SEQUTIL::nuc2a(splnuc1, splnuc2, splnuc3));
                         outr += protr;
                         outr[tranp1] = protr;
@@ -1016,12 +1017,12 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
                     if(l==2) {
                         tranp2 = pos;
                         if(outn[pos] == '-') splnuc2 = -1;
-                        else splnuc2 = CharToNuc(outn[pos]);
+                        else splnuc2 = SEQUTIL::CharToNuc(outn[pos]);
                     }
                     if(l==1) {
                         tranp1 = pos;
                         if(outn[pos] == '-') splnuc1 = -1;
-                        else splnuc1 = CharToNuc(outn[pos]);
+                        else splnuc1 = SEQUTIL::CharToNuc(outn[pos]);
                     }
                     outr += " ";
                 }
@@ -1070,7 +1071,7 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
     match.resize(outp.size(), ' ');
     for(string::size_type sn = 0; sn < outp.size(); ++sn) {
         //match
-        if(matrix.matrix[outp[sn]][outr[sn]] > 0) {
+        if(matrix.scaled_subst_matrix[outp[sn]][outr[sn]] > 0) {
             char po = '.';//positive
             char spo = '+';//positive
             if(outp[sn] == outr[sn]) {//match
@@ -1132,7 +1133,7 @@ void CInfo::InitAlign(const SEQUTIL& matrix)
 
 int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
                    // int g/*gap opening*/, int e/*one nuc extension cost*/, int f/*frameshift opening cost*/,
-                   const CProSplignScaledScoring& scoring, const SEQUTIL& matrix,
+                   const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix,
                    bool left_gap, bool right_gap)
 {
     int g/*gap opening*/ = scoring.GetGapOpeningCost();
@@ -1146,7 +1147,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
   CFrAlignRow *crow = &row1, *prow = &row2;
   int i, j;
   CFastIScore fiscore;
-  fiscore.Init(nseq, scoring, matrix);
+  fiscore.Init(nseq, matrix);
   //first row, i.e. i=0
     for(j=0;j<jlen;j++) {
       crow->w[j] = 0;
@@ -1198,7 +1199,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
     pw1 =  &prow->w[2];
     pv1 =  &prow->v[2];
     pv =  &prow->v[0];
-    fiscore.SetAmin(pseq[i-1], scoring, matrix);
+    fiscore.SetAmin(pseq[i-1], matrix);
 	for(j=3;j<jlen_1;++j) {
         bb = 0;
         //rest
@@ -1254,7 +1255,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
                 b |= 64;
             }
             //rest
-            int w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1], scoring);
+            int w1 = prow->w[j-3] + matrix.MultScore(nseq[j-3], nseq[j-2], nseq[j-1], pseq[i-1]);
             int w12 = prow->w[j-1];
             int w13 = prow->w[j-2];
             int w0 = max(w1, max(w12, max(w13, max(h1, max(h2, h3)))));
@@ -1292,7 +1293,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
 }
 
 
-int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const SEQUTIL& matrix)
+int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
   if(nseq.size() < 1) return 0;
   int ilen = (int)pseq.size() + 1;
@@ -1301,7 +1302,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, 
   CAlignRow *crow = &row1, *prow = &row2;
   int i, j;
   CFastIScore fiscore;
-  fiscore.Init(nseq, scoring, matrix);
+  fiscore.Init(nseq, matrix);
   CFIntron fin(nseq, scoring);
   //first row, i.e. i=0
     for(j=0;j<jlen;j++) {
@@ -1351,7 +1352,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, 
     pw1 =  &prow->w[2];
     pv1 =  &prow->v[2];
     pv =  &prow->v[0];
-    fiscore.SetAmin(pseq[i-1], scoring, matrix);
+    fiscore.SetAmin(pseq[i-1], matrix);
     int jlen_1 = jlen - 1;
   // *******  INTERNAL LOOP ******************
 	for(j=3;j<jlen_1;++j) {
