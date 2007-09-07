@@ -133,7 +133,7 @@ int CDBAPI_CacheAdmin::Connect(const CArgs& args)
 {
     CDriverManager &db_drv_man = CDriverManager::GetInstance();
     string drv_name;
-    DBAPI_RegisterDriver_FTDS(db_drv_man);
+    DBAPI_RegisterDriver_FTDS();
     drv_name = "ftds";
 
     IDataSource* ds = db_drv_man.CreateDs(drv_name);
