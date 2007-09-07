@@ -155,7 +155,7 @@ unsigned CBDB_Volumes::AddVolume(const string& location,
     m_VolumesDB->version = version;
     m_VolumesDB->date_from = 0;
     m_VolumesDB->date_to = 0;
-    m_VolumesDB->mtimestamp = time(0);
+    m_VolumesDB->mtimestamp = (Uint4)time(0);
     m_VolumesDB->relo_volume_id = 0;
     m_VolumesDB->location = location;
     m_VolumesDB->backup_loc = "";
