@@ -294,7 +294,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
   int wmax = 0;//max score in the last column
   int imax = 0;//row number for wmax
   int jmax = jlen - 1;//column number for wmax
-  CIgapIntronChain lsb(&wmax); //last column best, corresponds to wmax
+  CIgapIntronChain lsb; //last column best, corresponds to wmax
   lsb.Creat(0, jmax);
 
   CFastIScore fiscore;

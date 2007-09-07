@@ -55,7 +55,7 @@ public:
 class CIgapIntronChain
 {
 public:
-    inline CIgapIntronChain(const void * owner) : m_Top(NULL) {}
+    inline CIgapIntronChain() : m_Top(NULL) {}
     ~CIgapIntronChain() { Clear(); }
     inline void Creat(int beg, int len) 
     {

@@ -63,6 +63,7 @@ public:
 
     int lmin;//minimum intron length
     int ie;//intron extention cost (scaled)
+    int ie_x_lmin; // ie*lmin
     int ini_nuc_margin;//minimum j-index where to check score before.
                            //in other words we requere ini_nuc_margin nucleotides before start thinking 
                            //about splice. In old version it is 0 meaning splice can be everywhere

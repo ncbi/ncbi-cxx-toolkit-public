@@ -557,23 +557,23 @@ private:
             bsc.second = j;
         }
     }
-    inline void AddDon1(CFIntronDon& don, Nucleotides& nuc, int& j, const CProSplignScaledScoring& scoring) {
+    inline void AddDon1(CFIntronDon& don, Nucleotides& nuc, int j, const CProSplignScaledScoring& scoring) {
         AddDonCon(*++m_w12, m_any.m_w1[nuc], j, scoring);
         AddDonCon(*m_w12, don.m_w1[nuc], j, scoring);
     }
-    inline void AddDon1(Nucleotides& nuc, int& j, const CProSplignScaledScoring& scoring) {
+    inline void AddDon1(Nucleotides& nuc, int j, const CProSplignScaledScoring& scoring) {
         AddDonCon(*++m_w12, m_any.m_w1[nuc], j, scoring);
     }
-    inline void AddDon2(int& j, const CProSplignScaledScoring& scoring) {
-        int& sc = *m_w12;
+    inline void AddDon2(int j, const CProSplignScaledScoring& scoring) {
+        int sc = *m_w12;
         AddDonAny(sc + m_w2s[nA], m_any.m_w2[nA], j, scoring);
         AddDonAny(sc + m_w2s[nC], m_any.m_w2[nC], j, scoring);
         AddDonAny(sc + m_w2s[nG], m_any.m_w2[nG], j, scoring);
         AddDonAny(sc + m_w2s[nT], m_any.m_w2[nT], j, scoring);
         AddDonAny(sc + m_w2s[nN], m_any.m_w2[nN], j, scoring);
     }
-    inline void AddDon2(CFIntronDon& don, int& j, const CProSplignScaledScoring& scoring) {
-        int& sc = *m_w12;
+    inline void AddDon2(CFIntronDon& don, int j, const CProSplignScaledScoring& scoring) {
+        int sc = *m_w12;
         AddDonAny(sc + m_w2s[nA], m_any.m_w2[nA], j, scoring);
         AddDonAny(sc + m_w2s[nC], m_any.m_w2[nC], j, scoring);
         AddDonAny(sc + m_w2s[nG], m_any.m_w2[nG], j, scoring);
@@ -585,14 +585,14 @@ private:
         AddDonCon(sc + m_w2s[nT], don.m_w2[nT], j, scoring);
         AddDonCon(sc + m_w2s[nN], don.m_w2[nN], j, scoring);
     }
-    inline void AddDon(int& j, const CProSplignScaledScoring& scoring) {
+    inline void AddDon(int j, const CProSplignScaledScoring& scoring) {
         AddDonAny(*++m_w, m_any.m_w, j, scoring);
         AddDonAny(*++m_v, m_any.m_v, j, scoring);
         AddDonAny(*++m_h1, m_any.m_h1, j, scoring);
         AddDonAny(*++m_h2, m_any.m_h2, j, scoring);
         AddDonAny(*++m_h3, m_any.m_h3, j, scoring);
     }
-    inline void AddDon(CFIntronDon& don, int& j, const CProSplignScaledScoring& scoring) {
+    inline void AddDon(CFIntronDon& don, int j, const CProSplignScaledScoring& scoring) {
         AddDonAny(*++m_w, m_any.m_w, j, scoring);
         AddDonAny(*++m_v, m_any.m_v, j, scoring);
         AddDonAny(*++m_h1, m_any.m_h1, j, scoring);
@@ -612,7 +612,7 @@ public:
     void InitRowScores(CAlignRow *row, vector<int>& prevw, int j);
     CFIntron(const CNSeq& nseq, const CProSplignScaledScoring scoring);
 
-    inline const CBestI& Step(int& j, const CProSplignScaledScoring& scoring, const CFastIScore& fiscore)
+    inline const CBestI& Step(int j, const CProSplignScaledScoring& scoring, const CFastIScore& fiscore)
     {
         InitW12s(j, scoring, fiscore);
         switch((++m_cd)->m_dt2) {
@@ -707,18 +707,18 @@ public:
                 }
                 break;
         }
-        m_bei.h1 -= scoring.ie*scoring.lmin;
-        m_bei.h2 -= scoring.ie*scoring.lmin;
-        m_bei.h3 -= scoring.ie*scoring.lmin;
-        m_bei.w1 -= scoring.ie*scoring.lmin;
-        m_bei.w2 -= scoring.ie*scoring.lmin;
-        m_bei.w -= scoring.ie*scoring.lmin;
-        m_bei.v -= scoring.ie*scoring.lmin;
+        m_bei.h1 -= scoring.ie_x_lmin;
+        m_bei.h2 -= scoring.ie_x_lmin;
+        m_bei.h3 -= scoring.ie_x_lmin;
+        m_bei.w1 -= scoring.ie_x_lmin;
+        m_bei.w2 -= scoring.ie_x_lmin;
+        m_bei.w -= scoring.ie_x_lmin;
+        m_bei.v -= scoring.ie_x_lmin;
         return m_bei;
     }
-    inline static int Getlen(const EAccType& at, const int& sc, const CHIntronScore& sc_any, const CHIntronScore& sc_at,
-                      const CHIntronScore& sc_gt, const CHIntronScore& sc_gc, const int&j, const CProSplignScaledScoring& scoring) { 
-        if(sc == sc_any.first - scoring.sm_ICANY - scoring.ie*scoring.lmin) return j - sc_any.second + scoring.lmin;
+    inline static int Getlen(const EAccType& at, int sc, const CHIntronScore& sc_any, const CHIntronScore& sc_at,
+                      const CHIntronScore& sc_gt, const CHIntronScore& sc_gc, int j, const CProSplignScaledScoring& scoring) { 
+        if(sc == sc_any.first - scoring.sm_ICANY - scoring.ie_x_lmin) return j - sc_any.second + scoring.lmin;
         _ASSERT(at == eAC || at == eAG);
         if(at == eAC) {
             _ASSERT(sc == sc_at.first - scoring.sm_ICAT - scoring.ie*(j - sc_at.second + scoring.lmin));
@@ -729,37 +729,47 @@ public:
         _ASSERT(sc == sc_gc.first - scoring.sm_ICGC - scoring.ie*(j - sc_gc.second + scoring.lmin));
         return j - sc_gc.second + scoring.lmin;
     }
-    inline int GetWlen(const int&j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.w, m_any.m_w, m_at.m_w, m_gt.m_w, m_gc.m_w, j, scoring); }
-    inline int GetVlen(const int&j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.v, m_any.m_v, m_at.m_v, m_gt.m_v, m_gc.m_v, j, scoring); }
-    inline int GetH1len(const int&j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.h1, m_any.m_h1, m_at.m_h1, m_gt.m_h1, m_gc.m_h1, j, scoring); }
-    inline int GetH2len(const int&j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.h2, m_any.m_h2, m_at.m_h2, m_gt.m_h2, m_gc.m_h2, j, scoring); }
-    inline int GetH3len(const int&j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.h3, m_any.m_h3, m_at.m_h3, m_gt.m_h3, m_gc.m_h3, j, scoring); }
-    inline int GetW2len(const int&j, const CProSplignScaledScoring& scoring) const {
+    inline int GetWlen(int j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.w, m_any.m_w, m_at.m_w, m_gt.m_w, m_gc.m_w, j, scoring); }
+    inline int GetVlen(int j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.v, m_any.m_v, m_at.m_v, m_gt.m_v, m_gc.m_v, j, scoring); }
+    inline int GetH1len(int j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.h1, m_any.m_h1, m_at.m_h1, m_gt.m_h1, m_gc.m_h1, j, scoring); }
+    inline int GetH2len(int j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.h2, m_any.m_h2, m_at.m_h2, m_gt.m_h2, m_gc.m_h2, j, scoring); }
+    inline int GetH3len(int j, const CProSplignScaledScoring& scoring) const { return Getlen(m_cd->m_at, m_bei.h3, m_any.m_h3, m_at.m_h3, m_gt.m_h3, m_gc.m_h3, j, scoring); }
+    inline int GetW2len(int j, const CProSplignScaledScoring& scoring) const {
         int m_2nuc = m_cd->m_2nuc;
-        if(m_bei.w2 == m_any.m_w2[m_2nuc].first - scoring.sm_ICANY - scoring.ie*scoring.lmin) return j - m_any.m_w2[m_2nuc].second + scoring.lmin;
+        if(m_bei.w2 == m_any.m_w2[m_2nuc].first - scoring.sm_ICANY - scoring.ie_x_lmin)
+            return j - m_any.m_w2[m_2nuc].second + scoring.lmin;
         _ASSERT(m_cd->m_at2 == eAC || m_cd->m_at2 == eAG);
+
+        int w2len;
+
         if(m_cd->m_at2 == eAC) {
-            _ASSERT(m_bei.w2 == m_at.m_w2[m_2nuc].first - scoring.sm_ICAT - scoring.ie*(j - m_at.m_w2[m_2nuc].second + scoring.lmin));
-            return j - m_at.m_w2[m_2nuc].second + scoring.lmin;
+            w2len = j - m_at.m_w2[m_2nuc].second + scoring.lmin;
+            _ASSERT(m_bei.w2 == m_at.m_w2[m_2nuc].first - scoring.sm_ICAT - scoring.ie*w2len);
+            return w2len;
         }
         _ASSERT(m_cd->m_at2 == eAG);
-        if(m_bei.w2 == m_gt.m_w2[m_2nuc].first - scoring.sm_ICGT - scoring.ie*(j - m_gt.m_w2[m_2nuc].second + scoring.lmin)) return j - m_gt.m_w2[m_2nuc].second + scoring.lmin;
-        _ASSERT(m_bei.w2 == m_gc.m_w2[m_2nuc].first - scoring.sm_ICGC - scoring.ie*(j - m_gc.m_w2[m_2nuc].second + scoring.lmin));
-        return j - m_gc.m_w2[m_2nuc].second + scoring.lmin;
+        w2len = j - m_gt.m_w2[m_2nuc].second + scoring.lmin;
+        if(m_bei.w2 == m_gt.m_w2[m_2nuc].first - scoring.sm_ICGT - scoring.ie*w2len)
+            return w2len;
+        w2len = j - m_gc.m_w2[m_2nuc].second + scoring.lmin;
+        _ASSERT(m_bei.w2 == m_gc.m_w2[m_2nuc].first - scoring.sm_ICGC - scoring.ie*w2len);
+        return w2len;
     }
-    inline int GetW1len(const int&j, const CProSplignScaledScoring& scoring) const {
+    inline int GetW1len(int j, const CProSplignScaledScoring& scoring) const {
         int len = GetLen1(m_bei.w1 + scoring.sm_ICANY, m_any, j, scoring);
         if(len) return len;
         _ASSERT(m_cd->m_at1 == eAC || m_cd->m_at1 == eAG);
         if(m_cd->m_at1 == eAC) {
-            _ASSERT(GetLen1(m_bei.w1 + scoring.sm_ICAT, m_at, j, scoring));
-            return GetLen1(m_bei.w1 + scoring.sm_ICAT, m_at, j, scoring);
+            len = GetLen1(m_bei.w1 + scoring.sm_ICAT, m_at, j, scoring);
+            _ASSERT(len);
+            return len;
         }
         _ASSERT(m_cd->m_at1 == eAG);
         len = GetLen1(m_bei.w1 + scoring.sm_ICGT, m_gt, j, scoring);
         if(len) return len;
-        _ASSERT(GetLen1(m_bei.w1 + scoring.sm_ICGC, m_gc, j, scoring));
-        return GetLen1(m_bei.w1 + scoring.sm_ICGC, m_gc, j, scoring);
+        len = GetLen1(m_bei.w1 + scoring.sm_ICGC, m_gc, j, scoring);
+        _ASSERT(len);
+        return len;
     }
 };
 

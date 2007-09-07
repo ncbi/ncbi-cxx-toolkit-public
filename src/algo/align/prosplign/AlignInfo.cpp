@@ -39,48 +39,78 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
-CAlignInfo::CAlignInfo(int length)
+CAlignInfo::CAlignInfo(int length) : m_length(length)
 {
     w.resize(length);
     h.resize(length);
     v.resize(length);
     fh.resize(length);
     fv.resize(length);
-    wis.resize(length, this);
-    his.resize(length, this);
-    vis.resize(length, this);
-    fhis.resize(length, this);
-    fvis.resize(length, this);
+    wis = new CIgapIntronChain[m_length];
+    his = new CIgapIntronChain[m_length];
+    vis = new CIgapIntronChain[m_length];
+    fhis = new CIgapIntronChain[m_length];
+    fvis = new CIgapIntronChain[m_length];
 }
+
+CAlignInfo::~CAlignInfo()
+{
+    delete[] wis;
+    delete[] his;
+    delete[] vis;
+    delete[] fhis;
+    delete[] fvis;
+}
+
 
 void CAlignInfo::ClearIIC(void)
 {
-    vector<CIgapIntronChain >::iterator it;
-    for(it=wis.begin(); it != wis.end(); ++it) it->Clear();
-    for(it=his.begin(); it != his.end(); ++it) it->Clear();
-    for(it=vis.begin(); it != vis.end(); ++it) it->Clear();
-    for(it=fhis.begin(); it != fhis.end(); ++it) it->Clear();
-    for(it=fvis.begin(); it != fvis.end(); ++it) it->Clear();
+    CIgapIntronChain* wis_it = wis;
+    CIgapIntronChain* his_it = his;
+    CIgapIntronChain* vis_it = vis;
+    CIgapIntronChain* fhis_it = fhis;
+    CIgapIntronChain* fvis_it = fvis;
+
+    for(size_t i=0; i < m_length; ++i) {
+        wis_it++->Clear();
+        his_it++->Clear();
+        vis_it++->Clear();
+        fhis_it++->Clear();
+        fvis_it++->Clear();
+    }
 }
 
-CFindGapIntronRow::CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring): CAlignRow(length, scoring)
+CFindGapIntronRow::CFindGapIntronRow(int length, const CProSplignScaledScoring& scoring): CAlignRow(length, scoring), m_length(length)
 {
-        wis.resize(length, this);
-        vis.resize(length, this);
-        h1is.resize(length, this);
-        h2is.resize(length, this);
-        h3is.resize(length, this);
+        wis = new CIgapIntronChain[m_length];
+        vis = new CIgapIntronChain[m_length];
+        h1is = new CIgapIntronChain[m_length];
+        h2is = new CIgapIntronChain[m_length];
+        h3is = new CIgapIntronChain[m_length];
 }
 
+CFindGapIntronRow::~CFindGapIntronRow()
+{
+    delete[] wis;
+    delete[] vis;
+    delete[] h1is;
+    delete[] h2is;
+    delete[] h3is;
+}
 void CFindGapIntronRow::ClearIIC(void)
 {
-    size_t size = wis.size();
-    for(size_t i=0; i<size; ++i) {
-        wis[i].Clear();
-        vis[i].Clear();
-        h1is[i].Clear();
-        h2is[i].Clear();
-        h3is[i].Clear();
+    CIgapIntronChain* wis_it = wis;
+    CIgapIntronChain* vis_it = vis;
+    CIgapIntronChain* h1is_it = h1is;
+    CIgapIntronChain* h2is_it = h2is;
+    CIgapIntronChain* h3is_it = h3is;
+
+    for(size_t i=0; i < m_length; ++i) {
+        wis_it++->Clear();
+        vis_it++->Clear();
+        h1is_it++->Clear();
+        h2is_it++->Clear();
+        h3is_it++->Clear();
     }
 }
 

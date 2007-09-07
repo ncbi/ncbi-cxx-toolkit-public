@@ -107,6 +107,7 @@ void CProSplignScaledScoring::Init()
 
     lmin = GetMinIntronLen();
     ie = GetIntronExtensionCost();
+    ie_x_lmin = ie*lmin;
     ini_nuc_margin = 1;
 
     sm_koef = GetScale();
