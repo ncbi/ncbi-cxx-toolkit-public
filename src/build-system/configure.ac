@@ -4021,7 +4021,8 @@ if test "$with_opengl" != "no"; then
             cmp -s /usr/X11R6/lib/$base $xlib  || \
                cmp -s /usr/lib/$base $xlib  || \
                cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
-               ac_x_libraries=/usr/X11R6/lib$bit64_sfx
+               : ${x_libraries=/usr/X11R6/lib$bit64_sfx} \
+                 ${x_includes=/usr/X11R6/include}
          fi
          AC_PATH_XTRA
          LDFLAGS="$orig_LDFLAGS $X_LIBS"

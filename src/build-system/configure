@@ -23172,7 +23172,8 @@ if test "$with_opengl" != "no"; then
             cmp -s /usr/X11R6/lib/$base $xlib  || \
                cmp -s /usr/lib/$base $xlib  || \
                cmp -s /usr/lib$bit64_sfx/$base $xlib  || \
-               ac_x_libraries=/usr/X11R6/lib$bit64_sfx
+               : ${x_libraries=/usr/X11R6/lib$bit64_sfx} \
+                 ${x_includes=/usr/X11R6/include}
          fi
          echo "$as_me:$LINENO: checking for X" >&5
 echo $ECHO_N "checking for X... $ECHO_C" >&6
