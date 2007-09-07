@@ -1646,7 +1646,7 @@ list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                            db_is_na, rid,
                                            query_number);
                                            if (url_with_parameters != NcbiEmptyString) { */
-        sprintf(buf, kMapviwerUrl.c_str(), gi);
+        sprintf(buf, kMapviwerUrl.c_str(), gi, rid.c_str());
         linkout_list.push_back(buf);
         // }
     }
