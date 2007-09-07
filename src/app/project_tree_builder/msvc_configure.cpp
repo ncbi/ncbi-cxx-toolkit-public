@@ -248,7 +248,7 @@ void CMsvcConfigure::AnalyzeDefines(
     CDir(dir).CreatePath();
     WriteNcbiconfMsvcSite(candidate_path);
     if (PromoteIfDifferent(filename, candidate_path)) {
-        LOG_POST(Info << "File "  << filename << ": modified");
+        LOG_POST(Warning << "File "  << filename << ": modified");
     } else {
         LOG_POST(Info << "File "  << filename << ": left intact");
     }

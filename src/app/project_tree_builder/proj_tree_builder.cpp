@@ -1335,7 +1335,15 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         CDirEntry::ConcatPath(dir_name, 
                               GetApp().GetProjectTreeInfo().m_TreeNode);
     if ( !CDirEntry(node_path).Exists() ) {
-        LOG_POST(Warning << "NOT FOUND: " << node_path);
+        CDir::TGetEntriesFlags flags = CDir::fIgnoreRecursive;
+        CDir::TEntries entries =
+            CDir(dir_name).GetEntries("Makefile.*.lib", flags);
+        if (entries.empty()) {
+            entries = CDir(dir_name).GetEntries("Makefile.*.app", flags);
+        }
+        if ( !entries.empty() ) {
+            LOG_POST(Warning << "Makefile.in missing: " << node_path);
+        }
         return;
     }
     if (!is_root &&

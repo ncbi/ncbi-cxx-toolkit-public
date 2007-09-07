@@ -193,10 +193,10 @@ public:
     CMsvcProjectMakefile(const string& file_path);
 
     string GetGUID(void) const;
-    bool Redefine(const string& value, list<string>& redef);
-    bool Redefine(const list<string>& value, list<string>& redef);
-    void Append( list<string>& values, const string& def);
-    void Append( list<string>& values, const list<string>& def);
+    bool Redefine(const string& value, list<string>& redef) const;
+    bool Redefine(const list<string>& value, list<string>& redef) const;
+    void Append( list<string>& values, const string& def) const;
+    void Append( list<string>& values, const list<string>& def) const;
 
     // IMsvcProjectMakefile
     virtual bool IsExcludeProject        (bool default_val) const;
@@ -237,13 +237,13 @@ public:
     string m_ProjectBaseDir;
 
 private:
+    void x_GetHeaders(const SConfigInfo& config, const string& entry,
+                      list<string>* files) const;
     
     //Prohibited to
     CMsvcProjectMakefile(void);
     CMsvcProjectMakefile(const CMsvcProjectMakefile&);
     CMsvcProjectMakefile& operator= (const CMsvcProjectMakefile&);
-    void x_GetHeaders(const SConfigInfo& config, const string& entry,
-                      list<string>* files) const;
 };
 
 

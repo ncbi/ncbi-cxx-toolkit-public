@@ -225,7 +225,7 @@ string CMsvcProjectMakefile::GetGUID(void) const
     return m_MakeFile.GetString("Common", "ProjectGUID");
 }
 
-bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
+bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef) const
 {
     redef.clear();
     if (IsEmpty()) {
@@ -261,7 +261,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
     return false;
 }
 
-bool CMsvcProjectMakefile::Redefine(const list<string>& value, list<string>& redef)
+bool CMsvcProjectMakefile::Redefine(const list<string>& value, list<string>& redef) const
 {
     bool res=false;
     redef.clear();
@@ -281,7 +281,7 @@ bool CMsvcProjectMakefile::Redefine(const list<string>& value, list<string>& red
     return res;
 }
 
-void CMsvcProjectMakefile::Append( list<string>& values, const string& def)
+void CMsvcProjectMakefile::Append( list<string>& values, const string& def) const
 {
     if (IsEmpty()) {
         values.push_back(def);
@@ -295,7 +295,7 @@ void CMsvcProjectMakefile::Append( list<string>& values, const string& def)
     }
 }
 
-void CMsvcProjectMakefile::Append( list<string>& values, const list<string>& def)
+void CMsvcProjectMakefile::Append( list<string>& values, const list<string>& def) const
 {
     if (IsEmpty()) {
         values.insert(values.end(), def.begin(), def.end());
