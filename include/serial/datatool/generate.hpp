@@ -125,8 +125,11 @@ public:
     void CheckFileNames(void);
     void GenerateCode(void);
     void GenerateDoxygenGroupDescription(map<string, pair<string,string> >& module_names);
-    void GenerateFileList(const list<string>& generated, const list<string>& untouched);
-    void GenerateCombiningFile(const list<string>& module_inc, const list<string>& module_src);
+    void GenerateFileList(const list<string>& generated, const list<string>& untouched,
+        list<string>& allGeneratedHpp, list<string>& allGeneratedCpp,
+        list<string>& allSkippedHpp, list<string>& allSkippedCpp);
+    void GenerateCombiningFile(const list<string>& module_inc, const list<string>& module_src,
+        list<string>& allHpp, list<string>& allCpp);
     void GenerateCvsignore(const string& outdir_cpp, const string& outdir_hpp,
         const list<string>& generated, map<string, pair<string,string> >& module_names);
     void GenerateModuleHPP(const string& path, list<string>& generated) const;

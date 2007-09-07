@@ -306,6 +306,7 @@ void CCodeGenerator::GenerateCode(void)
     // generate output files
     string outdir_cpp, outdir_hpp;
     list<string> listGenerated, listUntouched;
+    list<string> allGeneratedHpp, allGeneratedCpp, allSkippedHpp, allSkippedCpp;
     map<string, pair<string,string> > module_names;
     ITERATE ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
@@ -314,24 +315,30 @@ void CCodeGenerator::GenerateCode(void)
         code->GenerateCode();
         string fileName;
         code->GenerateHPP(m_HPPDir, fileName);
+        allGeneratedHpp.push_back(fileName);
         if (outdir_hpp.empty()) {
             CDirEntry entry(fileName);
             outdir_hpp = entry.GetDir();
         }
         code->GenerateCPP(m_CPPDir, fileName);
+        allGeneratedCpp.push_back(fileName);
         if (outdir_cpp.empty()) {
             CDirEntry entry(fileName);
             outdir_cpp = entry.GetDir();
         }
         if (code->GenerateUserHPP(m_HPPDir, fileName)) {
             listGenerated.push_back( fileName);
+            allGeneratedHpp.push_back(fileName);
         } else {
             listUntouched.push_back( fileName);
+            allSkippedHpp.push_back(fileName);
         }
         if (code->GenerateUserCPP(m_CPPDir, fileName)) {
             listGenerated.push_back( fileName);
+            allGeneratedCpp.push_back(fileName);
         } else {
             listUntouched.push_back( fileName);
+            allSkippedCpp.push_back(fileName);
         }
     }
     list<string> module_inc, module_src;
@@ -339,10 +346,13 @@ void CCodeGenerator::GenerateCode(void)
     GenerateModuleCPP(Path(m_CPPDir,m_FileNamePrefix), module_src);
 
     GenerateDoxygenGroupDescription(module_names);
-    GenerateCombiningFile(module_inc, module_src);
+    GenerateCombiningFile(module_inc, module_src, allGeneratedHpp, allGeneratedCpp);
 	listGenerated.insert(listGenerated.end(), module_inc.begin(), module_inc.end());
+	allGeneratedHpp.insert(allGeneratedHpp.end(), module_inc.begin(), module_inc.end());
 	listGenerated.insert(listGenerated.end(), module_src.begin(), module_src.end());
-    GenerateFileList(listGenerated, listUntouched);
+	allGeneratedCpp.insert(allGeneratedCpp.end(), module_src.begin(), module_src.end());
+    GenerateFileList(listGenerated, listUntouched,
+        allGeneratedHpp, allGeneratedCpp, allSkippedHpp, allSkippedCpp);
     GenerateCvsignore(outdir_cpp, outdir_hpp, listGenerated, module_names);
     GenerateClientCode();
 }
@@ -396,7 +406,9 @@ void CCodeGenerator::GenerateDoxygenGroupDescription(
 
 
 void CCodeGenerator::GenerateFileList(
-    const list<string>& generated, const list<string>& untouched)
+    const list<string>& generated, const list<string>& untouched,
+    list<string>& allGeneratedHpp, list<string>& allGeneratedCpp,
+    list<string>& allSkippedHpp, list<string>& allSkippedCpp)
 {
     if ( m_FileListFileName.empty() ) {
         return;
@@ -458,7 +470,7 @@ void CCodeGenerator::GenerateFileList(
                         }
                     }
                     CDirEntry ent(CDirEntry::ConvertToOSPath(pp));
-                    string tmp(ent.GetDir());
+                    string tmp(ent.GetDir(CDirEntry::eIfEmptyPath_Empty));
 #if defined(NCBI_OS_MSWIN)
                     tmp = NStr::Replace(tmp,"\\","/");
 #endif                
@@ -471,10 +483,76 @@ void CCodeGenerator::GenerateFileList(
     }
     }
     }
+
+    string flist, flist_local;
+    ITERATE( list<string>, p, allGeneratedHpp) {
+        string tmp(*p);
+        flist_local += ' ' + CDirEntry(tmp).GetName();
+        if (!m_HPPDir.empty() && tmp.find(m_HPPDir) == 0) {
+            tmp.erase(0,m_HPPDir.length()+1);
+        }
+        tmp = CDirEntry::ConvertToOSPath(tmp);
+#if defined(NCBI_OS_MSWIN)
+        tmp = NStr::Replace(tmp,"\\","/");
+#endif                
+        flist += ' ' +tmp;
+    }
+    fileList << "ALLGENERATED_HPP =" << flist << '\n';
+    fileList << "ALLGENERATED_HPP_LOCAL =" << flist_local << '\n';
+    
+    flist.clear(); flist_local.clear();
+    ITERATE( list<string>, p, allSkippedHpp) {
+        string tmp(*p);
+        flist_local += ' ' + CDirEntry(tmp).GetName();
+        if (!m_HPPDir.empty() && tmp.find(m_HPPDir) == 0) {
+            tmp.erase(0,m_HPPDir.length()+1);
+        }
+        tmp = CDirEntry::ConvertToOSPath(tmp);
+#if defined(NCBI_OS_MSWIN)
+        tmp = NStr::Replace(tmp,"\\","/");
+#endif                
+        flist += ' ' +tmp;
+    }
+    fileList << "ALLSKIPPED_HPP =" << flist << '\n';
+    fileList << "ALLSKIPPED_HPP_LOCAL =" << flist_local << '\n';
+
+    flist.clear(); flist_local.clear();
+    ITERATE( list<string>, p, allGeneratedCpp) {
+        string tmp(*p);
+        flist_local += ' ' + CDirEntry(tmp).GetName();
+        if (!m_CPPDir.empty() && tmp.find(m_CPPDir) == 0) {
+            tmp.erase(0,m_CPPDir.length()+1);
+        }
+        tmp = CDirEntry::ConvertToOSPath(tmp);
+#if defined(NCBI_OS_MSWIN)
+        tmp = NStr::Replace(tmp,"\\","/");
+#endif                
+        flist += ' ' +tmp;
+    }
+    fileList << "ALLGENERATED_CPP =" << flist << '\n';
+    fileList << "ALLGENERATED_CPP_LOCAL =" << flist_local << '\n';
+    
+    flist.clear(); flist_local.clear();
+    ITERATE( list<string>, p, allSkippedCpp) {
+        string tmp(*p);
+        flist_local += ' ' + CDirEntry(tmp).GetName();
+        if (!m_CPPDir.empty() && tmp.find(m_CPPDir) == 0) {
+            tmp.erase(0,m_CPPDir.length()+1);
+        }
+        tmp = CDirEntry::ConvertToOSPath(tmp);
+#if defined(NCBI_OS_MSWIN)
+        tmp = NStr::Replace(tmp,"\\","/");
+#endif                
+        flist += ' ' +tmp;
+    }
+    fileList << "ALLSKIPPED_CPP =" << flist << '\n';
+    fileList << "ALLSKIPPED_CPP_LOCAL =" << flist_local << '\n';
+
 }
 
 void CCodeGenerator::GenerateCombiningFile(
-    const list<string>& module_inc, const list<string>& module_src)
+    const list<string>& module_inc, const list<string>& module_src,
+    list<string>& allHpp, list<string>& allCpp)
 {
     if ( m_CombiningFileName.empty() ) {
         return;
@@ -484,6 +562,7 @@ void CCodeGenerator::GenerateCombiningFile(
         const char* suffix = i? "_.cpp": ".cpp";
         string fileName = m_CombiningFileName + "__" + suffix;
         fileName = Path(m_CPPDir,Path(m_FileNamePrefix,fileName));
+        allCpp.push_back(fileName);
         CDelayedOfstream out(fileName);
         if ( !out )
             ERR_POST(Fatal << "Cannot create file: "<<fileName);
@@ -514,6 +593,7 @@ void CCodeGenerator::GenerateCombiningFile(
     string fileName = Path(m_HPPDir,
                             Path(m_FileNamePrefix,
                                 m_CombiningFileName + "__" + suffix));
+    allHpp.push_back(fileName);
 
     CDelayedOfstream out(fileName);
     if ( !out )
