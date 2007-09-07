@@ -58,6 +58,11 @@ enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
 static const char* msg_record_expected = "Record expected";
 
+inline
+void PutMsgDisabled(const char* msg)
+{
+    LOG_POST(Warning << "- " << msg << " is disabled !!!");
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
@@ -1738,6 +1743,8 @@ CDBAPIUnitTest::Test_LOB(void)
                 }
 
             }
+        } else {
+            PutMsgDisabled("Test_LOB Read Blob");
         }
 
         // Test NULL values ...
@@ -1850,6 +1857,8 @@ CDBAPIUnitTest::Test_LOB(void)
                         }
                     }
                 }
+            } else {
+                PutMsgDisabled("Test_LOB Read blob via Read method");
             }
 
             // Read Blob
@@ -1904,6 +1913,8 @@ CDBAPIUnitTest::Test_LOB(void)
                     }
 
                 }
+            } else {
+                PutMsgDisabled("Test_LOB Read Read Blob");
             } // Read Blob
         } // Test NULL values ...
     }
@@ -2658,6 +2669,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                 // Dump results ...
                 DumpResults( auto_stmt.get() );
+            } else {
+                // PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
 
@@ -2957,6 +2970,8 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                         }
                     }
                 }
+            } else {
+                // PutMsgDisabled("Test_Bulk_Writing Retrieve data");
             }
         }
     }
@@ -3549,6 +3564,8 @@ CDBAPIUnitTest::Test_Cursor(void)
                     auto_cursor->Update("#Objects", sql);
                 }
             }
+        } else {
+            PutMsgDisabled("Test_Cursor Second test");
         } // Second test ...
     }
     catch(const CException& ex) {
@@ -3758,7 +3775,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             BOOST_CHECK( rs.get() != NULL );
             BOOST_CHECK( rs->Next() );
         } else {
-            LOG_POST(Warning << "Check sequent call of ExecuteQuery" << " is disabled !!!");
+            PutMsgDisabled("Check sequent call of ExecuteQuery");
         }
 
 
@@ -9195,6 +9212,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One,
                                    DBAPIInstance);
         add(tc);
+    } else {
+        // PutMsgDisabled("Test_DriverContext_One");
     }
 
     if (args.GetDriverName() == "ctlib"
@@ -9205,6 +9224,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
                                    DBAPIInstance);
         add(tc);
+    } else {
+        // PutMsgDisabled("Test_DriverContext_Many");
     }
 
     boost::unit_test::test_case* tc_init =
@@ -9219,6 +9240,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_ConnFactory");
     }
 
     if (!(args.GetDriverName() == "ftds" 
@@ -9228,21 +9251,26 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_ConnPool");
     }
 
 
-    if (args.GetServerType() == CTestArguments::eSybase
-        && args.GetDriverName() != "dblib"
-        && args.GetDriverName() != "ftds_dblib"
-        && args.GetDriverName() != "ftds8"
-        && args.GetDriverName() != "ftds"
-        // ctlib on x86_64 requires appropriate Sybase client ...
-        && args.GetDriverName() != "ctlib"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+    if (args.GetServerType() == CTestArguments::eSybase) {
+        if (args.GetDriverName() != "dblib"
+            && args.GetDriverName() != "ftds_dblib"
+            && args.GetDriverName() != "ftds8"
+            && args.GetDriverName() != "ftds"
+            // ctlib on x86_64 requires appropriate Sybase client ...
+            && args.GetDriverName() != "ctlib"
+           ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DropConnection,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_DropConnection");
+        }
     }
 
     if ((args.GetServerType() == CTestArguments::eMsSql
@@ -9254,6 +9282,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_BlobStore");
     }
 
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
@@ -9273,6 +9303,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Timeout");
     }
 
 
@@ -9295,6 +9327,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Query_Cancelation");
     }
 
 
@@ -9307,6 +9341,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Authentication");
     }
 
     //
@@ -9326,6 +9362,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Create_Destroy");
     }
 
     //
@@ -9340,6 +9378,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Multiple_Close");
     }
 
     if (args.IsBCPAvailable()
@@ -9355,7 +9395,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
+        } else {
+            PutMsgDisabled("Test_Bulk_Writing2");
         }
+    } else {
+        PutMsgDisabled("Test_Bulk_Writing");
     }
 
 
@@ -9384,6 +9428,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
+        } else {
+            PutMsgDisabled("Test_LOB_LowLevel");
         }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
@@ -9412,6 +9458,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 tc->depends_on(tc_init);
                 tc->depends_on(tc_parameters);
                 add(tc);
+            } else {
+                PutMsgDisabled("Test_Cursor2");
             }
 
             // Does not work with all databases and drivers currently ...
@@ -9432,6 +9480,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
             add(tc);
+        } else {
+            PutMsgDisabled("Test_Cursor");
+            PutMsgDisabled("Test_LOB");
+            PutMsgDisabled("Test_BlobStream");
         }
 
         // Not completed yet ...
@@ -9451,7 +9503,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             tc->depends_on(tc_parameters);
             add(tc);
+        } else {
+            PutMsgDisabled("Test_Unicode");
         }
+    } else {
+        PutMsgDisabled("Test_StatementParameters");
+        PutMsgDisabled("Test_NULL");
+        PutMsgDisabled("Test_GetRowCount");
     }
 
 
@@ -9462,17 +9520,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_BulkInsertBlob");
     }
 
-    if(args.IsBCPAvailable()
-        && args.GetDriverName() != "ftds_dblib"
-        && args.GetDriverName() != "ftds"
-        )
-    {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+    if (args.IsBCPAvailable()) {
+        if(args.GetDriverName() != "ftds_dblib"
+           && args.GetDriverName() != "ftds"
+          )
+        {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_BulkInsertBlob_LowLevel");
+        }
     }
 
     // Test_UserErrorHandler depends on Test_Exception_Safety ...
@@ -9490,6 +9553,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         tc->depends_on(except_safety_tc);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Exception_Safety");
+        PutMsgDisabled("Test_UserErrorHandler");
     }
 
     {
@@ -9514,6 +9580,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 tc->depends_on(tc_init);
                 tc->depends_on(select_stmt_tc);
                 add(tc);
+            } else {
+                PutMsgDisabled("Test_Recordset");
             }
 
             //
@@ -9523,6 +9591,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                 tc->depends_on(tc_init);
                 tc->depends_on(select_stmt_tc);
                 add(tc);
+            } else {
+                PutMsgDisabled("Test_MetaData");
             }
 
             //
@@ -9546,8 +9616,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                     tc->depends_on(tc_init);
                     tc->depends_on(select_xml_stmt_tc);
                     add(tc);
+                } else {
+                    PutMsgDisabled("Test_Unicode_Simple");
                 }
+            } else {
+                PutMsgDisabled("Test_SelectStmtXML");
             }
+        } else {
+            PutMsgDisabled("Test_SelectStmt");
         }
 
         // ctlib/ftds64 will work in case of protocol version 12.5 only
@@ -9573,6 +9649,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                        DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
+        } else {
+            PutMsgDisabled("Test_Insert");
         }
     }
 
@@ -9597,6 +9675,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Procedure");
+        PutMsgDisabled("Test_Variant2");
+        PutMsgDisabled("Test_GetTotalColumns");
     }
 
     if ( (args.GetDriverName() == "ftds8"
@@ -9610,6 +9692,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_UNIQUE");
     }
 
     if (args.IsBCPAvailable()
@@ -9621,35 +9705,44 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_DateTimeBCP");
     }
 
     // !!! There are still problems ...
-    if (args.IsBCPAvailable()
-        && args.GetDriverName() != "odbc"
-        && args.GetDriverName() != "ftds" // Something is completely wrong ...
-        // && !(args.GetDriverName() == "ftds"
-        //      && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
-        && args.GetDriverName() != "ctlib"
-        && args.GetDriverName() != "ftds_dblib"
-        )
-    {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+    if (args.IsBCPAvailable()) {
+        if (args.GetDriverName() != "odbc"
+            && args.GetDriverName() != "ftds" // Something is completely wrong ...
+            // && !(args.GetDriverName() == "ftds"
+            //      && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+            && args.GetDriverName() != "ctlib"
+            && args.GetDriverName() != "ftds_dblib"
+           )
+        {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_Bulk_Overflow");
+        }
     }
 
     // The only problem with this test is that the LINK_OS server is not
     // available from time to time.
-    if (args.GetServerType() == CTestArguments::eSybase
-        && args.GetDriverName() != "ftds8"
-        && args.GetDriverName() != "ftds"
-        && args.GetDriverName() != "ftds_dblib"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+    if(args.GetServerType() == CTestArguments::eSybase)
+    {
+        if (args.GetDriverName() != "ftds8"
+            && args.GetDriverName() != "ftds"
+            && args.GetDriverName() != "ftds_dblib"
+           ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_Iskhakov");
+        }
     }
 
 
@@ -9663,6 +9756,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_DateTime");
     }
 
     // Valid for all drivers ...
@@ -9679,6 +9774,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Decimal");
+        PutMsgDisabled("Test_SetLogStream");
     }
 
     if (!(((args.GetDriverName() == "ftds"
@@ -9694,6 +9792,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_Identity");
     }
 
 
@@ -9709,6 +9809,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        // PutMsgDisabled("Test_N_Connections");
     }
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
@@ -9727,6 +9829,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
+    } else {
+        PutMsgDisabled("Test_HasMoreResults");
     }
 
 }
