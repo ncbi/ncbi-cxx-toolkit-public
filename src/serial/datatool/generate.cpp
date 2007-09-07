@@ -500,7 +500,7 @@ void CCodeGenerator::GenerateFileList(
     fileList << "ALLGENERATED_HPP =" << flist << '\n';
     fileList << "ALLGENERATED_HPP_LOCAL =" << flist_local << '\n';
     
-    flist.clear(); flist_local.clear();
+    flist.erase(); flist_local.erase();
     ITERATE( list<string>, p, allSkippedHpp) {
         string tmp(*p);
         flist_local += ' ' + CDirEntry(tmp).GetName();
@@ -516,7 +516,7 @@ void CCodeGenerator::GenerateFileList(
     fileList << "ALLSKIPPED_HPP =" << flist << '\n';
     fileList << "ALLSKIPPED_HPP_LOCAL =" << flist_local << '\n';
 
-    flist.clear(); flist_local.clear();
+    flist.erase(); flist_local.erase();
     ITERATE( list<string>, p, allGeneratedCpp) {
         string tmp(*p);
         flist_local += ' ' + CDirEntry(tmp).GetName();
@@ -532,7 +532,7 @@ void CCodeGenerator::GenerateFileList(
     fileList << "ALLGENERATED_CPP =" << flist << '\n';
     fileList << "ALLGENERATED_CPP_LOCAL =" << flist_local << '\n';
     
-    flist.clear(); flist_local.clear();
+    flist.erase(); flist_local.erase();
     ITERATE( list<string>, p, allSkippedCpp) {
         string tmp(*p);
         flist_local += ' ' + CDirEntry(tmp).GetName();
