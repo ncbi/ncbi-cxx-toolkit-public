@@ -202,6 +202,7 @@ public:
     void Test_LOB2(void);
     void Test_BlobStream(void);
     void Test_BulkInsertBlob(void);
+    void Test_BulkInsertBlob_LowLevel(void);
     void Test_UNIQUE(void);
     void Test_DateTime(void);
     void Test_DateTimeBCP(void);
@@ -262,6 +263,7 @@ protected:
     static int GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                const string& table_name);
     static int GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
+    static Int8 GetIdentity(const auto_ptr<IStatement>& auto_stmt);
     void Connect(const auto_ptr<IConnection>& conn) const;
 
 private:

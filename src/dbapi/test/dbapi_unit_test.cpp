@@ -2222,6 +2222,61 @@ CDBAPIUnitTest::Test_BulkInsertBlob(void)
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
+{
+    string sql;
+    // enum { record_num = 10 };
+    string table_name = "#bcp_table1";
+
+    try {
+        CDB_Connection* conn = m_Conn->GetCDB_Connection();
+
+        // Create table ...
+        {
+            sql  = " CREATE TABLE " + table_name + "( \n";
+            sql += "    geneId INT NOT NULL, \n";
+            sql += "    dataText TEXT NULL \n";
+            sql += " )";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
+
+            auto_stmt->Send();
+            auto_stmt->DumpResults();
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+
+            CDB_Int geneIdVal;
+            CDB_Text dataTextVal;
+
+            bcp->Bind(0, &geneIdVal);
+            bcp->Bind(1, &dataTextVal);
+
+            geneIdVal = 2;
+
+            string data = "testing";
+            dataTextVal.Append(data);
+            dataTextVal.MoveTo(0);
+
+            bcp->SendRow();
+            bcp->CompleteBCP();
+        }
+        
+        // Retrieve data back ...
+        {
+        }
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_BlobStream(void)
 {
@@ -3257,16 +3312,17 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     DumpResults(auto_stmt.get());
     auto_stmt->ClearParamList();
     auto_stmt->SendSql( "select count(*) FROM " + table_name );
-    if (auto_stmt->HasMoreResults()) {
+    while (auto_stmt->HasMoreResults()) {
         if (auto_stmt->HasRows()) {
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
             if (rs.get() != NULL) {
-                if (rs->Next()) {
+                while (rs->Next()) {
                     cur_rec_num = rs->GetVariant(1).GetInt4();
                 }
             }
         }
     }
+
     return cur_rec_num;
 }
 
@@ -3292,6 +3348,30 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+Int8 
+CDBAPIUnitTest::GetIdentity(const auto_ptr<IStatement>& auto_stmt)
+{
+    int identity = 0;
+
+    DumpResults(auto_stmt.get());
+    auto_stmt->ClearParamList();
+    auto_stmt->SendSql( "select CONVERT(NUMERIC(18, 0), @@identity)");
+    while (auto_stmt->HasMoreResults()) {
+        if (auto_stmt->HasRows()) {
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            if (rs.get() != NULL) {
+                while (rs->Next()) {
+                    identity = rs->GetVariant(1).GetInt8();
+                }
+            }
+        }
+    }
+
+    return identity;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Cursor(void)
 {
@@ -3299,10 +3379,10 @@ CDBAPIUnitTest::Test_Cursor(void)
     string sql;
 
     try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
         // Initialize a test table ...
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
             // Drop all records ...
             sql  = " DELETE FROM " + GetTableName();
             auto_stmt->ExecuteUpdate(sql);
@@ -3372,8 +3452,6 @@ CDBAPIUnitTest::Test_Cursor(void)
         // Second test ...
         if (m_args.GetDriverName() != "ctlib") 
         {
-            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
             sql  =
                 " CREATE TABLE #AgpFiles ( \n"
                 "     id   INT IDENTITY, \n"
@@ -3389,11 +3467,11 @@ CDBAPIUnitTest::Test_Cursor(void)
                 "     live_objects INT default 0, \n"
                 "      \n"
                 "     blob_num INT DEFAULT 0, \n"
-                "     data0 IMAGE NULL, \n"
-                "     data1 IMAGE NULL, \n"
-                "     data2 IMAGE NULL, \n"
-                "     data3 IMAGE NULL, \n"
-                "     data4 IMAGE NULL, \n"
+                // "     data0 IMAGE NULL, \n"
+                // "     data1 IMAGE NULL, \n"
+                // "     data2 IMAGE NULL, \n"
+                // "     data3 IMAGE NULL, \n"
+                // "     data4 IMAGE NULL, \n"
                 " )  \n"
                 ;
             auto_stmt->ExecuteUpdate(sql);
@@ -3405,26 +3483,26 @@ CDBAPIUnitTest::Test_Cursor(void)
                 "     rm_file_id   INT DEFAULT 0x7FFFFFF, \n"
                 "     name         VARCHAR(80), \n"
                 "     blob_ofs     INT NOT NULL, \n"
-                "     blob_len     INT NOT NULL, \n"
-                "     obj_len      INT NOT NULL, \n"
-                "      \n"
-                "     comps        INT NOT NULL, \n"
-                "     gaps         INT NOT NULL, \n"
-                "     scaffolds    INT NOT NULL, \n"
-                "     singletons   INT NOT NULL, \n"
-                "     checksum     INT NOT NULL, \n"
+                // "     blob_len     INT NOT NULL, \n"
+                // "     obj_len      INT NOT NULL, \n"
+                // "      \n"
+                // "     comps        INT NOT NULL, \n"
+                // "     gaps         INT NOT NULL, \n"
+                // "     scaffolds    INT NOT NULL, \n"
+                // "     singletons   INT NOT NULL, \n"
+                // "     checksum     INT NOT NULL, \n"
                 "      \n"
                 "     chr          SMALLINT DEFAULT -1, \n"
                 "     is_scaffold  BIT, \n"
                 "     is_unlinked  BIT, \n"
                 "      \n"
-                "     line_num     INT, \n"
+                // "     line_num     INT, \n"
                 "     PRIMARY KEY(submit_id, file_id, blob_ofs) \n"
                 " ) \n"
                 ;
             auto_stmt->ExecuteUpdate(sql);
 
-            sql  =
+            string cursor_sql  =
                 " SELECT obj.name, f.name, obj.chr, obj.is_scaffold, obj.is_unlinked \n"
                 "   FROM #Objects obj \n"
                 "   JOIN #AgpFiles f ON obj.file_id = f.id \n"
@@ -3432,9 +3510,24 @@ CDBAPIUnitTest::Test_Cursor(void)
                 "    FOR UPDATE OF obj.chr, obj.is_scaffold, obj.is_unlinked"
                 ;
 
-            // Not fixed yet ...
+            // Insert something ...
             {
-                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", sql));
+                sql  = "INSERT INTO #AgpFiles(submit_id, file_num, path, name, notes, file_size) ";
+                sql += "VALUES(1, 0, '', '', '', 0)";
+
+                auto_stmt->ExecuteUpdate(sql);
+
+                Int8 agp_files_id = GetIdentity(auto_stmt);
+
+                sql  = "INSERT INTO #Objects(submit_id, file_id, name, blob_ofs) ";
+                sql += "VALUES(1, " + NStr::Int8ToString(agp_files_id) + ", '', 0)";
+
+                auto_stmt->ExecuteUpdate(sql);
+            }
+
+            // Just read data ...
+            {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", cursor_sql));
                 auto_ptr<IResultSet> rs(auto_cursor->Open());
                 BOOST_CHECK(rs.get() != NULL);
 
@@ -3442,7 +3535,21 @@ CDBAPIUnitTest::Test_Cursor(void)
                     ;
                 }
             }
-        }
+
+            // Update something ...
+            // Not ready yet !!!!
+            if (false) {
+                auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test01", cursor_sql));
+                auto_ptr<IResultSet> rs(auto_cursor->Open());
+                BOOST_CHECK(rs.get() != NULL);
+
+                sql = "UPDATE #Objects SET chr=123, is_scaffold=234, is_unlinked=345";
+
+                while (rs->Next()) {
+                    auto_cursor->Update("#Objects", sql);
+                }
+            }
+        } // Second test ...
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -3629,9 +3736,32 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             }
 
             BOOST_CHECK_EQUAL(num, 1);
-
-            DumpResults(auto_stmt.get());
         }
+
+        // Check sequent call of ExecuteQuery ...
+        if (false) {
+            auto_ptr<IResultSet> rs;
+            auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+            // Run first time ...
+            rs.reset( auto_stmt->ExecuteQuery( "select @@version as oops" ));
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            // Run second time ...
+            rs.reset( auto_stmt->ExecuteQuery( "select @@version as oops" ));
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            // Run third time ...
+            rs.reset( auto_stmt->ExecuteQuery( "select @@version as oops" ));
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+        } else {
+            LOG_POST(Warning << "Check sequent call of ExecuteQuery" << " is disabled !!!");
+        }
+
+
 
     //     // TMP
     //     {
@@ -9215,8 +9345,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()
         && !Solaris // Requires Sybase client 12.5
         && args.GetDriverName() != "odbc"
-        && !((args.GetDriverName() == "ftds8" || args.GetDriverName() == "ftds")
-            && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != "ftds_dblib"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
@@ -9329,10 +9457,19 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()
         && args.GetDriverName() != "ftds_dblib"
-        && !((args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds8") &&
-             args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    if(args.IsBCPAvailable()
+        && args.GetDriverName() != "ftds_dblib"
+        && args.GetDriverName() != "ftds"
+        )
+    {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -9477,8 +9614,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()
         && args.GetDriverName() != "odbc"
-        && !((args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds8")
-           && args.GetServerType() == CTestArguments::eSybase)
         && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
         && args.GetDriverName() != "ftds_dblib"
         ) {
@@ -9742,6 +9877,7 @@ CTestArguments::IsBCPAvailable(void) const
     } else if ( GetDriverName() == "ftds_odbc"
          || GetDriverName() == "odbcw"
          || GetDriverName() == "msdblib"
+         || ((GetDriverName() == "ftds" || GetDriverName() == "ftds8") && GetServerType() == CTestArguments::eSybase)
          ) {
         return false;
     }
