@@ -38,6 +38,8 @@ BEGIN { status=0 }
 /^Could not open file /                      { status=1 }
 /: fatal:/                                   { status=1 }
 /^ >> Signal [0-9]+:/                        { status=1 }
+/: assertion failed/                         { status=1 }
+/: [0-9]+ error/                             { status=1 }
 END { exit status } # This must be the last END block.
 
 
