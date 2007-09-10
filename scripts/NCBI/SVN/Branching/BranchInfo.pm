@@ -232,6 +232,8 @@ sub new
             $Revision->{SourceRevisionNumber} =
                 $Self->{LastDownSyncRevisionNumber} = $1;
 
+            $Revision->{MergeDirection} = 'down';
+
             unshift @MergeDownRevisions, $Revision
         }
     }
@@ -283,12 +285,17 @@ sub new
         {
             $Revision->{SourceRevisionNumber} = $1;
 
+            $Revision->{MergeDirection} = 'up';
+
             push @MergeUpRevisions, $Revision
         }
     }
 
     @$Self{qw(UpstreamRevisions MergeUpRevisions)} =
         ($UpstreamRevisions, \@MergeUpRevisions);
+
+    $Self->{MergeRevisions} = [sort {$b->{Number} <=> $a->{Number}}
+        @MergeUpRevisions, @{$Self->{MergeDownRevisions}}];
 
     return $Self
 }
