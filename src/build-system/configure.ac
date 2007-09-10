@@ -3545,7 +3545,7 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
                [Your Berkeley DB version is too old to use.  (Needed >= 4.3.)])
             with_bdb=no
             ;;
-         4.[[3-5]].* ) ;;
+         4.[[3-6]].* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])
@@ -3763,7 +3763,9 @@ if test "$with_boost" != "no"; then
    else
       BOOST_PATH=$with_boost
    fi
-   NCBI_FIX_DIR(BOOST_PATH)
+   if test -d "$BOOST_PATH"; then
+      NCBI_FIX_DIR(BOOST_PATH)
+   fi
    : ${BOOST_INCLUDE=-I$BOOST_PATH/include}
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
@@ -4344,7 +4346,7 @@ if test "$with_wxwidgets" != "no" ; then
          fi
          ;;
       * )
-         baseflags=`$gtkconf --cflags`
+         baseflags=`$gtkconf --cflags 2>/dev/null`
          basesed=''
          libsed=''
          ;;
@@ -4390,7 +4392,7 @@ else
    WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static | sed -e "$basesed"`
    WXWIDGETS_GL_LIBS=`$wxconf --gl-libs | sed -e "$basesed"`
    WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static | sed -e "$basesed"`
-   WXWIDGETS_POST_LINK=`$wxconf --rezflags`
+   WXWIDGETS_POST_LINK=`$wxconf --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
    AC_DEFINE(HAVE_WXWIDGETS, 1, [Define to 1 if wxWidgets is available.])
 fi
@@ -4616,7 +4618,9 @@ if test "${with_orbacus:-yes}" = yes; then
 elif test "$with_orbacus" != no; then
     ORBACUS_PATH=$with_orbacus
 fi
-NCBI_FIX_DIR(ORBACUS_PATH)
+if test -d "$ORBACUS_PATH"; then
+   NCBI_FIX_DIR(ORBACUS_PATH)
+fi
 if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
@@ -4751,7 +4755,9 @@ fi
 : ${SABLOT_PATH=$NCBI/Sablot}
 vpath="$SABLOT_PATH/${compiler_vpfx}build"
 test -d "$vpath"  &&  SABLOT_PATH=$vpath
-NCBI_FIX_DIR(SABLOT_PATH)
+if test -d "$SABLOT_PATH"; then
+   NCBI_FIX_DIR(SABLOT_PATH)
+fi
 NCBI_CHECK_THIRD_PARTY_LIB(sablot,
  AC_LANG_PROGRAM([#include <sablot.h>],
     [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
@@ -5339,15 +5345,10 @@ if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
-if test ! -f ${real_srcdir}/src/gui/Makefile.in  -o  ! -d ${real_srcdir}/include/gui \
-    -o  "$with_fltk" = "no"
-then
+if test ! -f ${real_srcdir}/src/gui/Makefile.in \
+   -o  ! -d ${real_srcdir}/include/gui; then
    if test "$with_gui" = "yes" ; then
-      if test "$with_fltk" = "no" ; then
-         AC_MSG_ERROR([--with-gui:  FLTK package is missing])
-      else
-         AC_MSG_ERROR([--with-gui:  GUI sources are missing])
-      fi
+      AC_MSG_ERROR([--with-gui:  GUI sources are missing])
    fi
    with_gui="no"
 fi
