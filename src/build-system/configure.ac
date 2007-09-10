@@ -52,8 +52,8 @@ fi
 cache_file=config.cache
 # reconfigure.sh expects config.cache to exist; unconditionally clobber
 # any command-line setting.
-if test -z "$CONFIG_SITE" -a -r $srcdir/config.site; then
-    CONFIG_SITE=$srcdir/config.site
+if test -z "$CONFIG_SITE" -a -r $srcdir/src/build-system/config.site; then
+    CONFIG_SITE=$srcdir/src/build-system/config.site
 fi
 AC_DIVERT_POP
 
