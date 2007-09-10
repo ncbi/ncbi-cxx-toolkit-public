@@ -101,7 +101,7 @@ src=\"images/G.gif\" alt=\"Gene info\"></a>";
 ///mapviewer linkout
 /*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
   src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";*/
-const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&RID=%s\"><img border=0 height=16 width=16 \
+const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d&THE_BLAST_RID=%s\"><img border=0 height=16 width=16 \
 src=\"images/M.gif\" alt=\"Genome view with mapviewer\"></a>";
 
 ///Sub-sequence
