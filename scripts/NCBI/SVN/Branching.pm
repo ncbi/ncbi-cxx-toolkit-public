@@ -288,17 +288,10 @@ sub ShapeBranch
     {
         my $BranchInfo;
 
-        if ($Force)
+        if (!$Force && ($BranchInfo =
+            eval {NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
+                $BranchPath)}))
         {
-            $BranchInfo =
-                NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath)
-        }
-        else
-        {
-            $BranchInfo =
-                NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
-                    $BranchPath);
-
             my $BranchRevisions = $BranchInfo->{BranchRevisions};
 
             if (@$BranchRevisions > 1 && $BranchRevisions->[0]->{Number} >
@@ -309,6 +302,11 @@ sub ShapeBranch
                     "were not merged into '$BranchInfo->{UpstreamPath}'.\n" .
                     "Use --force to remove the branch anyway.\n"
             }
+        }
+        else
+        {
+            $BranchInfo =
+                NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath)
         }
 
         for (@{$BranchInfo->{BranchDirs}})
