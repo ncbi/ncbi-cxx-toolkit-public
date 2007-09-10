@@ -1334,7 +1334,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     string node_path = 
         CDirEntry::ConcatPath(dir_name, 
                               GetApp().GetProjectTreeInfo().m_TreeNode);
-    if ( !CDirEntry(node_path).Exists() ) {
+    if ( !is_root && !CDirEntry(node_path).Exists() ) {
         CDir::TGetEntriesFlags flags = CDir::fIgnoreRecursive;
         CDir::TEntries entries =
             CDir(dir_name).GetEntries("Makefile.*.lib", flags);
