@@ -115,6 +115,7 @@ Blast4-queue-search-request ::= SEQUENCE {
     service                 VisibleString,
     queries                 Blast4-queries,
     subject                 Blast4-subject,
+    -- This field contains a task description
     paramset                VisibleString OPTIONAL,
     algorithm-options       Blast4-parameters OPTIONAL,
     program-options         Blast4-parameters OPTIONAL
