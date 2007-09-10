@@ -47,22 +47,22 @@ sub Info
         return @{$_[0]} ? @{$_[0]} > 1 ? @{$_[0]} . ' times' : 'once' : 'never'
     }
 
-    print "Merged from '$UpstreamPath' into '$BranchPath': " .
+    print "Merged [down] from '$UpstreamPath' into '$BranchPath': " .
         Times($BranchInfo->{MergeDownRevisions}) . "\n";
 
     for my $Revision (@{$BranchInfo->{MergeDownRevisions}})
     {
-        print "  r$Revision->{Number} (from $UpstreamPath" .
-            "\@$Revision->{SourceRevisionNumber})\n"
+        print "  r$Revision->{Number} (from " .
+            "r$Revision->{SourceRevisionNumber})\n"
     }
 
-    print "Merged from '$BranchPath' into '$UpstreamPath': " .
+    print "Merged [up] from '$BranchPath' into '$UpstreamPath': " .
         Times($BranchInfo->{MergeUpRevisions}) . "\n";
 
     for my $Revision (@{$BranchInfo->{MergeUpRevisions}})
     {
-        print "  r$Revision->{Number} (from $BranchPath" .
-            "\@$Revision->{SourceRevisionNumber})\n"
+        print "  r$Revision->{Number} (from " .
+            "r$Revision->{SourceRevisionNumber})\n"
     }
 }
 
