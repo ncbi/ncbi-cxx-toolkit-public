@@ -1466,4 +1466,102 @@ bool CCgiRequest::CalcChecksum(string& checksum, string& content) const
 }
 
 
+string CCgiEntry::x_GetCharset(void) const
+{
+    string type = GetContentType();
+    SIZE_TYPE pos = NStr::FindNoCase(type, "charset=");
+    if (pos == NPOS) {
+        return kEmptyStr;
+    }
+    pos += 8;
+    SIZE_TYPE pos2 = type.find(";", pos);
+    return type.substr(pos, pos2 == NPOS ? pos2 : pos2 - pos);
+}
+
+
+CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
+{
+    CNcbiIstrstream is(GetValue().c_str());
+    EEncodingForm enc = GetCharSetEncodingForm(x_GetCharset(), on_error);
+    CStringUTF8 utf_str;
+    ReadIntoUtf8(is, &utf_str, enc);
+    return utf_str;
+}
+
+
+inline
+bool s_Is_ISO_8859_1(const string& charset)
+{
+    const char* s_ISO_8859_1_Names[8] = {
+        "ISO-8859-1",
+        "iso-ir-100",
+        "ISO_8859-1",
+        "latin1",
+        "l1",
+        "IBM819",
+        "CP819",
+        "csISOLatin1"
+    };
+    for (int i = 0; i < 8; i++) {
+        if (NStr::CompareNocase(s_ISO_8859_1_Names[i], charset) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+inline
+bool s_Is_Windows_1252(const string& charset)
+{
+    const char* s_Windows_1252_Name = "windows-1252";
+    return NStr::CompareNocase(s_Windows_1252_Name, charset) == 0;
+}
+
+
+inline
+bool s_Is_UTF_8(const string& charset)
+{
+    const char* s_UTF_8_Name = "utf-8";
+    return NStr::CompareNocase(s_UTF_8_Name, charset) == 0;
+}
+
+
+EEncodingForm GetCharSetEncodingForm(const string& charset,
+                                     EOnCharsetError on_error)
+{
+    if ( charset.empty() ) {
+        return eEncodingForm_Unknown;
+    }
+    if ( s_Is_ISO_8859_1(charset) ) {
+        return eEncodingForm_ISO8859_1;
+    }
+    if ( s_Is_Windows_1252(charset) ) {
+        return eEncodingForm_Windows_1252;
+    }
+    if ( s_Is_UTF_8(charset) ) {
+        return eEncodingForm_Utf8;
+    }
+    // UTF-16BE
+    // UTF-16LE
+    // UTF-16
+    static const unsigned char s_BE_test[2] = {0xFF, 0xFE};
+    static bool s_BE = (*reinterpret_cast<const Uint2*>(&s_BE_test) == 0xFFFE);
+    if (NStr::CompareNocase(charset, "UTF-16BE") == 0) {
+        return s_BE ? eEncodingForm_Utf16Native : eEncodingForm_Utf16Foreign;
+    }
+    if (NStr::CompareNocase(charset, "UTF-16LE") == 0) {
+        return s_BE ? eEncodingForm_Utf16Foreign : eEncodingForm_Utf16Native;
+    }
+    if (NStr::CompareNocase(charset, "UTF-16") == 0) {
+        // Try to autodetect UTF-16 byte order
+        return eEncodingForm_Unknown;
+    }
+    if (on_error == eCharsetError_Throw) {
+        NCBI_THROW(CCgiException, eUnknown, "Unsupported charset: " + charset);
+    }
+    return eEncodingForm_Unknown;
+}
+
+
 END_NCBI_SCOPE

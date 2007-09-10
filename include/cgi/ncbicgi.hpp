@@ -367,6 +367,19 @@ enum ECgiProp {
 };  // ECgiProp
 
 
+/// Action to perform if the explicit charset is not supported
+enum EOnCharsetError {
+    eCharsetError_Ignore, ///< Ignore unknown charset (try to autodetect)
+    eCharsetError_Throw   ///< Throw exception if charset is not supported
+};
+
+/// Get EEncodingForm flag for the given charset. If the charset is
+/// empty or UTF-16 (no byte order set) returns 'unknown'. If the
+/// charset is not recognized, the action depends on the flag.
+EEncodingForm
+GetCharSetEncodingForm(const string& charset,
+                       EOnCharsetError on_error = eCharsetError_Ignore);
+
 
 /// @sa CCgiRequest
 class NCBI_XCGI_EXPORT CCgiEntry // copy-on-write semantics
@@ -376,12 +389,12 @@ private:
     {
         SData(const string& value, const string& filename,
               unsigned int position, const string& type)
-            : m_Value(value), m_Filename(filename),
-              m_ContentType(type), m_Position(position)
-            { }
+            : m_Value(value), m_Filename(filename), m_ContentType(type),
+              m_Position(position) { }
         SData(const SData& data)
             : m_Value(data.m_Value), m_Filename(data.m_Filename),
-              m_ContentType(data.m_ContentType), m_Position(data.m_Position)
+              m_ContentType(data.m_ContentType),
+              m_Position(data.m_Position)
             { }
 
         string       m_Value, m_Filename, m_ContentType;
@@ -416,6 +429,9 @@ public:
         { x_ForceUnique(); return m_Data->m_Value; }
     void          SetValue(const string& v)
         { x_ForceUnique(); m_Data->m_Value = v; }
+
+    CStringUTF8 GetValueAsUTF8(EOnCharsetError on_error =
+        eCharsetError_Ignore) const;
 
     /// Only available for certain fields of POSTed forms
     const string& GetFilename() const
@@ -503,6 +519,9 @@ public:
 private:
     void x_ForceUnique()
         { if (!m_Data->ReferencedOnlyOnce()) { m_Data = new SData(*m_Data); } }
+
+    // Get charset from content type or empty string
+    string x_GetCharset(void) const;
 
     CRef<SData> m_Data;
 };
