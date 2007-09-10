@@ -1688,7 +1688,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
             CSeq_id seqid(acc);
             id = seqid.AsFastaString();
         }
-        catch(CSeqIdException & e) {
+        catch(CSeqIdException &) {
         }
         
         if (id.size() &&
