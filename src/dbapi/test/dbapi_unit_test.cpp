@@ -9246,6 +9246,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (!(args.GetDriverName() == "ftds" 
           && args.GetServerType() == CTestArguments::eSybase)
+        && args.GetDriverName() != "msdblib"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_ConnPool,
                 DBAPIInstance);
