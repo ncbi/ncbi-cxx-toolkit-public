@@ -495,19 +495,19 @@ AC_PROG_CXX
 
 
 #### Detect Insure++, and attempt to find the real compiler.
-case "$CC" in
+case "$CXX" in
    insure* | */insure*)
-      psrcdump=`echo "$CC" | sed -e 's/insure.*/psrcdump/'`
-      real_CC=`$psrcdump -t insure++ | sed -ne 's/^Compiler \(.*\)/\1/p'`
+      psrcdump=`echo "$CXX" | sed -e 's/insure.*/psrcdump/'`
+      real_CXX=`$psrcdump -t insure++ | sed -ne 's/^Compiler \(.*\)/\1/p'`
       real_dir=`$psrcdump -t insure++ | sed -ne 's/^Compilerinstalldir \(.*\)/\1/p'`
-      test -n "$real_dir" && test -x "$real_dir/$real_CC" && \
-        real_CC="$real_dir/$real_CC"
-      case "$real_CC" in
+      test -n "$real_dir" && test -x "$real_dir/$real_CXX" && \
+        real_CXX="$real_dir/$real_CXX"
+      case "$real_CXX" in
           *gcc* ) LIBS="$LIBS -lstdc++"
       esac
       ;;
    *)
-      real_CC=$CC
+      real_CXX=$CXX
       ;;
 esac
 
@@ -515,8 +515,8 @@ esac
 #### Detect KCC compiler
 if test "$GCC" != "yes" ; then
    touch kcc_test.cpp
-   kcc_ver="`$real_CC -V -c kcc_test.cpp 2>&1 | grep '^KAI '`"
-   kcc_license="`$real_CC -V -c kcc_test.cpp 2>&1 | grep -v '^KAI '`"
+   kcc_ver="`$real_CXX -V -c kcc_test.cpp 2>&1 | grep '^KAI '`"
+   kcc_license="`$real_CXX -V -c kcc_test.cpp 2>&1 | grep -v '^KAI '`"
    rm -f kcc_test.cpp kcc_test.o
    case "$kcc_ver" in
       KAI* )  KCC="yes" ;;
@@ -526,8 +526,8 @@ fi
 
 #### Detect ICC compiler (newer versions of which configure can mis-ID as GCC)
 if test "$KCC" != "yes"; then
-   icc_ver="`$real_CC -V 2>&1 | grep '^Intel(R) C'`"
-   icc_license="`$real_CC -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
+   icc_ver="`$real_CXX -V 2>&1 | grep '^Intel(R) C'`"
+   icc_license="`$real_CXX -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
    case "$icc_ver" in
       Intel*C*Compiler* )  ICC="yes"; GCC="no" ;;
    esac
@@ -536,7 +536,7 @@ fi
 
 #### Detect IBM VisualAge compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
-   vac_ver="`$real_CC -qversion 2>&1`"
+   vac_ver="`$real_CXX -qversion 2>&1`"
    case "$vac_ver" in
       *AIX* ) VAC="yes" ;;
    esac
@@ -546,8 +546,7 @@ fi
 #### Detect Compaq compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
   -a  "$VAC" != "yes"; then
-   # Must use CXX rather than real_CC to ensure correct version number.
-   ccc_ver="`$CXX -V 2>&1 | grep '^Compaq C++ V'`"
+   ccc_ver="`$real_CXX -V 2>&1 | grep '^Compaq C++ V'`"
    case "$ccc_ver" in
       *Compaq* ) CCC="yes" ;;
    esac
@@ -562,7 +561,7 @@ ncbi_compiler="UNKNOWN"
 ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
-   compiler_ver="`$real_CC -dumpversion 2>&1`"
+   compiler_ver="`$real_CXX -dumpversion 2>&1`"
    case "$compiler_ver" in
      2.95* | 2.96* | 3.* | 4.* )
        compiler="GCC"
@@ -592,7 +591,7 @@ elif test "$CCC" = "yes" ; then
 else
    case "$host_os" in
     solaris* )
-      compiler_ver="`$CXX -V 2>&1`"
+      compiler_ver="`$real_CXX -V 2>&1`"
       case "$compiler_ver" in
         *WorkShop*Compilers*5\.0 )
           compiler="WorkShop5"
@@ -629,7 +628,7 @@ else
       esac ;;
 
     irix* )
-      compiler_ver="`$real_CC -version 2>&1`"
+      compiler_ver="`$real_CXX -version 2>&1`"
       case "$compiler_ver" in
         MIPSpro*Compilers:*Version*7\.3* )
           compiler="MIPSpro73"
@@ -638,7 +637,7 @@ else
       esac ;;
 
     cygwin* )
-      case "$real_CC" in
+      case "$real_CXX" in
         *cl\.exe* | cl)
           compiler="MSVC"
           ncbi_compiler="MSVC"
