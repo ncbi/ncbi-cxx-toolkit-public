@@ -534,7 +534,7 @@ CDbapiOdbcCFBase::CreateInstance(
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
 #if defined(FTDS_IN_USE)
-        int tds_version = 80; // version 80 doesn't work with MS SQL 2005
+        int tds_version = 70; // version 80 doesn't work with MS SQL 2005
 #else
         int tds_version = 80;
 #endif
