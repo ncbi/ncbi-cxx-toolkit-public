@@ -414,7 +414,7 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
 
     try {
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
-        auto_ptr<IResultSet> rs;
+        IResultSet* rs;
         char buff[128];
         size_t read_bytes = 0;
 
@@ -422,8 +422,8 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
         sql += "1 as 'Test!1!id' ";
         sql += "for xml explicit";
 
-        rs.reset(auto_stmt->ExecuteQuery(sql));
-        BOOST_CHECK(rs.get() != NULL);
+        rs = auto_stmt->ExecuteQuery(sql);
+        BOOST_CHECK(rs != NULL);
 
 //         if (rs->Next()) {
 //             const CVariant& value = rs->GetVariant(1);
@@ -438,8 +438,8 @@ void CDBAPIUnitTest::Test_Unicode_Simple(void)
         }
 
         sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
-        rs.reset(auto_stmt->ExecuteQuery(sql));
-        BOOST_CHECK(rs.get() != NULL);
+        rs = auto_stmt->ExecuteQuery(sql);
+        BOOST_CHECK(rs != NULL);
 
 //         if (rs->Next()) {
 //             const CVariant& value = rs->GetVariant(1);
@@ -3682,19 +3682,19 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         // 3) Select another recordset with just one record
         {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-            auto_ptr<IResultSet> rs;
+            IResultSet* rs;
 
             // 1) Select recordset with just one record
-            rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( "select qq = 57 + 33" );
+            BOOST_CHECK( rs != NULL );
 
             // 2) Retrive a record.
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
 
             // 3) Select another recordset with just one record
-            rs.reset( auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" );
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
         }
@@ -3702,11 +3702,11 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         // Same as before but uses two differenr connections ...
         if (false) {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-            auto_ptr<IResultSet> rs;
+            IResultSet* rs;
 
             // 1) Select recordset with just one record
-            rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( "select qq = 57 + 33" );
+            BOOST_CHECK( rs != NULL );
 
             // 2) Retrive only one record.
             BOOST_CHECK( rs->Next() );
@@ -3714,8 +3714,8 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 
             // 3) Select another recordset with just one record
             auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
-            rs.reset( auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" );
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             BOOST_CHECK( !rs->Next() );
         }
@@ -3724,10 +3724,10 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            auto_ptr<IResultSet> rs(
+            IResultSet* rs(
                 auto_stmt->ExecuteQuery( "select @@version as oops" )
                 );
-            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
             auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
             BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
@@ -3742,8 +3742,8 @@ CDBAPIUnitTest::Test_SelectStmt(void)
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             // 1) Select recordset with just one record
-            auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( sql ) );
-            BOOST_CHECK( rs.get() != NULL );
+            IResultSet* rs( auto_stmt->ExecuteQuery( sql ) );
+            BOOST_CHECK( rs != NULL );
 
             while (rs->Next()) {
                 BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
@@ -3756,23 +3756,23 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         }
 
         // Check sequent call of ExecuteQuery ...
-        if (false) {
-            auto_ptr<IResultSet> rs;
+        if (true) {
+            IResultSet* rs = NULL;
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
             // Run first time ...
-            rs.reset( auto_stmt->ExecuteQuery( "select @@version as oops" ));
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
 
             // Run second time ...
-            rs.reset( auto_stmt->ExecuteQuery( "select @@version as oops" ));
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
 
             // Run third time ...
-            rs.reset( auto_stmt->ExecuteQuery( "select @@version as oops" ));
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( "select @@version as oops" );
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
         } else {
             PutMsgDisabled("Check sequent call of ExecuteQuery");
@@ -3860,11 +3860,11 @@ CDBAPIUnitTest::Test_SelectStmtXML(void)
         {
             string sql;
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-            auto_ptr<IResultSet> rs;
+            IResultSet* rs;
 
             sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
-            rs.reset( auto_stmt->ExecuteQuery( sql ) );
-            BOOST_CHECK( rs.get() != NULL );
+            rs = auto_stmt->ExecuteQuery( sql );
+            BOOST_CHECK( rs != NULL );
 
             if ( !rs->Next() ) {
                 BOOST_FAIL( msg_record_expected );
@@ -3886,12 +3886,12 @@ CDBAPIUnitTest::Test_Recordset(void)
 {
     try {
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
-        auto_ptr<IResultSet> rs;
+        IResultSet* rs;
 
         // bit
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(bit, 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(bit, 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3901,8 +3901,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // tinyint
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(tinyint, 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(tinyint, 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3912,8 +3912,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // smallint
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(smallint, 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(smallint, 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3923,8 +3923,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // int
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(int, 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(int, 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3934,8 +3934,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // numeric
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3945,8 +3945,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // decimal
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3956,8 +3956,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // float
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(float(4), 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(float(4), 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3967,8 +3967,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // double
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(double precision, 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3978,8 +3978,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // real
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(real, 1)"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(real, 1)");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -3990,8 +3990,8 @@ CDBAPIUnitTest::Test_Recordset(void)
         // smallmoney
         // Unsupported type ...
     //     {
-    //         rs.reset(auto_stmt->ExecuteQuery("select convert(smallmoney, 1)"));
-    //         BOOST_CHECK(rs.get() != NULL);
+    //         rs = auto_stmt->ExecuteQuery("select convert(smallmoney, 1)");
+    //         BOOST_CHECK(rs != NULL);
     //
     //         BOOST_CHECK(rs->Next());
     //         BOOST_CHECK(!rs->Next());
@@ -4002,8 +4002,8 @@ CDBAPIUnitTest::Test_Recordset(void)
         // money
         // Unsupported type ...
     //     {
-    //         rs.reset(auto_stmt->ExecuteQuery("select convert(money, 1)"));
-    //         BOOST_CHECK(rs.get() != NULL);
+    //         rs = auto_stmt->ExecuteQuery("select convert(money, 1)");
+    //         BOOST_CHECK(rs != NULL);
     //
     //         BOOST_CHECK(rs->Next());
     //         BOOST_CHECK(!rs->Next());
@@ -4013,8 +4013,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // smalldatetime
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4024,8 +4024,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // datetime
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4035,8 +4035,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // char
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(char(32), '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(char(32), '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4046,8 +4046,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // varchar
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4057,8 +4057,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // nchar
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4068,8 +4068,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // nvarchar
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4079,8 +4079,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // binary
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(binary(32), '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(binary(32), '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4090,8 +4090,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // varbinary
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4101,8 +4101,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // text
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(text, '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4112,8 +4112,8 @@ CDBAPIUnitTest::Test_Recordset(void)
 
         // image
         {
-            rs.reset(auto_stmt->ExecuteQuery("select convert(image, '12345')"));
-            BOOST_CHECK(rs.get() != NULL);
+            rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
+            BOOST_CHECK(rs != NULL);
 
             BOOST_CHECK(rs->Next());
             BOOST_CHECK(!rs->Next());
@@ -4133,7 +4133,7 @@ CDBAPIUnitTest::Test_MetaData(void)
 {
     try {
         auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
-        auto_ptr<IResultSet> rs;
+        IResultSet* rs;
         const IResultSetMetaData* md = NULL;
 
         // First test ...
@@ -4142,8 +4142,8 @@ CDBAPIUnitTest::Test_MetaData(void)
         {
             // bit
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(bit, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(bit, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4155,8 +4155,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // tinyint
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(tinyint, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(tinyint, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4168,8 +4168,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // smallint
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(smallint, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(smallint, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4181,8 +4181,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // int
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(int, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(int, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4194,8 +4194,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // numeric
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(numeric(38, 0), 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4208,8 +4208,8 @@ CDBAPIUnitTest::Test_MetaData(void)
             // decimal
             // There is no eDB_Decimal ...
             if (false) {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(decimal(38, 0), 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4221,8 +4221,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // float
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(float(4), 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(float(4), 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4234,8 +4234,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // double
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(double precision, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(double precision, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4247,8 +4247,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // real
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(real, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(real, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4261,8 +4261,8 @@ CDBAPIUnitTest::Test_MetaData(void)
             // smallmoney
             // Unsupported type ...
             if (false) {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(smallmoney, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(smallmoney, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4275,8 +4275,8 @@ CDBAPIUnitTest::Test_MetaData(void)
             // money
             // Unsupported type ...
             if (false) {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(money, 1)"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(money, 1)");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4288,8 +4288,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // smalldatetime
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(smalldatetime, 'January 1, 1900')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4301,8 +4301,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // datetime
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(datetime, 'January 1, 1753')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4314,8 +4314,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // char
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(char(32), '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(char(32), '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4327,8 +4327,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // varchar
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(varchar(32), '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4340,8 +4340,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // nchar
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(nchar(32), '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4353,8 +4353,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // nvarchar
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(nvarchar(32), '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4366,8 +4366,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // binary
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(binary(32), '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(binary(32), '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4379,8 +4379,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // varbinary
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(varbinary(32), '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4392,8 +4392,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // text
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(text, '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(text, '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -4405,8 +4405,8 @@ CDBAPIUnitTest::Test_MetaData(void)
 
             // image
             {
-                rs.reset(auto_stmt->ExecuteQuery("select convert(image, '12345')"));
-                BOOST_CHECK(rs.get() != NULL);
+                rs = auto_stmt->ExecuteQuery("select convert(image, '12345')");
+                BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
 
@@ -8399,8 +8399,8 @@ CDBAPIUnitTest::Test_Authentication(void)
 
             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
 
-            auto_ptr<IResultSet> rs(auto_stmt->ExecuteQuery("select @@version"));
-            BOOST_CHECK( rs.get() != NULL );
+            IResultSet* rs = auto_stmt->ExecuteQuery("select @@version");
+            BOOST_CHECK( rs != NULL );
             BOOST_CHECK( rs->Next() );
         }
     }
