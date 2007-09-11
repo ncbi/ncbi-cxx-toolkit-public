@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <corelib/ncbiutil.hpp>
 
 #include <algorithm>
 
@@ -54,7 +55,8 @@ void GetSequenceLengthAndId(const blast::IBlastSeqInfoSrc * seqinfo_src,
     _ASSERT(length);
     list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
     
-    seqid.Reset(seqid_list.front());
+    // seqid.Reset(seqid_list.front());
+    seqid.Reset(FindBestChoice(seqid_list, CSeq_id::BestRank));
     *length = seqinfo_src->GetLength(oid);
 
     return;
