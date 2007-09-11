@@ -85,15 +85,22 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     string sln_path_par  = "$(SolutionPath)";
 
     m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
+    m_CustomBuildCommand +=
+        "if exist \"%PREBUILT_PTB_EXE%\" (set PTB_EXE=%PREBUILT_PTB_EXE%)";
+    m_CustomBuildCommand +=
+        " else (set PTB_EXE=%PTB_PATH%\\project_tree_builder.exe)\n";
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     m_CustomBuildCommand += "set PTB_PLATFORM=$(PlatformName)\n";
+    m_CustomBuildOutput   = ptb_path_par  + "\\project_tree_builder.exe";
 
     // Build command for project_tree_builder.sln
     if (m_BuildPtb) {
+        m_CustomBuildCommand += 
+            "if not exist \"%PTB_EXE%\" (";
         if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
             m_CustomBuildCommand += 
-                "devenv /build Release /project project_tree_builder.exe ";
+                "devenv /rebuild Release /project project_tree_builder.exe ";
 //           "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
             string project_tree_builder_sln_dir = 
                 GetApp().GetProjectTreeInfo().m_Compilers;
@@ -120,7 +127,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                 CDirEntry::CreateRelativePath(project_dir, 
                                             project_tree_builder_sln_path);
             
-            m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+            m_CustomBuildCommand += project_tree_builder_sln_path;
         } else {
             string project_tree_builder_sln_dir = 
                 GetApp().GetProjectTreeInfo().m_Compilers;
@@ -144,8 +151,12 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
             
             m_CustomBuildCommand += "msbuild \"";
             m_CustomBuildCommand += project_tree_builder_sln_path;
-            m_CustomBuildCommand += "\" /t:\"project_tree_builder_exe\" /p:Configuration=ReleaseDLL;PlatformName=$(PlatformName)\n";
+            m_CustomBuildCommand +=
+                "\" /t:\"project_tree_builder_exe:Rebuild\"";
+            m_CustomBuildCommand +=
+                " /p:Configuration=ReleaseDLL;PlatformName=$(PlatformName)";
         }
+        m_CustomBuildCommand += ") else (echo USING PREBUILT PTB at %PTB_EXE%)\n";
         m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     }
 
@@ -200,7 +211,7 @@ void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
         build_info.m_SourceFile  = source_file_path_abs;
         build_info.m_Description = "Configure solution : $(SolutionName)";
         build_info.m_CommandLine = m_CustomBuildCommand;
-        build_info.m_Outputs     = "$(InputPath).aanofile.out";
+        build_info.m_Outputs     = m_CustomBuildOutput;//"$(InputPath).aanofile.out";
         
         AddCustomBuildFileToFilter(filter, 
                                    m_Configs, 
@@ -258,7 +269,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
         << "echo Running -CONFIGURE- please wait" << endl
         << "echo ******************************************************************************" << endl
         << "@echo on" << endl;
-    ofs << "\"%PTB_PATH%\\project_tree_builder.exe\"";
+    ofs << "\"%PTB_EXE%\"";
 
     if ( m_DllBuild )
         ofs << " -dll";

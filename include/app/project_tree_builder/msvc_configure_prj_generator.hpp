@@ -90,6 +90,7 @@ private:
     const string m_ProjectItemExt;
 
     string       m_CustomBuildCommand;
+    string       m_CustomBuildOutput;
 
     const string m_SrcFileName;
     const string m_SrcFileNameGui;
