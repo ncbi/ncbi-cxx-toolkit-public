@@ -542,7 +542,7 @@ bool CTL_BCPInCmd::Send(void)
                     valid_len = CStringUTF8::GetValidBytesCount(buff, len);
                     invalid_len = len - valid_len;
 
-#if defined(HAVE_WSTRING)
+#if false //  #if defined(HAVE_WSTRING)
                     if (x_IsUnicodeClientAPI()) {
                         CWString unicode_str(buff, valid_len, eEncoding_UTF8);
 
