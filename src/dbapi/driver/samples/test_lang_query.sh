@@ -9,9 +9,10 @@ ulimit -n 1536 > /dev/null 2>&1
 # driver_list="ftds64_dblib ftds63"
 driver_list="ctlib dblib ftds odbc msdblib ftds8 odbcw ftds_odbc"
 # server_list="MS_DEV2 STRAUSS"
-server_list="MS_DEV1 TAPER"
+server_list="MS_DEV1 TAPER MSSQL67"
 # server_mssql="MS_DEV2"
 server_mssql="MS_DEV1"
+server_mssql2005="MSSQL67"
 
 res_file="/tmp/test_lang_query.sh.$$"
 trap 'rm -f $res_file' 1 2 15
@@ -163,10 +164,10 @@ EOF
 
     else
         for server in $server_list ; do
-            if test $driver = "ctlib"  -a  $server = $server_mssql ; then
+            if test $driver = "ctlib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
                 continue
             fi
-            if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "ftds_odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "ftds_odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 continue
             fi
 
@@ -190,7 +191,7 @@ EOF
         # simple tests
 
             # dblib is not  supposed to work with MS SQL Server
-            if test $driver = "dblib"  -a  $server = $server_mssql ; then
+            if test $driver = "dblib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
                 continue
             fi
 
@@ -207,7 +208,7 @@ EOF
             else
                 # do not run tests with a boolk copy operations 
                 # on Sybase databases with the "ftds" driver
-                if test \( $driver = "ftds" -o $driver = "ftds8" \) -a  $server != $server_mssql ; then
+                if test \( $driver = "ftds" -o $driver = "ftds8" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                     sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
                 else
                     cmd="dbapi_bcp -lb random -d $driver -S $server"
@@ -224,7 +225,7 @@ EOF
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
             elif test $driver = "msdblib" -o $driver = "ftds_odbc" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
-            elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql ; then
+            elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"
