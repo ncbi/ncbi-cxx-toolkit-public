@@ -9453,6 +9453,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
             if (args.GetDriverName() != "ftds_odbc"
                 && args.GetDriverName() != "odbc"
+                && args.GetDriverName() != "odbcw"
                 && args.GetDriverName() != "ftds8"
                 ) {
                 tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
