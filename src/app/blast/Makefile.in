@@ -3,7 +3,7 @@
 # Meta-makefile("APP" project)
 #################################
 
-REQUIRES = dbapi objects
+REQUIRES = dbapi objects algo
 
 APP_PROJ = psiblast blastp blastn blastx rpsblast rpstblastn tblastn tblastx multisource
 
