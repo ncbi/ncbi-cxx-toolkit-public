@@ -245,7 +245,7 @@ void CBDB_RawFile::SetCompressor(ICompression* compressor, EOwnership own)
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 {
     LOG_POST(Info << "Closing: " << m_FileName);
-    if ( m_FileName.empty() )
+    if (m_FileName.empty())
         return;
 
     if (m_DB_Attached) {
@@ -258,13 +258,15 @@ void CBDB_RawFile::x_Close(EIgnoreError close_mode)
         m_DB = 0;
         if (close_mode == eThrowOnError) {
             BDB_CHECK(ret, m_FileName.c_str());
-            m_Env->LsnResetForMemLog(m_FileName.c_str());
+            if (m_Env)
+                m_Env->LsnResetForMemLog(m_FileName.c_str());
         } else {
             if (ret != 0) {
                 ERR_POST("Error when closing " << m_FileName);
             } else {
                 try {
-                    m_Env->LsnResetForMemLog(m_FileName.c_str());
+                    if (m_Env)
+                        m_Env->LsnResetForMemLog(m_FileName.c_str());
                 } catch (CBDB_Exception& ex) {
                     ERR_POST("Error " << ex.what() << " resetting LSN for "
                              << m_FileName);
