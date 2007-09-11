@@ -440,7 +440,7 @@ bool CTL_BCPInCmd::x_AssignParams()
 }
 
 
-#if false // defined(HAVE_WSTRING)
+#if 0 // defined(HAVE_WSTRING)
 static
 string MakeUCS2LE(const wstring& str)
 {
@@ -542,7 +542,7 @@ bool CTL_BCPInCmd::Send(void)
                     valid_len = CStringUTF8::GetValidBytesCount(buff, len);
                     invalid_len = len - valid_len;
 
-#if false //  #if defined(HAVE_WSTRING)
+#if 0 //  #if defined(HAVE_WSTRING)
                     if (x_IsUnicodeClientAPI()) {
                         CWString unicode_str(buff, valid_len, eEncoding_UTF8);
 
