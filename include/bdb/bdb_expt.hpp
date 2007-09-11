@@ -190,7 +190,7 @@ public:
 #define BDB_CHECK(errnum, x_db_object__) \
     do { \
         if ( errnum ) { \
-            std::string message = "BerkeleyDB error:"; \
+            std::string message = "BerkeleyDB error: "; \
             message.append(CBDB_StrErrAdapt::GetErrCodeString(errnum)); \
             if (x_db_object__) { \
                 message.append(" Object:'"); \
