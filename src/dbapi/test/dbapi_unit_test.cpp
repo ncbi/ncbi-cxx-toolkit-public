@@ -9323,6 +9323,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
              && args.GetServerType() == CTestArguments::eSybase)
         && !(args.GetDriverName() == "ftds"
              && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == "ftds_odbc"
+             && args.GetServerType() == CTestArguments::eMsSql2005)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
                                    DBAPIInstance);
@@ -9661,14 +9663,21 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == "ftds8"
           && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == "ftds_odbc"
+          && args.GetServerType() == CTestArguments::eMsSql2005)
         && args.GetDriverName() != "ftds_dblib"
         ) {
-//         if (args.GetServerType() != CTestArguments::eMsSql2005) {
+
+        if (!(args.GetDriverName() == "ftds"
+              && args.GetServerType() == CTestArguments::eMsSql2005) // Something is wrong ...
+            && !(args.GetDriverName() == "ftds8"
+              && args.GetServerType() == CTestArguments::eMsSql2005)
+            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
-                                       DBAPIInstance);
+                    DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
-//         }
+        }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
         tc->depends_on(tc_init);
