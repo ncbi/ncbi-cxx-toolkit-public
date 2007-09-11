@@ -62,6 +62,7 @@ function Tree(oShell, oTask)
     this.IncludeProjectBranch  = this.IncludeRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 
     this.SrcRootBranch         = this.TreeRoot + "\\src";
+    this.SrcBuildSystemBranch  = this.TreeRoot + "\\src\\build-system";
     this.SrcProjectBranch      = this.SrcRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 }
 // diagnostic dump of the tree object
@@ -79,6 +80,7 @@ function DumpTree(oTree)
     VerboseEcho("IncludeProjectBranch  = " + oTree.IncludeProjectBranch);
 
     VerboseEcho("SrcRootBranch         = " + oTree.SrcRootBranch);
+    VerboseEcho("SrcBuildSystemBranch  = " + oTree.SrcBuildSystemBranch);
     VerboseEcho("SrcProjectBranch      = " + oTree.SrcProjectBranch);
 }
 
@@ -136,6 +138,7 @@ function CreateTreeStructure(oTree, oTask)
     CreateFolderIfAbsent(oFso, oTree.IncludeProjectBranch  );
 
     CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
+    CreateFolderIfAbsent(oFso, oTree.SrcBuildSystemBranch  );
     CreateFolderIfAbsent(oFso, oTree.SrcProjectBranch      );
 }
 
@@ -146,10 +149,11 @@ function FillTreeStructure(oShell, oTree)
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
     // Fill-in infrastructure for the build tree
-    GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.in",                                oTree.SrcRootBranch);
-    GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in",                             oTree.SrcRootBranch);
-    GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.mk.in.msvc",                        oTree.SrcRootBranch);
-    GetFileFromTree(oShell, oTree, oTask, "/src/project_tags.txt",                           oTree.SrcRootBranch);
+    //gone; do we need it?
+    //GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.in",                                oTree.SrcRootBranch);
+    GetFileFromTree(oShell, oTree, oTask, "/src/build-system/Makefile.mk.in",                oTree.SrcBuildSystemBranch);
+    GetFileFromTree(oShell, oTree, oTask, "/src/build-system/Makefile.mk.in.msvc",           oTree.SrcBuildSystemBranch);
+    GetFileFromTree(oShell, oTree, oTask, "/src/build-system/project_tags.txt",              oTree.SrcBuildSystemBranch);
 
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/Makefile.FLTK.app.msvc",   oTree.CompilersBranch);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/ncbi.rc",                  oTree.CompilersBranch);
