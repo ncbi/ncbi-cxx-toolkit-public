@@ -6,9 +6,10 @@ ulimit -n 1024 > /dev/null 2>&1
 
 # Declare drivers and servers
 driver_list="ctlib dblib ftds ftds63 odbc odbcw msdblib ftds_odbc ftds_dblib ftds8" # mysql
-server_list="MS_DEV1 SCHUMANN"
+server_list="MS_DEV1 SCHUMANN MSSQL67"
 # "MSSQL67"
 server_mssql="MS_DEV1"
+server_mssql2005="MSSQL67"
 
 res_file="/tmp/dbapi_unit_test.sh.$$"
 trap 'rm -f $res_file' 1 2 15
@@ -103,11 +104,15 @@ Unknown driver initialization error.
 EOF
     else
         for server in $server_list ; do
-            if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
+            if test \( $driver = "ctlib" -o $driver = "dblib" \) -a \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
                 continue
             fi
 
-            if test \( $driver = "ftds_odbc" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+            if test $driver = "ftds_dblib" -a $server = $server_mssql2005 ; then
+                continue
+            fi
+
+            if test \( $driver = "ftds_odbc" -o $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 continue
             fi
 
