@@ -440,7 +440,7 @@ bool CTL_BCPInCmd::x_AssignParams()
 }
 
 
-#if defined(HAVE_WSTRING)
+#if false // defined(HAVE_WSTRING)
 static
 string MakeUCS2LE(const wstring& str)
 {
