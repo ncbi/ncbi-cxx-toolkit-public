@@ -485,36 +485,44 @@ tds_free_row(const TDSRESULTINFO * res_info, unsigned char *row)
 void
 tds_free_results(TDSRESULTINFO * res_info)
 {
-	int i;
-	TDSCOLUMN *curcol;
+    int i;
+    TDSCOLUMN *curcol;
 
-	if (!res_info)
-		return;
+    if (!res_info)
+        return;
 
-	if (--res_info->ref_count != 0)
-		return;
+    if (--res_info->ref_count != 0)
+        return;
 
-	if (res_info->num_cols && res_info->columns) {
-		for (i = 0; i < res_info->num_cols; i++)
-			if ((curcol = res_info->columns[i]) != NULL) {
-				if (curcol->bcp_terminator)
-					free(curcol->bcp_terminator);
-				tds_free_bcp_column_data(curcol->bcp_column_data);
-				if (res_info->current_row && is_blob_type(curcol->column_type)) {
-					free(((TDSBLOB *) (res_info->current_row + curcol->column_offset))->textvalue);
-				}
-				free(curcol);
-			}
-		free(res_info->columns);
-	}
+    if (res_info->num_cols && res_info->columns) {
+        for (i = 0; i < res_info->num_cols; i++)
+            if ((curcol = res_info->columns[i]) != NULL) {
+                if (curcol->bcp_terminator)
+                    free(curcol->bcp_terminator);
+                tds_free_bcp_column_data(curcol->bcp_column_data);
+                if (res_info->current_row && is_blob_type(curcol->column_type)) {
+                    /* ssikorsk */
+                    TDSBLOB* blob = (TDSBLOB *) (res_info->current_row + curcol->column_offset);
+                    if( blob->textvalue )
+                    {
+                        TDS_ZERO_FREE(blob->textvalue);
+                    }
+                    /* free(((TDSBLOB *) (res_info->current_row
+                     * + curcol->column_offset))->textvalue);
+                     * */
+                }
+                free(curcol);
+            }
+        free(res_info->columns);
+    }
 
-	if (res_info->current_row)
-		free(res_info->current_row);
+    if (res_info->current_row)
+        free(res_info->current_row);
 
-	if (res_info->bycolumns)
-		free(res_info->bycolumns);
+    if (res_info->bycolumns)
+        free(res_info->bycolumns);
 
-	free(res_info);
+    free(res_info);
 }
 
 void
