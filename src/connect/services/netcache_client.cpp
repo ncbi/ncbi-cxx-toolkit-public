@@ -1161,7 +1161,7 @@ public:
                                "service", CConfig::eErr_NoThrow, kEmptyStr);
             NStr::TruncateSpacesInPlace(service);
             string sport, host;
-	    unsigned int port;
+	    unsigned int port = 0;
             if ( NStr::SplitInTwo(service, ":", host, sport) ) {
                port = NStr::StringToInt(sport);
 	       service = kEmptyStr;
@@ -1194,9 +1194,10 @@ public:
                         ", missing parameter: host or service";
                        NCBI_THROW(CConfigException, eParameterMissing, msg);
                    }
-                   port = conf.GetInt(m_DriverName,
-                                               "port",
-                                               CConfig::eErr_Throw, 9001);
+                   if (port == 0 )
+                           port = conf.GetInt(m_DriverName,
+                                                       "port",
+                                                       CConfig::eErr_Throw, 9001);
 		}
                 drv = new CNetCacheClient(host, port, client_name);
             }
