@@ -56,7 +56,10 @@ public:
         eInvalidCharacter,
         eIncorrectSequenceOrder,
         eInvalidSpliceTypeIndex,
-	eNoData,
+        eIntronTooLong,
+	eNoSeqData,
+	ePattern,
+	eNoHits,
 	eNoAlignment,
 	eNotInitialized,
         eFormat
@@ -77,8 +80,14 @@ public:
             return "mRna should go first";
         case eInvalidSpliceTypeIndex:
             return "Splice type index out of range";
-	case eNoData:
-	    return "No data available";
+        case eIntronTooLong:
+            return "Max supported intron length exceeded";
+	case eNoSeqData:
+	    return "No sequence data available";
+	case ePattern:
+	    return "Problem with the hit pattern";
+	case eNoHits:
+	    return "Zero hit count";
 	case eNoAlignment:
 	    return "No alignment found";
         case eNotInitialized:
