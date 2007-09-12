@@ -1351,7 +1351,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     }
                     else {
                         ERR_POST(Info <<
-                            "Failed to set log file to " << kDefaultFallback);
+                            "Failed to set log file to " <<
+                            CFile::NormalizePath(kDefaultFallback));
                     }
                 }
             }
@@ -2377,11 +2378,12 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     }
     else {
         string sev = CNcbiDiag::SeverityName(m_Severity);
+        os << setfill(' ') << setw(12); // add 2 for colon and space
         if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
-            os << "Message[" << sev[0] << "]: ";
+            os << string("Message[") + sev[0] + "]: ";
         }
         else {
-            os << sev << ": ";
+            os << sev + ": ";
         }
     }
 
