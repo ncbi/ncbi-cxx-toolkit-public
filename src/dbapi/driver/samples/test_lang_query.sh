@@ -167,7 +167,7 @@ EOF
             if test $driver = "ctlib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
                 continue
             fi
-            if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "ftds_odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 continue
             fi
 
@@ -202,7 +202,7 @@ EOF
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped because of invalid Sybase client installation)"
-            elif test $driver = "msdblib" -o $driver = "ftds8" -o $driver = "ftds_odbc" ; then
+            elif test $driver = "msdblib" -o $driver = "ftds8" -o $driver = "ftds_odbc" -o $driver = "odbcw" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb random -d $driver -S $server (skipped)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb random -d $driver -S $server (skipped)"
             else
@@ -223,7 +223,7 @@ EOF
             cmd="dbapi_cursor -lb random -d $driver -S $server"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test $driver = "msdblib" -o $driver = "ftds_odbc" ; then
+            elif test $driver = "msdblib" -o $driver = "ftds_odbc" -o $driver = "odbcw" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
