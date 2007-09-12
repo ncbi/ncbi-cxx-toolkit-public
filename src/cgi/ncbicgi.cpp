@@ -1479,16 +1479,6 @@ string CCgiEntry::x_GetCharset(void) const
 }
 
 
-CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
-{
-    CNcbiIstrstream is(GetValue().c_str());
-    EEncodingForm enc = GetCharSetEncodingForm(x_GetCharset(), on_error);
-    CStringUTF8 utf_str;
-    ReadIntoUtf8(is, &utf_str, enc);
-    return utf_str;
-}
-
-
 inline
 bool s_Is_ISO_8859_1(const string& charset)
 {
@@ -1527,8 +1517,8 @@ bool s_Is_UTF_8(const string& charset)
 }
 
 
-EEncodingForm GetCharSetEncodingForm(const string& charset,
-                                     EOnCharsetError on_error)
+EEncodingForm GetCharsetEncodingForm(const string& charset,
+                                     CCgiEntry::EOnCharsetError on_error)
 {
     if ( charset.empty() ) {
         return eEncodingForm_Unknown;
@@ -1557,10 +1547,20 @@ EEncodingForm GetCharSetEncodingForm(const string& charset,
         // Try to autodetect UTF-16 byte order
         return eEncodingForm_Unknown;
     }
-    if (on_error == eCharsetError_Throw) {
+    if (on_error == CCgiEntry::eCharsetError_Throw) {
         NCBI_THROW(CCgiException, eUnknown, "Unsupported charset: " + charset);
     }
     return eEncodingForm_Unknown;
+}
+
+
+CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
+{
+    CNcbiIstrstream is(GetValue().c_str());
+    EEncodingForm enc = GetCharsetEncodingForm(x_GetCharset(), on_error);
+    CStringUTF8 utf_str;
+    ReadIntoUtf8(is, &utf_str, enc);
+    return utf_str;
 }
 
 

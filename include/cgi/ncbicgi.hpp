@@ -367,20 +367,6 @@ enum ECgiProp {
 };  // ECgiProp
 
 
-/// Action to perform if the explicit charset is not supported
-enum EOnCharsetError {
-    eCharsetError_Ignore, ///< Ignore unknown charset (try to autodetect)
-    eCharsetError_Throw   ///< Throw exception if charset is not supported
-};
-
-/// Get EEncodingForm flag for the given charset. If the charset is
-/// empty or UTF-16 (no byte order set) returns 'unknown'. If the
-/// charset is not recognized, the action depends on the flag.
-EEncodingForm
-GetCharSetEncodingForm(const string& charset,
-                       EOnCharsetError on_error = eCharsetError_Ignore);
-
-
 /// @sa CCgiRequest
 class NCBI_XCGI_EXPORT CCgiEntry // copy-on-write semantics
 {
@@ -429,6 +415,12 @@ public:
         { x_ForceUnique(); return m_Data->m_Value; }
     void          SetValue(const string& v)
         { x_ForceUnique(); m_Data->m_Value = v; }
+
+    /// Action to perform if the explicit charset is not supported
+    enum EOnCharsetError {
+        eCharsetError_Ignore, ///< Ignore unknown charset (try to autodetect)
+        eCharsetError_Throw   ///< Throw exception if charset is not supported
+    };
 
     CStringUTF8 GetValueAsUTF8(EOnCharsetError on_error =
         eCharsetError_Ignore) const;
