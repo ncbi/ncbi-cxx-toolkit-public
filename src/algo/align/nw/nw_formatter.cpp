@@ -79,7 +79,7 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
 #endif
 
     if(transcript.size() == 0) {
-        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_NoAlignment);
+        NCBI_THROW(CAlgoAlignException, eNoSeqData, g_msg_NoAlignment);
     }
 
     CRef<CSeq_align> seqalign (new CSeq_align);
@@ -484,7 +484,7 @@ void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
 {
     const CNWAligner::TTranscript transcript (m_aligner->GetTranscript());
     if(transcript.size() == 0) {
-        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_NoAlignment);
+        NCBI_THROW(CAlgoAlignException, eNoSeqData, g_msg_NoAlignment);
     }
 
     deque<SSegment>& segments (*psegments);
@@ -609,7 +609,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
     const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
     if(transcript.size() == 0) {
         NCBI_THROW(CAlgoAlignException,
-                   eNoData,
+                   eNoSeqData,
                    g_msg_NoAlignment);
     }
 

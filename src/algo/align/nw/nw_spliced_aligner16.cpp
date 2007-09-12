@@ -388,7 +388,8 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
             if (intron_length != kMax_UInt) {
                 if(intron_length > 1048575) {
                     // no space to record introns longer than 2^20
-                    NCBI_THROW(CAlgoAlignException, eNoAlignment,
+                    NCBI_THROW(CAlgoAlignException,
+                               eIntronTooLong,
                                g_msg_IntronTooLong);
                 }
 

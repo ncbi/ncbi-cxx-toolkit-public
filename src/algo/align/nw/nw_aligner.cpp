@@ -359,7 +359,7 @@ CNWAligner::TScore CNWAligner::Run()
     }
 
     if(!m_Seq1 || !m_Seq2) {
-        NCBI_THROW(CAlgoAlignException, eNoData,
+        NCBI_THROW(CAlgoAlignException, eNoSeqData,
                    g_msg_DataNotAvailable);
     }
 
@@ -840,7 +840,7 @@ CNWAligner::TScore CNWAligner::GetScore() const
       return m_score;
   }
   else {
-    NCBI_THROW(CAlgoAlignException, eNoData,
+    NCBI_THROW(CAlgoAlignException, eNoSeqData,
                g_msg_NoAlignment);
   }
 }
