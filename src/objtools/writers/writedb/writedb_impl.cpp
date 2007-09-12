@@ -912,7 +912,11 @@ void CWriteDB_Impl::x_ComputeHash(const CBioseq & sequence)
 
 static void s_UnescapeControlA(const string & inp, string & outp)
 {
-    bool debug = true;
+    bool debug = false;
+    
+#ifdef _DEBUG
+    debug = true;
+#endif
     
     outp.reserve(inp.size());
     outp.resize(0);
@@ -926,6 +930,10 @@ static void s_UnescapeControlA(const string & inp, string & outp)
             switch(ch) {
             case '1':
                 outp.append("\001");
+                break;
+                
+            case '\\':
+                outp.append("\\");
                 break;
                 
             default:
