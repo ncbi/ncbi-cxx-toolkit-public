@@ -2058,6 +2058,8 @@ CDBAPIUnitTest::Test_LOB_LowLevel(void)
                     descr.reset(rs->GetImageOrTextDescriptor());
                 }
             }
+
+            BOOST_CHECK(descr.get() != NULL);
         }
 
         // Send data ...
