@@ -111,26 +111,41 @@ public:
     // aligned compartment representation 
     struct NCBI_XALGOALIGN_EXPORT SAlignedCompartment {
         
-        size_t           m_id;
-        bool             m_error;
-        string           m_msg;
+        size_t           m_Id;
+
+        enum ECompartmentStatus {
+            eStatus_Ok,
+            eStatus_Empty,
+            eStatus_Error
+        };
+
+        ECompartmentStatus m_Status;
+
+        string           m_Msg;
         bool             m_QueryStrand, m_SubjStrand;
-        size_t           m_cds_start, m_cds_stop;
+        size_t           m_Cds_start, m_Cds_stop;
         size_t           m_QueryLen;
         size_t           m_PolyA;
-        TSegments        m_segments;
+        TAligner::TScore m_Score;
+        TSegments        m_Segments;
         
-        SAlignedCompartment(void): m_id(0), m_error(true), 
-                                   m_cds_start(0), m_cds_stop(0),
-                                   m_QueryLen (0),
-                                   m_PolyA(0)
+        SAlignedCompartment(void):
+            m_Id(0),
+            m_Status(eStatus_Empty),
+            m_Cds_start(0), m_Cds_stop(0),
+            m_QueryLen (0),
+            m_PolyA(0),
+            m_Score(0)
         {}
         
-        SAlignedCompartment(size_t id, bool err, const char* msg):
-            m_id(id), m_error(err), m_msg(msg),
-            m_cds_start(0), m_cds_stop(0),
+        SAlignedCompartment(size_t id, const char* msg):
+            m_Id(id),
+            m_Status(eStatus_Empty),
+            m_Msg(msg),
+            m_Cds_start(0), m_Cds_stop(0),
             m_QueryLen(0),
-            m_PolyA(0)
+            m_PolyA(0),
+            m_Score(0)
         {}
         
         // return overall identity (including gaps)
@@ -241,7 +256,7 @@ protected:
                                             size_t range_left,
                                             size_t range_right);
 
-    void   x_Run(const char* seq1, const char* seq2);
+    TAligner::TScore x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
     void   x_SetPattern(THitRefs* hitrefs);
     bool   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
