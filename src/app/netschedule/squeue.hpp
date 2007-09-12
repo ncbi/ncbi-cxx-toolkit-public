@@ -216,6 +216,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
         eKindDynamic = 1
     };
     enum EVectorId {
+        eVIAll      = -1,
         eVIJob      = 0,
         eVITag      = 1,
         eVIAffinity = 2
@@ -314,7 +315,7 @@ public:
     int GetFieldIndex(const string& name);
     string GetField(int index);
 
-    unsigned ReadStatus();
+    unsigned LoadStatusMatrix();
 
     /// get next job id (counter increment)
     unsigned int GetNextId();
@@ -324,11 +325,14 @@ public:
     /// Erase job from all structures, request delayed db deletion
     void Erase(unsigned job_id);
 
+    /// Erase jobs from all structures, request delayed db deletion
+    void Erase(const TNSBitVector& job_ids);
+
     /// Erase all jobs from all structures, request delayed db deletion
     void Clear();
 
     /// Persist deleted vectors so restarted DB will not reincarnate jobs
-    void FlushDeletedVectors();
+    void FlushDeletedVectors(EVectorId vid = eVIAll);
 
     /// Filter out deleted jobs
     void FilterJobs(TNSBitVector& ids);

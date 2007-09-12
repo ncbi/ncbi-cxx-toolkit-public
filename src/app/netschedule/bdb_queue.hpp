@@ -202,12 +202,6 @@ public:
     ///    Time worker node needs to execute the job (in seconds)
     void JobDelayExpiration(unsigned job_id, unsigned tm);
 
-    /// Delete if job is done and timeout expired
-    ///
-    /// @return TRUE if job has been deleted
-    ///
-    bool CheckDelete(unsigned int job_id);
-
     /// Delete batch_size jobs
     /// @return
     ///    Number of deleted jobs
@@ -376,10 +370,6 @@ private:
                                unsigned      port,
                                CNcbiOstream& out,
                                const char*   fld_separator = "\t");
-
-    /// Delete record using positioned cursor
-    void x_DeleteDBRec(SQueueDB& db, 
-                       CBDB_FileCursor& cur);
 
     bool x_AssignSubmitRec(SQueueDB&     db,
                            SJobInfoDB&   job_info_db,
@@ -571,6 +561,7 @@ private:
 struct SNSDBEnvironmentParams
 {
     unsigned  cache_ram_size;      ///< Size of database cache
+    unsigned  mutex_max;           ///< Number of mutexes
     unsigned  max_locks;           ///< Number of locks
     unsigned  max_lockers;         ///< Number of lockers
     unsigned  max_lockobjects;     ///< Number of lock objects

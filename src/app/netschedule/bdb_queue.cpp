@@ -332,6 +332,8 @@ void CQueueDataBase::Open(const string& db_path,
 
     if (params.cache_ram_size)
         m_Env->SetCacheSize(params.cache_ram_size);
+    if (params.mutex_max)
+        m_Env->MutexSetMax(params.mutex_max);
     if (params.max_locks)
         m_Env->SetMaxLocks(params.max_locks);
     if (params.max_lockers)
@@ -487,7 +489,7 @@ void CQueueDataBase::MountQueue(const string& qname,
 
     SLockedQueue& queue = m_QueueCollection.AddQueue(qname, q.release());
 
-    unsigned recs = queue.ReadStatus();
+    unsigned recs = queue.LoadStatusMatrix();
 
     queue.udp_socket.SetReuseAddress(eOn);
     unsigned short udp_port = GetUdpPort();
@@ -743,7 +745,7 @@ void CQueueDataBase::Purge(void)
     // This is done to spread massive job deletion in time
     // and thus smooth out peak loads
     // TODO: determine batch size based on load
-    unsigned n_jobs_to_delete = 10000; 
+    unsigned n_jobs_to_delete = 1000; 
     unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
     global_del_rec += unc_del_rec;
 
@@ -3308,7 +3310,9 @@ bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
 }
 
 
-bool CQueue::CheckDelete(unsigned int job_id)
+unsigned 
+CQueue::CheckDeleteBatch(unsigned batch_size,
+                         CNetScheduleAPI::EJobStatus status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned queue_timeout, queue_run_timeout;
@@ -3318,77 +3322,67 @@ bool CQueue::CheckDelete(unsigned int job_id)
         queue_run_timeout = qp.GetRunTimeout();
     }}
 
-    SQueueDB& db = q->db;
+    SQueueDB& job_db = q->db;
+
+    TNSBitVector job_ids;
 
     time_t curr = time(0);
-    time_t time_update, time_done;
-    time_t timeout, run_timeout;
 
+    unsigned dcnt = 0;
     {{
         CFastMutexGuard guard(q->lock);
-        db.SetTransaction(NULL);
-        
-        db.id = job_id;
+        job_db.SetTransaction(NULL);
+        CBDB_FileCursor cur(job_db);
+        // unsigned prev_job_id = 0;
+        for (unsigned n = 0; n < batch_size; ++n) {
+            unsigned job_id = q->status_tracker.GetFirst(status);
+            if (job_id == 0)
+                break;
+            cur.SetCondition(CBDB_FileCursor::eEQ);
+            cur.From << job_id;
+            if (cur.FetchFirst() != eBDB_Ok) {
+                // ? already deleted
+                LOG_POST(Warning << "Discrepancy between matrix and database " <<
+                    "for job " << job_id);
+                // Do not break the process of erasing expired jobs
+                continue;
+            }
 
-        if (db.Fetch() != eBDB_Ok) {
-            // ? already deleted
-            LOG_POST(Warning << "Attempt to delete non-existent job");
-            // Do not break the process of erasing expired jobs
-            return true;
+            // Is the job expired?
+            time_t time_update, time_done;
+            time_t timeout, run_timeout;
+
+            int status = job_db.status;
+
+            timeout = job_db.timeout;
+            if (timeout == 0) timeout = queue_timeout;
+            run_timeout = job_db.run_timeout;
+            if (run_timeout == 0) run_timeout = queue_run_timeout;
+
+            // Calculate time of last update and effective timeout
+            time_done = job_db.time_done;
+            if (status == (int) CNetScheduleAPI::eRunning) {
+                // Running job
+                time_update = job_db.time_run;
+                timeout += run_timeout;
+            } else if (time_done == 0) {
+                // Submitted job
+                time_update = job_db.time_submit;
+            } else {
+                // Done, Failed, ?Returned, Canceled
+                time_update = time_done;
+            }
+
+            if (time_update + timeout > curr)
+                break;
+
+            q->status_tracker.Erase(job_id);
+            job_ids.set_bit(job_id);
+            ++dcnt;
         }
-
-        int status = db.status;
-
-        timeout = db.timeout;
-        if (timeout == 0) timeout = queue_timeout;
-        run_timeout = db.run_timeout;
-        if (run_timeout == 0) run_timeout = queue_run_timeout;
-
-        // Calculate time of last update and effective timeout
-        time_done = db.time_done;
-        if (status == (int) CNetScheduleAPI::eRunning) {
-            // Running job
-            time_update = db.time_run;
-            timeout += run_timeout;
-        } else if (time_done == 0) {
-            // Submitted job
-            time_update = db.time_submit;
-        } else {
-            // Done, Failed, ?Returned, Canceled
-            time_update = time_done;
-        }
-
-        if (time_update + timeout > curr)
-            return false;
     }}
-
-    q->Erase(job_id);
-
-    return true;
-}
-
-void CQueue::x_DeleteDBRec(SQueueDB&  db, CBDB_FileCursor& cur)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    cur.Delete(CBDB_File::eIgnoreError);
-}
-
-
-unsigned 
-CQueue::CheckDeleteBatch(unsigned batch_size,
-                         CNetScheduleAPI::EJobStatus status)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-    unsigned dcnt;
-    for (dcnt = 0; dcnt < batch_size; ++dcnt) {
-        unsigned job_id = q->status_tracker.GetFirst(status);
-        if (job_id == 0)
-            break;
-        bool deleted = CheckDelete(job_id);
-        if (!deleted)
-            break;
-    }
-    // TODO: flush jobs-to-delete vector into db
+    if (dcnt)
+        q->Erase(job_ids);
     return dcnt;
 }
 

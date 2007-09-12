@@ -32,7 +32,7 @@
  *
  */
 
-#define NETSCHEDULED_VERSION "3.1.0"
+#define NETSCHEDULED_VERSION "3.1.1"
 
 #define NETSCHEDULED_FEATURES \
     "fast_status=1;dyn_queues=1;tags=1;version=" NETSCHEDULED_VERSION

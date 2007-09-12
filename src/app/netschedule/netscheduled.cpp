@@ -2651,6 +2651,9 @@ int CNetScheduleDApp::Run(void)
         bdb_params.cache_ram_size = (unsigned)
             bdb_conf.GetDataSize("netschedule", "mem_size", 
                                  CConfig::eErr_NoThrow, 0);
+        bdb_params.mutex_max = (unsigned)
+            bdb_conf.GetInt("netschedule", "mutex_max", 
+                            CConfig::eErr_NoThrow, 0);
         bdb_params.max_locks = (unsigned)
             bdb_conf.GetInt("netschedule", "max_locks", 
                             CConfig::eErr_NoThrow, 0);

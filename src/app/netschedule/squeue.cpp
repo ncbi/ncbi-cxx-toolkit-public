@@ -146,12 +146,14 @@ SLockedQueue::~SLockedQueue()
     }
     delete run_time_line;
     if (delete_database) {
+        //CBDB_File deleter;
         db.Close();
         aff_idx.Close();
         affinity_dict.Close();
         m_TagDb.Close();
         ITERATE(vector<string>, it, files) {
             // NcbiCout << "Wipig out " << *it << NcbiEndl;
+            //deleter.Remove(*it);
             CFile(*it).Remove();
         }
     }
@@ -277,29 +279,21 @@ string SLockedQueue::GetField(int index)
 }
 
 
-unsigned SLockedQueue::ReadStatus()
+unsigned SLockedQueue::LoadStatusMatrix()
 {
     EBDB_ErrCode err;
-    m_DeletedJobsDB.id = eVIJob;
-    err = m_DeletedJobsDB.ReadVector(&m_JobsToDelete);
-    if (err != eBDB_Ok && err != eBDB_NotFound) {
-        // TODO: throw db error
-    }
-    m_JobsToDelete.optimize();
 
-    m_DeletedJobsDB.id = eVITag;
-    err = m_DeletedJobsDB.ReadVector(&m_DeletedJobs);
-    if (err != eBDB_Ok && err != eBDB_NotFound) {
-        // TODO: throw db error
+    static EVectorId all_ids[] = { eVIJob, eVITag, eVIAffinity };
+    TNSBitVector all_vects[] = 
+        { m_JobsToDelete, m_DeletedJobs, m_AffJobsToDelete };
+    for (size_t i = 0; i < sizeof(all_ids) / sizeof(all_ids[0]); ++i) {
+        m_DeletedJobsDB.id = all_ids[i];
+        err = m_DeletedJobsDB.ReadVector(&all_vects[i]);
+        if (err != eBDB_Ok && err != eBDB_NotFound) {
+            // TODO: throw db error
+        }
+        all_vects[i].optimize();
     }
-    m_DeletedJobs.optimize();
-
-    m_DeletedJobsDB.id = eVIAffinity;
-    err = m_DeletedJobsDB.ReadVector(&m_AffJobsToDelete);
-    if (err != eBDB_Ok && err != eBDB_NotFound) {
-        // TODO: throw db error
-    }
-    m_AffJobsToDelete.optimize();
 
     // scan the queue, load the state machine from DB
 
@@ -378,6 +372,21 @@ void SLockedQueue::Erase(unsigned job_id)
 }
 
 
+void SLockedQueue::Erase(const TNSBitVector& job_ids)
+{
+    CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+    m_JobsToDelete    |= job_ids;
+    m_DeletedJobs     |= job_ids;
+    m_AffJobsToDelete |= job_ids;
+
+    // start affinity erase process
+    m_AffWrapped = false;
+    m_LastAffId = m_CurrAffId;
+
+    FlushDeletedVectors();
+}
+
+
 void SLockedQueue::Clear()
 {
     TNSBitVector bv;
@@ -389,34 +398,22 @@ void SLockedQueue::Clear()
         run_time_line->ReInit(0);
     }}
 
-    {{
-        CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
-        m_JobsToDelete    |= bv;
-        m_DeletedJobs     |= bv;
-        m_AffJobsToDelete |= bv;
-
-        // start affinity erase process
-        m_AffWrapped = false;
-        m_LastAffId = m_CurrAffId;
-
-        FlushDeletedVectors();
-    }}
+    Erase(bv);
 }
 
 
-void SLockedQueue::FlushDeletedVectors()
+void SLockedQueue::FlushDeletedVectors(EVectorId vid)
 {
-    m_DeletedJobsDB.id = eVIJob;
-    m_JobsToDelete.optimize();
-    m_DeletedJobsDB.WriteVector(m_JobsToDelete, SDeletedJobsDB::eNoCompact);
-
-    m_DeletedJobsDB.id = eVITag;
-    m_DeletedJobs.optimize();
-    m_DeletedJobsDB.WriteVector(m_DeletedJobs, SDeletedJobsDB::eNoCompact);
-
-    m_DeletedJobsDB.id = eVIAffinity;
-    m_AffJobsToDelete.optimize();
-    m_DeletedJobsDB.WriteVector(m_AffJobsToDelete, SDeletedJobsDB::eNoCompact);
+    static EVectorId all_ids[] = { eVIJob, eVITag, eVIAffinity };
+    TNSBitVector all_vects[] = 
+        { m_JobsToDelete, m_DeletedJobs, m_AffJobsToDelete };
+    for (size_t i = 0; i < sizeof(all_ids) / sizeof(all_ids[0]); ++i) {
+        if (vid != eVIAll && vid != all_ids[i]) continue;
+        m_DeletedJobsDB.id = all_ids[i];
+        TNSBitVector& bv = all_vects[i];
+        bv.optimize();
+        m_DeletedJobsDB.WriteVector(bv, SDeletedJobsDB::eNoCompact);
+    }
 }
 
 
@@ -544,7 +541,7 @@ void SLockedQueue::ClearAffinityIdx()
         CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
         if (m_AffWrapped && m_CurrAffId >= m_LastAffId) {
             m_AffJobsToDelete.clear(true);
-            FlushDeletedVectors(); // TODO: hint - only one vector changed
+            FlushDeletedVectors(eVIAffinity);
         }
     }}
 }
@@ -699,7 +696,8 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
         {
             batch.set(job_id);
         }
-        FlushDeletedVectors(); // TODO: hint - only one vector changed
+        if (batch.any())
+            FlushDeletedVectors(eVIJob);
     }}
     if (batch.none()) return 0;
 
