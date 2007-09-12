@@ -1069,7 +1069,7 @@ CDB_Object* CTL_RowResult::GetItem(CDB_Object* item_buf)
 size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
                                bool* is_null)
 {
-    if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
+    if ((unsigned int) m_CurrItem >= m_NofCols || m_CurrItem == -1) {
         return 0;
     }
 
@@ -1080,46 +1080,49 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
     }
 
     bool is_null_tmp;
-    switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, buffer, (CS_INT) buffer_size,
-                         &outlen, is_null_tmp) ) {
+    const CS_RETCODE rc = my_ct_get_data(
+            x_GetSybaseCmd(), 
+            m_CurrItem + 1, 
+            buffer, 
+            (CS_INT) buffer_size,
+            &outlen, 
+            is_null_tmp
+            );
+
+    switch (rc) {
+    case CS_END_ITEM:
+        // This is not the last column in the row.
+    case CS_END_DATA:
+        // This is the last column in the row.
+        if (m_NullValue[m_CurrItem] == eNullUnknown) {
+            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
+        }
+
+        if (is_null) {
+            if (m_NullValue[m_CurrItem] != eNullUnknown) {
+                *is_null = (m_NullValue[m_CurrItem] == eIsNull);
+            } else {
+                *is_null = (outlen == 0);
+            }
+        }
+
 #ifdef FTDS_IN_USE
-    case CS_END_ITEM:
-        // This is not the last column in the row.
-    case CS_END_DATA:
-        // This is the last column in the row.
-        if (m_NullValue[m_CurrItem] == eNullUnknown) {
-            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
+        if (rc == CS_END_ITEM) {
+            ++m_CurrItem; 
         }
-        break;
 #else
-    case CS_END_ITEM:
-        // This is not the last column in the row.
-    case CS_END_DATA:
-        // This is the last column in the row.
-        if (m_NullValue[m_CurrItem] == eNullUnknown) {
-            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
-        }
         ++m_CurrItem; // That won't work with the ftds64 driver
 #endif
+
+        break;
     case CS_SUCCEED:
         // ct_get_data successfully retrieved a chunk of data that is
         // not the last chunk of data for this column.
-        if (m_NullValue[m_CurrItem] == eNullUnknown) {
-            m_NullValue[m_CurrItem] = (is_null_tmp ? eIsNull : eIsNotNull);
-        }
         break;
     case CS_CANCELED:
         DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
     default:
         DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-    }
-
-    if (is_null) {
-        if (m_NullValue[m_CurrItem] != eNullUnknown) {
-            *is_null = (m_NullValue[m_CurrItem] == eIsNull);
-        } else {
-            *is_null = (outlen == 0);
-        }
     }
 
     return (size_t) outlen;
