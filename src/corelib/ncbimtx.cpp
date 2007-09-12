@@ -940,10 +940,26 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
     m_Sem->count     = init_count;
     m_Sem->wait_count = 0;
 
-    xncbi_Validate(pthread_mutex_init(&m_Sem->mutex, 0) == 0,
-                   "CSemaphore::CSemaphore() - pthread_mutex_init() failed");
-    xncbi_Validate(pthread_cond_init(&m_Sem->cond, 0) == 0,
-                   "CSemaphore::CSemaphore() - pthread_cond_init() failed");
+#  if defined(NCBI_OS_CYGWIN)
+    if (pthread_mutex_init(&m_Sem->mutex, 0) != 0) {
+        memset(&m_Sem->mutex, 0, sizeof(m_Sem->mutex));
+#  endif  /* NCBI_OS_CYGWIN */
+        xncbi_Validate(pthread_mutex_init(&m_Sem->mutex, 0) == 0,
+                       "CSemaphore::CSemaphore() - pthread_mutex_init() failed");
+#  if defined(NCBI_OS_CYGWIN)
+    }
+#  endif  /* NCBI_OS_CYGWIN */
+
+#  if defined(NCBI_OS_CYGWIN)
+    if (pthread_cond_init(&m_Sem->cond, 0) != 0) {
+        memset(&m_Sem->cond, 0, sizeof(m_Sem->cond));
+#  endif  /* NCBI_OS_CYGWIN */
+        xncbi_Validate(pthread_cond_init(&m_Sem->cond, 0) == 0,
+                       "CSemaphore::CSemaphore() - pthread_cond_init() failed");
+#  if defined(NCBI_OS_CYGWIN)
+    }
+#  endif  /* NCBI_OS_CYGWIN */
+
 #elif defined(NCBI_WIN32_THREADS)
     m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
     xncbi_Validate(m_Sem->sem != NULL,
