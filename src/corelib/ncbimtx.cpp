@@ -43,11 +43,44 @@
 #  include <sys/time.h> // for gettimeofday()
 #endif
 
+#if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
+
+#include <corelib/ncbifile.hpp>
+#include <fcntl.h>
+#  if defined(NCBI_OS_MSWIN)
+#    include <io.h>
+#  endif
+
+#endif
 
 #define STACK_THRESHOLD (1024)
 
 
 BEGIN_NCBI_SCOPE
+
+
+#if defined(_DEBUG) &&  defined(LOG_MUTEX_EVENTS)
+
+void WriteMutexEvent(void* mutex_ptr, const char* message)
+{
+    static const int mode = O_WRONLY | O_APPEND | O_CREAT | O_TRUNC;
+    static const mode_t perm = CDirEntry::MakeModeT(
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        0);
+    static const char* file_name = getenv("MUTEX_EVENTS_LOG_FILE");
+    static int handle = open(file_name ? file_name : "mutex_events.log",
+        mode, perm);
+    CNcbiOstrstream str_os;
+    str_os << mutex_ptr << " "
+        << CThreadSystemID::GetCurrent().m_ID << " "
+        << message << "\n";
+    write(handle, str_os.str(), str_os.pcount());
+    str_os.rdbuf()->freeze(false);
+}
+
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -56,6 +89,8 @@ BEGIN_NCBI_SCOPE
 
 void SSystemFastMutex::InitializeHandle(void)
 {
+    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::InitializeHandle()");
+
     // Create platform-dependent mutex handle
 #if defined(NCBI_WIN32_THREADS)
 #  if defined(NCBI_USE_CRITICAL_SECTION)
@@ -83,6 +118,8 @@ void SSystemFastMutex::InitializeHandle(void)
 
 void SSystemFastMutex::DestroyHandle(void)
 {
+    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::DestroyHandle()");
+
     // Destroy system mutex handle
 #if defined(NCBI_WIN32_THREADS)
 #  if defined(NCBI_USE_CRITICAL_SECTION)
@@ -907,7 +944,6 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
                    "CSemaphore::CSemaphore() - pthread_mutex_init() failed");
     xncbi_Validate(pthread_cond_init(&m_Sem->cond, 0) == 0,
                    "CSemaphore::CSemaphore() - pthread_cond_init() failed");
-
 #elif defined(NCBI_WIN32_THREADS)
     m_Sem->sem = CreateSemaphore(NULL, init_count, max_count, NULL);
     xncbi_Validate(m_Sem->sem != NULL,

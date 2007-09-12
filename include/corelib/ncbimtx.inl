@@ -62,6 +62,8 @@ void SSystemFastMutex::CheckInitialized(void) const
 inline
 void SSystemFastMutex::Lock(void)
 {
+    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::Lock()");
+
 #if defined(NCBI_NO_THREADS)
     return;
 #else
@@ -88,6 +90,8 @@ void SSystemFastMutex::Lock(void)
 inline
 bool SSystemFastMutex::TryLock(void)
 {
+    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::TryLock()");
+
 #if defined(NCBI_NO_THREADS)
     return true;
 #else
@@ -129,6 +133,8 @@ bool SSystemFastMutex::TryLock(void)
 inline
 void SSystemFastMutex::Unlock(void)
 {
+    WRITE_MUTEX_EVENT(this, "SSystemFastMutex::Unlock()");
+
 #if defined(NCBI_NO_THREADS)
     return;
 #else
