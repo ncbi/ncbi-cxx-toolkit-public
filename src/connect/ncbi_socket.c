@@ -2098,10 +2098,15 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 
     if (s_Initialized  &&  SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
         int x_errno = SOCK_ERRNO;
+#ifdef NCBI_OS_MSWIN
+        if (x_errno == WSANOTINITIALISED)
+            s_Initialized = 0/*false*/;
+        else
+#endif /*NCBI_OS_MSWIN*/
         if (
-#if defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
-    defined(NCBI_OS_IRIX)                                        || \
-    defined(NCBI_OS_OSF1)
+#if   defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
+      defined(NCBI_OS_IRIX)                                        || \
+      defined(NCBI_OS_OSF1)
             x_errno != SOCK_ENOTCONN
 #else
             x_errno != SOCK_ENOTCONN  ||  sock->pending
@@ -2180,7 +2185,7 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
         } else
             sock->r_status = sock->w_status = eIO_Closed;
         /* set the socket back to blocking mode */
-        if (!s_SetNonblock(sock->sock, 0/*false*/)  &&  !abort) {
+        if (s_Initialized && !s_SetNonblock(sock->sock, 0/*false*/) && !abort){
             CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Close]  Cannot set socket "
                                    "back to blocking mode", s_ID(sock, _id)));
         }
@@ -2213,6 +2218,12 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ abort)
             if (!s_Initialized)
                 break;
             x_errno = SOCK_ERRNO;
+#ifdef NCBI_OS_MSWIN
+            if (x_errno == WSANOTINITIALISED) {
+                s_Initialized = 0/*false*/;
+                break;
+            }
+#endif /*NCBI_OS_MSWIN*/
             if (abort  ||  x_errno != SOCK_EINTR) {
                 CORE_LOGF_ERRNO_EX(abort > 1 ? eLOG_Error : eLOG_Warning,
                                    x_errno, SOCK_STRERROR(x_errno),
