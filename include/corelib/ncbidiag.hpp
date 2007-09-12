@@ -791,11 +791,11 @@ extern void PushDiagPostPrefix(const char* prefix);
 NCBI_XNCBI_EXPORT
 extern void PopDiagPostPrefix(void);
 
-/// Get iteration number/request ID. Not MT-safe.
+/// Get iteration number/request ID for the current thread.
 NCBI_XNCBI_EXPORT
 extern int GetDiagRequestId(void);
 
-/// Set iteration number/request ID. Not MT-safe.
+/// Set iteration number/request ID for the current thread.
 NCBI_XNCBI_EXPORT
 extern void SetDiagRequestId(int id);
 
