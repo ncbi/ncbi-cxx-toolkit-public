@@ -270,7 +270,8 @@ void CSplign::x_LoadSequence(vector<char>* seq,
             CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             const TSeqPos dim = sv.size();
             if(dim == 0) {
-                NCBI_THROW(CAlgoAlignException, eNoData, 
+                NCBI_THROW(CAlgoAlignException,
+                           eNoSeqData, 
                            string("Sequence is empty: ") 
                            + seqid.AsFastaString());
             }
@@ -284,7 +285,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                      << seqid.GetSeqIdString(true) << ":\t"
                      << start << '\t' << finish;
                 const string err = CNcbiOstrstreamToString(ostr);
-                NCBI_THROW(CAlgoAlignException, eInternal, err);
+                NCBI_THROW(CAlgoAlignException, eNoSeqData, err);
             }
             
             string s;
@@ -293,18 +294,16 @@ void CSplign::x_LoadSequence(vector<char>* seq,
             copy(s.begin(), s.end(), seq->begin());
         }
         else {
-            NCBI_THROW(CAlgoAlignException, eNoData, 
+            NCBI_THROW(CAlgoAlignException, eNoSeqData, 
                        string("ID not found: ") + seqid.AsFastaString());
         }
         
         if(retain == false && m_CanResetHistory) {
             m_Scope->RemoveFromHistory(bh);
-        }
-        
+        }       
     }
     
     catch(CAlgoAlignException& e) {
-        e.SetSeverity(eDiag_Fatal);
         NCBI_RETHROW_SAME(e, "CSplign::x_LoadSequence(): Sequence data problem");
     }
 }
@@ -352,7 +351,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             if(!consistent) {
                 const string errmsg (g_msg_CompartmentInconsistent
                                      + string(" (extra long introns)"));
-                NCBI_THROW(CAlgoAlignException, eNoAlignment, errmsg);
+                NCBI_THROW(CAlgoAlignException, eIntronTooLong, errmsg);
             }
         }
         prev = h->GetSubjStop();
@@ -401,7 +400,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     
     // verify conditions on the input hit pattern
     CNcbiOstrstream ostr_err;
-    bool severe = false;
+    bool severe (false);
     if(dim % 4 == 0) {
 
         for(size_t i = 0; i < dim; i += 4) {
@@ -446,7 +445,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             NCBI_THROW(CAlgoAlignException, eBadParameter, err);
         }
         else {
-            NCBI_THROW(CAlgoAlignException, eNoAlignment, err);
+            NCBI_THROW(CAlgoAlignException, ePattern, err);
         }
     }
 
@@ -642,16 +641,16 @@ void CSplign::Run(THitRefs* phitrefs)
     }
     
     if(hitrefs.size() == 0) {
-        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_EmptyHitVectorPassed);
+        NCBI_THROW(CAlgoAlignException, eNoHits, g_msg_EmptyHitVectorPassed);
     }
 
     m_result.clear();
 
     THit::TId id_query (hitrefs.front()->GetQueryId());
 
-    const TSeqPos mrna_size = objects::sequence::GetLength(*id_query, m_Scope);
+    const TSeqPos mrna_size (objects::sequence::GetLength(*id_query, m_Scope));
     if(mrna_size == numeric_limits<TSeqPos>::max()) {
-        NCBI_THROW(CAlgoAlignException, eNoData, 
+        NCBI_THROW(CAlgoAlignException, eNoSeqData, 
                    string("Sequence not found: ") + id_query->AsFastaString());
     }
     
@@ -721,14 +720,14 @@ void CSplign::Run(THitRefs* phitrefs)
             
                     SAlignedCompartment ac (x_RunOnCompartment(&comp_hits,smin,smax));
 
-                    ac.m_id = ++m_model_id;
-                    ac.m_segments = m_segments;
-                    ac.m_error = false;
-                    ac.m_msg = "Ok";
-                    ac.m_cds_start = m_cds_start;
-                    ac.m_cds_stop = m_cds_stop;
+                    ac.m_Id = ++m_model_id;
+                    ac.m_Segments = m_segments;
+                    ac.m_Status = SAlignedCompartment::eStatus_Ok;
+                    ac.m_Msg = "Ok";
+                    ac.m_Cds_start = m_cds_start;
+                    ac.m_Cds_stop = m_cds_stop;
                     ac.m_QueryLen = m_mrna.size();
-                    ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0); 
+                    ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0);
                     m_result.push_back(ac);
                 }
             }
@@ -739,7 +738,13 @@ void CSplign::Run(THitRefs* phitrefs)
                     throw;
                 }
                 
-                m_result.push_back(SAlignedCompartment(0, true, e.GetMsg().c_str()));
+                m_result.push_back(SAlignedCompartment(0, e.GetMsg().c_str()));
+
+                const CException::TErrCode errcode (e.GetErrCode());
+                if(errcode != CAlgoAlignException::eNoAlignment) {
+                    m_result.back().m_Status = SAlignedCompartment::eStatus_Error;
+                }
+
                 ++m_model_id;
             }
 
@@ -780,12 +785,12 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
 
         SAlignedCompartment ac (x_RunOnCompartment(phitrefs, subj_min, subj_max));
 
-        ac.m_id = ++m_model_id;
-        ac.m_segments = m_segments;
-        ac.m_error = false;
-        ac.m_msg = "Ok";
-        ac.m_cds_start = m_cds_start;
-        ac.m_cds_stop = m_cds_stop;
+        ac.m_Id = ++m_model_id;
+        ac.m_Segments = m_segments;
+        ac.m_Status = SAlignedCompartment::eStatus_Ok;
+        ac.m_Msg = "Ok";
+        ac.m_Cds_start = m_cds_start;
+        ac.m_Cds_stop = m_cds_stop;
         ac.m_QueryLen = m_mrna.size();
         ac.m_PolyA = (m_polya_start < kMax_UInt? m_polya_start : 0);
 
@@ -801,10 +806,18 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
             throw;
         }
         
-        *result = SAlignedCompartment(0, true, e.GetMsg().c_str());
+        *result = SAlignedCompartment(0, e.GetMsg().c_str());
+
+        const CException::TErrCode errcode (e.GetErrCode());
+        if(errcode != CAlgoAlignException::eNoAlignment) {
+            result->m_Status = SAlignedCompartment::eStatus_Error;
+        }
+
         ++m_model_id;
         rv = false;
     }
+
+    cerr << endl;
 
     return rv;
 }
@@ -841,7 +854,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         if(phitrefs->size() == 0) {
-            NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoHitsAfterFiltering);
+            NCBI_THROW(CAlgoAlignException, eNoHits, g_msg_NoHitsAfterFiltering);
         }
     
         const size_t mrna_size (m_mrna.size());
@@ -913,7 +926,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                         phitrefs->end());
 
         if(phitrefs->size() == 0) {
-            NCBI_THROW(CAlgoAlignException, eNoAlignment,
+            NCBI_THROW(CAlgoAlignException, eNoHits,
                        g_msg_NoHitsAfterFiltering);
         }
 
@@ -1033,7 +1046,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         x_SetPattern(phitrefs);
-        x_Run(&m_mrna.front(), &m_genomic.front());
+        rv.m_Score = x_Run(&m_mrna.front(), &m_genomic.front());
 
         const size_t seg_dim (m_segments.size());
         if(seg_dim == 0) {
@@ -1174,10 +1187,17 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
 
     catch(CAlgoAlignException& e) {
         
-        const CException::TErrCode errcode = e.GetErrCode();
-        const bool severe = 
-            errcode != CAlgoAlignException::eNoAlignment && 
-            errcode != CAlgoAlignException::eMemoryLimit;
+        const CException::TErrCode errcode (e.GetErrCode());
+        bool severe (true);
+        switch(errcode) {
+        case CAlgoAlignException::eNoAlignment:
+        case CAlgoAlignException::eMemoryLimit:
+        case CAlgoAlignException::eNoHits:
+        case CAlgoAlignException::eIntronTooLong:
+            severe = false;
+            break;
+        }
+
         if(severe) {
             e.SetSeverity(eDiag_Fatal);
         }
@@ -1191,7 +1211,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
 static const char s_kGap [] = "<GAP>";
 
 // at this level and below, plus strand is assumed for both sequences
-void CSplign::x_Run(const char* Seq1, const char* Seq2)
+CSplign::TAligner::TScore CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
     typedef deque<TSegment> TSegmentDeque;
     TSegmentDeque segments;
@@ -1200,6 +1220,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 #ifdef  DBG_DUMP_PATTERN
     cerr << "Pattern:" << endl;  
 #endif
+
+    TAligner::TScore rv (0);
 
     for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
 
@@ -1254,7 +1276,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         else {
             m_aligner->SetCDS(len1 - m_cds_start - 1, len1 - m_cds_stop - 1);
         }
-        m_aligner->Run();
+
+        rv += m_aligner->Run();
 
 //#define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
@@ -1337,7 +1360,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         size_t seg_dim (segments.size());
         if(seg_dim == 0) {
-            return;
+            return 0;
         }
 
         size_t exon_count0 (0);
@@ -1566,14 +1589,16 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
              << ii->m_annot << '\t' << ii->m_score << endl;
     }
 #endif
+
+    return rv;
 }
 
 
 double CSplign::SAlignedCompartment::GetIdentity() const
 {
     string trans;
-    for(size_t i = 0, dim = m_segments.size(); i < dim; ++i) {
-        const TSegment& s = m_segments[i];
+    for(size_t i (0), dim (m_Segments.size()); i < dim; ++i) {
+        const TSegment & s (m_Segments[i]);
         if(s.m_exon) {
             trans.append(s.m_details);
         }
@@ -1596,8 +1621,8 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
 {
     box[0] = box[2] = kMax_UInt;
     box[1] = box[3] = 0;
-    ITERATE(TSegments, ii, m_segments) {
-        const TSegment& s = *ii;
+    ITERATE(TSegments, ii, m_Segments) {
+        const TSegment& s (*ii);
         if(s.m_exon) {
             
             Uint4 a, b;
@@ -1821,29 +1846,35 @@ void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
     }
 
     const size_t core_size (
-          sizeof m_id + sizeof m_error + m_msg.size() + 1
-        + sizeof m_QueryStrand + sizeof m_SubjStrand + sizeof m_cds_start
-        + sizeof m_cds_stop);
+        sizeof m_Id + sizeof m_Status + m_Msg.size() + 1
+        + sizeof m_QueryStrand + sizeof m_SubjStrand
+        + sizeof m_Cds_start + sizeof m_Cds_stop
+        + sizeof m_QueryLen
+        + sizeof m_PolyA
+        + sizeof m_Score);
 
     vector<char> core (core_size);
 
     char* p = &core.front();
-    ElemToBuffer(m_id, p);
-    ElemToBuffer(m_error, p);
-    ElemToBuffer(m_msg, p);
+    ElemToBuffer(m_Id, p);
+    ElemToBuffer(m_Status, p);
+    ElemToBuffer(m_Msg, p);
     ElemToBuffer(m_QueryStrand, p);
     ElemToBuffer(m_SubjStrand, p);
-    ElemToBuffer(m_cds_start, p);
-    ElemToBuffer(m_cds_stop, p);
+    ElemToBuffer(m_Cds_start, p);
+    ElemToBuffer(m_Cds_stop, p);
+    ElemToBuffer(m_QueryLen, p);
+    ElemToBuffer(m_PolyA, p);
+    ElemToBuffer(m_Score, p);
     
     typedef vector<TNetCacheBuffer> TBuffers;
-    TBuffers vb (m_segments.size());
-    size_t ibuf = 0;
-    ITERATE(TSegments, ii, m_segments) {
+    TBuffers vb (m_Segments.size());
+    size_t ibuf (0);
+    ITERATE(TSegments, ii, m_Segments) {
         ii->ToBuffer(&vb[ibuf++]);
     }
 
-    size_t total_size = core_size + sizeof(size_t) * m_segments.size();
+    size_t total_size (core_size + sizeof(size_t) * m_Segments.size());
     ITERATE(TBuffers, ii, vb) {
         total_size += ii->size();
     }
@@ -1869,29 +1900,37 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
     using namespace splign_local;
 
     const size_t min_size (
-          sizeof m_id + sizeof m_error + 1 
-        + sizeof m_QueryStrand + sizeof m_SubjStrand + sizeof m_cds_start 
-        + sizeof m_cds_stop);
+          sizeof m_Id 
+          + sizeof m_Status
+          + 1 
+          + sizeof m_QueryStrand + sizeof m_SubjStrand
+          + sizeof m_Cds_start + sizeof m_Cds_stop
+          + sizeof m_QueryLen
+          + sizeof m_PolyA
+          + sizeof m_Score );
 
     if(source.size() < min_size) {
         NCBI_THROW(CAlgoAlignException, eInternal, g_msg_NetCacheBufferIncomplete);
     }
     
-    const char* p =  &source.front();
-    ElemFromBuffer(m_id, p);
-    ElemFromBuffer(m_error, p);
-    ElemFromBuffer(m_msg, p);
+    const char* p (&source.front());
+    ElemFromBuffer(m_Id, p);
+    ElemFromBuffer(m_Status, p);
+    ElemFromBuffer(m_Msg, p);
     ElemFromBuffer(m_QueryStrand, p);
     ElemFromBuffer(m_SubjStrand, p);
-    ElemFromBuffer(m_cds_start, p);
-    ElemFromBuffer(m_cds_stop, p);
+    ElemFromBuffer(m_Cds_start, p);
+    ElemFromBuffer(m_Cds_stop, p);
+    ElemFromBuffer(m_QueryLen, p);
+    ElemFromBuffer(m_PolyA, p);
+    ElemFromBuffer(m_Score, p);
 
-    const char* pe = &source.back();
+    const char* pe (&source.back());
     while(p <= pe) {
-        size_t seg_buf_size = 0;
+        size_t seg_buf_size (0);
         ElemFromBuffer(seg_buf_size, p);
-        m_segments.push_back(TSegment());
-        TSegment& seg = m_segments.back();
+        m_Segments.push_back(TSegment());
+        TSegment& seg (m_Segments.back());
         seg.FromBuffer(TNetCacheBuffer(p, p + seg_buf_size));
         p += seg_buf_size;
     }

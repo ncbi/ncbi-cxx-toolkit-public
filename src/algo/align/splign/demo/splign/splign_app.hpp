@@ -101,12 +101,9 @@ protected:
     CNcbiOstream*                    m_AlnOut;
 
     CNcbiOstream*    m_logstream;
-    void x_LogStatus(size_t model_id,
-                     bool query_strand,
-                     const CSplign::THit::TId& query,
-                     const CSplign::THit::TId& subj,
-                     bool error,
-                     const string& msg);
+    void x_LogCompartmentStatus(const THit::TId & query, 
+                                const THit::TId & subj, 
+                                const CSplign::SAlignedCompartment & ac);
 
     bool x_GetNextPair(istream& ifs, THitRefs* hitrefs);
     bool x_GetNextPair(const THitRefs& hitrefs, THitRefs* hitrefs_pair);

@@ -79,10 +79,10 @@ void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 26, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 27, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.26");
+    string program_name ("Splign v.1.27");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';
@@ -500,24 +500,49 @@ bool CSplignApp::x_GetNextComp(istream& ifs, THitRefs* hitrefs,
 }
 
 
-void CSplignApp::x_LogStatus(size_t model_id, 
-                             bool query_strand,
-                             const THit::TId& query, 
-                             const THit::TId& subj, 
-			     bool error, 
-                             const string& msg)
+void CSplignApp::x_LogCompartmentStatus(const THit::TId & query, 
+                                        const THit::TId & subj, 
+                                        const CSplign::SAlignedCompartment & ac)
 {
-    string error_tag (error? "Error: ": "");
-    if(model_id == 0) {
-        *m_logstream << '-';
+    typedef CSplign::SAlignedCompartment TCompartment;
+
+    switch(ac.m_Status) {
+
+        case TCompartment::eStatus_Ok: {
+
+            if(ac.m_Id == 0) {
+                NCBI_THROW(CSplignAppException, eInternal, "Missing compartment id.");
+            }
+
+            *m_logstream << (ac.m_QueryStrand? '+': '-') << ac.m_Id
+                         << '\t' << query->GetSeqIdString(true)
+                         << '\t' << subj->GetSeqIdString(true)
+                         << '\t' << ac.m_Msg
+                         << '\t' << ac.m_Score
+                         << endl;
+        }
+        break;
+
+        case TCompartment::eStatus_Error: {
+
+            *m_logstream << '-'
+                         << '\t' << query->GetSeqIdString(true)
+                         << '\t' << subj->GetSeqIdString(true)
+                         << '\t' << ac.m_Msg
+                         << '\t' << '-'
+                         << endl;
+        }
+        break;
+
+        case TCompartment::eStatus_Empty:
+        break;
+
+        default: {
+            NCBI_THROW(CSplignAppException, eInternal,
+                       "Unexpected compartment status.");
+        }
     }
-    else {
-        *m_logstream << (query_strand? '+': '-') << model_id;
-    }
-    
-    *m_logstream << '\t' << query->GetSeqIdString(true) 
-                 << '\t' << subj->GetSeqIdString(true)
-                 << '\t' << error_tag << msg << endl;
+
 }
 
 
@@ -887,7 +912,7 @@ int CSplignApp::Run()
             fa_dir = curdir + fa_dir;
         }
         const string lds_db_dir = GetLdsDbDir(fa_dir);
-        CLDS_Database ldsdb (lds_db_dir, kSplignLdsDb, kSplignLdsDb);
+        CLDS_Database ldsdb (lds_db_dir, kSplignLdsDb);
         CLDS_Management ldsmgt (ldsdb);
         ldsmgt.Create();
         ldsmgt.SyncWithDir(fa_dir,
@@ -962,7 +987,7 @@ int CSplignApp::Run()
         const string fasta_dir = args["ldsdir"].AsString();
         const string ldsdb_dir = GetLdsDbDir(fasta_dir);
         CLDS_Database* ldsdb (
-              new CLDS_Database(ldsdb_dir, kSplignLdsDb, kSplignLdsDb));
+              new CLDS_Database(ldsdb_dir, kSplignLdsDb));
         m_LDS_db.reset(ldsdb);
         m_LDS_db->Open();
         CLDS_DataLoader::RegisterInObjectManager(
@@ -1095,7 +1120,7 @@ size_t GetNonConsensusSpliceCount(const CSplign::TResults & splign_results)
         char acc [] = {0, 0, 0};
         size_t exon_count (0);
 
-        for(TIterator jjb (ac.m_segments.begin()), jje (ac.m_segments.end()), jj(jjb);
+        for(TIterator jjb (ac.m_Segments.begin()), jje (ac.m_Segments.end()), jj(jjb);
             jj != jje; ++jj)
         {
 
@@ -1262,25 +1287,18 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
     cout << m_Formatter->AsExonTable(&splign_results, flags);
         
     if(m_AsnOut) {
-        
         *m_AsnOut << MSerial_AsnText 
                   << *(m_Formatter->AsSeqAlignSet(&splign_results))
                   << endl;
     }
     
-    if(m_AlnOut) {
-        
+    if(m_AlnOut) {       
         *m_AlnOut << m_Formatter->AsAlignmentText(m_Splign->GetScope(),
                                                   &splign_results);
     }
         
     ITERATE(CSplign::TResults, ii, splign_results) {
-        x_LogStatus(ii->m_id, ii->m_QueryStrand, query, subj,
-                    ii->m_error, ii->m_msg);
-    }
-    
-    if(splign_results.size() == 0) {
-        //x_LogStatus(0, true, query, subj, false, "No compartment found");
+        x_LogCompartmentStatus(query, subj, *ii);
     }
 }
 

@@ -109,12 +109,12 @@ string CSplignFormatter::AsExonTable(
     
     ITERATE(CSplign::TResults, ii, *results) {
         
-        for(size_t i = 0, seg_dim = ii->m_segments.size(); i < seg_dim; ++i) {
+        for(size_t i (0), seg_dim (ii->m_Segments.size()); i < seg_dim; ++i) {
             
-            const CSplign::TSegment& seg = ii->m_segments[i];
+            const CSplign::TSegment& seg (ii->m_Segments[i]);
             
             oss << (ii->m_QueryStrand? '+': '-')
-                << ii->m_id << '\t' 
+                << ii->m_Id << '\t' 
                 << querystr << '\t' 
                 << subjstr << '\t';
             if(seg.m_exon) {
@@ -210,7 +210,7 @@ string CSplignFormatter::AsAlignmentText(
 
     ITERATE(CSplign::TResults, ii, *results) {
             
-        if(ii->m_error) {
+        if(ii->m_Status != CSplign::SAlignedCompartment::eStatus_Ok) {
             continue;
         }
         
@@ -219,12 +219,12 @@ string CSplignFormatter::AsAlignmentText(
         const char qc = qstrand? '+': '-';
         const char sc = sstrand? '+': '-';
 
-        oss << endl << '>' << qc << ii->m_id << '\t' 
+        oss << endl << '>' << qc << ii->m_Id << '\t' 
             << querystr << '(' << qc << ")\t" 
             << subjstr << '(' << sc << ')' << endl;
                 
         size_t exons_total = 0;
-        ITERATE(CSplign::TSegments, jj, ii->m_segments) {
+        ITERATE(CSplign::TSegments, jj, ii->m_Segments) {
             if(jj->m_exon) {
                 ++exons_total;
             }
@@ -241,21 +241,21 @@ string CSplignFormatter::AsAlignmentText(
         }
 
         string cds_sequence, query_protein;
-        if(ii->m_cds_start < ii->m_cds_stop) {
+        if(ii->m_Cds_start < ii->m_Cds_stop) {
 
-            cds_sequence.resize(ii->m_cds_stop - ii->m_cds_start + 1);
-            copy(query_sequence.begin() + ii->m_cds_start,
-                 query_sequence.begin() + ii->m_cds_stop + 1,
+            cds_sequence.resize(ii->m_Cds_stop - ii->m_Cds_start + 1);
+            copy(query_sequence.begin() + ii->m_Cds_start,
+                 query_sequence.begin() + ii->m_Cds_stop + 1,
                  cds_sequence.begin());
             CSeqTranslator::Translate(cds_sequence, query_protein);
         }
 
         size_t exon_count = 0, seg_count = 0;
         int query_aa_idx (0);
-        int qframe(ii->m_cds_start < ii->m_cds_stop? -2: -3);
-        ITERATE(CSplign::TSegments, jj, ii->m_segments) {
+        int qframe(ii->m_Cds_start < ii->m_Cds_stop? -2: -3);
+        ITERATE(CSplign::TSegments, jj, ii->m_Segments) {
             
-            const CSplign::TSegment& s = *jj;
+            const CSplign::TSegment & s (*jj);
             if(s.m_exon) {
 
                 size_t qbeg = s.m_box[0];
@@ -357,11 +357,11 @@ string CSplignFormatter::AsAlignmentText(
                     
                     char c = trans[t], c1, c2, c3, c0, c4;
 
-                    if(qframe == -2 && q0 + iq == ii->m_cds_start) {
+                    if(qframe == -2 && q0 + iq == ii->m_Cds_start) {
                         qframe = -1;
                     }
 
-                    if(qframe >= 0 && q0 + iq >= ii->m_cds_stop) {
+                    if(qframe >= 0 && q0 + iq >= ii->m_Cds_stop) {
                         qframe = -3;
                     }
                     
@@ -606,7 +606,7 @@ const
 
     ITERATE(CSplign::TResults, ii, *results) {
     
-        if(ii->m_error) continue;
+        if(ii->m_Status != CSplign::SAlignedCompartment::eStatus_Ok) continue;
 
         if(flag != fSeqAlign_Disc) {
 
@@ -639,9 +639,9 @@ const
             }
 
             CSpliced_seg::TExons & exons (sseg.SetExons());
-            for(size_t i (0), seg_dim ((*ii).m_segments.size()); i < seg_dim; ++i) {
+            for(size_t i (0), seg_dim ((*ii).m_Segments.size()); i < seg_dim; ++i) {
 
-                const CSplign::TSegment & seg ((*ii).m_segments[i]);
+                const CSplign::TSegment & seg ((*ii).m_Segments[i]);
                 if(seg.m_exon) {
 
                     CRef<CSpliced_exon> exon (new CSpliced_exon);
@@ -744,9 +744,9 @@ const
             vector<string> transcripts;
             vector<CNWAligner::TScore> scores;
 
-            for(size_t i (0), seg_dim (ii->m_segments.size()); i < seg_dim; ++i) {
+            for(size_t i (0), seg_dim (ii->m_Segments.size()); i < seg_dim; ++i) {
             
-                const CSplign::TSegment& seg = ii->m_segments[i];
+                const CSplign::TSegment& seg (ii->m_Segments[i]);
             
                 if(seg.m_exon) {
                 
