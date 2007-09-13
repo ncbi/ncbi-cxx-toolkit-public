@@ -817,8 +817,6 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
         rv = false;
     }
 
-    cerr << endl;
-
     return rv;
 }
 
