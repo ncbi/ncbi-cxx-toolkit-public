@@ -100,6 +100,7 @@ public:
     /// @param locality Local processing (default) or remote processing.
     /// @return requested options handle with default values set
     /// @throw CBlastException in case of an unhandled program type
+    /// @sa GetDocumentation
     static CBlastOptionsHandle*
         CreateTask(string task,
                EAPILocality locality = CBlastOptions::eLocal);
@@ -115,7 +116,7 @@ public:
     static set<string> GetTasks(ETaskSets choice = eAll);
 
     /// Return the documentation for the provided task
-    /// @param task_name Taks name task for which to provide documentation [in]
+    /// @param task_name Task name for which to provide documentation [in]
     static string GetDocumentation(const string& task_name);
 
 private:
