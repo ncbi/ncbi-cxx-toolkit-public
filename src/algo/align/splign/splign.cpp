@@ -1101,7 +1101,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                 if(*pc == 'A') ++count;
             }
 
-            double min_a_content (0.799); // min 'A' content in a polyA
+            double min_a_content (0.76); // min 'A' content in a polyA
             // also check splices
             if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
 
