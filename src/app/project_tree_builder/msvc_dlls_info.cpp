@@ -36,6 +36,7 @@
 #include <app/project_tree_builder/msvc_project_context.hpp>
 #include <app/project_tree_builder/msvc_prj_files_collector.hpp>
 #include <app/project_tree_builder/msvc_dlls_info_utils.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 #include <corelib/ncbistre.hpp>
 
@@ -64,7 +65,8 @@ CMsvcDllsInfo::CMsvcDllsInfo(const string& file_path)
             }
         }
     } else {
-        LOG_POST(Warning << file_path << " not found");
+        PTB_ERROR_EX(file_path, ePTB_FileNotFound,
+                     "File not found: " << file_path);
     }
 }
 
@@ -267,7 +269,8 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                 }
 
             } else  {
-                LOG_POST(Warning << dll_id << ": project not found: " + depend_id);
+                PTB_WARNING_EX(dll_id, ePTB_MissingDependency,
+                               "Missing dependency: " << depend_id);
             }
         }
     }
@@ -550,9 +553,6 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                     str_log += " " + lib_id;
                 }
                 continue;
-                //LOG_POST(Error << "DLL " + dll_id + " generation skipped");
-                //complete = false; // do not create incomplete DLLs
-                //break;
             }
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
@@ -568,14 +568,17 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         }
         if ( !is_empty ) {
             tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
-            if (str_log.empty()) {
-                LOG_POST(Info << "Ok: " << dll_id);
-            } else {
-                LOG_POST(Info << "Reduced: " << dll_id
-                              << ":     not found: " << str_log);
+            if ( !str_log.empty() ) {
+                string path = CDirEntry::ConcatPath(dll.m_SourcesBaseDir, dll_id);
+                path += ".vcproj";
+                PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                               "Missing libraries not found: " << str_log);
             }
         } else {
-            LOG_POST(Info << "Skipped empty: " << dll_id);
+            string path = CDirEntry::ConcatPath(dll.m_SourcesBaseDir, dll_id);
+            path += ".vcproj";
+            PTB_WARNING_EX(path, ePTB_ProjectExcluded,
+                           "Skipped empty project: " << dll_id);
         }
     }
 }

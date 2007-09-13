@@ -7,6 +7,7 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <app/project_tree_builder/msvc_prj_files_collector.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 #include <algorithm>
 
@@ -65,14 +66,30 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             project_configs.push_back(cfg_info);
         }
     }
+
+    string path = CDirEntry::ConcatPath(prj.m_SourcesBaseDir, "Makefile.");
+    path += prj.m_Name;
+    switch (prj.m_ProjType) {
+    case CProjKey::eApp:
+        path += ".app";
+        break;
+    case CProjKey::eLib:
+        path += ".lib";
+        break;
+    default:
+        break;
+    }
     if (!str_log.empty()) {
-        LOG_POST(Warning << prj.m_ID << ": disabled configurations: " << str_log);
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "Disabled configurations: " << str_log);
     }
     if (!req_log.empty()) {
-        LOG_POST(Warning << prj.m_ID << ": problem configurations: " << req_log);
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "Invalid configurations: " << req_log);
     }
     if (project_configs.empty()) {
-        LOG_POST(Warning << prj.m_ID << ": skipped (all configurations are disabled)");
+        PTB_WARNING_EX(path, ePTB_ConfigurationError,
+                       "Disabled all configurations for project " << prj.m_Name);
         return;
     }
     if (failed == m_Configs.size()) {

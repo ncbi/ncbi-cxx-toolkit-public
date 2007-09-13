@@ -117,6 +117,7 @@ private:
 
     void AddReadyKV(const SKeyValue& kv);
     EMakeFileType m_Type;
+    string m_Filename;
 };
 
 

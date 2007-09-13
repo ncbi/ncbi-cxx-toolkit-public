@@ -88,7 +88,7 @@ struct SLibInfo
 class CMsvcSite
 {
 public:
-    CMsvcSite(const CNcbiRegistry& registry);
+    CMsvcSite(const string& reg_path);
 
     // Is REQUIRES provided?
     bool IsProvided(const string& thing) const;

@@ -31,6 +31,7 @@
 #include <app/project_tree_builder/configurable_file.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 #include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -103,14 +104,14 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
         NCBI_THROW(CProjBulderAppException, eFileCreation, dst_path);
     }
     os.close();
-    string str_log("Configurable file ");
-    str_log += dst_path;
+
     if (PromoteIfDifferent(dst_path,dst)) {
-        str_log += ": modified";
+        PTB_WARNING_EX(dst_path, ePTB_FileModified,
+                       "Configuration file modified");
     } else {
-        str_log += ": left intact";
+        PTB_INFO_EX(dst_path, ePTB_NoError,
+                    "Configuration file unchanged");
     }
-    LOG_POST(Info << str_log);
     return true;
 }
 

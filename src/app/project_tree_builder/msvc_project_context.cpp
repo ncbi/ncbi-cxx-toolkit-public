@@ -35,6 +35,7 @@
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 #include <algorithm>
 #include <set>
@@ -394,9 +395,10 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
             }
         } else {
             if (!lib_info.IsEmpty()) {
-                LOG_POST(Warning << requires << "|" << cfg_info.GetConfigFullName()
-                              << " unavailable: additional libraries ignored: "
-                              << NStr::Join(lib_info.m_Libs,","));
+                PTB_WARNING_EX(lib_info.m_LibPath, ePTB_FileNotFound,
+                               requires << "|" << cfg_info.GetConfigFullName()
+                               << " unavailable: missing additional libraries: "
+                               << NStr::Join(lib_info.m_Libs,","));
 
             }
         }
@@ -424,7 +426,8 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
                     lib_path += ".lib";
                     CDirEntry lib(lib_path);
                     if (!lib.Exists()) {
-                        LOG_POST(Error << "ERROR: Library not found:  " << lib_path);
+                        PTB_ERROR_EX(lib_path, ePTB_FileNotFound,
+                                     "Library not found: " << lib_path);
                     }
                     additional_libs.push_back(lib.GetName());
                 }
@@ -490,9 +493,10 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
             }
         } else {
             if (!lib_info.IsEmpty()) {
-                LOG_POST(Warning << requires << "|" << cfg_info.GetConfigFullName()
-                              << " unavailable: library folder  ignored: "
-                              << lib_info.m_LibPath);
+                PTB_WARNING_EX(lib_info.m_LibPath, ePTB_FileNotFound,
+                               requires << "|" << cfg_info.GetConfigFullName()
+                               << " unavailable: library folder ignored: "
+                               << lib_info.m_LibPath);
             }
         }
     }

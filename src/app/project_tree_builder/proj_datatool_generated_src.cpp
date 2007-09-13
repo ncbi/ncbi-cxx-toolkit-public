@@ -31,6 +31,7 @@
 #include <app/project_tree_builder/proj_datatool_generated_src.hpp>
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -127,7 +128,8 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
                 }
             }
         } else {
-            LOG_POST(Info << "Datatool module file not found: " + module_path);
+            PTB_WARNING_EX(module_path, ePTB_FileNotFound,
+                           "Datatool module file not found");
         }
     }}
 
@@ -181,7 +183,8 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
             if (p != fc.m_Contents.end())
                 src->m_SkippedCppLocal = p->second;
         } else {
-            LOG_POST(Info << "Datatool-generated file not found: " + files_path);
+            PTB_WARNING_EX(files_path, ePTB_FileNotFound,
+                           "Datatool-generated file not found");
         }
 
 

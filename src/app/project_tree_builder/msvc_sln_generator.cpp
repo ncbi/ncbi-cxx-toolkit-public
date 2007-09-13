@@ -36,6 +36,7 @@
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <app/project_tree_builder/msvc_makefile.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 #if NCBI_COMPILER_MSVC
@@ -347,8 +348,9 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             CProjKey id_alt(CProjKey::eMsvc,id.Id());
             n = m_Projects.find(id_alt);
             if (n == m_Projects.end()) {
-                LOG_POST(Warning << "Project " + 
-                        project.m_ProjectName + " depends on missing project " + id.Id());
+                PTB_WARNING_EX(project.m_ProjectName, ePTB_MissingDependency,
+                               "Project " << project.m_ProjectName
+                               << " depends on missing project " << id.Id());
                 continue;
             }
         }
@@ -438,11 +440,12 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
 //        const CProjKey&    id    = p->first;
         const CPrjContext& prj_i = p->second;
         if (prj_i.m_Project.m_MakeType == eMakeType_Excluded) {
-            LOG_POST(Info << "For reference only: " << prj_i.m_ProjectName);
+            _TRACE("For reference only: " << prj_i.m_ProjectName);
             continue;
         }
         if (prj_i.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
-            LOG_POST(Info << "Cannot be built due to unmet requirements: " << prj_i.m_ProjectName);
+            PTB_WARNING_EX(prj_i.m_ProjectName, ePTB_ProjectExcluded,
+                           "Excluded due to unmet requirements");
             continue;
         }
         proj_guid.push_back(prj_i.m_GUID);

@@ -32,6 +32,7 @@
 #include <app/project_tree_builder/msvc_prj_files_collector.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/configurable_file.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -110,7 +111,8 @@ struct PSourcesExclude
         string src_base;
         CDirEntry::SplitPath(src, NULL, &src_base);
         if (m_ExcludedSources.find(src_base) != m_ExcludedSources.end()) {
-            LOG_POST(Info << "Project " << m_Prj << ": source file excluded by request: " << src);
+            PTB_WARNING_EX(src, ePTB_FileExcluded,
+                           "Project " << m_Prj << ": source file excluded");
             return true;
         }
         return false;
@@ -255,7 +257,8 @@ CMsvcPrjFilesCollector::CollectSources(void)
                 CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               abs_path + ".cpp"));
         } else {
-            LOG_POST(Warning <<"Cannot resolve/find source file: " + abs_path);
+            PTB_WARNING_EX(abs_path + ".cpp", ePTB_FileNotFound,
+                           "Source file not found");
         }
     }
     m_SourceFiles.sort(s_FileName_less);

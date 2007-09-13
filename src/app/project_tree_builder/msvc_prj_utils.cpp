@@ -31,11 +31,12 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
-#if NCBI_COMPILER_MSVC
-#include <serial/objostrxml.hpp>
-#include <serial/objistr.hpp>
-#include <serial/serial.hpp>
+#ifdef NCBI_COMPILER_MSVC
+#  include <serial/objostrxml.hpp>
+#  include <serial/objistr.hpp>
+#  include <serial/serial.hpp>
 #endif
 
 
@@ -87,7 +88,8 @@ void SaveIfNewer(const string&               file_path,
     // If no such file then simple write it
     if ( !CDirEntry(file_path).Exists() ) {
         SaveToXmlFile(file_path, project);
-        LOG_POST(Info << "Created    : " << project.GetAttlist().GetName());
+        PTB_WARNING_EX(file_path, ePTB_FileModified,
+                       "Project created");
         return;
     }
 
@@ -95,9 +97,10 @@ void SaveIfNewer(const string&               file_path,
     string candidate_file_path = file_path + ".candidate";
     SaveToXmlFile(candidate_file_path, project);
     if (PromoteIfDifferent(file_path, candidate_file_path)) {
-        LOG_POST(Info << "Modified   : " << project.GetAttlist().GetName());
+        PTB_WARNING_EX(file_path, ePTB_FileModified,
+                       "Project updated");
     } else {
-        LOG_POST(Info << "Left intact: " << project.GetAttlist().GetName());
+        PTB_TRACE("Left intact: " << project.GetAttlist().GetName());
     }
 }
 #endif //NCBI_COMPILER_MSVC
@@ -236,8 +239,9 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
         }
     }
     if (!guid.empty() && !guid_gen.Insert(guid,vcproj)) {
-        LOG_POST(Error << "VC Project needs GUID that is already in use: " << vcproj);
-        LOG_POST(Error << "Used by: " << guid_gen.GetGuidUser(guid));
+        PTB_ERROR_EX(vcproj, ePTB_ConfigurationError,
+                     "MSVC Project GUID already in use by "
+                     << guid_gen.GetGuidUser(guid));
         if (proj.Type() != CProjKey::eMsvc) {
             guid.clear();
         }

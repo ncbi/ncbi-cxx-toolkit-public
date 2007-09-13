@@ -36,6 +36,8 @@
 #include <app/project_tree_builder/proj_projects.hpp>
 #include <algorithm>
 
+#include <app/project_tree_builder/ptb_err_codes.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -69,28 +71,61 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
                                                 SMakeInInfo::TMakeinType type)
 {
     string fname = "Makefile." + projname;
-    if (type == SMakeInInfo::eApp) {
-        if ( CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".app")).Exists())
+
+    string fname_base = CDirEntry::ConcatPath(base_dir, fname);
+    string fname_app = CDirEntry::ConcatPath(base_dir, fname + ".app");
+    string fname_lib = CDirEntry::ConcatPath(base_dir, fname + ".lib");
+    string fname_msvc = CDirEntry::ConcatPath(base_dir, fname + ".msvcproj");
+
+    switch (type) {
+    case SMakeInInfo::eApp:
+        if ( CDirEntry(fname_app).Exists()) {
             return CProjKey::eApp;
-    } else if (type == SMakeInInfo::eLib) {
-        if ( CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".lib")).Exists())
+        }
+        break;
+
+    case SMakeInInfo::eLib:
+        if ( CDirEntry(fname_lib).Exists()) {
             return CProjKey::eLib;
-    } else if (type == SMakeInInfo::eMsvc) {
-        if ( CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".msvcproj")).Exists())
+        }
+        break;
+
+    case SMakeInInfo::eMsvc:
+        if ( CDirEntry(fname_msvc).Exists()) {
             return CProjKey::eMsvc;
+        }
+        break;
     }
-    if ( CDirEntry(CDirEntry::ConcatPath
-            (base_dir, fname + ".lib")).Exists() )
+
+    if ( CDirEntry(fname_lib).Exists() )
         return CProjKey::eLib;
-    else if (CDirEntry(CDirEntry::ConcatPath
-            (base_dir, fname + ".app")).Exists() )
+    else if (CDirEntry(fname_app).Exists() )
         return CProjKey::eApp;
-    else if (CDirEntry(CDirEntry::ConcatPath
-            (base_dir, fname + ".msvcproj")).Exists() )
+    else if (CDirEntry(fname_msvc).Exists() )
         return CProjKey::eMsvc;
 
-    LOG_POST(Warning << "Makefile not found: project " << projname
-                     << " at " << base_dir);
+
+    switch (type) {
+    case SMakeInInfo::eApp:
+        PTB_WARNING_EX(fname_app, ePTB_MissingMakefile,
+                       "Makefile not found");
+        break;
+
+    case SMakeInInfo::eLib:
+        PTB_WARNING_EX(fname_lib, ePTB_MissingMakefile,
+                       "Makefile not found");
+        break;
+
+    case SMakeInInfo::eMsvc:
+        PTB_WARNING_EX(fname_msvc, ePTB_MissingMakefile,
+                       "Makefile not found");
+        break;
+
+    default:
+        PTB_WARNING_EX(fname_base, ePTB_MissingMakefile,
+                       "Makefile not found");
+        break;
+    }
     return CProjKey::eNoProj;
 }
 
@@ -231,19 +266,28 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
 		    }
         }
     }
+
     if (!defs_resolved.empty()) {
-        LOG_POST(Info << "Resolved:");
+        string s;
         for (map<string,string>::const_iterator r = defs_resolved.begin();
             r != defs_resolved.end(); ++r) {
-            LOG_POST(Info << r->first << " = " << r->second);
+            s += ' ';
+            s += r->first;
+            s += " = ";
+            s += r->second;
+            s += ";";
         }
+        PTB_INFO("Resolved macro definitions: " << s);
     }
     if (!defs_unresolved.empty()) {
-        LOG_POST(Info << "Unresolved:");
+        string s;
         for (set<string>::const_iterator u = defs_unresolved.begin();
             u != defs_unresolved.end(); ++u) {
-            LOG_POST(Info << *u);
+            s += ' ';
+            s += *u;
         }
+        PTB_WARNING_EX(kEmptyStr, ePTB_MacroUndefined,
+                       "Unresolved macro definitions:" << s);
     }
 }
 
@@ -586,19 +630,25 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 {
     CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
-
-        LOG_POST(Info << "App Makefile not found: " << applib_mfilepath);
+        /// FIXME: items may not be really missing here; they may just be
+        /// excluded based on user preference
+        /**
+        PTB_WARNING_EX(applib_mfilepath, ePTB_MissingMakefile,
+                       "Makefile not found");
+                       **/
         return CProjKey();
     }
     
     const CSimpleMakeFileContents& makefile = m->second;
+    string full_makefile_name = "Makefile." + proj_name + ".app";
+    string full_makefile_path =
+        CDirEntry::ConcatPath(applib_mfilepath, full_makefile_name);
 
     CSimpleMakeFileContents::TContents::const_iterator k = 
         makefile.m_Contents.find("SRC");
     if (k == makefile.m_Contents.end()) {
-
-        LOG_POST(Info << "No SRC specified in Makefile." << proj_name
-                      << ".app  at " << applib_mfilepath);
+        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                     "SRC is not specified: " << full_makefile_name);
         return CProjKey();
     }
 
@@ -650,10 +700,9 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     //project name
     k = makefile.m_Contents.find("APP");
-    if (k == makefile.m_Contents.end()  ||  
-                                           k->second.empty()) {
-        LOG_POST(Info << "No APP specified in Makefile." << proj_name
-                      << ".app  at " << applib_mfilepath);
+    if (k == makefile.m_Contents.end()  ||  k->second.empty()) {
+        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                     "APP is not specified: " << full_makefile_name);
         return CProjKey();
     }
     string proj_id = k->second.front();
@@ -745,17 +794,24 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
 {
     TFiles::const_iterator m = makelib.find(applib_mfilepath);
     if (m == makelib.end()) {
-
-        LOG_POST(Info << "Lib Makefile not found: " << applib_mfilepath);
+        /// FIXME: items may not be really missing here; they may just be
+        /// excluded based on user preference
+        /**
+        PTB_WARNING_EX(applib_mfilepath, ePTB_MissingMakefile,
+                       "Makefile not found");
+                       **/
         return CProjKey();
     }
 
     CSimpleMakeFileContents::TContents::const_iterator k = 
         m->second.m_Contents.find("SRC");
-    if (k == m->second.m_Contents.end()) {
+    string full_makefile_name = "Makefile." + proj_name + ".lib";
+    string full_makefile_path =
+        CDirEntry::ConcatPath(applib_mfilepath, full_makefile_name);
 
-        LOG_POST(Info << "No SRC specified in Makefile." << proj_name
-                      << ".lib  at " << applib_mfilepath);
+    if (k == m->second.m_Contents.end()) {
+        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                     "SRC is not specified: " << full_makefile_name);
         return CProjKey();
     }
 
@@ -787,8 +843,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("LIB");
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
-        LOG_POST(Info << "No LIB specified in Makefile." << proj_name
-                      << ".lib  at " << applib_mfilepath);
+        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                     "LIB is not specified: " << full_makefile_name);
         return CProjKey();
     }
     string proj_id = k->second.front();
@@ -1232,7 +1288,6 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     ResolveDefs(resolver, subtree_makefiles);
 
     // Build projects tree
-    LOG_POST(Info << "*** Building project items tree ***");
     CProjectItemsTree::CreateFrom(root_src_path,
                                   subtree_makefiles.m_In, 
                                   subtree_makefiles.m_Lib, 
@@ -1272,10 +1327,11 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
                 } else {
-                    LOG_POST (Warning << "Project not found: " + prj_id.Id());
+                    /// FIXME: is this needed?
+                    _TRACE("Project not found: " + prj_id.Id());
                 }
             }
-
+    
             if (!modified) {
                 //done - no projects has been added to target_tree
                 AddDatatoolSourcesDepends(&target_tree);
@@ -1331,10 +1387,12 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     }
 #else
     // Node - Makefile.in should present
+    // this is true if and only if there are also Makefile.*.lib or
+    // Makefile.*.app project makefiles to process
     string node_path = 
         CDirEntry::ConcatPath(dir_name, 
                               GetApp().GetProjectTreeInfo().m_TreeNode);
-    if ( !is_root && !CDirEntry(node_path).Exists() ) {
+    if ( !is_root  &&  !CDirEntry(node_path).Exists() ) {
         CDir::TGetEntriesFlags flags = CDir::fIgnoreRecursive;
         CDir::TEntries entries =
             CDir(dir_name).GetEntries("Makefile.*.lib", flags);
@@ -1342,7 +1400,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             entries = CDir(dir_name).GetEntries("Makefile.*.app", flags);
         }
         if ( !entries.empty() ) {
-            LOG_POST(Warning << "Makefile.in missing: " << node_path);
+            PTB_WARNING_EX(node_path, ePTB_MissingMakefile,
+                           "Makefile.in missing");
         }
         return;
     }
@@ -1355,7 +1414,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 GetApp().GetProjectTreeInfo().m_Src, dir_name);
         subtree = CDirEntry::ConcatPath(CDirEntry(GetApp().m_Solution).GetDir(), subtree);
         if (!CDirEntry(subtree).Exists()) {
-            LOG_POST(Info << subtree << " : skipped (not configured)");
+            PTB_INFO_EX(subtree, ePTB_NoError,
+                        "skipped missing subtree");
             return;
         }
     }
@@ -1522,14 +1582,12 @@ void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name,
                                             SMakeFiles*   makefiles,
                                             EMakeFileType type)
 {
-    string s = "MakeIn : " + file_name + "   ";
-    LOG_POST(Info << s << MakeFileTypeAsString(type));
-
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty() ) {
 	    makefiles->m_In[file_name] = fc;
+        PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	} else {
-        LOG_POST(Info << s << "rejected (is empty)");
+        PTB_WARNING(file_name, "ignored; empty");
 	}
 }
 
@@ -1538,19 +1596,17 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
                                              SMakeFiles*   makefiles,
                                              EMakeFileType type)
 {
-    string s = "MakeLib : " + file_name + "   ";
-    LOG_POST(Info << s << MakeFileTypeAsString(type));
-
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty()  ) {
         string unmet;
         if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
 	        makefiles->m_Lib[file_name] = fc;
+            PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	    } else {
-            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+            PTB_WARNING(file_name, "ignored; unmet dependency: " << unmet);
 	    }
 	} else {
-        LOG_POST(Info << s << "rejected (is empty)");
+        PTB_WARNING(file_name, "ignored; empty");
 	}
 }
 
@@ -1559,19 +1615,17 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
                                              SMakeFiles*   makefiles,
                                              EMakeFileType type)
 {
-    string s = "MakeApp : " + file_name + "   ";
-    LOG_POST(Info << s << MakeFileTypeAsString(type));
-
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty() ) {
         string unmet;
         if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
 	        makefiles->m_App[file_name] = fc;
+            PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	    } else {
-            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+            PTB_WARNING(file_name, "ignored; unmet dependency: " << unmet);
 	    }
 	} else {
-        LOG_POST(Info << s << "rejected (is empty)");
+        PTB_WARNING(file_name, "ignored; empty");
 	}
 }
 
@@ -1580,19 +1634,17 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
                                              SMakeFiles*   makefiles,
                                              EMakeFileType type)
 {
-    string s = "UserPrj : " + file_name + "   ";
-    LOG_POST(Info << s << MakeFileTypeAsString(type));
-
     CSimpleMakeFileContents fc(file_name, type);
     if ( !fc.m_Contents.empty() ) {
         string unmet;
         if ( GetApp().IsAllowedProjectTag(fc, unmet) ) {
     	    makefiles->m_User[file_name] = fc;
+            PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	    } else {
-            LOG_POST(Info << s << "rejected, proj_tag= " << unmet);
+            PTB_WARNING(file_name, "ignored; unmet dependency: " << unmet);
 	    }
 	} else {
-        LOG_POST(Info << s << "rejected (is empty)");
+        PTB_WARNING(file_name, "ignored; empty");
 	}
 }
 
@@ -1602,7 +1654,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
                                       SMakeFiles&   makefiles)
 {
     {{
-        LOG_POST(Info << "*** Resolving macrodefinitions in App projects ***");
+        _TRACE("*** Resolving macrodefinitions in App projects ***");
         //App
         set<string> keys;
         keys.insert("LIB");
@@ -1612,7 +1664,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
     }}
 
     {{
-        LOG_POST(Info << "*** Resolving macrodefinitions in Lib projects ***");
+        _TRACE("*** Resolving macrodefinitions in Lib projects ***");
         //Lib
         set<string> keys;
         keys.insert("LIB");

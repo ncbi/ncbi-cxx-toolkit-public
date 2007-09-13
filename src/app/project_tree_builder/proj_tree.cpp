@@ -117,9 +117,14 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
             ITERATE(list<string>, n, info.m_ProjNames) {
 
                 //project id will be defined latter
-                const string proj_name = *n;
+                const string& proj_name = *n;
                 if (proj_name[0] == '#') {
                     break;
+                }
+                if (proj_name[0] == '@'  &&
+                    proj_name[proj_name.size() - 1] == '@') {
+                    /// skip these - these are dead macros
+                    continue;
                 }
         
                 string applib_mfilepath = 

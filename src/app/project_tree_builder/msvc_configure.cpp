@@ -31,6 +31,8 @@
 #include <app/project_tree_builder/msvc_configure.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 
+#include <app/project_tree_builder/ptb_err_codes.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -108,11 +110,14 @@ static void s_CreateThirdPartyLibsInstallMakefile
 
                 s_ResetLibInstallKey(dir, lib);
             } else {
-                LOG_POST(Warning << lib << "|" << config.GetConfigFullName() << ": "
-                                 << bin_dir << " not found");
+                PTB_WARNING_EX(bin_dir, ePTB_PathNotFound,
+                               lib << "|" << config.GetConfigFullName()
+                               << " disabled, path not found");
             }
         } else {
-            LOG_POST(Warning << lib << "|" << config.GetConfigFullName() << ": LIBPATH is empty");
+            PTB_WARNING_EX(kEmptyStr, ePTB_PathNotFound,
+                           lib << "|" << config.GetConfigFullName()
+                           << ": no LIBPATH specified");
         }
     }
 }
@@ -122,7 +127,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
                                const list<SConfigInfo>& configs,
                                const string&            root_dir)
 {
-    LOG_POST(Info << "*** Analyzing 3rd party libraries availability ***");
+    _TRACE("*** Analyzing 3rd party libraries availability ***");
     
     InitializeFrom(site);
     site.ProcessMacros(configs);
@@ -146,7 +151,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
         }
     }
 
-    LOG_POST(Info << "*** Creating Makefile.third_party.mk files ***");
+    _TRACE("*** Creating Makefile.third_party.mk files ***");
     // Write makefile uses to install 3-rd party dlls
     list<string> third_party_to_install;
     site.GetThirdPartyLibsToInstall(&third_party_to_install);
@@ -176,18 +181,20 @@ void CMsvcConfigure::InitializeFrom(const CMsvcSite& site)
     m_ConfigSite.clear();
 
     m_ConfigureDefinesPath = site.GetConfigureDefinesPath();
-    if ( m_ConfigureDefinesPath.empty() )
+    if ( m_ConfigureDefinesPath.empty() ) {
         NCBI_THROW(CProjBulderAppException, 
            eConfigureDefinesPath,
            "Configure defines file name is not specified");
+    }
 
     site.GetConfigureDefines(&m_ConfigureDefines);
     if( m_ConfigureDefines.empty() ) {
-        LOG_POST(Warning << "No configurable macrodefinitions specified.");
+        PTB_ERROR(m_ConfigureDefinesPath,
+                  "No configurable macro definitions specified.");
     } else {
-        LOG_POST(Info    << "Configurable macrodefinitions: ");
+        _TRACE("Configurable macro definitions: ");
         ITERATE(list<string>, p, m_ConfigureDefines) {
-            LOG_POST(Info    << *p);
+            _TRACE(*p);
         }
     }
 }
@@ -198,7 +205,8 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
                                    const SConfigInfo& config) const
 {
     if ( !site.IsDescribed(define) ) {
-        LOG_POST(Error << "Macro not described: " + define);
+        PTB_ERROR_EX(kEmptyStr, ePTB_MacroUndefined,
+                     define << ": Macro not defined");
         return false;
     }
     list<string> components;
@@ -209,8 +217,9 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
         site.GetLibInfo(component, config, &lib_info);
         if ( !site.IsLibOk(lib_info) ) {
             if (!lib_info.IsEmpty()) {
-                LOG_POST(Warning << define << " is disabled because of "
-                                 << component << "|" << config.GetConfigFullName());
+                PTB_WARNING_EX("", ePTB_ConfigurationError,
+                               component << "|" << config.GetConfigFullName()
+                               << ": " << define << " not satisfied, disabled");
             }
             return false;
         }
@@ -228,17 +237,18 @@ void CMsvcConfigure::AnalyzeDefines(
     CDirEntry::SplitPath(ncbi_conf_msvc_site_path, &dir, &base, &ext);
     string filename = CDirEntry::ConcatPath( dir, base) + "." + config.m_Name + ext;
 
-    LOG_POST(Info << "Configuration " << config.m_Name << ":");
+    _TRACE("Configuration " << config.m_Name << ":");
 
     m_ConfigSite.clear();
 
     ITERATE(list<string>, p, m_ConfigureDefines) {
         const string& define = *p;
         if( ProcessDefine(define, site, config) ) {
-            LOG_POST(Info << "Ok  " << define);
+            _TRACE("Macro definition Ok  " << define);
             m_ConfigSite[define] = '1';
         } else {
-            LOG_POST(Info << "Failed " << define);
+            PTB_WARNING_EX(kEmptyStr, ePTB_MacroUndefined,
+                           "Macro definition not satisfied: " << define);
             m_ConfigSite[define] = '0';
         }
     }
@@ -248,9 +258,11 @@ void CMsvcConfigure::AnalyzeDefines(
     CDir(dir).CreatePath();
     WriteNcbiconfMsvcSite(candidate_path);
     if (PromoteIfDifferent(filename, candidate_path)) {
-        LOG_POST(Warning << "File "  << filename << ": modified");
+        PTB_WARNING_EX(filename, ePTB_FileModified,
+                       "Configuration file modified");
     } else {
-        LOG_POST(Info << "File "  << filename << ": left intact");
+        PTB_INFO_EX(filename, ePTB_NoError,
+                    "Configuration file unchanged");
     }
 }
 

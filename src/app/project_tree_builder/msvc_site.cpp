@@ -32,6 +32,7 @@
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 #include <algorithm>
 
@@ -41,10 +42,13 @@ BEGIN_NCBI_SCOPE
 
 CMsvcSite::TDirectoryExistenceMap CMsvcSite::sm_DirExists;
 
+
 //-----------------------------------------------------------------------------
-CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
-    :m_Registry(registry)
+CMsvcSite::CMsvcSite(const string& reg_path)
 {
+    CNcbiIfstream istr(reg_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    m_Registry.Read(istr);
+
     string str;
 
     if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
@@ -108,7 +112,8 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
         if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
             m_LibChoices.push_back(SLibChoice(*this, lib_id, lib_3party_id));
         } else {
-           LOG_POST(Error << "Incorrect LibChoices definition: " << choice_str);
+           PTB_ERROR_EX(reg_path, ePTB_ConfigurationError,
+                        "Invalid LibChoices definition: " << choice_str);
         }
     }
 
@@ -180,7 +185,8 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
     while ((start = data.find("$(", done)) != string::npos) {
         end = data.find(")", start);
         if (end == string::npos) {
-            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + raw_data);
+            PTB_WARNING_EX("", ePTB_ConfigurationError,
+                           "Malformatted macro definition: " + raw_data);
             return data;
         }
         raw_macro = data.substr(start,end-start+1);
@@ -512,7 +518,8 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
         ITERATE(list<string>, i, lib_info.m_IncludeDir) {
             if (!x_DirExists(*i) ) {
                 if (!silent) {
-                    LOG_POST(Warning << "No LIB INCLUDE: " + *i);
+                    PTB_WARNING_EX(*i, ePTB_PathNotFound,
+                                   "INCLUDE path not found");
                 }
                 return false;
             }
@@ -521,7 +528,8 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
     if ( !lib_info.m_LibPath.empty() &&
          !x_DirExists(lib_info.m_LibPath) ) {
         if (!silent) {
-            LOG_POST(Warning << "No LIBPATH: " + lib_info.m_LibPath);
+            PTB_WARNING_EX(lib_info.m_LibPath, ePTB_PathNotFound,
+                           "LIB path not found");
         }
         return false;
     }
@@ -532,7 +540,8 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             if ( !lib_path_abs.empty() &&
                  !x_DirExists(lib_path_abs) ) {
                 if (!silent) {
-                    LOG_POST(Warning << "No LIB: " + lib_path_abs);
+                    PTB_WARNING_EX(lib_path_abs, ePTB_PathNotFound,
+                                   "LIB path not found");
                 }
                 return false;
             }
@@ -546,7 +555,8 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             }
             if ( !x_DirExists(file) ) {
                 if (!silent) {
-                    LOG_POST(Warning << "No FILES: " + file);
+                    PTB_WARNING_EX(file, ePTB_FileNotFound,
+                                   "file not found");
                 }
                 return false;
             }

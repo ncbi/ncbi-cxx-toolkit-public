@@ -40,12 +40,122 @@
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
 #include <app/project_tree_builder/proj_projects.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 #include <corelib/ncbitime.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Windows-specific command-line logger
+/// This is used to format error output in such a way that the Windows error
+/// logger can pick this up
+
+class CWindowsCmdErrorHandler : public CDiagHandler
+{
+public:
+    
+    CWindowsCmdErrorHandler()
+    {
+        m_OrigHandler.reset(GetDiagHandler(true));
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app) {
+            m_AppName = app->GetProgramDisplayName();
+        } else {
+            m_AppName = "unknown_app";
+        }
+    }
+
+    ~CWindowsCmdErrorHandler()
+    {
+    }
+
+    /// post a message
+    void Post(const SDiagMessage& msg)
+    {
+        if (m_OrigHandler.get()) {
+            m_OrigHandler->Post(msg);
+        }
+
+        CTempString str(msg.m_Buffer, msg.m_BufferLen);
+
+        /// screen for error message level data only
+        /// MSVC doesn't handle the other parts
+        switch (msg.m_Severity) {
+        case eDiag_Error:
+        case eDiag_Critical:
+        case eDiag_Fatal:
+        case eDiag_Warning:
+            break;
+
+        case eDiag_Info:
+        case eDiag_Trace:
+            if (msg.m_ErrCode == ePTB_NoError) {
+                /// simple pass-through to stderr
+                if (strlen(msg.m_File) != 0) {
+                    cerr << msg.m_File << ": ";
+                }
+                cerr << str << endl;
+                return;
+            }
+            break;
+        }
+
+        /// REQUIRED: origin
+        if (strlen(msg.m_File) == 0) {
+            cerr << m_AppName;
+        } else {
+            cerr << msg.m_File;
+        }
+        if (msg.m_Line) {
+            cerr << "(" << msg.m_Line << ")";
+        }
+        cerr << ": ";
+
+        /// OPTIONAL: subcategory
+        //cerr << m_AppName << " ";
+
+        /// REQUIRED: category
+        /// the MSVC system understands only 'error' and 'warning'
+        switch (msg.m_Severity) {
+        case eDiag_Error:
+        case eDiag_Critical:
+        case eDiag_Fatal:
+            cerr << "error ";
+            break;
+
+        case eDiag_Warning:
+            cerr << "warning ";
+            break;
+
+        case eDiag_Info:
+        case eDiag_Trace:
+            /// FIXME: find out how to get this in the messages tab
+            cerr << "warning ";
+            break;
+        }
+
+        /// REQUIRED: error code
+        cerr << msg.m_ErrCode << ": ";
+
+        /// OPTIONAL: text
+        cerr << str << endl;
+    }
+
+private:
+    auto_ptr<CDiagHandler> m_OrigHandler;
+
+    /// the original diagnostics handler
+    string        m_AppName;
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
 
 // When defined, this environment variable
 // instructs PTB to exclude CONFIGURE, INDEX, and HIERARCHICAL VIEW
@@ -220,8 +330,29 @@ struct PIsExcludedByRequires
         if ( CMsvcPrjProjectContext::IsRequiresOk(project, &unmet) ) {
             return false;
         }
-        LOG_POST(Warning << "Excluded:  " << project.m_Name
-                      << "    project requires    " << unmet);
+
+        string path =
+            CDirEntry::ConcatPath(project.m_SourcesBaseDir, "Makefile.");
+        path += project.m_Name;
+        switch (project.m_ProjType) {
+        case CProjKey::eLib:
+            path += ".lib";
+            break;
+        case CProjKey::eApp:
+            path += ".lib";
+            break;
+        case CProjKey::eMsvc:
+            path += ".msvc";
+            break;
+        case CProjKey::eDll:
+            path += ".dll";
+            break;
+        default:
+            break;
+        }
+        PTB_WARNING_EX(path, ePTB_ProjectExcluded,
+                       "Excluded due to unmet requirement: "
+                       << unmet);
         return true;
     }
 };
@@ -245,6 +376,7 @@ CProjBulderApp::CProjBulderApp(void)
 
 void CProjBulderApp::Init(void)
 {
+    SetDiagHandler(new CWindowsCmdErrorHandler);
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -341,7 +473,7 @@ void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles,
         }
     }
     if (!reported) {
-        LOG_POST(Info << "No dependency cycles found.");
+        PTB_INFO("No dependency cycles found.");
     }
 }
 
@@ -352,8 +484,8 @@ int CProjBulderApp::Run(void)
 	SetDiagPostFlag(eDPF_Default);
 	SetDiagPostLevel(eDiag_Info);
 
-    // Start 
-    LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
+    CStopWatch sw;
+    sw.Start();
 
     // Get and check arguments
     ParseArguments();
@@ -371,20 +503,19 @@ int CProjBulderApp::Run(void)
                         GetProjectTreeInfo().m_Root);
 
     // Build projects tree
-    LOG_POST(Info << "*** Analyzing subtree makefiles ***");
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
     
     // Analyze tree for dependencies cycles
-    LOG_POST(Info << "*** Checking projects inter-dependencies ***");
+    PTB_INFO("Checking project inter-dependencies...");
     CCyclicDepends::TDependsCycles cycles;
     CCyclicDepends::FindCycles(projects_tree.m_Projects, &cycles);
     s_ReportDependenciesStatus(cycles,projects_tree.m_Projects);
 
     // MSVC specific part:
-    LOG_POST(Info << "*** Checking requirements ***");
+    PTB_INFO("Checking project requirements...");
     // Exclude some projects from build:
 #ifdef COMBINED_EXCLUDE
     {{
@@ -414,25 +545,26 @@ int CProjBulderApp::Run(void)
     CProjectItemsTree dll_projects_tree;
     bool dll = (GetBuildType().GetType() == CBuildType::eDll);
     if (dll) {
-        LOG_POST(Info << "Assembling DLLs:");
+        PTB_INFO("Assembling DLLs...");
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
     }
     CProjectItemsTree& prj_tree = dll ? dll_projects_tree : projects_tree;
 
+    PTB_INFO("Creating projects...");
     if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
         GenerateMsvcProjects(prj_tree);
     } else {
         GenerateUnixProjects(prj_tree);
     }
     //
-    LOG_POST(Info << "Finished at "+ CTime(CTime::eCurrent).AsString());
+    PTB_INFO("Done.  Elapsed time = " << sw.Elapsed() << " seconds");
     return 0;
 }
 
 void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
 {
 #if NCBI_COMPILER_MSVC
-    LOG_POST(Info << "*** Generating MSVC projects ***");
+    PTB_INFO("Generating MSBuild projects...");
 
     bool dll = (GetBuildType().GetType() == CBuildType::eDll);
     list<SConfigInfo> dll_configs;
@@ -440,18 +572,20 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
 
     if (dll) {
-        LOG_POST(Info << "DLL build");
+        _TRACE("DLL build");
         GetDllsInfo().GetBuildConfigs(&dll_configs);
         configurations = &dll_configs;
     } else {
-        LOG_POST(Info << "Static build");
+        _TRACE("Static build");
         configurations = &GetRegSettings().m_ConfigInfo;
     }
-    string str_log("Configurations: ");
-    ITERATE(list<SConfigInfo>, p , *configurations) {
-        str_log += p->GetConfigFullName() + " ";
-    }
-    LOG_POST(Info << str_log);
+    {{
+        string str_log;
+        ITERATE(list<SConfigInfo>, p , *configurations) {
+            str_log += p->GetConfigFullName() + " ";
+        }
+        PTB_INFO("Building configurations: " << str_log);
+    }}
 
     if ( m_AddMissingLibs ) {
         m_CurrentBuildTree = &projects_tree;
@@ -724,7 +858,7 @@ void CProjBulderApp::ParseArguments(void)
 
     // Solution
     m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
-    LOG_POST(Info << "Solution: " << m_Solution);
+    PTB_INFO("Solution: " << m_Solution);
     m_StatusDir = 
         CDirEntry::NormalizePath( CDirEntry::ConcatPath( CDirEntry::ConcatPath( 
             CDirEntry(m_Solution).GetDir(),".."),"status"));
@@ -856,8 +990,9 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 
 const CMsvcSite& CProjBulderApp::GetSite(void)
 {
-    if ( !m_MsvcSite.get() ) 
-        m_MsvcSite.reset(new CMsvcSite(GetConfig()));
+    if ( !m_MsvcSite.get() ) {
+        m_MsvcSite.reset(new CMsvcSite(GetConfigPath()));
+    }
     
     return *m_MsvcSite;
 }
@@ -890,7 +1025,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     
     // Root, etc.
     m_ProjectTreeInfo->m_Root = m_Root;
-    LOG_POST(Info << "Project tree root: " << m_Root);
+    PTB_INFO("Project tree root: " << m_Root);
 
     // all possible project tags
     const string& tagsfile = GetConfig().Get("ProjectTree", "ProjectTags");
@@ -921,7 +1056,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     string ext;
     CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
     if (NStr::CompareNocase(ext, ".lst") == 0) {
-        LOG_POST(Info << "Project list: " << subtree);
+        PTB_INFO("Project list: " << subtree);
         //If this is *.lst file
         m_ProjectTreeInfo->m_IProjectFilter.reset
             (new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src,
@@ -1014,15 +1149,12 @@ const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
     if ( !m_WholeTree.get() ) {
         m_WholeTree.reset(new CProjectItemsTree);
         if (m_ScanWholeTree) {
-            LOG_POST(Info << "*** Analyzing the whole tree makefiles ***");
             m_ScanningWholeTree = true;
             CProjectDummyFilter pass_all_filter;
             CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
                                                 GetProjectTreeInfo().m_Src, 
                                                 m_WholeTree.get());
             m_ScanningWholeTree = false;
-        } else {
-            LOG_POST(Info << "*** Skipping scanning the whole tree makefiles ***");
         }
     }    
     return *m_WholeTree;

@@ -151,8 +151,8 @@ public:
 
 protected:
     CPtbRegistry m_MakeFile;
-    string        m_MakeFileBaseDir;
-    string        m_FilePath;
+    string       m_MakeFileBaseDir;
+    string       m_FilePath;
 
     struct SPchInfo
     {

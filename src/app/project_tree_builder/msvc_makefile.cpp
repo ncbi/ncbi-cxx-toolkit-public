@@ -43,8 +43,8 @@ BEGIN_NCBI_SCOPE
 CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
 {
 #if NCBI_COMPILER_MSVC
-    CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
-    if (ifs) {
+    if (CFile(file_path).Exists()) {
+        CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
         //read registry
         m_MakeFile.Read(ifs);
         //and remember dir from where it has been loaded
@@ -238,7 +238,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef) co
         string new_val = m_MakeFile.GetString("Redefine", raw_define);
         if (!new_val.empty()) {
             redef.push_back("$(" + new_val + ")");
-            LOG_POST(Info << m_FilePath << " redefines:  " << raw_define << " = " << new_val);
+            _TRACE(m_FilePath << " redefines:  " << raw_define << " = " << new_val);
             return true;
         }
     } else if (NStr::StartsWith(value, "@") && NStr::EndsWith(value, "@")) {
@@ -246,7 +246,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef) co
         string new_val = m_MakeFile.GetString("Redefine", raw_define);
         if (!new_val.empty()) {
             redef.push_back("@" + new_val + "@");
-            LOG_POST(Info << m_FilePath << " redefines:  " << raw_define << " = " << new_val);
+            _TRACE(m_FilePath << " redefines:  " << raw_define << " = " << new_val);
             return true;
         }
     } else {
@@ -254,7 +254,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef) co
         if (!new_val.empty()) {
             redef.clear();
             NStr::Split(new_val, LIST_SEPARATOR, redef);
-            LOG_POST(Info << m_FilePath << " redefines:  " << value << " = " << new_val);
+            _TRACE(m_FilePath << " redefines:  " << value << " = " << new_val);
             return true;
         }
     }

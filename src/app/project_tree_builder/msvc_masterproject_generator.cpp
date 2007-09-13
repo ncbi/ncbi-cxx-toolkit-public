@@ -34,6 +34,7 @@
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -184,7 +185,8 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter,
                                    build_info);
 
     } else {
-        LOG_POST(Warning << "Project not found: " + project_id.Id());
+        PTB_WARNING_EX(project_id.Id(), ePTB_ProjectNotFound,
+                       "Project not found: " << project_id.Id());
     }
 }
 

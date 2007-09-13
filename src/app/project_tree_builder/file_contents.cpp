@@ -31,6 +31,7 @@
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/ptb_err_codes.hpp>
 #include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -88,6 +89,7 @@ void CSimpleMakeFileContents::Clear(void)
 {
     m_Contents.clear();
     m_Type = eMakeType_Undefined;
+    m_Filename.clear();
 }
 
 
@@ -95,6 +97,7 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
 {
     m_Contents = contents.m_Contents;
     m_Type = contents.m_Type;
+    m_Filename = contents.m_Filename;
 }
 
 
@@ -115,6 +118,7 @@ void CSimpleMakeFileContents::LoadFrom(const string&  file_path,
 	    parser.AcceptLine(strline);
 
     parser.EndParse();
+    fc->m_Filename = file_path;
 }
 
 void CSimpleMakeFileContents::AddDefinition(const string& key,
@@ -148,7 +152,8 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
         while ((start = value.find("$(", done)) != string::npos) {
             end = value.find(")", start);
             if (end == string::npos) {
-                LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + value);
+                PTB_WARNING_EX(m_Filename, ePTB_MacroInvalid,
+                               "Invalid macro definition: " << value);
                 break;
             }
             string raw_macro = value.substr(start,end-start+1);
