@@ -6,7 +6,7 @@ LIB = xalgoalignutil
 
 DLL_LIB = $(BLAST_LIBS)
 
-ASN_DEP = seqset
+ASN_DEP = seqset xnetblast
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
