@@ -231,7 +231,10 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     SJobInfoDB                   m_JobInfoDB;      ///< Aux info on jobs, tags etc.
     SQueueAffinityIdx            aff_idx;          ///< Q affinity index
     auto_ptr<CBDB_FileCursor>    m_Cursor;         ///< DB cursor
+private:
+    friend class CQueueGuard;
     CFastMutex                   lock;             ///< db, cursor lock
+public:
     CJobStatusTracker            status_tracker;   ///< status FSA
 
     // Main DB field info
@@ -380,6 +383,7 @@ public:
     enum EStatEvent {
         eStatGetEvent  = 0,
         eStatPutEvent  = 1,
+        eStatDBLockEvent = 2,
         eStatNumEvents
     };
     typedef unsigned TStatEvent;
@@ -447,6 +451,50 @@ public:
     typedef CIntrusiveLocker<SLockedQueue> TLockerType;
 };
 
+
+class CQueueGuard
+{
+public:
+    CQueueGuard() : m_Queue(0)
+    {
+    }
+
+    CQueueGuard(CRef<SLockedQueue> q) : m_Queue(0)
+    {
+        Guard(q);
+    }
+
+    ~CQueueGuard()
+    {
+        try {
+            Release();
+        } catch (std::exception& ) {
+        }
+    }
+
+    void Release()
+    {
+        if (m_Queue) {
+            m_Queue->lock.Unlock();
+            m_Queue = 0;
+        }
+    }
+
+    void Guard(CRef<SLockedQueue> q)
+    {
+        Release();
+        m_Queue = q;
+        m_Queue->lock.Lock();
+        m_Queue->CountEvent(SLockedQueue::eStatDBLockEvent);
+    }
+
+private:
+    // No copy
+    CQueueGuard(const CQueueGuard&);
+    void operator=(const CQueueGuard&);
+private:
+    SLockedQueue* m_Queue;
+};
 
 END_NCBI_SCOPE
 

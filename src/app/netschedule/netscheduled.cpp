@@ -1646,6 +1646,9 @@ void CNetScheduleHandler::ProcessStatistics()
     load_str += "/sec, jobs complete: ";
     load_str +=
         NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatPutEvent));
+    load_str += "/sec, DB locks: ";
+    load_str +=
+        NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatDBLockEvent));
     load_str += "/sec";
     WriteMsg("OK:", load_str);
 
