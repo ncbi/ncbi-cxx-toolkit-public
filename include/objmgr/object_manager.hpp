@@ -127,9 +127,6 @@ class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
     /// Return the existing object manager or create one.
-    /// If the result is not stored in a CRef, the object can be
-    /// destroyed at any moment and the next call is not guaranteed
-    /// to return the same pointer.
     static CRef<CObjectManager> GetInstance(void);
     virtual ~CObjectManager(void);
 
@@ -214,6 +211,8 @@ protected:
 
 private:
     CObjectManager(void);
+
+    static CRef<CObjectManager> sx_Create(void);
 
     // these are for Object Manager itself
     // nobody else should use it

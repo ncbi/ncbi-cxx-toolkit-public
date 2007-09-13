@@ -100,8 +100,6 @@ protected:
     typedef map<TMapKey, CBlobIdKey>        TBlobIdMap;
     typedef vector<CSeq_id_Handle>          TIds;
 
-    CRef<CObjectManager> m_ObjMgr;
-
     TBlobIdMap  m_BlobIdMap;
     TIntMap     m_DescMap;
     TFeatMap    m_Feat0Map;
@@ -226,8 +224,9 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 
 bool CTestOM::Thread_Run(int idx)
 {
-// initialize scope
-    CScope scope(*m_ObjMgr);
+    // initialize scope
+    CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
+    CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
 
     vector<CSeq_id_Handle> ids = m_Ids;
@@ -589,9 +588,6 @@ bool CTestOM::TestApp_Init(void)
     m_keep_handles = args["keep_handles"];
     m_verbose = args["verbose"];
     m_release_all_memory = args["release_all_memory"];
-
-    m_ObjMgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
     if ( args["prefetch"] ) {
         LOG_POST("Using prefetch");

@@ -44,40 +44,21 @@
 
 #include <objects/seq/seq_id_mapper.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-typedef CObjectManager TInstance;
-
-static TInstance* s_Instance = 0;
-DEFINE_STATIC_FAST_MUTEX(s_InstanceMutex);
-
-CRef<TInstance> TInstance::GetInstance(void)
+CRef<CObjectManager> CObjectManager::sx_Create(void)
 {
-    CRef<TInstance> ret;
-    {{
-        CFastMutexGuard guard(s_InstanceMutex);
-        ret.Reset(s_Instance);
-        if ( !ret || ret->ReferencedOnlyOnce() ) {
-            if ( ret ) {
-                ret.Release();
-            }
-            ret.Reset(new TInstance);
-            s_Instance = ret;
-        }
-    }}
-    _ASSERT(ret == s_Instance);
-    return ret;
+    return Ref(new CObjectManager());
 }
 
 
-static void s_ResetInstance(TInstance* instance)
+CRef<CObjectManager> CObjectManager::GetInstance(void)
 {
-    CFastMutexGuard guard(s_InstanceMutex);
-    if ( s_Instance == instance ) {
-        s_Instance = 0;
-    }
+    static CSafeStaticRef<CObjectManager> s_Instance;
+    return Ref(&s_Instance.Get(sx_Create));
 }
 
 
@@ -89,7 +70,6 @@ CObjectManager::CObjectManager(void)
 
 CObjectManager::~CObjectManager(void)
 {
-    s_ResetInstance(this);
     // delete scopes
     TWriteLockGuard guard(m_OM_Lock);
 

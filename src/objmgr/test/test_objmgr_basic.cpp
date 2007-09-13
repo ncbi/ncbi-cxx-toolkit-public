@@ -159,6 +159,8 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
             delete pScope3; //  loader 2 alive
         }
         // scopes deleted, all dataloaders alive
+        pOm->RevokeDataLoader(name1);
+        pOm->RevokeDataLoader(name2);
     }
 // objmgr deleted, all dataloaders deleted
 }
