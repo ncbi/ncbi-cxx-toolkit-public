@@ -59,8 +59,9 @@ BEGIN_NCBI_SCOPE
 /// Define macros to support debugging.
 #ifdef _DEBUG
 
-#  define _TRACE(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Trace) \
+#  define _TRACE(message)                        \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
+      NCBI_NS_NCBI::eDiag_Trace).GetRef()        \
       << message << NCBI_NS_NCBI::Endm )
 
 #  define NCBI_TROUBLE(mess) \
