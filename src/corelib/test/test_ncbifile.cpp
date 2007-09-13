@@ -1061,7 +1061,7 @@ static void s_TEST_MemoryFile(void)
 
         // Map segments
         for (size_t i=0; i<s_PartCount; i++) {
-            char* p = (char*)m.Map(i*1024,1024);
+            char* p = (char*)m.Map((off_t)i*1024,1024);
             assert( p );
             assert( m.GetSize(p) == 1024 );
             ptrs[i] = p;
@@ -1083,6 +1083,160 @@ static void s_TEST_MemoryFile(void)
         delete [] buf;
     }}
     // Remove the file
+    assert( f.Remove() );
+}
+
+
+/////////////////////////////////
+// Low level file IO
+//
+
+static void s_TEST_FileIO(void)
+{
+    const char*   filename = "test_fio.tmp";
+    const char    data[]   = "test data";
+    const ssize_t data_len = sizeof(data) - 1;
+    char          buf[100];
+    ssize_t       n;
+
+    CFileIO fio;
+    CFile   f(filename);
+
+    // Check that file doesn't exists
+    assert( !f.Exists() );
+
+    // Try to open file, should have exception here,
+    // because the file do not exists
+    try {
+        fio.Open(filename, CFileIO::eOpen, CFileIO::eRead);
+        _TROUBLE;
+    } catch (CFileException&) { }
+    try {
+        fio.Open(filename, CFileIO::eTruncate, CFileIO::eWrite);
+        _TROUBLE;
+    } catch (CFileException&) { }
+
+    // Create test file 
+    {{
+        fio.Open(filename, CFileIO::eCreate, CFileIO::eWrite);
+        assert( f.Exists() );
+        n = fio.Write(data, data_len);
+        assert( n == data_len );
+        // We opened file for write only
+        n = fio.Read(buf, sizeof(buf));
+        assert( n == -1 );
+        fio.Close();
+        // Check if the file exists now
+        assert( f.Exists() );
+        assert( f.GetLength() == data_len );
+    }}
+
+    // Try to create new file, should have exception here,
+    // because file already exists
+    try {
+        fio.Open(filename, CFileIO::eCreateNew, CFileIO::eWrite);
+        _TROUBLE;
+    } catch (CFileException&) { }
+
+
+    // Recreate file with RW permissions
+    {{
+        assert( f.Remove() );
+        fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
+        n = fio.Write(data, data_len);
+        assert( n == data_len );
+        fio.Close();
+        // Check if the file exists now
+        assert( f.Exists() );
+        assert( f.GetLength() == data_len );
+    }}
+
+    // Open test file and read from it
+    {{
+        fio.Open(filename, CFileIO::eOpen, CFileIO::eRead);
+        n = fio.Read(buf, sizeof(buf));
+        assert( n == data_len );
+        assert( memcmp(buf, data, data_len) == 0 );
+        // We opened file for reading only
+        n = fio.Write(data, data_len);
+        assert( n == -1 );
+        fio.Close();
+    }}
+
+    // Truncate existent file
+    {{
+        fio.Open(filename, CFileIO::eTruncate, CFileIO::eWrite);
+        fio.Close();
+        assert( f.Exists() );
+        assert( f.GetLength() == 0 );
+    }}
+
+    // File seek test
+    {{
+        fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
+        assert( fio.GetFilePos() == 0 );
+
+        // Write data
+        n = fio.Write(data, data_len);
+        assert( n == data_len );
+        assert( fio.GetFilePos() == data_len );
+
+        // Go to begin of the file and read written data
+        fio.SetFilePos(0, CFileIO::eBegin);
+        assert( fio.GetFilePos() == 0 );
+        n = fio.Read(buf, sizeof(buf));
+        assert( n == data_len );
+        assert( memcmp(buf, data, data_len) == 0 );
+        assert( fio.GetFilePos() == data_len );
+
+        // Change position in the file
+        fio.SetFilePos(-1, CFileIO::eCurrent);
+        assert( fio.GetFilePos() == (data_len - 1) );
+
+        // Write more data
+        n = fio.Write(data, data_len);
+        assert( n == data_len );
+        assert( fio.GetFilePos() == (data_len*2-1) );
+
+        // Go back and read data again
+        fio.SetFilePos(-data_len, CFileIO::eEnd);
+        n = fio.Read(buf, sizeof(buf));
+        assert( n == data_len );
+        assert( memcmp(buf, data, data_len) == 0 );
+        assert( fio.GetFilePos() == (data_len*2-1) );
+
+        // Set position beyond of the EOF -- it is allowed
+        fio.SetFilePos(100, CFileIO::eBegin);
+        // and write '\0' here
+        n = fio.Write("", 1);
+        assert( n == 1 );
+        fio.Close();
+        // File size must increase
+        assert( f.GetLength() == 101 );
+    }}
+
+    // SetFileSize() test
+    {{
+        fio.Open(filename, CFileIO::eOpen, CFileIO::eReadWrite);
+        assert( fio.GetFilePos() == 0 );
+        // Extend file
+        fio.SetFileSize(200, CFileIO::eEnd);
+        assert( fio.GetFilePos() == 200 );
+        assert( f.GetLength() == 200 );
+        // Truncate file
+        fio.SetFileSize(50);
+        assert( fio.GetFilePos() == 200 );
+        assert( f.GetLength() == 50 );
+        // Extend file again
+        fio.SetFilePos(50, CFileIO::eBegin);
+        fio.SetFileSize(100 /*, CFileIO::eCurrent */);
+        assert( fio.GetFilePos() == 50 );
+        assert( f.GetLength() == 100 );
+        // Close file
+        fio.Close();
+    }}
+
+    // Remove test file
     assert( f.Remove() );
 }
 
@@ -1128,11 +1282,14 @@ int CTest::Run(void)
 
     // CMemoryFile
     s_TEST_MemoryFile();
+    // CFileIO
+    s_TEST_FileIO();
 
     cout << endl;
     cout << "TEST execution completed successfully!" << endl << endl;
     return 0;
 }
+
 
 
 ///////////////////////////////////
