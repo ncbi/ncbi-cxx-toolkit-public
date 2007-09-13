@@ -109,7 +109,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
                     }
                 }
             }
-            if (!master->Matches(sids.front().GetObject())) {
+            if (master && !master->Matches(sids.front().GetObject())) {
                 ERR_POST(Error << "AlignmentSet::AlignmentSet() - master must be first sequence of every alignment");
                 return;
             }
