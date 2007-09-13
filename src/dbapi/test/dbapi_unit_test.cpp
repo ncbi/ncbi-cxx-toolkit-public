@@ -1708,6 +1708,7 @@ CDBAPIUnitTest::Test_LOB(void)
         }
         
         // Read Blob
+        // There is a bug in implementation of ReadItem in ftds8 driver.
         if (m_args.GetDriverName() != "ftds8") {
             string result;
             char buff[3];
@@ -1744,7 +1745,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
             }
         } else {
-            PutMsgDisabled("Test_LOB Read Blob");
+            PutMsgDisabled("Test_LOB - Read Blob");
         }
 
         // Test NULL values ...
@@ -1824,6 +1825,7 @@ CDBAPIUnitTest::Test_LOB(void)
             }
             
             // Read blob via Read method ...
+            // ftds_odbc is hanging up ...
             if (m_args.GetDriverName() != "ftds_odbc") {
                 char buff[3];
 
@@ -1862,10 +1864,7 @@ CDBAPIUnitTest::Test_LOB(void)
             }
 
             // Read Blob
-            if (m_args.GetDriverName() != "ftds8"
-                && m_args.GetDriverName() != "ftds_odbc"
-                && m_args.GetDriverName() != "ctlib"
-                ) {
+            if (m_args.GetDriverName() != "ftds8") {
                 char buff[3];
 
                 sql = "SELECT text_field FROM "+ GetTableName();
@@ -5203,7 +5202,10 @@ CDBAPIUnitTest::Test_Procedure(void)
 
         // Test returned recordset ...
         {
-            {
+            // In case of MS SQL 2005 sp_databases returns empty result set.
+            // It is not a bug. It is a difference in implementation of MS SQL
+            // 2005.
+            if (m_args.GetServerType() != CTestArguments::eMsSql2005) {
                 int num = 0;
                 // Execute it first time ...
                 auto_ptr<ICallableStatement> auto_stmt(
@@ -9396,7 +9398,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        if (args.GetServerType() == CTestArguments::eMsSql) {
+        if (args.GetServerType() == CTestArguments::eMsSql
+            || args.GetServerType() == CTestArguments::eMsSql2005
+           ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
@@ -9427,8 +9431,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
 
         // Doesn't work at the moment ...
-        if (args.GetDriverName() == "ftds"
-            || args.GetDriverName() == "ctlib") {
+        if (args.GetDriverName() != "ftds8"
+            && args.GetDriverName() != "ftds_odbc"
+            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_LowLevel,
                                    DBAPIInstance);
             tc->depends_on(tc_init);
@@ -9665,21 +9670,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         && !(args.GetDriverName() == "ftds8"
           && args.GetServerType() == CTestArguments::eSybase)
-        && !(args.GetDriverName() == "ftds_odbc"
-          && args.GetServerType() == CTestArguments::eMsSql2005)
         && args.GetDriverName() != "ftds_dblib"
         ) {
 
-        if (!(args.GetDriverName() == "ftds"
-              && args.GetServerType() == CTestArguments::eMsSql2005) // Something is wrong ...
-            && !(args.GetDriverName() == "ftds8"
-              && args.GetServerType() == CTestArguments::eMsSql2005)
-            ) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
-                    DBAPIInstance);
-            tc->depends_on(tc_init);
-            add(tc);
-        }
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
         tc->depends_on(tc_init);
