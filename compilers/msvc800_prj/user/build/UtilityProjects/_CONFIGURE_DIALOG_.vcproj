@@ -75,9 +75,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configure solution : $(SolutionName)"
-                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\static\bin\$(ConfigurationName)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\..\static\build\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;PlatformName=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
 						AdditionalDependencies=""
-						Outputs="$(InputPath).aanofile.out"
+						Outputs="$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -86,9 +86,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configure solution : $(SolutionName)"
-                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\static\bin\$(ConfigurationName)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
+                                                CommandLine="@echo on&#xa;set PTB_PATH=$(ProjectDir)..\..\..\static\bin\ReleaseDLL&#xa;if exist &quot;%PREBUILT_PTB_EXE%&quot; (set PTB_EXE=%PREBUILT_PTB_EXE%) else (set PTB_EXE=%PTB_PATH%\project_tree_builder.exe)&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..&#xa;set SLN_PATH=$(SolutionPath)&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;if not exist &quot;%PTB_EXE%&quot; (msbuild &quot;..\..\..\static\build\ncbi_cpp.sln&quot; /t:&quot;project_tree_builder_exe:Rebuild&quot; /p:Configuration=ReleaseDLL;PlatformName=$(PlatformName)) else (echo USING PREBUILT PTB at %PTB_EXE%)&#xa;if errorlevel 1 exit 1&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; ON &quot;$(ProjectDir)..\..\..\&quot;&#xa;if errorlevel 1 exit 1&#xa;cd $(InputDir)&#xa;copy /Y $(InputFileName) $(InputName).bat&#xa;call $(InputName).bat&#xa;call &quot;$(ProjectDir)..\..\..\lock_ptb_config.bat&quot; OFF &quot;$(ProjectDir)..\..\..\&quot;&#xa;del /Q $(InputName).bat&#xa;"
 						AdditionalDependencies=""
-						Outputs="$(InputPath).aanofile.out"
+						Outputs="$(ProjectDir)..\..\..\static\bin\ReleaseDLL\project_tree_builder.exe;$(InputPath).aanofile.out"
 					/>
 				</FileConfiguration>
 			</File>

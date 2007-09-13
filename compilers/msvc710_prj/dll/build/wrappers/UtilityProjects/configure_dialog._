@@ -3,7 +3,7 @@ echo ***************************************************************************
 echo Running -CONFIGURE- please wait
 echo ******************************************************************************
 @echo on
-"%PTB_PATH%\project_tree_builder.exe" -cfg -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_PATH%\..\..\..\project_tree_builder.ini" "%TREE_ROOT%" scripts\projects\ncbi_wrap.lst "%SLN_PATH%"
+"%PTB_EXE%" -cfg -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_PATH%\..\..\..\project_tree_builder.ini" "%TREE_ROOT%" scripts\projects\ncbi_wrap.lst "%SLN_PATH%"
 @echo off
 if errorlevel 1 goto report_error
 

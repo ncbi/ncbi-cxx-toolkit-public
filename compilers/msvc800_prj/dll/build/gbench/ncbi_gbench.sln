@@ -2,12 +2,10 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-", "UtilityProjects\_CONFIGURE_.vcproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA58}"
 	ProjectSection(ProjectDependencies) = postProject
-		{8D5B9C1E-5941-44F8-B017-25F6201E822B} = {8D5B9C1E-5941-44F8-B017-25F6201E822B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "-CONFIGURE-DIALOG-", "UtilityProjects\_CONFIGURE_DIALOG_.vcproj", "{6DEFDB58-C014-4026-A166-299146BD9947}"
 	ProjectSection(ProjectDependencies) = postProject
-		{8D5B9C1E-5941-44F8-B017-25F6201E822B} = {8D5B9C1E-5941-44F8-B017-25F6201E822B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xncbi.lib", "..\..\..\static\build\corelib\xncbi.lib.vcproj", "{1EDB6A26-ADB9-4591-B907-505E8D1A8157}"
