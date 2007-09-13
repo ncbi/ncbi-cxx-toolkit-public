@@ -4614,7 +4614,7 @@ void CFileIO::Open(const string& filename,
     share_mode = eShare;
 
     // Try to open/create file
-    m_Handle = open(filename.c_str(), flags);
+    m_Handle = open(filename.c_str(), flags, mode);
 
 #endif
 
@@ -4672,13 +4672,17 @@ ssize_t CFileIO::Write(const void* buf, size_t count)
 }
 
 
-bool CFileIO::Flush(void)
+void CFileIO::Flush(void)
 {
+    bool res;
 #if defined(NCBI_OS_MSWIN)
-    return FlushFileBuffers(m_Handle) == TRUE;
+    res = (FlushFileBuffers(m_Handle) == TRUE);
 #elif defined(NCBI_OS_UNIX)
-    return fsync(m_Handle) == 0;
+    res = (fsync(m_Handle) == 0);
 #endif
+    if ( !res ) {
+        NCBI_THROW(CFileErrnoException, eFileIO, "Flush failed");
+    }
 }
 
 
@@ -4689,6 +4693,113 @@ void CFileIO::SetFileHandle(TFileHandle handle)
     // Use given handle for all I/O
     m_Handle = handle;
 }
+
+
+ssize_t CFileIO::GetFilePos(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    LARGE_INTEGER ofs;
+    LARGE_INTEGER pos;
+    ofs.QuadPart = 0;
+    pos.QuadPart = 0;
+    BOOL res = SetFilePointerEx(m_Handle, ofs, &pos, FILE_CURRENT);
+    if (res) {
+        return (ssize_t)pos.QuadPart;
+    }
+#elif defined(NCBI_OS_UNIX)
+    off_t pos = lseek(m_Handle, 0, SEEK_CUR);
+    if (pos != -1) {
+        return (ssize_t)pos;
+    }
+#endif
+    return -1;
+}
+
+
+void CFileIO::SetFilePos(off_t offset, EPositionMoveMethod move_method)
+{
+#if defined(NCBI_OS_MSWIN)
+    DWORD from = 0;
+    switch (move_method) {
+        case eBegin:
+            from = FILE_BEGIN;
+            break;
+        case eCurrent:
+            from = FILE_CURRENT;
+            break;
+        case eEnd:
+            from = FILE_END;
+            break;
+        default:
+            _TROUBLE;
+    }
+    LARGE_INTEGER ofs;
+    ofs.QuadPart = offset;
+    bool res = (SetFilePointerEx(m_Handle, ofs, NULL, from) == TRUE);
+#elif defined(NCBI_OS_UNIX)
+    int from = 0;
+    switch (move_method) {
+        case eBegin:
+            from = SEEK_SET;
+            break;
+        case eCurrent:
+            from = SEEK_CUR;
+            break;
+        case eEnd:
+            from = SEEK_END;
+            break;
+        default:
+            _TROUBLE;
+    }
+    bool res = (lseek(m_Handle, offset, from) != -1);
+#endif
+    if ( !res ) {
+        NCBI_THROW(CFileErrnoException, eFileIO,
+            "SetFilePos() failed (offset=" + 
+            NStr::Int8ToString(offset) + ", method=" +
+            NStr::IntToString(move_method) + ")");
+    }
+}
+
+
+void CFileIO::SetFileSize(size_t length, EPositionMoveMethod pos)
+{
+#if defined(NCBI_OS_MSWIN)
+    BOOL res = true;
+    // Get current position if needed
+    LARGE_INTEGER ofs;
+    LARGE_INTEGER saved;
+    ofs.QuadPart = 0;
+    saved.QuadPart = 0;
+    if (pos != eEnd) {
+        res = SetFilePointerEx(m_Handle, ofs, &saved, FILE_CURRENT);
+    }
+    if (res) {
+        // Set file position to specified length (new EOF)
+        ofs.QuadPart = length;
+        res = SetFilePointerEx(m_Handle, ofs, NULL, FILE_BEGIN);
+        // And change file size
+        if (res) {
+            res = SetEndOfFile(m_Handle);
+        }
+        // Set file pointer if other than eEnd
+        if (res  &&  (pos != eEnd)) {
+            res = SetFilePointerEx(m_Handle, saved, NULL, FILE_BEGIN);
+        }
+    }
+#elif defined(NCBI_OS_UNIX)
+    bool res = (ftruncate(m_Handle, (off_t)length) != -1);
+    // POSIX ftruncate() doesn't move file pointer
+    if (res  &&  (pos != eCurrent)) {
+        SetFilePos(0, pos);
+    }
+#endif
+    if ( !res ) {
+        NCBI_THROW(CFileErrnoException, eFileIO,
+            "SetFileSize() failed (length=" + NStr::UInt8ToString(length)+")");
+    }
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -4800,10 +4911,12 @@ ERW_Result CFileWriter::Write(const void* buf,
 
 ERW_Result CFileWriter::Flush(void)
 {
-    if ( m_File.Flush() ) {
-        return eRW_Success;
+    try {
+        m_File.Flush();
+    } catch (CFileException&) { 
+       return eRW_Error;
     }
-    return eRW_Error;
+    return eRW_Success;
 }
 
 
@@ -4883,10 +4996,12 @@ ERW_Result CFileReaderWriter::Write(const void* buf,
 
 ERW_Result CFileReaderWriter::Flush(void)
 {
-    if ( m_File.Flush() ) {
-        return eRW_Success;
+    try {
+        m_File.Flush();
+    } catch (CFileException&) { 
+       return eRW_Error;
     }
-    return eRW_Error;
+    return eRW_Success;
 }
 
 
@@ -4901,7 +5016,7 @@ ERW_Result CFileReaderWriter::Flush(void)
     if (F_ISSET(m_Flags, (group))) \
         m_Flags &= ~unsigned((group) & ~unsigned(fDefault))
 
-// Platform-dependent structure to store locking information
+// Platform-dependent structure to store file locking information
 struct SLock {
     SLock(void) {};
     SLock(off_t off, size_t len) {
@@ -5098,3 +5213,4 @@ void CFileLock::Unlock(void)
 
 
 END_NCBI_SCOPE
+ 

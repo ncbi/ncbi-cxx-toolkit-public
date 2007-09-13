@@ -33,10 +33,15 @@
 
 /// @file ncbifile.hpp
 ///
-/// Defines classes CDirEntry, CFile, CDir, CSymLink, CMemoryFile, CFileUtil,
-/// CFileLock, CFileReader, CFileException. Defines file finding algorithms.
-/// CFileException to allow various file and directory operations.
-///
+/// Defines classes:
+///   CDirEntry, CFile, CDir, CSymLink,
+///   CMemoryFile,
+///   CFileUtil,
+///   CFileLock,
+///   CFileIO,
+///   CFileReader, CFileWriter, CFileReaderWriter,
+///   CFileException.
+///   Defines different file finding algorithms.
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
@@ -1086,8 +1091,7 @@ public:
     /// Get size of file.
     ///
     /// @return
-    /// - size of file, if no error.
-    /// - -1, if there was an error obtaining file size.
+    ///   Size of the file, if operation successful; -1, otherwise.
     Int8 GetLength(void) const;
 
     /// Copy a file.
@@ -2716,6 +2720,13 @@ public:
         /// operations on the file.
         eExclusive
     };
+
+    /// Which starting point use to the file pointer move.
+    enum EPositionMoveMethod {
+        eBegin,       ///< Absolute position from beginning of the file.
+        eCurrent,     ///< Relative from current position.
+        eEnd          ///< The starting point is the current EOF position.
+    };
 };
 
 
@@ -2736,7 +2747,7 @@ public:
 
     /// Open file.
     void Open(const string& filename, EOpenMode open_mode,
-              EAccessMode access_mode, EShareMode share_mode);
+              EAccessMode access_mode, EShareMode share_mode = eShare);
 
     /// Close file.
     void Close(void);
@@ -2756,13 +2767,40 @@ public:
     ssize_t Write(const void* buf, size_t count);
 
     /// Flush file buffers.
-    bool Flush(void);
+    void Flush(void);
 
     /// Return system file handle associated with the file.
     TFileHandle GetFileHandle(void) { return m_Handle; };
 
     /// Close previous handle if needed and use given handle for all I/O.
     void SetFileHandle(TFileHandle handle);
+
+    /// Get file position.
+    ///
+    /// @return
+    ///   Current file position. On error, -1 is returned. 
+    ssize_t GetFilePos(void);
+
+    /// Set file position.
+    void SetFilePos(off_t offset, EPositionMoveMethod move_method);
+
+    /// Set new size for the file.
+    ///
+    /// This method can be used to truncate or extend the file.
+    /// @note
+    ///   The file must be opened with write access rights.
+    ///   Function repositions the offset of the file descriptor to the EOF.
+    /// @param length
+    ///   New file size.
+    ///   If the file was previously longer than length, bytes past "length"
+    ///   will no longer be accessible. If it was shorter, the contents of
+    ///   the file between the old EOF position and the new position are
+    ///   not defined. Usually it will be read in as zeros, but this depends
+    ///   from OS.
+    /// @param pos
+    ///   Defines how to set current file position after changing file size.
+    ///   eCurrent means that file position does not change.
+    void SetFileSize(size_t length, EPositionMoveMethod pos = eCurrent);
 
 protected:
     TFileHandle  m_Handle;      ///< System file handle.
@@ -2913,8 +2951,8 @@ private:
 ///    used, obtain a file descriptor from CFileLock object using method
 ///    GetFileHandle(). Because on Unix all locks associated with a file
 ///    for a given process are removed when any file descriptor for that
-///    file is closed by that process, even if a lock was never requested for
-///    that file descriptor. On Windows you cannot open the file for
+///    file is closed by that process, even if a lock was never requested
+///    for that file descriptor. On Windows you cannot open the file for
 ///    writing, if it already have an exclusive lock, even established
 ///    by the same process.
 ///    So, often is better to open file somewhere else and pass its file
