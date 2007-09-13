@@ -1,5 +1,5 @@
 APP = psiblast
-SRC = psiblast_app blast_format blast_app_util
+SRC = psiblast_app blast_format data4xmlformat blast_app_util
 LIB = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)

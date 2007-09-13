@@ -37,7 +37,7 @@ Author: Jason Papadopoulos
 #define APP___BLAST_FORMAT__HPP
 
 #include <corelib/ncbi_limits.hpp>
-#include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_results.hpp>
@@ -47,6 +47,7 @@ Author: Jason Papadopoulos
 #include <objtools/blast_format/showdefline.hpp>
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
+#include <algo/blast/blastinput/blast_input.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -56,6 +57,7 @@ class CBlastFormat
 public:
     /// The line length of pairwise blast output
     static const int kFormatLineLength = 65;
+    static const string kNoHitsFound;
 
     /// Constructor
     /// @param program Blast program name ("blastn", "blastp", etc) [in]
@@ -66,6 +68,9 @@ public:
     ///                are to be parsed. If multiple queries are provieded,
     ///                their sequence ID's must be distinct [in]
     /// @param outfile Stream that will receive formatted output
+    /// @param blast_input object containing query sequences read. Its lifetime
+    ///                 must exceed that of this object, as this object doesn't
+    ///                 own this pointer [in]
     /// @param asn_outfile Name of file to receive ASN.1 output
     /// @param num_summary The number of 1-line summaries at the top of
     ///                   the blast report (for output types that have
@@ -88,6 +93,7 @@ public:
     CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
                  int format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
+                 blast::CBlastInput* blast_input,
                  int num_summary, 
                  int num_alignments, 
                  const char *matrix_name = BLAST_DEFAULT_MATRIX,
@@ -110,9 +116,9 @@ public:
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
     void PrintOneResultSet(const blast::CSearchResults& results,
-                          objects::CScope& scope,
-                          unsigned int itr_num =
-                          numeric_limits<unsigned int>::max());
+                           objects::CScope& scope,
+                           unsigned int itr_num =
+                           numeric_limits<unsigned int>::max());
 
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]
@@ -146,6 +152,12 @@ private:
 
     /// internal representation of database information
     list<CBlastFormatUtil::SDbInfo> m_DbInfo;
+
+    /// Queries are required for XML format, not owned by this class
+    blast::CBlastInput* m_Queries;
+    /// Accumulated results to display in XML format 
+    blast::CSearchResultSet m_AccumulatedResults;
+    
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

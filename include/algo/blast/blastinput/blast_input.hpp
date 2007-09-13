@@ -224,6 +224,12 @@ public:
     ///
     ~CBlastInput() {}
 
+    /// Copy constructor
+    CBlastInput(const CBlastInput& rhs);
+
+    /// Assignment operator
+    CBlastInput& operator=(const CBlastInput& rhs);
+
     /// Read and convert all the sequences from the source
     /// @return The converted sequences
     ///
@@ -262,8 +268,16 @@ public:
     TSeqPos GetBatchSize() const { return m_BatchSize; }
 
 private:
-    CBlastInputSource *m_Source;  ///< pointer to source of sequences
+    CRef<CBlastInputSource> m_Source;  ///< pointer to source of sequences
     TSeqPos m_BatchSize;          ///< total size of one block of sequences
+
+    /// Cached value for all queries read in TSeqLocVector format
+    auto_ptr<TSeqLocVector> m_AllSeqLocs;
+    /// Cached value for all queries read in CBlastQueryVector format
+    CRef<CBlastQueryVector> m_AllQueries;
+
+    /// Perform the actual copy for assignment operator and copy constructor
+    void do_copy(const CBlastInput& input);
 };
 
 

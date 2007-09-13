@@ -1,5 +1,5 @@
 APP = blastn
-SRC = blastn_app blast_format blast_app_util bl2seq_runner
+SRC = blastn_app blast_format data4xmlformat blast_app_util bl2seq_runner
 LIB = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)

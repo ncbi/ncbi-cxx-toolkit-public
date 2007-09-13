@@ -57,6 +57,34 @@ CBlastInputConfig::CBlastInputConfig(const SDataLoaderConfig& dlconfig,
   m_RetrieveSeqData(retrieve_seqs)
 {}
 
+CBlastInput::CBlastInput(const CBlastInput& rhs)
+{
+    do_copy(rhs);
+}
+
+CBlastInput&
+CBlastInput::operator=(const CBlastInput& rhs)
+{
+    do_copy(rhs);
+    return *this;
+}
+
+void
+CBlastInput::do_copy(const CBlastInput& rhs)
+{
+    if (this != &rhs) {
+        m_Source = rhs.m_Source;
+        m_BatchSize = rhs.m_BatchSize;
+        if (rhs.m_AllSeqLocs.get() != 0) {
+            m_AllSeqLocs.reset(new TSeqLocVector(rhs.m_AllSeqLocs->size()));
+            copy(rhs.m_AllSeqLocs->begin(),
+                 rhs.m_AllSeqLocs->end(),
+                 m_AllSeqLocs->begin());
+        }
+        m_AllQueries = rhs.m_AllQueries;
+    }
+}
+
 TSeqLocVector
 CBlastInput::GetNextSeqLocBatch()
 {
@@ -83,6 +111,11 @@ CBlastInput::GetNextSeqLocBatch()
             // of type interval or whole
             abort();
         }
+
+        if (m_AllSeqLocs.get() == 0) {
+            m_AllSeqLocs.reset(new TSeqLocVector());
+        }
+        m_AllSeqLocs->push_back(loc);
     }
 
     return retval;
@@ -115,6 +148,11 @@ CBlastInput::GetNextSeqBatch()
         }
 
         retval->AddQuery(q);
+
+        if (m_AllQueries.Empty()) {
+            m_AllQueries.Reset(new CBlastQueryVector());
+        }
+        m_AllQueries->AddQuery(q);
     }
 
     return retval;
@@ -124,27 +162,62 @@ CBlastInput::GetNextSeqBatch()
 TSeqLocVector
 CBlastInput::GetAllSeqLocs()
 {
-    TSeqLocVector retval;
-
-    while (!m_Source->End()) {
-        retval.push_back(m_Source->GetNextSSeqLoc());
+    if (m_AllSeqLocs.get() == 0) {
+        m_AllSeqLocs.reset(new TSeqLocVector());
     }
 
-    return retval;
+    while (!m_Source->End()) {
+        m_AllSeqLocs->push_back(m_Source->GetNextSSeqLoc());
+    }
+
+    if (m_AllSeqLocs->empty() ) {
+        // Copy from cached CBlastQueryVector
+        if (m_AllQueries.NotEmpty() && !m_AllQueries->Empty()) {
+            m_AllSeqLocs.reset(new TSeqLocVector(m_AllQueries->Size()));
+            for (size_t i = 0; i < m_AllQueries->Size(); i++) {
+                CRef<CBlastSearchQuery> bq =
+                    m_AllQueries->GetBlastSearchQuery(i);
+                (*m_AllSeqLocs)[i].seqloc = bq->GetQuerySeqLoc();
+                (*m_AllSeqLocs)[i].scope = bq->GetScope();
+
+                TMaskedQueryRegions mqr = bq->GetMaskedRegions();
+                (*m_AllSeqLocs)[i].mask = MaskedQueryRegionsToPackedSeqLoc(mqr);
+            }
+        }
+    }
+
+    return *m_AllSeqLocs;
 }
 
 
 CRef<CBlastQueryVector>
 CBlastInput::GetAllSeqs()
 {
-    CRef<CBlastQueryVector> retval(new CBlastQueryVector);
+    if (m_AllQueries.Empty()) {
+        m_AllQueries.Reset(new CBlastQueryVector());
+    }
 
     while (!m_Source->End()) {
         CRef<CBlastSearchQuery> q(m_Source->GetNextSequence());
-        retval->AddQuery(q);
+        m_AllQueries->AddQuery(q);
     }
 
-    return retval;
+    if (m_AllQueries->Empty()) {
+        // Copy from cached TSeqLocVector
+        if (m_AllSeqLocs.get() && !m_AllSeqLocs->empty()) {
+            // it's safe to add empty query masks because these are
+            // available from the blast::CSearchResultsSet class
+            TMaskedQueryRegions empty_masks;
+            ITERATE(TSeqLocVector, itr, *m_AllSeqLocs) {
+                CRef<CBlastSearchQuery> bq (new CBlastSearchQuery(*itr->seqloc, 
+                                                                  *itr->scope, 
+                                                                  empty_masks));
+                m_AllQueries->AddQuery(bq);
+            }
+        }
+    }
+
+    return m_AllQueries;
 }
 
 

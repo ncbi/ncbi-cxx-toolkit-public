@@ -83,7 +83,7 @@ public:
     /// Returns number of query sequences.
     virtual unsigned int GetNumQueries(void) const = 0;
     /// Returns list of mask locations for a given query.
-    virtual const list<CRef<blast::CSeqLocInfo> >*
+    virtual const blast::TMaskedQueryRegions*
     GetMaskLocations(int query_index) const = 0;
     /// Returns number of database sequences.
     virtual int GetDbNumSeqs(void) const = 0;
@@ -112,7 +112,8 @@ public:
     virtual int GetMasterGeneticCode() const = 0;
     ///slave genetic code
     virtual int GetSlaveGeneticCode() const = 0;
-    /// Get error messages
+    /// Get error messages, one element per query (e.g.: size of return value
+    /// == GetNumQueries());
     virtual vector<string> GetMessages() const = 0;
 
 };

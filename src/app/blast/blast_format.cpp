@@ -41,7 +41,9 @@ Author: Jason Papadopoulos
 #include <objects/seq/Seq_annot.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <util/tables/raw_scoremat.h>
+#include <objtools/blast_format/blastxml_format.hpp>
 #include "blast_format.hpp"
+#include "data4xmlformat.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -49,9 +51,12 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
+const string CBlastFormat::kNoHitsFound("No hits found");
+
 CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname, 
                  int format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
+                 CBlastInput* blast_input,
                  int num_summary, 
                  int num_alignments, 
                  const char *matrix_name,
@@ -68,14 +73,9 @@ CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname,
           m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
           m_IsDbAvailable(dbname.length() > 0),
           m_IsUngappedSearch(!options.GetGappedMode()),
-          m_MatrixSet(false)
+          m_MatrixSet(false),
+          m_Queries(blast_input)
 {
-    // blast formatter cannot handle these output types
-    if (format_type == 5) {
-        NCBI_THROW(blast::CBlastException, eInvalidArgument,
-                   "XML output format not supported");
-    }
-
     x_FillScoreMatrix(matrix_name);
     if (m_IsDbAvailable) {
         x_FillDbInfo();
@@ -162,7 +162,7 @@ void
 CBlastFormat::PrintProlog()
 {
     // no header for some output types
-    if (m_FormatType >= 6)
+    if (m_FormatType >= 5)
         return;
 
     CBlastFormatUtil::BlastPrintVersionInfo(m_Program, m_IsHTML, 
@@ -208,7 +208,8 @@ CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 void
 CBlastFormat::PrintOneResultSet(const CSearchResults& results,
                                 CScope& scope,
-                                unsigned int itr_num)
+                                unsigned int itr_num
+                                /* = numeric_limits<unsigned int>::max() */)
 {
     CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
 
@@ -221,6 +222,12 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
     } else if (m_FormatType == 9) {
         if (results.HasAlignments()) {
             m_Outfile << MSerial_AsnBinary << *aln_set;
+        }
+        return;
+    } else if (m_FormatType == 5) { // Prepare for XML formatting
+        if (results.HasAlignments()) {
+            CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
+            m_AccumulatedResults.push_back(res);
         }
         return;
     }
@@ -272,7 +279,8 @@ CBlastFormat::PrintOneResultSet(const CSearchResults& results,
 
     // quit early if there are no hits
     if ( !results.HasAlignments() ) {
-        m_Outfile << endl << endl << "***** No hits found *****" << endl 
+        m_Outfile << endl << endl 
+                  << "***** " << kNoHitsFound << " *****" << endl 
                   << endl << endl;
         x_PrintOneQueryFooter(*results.GetAncillaryData());
         return;
@@ -371,6 +379,19 @@ CBlastFormat::PrintEpilog(const CBlastOptions& options)
     // some output types don't have a footer
     if (m_FormatType >= 6)
         return;
+
+    // XML can only be printed once (i.e.: not in batches), so we print it as
+    // the epilog of the report
+    if (m_FormatType == 5) {
+        CRef<CBlastQueryVector> queries = m_Queries->GetAllSeqs();
+        CCmdLineBlastXMLReportData report_data(queries, m_AccumulatedResults,
+                                               options, m_DbName, m_DbIsAA,
+                                               m_QueryGenCode, m_DbGenCode);
+        objects::CBlastOutput xml_output;
+        BlastXML_FormatReport(xml_output, &report_data);
+        m_Outfile << MSerial_Xml << xml_output;
+        return;
+    }
 
     m_Outfile << endl << endl;
     if (m_IsDbAvailable)

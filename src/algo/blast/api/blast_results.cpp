@@ -252,6 +252,10 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
     return retval;
 }
 
+CSearchResultSet::CSearchResultSet(EResultType res_type /* = eDatabaseSearch*/)
+: m_ResultType(res_type)
+{}
+
 CSearchResultSet::CSearchResultSet(TQueryIdVector               queries,
                                    TSeqAlignVector              aligns,
                                    TSearchMessages              msg_vec,
@@ -329,6 +333,13 @@ void CSearchResultSet::x_Init(vector< CConstRef<objects::CSeq_id> > queries,
                                                   ancillary_data[i]));
         }
     }
+}
+
+void
+CSearchResultSet::push_back(CSearchResultSet::value_type& element)
+{
+    m_Results.push_back(element);
+    m_NumQueries++;
 }
 
 END_SCOPE(blast)

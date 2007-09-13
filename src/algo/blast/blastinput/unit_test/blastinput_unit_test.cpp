@@ -818,8 +818,12 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleAccessions)
     blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
-    blast::TSeqLocVector no_queries = bi.GetAllSeqLocs();
-    CHECK(no_queries.empty());
+
+    {{
+        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
+        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        CHECK(source->End() == true);
+    }}
 
     for (size_t i = 0; i < kNumQueries; i++) {
 
@@ -997,8 +1001,12 @@ BOOST_AUTO_TEST_CASE(s_ReadMultipleTis)
     blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
-    blast::TSeqLocVector no_queries = bi.GetAllSeqLocs();
-    CHECK(no_queries.empty());
+
+    {{
+        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
+        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        CHECK(source->End() == true);
+    }}
 
     const string db("ti");
     for (size_t i = 0; i < kNumQueries; i++) {
@@ -1091,8 +1099,12 @@ BOOST_AUTO_TEST_CASE(s_ReadAccessionsAndGisWithNewLines)
     blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
-    blast::TSeqLocVector no_queries = bi.GetAllSeqLocs();
-    CHECK(no_queries.empty());
+
+    {{
+        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
+        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        CHECK(source->End() == true);
+    }}
 
     for (size_t i = 0; i < kNumQueries; i++) {
 
@@ -1513,8 +1525,12 @@ BOOST_AUTO_TEST_CASE(s_ReadFastaWithDeflineNucl_Multiple)
     blast::TSeqLocVector query_vector = bi.GetAllSeqLocs();
     CHECK_EQUAL(kNumQueries, query_vector.size());
     CHECK(source->End() == true);
-    blast::TSeqLocVector no_queries = bi.GetAllSeqLocs();
-    CHECK(no_queries.empty());
+
+    {{
+        blast::TSeqLocVector cached_queries = bi.GetAllSeqLocs();
+        CHECK_EQUAL(kNumQueries, cached_queries.size());
+        CHECK(source->End() == true);
+    }}
 
     blast::SSeqLoc ssl = query_vector.front();
     TSeqPos length = 646;

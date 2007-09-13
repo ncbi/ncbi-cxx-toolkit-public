@@ -89,7 +89,7 @@ public:
 ///                    alignment for?
 static void
 s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq, 
-               const list<CRef<blast::CSeqLocInfo> >& mask_info, 
+               const TMaskedQueryRegions& mask_info, 
                CDisplaySeqalign::SeqLocCharOption mask_char,
                int query_frame)
 {
@@ -103,7 +103,7 @@ s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
 
     CRangeVector masks_v;
     int aln_stop = query_seq.size() - 1;
-    ITERATE(list<CRef<blast::CSeqLocInfo> >, mask_iter, mask_info) {
+    ITERATE(TMaskedQueryRegions, mask_iter, mask_info) {
         if ((*mask_iter)->GetFrame() != query_frame)
             continue;
         int start = 
@@ -196,7 +196,7 @@ static void
 s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list, 
                        const CSeq_align_set& alnset, CScope* scope, 
                        const CBlastFormattingMatrix* matrix,
-                       const list<CRef<blast::CSeqLocInfo> >* mask_info,
+                       const TMaskedQueryRegions* mask_info,
                        int master_gentice_code, int slave_genetic_code)
 {
     int index = 1;
@@ -401,7 +401,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
 static void 
 s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
                    const CBlastFormattingMatrix* matrix, 
-                   const list<CRef<blast::CSeqLocInfo> >* mask_info, 
+                   const TMaskedQueryRegions* mask_info, 
                    bool ungapped, int master_gentice_code, int slave_genetic_code)
 {
     _ASSERT(align_in.GetSegs().IsDisc());
@@ -498,7 +498,7 @@ s_GetSubjectId(const CSeq_align& align)
 static void
 s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
                        CScope* scope, const CBlastFormattingMatrix* matrix, 
-                       const list<CRef<blast::CSeqLocInfo> >* mask_info,
+                       const TMaskedQueryRegions* mask_info,
                        bool ungapped, int master_gentice_code, int slave_genetic_code)
 {
     // If there are no hits for this query, return with empty Hits list.
@@ -559,7 +559,7 @@ static void
 s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CSeq_loc& seqloc, CScope* scope, 
                        const CBlastFormattingMatrix* matrix, 
-                       const list<CRef<blast::CSeqLocInfo> >* mask_info,
+                       const TMaskedQueryRegions* mask_info,
                        int index, CStatistics& stat, bool is_ungapped,
                        int master_gentice_code, int slave_genetic_code,
                        const vector<string>& messages)
@@ -600,8 +600,8 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
     }
     one_query_iter->SetStat(stat);
   
-    if (messages.size() > 0)
-       one_query_iter->SetMessage(messages[0]);
+    if (messages.size() > 0 && !messages[index].empty())
+       one_query_iter->SetMessage(messages[index]);
 
     iterations.push_back(one_query_iter);
 }

@@ -215,10 +215,10 @@ public:
     bool HasWarnings() const;
 
     /// Retrieve a string with the query identifier followed by the errors
-    /// produced, returns a empty string if HasErrors() returns true.
+    /// produced, returns a empty string if HasErrors() returns false.
     string GetErrorStrings() const;
     /// Retrieve a string with the query identifier followed by the warnings
-    /// produced, returns a empty string if HasErrors() returns true.
+    /// produced, returns a empty string if HasWarnings() returns false.
     string GetWarningStrings() const;
 
     /// Retrieve the query regions which were masked by BLAST
@@ -266,6 +266,12 @@ public:
 
     /// const_iterator type definition
     typedef vector< CRef<CSearchResults> >::const_iterator const_iterator;
+
+    /// data type contained by this container
+    typedef CRef<CSearchResults> value_type;
+
+    /// Simplest constructor
+    CSearchResultSet(EResultType res_type = eDatabaseSearch);
 
     /// Parametrized constructor
     /// @param aligns vector of all queries' alignments [in]
@@ -357,6 +363,10 @@ public:
     /// Returns const_iterator to end of container, provided to
     /// facilitate STL-style iteration
     const_iterator end() const { return m_Results.end(); }
+
+    /// Add a value to the back of this container
+    /// @param element element to add [in]
+    void push_back(value_type& element);
 
     EResultType GetResultType() const { return m_ResultType; }
     

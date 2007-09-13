@@ -173,6 +173,7 @@ int CPsiBlastApp::Run(void)
         CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
         CRef<CBlastQueryVector> query;
         CRef<CBlastFastaInputSource> fasta;
+        CRef<CBlastInput> input;
         if (pssm.Empty()) {
             SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
             CBlastInputConfig iconfig(dlconfig, query_opts->GetStrand(),
@@ -182,8 +183,9 @@ int CPsiBlastApp::Run(void)
             fasta.Reset(new CBlastFastaInputSource(*m_ObjMgr, 
                                          m_CmdLineArgs->GetInputStream(),
                                          iconfig));
-            CBlastInput input(&*fasta, m_CmdLineArgs->GetQueryBatchSize());
-            query.Reset(input.GetAllSeqs());
+            input.Reset(new CBlastInput(&*fasta,
+                                        m_CmdLineArgs->GetQueryBatchSize()));
+            query.Reset(input->GetAllSeqs());
             if (query->Size() > 1 && kNumIterations > 1) {
                 ERR_POST(Warning << "Multiple queries provided and multiple "
                          "iterations requested, only first query will be "
@@ -223,7 +225,7 @@ int CPsiBlastApp::Run(void)
                                fmt_args->GetFormattedOutputChoice(),
                                db_args->IsProtein(),
                                query_opts->BelieveQueryDefline(),
-                               out_stream,
+                               out_stream, input,
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
                                opt.GetMatrixName(),

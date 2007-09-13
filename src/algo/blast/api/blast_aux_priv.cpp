@@ -436,8 +436,12 @@ PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
 }
 
 CRef<objects::CSeq_loc>
-MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & /*sloc*/ )
+MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc )
 {
+    if (sloc.empty()) {
+        return CRef<objects::CSeq_loc>();
+    }
+
     // This function could produce this error only in cases where a
     // clean (non-information-losing) conversion failed.
     

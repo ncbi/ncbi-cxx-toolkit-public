@@ -133,7 +133,7 @@ int CBlastpApp::Run(void)
                                fmt_args->GetFormattedOutputChoice(),
                                db_args->IsProtein(),
                                query_opts->BelieveQueryDefline(),
-                               m_CmdLineArgs->GetOutputStream(),
+                               m_CmdLineArgs->GetOutputStream(), &input,
                                fmt_args->GetNumDescriptions(),
                                fmt_args->GetNumAlignments(),
                                opt.GetMatrixName(),

@@ -168,7 +168,7 @@ int CBlastnApp::Run(void)
                     fmt_args->GetFormattedOutputChoice(),
                     is_subject_protein,
                     query_opts->BelieveQueryDefline(),
-                    m_CmdLineArgs->GetOutputStream(),
+                    m_CmdLineArgs->GetOutputStream(), &input,
                     fmt_args->GetNumDescriptions(),
                     fmt_args->GetNumAlignments(),
                     opt.GetMatrixName(),
