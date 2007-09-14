@@ -631,11 +631,11 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
     CS_SMALLINT *nullind = NULL;
     CS_INT      *datalen = NULL;
     CS_CONTEXT  *ctx = blkdesc->con->ctx;
+    unsigned char* current_row = blkdesc->bindinfo->current_row;
 
     tdsdump_log(TDS_DBG_FUNC, "blk_textxfer(blkdesc, buflen %d, outlen)\n", buflen);
 
     record = blkdesc->bindinfo->current_row;
-    unsigned char* current_row = blkdesc->bindinfo->current_row;
     old_record_size = blkdesc->bindinfo->row_size;
     new_record_size = 0;
 
