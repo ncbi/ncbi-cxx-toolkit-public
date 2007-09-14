@@ -488,9 +488,10 @@ int CProjBulderApp::Run(void)
 {
 	// Set error posting and tracing on maximum.
 	SetDiagTrace(eDT_Enable);
-//	SetDiagPostFlag(eDPF_Default);
-	SetDiagPostFlag(eDPF_Trace);
+    SetDiagPostAllFlags(eDPF_File | eDPF_LongFilename | eDPF_ErrCodeMessage);
+
 	SetDiagPostLevel(eDiag_Info);
+    LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
 
     CStopWatch sw;
     sw.Start();

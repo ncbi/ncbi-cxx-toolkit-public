@@ -87,22 +87,22 @@ private:
 
 
 #define PTB_ERROR(file, msg) \
-    LOG_POST(Error << MDiagFile(file) << ": " << msg)
+    ERR_POST(Error << MDiagFile(file) << ": " << msg)
 
 #define PTB_ERROR_EX(file, err_code, msg) \
-    LOG_POST(Error << MDiagFile(file) << ErrCode(err_code) << msg)
+    ERR_POST(Error << MDiagFile(file) << ErrCode(err_code) << msg)
 
 #define PTB_WARNING(file, msg) \
-    LOG_POST(Warning << MDiagFile(file) << ": " << msg)
+    ERR_POST(Warning << MDiagFile(file) << ": " << msg)
 
 #define PTB_WARNING_EX(file, err_code, msg) \
-    LOG_POST(Warning << MDiagFile(file) << ErrCode(err_code) << msg)
+    ERR_POST(Warning << MDiagFile(file) << ErrCode(err_code) << msg)
 
 #define PTB_INFO(msg) \
-    LOG_POST(Info << MDiagFile(kEmptyStr) << ErrCode(ePTB_NoError) << msg)
+    ERR_POST(Info << MDiagFile(kEmptyStr) << ErrCode(ePTB_NoError) << msg)
 
 #define PTB_INFO_EX(file, err_code, msg) \
-    LOG_POST(Info << MDiagFile(file) << ErrCode(err_code) << msg)
+    ERR_POST(Info << MDiagFile(file) << ErrCode(err_code) << msg)
 
 #define PTB_TRACE(msg) \
     _TRACE(ErrCode(ePTB_NoError) << msg)
