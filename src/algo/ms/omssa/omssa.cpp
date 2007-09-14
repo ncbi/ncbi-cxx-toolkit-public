@@ -371,7 +371,7 @@ RestrictedSearch(false)
 
 void CSearch::ResetGlobals(void)
 {
-    iSearchGlobal = 0;
+    iSearchGlobal = -1;
     MaxMZ = 0;
     SharedPeakSet.Reset(0);
 }
