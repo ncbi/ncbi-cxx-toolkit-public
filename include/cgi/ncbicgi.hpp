@@ -579,6 +579,9 @@ public:
     /// "application/x-www-form-urlencoded" or "multipart/form-data",
     /// and "fDoNotParseContent" flag is not set,
     /// then retrieve and parse entries from the input stream "istr".
+    /// If "$CONTENT_TYPE" is empty, the contents is not stripped from
+    /// the stream but remains available (pushed back) whether or not
+    /// the form parsing was successful.
     ///
     /// If "$REQUEST_METHOD" is undefined then try to retrieve the request's
     /// entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
