@@ -396,7 +396,7 @@ void CSafeStaticPtr<T>::Init(void)
     if ( Init_Lock(&mutex_locked) ) {
         // Create the object and register for cleanup
         try {
-            m_Ptr = new T();
+            m_Ptr = new T;
             CSafeStaticGuard::Register(this);
         }
         catch (CException& e) {
@@ -473,7 +473,7 @@ void CSafeStaticRef<T>::Init(void)
     if ( Init_Lock(&mutex_locked) ) {
         // Create the object and register for cleanup
         try {
-            m_Ptr = new CRef<T>(new T());
+            m_Ptr = new CRef<T>(new T);
             CSafeStaticGuard::Register(this);
         }
         catch (CException& e) {
