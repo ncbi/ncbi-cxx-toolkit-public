@@ -437,25 +437,8 @@ sub DoMerge
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
 
-    my $BranchInfo;
-
-    if ($Direction eq 'up')
-    {
-        $BranchInfo = NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
-            $BranchPath, $SourceRev, undef);
-
-        $SourceRev = $BranchInfo->{BranchRevisions}->[0]->{Number}
-    }
-    else
-    {
-        $BranchInfo = NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL,
-            $BranchPath, undef, $SourceRev);
-
-        my $UpstreamRevisions = $BranchInfo->{UpstreamRevisions};
-
-        $SourceRev = @$UpstreamRevisions ? $UpstreamRevisions->[0]->{Number} :
-            $BranchInfo->{BranchRevisions}->[-1]->{Number} - 1;
-    }
+    my $BranchInfo =
+        NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
 
     my @BranchDirs = @{$BranchInfo->{BranchDirs}};
 
@@ -467,71 +450,60 @@ sub DoMerge
             unless m/^(?:[\?~X]|    S)/o
     }
 
-    print STDERR "Performing updates...\n";
-
-    $Self->{SVN}->RunSubversion('update', @BranchDirs);
-
-    my ($MergeRevisions, $ReverseMergeRevisions) =
-        @$BranchInfo{$Direction eq 'up' ?
-            qw(MergeUpRevisions MergeDownRevisions) :
-            qw(MergeDownRevisions MergeUpRevisions)};
-
-    my $LastSourceRev = @$MergeRevisions ?
-        $MergeRevisions->[0]->{SourceRevisionNumber} :
-        $Direction ne 'up' ? $BranchInfo->{BranchSourceRevision} :
-            $BranchInfo->{BranchCreationRevision}->{Number};
-
     my $UpstreamPath = $BranchInfo->{UpstreamPath};
 
-    my ($SourcePath, $TargetPath) = $Direction ne 'up' ?
-        ($UpstreamPath, $BranchPath) : ($BranchPath, $UpstreamPath);
+    my ($SourcePath, $TargetPath,
+        $LastSourceRev, $LastTargetRev, $SourceRevisions) =
+        $Direction eq 'up' ?
+            ($BranchPath, $UpstreamPath,
+                $BranchInfo->{LastUpSyncRevisionNumber},
+                $BranchInfo->{LastDownSyncRevisionNumber},
+                $BranchInfo->{BranchRevisions}) :
+            ($UpstreamPath, $BranchPath,
+                $BranchInfo->{LastDownSyncRevisionNumber},
+                $BranchInfo->{LastUpSyncRevisionNumber},
+                $BranchInfo->{UpstreamRevisions});
+
+    $SourceRev ||= $SourceRevisions->[0]->{Number} || 0;
 
     unless ($SourceRev > $LastSourceRev)
     {
         die "$Self->{MyName}: '$TargetPath' is already " .
-            "in synch with r$LastSourceRev of '$SourcePath'\n"
+            "in sync with r$LastSourceRev of '$SourcePath'\n"
     }
 
-    my @ExcludedRevisions;
+    my $SourceURL = $RootURL . '/' . $SourcePath . '/';
+    my $TargetURL = $RootURL . '/' . $TargetPath . '/';
 
-    for my $Revision (@$ReverseMergeRevisions)
-    {
-        last if $Revision->{Number} <= $LastSourceRev;
+    print STDERR "Performing updates...\n";
 
-        push @ExcludedRevisions, $Revision->{Number}
-    }
-
-    my @MergePlan;
-
-    for my $Revision (reverse @ExcludedRevisions)
-    {
-        push @MergePlan, "-r$LastSourceRev\:" . ($Revision - 1)
-            if $LastSourceRev < $Revision - 1;
-
-        $LastSourceRev = $Revision
-    }
-
-    push @MergePlan, "-r$LastSourceRev\:$SourceRev"
-        if $LastSourceRev < $SourceRev;
-
-    unless (@MergePlan)
-    {
-        print STDERR "Nothing to do.\n";
-        return
-    }
+    $Self->{SVN}->RunSubversion('update', @BranchDirs);
 
     print STDERR "Merging with r$SourceRev...\n";
 
-    my $BaseURL = $RootURL . '/' . ($Direction eq 'up' ?
-        $BranchPath : $UpstreamPath) . '/';
+    my $LastMergeRevision = $BranchInfo->{MergeRevisions}->[0];
 
-    for my $LocalDir (@BranchDirs)
+    if ($LastMergeRevision and
+        $LastMergeRevision->{MergeDirection} ne $Direction)
     {
-        for my $RevRange (@MergePlan)
+        # Previous merge was of the opposite direction.
+        for my $LocalDir (@BranchDirs)
         {
-            print STDERR "  $RevRange => $LocalDir\n";
-            $Self->{SVN}->RunSubversion('merge', $RevRange,
-                $BaseURL . $LocalDir, $LocalDir)
+            $Self->{SVN}->RunSubversion('merge',
+                $TargetURL . $LocalDir . '@' . $LastTargetRev,
+                $SourceURL . $LocalDir . '@' . $SourceRev,
+                $LocalDir)
+        }
+    }
+    else
+    {
+        # Either there were no merge revisions or
+        # previous merge was of the same direction.
+        for my $LocalDir (@BranchDirs)
+        {
+            $Self->{SVN}->RunSubversion('merge',
+                "-r$LastSourceRev\:$SourceRev", $SourceURL . $LocalDir,
+                $LocalDir)
         }
     }
 

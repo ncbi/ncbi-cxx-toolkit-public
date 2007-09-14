@@ -7,7 +7,7 @@ use warnings;
 
 use base qw(NCBI::SVN::Base);
 
-sub SetUpstreamAndSynchRev
+sub SetUpstreamAndDownSynchRev
 {
     my ($Self, $SourcePath, $BranchDir, $SourceRevisionNumber, $Revision) = @_;
 
@@ -114,7 +114,7 @@ sub ModelBranchStructure
             {
                 $ParentNode->{$Name} = {'/' => 1};
 
-                $Self->SetUpstreamAndSynchRev($SourcePath,
+                $Self->SetUpstreamAndDownSynchRev($SourcePath,
                     $BranchDir, $SourceRevisionNumber)
             }
             elsif (my $DeletedNode = delete $ParentNode->{$Name})
@@ -134,7 +134,7 @@ sub ModelBranchStructure
             NCBI::SVN::Branching::Util::FindTreeNode($BranchStructure,
                 $BranchDir)->{'/'} = 1;
 
-            $Self->SetUpstreamAndSynchRev($SourcePath,
+            $Self->SetUpstreamAndDownSynchRev($SourcePath,
                 $BranchDir, $SourceRevisionNumber)
         }
     }
@@ -173,9 +173,7 @@ sub FindPathsInTree
 
 sub new
 {
-    my ($Class, $RootURL, $BranchPath, $MaxBranchRev) = @_;
-
-    $MaxBranchRev ||= 'HEAD';
+    my ($Class, $RootURL, $BranchPath) = @_;
 
     my @BranchRevisions;
     my @MergeDownRevisions;
@@ -189,7 +187,7 @@ sub new
     print STDERR "Gathering information about $BranchPath...\n";
 
     my $RevisionLog = $Self->{SVN}->ReadLog('--stop-on-copy',
-        "-r$MaxBranchRev\:1", $RootURL, $BranchPath);
+        "-rHEAD\:1", $RootURL, $BranchPath);
 
     my %BranchStructure;
     my $CommonTarget = "/$BranchPath/";
@@ -261,33 +259,35 @@ use base qw(NCBI::SVN::Branching::BranchInfo);
 
 sub new
 {
-    my ($Class, $RootURL, $BranchPath, $MaxBranchRev, $MaxUpstreamRev) = @_;
+    my ($Class, $RootURL, $BranchPath) = @_;
 
-    my $Self = $Class->SUPER::new($RootURL, $BranchPath, $MaxBranchRev);
-
-    $MaxUpstreamRev ||= 'HEAD';
+    my $Self = $Class->SUPER::new($RootURL, $BranchPath);
 
     my $UpstreamPath = $Self->{UpstreamPath};
 
     print STDERR "Gathering information about $UpstreamPath...\n";
 
+    $Self->{LastUpSyncRevisionNumber} =
+        $Self->{BranchCreationRevision}->{Number};
+
     my $UpstreamRevisions = $Self->{SVN}->ReadLog('--stop-on-copy',
-        "-r$MaxUpstreamRev\:$Self->{BranchRevisions}->[-1]->{Number}",
+        "-rHEAD\:$Self->{BranchRevisions}->[-1]->{Number}",
         $RootURL, map {"$UpstreamPath/$_"} @{$Self->{BranchDirs}});
 
     my @MergeUpRevisions;
 
-    for my $Revision (@$UpstreamRevisions)
+    for my $Revision (reverse @$UpstreamRevisions)
     {
         if ($Revision->{LogMessage} =~
             m/^Merged changes up to r(\d+) from '(.+)' into '.+'.$/o &&
                 $2 eq $BranchPath)
         {
-            $Revision->{SourceRevisionNumber} = $1;
+            $Revision->{SourceRevisionNumber} =
+                $Self->{LastUpSyncRevisionNumber} = $1;
 
             $Revision->{MergeDirection} = 'up';
 
-            push @MergeUpRevisions, $Revision
+            unshift @MergeUpRevisions, $Revision
         }
     }
 
