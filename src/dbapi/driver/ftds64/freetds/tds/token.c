@@ -1139,10 +1139,11 @@ tds_add_row_column_size(TDSRESULTINFO * info, TDSCOLUMN * curcol)
         info->row_size += sizeof(TDSBLOB);
     } else {
         info->row_size += curcol->column_size;
-
-        /* Added by ssikorsk */
-        info->row_size += curcol->column_varint_size;
     }
+
+    /* Added by ssikorsk */
+    info->row_size += curcol->column_varint_size;
+
     info->row_size += (TDS_ALIGN_SIZE - 1);
     info->row_size -= info->row_size % TDS_ALIGN_SIZE;
 }
