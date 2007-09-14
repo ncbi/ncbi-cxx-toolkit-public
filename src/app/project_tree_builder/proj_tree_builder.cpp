@@ -647,8 +647,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     CSimpleMakeFileContents::TContents::const_iterator k = 
         makefile.m_Contents.find("SRC");
     if (k == makefile.m_Contents.end()) {
-        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
-                     "SRC is not specified: " << full_makefile_name);
+        if (GetApp().IsScanningWholeTree()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "SRC is not specified: " << full_makefile_name);
+        } else {
+            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "SRC is not specified: " << full_makefile_name);
+        }
         return CProjKey();
     }
 
@@ -701,8 +706,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //project name
     k = makefile.m_Contents.find("APP");
     if (k == makefile.m_Contents.end()  ||  k->second.empty()) {
-        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
-                     "APP is not specified: " << full_makefile_name);
+        if (GetApp().IsScanningWholeTree()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "APP is not specified: " << full_makefile_name);
+        } else {
+            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "APP is not specified: " << full_makefile_name);
+        }
         return CProjKey();
     }
     string proj_id = k->second.front();
@@ -810,8 +820,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         CDirEntry::ConcatPath(applib_mfilepath, full_makefile_name);
 
     if (k == m->second.m_Contents.end()) {
-        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
-                     "SRC is not specified: " << full_makefile_name);
+        if (GetApp().IsScanningWholeTree()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "SRC is not specified: " << full_makefile_name);
+        } else {
+            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "SRC is not specified: " << full_makefile_name);
+        }
         return CProjKey();
     }
 
@@ -843,8 +858,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("LIB");
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
-        PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
-                     "LIB is not specified: " << full_makefile_name);
+        if (GetApp().IsScanningWholeTree()) {
+            PTB_WARNING_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "LIB is not specified: " << full_makefile_name);
+        } else {
+            PTB_ERROR_EX(full_makefile_path, ePTB_InvalidMakefile,
+                        "LIB is not specified: " << full_makefile_name);
+        }
         return CProjKey();
     }
     string proj_id = k->second.front();

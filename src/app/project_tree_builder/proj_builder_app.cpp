@@ -82,6 +82,9 @@ public:
         }
 
         CTempString str(msg.m_Buffer, msg.m_BufferLen);
+        if (!msg.m_Buffer) {
+            str.assign(kEmptyStr.c_str(),0);
+        }
 
         /// screen for error message level data only
         /// MSVC doesn't handle the other parts
@@ -376,7 +379,11 @@ CProjBulderApp::CProjBulderApp(void)
 
 void CProjBulderApp::Init(void)
 {
-    SetDiagHandler(new CWindowsCmdErrorHandler);
+    string logfile = GetLogFile();
+    if (logfile != "STDERR")
+    {
+        SetDiagHandler(new CWindowsCmdErrorHandler);
+    }
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -481,7 +488,8 @@ int CProjBulderApp::Run(void)
 {
 	// Set error posting and tracing on maximum.
 	SetDiagTrace(eDT_Enable);
-	SetDiagPostFlag(eDPF_Default);
+//	SetDiagPostFlag(eDPF_Default);
+	SetDiagPostFlag(eDPF_Trace);
 	SetDiagPostLevel(eDiag_Info);
 
     CStopWatch sw;

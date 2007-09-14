@@ -65,8 +65,10 @@ CMsvcDllsInfo::CMsvcDllsInfo(const string& file_path)
             }
         }
     } else {
-        PTB_ERROR_EX(file_path, ePTB_FileNotFound,
-                     "File not found: " << file_path);
+        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+            PTB_ERROR_EX(file_path, ePTB_FileNotFound,
+                        "File not found: " << file_path);
+        }
     }
 }
 

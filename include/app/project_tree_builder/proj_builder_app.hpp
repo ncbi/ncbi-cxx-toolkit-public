@@ -159,6 +159,7 @@ public:
                                string& unmet) const;
     void   LoadProjectTags(const string& filename);
     string ProcessLocationMacros(string data);
+    bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
