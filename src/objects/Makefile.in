@@ -12,6 +12,8 @@ SUB_PROJ = tinyseq omssa general biblio medline pub pubmed \
            entrezgene blast blastdb blastxml pcsubstance pcassay remap \
            seqtest seqsplit homologene seqedit seqtable valerr
 
+REQUIRES = objects
+
 # Use abs_srcdir here to avoid trouble from fake-root setups...
 srcdir = @abs_srcdir@
 include @builddir@/Makefile.meta

@@ -6,5 +6,7 @@
 LIB_PROJ = serial cserial
 SUB_PROJ = datatool test soap
 
+REQUIRES = serial
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

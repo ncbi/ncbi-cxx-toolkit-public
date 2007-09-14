@@ -6,7 +6,7 @@
 # Meta-makefile for the "BDB" lib
 #################################
 
-REQUIRES = BerkeleyDB
+REQUIRES = BerkeleyDB bdb
 
 LIB_PROJ = bdb ncbi_xcache_bdb
 #SUB_PROJ = test test_split demo dumper cache_verify 

@@ -10,5 +10,7 @@ SUB_PROJ = sample asn2asn asn2flat id1_fetch blast convert_seq \
 
 EXPENDABLE_SUB_PROJ = project_tree_builder
 
+REQUIRES = app
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

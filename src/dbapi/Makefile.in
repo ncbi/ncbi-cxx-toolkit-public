@@ -4,5 +4,7 @@ SUB_PROJ = driver cache lang_bind test
 
 LIB_PROJ = dbapi
 
+REQUIRES = dbapi
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
