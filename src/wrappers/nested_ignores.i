@@ -30,6 +30,9 @@
  */
 
 
+%ignore *::CSplign_SAlignedCompartment::m_Score;
+%ignore *::CSplign_SAlignedCompartment::m_Segments;
+
 // Nested structs in template classes
 // bdb_dict_store.hpp (bdb/bdb_dict_store.hpp)
 // and CBDB_PropertyDictionary (bdb/bdb_bv_property_store.hpp)
