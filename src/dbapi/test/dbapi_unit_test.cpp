@@ -9538,7 +9538,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()) {
         if(args.GetDriverName() != "ftds_dblib"
-           && args.GetDriverName() != "ftds"
           )
         {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
