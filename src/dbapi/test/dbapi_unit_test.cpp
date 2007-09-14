@@ -2242,6 +2242,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
     string sql;
     // enum { record_num = 10 };
     string table_name = "#bcp_table1";
+    const string data = "testing";
 
     try {
         CDB_Connection* conn = m_Conn->GetCDB_Connection();
@@ -2271,7 +2272,6 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             geneIdVal = 2;
 
-            string data = "testing";
             dataTextVal.Append(data);
             dataTextVal.MoveTo(0);
 
@@ -2280,7 +2280,46 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         }
         
         // Retrieve data back ...
+        // Read Blob
+        // There is a bug in implementation of ReadItem in ftds8 driver.
         {
+            string result;
+            char buff[64];
+            int rec_num = 0;
+
+            sql = "SELECT dataText FROM "+ table_name;
+
+            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+            bool rc = auto_stmt->Send();
+            BOOST_CHECK( rc );
+
+            while(auto_stmt->HasMoreResults()) {
+                auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                if (rs.get() == NULL) {
+                    continue;
+                }
+
+                if (rs->ResultType() != eDB_RowResult) {
+                    continue;
+                }
+
+                while(rs->Fetch()) {
+                    size_t read_bytes = 0;
+                    bool is_null = true;
+                    ++rec_num;
+
+                    if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                        result += string(buff, read_bytes);
+                    }
+
+                    BOOST_CHECK(!is_null);
+                    BOOST_CHECK_EQUAL(result, data);
+                }
+                BOOST_CHECK_EQUAL(rec_num, 1);
+
+            }
         }
     }
     catch(const CException& ex) {
