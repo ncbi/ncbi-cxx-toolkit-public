@@ -575,7 +575,7 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
             sprintf(port, ":%hu", net_info->port);
         else
             *port = '\0';
-        if (!(referer = (char*) malloc(9 + strlen(host) + strlen(port)
+        if (!(referer = (char*) malloc(7 + 1 +1 + strlen(host) + strlen(port)
                                        + strlen(path) + strlen(args)))) {
             return;
         }
@@ -584,6 +584,7 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
             strcat(strcat(referer, "?"), args);
     } else if ((str = strdup(iter->op->name)) != 0) {
         const char* host = net_info->client_host;
+        const char* args = net_info->args;
         const char* name = iter->name;
 
         if (!*net_info->client_host  &&
@@ -592,12 +593,15 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
             SOCK_gethostname(net_info->client_host,
                              sizeof(net_info->client_host));
         }
-        if (!(referer = (char*) malloc(3 + 1 + 9 + 1 + 2*strlen(strlwr(str)) +
-                                       strlen(host) + strlen(name)))) {
+        if (!(referer = (char*) malloc(3 + 1 + 9 + 1 +1 + 2*strlen(strlwr(str))
+                                       + strlen(host) + strlen(name)
+                                       + strlen(args)))) {
             return;
         }
         strcat(strcat(strcat(strcpy(referer, str), "://"), host), "/");
         strcat(strcat(strcat(referer, str), "?service="), name);
+        if (args[0])
+            strcat(strcat(referer, "&"), args);
         free(str);
     }
     assert(!net_info->http_referer);
