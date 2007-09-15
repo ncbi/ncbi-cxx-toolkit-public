@@ -175,10 +175,10 @@ static int/*bool*/ s_ParseHeader(const char* header,
 }
 
 
-static int/*bool*/ s_ContentTypeDefined(const SConnNetInfo* net_info,
-                                        EMIME_Type          mime_t,
-                                        EMIME_SubType       mime_s,
-                                        EMIME_Encoding      mime_e)
+static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
+                                          EMIME_Type          mime_t,
+                                          EMIME_SubType       mime_s,
+                                          EMIME_Encoding      mime_e)
 {
     const char* s;
 
@@ -243,19 +243,18 @@ static int/*bool*/ s_ContentTypeDefined(const SConnNetInfo* net_info,
 }
 
 
-static char* s_AdjustNetParams(SConnNetInfo*  net_info,
-                               EReqMethod     req_method,
-                               const char*    cgi_path,
-                               const char*    cgi_args,
-                               const char*    args,
-                               const char*    static_header,
-                               EMIME_Type     mime_t,
-                               EMIME_SubType  mime_s,
-                               EMIME_Encoding mime_e,
-                               char*          dynamic_header/*will be freed*/)
+static const char* s_AdjustNetParams(SConnNetInfo*  net_info,
+                                     EReqMethod     req_method,
+                                     const char*    cgi_path,
+                                     const char*    cgi_args,
+                                     const char*    args,
+                                     const char*    static_header,
+                                     EMIME_Type     mime_t,
+                                     EMIME_SubType  mime_s,
+                                     EMIME_Encoding mime_e,
+                                     char*          dynamic_header/*freed!*/)
 {
-    char c_t[MAX_CONTENT_TYPE_LEN], *retval;
-    size_t sh_len, dh_len, ct_len;
+    const char *retval = 0;
 
     net_info->req_method = req_method;
 
@@ -265,30 +264,36 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
     if (args)
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
     ConnNetInfo_DeleteAllArgs(net_info, cgi_args);
-    if (!ConnNetInfo_PrependArg(net_info, cgi_args, 0)) {
-        if (dynamic_header)
-            free(dynamic_header);
-        return 0/*failed*/;
+
+    if (ConnNetInfo_PrependArg(net_info, cgi_args, 0)) {
+        size_t sh_len = static_header  ? strlen(static_header)  : 0;
+        size_t dh_len = dynamic_header ? strlen(dynamic_header) : 0;
+        char   c_t[MAX_CONTENT_TYPE_LEN];
+        size_t ct_len, len;
+
+        if (s_IsContentTypeDefined(net_info, mime_t, mime_s, mime_e)  ||
+            mime_t == SERV_MIME_TYPE_UNDEFINED                        ||
+            mime_s == SERV_MIME_SUBTYPE_UNDEFINED                     ||
+            !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e,
+                                       c_t, sizeof(c_t))) {
+            c_t[0] = '\0';
+            ct_len = 0;
+        } else
+            ct_len = strlen(c_t);
+        if ((len = sh_len + dh_len + ct_len) != 0) {
+            char* temp = (char*) malloc(len + 1/*EOL*/);
+            if (temp) {
+                strcpy(temp,          static_header  ? static_header  : "");
+                strcpy(temp + sh_len, dynamic_header ? dynamic_header : "");
+                strcpy(temp + sh_len + dh_len, c_t);
+                retval = temp;
+            }
+        } else
+            retval = "";
     }
 
-    sh_len = static_header  ? strlen(static_header)  : 0;
-    dh_len = dynamic_header ? strlen(dynamic_header) : 0;
-    if (s_ContentTypeDefined(net_info, mime_t, mime_s, mime_e)  ||
-        mime_t == SERV_MIME_TYPE_UNDEFINED                      ||
-        mime_s == SERV_MIME_SUBTYPE_UNDEFINED                   ||
-        !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e, c_t, sizeof(c_t))) {
-        c_t[0] = '\0';
-        ct_len = 0;
-    } else
-        ct_len = strlen(c_t);
-    if ((retval = (char*) malloc(sh_len + dh_len +ct_len + 1/*EOL*/)) != 0) {
-        strcpy(retval,                   static_header  ? static_header  : "");
-        strcpy(retval + sh_len,          dynamic_header ? dynamic_header : "");
-        strcpy(retval + sh_len + dh_len, c_t);
-    }
     if (dynamic_header)
         free(dynamic_header);
-
     return retval;
 }
 
@@ -394,7 +399,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         free((void*) uuu->user_header);
     }
-    uuu->user_header = user_header;
+    uuu->user_header = *user_header ? user_header : 0;
     if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0/*false - not adjusted*/;
 
@@ -420,7 +425,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         int/*bool*/        second_try)
 {
     const char* user_header; /* either "" or non-empty dynamic string */
-    char*       iter_header;
+    char*       iter_header = SERV_Print(uuu->iter, net_info);
     EReqMethod  req_method;
 
     if (info && info->type != fSERV_Firewall) {
@@ -516,10 +521,13 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                         0, 0, 0, user_header,
                                         mime_t, mime_s, mime_e, 0);
     }
-    if (!user_header)
+    if (!user_header) {
+        if (iter_header)
+            free(iter_header);
         return 0;
+    }
 
-    if ((iter_header = SERV_Print(uuu->iter, net_info)) != 0) {
+    if (iter_header) {
         size_t uh_len;
         if ((uh_len = strlen(user_header)) > 0) {
             char*  ih;
