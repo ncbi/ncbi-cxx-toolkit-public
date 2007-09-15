@@ -148,7 +148,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     assert(!!net_info->stateless == !!iter->stateless);
     /* Obtain additional header information */
     if ((!(s = SERV_Print(iter, 0))
-         || ConnNetInfo_OverrideUserHeader(net_info, s))
+         ||  ConnNetInfo_OverrideUserHeader(net_info, s))
         &&
         ConnNetInfo_OverrideUserHeader(net_info,
                                        iter->ok_down  &&  iter->ok_suppressed
@@ -173,7 +173,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         ConnNetInfo_DeleteUserHeader(net_info, s);
         free(s);
     }
-    if (!conn || CONN_Create(conn, &c) != eIO_Success) {
+    if (!conn  ||  CONN_Create(conn, &c) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[DISPATCHER]  Unable to create aux. %s",
                                conn ? "connection" : "connector"));
         assert(0);
