@@ -76,9 +76,8 @@ CCmdLineBlastXMLReportData::CCmdLineBlastXMLReportData
                         CBlastFormat::kNoHitsFound);
     } else {
 
-        size_t num_queries = m_Queries->Size();
         if (opts.GetProgram() == ePSIBlast) {
-            _ASSERT(num_queries == 1);
+            _ASSERT(m_Queries->Size() == 1);
             // artificially increment the number of 'queries' to match the
             // number of results, which represents the actual number of
             // iterations in PSI-BLAST
