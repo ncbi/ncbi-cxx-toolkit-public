@@ -5,7 +5,7 @@
 var g_verbose = false;
 var g_usesvn = true;
 var g_usefilecopy = true;
-var g_branch = "trunk/c++";
+var g_branch = "toolkit/trunk/c++";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -591,7 +591,7 @@ function CopyRes(oShell, oTree, oTask)
 // CVS/SVN tree root
 function GetSvnRepositoryRoot()
 {
-	return "https://svn.ncbi.nlm.nih.gov/repos/toolkit/";
+	return "https://svn.ncbi.nlm.nih.gov/repos/";
 }
 
 function GetCvsTreeRoot()
