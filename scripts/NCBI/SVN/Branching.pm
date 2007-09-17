@@ -185,8 +185,8 @@ sub GetDirsToCreate
 
 sub ShapeBranch
 {
-    my ($Self, $Action, $Force, $RootURL,
-        $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $Action, $Force, $RootURL, $BranchPath,
+        $UpstreamPath, $SourceRevision, @BranchDirs) = @_;
 
     my @MUCCCommands;
 
@@ -239,13 +239,7 @@ sub ShapeBranch
 
     if ($Action eq 'create')
     {
-        my $SourceRevision = 'HEAD';
-
-        if ($UpstreamPath =~ m/^(.+):(.+)$/)
-        {
-            $UpstreamPath = $1;
-            $SourceRevision = $2
-        }
+        $SourceRevision ||= 'HEAD';
 
         for my $Dir (@BranchDirs)
         {
@@ -399,10 +393,11 @@ sub ShapeBranch
 
 sub Create
 {
-    my ($Self, $RootURL, $BranchPath, $UpstreamPath, @BranchDirs) = @_;
+    my ($Self, $RootURL, $BranchPath,
+        $UpstreamPath, $SourceRev, @BranchDirs) = @_;
 
     $Self->ShapeBranch('create', undef, $RootURL,
-        $BranchPath, $UpstreamPath, @BranchDirs)
+        $BranchPath, $UpstreamPath, $SourceRev, @BranchDirs)
 }
 
 sub Alter
@@ -410,7 +405,7 @@ sub Alter
     my ($Self, $Force, $RootURL, $BranchPath, @BranchDirs) = @_;
 
     $Self->ShapeBranch('alter', $Force, $RootURL,
-        $BranchPath, undef, @BranchDirs)
+        $BranchPath, undef, undef, @BranchDirs)
 }
 
 sub Remove
