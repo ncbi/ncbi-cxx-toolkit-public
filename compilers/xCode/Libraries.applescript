@@ -38,10 +38,9 @@ global AllApplications -- All GUI applications to build
 
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : "z"
-property IMG_LIBS : " png tiff gif z"
-property FLTK_LIBS : " fltk_images fltk_gl fltk"
+property IMG_LIBS : " png jpeg tiff z"
 property BDB_LIBS : " db"
-
+property FI_LIBS : " png jpeg tiff z fltk_images fltk_gl fltk"
 
 (*
 Library definition rules:
@@ -205,8 +204,8 @@ property gui__config : {name:"gui__config", path:"gui:config"}
 property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
 property gui_print : {name:"gui_print", path:"gui:print"}
-property gui_math : {name:"gui_math", path:"gui:math"}
 property gui__services : {name:"gui__services", path:"gui:services"}
+property gui__math : {name:"gui__math", path:"gui:math"}
 
 property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entry_form"}
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
@@ -224,7 +223,7 @@ property w_flu : {name:"w_flu", path:"gui:widgets:FLU"}
 property w_fltk : {name:"w_fltk", path:"gui:widgets:fl"}
 property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
-property w_snp : {name:"w_snp", path:"gui:widgets:snp"}
+--property w_snp : {name:"w_snp", path:"gui:widgets:snp"}
 property w_data : {name:"w_data", path:"gui:widgets:data"}
 property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", exc:{"Sparse_align.cpp", "NCBI_Seqalign_ext_module.cpp", "Sparse_align_.cpp", "Sparse_score.cpp", "Sparse_score_.cpp", "Sparse_seg.cpp", "Sparse_seg_.cpp", "Sparse_seg_ext.cpp", "Sparse_seg_ext_.cpp"}}
 --property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
@@ -276,65 +275,65 @@ property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view
 property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, fworks:"CoreServices", req:true}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core" & BDB_LIBS, req:true}
-property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb", req:true}
+property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb db", req:true}
 property ncbi_xcache_netcache : {name:"ncbi_xcache_netcache", libs:{xcache_netcache}, dep:"ncbi_core", req:true}
 property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core" & IMG_LIBS, req:true}
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core", req:true}
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver", req:true}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", req:true}
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xomssa, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xomssa, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple ncbi_pub", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
-property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
-property ncbi_lds : {name:"ncbi_lds", libs:{lds}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext", req:true}
-property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
-property ncbi_xreader_id1 : {name:"ncbi_xreader_id1", libs:{xreader_id1}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader", req:true}
-property ncbi_xreader_id2 : {name:"ncbi_xreader_id2", libs:{xreader_id2}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader", req:true}
-property ncbi_xreader_cache : {name:"ncbi_xreader_cache", libs:{xreader_cache}, dep:"ncbi_core ncbi_xreader ncbi_pub ncbi_seq ncbi_seqext", req:true}
-property ncbi_xreader_pubseqos : {name:"ncbi_xreader_pubseqos", libs:{xreader_pubseqos}, dep:"ncbi_core ncbi_dbapi ncbi_dbapi_driver ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader", req:true}
-property ncbi_xloader_cdd : {name:"ncbi_xloader_cdd", libs:{xloader_cdd}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_general", req:true}
-property ncbi_xloader_genbank : {name:"ncbi_xloader_genbank", libs:{xloader_genbank}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache", req:true}
-property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", libs:{xloader_blastdb}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext", req:true}
-property ncbi_xloader_lds : {name:"ncbi_xloader_lds", libs:{xloader_lds}, dep:"ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_general ncbi_lds ncbi_pub ncbi_seq ncbi_seqext", req:true}
-property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
-property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:true}
+property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true}
+property ncbi_lds : {name:"ncbi_lds", libs:{lds}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc db", req:true}
+property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_misc", req:true}
+property ncbi_xreader_id1 : {name:"ncbi_xreader_id1", libs:{xreader_id1}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_seqext ncbi_xreader", req:true}
+property ncbi_xreader_id2 : {name:"ncbi_xreader_id2", libs:{xreader_id2}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_seqext ncbi_xreader", req:true}
+property ncbi_xreader_cache : {name:"ncbi_xreader_cache", libs:{xreader_cache}, dep:"ncbi_core ncbi_xreader ncbi_pub ncbi_seq ncbi_seqext ncbi_misc ncbi_general", req:true}
+property ncbi_xreader_pubseqos : {name:"ncbi_xreader_pubseqos", libs:{xreader_pubseqos}, dep:"ncbi_core ncbi_dbapi ncbi_dbapi_driver ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_misc ncbi_general", req:true}
+property ncbi_xloader_cdd : {name:"ncbi_xloader_cdd", libs:{xloader_cdd}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_misc ncbi_general", req:true}
+property ncbi_xloader_genbank : {name:"ncbi_xloader_genbank", libs:{xloader_genbank}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_misc ncbi_general", req:true}
+property ncbi_xloader_blastdb : {name:"ncbi_xloader_blastdb", libs:{xloader_blastdb}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_misc ncbi_general", req:true}
+property ncbi_xloader_lds : {name:"ncbi_xloader_lds", libs:{xloader_lds}, dep:"ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_general ncbi_lds ncbi_pub ncbi_seq ncbi_seqext ncbi_misc db", req:true}
+property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_pub", req:true}
+property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_pub ncbi_misc ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2", req:true}
 
 -- GUI
-property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_pub ncbi_seqext ncbi_image ncbi_general ncbi_misc ncbi_validator" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
-property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
-property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", fworks:"OpenGL", req:true}
-property gui_widgets : {name:"gui_widgets", libs:{w_aln_data, w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_data, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_pub ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
-property gui_core : {name:"gui_core", libs:{gui__core, gui_objects}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
-property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d, w_snp}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets gui_widgets_misc" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_algo gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
-property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_core gui_config gui_utils gui_widgets gui_widgets_seq ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext" & FLTK_LIBS, req:true}
+property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui__math}, dep:"ncbi_core ncbi_seq ncbi_pub ncbi_seqext ncbi_image ncbi_general ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true}
+property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_misc ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_validator ncbi_image" & FI_LIBS, req:true}
+property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core ncbi_validator ncbi_seqext ncbi_image ncbi_pub ncbi_general ncbi_seq ncbi_misc" & FI_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets : {name:"gui_widgets", libs:{w_aln_data, w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_data, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true}
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_seq_goto}, dep:"ncbi_image gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_pub ncbi_seqext ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
+property gui_core : {name:"gui_core", libs:{gui__core, gui_objects}, dep:"ncbi_image gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, req:true}
+property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_validator ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config ncbi_pub ncbi_misc" & FI_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_image ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets gui_widgets_misc ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_hit_matrix, w_aln_table}, dep:"ncbi_image ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_algo gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq ncbi_pub ncbi_misc ncbi_validator gui_widgets_misc" & FI_LIBS, fworks:"OpenGL", req:true} --gui_core
+property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_core gui_config gui_utils gui_widgets gui_widgets_seq ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator ncbi_image gui_graph gui_widgets_misc ncbi_algo gui_dialogs" & FI_LIBS, req:true}
 
 -- PLUG-INS
-property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
-property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_cdd ncbi_xloader_genbank ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
+property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank ncbi_pub ncbi_misc ncbi_validator ncbi_image db gui_config" & FI_LIBS, bundle:true, req:true}
+property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_cdd ncbi_xloader_genbank ncbi_pub ncbi_misc ncbi_validator ncbi_image gui_graph gui_widgets_misc ncbi_algo gui_dialogs gui_config" & FI_LIBS, bundle:true, req:true}
 
-property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank", bundle:true, req:true}
-property algo_external : {name:"algo_external", libs:{gui_algo_external}, dep:"gui_core gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
-property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", bundle:true, req:true}
-property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_xcache_bdb gui_dialogs gui_widgets gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_xcache_netcache" & FLTK_LIBS, bundle:true, req:true}
-property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_web ncbi_seq ncbi_seqext", bundle:true, req:true}
-property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
-property algo_webpage : {name:"algo_webpage", libs:{gui_algo_webpage}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
-property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core gui_utils ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
-property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq gui_services ncbi_algo ncbi_xloader_genbank ncbi_xloader_lds ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
-property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, bundle:true, req:true}
-property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config" & FLTK_LIBS, bundle:true, req:true}
-property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, bundle:true, req:true}
-property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_misc gui_config" & FLTK_LIBS, bundle:true, req:true}
-property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq" & FLTK_LIBS, bundle:true, req:true}
-property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs" & FLTK_LIBS, bundle:true, req:true}
-property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs gui_config" & FLTK_LIBS, bundle:true, req:true}
-property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets" & FLTK_LIBS, bundle:true, req:true}
+property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank ncbi_pub ncbi_misc gui_dialogs gui_widgets gui_widgets_misc ncbi_validator ncbi_image gui_config" & FI_LIBS, bundle:true, req:true}
+property algo_external : {name:"algo_external", libs:{gui_algo_external}, dep:"gui_core gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank gui_utils ncbi_mmdb ncbi_pub ncbi_misc gui_dialogs gui_widgets_misc ncbi_validator ncbi_image gui_config" & FI_LIBS, bundle:true, req:true}
+property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_misc ncbi_pub ncbi_image ncbi_validator gui_config" & FI_LIBS, bundle:true, req:true}
+property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_xcache_bdb gui_dialogs gui_widgets gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_xcache_netcache db ncbi_validator ncbi_pub ncbi_general ncbi_image gui_config" & FI_LIBS, bundle:true, req:true}
+property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_web ncbi_seq ncbi_seqext ncbi_validator gui_dialogs gui_config gui_widgets ncbi_pub ncbi_misc gui_widgets_misc ncbi_image" & FI_LIBS, bundle:true, req:true}
+property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext gui_dialogs ncbi_validator ncbi_image gui_config ncbi_pub ncbi_general gui_widgets" & FI_LIBS, bundle:true, req:true}
+property algo_webpage : {name:"algo_webpage", libs:{gui_algo_webpage}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext gui_dialogs gui_config gui_widgets ncbi_validator ncbi_image ncbi_general ncbi_pub" & FI_LIBS, bundle:true, req:true}
+property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core gui_utils ncbi_core ncbi_seq ncbi_seqext ncbi_validator ncbi_misc gui_dialogs gui_config gui_widgets ncbi_validator ncbi_image ncbi_general ncbi_pub" & FI_LIBS, bundle:true, req:true}
+property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq gui_services ncbi_algo ncbi_xloader_genbank ncbi_xloader_lds ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub db gui_graph ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2 gui_widgets_misc ncbi_misc gui_dialogs gui_config gui_widgets ncbi_validator ncbi_image" & FI_LIBS, bundle:true, req:true}
+property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_validator ncbi_misc ncbi_image ncbi_pub gui_config" & FI_LIBS, bundle:true, req:true}
+property view_align : {name:"view_align", libs:{gui_view_align}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_aln gui_config ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_general ncbi_pub gui_dialogs gui_widgets_seq" & FI_LIBS, bundle:true, req:true}
+property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, bundle:true, req:true}
+property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_misc gui_config ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_general ncbi_pub gui_widgets gui_dialogs" & FI_LIBS, bundle:true, req:true}
+property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq gui_dialogs gui_config ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, bundle:true, req:true}
+property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs gui_config ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, bundle:true, req:true}
+property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs gui_config ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_pub" & FI_LIBS, bundle:true, req:true}
+property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets gui_dialogs gui_config ncbi_seqext ncbi_validator ncbi_image ncbi_algo gui_widgets_misc gui_graph ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, bundle:true, req:true}
 
 
 
@@ -357,13 +356,13 @@ property coretest : {name:"coretest", path:"corelib:test", inc:{"coretest.cpp"},
 -- object manager
 property test_objmgr : {name:"test_objmgr", path:"objmgr:test", inc:{"test_objmgr.cpp", "test_helper.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property test_objmgr_basic : {name:"test_objmgr_basic", path:"objmgr:test", inc:{"test_objmgr_basic.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
-property test_validator : {name:"test_validator", path:"objtools:validator:test", inc:{"test_validator.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_validator", req:true}
-property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup:test", inc:{"test_basic_cleanup.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
+property test_validator : {name:"test_validator", path:"objtools:validator:test", inc:{"test_validator.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_xreader_id2 ncbi_xreader_cache ncbi_misc ncbi_pub ncbi_validator ncbi_seq ncbi_seqext ncbi_validator", req:true}
+property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup:test", inc:{"test_basic_cleanup.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id2 ncbi_xreader_cache ncbi_misc ncbi_pub ncbi_validator ncbi_seq", req:true}
 -- App
 --property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property gi2taxid : {name:"gi2taxid", path:"app:gi2taxid", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
-property ini2reg : {name:"ini2reg", path:"gui:objutils:test", inc:{"ini2reg.cpp"}, dep:"ncbi_core ncbi_general gui_utils ncbi_seq ncbi_seqext", req:true}
+property ini2reg : {name:"ini2reg", path:"gui:objutils:test", inc:{"ini2reg.cpp"}, dep:"ncbi_core ncbi_general gui_utils ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator ncbi_image" & FI_LIBS, req:true}
 property omssacl : {name:"omssacl", path:"algo:ms:omssa", inc:{"omssacl.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_pub ncbi_seqext ncbi_algo", req:false}
 property omssamerge : {name:"omssamerge", path:"algo:ms:omssa", inc:{"omssamerge.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_pub ncbi_seqext ncbi_algo", req:false}
 
@@ -379,34 +378,34 @@ property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", r
 
 (* GUI Applications *)
 (* Demo GUI Applications *)
-property demo_seqgraphic : {name:"demo_seqgraphic", path:"gui:widgets:seq_graphic:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, fworks:"Carbon", req:true}
-property demo_crossaln : {name:"demo_crossaln", path:"gui:widgets:aln_crossaln:demo", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_widgets_aln gui_config ncbi_xloader_genbank" & FLTK_LIBS, fworks:"Carbon", req:true}
-property demo_seqtext : {name:"demo_seqtext", path:"gui:widgets:seq_text:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, fworks:"Carbon", req:false}
+property demo_seqgraphic : {name:"demo_seqgraphic", path:"gui:widgets:seq_graphic:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_general ncbi_pub ncbi_misc ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_misc gui_widgets_seq gui_widgets_seq gui_config ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache ncbi_algo ncbi_image gui_graph ncbi_validator" & FI_LIBS, fworks:"Carbon", req:true}
+property demo_crossaln : {name:"demo_crossaln", path:"gui:widgets:aln_crossaln:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_pub ncbi_general ncbi_misc ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_misc gui_widgets_seq gui_widgets_seq gui_config ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_cache ncbi_algo ncbi_image gui_graph ncbi_validator gui_widgets_aln" & FI_LIBS, fworks:"Carbon", req:true}
+property demo_seqtext : {name:"demo_seqtext", path:"gui:widgets:seq_text:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FI_LIBS, fworks:"Carbon", req:false}
 
-property demo_hitmatrix : {name:"demo_hitmatrix", path:"gui:widgets:hit_matrix:demo", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config ncbi_xloader_genbank" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_workspace : {name:"demo_workspace", path:"gui:widgets:workspace:demo", inc:{"demo_workspace.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_win_manager : {name:"demo_win_manager", path:"gui:widgets:workspace:demo", inc:{"demo_win_manager.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_phylo_tree : {name:"demo_phylo_tree", path:"gui:widgets:phylo_tree:demo", dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets gui_widgets_misc" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_serial_browse : {name:"demo_serial_browse", path:"gui:widgets:serial_browse:demo", dep:"ncbi_core ncbi_seq gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_tooltip : {name:"demo_tooltip", path:"gui:widgets:fl:demo", inc:{"tt_demo.cpp", "tt_demo_ui.cpp", "tt_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FLTK_LIBS, fworks:"Carbon OpenGL", req:false}
-property demo_treebrowser : {name:"demo_treebrowser", path:"gui:widgets:fl:demo", inc:{"test_treebrowser.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_table : {name:"demo_table", path:"gui:widgets:fl:demo", inc:{"table_demo.cpp", "table_demo_ui.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_taxtree : {name:"demo_taxtree", path:"gui:widgets:tax_tree:demo", dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_misc gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq ncbi_xloader_genbank" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_font : {name:"demo_font", path:"gui:opengl:demo", inc:{"font_demo.cpp", "font_demo_ui.cpp", "font_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon OpenGL", req:false}
-property demo_gl3d : {name:"demo_gl3d", path:"gui:opengl:demo", inc:{"gl3d_demo.cpp", "gl3d_demo_ui.cpp", "gl3d_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon OpenGL", req:false}
-property demo_spline : {name:"demo_spline", path:"gui:opengl:demo", inc:{"spline_demo.cpp", "spline_demo_ui.cpp", "spline_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon OpenGL", req:false}
-property demo_tex : {name:"demo_texture", path:"gui:opengl:demo", inc:{"tex_demo.cpp", "tex_demo_ui.cpp", "tex_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon OpenGL", req:false}
-property demo_tex_font : {name:"demo_texture_fonts", path:"gui:opengl:demo", inc:{"tex_font_demo.cpp", "tex_font_demo_ui.cpp", "tex_font_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon OpenGL", req:false}
-property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", exc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
-property demo_wizard : {name:"demo_wizard", path:"gui:widgets:controls:demo", inc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
+property demo_hitmatrix : {name:"demo_hitmatrix", path:"gui:widgets:hit_matrix:demo", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config ncbi_xloader_genbank" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_workspace : {name:"demo_workspace", path:"gui:widgets:workspace:demo", inc:{"demo_workspace.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_win_manager : {name:"demo_win_manager", path:"gui:widgets:workspace:demo", inc:{"demo_win_manager.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_phylo_tree : {name:"demo_phylo_tree", path:"gui:widgets:phylo_tree:demo", dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets gui_widgets_misc" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_serial_browse : {name:"demo_serial_browse", path:"gui:widgets:serial_browse:demo", dep:"ncbi_core ncbi_seq gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_tooltip : {name:"demo_tooltip", path:"gui:widgets:fl:demo", inc:{"tt_demo.cpp", "tt_demo_ui.cpp", "tt_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FI_LIBS, fworks:"Carbon OpenGL", req:false}
+property demo_treebrowser : {name:"demo_treebrowser", path:"gui:widgets:fl:demo", inc:{"test_treebrowser.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_table : {name:"demo_table", path:"gui:widgets:fl:demo", inc:{"table_demo.cpp", "table_demo_ui.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_taxtree : {name:"demo_taxtree", path:"gui:widgets:tax_tree:demo", dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_misc gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq ncbi_xloader_genbank" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_font : {name:"demo_font", path:"gui:opengl:demo", inc:{"font_demo.cpp", "font_demo_ui.cpp", "font_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon OpenGL", req:false}
+property demo_gl3d : {name:"demo_gl3d", path:"gui:opengl:demo", inc:{"gl3d_demo.cpp", "gl3d_demo_ui.cpp", "gl3d_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon OpenGL", req:false}
+property demo_spline : {name:"demo_spline", path:"gui:opengl:demo", inc:{"spline_demo.cpp", "spline_demo_ui.cpp", "spline_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon OpenGL", req:false}
+property demo_tex : {name:"demo_texture", path:"gui:opengl:demo", inc:{"tex_demo.cpp", "tex_demo_ui.cpp", "tex_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon OpenGL", req:false}
+property demo_tex_font : {name:"demo_texture_fonts", path:"gui:opengl:demo", inc:{"tex_font_demo.cpp", "tex_font_demo_ui.cpp", "tex_font_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon OpenGL", req:false}
+property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", exc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
+property demo_wizard : {name:"demo_wizard", path:"gui:widgets:controls:demo", inc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon", req:false}
 
-property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp", "gca_nc_request_parser.cpp", "gca_netcached.cpp", "gca_process_ic.cpp", "gca_smng_thread.cpp"}, dep:"ncbi_core ncbi_xcache_netcache ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_services gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
+property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp", "gca_nc_request_parser.cpp", "gca_netcached.cpp", "gca_process_ic.cpp", "gca_smng_thread.cpp"}, dep:"ncbi_core ncbi_xcache_netcache ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_services gui_widgets gui_widgets_aln gui_widgets_misc gui_config gui_widgets_seq ncbi_validator ncbi_image ncbi_algo gui_graph ncbi_misc ncbi_pub" & FI_LIBS, fworks:"Carbon", gbench:true, req:true}
 
-property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils", req:true}
+property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs ncbi_image ncbi_validator gui_config gui_widgets ncbi_misc ncbi_general ncbi_pub" & FI_LIBS, req:true}
 property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core ncbi_xcache_netcache", req:true}
-property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"ncbi_core ncbi_general gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:true}
-property gbench_cache_agent : {name:"gbench_cache_agent", path:"app:netcache", inc:{"netcached.cpp", "nc_request_parser.cpp", "process_ic.cpp", "smng_thread.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_xcache_bdb ncbi_xcache_netcache", req:true}
+property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"gui_dialogs ncbi_image ncbi_pub ncbi_validator ncbi_seq ncbi_seqext gui_config ncbi_misc ncbi_core ncbi_general gui_core gui_utils gui_widgets" & FI_LIBS, fworks:"Carbon", req:true}
+property gbench_cache_agent : {name:"gbench_cache_agent", path:"app:netcache", inc:{"netcached.cpp", "nc_request_parser.cpp", "process_ic.cpp", "smng_thread.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_xcache_bdb ncbi_xcache_netcache db", req:true}
 (* ====================================================================================================== *)
 
 

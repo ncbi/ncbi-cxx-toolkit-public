@@ -646,12 +646,12 @@ on ValidatePaths()
 	end if
 	
 	if x_NoSuchPath(ThePCREPath & "/include/gif_lib.h") then
-		return "Lib GIF installation was not found at " & ThePCREPath
+		--return "Lib GIF installation was not found at " & ThePCREPath
 	end if
 	
-	if x_NoSuchPath(TheSQLPath & "/include/sqlite.h") then
-		return "SQLite installation was not found at " & TheSQLPath
-	end if
+	--if x_NoSuchPath(TheSQLPath & "/include/sqlite.h") then
+	--	return "SQLite installation was not found at " & TheSQLPath
+	--end if
 	
 	if x_NoSuchPath(TheBDBPath & "/include/db.h") then
 		return "Berkeley DB installation was not found at " & TheBDBPath
