@@ -1660,7 +1660,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         
                         previousId = subid;
                     }                
-                } catch (const CException& e){
+                } catch (const CException&){
                     out << "Sequence with id "
                         << (avRef->GetSeqId(1)).GetSeqIdString().c_str() 
                         <<" no longer exists in database...alignment skipped\n";
