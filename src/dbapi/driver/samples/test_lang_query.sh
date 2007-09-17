@@ -172,10 +172,9 @@ EOF
                 continue
             fi
              
-# Do not try to use ftds and ftds8 drivers on Solaris with Sybase (actually,
-# with tli-format of interface-file.)
-            if test \( $driver = "ftds" -o $driver = "ftds8" \) -a $SYSTEM_NAME = "SunOS" -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
-                continue;
+            if test \( -z "$SYBASE" -o "$SYBASE" == "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
+                SYBASE="/netopt/Sybase/clients/current"
+                exprort SYBASE
             fi
 
             cat <<EOF
