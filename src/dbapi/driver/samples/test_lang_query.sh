@@ -167,8 +167,15 @@ EOF
             if test $driver = "ctlib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
                 continue
             fi
+
             if test \( $driver = "ftds64" -o $driver = "odbc" -o $driver = "odbcw" -o $driver = "ftds_odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 continue
+            fi
+             
+# Do not try to use ftds and ftds8 drivers on Solaris with Sybase (actually,
+# with tli-format of interface-file.)
+            if test \( $driver = "ftds" -o $driver = "ftds8" \) -a $SYSTEM_NAME = "SunOS" -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+                continue;
             fi
 
             cat <<EOF
