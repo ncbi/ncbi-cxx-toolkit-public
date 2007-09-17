@@ -640,6 +640,12 @@ void CSearch::UpdateWithNewPep(int Missed,
                 continue;
             }
 
+            // if n-term protein mod, don't copy
+             if (Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modn || 
+                  Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modnaa) {
+                 continue;
+             }
+
             // copy the mod to the old peptide
             ModList[iMissed][NumModCount + NumMod[iMissed]] = 
             ModList[Missed-1][iMod];
