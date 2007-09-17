@@ -972,28 +972,7 @@ unsigned CQueue::GetMaxOutputSize() const
 bool CQueue::IsExpired(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    int empty_lifetime = CQueueParamAccessor(*q).GetEmptyLifetime();
-    CQueueGuard guard(q);
-    if (q->kind && empty_lifetime != -1) {
-        unsigned cnt = q->status_tracker.Count();
-        if (cnt) {
-            q->became_empty = -1;
-        } else {
-            if (q->became_empty != -1 &&
-                q->became_empty + empty_lifetime < time(0))
-            {
-                LOG_POST(Info << "Queue " << q->qname << " expired."
-                    << " Became empty: "
-                    << CTime(q->became_empty).ToLocalTime().AsString()
-                    << " Empty lifetime: " << empty_lifetime
-                    << " sec." );
-                return true;
-            }
-            if (q->became_empty == -1)
-                q->became_empty = time(0);
-        }
-    }
-    return false;
+    return q->IsExpired();
 }
 
 
@@ -3407,7 +3386,7 @@ void CQueue::Truncate(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     q->Clear();
-    // Update 'became_empty' timestamp
+    // Next call updates 'm_BecameEmpty' timestamp
     IsExpired(); // locks q->lock
 }
 

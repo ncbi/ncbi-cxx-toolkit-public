@@ -251,7 +251,7 @@ public:
     CFastMutex                   m_TagLock;
 
     ///< When it became empty, guarded by 'lock'
-    time_t                       became_empty;
+    time_t                       m_BecameEmpty;
 
     // List of active worker node listeners waiting for pending jobs
 
@@ -319,6 +319,9 @@ public:
     string GetField(int index);
 
     unsigned LoadStatusMatrix();
+
+    /// Is the queue empty long enough to be deleted?
+    bool IsExpired();
 
     /// get next job id (counter increment)
     unsigned int GetNextId();
@@ -464,6 +467,11 @@ public:
         Guard(q);
     }
 
+    CQueueGuard(SLockedQueue* q) : m_Queue(0)
+    {
+        Guard(q);
+    }
+
     ~CQueueGuard()
     {
         try {
@@ -480,7 +488,7 @@ public:
         }
     }
 
-    void Guard(CRef<SLockedQueue> q)
+    void Guard(SLockedQueue* q)
     {
         Release();
         m_Queue = q;

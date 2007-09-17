@@ -109,7 +109,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
     qclass(qclass_name),
     kind(queue_kind),
 
-    became_empty(-1),
+    m_BecameEmpty(-1),
     last_notif(0), 
     q_notif("NCBI_JSQ_"),
     run_time_line(NULL),
@@ -328,6 +328,33 @@ unsigned SLockedQueue::LoadStatusMatrix()
 }
 
 
+bool SLockedQueue::IsExpired()
+{
+    int empty_lifetime = CQueueParamAccessor(*this).GetEmptyLifetime();
+    CQueueGuard guard(this);
+    if (kind && empty_lifetime != -1) {
+        unsigned cnt = status_tracker.Count();
+        if (cnt) {
+            m_BecameEmpty = -1;
+        } else {
+            if (m_BecameEmpty != -1 &&
+                m_BecameEmpty + empty_lifetime < time(0))
+            {
+                LOG_POST(Info << "Queue " << qname << " expired."
+                    << " Became empty: "
+                    << CTime(m_BecameEmpty).ToLocalTime().AsString()
+                    << " Empty lifetime: " << empty_lifetime
+                    << " sec." );
+                return true;
+            }
+            if (m_BecameEmpty == -1)
+                m_BecameEmpty = time(0);
+        }
+    }
+    return false;
+}
+
+
 unsigned int SLockedQueue::GetNextId()
 {
     if (m_LastId.Get() >= kMax_I4) {
@@ -452,7 +479,7 @@ void SLockedQueue::ClearAffinityIdx()
 
     // get batch of affinity tokens in the index
     {{
-        CFastMutexGuard guard(lock);
+        CFastMutexGuard guard(lock); // TODO: replace by CQueueGuard
         aff_idx.SetTransaction(0);
         CBDB_FileCursor cur(aff_idx);
         cur.SetCondition(CBDB_FileCursor::eGE);
@@ -499,7 +526,7 @@ void SLockedQueue::ClearAffinityIdx()
     TNSBitVector::enumerator en(bv.first());
     for (; en.valid(); ++en) {
         unsigned aff_id = *en;
-        CFastMutexGuard guard(lock);
+        CFastMutexGuard guard(lock); // TODO: replace by CQueueGuard
         CBDB_Transaction trans(*db.GetEnv(), 
                                 CBDB_Transaction::eEnvDefault,
                                 CBDB_Transaction::eNoAssociation);
@@ -713,7 +740,7 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
         if (residue) {
             ++txn_size; --residue;
         }
-        CFastMutexGuard guard(lock);
+        CFastMutexGuard guard(lock); // TODO: replace by CQueueGuard
         CBDB_Transaction trans(*db.GetEnv(),
             CBDB_Transaction::eEnvDefault,
             CBDB_Transaction::eNoAssociation);
