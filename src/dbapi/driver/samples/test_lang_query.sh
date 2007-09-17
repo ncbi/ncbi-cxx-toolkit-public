@@ -6,8 +6,8 @@
 ulimit -n 1536 > /dev/null 2>&1
 
 
-# driver_list="ftds64_dblib ftds63"
-driver_list="ctlib dblib ftds odbc msdblib ftds8 odbcw ftds_odbc"
+# driver_list="ftds64_dblib"
+driver_list="ctlib dblib ftds odbc msdblib ftds8 odbcw ftds_odbc ftds63"
 # server_list="MS_DEV2 STRAUSS"
 server_list="MS_DEV1 TAPER MSSQL67"
 # server_mssql="MS_DEV2"
@@ -223,7 +223,7 @@ EOF
             cmd="dbapi_cursor -lb random -d $driver -S $server"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test $driver = "msdblib" -o $driver = "ftds_odbc" -o $driver = "odbcw" ; then
+            elif test $driver = "msdblib" -o $driver = "ftds_odbc" -o $driver = "odbcw" -o $driver = "ftds63" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             elif test \( $driver = "ftds8" -o $driver = "ftds" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
