@@ -239,7 +239,7 @@ string IdentifySlnGUID(const string& source_dir, const CProjKey& proj)
         }
     }
     if (!guid.empty() && !guid_gen.Insert(guid,vcproj)) {
-        PTB_ERROR_EX(vcproj, ePTB_ConfigurationError,
+        PTB_WARNING_EX(vcproj, ePTB_ConfigurationError,
                      "MSVC Project GUID already in use by "
                      << guid_gen.GetGuidUser(guid));
         if (proj.Type() != CProjKey::eMsvc) {
