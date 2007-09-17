@@ -174,7 +174,7 @@ EOF
              
             if test \( -z "$SYBASE" -o "$SYBASE" == "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
                 SYBASE="/netopt/Sybase/clients/current"
-                exprort SYBASE
+                export SYBASE
             fi
 
             cat <<EOF
