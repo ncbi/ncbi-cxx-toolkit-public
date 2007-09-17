@@ -434,6 +434,9 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
             if (pos != NCBI_NS_STD::string::npos) {
                 val = val.substr(0, pos);
             }
+            if (st == COrgMod::eSubtype_specimen_voucher && NStr::StartsWith (val, "personal:")) {
+                val = val.substr(9);
+            }
             source_description += val;
             used = true;
         }

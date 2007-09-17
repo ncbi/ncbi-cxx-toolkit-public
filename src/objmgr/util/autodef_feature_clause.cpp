@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -525,6 +526,28 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         } else {
             return false;
         }
+    } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
+        if (subtype == CSeqFeatData::eSubtype_tRNA) {
+            string label;
+            
+            feature::GetLabel(m_MainFeat, &label, feature::eContent);
+            if (NStr::Equal(label, "tRNA-Xxx")) {
+                label = "tRNA-OTHER";
+            } else if (!NStr::StartsWith(label, "tRNA-")) {
+                label = "tRNA-" + label;
+            }
+            product_name = label;
+            return true;
+        } else {
+            product_name = m_MainFeat.GetNamedQual("product");
+            if (NStr::IsBlank(product_name)
+                && m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
+                product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
+                return true;
+            } else {
+                return true;
+            }
+        }
     } else {
         string label;
         
@@ -541,17 +564,9 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         if (NStr::IsBlank(label)) {                    
             feature::GetLabel(m_MainFeat, &label, feature::eContent);
         }
-        if (subtype == CSeqFeatData::eSubtype_tRNA) {
-            if (NStr::Equal(label, "tRNA-Xxx")) {
-                label = "tRNA-OTHER";
-            } else if (!NStr::StartsWith(label, "tRNA-")) {
-                label = "tRNA-" + label;
-            }
-            product_name = label;
-            return true;
-        } else if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
-                   || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
-                   || (subtype != CSeqFeatData::eSubtype_cdregion && subtype != CSeqFeatData::eSubtype_mRNA)) {
+        if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
+            || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
+            || (subtype != CSeqFeatData::eSubtype_cdregion && subtype != CSeqFeatData::eSubtype_mRNA)) {
         } else {
             label = "";
         }
@@ -754,8 +769,6 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
             if (subtype == CSeqFeatData::eSubtype_cdregion && !m_ClauseInfoOnly) {
                 suppress_final_and = true;
             }
-        
-            // ConsolidateClauses
         
             // create subclause list for interval
             interval += ListClauses(false, suppress_final_and);

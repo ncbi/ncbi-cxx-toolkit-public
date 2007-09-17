@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -493,34 +494,40 @@ static string separators [] = {
 
 bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
 {
-//    string label = "";
-    string comment = "";
+    string product = "";
     unsigned int pos;
     bool is_first = true;
     
-//    feature::GetLabel(cf, &label, feature::eContent);
-    if (cf.CanGetComment()) {
-        comment = cf.GetComment();
+    if (cf.GetData().Which() == CSeqFeatData::e_Rna) {
+        product = cf.GetNamedQual("product");
+        if (NStr::IsBlank(product)
+            && cf.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
+            product = cf.GetData().GetRna().GetExt().GetName();
+        }
     }
-    if (NStr::IsBlank(comment)) {
+
+    if (NStr::IsBlank (product) && cf.CanGetComment()) {
+        product = cf.GetComment();
+    }
+    if (NStr::IsBlank(product)) {
         return false;
     }
     
-    if (NStr::StartsWith(comment, "contains ")) {
-        comment = comment.substr(9);
+    if (NStr::StartsWith(product, "contains ")) {
+        product = product.substr(9);
     }
     
-    pos = NStr::Find(comment, "spacer");
+    pos = NStr::Find(product, "spacer");
     if (pos == NCBI_NS_STD::string::npos) {
         return false;
     }
     
-    while (!NStr::IsBlank(comment)) {
-        string this_label = comment;
+    while (!NStr::IsBlank(product)) {
+        string this_label = product;
         unsigned int first_separator = NCBI_NS_STD::string::npos;
         unsigned int separator_len = 0;
         for (unsigned int i = 0; i < 4; i++) {
-            pos = NStr::Find(comment, separators[i]);
+            pos = NStr::Find(product, separators[i]);
             if (pos != NCBI_NS_STD::string::npos 
                 && (first_separator == NCBI_NS_STD::string::npos
                     || pos < first_separator)) {
@@ -530,10 +537,10 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         }
         
         if (first_separator != NCBI_NS_STD::string::npos) {
-            this_label = comment.substr(0, first_separator);
-            comment = comment.substr(first_separator + separator_len);
+            this_label = product.substr(0, first_separator);
+            product = product.substr(first_separator + separator_len);
         } else {
-            comment = "";
+            product = "";
         }
     
         // find first of the recognized words to occur in the string
@@ -553,7 +560,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         // check to see if any other clauses are present
         bool is_last = true;
         for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && is_last; i++) {
-            if (NStr::Find (comment, misc_words[i]) != NCBI_NS_STD::string::npos) {
+            if (NStr::Find (product, misc_words[i]) != NCBI_NS_STD::string::npos) {
                 is_last = false;
             }
         }
