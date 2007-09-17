@@ -37,9 +37,9 @@ sub Info
         " from $UpstreamPath\@$BranchInfo->{BranchSourceRevision}\n";
 
     print "Branch structure:\n";
-    for my $Directory (@{$BranchInfo->{BranchDirs}})
+    for my $Path (@{$BranchInfo->{BranchPaths}})
     {
-        print "  $Directory\n"
+        print "  $Path\n"
     }
 
     sub Times
@@ -186,7 +186,7 @@ sub GetDirsToCreate
 sub ShapeBranch
 {
     my ($Self, $Action, $Force, $RootURL, $BranchPath,
-        $UpstreamPath, $SourceRevision, @BranchDirs) = @_;
+        $UpstreamPath, $SourceRevision, @BranchPaths) = @_;
 
     my @MUCCCommands;
 
@@ -241,10 +241,10 @@ sub ShapeBranch
     {
         $SourceRevision ||= 'HEAD';
 
-        for my $Dir (@BranchDirs)
+        for my $Path (@BranchPaths)
         {
-            my $SourcePath = "$UpstreamPath/$Dir";
-            my $TargetPath = "$BranchPath/$Dir";
+            my $SourcePath = "$UpstreamPath/$Path";
+            my $TargetPath = "$BranchPath/$Path";
 
             MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
             push @MUCCCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
@@ -257,14 +257,14 @@ sub ShapeBranch
 
         $UpstreamPath = $BranchInfo->{UpstreamPath};
 
-        my %OldBranchDirs = map {$_ => 1} @{$BranchInfo->{BranchDirs}};
+        my %OldBranchPaths = map {$_ => 1} @{$BranchInfo->{BranchPaths}};
 
-        for my $Dir (@BranchDirs)
+        for my $Path (@BranchPaths)
         {
-            unless (delete $OldBranchDirs{$Dir})
+            unless (delete $OldBranchPaths{$Path})
             {
-                my $SourcePath = "$UpstreamPath/$Dir";
-                my $TargetPath = "$BranchPath/$Dir";
+                my $SourcePath = "$UpstreamPath/$Path";
+                my $TargetPath = "$BranchPath/$Path";
 
                 MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
                 push @MUCCCommands, 'cp',
@@ -273,9 +273,9 @@ sub ShapeBranch
             }
         }
 
-        for my $Dir (keys %OldBranchDirs)
+        for my $Path (keys %OldBranchPaths)
         {
-            MarkPath("$BranchPath/$Dir", \%ModTree, 'rm')
+            MarkPath("$BranchPath/$Path", \%ModTree, 'rm')
         }
     }
     elsif ($Action eq 'remove')
@@ -303,7 +303,7 @@ sub ShapeBranch
                 NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath)
         }
 
-        for (@{$BranchInfo->{BranchDirs}})
+        for (@{$BranchInfo->{BranchPaths}})
         {
             MarkPath("$BranchPath/$_", \%ModTree, 'rm')
         }
@@ -394,18 +394,18 @@ sub ShapeBranch
 sub Create
 {
     my ($Self, $RootURL, $BranchPath,
-        $UpstreamPath, $SourceRev, @BranchDirs) = @_;
+        $UpstreamPath, $SourceRev, @BranchPaths) = @_;
 
     $Self->ShapeBranch('create', undef, $RootURL,
-        $BranchPath, $UpstreamPath, $SourceRev, @BranchDirs)
+        $BranchPath, $UpstreamPath, $SourceRev, @BranchPaths)
 }
 
 sub Alter
 {
-    my ($Self, $Force, $RootURL, $BranchPath, @BranchDirs) = @_;
+    my ($Self, $Force, $RootURL, $BranchPath, @BranchPaths) = @_;
 
     $Self->ShapeBranch('alter', $Force, $RootURL,
-        $BranchPath, undef, undef, @BranchDirs)
+        $BranchPath, undef, undef, @BranchPaths)
 }
 
 sub Remove
@@ -417,12 +417,12 @@ sub Remove
 
 sub SetRawMergeProp
 {
-    my ($Self, $BranchPath, $Changes, @BranchDirs) = @_;
+    my ($Self, $BranchPath, $Changes, @BranchPaths) = @_;
 
     $Self->{SVN}->RunSubversion('propset', '-R', 'ncbi:raw',
         "Please run \"$Self->{MyName} commit_merge " .
         NCBI::SVN::Branching::Util::SimplifyBranchPath($BranchPath) .
-        "\" to merge $Changes", @BranchDirs)
+        "\" to merge $Changes", @BranchPaths)
 }
 
 sub DoMerge
@@ -435,11 +435,11 @@ sub DoMerge
     my $BranchInfo =
         NCBI::SVN::Branching::BranchAndUpstreamInfo->new($RootURL, $BranchPath);
 
-    my @BranchDirs = @{$BranchInfo->{BranchDirs}};
+    my @BranchPaths = @{$BranchInfo->{BranchPaths}};
 
     print STDERR "Running svn status on branch directories...\n";
 
-    for ($Self->{SVN}->ReadSubversionLines('status', @BranchDirs))
+    for ($Self->{SVN}->ReadSubversionLines('status', @BranchPaths))
     {
         die "$Self->{MyName}: local modifications detected.\n"
             unless m/^(?:[\?~X]|    S)/o
@@ -472,7 +472,7 @@ sub DoMerge
 
     print STDERR "Performing updates...\n";
 
-    $Self->{SVN}->RunSubversion('update', @BranchDirs);
+    $Self->{SVN}->RunSubversion('update', @BranchPaths);
 
     print STDERR "Merging with r$SourceRev...\n";
 
@@ -482,28 +482,28 @@ sub DoMerge
         $LastMergeRevision->{MergeDirection} ne $Direction)
     {
         # Previous merge was of the opposite direction.
-        for my $LocalDir (@BranchDirs)
+        for my $Path (@BranchPaths)
         {
             $Self->{SVN}->RunSubversion('merge',
-                $TargetURL . $LocalDir . '@' . $LastTargetRev,
-                $SourceURL . $LocalDir . '@' . $SourceRev,
-                $LocalDir)
+                $TargetURL . $Path . '@' . $LastTargetRev,
+                $SourceURL . $Path . '@' . $SourceRev,
+                $Path)
         }
     }
     else
     {
         # Either there were no merge revisions or
         # previous merge was of the same direction.
-        for my $LocalDir (@BranchDirs)
+        for my $Path (@BranchPaths)
         {
             $Self->{SVN}->RunSubversion('merge',
-                "-r$LastSourceRev\:$SourceRev", $SourceURL . $LocalDir,
-                $LocalDir)
+                "-r$LastSourceRev\:$SourceRev", $SourceURL . $Path,
+                $Path)
         }
     }
 
     $Self->SetRawMergeProp($BranchPath, "changes up to r$SourceRev from " .
-        "'$SourcePath' into '$TargetPath'.", @BranchDirs)
+        "'$SourcePath' into '$TargetPath'.", @BranchPaths)
 }
 
 sub MergeDown
@@ -527,15 +527,15 @@ sub CommitMerge
     my $RootURL = $Self->{SVN}->GetRootURL() ||
         die "$Self->{MyName}: not in a working copy\n";
 
-    my @BranchDirs = @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
-        $BranchPath)->{BranchDirs}};
+    my @BranchPaths = @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
+        $BranchPath)->{BranchPaths}};
 
     my $Message;
 
-    for my $Dir (@BranchDirs)
+    for my $Path (@BranchPaths)
     {
         my $PropValue =
-            $Self->{SVN}->ReadSubversionStream('propget', 'ncbi:raw', $Dir);
+            $Self->{SVN}->ReadSubversionStream('propget', 'ncbi:raw', $Path);
 
         unless ($Message)
         {
@@ -551,15 +551,15 @@ sub CommitMerge
 
     die "$Self->{MyName}: cannot retrieve log message.\n" unless $Changes;
 
-    $Self->{SVN}->RunSubversion('propdel', '-R', 'ncbi:raw', @BranchDirs);
+    $Self->{SVN}->RunSubversion('propdel', '-R', 'ncbi:raw', @BranchPaths);
 
     eval
     {
         $Self->{SVN}->RunSubversion('commit',
-            '-m', "Merged $Changes", @BranchDirs)
+            '-m', "Merged $Changes", @BranchPaths)
     };
 
-    $Self->SetRawMergeProp($BranchPath, $Changes, @BranchDirs) if $@
+    $Self->SetRawMergeProp($BranchPath, $Changes, @BranchPaths) if $@
 }
 
 sub MergeDiff
@@ -571,7 +571,7 @@ sub MergeDiff
 
     my $Stream = $Self->{SVN}->Run('diff',
         @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
-            $BranchPath)->{BranchDirs}});
+            $BranchPath)->{BranchPaths}});
 
     my $Line;
     my $State = 0;
@@ -631,7 +631,7 @@ sub MergeStat
 
     my $Stream = $Self->{SVN}->Run('status',
         @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
-            $BranchPath)->{BranchDirs}});
+            $BranchPath)->{BranchPaths}});
 
     my $Line;
 
@@ -655,7 +655,7 @@ sub Svn
 
     exec($Self->{SVN}->GetSvnPathname(), @CommandAndArgs,
         @{NCBI::SVN::Branching::BranchInfo->new($RootURL,
-            $BranchPath)->{BranchDirs}})
+            $BranchPath)->{BranchPaths}})
 }
 
 sub DoSwitchUnswitch
@@ -674,7 +674,7 @@ sub DoSwitchUnswitch
     my $BaseURL = $RootURL . '/' . ($DoSwitch ?
         $BranchPath : $BranchInfo->{UpstreamPath}) . '/';
 
-    for (@{$BranchInfo->{BranchDirs}})
+    for (@{$BranchInfo->{BranchPaths}})
     {
         $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
     }
@@ -702,10 +702,10 @@ sub Update
 
     print STDERR "Updating working copy directories of '$BranchPath'...\n";
 
-    my ($BranchDirs, $UpstreamPath, $ObsoleteBranchPaths) =
-        @$BranchInfo{qw(BranchDirs UpstreamPath ObsoleteBranchPaths)};
+    my ($BranchPaths, $UpstreamPath, $ObsoleteBranchPaths) =
+        @$BranchInfo{qw(BranchPaths UpstreamPath ObsoleteBranchPaths)};
 
-    my @AffectedPaths = @$BranchDirs;
+    my @AffectedPaths = @$BranchPaths;
 
     push @AffectedPaths, @$ObsoleteBranchPaths if $ObsoleteBranchPaths;
 
@@ -718,7 +718,7 @@ sub Update
     my @RecursiveUpdate;
     my @PathsToSwtich;
 
-    for my $Path (@$BranchDirs)
+    for my $Path (@$BranchPaths)
     {
         my $Info = $AffectedPathInfo->{$Path};
 

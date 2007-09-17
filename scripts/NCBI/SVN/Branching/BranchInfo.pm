@@ -236,9 +236,9 @@ sub new
         }
     }
 
-    my @BranchDirs = sort @{FindPathsInTree(\%BranchStructure)};
+    my @BranchPaths = sort @{FindPathsInTree(\%BranchStructure)};
 
-    $Self->{BranchDirs} = \@BranchDirs;
+    $Self->{BranchPaths} = \@BranchPaths;
 
     if ($Self->{ObsoleteBranchPaths})
     {
@@ -272,7 +272,7 @@ sub new
 
     my $UpstreamRevisions = $Self->{SVN}->ReadLog('--stop-on-copy',
         "-rHEAD\:$Self->{BranchRevisions}->[-1]->{Number}",
-        $RootURL, map {"$UpstreamPath/$_"} @{$Self->{BranchDirs}});
+        $RootURL, map {"$UpstreamPath/$_"} @{$Self->{BranchPaths}});
 
     my @MergeUpRevisions;
 

@@ -123,13 +123,13 @@ sub TooManyArgs
     UsageError(qq(too many arguments for "$Command"))
 }
 
-my ($Force, $RootURL, $Revision, $DirList);
+my ($Force, $RootURL, $Revision, $PathList);
 
 GetOptions('help|h|?' => sub {Help()},
     'force|f' => \$Force,
     'root-url|root|U=s' => \$RootURL,
     'revision|rev|r=i' => \$Revision,
-    'dirlist|l=s' => \$DirList)
+    'list|l=s' => \$PathList)
         or UsageError();
 
 my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
@@ -216,38 +216,38 @@ sub GetBranchDirArgs
 {
     my ($Command, @AdditionalPathArgs) = @_;
 
-    my @BranchDirs;
+    my @BranchPaths;
 
-    unless ($DirList)
+    unless ($PathList)
     {
         UsageError('directory listing is missing') unless @ARGV;
 
-        @BranchDirs = @ARGV
+        @BranchPaths = @ARGV
     }
     else
     {
         TooManyArgs($Command) if @ARGV;
 
-        if ($DirList eq '-')
+        if ($PathList eq '-')
         {
-            @BranchDirs = ReadFileLines(\*STDIN)
+            @BranchPaths = ReadFileLines(\*STDIN)
         }
         else
         {
-            open FILE, '<', $DirList or die "$ScriptName\: $DirList\: $!\n";
+            open FILE, '<', $PathList or die "$ScriptName\: $PathList\: $!\n";
 
-            @BranchDirs = ReadFileLines(\*FILE);
+            @BranchPaths = ReadFileLines(\*FILE);
 
             close FILE
         }
     }
 
-    for my $Dir (@BranchDirs)
+    for my $Path (@BranchPaths)
     {
-        TrimSlashes(\$Dir)
+        TrimSlashes(\$Path)
     }
 
-    return (@AdditionalPathArgs, @BranchDirs)
+    return (@AdditionalPathArgs, @BranchPaths)
 }
 
 if ($Command eq 'list')
