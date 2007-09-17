@@ -95,6 +95,9 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
             return CProjKey::eMsvc;
         }
         break;
+
+    default:
+        break;
     }
 
     if ( CDirEntry(fname_lib).Exists() )
