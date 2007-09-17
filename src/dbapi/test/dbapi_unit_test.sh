@@ -106,7 +106,7 @@ EOF
         for server in $server_list ; do
             if test \( -z "$SYBASE" -o "$SYBASE" == "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
                 SYBASE="/netopt/Sybase/clients/current"
-                exprort SYBASE
+                export SYBASE
             fi
 
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
