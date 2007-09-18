@@ -172,7 +172,7 @@ EOF
                 continue
             fi
              
-            if test \( -z "$SYBASE" -o "$SYBASE" == "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
+            if test \( -z "$SYBASE" -o "$SYBASE" = "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
                 SYBASE="/netopt/Sybase/clients/current"
                 export SYBASE
             fi

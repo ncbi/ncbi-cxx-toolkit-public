@@ -104,7 +104,7 @@ Unknown driver initialization error.
 EOF
     else
         for server in $server_list ; do
-            if test \( -z "$SYBASE" -o "$SYBASE" == "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
+            if test \( -z "$SYBASE" -o "$SYBASE" = "No_Sybase" \) -a -f "/netopt/Sybase/clients/current/interfaces" ; then
                 SYBASE="/netopt/Sybase/clients/current"
                 export SYBASE
             fi
