@@ -141,7 +141,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
             if (uuu->host)
                 break/*failed - duplicate connection info*/;
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
-            while (*header && isspace((unsigned char)(*header)))
+            while (*header  &&  isspace((unsigned char)(*header)))
                 header++;
             if (strncasecmp(header, kStateless, sizeof(kStateless) - 1) == 0) {
                 /* Special keyword for switching into stateless mode */
@@ -159,7 +159,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 }
                 o1 = i1; o2 = i2; o3 = i3; o4 = i4;
                 sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
-                if (!(uuu->host = SOCK_gethostbyname(ipaddr)) || !uuu->port)
+                if (!(uuu->host = SOCK_gethostbyname(ipaddr))  ||  !uuu->port)
                     break/*failed - bad host:port in connection info*/;
                 uuu->ticket = SOCK_HostToNetLong(ticket);
             }
@@ -167,7 +167,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
         if ((header = strchr(header, '\n')) != 0)
             header++;
     }
-    if (!header || !*header)
+    if (!header  ||  !*header)
         return 1/*success*/;
 
     uuu->host = 0;
@@ -183,7 +183,7 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
     const char* s;
 
     assert(net_info);
-    for (s = net_info->http_user_header; s; s = strchr(s, '\n')) {
+    for (s = net_info->http_user_header;  s;  s = strchr(s, '\n')) {
         if (s != net_info->http_user_header)
             s++;
         if (!*s)
@@ -199,11 +199,11 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                 mime_t != eMIME_T_Unknown                     &&
                 MIME_ParseContentTypeEx(s, &m_t, &m_s, &m_e)  &&
                 (mime_t != m_t
-                 ||  (mime_s != SERV_MIME_SUBTYPE_UNDEFINED &&
-                      mime_s != eMIME_Unknown &&
-                      m_s != eMIME_Unknown && mime_s != m_s)
-                 ||  (mime_e != eENCOD_None &&
-                      m_e != eENCOD_None && mime_e != m_e))) {
+                 ||  (mime_s != SERV_MIME_SUBTYPE_UNDEFINED  &&
+                      mime_s != eMIME_Unknown                &&
+                      m_s    != eMIME_Unknown  &&  mime_s != m_s)
+                 ||  (mime_e != eENCOD_None                  &&
+                      m_e    != eENCOD_None    &&  mime_e != m_e))) {
                 const char* c;
                 size_t len;
                 char* t;
@@ -213,7 +213,7 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                 }
                 if (!(c = strchr(s, '\n')))
                     c = s + strlen(s);
-                if (c > s && c[-1] == '\r')
+                if (c > s  &&  c[-1] == '\r')
                     c--;
                 len = (size_t)(c - s);
                 if ((t = (char*) malloc(len + 1)) != 0) {
@@ -227,11 +227,11 @@ static int/*bool*/ s_IsContentTypeDefined(const SConnNetInfo* net_info,
                 CORE_LOGF(eLOG_Warning,
                           ("[SERVICE]  Content-Type mismatch for \"%s\" "
                            "%s%s%s%s%s", net_info->service,
-                           t && *t         ? "specified="  : "",
-                           t && *t         ? t             : "",
-                           t && *t && *c_t ? ", "          : "",
-                           *c_t            ? "configured=" : "",
-                           *c_t            ? c_t           : ""));
+                           t  &&  *t           ? "specified="  : "",
+                           t  &&  *t           ? t             : "",
+                           t  &&  *t  &&  *c_t ? ", "          : "",
+                           *c_t                ? "configured=" : "",
+                           *c_t                ? c_t           : ""));
                 if (t)
                     free(t);
             }
@@ -331,7 +331,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     const SSERV_Info* info;
 
     assert(n != 0); /* paranoid assertion :-) */
-    if (uuu->net_info->firewall && !uuu->net_info->stateless)
+    if (uuu->net_info->firewall  &&  !uuu->net_info->stateless)
         return 0; /*cannot adjust firewall stateful client*/
 
     for (;;) {
@@ -403,7 +403,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0/*false - not adjusted*/;
 
-    if (info->type == fSERV_Ncbid || (info->type & fSERV_Http)) {
+    if (info->type == fSERV_Ncbid  ||  (info->type & fSERV_Http)) {
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
     } else {
@@ -428,7 +428,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     char*       iter_header = SERV_Print(uuu->iter, net_info);
     EReqMethod  req_method;
 
-    if (info && info->type != fSERV_Firewall) {
+    if (info  &&  info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
         assert(!second_try);
         /* We know the connection point, let's try to use it! */
@@ -493,8 +493,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
-        if (net_info->stateless ||
-            (info && (info->u.firewall.type & fSERV_Http))) {
+        if (net_info->stateless  ||
+            (info  &&  (info->u.firewall.type & fSERV_Http))) {
             if (info) {
                 req_method = info->u.firewall.type == fSERV_HttpGet
                     ? eReqMethod_Get : (info->u.firewall.type == fSERV_HttpPost
@@ -562,9 +562,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
              "\r\n");
     }
 
-    if (!net_info->stateless && (!info                        ||
-                                 info->type == fSERV_Firewall ||
-                                 info->type == fSERV_Ncbid)) {
+    if (!net_info->stateless  &&  (!info                         ||
+                                   info->type == fSERV_Firewall  ||
+                                   info->type == fSERV_Ncbid)) {
         /* HTTP connector is auxiliary only */
         CONNECTOR conn;
         CONN c;
@@ -596,12 +596,12 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             return 0/*failed, no connection info returned*/;
         if (uuu->host == (unsigned int)(-1)) {
             /* Firewall mode only in stateful mode, fallback requested */
-            assert((!info || info->type == fSERV_Firewall) && !second_try);
+            assert((!info  ||  info->type == fSERV_Firewall)  &&  !second_try);
             /* Try to use stateless mode instead */
             net_info->stateless = 1/*true*/;
             return s_Open(uuu, timeout, info, net_info, 1/*second try*/);
         }
-        if (net_info->firewall && *net_info->proxy_host)
+        if (net_info->firewall  &&  *net_info->proxy_host)
             strcpy(net_info->host, net_info->proxy_host);
         else
             SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
@@ -678,7 +678,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     CONNECTOR conn;
 
     assert(!uuu->meta.list && !uuu->name);
-    if (!uuu->iter && !s_OpenDispatcher(uuu)) {
+    if (!uuu->iter  &&  !s_OpenDispatcher(uuu)) {
         uuu->status = status;
         return status;
     }
@@ -765,9 +765,9 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     /* initialize virtual table */
-    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
-    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
-    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
+    CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
+    CONN_SET_METHOD(meta, open,     s_VT_Open,    connector);
+    CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
     CONN_SET_DEFAULT_TIMEOUT(meta, uuu->net_info->timeout);
     /* all the rest is reset to NULL */
     s_Reset(meta);
@@ -806,7 +806,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     CONNECTOR          ccc;
     SServiceConnector* xxx;
 
-    if (!service || !*service)
+    if (!service  ||  !*service)
         return 0;
 
     ccc = (SConnector*)        malloc(sizeof(SConnector));
