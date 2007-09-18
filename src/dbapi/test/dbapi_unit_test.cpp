@@ -2280,8 +2280,6 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         }
         
         // Retrieve data back ...
-        // Read Blob
-        // There is a bug in implementation of ReadItem in ftds8 driver.
         {
             string result;
             char buff[64];
@@ -2320,6 +2318,131 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
                 BOOST_CHECK_EQUAL(rec_num, 1);
 
             }
+        }
+
+        // Check NULL-values ...
+        if (false) {
+            int num_of_tests = 10;
+
+            // Delete previously inserted data ...
+            {
+                sql = "DELETE FROM " + table_name;
+
+                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+                auto_stmt->Send();
+                auto_stmt->DumpResults();
+            }
+
+            // Insert data ...
+            {
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+
+                CDB_Int geneIdVal;
+                CDB_Text dataTextVal;
+
+                bcp->Bind(0, &geneIdVal);
+                bcp->Bind(1, &dataTextVal);
+
+                for(int i = 0; i < num_of_tests; ++i ) {
+                    geneIdVal = i;
+
+                    if (i % 2 == 0) {
+                        dataTextVal.Append(data);
+                        dataTextVal.MoveTo(0);
+                    } else {
+                        dataTextVal.AssignNULL();
+                    }
+
+                    bcp->SendRow();
+                }
+
+                bcp->CompleteBCP();
+            }
+
+            // Check inserted data ...
+            {
+                char buff[64];
+
+                sql = "SELECT dataText FROM "+ table_name;
+
+                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while(auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL) {
+                        continue;
+                    }
+
+                    if (rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    for(int i = 0; i < num_of_tests; ++i ) {
+                        string result;
+                        size_t read_bytes = 0;
+                        bool is_null = true;
+
+                        BOOST_CHECK(rs->Fetch());
+
+                        if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                            result += string(buff, read_bytes);
+                        }
+
+
+                        if (i % 2 == 0) {
+                            BOOST_CHECK(!is_null);
+                            BOOST_CHECK_EQUAL(result, data);
+                        } else {
+                            BOOST_CHECK(is_null);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
+{
+    string sql;
+    // enum { record_num = 10 };
+    string table_name = "#bcp_table2";
+    const string data = "testing";
+
+    try {
+        CDB_Connection* conn = m_Conn->GetCDB_Connection();
+
+        // Create table ...
+        {
+            sql  = " CREATE TABLE " + table_name + "( \n";
+            sql += "    vkey bigint NOT NULL , \n";
+            sql += "    geneId int NOT NULL , \n";
+            sql += "    modate datetime NOT NULL , \n";
+            sql += "    dtype int NOT NULL , \n";
+            sql += "    dsize int NOT NULL , \n";
+            sql += "    dataStr varchar (255) COLLATE Latin1_General_BIN NULL , \n";
+            sql += "    dataInt int NULL , \n";
+            sql += "    dataBin varbinary (255) NULL , \n";
+            sql += "    cnt int NOT NULL , \n";
+            sql += "    dataText text COLLATE Latin1_General_BIN NULL , \n";
+            sql += "    dataImg image NULL  \n";
+            sql += " )";
+
+            auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
+
+            auto_stmt->Send();
+            auto_stmt->DumpResults();
         }
     }
     catch(const CException& ex) {
@@ -8838,17 +8961,22 @@ void CDBAPIUnitTest::Test_Timeout(void)
         }
 
         // Check if connection is alive ...
-        if (false) {
+        if (m_args.GetDriverName() != "ftds8"
+            && !(m_args.GetDriverName() == "ftds" 
+              && m_args.GetServerType() == CTestArguments::eSybase)    
+            ) {
             auto_stmt->SendSql("SELECT name FROM sysobjects");
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
+        } else {
+            PutMsgDisabled("CDBAPIUnitTest. Check if connection is alive.");
         }
 
-        dc->SetTimeout(timeout);
-
         BOOST_CHECK(timeout_was_reported);
+
+        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
