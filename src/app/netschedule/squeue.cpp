@@ -31,8 +31,6 @@
 #include <ncbi_pch.hpp>
 
 #include "squeue.hpp"
-#include "nslb.hpp"
-
 
 #include <bdb/bdb_trans.hpp>
 #include <util/bitset/bmalgo.h>
@@ -328,6 +326,22 @@ unsigned SLockedQueue::LoadStatusMatrix()
 }
 
 
+CNetScheduleAPI::EJobStatus
+SLockedQueue::GetJobStatus(unsigned job_id) const
+{
+    return status_tracker.GetStatus(job_id);
+}
+
+
+void SLockedQueue::SetPort(unsigned short port)
+{
+    if (port) {
+        udp_socket.SetReuseAddress(eOn);
+        udp_socket.Bind(port);
+    }
+}
+
+
 bool SLockedQueue::IsExpired()
 {
     int empty_lifetime = CQueueParamAccessor(*this).GetEmptyLifetime();
@@ -571,6 +585,78 @@ void SLockedQueue::ClearAffinityIdx()
             FlushDeletedVectors(eVIAffinity);
         }
     }}
+}
+
+
+void SLockedQueue::NotifyListeners(bool unconditional)
+{
+    int notif_timeout = CQueueParamAccessor(*this).GetNotifTimeout();
+
+    time_t curr = time(0);
+
+    if (!unconditional &&
+        (notif_timeout == 0 ||
+         !status_tracker.AnyPending())) {
+        return;
+    }
+
+    SLockedQueue::TListenerList::size_type lst_size;
+    {{
+        CWriteLockGuard guard(wn_lock);
+        lst_size = wnodes.size();
+        if ((lst_size == 0) ||
+            (!unconditional && last_notif + notif_timeout > curr)) {
+            return;
+        }
+        last_notif = curr;
+    }}
+
+    const char* msg = q_notif.c_str();
+    size_t msg_len = q_notif.length()+1;
+
+    for (SLockedQueue::TListenerList::size_type i = 0;
+         i < lst_size;
+         ++i)
+    {
+        unsigned host;
+        unsigned short port;
+        {{
+            CReadLockGuard guard(wn_lock);
+            SQueueListener* ql = wnodes[i];
+            if (ql->last_connect + ql->timeout < curr)
+                continue;
+            host = ql->host;
+            port = ql->udp_port;
+        }}
+
+        if (port) {
+            CFastMutexGuard guard(us_lock);
+            //EIO_Status status =
+                udp_socket.Send(msg, msg_len,
+                                   CSocketAPI::ntoa(host), port);
+        }
+        // periodically check if we have no more jobs left
+        if ((i % 10 == 0) && !status_tracker.AnyPending())
+            break;
+    }
+}
+
+
+void SLockedQueue::Notify(unsigned addr, unsigned short port, unsigned job_id)
+{
+    char msg[1024];
+    sprintf(msg, "JNTF %u", job_id);
+
+    CFastMutexGuard guard(us_lock);
+
+    udp_socket.Send(msg, strlen(msg)+1,
+                    CSocketAPI::ntoa(addr), port);
+}
+
+
+void SLockedQueue::OptimizeMem()
+{
+    status_tracker.OptimizeMem();
 }
 
 

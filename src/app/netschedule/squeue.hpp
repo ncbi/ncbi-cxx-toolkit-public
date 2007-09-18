@@ -200,7 +200,6 @@ private:
 
 // slight violation of naming convention for porting to util/time_line
 typedef CTimeLine<TNSBitVector> CJobTimeLine;
-class CNSLB_Coordinator;
 /// Mutex protected Queue database with job status FSM 
 ///
 /// Class holds the queue database (open files and indexes), 
@@ -315,10 +314,18 @@ public:
     // Thread-safe parameter set
     void SetParameters(const SQueueParameters& params);
 
+    ////
+    // Status matrix related
+    unsigned LoadStatusMatrix();
+
+    CNetScheduleAPI::EJobStatus
+        GetJobStatus(unsigned job_id) const;
+
+    // Set UDP port for notifications
+    void SetPort(unsigned short port);
+
     int GetFieldIndex(const string& name);
     string GetField(int index);
-
-    unsigned LoadStatusMatrix();
 
     /// Is the queue empty long enough to be deleted?
     bool IsExpired();
@@ -345,6 +352,12 @@ public:
 
     /// Clear part of affinity index, called from periodic Purge
     void ClearAffinityIdx();
+
+    void NotifyListeners(bool unconditional);
+    void Notify(unsigned addr, unsigned short port, unsigned job_id);
+
+    // Optimize bitvectors
+    void OptimizeMem();
 
     // Tags methods
     typedef CSimpleBuffer TBuffer;

@@ -127,15 +127,6 @@ public:
     /// jobs
     void GetAliveJobs(TNSBitVector& ids);
 
-    /// Return job id (job is taken out of the regular job matrix)
-    /// 0 - no pending jobs
-    unsigned BorrowPendingJob();
-
-    /// Return borrowed job to the specified status
-    /// (pending or running)
-    void ReturnBorrowedJob(unsigned int  job_id, 
-                          CNetScheduleAPI::EJobStatus status);
-
     /// TRUE if we have pending jobs
     bool AnyPending() const;
 
@@ -197,7 +188,7 @@ public:
     void ClearAll(TNSBitVector* bv = 0);
 
     /// Free unused memory buffers
-    void FreeUnusedMem();
+    void OptimizeMem();
 
     void PrintStatusMatrix(CNcbiOstream& out) const;
 
@@ -246,52 +237,12 @@ private:
 
     TStatusStorage          m_StatusStor;
     mutable CRWLock         m_Lock;
-    /// Pending Ids extracted out
-    TNSBitVector            m_BorrowedIds; 
     /// Last pending id
     bm::id_t                m_LastPending;
     /// Done jobs counter
     unsigned                m_DoneCnt;
 };
 
-
-/// @internal
-class CNetSchedule_JS_BorrowGuard
-{
-public:
-    CNetSchedule_JS_BorrowGuard(CJobStatusTracker& strack,
-                                unsigned int       job_id,
-        CNetScheduleAPI::EJobStatus  old_status = CNetScheduleAPI::ePending)
-    : m_Tracker(strack),
-      m_OldStatus(old_status),
-       m_JobId(job_id)
-    {
-        _ASSERT(job_id);
-    }
-
-    ~CNetSchedule_JS_BorrowGuard()
-    {
-        if (m_JobId) {
-            m_Tracker.ReturnBorrowedJob(m_JobId, m_OldStatus);
-        }
-    }
-    
-    void ReturnToStatus(CNetScheduleAPI::EJobStatus status)
-    {
-        if (m_JobId) {
-            m_Tracker.ReturnBorrowedJob(m_JobId, status);
-            m_JobId = 0;
-        }
-    }
-
-private:
-    CNetSchedule_JS_BorrowGuard(const CNetSchedule_JS_BorrowGuard&);
-    CNetSchedule_JS_BorrowGuard& operator=(const CNetSchedule_JS_BorrowGuard&);
-private:
-    CJobStatusTracker&           m_Tracker;
-    CNetScheduleAPI::EJobStatus  m_OldStatus;
-    unsigned int                 m_JobId;
-};
 
 /// @internal
 class CNetSchedule_JS_Guard

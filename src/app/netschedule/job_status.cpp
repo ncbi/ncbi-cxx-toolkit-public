@@ -39,8 +39,7 @@ BEGIN_NCBI_SCOPE
 
 
 CJobStatusTracker::CJobStatusTracker()
- : m_BorrowedIds(bm::BM_GAP),
-   m_LastPending(0),
+ : m_LastPending(0),
    m_DoneCnt(0)
 {
     for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
@@ -89,9 +88,6 @@ CJobStatusTracker::GetStatusNoLock(unsigned int job_id) const
             return (CNetScheduleAPI::EJobStatus) i;
         }
     }
-    if (m_BorrowedIds[job_id]) {
-        return CNetScheduleAPI::ePending;
-    }
     return CNetScheduleAPI::eJobNotFound;
 }
 
@@ -102,12 +98,7 @@ CJobStatusTracker::CountStatus(CNetScheduleAPI::EJobStatus status) const
     CReadLockGuard guard(m_Lock);
 
     const TNSBitVector& bv = *m_StatusStor[(int)status];
-    unsigned cnt = bv.count();
-
-    if (status == CNetScheduleAPI::ePending) {
-        cnt += m_BorrowedIds.count();
-    }
-    return cnt;
+    return bv.count();
 }
 
 
@@ -210,7 +201,6 @@ CJobStatusTracker::SetStatus(unsigned int                job_id,
         TNSBitVector& bv = *m_StatusStor[i];
         bv.set(job_id, (int)status == (int)i);
     }
-    m_BorrowedIds.set(job_id, false);
 
     if (status == CNetScheduleAPI::eDone) {
         IncDoneJobs();
@@ -234,39 +224,19 @@ void CJobStatusTracker::ClearAll(TNSBitVector* bv)
         }
         bv1.clear(true);
     }
-    if (bv) {
-        *bv |= m_BorrowedIds;
-    }
-    m_BorrowedIds.clear(true);
 }
 
 
-void CJobStatusTracker::FreeUnusedMem()
+void CJobStatusTracker::OptimizeMem()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
         TNSBitVector& bv = *m_StatusStor[i];
         {{
-        CWriteLockGuard guard(m_Lock);
-        bv.optimize(0, TNSBitVector::opt_free_0);
+            CWriteLockGuard guard(m_Lock);
+            bv.optimize(0, TNSBitVector::opt_free_0);
         }}
     }
-    {{
-    CWriteLockGuard guard(m_Lock);
-    m_BorrowedIds.optimize(0, TNSBitVector::opt_free_0);
-    }}
 }
-
-
-/*
-void CJobStatusTracker::FreeUnusedMemNoLock()
-{
-    for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TNSBitVector& bv = *m_StatusStor[i];
-        bv.optimize(0, TNSBitVector::opt_free_0);
-    }
-    m_BorrowedIds.optimize(0, TNSBitVector::opt_free_0);
-}
-*/
 
 
 void
@@ -595,52 +565,6 @@ CJobStatusTracker::GetPendingJobNoLock()
 }
 
 
-unsigned int CJobStatusTracker::BorrowPendingJob()
-{
-    TNSBitVector& bv = 
-        *m_StatusStor[(int) CNetScheduleAPI::ePending];
-
-    bm::id_t job_id;
-    CWriteLockGuard guard(m_Lock);
-
-    for (int i = 0; i < 2; ++i) {
-        job_id = bv.get_next(m_LastPending);
-        if (job_id) {
-            m_BorrowedIds.set(job_id, true);
-            m_LastPending = job_id;
-            bv.set(job_id, false);
-            break;
-        } else {
-            Returned2PendingNoLock();
-        }
-/*
-        if (bv.any()) {
-            job_id = bv.get_first();
-            if (job_id) {
-                m_BorrowedIds.set(job_id, true);
-                return job_id;
-            }
-        }        
-        Returned2PendingNoLock();
-*/
-    }
-    return job_id;
-}
-
-
-void CJobStatusTracker::ReturnBorrowedJob(unsigned int  job_id, 
-                                          CNetScheduleAPI::EJobStatus status)
-{
-    CWriteLockGuard guard(m_Lock);
-    if (!m_BorrowedIds[job_id]) {
-        ReportInvalidStatus(job_id, status, CNetScheduleAPI::ePending);
-        return;
-    }
-    m_BorrowedIds.set(job_id, false);
-    SetExactStatusNoLock(job_id, status, true /*set status*/);
-}
-
-
 bool CJobStatusTracker::AnyPending() const
 {
     const TNSBitVector& bv = 
@@ -768,16 +692,7 @@ CJobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
         if (!out.good()) break;
     } // for
 
-    out << "status: Borrowed pending" << "\n\n";
-    TNSBitVector::enumerator en(m_BorrowedIds.first());
-    for (int cnt = 0;en.valid(); ++en, ++cnt) {
-        out << *en << ", ";
-        if (cnt % 10 == 0) {
-            out << "\n";
-        }
-    } // for
     out << "\n\n";
-    
 }
 
 

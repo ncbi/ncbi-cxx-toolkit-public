@@ -312,8 +312,8 @@ public:
 
     // Service for CQueueDataBase
     /// Free unsued memory (status storage)
-    void FreeUnusedMem(void)
-        { x_GetLQueue()->status_tracker.FreeUnusedMem(); }
+    void OptimizeMem(void)
+        { x_GetLQueue()->OptimizeMem(); }
 
     /// All returned jobs come back to pending status
     void Returned2Pending(void)
@@ -403,6 +403,8 @@ private:
                                     const string&        output,
                                     SSubmitNotifInfo*    subm_info);
 
+    bool x_ShouldNotify(time_t curr, const SSubmitNotifInfo& si);
+
     bool x_GetInput(SQueueDB& db, SJobInfoDB& job_info_db,
         bool fetched, string& str);
     bool x_GetOutput(SQueueDB& db, SJobInfoDB& job_info_db,
@@ -452,9 +454,6 @@ private:
 
     void x_ReadAffIdx_NoLock(unsigned            aff_id,
                              TNSBitVector*       job_candidates);
-
-    void x_Count(TStatEvent event)
-        { x_GetLQueue()->CountEvent(event); }
 
     CRef<SLockedQueue> x_GetLQueue(void);
     const CRef<SLockedQueue> x_GetLQueue(void) const;
