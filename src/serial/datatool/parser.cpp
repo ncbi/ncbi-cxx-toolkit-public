@@ -471,8 +471,7 @@ const string& ASNParser::Identifier(void)
 {
     switch ( Next() ) {
     case T_TYPE_REFERENCE:
-        ERR_POST("LINE " << Location() <<
-            " identifier must begin with lowercase letter");
+        Lexer().LexerError("identifier must begin with lowercase letter");
         return ConsumeAndValue();
     case T_IDENTIFIER:
         return ConsumeAndValue();
@@ -487,8 +486,7 @@ const string& ASNParser::TypeReference(void)
     case T_TYPE_REFERENCE:
         return ConsumeAndValue();
     case T_IDENTIFIER:
-        ERR_POST("LINE " << Location() <<
-            " type name must begin with uppercase letter");
+        Lexer().LexerError("type name must begin with uppercase letter");
         return ConsumeAndValue();
     }
     ParseError("type name");
@@ -501,8 +499,7 @@ const string& ASNParser::ModuleReference(void)
     case T_TYPE_REFERENCE:
         return ConsumeAndValue();
     case T_IDENTIFIER:
-        ERR_POST("LINE " << Location() <<
-            " module name must begin with uppercase letter");
+        Lexer().LexerError("module name must begin with uppercase letter");
         return ConsumeAndValue();
     }
     ParseError("module name");
