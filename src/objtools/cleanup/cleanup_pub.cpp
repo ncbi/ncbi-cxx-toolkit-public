@@ -176,11 +176,12 @@ void CCleanup_imp::BasicCleanup(CCit_gen& cg, bool fix_initials)
     }
     if (cg.IsSetCit()) {
         CCit_gen::TCit& cit = cg.SetCit();
-        if (NStr::StartsWith(cit, "unpublished", NStr::eNocase)) {
+        if (NStr::StartsWith(cit, "unpublished", NStr::eNocase) && !NStr::StartsWith (cit, "Unpublished", NStr::eCase)) {
             cit[0] = 'U';
             ChangeMade(CCleanupChange::eChangePublication);
         }
-        if (!cg.IsSetJournal()) {
+        if (!cg.IsSetJournal()
+            && (cg.IsSetVolume() || cg.IsSetPages() || cg.IsSetIssue())) {
             cg.ResetVolume();
             cg.ResetPages();
             cg.ResetIssue();
@@ -460,6 +461,10 @@ void CCleanup_imp::BasicCleanup(CAffil& af)
             CLEAN_STRING_MEMBER(std, City);
             CLEAN_STRING_MEMBER(std, Sub);
             CLEAN_STRING_MEMBER(std, Country);
+            if (NStr::CompareNocase (std.GetCountry(), "U.S.A.") == 0) {
+                std.SetCountry("USA");
+                ChangeMade (CCleanupChange::eChangePublication);
+            }
             CLEAN_STRING_MEMBER(std, Street);
             CLEAN_STRING_MEMBER(std, Email);
             CLEAN_STRING_MEMBER(std, Fax);
