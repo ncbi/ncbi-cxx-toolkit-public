@@ -142,6 +142,11 @@ tds_set_state(TDSSOCKET * tds, TDS_STATE state)
 		if (tds->state == TDS_DEAD) {
 			tds_client_msg(tds->tds_ctx, tds, 20006, 9, 0, 0, "Write to SQL Server failed.");
 			return tds->state;
+		} else if (tds->state == TDS_READING) {
+			tdsdump_log(TDS_DBG_ERROR, "tds_submit_query(): state is READING\n");
+			tds_client_msg(tds->tds_ctx, tds, 20003, 2, 0, 1,
+				       "Read from the server has timed out.");
+			return tds->state;
 		} else if (tds->state != TDS_IDLE) {
 			tdsdump_log(TDS_DBG_ERROR, "tds_submit_query(): state is PENDING\n");
 			tds_client_msg(tds->tds_ctx, tds, 20019, 7, 0, 1,

@@ -8950,9 +8950,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
         auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
 
-        if(m_args.GetDriverName() == "ftds8" 
-           || m_args.GetDriverName() == "ftds"
-          ) {
+        if(m_args.GetDriverName() == "ftds8") {
             try {
                 auto_stmt->SendSql("waitfor delay '0:00:03'");
                 BOOST_CHECK(auto_stmt->HasMoreResults());
