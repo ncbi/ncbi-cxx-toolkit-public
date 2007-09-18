@@ -8950,15 +8950,26 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
         auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
 
-        try {
-            auto_stmt->SendSql("waitfor delay '0:00:03'");
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-        // } catch(const CDB_TimeoutEx&) {
-        // We have to catch CDB_Exception here because of the ftds driver ...
-        } catch(const CDB_Exception&) {
-            timeout_was_reported = true;
-            auto_stmt->Cancel();
+        if(m_args.GetDriverName() == "ftds8" 
+           || m_args.GetDriverName() == "ftds"
+          ) {
+            try {
+                auto_stmt->SendSql("waitfor delay '0:00:03'");
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+            } catch(const CDB_Exception&) {
+                timeout_was_reported = true;
+                auto_stmt->Cancel();
+            }
+        } else {
+            try {
+                auto_stmt->SendSql("waitfor delay '0:00:03'");
+                BOOST_CHECK(auto_stmt->HasMoreResults());
+            } catch(const CDB_TimeoutEx&) {
+                timeout_was_reported = true;
+                auto_stmt->Cancel();
+            }
         }
+
 
         // Check if connection is alive ...
         if (m_args.GetDriverName() != "ftds8"
@@ -8971,7 +8982,7 @@ void CDBAPIUnitTest::Test_Timeout(void)
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
             BOOST_CHECK( rs.get() != NULL );
         } else {
-            PutMsgDisabled("CDBAPIUnitTest. Check if connection is alive.");
+            PutMsgDisabled("Test_Timeout. Check if connection is alive.");
         }
 
         BOOST_CHECK(timeout_was_reported);
