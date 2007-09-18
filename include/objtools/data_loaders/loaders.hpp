@@ -36,7 +36,7 @@
 BEGIN_NCBI_SCOPE
 
 extern void DataLoaders_Register_GenBank    (void);
-extern void DataLoaders_Register_BlastDB    (void);
+extern void DataLoaders_Register_BlastDb    (void);
 extern void DataLoaders_Register_CDD        (void);
 extern void DataLoaders_Register_LDS        (void);
 extern void DataLoaders_Register_Trace      (void);
