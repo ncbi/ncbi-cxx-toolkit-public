@@ -203,6 +203,7 @@ public:
     void Test_BlobStream(void);
     void Test_BulkInsertBlob(void);
     void Test_BulkInsertBlob_LowLevel(void);
+    void Test_BulkInsertBlob_LowLevel2(void);
     void Test_UNIQUE(void);
     void Test_DateTime(void);
     void Test_DateTimeBCP(void);
