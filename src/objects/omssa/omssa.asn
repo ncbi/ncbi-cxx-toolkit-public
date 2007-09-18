@@ -259,7 +259,7 @@ MSMod ::= INTEGER {
     hexNAcN (182),
     dHexHexNAcN (183),
     hexNAcS (184),
-    HexNAcT (185),
+    hexNAcT (185),
     mod186 (186),
     mod187 (187),
     mod188 (188),
