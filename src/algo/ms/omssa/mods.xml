@@ -2239,4 +2239,94 @@
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
     </MSModSpec_residues>
   </MSModSpec>
-</MSModSpecSet>
+  <MSModSpec>
+    <MSModSpec_mod>
+      <MSMod value="lys-2H4">180</MSMod>
+    </MSModSpec_mod>
+    <MSModSpec_type>
+      <MSModType value="modaa">0</MSModType>
+    </MSModSpec_type>
+    <MSModSpec_name>heavy lysine - 2H4</MSModSpec_name>
+    <MSModSpec_monomass>4.025107008</MSModSpec_monomass>
+    <MSModSpec_averagemass>0</MSModSpec_averagemass>
+    <MSModSpec_n15mass>0</MSModSpec_n15mass>
+    <MSModSpec_residues>
+      <MSModSpec_residues_E>K</MSModSpec_residues_E>
+    </MSModSpec_residues>
+  </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="lys-13C615N2">181</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>heavy lysine - 13C6 15N2</MSModSpec_name>
+     <MSModSpec_monomass>8.014198892</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>K</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="hexNAcN">182</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>Asparagine HexNAc</MSModSpec_name>
+     <MSModSpec_monomass>203.0793726</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>N</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="dHexHexNAcN">183</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>Asparagine dHexHexNAc</MSModSpec_name>
+     <MSModSpec_monomass>349.1372815</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>N</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="hexNAcS">184</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>Serine HexNAc</MSModSpec_name>
+     <MSModSpec_monomass>203.0793726</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>S</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="hexNAcT">185</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>Threonine HexNAc</MSModSpec_name>
+     <MSModSpec_monomass>203.0793726</MSModSpec_monomass>
+     <MSModSpec_averagemass>0</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>T</MSModSpec_residues_E>
+     </MSModSpec_residues>
+   </MSModSpec>
+  </MSModSpecSet>
