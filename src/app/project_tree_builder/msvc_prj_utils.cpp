@@ -37,6 +37,8 @@
 #  include <serial/objostrxml.hpp>
 #  include <serial/objistr.hpp>
 #  include <serial/serial.hpp>
+
+#  include <objbase.h>
 #endif
 
 
@@ -302,7 +304,31 @@ string CGuidGenerator::DoGenerateSlnGUID(void)
 {
     for ( ;; ) {
         //GUID prototype
-        string proto = guid_base + Generate12Chars();
+        string proto;// = guid_base + Generate12Chars();
+#if NCBI_COMPILER_MSVC
+        GUID guid;
+        if (SUCCEEDED(CoCreateGuid(&guid))) {
+            CNcbiOstrstream out;
+            out.fill('0');
+            out.flags(ios::hex | ios::uppercase);
+            out << setw(8) << guid.Data1 << '-'
+                << setw(4) << guid.Data2 << '-'
+                << setw(4) << guid.Data3 << '-'
+                << setw(2) << (unsigned int)guid.Data4[0]
+                << setw(2) << (unsigned int)guid.Data4[1] << '-'
+                << setw(2) << (unsigned int)guid.Data4[2]
+                << setw(2) << (unsigned int)guid.Data4[3]
+                << setw(2) << (unsigned int)guid.Data4[4]
+                << setw(2) << (unsigned int)guid.Data4[5]
+                << setw(2) << (unsigned int)guid.Data4[6]
+                << setw(2) << (unsigned int)guid.Data4[7];
+            proto = CNcbiOstrstreamToString(out);
+        } else {
+            proto = guid_base + Generate12Chars();
+        }
+#else
+        proto = guid_base + Generate12Chars();
+#endif
         if (Insert(proto,kEmptyStr)) {
             return "{" + proto + "}";
         }
