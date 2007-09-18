@@ -388,6 +388,21 @@ inline Uint8 s_GetThreadId(void)
 }
 
 
+enum EThreadDataState {
+    eInitialized,
+    eUninitialized,
+    eInitializing,
+    eDeinitialized
+};
+
+static volatile EThreadDataState s_ThreadDataState = eUninitialized;
+
+static void s_ThreadDataSafeStaticCleanup(void*)
+{
+    s_ThreadDataState = eDeinitialized; // re-enable protection
+}
+
+
 CDiagContextThreadData::CDiagContextThreadData(void)
     : m_Properties(NULL),
       m_RequestId(0),
@@ -419,6 +434,7 @@ void ThreadDataTlsCleanup(CDiagContextThreadData* value, void* cleanup_data)
         if (!CDiagContext::IsSetOldPostFormat()) {
             GetDiagContext().PrintStop();
         }
+        s_ThreadDataState = eDeinitialized; // re-enable protection
     }
     delete value;
 }
@@ -426,8 +442,51 @@ void ThreadDataTlsCleanup(CDiagContextThreadData* value, void* cleanup_data)
 
 CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 {
+    // If any of this method's direct or indirect callees attempted to
+    // report a (typically fatal) error, the result would ordinarily
+    // be infinite recursion resulting in an undignified crash.  The
+    // business with s_ThreadDataState allows the program to exit
+    // (relatively) gracefully in such cases.
+    //
+    // In principle, such an event could happen at any stage; in
+    // practice, however, the first call involves a superset of most
+    // following calls' actions, at least until deep program
+    // finalization.  Moreover, attempting to catch bad calls
+    // mid-execution would both add overhead and open up uncatchable
+    // opportunities for inappropriate recursion.
+
+    static volatile CThreadSystemID s_LastThreadID
+        = THREAD_SYSTEM_ID_INITIALIZER;
+
+    if (s_ThreadDataState != eInitialized) {
+        // Avoid false positives, while also taking care not to call
+        // anything that might itself produce diagnostics.
+        CThreadSystemID thread_id = CThreadSystemID::GetCurrent();
+        switch (s_ThreadDataState) {
+        case eInitialized:
+            break;
+
+        case eUninitialized:
+            s_ThreadDataState = eInitializing;
+            s_LastThreadID.Set(thread_id);
+            break;
+
+        case eInitializing:
+            if (s_LastThreadID.Is(thread_id)) {
+                cerr << "FATAL ERROR: inappropriate recursion initializing NCBI"
+                        " diagnostic framework." << endl;
+                Abort();
+            }
+
+        case eDeinitialized:
+            cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
+                    " initialized." << endl;
+            Abort();
+        }
+    }
+
     static CSafeStaticRef< CTls<CDiagContextThreadData> >
-        s_ThreadData(0,
+        s_ThreadData(s_ThreadDataSafeStaticCleanup,
         CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
     CDiagContextThreadData* data = s_ThreadData->GetValue();
     if ( !data ) {
@@ -438,6 +497,9 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         s_ThreadData->SetValue(data, ThreadDataTlsCleanup,
             CThread::GetSelf() ? 0 : (void*)(1));
     }
+
+    s_ThreadDataState = eInitialized;
+
     return *data;
 }
 
