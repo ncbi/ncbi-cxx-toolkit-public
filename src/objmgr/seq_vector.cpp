@@ -222,6 +222,21 @@ CSeqVector::CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
 }
 
 
+CSeqVector::CSeqVector(const CBioseq& bioseq,
+                       CScope* scope,
+                       EVectorCoding coding, ENa_strand strand)
+    : m_Scope(scope),
+      m_SeqMap(CSeqMap::CreateSeqMapForBioseq(bioseq)),
+      m_Strand(strand),
+      m_Coding(CSeq_data::e_not_set)
+{
+    m_Size = m_SeqMap->GetLength(scope);
+    m_Mol = bioseq.GetInst().GetMol();
+    m_Iterator.x_SetVector(*this);
+    SetCoding(coding);
+}
+
+
 CSeqVector::~CSeqVector(void)
 {
 }

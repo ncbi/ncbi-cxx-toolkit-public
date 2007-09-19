@@ -83,6 +83,10 @@ public:
     CSeqVector(const CSeq_loc& loc, const CTSE_Handle& top_tse,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
+    CSeqVector(const CBioseq& bioseq,
+               CScope* scope = 0,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeqVector& vec);
 
     virtual ~CSeqVector(void);
