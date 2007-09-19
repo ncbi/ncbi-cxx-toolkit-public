@@ -2426,16 +2426,16 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         // Create table ...
         {
             sql  = " CREATE TABLE " + table_name + "( \n";
-            sql += "    vkey bigint NOT NULL , \n";
+            sql += "    vkey int NOT NULL , \n";
             sql += "    geneId int NOT NULL , \n";
             sql += "    modate datetime NOT NULL , \n";
             sql += "    dtype int NOT NULL , \n";
             sql += "    dsize int NOT NULL , \n";
-            sql += "    dataStr varchar (255) COLLATE Latin1_General_BIN NULL , \n";
+            sql += "    dataStr varchar (255) NULL , \n";
             sql += "    dataInt int NULL , \n";
             sql += "    dataBin varbinary (255) NULL , \n";
             sql += "    cnt int NOT NULL , \n";
-            sql += "    dataText text COLLATE Latin1_General_BIN NULL , \n";
+            sql += "    dataText text NULL , \n";
             sql += "    dataImg image NULL  \n";
             sql += " )";
 
@@ -2443,6 +2443,61 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
 
             auto_stmt->Send();
             auto_stmt->DumpResults();
+        }
+
+        // Insert data ...
+        {
+            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
+
+            CDB_Int vkeyVal; 
+            vkeyVal = 1; 
+            bcp->Bind(0, &vkeyVal);
+
+            CDB_Int geneIdVal;
+            geneIdVal = 2;
+            bcp->Bind(1, &geneIdVal);
+
+            CDB_DateTime modateVal(CTime(CTime::eCurrent));
+            bcp->Bind(2, &modateVal);
+
+            CDB_Int dtypeVal; 
+            dtypeVal = 106;
+            bcp->Bind(3, &dtypeVal);
+
+            CDB_Int dsizeVal; 
+            dsizeVal = data.size();
+            bcp->Bind(4, &dsizeVal);
+
+            CDB_VarChar dataStrVal;
+            dataStrVal.AssignNULL();
+            bcp->Bind(5, &dataStrVal);
+
+            CDB_Int dataIntVal; 
+            dataIntVal = 0;
+            bcp->Bind(6, &dataIntVal);
+
+            CDB_VarBinary dataBinVal;
+            dataBinVal.AssignNULL();
+            bcp->Bind(7, &dataBinVal);
+
+            CDB_Int cntVal;
+            cntVal = 1;
+            bcp->Bind(8, &cntVal);
+
+            CDB_Text dataTextVal;
+            dataTextVal.AssignNULL();
+            // doesn't matter, null or not null data both fail
+            //    dataTextVal.Append(data);
+            //    dataTextVal.MoveTo(0);
+            bcp->Bind(9, &dataTextVal);
+
+            CDB_Image dataImgVal;
+            dataImgVal.AssignNULL();
+            bcp->Bind(10, &dataImgVal);
+
+            bcp->SendRow();
+
+            bcp->CompleteBCP();
         }
     }
     catch(const CException& ex) {
@@ -9725,6 +9780,20 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             add(tc);
         } else {
             PutMsgDisabled("Test_BulkInsertBlob_LowLevel");
+        }
+    }
+
+    if (args.IsBCPAvailable()) {
+        if (args.GetDriverName() != "dblib" // Invalid parameters to bcp_bind ...
+            && args.GetDriverName() != "ftds" //The incoming tabular data stream (TDS) protocol stream is incorrect.
+            && args.GetDriverName() != "ftds_dblib" // Invalid parameters to bcp_bind ...
+           ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
+                    DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        } else {
+            PutMsgDisabled("Test_BulkInsertBlob_LowLevel2");
         }
     }
 
