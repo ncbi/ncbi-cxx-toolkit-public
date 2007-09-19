@@ -167,6 +167,9 @@ typedef struct BlastHitSavingParameters {
                                                is not done if NULL. */
    Boolean restricted_align; /**< TRUE if approximate score-only gapped
                                   alignment is used */
+   Boolean do_sum_stats;  /**< TRUE if sum stats will be used.  Can override the
+                                  do_sum_stats Boolean in the options if criteria for 
+                                  doing sum stats are not met.  */
 } BlastHitSavingParameters;
 
 /** Because approximate gapped alignment adds extra overhead,
