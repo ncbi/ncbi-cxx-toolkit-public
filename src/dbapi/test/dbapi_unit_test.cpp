@@ -2321,7 +2321,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         }
 
         // Check NULL-values ...
-        if (false) {
+        {
             int num_of_tests = 10;
 
             // Delete previously inserted data ...
@@ -2447,6 +2447,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
 
         // Insert data ...
         {
+            // auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 1));
+
             auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
 
             CDB_Int vkeyVal; 
@@ -2495,6 +2497,19 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
             CDB_Image dataImgVal;
             dataImgVal.AssignNULL();
             bcp->Bind(10, &dataImgVal);
+
+            /*
+            CDB_Text dataTextVal;
+            dataTextVal.AssignNULL();
+            // doesn't matter, null or not null data both fail
+            //    dataTextVal.Append(data);
+            //    dataTextVal.MoveTo(0);
+            bcp->Bind(0, &dataTextVal);
+
+            CDB_Image dataImgVal;
+            dataImgVal.AssignNULL();
+            bcp->Bind(0, &dataImgVal);
+            */
 
             bcp->SendRow();
 
@@ -9786,7 +9801,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.IsBCPAvailable()) {
         if (args.GetDriverName() != "dblib" // Invalid parameters to bcp_bind ...
-            && args.GetDriverName() != "ftds" //The incoming tabular data stream (TDS) protocol stream is incorrect.
             && args.GetDriverName() != "ftds_dblib" // Invalid parameters to bcp_bind ...
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
