@@ -2457,7 +2457,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
             geneIdVal = 2;
             bcp->Bind(1, &geneIdVal);
 
-            CDB_DateTime modateVal(CTime(CTime::eCurrent));
+            CTime curr_time(CTime::eCurrent);
+            CDB_DateTime modateVal(curr_time);
             bcp->Bind(2, &modateVal);
 
             CDB_Int dtypeVal; 
