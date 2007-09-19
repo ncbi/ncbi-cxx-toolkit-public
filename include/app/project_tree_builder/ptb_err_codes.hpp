@@ -66,8 +66,9 @@ enum EProjectTreeBuilderErrCode
 class MDiagFile 
 {
 public:
-    MDiagFile(const string& file)
+    MDiagFile(const string& file, int line = 0)
         : m_File(file)
+        , m_Line(line)
     {
     }
 
@@ -75,11 +76,12 @@ public:
                                         const MDiagFile& file)
     {
         //return diag;
-        return diag.SetFile(file.m_File.c_str()).SetLine(0);
+        return diag.SetFile(file.m_File.c_str()).SetLine(file.m_Line);
     }
 
 private:
     string m_File;
+    int m_Line;
 };
 
 
