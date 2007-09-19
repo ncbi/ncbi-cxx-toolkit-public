@@ -392,7 +392,8 @@ enum EThreadDataState {
     eInitialized,
     eUninitialized,
     eInitializing,
-    eDeinitialized
+    eDeinitialized,
+    eReinitializing
 };
 
 static volatile EThreadDataState s_ThreadDataState = eUninitialized;
@@ -477,11 +478,20 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
                         " diagnostic framework." << endl;
                 Abort();
             }
+            break;
 
         case eDeinitialized:
-            cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
-                    " initialized." << endl;
-            Abort();
+            s_ThreadDataState = eReinitializing;
+            s_LastThreadID.Set(thread_id);
+            break;
+
+        case eReinitializing:
+            if (s_LastThreadID.Is(thread_id)) {
+                cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
+                        " initialized." << endl;
+                Abort();
+            }
+            break;
         }
     }
 
