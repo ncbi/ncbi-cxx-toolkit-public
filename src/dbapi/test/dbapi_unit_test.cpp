@@ -9609,6 +9609,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         // Doesn't work at the moment ...
         if (args.GetDriverName() != "ftds8"
             && args.GetDriverName() != "ftds_odbc"
+            && args.GetDriverName() != "odbc"
+            && args.GetDriverName() != "odbcw"
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_LowLevel,
                                    DBAPIInstance);
