@@ -17,91 +17,312 @@ use NCBI::SVN::Branching;
 
 use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 
+# Command line options.
+my ($Help, $Force, $RootURL, $Revision, $PathList);
+
+my @OptionInfo =
+(
+    ['help|h|?', help => \$Help, {}],
+
+    ['force|f', force => \$Force,
+        {alter => 1, remove => 1}, <<'EOF'],
+  -f [--force]          : Force operation to run.
+EOF
+
+    ['root-url|root|U=s', root => \$RootURL,
+        {list => 1, info => 1, create => 1, alter => 1, remove => 1}, <<'EOF'],
+  -U [--root-url] arg   : Override repository root URL otherwise
+                          detected from the working copy directory.
+EOF
+
+    ['revision|rev|r=i', revision => \$Revision,
+        {create => 1, merge_down => 1, merge_up => 1}, <<'EOF'],
+  -r [--revision] arg   : Source revision number (HEAD by default).
+EOF
+
+    ['list|l=s', list => \$PathList,
+        {create => 1, alter => 1}, <<'EOF']
+  -l [--list] arg       : Pathname of the file containing newline
+                          separated list of branch elements. If this
+                          option is used, no branch elements may be
+                          specified in the command line.
+EOF
+);
+
+my %CommandHelp =
+(
+    help => <<EOF,
+help: Describe the usage of this program or its commands.
+
+Usage: $ScriptName help [COMMAND ...]
+
+Examples:
+  1. Display help for the 'create' command:
+
+    $ScriptName help create
+
+  2. Display help for both 'merge_down' and 'merge_up' commands:
+
+    $ScriptName help merge_down merge_up
+EOF
+
+    list => <<EOF,
+list: Print the list of branches that were created using this utility.
+
+Usage: $ScriptName list
+
+Example:
+  $ScriptName -U http://example.org/repos/example list
+EOF
+
+    info => <<EOF,
+info: Display brief information about a branch.
+
+Usage: $ScriptName info BRANCH_PATH
+
+This command displays branch structure, its parent path, and the
+history of 'merge_down' and 'merge_up' operations performed on
+this branch.
+
+Example:
+  $ScriptName -U http://example.org/repos/example info new_feat
+EOF
+    create => <<EOF,
+create: Create a new managed branch.
+
+Usage: $ScriptName create BRANCH_PATH PARENT_PATH [BRANCH_ELEMENT ...]
+
+This command branches out one or more directories and/or files located
+under PARENT_PATH into BRANCH_PATH. These directories and files
+(further referred to as branch elements) are defined by their
+pathnames relative to PARENT_PATH.
+
+BRANCH_PATH is the base path of the branch. It is used to identify the
+branch in the repository. If BRANCH_PATH path doesn't exist, it is
+created. Otherwise, it is removed and then created anew.
+
+If BRANCH_PATH starts with a slash, 'branches/' or 'trunk/', it is
+considered to be an absolute path. Otherwise, it is considered to be
+relative to the '/branches' directory of the repository.
+
+Branch elements can be listed either in the command line or in the
+file specified by the '--list' option.
+
+Note that PARENT_PATH can point to any part of the repository, in
+particular, other branches.
+
+Examples:
+    $ScriptName create app_new_feat trunk/app include src
+
+    $ScriptName create app_new_gui branches/app_new_feat src/gui
+EOF
+
+    alter => <<EOF,
+alter: Modify the structure of an existing branch.
+
+Usage: $ScriptName alter BRANCH_PATH [BRANCH_ELEMENT ...]
+
+This command modifies the structure of an existing managed branch in
+such a way that it looks as if it was initially created by a 'create'
+command with the same list of branch elements. This implies that the
+original source revision number will be used (that is, the revision
+number that was used by the branch creation operation). If the branch
+was ever synchronized with its parent path, the source revision number
+of the last 'merge_down' command will be used instead.
+
+Note that this command will require '--force' to be specified if the
+requested change eliminates any of the existing branch elements.
+
+Example:
+    $ScriptName create app_new_gui branches/app_new_feat src/gui
+    $ScriptName alter app_new_gui src/gui include/gui
+EOF
+
+    remove => <<EOF,
+remove: Remove a managed branch.
+
+Usage: $ScriptName remove BRANCH_PATH
+
+This command removes the branch identified by the BRANCH_PATH argument
+from the repository. Together with the branch elements themselves, all
+empty directories that may appear as a result of the removal, will be
+removed as well.
+
+Note that this operation will require the '--force' option if not all
+recent changes were merged into the parent stream.
+EOF
+
+    merge_down => <<EOF,
+merge_down: Synchronize the branch with the parent stream.
+
+Usage: $ScriptName merge_down BRANCH_PATH
+
+This command must be executed from a working copy "switched" to
+the branch identified by the BRANCH_PATH argument. There must be
+no local changes in directories and files belonging to the branch
+before running this command.
+
+Once the merge results are reviewed and possible conflicts are
+resolved, the results of the 'merge_down' operation can be
+committed with the help of the 'commit_merge' command.
+EOF
+
+    merge_up => <<EOF,
+merge_up: Promote branch changes to the parent stream.
+
+Usage: $ScriptName merge_up BRANCH_PATH
+
+Before the merge, the parent stream must be checked out to the
+current working directory and there must be no local changes in it.
+
+The results of the merge can be committed with the help of the
+'commit_merge' command.
+EOF
+
+    commit_merge => <<EOF,
+commit_merge: Commit the results of 'merge_down' or 'merge_up'.
+
+Usage: $ScriptName commit_merge BRANCH_PATH
+
+This command commits local changes made by a merge operation to the
+repository. A special format of the commit log message is used.
+EOF
+
+    merge_stat => <<EOF,
+merge_stat: Sanitize 'svn stat' output after 'merge_down' or 'merge_up'.
+
+Usage: $ScriptName merge_stat BRANCH_PATH
+
+Reviewing the output of 'svn stat' run on the results of a 'merge_down'
+or 'merge_up' operation can be very inconvenient because each of these
+operations sets a special Subversion property on each and every file and
+directory. Thus, the 'svn stat' output gets bloated with property changes.
+The 'merge_stat' command leaves out all property changes resulting in a
+clearer 'svn stat' output.
+EOF
+
+    merge_diff => <<EOF,
+merge_diff: Sanitize 'svn diff' output after 'merge_down' or 'merge_up'.
+
+Usage: $ScriptName merge_diff BRANCH_PATH
+
+This command leaves out changes of the 'ncbi:raw' property from the output
+of the 'svn diff' command run on the results of a 'merge_down' or 'merge_up'
+operation thus making the diff readable.
+EOF
+
+    svn => <<EOF,
+svn: Execute an arbitrary Subversion command.
+
+Usage: $ScriptName svn SVN_COMMAND -- [SVN_ARG ...] BRANCH_PATH
+
+This directory executes a Subversion command with branch element
+pathnames as its trailing arguments.
+
+Example:
+  $ScriptName svn revert -- -R new_feat
+
+  In this example, the 'svn revert' command is executed on all files
+  and directories that form the 'new_feat' branch.
+EOF
+
+    update => <<EOF,
+update: Update branch directories from the repository.
+
+Usage: $ScriptName update BRANCH_PATH
+
+This command updates working copy directories of the branch
+identified by BRANCH_PATH. It automatically detects if these
+directories are switched to the branch or its parent stream
+and maintains this property for newly added branch elements.
+EOF
+
+    switch => <<EOF,
+switch: Switch working copy directories to a branch.
+
+Usage: $ScriptName switch BRANCH_PATH
+
+This command switches working copy directories to the branch
+identified by the BRANCH_PATH argument. If the working copy
+directories are already switched to that branch, they get
+updated to the latest version from the repository.
+EOF
+
+    unswitch => <<EOF,
+unswitch: Switch WC to the parent stream of a branch.
+
+Usage: $ScriptName unswitch BRANCH_PATH
+
+This command switches working copy directories back to the
+parent stream.
+EOF
+);
+
 sub Help
 {
-    my ($Topic) = @_;
+    my (@Commands) = @_;
 
-    print <<EOF;
-Usage:
-    $ScriptName list
+    unless (@Commands)
+    {
+        print <<EOF
+Usage: $ScriptName <command> [options] [args]
+NCBI branching and merging helper for Subversion.
+Type '$ScriptName help <command>' for help on a specific command.
 
-    $ScriptName info <branch_path>
+Available commands:
 
-    $ScriptName create <branch_path> <upstream_path>[:<rev>] <branch_dirs>
+  Getting information about branches:
+    list          - Print the list of managed branches.
+    info          - Display brief information about a branch.
 
-    $ScriptName alter <branch_path> <branch_dirs>
+  Branch structure modification:
+    create        - Create a new managed branch.
+    alter         - Restructure an existing branch.
+    remove        - Remove a branch.
 
-    $ScriptName remove <branch_path>
+  Operations on working copy:
+    switch        - Switch working copy directories to a branch.
+    unswitch      - Switch WC to the parent stream of a branch.
+    update        - Update branch directories from the repository.
 
-    $ScriptName merge_down <branch_path> [<trunk_rev>]
+  Merging:
+    merge_down    - Merge parent stream changes into a branch.
+    merge_up      - Promote branch changes to the parent stream.
+    commit_merge  - Commit either of the above merge command results.
+    merge_stat    - Omit prop. changes from 'svn stat' on merge results.
+    merge_diff    - Omit 'ncbi:raw' props from 'svn diff' on merge results.
 
-    $ScriptName merge_down_commit <branch_path>
+  Miscellaneous:
+    svn           - Run any Subversion command on branch directories.
+    help          - Describe the usage of this program or its commands.
 
-    $ScriptName merge_up <branch_path> [<branch_rev>]
-
-    $ScriptName merge_up_commit <branch_path>
-
-    $ScriptName svn <branch_path> <svn_command_with_args>
-
-    $ScriptName update <branch_path>
-
-    $ScriptName switch <branch_path>
-
-    $ScriptName unswitch <branch_path>
-
-Where:
-    branch_path         Path in the repository (relative to /branches)
-                        that identifies the branch.
-
-    trunk_rev           Trunk revision to operate with (HEAD by default).
-
-Commands:
-    list                Prints the list of branches that were created
-                        with the help of this utility.
-
-    info                Displays brief information about the branch
-                        specified by the <branch_path> argument.
-
-    create              Creates a new branch defined by its base path
-                        <branch_path>, upstream path, and directory
-                        listing <branch_dirs>.
-
-    alter               Modifies branch structure bringing it to the state
-                        as if it was initially created with directory
-                        listing <branch_dirs>.
-
-    remove              Removes branch identified by the path <branch_path>
-                        from the repository.
-
-    merge_down          Merges the latest changes from the trunk into the
-                        branch identified by <branch_path>. The branch must
-                        be checked out to the current working directory and
-                        there must be no local changes in it.
-
-    merge_up            Merges the latest changes from the branch back to the
-                        trunk. The trunk stream must be checked out to the
-                        current working directory and there must be no local
-                        changes in it.
-
-    commit_merge        Commits the results of merge_down or merge_up.
-                        A special format of the commit log message is used.
-
-    svn                 Executes an arbitrary Subversion command with branch
-                        directory names as its arguments.
-
-    update              Updates working copy directories of the branch
-                        identified by <branch_path>.
-
-    switch              Switches working copy directories to the branch
-                        identified by <branch_path>.
-
-    unswitch            "Unswitches" working copy directories from the
-                        branch identified by <branch_path>.
-
-Description:
-    This script facilitates branch handling using Subversion.
-
+For additional information, see http://mini.ncbi.nih.gov/2jj
 EOF
+    }
+    else
+    {
+        for my $Command (@Commands)
+        {
+            if (my $Help = $CommandHelp{$Command})
+            {
+                print "$Help\n";
+
+                my $OptionHelp = '';
+
+                for my $OptionInfo (@OptionInfo)
+                {
+                    $OptionHelp .= $OptionInfo->[4]
+                        if $OptionInfo->[3]->{$Command}
+                }
+
+                print "Valid options:\n$OptionHelp\n" if $OptionHelp
+            }
+            else
+            {
+                print "'$Command': unknown command.\n\n"
+            }
+        }
+    }
 
     exit 0
 }
@@ -120,32 +341,34 @@ sub TooManyArgs
 {
     my ($Command) = @_;
 
-    UsageError(qq(too many arguments for "$Command"))
+    UsageError("too many arguments for '$Command'")
 }
 
-my ($Force, $RootURL, $Revision, $PathList);
+# Parse the command line.
+GetOptions(map {@$_[0, 2]} @OptionInfo) or UsageError();
 
-GetOptions('help|h|?' => sub {Help()},
-    'force|f' => \$Force,
-    'root-url|root|U=s' => \$RootURL,
-    'revision|rev|r=i' => \$Revision,
-    'list|l=s' => \$PathList)
-        or UsageError();
-
-my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
-
+# Command is the first non-option argument.
 my $Command = shift @ARGV;
 
 unless (defined $Command)
 {
-    UsageError()
+    $Help ? Help() : UsageError()
 }
-elsif ($Command eq 'help')
+else
 {
-    TooManyArgs($Command) if @ARGV > 1;
+    # Allow only options accepted by $Command to be
+    # specified in the command line.
+    for (@OptionInfo)
+    {
+        my (undef, $Option, $OptionValueRev, $CommandsThatAcceptIt) = @$_;
 
-    Help($ARGV[0])
+        UsageError("command '$Command' doesn't accept option '--$Option'")
+            if defined $$OptionValueRev && !$CommandsThatAcceptIt->{$Command}
+    }
 }
+
+# Instantiate the Branching module, which actually does the work.
+my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
 
 sub TrimSlashes
 {
@@ -174,8 +397,8 @@ sub ExtractBranchPathArg
     my ($ArgName) = @_;
 
     return AdjustBranchPath(shift(@ARGV) or
-        UsageError('"' . ($ArgName || 'branch_path') .
-            '" argument is missing'))
+        UsageError(q(') . ($ArgName || 'branch_path') .
+            q(' argument is missing)))
 }
 
 sub RequireRootURL
@@ -250,9 +473,13 @@ sub GetBranchDirArgs
     return (@AdditionalPathArgs, @BranchPaths)
 }
 
-if ($Command eq 'list')
+if ($Command eq 'help')
 {
-    UsageError(q("list" doesn't accept arguments)) if @ARGV;
+    Help(@ARGV)
+}
+elsif ($Command eq 'list')
+{
+    UsageError(q('list' doesn't accept arguments)) if @ARGV;
 
     $Module->List(RequireRootURL())
 }
@@ -313,7 +540,7 @@ elsif ($Command eq 'unswitch')
 }
 elsif ($Command eq 'svn')
 {
-    UsageError('not enough arguments for "svn"') if @ARGV < 2;
+    UsageError(q(not enough arguments for 'svn')) if @ARGV < 2;
 
     my $BranchPath = AdjustBranchPath(pop @ARGV);
 
