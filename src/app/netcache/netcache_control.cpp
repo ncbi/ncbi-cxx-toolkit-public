@@ -36,6 +36,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <connect/services/netcache_api.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -78,6 +79,11 @@ void CNetCacheControl::Init(void)
     arg_desc->AddFlag("stat", "Server statistics");
     arg_desc->AddFlag("dropstat", "Drop server statistics");
     arg_desc->AddFlag("monitor", "Monitor server");
+
+    arg_desc->AddOptionalKey("fetch",
+                     "key",
+                     "Retrieve data by key",
+                     CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -122,7 +128,20 @@ int CNetCacheControl::Run(void)
 
     CNetCacheAPI nc_client(service,"netcache_control");
     CNetCacheAdmin admin = nc_client.GetAdmin();
-    
+
+    if (args["fetch"]) {
+        string key = args["fetch"].AsString();
+        size_t blob_size = 0;
+        auto_ptr<IReader> reader(nc_client.GetData(key, &blob_size));
+        if (!reader.get()) {
+            ERR_POST("cannot retrieve data");
+            return 1;
+        }
+        CRStream strm(reader.get());
+        NcbiCout << strm.rdbuf();
+        return 0;
+    }
+
     if (args["log"]) {  // logging control
         bool on_off = args["log"].AsBoolean();
         admin.Logging(on_off);
