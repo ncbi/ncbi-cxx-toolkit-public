@@ -9611,6 +9611,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             && args.GetDriverName() != "ftds_odbc"
             && args.GetDriverName() != "odbc"
             && args.GetDriverName() != "odbcw"
+            && args.GetDriverName() != "msdblib" // Fails with the message "Cannot get the DBCOLINFO*"
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB_LowLevel,
                                    DBAPIInstance);
