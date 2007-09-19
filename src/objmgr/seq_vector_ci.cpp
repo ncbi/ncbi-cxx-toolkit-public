@@ -299,11 +299,13 @@ void CSeqVector_CI::SetCoding(TCoding coding)
 {
     if ( m_Coding != coding ) {
         TSeqPos pos = GetPos();
-        x_ResetCache();
-        x_ResetBackup();
         m_Coding = coding;
-        if ( m_Seg ) {
-            x_SetPos(pos);
+        x_ResetBackup();
+        if ( x_CacheSize() ) {
+            x_ResetCache();
+            if ( m_Seg ) {
+                x_SetPos(pos);
+            }
         }
     }
 }
