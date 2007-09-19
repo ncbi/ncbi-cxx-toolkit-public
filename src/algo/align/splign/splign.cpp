@@ -400,14 +400,14 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     
     // verify conditions on the input hit pattern
     CNcbiOstrstream ostr_err;
-    bool severe (false);
+    bool bad_input (false);
     if(dim % 4 == 0) {
 
         for(size_t i = 0; i < dim; i += 4) {
             
             if(pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3]) {
                 ostr_err << "Pattern hits must be specified in plus strand";
-                severe = true;
+                bad_input = true;
                 break;
             }
             
@@ -419,8 +419,26 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 }
             }
             
-            if(pattern0[i+1] >= SeqLen1 || pattern0[i+3] >= SeqLen2) {
-                ostr_err << "One or several pattern hits are out of range";
+            const bool br1 (pattern0[i+1] >= SeqLen1);
+            const bool br2 (pattern0[i+3] >= SeqLen2);
+            if(br1 || br2) {
+
+                ostr_err << "Pattern hits out of range ("
+                         << "query = " 
+                         << phitrefs->front()->GetQueryId()->GetSeqIdString(true)
+                         << "subj = " 
+                         << phitrefs->front()->GetSubjId()->GetSeqIdString(true)
+                         << "):" << endl;
+
+                if(br1) {
+                    ostr_err << "\tquery_pattern_max = " << pattern0[i+1]
+                             << "; query_len = " << SeqLen1 << endl;
+                }
+
+                if(br2) {
+                    ostr_err << "\tsubj_pattern_max = " << pattern0[i+3]
+                             << "; subj_len = " << SeqLen2 << endl;
+                }
                 break;
             }
         }
@@ -428,10 +446,10 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     }
     else {
         ostr_err << "Pattern dimension must be a multiple of four";
-        severe = true;
+        bad_input = true;
     }
     
-    if(severe) {
+    if(bad_input) {
         ostr_err << " (query = " 
                  << phitrefs->front()->GetQueryId()->AsFastaString() 
                  << " , subj = "
@@ -441,7 +459,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     const string err = CNcbiOstrstreamToString(ostr_err);
     if(err.size() > 0) {
-        if(severe) {
+        if(bad_input) {
             NCBI_THROW(CAlgoAlignException, eBadParameter, err);
         }
         else {
@@ -1192,6 +1210,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         case CAlgoAlignException::eMemoryLimit:
         case CAlgoAlignException::eNoHits:
         case CAlgoAlignException::eIntronTooLong:
+        // case CAlgoAlignException::ePattern:
             severe = false;
             break;
         }
