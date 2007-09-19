@@ -628,9 +628,9 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
     // composition based statistics
-    arg_desc.AddOptionalKey(kArgCompBasedStats, "compo", 
+    arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
                       "Use composition-based statistics for blastp / tblastn:\n"
-                      "    D or d: default (equivalent to F)\n"
+                      "    D or d: default (equivalent to 1)\n"
                       "    0 or F or f: no composition-based statistics\n"
                       "    1 or T or t: Composition-based statistics "
                                       "as in NAR 29:2994-3005, 2001\n"
@@ -642,7 +642,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                       "    2005, unconditionally\n"
                       "For programs other than tblastn, must either be "
                       "absent or be D, F or 0",
-                      CArgDescriptions::eString);
+                      CArgDescriptions::eString, "1");
 
     arg_desc.SetCurrentGroup("misc");
     // Use Smith-Waterman algorithm in traceback stage
