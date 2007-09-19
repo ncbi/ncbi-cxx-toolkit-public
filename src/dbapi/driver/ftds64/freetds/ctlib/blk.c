@@ -1900,9 +1900,11 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
      * and increment it if offset specified
      */
 
+    /* ssikorsk
     if (is_blob_type(bindcol->column_type) && bindcol->column_varaddr == NULL) {
         return CS_BLK_HAS_TEXT;
     }
+    */
 
     src = (unsigned char *) bindcol->column_varaddr;
     src += offset * bindcol->column_bindlen;
@@ -1981,10 +1983,20 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
          * printf("error source field not addressable \n");
          * return CS_FAIL;
          *--------------------------------------------------*/
+
+        if (nullind &&  *nullind == -1) {
+            null_column = 1;
+        }
+
         bindcol->bcp_column_data->datalen = destlen;
         /* bindcol->bcp_column_data->null_column =
          * bindcol->column_nullable; */
-        bindcol->bcp_column_data->null_column = 1;
+        /* bindcol->bcp_column_data->null_column = 1; */
+        bindcol->bcp_column_data->null_column = null_column;
+
+        if (null_column == 0 && is_blob_type(bindcol->column_type) && bindcol->column_varaddr == NULL) {
+            return CS_BLK_HAS_TEXT;
+        }
 
         return CS_SUCCEED;
     }
