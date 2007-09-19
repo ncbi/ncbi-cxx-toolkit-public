@@ -665,13 +665,14 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    if (params == NULL)
       return 1;
 
+   params->do_sum_stats = options->do_sum_stats;
    params->options = (BlastHitSavingOptions *) options;
    /* Each context gets its own gapped cutoff data */
    params->cutoffs = (BlastGappedCutoffs *)calloc(
                                         (size_t)(query_info->last_context+1),
                                         sizeof(BlastGappedCutoffs));
 
-   if (options->do_sum_stats) {
+   if (params->do_sum_stats) {
       BlastLinkHSPParametersNew(program_number, gapped_calculation,
                                 &params->link_hsp_params);
 
@@ -695,6 +696,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
                   /* A nonpositive value of max_protein_gap disables linking */
                   params->link_hsp_params =
                       BlastLinkHSPParametersFree(params->link_hsp_params);
+                  params->do_sum_stats = FALSE;
               } else { /* the value of max_protein_gap is positive */
                   params->link_hsp_params->longest_intron = max_protein_gap;
               }
@@ -940,6 +942,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log: blast_parameters.c,v $
+ * Revision 1.36  2007/05/22 20:55:36  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
  * Revision 1.35  2007/03/05 15:25:34  kazimird
  * Synchronized with the C++ Toolkit.
  *

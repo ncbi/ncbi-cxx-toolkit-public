@@ -395,7 +395,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
     int status = 0;
     *pbestEvalue = DBL_MAX;
     *pbestScore  = 0;
-    if (hitParams->options->do_sum_stats) {
+    if (hitParams->do_sum_stats) {
         status = BLAST_LinkHsps(program_number, hsp_list, queryInfo,
                                 subject_length, sbp,
                                 hitParams->link_hsp_params, TRUE);
@@ -1741,7 +1741,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     /* is this a positiion-based search */
     Boolean positionBased = (Boolean) (context->sbp->psi_matrix != NULL);
     /* will BLAST_LinkHsps be called to assign e-values */
-    Boolean do_link_hsps = (hitParams->options->do_sum_stats);
+    Boolean do_link_hsps = (hitParams->do_sum_stats);
     ECompoAdjustModes compo_adjust_mode =
         (ECompoAdjustModes) extendParams->options->compositionBasedStats;
     
