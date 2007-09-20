@@ -502,6 +502,29 @@ unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_descriptio
 }
 
 
+bool IsSpName (string taxname)
+{
+    bool is_sp_name = false;
+    unsigned int pos = NStr::Find(taxname, " sp. ");
+    if (pos != NCBI_NS_STD::string::npos
+        && (pos < 2 || !NStr::StartsWith(taxname.substr(pos - 2), "f."))) {
+        is_sp_name = true;
+    }
+    return is_sp_name;
+}
+
+
+bool CAutoDefModifierCombo::GetDefaultExcludeSp ()
+{
+    bool default_exclude = true;
+    
+    for (unsigned int k = 0; k < m_GroupList.size() && default_exclude; k++) {
+        default_exclude = m_GroupList[k]->GetDefaultExcludeSp ();
+    }
+    return default_exclude;
+}
+
+
 string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc) 
 {
     unsigned int k;

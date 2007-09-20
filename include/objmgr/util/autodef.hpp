@@ -275,6 +275,9 @@ void CAutoDef::SetKeep5UTRs(bool keep)
 }
 
 
+bool IsSpName (string taxname);
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

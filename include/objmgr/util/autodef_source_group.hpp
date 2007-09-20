@@ -70,6 +70,7 @@ public:
 
     typedef vector<CAutoDefSourceDescription *> TSourceDescriptionVector;
     bool HasTrickyHIV();
+    bool GetDefaultExcludeSp();
 
 private:
     TSourceDescriptionVector m_SourceList;

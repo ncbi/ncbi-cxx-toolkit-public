@@ -94,6 +94,11 @@ void CAutoDef::AddSources (CSeq_entry_Handle se)
            }
         }
     }
+
+    // set default exclude_sp values
+    for (unsigned int k = 0; k < m_ComboList.size(); k++) {
+        m_ComboList[k]->SetExcludeSpOrgs(m_ComboList[k]->GetDefaultExcludeSp());
+    }
 }
 
 
@@ -104,6 +109,11 @@ void CAutoDef::AddSources (CBioseq_Handle bh)
         for (unsigned int k = 0; k < m_ComboList.size(); k++) {
              m_ComboList[k]->AddSource(bsrc);
         }
+    }
+
+    // set default exclude_sp values
+    for (unsigned int k = 0; k < m_ComboList.size(); k++) {
+        m_ComboList[k]->SetExcludeSpOrgs(m_ComboList[k]->GetDefaultExcludeSp());
     }
 }
 

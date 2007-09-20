@@ -85,6 +85,7 @@ public:
     bool AllUnique();
     void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     bool HasTrickyHIV();
+    bool GetDefaultExcludeSp();
     
     void SetUseModifierLabels(bool use);
     bool GetUseModifierLabels();

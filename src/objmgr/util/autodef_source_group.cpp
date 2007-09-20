@@ -178,6 +178,30 @@ bool CAutoDefSourceGroup::HasTrickyHIV ()
 }
 
 
+bool CAutoDefSourceGroup::GetDefaultExcludeSp ()
+{
+    bool all_diff_sp_orgnames = true;
+
+    for (unsigned int k = 0; k < m_SourceList.size() && all_diff_sp_orgnames; k++) {
+        const CBioSource& bsrc = m_SourceList[k]->GetBioSource();
+        if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetTaxname()) {
+            string taxname1 = bsrc.GetOrg().GetTaxname();
+            if (IsSpName (taxname1)) {
+                for (unsigned int j = 0; j < m_SourceList.size() && all_diff_sp_orgnames; j++) {
+                    const CBioSource& bsrc2 = m_SourceList[k]->GetBioSource();
+                    if (bsrc2.CanGetOrg() && bsrc2.GetOrg().CanGetTaxname()) {
+                        string taxname2 = bsrc.GetOrg().GetTaxname();
+                        if (IsSpName (taxname2) && NStr::Equal (taxname1, taxname2)) {
+                            all_diff_sp_orgnames = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return all_diff_sp_orgnames;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
