@@ -3226,13 +3226,13 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
         {
             sql =
                 "CREATE TABLE #SbSubs ( \n"
-                "    [sacc] int NOT NULL , \n"
-                "    [sid] int NOT NULL , \n"
-                "    [ver] smallint NOT NULL , \n"
-                "    [live] bit NOT NULL DEFAULT (1), \n"
-                "    [date] datetime NOT NULL DEFAULT (getdate()), \n"
-                "    [rlsdate] smalldatetime NULL, \n"
-                "    [depdate] datetime NOT NULL DEFAULT (getdate()) \n"
+                "    sacc int NOT NULL , \n"
+                "    sid int NOT NULL , \n"
+                "    ver smallint NOT NULL , \n"
+                "    live bit NOT NULL DEFAULT (1), \n"
+                "    date datetime NOT NULL DEFAULT (getdate()), \n"
+                "    rlsdate smalldatetime NULL, \n"
+                "    depdate datetime NOT NULL DEFAULT (getdate()) \n"
                 ")"
                 ;
 
@@ -3258,6 +3258,73 @@ CDBAPIUnitTest::Test_Bulk_Writing2(void)
             col2 = 1;
             col3 = 2;
             bi->AddRow();
+            bi->Complete();
+        }
+
+
+    }
+    catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+void
+CDBAPIUnitTest::Test_Bulk_Writing3(void)
+{
+    string sql;
+    string table_name("#blk_table3");
+    string table_name2 = "#dbapi_bcp_table2";
+    const int test_num = 10;
+
+    try {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        
+        // Side-effect ... 
+        // Tmp table ...
+        auto_ptr<IBulkInsert> bi_tmp(
+            // m_Conn->CreateBulkInsert(table_name2, 1)
+            m_Conn->GetBulkInsert(table_name2, 1)
+            );
+
+        CVariant col_tmp(eDB_Int);
+        bi_tmp->Bind(1, &col_tmp);
+
+        // Create table ...
+        {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "    uid int NOT NULL , \n"
+                "    info_id int NOT NULL \n"
+                ")"
+                ;
+
+            auto_stmt->ExecuteUpdate(sql);
+        }
+
+        // Insert data ...
+        {
+            //
+            auto_ptr<IBulkInsert> bi(
+                // m_Conn->CreateBulkInsert(table_name, 2)
+                m_Conn->GetBulkInsert(table_name, 2)
+                );
+
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_Int);
+
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
+
+            for (int j = 0; j < test_num; ++j) {
+                for (int i = 0; i < test_num; ++i) {
+                    col1 = i;
+                    col2 = i * 2;
+
+                    bi->AddRow();
+                }
+                bi->StoreBatch();
+            }
+
             bi->Complete();
         }
 
@@ -9645,15 +9712,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        if (args.GetServerType() == CTestArguments::eMsSql
-            || args.GetServerType() == CTestArguments::eMsSql2005
-           ) {
+        if (args.GetServerType() != CTestArguments::eSybase) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing2, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
         } else {
             PutMsgDisabled("Test_Bulk_Writing2");
         }
+
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing3, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }

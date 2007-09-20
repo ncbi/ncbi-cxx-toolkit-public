@@ -195,6 +195,7 @@ public:
     void Test_Procedure(void);
     void Test_Bulk_Writing(void);
     void Test_Bulk_Writing2(void);
+    void Test_Bulk_Writing3(void);
     void Test_Bulk_Overflow(void);
     void Test_GetTotalColumns(void);
     void Test_LOB(void);
