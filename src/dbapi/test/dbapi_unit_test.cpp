@@ -2459,7 +2459,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         }
 
         // Insert data ...
-        if (false) {
+        if (true) {
             // auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 1));
 
             auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
