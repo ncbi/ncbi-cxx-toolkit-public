@@ -5023,7 +5023,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(png,
 # : ${TIFF_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(tiff,
  AC_LANG_PROGRAM([#include <tiffio.h>],
-    [TIFF* tiff = TIFFOpen("foo", "r");]), $Z_LIBS)
+    [TIFF* tiff = TIFFOpen("foo", "r");]), $Z_LIBS, $JPEG_LIBS)
 ## etc.
 
 # Paths?

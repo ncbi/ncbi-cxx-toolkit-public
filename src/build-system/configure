@@ -28470,7 +28470,7 @@ if test "${ncbi_cv_lib_tiff+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS=" $TIFF_INCLUDE $orig_CPPFLAGS"
-       LIBS="$TIFF_LIBS  $orig_LIBS"
+       LIBS="$TIFF_LIBS $JPEG_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
