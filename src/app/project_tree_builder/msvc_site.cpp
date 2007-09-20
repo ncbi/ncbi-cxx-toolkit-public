@@ -315,6 +315,10 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
 {
     if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvcNone) {
         m_Choice = e3PartyLib;
+        // special case: lzo is always 3rd party lib
+        if (lib == "lzo") {
+            return;
+        }
         ITERATE(list<SConfigInfo>, p, GetApp().GetRegSettings().m_ConfigInfo) {
             const SConfigInfo& config = *p;
             SLibInfo lib_info;
