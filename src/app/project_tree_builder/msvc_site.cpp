@@ -555,8 +555,8 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             }
             if ( !x_DirExists(file) ) {
                 if (!silent) {
-                    PTB_ERROR_EX(file, ePTB_FileNotFound,
-                                 "file not found");
+                    PTB_WARNING_EX(file, ePTB_FileNotFound,
+                                   "file not found");
                 }
                 return false;
             }

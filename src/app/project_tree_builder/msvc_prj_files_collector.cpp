@@ -257,8 +257,8 @@ CMsvcPrjFilesCollector::CollectSources(void)
                 CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               abs_path + ".cpp"));
         } else {
-            PTB_ERROR_EX(abs_path + ".cpp", ePTB_FileNotFound,
-                         "Source file not found");
+            PTB_WARNING_EX(abs_path + ".cpp", ePTB_FileNotFound,
+                           "Source file not found");
         }
     }
     m_SourceFiles.sort(s_FileName_less);
