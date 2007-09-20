@@ -90,7 +90,7 @@ void CTestApp::Init(void)
                             "Number of test passes to run",
                             CArgDescriptions::eInteger, "20");
     arg_desc->AddDefaultKey("levels", "DeltaLevels",
-                            "Number of seq delta levels",
+                            "Maximum number of seq delta levels",
                             CArgDescriptions::eInteger, "3");
     arg_desc->AddDefaultKey("sequences", "LevelSequences",
                             "Number of sequences on each level",
@@ -100,7 +100,8 @@ void CTestApp::Init(void)
                             CArgDescriptions::eInteger, "20");
     arg_desc->AddDefaultKey("requests", "SeqVectorRequests",
                             "Number of seq vector operations in pass",
-                            CArgDescriptions::eInteger, "20");
+                            CArgDescriptions::eInteger, "200");
+    arg_desc->AddFlag("verbose", "Dump verbose results");
     arg_desc->AddDefaultKey("checksum", "CheckSum",
                             "Check md5 sum of result",
                             CArgDescriptions::eString, "");
@@ -212,10 +213,11 @@ int CTestApp::Run(void)
     NcbiCout << "Using random seed: " << seed << NcbiEndl;
     m_Random.SetSeed(seed);
     int passes = args["count"].AsInteger();
-    int levels = args["levels"].AsInteger();
+    int max_levels = args["levels"].AsInteger();
     int sequences = args["sequences"].AsInteger();
     int segments = args["segments"].AsInteger();
     int requests = args["requests"].AsInteger();
+    bool verbose = args["verbose"];
     string ref_sum = args["checksum"].AsString();
     if ( !ref_sum.empty() ) ref_sum = "MD5: " + ref_sum;
 
@@ -224,6 +226,10 @@ int CTestApp::Run(void)
     CChecksum sum(CChecksum::eMD5);
 
     for ( int pass = 0; pass < passes; ++pass ) {
+        int levels = m_Random.GetRand(1, max_levels);
+        if ( verbose ) {
+            NcbiCout << "Pass " << pass << ", " << levels << " levels." << NcbiEndl;
+        }
         CScope scope(*om);
         TLevel ll, pll;
         CBioseq_Handle main;
@@ -233,6 +239,9 @@ int CTestApp::Run(void)
             for ( int seqnum = 0; seqnum < sequences; ++seqnum ) {
                 int gi = level*1000 + seqnum;
                 CConstRef<CBioseq> seq = CreateBioseq(gi, segments, pll);
+                if ( verbose ) {
+                    NcbiCout << "Level "<<level<<" "<<MSerial_AsnText<<*seq;
+                }
                 CBioseq_Handle bh = scope.AddBioseq(*seq);
                 ll.push_back(pair<int, int>(gi, bh.GetBioseqLength()));
                 if ( level == levels - 1 ) {
@@ -241,17 +250,55 @@ int CTestApp::Run(void)
                 }
             }
         }
+        
+        TSeqPos size = main.GetBioseqLength();
         for ( int req = 0; req < requests; ++req ) {
-            CBioseq_Handle::EVectorCoding coding = m_Random.GetRand(0, 1)?
+            TSeqPos start = m_Random.GetRand(0, size);
+            TSeqPos stop = m_Random.GetRand(0, size);
+            if ( start > stop ) swap(start, stop);
+            if ( verbose ) {
+                NcbiCout << "["<<start<<"..."<<stop<<") ";
+            }
+
+            bool iupac = m_Random.GetRand(0, 1);
+            CBioseq_Handle::EVectorCoding coding = iupac?
                 CBioseq_Handle::eCoding_Iupac: CBioseq_Handle::eCoding_Ncbi;
-            ENa_strand strand = m_Random.GetRand(0, 1)?
-                eNa_strand_plus: eNa_strand_minus;
+            bool minus = m_Random.GetRand(0, 1);
+            ENa_strand strand = minus? eNa_strand_minus: eNa_strand_plus;
             CSeqVector sv(main, coding, strand);
-            TSeqPos a = m_Random.GetRand(0, sv.size());
-            TSeqPos b = m_Random.GetRand(0, sv.size());
-            if ( a > b ) swap(a, b);
+            bool ncbi2na = !iupac && m_Random.GetRand(0, 1);
+            if ( ncbi2na ) {
+                sv.SetCoding(CSeq_data::e_Ncbi2na);
+            }
+            if ( verbose ) {
+                if ( minus ) {
+                    NcbiCout << "minus ";
+                }
+                if ( ncbi2na ) {
+                    NcbiCout << "NCBI2NA ";
+                }
+                else if ( iupac ) {
+                    NcbiCout << "IUPAC ";
+                }
+                else {
+                    NcbiCout << "NCBI ";
+                }
+            }
+            int randomize_ncbi2na_seed = m_Random.GetRand(0, 4); // 0 - no rand
+            if ( randomize_ncbi2na_seed ) {
+                sv.SetRandomizeAmbiguities(randomize_ncbi2na_seed);
+                if ( verbose ) {
+                    NcbiCout << "rand("<<randomize_ncbi2na_seed<<") ";
+                }
+            }
+            if ( verbose ) {
+                NcbiCout << NcbiEndl;
+            }
             string data;
-            sv.GetSeqData(a, b, data);
+            sv.GetSeqData(start, stop, data);
+            if ( verbose ) {
+                NcbiCout << NStr::PrintableString(data) << NcbiEndl;
+            }
             sum.AddLine(data);
         }
     }
