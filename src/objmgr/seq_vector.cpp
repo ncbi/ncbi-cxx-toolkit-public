@@ -54,6 +54,11 @@ BEGIN_SCOPE(objects)
 //  CNcbi2naRandomizer::
 //
 
+INcbi2naRandomizer::~INcbi2naRandomizer(void)
+{
+}
+
+
 CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
 {
     unsigned int bases[4]; // Count of each base in the random distribution
@@ -73,12 +78,11 @@ CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
         }
         if (bit_count == 1) {
             // Single base
-            m_RandomTable[na4][0] = 0;
-            m_RandomTable[na4][1] = set_bit;
+            m_FixedTable[na4] = set_bit;
             continue;
         }
+        m_FixedTable[na4] = kRandomValue;
         // Ambiguity: create random distribution with possible bases
-        m_RandomTable[na4][0] = bit_count; // need any non-zero value
         for (int bit = 0; bit < 4; bit++) {
             bases[bit] *= kRandomDataSize/bit_count +
                 kRandomDataSize % bit_count;
@@ -90,7 +94,7 @@ CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
                     rnd -= bases[base];
                     continue;
                 }
-                m_RandomTable[na4][i + 1] = base;
+                m_RandomTable[na4][i] = base;
                 bases[base]--;
                 break;
             }
@@ -101,24 +105,21 @@ CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
 
 CNcbi2naRandomizer::~CNcbi2naRandomizer(void)
 {
-    return;
 }
 
 
-void CNcbi2naRandomizer::RandomizeData(TData data,
+void CNcbi2naRandomizer::RandomizeData(char* data,
                                        size_t count,
                                        TSeqPos pos)
 {
-    for (TData stop = data + count; data < stop; ++data, ++pos) {
-        if ( m_RandomTable[(unsigned char)(*data)][0] ) {
+    for (char* stop = data + count; data < stop; ++data, ++pos) {
+        int base4na = *data;
+        char base2na = m_FixedTable[base4na];
+        if ( base2na == kRandomValue ) {
             // Ambiguity, use random value
-            *data = m_RandomTable[(unsigned char)(*data)]
-                [(pos & kRandomizerPosMask) + 1];
+            base2na = m_RandomTable[base4na][(pos & kRandomizerPosMask)];
         }
-        else {
-            // Normal base
-            *data = m_RandomTable[(unsigned char)(*data)][1];
-        }
+        *data = base2na;
     }
 }
 
@@ -381,6 +382,7 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
     }
 
     table.resize(COUNT, char(kInvalidCode));
+    bool different = false;
     for ( unsigned i = srcIndex.first; i <= srcIndex.second; ++i ) {
         try {
             unsigned code = i;
@@ -397,10 +399,18 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
             else if( case_cvt == eCaseConversion_lower ) {
                 code = tolower((unsigned char) code);
             }
+            if ( code != i ) {
+                different = true;
+            }
             table[i] = char(code);
         }
         catch ( exception& /*noConversion or noComplement*/ ) {
+            different = true;
         }
+    }
+    if ( !different ) {
+        table.clear();
+        return 0;
     }
     return &table[0];
 }

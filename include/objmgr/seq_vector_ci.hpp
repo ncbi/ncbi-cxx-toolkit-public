@@ -74,7 +74,27 @@ protected:
 };
 
 class CSeqVector;
-class CNcbi2naRandomizer;
+
+
+/////////////////////////////////////////////////////////////////////////////
+// INcbi2naRandomizer interface is used to randomize ambiguous nucleotides
+// when generating unambiguous Ncbi2na encoding.
+// The source encoding is prepared by CSeqVector as unpacked Ncbi4na and
+// must be converted to unpacked Ncbi2na with possible randomization.
+// Extra parameter with position of current buffer in the whole sequence
+// can be used to generate the same bases for the same ambiguous positions.
+class NCBI_XOBJMGR_EXPORT INcbi2naRandomizer : public CObject
+{
+public:
+    virtual ~INcbi2naRandomizer(void);
+
+    /// Convert count unpacked bases in buffer 4na -> 2na with randomization.
+    /// The argument pos will contain position of the buffer in
+    /// the sequence, and can be used to give the same random base
+    /// at the same ambiguous position.
+    virtual void RandomizeData(char* buffer, size_t count, TSeqPos pos) = 0;
+};
+
 
 class NCBI_XOBJMGR_EXPORT CSeqVector_CI : public CSeqVectorTypes
 {
@@ -201,7 +221,7 @@ private:
     void x_FillCache(TSeqPos start, TSeqPos count);
     void x_UpdateSeg(TSeqPos pos);
     void x_InitSeg(TSeqPos pos);
-    void x_SetRandomizer(CNcbi2naRandomizer& randomizer);
+    void x_SetRandomizer(INcbi2naRandomizer& randomizer);
     void x_InitRandomizer(CRandom& random_gen);
 
     void x_NextCacheSeg(void);
@@ -245,7 +265,7 @@ private:
     TSeqPos                  m_BackupPos;
     TCacheData               m_BackupData;
     TCache_I                 m_BackupEnd;
-    CRef<CNcbi2naRandomizer> m_Randomizer;
+    CRef<INcbi2naRandomizer> m_Randomizer;
 };
 
 

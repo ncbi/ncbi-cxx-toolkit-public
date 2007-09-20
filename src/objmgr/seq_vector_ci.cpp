@@ -58,9 +58,8 @@ static const TSeqPos kCacheSize = 1024;
 namespace {
     void ThrowOutOfRangeSeq_inst(TSeqPos pos)
     {
-        NCBI_THROW(CSeqVectorException, eOutOfRange,
-                   "reference out of range of Seq-inst data: "+
-                   NStr::UIntToString(pos));
+        NCBI_THROW_FMT(CSeqVectorException, eOutOfRange,
+                       "reference out of range of Seq-inst data: "<<pos);
     }
 }
 
@@ -288,10 +287,8 @@ void CSeqVector_CI::x_InitSeg(TSeqPos pos)
 
 void CSeqVector_CI::x_ThrowOutOfRange(void) const
 {
-    NCBI_THROW(CSeqVectorException, eOutOfRange,
-               "iterator out of range: "+
-               NStr::UIntToString(GetPos())+">="+
-               NStr::UIntToString(x_GetSize()));
+    NCBI_THROW_FMT(CSeqVectorException, eOutOfRange,
+                   "iterator out of range: "<<GetPos()<<">="<<x_GetSize());
 }
 
 
@@ -491,7 +488,9 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         bool reverse = m_Seg.GetRefMinusStrand();
 
         bool randomize = false;
-        if (cacheCoding == CSeq_data::e_Ncbi2na  &&  m_Randomizer) {
+        if ( cacheCoding != dataCoding &&
+             cacheCoding == CSeq_data::e_Ncbi2na &&
+             m_Randomizer) {
             cacheCoding = CSeq_data::e_Ncbi4na;
             randomize = true;
         }
@@ -502,8 +501,9 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
             table = sx_GetConvertTable(dataCoding, cacheCoding,
                                        reverse, m_CaseConversion);
             if ( !table && cacheCoding != dataCoding ) {
-                NCBI_THROW(CSeqVectorException, eCodingError,
-                           "Incompatible sequence codings");
+                NCBI_THROW_FMT(CSeqVectorException, eCodingError,
+                               "Incompatible sequence codings: "<<
+                               dataCoding<<" -> "<<cacheCoding);
             }
         }
 
@@ -558,8 +558,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
                           table, reverse);
             break;
         default:
-            NCBI_THROW(CSeqVectorException, eCodingError,
-                       "Invalid data coding");
+            NCBI_THROW_FMT(CSeqVectorException, eCodingError,
+                           "Invalid data coding: "<<dataCoding);
         }
         if ( randomize ) {
             m_Randomizer->RandomizeData(m_Cache, count, start);
@@ -577,8 +577,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         }
         break;
     default:
-        NCBI_THROW(CSeqVectorException, eDataError,
-                   "Invalid segment type");
+        NCBI_THROW_FMT(CSeqVectorException, eDataError,
+                       "Invalid segment type: "<<m_Seg.GetType());
     }
     m_CachePos = start;
 }
@@ -735,7 +735,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
     if ( pos-- == 0 ) {
         // Can not go further
         NCBI_THROW(CSeqVectorException, eOutOfRange,
-                   "Can not update cache: iterator out of range");
+                   "Can not update cache: iterator beyond start");
     }
     // save current cache in backup
     x_SwapCache();
@@ -765,7 +765,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
 }
 
 
-void CSeqVector_CI::x_SetRandomizer(CNcbi2naRandomizer& randomizer)
+void CSeqVector_CI::x_SetRandomizer(INcbi2naRandomizer& randomizer)
 {
     TSeqPos pos = GetPos();
     x_ResetCache();

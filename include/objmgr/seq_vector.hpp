@@ -53,7 +53,6 @@ class CScope;
 class CSeq_loc;
 class CSeqMap;
 class CSeqVector_CI;
-class CNcbi2naRandomizer;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -162,14 +161,10 @@ private:
     TMol                     m_Mol;
     ENa_strand               m_Strand;
     TCoding                  m_Coding;
-    CRef<CNcbi2naRandomizer> m_Randomizer;
+    CRef<INcbi2naRandomizer> m_Randomizer;
 
     mutable CSeqVector_CI    m_Iterator;
 };
-
-
-const size_t kRandomizerPosMask = 0x3f;
-const size_t kRandomDataSize    = kRandomizerPosMask + 1;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -177,29 +172,26 @@ const size_t kRandomDataSize    = kRandomizerPosMask + 1;
 ///  CNcbi2naRandomizer --
 ///
 
-class NCBI_XOBJMGR_EXPORT CNcbi2naRandomizer : public CObject
+class NCBI_XOBJMGR_EXPORT CNcbi2naRandomizer : public INcbi2naRandomizer
 {
 public:
     // If seed == 0 then use random number for seed
     CNcbi2naRandomizer(CRandom& gen);
     ~CNcbi2naRandomizer(void);
 
-    typedef char* TData;
-
-    void RandomizeData(TData data,    // cache to be randomized
-                       size_t count,  // number of bases in the cache
-                       TSeqPos pos);  // sequence pos of the cache
+    void RandomizeData(char* buffer,  // buffer to be randomized
+                       size_t count,  // number of bases in the buffer
+                       TSeqPos pos);  // sequence pos of the buffer
 
 private:
-    CNcbi2naRandomizer(const CNcbi2naRandomizer&);
-    CNcbi2naRandomizer& operator=(const CNcbi2naRandomizer&);
+    enum {
+        kRandomizerPosMask = 0x3f,
+        kRandomDataSize    = kRandomizerPosMask + 1,
+        kRandomValue       = 16
+    };
 
-    // First value in each row indicates ambiguity (1) or
-    // normal base (0)
-    typedef char        TRandomData[kRandomDataSize + 1];
-    typedef TRandomData TRandomTable[16];
-
-    TRandomTable m_RandomTable;
+    char m_FixedTable[16];
+    char m_RandomTable[16][kRandomDataSize];
 };
 
 
