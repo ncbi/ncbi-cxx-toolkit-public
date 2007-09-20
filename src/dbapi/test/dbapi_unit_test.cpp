@@ -9720,9 +9720,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             PutMsgDisabled("Test_Bulk_Writing2");
         }
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing3, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+        if (args.GetDriverName() != "dblib") {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing3, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
     } else {
         PutMsgDisabled("Test_Bulk_Writing");
     }
