@@ -2418,7 +2418,20 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
     string sql;
     // enum { record_num = 10 };
     string table_name = "#bcp_table2";
-    const string data = "testing";
+    string data;
+
+    data = 
+        "9606    2       GO:0019899      IPI     -       enzyme binding  11435418        Function"
+        "9606    2       GO:0019966      IDA     -       interleukin-1 binding   9714181 Function"
+        "9606    2       GO:0019959      IPI     -       interleukin-8 binding   10880251        Function"
+        "9606    2       GO:0008320      NR      -       protein carrier activity        -       Function"
+        "9606    2       GO:0004867      IEA     -       serine-type endopeptidase inhibitor activity    -       Function"
+        "9606    2       GO:0043120      IDA     -       tumor necrosis factor binding   9714181 Function"
+        "9606    2       GO:0017114      IEA     -       wide-spectrum protease inhibitor activity       -       Function"
+        "9606    2       GO:0006886      NR      -       intracellular protein transport -       Process"
+        "9606    2       GO:0051260      NAS     -       protein homooligomerization     -       Process"
+        "9606    2       GO:0005576      NAS     -       extracellular region    14718574        Component";
+    // data = "testing";
 
     try {
         CDB_Connection* conn = m_Conn->GetCDB_Connection();
@@ -2446,7 +2459,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         }
 
         // Insert data ...
-        {
+        if (false) {
             // auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 1));
 
             auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
@@ -2498,23 +2511,92 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
             dataImgVal.AssignNULL();
             bcp->Bind(10, &dataImgVal);
 
+            bcp->SendRow();
+
+            bcp->CompleteBCP();
+        }
+
+        // Delete previously inserted data ...
+        {
+            sql = "DELETE FROM " + table_name;
+
+            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+            auto_stmt->Send();
+            auto_stmt->DumpResults();
+        }
+
+        // Insert data again ...
+        {
+            // auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
+
+            auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
+
+            CDB_Int vkeyVal; 
+            vkeyVal = 1; 
+            bcp->Bind(0, &vkeyVal);
+
+            CDB_Int geneIdVal;
+            geneIdVal = 2;
+            bcp->Bind(1, &geneIdVal);
+
+            CTime curr_time(CTime::eCurrent);
+            CDB_DateTime modateVal(curr_time);
+            bcp->Bind(2, &modateVal);
+
+            CDB_Int dtypeVal; 
+            dtypeVal = 106;
+            bcp->Bind(3, &dtypeVal);
+
+            CDB_Int dsizeVal; 
+            dsizeVal = data.size();
+            bcp->Bind(4, &dsizeVal);
+
+            CDB_VarChar dataStrVal;
+            dataStrVal.AssignNULL();
+            bcp->Bind(5, &dataStrVal);
+
+            CDB_Int dataIntVal; 
+            dataIntVal = 0;
+            bcp->Bind(6, &dataIntVal);
+
+            CDB_VarBinary dataBinVal;
+            dataBinVal.AssignNULL();
+            bcp->Bind(7, &dataBinVal);
+
+            CDB_Int cntVal;
+            cntVal = 1;
+            bcp->Bind(8, &cntVal);
+
+            CDB_Text dataTextVal;
+            // dataTextVal.AssignNULL();
+            // doesn't matter, null or not null data both fail
+            dataTextVal.Append(data);
+            dataTextVal.MoveTo(0);
+            bcp->Bind(9, &dataTextVal);
+
+            CDB_Image dataImgVal;
+            dataImgVal.AssignNULL();
+            bcp->Bind(10, &dataImgVal);
+
             /*
             CDB_Text dataTextVal;
-            dataTextVal.AssignNULL();
+            // dataTextVal.AssignNULL();
             // doesn't matter, null or not null data both fail
-            //    dataTextVal.Append(data);
-            //    dataTextVal.MoveTo(0);
+            dataTextVal.Append(data);
+            dataTextVal.MoveTo(0);
             bcp->Bind(0, &dataTextVal);
 
             CDB_Image dataImgVal;
             dataImgVal.AssignNULL();
-            bcp->Bind(0, &dataImgVal);
+            bcp->Bind(1, &dataImgVal);
             */
 
             bcp->SendRow();
 
             bcp->CompleteBCP();
         }
+
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
