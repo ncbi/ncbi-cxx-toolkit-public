@@ -205,7 +205,6 @@ property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
 property gui_print : {name:"gui_print", path:"gui:print"}
 property gui__services : {name:"gui__services", path:"gui:services"}
-property gui__math : {name:"gui__math", path:"gui:math"}
 
 property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entry_form"}
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
@@ -223,7 +222,7 @@ property w_flu : {name:"w_flu", path:"gui:widgets:FLU"}
 property w_fltk : {name:"w_fltk", path:"gui:widgets:fl"}
 property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
---property w_snp : {name:"w_snp", path:"gui:widgets:snp"}
+property w_snp : {name:"w_snp", path:"gui:widgets:snp"}
 property w_data : {name:"w_data", path:"gui:widgets:data"}
 property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", exc:{"Sparse_align.cpp", "NCBI_Seqalign_ext_module.cpp", "Sparse_align_.cpp", "Sparse_score.cpp", "Sparse_score_.cpp", "Sparse_seg.cpp", "Sparse_seg_.cpp", "Sparse_seg_ext.cpp", "Sparse_seg_ext_.cpp"}}
 --property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
@@ -302,13 +301,13 @@ property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, 
 property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_pub ncbi_misc ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2", req:true}
 
 -- GUI
-property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui__math}, dep:"ncbi_core ncbi_seq ncbi_pub ncbi_seqext ncbi_image ncbi_general ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true}
+property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print}, dep:"ncbi_core ncbi_seq ncbi_pub ncbi_seqext ncbi_image ncbi_general ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_misc ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_validator ncbi_image" & FI_LIBS, req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core ncbi_validator ncbi_seqext ncbi_image ncbi_pub ncbi_general ncbi_seq ncbi_misc" & FI_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_aln_data, w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_data, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_seq_goto}, dep:"ncbi_image gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_pub ncbi_seqext ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, gui_objects}, dep:"ncbi_image gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, req:true}
-property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_validator ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config ncbi_pub ncbi_misc" & FI_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d, w_snp}, dep:"ncbi_validator ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config ncbi_pub ncbi_misc" & FI_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_image ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets gui_widgets_misc ncbi_pub ncbi_misc ncbi_validator" & FI_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_hit_matrix, w_aln_table}, dep:"ncbi_image ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_algo gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq ncbi_pub ncbi_misc ncbi_validator gui_widgets_misc" & FI_LIBS, fworks:"OpenGL", req:true} --gui_core
 property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_core gui_config gui_utils gui_widgets gui_widgets_seq ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub ncbi_misc ncbi_validator ncbi_image gui_graph gui_widgets_misc ncbi_algo gui_dialogs" & FI_LIBS, req:true}
@@ -433,3 +432,11 @@ script ToolkitSource
 	end Initialize
 	
 end script
+
+on cell value theObject row theRow table column tableColumn
+	(*Add your script here.*)
+end cell value
+
+on number of rows theObject
+	(*Add your script here.*)
+end number of rows

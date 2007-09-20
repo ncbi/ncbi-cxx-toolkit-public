@@ -38,7 +38,7 @@ property ret : "
 global newProject
 
 (* external globals *)
-global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
+global TheNCBIPath, TheFLTKPath, TheBDBPath, ThePCREPath, TheOUTPath
 global libTypeDLL, cpuOptimization, zeroLink, fixContinue, xcodeVersion, projFile
 
 (**)
@@ -94,7 +94,7 @@ script ProjBuilder
 		set headerPath to TheNCBIPath & "/include/util/regexp" -- for local pcre library
 		set headerPath to headerPath & " " & TheNCBIPath & "/include"
 		
-		set pack to {TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath}
+		set pack to {TheFLTKPath, TheBDBPath, ThePCREPath}
 		
 		repeat with p in pack -- add all paths to headers
 			set headerPath to headerPath & " " & p & "/include"

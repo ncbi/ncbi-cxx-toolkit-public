@@ -38,7 +38,7 @@ global AllApplications
 global ToolkitSource
 global ProjBuilderLib
 
-global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
+global TheNCBIPath, TheFLTKPath, TheBDBPath, ThePCREPath, TheOUTPath
 global libTypeDLL, cpuOptimization, zeroLink, fixContinue, xcodeVersion, projFile
 
 
@@ -50,7 +50,7 @@ property libScriptRunning : false
 
 
 (* ==== Properties ==== *)
-property allPaths : {"pathNCBI", "pathFLTK", "pathBDB", "pathSQL", "pathPCRE", "pathOUT"}
+property allPaths : {"pathNCBI", "pathFLTK", "pathBDB", "pathPCRE", "pathOUT"}
 property libDataSource : null
 property toolDataSource : null
 property appDataSource : null
@@ -155,7 +155,6 @@ on clicked theObject
 			set new_insdir to contents of text field "ins_dir" of window "install_libs"
 			set contents of text field "pathFLTK" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
 			set contents of text field "pathBDB" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
-			set contents of text field "pathSQL" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
 			set contents of text field "pathPCRE" of tab view item "tab1" of tab view "theTab" of window "Main" to new_insdir
 		end if
 		close panel window "install_libs"
@@ -212,10 +211,6 @@ on clicked theObject
 			
 			if theObject is equal to button "ChooseFLTK" then
 				my ChooseFolder("Select FLTK installation", "pathFLTK")
-			end if
-			
-			if theObject is equal to button "ChooseSQL" then
-				my ChooseFolder("Select SQLite installation", "pathSQL")
 			end if
 			
 			if theObject is equal to button "ChoosePCRE" then
@@ -617,14 +612,13 @@ on ValidatePaths()
 		set TheNCBIPath to contents of text field "pathNCBI"
 		set TheFLTKPath to contents of text field "pathFLTK"
 		set TheBDBPath to contents of text field "pathBDB"
-		set TheSQLPath to contents of text field "pathSQL"
 		set ThePCREPath to contents of text field "pathPCRE"
 		set TheOUTPath to contents of text field "pathOUT"
 	end tell
 	
 	set ncbiPath to x_Replace(TheNCBIPath, "/", ":")
 	
-	if TheNCBIPath is "" or TheFLTKPath is "" or TheBDBPath is "" or TheSQLPath is "" or ThePCREPath is "" or TheOUTPath is "" then
+	if TheNCBIPath is "" or TheFLTKPath is "" or TheBDBPath is "" or ThePCREPath is "" or TheOUTPath is "" then
 		return "Path(s) could not be empty"
 	end if
 	
@@ -648,10 +642,6 @@ on ValidatePaths()
 	if x_NoSuchPath(ThePCREPath & "/include/gif_lib.h") then
 		--return "Lib GIF installation was not found at " & ThePCREPath
 	end if
-	
-	--if x_NoSuchPath(TheSQLPath & "/include/sqlite.h") then
-	--	return "SQLite installation was not found at " & TheSQLPath
-	--end if
 	
 	if x_NoSuchPath(TheBDBPath & "/include/db.h") then
 		return "Berkeley DB installation was not found at " & TheBDBPath
