@@ -222,7 +222,7 @@
 /* #undef HAVE_LIBFTDS */
 
 /* Define to 1 if libgif is available. */
-#define HAVE_LIBGIF 1
+//#define HAVE_LIBGIF 1
 
 /* Define to 1 if you have libglut. */
 /* #undef HAVE_LIBGLUT */
@@ -236,6 +236,7 @@
 
 /* Define to 1 if libjpeg is available. */
 /* #undef HAVE_LIBJPEG */
+#define HAVE_LIBJPEG 1
 
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
@@ -277,7 +278,7 @@
 /* #undef HAVE_LIBSP */
 
 /* Define to 1 if libsqlite is available. */
-#define HAVE_LIBSQLITE 1
+//#define HAVE_LIBSQLITE 1
 
 /* Define to 1 if libsqlite3 is available. */
 /* #undef HAVE_LIBSQLITE3 */
@@ -514,7 +515,7 @@
 #define HAVE_SYS_SOCKIO_H 1
 
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
-#define HAVE_SYS_STATVFS_H 1
+//#define HAVE_SYS_STATVFS_H 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
