@@ -1454,6 +1454,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
                 tagName = ReadName(BeginOpeningTag());
                 UndoClassMember();
                 bool res = (tagName == m_LastPrimitive ||
+                    tagName == type->GetName() ||
                     CObjectTypeInfo(type).GetPrimitiveValueType() == ePrimitiveValueAny);
                 if (!res) {
                     m_LastPrimitive.erase();
@@ -1711,6 +1712,15 @@ ETypeFamily CObjectIStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
     return GetRealTypeInfo( typeInfo )->GetTypeFamily();
 }
 
+TTypeInfo CObjectIStreamXml::GetContainerElementTypeInfo(TTypeInfo typeInfo)
+{
+    typeInfo = GetRealTypeInfo( typeInfo );
+    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
+    const CContainerTypeInfo* ptr =
+        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
+    return GetRealTypeInfo(ptr->GetElementType());
+}
+
 ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
 {
     typeInfo = GetRealTypeInfo( typeInfo );
@@ -1725,6 +1735,13 @@ void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
     CheckStdXml(classInfo);
     if (x_IsStdXml()) {
+        if (!m_Attlist) {
+// if class spec defines no attributes, but there are some - skip them
+            if (HasAttlist() && !classInfo->GetMemberInfo(
+                classInfo->GetMembers().FirstIndex())->GetId().IsAttlist()) {
+                ReadUndefinedAttributes();
+            }
+        }
         if (m_Attlist || HasAttlist()) {
             TopFrame().SetNotag();
         } else {
@@ -1929,8 +1946,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             bool needUndo = false;
             if (GetEnforcedStdXml()) {
                 if (type == eTypeFamilyContainer) {
-                    needUndo = (GetContainerElementTypeFamily(
-                        mem_info->GetTypeInfo()) == eTypeFamilyPrimitive);
+                    TTypeInfo mem_type  = GetRealTypeInfo(mem_info->GetTypeInfo());
+                    TTypeInfo elem_type = GetContainerElementTypeInfo(mem_type);
+                    needUndo = (elem_type->GetTypeFamily() == eTypeFamilyPrimitive &&
+                        elem_type->GetName() == mem_type->GetName());
                 }
             } else {
                 needUndo = (type != eTypeFamilyPrimitive) ||
@@ -2068,8 +2087,10 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
             bool needUndo = false;
             if (GetEnforcedStdXml()) {
                 if (type == eTypeFamilyContainer) {
-                    needUndo = (GetContainerElementTypeFamily(
-                        var_info->GetTypeInfo()) == eTypeFamilyPrimitive);
+                    TTypeInfo var_type  = GetRealTypeInfo(var_info->GetTypeInfo());
+                    TTypeInfo elem_type = GetContainerElementTypeInfo(var_type);
+                    needUndo = (elem_type->GetTypeFamily() == eTypeFamilyPrimitive &&
+                        elem_type->GetName() == var_type->GetName());
                 }
             } else {
                 needUndo = (type != eTypeFamilyPrimitive);

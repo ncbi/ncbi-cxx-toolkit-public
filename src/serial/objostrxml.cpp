@@ -1177,6 +1177,15 @@ ETypeFamily CObjectOStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
     return GetRealTypeInfo( typeInfo )->GetTypeFamily();
 }
 
+TTypeInfo CObjectOStreamXml::GetContainerElementTypeInfo(TTypeInfo typeInfo)
+{
+    typeInfo = GetRealTypeInfo( typeInfo );
+    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
+    const CContainerTypeInfo* ptr =
+        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
+    return GetRealTypeInfo(ptr->GetElementType());
+}
+
 ETypeFamily CObjectOStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
 {
     if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
@@ -1234,8 +1243,10 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
             bool needTag = true;
             if (GetEnforcedStdXml()) {
                 if (type == eTypeFamilyContainer) {
-                    needTag = (GetContainerElementTypeFamily(memberType) !=
-                               eTypeFamilyPrimitive);
+                    TTypeInfo mem_type  = GetRealTypeInfo(memberType);
+                    TTypeInfo elem_type = GetContainerElementTypeInfo(mem_type);
+                    needTag = (elem_type->GetTypeFamily() != eTypeFamilyPrimitive ||
+                        elem_type->GetName() != mem_type->GetName());
                 }
             } else {
                 needTag = (type == eTypeFamilyPrimitive &&
@@ -1348,8 +1359,10 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
         bool needTag = true;
         if (GetEnforcedStdXml()) {
             if (type == eTypeFamilyContainer) {
-                needTag = (GetContainerElementTypeFamily(
-                    var_info->GetTypeInfo()) != eTypeFamilyPrimitive);
+                TTypeInfo var_type  = GetRealTypeInfo(var_info->GetTypeInfo());
+                TTypeInfo elem_type = GetContainerElementTypeInfo(var_type);
+                needTag = (elem_type->GetTypeFamily() != eTypeFamilyPrimitive ||
+                    elem_type->GetName() != var_type->GetName());
             }
         } else {
             needTag = (type == eTypeFamilyPrimitive && !id.HasNotag());
