@@ -294,14 +294,14 @@ void CAlignShadow::SetStrand(Uint1 where, bool strand)
     }
 #endif
 
-    const Uint1 i1 = where << 1, i2 = i1 + 1;
+    const Uint1 i1 (where << 1), i2 (i1 + 1);
 
-    if(m_Box[i1] == g_UndefCoord || m_Box[i1] == g_UndefCoord) {
+    if(m_Box[i1] == g_UndefCoord || m_Box[i2] == g_UndefCoord) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetStrand() -start and/or stop not yet set");
     }
 
-    bool cur_strand = GetStrand(where);
+    const bool cur_strand (GetStrand(where));
     if(strand != cur_strand) {
         swap(m_Box[i1], m_Box[i2]);
     }
@@ -497,9 +497,9 @@ void CAlignShadow::SetMin(Uint1 where, TCoord val)
     }
 #endif
 
-    Uint1 i1 = where << 1, i2 = i1 + 1;
+    const Uint1 i1 (where << 1), i2 (i1 + 1);
 
-    if(m_Box[i1] == g_UndefCoord || m_Box[i1] == g_UndefCoord) {
+    if(m_Box[i1] == g_UndefCoord || m_Box[i2] == g_UndefCoord) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetMin() - start and/or stop not yet set");
     }
@@ -529,9 +529,9 @@ void CAlignShadow::SetMax(Uint1 where, TCoord val)
     }
 #endif
 
-    Uint1 i1 = where << 1, i2 = i1 + 1;
+    const Uint1 i1 (where << 1), i2 (i1 + 1);
 
-    if(m_Box[i1] == g_UndefCoord || m_Box[i1] == g_UndefCoord) {
+    if(m_Box[i1] == g_UndefCoord || m_Box[i2] == g_UndefCoord) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetMax() - start and/or stop not yet set");
     }
