@@ -217,13 +217,13 @@ EOF
     svn => <<EOF,
 svn: Execute an arbitrary Subversion command.
 
-Usage: $ScriptName svn SVN_COMMAND -- [SVN_ARG ...] BRANCH_PATH
+Usage: $ScriptName svn SVN_COMMAND [SVN_ARG ...] BRANCH_PATH
 
 This directory executes a Subversion command with branch element
 pathnames as its trailing arguments.
 
 Example:
-  $ScriptName svn revert -- -R new_feat
+  $ScriptName svn revert -R new_feat
 
   In this example, the 'svn revert' command is executed on all files
   and directories that form the 'new_feat' branch.
