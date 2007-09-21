@@ -95,8 +95,8 @@ protected:
     void ParseRestriction(DTDAttribute& att);
     void ParseEnumeration(DTDAttribute& att);
 
-    static string CreateEmbeddedName(const string& name, int emb);
-    static string CreateEntityId( const string& name, DTDEntity::EType type);
+    string CreateEmbeddedName(const string& name, int emb);
+    string CreateEntityId( const string& name, DTDEntity::EType type);
     void CreateTypeDefinition(DTDEntity::EType type);
     void ParseTypeDefinition(DTDEntity& ent);
     void ProcessNamedTypes(void);
@@ -132,6 +132,7 @@ private:
     stack< map<string,string> > m_StackNamespaceToPrefix;
     stack<string> m_StackTargetNamespace;
     stack<bool> m_StackElementFormDefault;
+    set<string> m_EmbeddedNames;
 };
 
 END_NCBI_SCOPE

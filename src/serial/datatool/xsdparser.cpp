@@ -889,6 +889,10 @@ string XSDParser::CreateEmbeddedName(const string& name, int emb)
     string emb_name(name);
     emb_name += "__emb#__";
     emb_name += NStr::IntToString(emb);
+    while (m_EmbeddedNames.find(emb_name) != m_EmbeddedNames.end()) {
+        emb_name += 'a';
+    }
+    m_EmbeddedNames.insert(emb_name);
     return emb_name;
 }
 
