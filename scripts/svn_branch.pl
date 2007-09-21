@@ -17,6 +17,9 @@ use NCBI::SVN::Branching;
 
 use Getopt::Long qw(:config permute no_getopt_compat no_ignore_case);
 
+# Instantiate the Branching module, which actually does the work.
+my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
+
 # Command line options.
 my ($Help, $Force, $RootURL, $Revision, $PathList);
 
@@ -344,32 +347,6 @@ sub TooManyArgs
     UsageError("too many arguments for '$Command'")
 }
 
-# Parse the command line.
-GetOptions(map {@$_[0, 2]} @OptionInfo) or UsageError();
-
-# Command is the first non-option argument.
-my $Command = shift @ARGV;
-
-unless (defined $Command)
-{
-    $Help ? Help() : UsageError()
-}
-else
-{
-    # Allow only options accepted by $Command to be
-    # specified in the command line.
-    for (@OptionInfo)
-    {
-        my (undef, $Option, $OptionValueRev, $CommandsThatAcceptIt) = @$_;
-
-        UsageError("command '$Command' doesn't accept option '--$Option'")
-            if defined $$OptionValueRev && !$CommandsThatAcceptIt->{$Command}
-    }
-}
-
-# Instantiate the Branching module, which actually does the work.
-my $Module = NCBI::SVN::Branching->new(MyName => $ScriptName);
-
 sub TrimSlashes
 {
     my ($PathRef) = @_;
@@ -471,6 +448,29 @@ sub GetBranchDirArgs
     }
 
     return (@AdditionalPathArgs, @BranchPaths)
+}
+
+# Parse the command line.
+GetOptions(map {@$_[0, 2]} @OptionInfo) or UsageError();
+
+# Command is the first non-option argument.
+my $Command = shift @ARGV;
+
+unless (defined $Command)
+{
+    $Help ? Help() : UsageError()
+}
+else
+{
+    # Allow only options accepted by $Command to be
+    # specified in the command line.
+    for (@OptionInfo)
+    {
+        my (undef, $Option, $OptionValueRev, $CommandsThatAcceptIt) = @$_;
+
+        UsageError("command '$Command' doesn't accept option '--$Option'")
+            if defined $$OptionValueRev && !$CommandsThatAcceptIt->{$Command}
+    }
 }
 
 if ($Command eq 'help')
