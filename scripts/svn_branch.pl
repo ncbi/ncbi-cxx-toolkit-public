@@ -450,8 +450,11 @@ sub GetBranchDirArgs
     return (@AdditionalPathArgs, @BranchPaths)
 }
 
-# Parse the command line.
-GetOptions(map {@$_[0, 2]} @OptionInfo) or UsageError();
+# Extract options. Do not touch arguments of the 'svn' command.
+if (@ARGV && $ARGV[0] ne 'svn')
+{
+    GetOptions(map {@$_[0, 2]} @OptionInfo) or UsageError()
+}
 
 # Command is the first non-option argument.
 my $Command = shift @ARGV;
