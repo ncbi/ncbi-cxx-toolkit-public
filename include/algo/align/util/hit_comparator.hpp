@@ -85,13 +85,13 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
 
     case eQueryMin:
 
-        rv = lhs->GetQueryMin() <= rhs->GetQueryMin();
+        rv = lhs->GetQueryMin() < rhs->GetQueryMin();
         break;
 
     case eQueryMinQueryMax:
         {
-            const typename THit::TCoord qmin_lhs = lhs->GetQueryMin();
-            const typename THit::TCoord qmin_rhs = rhs->GetQueryMin();
+            const typename THit::TCoord qmin_lhs (lhs->GetQueryMin());
+            const typename THit::TCoord qmin_rhs (rhs->GetQueryMin());
             if(qmin_lhs != qmin_rhs) {
                 return qmin_lhs < qmin_rhs;
             }
@@ -103,7 +103,7 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
 
     case eSubjMin:
 
-        rv = lhs->GetSubjMin() <= rhs->GetSubjMin();
+        rv = lhs->GetSubjMin() < rhs->GetSubjMin();
         break;
 
     case eSubjMinSubjMax:
