@@ -441,7 +441,7 @@ sub ReadFileLines
 
 sub GetBranchDirArgs
 {
-    my ($Command, @AdditionalPathArgs) = @_;
+    my ($Command) = @_;
 
     my @BranchPaths;
 
@@ -469,12 +469,15 @@ sub GetBranchDirArgs
         }
     }
 
+    my %BranchPaths;
+
     for my $Path (@BranchPaths)
     {
-        TrimSlashes(\$Path)
+        TrimSlashes(\$Path);
+        $BranchPaths{$Path} = undef
     }
 
-    return (@AdditionalPathArgs, @BranchPaths)
+    return keys %BranchPaths
 }
 
 # Extract options. Do not touch arguments of the 'svn' command.
