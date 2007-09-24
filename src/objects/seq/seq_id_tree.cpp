@@ -646,10 +646,19 @@ void CSeq_id_Textseq_Tree::x_Unindex(const CSeq_id_Info* info)
 }
 
 
+inline
+bool x_IsDefaultSwissprotRelease(const CTextseq_id& tid)
+{
+    return tid.IsSetRelease() &&
+        (tid.GetRelease() == "standard"  ||  tid.GetRelease() == "prelim");
+}
+
+
 void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
                                               const CTextseq_id& tid,
                                               TSeq_id_MatchList& id_list,
-                                              bool by_accession) const
+                                              bool by_accession,
+                                              bool is_swissprot) const
 {
     ITERATE(TVersions, vit, ver_list) {
         const CTextseq_id& tst = x_Get(*(*vit)->GetSeqId());
@@ -670,9 +679,12 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
                 continue;
             }
             if ( tid.IsSetRelease() ) {
-                if ( !tst.IsSetRelease() ||
-                     tst.GetRelease() != tid.GetRelease() ) {
-                    continue;
+                if (!is_swissprot  ||  tst.IsSetRelease()  ||
+                    !x_IsDefaultSwissprotRelease(tid)) {
+                    if ( !tst.IsSetRelease() ||
+                         tst.GetRelease() != tid.GetRelease() ) {
+                        continue;
+                    }
                 }
             }
         }
@@ -696,14 +708,15 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
         TReadLockGuard guard(m_TreeLock);
         TStringMap::const_iterator it = m_ByAccession.find(tid.GetAccession());
         if (it != m_ByAccession.end()) {
-            x_FindVersionMatch(it->second, tid, id_list, true);
+            x_FindVersionMatch(it->second, tid, id_list, true, false);
         }
     }
     if ( tid.IsSetName() ) {
         TReadLockGuard guard(m_TreeLock);
         TStringMap::const_iterator it = m_ByName.find(tid.GetName());
         if (it != m_ByName.end()) {
-            x_FindVersionMatch(it->second, tid, id_list, false);
+            x_FindVersionMatch(it->second, tid, id_list, false,
+                id.GetSeqId()->IsSwissprot());
         }
     }
 }

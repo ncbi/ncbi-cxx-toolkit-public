@@ -309,7 +309,8 @@ private:
     void x_FindVersionMatch(const TVersions& ver_list,
                             const CTextseq_id& tid,
                             TSeq_id_MatchList& id_list,
-                            bool by_accession) const;
+                            bool by_accession,
+                            bool is_swissprot) const;
 
     TStringMap m_ByAccession;
     TStringMap m_ByName; // Used for searching by string
