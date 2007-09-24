@@ -596,7 +596,11 @@ struct SFillTypes
 {
     SFillTypes()
     {
-        for (int i = 0;  i < 256;  ++i) {
+        // This cycle is processed in backward order to avoid buggy
+        // optimization by ICC 9.1 on 64-bit platforms.
+        // The optimizer calls buggy intel_fast_mem(cpy|set) even with
+        // -fno-builtin-memset -fno-builtin-memcpy.
+        for (int i = 256;  i--; ) {
             s_char_type[i] = eOther;
         }
 
