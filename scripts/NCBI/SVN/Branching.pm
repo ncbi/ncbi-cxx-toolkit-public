@@ -189,10 +189,7 @@ sub ShapeBranch
         $UpstreamPath, $SourceRevision, @BranchPaths) = @_;
 
     my @MUCCCommands;
-
-    my @PathsToRemove;
-    my @DirsToCreate;
-
+    my %ModTree;
     my $RewriteBranchList;
 
     # Read branch_list, if it exists.
@@ -211,34 +208,8 @@ sub ShapeBranch
         }
 
         push @Branches, $BranchPath;
-        $RewriteBranchList = 1
-    }
-    elsif ($Action eq 'alter')
-    {
-        unless (grep {$_ eq $BranchPath} @Branches)
-        {
-            warn 'Warning: branch ' .
-                "'$BranchPath' was not found in branch_list.\n";
+        $RewriteBranchList = 1;
 
-            push @Branches, $BranchPath;
-            $RewriteBranchList = 1
-        }
-    }
-    elsif ($Action eq 'remove')
-    {
-        my @NewBranchList = grep {$_ ne $BranchPath} @Branches;
-
-        if (scalar(@NewBranchList) != scalar(@Branches))
-        {
-            @Branches = @NewBranchList;
-            $RewriteBranchList = 1
-        }
-    }
-
-    my %ModTree;
-
-    if ($Action eq 'create')
-    {
         $SourceRevision ||= 'HEAD';
 
         for my $Path (@BranchPaths)
@@ -250,36 +221,70 @@ sub ShapeBranch
             push @MUCCCommands, 'cp', $SourceRevision, $SourcePath, $TargetPath
         }
     }
-    elsif ($Action eq 'alter')
+    elsif ($Action eq 'alter' or $Action eq 'grow' or $Action eq 'truncate')
     {
+        unless (grep {$_ eq $BranchPath} @Branches)
+        {
+            warn 'Warning: branch ' .
+                "'$BranchPath' was not found in branch_list.\n";
+
+            push @Branches, $BranchPath;
+            $RewriteBranchList = 1
+        }
+
         my $BranchInfo =
             NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath);
 
-        $UpstreamPath = $BranchInfo->{UpstreamPath};
-
         my %OldBranchPaths = map {$_ => 1} @{$BranchInfo->{BranchPaths}};
 
-        for my $Path (@BranchPaths)
+        if ($Action ne 'truncate')
         {
-            unless (delete $OldBranchPaths{$Path})
-            {
-                my $SourcePath = "$UpstreamPath/$Path";
-                my $TargetPath = "$BranchPath/$Path";
+            $UpstreamPath = $BranchInfo->{UpstreamPath};
 
-                MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
-                push @MUCCCommands, 'cp',
-                    $BranchInfo->{LastDownSyncRevisionNumber},
-                        $SourcePath, $TargetPath
+            for my $Path (@BranchPaths)
+            {
+                unless (delete $OldBranchPaths{$Path})
+                {
+                    my $SourcePath = "$UpstreamPath/$Path";
+                    my $TargetPath = "$BranchPath/$Path";
+
+                    MarkPath($TargetPath, \%ModTree, qw(rm mkparent));
+                    push @MUCCCommands, 'cp',
+                        $BranchInfo->{LastDownSyncRevisionNumber},
+                            $SourcePath, $TargetPath
+                }
+            }
+
+            if ($Action eq 'alter')
+            {
+                for my $Path (keys %OldBranchPaths)
+                {
+                    MarkPath("$BranchPath/$Path", \%ModTree, 'rm')
+                }
             }
         }
-
-        for my $Path (keys %OldBranchPaths)
+        else
         {
-            MarkPath("$BranchPath/$Path", \%ModTree, 'rm')
+            for my $Path (@BranchPaths)
+            {
+                MarkPath("$BranchPath/$Path", \%ModTree, 'rm')
+                    if delete $OldBranchPaths{$Path}
+            }
+
+            die "$Self->{MyName}: cannot remove all branch elements.\n"
+                unless %OldBranchPaths
         }
     }
     elsif ($Action eq 'remove')
     {
+        my @NewBranchList = grep {$_ ne $BranchPath} @Branches;
+
+        if (scalar(@NewBranchList) != scalar(@Branches))
+        {
+            @Branches = @NewBranchList;
+            $RewriteBranchList = 1
+        }
+
         my $BranchInfo;
 
         if (!$Force && ($BranchInfo =
@@ -299,18 +304,29 @@ sub ShapeBranch
         }
         else
         {
-            $BranchInfo =
-                NCBI::SVN::Branching::BranchInfo->new($RootURL, $BranchPath)
+            $BranchInfo = eval {NCBI::SVN::Branching::BranchInfo->new($RootURL,
+                $BranchPath)}
         }
 
-        for (@{$BranchInfo->{BranchPaths}})
+        if ($BranchInfo)
         {
-            MarkPath("$BranchPath/$_", \%ModTree, 'rm')
+            for (@{$BranchInfo->{BranchPaths}})
+            {
+                MarkPath("$BranchPath/$_", \%ModTree, 'rm')
+            }
+        }
+        elsif (!$Force)
+        {
+            die "$Self->{MyName}: cannot retrieve branch information.\n" .
+                "Use --force to remove branch record from 'branch_list'.\n"
         }
     }
 
     my $ExistingStructure =
         $Self->GetTreeContainingSubtree($RootURL, \%ModTree);
+
+    my @PathsToRemove;
+    my @DirsToCreate;
 
     while (my ($Subdir, $Subtree) = each %ModTree)
     {
@@ -320,7 +336,7 @@ sub ShapeBranch
             $Subdir, $Subtree, $Subdir)
     }
 
-    unless ($Action eq 'remove')
+    unless ($Action eq 'remove' or $Action eq 'truncate')
     {
         if (!$Force && @PathsToRemove)
         {
@@ -366,9 +382,8 @@ sub ShapeBranch
     # with a single revision using MUCC.
     if (@MUCCCommands)
     {
-        my ($VerbING, $VerbED) = $Action eq 'create' ?
-            qw(Creating Created) : $Action eq 'alter' ?
-            qw(Updating Modified) : qw(Removing Removed);
+        my ($VerbING, $VerbED) = $Action eq 'create' ? qw(Creating Created) :
+            $Action eq 'remove' ? qw(Removing Removed) : qw(Updating Modified);
 
         print STDERR "$VerbING branch '$BranchPath'...\n";
 
@@ -405,6 +420,22 @@ sub Alter
     my ($Self, $Force, $RootURL, $BranchPath, @BranchPaths) = @_;
 
     $Self->ShapeBranch('alter', $Force, $RootURL,
+        $BranchPath, undef, undef, @BranchPaths)
+}
+
+sub Grow
+{
+    my ($Self, $RootURL, $BranchPath, @BranchPaths) = @_;
+
+    $Self->ShapeBranch('grow', undef, $RootURL,
+        $BranchPath, undef, undef, @BranchPaths)
+}
+
+sub Truncate
+{
+    my ($Self, $RootURL, $BranchPath, @BranchPaths) = @_;
+
+    $Self->ShapeBranch('truncate', undef, $RootURL,
         $BranchPath, undef, undef, @BranchPaths)
 }
 

@@ -33,7 +33,8 @@ my @OptionInfo =
 EOF
 
     ['root-url|root|U=s', root => \$RootURL,
-        {list => 1, info => 1, create => 1, alter => 1, remove => 1}, <<'EOF'],
+        {list => 1, info => 1, create => 1, alter => 1,
+            grow => 1, truncate => 1, remove => 1}, <<'EOF'],
   -U [--root-url] arg   : Override repository root URL otherwise
                           detected from the working copy directory.
 EOF
@@ -44,7 +45,7 @@ EOF
 EOF
 
     ['list|l=s', list => \$PathList,
-        {create => 1, alter => 1}, <<'EOF']
+        {create => 1, alter => 1, grow => 1, truncate => 1}, <<'EOF']
   -l [--list] arg       : Pathname of the file containing newline
                           separated list of branch elements. If this
                           option is used, no branch elements may be
@@ -139,6 +140,30 @@ requested change eliminates any of the existing branch elements.
 Example:
     $ScriptName create app_new_gui branches/app_new_feat src/gui
     $ScriptName alter app_new_gui src/gui include/gui
+EOF
+
+    grow => <<EOF,
+grow: Expand an existing branch.
+
+Usage: $ScriptName grow BRANCH_PATH [BRANCH_ELEMENT ...]
+
+This command adds more branch elements (directories and/or files) by
+copying them from the parent path.
+
+Note that the source revision of the latest 'create' or 'merge_down'
+revision will be used for this 'grow' operation.
+
+Example:
+    $ScriptName grow app_new_gui doc/gui
+EOF
+
+    truncate => <<EOF,
+truncate: Remove elements of an existing branch.
+
+Usage: $ScriptName truncate BRANCH_PATH [BRANCH_ELEMENT ...]
+
+Example:
+    $ScriptName truncate app_new_gui include/gui
 EOF
 
     remove => <<EOF,
@@ -281,6 +306,8 @@ Available commands:
   Branch structure modification:
     create        - Create a new managed branch.
     alter         - Restructure an existing branch.
+    grow          - Expand an existing branch.
+    truncate      - Remove elements of an existing branch.
     remove        - Remove a branch.
 
   Operations on working copy:
@@ -504,6 +531,18 @@ elsif ($Command eq 'alter')
 
     $Module->Alter($Force, RequireRootURL(), $BranchPath,
         GetBranchDirArgs($Command))
+}
+elsif ($Command eq 'grow')
+{
+    my $BranchPath = ExtractBranchPathArg();
+
+    $Module->Grow(RequireRootURL(), $BranchPath, GetBranchDirArgs($Command))
+}
+elsif ($Command eq 'truncate')
+{
+    my $BranchPath = ExtractBranchPathArg();
+
+    $Module->Truncate(RequireRootURL(), $BranchPath, GetBranchDirArgs($Command))
 }
 elsif ($Command eq 'remove')
 {
