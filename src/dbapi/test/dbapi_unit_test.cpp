@@ -4590,7 +4590,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
                 BOOST_CHECK(data);
 
-                BOOST_CHECK_EQUAL(data->Value(), "1");
+                BOOST_CHECK_EQUAL(data->Value(), string("1"));
 
                 DumpResults(auto_stmt.get());
             }
@@ -4606,7 +4606,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
                 BOOST_CHECK(data);
 
-                BOOST_CHECK_EQUAL(data->Value(), "1");
+                BOOST_CHECK_EQUAL(data->Value(), string("1"));
 
                 DumpResults(auto_stmt.get());
             }
@@ -4748,7 +4748,8 @@ CDBAPIUnitTest::Test_Recordset(void)
                 char_data = dynamic_cast<CDB_Char*>(variant.GetData());
 
                 if(char_data) {
-                    BOOST_CHECK_EQUAL(char_data->Value(), "12345     ");
+                    BOOST_CHECK_EQUAL(char_data->Value(),
+                                      string("12345     "));
                 }
 
                 //
@@ -4794,7 +4795,8 @@ CDBAPIUnitTest::Test_Recordset(void)
                 if(char_data) {
                     PutMsgExpected("CDB_VarChar", "CDB_Char");
 
-                    BOOST_CHECK_EQUAL(char_data->Value(), "12345     ");
+                    BOOST_CHECK_EQUAL(char_data->Value(),
+                                      string("12345     "));
                 }
 
                 //
@@ -4802,7 +4804,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 varchar_data = dynamic_cast<CDB_VarChar*>(variant.GetData());
 
                 if (varchar_data) {
-                    BOOST_CHECK_EQUAL(varchar_data->Value(), "12345");
+                    BOOST_CHECK_EQUAL(varchar_data->Value(), string("12345"));
                 }
 
                 // 
@@ -4834,7 +4836,8 @@ CDBAPIUnitTest::Test_Recordset(void)
                 char_data = dynamic_cast<CDB_Char*>(variant.GetData());
 
                 if(char_data) {
-                    BOOST_CHECK_EQUAL(char_data->Value(), "12345     ");
+                    BOOST_CHECK_EQUAL(char_data->Value(),
+                                      string("12345     "));
                 }
 
                 CDB_VarChar* varchar_data = NULL;
@@ -4877,7 +4880,8 @@ CDBAPIUnitTest::Test_Recordset(void)
                 if(char_data) {
                     PutMsgExpected("CDB_VarChar", "CDB_Char");
 
-                    BOOST_CHECK_EQUAL(char_data->Value(), "12345     ");
+                    BOOST_CHECK_EQUAL(char_data->Value(),
+                                      string("12345     "));
                 }
 
                 //
@@ -4885,7 +4889,7 @@ CDBAPIUnitTest::Test_Recordset(void)
                 varchar_data = dynamic_cast<CDB_VarChar*>(variant.GetData());
 
                 if (varchar_data) {
-                    BOOST_CHECK_EQUAL(varchar_data->Value(), "12345");
+                    BOOST_CHECK_EQUAL(varchar_data->Value(), string("12345"));
                 }
 
                 // 
