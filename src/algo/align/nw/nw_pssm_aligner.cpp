@@ -41,10 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// only NCBIstdaa alphabet supported
-static const int kPSSM_ColumnSize = 26;
-
-
 CPSSMAligner::CPSSMAligner()
     : CNWAligner(),
       m_Pssm1(0), m_Freq1(0),
@@ -725,11 +721,11 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                 if (!m_esf_L2) {
                     wg = m_StartWg; ws = m_StartWs;
                 }
-            } else if (offset1 == m_SeqLen1 - 1) {
+            } else if (offset1 == (int)m_SeqLen1 - 1) {
                 if (!m_esf_R1) {
                     wg = m_EndWg; ws = m_EndWs;
                 }
-            } else if (offset2 == m_SeqLen2 - 1) {
+            } else if (offset2 == (int)m_SeqLen2 - 1) {
                 if (!m_esf_R2) {
                     wg = m_EndWg; ws = m_EndWs;
                 }
@@ -782,7 +778,7 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                 if (!m_esf_L1) {
                     wg1 = m_StartWg; ws1 = m_StartWs;
                 }
-            } else if (offset1 == m_SeqLen1 - 1) {
+            } else if (offset1 == (int)m_SeqLen1 - 1) {
                 if (!m_esf_R1) {
                     wg1 = m_EndWg; ws1 = m_EndWs;
                 }
@@ -794,7 +790,7 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                 if (!m_esf_L2) {
                     wg2 = m_StartWg; ws2 = m_StartWs;
                 }
-            } else if (offset2 == m_SeqLen2 - 1) {
+            } else if (offset2 == (int)m_SeqLen2 - 1) {
                 if (!m_esf_R2) {
                     wg2 = m_EndWg; ws2 = m_EndWs;
                 }
