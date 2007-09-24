@@ -10604,6 +10604,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()) {
         if (args.GetDriverName() != "dblib" // Invalid parameters to bcp_bind ...
             && args.GetDriverName() != "ftds_dblib" // Invalid parameters to bcp_bind ...
+            && !(args.GetDriverName() == "ctlib" && Solaris)
            ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2,
                     DBAPIInstance);
