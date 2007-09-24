@@ -1921,7 +1921,7 @@ else
    # sure to use DLL flags for both on platforms where such inclusion
    # would otherwise be illegal....
    case "$host_os:$host_cpu:$bit64_sfx" in
-      linux*:*86:*) ;;
+      # linux*:*86:*) ;;
       linux* | darwin* | solaris*:64 )
         CFLAGS="$CFLAGS $CFLAGS_DLL"
         CFLAGS_DLL=
