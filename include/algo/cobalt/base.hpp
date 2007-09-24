@@ -116,7 +116,7 @@ typedef CLocalRange<TOffset> TRange;
 
 /// The aligner internally works only with the 
 /// ncbistdaa alphabet
-static const int kAlphabetSize = 26;
+static const int kAlphabetSize = 28;
 
 END_SCOPE(cobalt)
 END_NCBI_SCOPE
