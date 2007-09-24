@@ -159,9 +159,9 @@ void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec, \
                sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size()); \
 }
   
-ENCODE(vector<char>);
-ENCODE(vector<unsigned char>);
-ENCODE(CSimpleBuffer);
+ENCODE(vector<char>)
+ENCODE(vector<unsigned char>)
+ENCODE(CSimpleBuffer)
 
 
 template<>
