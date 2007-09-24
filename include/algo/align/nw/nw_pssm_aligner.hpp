@@ -128,7 +128,7 @@ public:
 protected:
 
     // only NCBIstdaa alphabet supported
-    static const int kPSSM_ColumnSize = 26;
+    static const int kPSSM_ColumnSize = 28;
 
     // Source sequences
     const TScore** m_Pssm1;
