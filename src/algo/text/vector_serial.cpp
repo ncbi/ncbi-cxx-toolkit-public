@@ -345,12 +345,9 @@ template<>
 void Encode<string, float>(const CScoreVector<string, float>& vec,
                            vector<char>& data)
 {
-    CConn_MemoryStream mem_str;
-    Serialize(mem_str, vec);
-    mem_str.flush();
-
-    data.resize(mem_str.tellp() - CT_POS_TYPE(0));
-    mem_str.read(&data[0], data.size());
+    CBufferWriter< vector<char> > writer(data);
+    CBufferWriterStream< vector<char> > w_ostr(writer);
+    Serialize(w_ostr, vec);
 }
 
 
@@ -358,12 +355,19 @@ template<>
 void Encode<string, float>(const CScoreVector<string, float>& vec,
                            vector<unsigned char>& data)
 {
-    CConn_MemoryStream mem_str;
-    Serialize(mem_str, vec);
-    mem_str.flush();
+    CBufferWriter< vector<unsigned char> > writer(data);
+    CBufferWriterStream< vector<unsigned char> > w_ostr(writer);
+    Serialize(w_ostr, vec);
+}
 
-    data.resize(mem_str.tellp() - CT_POS_TYPE(0));
-    mem_str.read((char*)&data[0], data.size());
+
+template<>
+void Encode<string, float>(const CScoreVector<string, float>& vec,
+                           CSimpleBuffer& data)
+{
+    CBufferWriter<CSimpleBuffer> writer(data);
+    CBufferWriterStream<CSimpleBuffer> w_ostr(writer);
+    Serialize(w_ostr, vec);
 }
 
 
@@ -386,6 +390,14 @@ void Decode<string, float>(const vector<char>& data,
 
 template<>
 void Decode<string, float>(const vector<unsigned char>& data,
+                           CScoreVector<string, float>& vec)
+{
+    Decode(&data[0], data.size(), vec);
+}
+
+
+template<>
+void Decode<string, float>(const CSimpleBuffer& data,
                            CScoreVector<string, float>& vec)
 {
     Decode(&data[0], data.size(), vec);
