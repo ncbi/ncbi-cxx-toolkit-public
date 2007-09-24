@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description:
  *   Net schedule job status states.
@@ -66,7 +66,7 @@ public:
     ~CJobStatusTracker();
 
     CNetScheduleAPI::EJobStatus 
-        GetStatus(unsigned int job_id) const;
+        GetStatus(unsigned job_id) const;
 
     /// Set job status. (Controls status change logic)
     ///
@@ -85,9 +85,9 @@ public:
     /// in this case status change is ignored
     /// 
     CNetScheduleAPI::EJobStatus
-    ChangeStatus(unsigned int                   job_id, 
+    ChangeStatus(unsigned                    job_id, 
                  CNetScheduleAPI::EJobStatus status,
-                 bool*                          updated = NULL);
+                 bool*                       updated = NULL);
 
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
@@ -116,9 +116,6 @@ public:
     bool GetPendingJob(const TNSBitVector& unwanted_jobs,
                        unsigned*           job_id);
 
-    /// Reschedule job without status check
-    void ForceReschedule(unsigned job_id);
-
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)
     void PendingIntersect(TNSBitVector* candidate_set);
@@ -134,26 +131,26 @@ public:
     void Returned2Pending();
 
     /// Get first job id from DONE status
-    unsigned int GetFirstDone() const;
+    unsigned GetFirstDone() const;
 
     /// Get first job in the specified status
-    unsigned int GetFirst(CNetScheduleAPI::EJobStatus  status) const;
+    unsigned GetFirst(CNetScheduleAPI::EJobStatus  status) const;
 
     /// Set job status without logic control.
     /// @param status
     ///     Status to set (all other statuses are cleared)
     ///     Non existing status code clears all statuses
-    void SetStatus(unsigned int                    job_id, 
+    void SetStatus(unsigned                     job_id, 
                    CNetScheduleAPI::EJobStatus  status);
 
     // Erase the job
-    void Erase(unsigned int job_id);
+    void Erase(unsigned job_id);
 
     /// Set job status without any protection 
     void SetExactStatusNoLock(
-        unsigned int                         job_id, 
-        CNetScheduleAPI::EJobStatus       status,
-                              bool           set_clear);
+        unsigned                    job_id, 
+        CNetScheduleAPI::EJobStatus status,
+        bool                        set_clear);
 
     /// Return number of jobs in specified status
     unsigned CountStatus(CNetScheduleAPI::EJobStatus status) const;
@@ -187,7 +184,7 @@ public:
     ///    (bv is not cleared)
     void ClearAll(TNSBitVector* bv = 0);
 
-    /// Free unused memory buffers
+    /// Optimize bitvectors memory
     void OptimizeMem();
 
     void PrintStatusMatrix(CNcbiOstream& out) const;
@@ -196,12 +193,12 @@ public:
 protected:
 
     CNetScheduleAPI::EJobStatus 
-        GetStatusNoLock(unsigned int job_id) const;
+        x_GetStatusNoLock(unsigned job_id) const;
 
     /// Check if job is in specified status
     /// @return -1 if no, status value otherwise
     CNetScheduleAPI::EJobStatus 
-    IsStatusNoLock(unsigned int job_id, 
+    IsStatusNoLock(unsigned         job_id, 
         CNetScheduleAPI::EJobStatus st1,
         CNetScheduleAPI::EJobStatus st2 = CNetScheduleAPI::eJobNotFound,
         CNetScheduleAPI::EJobStatus st3 = CNetScheduleAPI::eJobNotFound
@@ -210,7 +207,7 @@ protected:
     /// Check if job is in specified status and switch to new status
     /// @return TRUE if switched
     bool
-    SwitchStatusNoLock(unsigned int job_id,
+    SwitchStatusNoLock(unsigned     job_id,
         CNetScheduleAPI::EJobStatus new_st,
         CNetScheduleAPI::EJobStatus st1,
         CNetScheduleAPI::EJobStatus st2 = CNetScheduleAPI::eJobNotFound,
@@ -218,15 +215,15 @@ protected:
         );
 
 
-    void ReportInvalidStatus(unsigned int    job_id, 
-             CNetScheduleAPI::EJobStatus  status,
-             CNetScheduleAPI::EJobStatus  old_status);
-    void x_SetClearStatusNoLock(unsigned int job_id,
-             CNetScheduleAPI::EJobStatus  status,
-             CNetScheduleAPI::EJobStatus  old_status);
+    void ReportInvalidStatus(unsigned    job_id, 
+             CNetScheduleAPI::EJobStatus status,
+             CNetScheduleAPI::EJobStatus old_status);
+    void x_SetClearStatusNoLock(unsigned job_id,
+             CNetScheduleAPI::EJobStatus status,
+             CNetScheduleAPI::EJobStatus old_status);
 
     void Returned2PendingNoLock();
-    unsigned int GetPendingJobNoLock();
+    unsigned GetPendingJobNoLock();
     void FreeUnusedMemNoLock();
     void IncDoneJobs();
 
@@ -250,14 +247,16 @@ class CNetSchedule_JS_Guard
 public:
     CNetSchedule_JS_Guard(
         CJobStatusTracker&          strack,
-        unsigned int                job_id,
+        unsigned                    job_id,
         CNetScheduleAPI::EJobStatus status,
         bool*                       updated = 0)
      : m_Tracker(strack),
-       m_OldStatus(strack.ChangeStatus(job_id, status, updated)),
+       m_OldStatus(-1),
        m_JobId(job_id)
     {
-        _ASSERT(job_id);
+
+        if (job_id)
+            m_OldStatus = strack.ChangeStatus(job_id, status, updated);
     }
 
     ~CNetSchedule_JS_Guard()
@@ -283,7 +282,7 @@ private:
 private:
     CJobStatusTracker& m_Tracker;
     int                m_OldStatus;
-    unsigned int       m_JobId;
+    unsigned           m_JobId;
 };
 
 

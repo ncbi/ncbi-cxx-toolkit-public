@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Network scheduler job status store
  *
@@ -45,17 +45,6 @@ CJobStatusTracker::CJobStatusTracker()
     for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
         TNSBitVector* bv;
         bv = new TNSBitVector(bm::BM_GAP);
-/*
-        if (i == (int)CNetScheduleAPI::eDone     ||
-            i == (int)CNetScheduleAPI::eCanceled ||
-            i == (int)CNetScheduleAPI::eFailed   ||
-            i == (int)CNetScheduleAPI::ePending
-            ) {
-            bv = new TNSBitVector(bm::BM_GAP);
-        } else {
-            bv = new TNSBitVector();
-        }
-*/
         m_StatusStor.push_back(bv);
     }
 }
@@ -71,22 +60,20 @@ CJobStatusTracker::~CJobStatusTracker()
 
 
 CNetScheduleAPI::EJobStatus 
-CJobStatusTracker::GetStatus(unsigned int job_id) const
+CJobStatusTracker::GetStatus(unsigned job_id) const
 {
     CReadLockGuard guard(m_Lock);
-    return GetStatusNoLock(job_id);
+    return x_GetStatusNoLock(job_id);
 }
 
 
 CNetScheduleAPI::EJobStatus 
-CJobStatusTracker::GetStatusNoLock(unsigned int job_id) const
+CJobStatusTracker::x_GetStatusNoLock(unsigned job_id) const
 {
     for (int i = m_StatusStor.size()-1; i >= 0; --i) {
         const TNSBitVector& bv = *m_StatusStor[i];
         bool b = bv[job_id];
-        if (b) {
-            return (CNetScheduleAPI::EJobStatus) i;
-        }
+        if (b) return (CNetScheduleAPI::EJobStatus) i;
     }
     return CNetScheduleAPI::eJobNotFound;
 }
@@ -97,8 +84,7 @@ CJobStatusTracker::CountStatus(CNetScheduleAPI::EJobStatus status) const
 {
     CReadLockGuard guard(m_Lock);
 
-    const TNSBitVector& bv = *m_StatusStor[(int)status];
-    return bv.count();
+    return m_StatusStor[(int)status]->count();
 }
 
 
@@ -182,17 +168,8 @@ void CJobStatusTracker::Returned2PendingNoLock()
 }
 
 
-void CJobStatusTracker::ForceReschedule(unsigned job_id)
-{
-    CWriteLockGuard guard(m_Lock);
-
-    CNetScheduleAPI::EJobStatus old_st = GetStatusNoLock(job_id);
-    x_SetClearStatusNoLock(job_id, CNetScheduleAPI::ePending, old_st);
-}
-
-
 void 
-CJobStatusTracker::SetStatus(unsigned int                job_id, 
+CJobStatusTracker::SetStatus(unsigned                    job_id, 
                              CNetScheduleAPI::EJobStatus status)
 {
     CWriteLockGuard guard(m_Lock);
@@ -207,7 +184,7 @@ CJobStatusTracker::SetStatus(unsigned int                job_id,
     }
 }
 
-void CJobStatusTracker::Erase(unsigned int job_id)
+void CJobStatusTracker::Erase(unsigned job_id)
 {
     SetStatus(job_id, CNetScheduleAPI::eJobNotFound);
 }
@@ -240,7 +217,7 @@ void CJobStatusTracker::OptimizeMem()
 
 
 void
-CJobStatusTracker::SetExactStatusNoLock(unsigned int job_id, 
+CJobStatusTracker::SetExactStatusNoLock(unsigned     job_id,
                          CNetScheduleAPI::EJobStatus status,
                                         bool         set_clear)
 {
@@ -255,9 +232,9 @@ CJobStatusTracker::SetExactStatusNoLock(unsigned int job_id,
 
 
 CNetScheduleAPI::EJobStatus 
-CJobStatusTracker::ChangeStatus(unsigned int  job_id, 
-                CNetScheduleAPI::EJobStatus   status,
-                bool*                         updated)
+CJobStatusTracker::ChangeStatus(unsigned    job_id, 
+                CNetScheduleAPI::EJobStatus status,
+                bool*                       updated)
 {
     CWriteLockGuard guard(m_Lock);
     bool status_updated = false;
@@ -267,7 +244,7 @@ CJobStatusTracker::ChangeStatus(unsigned int  job_id,
     switch (status) {
 
     case CNetScheduleAPI::ePending:
-        old_status = GetStatusNoLock(job_id);
+        old_status = x_GetStatusNoLock(job_id);
         if (old_status == CNetScheduleAPI::eJobNotFound) { // new job
             SetExactStatusNoLock(job_id, status, true);
             status_updated = true;
@@ -319,7 +296,7 @@ CJobStatusTracker::ChangeStatus(unsigned int  job_id,
         if (old_status != CNetScheduleAPI::eJobNotFound) {
             break;
         }
-        old_status = GetStatusNoLock(job_id);
+        old_status = x_GetStatusNoLock(job_id);
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
@@ -368,7 +345,7 @@ CJobStatusTracker::ChangeStatus(unsigned int  job_id,
         if (IsCancelCode(old_status)) {
             break;
         }
-        old_status = GetStatusNoLock(job_id);
+        old_status = x_GetStatusNoLock(job_id);
         if (old_status == CNetScheduleAPI::eDone) {
             break;
         }
@@ -575,25 +552,24 @@ bool CJobStatusTracker::AnyPending() const
 }
 
 
-unsigned int CJobStatusTracker::GetFirstDone() const
+unsigned CJobStatusTracker::GetFirstDone() const
 {
     return GetFirst(CNetScheduleAPI::eDone);
 }
 
 
-unsigned int 
+unsigned 
 CJobStatusTracker::GetFirst(CNetScheduleAPI::EJobStatus status) const
 {
     const TNSBitVector& bv = *m_StatusStor[(int)status];
 
     CReadLockGuard guard(m_Lock);
-    unsigned int job_id = bv.get_first();
-    return job_id;
+    return bv.get_first();
 }
 
 
 void 
-CJobStatusTracker::x_SetClearStatusNoLock(unsigned int job_id,
+CJobStatusTracker::x_SetClearStatusNoLock(unsigned  job_id,
                         CNetScheduleAPI::EJobStatus status,
                         CNetScheduleAPI::EJobStatus old_status)
 {
@@ -603,7 +579,7 @@ CJobStatusTracker::x_SetClearStatusNoLock(unsigned int job_id,
 
 
 void 
-CJobStatusTracker::ReportInvalidStatus(unsigned int job_id, 
+CJobStatusTracker::ReportInvalidStatus(unsigned  job_id, 
                      CNetScheduleAPI::EJobStatus status,
                      CNetScheduleAPI::EJobStatus old_status)
 {
@@ -617,7 +593,7 @@ CJobStatusTracker::ReportInvalidStatus(unsigned int job_id,
 
 
 CNetScheduleAPI::EJobStatus 
-CJobStatusTracker::IsStatusNoLock(unsigned int job_id, 
+CJobStatusTracker::IsStatusNoLock(unsigned job_id, 
         CNetScheduleAPI::EJobStatus st1,
         CNetScheduleAPI::EJobStatus st2,
         CNetScheduleAPI::EJobStatus st3
@@ -655,7 +631,7 @@ CJobStatusTracker::IsStatusNoLock(unsigned int job_id,
 
 
 bool
-CJobStatusTracker::SwitchStatusNoLock(unsigned int job_id,
+CJobStatusTracker::SwitchStatusNoLock(unsigned     job_id,
                        CNetScheduleAPI::EJobStatus new_st,
                        CNetScheduleAPI::EJobStatus st1,
                        CNetScheduleAPI::EJobStatus st2,

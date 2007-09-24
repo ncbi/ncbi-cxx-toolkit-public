@@ -133,27 +133,27 @@ public:
 
     void PutResult(unsigned int  job_id,
                    int           ret_code,
-                   const string& output);
+                   const string* output);
+
+    void GetJob(unsigned int   worker_node,
+                const string*  client_name,
+                const list<string>* aff_list,
+                unsigned int*  job_id_ptr, 
+                string*        input,
+                unsigned*      job_mask,
+                string*        aff_token);
 
     void PutResultGetJob(unsigned int   done_job_id,
                          int            ret_code,
-                         const string&  output,
+                         const string*  output,
                          // GetJob params
                          unsigned int   worker_node,
-                         unsigned int*  job_id, 
-                         string&        input,
-                         const string&  client_name,
+                         const string*  client_name,
+                         const list<string>* aff_list,
+                         unsigned int*  job_id_ptr,
+                         string*        input,
                          unsigned*      job_mask,
-                         const list<string>& aff_list,
-                         string&        aff_token);
-
-    void GetJob(unsigned int   worker_node,
-                unsigned int*  job_id, 
-                string&        input,
-                const string&  client_name,
-                unsigned*      job_mask,
-                const list<string>& aff_list,
-                string&        aff_token);
+                         string*        aff_token);
 
     void PutProgressMessage(unsigned int  job_id,
                             const char*   msg);
@@ -427,7 +427,7 @@ private:
                                 CBDB_Transaction&    trans,
                                 unsigned int         worker_node,
                                 unsigned             job_id,
-                                string&              input,
+                                string*              input,
                                 unsigned*            aff_id,
                                 unsigned*            job_mask);
 

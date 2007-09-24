@@ -65,6 +65,8 @@
 
 #include "netschedule_version.hpp"
 
+#define NETSCHEDULED_FEATURES \
+    "fast_status=1;dyn_queues=1;tags=1;version=" NETSCHEDULED_VERSION
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
@@ -1323,12 +1325,13 @@ void CNetScheduleHandler::ProcessGet()
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
                 aff_list, NStr::eNoMergeDelims);
-    m_Queue->GetJob(m_PeerAddr, &job_id,
-                    m_JobReq.input,
-                    m_AuthString, 
+    m_Queue->GetJob(m_PeerAddr,
+                    &m_AuthString,
+                    &aff_list,
+                    &job_id,
+                    &m_JobReq.input,
                     &m_JobReq.job_mask,
-                    aff_list,
-                    aff_token);
+                    &aff_token);
 
     m_Queue->GetJobKey(key_buf, job_id,
         m_Server->GetHost(), m_Server->GetPort());
@@ -1378,14 +1381,15 @@ CNetScheduleHandler::ProcessJobExchange()
     }
     m_Queue->PutResultGetJob(done_job_id,
                              m_JobReq.job_return_code,
-                             m_JobReq.output,
+                             &m_JobReq.output,
                              // GetJob params
-                             m_PeerAddr, &job_id,
-                             m_JobReq.input,
-                             m_AuthString,
+                             m_PeerAddr,
+                             &m_AuthString,
+                             &aff_list,
+                             &job_id,
+                             &m_JobReq.input,
                              &m_JobReq.job_mask,
-                             aff_list,
-                             aff_token);
+                             &aff_token);
 
     m_Queue->GetJobKey(key_buf, job_id,
         m_Server->GetHost(), m_Server->GetPort());
@@ -1420,12 +1424,13 @@ void CNetScheduleHandler::ProcessWaitGet()
     list<string> aff_list;
     NStr::Split(m_JobReq.affinity_token, "\t,",
                 aff_list, NStr::eNoMergeDelims);
-    m_Queue->GetJob(m_PeerAddr, &job_id, 
-                    m_JobReq.input,
-                    m_AuthString,
+    m_Queue->GetJob(m_PeerAddr,
+                    &m_AuthString,
+                    &aff_list,
+                    &job_id, 
+                    &m_JobReq.input,
                     &m_JobReq.job_mask,
-                    aff_list,
-                    aff_token);
+                    &aff_token);
 
     if (job_id) {
         char key_buf[1024];
@@ -1502,7 +1507,7 @@ void CNetScheduleHandler::ProcessPutFailure()
 void CNetScheduleHandler::ProcessPut()
 {
     unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
-    m_Queue->PutResult(job_id, m_JobReq.job_return_code, m_JobReq.output);
+    m_Queue->PutResult(job_id, m_JobReq.job_return_code, &m_JobReq.output);
     WriteMsg("OK:");
 }
 
@@ -1649,6 +1654,9 @@ void CNetScheduleHandler::ProcessStatistics()
     load_str += "/sec, DB locks: ";
     load_str +=
         NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatDBLockEvent));
+    load_str += "/sec, Job DB writes: ";
+    load_str +=
+        NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatDBWriteEvent));
     load_str += "/sec";
     WriteMsg("OK:", load_str);
 

@@ -32,9 +32,7 @@
  *
  */
 
-#define NETSCHEDULED_VERSION "3.1.3"
+#define NETSCHEDULED_VERSION "3.1.4"
 
-#define NETSCHEDULED_FEATURES \
-    "fast_status=1;dyn_queues=1;tags=1;version=" NETSCHEDULED_VERSION
-    
+
 #endif /* NETSCHEDULE_VERSION__HPP */

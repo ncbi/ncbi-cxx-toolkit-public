@@ -918,9 +918,9 @@ void SLockedQueue::CStatisticsThread::DoJob(void) {
 }
 
 
-void SLockedQueue::CountEvent(TStatEvent event)
+void SLockedQueue::CountEvent(TStatEvent event, int num)
 {
-    m_EventCounter[event].Add(1);
+    m_EventCounter[event].Add(num);
 }
 
 

@@ -397,16 +397,17 @@ public:
 
     // Statistics
     enum EStatEvent {
-        eStatGetEvent  = 0,
-        eStatPutEvent  = 1,
-        eStatDBLockEvent = 2,
+        eStatGetEvent     = 0,
+        eStatPutEvent     = 1,
+        eStatDBLockEvent  = 2,
+        eStatDBWriteEvent = 3,
         eStatNumEvents
     };
     typedef unsigned TStatEvent;
     CAtomicCounter m_EventCounter[eStatNumEvents];
     unsigned m_Average[eStatNumEvents];
-    void CountEvent(TStatEvent);
-    double GetAverage(TStatEvent);
+    void CountEvent(TStatEvent event, int num=1);
+    double GetAverage(TStatEvent event);
 private:
     // Configurable queue parameters
     friend class CQueueParamAccessor;
