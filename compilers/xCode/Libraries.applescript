@@ -97,7 +97,7 @@ property xalgowinmask : {name:"xalgowinmask", path:"algo:winmask"}
 property xalgodustmask : {name:"xalgodustmask", path:"algo:dustmask"}
 property xalgophytree : {name:"xalgophytree", path:"algo:phy_tree"}
 property fastme : {name:"fastme", path:"algo:phy_tree:fastme"}
-property xomssa : {name:"xomssa", path:"algo:ms:omssa", inc:{"SpectrumSet.cpp", "msladder.cpp", "msms.cpp", "mspeak.cpp", "omssa.cpp", "Mod.cpp", "omssascore.cpp", "msmerge.cpp", "omssaapp.cpp"}}
+
 -- Objects
 property access : {name:"access", path:"objects:access", inc:{"access__.cpp", "access___.cpp"}, asn1:true}
 property biblio : {name:"biblio", path:"objects:biblio", inc:{"biblio__.cpp", "biblio___.cpp", "label_util.cpp"}, asn1:true}
@@ -280,7 +280,7 @@ property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core" & IMG_L
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core", req:true}
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver", req:true}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", req:true}
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xomssa, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple ncbi_pub", req:true}
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xblast_dbindex, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple ncbi_pub", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqtable, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
