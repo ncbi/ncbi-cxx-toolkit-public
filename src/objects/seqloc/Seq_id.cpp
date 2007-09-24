@@ -1077,6 +1077,7 @@ static const char * kBuiltInGuide[] = {
     "special  CAJ75788-CAJ75794  embl_tpa_prot # '90 unassigned",
     "special  CAJ77880-CAJ77886  embl_tpa_prot",
     "special  CAJ84770           embl_tpa_prot",
+    "special  CAJ85665-CAJ85740  embl_tpa_prot # '76, '12 unassigned",
     "special  CAK26553           embl_tpa_prot",
     "special  CAK26777-CAK26786  embl_tpa_prot",
     "special  CAK32514           embl_tpa_prot",
