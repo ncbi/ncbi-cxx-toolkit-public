@@ -131,8 +131,7 @@ void CNSSubmitRemoveJobApp::Init(void)
                              CArgDescriptions::eString);
 
     arg_desc->AddFlag("exclusive",
-                      "Run job in the exclusive mode",
-                      false);
+                      "Run job in the exclusive mode");
 
     arg_desc->AddOptionalKey("jout", 
                              "file_names",
