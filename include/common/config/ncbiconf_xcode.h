@@ -235,7 +235,7 @@
 #define HAVE_LIBICONV 1
 
 /* Define to 1 if libjpeg is available. */
-/* #undef HAVE_LIBJPEG */
+#define HAVE_LIBJPEG 1
 #define HAVE_LIBJPEG 1
 
 /* Define to 1 if KSTAT is available, either in its own library or as part of
