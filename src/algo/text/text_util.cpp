@@ -560,13 +560,20 @@ void CTextUtil::CleanJournalTitle(string& title)
 
 /// encode word frequencies in a serializable blob of data
 void CTextUtil::EncodeFreqs(const CTextUtil::TWordFreq& freq,
-                             vector<unsigned char>& data)
+                            vector<unsigned char>& data)
 {
     Encode(freq, data);
 }
 
 void CTextUtil::EncodeFreqs(const CTextUtil::TWordFreq& freq,
-                             vector<char>& data)
+                            vector<char>& data)
+{
+    Encode(freq, data);
+}
+
+
+void CTextUtil::EncodeFreqs(const CTextUtil::TWordFreq& freq,
+                            CSimpleBuffer& data)
 {
     Encode(freq, data);
 }
@@ -582,6 +589,13 @@ void CTextUtil::DecodeFreqs(CTextUtil::TWordFreq& freq,
 
 void CTextUtil::DecodeFreqs(CTextUtil::TWordFreq& freq,
                              const vector<char>& data)
+{
+    Decode(data, freq);
+}
+
+
+void CTextUtil::DecodeFreqs(CTextUtil::TWordFreq& freq,
+                            const CSimpleBuffer& data)
 {
     Decode(data, freq);
 }

@@ -35,6 +35,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/hash_map.hpp>
 #include <corelib/hash_set.hpp>
+#include <util/simple_buffer.hpp>
 
 #include <algo/text/vector.hpp>
 
@@ -182,10 +183,14 @@ public:
                             vector<char>& data);
     static void EncodeFreqs(const TWordFreq& freq,
                             vector<unsigned char>& data);
+    static void EncodeFreqs(const TWordFreq& freq,
+                            CSimpleBuffer& data);
     static void DecodeFreqs(TWordFreq& freq,
                             const vector<char>& data);
     static void DecodeFreqs(TWordFreq& freq,
                             const vector<unsigned char>& data);
+    static void DecodeFreqs(TWordFreq& freq,
+                            const CSimpleBuffer& data);
     static void DecodeFreqs(TWordFreq& freq,
                             const void* data, size_t data_len);
 

@@ -58,7 +58,6 @@ void Deserialize(CNcbiIstream& istr, CRawScoreVector<Key, Score>& vec)
                "Deserialize(): Deserialization type unknown");
 }
 
-
 template <class Key, class Score>
 void Serialize(CNcbiOstream& ostr, const CScoreVector<Key, Score>& vec)
 {
@@ -115,6 +114,13 @@ void Decode(const vector<unsigned char>& data, CRawScoreVector<Key, Score>& vec)
 }
 
 template <class Key, class Score>
+void Decode(const CSimpleBuffer& data, CRawScoreVector<Key, Score>& vec)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Decode(): Deserialization type unknown");
+}
+
+template <class Key, class Score>
 void Decode(const void* data, size_t size, CRawScoreVector<Key, Score>& vec)
 {
     NCBI_THROW(CException, eUnknown,
@@ -162,6 +168,13 @@ void Decode(const vector<unsigned char>& data, CScoreVector<Key, Score>& vec)
 }
 
 template <class Key, class Score>
+void Decode(const CSimpleBuffer& data, CScoreVector<Key, Score>& vec)
+{
+    NCBI_THROW(CException, eUnknown,
+               "Decode(): Deserialization type unknown");
+}
+
+template <class Key, class Score>
 void Decode(const void* data, size_t size, CScoreVector<Key, Score>& vec)
 {
     NCBI_THROW(CException, eUnknown,
@@ -196,10 +209,17 @@ template<>
 void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
                           CSimpleBuffer& data);
 template<>
+void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
+                          CSimpleBuffer& data);
+
+template<>
 void Decode<Uint4, float>(const vector<unsigned char>& data,
                           CRawScoreVector<Uint4, float>& vec);
 template<>
 void Decode<Uint4, float>(const vector<char>& data,
+                          CRawScoreVector<Uint4, float>& vec);
+template<>
+void Decode<Uint4, float>(const CSimpleBuffer& data,
                           CRawScoreVector<Uint4, float>& vec);
 template<>
 void Decode<Uint4, float>(const void* data, size_t size,
@@ -223,10 +243,17 @@ template<>
 void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
                           CSimpleBuffer& data);
 template<>
+void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
+                          CSimpleBuffer& data);
+
+template<>
 void Decode<Uint4, float>(const vector<char>& data,
                           CScoreVector<Uint4, float>& vec);
 template<>
 void Decode<Uint4, float>(const vector<unsigned char>& data,
+                          CScoreVector<Uint4, float>& vec);
+template<>
+void Decode<Uint4, float>(const CSimpleBuffer& data,
                           CScoreVector<Uint4, float>& vec);
 template<>
 void Decode<Uint4, float>(const void* data, size_t size,
@@ -252,10 +279,16 @@ template<>
 void Encode<string, float>(const CScoreVector<string, float>& vec,
                            vector<char>& data);
 template<>
+void Encode<string, float>(const CScoreVector<string, float>& vec,
+                           CSimpleBuffer& data);
+template<>
 void Decode<string, float>(const vector<unsigned char>& data,
                            CScoreVector<string, float>& vec);
 template<>
 void Decode<string, float>(const vector<char>& data,
+                           CScoreVector<string, float>& vec);
+template<>
+void Decode<string, float>(const CSimpleBuffer& data,
                            CScoreVector<string, float>& vec);
 template<>
 void Decode<string, float>(const void* data, size_t size,

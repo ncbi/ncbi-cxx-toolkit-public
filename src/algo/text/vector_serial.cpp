@@ -42,6 +42,7 @@
 
 #include <util/compress/zlib.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <util/rwstream.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -80,74 +81,92 @@ void Deserialize<Uint4, float>(CNcbiIstream& istr,
 
 /////////////////////////////////////////////////////////////////////////////
 
-
-template <class Type>
-char* s_Write(char* p, Type val)
+template <class Buffer>
+class CBufferWriter : public IWriter
 {
-    const char* src = reinterpret_cast<const char*>(&val);
-    for (unsigned i = 0;  i < sizeof(Type);  ++i) {
-        *p++ = *src++;
+public:
+    typedef Buffer TBuffer;
+
+    CBufferWriter(TBuffer& buf, bool clear_buffer = true)
+        : m_Buffer(buf)
+        {
+            if (clear_buffer) {
+                m_Buffer.clear();
+            }
+        }
+
+    ERW_Result Write(const void* buf, size_t count, size_t* bytes_written)
+    {
+        _ASSERT(buf  &&  count);
+        size_t offs = m_Buffer.size();
+        m_Buffer.resize(m_Buffer.size() + count);
+        memcpy(&m_Buffer[0] + offs, buf, count);
+        if (bytes_written) {
+            *bytes_written = count;
+        }
+
+        return eRW_Success;
     }
-    return p;
-}
+
+    ERW_Result Flush(void)
+    {
+        return eRW_Success;
+    }
+
+private:
+    TBuffer& m_Buffer;
+
+    /// forbidden
+    CBufferWriter(const CBufferWriter&);
+    CBufferWriter& operator=(const CBufferWriter&);
+};
 
 
-template<>
-void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
-                          vector<char>& data)
+template <class Buffer>
+class CBufferWriterStream : public CWStream
 {
-    data.clear();
-    data.resize(sizeof(Uint4) +
-                sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.size());
+public:
+    CBufferWriterStream(CBufferWriter<Buffer>& writer)
+        : CWStream(&writer)
+        {
+        }
 
-    char* p = &data[0];
+private:
+    /// forbidden
+    CBufferWriterStream(const CBufferWriterStream&);
+    CBufferWriterStream& operator=(const CBufferWriterStream&);
+};
 
-    p = s_Write(p, vec.GetId());
-    memcpy(p, &vec.Get()[0],
-           sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size());
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#define ENCODE(Type) \
+template<> \
+void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec, \
+                          Type& data) \
+{ \
+    data.clear(); \
+    data.reserve(sizeof(Uint4) + \
+                 sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.size()); \
+ \
+    CBufferWriter< Type > bw(data); \
+    CBufferWriterStream< Type > ostr(bw); \
+ \
+    Uint4 uid = vec.GetId(); \
+    ostr.write((const char*)&uid, sizeof(uid)); \
+    ostr.write((const char*)&vec.Get()[0],  \
+               sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size()); \
 }
+  
+ENCODE(vector<char>);
+ENCODE(vector<unsigned char>);
+ENCODE(CSimpleBuffer);
 
-template<>
-void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
-                          vector<unsigned char>& data)
-{
-    data.clear();
-    data.resize(sizeof(Uint4) +
-                sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.size());
-
-    char* p = (char*)&data[0];
-
-    p = s_Write(p, vec.GetId());
-    memcpy(p, &vec.Get()[0],
-           sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size());
-}
-
-template<>
-void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
-                          CSimpleBuffer& data)
-{
-    data.clear();
-    data.resize(sizeof(Uint4) +
-                sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.size());
-
-    char* p = (char*)&data[0];
-
-    p = s_Write(p, vec.GetId());
-    memcpy(p, &vec.Get()[0],
-           sizeof(CRawScoreVector<Uint4, float>::TVector::value_type) * vec.Get().size());
-}
 
 template<>
 void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
                           vector<char>& data)
-{
-    CRawScoreVector<Uint4, float> raw(vec);
-    Encode(raw, data);
-}
-
-template<>
-void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
-                          vector<unsigned char>& data)
 {
     CRawScoreVector<Uint4, float> raw(vec);
     Encode(raw, data);
@@ -194,6 +213,15 @@ void Decode<Uint4, float>(const void* data, size_t size,
         istr.read((char*)&p.second, sizeof(p.second));
         vec_data.push_back(p);
     }
+
+    /**
+    typedef CRawScoreVector<Uint4, float> TVector;
+    cout << "read vector: " << vec.GetId() << ": ";
+    ITERATE (TVector, iter, vec) {
+        cout << " (" << iter->first << "," << iter->second << ")";
+    }
+    cout << endl;
+    **/
 }
 
 template<>
@@ -205,6 +233,13 @@ void Decode<Uint4, float>(const vector<char>& data,
 
 template<>
 void Decode<Uint4, float>(const vector<unsigned char>& data,
+                          CRawScoreVector<Uint4, float>& vec)
+{
+    Decode(&data[0], data.size(), vec);
+}
+
+template<>
+void Decode<Uint4, float>(const CSimpleBuffer& data,
                           CRawScoreVector<Uint4, float>& vec)
 {
     Decode(&data[0], data.size(), vec);
@@ -221,6 +256,15 @@ void Decode<Uint4, float>(const vector<char>& data,
 
 template<>
 void Decode<Uint4, float>(const vector<unsigned char>& data,
+                          CScoreVector<Uint4, float>& vec)
+{
+    CRawScoreVector<Uint4, float> raw;
+    Decode(&data[0], data.size(), raw);
+    vec = raw;
+}
+
+template<>
+void Decode<Uint4, float>(const CSimpleBuffer& data,
                           CScoreVector<Uint4, float>& vec)
 {
     CRawScoreVector<Uint4, float> raw;

@@ -106,31 +106,9 @@ CRawScoreVector<Key, Score>::CRawScoreVector()
 
 template <class Key, class Score>
 inline
-CRawScoreVector<Key, Score>::CRawScoreVector(const CScoreVector<Key, Score>& vec)
+CRawScoreVector<Key, Score>::CRawScoreVector(const CScoreVector<Key, Score>& other)
 {
-    m_Data.reserve(vec.size());
-    typedef CScoreVector<Key, Score> TOtherVector;
-    ITERATE (typename TOtherVector, iter, vec) {
-        m_Data.push_back(value_type(iter->first, iter->second));
-    }
-}
-
-
-template <class Key, class Score>
-inline
-CRawScoreVector<Key, Score>& CRawScoreVector<Key, Score>::operator=(const CScoreVector<Key, Score>& vec)
-{
-    m_Data.clear();
-    m_Data.reserve(vec.size());
-
-    typedef CScoreVector<Key, Score> TOtherVector;
-    ITERATE (typename TOtherVector, iter, vec) {
-        m_Data.push_back(iter->first, iter->second);
-    }
-
-    m_Uid = vec.GetId();
-
-    return *this;
+    *this = other;
 }
 
 
@@ -153,6 +131,24 @@ CRawScoreVector<Key, Score>& CRawScoreVector<Key, Score>::operator=(const CRawSc
 
     return *this;
 }
+
+template <class Key, class Score>
+inline
+CRawScoreVector<Key, Score>& CRawScoreVector<Key, Score>::operator=(const CScoreVector<Key, Score>& vec)
+{
+    m_Data.clear();
+    m_Data.reserve(vec.size());
+
+    typedef CScoreVector<Key, Score> TOtherVector;
+    ITERATE (typename TOtherVector, iter, vec) {
+        m_Data.push_back(typename TVector::value_type(iter->first, iter->second));
+    }
+
+    m_Uid = vec.GetId();
+
+    return *this;
+}
+
 
 
 template <class Key, class Score>
