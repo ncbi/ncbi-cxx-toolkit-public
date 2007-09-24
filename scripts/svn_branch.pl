@@ -447,8 +447,6 @@ sub GetBranchDirArgs
 
     unless ($PathList)
     {
-        UsageError('directory listing is missing') unless @ARGV;
-
         @BranchPaths = @ARGV
     }
     else
@@ -468,6 +466,8 @@ sub GetBranchDirArgs
             close FILE
         }
     }
+
+    UsageError('directory listing is missing') unless @BranchPaths;
 
     my %BranchPaths;
 
