@@ -422,7 +422,11 @@ const string& CDataType::GlobalName(void) const
             if (!m) {
                 return GetDataMember()->GetName();
             } else if (m->NoPrefix() && !m->Attlist()) {
-                return m->GetName();
+                if (IsInUniSeq()) {
+                    return m->GetName();
+                } else {
+                    return m_MemberName;
+                }
             }
         }
         return NcbiEmptyString;
