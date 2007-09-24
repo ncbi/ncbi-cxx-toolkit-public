@@ -53,10 +53,21 @@ public:
                 CConstRef<CSoapFault>* fault=0,
                 const string& soap_action = kEmptyStr);
 
+protected:
+    // These methods exist to provide compatibility with data object classes
+    // generated from ASN.1 specification.
+    // If you generate data object classes from Schema, you do not need them.
+    void SetOmitScopePrefixes(bool bOmit);
+    bool GetOmitScopePrefixes() const
+    {
+        return m_OmitScopePrefixes;
+    }
+
 private:
     string m_ServerUrl;
     string m_DefNamespace;
     vector< TTypeInfoGetter >  m_Types;
+    bool m_OmitScopePrefixes;
 };
 
 

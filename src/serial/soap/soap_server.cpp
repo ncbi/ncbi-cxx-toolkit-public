@@ -87,7 +87,8 @@ void CSoapServerApplication::Storage::push_back(TWebMethod value)
 
 CSoapServerApplication::CSoapServerApplication(
     const string& wsdl_filename, const string& namespace_name)
-    : CCgiApplication(), m_DefNamespace(namespace_name), m_Wsdl(wsdl_filename)
+    : CCgiApplication(), m_DefNamespace(namespace_name), m_Wsdl(wsdl_filename),
+      m_OmitScopePrefixes(false)
 {
 }
 
@@ -163,6 +164,9 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     if (request.GetInputStream()) {
         try {            
             auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
+            if (m_OmitScopePrefixes) {
+                dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
+            }
             *is >> soap_in;
         }
         catch (exception& e) {
@@ -184,6 +188,9 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 #else
             auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,"input.xml"));
 #endif
+            if (m_OmitScopePrefixes) {
+                dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
+            }
             *is >> soap_in;
         }
         catch (exception& e) {
@@ -222,6 +229,9 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     response.WriteHeader();
     {
         auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_Xml,response.out()));
+        if (m_OmitScopePrefixes) {
+            dynamic_cast<CObjectOStreamXml*>(out.get())->SetEnforcedStdXml(true);
+        }
         *out << soap_out;
     }	
     return true;
@@ -296,6 +306,12 @@ CSoapServerApplication::AddMessageListener(TWebMethod listener,
             pair<string const, pair<string,TListeners> >(message_name,
                 make_pair(ns,new_listeners)));
     }
+}
+
+void
+CSoapServerApplication::SetOmitScopePrefixes(bool bOmit)
+{
+    m_OmitScopePrefixes = bOmit;
 }
 
 void

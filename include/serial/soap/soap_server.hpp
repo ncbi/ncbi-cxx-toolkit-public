@@ -88,6 +88,16 @@ public:
                             const string& message_name,
                             const string& namespace_name = kEmptyStr);
 
+protected:
+    // These methods exist to provide compatibility with data object classes
+    // generated from ASN.1 specification.
+    // If you generate data object classes from Schema, you do not need them.
+    void SetOmitScopePrefixes(bool bOmit);
+    bool GetOmitScopePrefixes() const
+    {
+        return m_OmitScopePrefixes;
+    }
+
 private:
     bool x_ProcessWsdlRequest(CCgiResponse& response,
                               const CCgiRequest& request) const;
@@ -107,6 +117,7 @@ private:
     string m_Wsdl;
     vector< TTypeInfoGetter >  m_Types;
     multimap<string, pair<string, TListeners > > m_Listeners;
+    bool m_OmitScopePrefixes;
 };
 
 END_NCBI_SCOPE

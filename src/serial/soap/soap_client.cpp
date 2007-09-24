@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 
 CSoapHttpClient::CSoapHttpClient(const string& server_url,
                                  const string& namespace_name)
-    : m_ServerUrl(server_url), m_DefNamespace(namespace_name)
+    : m_ServerUrl(server_url), m_DefNamespace(namespace_name),
+      m_OmitScopePrefixes(false)
 {
 }
 
@@ -104,12 +105,21 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
     auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
+    if (m_OmitScopePrefixes) {
+        dynamic_cast<CObjectOStreamXml*>(os.get())->SetEnforcedStdXml(true);
+        dynamic_cast<CObjectIStreamXml*>(is.get())->SetEnforcedStdXml(true);
+    }
 
     *os << request;
     *is >> response;
     if (fault) {
         *fault = SOAP_GetKnownObject<CSoapFault>(response);
     }
+}
+
+void CSoapHttpClient::SetOmitScopePrefixes(bool bOmit)
+{
+    m_OmitScopePrefixes = bOmit;
 }
 
 END_NCBI_SCOPE
