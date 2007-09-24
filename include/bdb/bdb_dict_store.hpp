@@ -218,18 +218,18 @@ public:
                         CBDB_RawFile::eThrowOnError,
                         CBDB_Transaction* trans = 0);
 
-    Dictionary& GetDictionary() { return *m_Dict; }
-    Store&    GetStore()    { return *m_Store; }
+    Dictionary& GetDictionary() { return x_GetOpenDict(); }
+    Store&      GetStore()      { return x_GetOpenStore(); }
 
 protected:
     AutoPtr<TDictionary> m_Dict;
     AutoPtr<TStore>      m_Store;
 
-    //string                  m_Filename;
-    //CBDB_RawFile::EOpenMode m_OpenMode;
+    string                  m_Filename;
+    CBDB_RawFile::EOpenMode m_OpenMode;
 
-    //TStore&      m_Store->
-    //TDictionary& m_Dict->
+    TStore&      x_GetOpenStore();
+    TDictionary& x_GetOpenDict();
 
 private:
     /// forbidden
@@ -378,7 +378,7 @@ template <typename Key, typename Dictionary, typename Store>
 inline
 const string& CBDB_BlobDictStore<Key, Dictionary, Store>::GetFileName() const
 {
-    return m_Store->GetFileName();
+    return m_Filename;
 }
 
 
@@ -396,28 +396,33 @@ inline
 void CBDB_BlobDictStore<Key, Dictionary, Store>::Open(const string& fname,
                                                       CBDB_RawFile::EOpenMode mode)
 {
+    m_Filename = fname;
+    m_OpenMode = mode;
+
     /// open our dictionary
     /// this we always do
+    x_GetOpenDict();
+    /**
     _ASSERT(m_Dict.get());
     if ( !m_Dict->IsOpen() ) {
         _ASSERT( !fname.empty() );
         m_Dict->Open(fname + ".dict", mode);
     }
+    **/
 
     /// delay opening our store until we need to
-    m_Store->Open(fname, mode);
+    //x_GetOpenStore();
+    //m_Store->Open(fname, mode);
 }
 
 
-/**
 template <typename Key, typename Dictionary, typename Store>
 inline
 typename CBDB_BlobDictStore<Key, Dictionary, Store>::TDictionary&
-CBDB_BlobDictStore<Key, Dictionary, Store>::x_GetOpenDictionary()
+CBDB_BlobDictStore<Key, Dictionary, Store>::x_GetOpenDict()
 {
     _ASSERT(m_Dict.get());
-    if ( !m_Dict->IsOpen() ) {
-        _ASSERT( !m_Filename.empty() );
+    if ( !m_Dict->IsOpen()  &&  !m_Filename.empty() ) {
         m_Dict->Open(m_Filename + ".dict", m_OpenMode);
     }
     return *m_Dict;
@@ -430,21 +435,19 @@ typename CBDB_BlobDictStore<Key, Dictionary, Store>::TStore&
 CBDB_BlobDictStore<Key, Dictionary, Store>::x_GetOpenStore()
 {
     _ASSERT(m_Store);
-    if ( !m_Store->IsOpen() ) {
-        _ASSERT( !m_Filename.empty() );
-        _ASSERT(m_Dict->IsOpen());
+    if ( !m_Store->IsOpen()  &&  !m_Filename.empty() ) {
         m_Store->Open(m_Filename, m_OpenMode);
     }
     return *m_Store;
 }
-**/
+
 
 template <typename Key, typename Dictionary, typename Store>
 inline EBDB_ErrCode
 CBDB_BlobDictStore<Key, Dictionary, Store>::Read(const Key& key,
                                                  CBDB_RawFile::TBuffer& data)
 {
-    TKeyId key_id = m_Dict->GetKey(key);
+    TKeyId key_id = x_GetOpenDict().GetKey(key);
     if ( !key_id ) {
         return eBDB_NotFound;
     }
@@ -457,7 +460,7 @@ inline EBDB_ErrCode
 CBDB_BlobDictStore<Key, Dictionary, Store>::ReadById(TKeyId key_id,
                                                      CBDB_RawFile::TBuffer& data)
 {
-    return m_Store->ReadRealloc(key_id, data);
+    return x_GetOpenStore().ReadRealloc(key_id, data);
 }
 
 
@@ -476,7 +479,7 @@ CBDB_BlobDictStore<Key, Dictionary, Store>::Write(const Key& key,
                                                   const void* data,
                                                   size_t size)
 {
-    TKeyId key_id = m_Dict->PutKey(key);
+    TKeyId key_id = x_GetOpenDict().PutKey(key);
     if ( !key_id ) {
         NCBI_THROW(CException, eUnknown,
                    "Failed to insert key value");
@@ -510,7 +513,7 @@ CBDB_BlobDictStore<Key, Dictionary, Store>::UpdateInsert(Uint4 uid,
                                                          const void* data,
                                                          size_t size)
 {
-    return m_Store->UpdateInsert(uid, data, size);
+    return x_GetOpenStore().UpdateInsert(uid, data, size);
 }
 
 
@@ -520,7 +523,7 @@ CBDB_BlobDictStore<Key, Dictionary, Store>::Delete(unsigned id,
                                                    CBDB_RawFile::EIgnoreError on_error,
                                                    CBDB_Transaction* trans)
 {
-    return m_Store->Delete(id, on_error, trans);
+    return x_GetOpenStore().Delete(id, on_error, trans);
 }
 
 END_NCBI_SCOPE
