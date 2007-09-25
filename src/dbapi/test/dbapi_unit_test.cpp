@@ -2257,7 +2257,8 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
         {
             sql  = " CREATE TABLE " + table_name + "( \n";
             sql += "    geneId INT NOT NULL, \n";
-            sql += "    dataText TEXT NULL \n";
+            sql += "    dataText TEXT NULL, \n";
+            sql += "    dataImage IMAGE NULL \n";
             sql += " )";
 
             auto_ptr<CDB_LangCmd> auto_stmt(conn->LangCmd(sql));
@@ -2368,6 +2369,98 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
             // Check inserted data ...
             {
+                char buff[64];
+
+                sql = "SELECT dataText FROM "+ table_name;
+
+                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+                bool rc = auto_stmt->Send();
+                BOOST_CHECK( rc );
+
+                while(auto_stmt->HasMoreResults()) {
+                    auto_ptr<CDB_Result> rs(auto_stmt->Result());
+
+                    if (rs.get() == NULL) {
+                        continue;
+                    }
+
+                    if (rs->ResultType() != eDB_RowResult) {
+                        continue;
+                    }
+
+                    for(int i = 0; i < num_of_tests; ++i ) {
+                        string result;
+                        size_t read_bytes = 0;
+                        bool is_null = true;
+
+                        BOOST_CHECK(rs->Fetch());
+
+                        if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                            result += string(buff, read_bytes);
+                        }
+
+
+                        if (i % 2 == 0) {
+                            BOOST_CHECK(!is_null);
+                            BOOST_CHECK_EQUAL(result, data);
+                        } else {
+                            BOOST_CHECK(is_null);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check NULL-values in a different way ...
+        if (false) {
+            int num_of_tests = 10;
+
+            // Delete previously inserted data ...
+            {
+                sql = "DELETE FROM " + table_name;
+
+                auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+                auto_stmt->Send();
+                auto_stmt->DumpResults();
+            }
+
+            // Insert data ...
+            {
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 3));
+
+                CDB_Int geneIdVal;
+                CDB_Text dataTextVal;
+                CDB_Image dataImageVal;
+
+                bcp->Bind(0, &geneIdVal);
+                bcp->Bind(1, &dataTextVal);
+                bcp->Bind(2, &dataImageVal);
+
+                for(int i = 0; i < num_of_tests; ++i ) {
+                    geneIdVal = i;
+
+                    if (i % 2 == 0) {
+                        dataTextVal.Append(data);
+                        dataTextVal.MoveTo(0);
+
+                        dataImageVal.AssignNULL();
+                    } else {
+                        dataTextVal.AssignNULL();
+
+                        dataImageVal.Append((void*)data.c_str(), data.size());
+                        dataImageVal.MoveTo(0);
+                    }
+
+                    bcp->SendRow();
+                }
+
+                bcp->CompleteBCP();
+            }
+
+            // Check inserted data ...
+            if (false) {
                 char buff[64];
 
                 sql = "SELECT dataText FROM "+ table_name;
@@ -2533,7 +2626,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
         }
 
         // Insert data again ...
-        {
+        if (true) {
             // auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 2));
 
             auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
@@ -2603,6 +2696,129 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel2(void)
             bcp->CompleteBCP();
         }
 
+        // Delete previously inserted data ...
+        {
+            sql = "DELETE FROM " + table_name;
+
+            auto_ptr<CDB_LangCmd> auto_stmt(m_Conn->GetCDB_Connection()->LangCmd(sql));
+
+            auto_stmt->Send();
+            auto_stmt->DumpResults();
+        }
+
+        // Third scenario ...
+        if (false) {
+            CDB_Int vkeyVal;
+            vkeyVal = 1;
+
+            CDB_Int geneIdVal;
+            geneIdVal = 2;
+
+            CDB_DateTime modateVal(CTime(CTime::eCurrent));
+
+            CDB_Int dtypeVal;
+            dtypeVal = 106;
+
+            CDB_Int dsizeVal;
+            dsizeVal = data.size();
+
+            CDB_VarChar dataStrVal;
+            dataStrVal.AssignNULL();
+
+            CDB_Int dataIntVal;
+            dataIntVal = 0;
+
+            CDB_VarBinary dataBinVal;
+            dataBinVal.AssignNULL();
+
+            CDB_Int cntVal;
+            cntVal = 1;
+
+            CDB_Text dataTextVal;
+            dataTextVal.AssignNULL();
+
+            CDB_Image dataImgVal;
+            dataImgVal.AssignNULL();
+
+            bool have_img = false;
+
+            // case 1: text data is null;
+            {
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
+
+                bcp->Bind(0, &vkeyVal);
+                bcp->Bind(1, &geneIdVal);
+                bcp->Bind(2, &modateVal);
+                bcp->Bind(3, &dtypeVal);
+                bcp->Bind(4, &dsizeVal);
+                bcp->Bind(5, &dataStrVal);
+                bcp->Bind(6, &dataIntVal);
+                bcp->Bind(7, &dataBinVal);
+                bcp->Bind(8, &cntVal);
+                bcp->Bind(9, &dataTextVal);
+                if ( have_img ) {
+                    bcp->Bind(10, &dataImgVal);
+                }
+
+                bcp->SendRow();
+
+                bcp->CompleteBCP();
+            }
+       
+            // case 2: text data is not null
+            {
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
+
+                bcp->Bind(0, &vkeyVal);
+                bcp->Bind(1, &geneIdVal);
+                bcp->Bind(2, &modateVal);
+                bcp->Bind(3, &dtypeVal);
+                bcp->Bind(4, &dsizeVal);
+                bcp->Bind(5, &dataStrVal);
+                bcp->Bind(6, &dataIntVal);
+                bcp->Bind(7, &dataBinVal);
+                bcp->Bind(8, &cntVal);
+                bcp->Bind(9, &dataTextVal);
+                if ( have_img ) {
+                    bcp->Bind(10, &dataImgVal);
+                }
+
+
+                dataTextVal.Append(data);
+                dataTextVal.MoveTo(0);
+
+                bcp->SendRow();
+
+                bcp->CompleteBCP();
+            }
+       
+
+            // case 3: text data is null but img is not null
+            {
+                auto_ptr<CDB_BCPInCmd> bcp(conn->BCPIn(table_name, 11));
+
+                bcp->Bind(0, &vkeyVal);
+                bcp->Bind(1, &geneIdVal);
+                bcp->Bind(2, &modateVal);
+                bcp->Bind(3, &dtypeVal);
+                bcp->Bind(4, &dsizeVal);
+                bcp->Bind(5, &dataStrVal);
+                bcp->Bind(6, &dataIntVal);
+                bcp->Bind(7, &dataBinVal);
+                bcp->Bind(8, &cntVal);
+                bcp->Bind(9, &dataTextVal);
+                bcp->Bind(10, &dataImgVal);
+
+                dataTextVal.AssignNULL();
+                dataImgVal.Append(data.c_str(), data.size()); // pretend this data is bi
+                dataImgVal.MoveTo(0);
+
+                bcp->SendRow();
+
+                bcp->CompleteBCP();
+            }
+
+        }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
