@@ -112,7 +112,7 @@ public:
     ///
     /// @return
     ///   TRUE (omit scope prefixes) or FALSE
-    bool GetEnforcedStdXml(void)     {return m_EnforcedStdXml;}
+    bool GetEnforcedStdXml(void)     {return m_StdXml ? false : m_EnforcedStdXml;}
 
     /// Make generated XML document reference XML schema
     ///

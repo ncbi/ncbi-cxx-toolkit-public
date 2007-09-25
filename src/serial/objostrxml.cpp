@@ -1155,9 +1155,6 @@ void CObjectOStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
 {
     TMemberIndex first = classType->GetItems().FirstIndex();
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
-    if (m_StdXml) {
-        m_EnforcedStdXml = false;
-    }
 }
 
 TTypeInfo CObjectOStreamXml::GetRealTypeInfo(TTypeInfo typeInfo)
