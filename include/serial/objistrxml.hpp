@@ -105,7 +105,7 @@ public:
     ///
     /// @return
     ///   TRUE (omit scope prefixes) or FALSE
-    bool GetEnforcedStdXml(void)     {return m_EnforcedStdXml;}
+    bool GetEnforcedStdXml(void)     {return m_StdXml ? false : m_EnforcedStdXml;}
 
     virtual string ReadFileHeader(void);
     virtual string PeekNextTypeName(void);
