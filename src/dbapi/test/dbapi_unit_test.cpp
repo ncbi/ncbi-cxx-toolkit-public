@@ -4587,10 +4587,29 @@ CDBAPIUnitTest::Test_Recordset(void)
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
-                CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
-                BOOST_CHECK(data);
+                switch(variant.GetData()->GetType()) {
+                    case eDB_Numeric:
+                        {
+                            CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
+                            BOOST_CHECK_EQUAL(data->Value(), string("1"));
+                        }
+                        break;
+                    case eDB_Double:
+                        {
+                            PutMsgExpected("CDB_Numeric", "CDB_Double");
 
-                BOOST_CHECK_EQUAL(data->Value(), string("1"));
+                            CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
+                            BOOST_CHECK_EQUAL(data->Value(), 1);
+                        }
+                        break;
+                    default:
+                        BOOST_FAIL("Invalid data type.");
+                }
+
+                // CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
+                // BOOST_CHECK(data);
+
+                // BOOST_CHECK_EQUAL(data->Value(), string("1"));
 
                 DumpResults(auto_stmt.get());
             }
@@ -4603,10 +4622,29 @@ CDBAPIUnitTest::Test_Recordset(void)
                 BOOST_CHECK(rs->Next());
                 const CVariant& variant = rs->GetVariant(1);
 
-                CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
-                BOOST_CHECK(data);
+                switch(variant.GetData()->GetType()) {
+                    case eDB_Numeric:
+                        {
+                            CDB_Numeric* data = static_cast<CDB_Numeric*>(variant.GetData());
+                            BOOST_CHECK_EQUAL(data->Value(), string("1"));
+                        }
+                        break;
+                    case eDB_Double:
+                        {
+                            PutMsgExpected("CDB_Numeric", "CDB_Double");
 
-                BOOST_CHECK_EQUAL(data->Value(), string("1"));
+                            CDB_Double* data = static_cast<CDB_Double*>(variant.GetData());
+                            BOOST_CHECK_EQUAL(data->Value(), 1);
+                        }
+                        break;
+                    default:
+                        BOOST_FAIL("Invalid data type.");
+                }
+
+                // CDB_Numeric* data = dynamic_cast<CDB_Numeric*>(variant.GetData());
+                // BOOST_CHECK(data);
+
+                // BOOST_CHECK_EQUAL(data->Value(), string("1"));
 
                 DumpResults(auto_stmt.get());
             }
@@ -4978,7 +5016,9 @@ CDBAPIUnitTest::Test_Recordset(void)
 
             // long binary
             // dblib cannot transfer more than 255 bytes ...
-            if (m_args.GetDriverName() != "dblib") {
+            if (m_args.GetDriverName() != "dblib"
+                && m_args.GetDriverName() != "msdblib"
+                ) {
                 rs = auto_stmt->ExecuteQuery("select convert(binary(1000), '12345')");
                 BOOST_CHECK(rs != NULL);
 
