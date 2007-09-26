@@ -124,6 +124,8 @@ public:
 
     bool IsBCPAvailable(void) const;
 
+    bool IsODBCBased(void) const;
+
     bool UseGateway(void) const
     {
         return !m_GatewayHost.empty();
@@ -235,6 +237,7 @@ public:
     typedef IDBConnectionFactory* (*TDBConnectionFactoryFactory)
                 (IDBServiceMapper::TFactory svc_mapper_factory);
     void Test_Exception_Safety(void);
+    void Test_MsgToEx(void);
     void ES_01_Internal(IConnection& conn);
     void Check_Validator(TDBConnectionFactoryFactory factory,
                          IConnValidator& validator);

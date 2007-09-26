@@ -54,10 +54,12 @@
 
 BEGIN_NCBI_SCOPE
 
+////////////////////////////////////////////////////////////////////////////////
 enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
 static const char* msg_record_expected = "Record expected";
 
+////////////////////////////////////////////////////////////////////////////////
 inline
 void PutMsgDisabled(const char* msg)
 {
@@ -69,6 +71,39 @@ void PutMsgExpected(const char* msg, const char* replacement)
 {
     LOG_POST(Warning << "? " << msg << " is expected instead of " << replacement);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+class CDB_UserHandler_Exception_NoThrow :
+    public CDB_UserHandler
+{
+public:
+    virtual ~CDB_UserHandler_Exception_NoThrow(void);
+
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
+CDB_UserHandler_Exception_NoThrow::~CDB_UserHandler_Exception_NoThrow(void)
+{
+}
+
+bool
+CDB_UserHandler_Exception_NoThrow::HandleIt(CDB_Exception* ex)
+{
+    if (!ex)
+        return false;
+
+    // Ignore errors with ErrorCode set to 0
+    // (this is related mostly to the FreeTDS driver)
+    if (ex->GetDBErrCode() == 0)
+        return true;
+
+    // Do not throw exceptions ...
+    // ex->Throw();
+
+    return true;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
@@ -217,10 +252,7 @@ CDBAPIUnitTest::TestInit(void)
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        if (m_args.GetDriverName() == "odbc" ||
-            m_args.GetDriverName() == "odbcw" ||
-            m_args.GetDriverName() == "ftds_odbc"
-            ) {
+        if (m_args.IsODBCBased()) {
             drv_context->PushCntxMsgHandler(
                 new CDB_UserHandler_Exception_ODBC,
                 eTakeOwnership
@@ -6794,15 +6826,105 @@ CDBAPIUnitTest::Test_Exception_Safety(void)
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
+}
 
-    // Third test ...
+
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_MsgToEx(void)
+{
+    // First test ...
     {
-        // Enable MsgToEx ...
-        m_Conn->MsgToEx(true);
-        // Disable MsgToEx ...
-        m_Conn->MsgToEx(false);
+        int msg_num = 0;
+        CDB_Exception* dbex = NULL;
 
-        BOOST_CHECK_THROW(ES_01_Internal(*m_Conn), CDB_Exception);
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
+        Connect(local_conn);
+        
+        // 1.
+        {
+            msg_num = 0;
+
+            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+
+            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+                ++msg_num;
+            }
+            
+            BOOST_CHECK_EQUAL(msg_num, 0);
+        }
+
+        // 2.
+        {
+            msg_num = 0;
+
+            // Enable MsgToEx ...
+            local_conn->MsgToEx(true);
+
+            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+
+            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+                ++msg_num;
+            }
+            
+            BOOST_CHECK_EQUAL(msg_num, 1);
+        }
+
+        // 3.
+        if (true) {
+            msg_num = 0;
+
+            // Enable MsgToEx ...
+            local_conn->MsgToEx(false);
+
+            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+
+            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+                ++msg_num;
+            }
+            
+            BOOST_CHECK_EQUAL(msg_num, 0);
+        }
+
+        // 4.
+        {
+            msg_num = 0;
+
+            // Enable MsgToEx ...
+            local_conn->MsgToEx(true);
+            // Disable MsgToEx ...
+            local_conn->MsgToEx(false);
+
+            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+
+            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+                ++msg_num;
+            }
+            
+            BOOST_CHECK_EQUAL(msg_num, 0);
+        }
+    }
+
+    // Second test ...
+    {
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
+        Connect(local_conn);
+
+        local_conn->GetCDB_Connection()->PushMsgHandler(
+            new CDB_UserHandler_Exception_NoThrow,
+            eTakeOwnership
+            );
+
+        // Enable MsgToEx ...
+        // local_conn->MsgToEx(true);
+        // Disable MsgToEx ...
+        // local_conn->MsgToEx(false);
+
+        BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
     }
 }
 
@@ -10878,6 +11000,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx,
+            DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
     // Test_UserErrorHandler depends on Test_Exception_Safety ...
     if (!(args.GetDriverName() == "ftds"
               && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
@@ -11328,6 +11455,13 @@ CTestArguments::IsBCPAvailable(void) const
     return true;
 }
 
+bool
+CTestArguments::IsODBCBased(void) const
+{
+    return GetDriverName() == "odbc" ||
+           GetDriverName() == "odbcw" ||
+           GetDriverName() == "ftds_odbc";
+}
 
 void
 CTestArguments::SetDatabaseParameters(void)
