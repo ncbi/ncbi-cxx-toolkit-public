@@ -195,6 +195,9 @@ TField B4Param_WordThreshold         ("WordThreshold",         CBlast4_value::e_
 TField B4Param_SumStatistics         ("SumStatistics",         CBlast4_value::e_Boolean);
 TField B4Param_LongestIntronLength   ("LongestIntronLength",   CBlast4_value::e_Integer);
 TField B4Param_GapTrigger            ("GapTrigger",            CBlast4_value::e_Real);
+TField B4Param_GapXDropoff           ("GapXDropoff",           CBlast4_value::e_Real);
+TField B4Param_GapXDropoffFinal      ("GapXDropoffFinal",      CBlast4_value::e_Real);
+TField B4Param_SmithWatermanMode     ("SmithWatermanMode",     CBlast4_value::e_Boolean);
 
 END_objects_SCOPE // namespace ncbi::objects::
 

@@ -547,6 +547,14 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
     case eBlastOpt_InclusionThreshold:
         x_SetParam(B4Param_InclusionThreshold, v);
         return;
+
+    case eBlastOpt_GapXDropoff:
+        x_SetParam(B4Param_GapXDropoff, v);
+        return;
+
+    case eBlastOpt_GapXDropoffFinal:
+        x_SetParam(B4Param_GapXDropoffFinal, v);
+        return;
         
     case eBlastOpt_XDropoff:
         //x_SetParam(B4Param_XDropoff, v);
@@ -671,6 +679,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         
     case eBlastOpt_SumStatisticsMode:
         x_SetParam(B4Param_SumStatistics, v);
+        return;
+
+    case eBlastOpt_SmithWatermanMode:
+        x_SetParam(B4Param_SmithWatermanMode, v);
         return;
 
 /*  What about this???
