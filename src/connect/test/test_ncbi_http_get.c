@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
         fclose(fp);
 
     t = time(0);
-    for (;;) {
+    do {
         status = CONN_Wait(conn, eIO_Read, net_info->timeout);
         if (status != eIO_Success) {
             if (status == eIO_Closed)
@@ -124,21 +124,20 @@ int main(int argc, char* argv[])
                 CORE_LOG(eLOG_Fatal, "Timed out");
 #ifdef NCBI_OS_UNIX
             usleep(500);
-#endif
+#endif /*NCBI_OS_UNIX*/
             continue;
         }
 
-        status = CONN_Read(conn, blk, sizeof(blk), &n, eIO_ReadPlain);
-        if (status != eIO_Success && status != eIO_Closed)
+        status = CONN_ReadLine(conn, blk, sizeof(blk), &n);
+        if (status != eIO_Success  &&  status != eIO_Closed)
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
-        if (n) {
+        if (n == sizeof(blk))
+            CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
+        if (n)
             fwrite(blk, 1, n, stdout);
-            fflush(stdout);
-        } else if (status == eIO_Closed) {
-            break;
-        } else
-            CORE_LOG(eLOG_Fatal, "Empty read");
-    }
+        fputc('\n', stdout);
+        fflush(stdout);
+    } while (status == eIO_Success);
 
     ConnNetInfo_Destroy(net_info);
     CORE_LOG(eLOG_Note, "Closing connection");
