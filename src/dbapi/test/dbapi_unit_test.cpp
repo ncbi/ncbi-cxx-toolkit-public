@@ -6856,6 +6856,22 @@ CDBAPIUnitTest::Test_MsgToEx(void)
             BOOST_CHECK_EQUAL(msg_num, 0);
         }
 
+        // 1a.
+        {
+            msg_num = 0;
+
+            // Enable MsgToEx ...
+            local_conn->MsgToEx(false);
+
+            BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
+
+            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+                ++msg_num;
+            }
+            
+            BOOST_CHECK_EQUAL(msg_num, 0);
+        }
+
         // 2.
         {
             msg_num = 0;
