@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <util/unicode.hpp>
+#include <util/util_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(utf8)
@@ -92,16 +93,32 @@ static TUnicodeTable g_DefaultUnicodeTable =
 
 
 const SUnicodeTranslation*
-UnicodeToAscii(TUnicode character, const TUnicodeTable* table)
+UnicodeToAscii(TUnicode character, const TUnicodeTable* table,
+               const SUnicodeTranslation* default_translation)
 {
     if (!table) {
         table = &g_DefaultUnicodeTable;
     }
-    unsigned int thePlanNo = (character & 0xFF00) >> 8;
-    unsigned int theOffset =  character & 0xFF;
-    const TUnicodePlan* thePlan = (*table)[thePlanNo];
-    if ( !thePlan ) return 0;
-    return &((*thePlan)[theOffset]);
+    const SUnicodeTranslation* translation=NULL;
+    if ((character & (~0xFFFF)) == 0) {
+        unsigned int thePlanNo = (character & 0xFF00) >> 8;
+        unsigned int theOffset =  character & 0xFF;
+        const TUnicodePlan* thePlan = (*table)[thePlanNo];
+        if ( thePlan ) {
+            translation = &((*thePlan)[theOffset]);
+        }
+    }
+    if (!translation) {
+        if (!default_translation) {
+            return NULL;
+        }
+        if (default_translation->Type == eException) {
+            NCBI_THROW(CUtilException,eWrongData,
+                       "UnicodeToAscii: unknown Unicode symbol");
+        }
+        translation = default_translation;
+    }
+    return translation;
 }
 
 
@@ -203,10 +220,20 @@ size_t UnicodeToUTF8( TUnicode theUnicode, char *theBuffer,
     return Length;
 }
 
-
-ssize_t UTF8ToAscii( const char* src, char* dst,
-                     size_t dstLen, const TUnicodeTable* table)
+ssize_t UTF8ToAscii( const char* src, char* dst, size_t dstLen,
+                     const TUnicodeTable* table)
 {
+    return UTF8ToAscii(src,dst,dstLen,NULL,table,NULL);
+}
+
+ssize_t UTF8ToAscii( const char* src, char* dst, size_t dstLen,
+                     const SUnicodeTranslation* default_translation,
+                     const TUnicodeTable* table,
+                     EConversionResult* result)
+{
+    if (result) {
+        *result = eConvertedFine;
+    }
     if ( !src || !dst || dstLen == 0 ) return 0;
     size_t srcPos = 0;
     size_t dstPos = 0;
@@ -230,7 +257,10 @@ ssize_t UTF8ToAscii( const char* src, char* dst,
 
         // Find the correct substitution.
         const SUnicodeTranslation*
-            pSubst = UnicodeToAscii( theUnicode, table );
+            pSubst = UnicodeToAscii( theUnicode, table, default_translation );
+        if (result && pSubst == default_translation) {
+            *result = eDefaultTranslationUsed;
+        }
 
         // Check if the unicode has a translation
         if ( !pSubst ) {
@@ -265,10 +295,21 @@ ssize_t UTF8ToAscii( const char* src, char* dst,
 }
 
 
-string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
+string UTF8ToAsciiString( const char* src,
+                          const TUnicodeTable* table)
 {
-    if ( !src ) return 0;
+    return UTF8ToAsciiString(src,NULL,table,NULL);
+}
 
+string UTF8ToAsciiString( const char* src,
+                          const SUnicodeTranslation* default_translation,
+                          const TUnicodeTable* table,
+                          EConversionResult* result)
+{
+    if (result) {
+        *result = eConvertedFine;
+    }
+    if ( !src ) return 0;
     string dst;
     size_t srcPos = 0;
     size_t srcLen = strlen( src );
@@ -290,7 +331,10 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
 
         // Find the correct substitution.
         const SUnicodeTranslation*
-            pSubst = UnicodeToAscii( theUnicode, table );
+            pSubst = UnicodeToAscii( theUnicode, table, default_translation );
+        if (result && pSubst == default_translation) {
+            *result = eDefaultTranslationUsed;
+        }
 
         // Check if the unicode has a translation
         if ( !pSubst ) {

@@ -52,9 +52,17 @@ enum ESubstType
     eSkip = 0,      ///< Unicode to be skipped in translation. Usually it is combined mark.
     eAsIs,          ///< Unicodes which should go into the text as is.
     eString,        ///< String of symbols.
+    eException,     ///< Throw exception (CUtilException, with type eWrongData)
+    //
     eHTML,          ///< HTML tag or, for example, HTML entity.
     ePicture,       ///< Path to the picture, or maybe picture itself.
     eOther          ///< Something else.
+};
+
+enum EConversionResult
+{
+    eConvertedFine,
+    eDefaultTranslationUsed
 };
 
 /// Structure to keep substititutions for the particular unicode character.
@@ -80,7 +88,8 @@ typedef unsigned int TUnicode;
 ///   Pointer to substitute structure
 NCBI_XUTIL_EXPORT
 const SUnicodeTranslation*
-UnicodeToAscii(TUnicode character, const TUnicodeTable* table=0);
+UnicodeToAscii(TUnicode character, const TUnicodeTable* table=NULL,
+               const SUnicodeTranslation* default_translation=NULL);
 
 /// Convert UTF8 into Unicode character.
 ///
@@ -115,6 +124,12 @@ size_t UnicodeToUTF8(TUnicode unicode, char *buffer, size_t buf_length);
 NCBI_XUTIL_EXPORT
 string UnicodeToUTF8(TUnicode unicode);
 
+/// Deprecated; use the function below instead
+NCBI_DEPRECATED
+NCBI_XUTIL_EXPORT
+ssize_t UTF8ToAscii(const char* src, char* dst, size_t dst_len,
+                    const TUnicodeTable* table=NULL);
+
 /// Convert UTF8 into ASCII character buffer.
 ///
 /// Decode UTF8 buffer and substitute all Unicodes with appropriate
@@ -125,14 +140,25 @@ string UnicodeToUTF8(TUnicode unicode);
 ///   Buffer to put the result in
 /// @param dst_len
 ///   Length of the destignation buffer
+/// @param default_translation
+///   Default translation of unknown Unicode symbols
 /// @param table
 ///   Table to use in translation. If Table is not specified,
 ///   the internal default one will be used.
+/// @param result
+///   Result of the conversion
 /// @return
 ///   Length of decoded string or -1 if buffer is too small
 NCBI_XUTIL_EXPORT
 ssize_t UTF8ToAscii(const char* src, char* dst, size_t dst_len,
-                    const TUnicodeTable* table=0);
+                    const SUnicodeTranslation* default_translation,
+                    const TUnicodeTable* table=NULL,
+                    EConversionResult* result=NULL);
+
+/// Deprecated; use the function below instead
+NCBI_DEPRECATED
+NCBI_XUTIL_EXPORT
+string UTF8ToAsciiString(const char* src, const TUnicodeTable* table=NULL);
 
 /// Convert UTF8 into ASCII string.
 ///
@@ -140,13 +166,20 @@ ssize_t UTF8ToAscii(const char* src, char* dst, size_t dst_len,
 /// symbols or words from dictionary.
 /// @param src
 ///   UTF8 buffer to decode
+/// @param default_translation
+///   Default translation of unknown Unicode symbols
 /// @param table
 ///   Table to use in translation. If Table is not specified,
 ///   the internal default one will be used.
+/// @param result
+///   Result of the conversion
 /// @return
 ///   String with decoded text
 NCBI_XUTIL_EXPORT
-string UTF8ToAsciiString(const char* src, const TUnicodeTable* table=0);
+string UTF8ToAsciiString(const char* src,
+                         const SUnicodeTranslation* default_translation,
+                         const TUnicodeTable* table=NULL,
+                         EConversionResult* result=NULL);
 
 
 END_SCOPE(utf8)
