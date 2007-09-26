@@ -1825,7 +1825,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
                 bo.SetPHIPattern(v.GetString().c_str(), is_na);
             }
         } else if (B4Param_PercentIdentity.Match(p)) {
-            opts.SetPercentIdentity(v.GetInteger());
+            opts.SetPercentIdentity(v.GetReal());
         } else if (B4Param_PseudoCountWeight.Match(p)) {
             bo.SetPseudoCount(v.GetInteger());
         } else {
