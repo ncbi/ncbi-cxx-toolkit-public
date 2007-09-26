@@ -367,6 +367,15 @@ public:
                      int            & count,
                      CSeqDBLockHold & locked);
     
+    /// Check if a given ISAM index exists.
+    ///
+    /// @param dbname Base name of the database volume.
+    /// @param prot_nucl 'n' or 'p' for protein or nucleotide.
+    /// @param file_ext_char Identifier symbol; 's' for string, etc.
+    static bool IndexExists(const string & dbname,
+                            char           prot_nucl,
+                            char           file_ext_char);
+    
 private:
     /// Stores a key for an ISAM file.
     ///
@@ -1112,6 +1121,18 @@ private:
                 : ids.GetGi(index));
     }
     
+    /// Make filenames for ISAM file.
+    ///
+    /// @param dbname Base name of the database volume.
+    /// @param prot_nucl 'n' or 'p' for protein or nucleotide.
+    /// @param file_ext_char Identifier symbol; 's' for string, etc.
+    /// @param index_name Filename of ISAM index file.
+    /// @param index_name Filename of ISAM data file.
+    static void x_MakeFilenames(const string & dbname,
+                                char           prot_nucl,
+                                char           file_ext_char,
+                                string       & index_name,
+                                string       & data_name);
     
     // Data
     

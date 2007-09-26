@@ -86,7 +86,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
     
     // ISAM files are optional
     
-    try {
+    if (CSeqDBIsam::IndexExists(name, prot_nucl, 'p')) {
         m_IsamPig =
             new CSeqDBIsam(m_Atlas,
                            name,
@@ -94,10 +94,8 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            'p',
                            CSeqDBIsam::ePigId);
     }
-    catch(CSeqDBException &) {
-    }
     
-    try {
+    if (CSeqDBIsam::IndexExists(name, prot_nucl, 'n')) {
         m_IsamGi =
             new CSeqDBIsam(m_Atlas,
                            name,
@@ -105,10 +103,8 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            'n',
                            CSeqDBIsam::eGiId);
     }
-    catch(CSeqDBException &) {
-    }
     
-    try {
+    if (CSeqDBIsam::IndexExists(name, prot_nucl, 's')) {
         m_IsamStr =
             new CSeqDBIsam(m_Atlas,
                            name,
@@ -116,10 +112,8 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            's',
                            CSeqDBIsam::eStringId);
     }
-    catch(CSeqDBException &) {
-    }
     
-    try {
+    if (CSeqDBIsam::IndexExists(name, prot_nucl, 't')) {
         m_IsamTi =
             new CSeqDBIsam(m_Atlas,
                            name,
@@ -127,18 +121,14 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
                            't',
                            CSeqDBIsam::eTiId);
     }
-    catch(CSeqDBException &) {
-    }
     
-    try {
+    if (CSeqDBIsam::IndexExists(name, prot_nucl, 'h')) {
         m_IsamHash =
             new CSeqDBIsam(m_Atlas,
                            name,
                            prot_nucl,
                            'h',
                            CSeqDBIsam::eHashId);
-    }
-    catch(CSeqDBException &) {
     }
 }
 

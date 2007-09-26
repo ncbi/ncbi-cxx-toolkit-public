@@ -1441,26 +1441,11 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
                    "Error: ident type argument not valid");
     }
     
-    if (dbname.empty() ||
-        (! isalpha((unsigned char) prot_nucl)) ||
-        (! isalpha((unsigned char) file_ext_char))) {
-        
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "Error: argument not valid");
-    }
-    
-    m_IndexFname.reserve(dbname.size() + 4);
-    m_DataFname.reserve(dbname.size() + 4);
-    
-    m_IndexFname = dbname;
-    m_IndexFname += '.';
-    m_IndexFname += prot_nucl;
-    m_IndexFname += file_ext_char;
-    
-    m_DataFname = m_IndexFname;
-    m_IndexFname += 'i';
-    m_DataFname  += 'd';
+    x_MakeFilenames(dbname,
+                    prot_nucl,
+                    file_ext_char,
+                    m_IndexFname,
+                    m_DataFname);
     
     if (! (CFile(m_IndexFname).Exists() &&
            CFile(m_DataFname).Exists()) ) {
@@ -1475,6 +1460,44 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
     } else {
         m_PageSize = DEFAULT_SISAM_SIZE;
     }
+}
+
+void CSeqDBIsam::x_MakeFilenames(const string & dbname,
+                                 char           prot_nucl,
+                                 char           file_ext_char,
+                                 string       & index_name,
+                                 string       & data_name)
+{
+    if (dbname.empty() ||
+        (! isalpha((unsigned char) prot_nucl)) ||
+        (! isalpha((unsigned char) file_ext_char))) {
+        
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Error: argument not valid");
+    }
+    
+    index_name.reserve(dbname.size() + 4);
+    data_name.reserve(dbname.size() + 4);
+    
+    index_name = dbname;
+    index_name += '.';
+    index_name += prot_nucl;
+    index_name += file_ext_char;
+    
+    data_name = index_name;
+    index_name += 'i';
+    data_name  += 'd';
+}
+
+bool CSeqDBIsam::IndexExists(const string & dbname,
+                             char           prot_nucl,
+                             char           file_ext_char)
+{
+    string iname, dname;
+    x_MakeFilenames(dbname, prot_nucl, file_ext_char, iname, dname);
+    
+    return CFile(iname).Exists() && CFile(dname).Exists();
 }
 
 CSeqDBIsam::~CSeqDBIsam()
