@@ -2367,6 +2367,52 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     }
 }
 
+BOOST_AUTO_TEST_CASE(AndNotGiList)
+{
+    START;
+    
+    vector<int> a3; // multiples of 3 from 0..500
+    vector<int> a5; // multiples of 5 from 0..500
+    
+    // The number 41 is added to the front of one set and the end of
+    // the other to verify that the code computing the intersection
+    // correctly sorts its inputs.
+    
+    int special = 41;
+    
+    // Add to start of a3
+    a3.push_back(special);
+    
+    for(int i = 0; (i*3) < 500; i++) {
+        a3.push_back(i*3);
+        
+        if (i*5 < 500) {
+            a5.push_back(i*5);
+        }
+    }
+    
+    // Add to end of a5
+    a5.push_back(special);
+    
+    CSimpleGiList gi3(a3);
+    
+    // X and not Y operation : multiples of 3 (or 41) that aren't
+    // multiples of 5 (or 41).
+    
+    CAndNotGiList and_not(gi3, a5);
+    
+    for(int i = 0; i < 500; i++) {
+        bool is_3 = ((i % 3) == 0) || (i == special);
+        bool is_5 = ((i % 5) == 0) || (i == special);
+        
+        if (is_3 && (! is_5)) {
+            CHECK(true == and_not.FindGi(i));
+        } else {
+            CHECK(false == and_not.FindGi(i));
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(SharedMemoryMaps)
 {
     START;

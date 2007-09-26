@@ -1400,6 +1400,57 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
 
+
+CAndNotGiList::CAndNotGiList(CSeqDBGiList & gilist, vector<int> & gis)
+{
+    _ASSERT(this != & gilist);
+    
+    gilist.InsureOrder(CSeqDBGiList::eGi);
+    sort(gis.begin(), gis.end());
+    
+    int list_i = 0;
+    int list_n = gilist.GetNumGis();
+    int gis_i = 0;
+    int gis_n = (int) gis.size();
+    
+    while(list_i < list_n && gis_i < gis_n) {
+        int POS = gilist[list_i].gi;
+        int NEG = gis[gis_i];
+        
+        int P_next = list_i;
+        int N_next = gis_i;
+        
+        bool included = false;
+        
+        if (POS < NEG) {
+            included = true;
+            P_next ++;
+        } else if (POS > NEG) {
+            N_next ++;
+        } else {
+            P_next ++;
+            N_next ++;
+        }
+        
+        if (included) {
+            m_GisOids.push_back(gilist[list_i]);
+        }
+        
+        list_i = P_next;
+        gis_i  = N_next;
+    }
+    
+    // Get the rest of the elements of gilist now that the negative
+    // GIs are exhausted.
+    
+    while(list_i < list_n) {
+        m_GisOids.push_back(gilist[list_i++]);
+    }
+    
+    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
+}
+
+
 unsigned SeqDB_SequenceHash(const char * sequence,
                             int          length)
 {
