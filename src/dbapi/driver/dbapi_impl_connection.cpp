@@ -96,6 +96,8 @@ CConnection::CConnection(CDriverContext& dc,
 , m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
 {
+    _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
+    _ASSERT(m_MsgHandlers.GetSize() > 0);
 }
 
 CConnection::CConnection(CDriverContext& dc,
@@ -119,6 +121,9 @@ CConnection::CConnection(CDriverContext& dc,
 , m_BCPable(isBCPable)
 , m_SecureLogin(hasSecureLogin)
 {
+    _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
+    _ASSERT(m_MsgHandlers.GetSize() > 0);
+
     SetExecCntxInfo("SERVER: '" + GetServerName() + "' USER: '" + GetUserName() + "'");
 }
 
@@ -133,12 +138,14 @@ void CConnection::PushMsgHandler(CDB_UserHandler* h,
                                     EOwnership ownership)
 {
     m_MsgHandlers.Push(h, ownership);
+    _ASSERT(m_MsgHandlers.GetSize() > 0);
 }
 
 
 void CConnection::PopMsgHandler(CDB_UserHandler* h)
 {
-    m_MsgHandlers.Pop(h);
+    m_MsgHandlers.Pop(h, false);
+    _ASSERT(m_MsgHandlers.GetSize() > 0);
 }
 
 void CConnection::DropCmd(impl::CCommand& cmd)
