@@ -310,19 +310,22 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
 
 I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
 {
-    string q= "set rowcount 1\nupdate ";
-    q+= descr_in.TableName();
-    q+= " set ";
-    q+= descr_in.ColumnName();
-    q+= "='0x0' where ";
-    q+= descr_in.SearchConditions();
-    q+= " \nselect ";
-    q+= descr_in.ColumnName();
-    q+= " from ";
-    q+= descr_in.TableName();
-    q+= " where ";
-    q+= descr_in.SearchConditions();
-    q+= " \nset rowcount 0";
+    string q;
+
+    q  = "set rowcount 1\nupdate ";
+    q += descr_in.TableName();
+    q += " set ";
+    q += descr_in.ColumnName();
+    q += "='0x0' where ";
+    q += descr_in.SearchConditions();
+    q += " \nselect ";
+    q += descr_in.ColumnName();
+    q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
+    q += " from ";
+    q += descr_in.TableName();
+    q += " where ";
+    q += descr_in.SearchConditions();
+    q += " \nset rowcount 0";
 
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
