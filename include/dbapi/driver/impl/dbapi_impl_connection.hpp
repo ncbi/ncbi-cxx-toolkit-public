@@ -219,10 +219,12 @@ protected:
 
     const CDBHandlerStack& GetMsgHandlers(void) const
     {
+        _ASSERT(m_MsgHandlers.GetSize() > 0);
         return m_MsgHandlers;
     }
     CDBHandlerStack& GetMsgHandlers(void)
     {
+        _ASSERT(m_MsgHandlers.GetSize() > 0);
         return m_MsgHandlers;
     }
 
