@@ -170,15 +170,24 @@ public:
     // (useful when reading several files).
     virtual string GetErrorMessage(const string& filename=NcbiEmptyString);
 
+    /// Invoked from ReadStream(), after the row has been parsed.
+    /// Seldom needs to be invoked by user.
+    /// One occassion is in agp_renumber - to force a line NOT to be skipped
+    /// it is called from OnError() when m_line_skipped=true
+    /// and m_error_code=E_ObjRangeNeGap or E_ObjRangeNeComp.
+    bool ProcessThisRow();
+
 protected:
     bool m_at_beg;  // m_this_row is the first valid component or gap line;
                     // m_prev_row undefined.
     bool m_at_end;  // after the last line; could be true only in OnScaffoldEnd(), OnObjectChange().
                     // m_prev_row is the last component or gap line;
                     // m_this_row undefined.
-    bool m_prev_line_skipped; // true after a syntax error or E_Obj/CompEndLtBeg, E_ObjRangeNeGap/Comp
-                      // (i.e. single-line errors detected by CAgpRow);
-                      // Not affected by comment lines, even though these are skipped, too.
+
+    bool m_line_skipped;      // true after a syntax error or E_Obj/CompEndLtBeg, E_ObjRangeNeGap/Comp
+    bool m_prev_line_skipped; // (i.e. single-line errors detected by CAgpRow);
+                              // Not affected by comment lines, even though these are skipped, too.
+
     bool m_new_obj;   // For OnScaffoldEnd(), true if this scaffold ends with an object.
                       // (false if there are scaffold-breaking gaps at object end)
     int m_error_code; // Set to a positive value to trigger OnError().
@@ -221,14 +230,17 @@ protected:
         // m_this_row = current gap or component (check with m_this_row->IsGap())
     }
 
-    virtual bool OnError(int code)
+    virtual bool OnError()
     {
-        // code=0: Non-fatal error, line saved to m_this_row.
-        //         Preceding callbacks might still be invoked.
-        //         They can check m_error_code, if they need to (which is unlikely).
-        //     >0: Syntax error; m_this_row most likely incomplete.
+        // in m_line_skipped :
+        // false: Non-fatal error, line saved to m_this_row.
+        //        Preceding callbacks might still be invoked.
+        //        They can check m_error_code, if they need to (which is unlikely).
+        // true  : Syntax error; m_this_row most likely incomplete.
         //         No other callbacks invoked for this line.
         //         On the next iteration, m_prev_row will retain the last known valid line.
+        // out m_line_skipped: copied to m_prev_line_skipped;
+        //         set to true to enable the checks that require 2 lines.
 
         return false; // abort on any error
     }
@@ -279,20 +291,20 @@ public:
     enum {
         // Errors within one line (detected in CAgpRow)
         E_ColumnCount=1 ,
-        E_EmptyColumn,
-        E_EmptyLine,
+        E_EmptyColumn   ,
+        E_EmptyLine     ,
         E_InvalidValue  ,
-        E_InvalidYes   ,
+        E_InvalidYes    ,
 
         E_MustBePositive,
-        E_ObjEndLtBeg ,
-        E_CompEndLtBeg,
+        E_ObjEndLtBeg   ,
+        E_CompEndLtBeg  ,
         E_ObjRangeNeGap ,
         E_ObjRangeNeComp,
 
         // Other errors, some detected only by agp_validate.
         // We define the codes here to preserve the historical error codes.
-        // CAgpRow and CAgpReader do not know such errors.
+        // CAgpRow and CAgpReader do not know of such errors.
         E_DuplicateObj  ,       // -- agp_validate --
         E_ObjMustBegin1 ,       // CAgpReader
         E_PartNumberNot1,       // CAgpReader

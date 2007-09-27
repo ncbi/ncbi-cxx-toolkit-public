@@ -122,7 +122,7 @@ int CAgpErr::AppliesTo(int mask)
 void CAgpErr::Msg(int code, const string& details, int appliesTo)
 {
     // Append warnings to preexisting errors.
-    // To collect all warnings, override Msg() s the derived class.
+    // To collect all warnings, override Msg() in the derived class.
     if(code<E_Last || m_apply_to) {
         m_apply_to |= appliesTo;
 
@@ -201,7 +201,7 @@ int CAgpRow::FromString(const string& line)
 {
     // Comments
     cols.clear();
-    SIZE_TYPE pcomment = NStr::Find(line, "#");
+    pcomment = NStr::Find(line, "#");
 
     bool tabsStripped=false;
     if( pcomment != NPOS  ) {
@@ -247,7 +247,7 @@ int CAgpRow::FromString(const string& line)
     if(object_beg<=0) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_beg (column 2)");
     object_end = NStr::StringToNumeric( GetObjectEnd() );
     if(object_end<=0) {
-        m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_end (column 4)");
+        m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_end (column 3)");
     }
     part_number = NStr::StringToNumeric( GetPartNumber() );
     if(part_number<=0) {
@@ -491,161 +491,115 @@ CAgpReader::~CAgpReader()
     if(m_OwnAgpErr) delete m_AgpErr;
 }
 
+bool CAgpReader::ProcessThisRow()
+{
+    CAgpRow* this_row=m_this_row;;
+    CAgpRow* prev_row=m_prev_row;
+
+    m_new_obj=prev_row->GetObject() != this_row->GetObject();
+    if(m_new_obj) {
+        if(!m_prev_line_skipped) {
+            if(this_row->object_beg !=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjMustBegin1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+            if(this_row->part_number!=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNot1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+            if(prev_row->is_gap && !prev_row->GapValidAtObjectEnd()) {
+                m_AgpErr->Msg(CAgpErr::W_GapObjEnd, prev_row->GetObject(), CAgpErr::fAtPrevLine);
+            }
+        }
+        if(!( prev_row->is_gap && prev_row->GapEndsScaffold() )) {
+            OnScaffoldEnd();
+        }
+        OnObjectChange();
+    }
+    else {
+        if(!m_prev_line_skipped) {
+            if(this_row->part_number != prev_row->part_number+1) {
+                m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNotPlus1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+            }
+            if(this_row->object_beg != prev_row->object_end+1) {
+                m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjBegNePrevEndPlus1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+            }
+        }
+    }
+
+    if(this_row->is_gap) {
+        if(!m_prev_line_skipped) {
+            if( m_new_obj && !this_row->GapValidAtObjectEnd() ) {
+                m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject()); // , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine
+            }
+            else if(prev_row->is_gap) {
+                m_AgpErr->Msg(CAgpErr::W_ConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
+            }
+        }
+        if(!m_new_obj) {
+            if( this_row->GapEndsScaffold() && !(
+                prev_row->is_gap && prev_row->GapEndsScaffold()
+            )) OnScaffoldEnd();
+        }
+        //OnGap();
+    }
+    //else { OnComponent(); }
+    OnGapOrComponent();
+    m_at_beg=false;
+
+    if(m_error_code>0){
+        if( !OnError() ) return false; // return m_error_code; - abort ReadStream()
+        m_AgpErr->Clear();
+    }
+
+    // swap this_row and prev_row
+    m_this_row=prev_row;
+    m_prev_row=this_row;
+    m_prev_line_num=m_line_num;
+    m_prev_line_skipped=m_line_skipped;
+    return true;
+}
+
 int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
 {
     m_at_end=false;
-    m_line_num=0;
-    CAgpRow* this_row;
     if(m_at_beg) {
         //// The first line
-        m_prev_line_skipped=false;
-        m_new_obj=true;
-        this_row=m_this_row;
-        while( NcbiGetline(is, m_line, "\r\n") ) {
-            m_line_num++;
-            m_error_code=this_row->FromString(m_line);
-            if(m_error_code==0) {
-                if( !m_prev_line_skipped ) {
-                    if(this_row->object_beg !=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjMustBegin1);
-                    if(this_row->part_number!=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNot1);
-                }
-                OnObjectChange();
-                if(this_row->is_gap) {
-                    if( !m_prev_line_skipped && !this_row->GapValidAtObjectEnd() ) {
-                        m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject());
-                    }
-                    //OnGap();
-                }
-                //else OnComponent();
-                OnGapOrComponent();
-                m_at_beg=false;
-                break;
-            }
-            else if(m_error_code==-1) {
-                OnComment();
-            }
-            else {
-                if( !OnError(m_error_code) ) return m_error_code;
-                m_AgpErr->Clear();
-                m_prev_line_skipped=true;
-                // Stay in the loop and try the next line --
-                // it could be the first valid line of the first object.
-            }
-        }
-        if(m_at_beg) {
-            m_AgpErr->Msg(m_error_code=CAgpErr::E_NoValidLines, CAgpErr::fAtNone);
-            return CAgpErr::E_NoValidLines;
-        }
-        else if(m_error_code) {
-            if(m_error_code<0) {
-                // Simulated EOF midstream
-                m_AgpErr->Clear();
-                m_prev_line_skipped=false;
+        m_line_num=0;
+        m_prev_line_skipped=true;
 
-                m_this_row=m_prev_row;
-                m_prev_row=this_row;
-                m_prev_line_num=m_line_num;
-
-                return finalize ? Finalize() : 0;
-            }
-            else if( !OnError(0) ) return m_error_code;
-
-            m_AgpErr->Clear();
-            m_prev_line_skipped=false;
-        }
-
-        // swap m_this_row and m_prev_row
-        m_this_row=m_prev_row;
-        m_prev_row=this_row;
-        m_prev_line_num=m_line_num;
+        // A fictitous empty row that ends with scaffold-breaking gap.
+        // Used to:
+        // - prevent the two-row checks;
+        // - prevent OnScaffoldEnd();
+        // - trigger OnObjectChange().
+        m_prev_row->cols.clear();
+        m_prev_row->cols.push_back(NcbiEmptyString);
+        m_prev_row->is_gap=true;
+        m_prev_row->gap_type=CAgpRow::eGapContig; // eGapCentromere
+        m_prev_row->linkage=false;
     }
-    //// Second and later lines
-    //// Adding context-sensetive code that uses prev_row
+
     while( NcbiGetline(is, m_line, "\r\n") ) {
         m_line_num++;
-        this_row=m_this_row;
-        m_error_code=this_row->FromString(m_line);
+        m_error_code=m_this_row->FromString(m_line);
+        m_line_skipped=false;
         if(m_error_code==0) {
-            CAgpRow* prev_row=m_prev_row;
-            m_new_obj=prev_row->GetObject() != this_row->GetObject();
-            if(m_new_obj) {
-                if(!m_prev_line_skipped) {
-                    if(this_row->object_beg !=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjMustBegin1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-                    if(this_row->part_number!=1) m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNot1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-                    if(prev_row->is_gap && !prev_row->GapValidAtObjectEnd()) {
-                        m_AgpErr->Msg(CAgpErr::W_GapObjEnd, prev_row->GetObject(), CAgpErr::fAtPrevLine);
-                    }
-                }
-                if(!( prev_row->is_gap && prev_row->GapEndsScaffold() )) {
-                    OnScaffoldEnd();
-                }
-                OnObjectChange();
-            }
-            else {
-                if(!m_prev_line_skipped) {
-                    if(this_row->part_number != prev_row->part_number+1) {
-                        m_AgpErr->Msg(m_error_code=CAgpErr::E_PartNumberNotPlus1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-                    }
-                    if(this_row->object_beg != prev_row->object_end+1) {
-                        m_AgpErr->Msg(m_error_code=CAgpErr::E_ObjBegNePrevEndPlus1, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-                    }
-                }
-            }
-
-            if(this_row->is_gap) {
-                if(!m_prev_line_skipped) {
-                    if( m_new_obj && !this_row->GapValidAtObjectEnd() ) {
-                        m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject()); // , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine
-                    }
-                    else if(prev_row->is_gap) {
-                        m_AgpErr->Msg(CAgpErr::W_ConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
-                    }
-                }
-                if(!m_new_obj) {
-                    if( this_row->GapEndsScaffold() && !(
-                        prev_row->is_gap && prev_row->GapEndsScaffold()
-                    )) OnScaffoldEnd();
-                }
-                //OnGap();
-            }
-            //else { OnComponent(); }
-            OnGapOrComponent();
-
-            if(m_error_code){
-                if(m_error_code<0) {
-                    // Simulated EOF midstream
-                    m_AgpErr->Clear();
-                    m_prev_line_skipped=false;
-
-                    m_this_row=prev_row;
-                    m_prev_row=this_row;
-                    m_prev_line_num=m_line_num;
-
-                    break;
-                }
-                else if( !OnError(0) ) return m_error_code;
-                m_AgpErr->Clear();
-                m_prev_line_skipped=false;
-            }
-
-            // swap this_row and prev_row
-            m_this_row=prev_row;
-            m_prev_row=this_row;
-            m_prev_line_num=m_line_num;
+            if( !ProcessThisRow() ) return m_error_code;
+            if( m_error_code < 0 ) break; // A simulated EOF midstream (very rare)
         }
         else if(m_error_code==-1) {
             OnComment();
         }
         else {
-            if( !OnError(m_error_code) ) return m_error_code;
+            m_line_skipped=true;
+            if( !OnError() ) return m_error_code;
             m_AgpErr->Clear();
-            m_prev_line_skipped=true;
             // for OnObjectChange(), keep the line before previous as if it is the previous
+            m_prev_line_skipped=m_line_skipped;
         }
 
-        if(is.eof()) {
+        if(is.eof() && !m_at_beg) {
             m_AgpErr->Msg(CAgpErr::W_NoEolAtEof);
         }
+    }
+    if(m_at_beg) {
+        m_AgpErr->Msg(m_error_code=CAgpErr::E_NoValidLines, CAgpErr::fAtNone);
+        return CAgpErr::E_NoValidLines;
     }
 
     return finalize ? Finalize() : 0;
@@ -675,7 +629,7 @@ int CAgpReader::Finalize()
     }
 
     // In preparation for the next file
-    m_prev_line_skipped=false;
+    //m_prev_line_skipped=false;
     m_at_beg=true;
 
     return m_error_code;
