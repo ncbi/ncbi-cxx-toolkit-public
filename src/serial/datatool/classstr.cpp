@@ -643,7 +643,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate getter
             inl = true;//!i->ref;
             if (!isNull) {
-                if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
+// for 'simple' types we define conversion operator in UserHPP,
+// which requires reference
+                if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive() && !i->simple)) {
                     if (CClassCode::GetDoxygenComments()) {
                         code.ClassPublic() <<
                             "\n"
