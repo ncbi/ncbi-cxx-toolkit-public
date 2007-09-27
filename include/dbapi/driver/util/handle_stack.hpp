@@ -49,6 +49,11 @@ public:
     CDBHandlerStack& operator= (const CDBHandlerStack& s);
 
 public:
+    size_t GetSize(void) const
+    {
+        return m_Stack.size();
+    }
+
     void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
     void SetExtraMsg(const string& msg);
