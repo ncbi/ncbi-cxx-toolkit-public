@@ -6944,6 +6944,70 @@ CDBAPIUnitTest::Test_MsgToEx(void)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// This code is based on a problem reported by Baoshan Gu.
+
+
+class BaoshanGu_handler : public CDB_UserHandler
+{
+public:
+     virtual ~BaoshanGu_handler(void)
+     {
+     };
+
+     virtual bool HandleIt(CDB_Exception* ex)
+     {
+         if (!ex)  return false;
+
+         // Ignore errors with ErrorCode set to 0
+         // (this is related mostly to the FreeTDS driver)
+         if (ex->GetDBErrCode() == 0 || 
+                 ex->Message().find("ERROR") == string::npos)
+             return true;
+
+         NcbiCout << "BaoshanGu_handler called." << endl;
+         throw *ex;
+         //ex->Throw();
+
+         return true;
+     }
+};
+
+
+void
+CDBAPIUnitTest::Test_MsgToEx2(void)
+{
+    CRef<BaoshanGu_handler> handler(new BaoshanGu_handler);
+    I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+    drv_context->PushCntxMsgHandler(handler);
+    drv_context->PushDefConnMsgHandler(handler);
+
+    auto_ptr<IConnection> conn(m_DS->CreateConnection());
+    conn->Connect("anyone","allowed", "REFTRACK_DEV", "x_locus");
+
+    conn->MsgToEx(false);
+
+    auto_ptr<IStatement> stmt(conn->GetStatement());
+
+    try {
+        string sql = " EXEC locusXref..undelete_locus_id @locus_id = 135896, @login='guba'";
+        
+        stmt->ExecuteUpdate(sql); //or SendSql
+
+        CDB_Exception* dbex = NULL;
+        while(dbex = conn->GetErrorAsEx()->Pop()){
+            cout << "MSG:" << dbex->Message() << endl;
+        }
+    } catch (const CDB_Exception& e) {
+        NcbiCout << "CDB_Exception:" << e.Message() << endl;
+    }
+
+    drv_context->PopCntxMsgHandler(handler);
+    drv_context->PopDefConnMsgHandler(handler);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Throw CDB_Exception ...
 void
@@ -11021,6 +11085,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
+    /*
+    if (args.GetServerType() == CTestArguments::eSybase
+        && args.GetDriverName() != "dblib") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx2,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+    */
+
     // Test_UserErrorHandler depends on Test_Exception_Safety ...
     if (!(args.GetDriverName() == "ftds"
               && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
@@ -11149,9 +11223,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
+        if (args.GetDriverName() != "dblib") {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
 
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetTotalColumns,
                                    DBAPIInstance);
@@ -11233,6 +11309,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
               && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
          && !(args.GetDriverName() == "ftds8"
               && args.GetServerType() == CTestArguments::eSybase)
+         && !(args.GetDriverName() == "dblib"
+              && args.GetServerType() == CTestArguments::eSybase)
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime,
                                    DBAPIInstance);
@@ -11245,6 +11323,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // Valid for all drivers ...
     if (args.GetDriverName() != "ftds_dblib"
         && !(args.GetDriverName() == "ftds"
+          && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
+        && !(args.GetDriverName() == "dblib"
           && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal,
@@ -11264,6 +11344,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (!(((args.GetDriverName() == "ftds"
                 || args.GetDriverName() == "ftds8"
                 || args.GetDriverName() == "ftds_dblib"
+                || args.GetDriverName() == "dblib"
               )
            && args.GetServerType() == CTestArguments::eSybase) // Something is wrong ...
           || args.GetDriverName() == "msdblib"
