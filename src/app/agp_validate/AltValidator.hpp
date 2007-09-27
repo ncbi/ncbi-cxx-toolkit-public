@@ -42,9 +42,11 @@ class CAltValidator
 {
 public:
   bool m_check_len_taxid;
+  CNcbiOstream* m_out;
   CAltValidator(bool check_len_taxid)
   {
     m_check_len_taxid=check_len_taxid;
+    m_out=NULL;
   }
 
   bool m_SpeciesLevelTaxonCheck;
@@ -76,7 +78,8 @@ public:
   void CheckTaxids();
   void PrintTotals();
 
-  static int ValidateAccession( const string& acc );
+  /// missing_ver: assign 0 if not missing, else the latest version
+  static int ValidateAccession( const string& acc, int* missing_ver=NULL );
   static void ValidateLength(const string& comp_id, int comp_end, int comp_len);
 
   void x_AddToTaxidMap(int taxid, const string& comp_id, int line_num);
@@ -85,6 +88,7 @@ public:
   int x_GetSpecies(int taxid);
   int x_GetTaxonSpecies(int taxid);
 
+protected:
   struct SLineData
   {
     string orig_line;
@@ -105,9 +109,12 @@ public:
   typedef vector<SLineData> TLineQueue;
   TLineQueue lineQueue;
 
+public:
   void QueueLine(
     const string& orig_line, const string& comp_id,
     int line_num, int comp_end);
+  // line for m_out that needs not be processed - comment, gap, invalid line
+  void QueueLine(const string& orig_line);
   int QueueSize()
   {
     return lineQueue.size();

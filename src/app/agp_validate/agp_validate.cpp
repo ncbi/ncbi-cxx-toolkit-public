@@ -99,12 +99,13 @@ public:
     "It also reports component, gap, scaffold and object statistics.\n"
     "\n"
     "OPTIONS:\n"
-    "  -alt      Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
-    "            This can be very time-consuming, and is done separately from most other checks.\n"
-    "  -a        Check component Accessions (not lengths or taxids); slightly faster than \"-alt\".\n"
-    "  -species  Allow components from different subspecies during Taxid checks (implies -alt).\n"
-    "  Checking component accessions, lengths and the taxonomy ID requires that the components\n"
-    "  are available in GenBank.\n"
+    "  -alt       Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
+    "             This can be very time-consuming, and is done separately from most other checks.\n"
+    "  -a         Check component Accessions (not lengths or taxids); slightly faster than \"-alt\".\n"
+    "  -species   Allow components from different subspecies during Taxid checks (implies -alt).\n"
+    "  -out FILE  Save the AGP file, adding missing version 1 to the component accessions\n"
+    "             (use with -a or -alt).\n"
+    "  The above options require that the components are available in GenBank.\n"
     /*
     "  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     */
@@ -144,6 +145,10 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("a" , "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
+
+  arg_desc->AddOptionalKey( "out", "FILE",
+    "add missing version 1 to component accessions",
+    CArgDescriptions::eOutputFile);
 
 
   arg_desc->AddOptionalKey( "skip", "error_or_warning",
@@ -202,9 +207,11 @@ int CAgpValidateApplication::Run(void)
 
     m_AltValidator= new CAltValidator(m_ValidationType==VT_AccLenTaxid);
     m_AltValidator->Init();
-    if( args["species"].HasValue() )
-    {
+    if( args["species"].HasValue() ) {
       m_AltValidator->m_SpeciesLevelTaxonCheck = true;
+    }
+    if( args["out"].HasValue() ) {
+      m_AltValidator->m_out = &(args["out"].AsOutputFile());
     }
   }
 
@@ -326,11 +333,16 @@ void CAgpValidateApplication::x_ValidateFile(
     bool tabsStripped=false;
     bool valid=false;
     bool badCount=false;
+    bool queued=false;
     // Strip #comments
     {
       SIZE_TYPE pos = NStr::Find(line, "#");
       if(pos==0) {
         m_CommentLineCount++;
+        if( (m_ValidationType & VT_Acc) && m_AltValidator->m_out ) {
+          m_AltValidator->QueueLine(line_orig);
+          // do not need to set queued=true since we are not jumping to "NextLine" label
+        }
         continue;
       }
       else if(pos != NPOS) {
@@ -428,9 +440,9 @@ void CAgpValidateApplication::x_ValidateFile(
         m_ContextValidator->ValidateLine(data_line, agp_line);
       }
       else if( !agp_line.is_gap ) {
-        //m_AltValidator->ValidateLine(
         m_AltValidator->QueueLine(line_orig,
           data_line.component_id, line_num, agp_line.compSpan.end);
+        queued=true;
       }
 
       if(istr.eof()) {
@@ -439,16 +451,21 @@ void CAgpValidateApplication::x_ValidateFile(
     }
 
   NextLine:
-    if( (m_ValidationType & VT_Acc) && (!valid || m_AltValidator->QueueSize() >= 150) ) {
-      // !valid: process the batch now so that error lines are printed in the correct order.
-      CNcbiOstrstream* tmp_messages = agpErr.m_messages;
-      agpErr.m_messages =  new CNcbiOstrstream();
+    if(m_ValidationType & VT_Acc) {
+      if(m_AltValidator->m_out && !queued) {
+        m_AltValidator->QueueLine(line_orig);
+      }
+      if( !valid || m_AltValidator->QueueSize() >= 150 ) {
+        // process the batch now so that error lines are printed in the correct order
+        CNcbiOstrstream* tmp_messages = agpErr.m_messages;
+        agpErr.m_messages =  new CNcbiOstrstream();
 
-      // process a batch of preceding lines
-      m_AltValidator->ProcessQueue();
+        // process a batch of preceding lines
+        m_AltValidator->ProcessQueue();
 
-      delete agpErr.m_messages;
-      agpErr.m_messages = tmp_messages;
+        delete agpErr.m_messages;
+        agpErr.m_messages = tmp_messages;
+      }
     }
 
     agpErr.LineDone(line_orig, line_num, !valid );

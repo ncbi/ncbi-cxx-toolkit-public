@@ -100,12 +100,14 @@ void CAltValidator::Init(void)
 }
 
 // Returns GI
-int CAltValidator::ValidateAccession( const string& acc )
+int CAltValidator::ValidateAccession( const string& acc, int* missing_ver )
 {
   CSeq_id seq_id;
   int gi=0;
+  if(missing_ver) *missing_ver=0; // not missing
+
   try {
-      seq_id.Set(acc);
+    seq_id.Set(acc);
   }
   //    catch (CSeqIdException::eFormat)
   catch (...) {
@@ -136,6 +138,8 @@ int CAltValidator::ValidateAccession( const string& acc )
           AT_ThisLine,
           acc);
       }
+
+      if(missing_ver) *missing_ver=ver;
     }
 
     try {
@@ -451,6 +455,14 @@ void CAltValidator::QueueLine(
   lineQueue.push_back(ld);
 }
 
+void CAltValidator::QueueLine(const string& orig_line)
+{
+  SLineData ld;
+  ld.orig_line = orig_line;
+  // ld.comp_id remains empty
+  lineQueue.push_back(ld);
+}
+
 void CAltValidator::ProcessQueue()
 {
   //// Collect GIs, accession-related errors and warnings
@@ -458,7 +470,37 @@ void CAltValidator::ProcessQueue()
   for(TLineQueue::iterator it=lineQueue.begin();
       it != lineQueue.end(); ++it
   ) {
-    int gi = ValidateAccession(it->comp_id);
+
+    if(it->comp_id.size()==0) {
+      // a line to be printed verbatim and not to be processed
+      if(m_out) {
+        *m_out << it->orig_line << "\n";
+      }
+      continue;
+    }
+
+    int missing_ver;
+    int gi = ValidateAccession(it->comp_id, &missing_ver);
+
+    if(m_out) {
+      if(missing_ver==1) {
+        // add missing version 1
+        SIZE_TYPE pos =
+          it->orig_line.find( "\t", 1+
+          it->orig_line.find( "\t", 1+
+          it->orig_line.find( "\t", 1+
+          it->orig_line.find( "\t", 1+
+          it->orig_line.find( "\t", 1+
+          it->orig_line.find( "\t") )))));
+        *m_out << it->orig_line.substr(0, pos);
+        if(pos!=NPOS) *m_out << ".1" << it->orig_line.substr(pos);
+      }
+      else {
+        *m_out << it->orig_line;
+        if(missing_ver!=0) *m_out << "#current version " << it->comp_id << "." << missing_ver;
+      }
+      *m_out << "\n";
+    }
 
     if( agpErr.m_messages->pcount() ) {
       // Error or warning when converting comp_id to GI.
@@ -480,7 +522,7 @@ void CAltValidator::ProcessQueue()
     // agpErr.LineDone(it->orig_line, it->line_num);
   }
 
-  //// Get docsums for collected GIs, validate lengths and taxids,
+  //// Get docsums for the collected GIs, validate lengths and taxids,
   //// print messages to cerr.
   if( uids.size() ) {
 

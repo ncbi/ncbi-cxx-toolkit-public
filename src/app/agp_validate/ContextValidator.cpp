@@ -66,7 +66,8 @@ void CAgpContextValidator::EndOfObject(bool afterLastLine)
 {
   if(m_ObjCount && componentsInLastObject==0) agpErr.Msg(
     CAgpErr::W_ObjNoComp, string(" ") + prev_object,
-    afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
+    AT_PrevLine
+    //afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
   );
   if(componentsInLastScaffold==1) m_SingleCompScaffolds++;
   if(componentsInLastObject  ==1) m_SingleCompObjects++;
