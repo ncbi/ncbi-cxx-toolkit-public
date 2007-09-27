@@ -177,6 +177,7 @@ public:
     void SetRandomizeAmbiguities(void);
     void SetRandomizeAmbiguities(Uint4 seed);
     void SetRandomizeAmbiguities(CRandom& random_gen);
+    void SetRandomizeAmbiguities(CRef<INcbi2naRandomizer> randomizer);
     void SetNoAmbiguities(void);
 
     TResidue operator*(void) const;
@@ -221,7 +222,6 @@ private:
     void x_FillCache(TSeqPos start, TSeqPos count);
     void x_UpdateSeg(TSeqPos pos);
     void x_InitSeg(TSeqPos pos);
-    void x_SetRandomizer(INcbi2naRandomizer& randomizer);
     void x_InitRandomizer(CRandom& random_gen);
 
     void x_NextCacheSeg(void);

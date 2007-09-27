@@ -71,7 +71,8 @@ public:
     virtual int  Run (void);
 
     typedef vector< pair<int, int> > TLevel;
-    CConstRef<CBioseq> CreateBioseq(int gi, int segments, const TLevel& pll);
+    CConstRef<CBioseq> CreateBioseq(int gi, bool protein,
+                                    int segments, const TLevel& pll);
     
 protected:
     CRandom m_Random;
@@ -115,6 +116,7 @@ void CTestApp::Init(void)
 
 
 CConstRef<CBioseq> CTestApp::CreateBioseq(int gi,
+                                          bool protein,
                                           int segments,
                                           const TLevel& pll)
 {
@@ -124,7 +126,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(int gi,
     seq->SetId().push_back(id);
     CSeq_inst& inst = seq->SetInst();
     inst.SetRepr(CSeq_inst::eRepr_delta);
-    inst.SetMol(CSeq_inst::eMol_na);
+    inst.SetMol(protein? CSeq_inst::eMol_aa: CSeq_inst::eMol_na);
     CDelta_ext& delta = inst.SetExt().SetDelta();
     int length = 0;
     for ( int seg = 0; seg < segments; ++seg ) {
@@ -135,43 +137,113 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(int gi,
             CSeq_literal& lit = s->SetLiteral();
             lit.SetLength(len);
             CSeq_data& data = lit.SetSeq_data();
-            switch ( m_Random.GetRand(0, 3) ) {
-            default:
-            {
-                string& s = data.SetIupacna().Set();
-                s.resize(len);
-                NON_CONST_ITERATE ( string, it, s ) {
-                    *it = "ABCDGHKMNRSTVWY"[m_Random.GetRand(0, 14)];
+            if ( protein ) {
+                switch ( m_Random.GetRand(0, 3) ) {
+                default:
+                {
+                    string& s = data.SetIupacaa().Set();
+                    s.resize(len);
+                    const char* BASES = "ABCDEFGHIKLMNPQRSTVWXYZ";
+                    int MAX_BASE = strlen(BASES)-1;
+                    NON_CONST_ITERATE ( string, it, s ) {
+                        *it = BASES[m_Random.GetRand(0, MAX_BASE)];
+                    }
+                    break;
                 }
-                break;
-            }
-            case 9:
-            {
-                vector<char>& s = data.SetNcbi8na().Set();
-                s.resize(len);
-                NON_CONST_ITERATE ( vector<char>, it, s ) {
-                    *it = m_Random.GetRand(0, 15);
+                case 1:
+                {
+                    // gap
+                    if ( m_Random.GetRand(0, 1) ) {
+                        data.SetGap().SetType(CSeq_gap::eType_unknown);
+                    }
+                    else {
+                        lit.ResetSeq_data();
+                    }
+                    break;
                 }
-                break;
-            }
-            case 2:
-            {
-                vector<char>& s = data.SetNcbi2na().Set();
-                s.resize((len+3)/4);
-                NON_CONST_ITERATE ( vector<char>, it, s ) {
-                    *it = m_Random.GetRand(0, 255);
+                case 2:
+                {
+                    string& s = data.SetNcbieaa().Set();
+                    s.resize(len);
+                    const char* BASES = "*-ABCDEFGHIKLMNPQRSTUVWXYZ";
+                    int MAX_BASE = strlen(BASES)-1;
+                    NON_CONST_ITERATE ( string, it, s ) {
+                        *it = BASES[m_Random.GetRand(0, MAX_BASE)];
+                    }
+                    break;
                 }
-                break;
-            }
-            case 3:
-            {
-                vector<char>& s = data.SetNcbi4na().Set();
-                s.resize((len+1)/2);
-                NON_CONST_ITERATE ( vector<char>, it, s ) {
-                    *it = m_Random.GetRand(0, 255);
+                case 3:
+                {
+                    vector<char>& s = data.SetNcbistdaa().Set();
+                    s.resize(len);
+                    NON_CONST_ITERATE ( vector<char>, it, s ) {
+                        *it = m_Random.GetRand(0, 25);
+                    }
+                    break;
                 }
-                break;
+                case 9:
+                {
+                    vector<char>& s = data.SetNcbi8aa().Set();
+                    s.resize(len);
+                    NON_CONST_ITERATE ( vector<char>, it, s ) {
+                        *it = m_Random.GetRand(0, 249);
+                    }
+                    break;
+                }
+                }
             }
+            else {
+                switch ( m_Random.GetRand(0, 3) ) {
+                default:
+                {
+                    string& s = data.SetIupacna().Set();
+                    s.resize(len);
+                    const char* BASES = "ABCDGHKMNRSTVWY";
+                    int MAX_BASE = strlen(BASES)-1;
+                    NON_CONST_ITERATE ( string, it, s ) {
+                        *it = BASES[m_Random.GetRand(0, MAX_BASE)];
+                    }
+                    break;
+                }
+                case 1:
+                {
+                    // gap
+                    if ( m_Random.GetRand(0, 1) ) {
+                        data.SetGap().SetType(CSeq_gap::eType_unknown);
+                    }
+                    else {
+                        lit.ResetSeq_data();
+                    }
+                    break;
+                }
+                case 2:
+                {
+                    vector<char>& s = data.SetNcbi2na().Set();
+                    s.resize((len+3)/4);
+                    NON_CONST_ITERATE ( vector<char>, it, s ) {
+                        *it = m_Random.GetRand(0, 255);
+                    }
+                    break;
+                }
+                case 3:
+                {
+                    vector<char>& s = data.SetNcbi4na().Set();
+                    s.resize((len+1)/2);
+                    NON_CONST_ITERATE ( vector<char>, it, s ) {
+                        *it = m_Random.GetRand(0, 255);
+                    }
+                    break;
+                }
+                case 9:
+                {
+                    vector<char>& s = data.SetNcbi8na().Set();
+                    s.resize(len);
+                    NON_CONST_ITERATE ( vector<char>, it, s ) {
+                        *it = m_Random.GetRand(0, 15);
+                    }
+                    break;
+                }
+                }
             }
         }
         else {
@@ -197,6 +269,61 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(int gi,
     }
     inst.SetLength(length);
     return seq;
+}
+
+
+static int GetKey(CBioseq_Handle::EVectorCoding sv_coding,
+                  ENa_strand strand,
+                  bool ncbi2na,
+                  int ncbi2na_seed)
+{
+    if ( ncbi2na ) {
+        sv_coding = CBioseq_Handle::eCoding_Ncbi;
+    }
+    else {
+        ncbi2na_seed = 0;
+    }
+    return sv_coding*1000 + strand*100 + ncbi2na*10 + ncbi2na_seed;
+}
+
+
+static string Pack(const string& s, CSeq_data::E_Choice coding)
+{
+    string ret;
+    if ( coding == CSeq_data::e_Ncbi2na ) {
+        size_t count = s.size();
+        ret.reserve((count+3)>>2);
+        for ( size_t i = 0; i+4 <= count; i += 4 ) {
+            ret += char((s[i]<<6)|(s[i+1]<<4)|(s[i+2]<<2)|s[i+3]);
+        }
+        switch ( count&3 ) {
+        default:
+            break;
+        case 1:
+            ret += char((s[count-1]<<6));
+            break;
+        case 2:
+            ret += char((s[count-2]<<6)|(s[count-1]<<4));
+            break;
+        case 3:
+            ret += char((s[count-3]<<6)|(s[count-2]<<4)|(s[count-1]<<2));
+            break;
+        }
+    }
+    else if ( coding == CSeq_data::e_Ncbi4na ) {
+        size_t count = s.size();
+        ret.reserve((count+1)>>1);
+        for ( size_t i = 0; i+2 <= count; i += 2 ) {
+            ret += char((s[i]<<4)|s[i+1]);
+        }
+        if ( count&1 ) {
+            ret += char(s[count-1]<<4);
+        }
+    }
+    else {
+        ret = s;
+    }
+    return ret;
 }
 
 
@@ -228,17 +355,20 @@ int CTestApp::Run(void)
     for ( int pass = 0; pass < passes; ++pass ) {
         int levels = m_Random.GetRand(1, max_levels);
         if ( verbose ) {
-            NcbiCout << "Pass " << pass << ", " << levels << " levels." << NcbiEndl;
+            NcbiCout << "Pass " << pass << ", " << levels << " levels."
+                     << NcbiEndl;
         }
         CScope scope(*om);
         TLevel ll, pll;
         CBioseq_Handle main;
+        bool protein = m_Random.GetRand(0, 1) != 0;
         for ( int level = 0; level < levels; ++level ) {
             swap(ll, pll);
             ll.clear();
             for ( int seqnum = 0; seqnum < sequences; ++seqnum ) {
                 int gi = level*1000 + seqnum;
-                CConstRef<CBioseq> seq = CreateBioseq(gi, segments, pll);
+                CConstRef<CBioseq> seq =
+                    CreateBioseq(gi, protein, segments, pll);
                 if ( verbose ) {
                     NcbiCout << "Level "<<level<<" "<<MSerial_AsnText<<*seq;
                 }
@@ -247,6 +377,44 @@ int CTestApp::Run(void)
                 if ( level == levels - 1 ) {
                     main = bh;
                     break;
+                }
+            }
+        }
+        map<int, string> ss;
+        for ( int iupac = 0; iupac < 2; ++iupac ) {
+            CBioseq_Handle::EVectorCoding coding = iupac?
+                CBioseq_Handle::eCoding_Iupac: CBioseq_Handle::eCoding_Ncbi;
+            for ( int minus = 0; minus < 2; ++minus ) {
+                ENa_strand strand = minus? eNa_strand_minus: eNa_strand_plus;
+                CSeqVector sv(main, coding, strand);
+                for ( int ncbi2na = 0;
+                      ncbi2na < (protein||iupac? 1: 2);
+                      ++ncbi2na ) {
+                    if ( ncbi2na ) {
+                        sv.SetCoding(CSeq_data::e_Ncbi2na);
+                    }
+                    for ( int seed = 0; seed <= (ncbi2na? 4: 0); ++seed ) {
+                        if ( seed ) {
+                            sv.SetRandomizeAmbiguities(seed);
+                        }
+                        string d;
+                        sv.GetSeqData(0, sv.size(), d);
+                        _ASSERT(d.size() == main.GetBioseqLength());
+                        int key = GetKey(coding, strand, ncbi2na, seed);
+                        if ( verbose ) {
+                            NcbiCerr << "Ref ("
+                                     << iupac << " "
+                                     << minus << " "
+                                     << ncbi2na << " "
+                                     << seed
+                                     << ") = " << key << " "
+                                     << '"'<<NStr::PrintableString(d)<<'"'
+                                     << NcbiEndl;
+                        }
+                        _ASSERT(!ss.count(key));
+                        ss[key] = d;
+                        sum.AddLine(d);
+                    }
                 }
             }
         }
@@ -266,7 +434,7 @@ int CTestApp::Run(void)
             bool minus = m_Random.GetRand(0, 1);
             ENa_strand strand = minus? eNa_strand_minus: eNa_strand_plus;
             CSeqVector sv(main, coding, strand);
-            bool ncbi2na = !iupac && m_Random.GetRand(0, 1);
+            bool ncbi2na = !protein && !iupac && m_Random.GetRand(0, 1);
             if ( ncbi2na ) {
                 sv.SetCoding(CSeq_data::e_Ncbi2na);
             }
@@ -300,6 +468,47 @@ int CTestApp::Run(void)
                 NcbiCout << NStr::PrintableString(data) << NcbiEndl;
             }
             sum.AddLine(data);
+            int key = GetKey(coding, strand, ncbi2na, randomize_ncbi2na_seed);
+            _ASSERT(ss.count(key));
+            const string& ref = ss[key];
+            _ASSERT(ref.size() == main.GetBioseqLength());
+            _ASSERT(equal(data.begin(), data.end(), ref.begin()+start));
+            if ( !ncbi2na || randomize_ncbi2na_seed ) {
+                string packed;
+                sv.GetPackedSeqData(packed, start, stop);
+                string packed_ref =
+                    Pack(ref.substr(start, stop-start), sv.GetCoding());
+                sum.AddLine(packed_ref);
+                if ( packed != packed_ref ) {
+                    NcbiCout << "packed != packed_ref\n";
+                    for ( size_t i = 0;
+                          i < packed.size() && i < packed_ref.size();
+                          ++i ) {
+                        NcbiCout << i;
+                        int c1 = -1, c2 = -1;
+                        if ( i < packed.size() ) {
+                            c1 = packed[i]&255;
+                            NcbiCout << " " << hex << c1 << dec;
+                        }
+                        else {
+                            NcbiCout << " ?";
+                        }
+                        if ( i < packed_ref.size() ) {
+                            c2 = packed_ref[i]&255;
+                            NcbiCout << " " << hex << c2 << dec;
+                        }
+                        else {
+                            NcbiCout << " ?";
+                        }
+                        if ( c1 != c2 ) {
+                            NcbiCout << " ERROR";
+                        }
+                        NcbiCout << "\n";
+                    }
+                    NcbiCout << NcbiEndl;
+                }
+                _ASSERT(packed == packed_ref);
+            }
         }
     }
 

@@ -38,4 +38,98 @@
 # include <objmgr/impl/seq_vector_cvt_gen.hpp>
 #endif
 
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+void NCBI_XOBJMGR_EXPORT ThrowOutOfRangeSeq_inst(TSeqPos pos);
+
+template<class DstIter, class SrcCont>
+inline
+void copy_8bit_any(DstIter dst, size_t count,
+                   const SrcCont& srcCont, size_t srcPos,
+                   const char* table, bool reverse)
+{
+    size_t endPos = srcPos + count;
+    if ( endPos < srcPos || endPos > srcCont.size() ) {
+        ThrowOutOfRangeSeq_inst(endPos);
+    }
+    if ( table ) {
+        if ( reverse ) {
+            copy_8bit_table_reverse(dst, count, srcCont, srcPos, table);
+        }
+        else {
+            copy_8bit_table(dst, count, srcCont, srcPos, table);
+        }
+    }
+    else {
+        if ( reverse ) {
+            copy_8bit_reverse(dst, count, srcCont, srcPos);
+        }
+        else {
+            copy_8bit(dst, count, srcCont, srcPos);
+        }
+    }
+}
+
+
+template<class DstIter, class SrcCont>
+inline
+void copy_4bit_any(DstIter dst, size_t count,
+                   const SrcCont& srcCont, size_t srcPos,
+                   const char* table, bool reverse)
+{
+    size_t endPos = srcPos + count;
+    if ( endPos < srcPos || endPos / 2 > srcCont.size() ) {
+        ThrowOutOfRangeSeq_inst(endPos);
+    }
+    if ( table ) {
+        if ( reverse ) {
+            copy_4bit_table_reverse(dst, count, srcCont, srcPos, table);
+        }
+        else {
+            copy_4bit_table(dst, count, srcCont, srcPos, table);
+        }
+    }
+    else {
+        if ( reverse ) {
+            copy_4bit_reverse(dst, count, srcCont, srcPos);
+        }
+        else {
+            copy_4bit(dst, count, srcCont, srcPos);
+        }
+    }
+}
+
+
+template<class DstIter, class SrcCont>
+inline
+void copy_2bit_any(DstIter dst, size_t count,
+                   const SrcCont& srcCont, size_t srcPos,
+                   const char* table, bool reverse)
+{
+    size_t endPos = srcPos + count;
+    if ( endPos < srcPos || endPos / 4 > srcCont.size() ) {
+        ThrowOutOfRangeSeq_inst(endPos);
+    }
+    if ( table ) {
+        if ( reverse ) {
+            copy_2bit_table_reverse(dst, count, srcCont, srcPos, table);
+        }
+        else {
+            copy_2bit_table(dst, count, srcCont, srcPos, table);
+        }
+    }
+    else {
+        if ( reverse ) {
+            copy_2bit_reverse(dst, count, srcCont, srcPos);
+        }
+        else {
+            copy_2bit(dst, count, srcCont, srcPos);
+        }
+    }
+}
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
 #endif//SEQ_VECTOR_CVT__HPP

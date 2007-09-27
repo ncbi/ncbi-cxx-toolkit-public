@@ -106,6 +106,9 @@ public:
     void GetSeqData(const const_iterator& start,
                     const const_iterator& stop,
                     string& buffer) const;
+    void GetPackedSeqData(string& buffer,
+                          TSeqPos start = 0,
+                          TSeqPos stop = kInvalidSeqPos);
 
     typedef CSeq_inst::TMol TMol;
 
@@ -142,6 +145,7 @@ public:
     void SetRandomizeAmbiguities(void);
     void SetRandomizeAmbiguities(Uint4 seed);
     void SetRandomizeAmbiguities(CRandom& random_gen);
+    void SetRandomizeAmbiguities(CRef<INcbi2naRandomizer> randomizer);
     void SetNoAmbiguities(void);
 
 private:
@@ -153,6 +157,13 @@ private:
     CSeqVector_CI& x_GetIterator(TSeqPos pos) const;
     CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
     void x_InitRandomizer(CRandom& random_gen);
+
+    void x_GetPacked8SeqData(string& dst_str,
+                             TSeqPos src_pos, TSeqPos src_end);
+    void x_GetPacked4naSeqData(string& dst_str,
+                               TSeqPos src_pos, TSeqPos src_end);
+    void x_GetPacked2naSeqData(string& dst_str,
+                               TSeqPos src_pos, TSeqPos src_end);
 
     CHeapScope               m_Scope;
     CConstRef<CSeqMap>       m_SeqMap;

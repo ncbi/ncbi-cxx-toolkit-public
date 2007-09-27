@@ -55,100 +55,11 @@ BEGIN_SCOPE(objects)
 
 static const TSeqPos kCacheSize = 1024;
 
-namespace {
-    void ThrowOutOfRangeSeq_inst(TSeqPos pos)
-    {
-        NCBI_THROW_FMT(CSeqVectorException, eOutOfRange,
-                       "reference out of range of Seq-inst data: "<<pos);
-    }
-}
-
-template<class DstIter, class SrcCont>
-inline
-void copy_8bit_any(DstIter dst, size_t count,
-                   const SrcCont& srcCont, size_t srcPos,
-                   const char* table, bool reverse)
+void ThrowOutOfRangeSeq_inst(TSeqPos pos)
 {
-    size_t endPos = srcPos + count;
-    if ( endPos < srcPos || endPos > srcCont.size() ) {
-        ThrowOutOfRangeSeq_inst(endPos);
-    }
-    if ( table ) {
-        if ( reverse ) {
-            copy_8bit_table_reverse(dst, count, srcCont, srcPos, table);
-        }
-        else {
-            copy_8bit_table(dst, count, srcCont, srcPos, table);
-        }
-    }
-    else {
-        if ( reverse ) {
-            copy_8bit_reverse(dst, count, srcCont, srcPos);
-        }
-        else {
-            copy_8bit(dst, count, srcCont, srcPos);
-        }
-    }
+    NCBI_THROW_FMT(CSeqVectorException, eOutOfRange,
+                   "reference out of range of Seq-inst data: "<<pos);
 }
-
-
-template<class DstIter, class SrcCont>
-inline
-void copy_4bit_any(DstIter dst, size_t count,
-                   const SrcCont& srcCont, size_t srcPos,
-                   const char* table, bool reverse)
-{
-    size_t endPos = srcPos + count;
-    if ( endPos < srcPos || endPos / 2 > srcCont.size() ) {
-        ThrowOutOfRangeSeq_inst(endPos);
-    }
-    if ( table ) {
-        if ( reverse ) {
-            copy_4bit_table_reverse(dst, count, srcCont, srcPos, table);
-        }
-        else {
-            copy_4bit_table(dst, count, srcCont, srcPos, table);
-        }
-    }
-    else {
-        if ( reverse ) {
-            copy_4bit_reverse(dst, count, srcCont, srcPos);
-        }
-        else {
-            copy_4bit(dst, count, srcCont, srcPos);
-        }
-    }
-}
-
-
-template<class DstIter, class SrcCont>
-inline
-void copy_2bit_any(DstIter dst, size_t count,
-                   const SrcCont& srcCont, size_t srcPos,
-                   const char* table, bool reverse)
-{
-    size_t endPos = srcPos + count;
-    if ( endPos < srcPos || endPos / 4 > srcCont.size() ) {
-        ThrowOutOfRangeSeq_inst(endPos);
-    }
-    if ( table ) {
-        if ( reverse ) {
-            copy_2bit_table_reverse(dst, count, srcCont, srcPos, table);
-        }
-        else {
-            copy_2bit_table(dst, count, srcCont, srcPos, table);
-        }
-    }
-    else {
-        if ( reverse ) {
-            copy_2bit_reverse(dst, count, srcCont, srcPos);
-        }
-        else {
-            copy_2bit(dst, count, srcCont, srcPos);
-        }
-    }
-}
-
 
 // CSeqVector_CI::
 
@@ -568,12 +479,12 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
     }
     case CSeqMap::eSeqGap:
         if (m_Coding == CSeq_data::e_Ncbi2na  &&  m_Randomizer) {
-            fill(m_Cache, m_Cache + count,
-                 sx_GetGapChar(CSeq_data::e_Ncbi4na, eCaseConversion_none));
+            fill_n(m_Cache, count,
+                   sx_GetGapChar(CSeq_data::e_Ncbi4na, eCaseConversion_none));
             m_Randomizer->RandomizeData(m_Cache, count, start);
         }
         else {
-            fill(m_Cache, m_Cache + count, GetGapChar());
+            fill_n(m_Cache, count, GetGapChar());
         }
         break;
     default:
@@ -765,23 +676,26 @@ void CSeqVector_CI::x_PrevCacheSeg()
 }
 
 
-void CSeqVector_CI::x_SetRandomizer(INcbi2naRandomizer& randomizer)
+void CSeqVector_CI::SetRandomizeAmbiguities(CRef<INcbi2naRandomizer> randomizer)
 {
-    TSeqPos pos = GetPos();
-    x_ResetCache();
-    x_ResetBackup();
-    m_Randomizer.Reset(&randomizer);
-    x_SetPos(pos);
+    if ( randomizer != m_Randomizer ) {
+        TSeqPos pos = GetPos();
+        m_Randomizer = randomizer;
+        x_ResetBackup();
+        if ( x_CacheSize() ) {
+            x_ResetCache();
+            if ( m_Seg ) {
+                x_SetPos(pos);
+            }
+        }
+    }
 }
 
 
 void CSeqVector_CI::x_InitRandomizer(CRandom& random_gen)
 {
-    TSeqPos pos = GetPos();
-    x_ResetCache();
-    x_ResetBackup();
-    m_Randomizer.Reset(new CNcbi2naRandomizer(random_gen));
-    x_SetPos(pos);
+    CRef<INcbi2naRandomizer> randomizer(new CNcbi2naRandomizer(random_gen));
+    SetRandomizeAmbiguities(randomizer);
 }
 
 
@@ -807,11 +721,7 @@ void CSeqVector_CI::SetRandomizeAmbiguities(CRandom& random_gen)
 
 void CSeqVector_CI::SetNoAmbiguities(void)
 {
-    TSeqPos pos = GetPos();
-    x_ResetCache();
-    x_ResetBackup();
-    m_Randomizer.Reset();
-    x_SetPos(pos);
+    SetRandomizeAmbiguities(null);
 }
 
 
