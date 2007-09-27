@@ -400,7 +400,7 @@ int CTestApp::Run(void)
                         string d;
                         sv.GetSeqData(0, sv.size(), d);
                         _ASSERT(d.size() == main.GetBioseqLength());
-                        int key = GetKey(coding, strand, ncbi2na, seed);
+                        int key = GetKey(coding, strand, ncbi2na != 0, seed);
                         if ( verbose ) {
                             NcbiCerr << "Ref ("
                                      << iupac << " "
@@ -428,10 +428,10 @@ int CTestApp::Run(void)
                 NcbiCout << "["<<start<<"..."<<stop<<") ";
             }
 
-            bool iupac = m_Random.GetRand(0, 1);
+            bool iupac = m_Random.GetRand(0, 1) != 0;
             CBioseq_Handle::EVectorCoding coding = iupac?
                 CBioseq_Handle::eCoding_Iupac: CBioseq_Handle::eCoding_Ncbi;
-            bool minus = m_Random.GetRand(0, 1);
+            bool minus = m_Random.GetRand(0, 1) != 0;
             ENa_strand strand = minus? eNa_strand_minus: eNa_strand_plus;
             CSeqVector sv(main, coding, strand);
             bool ncbi2na = !protein && !iupac && m_Random.GetRand(0, 1);
