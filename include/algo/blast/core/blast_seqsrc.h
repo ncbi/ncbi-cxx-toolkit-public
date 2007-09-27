@@ -170,6 +170,9 @@ Int8
 BlastSeqSrcGetTotLenStats(const BlastSeqSrc* seq_src);
 
 /** Get the Blast Sequence source name (e.g.: BLAST database name).
+ * Here the full name (path and file name) should be returned.  
+ * If an alias file is present the return value should be the full name of 
+ * the alias file.
  * @param seq_src the BLAST sequence source [in]
  */
 NCBI_XBLAST_EXPORT
