@@ -6962,9 +6962,11 @@ public:
 
          // Ignore errors with ErrorCode set to 0
          // (this is related mostly to the FreeTDS driver)
-         if (ex->GetDBErrCode() == 0 || 
-                 ex->Message().find("ERROR") == string::npos)
+         if (ex->GetDBErrCode() == 0 
+             // || ex->Message().find("ERROR") == string::npos
+            ) {
              return true;
+         }
 
          NcbiCout << "BaoshanGu_handler called." << endl;
          throw *ex;
@@ -6987,6 +6989,7 @@ CDBAPIUnitTest::Test_MsgToEx2(void)
     auto_ptr<IConnection> conn(m_DS->CreateConnection());
     conn->Connect("anyone","allowed", "REFTRACK_DEV", "x_locus");
 
+    // conn->MsgToEx(true);
     conn->MsgToEx(false);
 
     auto_ptr<IStatement> stmt(conn->GetStatement());
@@ -6995,13 +6998,13 @@ CDBAPIUnitTest::Test_MsgToEx2(void)
         string sql = " EXEC locusXref..undelete_locus_id @locus_id = 135896, @login='guba'";
         
         stmt->ExecuteUpdate(sql); //or SendSql
-
-        CDB_Exception* dbex = NULL;
-        while(dbex = conn->GetErrorAsEx()->Pop()){
-            cout << "MSG:" << dbex->Message() << endl;
-        }
     } catch (const CDB_Exception& e) {
         NcbiCout << "CDB_Exception:" << e.Message() << endl;
+    }
+
+    CDB_Exception* dbex = NULL;
+    while(dbex = conn->GetErrorAsEx()->Pop()){
+        cout << "MSG:" << dbex->Message() << endl;
     }
 
     drv_context->PopCntxMsgHandler(handler);
@@ -11054,6 +11057,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.IsBCPAvailable()) {
         if(args.GetDriverName() != "ftds_dblib"
            && args.GetDriverName() != "odbc"
+           && !(args.GetDriverName() == "ctlib" && Solaris && !sybase_client_v125)
           )
         {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel,
