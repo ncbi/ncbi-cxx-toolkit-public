@@ -32,6 +32,13 @@
 
 %module(docstring="Interface to the NCBI C++ Toolkit") ncbi
 
+// Use "compactdefaultargs" to decrease wrapper size and make
+// autodoc nicer.
+// However, a few functions must be excepted from this or
+// the wrapper code will be uncompilable.
+%feature("compactdefaultargs");
+%feature("compactdefaultargs", "0") ncbi::CSymDustMasker::CSymDustMasker;
+%feature("compactdefaultargs", "0") ncbi::CPairwiseAln::CPairwiseAln;
 
 #ifdef SWIGRUBY
 // int vs. enum for ios_base::fmtflags
