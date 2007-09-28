@@ -308,7 +308,9 @@ static inline
 void x_Append8To8(string& dst_str, const string& src_str,
                   size_t src_pos, size_t count)
 {
-    dst_str.append(src_str.data()+src_pos, count);
+    if ( count ) {
+        dst_str.append(src_str.data()+src_pos, count);
+    }
 }
 
 
@@ -316,14 +318,18 @@ static inline
 void x_Append8To8(string& dst_str, const vector<char>& src_str,
                   size_t src_pos, size_t count)
 {
-    dst_str.append(&src_str[src_pos], count);
+    if ( count ) {
+        dst_str.append(&src_str[src_pos], count);
+    }
 }
 
 
 static inline
 void x_AppendGapTo8(string& dst_str, size_t count, char gap)
 {
-    dst_str.append(count, gap);
+    if ( count ) {
+        dst_str.append(count, gap);
+    }
 }
 
 
@@ -392,7 +398,9 @@ void x_Append4To4(string& dst, char& dst_c, TSeqPos dst_pos,
         _ASSERT(!(dst_pos&1));
         size_t octets = count>>1;
         size_t pos = src_pos>>1;
-        dst.append(&src[pos], octets);
+        if ( octets ) {
+            dst.append(&src[pos], octets);
+        }
         if ( count&1 ) {
             _ASSERT(!(src_pos&1));
             dst_c = (src[pos+octets]>>4)&15;
@@ -417,7 +425,9 @@ void x_AppendGapTo4(string& dst_str, char& dst_c, TSeqPos dst_pos,
     }
     _ASSERT(!(dst_pos&1));
     size_t octets = count>>1;
-    dst_str.append(octets, char((gap<<4)|gap));
+    if ( octets ) {
+        dst_str.append(octets, char((gap<<4)|gap));
+    }
     if ( count&1 ) {
         dst_c = gap;
     }
@@ -428,6 +438,9 @@ static
 void x_Append8To2(string& dst_str, char& dst_c, TSeqPos dst_pos,
                   const char* buffer, TSeqPos count)
 {
+    if ( !count ) {
+        return;
+    }
     _ASSERT(dst_str.size() == dst_pos>>2);
     const char* unpacked = buffer;
     if ( dst_pos&3 ) {
@@ -442,9 +455,9 @@ void x_Append8To2(string& dst_str, char& dst_c, TSeqPos dst_pos,
         else {
             dst_c = c;
         }
-    }
-    if ( !count ) {
-        return;
+        if ( !count ) {
+            return;
+        }
     }
     _ASSERT((dst_pos&3) == 0);
     _ASSERT(dst_str.size() == dst_pos>>2);
@@ -514,7 +527,9 @@ void x_Append2To2(string& dst, char& dst_c, TSeqPos dst_pos,
     _ASSERT(!(src_pos&3));
     size_t octets = count>>2;
     size_t pos = src_pos>>2;
-    dst.append(&src[pos], octets);
+    if ( octets ) {
+        dst.append(&src[pos], octets);
+    }
     size_t rem = count&3;
     if ( rem ) {
         _ASSERT(!(src_pos&3));
