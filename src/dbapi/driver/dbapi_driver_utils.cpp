@@ -47,7 +47,8 @@ struct SUnLock
     void operator() (CDB_UserHandler::TExceptions& resource) const
     {
         NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, resource) {
-            delete *it;
+            CDB_Exception* ex = *it; // for debugging ...
+            delete ex;
         }
 
         resource.clear();
@@ -75,7 +76,8 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
 {
     CFastMutexGuard mg(m_Mutex);
 
-    m_Exceptions.push_back(e.Clone());
+    CDB_Exception* ex = e.Clone(); // for debugging ...
+    m_Exceptions.push_back(ex);
 }
 
 
