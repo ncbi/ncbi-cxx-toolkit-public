@@ -274,7 +274,8 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
                   vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen);
 
-/** Object manager free version of GetSequence */
+/** Object manager free version of GetSequence 
+ */
 NCBI_XBLAST_EXPORT
 SBlastSequence
 GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding, 
