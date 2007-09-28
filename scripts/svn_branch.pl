@@ -5,10 +5,22 @@ use strict;
 
 my ($ScriptDir, $ScriptName);
 
+use File::Spec;
+
 BEGIN
 {
-    ($ScriptDir, $ScriptName) = $0 =~ m/^(?:(.+)[\\\/])?(.+)$/;
-    $ScriptDir ||= '.'
+    my $ScriptPathname = $0;
+
+    ($ScriptDir, $ScriptName) = $ScriptPathname =~ m/^(?:(.+)[\\\/])?(.+)$/;
+
+    $ScriptDir = File::Spec->rel2abs($ScriptDir || '.');
+
+    while ($ScriptPathname = eval {readlink $ScriptPathname})
+    {
+        my ($NewScriptDir) = $ScriptPathname =~ m/^(?:(.+)[\\\/])?/;
+
+        $ScriptDir = File::Spec->rel2abs($NewScriptDir || '.', $ScriptDir)
+    }
 }
 
 use lib $ScriptDir;
