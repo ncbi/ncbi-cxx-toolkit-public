@@ -6995,7 +6995,8 @@ CDBAPIUnitTest::Test_MsgToEx2(void)
     auto_ptr<IStatement> stmt(conn->GetStatement());
 
     try {
-        string sql = " EXEC locusXref..undelete_locus_id @locus_id = 135896, @login='guba'";
+        // string sql = " EXEC locusXref..undelete_locus_id @locus_id = 135896, @login='guba'";
+        string sql = "EXEC locusXref..dbapitest";
         
         stmt->ExecuteUpdate(sql); //or SendSql
     } catch (const CDB_Exception& e) {
@@ -11084,10 +11085,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx,
-            DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if (args.GetDriverName() != "msdblib") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_MsgToEx,
+                DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     /*
     if (args.GetServerType() == CTestArguments::eSybase
