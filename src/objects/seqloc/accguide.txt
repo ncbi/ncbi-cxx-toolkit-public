@@ -408,6 +408,7 @@ special  CAL48381-CAL48383  embl_tpa_prot
 special  CAL59562-CAL59577  embl_tpa_prot
 special  CAL63903-CAL63904  embl_tpa_prot
 special  CAL64054-CAL64058  embl_tpa_prot
+special  CAL69054-CAL69118  embl_tpa_prot # '55 unassigned
 special  CAM06633           embl_tpa_prot
 special  CAM12311           embl_tpa_prot
 special  CAM31891-CAM31896  embl_tpa_prot
