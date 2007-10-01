@@ -201,7 +201,7 @@ protected:
     double m_MinExonIdty;
 
     // compartment penalty as a per cent of the query (mRna) length
-    double m_compartment_penalty;
+    double m_CompartmentPenalty;
 
     // min compartment idty - others will be skipped
     double m_MinCompartmentIdty;
