@@ -425,9 +425,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
 
     ITERATE (COrgName::TMod, modI, bsrc.GetOrg().GetOrgname().GetMod()) {
         if ((*modI)->GetSubtype() == st) {
-            source_description += x_GetOrgModLabel(st);
 
-            source_description += " ";
             string val = (*modI)->GetSubname();
             // truncate value at first semicolon
             unsigned int pos = NStr::Find(val, ";");
@@ -437,8 +435,24 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
             if (st == COrgMod::eSubtype_specimen_voucher && NStr::StartsWith (val, "personal:")) {
                 val = val.substr(9);
             }
-            source_description += val;
-            used = true;
+            // If modifier is one of the following types and the value already appears in the tax Name,
+            // don't use in the organism description
+            if ((st == COrgMod::eSubtype_strain
+                 || st == COrgMod::eSubtype_variety
+                 || st == COrgMod::eSubtype_sub_species
+                 || st == COrgMod::eSubtype_forma
+                 || st == COrgMod::eSubtype_forma_specialis
+                 || st == COrgMod::eSubtype_pathovar
+                 || st == COrgMod::eSubtype_specimen_voucher)
+                && NStr::Find (bsrc.GetOrg().GetTaxname(), val) != NCBI_NS_STD::string::npos) {
+                // can't use this
+            } else {
+                source_description += x_GetOrgModLabel(st);
+
+                source_description += " ";
+                source_description += val;
+                used = true;
+            }
         }
     }
     return used;
