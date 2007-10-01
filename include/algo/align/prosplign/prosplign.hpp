@@ -48,7 +48,6 @@ BEGIN_SCOPE(objects)
     class CSeq_loc;
     class CSeq_align;
 END_SCOPE(objects)
-USING_SCOPE(objects);
 
 /// Scoring parameters object
 class NCBI_XALGOALIGN_EXPORT CProSplignScoring: public CObject
@@ -243,8 +242,11 @@ public:
     /// genomic seq_loc should be a continuous region - an interval or a whole sequence
     ///
     /// Returns Spliced-seg
-    CRef<CSeq_align> FindAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic, 
-                                   CProSplignOutputOptions output_options = CProSplignOutputOptions());
+    CRef<objects::CSeq_align>
+        FindAlignment(objects::CScope& scope,
+                      const objects::CSeq_id& protein,
+                      const objects::CSeq_loc& genomic, 
+                      CProSplignOutputOptions output_options = CProSplignOutputOptions());
 
     /// deprecated internals
     void SetMode(bool one_stage, bool just_second_stage, bool old);
