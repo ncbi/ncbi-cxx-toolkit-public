@@ -2584,8 +2584,8 @@ TDSSOCKET *tds = (TDSSOCKET *) dbproc->tds_socket;
         return FAIL;
     }
 
-
-	sprintf(query, "writetext bulk %s 0x%s timestamp = 0x%s",
+        /* ssikorsk added " with log" */
+	sprintf(query, "writetext bulk %s 0x%s timestamp = 0x%s with log",
 		objname, textptr_string, timestamp_string);
 	if (tds_submit_query(dbproc->tds_socket, query)!=TDS_SUCCEED) {
 		return FAIL;
