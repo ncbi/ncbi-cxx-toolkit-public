@@ -74,11 +74,15 @@ namespace {
     // kMinTermExonIdty will be converted to gaps
     const size_t kMinTermExonSize (28);
     const double kMinTermExonIdty (0.9);
+
+    const CSplign::THit::TCoord
+                 kMaxCoord (numeric_limits<CSplign::THit::TCoord>::max());
 }
+
 
 CSplign::CSplign( void )
 {
-    m_compartment_penalty = s_GetDefaultCompartmentPenalty();
+    m_CompartmentPenalty = s_GetDefaultCompartmentPenalty();
     m_MinExonIdty = s_GetDefaultMinExonIdty();
     m_MinSingletonIdty = m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
     m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
@@ -232,7 +236,7 @@ void CSplign::SetCompartmentPenalty(double penalty)
     if(penalty < 0 || penalty > 1) {
         NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_QueryCoverageOutOfRange);
     }
-    m_compartment_penalty = penalty;
+    m_CompartmentPenalty = penalty;
 }
 
 double CSplign::s_GetDefaultCompartmentPenalty(void)
@@ -242,7 +246,7 @@ double CSplign::s_GetDefaultCompartmentPenalty(void)
 
 double CSplign::GetCompartmentPenalty( void ) const 
 {
-    return m_compartment_penalty;
+    return m_CompartmentPenalty;
 }
 
 void CSplign::x_LoadSequence(vector<char>* seq, 
@@ -275,7 +279,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                            string("Sequence is empty: ") 
                            + seqid.AsFastaString());
             }
-            if(finish > dim) {
+            if(finish >= dim) {
                 finish = dim - 1;
             }
 
@@ -584,7 +588,7 @@ CSplign::TOrfPair CSplign::GetCds(const THit::TId& id, const vector<char> * seq_
 
         vector<char> seq;
         if(seq_data == 0) {
-            x_LoadSequence(&seq, *id, 0, numeric_limits<THit::TCoord>::max(),false);
+            x_LoadSequence(&seq, *id, 0, kMaxCoord, false);
             seq_data = & seq;
         }
 
@@ -666,30 +670,26 @@ void CSplign::Run(THitRefs* phitrefs)
 
     THit::TId id_query (hitrefs.front()->GetQueryId());
 
-    const TSeqPos mrna_size (objects::sequence::GetLength(*id_query, m_Scope));
-    if(mrna_size == numeric_limits<TSeqPos>::max()) {
+    const THit::TCoord mrna_size (objects::sequence::GetLength(*id_query, m_Scope));
+    if(mrna_size == kMaxCoord) {
         NCBI_THROW(CAlgoAlignException, eNoSeqData, 
                    string("Sequence not found: ") + id_query->AsFastaString());
     }
     
-    const TSeqPos comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
-    const TSeqPos min_matches = size_t(m_MinCompartmentIdty * mrna_size);
-    const TSeqPos min_singleton_matches = size_t(m_MinSingletonIdty * mrna_size);
-
     // iterate through compartments
-    CCompartmentAccessor<THit> comps ( hitrefs.begin(), hitrefs.end(),
-                                       comp_penalty_bps,
-                                       min_matches,
-                                       min_singleton_matches,
-                                       true );
+    CCompartmentAccessor<THit> comps (hitrefs.begin(),
+                                      hitrefs.end(),
+                                      THit::TCoord(m_CompartmentPenalty * mrna_size),
+                                      THit::TCoord(m_MinCompartmentIdty * mrna_size),
+                                      THit::TCoord(m_MinSingletonIdty * mrna_size),
+                                      true);
 
     pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
     if(dim.second > 0) {
  
         // pre-load cDNA
         m_mrna.clear();
-        x_LoadSequence(&m_mrna, *id_query, 0, 
-                       numeric_limits<THit::TCoord>::max(), false);
+        x_LoadSequence(&m_mrna, *id_query, 0, kMaxCoord, false);
 
         const TOrfPair orfs (GetCds(id_query, & m_mrna));
         if(m_strand) {
@@ -730,13 +730,14 @@ void CSplign::Run(THitRefs* phitrefs)
             }
      
             try {
-                
-                THitRefs comp_hits;
-                comps.Get(i, comp_hits);
-            
+
                 if(comps.GetStatus(i)) {
-            
-                    SAlignedCompartment ac (x_RunOnCompartment(&comp_hits,smin,smax));
+
+                    THitRefs comp_hits;
+                    comps.Get(i, comp_hits);
+
+                    SAlignedCompartment ac (
+                         x_RunOnCompartment(&comp_hits, smin, smax));
 
                     ac.m_Id = ++m_model_id;
                     ac.m_Segments = m_segments;
@@ -780,8 +781,7 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
 
     THit::TId id_query (phitrefs->front()->GetQueryId());
 
-    x_LoadSequence(&m_mrna, *id_query, 0, 
-                   numeric_limits<THit::TCoord>::max(), false);
+    x_LoadSequence(&m_mrna, *id_query, 0, kMaxCoord, false);
 
     const TOrfPair orfs (GetCds(id_query, & m_mrna));
     if(m_strand) {
@@ -960,8 +960,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         const THit::TCoord extent_right_m1 (x_GetGenomicExtent(rspace));
         
         // m2: estimate genomic extents using compartment hits
-        THit::TCoord fixed_left (numeric_limits<THit::TCoord>::max() / 2), 
-                     fixed_right(fixed_left);
+        THit::TCoord fixed_left (kMaxCoord / 2), fixed_right(fixed_left);
 
         const size_t kTermLenCutOff_m2 (10);
         const bool fix_left  (qmin   <= kTermLenCutOff_m2);
@@ -1028,26 +1027,40 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         m_genomic.clear();
         x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
                        smin, smax, true);
-    
+
+        // adjust smax if beyond the end
         const THit::TCoord ctg_end (smin + m_genomic.size());
-        if(ctg_end - 1 < smax) { // adjust smax if beyond the end
-            smax = ctg_end - 1;
+        if(smax >= ctg_end) {
+            smax = ctg_end > 0? ctg_end - 1: 0;
         }
 
-        if(!ctg_strand) {
+        if(ctg_strand == false) {
 
             // make reverse complementary
             // for the contig's area of interest
             reverse (m_genomic.begin(), m_genomic.end());
             transform(m_genomic.begin(), m_genomic.end(), m_genomic.begin(),
                       SCompliment());
+        }
 
-            // flip hits
-            NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
+        NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
-                THitRef& h = *ii;
-                THit::TCoord a2 = smax - (h->GetSubjMax() - smin);
-                THit::TCoord a3 = smax - (h->GetSubjMin() - smin);
+            THitRef& h (*ii);
+
+            const THit::TCoord hsmin (h->GetSubjMin());
+            const THit::TCoord hsmax (h->GetSubjMax());
+            if(!(smin <= hsmin && hsmax <= smax)) {
+                CNcbiOstrstream ostr;
+                ostr << "Invalid pattern hit:\n" << *h
+                     << "\n Interval = (" << smin << ", " << smax << ')';
+                const string errmsg = CNcbiOstrstreamToString(ostr);
+                NCBI_THROW(CAlgoAlignException, ePattern, errmsg);
+            }
+            
+            if(ctg_strand == false) {
+
+                THit::TCoord a2 (smax - (hsmax - smin));
+                THit::TCoord a3 (smax - (hsmin - smin));
                 h->SetSubjStart(a2);
                 h->SetSubjStop(a3);
             }
