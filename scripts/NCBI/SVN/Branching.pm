@@ -451,9 +451,9 @@ sub SetRawMergeProp
     my ($Self, $BranchPath, $Changes, @BranchPaths) = @_;
 
     $Self->{SVN}->RunSubversion('propset', '-R', 'ncbi:raw',
-        "Please run \"$Self->{MyName} commit_merge " .
+        "Please run '$Self->{MyName} commit_merge " .
         NCBI::SVN::Branching::Util::SimplifyBranchPath($BranchPath) .
-        "\" to merge $Changes", @BranchPaths)
+        "' to merge $Changes", @BranchPaths)
 }
 
 sub DoMerge
