@@ -1002,19 +1002,20 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 
 void CNcbiApplication::AppStart(void)
 {
-    string args;
+    string cmd_line = GetProgramExecutablePath();
     if ( m_Arguments.get() ) {
-        for (SIZE_TYPE arg = 0; arg < m_Arguments->Size(); ++arg) {
-            if (arg > 0) {
-                args += " ";
-            }
-            args += (*m_Arguments)[arg];
+        if ( cmd_line.empty() ) {
+            cmd_line = (*m_Arguments)[0];
+        }
+        for (SIZE_TYPE arg = 1; arg < m_Arguments->Size(); ++arg) {
+            cmd_line += " ";
+            cmd_line += (*m_Arguments)[arg];
         }
     }
 
     // Print application start message
     if ( !CDiagContext::IsSetOldPostFormat() ) {
-        GetDiagContext().PrintStart(NStr::PrintableString(args));
+        GetDiagContext().PrintStart(NStr::PrintableString(cmd_line));
     }
 }
 
