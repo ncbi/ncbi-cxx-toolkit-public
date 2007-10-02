@@ -1159,6 +1159,9 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     case DTDAttribute::eEnum:
         type = EnumeratedBlock(att, new CEnumDataType());
         break;
+    case DTDAttribute::eIntEnum:
+        type = EnumeratedBlock(att, new CIntEnumDataType());
+        break;
 
     case DTDAttribute::eBoolean:
         type = new CBoolDataType();
@@ -1179,9 +1182,11 @@ CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
 {
     int v=1;
     const list<string>& attEnums = att.GetEnumValues();
-    for (list<string>::const_iterator i = attEnums.begin();
-        i != attEnums.end(); ++i, ++v)
-    {
+    list<string>::const_iterator i;
+    for (i = attEnums.begin(); i != attEnums.end(); ++i, ++v) {
+        if (enumType->IsInteger()) {
+            v = att.GetEnumValueId(*i);
+        }
         enumType->AddValue( *i, v).SetSourceLine(
             att.GetEnumValueSourceLine(*i));
     }
@@ -1375,7 +1380,7 @@ void DTDParser::PrintAttribute(const DTDAttribute& attrib, bool indent/*=true*/)
                 if (ie != enumV.begin()) {
                     cout << ",";
                 }
-                cout << *ie;
+                cout << *ie << "(" << attrib.GetEnumValueId(*ie) << ")";
             }
             cout << ")";
         }

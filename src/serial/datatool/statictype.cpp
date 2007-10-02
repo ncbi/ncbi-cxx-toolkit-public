@@ -727,7 +727,7 @@ const char* CBigIntDataType::GetXMLContents(void) const
 
 string CBigIntDataType::GetSchemaTypeString(void) const
 {
-    return "xs:integer";
+    return "xs:long";
 }
 
 bool CBigIntDataType::CheckValue(const CDataValue& value) const

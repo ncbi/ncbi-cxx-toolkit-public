@@ -210,6 +210,7 @@ void CFileModules::PrintXMLSchemaModular(void) const
 void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
 {
     string nsName("http://www.ncbi.nlm.nih.gov");
+    string nsNcbi(nsName);
     if (!m_Modules.empty()) {
         const CDataTypeModule::TDefinitions& defs = 
             m_Modules.front()->GetDefinitions();
@@ -227,7 +228,8 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
     out << "<?xml version=\"1.0\" ?>\n";
     PrintXMLRefInfo(out);
     out << "<xs:schema\n"
-        << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n";
+        << "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
+        << "  xmlns:ncbi=\"" << nsNcbi << "\"\n";
     if (!nsName.empty()) {
         out << "  xmlns=\"" << nsName << "\"\n"
             << "  targetNamespace=\"" << nsName << "\"\n";

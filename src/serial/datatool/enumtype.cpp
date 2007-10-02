@@ -201,7 +201,11 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
     }
     ITERATE ( TValues, i, m_Values ) {
         PrintASNNewLine(out, indent) <<
-            "<xs:enumeration value=\"" << i->GetName() << "\"/>";
+            "<xs:enumeration value=\"" << i->GetName() << "\"";
+        if (IsInteger()) {
+            out << " ncbi:intvalue=\"" << i->GetValue() << "\"";
+        }
+        out << "/>";
     }
     ITERATE ( list<string>, s, closetag ) {
         PrintASNNewLine(out, --indent) << *s;

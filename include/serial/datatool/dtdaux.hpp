@@ -110,6 +110,7 @@ public:
 
         eString,
         eEnum,
+        eIntEnum,
         eId,
         eIdRef,
         eIdRefs,
@@ -150,9 +151,10 @@ public:
     void SetValue(const string& value);
     const string& GetValue(void) const;
 
-    void AddEnumValue(const string& value, int line);
+    void AddEnumValue(const string& value, int line, int id=0);
     const list<string>& GetEnumValues(void) const;
     int GetEnumValueSourceLine(const string& value) const;
+    int GetEnumValueId(const string& value) const;
     
     CComments& Comments(void)
     {
@@ -171,6 +173,7 @@ private:
     string m_Value;
     list<string> m_ListEnum;
     map<string,int> m_ValueSourceLine;
+    map<string,int> m_ValueId;
     CComments m_Comments;
 };
 

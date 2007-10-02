@@ -113,6 +113,7 @@ DTDAttribute::DTDAttribute(const DTDAttribute& other)
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
     m_ValueSourceLine = other.m_ValueSourceLine;
+    m_ValueId = other.m_ValueId;
     m_Comments  = other.m_Comments;
 }
 DTDAttribute::~DTDAttribute(void)
@@ -129,6 +130,7 @@ DTDAttribute& DTDAttribute::operator= (const DTDAttribute& other)
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
     m_ValueSourceLine = other.m_ValueSourceLine;
+    m_ValueId = other.m_ValueId;
     m_Comments  = other.m_Comments;
     return *this;
 }
@@ -144,6 +146,7 @@ void DTDAttribute::Merge(const DTDAttribute& other)
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
     m_ValueSourceLine = other.m_ValueSourceLine;
+    m_ValueId = other.m_ValueId;
 }
 
 void DTDAttribute::SetSourceLine(int line)
@@ -202,10 +205,11 @@ const string& DTDAttribute::GetValue(void) const
     return m_Value;
 }
 
-void DTDAttribute::AddEnumValue(const string& value, int line)
+void DTDAttribute::AddEnumValue(const string& value, int line, int id)
 {
     m_ListEnum.push_back(value);
     m_ValueSourceLine[value] = line;
+    m_ValueId[value] = id;
 }
 const list<string>& DTDAttribute::GetEnumValues(void) const
 {
@@ -216,6 +220,14 @@ int DTDAttribute::GetEnumValueSourceLine(const string& value) const
 {
     if (m_ValueSourceLine.find(value) != m_ValueSourceLine.end()) {
         return m_ValueSourceLine.find(value)->second;
+    }
+    return 0;
+}
+
+int DTDAttribute::GetEnumValueId(const string& value) const
+{
+    if (m_ValueId.find(value) != m_ValueId.end()) {
+        return m_ValueId.find(value)->second;
     }
     return 0;
 }

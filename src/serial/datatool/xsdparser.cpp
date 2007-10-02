@@ -876,8 +876,13 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
 {
     TToken tok = GetRawAttributeSet();
     att.SetType(DTDAttribute::eEnum);
+    int id = 0;
+    if (GetAttribute("intvalue")) {
+        id = NStr::StringToInt(m_Value);
+        att.SetType(DTDAttribute::eIntEnum);
+    }
     if (GetAttribute("value")) {
-        att.AddEnumValue(m_Value, Lexer().CurrentLine());
+        att.AddEnumValue(m_Value, Lexer().CurrentLine(), id);
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
