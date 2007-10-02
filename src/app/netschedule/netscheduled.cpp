@@ -2784,11 +2784,6 @@ int CNetScheduleDApp::Run(void)
             qdb->SetUdpPort((unsigned short) udp_port);
         }
 
-        // Scan and mount queues
-        unsigned min_run_timeout = 3600;
-
-        qdb->Configure(reg, &min_run_timeout);
-
 #if defined(NCBI_OS_UNIX)
         if (is_daemon) {
             LOG_POST("Entering UNIX daemon mode...");
@@ -2802,6 +2797,10 @@ int CNetScheduleDApp::Run(void)
 #else
         is_daemon = false;
 #endif
+
+        // Scan and mount queues
+        unsigned min_run_timeout = 3600;
+        qdb->Configure(reg, &min_run_timeout);
 
         LOG_POST(Info << "Running execution control every " 
                       << min_run_timeout << " seconds");

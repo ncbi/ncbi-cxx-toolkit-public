@@ -32,7 +32,7 @@
  *
  */
 
-#define NETSCHEDULED_VERSION "3.1.4"
+#define NETSCHEDULED_VERSION "3.1.5"
 
 
 #endif /* NETSCHEDULE_VERSION__HPP */
