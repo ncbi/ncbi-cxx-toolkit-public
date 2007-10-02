@@ -726,7 +726,7 @@ void CSplign::Run(THitRefs* phitrefs)
                 bool strand_this (comps.GetStrand(i));
                 bool strand_next (comps.GetStrand(i+1));
                 same_strand = strand_this == strand_next;
-                smax = same_strand? (box+4)[2] - 1: kMax_UInt;
+                smax = same_strand? (box + 4)[2]: kMax_UInt;
             }
      
             try {
@@ -735,6 +735,9 @@ void CSplign::Run(THitRefs* phitrefs)
 
                     THitRefs comp_hits;
                     comps.Get(i, comp_hits);
+
+                    if(smax < box[3]) smax = box[3];
+                    if(smin > box[2]) smin = box[2];
 
                     SAlignedCompartment ac (
                          x_RunOnCompartment(&comp_hits, smin, smax));
@@ -767,7 +770,7 @@ void CSplign::Run(THitRefs* phitrefs)
                 ++m_model_id;
             }
 
-            smin = same_strand? box[3] + 1: 0;
+            smin = same_strand? box[3]: 0;
         }
     }
 }
