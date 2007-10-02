@@ -53,7 +53,8 @@ class CConn_Streambuf : public CConn_StreambufBase
 {
 public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
-                    streamsize buf_size, bool tie);
+                    streamsize buf_size, bool tie,
+                    CT_CHAR_TYPE* ptr, size_t size);
     virtual ~CConn_Streambuf();
     CONN    GetCONN(void) const { return m_Conn; }
     void    Close(void)         { x_Cleanup();   }
@@ -80,7 +81,7 @@ private:
 
     CT_CHAR_TYPE*       m_ReadBuf;   // I/O arena or &x_Buf (if unbuffered)
     CT_CHAR_TYPE*       m_WriteBuf;  // m_ReadBuf + m_BufSize (0 if unbuffered)
-    streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf(if buffered)
+    streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf (if buffered)
 
     bool                m_Tie;       // always flush before reading
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream

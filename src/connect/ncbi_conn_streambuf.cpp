@@ -43,8 +43,9 @@ BEGIN_NCBI_SCOPE
 
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
-                                 streamsize buf_size, bool tie)
-    : m_Conn(0), m_ReadBuf(0), m_BufSize(buf_size ? buf_size : 1),
+                                 streamsize buf_size, bool tie,
+                                 CT_CHAR_TYPE* ptr, size_t size)
+    : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1),
       m_Tie(tie), x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
     if ( !connector ) {
@@ -61,11 +62,14 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     CONN_SetTimeout(m_Conn, eIO_Write, timeout);
     CONN_SetTimeout(m_Conn, eIO_Close, timeout);
 
-    m_ReadBuf  = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : &x_Buf;
-    m_WriteBuf = buf_size ? m_ReadBuf + m_BufSize            : 0;
+    m_WriteBuf = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : 0;
+    m_ReadBuf  = buf_size ? m_WriteBuf + m_BufSize           : &x_Buf;
 
-    setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);  // Empty get area
-    setp(m_WriteBuf, m_WriteBuf + buf_size); // Put area (if any)
+    setp(m_WriteBuf, m_WriteBuf + buf_size);   // Put area (if any)
+    if (ptr)
+        setg(ptr, ptr, ptr + size);            // Initial get area
+    else
+        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf); // Empty get area
 
     SCONN_Callback cb;
     cb.func = x_OnClose;
@@ -77,9 +81,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 CConn_Streambuf::~CConn_Streambuf()
 {
     x_Cleanup();
-    if (m_ReadBuf != &x_Buf) {
-        delete[] m_ReadBuf;
-    }
+    delete[] m_WriteBuf;
 }
 
 

@@ -43,11 +43,13 @@ BEGIN_NCBI_SCOPE
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
-                               streamsize buf_size, bool do_tie) :
+                               streamsize buf_size, bool do_tie,
+                               CT_CHAR_TYPE* ptr, size_t size) :
     CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
+        csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie,
+                                ptr, size));
     if (csb->GetCONN()) {
         init(csb.get());
         m_CSb = csb.release();
@@ -296,32 +298,9 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 }
 
 
-static CONNECTOR s_MemoryConnectorBuilder(const void* ptr,
-                                          size_t      size,
-                                          BUF*        buf,
-                                          EOwnership  owner)
-{
-    BUF tmp;
-    if (ptr  &&  size) {
-        tmp = 0;
-        if (!(owner == eTakeOwnership
-              ? BUF_Append(&tmp, ptr, size)
-              : BUF_Write (&tmp, ptr, size))) {
-            NCBI_THROW(CIO_Exception, eUnknown,
-                       "CConn_MemoryStream::ctor cannot create buffer");
-        }
-        *buf = tmp;
-    } else {
-        tmp  = (BUF)(size ? 0 : ptr);
-        *buf = owner == eTakeOwnership ? tmp : 0;
-    }
-    return MEMORY_CreateConnectorEx(tmp);
-}
-
-
 CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
-    : CConn_IOStream(s_MemoryConnectorBuilder(0, 0, &m_Buf, eTakeOwnership),
-                     0, buf_size), m_Ptr(0)
+    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, false),
+      m_Buf(0), m_Ptr(0)
 {
     return;
 }
@@ -330,8 +309,8 @@ CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
 CConn_MemoryStream::CConn_MemoryStream(BUF         buf,
                                        EOwnership  owner,
                                        streamsize  buf_size)
-    : CConn_IOStream(s_MemoryConnectorBuilder(buf, 0, &m_Buf, owner),
-                     0, buf_size), m_Ptr(0)
+    : CConn_IOStream(MEMORY_CreateConnectorEx(buf), 0, buf_size, false),
+      m_Buf(owner == eTakeOwnership ? buf : 0), m_Ptr(0)
 {
     return;
 }
@@ -341,8 +320,9 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        size_t      size,
                                        EOwnership  owner,
                                        streamsize  buf_size)
-    : CConn_IOStream(s_MemoryConnectorBuilder(ptr, size, &m_Buf, owner),
-                     0, buf_size), m_Ptr(owner == eTakeOwnership ? ptr : 0)
+    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, false,
+                     (CT_CHAR_TYPE*) ptr, size),
+      m_Buf(0), m_Ptr(owner == eTakeOwnership ? ptr : 0)
 {
     return;
 }
