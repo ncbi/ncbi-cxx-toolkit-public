@@ -1333,20 +1333,20 @@ case "$compiler:$compiler_version:$with_bin_release" in
     LDFLAGS="-static-libcxa $LDFLAGS"
     ;;
   ICC:8* )
-    # Back to the runpath approach, since ICC now ignores
-    # -static-libcxa when building shared libraries....
+    # Back to the runpath approach, since ICC now ignores -static-libcxa
+    # when building shared libraries; ideally, it would be possible to
+    # counteract this with -nodefaultlibs as with ICC 9, but that
+    # doesn't actually work, at least when using -cxxlib-icc.
+    # (Unloading plugins takes out symbols the program needs.)
     LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
     ;;
   ICC:9* )
-    # Back and forth we go.
+    # Actually workable now, perhaps thanks to forcing -cxxlib-gcc.
     LDFLAGS="-i-static $LDFLAGS"
     # Running icpc on a bunch of object files doesn't always ensure that
     # the C++ standard library is actually linked in, and we shouldn't
     # rely on help from wrapper scripts.
     LINK="$LINK -Kc++"
-    # Some intrinsics can go into infinite loops in optimized builds.
-    CFLAGS="$ORIG_CFLAGS -fno-builtin-memcpy -fno-builtin-memset"
-    CXXFLAGS="$ORIG_CXXFLAGS -fno-builtin-memcpy -fno-builtin-memset"
     ;;
 esac
 
@@ -1834,7 +1834,7 @@ ALLOW_UNDEF=
 FORBID_UNDEF=
 case "$compiler" in
  GCC | ICC )
-   LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
+   LINK_DLL="$LINK $ARCH_CFLAGS -shared -o" # possibly overridden below
    case "$host_os" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
@@ -1859,7 +1859,21 @@ case "$compiler" in
         fi
         ;;
       linux* | *gnu* ) # | *bsd*
-        FORBID_UNDEF='-Wl,--no-undefined'
+        case "$compiler:$compiler_version" in
+           ICC:9* )
+	     # Take care not to link dynamic libraries against ICC's
+	     # libraries, as linking them dynamically yields unwanted
+	     # dependencies and linking them statically can lead to
+	     # incorrect behavior (segfaults or infinite loops).
+             ncbi_cv_prog_cc_wl_no_asu=no
+             LINK_DLL="$LINK $ARCH_CFLAGS -nodefaultlibs -shared -o"
+             LIBS="$LIBS -lc"
+             C_LIBS="$C_LIBS -lc"
+             ;;
+           * )
+             FORBID_UNDEF='-Wl,--no-undefined'
+             ;;
+        esac
         ;;
       irix* )
         FORBID_UNDEF='-Wl,-no_unresolved'
