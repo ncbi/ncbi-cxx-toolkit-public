@@ -131,7 +131,9 @@ protected:
     (CONNECTOR       connector,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize,
-     bool            do_tie   = true);
+     bool            do_tie   = true,
+     CT_CHAR_TYPE*   ptr      = 0,
+     size_t          size     = 0);
 
 public:
     virtual ~CConn_IOStream();
@@ -336,28 +338,35 @@ class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 {
 public:
     CConn_MemoryStream(streamsize  buf_size = kConn_DefaultBufSize);
+
     /// Build a stream on top of an NCBI buffer (which in turn
     /// could have been built over a memory area of a specified size).
     /// BUF's ownership is assumed by the stream as specified in "owner".
     CConn_MemoryStream(BUF         buf,
                        EOwnership  owner    = eTakeOwnership,
                        streamsize  buf_size = kConn_DefaultBufSize);
+
     /// Build a stream on top of an existing data area of a specified size.
     /// The contents of the area is what will be read first from the stream.
     /// Writing to the stream will _not_ modify the contents of the area.
-    /// Ownership of the area is controlled by "owner" parameter, and
-    /// if the ownership is retained by the caller, then the entire area
-    /// contents are copied into an internal buffer at the constructor.
-    /// Please note that passing the ownership of the memory area means that
-    /// it will be deleted by "delete[] (char*)" at the stream dtor.
-    /// If any special considerations are to be done for deleting the area
+    /// Ownership of the area pointed to by "ptr" is controlled by "owner"
+    /// parameter, and if the ownership is passed to the stream the area will
+    /// be deleted by "delete[] (char*)" at the stream dtor.  That is,
+    /// if there are any requirements to be considered for deleting the area
     /// (like deleting an object or an array of objects), then the
     /// ownership must not be passed to the stream.
+    /// Note that the area pointed to by "ptr" should not be changed
+    /// while it is still holding the data yet to be read from the stream.
     CConn_MemoryStream(const void* ptr,
                        size_t      size,
-                       EOwnership  owner    = eTakeOwnership,
+                       EOwnership  owner/*no default for satefy*/,
                        streamsize  buf_size = kConn_DefaultBufSize);
+
     virtual ~CConn_MemoryStream();
+
+    /// The CConnMemoryStream::To* methods allow to obtain unread portion of
+    /// the stream in a single container (a string, a vector, or a character
+    /// array) so that all data is kept in sequential memory locations.
 
     NCBI_DEPRECATED
     string& ToString(string&); ///< fill in the data, return the argument
