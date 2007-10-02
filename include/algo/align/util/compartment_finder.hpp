@@ -1118,10 +1118,10 @@ void CCompartmentAccessor<THit>::x_Copy2Pending(
             }
         
             const TCoord* box = compartment->GetBox();
-            m_ranges.push_back(box[0] - 1);
-            m_ranges.push_back(box[1] - 1);
-            m_ranges.push_back(box[2] - 1);
-            m_ranges.push_back(box[3] - 1);
+            m_ranges.push_back(box[0]);
+            m_ranges.push_back(box[1]);
+            m_ranges.push_back(box[2]);
+            m_ranges.push_back(box[3]);
         
             m_strands.push_back(compartment->GetStrand());
             m_status.push_back(compartment->GetFirst()->GetScore() > 0);
