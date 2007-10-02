@@ -111,6 +111,7 @@ public:
     enum EDebugLevel
     {
         eTraceError    = 1,
+        eTraceOpen     = 2,
         eTraceConn     = 4,
         eTraceASN      = 5,
         eTraceBlob     = 8,

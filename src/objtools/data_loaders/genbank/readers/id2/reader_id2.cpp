@@ -263,11 +263,11 @@ string CId2Reader::x_ConnDescription(TConn conn) const
 CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 {
     WaitBeforeNewConnection(conn);
-    if ( GetDebugLevel() >= eTraceConn ) {
+    if ( GetDebugLevel() >= eTraceOpen ) {
         CDebugPrinter s(conn, "CId2Reader");
         s << "New connection to " << m_ServiceName << "...";
     }
-        
+    
     STimeout tmout;
     tmout.sec = m_Timeout;
     tmout.usec = 0;
@@ -289,7 +289,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
                    "cannot open connection: "+x_ConnDescription(*stream));
     }
 
-    if ( GetDebugLevel() >= eTraceConn ) {
+    if ( GetDebugLevel() >= eTraceOpen ) {
         CDebugPrinter s(conn, "CId2Reader");
         s << "New connection: " << x_ConnDescription(*stream);
     }
