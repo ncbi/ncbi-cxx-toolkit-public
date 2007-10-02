@@ -9,17 +9,22 @@ use File::Spec;
 
 BEGIN
 {
+    my $Volume;
+    my $NewScriptDir;
+
     my $ScriptPathname = $0;
 
-    ($ScriptDir, $ScriptName) = $ScriptPathname =~ m/^(?:(.+)[\\\/])?(.+)$/;
+    ($Volume, $ScriptDir, $ScriptName) = File::Spec->splitpath($ScriptPathname);
 
-    $ScriptDir = File::Spec->rel2abs($ScriptDir || '.');
+    $ScriptDir = File::Spec->rel2abs(File::Spec->catpath($Volume,
+        $ScriptDir, ''));
 
     while ($ScriptPathname = eval {readlink $ScriptPathname})
     {
-        my ($NewScriptDir) = $ScriptPathname =~ m/^(?:(.+)[\\\/])?/;
+        ($Volume, $NewScriptDir) = File::Spec->splitpath($ScriptPathname);
 
-        $ScriptDir = File::Spec->rel2abs($NewScriptDir || '.', $ScriptDir)
+        $ScriptDir = File::Spec->rel2abs(File::Spec->catpath($Volume,
+            $NewScriptDir, ''), $ScriptDir);
     }
 }
 
