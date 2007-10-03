@@ -1994,7 +1994,9 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
         /* bindcol->bcp_column_data->null_column = 1; */
         bindcol->bcp_column_data->null_column = null_column;
 
-        if (null_column == 0 && is_blob_type(bindcol->column_type) && bindcol->column_varaddr == NULL) {
+        /* if (null_column == 0 && is_blob_type(bindcol->column_type) &&
+         * bindcol->column_varaddr == NULL) { */
+        if (is_blob_type(bindcol->column_type) && bindcol->column_varaddr == NULL) {
             return CS_BLK_HAS_TEXT;
         }
 
@@ -2005,9 +2007,42 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 
 int blk_is_binded(TDSCOLUMN * colinfo)
 {
-    if (colinfo)
-    {
-        return colinfo->column_varaddr != NULL || colinfo->column_lenbind != 0;
+    if (colinfo) {
+        int result = 0;
+
+        if (colinfo->column_varaddr == NULL) {
+            if (colinfo->column_lenbind != NULL) {
+                if (*colinfo->column_lenbind == 0) {
+                    if (colinfo->column_nullbind != NULL) {
+                        if (*colinfo->column_nullbind == -1) {
+                            // null-value for blk_textxfer ...
+                            result = 1;
+                        }
+                    } 
+                } else {
+                    result = 1;
+                }
+            } 
+        } else {
+            if (colinfo->column_lenbind != NULL) {
+                if (*colinfo->column_lenbind == 0) {
+                    if (colinfo->column_nullbind != NULL) {
+                        if (*colinfo->column_nullbind == -1) {
+                            // null-value for blk_textxfer ...
+                            result = 1;
+                        }
+                    } 
+                } else {
+                    result = 1;
+                }
+            }
+        }
+
+        if (result) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     return 0;
