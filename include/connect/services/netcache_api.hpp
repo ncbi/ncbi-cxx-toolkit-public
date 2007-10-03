@@ -254,16 +254,6 @@ inline CNetCacheAdmin CNetCacheAPI::GetAdmin() const
     return CNetCacheAdmin(*this);
 }
 
-inline
-CNetSrvConnectorHolder CNetCacheAPI::x_GetConnector(const string& bid) const
-{
-    if (bid.empty())
-        return GetPoll().GetBest();
-
-    CNetCacheKey key(bid);
-    return GetPoll().GetSpecific(key.host, key.port);
-}
-
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetCacheAPI,  "xnetcacheapi", 1, 1, 0);
 

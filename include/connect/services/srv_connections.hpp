@@ -276,7 +276,7 @@ public:
                          IRebalanceStrategy* rebalance_strategy);
     ~CNetSrvConnectorPoll();
 
-    CNetSrvConnectorHolder GetBest(const string& hit = "");
+    CNetSrvConnectorHolder GetBest(const TService* backup = NULL, const string& hit = "");
     CNetSrvConnectorHolder GetSpecific(const string& host, unsigned int port);
 
     // invalidates priveosly taken iterators

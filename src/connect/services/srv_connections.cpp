@@ -69,7 +69,7 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
         SERV_Close(srv_it);
     } else {
         NCBI_THROW(CNetSrvConnException, eLBNameNotFound, 
-                   "Load balancer cannot find service name " + service_name);
+                   "Load balancer cannot find service name " + service_name + ".");
     }
 }
 
@@ -231,7 +231,6 @@ void CNetSrvConnector::Telnet( CNcbiOstream& out,  CNetSrvConnector::IStringProc
 
     string line;
     while (1) {
-
         EIO_Status st = m_Socket->ReadLine(line);       
         if (st == eIO_Success) {
             if (processor && !processor->Process(line))
@@ -295,6 +294,7 @@ void CNetSrvConnector::x_CheckConnect()
     m_Socket->SetDataLogging(eDefault);
     m_Socket->SetTimeout(eIO_ReadWrite, &m_Timeout);
     m_Socket->DisableOSSendDelay();
+//    m_Socket->SetReuseAddress(eOn);
 
     if (m_EventListener)
         m_EventListener->OnConnected(*this);
@@ -427,13 +427,40 @@ CNetSrvConnector* CNetSrvConnectorPoll::x_FindOrCreateConnector(const TService& 
     return conn;
 }
 
-CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const string& hit)
+CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const TService* backup, const string& hit)
 {
-    x_Rebalance();
-    if( m_Services.empty() )
-        NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The services list is empty.");
-    const TService& srv = m_Services[0];
-    return CNetSrvConnectorHolder(*x_FindOrCreateConnector(srv), !m_PermConn);
+    if (!m_IsLoadBalanced) {
+        if (m_Services.empty()) 
+            NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "The service is not set.");
+        return CNetSrvConnectorHolder(*x_FindOrCreateConnector(m_Services[0]), !m_PermConn);
+    }
+    try {
+        x_Rebalance();
+    } catch (CNetSrvConnException& ex) {
+        if (ex.GetErrCode() != CNetSrvConnException::eLBNameNotFound || !backup)
+            throw;
+        ERR_POST("Connecting to backup server " << backup->first << ":" << backup->second << ".");
+        return CNetSrvConnectorHolder(*x_FindOrCreateConnector(*backup), !m_PermConn);
+    }
+    ITERATE(TServices, it, m_Services) {
+        CNetSrvConnector* conn = x_FindOrCreateConnector(*it);
+        try {
+            conn->x_CheckConnect();
+            return CNetSrvConnectorHolder(*conn, !m_PermConn);
+        } catch (CNetSrvConnException& ex) {
+            if (ex.GetErrCode() == CNetSrvConnException::eConnectionFailure)
+                ERR_POST(ex.what());
+            else
+                throw;
+        }
+    }
+    if (backup) {
+        ERR_POST("Couldn't find any availbale servers for " << m_ServiceName 
+                << " service. Connecting to backup server " << backup->first << ":" << backup->second << ".");
+        return CNetSrvConnectorHolder(*x_FindOrCreateConnector(*backup), !m_PermConn);
+    }
+    NCBI_THROW(CNetSrvConnException, eSrvListEmpty, "Couldn't find any availbale servers for " 
+                                                    + m_ServiceName + " service.");
 }
 
 CNetSrvConnectorHolder CNetSrvConnectorPoll::GetSpecific(const string& host, unsigned int port)

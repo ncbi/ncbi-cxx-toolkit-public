@@ -39,8 +39,43 @@
 #include <connect/services/netcache_key.hpp>
 #include <memory>
 
-
 BEGIN_NCBI_SCOPE
+
+
+/****************************************************************/
+NCBI_PARAM_DECL(string, netcache_api, fallback_server); 
+typedef NCBI_PARAM_TYPE(netcache_api, fallback_server) TCGI_NetCacheFallbackServer;
+NCBI_PARAM_DEF(string, netcache_api, fallback_server, kEmptyStr);
+
+static bool s_FallbackServer_Initialized = false;
+static auto_ptr<CNetSrvConnectorPoll::TService> s_FallbackServer;
+static CNetSrvConnectorPoll::TService* s_GetFallbackServer()
+{
+    if (s_FallbackServer_Initialized)
+        return s_FallbackServer.get();
+    try {
+       string sport, host, hostport;
+       hostport = TCGI_NetCacheFallbackServer::GetDefault(); 
+       if ( NStr::SplitInTwo(hostport, ":", host, sport) ) {
+          unsigned int port = NStr::StringToInt(sport);
+          host = CSocketAPI::ntoa(CSocketAPI::gethostbyname(host));
+          s_FallbackServer.reset(new CNetSrvConnectorPoll::TService(host, port));
+       }
+    } catch (...) {
+    }
+    s_FallbackServer_Initialized = true;
+    return s_FallbackServer.get();
+}
+/****************************************************************/
+
+CNetSrvConnectorHolder CNetCacheAPI::x_GetConnector(const string& bid) const
+{
+    if (bid.empty())
+        return GetPoll().GetBest(s_GetFallbackServer());
+
+    CNetCacheKey key(bid);
+    return GetPoll().GetSpecific(key.host, key.port);
+}
 
 void CNetCacheAPI::x_SendAuthetication(CNetSrvConnector& conn) const
 {
