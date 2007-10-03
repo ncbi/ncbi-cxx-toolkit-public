@@ -16,7 +16,7 @@ for dir in "$@"; do
     fi
     for f in $dir/*; do
 	case "`basename $f`" in
-	    blast | blast2seq | datatool | gbench* | id1_fetch | idwwwget \
+	    *blast* | datatool | gbench* | id1_fetch | idwwwget \
 	        | lbsmc | one2all | testipub | test_checksum | test_mghbn \
 	        | *.gz )
                 ;;
