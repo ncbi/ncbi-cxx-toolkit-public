@@ -86,7 +86,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
         m_NullValue[nof_items] = eNullUnknown;
 
 #ifdef FTDS_IN_USE
-        // Seems like FreeTDS reports the wrong maxlength in
+        // Seems like FreeTDS reports wrong maxlength in
         // ct_describe() - fix this when binding to a buffer.
         if (m_ColFmt[nof_items].datatype == CS_NUMERIC_TYPE
             || m_ColFmt[nof_items].datatype == CS_DECIMAL_TYPE
