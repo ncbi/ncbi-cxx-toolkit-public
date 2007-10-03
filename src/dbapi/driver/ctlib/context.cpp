@@ -387,7 +387,7 @@ Command::GetDataInfo(CS_IODESC& desc)
 {
     return (GetCTLConn().Check(ct_data_info(
         m_Handle,
-        CS_SET,
+        CS_GET,
         CS_UNUSED,
         &desc)) == CS_SUCCEED);
 }
