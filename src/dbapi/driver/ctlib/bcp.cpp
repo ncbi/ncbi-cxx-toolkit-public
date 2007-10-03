@@ -469,7 +469,8 @@ bool CTL_BCPInCmd::Send(void)
 {
     unsigned int i;
     CS_INT       datalen = 0;
-    CS_SMALLINT  indicator = -1; // NULL value
+    // CS_SMALLINT  indicator = -1; // NULL value
+    CS_SMALLINT  indicator = 0; // DEFAULT value
     size_t       len = 0;
     char         buff[2048];
 
@@ -505,6 +506,8 @@ bool CTL_BCPInCmd::Send(void)
                                          // This adderess is semantically
                                          // invalid, but we have to pass
                                          // something except of NULL.
+                                         // In case of NULL data is supposed to
+                                         // transfered via blk_textxfer.
                                          (void*) &GetParams(),
                                          &datalen,
                                          &indicator)) != CS_SUCCEED));
