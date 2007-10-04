@@ -86,9 +86,11 @@ for dir in $dirs ; do
      start=`eval $timer`
      echo Start time: $start
      echo "INFO: Configure \"$dir\\$alias\""
+     echo "Command line: " $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
      $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
      status=$?
-     cat $out
+# don't need to cat here, because msdev2005 double output to console also
+#     cat $out
      rm -f $out >/dev/null 2>&1
      if [ $status -ne 0 ] ; then
        exit 3
@@ -117,9 +119,11 @@ for cfg in $cfgs ; do
        start=`eval $timer`
        echo Start time: $start
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
+       echo "Command line: " $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
        $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
        status=$?
-       cat $out
+# don't need to cat here, because msdev2005 double output to console also
+#       cat $out
        echo "Build time: $start - `eval $timer`"
        if [ $status -ne 0 ] ; then
          # Check on errors (skip expendable projects)
