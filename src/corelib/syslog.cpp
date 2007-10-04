@@ -43,6 +43,12 @@
 #  endif
 #endif
 
+
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibDiag
+
+
 BEGIN_NCBI_SCOPE
 
 DEFINE_CLASS_STATIC_MUTEX(CSysLog::sm_Mutex);
@@ -147,8 +153,8 @@ int CSysLog::x_TranslateFlags(TFlags flags)
     if (flags & fNoOverride) {
 #ifdef _DEBUG
         if (flags != fNoOverride) {
-            ERR_POST(Warning << "CSysLog::x_TranslateFlags:"
-                     " fNoOverride is incompatible with other flags.");
+            ERR_POST_X(15, Warning << "CSysLog::x_TranslateFlags:"
+                           " fNoOverride is incompatible with other flags.");
         }
 #endif
         return 0;
@@ -157,8 +163,8 @@ int CSysLog::x_TranslateFlags(TFlags flags)
     int result = 0;
 #ifdef _DEBUG
     if (flags & ~fAllFlags) {
-        ERR_POST(Warning
-                 << "CSysLog::x_TranslateFlags: ignoring extra flags.");
+        ERR_POST_X(16, Warning
+                       << "CSysLog::x_TranslateFlags: ignoring extra flags.");
     }
 #endif
 #ifdef NCBI_OS_UNIX

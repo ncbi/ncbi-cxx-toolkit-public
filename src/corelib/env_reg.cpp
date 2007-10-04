@@ -36,6 +36,11 @@
 #include <corelib/ncbienv.hpp>
 #include <set>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibEnv
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -218,8 +223,8 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
         }
     }
 
-    ERR_POST(Warning << "CEnvironmentRegistry::x_Set: "
-             "no mapping defined for [" << section << ']' << name);
+    ERR_POST_X(1, Warning << "CEnvironmentRegistry::x_Set: "
+                  "no mapping defined for [" << section << ']' << name);
     return false;
 }
 
@@ -227,8 +232,8 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
 bool CEnvironmentRegistry::x_SetComment(const string&, const string&,
                                         const string&, TFlags)
 {
-    ERR_POST(Warning
-             << "CEnvironmentRegistry::x_SetComment: unsupported operation");
+    ERR_POST_X(2, Warning
+                  << "CEnvironmentRegistry::x_SetComment: unsupported operation");
     return false;
 }
 

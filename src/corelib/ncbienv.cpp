@@ -50,6 +50,12 @@
 extern char** environ;
 #endif
 
+
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibEnv
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -89,7 +95,7 @@ void CNcbiEnvironment::Reset(const char* const* envp)
         const char* s = *envp;
         const char* eq = strchr(s, '=');
         if ( !eq ) {
-            ERR_POST("CNcbiEnvironment: bad string '" << s << "'");
+            ERR_POST_X(3, "CNcbiEnvironment: bad string '" << s << "'");
             continue;
         }
         m_Cache[string(s, eq)] = eq + 1;
@@ -208,16 +214,16 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
             NCBI_THROW(CArgumentsException,eNoArgs,
                 "Command-line arguments are absent");
         }
-        ERR_POST(Info <<
-                 "CNcbiArguments(): zero \"argc\", non-zero \"argv\"");
+        ERR_POST_X(4, Info <<
+                      "CNcbiArguments(): zero \"argc\", non-zero \"argv\"");
     }
 
     // clear old args, store new ones
     m_Args.clear();
     for (int i = 0;  i < argc;  i++) {
         if ( !argv[i] ) {
-            ERR_POST(Warning <<
-                     "CNcbiArguments() -- NULL cmd.-line arg #" << i);
+            ERR_POST_X(5, Warning <<
+                          "CNcbiArguments() -- NULL cmd.-line arg #" << i);
             continue;
         }
         m_Args.push_back(argv[i]);

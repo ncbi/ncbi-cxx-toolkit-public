@@ -36,6 +36,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimempool.hpp>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibObject
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -54,8 +59,8 @@ static struct Printer
     ~Printer()
         {
             if ( sx_max_counter ) {
-                ERR_POST("Max memory chunks: " << sx_max_counter);
-                ERR_POST("Final memory chunks: " << sx_chunks_counter.Get());
+                ERR_POST_X(9, "Max memory chunks: " << sx_max_counter);
+                ERR_POST_X(10, "Final memory chunks: " << sx_chunks_counter.Get());
             }
         }
 } sx_printer;
@@ -130,18 +135,18 @@ public:
             CObjectMemoryPoolChunk* chunk = header->m_ChunkPtr;
             if ( header->m_Magic != SHeader::eMagicAllocated ) {
                 if ( header->m_Magic != SHeader::eMagicDeallocated ) {
-                    ERR_POST(ObjFatal << "CObjectMemoryPoolChunk::GetChunk: "
-                             "Bad chunk header magic: already freed");
+                    ERR_POST_X(11, ObjFatal << "CObjectMemoryPoolChunk::GetChunk: "
+                                   "Bad chunk header magic: already freed");
                 }
                 else {
-                    ERR_POST(ObjFatal << "CObjectMemoryPoolChunk::GetChunk: "
-                             "Bad chunk header magic");
+                    ERR_POST_X(12, ObjFatal << "CObjectMemoryPoolChunk::GetChunk: "
+                                   "Bad chunk header magic");
                 }
                 return 0;
             }
             if ( ptr <= chunk->m_Memory || ptr >= chunk->m_CurPtr ) {
-                ERR_POST(ObjFatal << "CObjectMemoryPoolChunk::GetChunk: "
-                         "Object is beyond chunk memory");
+                ERR_POST_X(13, ObjFatal << "CObjectMemoryPoolChunk::GetChunk: "
+                               "Object is beyond chunk memory");
             }
             // now we mark header so it will not be deleted twice
             const_cast<SHeader*>(header)->m_Magic = SHeader::eMagicDeallocated;
@@ -257,8 +262,8 @@ void* CObjectMemoryPool::Allocate(size_t size)
         }
         m_CurrentChunk.Reset();
     }
-    ERR_POST_ONCE("CObjectMemoryPool::Allocate("<<size<<"): "
-                  "double fault in chunk allocator");
+    ERR_POST_X_ONCE(14, "CObjectMemoryPool::Allocate("<<size<<"): "
+                        "double fault in chunk allocator");
     return 0;
 }
 
@@ -280,8 +285,8 @@ void CObjectMemoryPool::Delete(const CObject* object)
         chunk->DecrementObjectCount();
     }
     else {
-        ERR_POST(Critical << "CObjectMemoryPool::Delete(): "
-                 "cannot determine the chunk, memory will not be released");
+        ERR_POST_X(15, Critical << "CObjectMemoryPool::Delete(): "
+                       "cannot determine the chunk, memory will not be released");
         const_cast<CObject*>(object)->~CObject();
     }
 }

@@ -41,6 +41,11 @@
 #include <memory>
 #include <set>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibConfig
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -471,7 +476,7 @@ const string& CConfig::GetString(const string&  driver_name,
         msg += ") defined";
         if (on_error == eErr_NoThrow) {
             msg += " for driver " + driver_name + ". Default value is used.";
-            ERR_POST_ONCE(msg); 
+            ERR_POST_X_ONCE(1, msg); 
             return kEmptyStr;
         } 
         msg = "Cannot init plugin " + driver_name + ". " + msg;
@@ -515,7 +520,7 @@ int CConfig::GetInt(const string&  driver_name,
                           ", incorrect parameter format:" +
                           param_name  + " : " + param +
                           " " + ex.what() + ". Default value is used";
-            ERR_POST_ONCE(msg);
+            ERR_POST_X_ONCE(2, msg);
         }
     }
     return default_value;
@@ -555,7 +560,7 @@ Uint8 CConfig::GetDataSize(const string&  driver_name,
                           ", incorrect parameter format:" +
                           param_name  + " : " + param +
                           " " + ex.what() + ". Default value is used";
-            ERR_POST_ONCE(msg);
+            ERR_POST_X_ONCE(3, msg);
         }
     }
     return default_value;
@@ -596,7 +601,7 @@ bool CConfig::GetBool(const string&  driver_name,
                           ", incorrect parameter format:" +
                           param_name  + " : " + param +
                           " " + ex.what() + ". Default value is used";
-            ERR_POST_ONCE(msg);
+            ERR_POST_X_ONCE(4, msg);
         }
     }
     return default_value;

@@ -33,6 +33,9 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/obj_store.hpp>
 
+#define NCBI_USE_ERRCODE_X   XNcbiLibPluginMgr
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -72,9 +75,9 @@ void CPluginManagerGetterImpl::ReportKeyConflict(const TKey& key,
                                                  const TObject* old_pm,
                                                  const type_info& new_pm_type)
 {
-    ERR_POST(Fatal << "Plugin Manager conflict, key=\"" << key << "\", "
-             "old type=" << typeid(*old_pm).name() << ", "
-             "new type=" << new_pm_type.name());
+    ERR_POST_X(4, Fatal << "Plugin Manager conflict, key=\"" << key << "\", "
+                  "old type=" << typeid(*old_pm).name() << ", "
+                  "new type=" << new_pm_type.name());
 }
 
 

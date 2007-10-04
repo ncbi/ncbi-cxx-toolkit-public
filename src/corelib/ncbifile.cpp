@@ -79,6 +79,11 @@
 #endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX */
 
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibFile
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -743,9 +748,9 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
             if (length > 0) {
                 current.assign(buf, length);
                 if (++link_depth >= 1024) {
-                    ERR_POST(Warning << "CDirEntry::NormalizePath: "
-                             "Reached symlink depth limit " << link_depth
-                             << " when resolving " << path);
+                    ERR_POST_X(1, Warning << "CDirEntry::NormalizePath: "
+                                  "Reached symlink depth limit " << link_depth
+                                  << " when resolving " << path);
                     follow_links = eIgnoreLinks;
                 }
                 continue;
@@ -2146,9 +2151,9 @@ string CFile::GetTmpName(ETmpFileCreationMode mode)
     return GetTmpNameEx(kEmptyStr, kEmptyStr, mode);
 #else
     if (mode == eTmpFileCreate) {
-        ERR_POST(Warning << 
-                 "The temporary file cannot be auto-created on this " \
-                 "platform, so return its name only");
+        ERR_POST_X(2, Warning << 
+                      "The temporary file cannot be auto-created on this " \
+                      "platform, so return its name only");
     }
     char* filename = tempnam(0,0);
     if ( !filename ) {
@@ -2398,9 +2403,9 @@ string CFile::GetTmpNameEx(const string&        dir,
 
 #else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     if (mode == eTmpFileCreate) {
-        ERR_POST(Warning << "CFile::GetTmpNameEx: "
-                 "The file cannot be auto-created on this platform, " \
-                 "return its name only");
+        ERR_POST_X(3, Warning << "CFile::GetTmpNameEx: "
+                      "The file cannot be auto-created on this platform, " \
+                      "return its name only");
     }
     fn = s_StdGetTmpName(dir.c_str(), prefix.c_str());
 #endif

@@ -33,6 +33,11 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibSystem
+
+
 #if defined(NCBI_OS_MAC)
 #  include <OpenTransport.h>
 #endif
@@ -165,17 +170,17 @@ static void s_ExitHandler(void)
         
     case eLEC_Memory:
         {
-            ERR_POST("Memory heap limit exceeded in allocating memory " \
-                     "by operator new (" << s_HeapLimit << " bytes)");
+            ERR_POST_X(1, "Memory heap limit exceeded in allocating memory " \
+                          "by operator new (" << s_HeapLimit << " bytes)");
             break;
         }
         
     case eLEC_Cpu: 
         {
-            ERR_POST("CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
+            ERR_POST_X(2, "CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
             tms buffer;
             if (times(&buffer) == (clock_t)(-1)) {
-                ERR_POST("Error in getting CPU time consumed by program");
+                ERR_POST_X(3, "Error in getting CPU time consumed by program");
                 break;
             }
             clock_t tick = sysconf(_SC_CLK_TCK);
@@ -185,15 +190,15 @@ static void s_ExitHandler(void)
 #endif /*CLK_TCK*/
             if (tick == (clock_t)(-1))
                 tick = 0;
-            LOG_POST("\tuser CPU time   : " << 
-                     buffer.tms_utime/(tick ? tick : 1) <<
-                     (tick ? " sec" : " tick"));
-            LOG_POST("\tsystem CPU time : " << 
-                     buffer.tms_stime/(tick ? tick : 1) <<
-                     (tick ? " sec" : " tick"));
-            LOG_POST("\ttotal CPU time  : " <<
-                     (buffer.tms_stime + buffer.tms_utime)/(tick ? tick : 1) <<
-                     (tick ? " sec" : " tick"));
+            LOG_POST_X(4, "\tuser CPU time   : " << 
+                          buffer.tms_utime/(tick ? tick : 1) <<
+                          (tick ? " sec" : " tick"));
+            LOG_POST_X(5, "\tsystem CPU time : " << 
+                          buffer.tms_stime/(tick ? tick : 1) <<
+                          (tick ? " sec" : " tick"));
+            LOG_POST_X(6, "\ttotal CPU time  : " <<
+                          (buffer.tms_stime + buffer.tms_utime)/(tick ? tick : 1) <<
+                          (tick ? " sec" : " tick"));
             break;
         }
 
@@ -205,11 +210,11 @@ static void s_ExitHandler(void)
     CTime ct(CTime::eCurrent);
     CTime et(2000, 1, 1);
     et.AddSecond((int) (ct.GetTimeT() - s_TimeSet.GetTimeT()));
-    LOG_POST("Program's time: " << Endm <<
-             "\tstart limit - " << s_TimeSet.AsString() << Endm <<
-             "\ttermination - " << ct.AsString() << Endm);
+    LOG_POST_X(7, "Program's time: " << Endm <<
+                  "\tstart limit - " << s_TimeSet.AsString() << Endm <<
+                  "\ttermination - " << ct.AsString() << Endm);
     et.SetFormat("h:m:s");
-    LOG_POST("\texecution   - " << et.AsString());
+    LOG_POST_X(8, "\texecution   - " << et.AsString());
 }
 
 
@@ -635,7 +640,7 @@ extern void DisableSuppressSystemMessageBox()
 {
 #if defined(NCBI_OS_MSWIN)
     if ( s_DoneSuppressSystemMessageBox ) {
-        ERR_POST(Critical << "SuppressSystemMessageBox() was already called");
+        ERR_POST_X(9, Critical << "SuppressSystemMessageBox() was already called");
     }
     s_EnableSuppressSystemMessageBox = false;
 #else

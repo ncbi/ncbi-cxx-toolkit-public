@@ -66,6 +66,11 @@
 #endif
 
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibDiag
+
+
 BEGIN_NCBI_SCOPE
 
 DEFINE_STATIC_MUTEX(s_DiagMutex);
@@ -1161,11 +1166,11 @@ void CDiagContext::FlushMessages(CDiagHandler& handler)
         return;
     }
     auto_ptr<TMessages> tmp(m_Messages.release());
-    //ERR_POST(Message << "***** BEGIN COLLECTED MESSAGES *****");
+    //ERR_POST_X(1, Message << "***** BEGIN COLLECTED MESSAGES *****");
     ITERATE(TMessages, it, *tmp.get()) {
         handler.Post(*it);
     }
-    //ERR_POST(Message << "***** END COLLECTED MESSAGES *****");
+    //ERR_POST_X(2, Message << "***** END COLLECTED MESSAGES *****");
     m_Messages.reset(tmp.release());
 }
 
@@ -1410,7 +1415,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     log_switched = SetLogFile(log_name, eDiagFile_All);
                 }
                 if ( !log_switched ) {
-                    ERR_POST(Info << "Failed to set log file to " +
+                    ERR_POST_X(3, Info << "Failed to set log file to " +
                         CFile::NormalizePath(log_name));
                 }
             }
@@ -1422,7 +1427,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         log_switched = true;
                     }
                     else {
-                        ERR_POST(Info <<
+                        ERR_POST_X(4, Info <<
                             "Failed to set log file to " <<
                             CFile::NormalizePath(kDefaultFallback));
                     }
@@ -1435,7 +1440,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             }
             break;
         default:
-            ERR_POST(Warning << "Unknown EAppDiagStream value");
+            ERR_POST_X(5, Warning << "Unknown EAppDiagStream value");
             _ASSERT(0);
             break;
         }
@@ -2987,7 +2992,7 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
         if ( !m_Messages.get() ) {
             m_Messages.reset(new TMessages);
         }
-        // ERR_POST(Info << "Failed to reopen log: " << msg);
+        // ERR_POST_X(6, Info << "Failed to reopen log: " << msg);
         return;
     }
     // Flush the collected messages, if any, once the handle if available
@@ -3104,7 +3109,7 @@ CStreamDiagHandler_Base* s_CreateHandler(const string& fname, bool& failed)
     CFileHandleDiagHandler* fh = new CFileHandleDiagHandler(fname);
     if ( !fh->Valid() ) {
         failed = true;
-        ERR_POST(Info << "Failed to open log file: " << fname);
+        ERR_POST_X(7, Info << "Failed to open log file: " << fname);
         return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
     }
     return fh;
@@ -3271,7 +3276,7 @@ extern bool SetLogFile(const string& file_name,
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
-            ERR_POST(Info <<
+            ERR_POST_X(8, Info <<
                 "Failed to set log file for the selected event type: "
                 "split log is disabled");
             return false;
@@ -3293,7 +3298,7 @@ extern bool SetLogFile(const string& file_name,
             auto_ptr<CFileHandleDiagHandler> fhandler(
                 new CFileHandleDiagHandler(file_name));
             if ( !fhandler->Valid() ) {
-                ERR_POST(Info << "Failed to initialize log: " << file_name);
+                ERR_POST_X(9, Info << "Failed to initialize log: " << file_name);
                 return false;
             }
             SetDiagHandler(fhandler.release());
@@ -3784,7 +3789,7 @@ extern CNcbiOstream* GetDiagStream(void)
 
 extern void SetDoubleDiagHandler(void)
 {
-    ERR_POST(Error << "SetDoubleDiagHandler() is not implemented");
+    ERR_POST_X(10, Error << "SetDoubleDiagHandler() is not implemented");
 }
 
 
@@ -3881,8 +3886,8 @@ bool s_ParseErrCodeInfoStr(string&          str,
         // Split string on parts
         NStr::Split(str, ",", tokens);
         if (tokens.size() < 2) {
-            ERR_POST("Error message file parsing: Incorrect file format "
-                     ", line " + NStr::UInt8ToString(line));
+            ERR_POST_X(11, "Error message file parsing: Incorrect file format "
+                           ", line " + NStr::UInt8ToString(line));
             return false;
         }
         // Mnemonic name (skip)
@@ -3900,17 +3905,17 @@ bool s_ParseErrCodeInfoStr(string&          str,
             if (CNcbiDiag::StrToSeverityLevel(token.c_str(), sev)) {
                 x_severity = sev;
             } else {
-                ERR_POST(Warning << "Error message file parsing: "
-                         "Incorrect severity level in the verbose "
-                         "message file, line " + NStr::UInt8ToString(line));
+                ERR_POST_X(12, Warning << "Error message file parsing: "
+                               "Incorrect severity level in the verbose "
+                               "message file, line " + NStr::UInt8ToString(line));
             }
         } else {
             x_severity = -1;
         }
     }
     catch (CException& e) {
-        ERR_POST(Warning << "Error message file parsing: " << e.GetMsg() <<
-                 ", line " + NStr::UInt8ToString(line));
+        ERR_POST_X(13, Warning << "Error message file parsing: " << e.GetMsg() <<
+                       ", line " + NStr::UInt8ToString(line));
         return false;
     }
     x_ready = true;

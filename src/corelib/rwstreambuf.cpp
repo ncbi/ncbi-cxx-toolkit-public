@@ -36,6 +36,10 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibStreamBuf
+
 
 #define RWSTREAMBUF_CATCH_ALL(message, action)                                \
 catch (CException& e) {                                                       \
@@ -50,7 +54,8 @@ catch (CException& e) {                                                       \
 catch (exception& e) {                                                        \
     if (m_Flags & fLogExceptions) {                                           \
         try {                                                                 \
-            ERR_POST(Error << "[" << message << "] Exception: " << e.what()); \
+            ERR_POST_X(1, Error << "[" << message                             \
+                                << "] Exception: " << e.what());              \
         } catch (...) {                                                       \
         }                                                                     \
     }                                                                         \
@@ -59,7 +64,7 @@ catch (exception& e) {                                                        \
 catch (...) {                                                                 \
     if (m_Flags & fLogExceptions) {                                           \
         try {                                                                 \
-            ERR_POST(Error << "[" << message << "] Unknown exception");       \
+            ERR_POST_X(2, Error << "[" << message << "] Unknown exception");  \
         } catch (...) {                                                       \
         }                                                                     \
     }                                                                         \
@@ -131,10 +136,10 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     }
 
     if (gptr()  &&  gptr() != egptr()) {
-        ERR_POST(Error << "CRWStreambuf::setbuf(): Read data pending");
+        ERR_POST_X(3, Error << "CRWStreambuf::setbuf(): Read data pending");
     }
     if (pptr()  &&  pptr() != pbase()) {
-        ERR_POST(Error << "CRWStreambuf::setbuf(): Write data pending");
+        ERR_POST_X(4, Error << "CRWStreambuf::setbuf(): Write data pending");
     }
 
     delete[] m_pBuf;

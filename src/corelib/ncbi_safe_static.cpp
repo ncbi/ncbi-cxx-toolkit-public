@@ -42,6 +42,11 @@
 #include <memory>
 #include <assert.h>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibStatic
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -53,7 +58,7 @@ CSafeStaticLifeSpan::CSafeStaticLifeSpan(ELifeSpan span, int adjust)
         adjust = 0;
     }
     if (adjust >= 5000  ||  adjust <= -5000) {
-        ERR_POST(Warning
+        ERR_POST_X(1, Warning
             << "CSafeStaticLifeSpan level adjustment out of range: "
             << adjust);
     }

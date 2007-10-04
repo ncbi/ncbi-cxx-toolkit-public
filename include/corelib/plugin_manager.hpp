@@ -74,6 +74,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbidiag.hpp>
 
 #include <set>
 #include <map>
@@ -86,6 +87,10 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
+
+
+NCBI_DEFINE_ERRCODE_X(XNcbiLibPluginMgr, 113, 4);
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -744,7 +749,8 @@ TClass* CPluginManager<TClass>::CreateInstanceFromList(
             drv = CreateInstance(drv_name, version, driver_params);
         }
         catch ( exception& e ) {
-            LOG_POST(drv_name << " is not available ::" << e.what());
+            LOG_POST_EX( NCBI_ERRCODE_X_NAME(XNcbiLibPluginMgr), 1,
+                         drv_name << " is not available ::" << e.what() );
         }
         if ( drv ) {
             break;
@@ -929,9 +935,10 @@ bool CPluginManager<TClass>::WillExtendCapabilities
         }
     }
 
-    ERR_POST(Warning << "A duplicate driver factory was found. "
-             "It will be ignored because it won't extend "
-             "Plugin Manager's capabilities.");
+    ERR_POST_EX( NCBI_ERRCODE_X_NAME(XNcbiLibPluginMgr), 2,
+                 Warning << "A duplicate driver factory was found. "
+                 "It will be ignored because it won't extend "
+                 "Plugin Manager's capabilities." );
 
     return false;
 }
@@ -1182,10 +1189,11 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
                 if ( RegisterWithEntryPoint(ep, driver, version) ) {
                     m_RegisteredEntries.push_back(entry);
                 } else {
-                    ERR_POST(Info << "Couldn't register an entry point "
+                    ERR_POST_EX( NCBI_ERRCODE_X_NAME(XNcbiLibPluginMgr), 3,
+                        Info << "Couldn't register an entry point "
                         "within a DLL '" << entry.dll->GetName() << "' "
                         "because either an entry point with the same name was already "
-                        "registered or it does not provide an appropriate factory.");
+                        "registered or it does not provide an appropriate factory." );
                 }
             }
         }

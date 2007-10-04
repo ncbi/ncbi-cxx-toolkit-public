@@ -83,6 +83,11 @@ static MyTZDLS sTZDLS = MyReadLocation();
 #endif
 
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibUtil
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -430,7 +435,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         // Timezone (local time in format GMT+HHMM)
         if (*fff == 'z') {
 #if defined(TIMEZONE_IS_UNDEFINED)
-            ERR_POST("Format symbol 'z' is unsupported on this platform");
+            ERR_POST_X(3, "Format symbol 'z' is unsupported on this platform");
 #else
             m_Data.tz = eLocal;
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
@@ -923,7 +928,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     // Adjust time for output timezone
     if (out_tz != eCurrentTimeZone) {
 #if defined(TIMEZONE_IS_UNDEFINED)
-        ERR_POST("Output timezone is unsupported on this platform");
+        ERR_POST_X(4, "Output timezone is unsupported on this platform");
 #else
         if (out_tz != TimeZone()) {
             t_out = new CTime(*this);
@@ -981,8 +986,8 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-                  ERR_POST("Format symbol 'z' is not supported on "
-                           "this platform");
+                  ERR_POST_X(5, "Format symbol 'z' is not supported on "
+                                "this platform");
 #else
                   str += "GMT";
                     if (IsGmtTime()) {

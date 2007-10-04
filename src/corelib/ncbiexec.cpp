@@ -47,6 +47,11 @@
 #endif
 
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibSystem
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -239,9 +244,9 @@ static void s_CheckExecArg(const char* arg)
     int lo = int((Uint8)arg & 0xffffffffU);
 #  endif
     if (lo == 0  &&  hi != 0) {
-        ERR_POST(Warning <<
-                 "It is possible that you used 0 instead of NULL "
-                 "to terminate the argument list of a CExec::Spawn*() call.");
+        ERR_POST_X(10, Warning <<
+                       "It is possible that you used 0 instead of NULL "
+                       "to terminate the argument list of a CExec::Spawn*() call.");
     }
 }
 #else

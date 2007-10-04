@@ -40,6 +40,10 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibUtil
+
 
 BEGIN_NCBI_SCOPE
 
@@ -1302,7 +1306,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
     SIZE_TYPE n = vsnprintf(buf.get(), size, format, args);
     while (n >= size  ||  buf.get()[size-2]) {
         if (buf.get()[size-1]) {
-            ERR_POST(Warning << "Buffer overrun by buggy vsnprintf");
+            ERR_POST_X(1, Warning << "Buffer overrun by buggy vsnprintf");
         }
         size = max(size << 1, n);
         buf.reset(new char[size]);
@@ -1316,7 +1320,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
     buf[sizeof(buf) - 1] = 0;
     vsprintf(buf, format, args);
     if (buf[sizeof(buf) - 1]) {
-        ERR_POST(Warning << "Buffer overrun by vsprintf");
+        ERR_POST_X(2, Warning << "Buffer overrun by vsprintf");
     }
     return buf;
 

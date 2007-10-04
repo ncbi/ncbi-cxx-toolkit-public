@@ -45,6 +45,12 @@
 #  include <fcntl.h> 
 #endif
 
+
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibConfig
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -390,8 +396,8 @@ CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 void CArg_InputFile::CloseFile(void) const
 {
     if ( !m_InputFile ) {
-        ERR_POST(Warning
-                 << s_ArgExptMsg(GetName(),
+        ERR_POST_X(20, Warning
+                       << s_ArgExptMsg(GetName(),
                                  "CArg_InputFile::CloseFile:  Unopened file",
                                  AsString()));
         return;
@@ -468,7 +474,7 @@ CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 void CArg_OutputFile::CloseFile(void) const
 {
     if ( !m_OutputFile ) {
-        ERR_POST(Warning << s_ArgExptMsg( GetName(),
+        ERR_POST_X(21, Warning << s_ArgExptMsg( GetName(),
             "CArg_InputFile::CloseFile: File was not opened", AsString()));
         return;
     }
@@ -1347,7 +1353,7 @@ CArgValue* CArgErrorHandler::HandleError(const CArgDesc& arg_desc,
         // Should never get past ProcessArgument()
     }
     if ((arg_desc.GetFlags() & CArgDescriptions::fWarnOnInvalidValue) == 0) {
-        ERR_POST(Warning << "Invalid value " << value <<
+        ERR_POST_X(22, Warning << "Invalid value " << value <<
             " for argument " << arg_desc.GetName() <<
             " - argument will be ignored.");
     }
@@ -2173,9 +2179,9 @@ void CArgDescriptions::SetUsageContext
     const SIZE_TYPE kMinUsageWidth = 30;
     if (usage_width < kMinUsageWidth) {
         usage_width = kMinUsageWidth;
-        ERR_POST(Warning <<
-                 "CArgDescriptions::SetUsageContext() -- usage_width=" <<
-                 usage_width << " adjusted to " << kMinUsageWidth);
+        ERR_POST_X(23, Warning <<
+                       "CArgDescriptions::SetUsageContext() -- usage_width=" <<
+                       usage_width << " adjusted to " << kMinUsageWidth);
     }
     m_UsageWidth = usage_width;
 }

@@ -54,6 +54,11 @@
 #endif
 
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibApp
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -147,7 +152,7 @@ void CNcbiApplication::Init(void)
 
 int CNcbiApplication::DryRun(void)
 {
-    ERR_POST(Info << "DryRun: default implementation does nothing");
+    ERR_POST_X(1, Info << "DryRun: default implementation does nothing");
     return 0;
 }
 
@@ -210,7 +215,7 @@ static void s_MacArgMunging(CNcbiApplication&   app,
     CNcbiIfstream in(args_fname.c_str());
 
     if ( !in.good() ) {
-        ERR_POST(Info << "Mac arguments file not found: " << args_fname);
+        ERR_POST_X(2, Info << "Mac arguments file not found: " << args_fname);
         return;
     }
 
@@ -276,11 +281,11 @@ int CNcbiApplication::AppMain
     // Make sure we have something as our 'real' executable's name.
     // though if it does not contain a full path it won't be much use.
     if ( exepath.empty() ) {
-        ERR_POST(Warning
-                 << "Warning:  Could not determine this application's "
-                 "file name and location.  Using \""
-                 << appname << "\" instead.\n"
-                 "Please fix FindProgramExecutablePath() on this platform.");
+        ERR_POST_X(3, Warning
+                      << "Warning:  Could not determine this application's "
+                      "file name and location.  Using \""
+                      << appname << "\" instead.\n"
+                      "Please fix FindProgramExecutablePath() on this platform.");
         exepath = appname;
     }
 
@@ -330,7 +335,7 @@ int CNcbiApplication::AppMain
                     continue;
                 }
                 // Print USAGE
-                LOG_POST(appname + ": " + GetVersion().Print());
+                LOG_POST_X(4, appname + ": " + GetVersion().Print());
                 GetDiagContext().DiscardMessages();
                 return 0;
 
@@ -477,7 +482,7 @@ int CNcbiApplication::AppMain
             string str;
             m_ArgDesc->PrintUsage
                 (str, e.GetErrCode() == CArgHelpException::eHelpFull);
-            // LOG_POST(str);
+            // LOG_POST_X(5, str);
             cout << str;
             exit_code = 0;
         }
@@ -490,7 +495,7 @@ int CNcbiApplication::AppMain
             exit_code = 2;
         }
         catch (exception& e) {
-            ERR_POST("Application's initialization failed: " << e.what());
+            ERR_POST_X(6, "Application's initialization failed: " << e.what());
             got_exception = true;
             exit_code = 2;
         }
@@ -510,7 +515,7 @@ int CNcbiApplication::AppMain
                 exit_code = 3;
             }
             catch (exception& e) {
-                ERR_POST("Application's execution failed: " << e.what());
+                ERR_POST_X(7, "Application's execution failed: " << e.what());
                 got_exception = true;
                 exit_code = 3;
             }
@@ -529,7 +534,7 @@ int CNcbiApplication::AppMain
             got_exception = true;
         }
         catch (exception& e) {
-            ERR_POST("Application's cleanup failed: "<< e.what());
+            ERR_POST_X(8, "Application's cleanup failed: "<< e.what());
             got_exception = true;
         }
 
@@ -538,7 +543,7 @@ int CNcbiApplication::AppMain
         // Print USAGE and the exception error message
         if ( m_ArgDesc.get() ) {
             string str;
-            LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
+            LOG_POST_X(9, m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
         NCBI_REPORT_EXCEPTION("", e);
         got_exception = true;
@@ -551,8 +556,8 @@ int CNcbiApplication::AppMain
     // debug mode to permit easy inspection of such error conditions, while
     // maintaining safety of production, release-mode applications.
     catch (...) {
-        ERR_POST(Warning <<
-                 "Application has thrown an exception of unknown type");
+        ERR_POST_X(10, Warning <<
+                       "Application has thrown an exception of unknown type");
         throw;
     }
 #endif
@@ -659,9 +664,9 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
         string dir;
         CDirEntry::SplitPath(*conf, &dir, 0, 0);
         if (dir.empty()) {
-            ERR_POST(Warning <<
-                     "Registry file of application \"" << basename
-                     << "\" is not found");
+            ERR_POST_X(11, Warning <<
+                           "Registry file of application \"" << basename
+                           << "\" is not found");
         } else {
             NCBI_THROW(CAppException, eNoRegistry,
                        "Registry file \"" + *conf + "\" cannot be opened");
@@ -945,9 +950,9 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             if ( info ) {
                 delete info;
             }
-            ERR_POST(Warning << "Applications message file \""
-                     << msg_file
-                     << "\" is not found");
+            ERR_POST_X(12, Warning << "Applications message file \""
+                           << msg_file
+                           << "\" is not found");
         } else {
             SetDiagErrCodeInfo(info);
         }
@@ -964,10 +969,10 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
         }
         heap_size_limit *= 1024 * 1024;
         if ( !SetHeapLimit(heap_size_limit) ) {
-            ERR_POST(Warning
-                     << "Failed to set the heap size limit to "
-                     << heap_size_limit
-                     << "Mb (as per the config param [NCBI.HeapSizeLimit])");
+            ERR_POST_X(13, Warning
+                           << "Failed to set the heap size limit to "
+                           << heap_size_limit
+                           << "Mb (as per the config param [NCBI.HeapSizeLimit])");
         }
     }
     
@@ -979,10 +984,10 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
                        "Configuration file error:  [NCBI.CpuTimeLimit] < 0");
         }
         if ( !SetCpuTimeLimit(cpu_time_limit) ) {
-            ERR_POST(Warning
-                     << "Failed to set the CPU time limit to "
-                     << cpu_time_limit
-                     << " sec (as per the config param [NCBI.CpuTimeLimit])");
+            ERR_POST_X(14, Warning
+                           << "Failed to set the CPU time limit to "
+                           << cpu_time_limit
+                           << " sec (as per the config param [NCBI.CpuTimeLimit])");
         }
     }
 

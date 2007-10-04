@@ -165,9 +165,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 
 
 /// Error posting with file, line number information but without error codes.
+/// This macro is kinda deprecated and it's strongly recomended to move
+/// in all projects (except tests) to macro ERR_POST_X.
 ///
 /// @sa
-///   ERR_POST_EX macro
+///   ERR_POST_EX, ERR_POST_X
 #define ERR_POST(message)                                 \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef() \
       << message                                          \
@@ -175,9 +177,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 
 
 /// Log message only without severity, location, prefix information.
+/// This macro is kinda deprecated and it's strongly recomended to move
+/// in all projects (except tests) to macro LOG_POST_X.
 ///
 /// @sa
-///   LOG_POST_EX macro
+///   LOG_POST_EX, LOG_POST_X
 #define LOG_POST(message)                          \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,   \
       eDiag_Error,                                 \
@@ -186,9 +190,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << NCBI_NS_NCBI::Endm )
 
 /// Error posting with error codes.
+/// This macro is kinda deprecated and it's strongly recomended to move
+/// in all projects (except tests) to macro ERR_POST_X.
 ///
 /// @sa
-///   ERR_POST
+///   ERR_POST, ERR_POST_X
 #define ERR_POST_EX(err_code, err_subcode, message)         \
     ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()   \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
@@ -196,9 +202,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << NCBI_NS_NCBI::Endm )
 
 /// Log posting with error codes.
+/// This macro is kinda deprecated and it's strongly recomended to move
+/// in all projects (except tests) to macro LOG_POST_X.
 ///
 /// @sa
-///   LOG_POST
+///   LOG_POST, LOG_POST_X
 #define LOG_POST_EX(err_code, err_subcode, message)         \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,                  \
       eDPF_Log | eDPF_OmitSeparator).GetRef()               \
@@ -206,29 +214,179 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
       << message << NCBI_NS_NCBI::Endm )
 
 
-#define LOG_POST_N_TIMES(count, message) \
-    do { \
-        static volatile int sx_to_show = (count);  \
-        int to_show = sx_to_show; \
-        if ( to_show > 0 ) { \
-            sx_to_show = to_show - 1; \
-            LOG_POST(message);     \
-        } \
+/// Defines global error code name with given value (err_code) and given
+/// maximum value of error subcode within this code. To use defined error
+/// code you need to define symbol NCBI_USE_ERRCODE_X with name as its value.
+/// This error code is used only in macros LOG_POST_X and ERR_POST_X. Maximum
+/// value of error subcode is being checked only in Debug configuration and
+/// exists for developers to know what code they can use in next inserted
+/// ERR_POST_X call.
+/// Macro must be used inside ncbi scope.
+///
+/// @sa
+///   LOG_POST_X, ERR_POST_X, NCBI_ERRCODE_X, NCBI_MAX_ERR_SUBCODE_X
+#define NCBI_DEFINE_ERRCODE_X(name, err_code, max_err_subcode)  \
+    namespace ErrCodesX {                                       \
+        enum enum##name {                                       \
+            eErrCodeX_##name = err_code,                        \
+            eErrCodeX_Max_##name = max_err_subcode              \
+        };                                                      \
+    }
+
+/// Makes one identifier from 2 parts
+#define NCBI_CONCAT_IDENTIFIER(prefix, postfix) prefix##postfix
+
+/// Returns value of error code by its name defined by NCBI_DEFINE_ERRCODE_X
+///
+/// @sa NCBI_DEFINE_ERRCODE_X
+#define NCBI_ERRCODE_X_NAME(name)                                       \
+    NCBI_NS_NCBI::ErrCodesX::NCBI_CONCAT_IDENTIFIER(eErrCodeX_, name)
+
+/// Returns currently set default error code. Default error code is set by
+/// definition of NCBI_USE_ERRCODE_X with name of error code as its value.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X
+#define NCBI_ERRCODE_X   NCBI_ERRCODE_X_NAME(NCBI_USE_ERRCODE_X)
+
+/// Returns maximum value of error subcode within error code with given name.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X
+#define NCBI_MAX_ERR_SUBCODE_X_NAME(name)                               \
+    NCBI_NS_NCBI::ErrCodesX::NCBI_CONCAT_IDENTIFIER(eErrCodeX_Max_, name)
+
+/// Returns maximum value of error subcode within current default error code.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X
+#define NCBI_MAX_ERR_SUBCODE_X   NCBI_MAX_ERR_SUBCODE_X_NAME(NCBI_USE_ERRCODE_X)
+
+
+#ifndef NDEBUG
+    /// Common code for checking that value of error subcode doesn't exceed
+    /// defined maximum value.
+#   define NCBI_CHECK_ERR_SUBCODE_X(local_subcode)                              \
+        if (NCBI_MAX_ERR_SUBCODE_X < local_subcode) {                           \
+            ERR_POST_EX(NCBI_ERRCODE_X, 0,                                      \
+                        "Wrong error subcode: " << local_subcode                \
+                        << " when maximum is " << NCBI_MAX_ERR_SUBCODE_X);      \
+        }                                                                       \
+
+    /// Error posting with default error code and given error subcode. Also
+    /// checks subcode correctness. All calls to ERR_POST_X or LOG_POST_X under
+    /// the same default error code MUST be with deferent error subcodes to be
+    /// able to filter only those messages that needed.
+    /// If using of macro leads to compile errors containing in message strings
+    /// like "ErrCodesX" or "ErrCodeX" then you didn't defined error code name
+    /// with NCBI_DEFINE_ERRCODE_X macro or didn't selected current default
+    /// error code with valid NCBI_USE_ERRCODE_X definition.
+    ///
+    /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#   define ERR_POST_X(err_subcode, message)                                     \
+        {                                                                       \
+            int local_subcode = (err_subcode);                                  \
+            NCBI_CHECK_ERR_SUBCODE_X(local_subcode);                            \
+            ERR_POST_EX(NCBI_ERRCODE_X, local_subcode, message);                \
+        }
+
+    /// Log posting with default error code and given error subcode. Also checks
+    /// subcode correctness. All calls to ERR_POST_X or LOG_POST_X under
+    /// the same default error code MUST be with deferent error subcodes to be
+    /// able to filter only those messages that needed.
+    /// If using of macro leads to compile errors containing in message strings
+    /// like "ErrCodesX" or "ErrCodeX" then you didn't defined error code name
+    /// with NCBI_DEFINE_ERRCODE_X macro or didn't selected current default
+    /// error code with valid NCBI_USE_ERRCODE_X definition.
+    ///
+    /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#   define LOG_POST_X(err_subcode, message)                                     \
+        {                                                                       \
+            int local_subcode = (err_subcode);                                  \
+            NCBI_CHECK_ERR_SUBCODE_X(local_subcode);                            \
+            LOG_POST_EX(NCBI_ERRCODE_X, local_subcode, message);                \
+        }
+#else
+    /// Error posting with default error code and given error subcode.
+    /// All calls to ERR_POST_X or LOG_POST_X under
+    /// the same default error code MUST be with deferent error subcodes to be
+    /// able to filter only those messages that needed.
+    /// If using of macro leads to compile errors containing in message strings
+    /// like "ErrCodesX" or "ErrCodeX" then you didn't defined error code name
+    /// with NCBI_DEFINE_ERRCODE_X macro or didn't selected current default
+    /// error code with valid NCBI_USE_ERRCODE_X definition.
+    ///
+    /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#   define ERR_POST_X(err_subcode, message)                                     \
+        ERR_POST_EX(NCBI_ERRCODE_X, err_subcode, message)
+
+    /// Log posting with default error code and given error subcode.
+    /// All calls to ERR_POST_X or LOG_POST_X under
+    /// the same default error code MUST be with deferent error subcodes to be
+    /// able to filter only those messages that needed.
+    /// If using of macro leads to compile errors containing in message strings
+    /// like "ErrCodesX" or "ErrCodeX" then you didn't defined error code name
+    /// with NCBI_DEFINE_ERRCODE_X macro or didn't selected current default
+    /// error code with valid NCBI_USE_ERRCODE_X definition.
+    ///
+    /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#   define LOG_POST_X(err_subcode, message)                                     \
+        LOG_POST_EX(NCBI_ERRCODE_X, err_subcode, message)
+#endif
+
+
+/// Common code for making log or error posting only given number of times
+/// during program execution. This macro MUST not be used outside this header.
+#define NCBI_REPEAT_POST_N_TIMES(post_macro, count, params)     \
+    do {                                                        \
+        static volatile int sx_to_show = (count);               \
+        int to_show = sx_to_show;                               \
+        if ( to_show > 0 ) {                                    \
+            sx_to_show = to_show - 1;                           \
+            post_macro params;  /* parenthesis are in params */ \
+        }                                                       \
     } while ( false )
 
 
-#define ERR_POST_N_TIMES(count, message) \
-    do { \
-        static volatile int sx_to_show = (count);  \
-        int to_show = sx_to_show; \
-        if ( to_show > 0 ) { \
-            sx_to_show = to_show - 1; \
-            ERR_POST(message);     \
-        } \
-    } while ( false )
+/// Log posting only given number of times during program execution.
+#define LOG_POST_N_TIMES(count, message)                        \
+    NCBI_REPEAT_POST_N_TIMES( LOG_POST, count, (message) )
 
+/// Error posting only given number of times during program execution.
+#define ERR_POST_N_TIMES(count, message)                        \
+    NCBI_REPEAT_POST_N_TIMES( ERR_POST, count, (message) )
+
+/// Log posting only once during program execution.
 #define LOG_POST_ONCE(message) LOG_POST_N_TIMES(1, message)
+
+/// Error posting only once during program execution.
 #define ERR_POST_ONCE(message) ERR_POST_N_TIMES(1, message)
+
+
+/// Log posting only given number of times during program execution
+/// with default error code and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#define LOG_POST_X_N_TIMES(count, err_subcode, message)             \
+    NCBI_REPEAT_POST_N_TIMES( LOG_POST_X, count, (err_subcode, message) )
+
+/// Error posting only given number of times during program execution
+/// with default error code and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#define ERR_POST_X_N_TIMES(count, err_subcode, message)             \
+    NCBI_REPEAT_POST_N_TIMES( ERR_POST_X, count, (err_subcode, message) )
+
+/// Log posting only once during program execution with default
+/// error code and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#define LOG_POST_X_ONCE(err_subcode, message)                       \
+    LOG_POST_X_N_TIMES(1, err_subcode, message)
+
+/// Error posting only once during program execution with default
+/// error code and given error subcode.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X
+#define ERR_POST_X_ONCE(err_subcode, message)                       \
+    ERR_POST_X_N_TIMES(1, err_subcode, message)
 
 
 /// Severity level for the posted diagnostics.

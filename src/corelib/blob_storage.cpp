@@ -34,10 +34,15 @@
 #include <corelib/ncbi_config.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibBlob
+
 
 BEGIN_NCBI_SCOPE
 
-IBlobStorage::~IBlobStorage() 
+
+IBlobStorage::~IBlobStorage()
 {
 }
 void IBlobStorage::DeleteStorage(void)
@@ -68,21 +73,21 @@ CBlobStorageFactory::~CBlobStorageFactory()
 
 IBlobStorage* CBlobStorageFactory::CreateInstance()
 {
-    typedef CPluginManager<IBlobStorage> TCacheManager; 
+    typedef CPluginManager<IBlobStorage> TCacheManager;
     typedef CPluginManagerGetter<IBlobStorage> TCacheManagerStore;
- 
+
     CRef<TCacheManager> cache_manager( TCacheManagerStore::Get() );
     //auto_ptr<TPluginManagerParamTree> params( MakeParamTree() );
     IBlobStorage* drv = NULL;
-    
+
     _ASSERT( cache_manager );
 
-    const TPluginManagerParamTree* storage_tree = 
+    const TPluginManagerParamTree* storage_tree =
             m_Params->FindSubNode("blob_storage");
-    
+
     string driver_name = "netcache";
     if (storage_tree) {
-        const TPluginManagerParamTree* driver_tree = 
+        const TPluginManagerParamTree* driver_tree =
             storage_tree->FindSubNode("driver");
         if (driver_tree  && !driver_tree->GetValue().value.empty()) {
             driver_name = driver_tree->GetValue().value;
@@ -93,7 +98,7 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
     if (!storage_tree)
         storage_tree = m_Params->FindSubNode("netcache_client");
 
-        
+
     try {
         drv = cache_manager->CreateInstance(
                                      driver_name,
@@ -102,7 +107,7 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
                                      );
     } catch (CPluginManagerException& ex) {
         if (ex.GetErrCode() == CPluginManagerException::eResolveFailure) {
-            LOG_POST(Warning << ex);
+            LOG_POST_X(1, Warning << ex);
         } else if (ex.GetErrCode() == CPluginManagerException::eNullInstance) {
         } else {
             throw;
@@ -111,7 +116,7 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
 
     if (!drv)
         drv = new CBlobStorage_Null;
-    
+
     return drv;
 }
 

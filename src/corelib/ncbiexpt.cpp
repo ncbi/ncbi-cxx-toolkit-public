@@ -46,6 +46,10 @@
 #include <stdio.h>
 #include <stack>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibDiag
+
 
 BEGIN_NCBI_SCOPE
 
@@ -442,9 +446,9 @@ void CException::x_ThrowSanityCheck(const type_info& expected_type,
 {
     const type_info& actual_type = typeid(*this);
     if (actual_type != expected_type) {
-        ERR_POST(Warning << "CException::Throw(): throwing object of type "
-                 << actual_type.name() << " as " << expected_type.name()
-                 << " [" << human_name << ']');
+        ERR_POST_X(14, Warning << "CException::Throw(): throwing object of type "
+                       << actual_type.name() << " as " << expected_type.name()
+                       << " [" << human_name << ']');
     }
 }
 

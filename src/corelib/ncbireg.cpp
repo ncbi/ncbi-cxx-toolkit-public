@@ -43,6 +43,10 @@
 #include <algorithm>
 #include <set>
 
+#include "error_codes_p.hpp"
+
+#define NCBI_USE_ERRCODE_X   XNcbiLibReg
+
 
 BEGIN_NCBI_SCOPE
 
@@ -312,7 +316,7 @@ int IRegistry::GetInt(const string& section, const string& name,
         if (err_action == eThrow) {
             NCBI_RETHROW_SAME(ex, msg);
         } else if (err_action == eErrPost) {
-            ERR_POST(ex.what() << msg);
+            ERR_POST_X(1, ex.what() << msg);
         }
 
         return default_value;
@@ -341,7 +345,7 @@ bool IRegistry::GetBool(const string& section, const string& name,
         if (err_action == eThrow) {
             NCBI_RETHROW_SAME(ex, msg);
         } else if (err_action == eErrPost) {
-            ERR_POST(ex.what() << msg);
+            ERR_POST_X(2, ex.what() << msg);
         }
 
         return default_value;
@@ -371,7 +375,7 @@ double IRegistry::GetDouble(const string& section, const string& name,
         if (err_action == eThrow) {
             NCBI_RETHROW_SAME(ex, msg);
         } else if (err_action == eErrPost) {
-            ERR_POST(ex.what() << msg);
+            ERR_POST_X(3, ex.what() << msg);
         }
 
         return default_value;
@@ -649,7 +653,7 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
             }
         } catch (exception& e) {
             if (ignore_errors) {
-                ERR_POST(e.what());
+                ERR_POST_X(4, e.what());
             } else {
                 throw;
             }
@@ -1320,13 +1324,13 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
             = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni,
                                   0, flags, m_SysRegistry.GetPointer());
         if (entry.registry  &&  entry.registry != m_SysRegistry) {
-            ERR_POST(Warning << "Resetting m_SysRegistry");
+            ERR_POST_X(5, Warning << "Resetting m_SysRegistry");
             m_SysRegistry.Reset(entry.registry);
         }
     } catch (CRegistryException& e) {
-        ERR_POST(Critical << "CNcbiRegistry: "
-                 "Syntax error in system-wide configuration file: "
-                 << e.what());
+        ERR_POST_X(6, Critical << "CNcbiRegistry: "
+                      "Syntax error in system-wide configuration file: "
+                      << e.what());
         return false;
     }
 
@@ -1358,8 +1362,8 @@ void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
                     "The sub-registry name " + name + " is reserved.", 0);
     }
     if (prio > ePriority_MaxUser) {
-        ERR_POST(Warning
-                 << "Reserved priority value automatically downgraded.");
+        ERR_POST_X(7, Warning
+                      << "Reserved priority value automatically downgraded.");
         prio = ePriority_MaxUser;
     }
     m_AllRegistries->Add(reg, prio, name);
