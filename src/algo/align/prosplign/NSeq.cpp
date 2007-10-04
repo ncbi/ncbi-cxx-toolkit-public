@@ -80,31 +80,37 @@ void CNSeq::Init(const CNSeq& fullseq, const vector<pair<int, int> >& igi)
     if(beg < fullseq.seq.end()) seq.insert(seq.end(), beg, fullseq.seq.end());
 }
 
-void CNSeq::Init(CScope& scope, const CSeq_loc& genomic)
+void CNSeq::Init(CScope& scope, CSeq_loc& genomic)
 {
-    seq.clear();
-    m_size = sequence::GetLength(genomic,&scope);
+    CRef<CSeq_id> seqid( new CSeq_id );
+    seqid->Assign(*genomic.GetId());
+
+    TSeqPos loc_end = sequence::GetStop(genomic, &scope);
+    TSeqPos seq_end = sequence::GetLength(*genomic.GetId(), &scope)-1;
 
     CRef<CSeq_loc> extended_seqloc(new CSeq_loc);
-    extended_seqloc->Assign(genomic);
+    if (loc_end<=seq_end)
+        extended_seqloc->Assign(genomic);
+    else {
+        CRef<CSeq_loc> extra_seqloc(new CSeq_loc(*seqid,seq_end+1,loc_end,genomic.GetStrand()) );
+        extended_seqloc = sequence::Seq_loc_Subtract(genomic,*extra_seqloc,CSeq_loc::fMerge_All|CSeq_loc::fSort,&scope);
+    }
+
+    m_size = sequence::GetLength(*extended_seqloc,&scope);
+
     if (IsForward(genomic.GetStrand())) {
-        TSeqPos pos = sequence::GetStop(genomic, &scope);
-        TSeqPos end = sequence::GetLength(*genomic.GetId(), &scope)-1;
-        if (pos<end) {
+        TSeqPos pos = sequence::GetStop(*extended_seqloc, &scope);
+        if (pos<seq_end) {
             TSeqPos pos1 = pos + 3;
-            if (pos1 > end)
-                pos1 = end;
-            CRef<CSeq_id> seqid( new CSeq_id );
-            seqid->Assign(*genomic.GetId());
+            if (pos1 > seq_end)
+                pos1 = seq_end;
             CRef<CSeq_loc> extra_seqloc(new CSeq_loc(*seqid,pos,pos1,eNa_strand_plus) );
             extended_seqloc = sequence::Seq_loc_Add(*extended_seqloc,*extra_seqloc,CSeq_loc::fMerge_All|CSeq_loc::fSort,&scope);
         }
     } else {
-        TSeqPos pos = sequence::GetStart(genomic, &scope);
+        TSeqPos pos = sequence::GetStart(*extended_seqloc, &scope);
         if (pos > 0) {
             TSeqPos  pos0 = pos < 3 ? 0 : pos - 3;
-            CRef<CSeq_id> seqid( new CSeq_id );
-            seqid->Assign(*genomic.GetId());
             CRef<CSeq_loc> extra_seqloc(new CSeq_loc(*seqid,pos0,pos-1,eNa_strand_minus) );
             extended_seqloc = sequence::Seq_loc_Add(*extended_seqloc,*extra_seqloc,CSeq_loc::fMerge_All|CSeq_loc::fSort,&scope);
         }
@@ -118,6 +124,7 @@ void CNSeq::Init(CScope& scope, const CSeq_loc& genomic)
     convert[4] = nG;
     convert[8] = nT;
 
+    seq.clear();
     for (CSeqVector_CI i(seq_vec); i; ++i) {
         seq.push_back(convert[*i&0xf]);
     }

@@ -354,12 +354,14 @@ bool CProSplign::GetIntronlessMode() const
     return m_data->m_intronless;
 }
 
-CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic, 
+CRef<CSeq_align> CProSplign::FindAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic_orig, 
                                    CProSplignOutputOptions output_options)
 {
     CPSeq protseq(scope, protein);
     PSEQ& pseq = protseq.seq;
 
+    CSeq_loc genomic;
+    genomic.Assign(genomic_orig);
     CNSeq cnseq(scope, genomic);
 
     auto_ptr<CAli> pali;

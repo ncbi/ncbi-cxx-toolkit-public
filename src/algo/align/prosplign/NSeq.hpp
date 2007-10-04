@@ -52,7 +52,7 @@ class CNSeq
 {
 public:
     CNSeq();
-    CNSeq(CScope& scope, const CSeq_loc& genomic)
+    CNSeq(CScope& scope, CSeq_loc& genomic)
     {
         Init(scope,genomic);
     }
@@ -60,7 +60,7 @@ public:
 
 //both init methods try to preserve three extra letters at the end of seq for stop presence check
 
-    void Init(CScope& scope, const CSeq_loc& genomic);
+    void Init(CScope& scope, CSeq_loc& genomic);
     //just cut ranges given in igi from fullseq
     void Init(const CNSeq& fullseq, const vector<pair<int, int> >& igi);
 
