@@ -537,29 +537,28 @@ void CQueueDataBase::UpdateQueueParameters(const string& qname,
 
 void CQueueDataBase::Close()
 {
+    // Check that we're still open
+    if (!m_Env) return;
+
     StopNotifThread();
     StopPurgeThread();
     StopExecutionWatcherThread();
 
-    if (m_Env) {
-        m_Env->ForceTransactionCheckpoint();
-        m_Env->CleanLog();
-    }
+    m_Env->ForceTransactionCheckpoint();
+    m_Env->CleanLog();
 
     x_CleanParamMap();
 
     m_QueueCollection.Close();
     m_QueueDescriptionDB.Close();
     try {
-        if (m_Env) {
-            if (m_Env->CheckRemove()) {
-                LOG_POST(Info    <<
-                         "JS: '" <<
-                         m_Name  << "' Unmounted. BDB ENV deleted.");
-            } else {
-                LOG_POST(Warning << "JS: '" << m_Name 
-                                 << "' environment still in use.");
-            }
+        if (m_Env->CheckRemove()) {
+            LOG_POST(Info    <<
+                        "JS: '" <<
+                        m_Name  << "' Unmounted. BDB ENV deleted.");
+        } else {
+            LOG_POST(Warning << "JS: '" << m_Name 
+                                << "' environment still in use.");
         }
     }
     catch (exception& ex) {

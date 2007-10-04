@@ -95,6 +95,19 @@ public:
     void Run(void);
 
 protected:
+    /// Initialize the server
+    ///
+    /// Called by Run method before poll cycle.
+    virtual void Init();
+
+    /// Cleanup the server
+    ///
+    /// Called by Run method after poll cycle when all processing threads
+    /// are stopped, but before releasing listening ports. Here you're still
+    /// guaranteed that another instance running on the same set of ports will
+    /// fail at StartListening point.
+    virtual void Exit();
+
     /// Runs synchronously when no socket activity has occurred in a
     /// while (as determined by m_AcceptTimeout).
     /// @sa m_Parameters->accept_timeout

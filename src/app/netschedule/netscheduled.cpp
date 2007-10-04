@@ -519,6 +519,9 @@ public:
     const CTime& GetStartTime(void) const { return m_StartTime; }
     const CNetSchedule_AccessList& GetAccessList(void) const { return m_AdminHosts; }
 
+protected:
+    virtual void Exit();
+
 private:
     void x_CreateLog();
 
@@ -2549,6 +2552,12 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
 CNetScheduleServer::~CNetScheduleServer()
 {
     delete m_QueueDB;
+}
+
+
+void CNetScheduleServer::Exit()
+{
+    m_QueueDB->Close();
 }
 
 

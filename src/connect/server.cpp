@@ -342,6 +342,7 @@ void CServer::Run(void)
     threadPool.Spawn(m_Parameters->init_threads);
 
     StartListening();
+    Init();
 
     vector<CSocketAPI::SPoll> polls;
     size_t                    count;
@@ -383,12 +384,27 @@ void CServer::Run(void)
         }
     }
 
-    m_ConnectionPool->StopListening();
     // We need to kill all processing threads first, so that there
     // is no request with already destroyed connection left.
     threadPool.KillAllThreads(true);
+    Exit();
+    // We stop listening only here to provide port lock until application
+    // cleaned up after execution.
+    m_ConnectionPool->StopListening();
+    // Here we finally free to erase connection pool.
     m_ConnectionPool->Erase();
 }
+
+
+void CServer::Init()
+{
+}
+
+
+void CServer::Exit()
+{
+}
+
 
 void CServer::CreateRequest(CStdPoolOfThreads& threadPool,
     IServer_ConnectionBase* conn_base,
