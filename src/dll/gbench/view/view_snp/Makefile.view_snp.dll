@@ -1,0 +1,9 @@
+# $Id$
+
+DLL = view_snp
+
+HOSTED_LIBS    = gui_view_snp
+
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_widgets_misc \
+                 gui_objects gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq
+

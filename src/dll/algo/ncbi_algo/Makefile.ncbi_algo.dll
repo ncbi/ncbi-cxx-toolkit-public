@@ -4,10 +4,6 @@ DLL = ncbi_algo
 
 HOSTED_LIBS    = \
                  fastme                 \
-                 xalgoalignnw           \
-                 xalgoalignsplign       \
-                 xalgoalignutil         \
-                 xalgoblastdbindex      \
                  xalgocontig_assembly   \
                  xalgodustmask          \
                  xalgognomon            \
@@ -17,10 +13,16 @@ HOSTED_LIBS    = \
                  xalgotext              \
                  xalgowinmask           \
                  \
+                 prosplign              \
+                 xalgoalignnw           \
+                 xalgoalignsplign       \
+                 xalgoalignutil         \
+                 \
                  blast                  \
                  blastinput             \
                  cobalt                 \
                  composition_adjustment \
+                 xalgoblastdbindex      \
                  xblast
 
 DEPENDENCIES   = \

@@ -4,6 +4,7 @@ DLL = gui_widgets
 
 HOSTED_LIBS    = w_workspace \
                  w_fltk     \
+                 w_wx       \
                  w_html     \
                  w_gl       \
                  w_flu      \

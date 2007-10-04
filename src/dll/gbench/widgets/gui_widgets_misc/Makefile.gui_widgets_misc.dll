@@ -5,7 +5,8 @@ DLL = gui_widgets_misc
 HOSTED_LIBS    = w_phylo_tree \
                  w_taxplot3d \
                  w_serial_browse \
-                 w_object_list
+                 w_object_list \
+                 w_snp
 
 DEPENDENCIES   = ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general \
                  ncbi_image \

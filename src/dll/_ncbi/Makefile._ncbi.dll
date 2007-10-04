@@ -26,7 +26,6 @@ DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  ncbi_pub              \
                  ncbi_seq              \
                  ncbi_seqext           \
-                 ncbi_sqlite           \
                  ncbi_validator        \
                  ncbi_web              \
                  ncbi_xblastformat     \
@@ -36,7 +35,6 @@ DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  ncbi_xloader_cdd      \
                  ncbi_xloader_genbank  \
                  ncbi_xloader_lds      \
-                 ncbi_xloader_table    \
                  ncbi_xloader_trace    \
                  ncbi_xobjsimple       \
                  ncbi_xreader          \

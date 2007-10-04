@@ -8,8 +8,8 @@ HOSTED_LIBS    = w_seq_graphic \
                  w_feat_table  \
                  w_seq_text
 
-DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_general \
-                 gui_config gui_utils gui_widgets gui_graph
+DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_misc \
+                 gui_config gui_utils gui_widgets gui_widgets_misc gui_graph
 
 CPPFLAGS = -DNCBI_GUIWIDGETS_SEQ_EXPORTS
 

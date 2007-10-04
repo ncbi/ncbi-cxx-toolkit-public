@@ -3,10 +3,11 @@
 DLL = gui_utils
 
 HOSTED_LIBS    = gui_utils  \
+                 gui_utils_fl \
                  gui_objutils \
                  gui_opengl \
-                 gui_print  \
-                 gui_math
+                 gui_print \
+                 gui_print_fl
 
 DEPENDENCIES   = ncbi_core ncbi_seq ncbi_seqext ncbi_misc ncbi_image ncbi_general
 

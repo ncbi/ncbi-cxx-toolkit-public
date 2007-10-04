@@ -5,8 +5,7 @@ DLL = dload_table
 HOSTED_LIBS    = gui_doc_table
 
 DEPENDENCIES   = gui_objects gui_core gui_widgets gui_utils \
-                 ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite \
-                 ncbi_xloader_table
+                 ncbi_core ncbi_general ncbi_seq ncbi_seqext
 
 
 
