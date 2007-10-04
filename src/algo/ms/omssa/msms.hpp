@@ -63,7 +63,7 @@ const int kNumAAIntervals = 19;
 // ABCXYZ ion mass calculation constants.  See Papayannopoulos, pg 63.
 
 /** mass of water */
-const double kWater = 18.015; 
+const double kWater = 18.010565;
 
 /** neutron mass */
 const double kNeutron = 1.008664904; 
@@ -82,8 +82,9 @@ const double MonoN15Mass[] = {0.0, 72.034144893, 0.0, 104.006224893, 116.0239748
 
 // const int AAIntervals[] = { 57, 71, 87, 97, 99, 101, 103, 113, 114, 115, 128, 129, 131, 137, 147, 150, 156, 163, 186 };
 
-const double kTermMass[] =  {1.008, 1.008, 1.008, 17.007, 17.007, 17.007};
-const double kIonTypeMass[] = { -28.01, 0.0, 17.01, 30.026, 2.016, -13.985 };
+
+const double kTermMass[] =  {1.007825, 1.007825, 1.007825, 17.00274, 17.00274, 17.00274};
+const double kIonTypeMass[] = { -27.994915, 0.0, 17.02655, 27.994915, 2.01565, -14.003075 };
 
 /////////////////////////////////////////////////////////////////////////////
 //
