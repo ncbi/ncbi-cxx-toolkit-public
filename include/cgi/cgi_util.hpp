@@ -545,6 +545,14 @@ public:
     EBrowser GetBrowser(void) const
         { return m_Browser; }
 
+    /// Get browser name.
+    ///
+    /// @return
+    ///   Browser name or empty string for unknown browser
+    /// @sa GetBrowser
+    const string& GetBrowserName(void) const
+        { return m_BrowserName; }
+
     /// Get browser engine type.
     /// @sa EBrowserEngine 
     EBrowserEngine GetEngine(void) const 
@@ -606,6 +614,7 @@ protected:
 protected:
     string            m_UserAgent;      ///< User-Agent string
     EBrowser          m_Browser;        ///< Browser type
+    string            m_BrowserName;    ///< Browser name
     TUserAgentVersion m_BrowserVersion; ///< Browser version info
     EBrowserEngine    m_Engine;         ///< Browser engine type
     TUserAgentVersion m_EngineVersion;  ///< Browser engine version
