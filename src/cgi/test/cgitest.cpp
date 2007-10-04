@@ -682,6 +682,11 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eEngine_Bot,     {-1, -1, -1},
         { 5,  0, -1}
     },
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1b2) Gecko/20060821 SeaMonkey/1.1a",
+        CCgiUserAgent::eSeaMonkey,      {  1,  1, -1},
+        CCgiUserAgent::eEngine_Gecko,   {  1,  8,  1},
+        { 5, 0, -1}
+    },
     { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; it-it) AppleWebKit/412 (KHTML, like Gecko) Safari/412",
         CCgiUserAgent::eSafari,         {412, -1, -1},
         CCgiUserAgent::eEngine_KHTML,   {412, -1, -1},
@@ -692,6 +697,7 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eEngine_KHTML,   {125,  4, -1},
         { 5, 0, -1}
     },
+
 
     // AppComment tests
 
@@ -822,7 +828,8 @@ void TestUserAgent(void)
         // Browser version
 
         CCgiUserAgent::EBrowser b = agent.GetBrowser();
-        cout << "Browser        : " << b << endl;
+        string b_name = agent.GetBrowserName();
+        cout << "Browser        : " << b_name << " (" << b << ")" << endl;
         v = agent.GetBrowserVersion();
         s_PrintUserAgentVersion("Version        : ", v);
         assert(a->browser == b);
