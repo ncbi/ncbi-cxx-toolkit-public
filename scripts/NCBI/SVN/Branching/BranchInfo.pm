@@ -7,6 +7,8 @@ use warnings;
 
 use base qw(NCBI::SVN::Base);
 
+use NCBI::SVN::Branching::Util;
+
 sub SetUpstreamAndDownSynchRev
 {
     my ($Self, $SourcePath, $BranchDir, $SourceRevisionNumber, $Revision) = @_;
@@ -140,37 +142,6 @@ sub ModelBranchStructure
     }
 }
 
-sub FindPathsInTreeRecursively
-{
-    my ($Paths, $Path, $Tree) = @_;
-
-    while (my ($Name, $Subtree) = each %$Tree)
-    {
-        unless ($Name eq '/')
-        {
-            FindPathsInTreeRecursively($Paths, "$Path/$Name", $Subtree)
-        }
-        else
-        {
-            push @$Paths, $Path
-        }
-    }
-}
-
-sub FindPathsInTree
-{
-    my ($Tree) = @_;
-
-    my @Paths;
-
-    while (my ($Name, $Subtree) = each %$Tree)
-    {
-        FindPathsInTreeRecursively(\@Paths, $Name, $Subtree)
-    }
-
-    return \@Paths
-}
-
 sub new
 {
     my ($Class, $RootURL, $BranchPath) = @_;
@@ -236,7 +207,8 @@ sub new
         }
     }
 
-    my @BranchPaths = sort @{FindPathsInTree(\%BranchStructure)};
+    my @BranchPaths =
+        sort @{NCBI::SVN::Branching::Util::FindPathsInTree(\%BranchStructure)};
 
     $Self->{BranchPaths} = \@BranchPaths;
 
@@ -245,7 +217,8 @@ sub new
         ClearDeletedTree($Self->{ObsoleteBranchPaths}, \%BranchStructure);
 
         $Self->{ObsoleteBranchPaths} =
-            FindPathsInTree($Self->{ObsoleteBranchPaths})
+            NCBI::SVN::Branching::Util::FindPathsInTree(
+                $Self->{ObsoleteBranchPaths})
     }
 
     $Self->{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;

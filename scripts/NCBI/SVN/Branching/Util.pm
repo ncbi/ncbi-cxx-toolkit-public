@@ -26,4 +26,35 @@ sub SimplifyBranchPath
     return $BranchPath
 }
 
+sub FindPathsInTreeRecursively
+{
+    my ($Paths, $Path, $Tree) = @_;
+
+    while (my ($Name, $Subtree) = each %$Tree)
+    {
+        unless ($Name eq '/')
+        {
+            FindPathsInTreeRecursively($Paths, "$Path/$Name", $Subtree)
+        }
+        else
+        {
+            push @$Paths, $Path
+        }
+    }
+}
+
+sub FindPathsInTree
+{
+    my ($Tree) = @_;
+
+    my @Paths;
+
+    while (my ($Name, $Subtree) = each %$Tree)
+    {
+        FindPathsInTreeRecursively(\@Paths, $Name, $Subtree)
+    }
+
+    return \@Paths
+}
+
 1

@@ -721,11 +721,13 @@ sub Unswitch
     DoSwitchUnswitch(@_, 0)
 }
 
-sub Update
+sub GetWorkingCopyInfo
 {
     my ($Self, $BranchPath) = @_;
 
-    my $RootURL = $Self->{SVN}->GetRootURL() ||
+    my $WorkingDirInfo = $Self->{SVN}->ReadInfo('.')->{'.'};
+
+    my $RootURL = $WorkingDirInfo && $WorkingDirInfo->{Root} ||
         die "$Self->{MyName}: not in a working copy\n";
 
     my $BranchInfo =
@@ -742,106 +744,133 @@ sub Update
 
     my $AffectedPathInfo = $Self->{SVN}->ReadInfo(@AffectedPaths);
 
-    my $SwitchedToBranch;
-
-    my @UpdateNonExisting;
-
-    my @RecursiveUpdate;
-    my @PathsToSwtich;
+    my @MissingBranchPaths;
+    my @SwitchedToBranch;
+    my @SwitchedToParent;
+    my @IncorrectlySwitched;
 
     for my $Path (@$BranchPaths)
     {
-        my $Info = $AffectedPathInfo->{$Path};
+        my $Info = delete $AffectedPathInfo->{$Path};
 
-        unless (-e $Path || !$Info)
+        unless (-e $Path && $Info)
         {
-            push @UpdateNonExisting, $Path
+            push @MissingBranchPaths, $Path
         }
-        elsif ($SwitchedToBranch)
+        elsif ($Info->{Path} eq "$BranchPath/$Path")
         {
-            if ($Info->{Path} eq "$BranchPath/$Path")
-            {
-                push @RecursiveUpdate, $Path
-            }
-            elsif ($Info->{Path} eq "$UpstreamPath/$Path")
-            {
-                push @PathsToSwtich, $Path
-            }
-            else
-            {
-                die "$Self->{MyName}: inconsistent working copy ($Path)\n";
-            }
+            push @SwitchedToBranch, $Path
+        }
+        elsif ($Info->{Path} eq "$UpstreamPath/$Path")
+        {
+            push @SwitchedToParent, $Path
         }
         else
         {
-            if ($Info->{Path} eq "$UpstreamPath/$Path")
-            {
-                push @RecursiveUpdate, $Path
-            }
-            elsif ($Info->{Path} eq "$BranchPath/$Path")
-            {
-                $SwitchedToBranch = 1;
-                @PathsToSwtich = @RecursiveUpdate;
-                @RecursiveUpdate = ($Path)
-            }
-            else
-            {
-                die "$Self->{MyName}: inconsistent working copy ($Path)\n";
-            }
+            push @IncorrectlySwitched, $Path
         }
     }
 
-    if (@UpdateNonExisting)
+    my @MissingInt;
+
+    if (@MissingBranchPaths)
     {
-        my %NonExistingTree;
+        my %MissingInt;
 
-        for my $NonExistingPath (@UpdateNonExisting)
+        for my $MissingPath (@MissingBranchPaths)
         {
-            my @PathComponents = split('/', $NonExistingPath);
-
-            if ($SwitchedToBranch)
-            {
-                push @PathsToSwtich, $NonExistingPath
-            }
-            else
-            {
-                push @RecursiveUpdate, $NonExistingPath;
-                pop @PathComponents
-            }
-
             my $Path = '.';
-            my $PathExists = 1;
-            my $Tree = \%NonExistingTree;
+            my $PathStillExists = 1;
+            my $Tree = \%MissingInt;
 
-            for my $PathComponent (@PathComponents)
+            for my $PathComponent (split('/', $MissingPath))
             {
                 $Tree = ($Tree->{$PathComponent} ||= {});
 
-                $Tree->{'/'} = 1
-                    unless $PathExists &&= -e ($Path .= '/' . $PathComponent)
+                $Tree->{'/'} = 1 unless $PathStillExists &&=
+                    -e ($Path .= '/' . $PathComponent)
             }
         }
 
-        @UpdateNonExisting = sort @{FindPathsInTree(\%NonExistingTree)};
+        @MissingInt =
+            sort @{NCBI::SVN::Branching::Util::FindPathsInTree(\%MissingInt)}
+    }
 
-        $Self->{SVN}->RunSubversion('update', '-N', @UpdateNonExisting)
-            if @UpdateNonExisting
+    my $WorkingDirPath = $WorkingDirInfo->{Path};
+
+    my @ObsoletePaths;
+
+    while (my ($Path, $Info) = each %$AffectedPathInfo)
+    {
+        if ($Info->{Path} eq "$BranchPath/$Path")
+        {
+            push @ObsoletePaths, $Path
+        }
+    }
+
+    return ($RootURL, $BranchInfo,
+        \@SwitchedToBranch, \@SwitchedToParent, \@IncorrectlySwitched,
+        \@MissingBranchPaths, \@MissingInt, \@ObsoletePaths, $WorkingDirPath)
+}
+
+sub Update
+{
+    my ($Self, $BranchPath) = @_;
+
+    my ($RootURL, $BranchInfo,
+        $SwitchedToBranch, $SwitchedToParent, $IncorrectlySwitched,
+        $MissingBranchPaths, $MissingInt, $ObsoletePaths, $WorkingDirPath) =
+            $Self->GetWorkingCopyInfo($BranchPath);
+
+    $Self->{SVN}->RunSubversion('update', '-N', @$MissingInt) if @$MissingInt;
+
+    my $BaseURL;
+    my @PathsToSwtich;
+
+    if (@$SwitchedToBranch)
+    {
+        $Self->{SVN}->RunSubversion('update', @$SwitchedToBranch);
+
+        $BaseURL = "$RootURL/$BranchPath/";
+
+        @PathsToSwtich = (@$SwitchedToParent,
+            @$IncorrectlySwitched, @$MissingBranchPaths)
+    }
+    elsif (@$SwitchedToParent)
+    {
+        $Self->{SVN}->RunSubversion('update', @$SwitchedToParent);
+
+        $BaseURL = "$RootURL/$BranchInfo->{UpstreamPath}/";
+
+        @PathsToSwtich = (@$IncorrectlySwitched, @$MissingBranchPaths)
+    }
+    else
+    {
+        warn "WARNING: unable to determine how this working copy\n" .
+            "relates to '$BranchPath' - no switching will be done.\n";
+
+        $Self->{SVN}->RunSubversion('update',
+            @$IncorrectlySwitched, @$MissingBranchPaths)
     }
 
     if (@PathsToSwtich)
     {
-        my $RootURL = $Self->{SVN}->GetRootURL() ||
-            die "$Self->{MyName}: not in a working copy\n";
-
-        my $BaseURL = "$RootURL/$BranchPath/";
-
         for (@PathsToSwtich)
         {
             $Self->{SVN}->RunSubversion('switch', $BaseURL . $_, $_)
         }
     }
 
-    $Self->{SVN}->RunSubversion('update', @RecursiveUpdate) if @RecursiveUpdate
+    if (@$ObsoletePaths)
+    {
+        $BaseURL = "$RootURL/$WorkingDirPath/";
+
+        for my $ObsoletePath (@$ObsoletePaths)
+        {
+            $Self->{SVN}->RunSubversion('switch',
+                $BaseURL . $ObsoletePath, $ObsoletePath)
+        }
+    }
 }
 
 1
