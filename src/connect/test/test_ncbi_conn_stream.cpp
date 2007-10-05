@@ -111,11 +111,15 @@ int main(int argc, const char* argv[])
 
     LOG_POST("Test 1 of 6: Memory stream");
     // Testing memory stream out-of-sequence interleaving operations
-    CConn_MemoryStream ms;
     m = (rand() & 0x00FF) + 1;
     size = 0;
     for (n = 0;  n < m;  n++) {
+        CConn_MemoryStream* ms = 0;
         string data, back;
+        size_t sz = 0;
+#if 0
+        LOG_POST("  Micro-test " << (int) n << " of " << (int) m << " start");
+#endif
         k = (rand() & 0x00FF) + 1;
         for (i = 0;  i < k;  i++) {
             l = (rand() & 0x00FF) + 1;
@@ -124,21 +128,89 @@ int main(int argc, const char* argv[])
             for (j = 0;  j < l;  j++) {
                 bit[j] = "0123456789"[rand() % 10];
             }
-            size += l;
+#if 0
+            LOG_POST("    Data bit at " << (unsigned long) sz <<
+                     ", " << (unsigned long) l << " byte(s) long: " << bit);
+#endif
+            sz += l;
             data += bit;
-            assert(ms << bit);
+            if (ms)
+                assert(*ms << bit);
+            else if (i == 0) {
+                switch (n % 4) {
+                case 0:
+#if 0
+                    LOG_POST("  CConn_MemoryStream()");
+#endif
+                    ms = new CConn_MemoryStream;
+                    assert(*ms << bit);
+                    break;
+                case 1:
+                {{
+                    BUF buf = 0;
+                    assert(BUF_Write(&buf, bit.data(), l));
+#if 0
+                    LOG_POST("  CConn_MemoryStream(BUF)");
+#endif
+                    ms = new CConn_MemoryStream(buf, eTakeOwnership);
+                    break;
+                }}
+                default:
+                    break;
+                }
+            }
         }
+        switch (n % 4) {
+        case 2:
+#if 0
+            LOG_POST("  CConn_MemoryStream(" <<
+                     (unsigned long) data.size() << ')');
+#endif
+            ms = new CConn_MemoryStream(data.data(),data.size(), eNoOwnership);
+            break;
+        case 3:
+        {{
+            BUF buf = 0;
+            assert(BUF_Append(&buf, data.data(), data.size()));
+#if 0
+            LOG_POST("  CConn_MemoryStream(BUF, " <<
+                     (unsigned long) data.size() << ')');
+#endif
+            ms = new CConn_MemoryStream(buf, eTakeOwnership);
+            break;
+        }}
+        default:
+            break;
+        }
+        assert(ms);
         if (!(rand() & 1)) {
-            assert(ms << endl);
-            ms >> back;
-            assert(ms.good());
+            assert(*ms << endl);
+            *ms >> back;
+            assert(ms->good());
             SetDiagTrace(eDT_Disable);
-            ms >> ws;
+            *ms >> ws;
             SetDiagTrace(eDT_Enable);
-            ms.clear();
+            ms->clear();
         } else
-            ms.ToString(&back);
+            ms->ToString(&back);
+#if 0
+        LOG_POST("  Data size=" << (unsigned long) data.size());
+        LOG_POST("  Back size=" << (unsigned long) back.size());
+#endif
+        for (i = 0;  ; i++) {
+            if (i >= data.size()  ||  i >= back.size())
+                break;
+            if (data[i] != back[i]) {
+                LOG_POST("  Data differ at pos " << (unsigned long) i <<
+                         " data[]=" << data[i] << ", back[]=" << back[i]);
+            }
+        }
         assert(back == data);
+        size += sz;
+        delete ms;
+#if 0
+        LOG_POST("  Micro-test " << (int) n << " of " << (int) m << " finish");
+#endif
     }
     LOG_POST("Test 1 completed in " <<
              (int) m    << " iteration(s) with " <<
