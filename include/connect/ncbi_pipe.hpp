@@ -72,8 +72,6 @@ class CPipeHandle;
 ///
 /// Program can read from stdin/stderr and write to stdin of the
 /// executed child process using pipe object functions Read/Write.
-/// Program can read from stdin/stderr and write to stdin of the
-/// executed child process using pipe object functions Read/Write.
 ///
 /// @sa
 ///   CNamedPipe, CExec
@@ -86,26 +84,33 @@ public:
     /// Default is 0 
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
     enum ECreateFlags {
-        fStdIn_Open    =    0,  ///< Do     open child's stdin (default).
-        fStdIn_Close   = 0x01,  ///< Do not open child's stdin.
-        fStdOut_Open   =    0,  ///< Do     open child's stdout (default).
-        fStdOut_Close  = 0x02,  ///< Do not open child's stdout.
-        fStdErr_Open   = 0x04,  ///< Do     open child's stderr.
-        fStdErr_Close  =    0,  ///< Do not open child's stderr (default).
-        fKeepOnClose   = 0x08,  ///< Close(): just return eIO_Timeout
-                                ///< if Close() cannot complete within
-                                ///< the allotted time;  don't close any
-                                ///< pipe handles nor signal the child.
-        fCloseOnClose  =    0,  ///< Close(): always close all pipe handles
-                                ///< but do not send any signal to running
-                                ///< process if Close()'s timeout expired.
-        fKillOnClose   = 0x10,  ///< Close(): kill child process if it hasn't
-                                ///< terminated within the allotted time.
-                                ///< NOTE:  If both fKeepOnClose and
-                                ///< fKillOnClose are set, the safer
-                                ///< fKeepOnClose takes the effect.
-        fResetPipeSignal =  0,
-        fKeepPipeSignal  = 0x20
+        fStdIn_Open      =    0,  ///< Do     open child's stdin (default).
+        fStdIn_Close     = 0x01,  ///< Do not open child's stdin.
+        fStdOut_Open     =    0,  ///< Do     open child's stdout (default).
+        fStdOut_Close    = 0x02,  ///< Do not open child's stdout.
+        fStdErr_Open     = 0x04,  ///< Do     open child's stderr.
+        fStdErr_Close    =    0,  ///< Do not open child's stderr (default).
+        fKeepOnClose     = 0x08,  ///< Close(): just return eIO_Timeout
+                                  ///< if Close() cannot complete within
+                                  ///< the allotted time;  don't close any
+                                  ///< pipe handles nor signal the child.
+        fCloseOnClose    =    0,  ///< Close(): always close all pipe handles
+                                  ///< but do not send any signal to running
+                                  ///< process if Close()'s timeout expired.
+        fKillOnClose     = 0x10,  ///< Close(): kill child process if it hasn't
+                                  ///< terminated within the allotted time.
+                                  ///< NOTE:  If both fKeepOnClose and
+                                  ///< fKillOnClose are set, the safer
+                                  ///< fKeepOnClose takes the effect.
+        fNewGroup        = 0x20,  ///< UNIX: new process group will be
+                                  ///< created and child become the leader
+                                  ///< of the new process group.
+                                  ///< The fKillOnClose flag kills child
+                                  ///< and all its spawned processes.
+        fResetPipeSignal =    0,  ///< Do not keep SIGPIPE signal
+                                  ///< processing for child process.
+        fKeepPipeSignal  = 0x40   ///< Keep SIGPIPE signal processing
+                                  ///< for child process.
     };
     typedef unsigned int TCreateFlags;    ///< bit-wise OR of "ECreateFlags"
 
@@ -115,7 +120,6 @@ public:
         fStdOut    = (1 << 1),
         fStdErr    = (1 << 2),
         fDefault   = (1 << 3),
-        
         eStdIn     = fStdIn,
         eStdOut    = fStdOut,
         eStdErr    = fStdErr,
@@ -217,8 +221,9 @@ public:
     ///                       or has been forcibly terminated otherwise;
     ///   Otherwise   - an error was detected;
     /// @sa
-    ///   Description for flags fKeepOnClose, fCloseOnClose, fKillOnClose.
     ///   Open
+    ///   Description for flags fKeepOnClose, fCloseOnClose, fKillOnClose,
+    ///   fNewGroup.
     EIO_Status Close(int* exitcode = 0);
 
     /// Close specified pipe handle.

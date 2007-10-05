@@ -404,14 +404,20 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
         unsigned long x_timeout = !timeout ? CProcess::kDefaultKillTimeout :
                                              timeout->sec * 1000 + (timeout->usec + 500) / 1000;
-        status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
-                  CProcess(m_Pid, CProcess::ePid).Kill(x_timeout)
-                  ? eIO_Success : eIO_Unknown);
+        status = eIO_Success;
+        if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
+            bool killed;
+            if ( IS_SET(m_Flags, CPipe::fNewGroup) ) {
+                killed = CProcess(m_Pid, CProcess::ePid).KillGroup(x_timeout);
+            } else {
+                killed = CProcess(m_Pid, CProcess::ePid).Kill(x_timeout);
+            }
+            status = (killed ? eIO_Success : eIO_Unknown);
+        }
     }
     if (status != eIO_Timeout) {
         x_Clear();
     }
-
     if ( exitcode ) {
         *exitcode = (int) x_exitcode;
     }
@@ -981,6 +987,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             // Now we are in the child process
             int status = -1;
 
+            // Create new process group if needed
+            if ( IS_SET(create_flags, CPipe::fNewGroup) ) {
+                setpgid(0, 0);
+            }
+
             // Close unused pipe handle
             close(status_pipe[0]);
 
@@ -1021,8 +1032,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             } else {
                 freopen("/dev/null", "a", stderr);
             }
-            if (m_Flags & CPipe::fKeepPipeSignal) 
+
+            // Restore SIGPIPE signal processing
+            if ( IS_SET(create_flags, CPipe::fKeepPipeSignal) ) {
                 signal(SIGPIPE, SIG_DFL);
+            }
 
             // Prepare program arguments
             size_t cnt = args.size();
@@ -1176,14 +1190,20 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     if (status == eIO_Timeout  &&  !IS_SET(m_Flags, CPipe::fKeepOnClose)) {
         unsigned long x_timeout = !timeout ? CProcess::kDefaultKillTimeout :
                                              timeout->sec * 1000 + (timeout->usec + 500) / 1000;
-        status = (!IS_SET(m_Flags, CPipe::fKillOnClose)  ||
-                  CProcess(m_Pid, CProcess::ePid).Kill(x_timeout)
-                  ? eIO_Success : eIO_Unknown);
+        status = eIO_Success;
+        if ( IS_SET(m_Flags, CPipe::fKillOnClose) ) {
+            bool killed;
+            if ( IS_SET(m_Flags, CPipe::fNewGroup) ) {
+                killed = CProcess(m_Pid, CProcess::ePid).KillGroup(x_timeout);
+            } else {
+                killed = CProcess(m_Pid, CProcess::ePid).Kill(x_timeout);
+            }
+            status = (killed ? eIO_Success : eIO_Unknown);
+        }
     }
     if (status != eIO_Timeout) {
         x_Clear();
     }
-
     if ( exitcode ) {
         // Get real exit code or -1 on error
         *exitcode = (status == eIO_Success  &&  x_exitcode != -1  &&
@@ -1728,7 +1748,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
 
     CPipe pipe;
     EIO_Status st = pipe.Open(cmd, args, 
-                              fStdErr_Open | fKeepPipeSignal | fKillOnClose,
+                              fStdErr_Open | fKeepPipeSignal | fNewGroup | fKillOnClose,
                               current_dir, env);
     if (st != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "Cannot execute \"" + cmd + "\"");
