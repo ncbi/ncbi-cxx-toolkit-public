@@ -45,8 +45,8 @@ BEGIN_NCBI_SCOPE
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie,
                                  CT_CHAR_TYPE* ptr, size_t size)
-    : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1),
-      m_Tie(tie), x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
+    : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie),
+      x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if ( !connector ) {
         ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");

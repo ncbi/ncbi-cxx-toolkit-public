@@ -309,7 +309,8 @@ CConn_MemoryStream::CConn_MemoryStream(streamsize  buf_size)
 CConn_MemoryStream::CConn_MemoryStream(BUF         buf,
                                        EOwnership  owner,
                                        streamsize  buf_size)
-    : CConn_IOStream(MEMORY_CreateConnectorEx(buf), 0, buf_size, false),
+    : CConn_IOStream(MEMORY_CreateConnectorEx(buf), 0, buf_size, false,
+                     0, BUF_Size(buf)),
       m_Buf(owner == eTakeOwnership ? buf : 0), m_Ptr(0)
 {
     return;
