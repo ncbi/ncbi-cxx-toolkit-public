@@ -1171,7 +1171,7 @@ const size_t kBrowsers = sizeof(s_Browsers)/sizeof(s_Browsers[0]);
 
 SIZE_TYPE s_SkipDigits(const string& str, SIZE_TYPE pos)
 {
-    while ( isdigit((unsigned char)str[pos]) ) {
+    while ( pos <= str.length()  &&  isdigit((unsigned char)str[pos]) ) {
         pos++;
     }
     return pos;
@@ -1180,6 +1180,9 @@ SIZE_TYPE s_SkipDigits(const string& str, SIZE_TYPE pos)
 void s_ParseVersion(const string& token, SIZE_TYPE start_pos,
                     TUserAgentVersion* version)
 {
+    if ( start_pos >= token.length() ) {
+        return;
+    }
     // Some browsers have 'v' before version number
     if ( token[start_pos] == 'v' ) {
         start_pos++;

@@ -647,6 +647,11 @@ const SUserAgent s_UserAgentTests[] = {
 
     // VendorProduct tests
 
+    { "SomeUnknownBrowser",
+        CCgiUserAgent::eUnknown,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1}
+    },
     { "SomeUnknownBrowser/1.0",
         CCgiUserAgent::eUnknown,        {-1, -1, -1},
         CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
