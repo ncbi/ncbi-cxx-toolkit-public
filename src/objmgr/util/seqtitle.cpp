@@ -596,7 +596,7 @@ static string x_TitleFromChromosome(const CBioSource& source,
     string lc_name = name;
     NStr::ToLower(lc_name);
 
-    if (lc_name.find("virus") != NPOS) {
+    if (lc_name.find("virus") != NPOS  ||  lc_name.find("phage") != NPOS) {
         is_virus = true;
     }
 
