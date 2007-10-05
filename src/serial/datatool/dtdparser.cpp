@@ -499,6 +499,18 @@ void DTDParser::BeginEntityContent(void)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-entity-decl
 
     TToken tok = GetNextToken();
+    if (tok == T_IDENTIFIER) {
+// skip
+        ConsumeToken();
+        tok = GetNextToken();
+        if (tok!=T_STRING) {
+            ParseError("string");
+        }
+        ConsumeToken();
+        GetNextToken();
+        ConsumeSymbol('>');
+        return;
+    }
     if (tok != T_SYMBOL || NextToken().GetSymbol() != '%') {
         ParseError("Incorrect format", "%");
     }
