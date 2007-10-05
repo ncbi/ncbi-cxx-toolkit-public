@@ -89,7 +89,7 @@ BEGIN_NCBI_SCOPE
  */
 
 
-NCBI_DEFINE_ERRCODE_X(XNcbiLibPluginMgr, 113, 4);
+NCBI_DEFINE_ERRCODE_X(XNcbiLibPluginMgr, 113, 4)
 
 
 /////////////////////////////////////////////////////////////////////////////
