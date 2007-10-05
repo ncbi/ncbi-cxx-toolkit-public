@@ -31,15 +31,7 @@ sub SetUpstreamAndDownSynchRev
             if $UpstreamPath ne $SameUpstreamPath
     }
 
-    unless (my $SingleSourceRevision = $Self->{LastDownSyncRevisionNumber})
-    {
-        $Self->{LastDownSyncRevisionNumber} = $SourceRevisionNumber
-    }
-    else
-    {
-        die "inconsistent source revision numbers in r$Revision->{Number}"
-            if $SourceRevisionNumber != $SingleSourceRevision
-    }
+    $Self->{LastDownSyncRevisionNumber} ||= $SourceRevisionNumber
 }
 
 sub MergeDeletedTrees
