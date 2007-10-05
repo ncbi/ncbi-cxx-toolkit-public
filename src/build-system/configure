@@ -4702,6 +4702,10 @@ elif test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
       ;;
+    *solaris*:WorkShop59 )
+      ARCH_CFLAGS="-m64"
+      LIBS="-lCstd -lCrun $LIBS -lc"
+      ;;
     *solaris*:WorkShop5* )
       ARCH_CFLAGS="-xtarget=generic64"
       # Redundant for programs, but necessary for dlopen-able shared libs,
@@ -4896,6 +4900,14 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
            DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
         fi
         ;;
+      WorkShop5[89]* )
+        # Limit optimization to -xO2 (-O now maps to -xO3) due to compiler bugs.
+        subst='s/[ 	]-x*O[1-9]*//g'
+        CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
+        CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
+        LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
+        DEF_FAST_FLAGS="-xO2"
+        ;;
       WorkShop* )
         DEF_FAST_FLAGS="-fast"
         case "$with_ncbi_public:$host_cpu" in
@@ -4907,14 +4919,6 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
                 *5.[0-4]*)
                   # Work around a WorkShop standard library bug.
                   DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
-                  ;;
-                *5.8*2006/* | *5.9*)
-                  # Work around optimizer bugs (-O = -xO3).
-                  subst='s/[ 	]-x*O[1-9]*//g'
-                  CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
-                  CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
-                  LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
-                  DEF_FAST_FLAGS="-xO2"
                   ;;
               esac
               ;;
