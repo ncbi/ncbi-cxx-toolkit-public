@@ -196,15 +196,14 @@ int main(int argc, const char* argv[])
 #if 0
         LOG_POST("  Data size=" << (unsigned long) data.size());
         LOG_POST("  Back size=" << (unsigned long) back.size());
-#endif
-        for (i = 0;  ; i++) {
-            if (i >= data.size()  ||  i >= back.size())
-                break;
+        for (i = 0;  i < data.size()  &&  i < back.size(); i++) {
             if (data[i] != back[i]) {
                 LOG_POST("  Data differ at pos " << (unsigned long) i <<
-                         " data[]=" << data[i] << ", back[]=" << back[i]);
+                         ": '" << data[i] << "' vs '" << back[i] << '\'');
+                break;
             }
         }
+#endif
         assert(back == data);
         size += sz;
         delete ms;
