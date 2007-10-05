@@ -154,7 +154,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
             m_CustomBuildCommand +=
                 "\" /t:\"project_tree_builder_exe:Rebuild\"";
             m_CustomBuildCommand +=
-                " /p:Configuration=ReleaseDLL;PlatformName=$(PlatformName)";
+                " /p:Configuration=ReleaseDLL;Platform=$(PlatformName)";
         }
         m_CustomBuildCommand += ") else (echo USING PREBUILT PTB at %PTB_EXE%)\n";
         m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
