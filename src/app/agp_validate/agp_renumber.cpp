@@ -84,7 +84,7 @@ public:
   {
     if( MustRenumber(code) ) return;
     if( code==W_GapLineMissingCol9 ) had_missing_tab=true;
-    return CAgpErr::Msg(code, details, appliesTo);
+    CAgpErr::Msg(code, details, appliesTo);
   }
 };
 
