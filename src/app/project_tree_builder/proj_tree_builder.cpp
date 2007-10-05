@@ -359,7 +359,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
                         if ( CDirEntry(d).IsDir() ) {
                             include_dirs->push_back(d);    
                         } else {
-                            LOG_POST(Error << flag << " = " << dir << ": "
+                            LOG_POST(Warning << flag << " = " << dir << ": "
                                         << dir << " not found");
                         }
                     }
