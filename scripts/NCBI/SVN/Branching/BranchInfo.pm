@@ -177,6 +177,10 @@ sub new
         die 'unable to determine branch source'
     }
 
+    my $UpstreamPath = $Self->{UpstreamPath};
+
+    $UpstreamPath =~ s/^\/?(.+?)\/?$/$1/;
+
     for my $Revision (reverse @BranchRevisions)
     {
         my $LogMessage = $Revision->{LogMessage};
@@ -187,8 +191,8 @@ sub new
                 $Revision, $CommonTarget)
         }
         elsif ($LogMessage =~
-            m/^Merged changes up to r(\d+) from '.+' into '(.+)'.$/o &&
-                $2 eq $BranchPath)
+            m/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o &&
+                $2 eq $UpstreamPath && $3 eq $BranchPath)
         {
             $Revision->{SourceRevisionNumber} =
                 $Self->{LastDownSyncRevisionNumber} = $1;
@@ -213,7 +217,7 @@ sub new
                 $Self->{ObsoleteBranchPaths})
     }
 
-    $Self->{UpstreamPath} =~ s/^\/?(.+?)\/?$/$1/;
+    $Self->{UpstreamPath} = $UpstreamPath;
 
     return $Self
 }
@@ -244,8 +248,8 @@ sub new
     for my $Revision (reverse @$UpstreamRevisions)
     {
         if ($Revision->{LogMessage} =~
-            m/^Merged changes up to r(\d+) from '(.+)' into '.+'.$/o &&
-                $2 eq $BranchPath)
+            m/^Merged changes up to r(\d+) from '(.+)' into '(.+)'.$/o &&
+                $2 eq $BranchPath && $3 eq $UpstreamPath)
         {
             $Revision->{SourceRevisionNumber} =
                 $Self->{LastUpSyncRevisionNumber} = $1;
