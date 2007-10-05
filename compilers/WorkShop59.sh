@@ -1,7 +1,7 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:    Sun C++ 5.9 (Studio Express)
+#   Compiler:    Sun C++ 5.9 (Studio 12)
 #   OS:          Solaris
 #   Processors:  Sparc,  Intel
 #
@@ -10,7 +10,7 @@
 
 
 ## Compiler location and attributes
-WS_BIN="/netopt/studiox/SUNWspro/bin"
+WS_BIN="/netopt/studio12/SUNWspro/bin"
 export WS_BIN
 
 ## Configure using generic script "WorkShop.sh"
