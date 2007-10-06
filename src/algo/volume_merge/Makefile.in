@@ -7,7 +7,7 @@ SUB_PROJ = test
 
 LIB_PROJ = xalgovmerge
 
-REQUIRES = objects
+REQUIRES = BerkeleyDB
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
