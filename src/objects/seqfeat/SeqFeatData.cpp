@@ -424,6 +424,8 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     for (int sub = eSubtype_preRNA; sub <= eSubtype_otherRNA; ++sub) {
         table[ESubtype(sub)] = e_Rna;
     }
+    table[eSubtype_ncRNA] = e_Rna;
+    table[eSubtype_tmRNA] = e_Rna;
     for (int sub = eSubtype_imp; sub <= eSubtype_site_ref; ++sub) {
         table[ESubtype(sub)] = e_Imp;
     }
