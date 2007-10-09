@@ -1,0 +1,51 @@
+# $Id$
+
+# Master (top-level) makefile for all NCBI C++ projects
+##################################################################
+
+include ./Makefile.mk
+
+
+#################################
+#  More or less standard meta-makefile
+#################################
+
+
+MANDATORY_PROJ  = corelib util connect cgi html misc
+
+OPTIONAL_PROJ   = @serial@ @bdb@ @dbapi@ @objects@ objmgr objtools \
+   ctools @algo@ @app@ @gui@ @internal@
+X_OPTIONAL_PROJ =  serial bdb dbapi objects objmgr objtools ctools \
+   algo app internal gui
+EXPENDABLE_SUB_PROJ = @check@
+
+SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
+srcdir = @top_srcdir@/src
+bspath = /build-system
+include ./Makefile.meta
+
+$(OPTIONAL_PROJ) util connect cgi html: corelib
+
+objects: serial connect dbapi util
+
+internal: $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
+
+##################################################
+#  Special rules (logic now farmed out to scripts)
+##################################################
+
+
+#
+# Prepare for install:   get rid of everything not needed for the install
+# and move aside internal libraries we plan to stop installing altogether
+#
+
+compress_tests:
+	$(top_srcdir)/scripts/compress_tests.sh --$(DEBUG_SFX) $(bindir)
+
+sfi=$(top_srcdir)/scripts/strip_for_install.sh
+strip_for_install:
+	$(sfi) --dirs $(COMPILER)-$(DEBUG_SFX) \
+	    $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check dll wrappers
+	$(sfi) --bin $(top_srcdir) $(bindir)
+	$(sfi) --lib $(top_srcdir) $(libdir) $(statusdir) 
