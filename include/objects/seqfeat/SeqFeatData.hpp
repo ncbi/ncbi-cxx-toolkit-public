@@ -123,8 +123,6 @@ public:
         eSubtype_snRNA,
         eSubtype_scRNA,
         eSubtype_snoRNA,
-        eSubtype_ncRNA,
-        eSubtype_tmRNA,
         eSubtype_otherRNA,
         eSubtype_pub,
         eSubtype_seq,
@@ -204,6 +202,8 @@ public:
         eSubtype_non_std_residue,
         eSubtype_het,
         eSubtype_biosrc,
+        eSubtype_ncRNA,
+        eSubtype_tmRNA,
         eSubtype_max,
         eSubtype_any = 255
     };
