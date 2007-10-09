@@ -589,24 +589,23 @@ I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
     // Not ready yet ...
     // return m_LCmd->m_Res->GetImageOrTextDescriptor(item_num, cond);
     return NULL;
+    // I_ITDescriptor* desc = new CTL_ITDescriptor(GetConnection(), GetCmd(), item_num+1);
+    // return desc;
 }
 
 bool CTL_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                     bool log_it)
 {
-    // Not ready yet ...
-    // CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    CDB_ITDescriptor* desc = NULL; 
+    I_ITDescriptor* desc= x_GetITDescriptor(item_num);
+    auto_ptr<I_ITDescriptor> g(desc);
 
     if(desc == NULL) {
         return false;
     }
 
-    auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
-
     m_LCmd->Cancel();
 
-    return (data.GetType() == eDB_Text)?
+    return (data.GetType() == eDB_Text) ?
         GetConnection().SendData(*desc, (CDB_Text&)data, log_it) :
         GetConnection().SendData(*desc, (CDB_Image&)data, log_it);
 }
@@ -614,19 +613,16 @@ bool CTL_CursorCmdExpl::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 CDB_SendDataCmd* CTL_CursorCmdExpl::SendDataCmd(unsigned int item_num, size_t size,
                         bool log_it)
 {
-    // Not ready yet ...
-    // CDB_ITDescriptor* desc= x_GetITDescriptor(item_num);
-    CDB_ITDescriptor* desc = NULL; 
+    I_ITDescriptor* desc = x_GetITDescriptor(item_num);
+    auto_ptr<I_ITDescriptor> g(desc);
 
     if(desc == NULL) {
         return NULL;
     }
 
-    auto_ptr<I_ITDescriptor> g((I_ITDescriptor*)desc);
-
     m_LCmd->Cancel();
 
-    return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
+    return GetConnection().SendDataCmd(*desc, size, log_it);
 }
 
 bool CTL_CursorCmdExpl::Delete(const string& table_name)
