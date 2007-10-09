@@ -263,7 +263,7 @@ int ProcessStream(istream &in, ostream& out)
     if(++buf_lines>=MAX_BUF_LINES) {
       buf_lines=0;
 
-      CNcbiIstrstream is(buf->str(), buf->pcount());
+      CNcbiIstrstream is(static_cast<const char*>(buf->str()), buf->pcount());
       code=renum.ReadStream(is, false);
       if(code) break;
 
@@ -275,7 +275,7 @@ int ProcessStream(istream &in, ostream& out)
   }
 
   if(buf_lines) {
-    CNcbiIstrstream is(buf->str(), buf->pcount());
+    CNcbiIstrstream is(static_cast<const char*>(buf->str()), buf->pcount());
     code=renum.ReadStream(is, false);
   }
 
