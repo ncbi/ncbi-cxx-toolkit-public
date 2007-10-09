@@ -1446,11 +1446,9 @@ void CSeq_id::WriteAsFasta(ostream& out)
 
     if (IsPatent()  &&  !GetPatent().GetCit().GetId().IsNumber() ) {
         out << "pgp|";
-#if 0 // not yet enabled
     } else if (IsSwissprot()  &&  GetSwissprot().IsSetRelease()
                &&  NStr::EqualNocase(GetSwissprot().GetRelease(), "prelim")) {
         out << "tr|";
-#endif
     } else {
         out << s_TextId[the_type] << '|';
     }

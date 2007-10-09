@@ -602,7 +602,7 @@ static const char* kTestFastaStrings[] = {
     "emb|AL123456|MTBH37RV",
     "pir||S16356",
     "sp|Q7CQJ0|RS22_SALTY",
-    // "tr|Q90RT2|Q90RT2_9HIV1",
+    "tr|Q90RT2|Q90RT2_9HIV1",
     "sp|Q7CQJ0.1|",
     "pat|US|RE33188|1",
     "pgp|EP|0238993|7",
