@@ -2568,6 +2568,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     DO_QUAL(operon);
 
+    DO_QUAL(ncRNA_class);
+
     DO_QUAL(product);
 
     x_FormatQual(eFQ_prot_EC_number, "EC_number", qvec);
@@ -2583,6 +2585,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(site_type);
     DO_QUAL(sec_str_type);
     DO_QUAL(heterogen);
+
+    // DO_QUAL(tag_peptide); // not until December 15, 2007
 
     if ( !cfg.GoQualsToNote() ) {
         x_FormatQual(eFQ_go_component, "GO_component", qvec);
@@ -2730,6 +2734,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(rrna_its);
     DO_NOTE(xtra_prod_quals);
     DO_NOTE(modelev);
+    DO_NOTE(tag_peptide); // through December 15, 2007
 #undef DO_NOTE
 
     string notestr;
@@ -2998,6 +3003,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_mobile_element, CSeqFeatData::eQual_mobile_element),
     TQualPair(eFQ_mod_base, CSeqFeatData::eQual_mod_base),
     TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_ncRNA_class, CSeqFeatData::eQual_ncRNA_class),
     TQualPair(eFQ_number, CSeqFeatData::eQual_number),
     TQualPair(eFQ_old_locus_tag, CSeqFeatData::eQual_old_locus_tag),
     TQualPair(eFQ_operon, CSeqFeatData::eQual_operon),
@@ -3037,6 +3043,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_site, CSeqFeatData::eQual_note),
     TQualPair(eFQ_site_type, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_standard_name, CSeqFeatData::eQual_standard_name),
+    TQualPair(eFQ_tag_peptide, CSeqFeatData::eQual_tag_peptide),
     TQualPair(eFQ_trans_splicing, CSeqFeatData::eQual_trans_splicing),
     TQualPair(eFQ_transcription, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_transcript_id, CSeqFeatData::eQual_note),

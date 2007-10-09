@@ -128,8 +128,20 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
         case CRNA_ref::eType_scRNA:   return "scRNA";
         case CRNA_ref::eType_snoRNA:  return "snoRNA"; // ok for GenBank?
         case CRNA_ref::eType_other:
-            // return GetRna().GetExt().GetName();
-            return genbank ? "misc_RNA" : "RNA";
+        {
+            bool can_get_name = ( !genbank /* through Dec. 15, 2007 */
+                                 &&  GetRna().CanGetExt()
+                                 &&  GetRna().GetExt().IsName());
+            const string& ext_name = (can_get_name ? GetRna().GetExt().GetName()
+                                      : kEmptyStr);
+            if (ext_name == "ncRNA"  ||  ext_name == "tmRNA") {
+                return ext_name;
+            } else if (genbank) {
+                return "misc_RNA";
+            } else {
+                return "RNA";
+            }
+        }
         default:                      return "misc_RNA";
         }
     case e_Imp:             return GetImp().GetKey(); // "Imp"?
@@ -264,7 +276,21 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
             case CRNA_ref::eType_snRNA:  m_Subtype = eSubtype_snRNA;    break;
             case CRNA_ref::eType_scRNA:  m_Subtype = eSubtype_scRNA;    break;
             case CRNA_ref::eType_snoRNA: m_Subtype = eSubtype_snoRNA;   break;
-            default:                     m_Subtype = eSubtype_otherRNA; break;
+            default:
+            {
+                bool can_get_name = (GetRna().CanGetExt()
+                                     &&  GetRna().GetExt().IsName());
+                const string& ext_name = (can_get_name
+                                          ? GetRna().GetExt().GetName()
+                                          : kEmptyStr);
+                if (ext_name == "ncRNA") {
+                    m_Subtype = eSubtype_ncRNA;
+                } else if (ext_name == "tmRNA") {
+                    m_Subtype = eSubtype_tmRNA;
+                } else {
+                    m_Subtype = eSubtype_otherRNA;
+                }
+            }
             }
             break;
         case e_Pub:        m_Subtype = eSubtype_pub;      break;
@@ -728,6 +754,30 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
+END_SUBTYPE
+
+START_SUBTYPE(ncRNA)
+    ADD_QUAL(allele);
+    ADD_QUAL(function);
+    ADD_QUAL(label);
+    ADD_QUAL(map);
+    ADD_QUAL(ncRNA_class);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
+    ADD_QUAL(product);
+    ADD_QUAL(standard_name);
+END_SUBTYPE
+
+START_SUBTYPE(tmRNA)
+    ADD_QUAL(allele);
+    ADD_QUAL(function);
+    ADD_QUAL(label);
+    ADD_QUAL(map);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
+    ADD_QUAL(product);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(tag_peptide);
 END_SUBTYPE
 
 START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
@@ -2172,7 +2222,7 @@ static const TQualPair kQualPairs[] = {
 typedef CStaticArrayMap<CSeqFeatData::EQualifier, string> TQualsMap;
 DEFINE_STATIC_ARRAY_MAP(TQualsMap, sc_QualPairs, kQualPairs);
 
-const string& CSeqFeatData::GetQulifierAsString(EQualifier qual)
+const string& CSeqFeatData::GetQualifierAsString(EQualifier qual)
 {
     TQualsMap::const_iterator iter = sc_QualPairs.find(qual);
     return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;

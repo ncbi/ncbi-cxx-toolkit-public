@@ -110,6 +110,7 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("locus_tag",         e_Locus_tag);
     ADD_ENUM_VALUE("map",               e_Map);
     ADD_ENUM_VALUE("mod_base",          e_Mod_base);
+    ADD_ENUM_VALUE("ncRNA_class",       e_NcRNA_class);
     ADD_ENUM_VALUE("note",              e_Note);
     ADD_ENUM_VALUE("number",            e_Number);
     ADD_ENUM_VALUE("organism",          e_Organism);
@@ -124,6 +125,7 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("site",              e_Site);
     ADD_ENUM_VALUE("site_type",         e_Site_type);
     ADD_ENUM_VALUE("standard_name",     e_Standard_name);
+    ADD_ENUM_VALUE("tag_peptide",       e_Tag_peptide);
     ADD_ENUM_VALUE("transl_except",     e_Transl_except);
     ADD_ENUM_VALUE("transl_table",      e_Transl_table);
     ADD_ENUM_VALUE("translation",       e_Translation);
@@ -284,6 +286,22 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_scRNA, CGbqualType::e_Usedin );
+
+    // ncRNA
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_NcRNA_class );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_ncRNA, CGbqualType::e_Standard_name );
+
+    // tmRNA
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Function );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Label );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Map );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Product );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Standard_name );
+    Associate( CSeqFeatData::eSubtype_tmRNA, CGbqualType::e_Tag_peptide );
 
     // otherRNA
     Associate( CSeqFeatData::eSubtype_otherRNA, CGbqualType::e_Function );
@@ -721,6 +739,10 @@ void CFeatQualAssoc::PopulateMandatoryGbquals(void)
 {
     // gene feature requires gene gbqual
     m_MandatoryGbquals[CSeqFeatData::eSubtype_gene].push_back(CGbqualType::e_Gene);
+    // ncRNA requires ncRNA_class
+    m_MandatoryGbquals[CSeqFeatData::eSubtype_ncRNA].push_back(CGbqualType::e_NcRNA_class);
+
+    // tmRNA -> tag_peptide?
 
     // misc_binding & protein_bind require bound_moiety
     m_MandatoryGbquals[CSeqFeatData::eSubtype_misc_binding].push_back(CGbqualType::e_Bound_moiety);

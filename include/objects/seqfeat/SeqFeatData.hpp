@@ -48,16 +48,16 @@
  *   (in src/objects/seqfeat/SeqFeatData.cpp),
  * - add or remove the qualifier to the list of qualifiers known by the
  *   flatfile generator 
- *   (in include/objtools/seqfeat/items/flat_file_slots.hpp),
+ *   (in include/objtools/format/items/flat_qual_slots.hpp),
  * - add or remove processing code in the flat-file generator 
- *   (src/objtools/feature_item.cpp). This will probably necessitate 
+ *   (src/objtools/format/feature_item.cpp). This may well necessitate 
  *   the addition or removal of a class that knows how to format the 
  *   new qualifier for display; look at the code for a similar 
  *   established qualifier for an idea of what needs to be done
  *   (check WHEN EDITING THE LIST OF QUALIFIERS comment in that file
- *   for additonal hints),
+ *   for additional hints),
  * - add or remove the qualifier to the list of qualifiers known to 
- *   the feature table reader (in src/objtools/reader/readfeat.cpp); 
+ *   the feature table reader (in src/objtools/readers/readfeat.cpp); 
  *   it's an independent project with its own book-keeping concerning 
  *   qualifiers, but needs to be kept in sync,
  * - make sure corresponding code gets added to the validator 
@@ -123,6 +123,8 @@ public:
         eSubtype_snRNA,
         eSubtype_scRNA,
         eSubtype_snoRNA,
+        eSubtype_ncRNA,
+        eSubtype_tmRNA,
         eSubtype_otherRNA,
         eSubtype_pub,
         eSubtype_seq,
@@ -262,6 +264,7 @@ public:
         eQual_mobile_element,
         eQual_mod_base,
         eQual_mol_type,
+        eQual_ncRNA_class,
         eQual_note,
         eQual_number,
         eQual_old_locus_tag,
@@ -297,6 +300,7 @@ public:
         eQual_sub_clone,
         eQual_sub_species,
         eQual_sub_strain,
+        eQual_tag_peptide,
         eQual_tissue_lib,
         eQual_tissue_type,
         eQual_trans_splicing,
@@ -324,7 +328,11 @@ public:
     static const TQualifiers& GetMandatoryQualifiers(ESubtype subtype);
     
     // Convert a qualifier from an enumerated value to a string representation.
-    static const string& GetQulifierAsString(EQualifier qual);
+    static const string& GetQualifierAsString(EQualifier qual);
+
+    NCBI_DEPRECATED
+    static const string& GetQulifierAsString(EQualifier qual)
+    { return GetQualifierAsString(qual); }
 
     static const CFeatList* GetFeatList();
     static const CBondList* GetBondList();

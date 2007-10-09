@@ -127,6 +127,7 @@ public:
         eQual_method,
         eQual_mod_base,
         eQual_muid,
+        eQual_ncRNA_class,
         eQual_nomenclature,
         eQual_note,
         eQual_number,
@@ -166,6 +167,7 @@ public:
         eQual_STS,
         eQual_sts_aliases,
         eQual_sts_dsegs,
+        eQual_tag_peptide,
         eQual_trans_splicing,
         eQual_transcript_id,
         eQual_transcription,
@@ -298,6 +300,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "modified_base",      CSeqFeatData::eSubtype_modified_base      ),
     TFeatKey ( "mRNA",               CSeqFeatData::eSubtype_mRNA               ),
     TFeatKey ( "N_region",           CSeqFeatData::eSubtype_N_region           ),
+    TFeatKey ( "ncRNA",              CSeqFeatData::eSubtype_ncRNA              ),
     TFeatKey ( "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue    ),
     TFeatKey ( "Num",                CSeqFeatData::eSubtype_num                ),
     TFeatKey ( "old_sequence",       CSeqFeatData::eSubtype_old_sequence       ),
@@ -337,6 +340,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     TFeatKey ( "STS",                CSeqFeatData::eSubtype_STS                ),
     TFeatKey ( "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal        ),
     TFeatKey ( "terminator",         CSeqFeatData::eSubtype_terminator         ),
+    TFeatKey ( "tmRNA",              CSeqFeatData::eSubtype_tmRNA              ),
     TFeatKey ( "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa ),
     TFeatKey ( "transit_peptide_nt", CSeqFeatData::eSubtype_transit_peptide    ),
     TFeatKey ( "tRNA",               CSeqFeatData::eSubtype_tRNA               ),
@@ -396,6 +400,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "map",                  CFeature_table_reader_imp::eQual_map                  ),
     TQualKey ( "method",               CFeature_table_reader_imp::eQual_method               ),
     TQualKey ( "mod_base",             CFeature_table_reader_imp::eQual_mod_base             ),
+    TQualKey ( "ncRNA_class",          CFeature_table_reader_imp::eQual_ncRNA_class          ),
     TQualKey ( "nomenclature",         CFeature_table_reader_imp::eQual_nomenclature         ),
     TQualKey ( "note",                 CFeature_table_reader_imp::eQual_note                 ),
     TQualKey ( "number",               CFeature_table_reader_imp::eQual_number               ),
@@ -432,6 +437,7 @@ static const TQualKey qual_key_to_subtype [] = {
     TQualKey ( "STS",                  CFeature_table_reader_imp::eQual_STS                  ),
     TQualKey ( "sts_aliases",          CFeature_table_reader_imp::eQual_sts_aliases          ),
     TQualKey ( "sts_dsegs",            CFeature_table_reader_imp::eQual_sts_dsegs            ),
+    TQualKey ( "tag_peptide",          CFeature_table_reader_imp::eQual_tag_peptide          ),
     TQualKey ( "trans_splicing",       CFeature_table_reader_imp::eQual_trans_splicing       ),
     TQualKey ( "transcript_id",        CFeature_table_reader_imp::eQual_transcript_id        ),
     TQualKey ( "transcription",        CFeature_table_reader_imp::eQual_transcription        ),
@@ -1327,6 +1333,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_insertion_seq:
                 case eQual_label:
                 case eQual_map:
+                case eQual_ncRNA_class:
                 case eQual_number:
                 case eQual_old_locus_tag:
                 case eQual_operon:
@@ -1342,6 +1349,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_rpt_unit_range:
                 case eQual_rpt_unit_seq:
                 case eQual_standard_name:
+                case eQual_tag_peptide:
                 case eQual_transcript_id:
                 case eQual_transposon:
                 case eQual_usedin:
@@ -1755,6 +1763,14 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
                         break;
                     case CSeqFeatData::eSubtype_snoRNA :
                         rnatyp = CRNA_ref::eType_snoRNA;
+                        break;
+                    case CSeqFeatData::eSubtype_ncRNA :
+                        rrp.SetExt().SetName("ncRNA");
+                        rnatyp = CRNA_ref::eType_other;
+                        break;
+                    case CSeqFeatData::eSubtype_tmRNA :
+                        rrp.SetExt().SetName("tmRNA");
+                        rnatyp = CRNA_ref::eType_other;
                         break;
                     case CSeqFeatData::eSubtype_otherRNA :
                         rnatyp = CRNA_ref::eType_other;
