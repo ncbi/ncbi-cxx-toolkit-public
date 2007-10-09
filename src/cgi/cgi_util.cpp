@@ -37,6 +37,9 @@
 #include <cgi/cgictx.hpp>
 #include <stdlib.h>
 
+#include <common/test_assert.h>  // This header must go last
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -1169,25 +1172,30 @@ const SBrowser s_Browsers[] = {
 const size_t kBrowsers = sizeof(s_Browsers)/sizeof(s_Browsers[0]);
 
 
+// Returns position first non-digit in the string, or string length.
 SIZE_TYPE s_SkipDigits(const string& str, SIZE_TYPE pos)
 {
-    while ( pos <= str.length()  &&  isdigit((unsigned char)str[pos]) ) {
+    SIZE_TYPE len = str.length();
+    while ( pos < len  &&  isdigit((unsigned char)str[pos]) ) {
         pos++;
     }
+    _ASSERT( pos <= len );
     return pos;
 }
 
 void s_ParseVersion(const string& token, SIZE_TYPE start_pos,
                     TUserAgentVersion* version)
 {
-    if ( start_pos >= token.length() ) {
+    SIZE_TYPE len = token.length();
+    if ( start_pos >= len ) {
         return;
     }
     // Some browsers have 'v' before version number
     if ( token[start_pos] == 'v' ) {
         start_pos++;
     }
-    if ( !isdigit((unsigned char)token[start_pos]) ) {
+    if ( (start_pos >= len) || 
+        !isdigit((unsigned char)token[start_pos]) ) {
         return;
     }
     // Init version numbers
@@ -1197,10 +1205,10 @@ void s_ParseVersion(const string& token, SIZE_TYPE start_pos,
 
     // Parse version
     SIZE_TYPE pos = s_SkipDigits(token, start_pos + 1);
-    if ( token[pos] == '.' ) {
+    if ( (pos < len-1)  && (token[pos] == '.') ) {
         minor = atoi(token.c_str() + pos + 1);
         pos = s_SkipDigits(token, pos + 1);
-        if ( token[pos] == '.' ) {
+        if ( (pos < len-1)  &&  (token[pos] == '.') ) {
             patch = atoi(token.c_str() + pos + 1);
         }
     }
@@ -1217,6 +1225,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // Initialization
     x_Init();
     m_UserAgent = NStr::TruncateSpaces(user_agent);
+    SIZE_TYPE len = m_UserAgent.length();
 
     // Very crude algorithm to get platform type...
     if (m_UserAgent.find("Win") != NPOS) {
@@ -1240,7 +1249,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     // If it matched some browser name, return it.
 
     SIZE_TYPE pos = m_UserAgent.rfind(")", NPOS);
-    if (pos != NPOS) {
+    if ((pos != NPOS)  &&  (pos < len-1)) {
         string token = m_UserAgent.substr(pos+1);
         x_ParseToken(token, fVendorProduct);
         // Try to determine Mozilla and engine versions below,
@@ -1281,14 +1290,14 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                     // (can contain nested parenthesis)
                     int par = 1;
                     SIZE_TYPE end = pos;
-                    while (end < m_UserAgent.length()  &&  par) {
+                    while (end < len  &&  par) {
                         if ( m_UserAgent[end] == ')' )
                             par--;
                         else if ( m_UserAgent[end] == '(' )
                             par++;
                         end++;
                     }
-                    if ( end <= m_UserAgent.length() ) {
+                    if ( end <= len ) {
                         string token = m_UserAgent.substr(pos, end-pos-1);
                         x_ParseToken(token, fAppComment);
                     }
@@ -1352,9 +1361,9 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         // Netscape 7.2 August 17, 2004 (based on Mozilla 1.7)
         // Netscape Browser 0.5.6+ November 30, 2004 (based on Mozilla Firefox 0.9.3)
         // Netscape Browser 0.6.4 January 7, 2005 (based on Mozilla Firefox 1.0)
-        // Netscape Browser 0.9.4 (8.0 Pre-Beta) Ö February 17, 2005 (based on Mozilla Firefox 1.0)
-        // Netscape Browser 0.9.5 (8.0 Pre-Beta) Ö February 23, 2005 (based on Mozilla Firefox 1.0)
-        // Netscape Browser 0.9.6 (8.0 Beta) Ö March 3, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 0.9.4 (8.0 Pre-Beta) February 17, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 0.9.5 (8.0 Pre-Beta) February 23, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 0.9.6 (8.0 Beta) March 3, 2005 (based on Mozilla Firefox 1.0)
         // Netscape Browser 8.0 May 19, 2005 (based on Mozilla Firefox 1.0.3)
         // Netscape Browser 8.0.1 May 19, 2005 (based on Mozilla Firefox 1.0.4)
         // Netscape Browser 8.0.2 June 17, 2005 (based on Mozilla Firefox 1.0.4)
@@ -1387,6 +1396,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
 
 bool CCgiUserAgent::x_ParseToken(const string& token, int where)
 {
+    SIZE_TYPE len = token.length();
     // Check all user agent signatures
     for (size_t i = 0; i < kBrowsers; i++) {
         if ( !(s_Browsers[i].flags & where) ) {
@@ -1396,20 +1406,18 @@ bool CCgiUserAgent::x_ParseToken(const string& token, int where)
         SIZE_TYPE pos = token.find(key);
         if ( pos != NPOS ) {
             pos += key.length();
-            if ( (pos == token.length())  ||
-                 !isalpha((unsigned char)token[pos]) ) {
-                // Browser
-                m_Browser     = s_Browsers[i].type;
-                m_BrowserName = s_Browsers[i].name;
-                m_Engine      = s_Browsers[i].engine;
-                // Version.
-                // Second entry in token after space or '/'.
-                if ( (token[pos] == ' ')  || (token[pos] == '/') ) {
-                    s_ParseVersion(token, pos+1, &m_BrowserVersion);
-                }
-                // User agent found and parsed
-                return true;
+            // Browser
+            m_Browser     = s_Browsers[i].type;
+            m_BrowserName = s_Browsers[i].name;
+            m_Engine      = s_Browsers[i].engine;
+            // Version.
+            // Second entry in token after space or '/'.
+            if ( (pos < len-1 /* have at least 1 symbol before EOL */) &&
+                    ((token[pos] == ' ')  || (token[pos] == '/')) ) {
+                s_ParseVersion(token, pos+1, &m_BrowserVersion);
             }
+            // User agent found and parsed
+            return true;
         }
     }
     // Not found
