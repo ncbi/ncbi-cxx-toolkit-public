@@ -250,13 +250,14 @@ CConn_IOStream* CId1Reader::x_GetConnection(TConn conn)
 
 string CId1Reader::x_ConnDescription(CConn_IOStream& stream) const
 {
-    const char* descr = CONN_Description(stream.GetCONN());
-    if ( descr ) {
-        return m_ServiceName + " -> " + descr;
+    CONN conn = stream.GetCONN();
+    if ( conn ) {
+        const char* descr = CONN_Description(conn);
+        if ( descr ) {
+            return m_ServiceName + " -> " + descr;
+        }
     }
-    else {
-        return m_ServiceName;
-    }
+    return m_ServiceName;
 }
 
 
