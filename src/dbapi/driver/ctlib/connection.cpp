@@ -658,45 +658,19 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
     auto_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
 
-#ifdef FTDS_IN_USE
-    EDB_Type data_type = eDB_UnsupportedType;
-
-    q  = "select ";
-    q += descr_in.ColumnName();
-    q += " from ";
-    q += descr_in.TableName();
-
-    lcmd.reset(LangCmd(q, 0));
-    rc = !lcmd->Send();
-    CHECK_DRIVER_ERROR( rc, "Cannot send the language command." + GetDbgInfo(), 110035 );
-
-    while(lcmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> res(lcmd->Result());
-        if(res.get() == NULL) continue;
-        if((res->ResultType() == eDB_RowResult)) {
-            data_type = res->ItemDataType(0);
-        }
-    }
-#endif
-
     q  = "set rowcount 1\nupdate ";
     q += descr_in.TableName();
     q += " set ";
     q += descr_in.ColumnName();
 #ifdef FTDS_IN_USE
-    if (data_type == eDB_Image) {
-        q += " = 0x0 where ";
-    } else if (data_type == eDB_Text) {
-        q += " = '' where ";
-    } else {
-        q += " = NULL where ";
-    }
+    q += " = '0x0' where ";
 #else
     q += " = NULL where ";
 #endif
     q += descr_in.SearchConditions();
     q += " \nselect ";
     q += descr_in.ColumnName();
+    q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
     q += " from ";
     q += descr_in.TableName();
     q += " where ";
