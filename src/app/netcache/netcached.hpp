@@ -69,7 +69,6 @@ typedef enum {
     ePut2,   ///< PUT v.2 transmission protocol
     ePut3,   ///< PUT v.2 transmission protocol with commit confirmation
     eGet,
-    eGet2,   ///< GET v.2 (with confirmation message)
     eShutdown,
     eVersion,
     eRemove,

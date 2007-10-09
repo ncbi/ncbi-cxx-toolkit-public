@@ -321,10 +321,6 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         stat.req_code = 'G';
         ProcessGet(socket, tdata.req, tdata, stat);
         break;
-    case eGet2:
-        stat.req_code = 'G';
-        ProcessGet2(socket, tdata.req, tdata, stat);
-        break;
     case eShutdown:
         stat.req_code = 'S';
         ProcessShutdown(socket);
@@ -910,177 +906,6 @@ void CNetCacheServer::x_WriteBuf(CSocket& sock,
 }
 
 
-void CNetCacheServer::ProcessGet2(CSocket&               sock, 
-                                  const SNC_Request&     req,
-                                  SNC_ThreadData&        tdata,
-                                  NetCache_RequestStat&  stat)
-{
-    // The key difference between Get2 and Get is that Get2 protocol
-    // requires the client to send a string "OK:" when client receives
-    // all the data. We do that to prevent server side disconnect 
-    // which freezes socket for 2 minutes on the kernel level
-
-    const string& req_id = req.req_id;
-
-    if (req_id.empty()) {
-        WriteMsg(sock, "ERR:", "BLOB id is empty.");
-        x_RegisterProtocolErr(req.req_type, tdata.auth);
-        return;
-    }
-
-    if (req.no_lock) {
-        bool locked = m_Cache->IsLocked(req_id, 0, kEmptyStr);
-        if (locked) {
-            WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
-            return;
-        }
-/*
-        bool lock_accuired = guard.Lock(req_id, 0);
-        if (!lock_accuired) {  // BLOB is locked by someone else
-            WriteMsg(sock, "ERR:", "BLOB locked by another client"); 
-            return;
-        }
-*/
-    } else {
-//        guard.Lock(req_id, m_InactivityTimeout);
-    }
-    char* buf = tdata.buffer.get();
-
-    ICache::SBlobAccessDescr ba_descr;
-    buf += 100;
-    ba_descr.buf = buf;
-    ba_descr.buf_size = GetTLS_Size() - 100;
-
-    unsigned blob_id = CNetCache_Key::GetBlobId(req.req_id);
-
-    for (int repeats = 0; repeats < 1000; ++repeats) {
-        m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
-
-        if (!ba_descr.blob_found) {
-            // check if id is locked maybe blob record not
-            // yet commited
-            {{
-                if (m_Cache->IsLocked(blob_id)) {
-                    if (repeats < 999) {
-                        SleepMilliSec(repeats);
-                        continue;
-                    }
-                } else {
-                    m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
-                    if (ba_descr.blob_found) {
-                        break;
-                    }
-
-                }
-            }}
-            string msg = "BLOB not found. ";
-            msg += req_id;
-            WriteMsg(sock, "ERR:", msg);
-            return;
-        } else {
-            break;
-        }
-    }
-
-    if (ba_descr.blob_size == 0) {
-        WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
-        return;
-    }
-
-/*
-    if (ba_descr.blob_size == 0) { // not found
-        if (ba_descr.reader == 0) {
-blob_not_found:
-            string msg = "BLOB not found. ";
-            msg += req_id;
-            WriteMsg(sock, "ERR:", msg);
-        } else {
-            WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
-        }
-        x_RegisterNoBlobErr(req.req_type, tdata.auth);
-        return;
-    }
-*/
-    stat.blob_size = ba_descr.blob_size;
-
-    if (ba_descr.reader.get() == 0) {  // all in buffer
-        string msg("OK:BLOB found. SIZE=");
-        string sz;
-        NStr::UIntToString(sz, ba_descr.blob_size);
-        msg += sz;
-
-        const char* msg_begin = msg.c_str();
-        const char* msg_end = msg_begin + msg.length();
-
-        for (; msg_end >= msg_begin; --msg_end) {
-            --buf;
-            *buf = *msg_end;
-            ++ba_descr.blob_size;
-        }
-
-        // translate BLOB fragment to the network
-        CStopWatch  sw(CStopWatch::eStart);
-
-        x_WriteBuf(sock, buf, ba_descr.blob_size);
-
-        stat.comm_elapsed += sw.Elapsed();
-        ++stat.io_blocks;
-        return;
-
-    } // inline BLOB
-
-
-    // re-translate reader to the network
-
-    auto_ptr<IReader> rdr(ba_descr.reader.release());
-    if (!rdr.get()) {
-        string msg = "BLOB not found. ";
-        msg += req_id;
-        WriteMsg(sock, "ERR:", msg);
-        return;
-    }
-    size_t blob_size = ba_descr.blob_size;
-
-    bool read_flag = false;
-    
-    buf = tdata.buffer.get();
-
-    size_t bytes_read;
-    do {
-        ERW_Result io_res = rdr->Read(buf, GetTLS_Size(), &bytes_read);
-        if (io_res == eRW_Success && bytes_read) {
-            if (!read_flag) {
-                read_flag = true;
-                string msg("BLOB found. SIZE=");
-                string sz;
-                NStr::UIntToString(sz, blob_size);
-                msg += sz;
-                WriteMsg(sock, "OK:", msg);
-            }
-
-            // translate BLOB fragment to the network
-            CStopWatch  sw(CStopWatch::eStart);
-
-            x_WriteBuf(sock, buf, bytes_read);
-
-            stat.comm_elapsed += sw.Elapsed();
-            ++stat.io_blocks;
-
-        } else {
-            break;
-        }
-    } while(1);
-    if (!read_flag) {
-        string msg = "BLOB not found. ";
-        msg += req_id;
-        WriteMsg(sock, "ERR:", msg);
-        return;
-    }
-}
-
-
-
-
 void CNetCacheServer::ProcessGet(CSocket&               sock, 
                                  const SNC_Request&     req,
                                  SNC_ThreadData&        tdata,
@@ -1438,6 +1263,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
     }
 }
 
+
 void CNetCacheServer::ProcessPut3(CSocket&              sock, 
                                   SNC_Request&          req,
                                   SNC_ThreadData&       tdata,
@@ -1489,7 +1315,6 @@ void CNetCacheServer::ProcessIsLock(CSocket& sock, const SNC_Request& req)
 }
 
 
-
 void CNetCacheServer::WriteMsg(CSocket&       sock, 
                                const string&  prefix, 
                                const string&  msg)
@@ -1502,54 +1327,6 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
         sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
 }
 
-/*
-bool CNetCacheServer::ReadBuffer(CSocket& sock,
-                                 IReader* rdr, 
-                                 char*    buf, 
-                                 size_t   buf_size,
-                                 size_t*  read_length,
-                                 size_t   expected_size)
-{
-    *read_length = 0;
-    size_t nn_read = 0;
-
-    bool ret_flag = true;
-
-    while (ret_flag && expected_size) {
-        if (!WaitForReadSocket(sock, m_InactivityTimeout)) {
-            break;
-        }
-
-        ERW_Result io_res = rdr->Read(buf, buf_size, &nn_read);
-        switch (io_res) 
-        {
-        case eRW_Success:
-            break;
-        case eRW_Timeout:
-            if (*read_length == 0) {
-                NCBI_THROW(CNetServiceException, eTimeout, "IReader timeout");
-            }
-            break;
-        case eRW_Eof:
-            ret_flag = false;
-            break;
-        default: // invalid socket or request
-            NCBI_THROW(CNetServiceException, eCommunicationError, kEmptyStr);
-
-        } // switch
-        *read_length += nn_read;
-        buf_size -= nn_read;
-        expected_size -= nn_read;
-
-        if (buf_size <= 10) {  // buffer too small to read again
-            break;
-        }
-        buf += nn_read;
-    }
-
-    return ret_flag;  // false means we hit "eIO_Closed"
-}
-*/
 
 bool CNetCacheServer::ReadBuffer(CSocket& sock,
                                  IReader* rdr, 
@@ -1638,7 +1415,6 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
     }
 
     return ret_flag;  // false means we hit "eIO_Closed"
-
 }
 
 
@@ -1761,11 +1537,13 @@ CNetCache_Logger* CNetCacheServer::GetLogger()
     return m_Logger.get();
 }
 
+
 bool CNetCacheServer::IsLog() const
 {
     CFastMutexGuard guard(x_NetCacheMutex);
     return m_LogFlag;
 }
+
 
 void CNetCacheServer::x_CreateLog()
 {
@@ -1785,6 +1563,7 @@ void CNetCacheServer::x_CreateLog()
         new CNetCache_Logger(log_path, 100 * 1024 * 1024));
 }
 
+
 SNC_ThreadData* CNetCacheServer::x_GetThreadData()
 {
     SNC_ThreadData* tdata = s_tls->GetValue();
@@ -1795,6 +1574,7 @@ SNC_ThreadData* CNetCacheServer::x_GetThreadData()
     }
     return tdata;
 }
+
 
 static
 SBDB_CacheUnitStatistics::EErrGetPut s_GetStatType(ENC_RequestType   req_type)
@@ -1815,6 +1595,7 @@ SBDB_CacheUnitStatistics::EErrGetPut s_GetStatType(ENC_RequestType   req_type)
     return op;
 }
 
+
 void CNetCacheServer::x_RegisterProtocolErr(
                                ENC_RequestType   req_type,
                                const string&     auth)
@@ -1826,6 +1607,7 @@ void CNetCacheServer::x_RegisterProtocolErr(
     SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
     bdb_cache->RegisterProtocolError(op, auth);
 }
+
 
 void CNetCacheServer::x_RegisterInternalErr(
                                ENC_RequestType   req_type,
@@ -1839,6 +1621,7 @@ void CNetCacheServer::x_RegisterInternalErr(
     bdb_cache->RegisterInternalError(op, auth);
 }
 
+
 void CNetCacheServer::x_RegisterNoBlobErr(ENC_RequestType   req_type,
                                           const string&     auth)
 {
@@ -1849,6 +1632,7 @@ void CNetCacheServer::x_RegisterNoBlobErr(ENC_RequestType   req_type,
     SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
     bdb_cache->RegisterNoBlobError(op, auth);
 }
+
 
 void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
                                           const string&             auth,
@@ -1897,6 +1681,7 @@ void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
     } // switch
 }
 
+
 /// Read the registry for icache_XXXX entries
 void CNetCacheServer::x_GetICacheNames(TLocalCacheMap* cache_map)
 {
@@ -1919,7 +1704,6 @@ void CNetCacheServer::x_GetICacheNames(TLocalCacheMap* cache_map)
 }
 
 
-
 ///////////////////////////////////////////////////////////////////////
 
 /// @internal
@@ -1932,6 +1716,7 @@ void Threaded_Server_SignalHandler( int )
         LOG_POST("Interrupt signal. Shutdown requested.");
     }
 }
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -1953,6 +1738,7 @@ private:
     /// Error message logging
     auto_ptr<CNetCacheLogStream> m_ErrLog;
 };
+
 
 void CNetCacheDApp::Init(void)
 {
@@ -2191,6 +1977,7 @@ int CNetCacheDApp::Run(void)
 
     return 0;
 }
+
 
 int main(int argc, const char* argv[])
 {
