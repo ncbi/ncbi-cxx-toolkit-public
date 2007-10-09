@@ -270,8 +270,9 @@ CConn_IOStream* CId1Reader::x_NewConnection(TConn conn)
     AutoPtr<CConn_IOStream> stream
         (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
     // need to call CONN_Wait to force connection to open
-    CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
-
+    if ( !stream->bad() ) {
+        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
+    }
 #ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
 #endif

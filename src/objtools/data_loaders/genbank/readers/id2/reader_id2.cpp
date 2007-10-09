@@ -282,7 +282,9 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
             (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
     }
     // need to call CONN_Wait to force connection to open
-    CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
+    if ( !stream->bad() ) {
+        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
+    }
     SetRandomFail(*stream, conn);
     if ( stream->bad() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
