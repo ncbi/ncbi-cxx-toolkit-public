@@ -928,7 +928,6 @@ static const int   kDiagW_Client   = 15;
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
                                   const SDiagMessage* msg) const
 {
-    //CDiagBuffer& buf = GetDiagBuffer();
     CDiagContextThreadData& thr_data =
         CDiagContextThreadData::GetThreadData();
 
@@ -1280,6 +1279,7 @@ bool OpenLogFileFromConfig(CNcbiRegistry& config)
 
 static bool s_UseRootLog = true;
 static bool s_FinishedSetupDiag = false;
+static bool s_MergeLinesSetBySetupDiag = false;
 
 void CDiagContext::SetUseRootLog(void)
 {
@@ -1312,6 +1312,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     }
 
     bool log_switched = false;
+    bool merge_lines = false;
     bool try_root_log_first = false;
     if ( config ) {
         try_root_log_first = config->GetBool("LOG", "TryRootLogFirst", false)
@@ -1396,6 +1397,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         GetDefaultLogLocation(*app), log_base);
                     if ( SetLogFile(log_name, eDiagFile_All) ) {
                         log_switched = true;
+                        merge_lines = true;
                         break;
                     }
                     if (try_root_log_first && OpenLogFileFromConfig(*config)) {
@@ -1406,6 +1408,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     log_name = CFile::ConcatPath("/log/fallback/", log_base);
                     if ( SetLogFile(log_name, eDiagFile_All) ) {
                         log_switched = true;
+                        merge_lines = true;
                         break;
                     }
                 }
@@ -1425,6 +1428,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 if ( s_UseRootLog ) {
                     if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
                         log_switched = true;
+                        merge_lines = true;
                     }
                     else {
                         ERR_POST_X(4, Info <<
@@ -1446,6 +1450,15 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         }
     }
 
+    if ( merge_lines ) {
+        SetDiagPostFlag(eDPF_PreMergeLines);
+        SetDiagPostFlag(eDPF_MergeLines);
+        s_MergeLinesSetBySetupDiag = true;
+    }
+    else if ( s_MergeLinesSetBySetupDiag ) {
+        UnsetDiagPostFlag(eDPF_PreMergeLines);
+        UnsetDiagPostFlag(eDPF_MergeLines);
+    }
     CDiagHandler* handler = GetDiagHandler();
     if (collect == eDCM_Flush) {
         // Flush and discard
@@ -2648,6 +2661,8 @@ static void s_SetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 
     CMutexGuard LOCK(s_DiagMutex);
     flags |= flag;
+    // Assume flag is set by user
+    s_MergeLinesSetBySetupDiag = false;
 }
 
 
@@ -2658,6 +2673,8 @@ static void s_UnsetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 
     CMutexGuard LOCK(s_DiagMutex);
     flags &= ~flag;
+    // Assume flag is set by user
+    s_MergeLinesSetBySetupDiag = false;
 }
 
 
