@@ -324,6 +324,8 @@ typedef struct {
     int         line;
     const void* raw_data;
     size_t      raw_size;
+    int         err_code;
+    int         err_subcode;
 } SLOG_Handler;
 
 
