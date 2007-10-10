@@ -297,29 +297,29 @@ bool CNetCacheServer::WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 
 
 void CNetCacheServer::ProcessNC(CSocket&              socket,
-                                ENC_RequestType&      req_type,
+                                string&               request,
                                 SNC_Request&          req,
                                 SNC_ThreadData&       tdata,
                                 NetCache_RequestStat& stat)
 {
-    ParseRequestNC(tdata.request, &(tdata.req));
+    ParseRequestNC(request, &req);
 
-    switch ((req_type = tdata.req.req_type)) {
+    switch (req.req_type) {
     case ePut:
         stat.req_code = 'P';
-        ProcessPut(socket, tdata.req, tdata, stat);
+        ProcessPut(socket, req, tdata, stat);
         break;
     case ePut2:
         stat.req_code = 'P';
-        ProcessPut2(socket, tdata.req, tdata, stat);
+        ProcessPut2(socket, req, tdata, stat);
         break;
     case ePut3:
         stat.req_code = 'P';
-        ProcessPut3(socket, tdata.req, tdata, stat);
+        ProcessPut3(socket, req, tdata, stat);
         break;
     case eGet:
         stat.req_code = 'G';
-        ProcessGet(socket, tdata.req, tdata, stat);
+        ProcessGet(socket, req, tdata, stat);
         break;
     case eShutdown:
         stat.req_code = 'S';
@@ -331,37 +331,37 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
         break;
     case eGetStat:
         stat.req_code = 'T';
-        ProcessGetStat(socket, tdata.req);
+        ProcessGetStat(socket, req);
         break;
     case eDropStat:
         stat.req_code = 'D';
         ProcessDropStat(socket);
         break;
     case eGetBlobOwner:
-        ProcessGetBlobOwner(socket, tdata.req);
+        ProcessGetBlobOwner(socket, req);
         break;
     case eVersion:
         stat.req_code = 'V';
-        ProcessVersion(socket, tdata.req);
+        ProcessVersion(socket, req);
         break;
     case eRemove:
         stat.req_code = 'R';
-        ProcessRemove(socket, tdata.req);
+        ProcessRemove(socket, req);
         break;
     case eRemove2:
         stat.req_code = 'R';
-        ProcessRemove2(socket, tdata.req);
+        ProcessRemove2(socket, req);
         break;
     case eLogging:
         stat.req_code = 'L';
-        ProcessLog(socket, tdata.req);
+        ProcessLog(socket, req);
         break;
     case eIsLock:
         stat.req_code = 'K';
-        ProcessIsLock(socket, tdata.req);
+        ProcessIsLock(socket, req);
         break;
     case eError:
-        WriteMsg(socket, "ERR:", tdata.req.err_msg);
+        WriteMsg(socket, "ERR:", req.err_msg);
         x_RegisterProtocolErr(eError, tdata.auth);
         break;
     default:
@@ -371,22 +371,22 @@ void CNetCacheServer::ProcessNC(CSocket&              socket,
 }
 
 void CNetCacheServer::ProcessIC(CSocket&              socket,
-                                EIC_RequestType&      req_type,
+                                string&               request,
                                 SIC_Request&          req,
                                 SNC_ThreadData&       tdata,
                                 NetCache_RequestStat& stat)
 {
-    ParseRequestIC(tdata.request, &req);
+    ParseRequestIC(request, &req);
 
     ICache* ic = GetLocalCache(req.cache_name);
     if (ic == 0) {
-        tdata.ic_req.err_msg = "Cache unknown: ";
-        tdata.ic_req.err_msg.append(req.cache_name);
-        WriteMsg(socket, "ERR:", tdata.ic_req.err_msg);
+        req.err_msg = "Cache unknown: ";
+        req.err_msg.append(req.cache_name);
+        WriteMsg(socket, "ERR:", req.err_msg);
         return;
     }
 
-    switch ((req_type = tdata.ic_req.req_type)) {
+    switch (req.req_type) {
     case eIC_SetTimeStampPolicy:
         Process_IC_SetTimeStampPolicy(*ic, socket, req, tdata);
         break;
@@ -437,7 +437,7 @@ void CNetCacheServer::ProcessIC(CSocket&              socket,
         break;
 
     case eIC_Error:
-        WriteMsg(socket, "ERR:", tdata.ic_req.err_msg);
+        WriteMsg(socket, "ERR:", req.err_msg);
         break;
     default:
         _ASSERT(0);
@@ -497,10 +497,9 @@ void CNetCacheServer::Process(SOCK sock)
     SNC_ThreadData* tdata = x_GetThreadData();
 
     ENC_RequestType nc_req_type = eError;
-    EIC_RequestType ic_req_type = eIC_Error;
     EServed_RequestType service_req_type = eNCServer_Unknown;
 
-    NetCache_RequestStat    stat;
+    NetCache_RequestStat stat;
     stat.blob_size = stat.io_blocks = 0;
 
     CSocket socket;
@@ -508,6 +507,7 @@ void CNetCacheServer::Process(SOCK sock)
     STimeout zero = {0,0};
     socket.SetTimeout(eIO_Close,&zero);
 
+    string request, blob_id;
     try {
         tdata->auth.erase();
         
@@ -541,43 +541,49 @@ void CNetCacheServer::Process(SOCK sock)
             
             WaitForReadSocket(socket, m_InactivityTimeout);
 
-            while (ReadStr(socket, &(tdata->request))) {
-                string& rq = tdata->request;
-                if (rq.length() < 2) { 
+            while (ReadStr(socket, &request)) {
+                SNC_Request nc_req;
+                SIC_Request ic_req;
+                if (request.length() < 2) { 
                     WriteMsg(socket, "ERR:", "Invalid request");
-                    x_RegisterProtocolErr(eError, rq);
+                    x_RegisterProtocolErr(eError, request);
                     return;
                 }
 
                 // check if it is NC or IC
 
-                if (rq[0] == 'I' && rq[1] == 'C') {  // ICache request
-                    tdata->ic_req.Init();
+                if (request[0] == 'I' && request[1] == 'C') { // ICache request
+                    ic_req.Init();
                     service_req_type = eNCServer_ICache;
-                    ProcessIC(socket, 
-                              ic_req_type, tdata->ic_req, *tdata, stat);
+                    ProcessIC(socket, request, ic_req, *tdata, stat);
+                    if (is_log)
+                        blob_id = ic_req.key + ":" +
+                            NStr::IntToString(ic_req.version) + ":" +
+                            ic_req.subkey;
                 } else 
-                if (rq[0] == 'A' && rq[1] == '?') {  // Alive?
+                if (request[0] == 'A' && request[1] == '?') { // Alive?
                     WriteMsg(socket, "OK:", "");
                 } else
-                if (rq[0] == 'S' && rq[1] == 'M') {  // Session management
+                if (request[0] == 'S' && request[1] == 'M') { // Session management
                     service_req_type = eNCServer_Session;
-                    ProcessSM(socket, rq);
+                    ProcessSM(socket, request);
                     break; // need to disconnect after reg-unreg
                 } else 
-                if (rq[0] == 'O' && rq[1] == 'K') {
+                if (request[0] == 'O' && request[1] == 'K') {
                     continue;
                 } else
-                if (rq == "MONI") {
+                if (request == "MONI") {
                     m_Monitor.SetSocket(socket);
                     m_Monitor.SendString("Monitor for " NETCACHED_VERSION "\n");
                     // Avoid handling closing connection
                     return;
                 } else {
-                    tdata->req.Init();
+                    nc_req.Init();
                     service_req_type = eNCServer_NetCache;
-                    ProcessNC(socket, 
-                              nc_req_type, tdata->req, *tdata, stat);
+                    ProcessNC(socket, request, nc_req, *tdata, stat);
+                    nc_req_type = nc_req.req_type;
+                    if (is_log)
+                        blob_id = nc_req.req_id;
                 }
 
                 // Monitoring
@@ -589,7 +595,7 @@ void CNetCacheServer::Process(SOCK sock)
                     string msg, tmp;
                     msg += tdata->auth;
                     msg += "\"";
-                    msg += tdata->request;
+                    msg += request;
                     msg += "\" ";
                     msg += stat.peer_address;
                     msg += "\n\t";
@@ -604,16 +610,16 @@ void CNetCacheServer::Process(SOCK sock)
                     msg += "\n\t";
                     switch (service_req_type) {
                     case eNCServer_NetCache:                
-                        msg += "NC:" + tdata->req.req_id;
+                        msg += "NC:" + nc_req.req_id;
                         break;
                     case eNCServer_Session:
                         msg += "Session request";
                         break;
                     case eNCServer_ICache:
-                        msg + "IC:" + "Cache=\"" + tdata->ic_req.cache_name + "\"";
-                        msg += " key=\"" + tdata->ic_req.key;
-                        msg += "\" version=" + NStr::IntToString(tdata->ic_req.version);
-                        msg += " subkey=\"" + tdata->ic_req.subkey +"\"";
+                        msg + "IC:" + "Cache=\"" + ic_req.cache_name + "\"";
+                        msg += " key=\"" + ic_req.key;
+                        msg += "\" version=" + NStr::IntToString(ic_req.version);
+                        msg += " subkey=\"" + ic_req.subkey +"\"";
                         break;
                     case eNCServer_Unknown:
                         msg += "UNK?";
@@ -648,9 +654,9 @@ void CNetCacheServer::Process(SOCK sock)
         //
         if (is_log) {
             stat.elapsed = sw.Elapsed();
-            CNetCache_Logger* lg = GetLogger();
-            _ASSERT(lg);
-            lg->Put(tdata->auth, stat, tdata->req.req_id);
+            CNetCache_Logger* log = GetLogger();
+            _ASSERT(log);
+            log->Put(tdata->auth, stat, blob_id);
         }
     } 
     catch (CNetCacheException &ex)
@@ -659,7 +665,7 @@ void CNetCacheServer::Process(SOCK sock)
         msg = "NC Server error: ";
         msg.append(ex.what());
         msg.append(" client=");  msg.append(tdata->auth);
-        msg.append(" request='");msg.append(tdata->request); msg.append("'");
+        msg.append(" request='");msg.append(request); msg.append("'");
         msg.append(" peer="); msg.append(socket.GetPeerAddress());
         msg.append(" blobsize=");
             msg.append(NStr::UIntToString(stat.blob_size));
@@ -681,7 +687,7 @@ void CNetCacheServer::Process(SOCK sock)
         msg = "NC Service exception: ";
         msg.append(ex.what());
         msg.append(" client=");  msg.append(tdata->auth);
-        msg.append(" request='");msg.append(tdata->request); msg.append("'");
+        msg.append(" request='");msg.append(request); msg.append("'");
         msg.append(" peer="); msg.append(socket.GetPeerAddress());
         msg.append(" blobsize=");
             msg.append(NStr::UIntToString(stat.blob_size));
@@ -712,7 +718,7 @@ void CNetCacheServer::Process(SOCK sock)
             msg = "NC BerkeleyDB error: ";
             msg.append(ex.what());
             msg.append(" client=");  msg.append(tdata->auth);
-            msg.append(" request='");msg.append(tdata->request); msg.append("'");
+            msg.append(" request='");msg.append(request); msg.append("'");
             msg.append(" peer="); msg.append(socket.GetPeerAddress());
             msg.append(" blobsize=");
                 msg.append(NStr::UIntToString(stat.blob_size));
@@ -734,8 +740,8 @@ void CNetCacheServer::Process(SOCK sock)
         string msg;
         msg = "NC std::exception: ";
         msg.append(ex.what());
-        msg.append(" client=");  msg.append(tdata->auth);
-        msg.append(" request='");msg.append(tdata->request); msg.append("'");
+        msg.append(" client="); msg.append(tdata->auth);
+        msg.append(" request='"); msg.append(request); msg.append("'");
         msg.append(" peer="); msg.append(socket.GetPeerAddress());
         msg.append(" blobsize=");
             msg.append(NStr::UIntToString(stat.blob_size));
@@ -1249,7 +1255,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
             ERW_Result res = 
                 iwrt->Write(buf, nn_read, &bytes_written);
             if (res != eRW_Success) {
-                WriteMsg(sock, "Err:", "Server I/O error");
+                WriteMsg(sock, "ERR:", "Server I/O error");
                 x_RegisterInternalErr(req.req_type, tdata.auth);
                 return;
             }

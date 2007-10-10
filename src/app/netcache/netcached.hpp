@@ -161,11 +161,8 @@ struct SIC_Request
 ///
 struct SNC_ThreadData
 {
-    string      request;                        ///< request string
     string      auth;                           ///< Authentication string
-    SNC_Request req;                            ///< parsed NC request
-    SIC_Request ic_req;                         ///< parsed IC request
-    AutoPtr<char, ArrayDeleter<char> >  buffer; ///< operation buffer
+    AutoPtr<char, ArrayDeleter<char> > buffer; ///< operation buffer
     size_t      buffer_size;
     string      tmp;
 
@@ -284,14 +281,14 @@ private:
 
     /// Process NetCache request
     void ProcessNC(CSocket&              socket,
-                   ENC_RequestType&      req_type,
+                   string&               request,
                    SNC_Request&          req,
                    SNC_ThreadData&       tdata,
                    NetCache_RequestStat& stat);
 
     /// Process ICache request
     void ProcessIC(CSocket&              socket,
-                   EIC_RequestType&      req_type,
+                   string&               request,
                    SIC_Request&          req,
                    SNC_ThreadData&       tdata,
                    NetCache_RequestStat& stat);
