@@ -40,8 +40,6 @@
 #include <util/error_codes.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   Util_LVector
-
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup Threads
@@ -202,7 +200,7 @@ CLockVectorGuard<TLockVect>::~CLockVectorGuard()
     } 
     catch (exception& ex)
     {
-        ERR_POST_X(1, ex.what());
+        ERR_POST_XX(Util_LVector, 1, ex.what());
     }
 }
 
@@ -289,7 +287,8 @@ template<class BV>
 CLockVector<BV>::~CLockVector() 
 {
     if (m_IdVector.any()) {
-        ERR_POST_X(2, "::~CLockVector() detected live locks on destruction.");
+        ERR_POST_XX(Util_LVector, 2,
+                    "::~CLockVector() detected live locks on destruction.");
     }
 }
 
@@ -330,8 +329,5 @@ bool CLockVector<BV>::IsLocked(unsigned id) const
 /* @} */
 
 END_NCBI_SCOPE
-
-#undef NCBI_USE_ERRCODE_X
-
 
 #endif

@@ -37,8 +37,6 @@
 #include <util/error_codes.hpp>
 
 
-#define NCBI_USE_ERRCODE_X   Util_Cache
-
 BEGIN_NCBI_SCOPE
 
 /// Thread class, peridically calls ICache::Purge to remove obsolete
@@ -63,9 +61,10 @@ public:
         catch(exception& ex)
         {
             RequestStop();
-            LOG_POST_X(3, Error << "Error when cleaning cache: " 
-                                << ex.what()
-                                << " cleaning thread has been stopped.");
+            LOG_POST_XX(Util_Cache, 3,
+                        Error << "Error when cleaning cache: " 
+                              << ex.what()
+                              << " cleaning thread has been stopped.");
         }
     }
 
@@ -75,8 +74,5 @@ private:
 
 
 END_NCBI_SCOPE
-
-#undef NCBI_USE_ERRCODE_X
-
 
 #endif

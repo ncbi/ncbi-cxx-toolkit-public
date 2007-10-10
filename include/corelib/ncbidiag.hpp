@@ -395,7 +395,6 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 /// ...
 /// #define NCBI_USE_ERRCODE_X   Corelib_Util
 /// ...
-/// NCBI_CHECK_ERR_SUBCODE_X(my_subcode);
 /// ERR_POST_EX(NCBI_ERRCODE_X, my_subcode,
 ///             "My error message with variables " << var);
 ///
@@ -405,9 +404,12 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 /// ...
 /// // no need to define NCBI_USE_ERRCODE_X
 /// ...
-/// NCBI_CHECK_ERR_SUBCODE_X_NAME(Corelib_Util, my_subcode);
 /// ERR_POST_EX(NCBI_ERRCODE_X_NAME(Corelib_Util), my_subcode,
 ///             "My error message with variables " << var);
+///
+/// It's strongly recomended to use macro NCBI_CHECK_ERR_SUBCODE_X
+/// (or NCBI_CHECK_ERR_SUBCODE_X_NAME in complicated case) to check validity
+/// of error subcodes in places where variable 'my_subcode' is assigned.
 ///
 ///
 /// @sa NCBI_DEFINE_ERRCODE_X, NCBI_ERRCODE_X, ERR_POST_EX
@@ -423,6 +425,24 @@ struct WRONG_ERROR_SUBCODE_IN_POST_MACRO
 #define LOG_POST_X(err_subcode, message)              \
     NCBI_CHECK_ERR_SUBCODE_X(err_subcode);            \
     LOG_POST_EX(NCBI_ERRCODE_X, err_subcode, message)
+
+/// Error posting with error code having given name and with given error
+/// subcode. Macro must be placed in headers instead of ERR_POST_X to not
+/// confuse default error codes used in sources where this header is included.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, ERR_POST_X
+#define ERR_POST_XX(error_name, err_subcode, message)                  \
+    NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode);            \
+    ERR_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message)
+
+/// Log posting with error code having given name and with given error
+/// subcode. Macro must be placed in headers instead of LOG_POST_X to not
+/// confuse default error codes used in sources where this header is included.
+///
+/// @sa NCBI_DEFINE_ERRCODE_X, LOG_POST_X
+#define LOG_POST_XX(error_name, err_subcode, message)                  \
+    NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode);            \
+    LOG_POST_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message)
 
 
 /// Common code for making log or error posting only given number of times

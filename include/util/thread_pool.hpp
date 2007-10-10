@@ -57,8 +57,6 @@
  * @{
  */
 
-#define NCBI_USE_ERRCODE_X   Util_Thread
-
 BEGIN_NCBI_SCOPE
 
 
@@ -887,7 +885,7 @@ void* CThreadInPool<TRequest>::Main(void)
                 handle.Reset(m_Pool->m_Queue.GetHandle());
             } catch (CBlockingQueueException& e) {
                 // work around "impossible" timeouts
-                ERR_POST_X(1, Warning << e.what());
+                ERR_POST_XX(Util_Thread, 1, Warning << e.what());
                 m_Pool->m_Delta.Add(1);
                 continue;
             }
@@ -895,13 +893,15 @@ void* CThreadInPool<TRequest>::Main(void)
                 ProcessRequest(handle);
             } catch (std::exception& e) {
                 handle->MarkAsForciblyCaught();
-                ERR_POST_X(2, "Exception from thread in pool: " << e.what());
+                ERR_POST_XX(Util_Thread, 2,
+                            "Exception from thread in pool: " << e.what());
                 // throw;
             } catch (...) {
                 handle->MarkAsForciblyCaught();
                 // silently propagate non-standard exceptions because they're
                 // likely to be CExitThreadException.
-                // ERR_POST_X(3, "Thread in pool threw non-standard exception.");
+                // ERR_POST_XX(Util_Thread, 3,
+                //             "Thread in pool threw non-standard exception.");
                 throw;
             }
             if (m_RunMode == eRunOnce) {
@@ -965,8 +965,9 @@ CPoolOfThreads<TRequest>::~CPoolOfThreads(void)
 {
     CAtomicCounter::TValue n = m_ThreadCount.Get() + m_UrgentThreadCount.Get();
     if (n) {
-        ERR_POST_X(4, Warning << "CPoolOfThreads<>::~CPoolOfThreads: "
-                      << n << " thread(s) still active");
+        ERR_POST_XX(Util_Thread, 4,
+                    Warning << "CPoolOfThreads<>::~CPoolOfThreads: "
+                            << n << " thread(s) still active");
     }
 }
 
@@ -1019,7 +1020,8 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
             // This should be redundant with the delta < 0 case, but
             // I've gotten reports that suggest otherwise. :-/
             m_Queue.WaitForHunger(0);
-            ERR_POST_X(5, "Possible thread pool bug.  delta: "
+            ERR_POST_XX(Util_Thread, 5,
+                        "Possible thread pool bug.  delta: "
                           << (long)m_Delta.Get() - kDeltaOffset
                           << "; hunger: " << m_Queue.GetHunger());
             return true;
@@ -1102,9 +1104,6 @@ void CPoolOfThreads<TRequest>::SetUserPriority(TItemHandle handle,
 }
 
 END_NCBI_SCOPE
-
-
-#undef NCBI_USE_ERRCODE_X
 
 
 /* @} */

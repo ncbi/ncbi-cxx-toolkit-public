@@ -82,10 +82,6 @@
 #include <string>
 
 
-// Don't forget to undef this macro in the end of header or
-// before any other include
-#define NCBI_USE_ERRCODE_X   Corelib_PluginMgr
-
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup PluginMgr
@@ -750,7 +746,8 @@ TClass* CPluginManager<TClass>::CreateInstanceFromList(
             drv = CreateInstance(drv_name, version, driver_params);
         }
         catch ( exception& e ) {
-            LOG_POST_X(1, drv_name << " is not available ::" << e.what());
+            LOG_POST_XX(Corelib_PluginMgr, 1,
+                        drv_name << " is not available ::" << e.what());
         }
         if ( drv ) {
             break;
@@ -935,9 +932,10 @@ bool CPluginManager<TClass>::WillExtendCapabilities
         }
     }
 
-    ERR_POST_X(2, Warning << "A duplicate driver factory was found. "
-                  "It will be ignored because it won't extend "
-                  "Plugin Manager's capabilities." );
+    ERR_POST_XX(Corelib_PluginMgr, 2,
+                Warning << "A duplicate driver factory was found. "
+                           "It will be ignored because it won't extend "
+                           "Plugin Manager's capabilities." );
 
     return false;
 }
@@ -1188,7 +1186,7 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
                 if ( RegisterWithEntryPoint(ep, driver, version) ) {
                     m_RegisteredEntries.push_back(entry);
                 } else {
-                    ERR_POST_X(3,
+                    ERR_POST_XX(Corelib_PluginMgr, 3,
                         Info << "Couldn't register an entry point "
                         "within a DLL '" << entry.dll->GetName() << "' "
                         "because either an entry point with the same name was already "
@@ -1290,8 +1288,5 @@ IClassFactory<TClass>::GetParam(
 
 
 END_NCBI_SCOPE
-
-#undef NCBI_USE_ERRCODE_X
-
 
 #endif  /* CORELIB___PLUGIN_MANAGER__HPP */
