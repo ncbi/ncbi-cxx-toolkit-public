@@ -252,6 +252,8 @@ CDBAPIUnitTest::TestInit(void)
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
+        drv_context->SetTimeout(1);
+
         if (m_args.IsODBCBased()) {
             drv_context->PushCntxMsgHandler(
                 new CDB_UserHandler_Exception_ODBC,
@@ -1735,7 +1737,7 @@ CDBAPIUnitTest::Test_LOB(void)
 
                         BOOST_CHECK( !value.IsNull() );
                         size_t read_bytes = 0;
-                        while (read_bytes = value.Read(buff, sizeof(buff))) {
+                        while ((read_bytes = value.Read(buff, sizeof(buff)))) {
                             result += string(buff, read_bytes);
                         }
 
@@ -1773,7 +1775,7 @@ CDBAPIUnitTest::Test_LOB(void)
                     size_t read_bytes = 0;
                     bool is_null = true;
 
-                    while (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                    while ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                         result += string(buff, read_bytes);
                     }
 
@@ -1886,7 +1888,7 @@ CDBAPIUnitTest::Test_LOB(void)
                             if (ind % 2 == 0) {
                                 BOOST_CHECK(!value.IsNull());
                                 size_t read_bytes = 0;
-                                while (read_bytes = value.Read(buff, sizeof(buff))) {
+                                while ((read_bytes = value.Read(buff, sizeof(buff)))) {
                                     result += string(buff, read_bytes);
                                 }
 
@@ -1931,7 +1933,7 @@ CDBAPIUnitTest::Test_LOB(void)
                             size_t read_bytes = 0;
                             bool is_null = true;
 
-                            while (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                            while ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                                 result += string(buff, read_bytes);
                             }
 
@@ -1941,7 +1943,7 @@ CDBAPIUnitTest::Test_LOB(void)
                             size_t read_bytes = 0;
                             bool is_null = true;
 
-                            while (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                            while ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                                 result += string(buff, read_bytes);
                             }
 
@@ -2349,7 +2351,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
                         bool is_null = true;
                         ++rec_num;
 
-                        if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                        if ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                             result += string(buff, read_bytes);
                         }
 
@@ -2422,7 +2424,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
                         bool is_null = true;
                         ++rec_num;
 
-                        if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                        if ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                             result += string(buff, read_bytes);
                         }
 
@@ -2503,7 +2505,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                     // First record ...
                     BOOST_CHECK(rs->Fetch());
-                    if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                    if ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                         result += string(buff, read_bytes);
                     }
 
@@ -2515,7 +2517,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
                     is_null = true;
 
                     BOOST_CHECK(rs->Fetch());
-                    if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                    if ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                         result += string(buff, read_bytes);
                     }
 
@@ -2594,7 +2596,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                         BOOST_CHECK(rs->Fetch());
 
-                        if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                        if ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                             result += string(buff, read_bytes);
                         }
 
@@ -2686,7 +2688,7 @@ CDBAPIUnitTest::Test_BulkInsertBlob_LowLevel(void)
 
                         BOOST_CHECK(rs->Fetch());
 
-                        if (read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null)) {
+                        if ((read_bytes = rs->ReadItem(buff, sizeof(buff), &is_null))) {
                             result += string(buff, read_bytes);
                         }
 
@@ -7046,7 +7048,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
 
             BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
 
-            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+            while((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
             }
             
@@ -7062,7 +7064,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
 
             BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
 
-            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+            while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
             }
             
@@ -7078,7 +7080,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
 
             BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
 
-            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+            while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
             }
             
@@ -7094,7 +7096,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
 
             BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
 
-            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+            while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
             }
             
@@ -7112,7 +7114,7 @@ CDBAPIUnitTest::Test_MsgToEx(void)
 
             BOOST_CHECK_THROW(ES_01_Internal(*local_conn), CDB_Exception);
 
-            while(dbex = local_conn->GetErrorAsEx()->Pop()) {
+            while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
                 ++msg_num;
             }
             
@@ -7201,7 +7203,7 @@ CDBAPIUnitTest::Test_MsgToEx2(void)
     }
 
     CDB_Exception* dbex = NULL;
-    while(dbex = conn->GetErrorAsEx()->Pop()){
+    while ((dbex = conn->GetErrorAsEx()->Pop())){
         cout << "MSG:" << dbex->Message() << endl;
     }
 
@@ -10527,6 +10529,64 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Exception-safe wrapper for database error message handlers ...
+class CMsgHandlerGuard
+{
+    public:
+        CMsgHandlerGuard(I_DriverContext* drv_context,
+                const string& driver_name);
+        ~CMsgHandlerGuard();
+
+    private:
+        I_DriverContext* m_DrvContext;
+        auto_ptr<CDB_UserHandler> m_Handler1;
+        auto_ptr<CDB_UserHandler> m_Handler2;
+};
+
+CMsgHandlerGuard::CMsgHandlerGuard(
+        I_DriverContext* drv_context,
+        const string& driver_name)
+: m_DrvContext(drv_context)
+{
+    if (driver_name == "odbc" ||
+            driver_name == "odbcw" ||
+            driver_name == "ftds_odbc"
+       )
+    {
+        m_Handler1.reset(new CDB_UserHandler_Exception_ODBC);
+        m_Handler2.reset(new CDB_UserHandler_Exception_ODBC);
+
+        m_DrvContext->PushCntxMsgHandler(
+                m_Handler1.get(),
+                eNoOwnership
+                );
+        m_DrvContext->PushDefConnMsgHandler(
+                m_Handler2.get(),
+                eNoOwnership
+                );
+    } else {
+        m_Handler1.reset(new CDB_UserHandler_Exception);
+        m_Handler2.reset(new CDB_UserHandler_Exception);
+
+        m_DrvContext->PushCntxMsgHandler(
+                m_Handler1.get(),
+                eNoOwnership
+                );
+        m_DrvContext->PushDefConnMsgHandler(
+                m_Handler2.get(),
+                eNoOwnership
+                );
+    }
+}
+
+CMsgHandlerGuard::~CMsgHandlerGuard()
+{
+    m_DrvContext->PopCntxMsgHandler(m_Handler1.get());
+    m_DrvContext->PopDefConnMsgHandler(m_Handler2.get());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 void CDBAPIUnitTest::Test_SetLogStream(void)
 {
     try {
@@ -10635,36 +10695,9 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
 
         // Install user-defined error handler (eNoOwnership)
         {
-            auto_ptr<CDB_UserHandler> h1;
-            auto_ptr<CDB_UserHandler> h2;
-
-            {
-                I_DriverContext* drv_context = m_DS->GetDriverContext();
-
-                if (m_args.GetDriverName() == "odbc" ||
-                    m_args.GetDriverName() == "odbcw" ||
-                    m_args.GetDriverName() == "ftds_odbc"
-                    )
-                {
-                    h1.reset(new CDB_UserHandler_Exception_ODBC);
-                    h2.reset(new CDB_UserHandler_Exception_ODBC);
-
-                    drv_context->PushCntxMsgHandler(h1.get(),
-                                                    eNoOwnership
-                                                    );
-                    drv_context->PushDefConnMsgHandler(h2.get(),
-                                                       eNoOwnership
-                                                       );
-                } else {
-                    h1.reset(new CDB_UserHandler_Exception);
-                    h2.reset(new CDB_UserHandler_Exception);
-
-                    drv_context->PushCntxMsgHandler(h1.get(),
-                                                    eNoOwnership);
-                    drv_context->PushDefConnMsgHandler(h2.get(),
-                                                       eNoOwnership);
-                }
-            }
+            CMsgHandlerGuard handler_guard(
+                    m_DS->GetDriverContext(), 
+                    m_args.GetDriverName());
 
             // Test block ...
             {
@@ -10700,14 +10733,6 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
                 }
 
                 m_DS->SetLogStream(&logfile);
-            }
-
-            // Remove error-handlers ...
-            {
-                I_DriverContext* drv_context = m_DS->GetDriverContext();
-
-                drv_context->PopCntxMsgHandler(h1.get());
-                drv_context->PopDefConnMsgHandler(h2.get());
             }
         }
     }
