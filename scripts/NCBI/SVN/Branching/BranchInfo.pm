@@ -38,24 +38,15 @@ sub MergeDeletedTrees
 {
     my ($ObsoletePathTree, $Subdir, $DeletedNode) = @_;
 
-    if (exists $DeletedNode->{'/'})
-    {
-        $ObsoletePathTree->{$Subdir} = {'/' => 1};
-
-        return
-    }
+    $ObsoletePathTree->{$Subdir} = {'/' => 1}
+        if defined delete $DeletedNode->{'/'};
 
     $ObsoletePathTree = ($ObsoletePathTree->{$Subdir} ||= {});
 
-    unless (exists $ObsoletePathTree->{'/'})
+    while (my ($Subdir, $Subtree) = each %$DeletedNode)
     {
-        while (my ($Subdir, $Subtree) = each %$DeletedNode)
-        {
-            MergeDeletedTrees($ObsoletePathTree, $Subdir, $Subtree)
-        }
+        MergeDeletedTrees($ObsoletePathTree, $Subdir, $Subtree)
     }
-
-    return 0
 }
 
 sub ClearDeletedTree

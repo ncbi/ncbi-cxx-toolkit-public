@@ -755,7 +755,7 @@ sub GetWorkingCopyInfo
 
     if ($ObsoleteBranchPaths)
     {
-        for my $Path (@$ObsoleteBranchPaths)
+        for my $Path (reverse @$ObsoleteBranchPaths)
         {
             push @ExistingObsoletePaths, $Path if -e $Path
         }
