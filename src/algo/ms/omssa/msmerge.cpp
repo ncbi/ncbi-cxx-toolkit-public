@@ -65,8 +65,11 @@ void COMSSASearch::CopyCMSSearch(CRef <COMSSASearch> OldSearch)
     // SerialAssign(*OldSearch);
     CConn_MemoryStream memory_stream;
 
+{
     CObjectOStreamAsnBinary omemorystream(memory_stream);
     omemorystream << *OldSearch;
+    omemorystream.Flush();
+}
 
     CObjectIStreamAsnBinary imemorystream(memory_stream);
     imemorystream >> *this;
