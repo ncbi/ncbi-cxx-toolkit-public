@@ -252,7 +252,7 @@ CDBAPIUnitTest::TestInit(void)
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        drv_context->SetTimeout(1);
+        // drv_context->SetTimeout(1);
 
         if (m_args.IsODBCBased()) {
             drv_context->PushCntxMsgHandler(
