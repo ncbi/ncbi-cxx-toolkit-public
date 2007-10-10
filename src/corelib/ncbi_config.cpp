@@ -36,14 +36,14 @@
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/error_codes.hpp>
 
 #include <algorithm>
 #include <memory>
 #include <set>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibConfig
+#define NCBI_USE_ERRCODE_X   Corelib_Config
 
 
 BEGIN_NCBI_SCOPE

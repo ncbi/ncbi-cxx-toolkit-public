@@ -33,10 +33,10 @@
 #include <corelib/blob_storage.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/error_codes.hpp>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibBlob
+#define NCBI_USE_ERRCODE_X   Corelib_Blob
 
 
 BEGIN_NCBI_SCOPE

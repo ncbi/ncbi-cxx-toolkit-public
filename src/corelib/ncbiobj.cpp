@@ -86,9 +86,9 @@
 #endif
 
 
-#include "error_codes_p.hpp"
+#include <corelib/error_codes.hpp>
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibObject
+#define NCBI_USE_ERRCODE_X   Corelib_Object
 
 
 BEGIN_NCBI_SCOPE

@@ -37,6 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/syslog.hpp>
+#include <corelib/error_codes.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
@@ -54,9 +55,7 @@
 #endif
 
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibApp
+#define NCBI_USE_ERRCODE_X   Corelib_App
 
 
 BEGIN_NCBI_SCOPE

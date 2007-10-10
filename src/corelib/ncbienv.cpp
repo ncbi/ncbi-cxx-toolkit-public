@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/error_codes.hpp>
 #include <algorithm>
 
 #ifdef NCBI_OS_LINUX
@@ -51,9 +52,7 @@ extern char** environ;
 #endif
 
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibEnv
+#define NCBI_USE_ERRCODE_X   Corelib_Env
 
 
 BEGIN_NCBI_SCOPE

@@ -35,10 +35,9 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/error_codes.hpp>
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibStreamBuf
+#define NCBI_USE_ERRCODE_X   Corelib_StreamBuf
 
 
 #define RWSTREAMBUF_CATCH_ALL(message, action)                                \

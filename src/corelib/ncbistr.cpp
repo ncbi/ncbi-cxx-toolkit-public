@@ -35,14 +35,14 @@
 #include <corelib/tempstr.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbistr_util.hpp>
+#include <corelib/error_codes.hpp>
 #include <memory>
 #include <algorithm>
 #include <errno.h>
 #include <stdio.h>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibUtil
+#define NCBI_USE_ERRCODE_X   Corelib_Util
 
 
 BEGIN_NCBI_SCOPE

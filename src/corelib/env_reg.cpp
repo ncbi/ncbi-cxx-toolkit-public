@@ -34,11 +34,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/env_reg.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/error_codes.hpp>
 #include <set>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibEnv
+#define NCBI_USE_ERRCODE_X   Corelib_Env
 
 
 BEGIN_NCBI_SCOPE

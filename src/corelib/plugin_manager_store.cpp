@@ -33,7 +33,7 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/obj_store.hpp>
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibPluginMgr
+#define NCBI_USE_ERRCODE_X   Corelib_PluginMgr
 
 
 BEGIN_NCBI_SCOPE

@@ -1,5 +1,5 @@
-#ifndef CORELIB___ERROR_CODES_P__HPP
-#define CORELIB___ERROR_CODES_P__HPP
+#ifndef CORELIB___ERROR_CODES__HPP
+#define CORELIB___ERROR_CODES__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -30,8 +30,8 @@
  *
  */
 
-/// @file error_codes_p.hpp
-/// Definition of all error codes used in xncbi.lib.
+/// @file error_codes.hpp
+/// Definition of all error codes used in corelib (xncbi.lib).
 ///
 
 
@@ -41,21 +41,22 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(XNcbiLibEnv, 101, 5)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibConfig, 102, 23)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibBlob, 103, 1)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibStatic, 104, 1)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibSystem, 105, 10)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibApp, 106, 14)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibDiag, 107, 16)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibFile, 108, 3)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibObject, 109, 15)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibReg, 110, 7)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibUtil, 111, 5)
-NCBI_DEFINE_ERRCODE_X(XNcbiLibStreamBuf, 112, 4)
+NCBI_DEFINE_ERRCODE_X(Corelib_Env,       101,  5);
+NCBI_DEFINE_ERRCODE_X(Corelib_Config,    102, 23);
+NCBI_DEFINE_ERRCODE_X(Corelib_Blob,      103,  1);
+NCBI_DEFINE_ERRCODE_X(Corelib_Static,    104,  1);
+NCBI_DEFINE_ERRCODE_X(Corelib_System,    105, 10);
+NCBI_DEFINE_ERRCODE_X(Corelib_App,       106, 14);
+NCBI_DEFINE_ERRCODE_X(Corelib_Diag,      107, 16);
+NCBI_DEFINE_ERRCODE_X(Corelib_File,      108,  3);
+NCBI_DEFINE_ERRCODE_X(Corelib_Object,    109, 15);
+NCBI_DEFINE_ERRCODE_X(Corelib_Reg,       110,  7);
+NCBI_DEFINE_ERRCODE_X(Corelib_Util,      111,  5);
+NCBI_DEFINE_ERRCODE_X(Corelib_StreamBuf, 112,  4);
+NCBI_DEFINE_ERRCODE_X(Corelib_PluginMgr, 113,  4);
 
 
 END_NCBI_SCOPE
 
 
-#endif  /* DIR_DIR_DIR___HEADER_TEMPLATE__HPP */
+#endif  /* CORELIB___ERROR_CODES__HPP */

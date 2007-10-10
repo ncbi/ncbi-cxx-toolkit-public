@@ -39,12 +39,12 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/error_codes.hpp>
 #include <memory>
 #include <assert.h>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibStatic
+#define NCBI_USE_ERRCODE_X   Corelib_Static
 
 
 BEGIN_NCBI_SCOPE

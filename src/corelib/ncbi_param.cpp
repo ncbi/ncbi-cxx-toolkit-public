@@ -33,10 +33,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/error_codes.hpp>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibConfig
+#define NCBI_USE_ERRCODE_X   Corelib_Config
 
 
 BEGIN_NCBI_SCOPE

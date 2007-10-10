@@ -37,6 +37,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/error_codes.hpp>
 #include <algorithm>
 
 #if defined(NCBI_OS_MSWIN)
@@ -46,9 +47,7 @@
 #endif
 
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibConfig
+#define NCBI_USE_ERRCODE_X   Corelib_Config
 
 
 BEGIN_NCBI_SCOPE

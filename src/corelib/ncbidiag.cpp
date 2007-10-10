@@ -45,6 +45,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/syslog.hpp>
+#include <corelib/error_codes.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,9 +67,7 @@
 #endif
 
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibDiag
+#define NCBI_USE_ERRCODE_X   Corelib_Diag
 
 
 BEGIN_NCBI_SCOPE

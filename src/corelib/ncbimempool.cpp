@@ -35,10 +35,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimempool.hpp>
+#include <corelib/error_codes.hpp>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibObject
+#define NCBI_USE_ERRCODE_X   Corelib_Object
 
 
 BEGIN_NCBI_SCOPE

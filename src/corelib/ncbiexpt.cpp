@@ -41,14 +41,14 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/error_codes.hpp>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stack>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibDiag
+#define NCBI_USE_ERRCODE_X   Corelib_Diag
 
 
 BEGIN_NCBI_SCOPE

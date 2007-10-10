@@ -39,13 +39,13 @@
 #include <corelib/metareg.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/error_codes.hpp>
 
 #include <algorithm>
 #include <set>
 
-#include "error_codes_p.hpp"
 
-#define NCBI_USE_ERRCODE_X   XNcbiLibReg
+#define NCBI_USE_ERRCODE_X   Corelib_Reg
 
 
 BEGIN_NCBI_SCOPE

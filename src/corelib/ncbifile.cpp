@@ -34,6 +34,7 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/error_codes.hpp>
 
 #include <stdio.h>
 
@@ -79,9 +80,7 @@
 #endif  /* NCBI_OS_MSWIN, NCBI_OS_UNIX */
 
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibFile
+#define NCBI_USE_ERRCODE_X   Corelib_File
 
 
 BEGIN_NCBI_SCOPE

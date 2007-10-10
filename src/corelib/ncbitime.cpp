@@ -34,6 +34,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/error_codes.hpp>
 #include <stdlib.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -83,9 +84,7 @@ static MyTZDLS sTZDLS = MyReadLocation();
 #endif
 
 
-#include "error_codes_p.hpp"
-
-#define NCBI_USE_ERRCODE_X   XNcbiLibUtil
+#define NCBI_USE_ERRCODE_X   Corelib_Util
 
 
 BEGIN_NCBI_SCOPE
