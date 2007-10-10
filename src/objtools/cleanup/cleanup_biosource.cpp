@@ -237,6 +237,63 @@ void x_CombinePrimerStrings(string& orig_seq, const string& new_seq)
     orig_seq = '(' + orig_seq + ',' + new_seq_trim + ')';
 }
 
+
+bool s_RemoveRedundantPlastidNameSubSourceQualifier (CBioSource& bs)
+{
+    bool rval = false;
+
+    if (!bs.IsSetGenome()) {
+        return false;
+    }
+    CBioSource::TGenome genome = bs.GetGenome();
+    string plastid_name = "";
+    switch (genome) {
+        case CBioSource::eGenome_apicoplast:
+            plastid_name = "apicoplast";
+            break;
+        case CBioSource::eGenome_chloroplast:
+            plastid_name = "chloroplast";
+            break;
+        case CBioSource::eGenome_chromoplast:
+            plastid_name = "chromoplast";
+            break;
+        case CBioSource::eGenome_kinetoplast:
+            plastid_name = "kinetoplast";
+            break;
+        case CBioSource::eGenome_leucoplast:
+            plastid_name = "leucoplast";
+            break;
+        case CBioSource::eGenome_plastid:
+            plastid_name = "plastid";
+            break;
+        case CBioSource::eGenome_proplastid:
+            plastid_name = "proplastid";
+            break;
+        default:
+            return false;
+            break;
+    }
+
+    CBioSource::TSubtype& subtypes = bs.SetSubtype();
+    CBioSource::TSubtype::iterator it = subtypes.begin();
+    while (it != subtypes.end()) {
+        if (*it) {
+            CSubSource& ss = **it;
+            if ( ss.GetSubtype() == CSubSource::eSubtype_plastid_name
+                 && NStr::Equal (ss.GetName(), plastid_name)) {
+                it = subtypes.erase(it);
+                rval = true;
+            } else {
+                ++it;
+            }
+        } else {
+            ++it;
+        }
+    }
+    return rval;
+}
+
+
 void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
 {
     _ASSERT(bs.IsSetSubtype());
@@ -254,7 +311,13 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
     subtypes.remove_if(s_SubSourceRemove);
     if (subtypes_cnt != subtypes.size()) {
         ChangeMade(CCleanupChange::eCleanSubsource);
-    }    
+    }
+
+    // remove plastid-name qual if the value is the same as the biosource location
+    if (s_RemoveRedundantPlastidNameSubSourceQualifier (bs)) {
+        ChangeMade(CCleanupChange::eCleanSubsource);
+    }
+    
     
     // merge any duplicate fwd_primer_seq and rev_primer_seq.
     // and any duplicate fwd_primer_name and rev_primer_name.
@@ -1441,19 +1504,11 @@ bool CCleanup_imp::x_Identical(const CBioSource& src1, const CBioSource& src2)
 
 bool CCleanup_imp::x_IsBioSourceEmpty (const CBioSource& src)
 {
-    if ((!src.IsSetGenome() || src.GetGenome() == CBioSource::eGenome_unknown)
-        && (!src.IsSetOrigin() || src.GetOrigin() == CBioSource::eOrigin_unknown)
-        && !src.IsSetOrg()) {
+    if (!src.IsSetOrg() || (!src.GetOrg().IsSetTaxname() && !src.GetOrg().IsSetCommon() && !src.GetOrg().IsSetDb())) {
         return true;
+    } else {       
+        return false;
     }
-    
-    if (src.CanGetOrg()
-        && !src.GetOrg().IsSetTaxname()
-        && !src.GetOrg().IsSetCommon()
-        && !src.GetOrg().IsSetDb()) {
-        return true;
-    }
-    return false;
 }
 
 
