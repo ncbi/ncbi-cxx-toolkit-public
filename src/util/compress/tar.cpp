@@ -47,6 +47,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <util/compress/tar.hpp>
+#include <util/error_codes.hpp>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
 #  error "Class CTar can be defined on MS-Windows and UNIX platforms only!"
@@ -60,6 +61,9 @@ typedef unsigned int mode_t;
 typedef short        uid_t;
 typedef short        gid_t;
 #endif
+
+
+#define NCBI_USE_ERRCODE_X   Util_Compress
 
 
 BEGIN_NCBI_SCOPE
@@ -847,10 +851,10 @@ CTar::~CTar()
               ? string(message) + ":\n" + s_DumpHeader(h, fmt, true)    \
               : string(message))
 
-#define TAR_POST(severity, message)                                     \
-    ERR_POST(severity <<                                                \
-             s_PositionAsString(m_FileName, m_StreamPos,                \
-                                m_BufferSize, m_Current) + (message))
+#define TAR_POST(subcode, severity, message)                            \
+    ERR_POST_X(subcode, severity <<                                     \
+               s_PositionAsString(m_FileName, m_StreamPos,              \
+                                  m_BufferSize, m_Current) + (message))
 
 
 void CTar::x_Init(void)
@@ -923,8 +927,8 @@ auto_ptr<CTar::TEntries> CTar::x_Open(EAction action)
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
         if (m_IsModified  &&  action != eAppend) {
-            TAR_POST(Warning, "Pending changes may be discarded"
-                     " upon reopen of in-stream archive");
+            TAR_POST(1, Warning, "Pending changes may be discarded"
+                                 " upon reopen of in-stream archive");
             m_IsModified = false;
             m_BufferPos = 0;
             m_StreamPos = 0;
@@ -1153,7 +1157,7 @@ static void s_Dump(const string& file, Uint8 pos, size_t recsize,
                    Uint8 datasize)
 {
     unsigned long blocks = (unsigned long) BLOCK_OF(datasize + (kBlockSize-1));
-    LOG_POST(s_PositionAsString(file, pos, recsize, entry)
+    LOG_POST_X(2, s_PositionAsString(file, pos, recsize, entry)
              + s_DumpHeader(h, fmt)
              + (blocks
                 ? "Blocks of data: " + NStr::UIntToString(blocks) + '\n'
@@ -1340,7 +1344,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info, bool dump)
             if (dump) {
                 string what(info.GetType() == CTarEntryInfo::eGNULongName
                             ? "Long name:      " : "Long link name: ");
-                LOG_POST(what +
+                LOG_POST_X(3, what +
                          '"' + NStr::PrintableString(info.GetName()) + "\"\n");
             }
             info.m_Stat.st_size = 0;
@@ -1570,7 +1574,7 @@ void CTar::x_Backspace(EAction action, size_t blocks)
         return;
     }
     if (!m_FileStream) {
-        TAR_POST(Warning, "In-stream update may result in gapped tar archive");
+        TAR_POST(4, Warning, "In-stream update may result in gapped tar archive");
         return;
     }
 
@@ -1629,7 +1633,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         switch (status) {
         case eSuccess:
             if (zeroblock_count  &&  !(m_Flags & fIgnoreZeroBlocks)) {
-                TAR_POST(Error, "Interspersing single zero block ignored");
+                TAR_POST(5, Error, "Interspersing single zero block ignored");
             }
             // processed below
             break;
@@ -1645,11 +1649,11 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 
         case eEOF:
             if (!nextLongName.empty()) {
-                TAR_POST(Error,
+                TAR_POST(6, Error,
                          "Orphaned long name '" + nextLongName + "' ignored");
             }
             if (!nextLongLink.empty()) {
-                TAR_POST(Error,
+                TAR_POST(7, Error,
                          "Orphaned long link '" + nextLongLink + "' ignored");
             }
             x_Backspace(action, zeroblock_count);
@@ -1666,7 +1670,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         switch (info.GetType()) {
         case CTarEntryInfo::eGNULongName:
             if (!nextLongName.empty()) {
-                TAR_POST(Error,
+                TAR_POST(8, Error,
                          "Unused long name '" + nextLongName + "' replaced");
             }
             // Latch next long name here then just skip
@@ -1674,7 +1678,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             continue;
         case CTarEntryInfo::eGNULongLink:
             if (!nextLongLink.empty()) {
-                TAR_POST(Error,
+                TAR_POST(9, Error,
                          "Unused long link '" + nextLongLink + "' replaced");
             }
             // Latch next long link here then just skip
@@ -1901,7 +1905,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                     break;
                 }
                 int x_errno = errno;
-                TAR_POST(Warning,
+                TAR_POST(10, Warning,
                          "Cannot hard-link '" + src->GetPath()
                          + "' and '" + dst->GetPath() + '\''
                          + s_OSReason(x_errno) + ", trying to copy");
@@ -1909,7 +1913,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
                 if (!src->Copy(dst->GetPath(),
                                CDirEntry::fCF_Overwrite |
                                CDirEntry::fCF_PreserveAll)) {
-                    TAR_POST(Error,
+                    TAR_POST(11, Error,
                              "Cannot hard-link '" + src->GetPath()
                              + "' and '" + dst->GetPath() + "\' via copy");
                     result = false;
@@ -1941,7 +1945,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
             CSymLink symlink(dst->GetPath());
             if (!symlink.Create(info.GetLinkName())) {
                 int x_errno = errno;
-                TAR_POST(Error,
+                TAR_POST(12, Error,
                          "Cannot create symlink '" + dst->GetPath()
                          + "' -> '" + info.GetLinkName() + '\''
                          + s_OSReason(x_errno));
@@ -1958,7 +1962,7 @@ bool CTar::x_ExtractEntry(const CTarEntryInfo& info, Uint8&           size,
         /*FALLTHRU*/
 
     default:
-        TAR_POST(Warning,
+        TAR_POST(13, Warning,
                  "Skipping unsupported entry '" + info.GetName()
                  + "' w/type #" + NStr::IntToString(int(info.GetType())));
         result = false;
@@ -2244,7 +2248,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         /*FALLTHRU*/
 
     default:
-        TAR_POST(Warning,
+        TAR_POST(14, Warning,
                  "Skipping unsupported source '" + path
                  + "' w/type #" + NStr::IntToString(int(type)));
         break;

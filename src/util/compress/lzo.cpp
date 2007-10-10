@@ -33,6 +33,9 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbifile.hpp>
 #include <util/compress/lzo.hpp>
+#include <util/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X   Util_Compress
 
 #if defined(HAVE_LIBLZO)
 
@@ -190,8 +193,8 @@ size_t s_CheckLZOHeader(const void* src_buf, size_t src_len,
     }
     if (header_len > src_len) {
         // Should never happens
-        ERR_COMPRESS("LZO header check failed. The length of " \
-                     "input buffer is less than expected header size.");
+        ERR_COMPRESS(34, "LZO header check failed. The length of " \
+                         "input buffer is less than expected header size.");
         return 0;
     }
     pos += 2;
@@ -452,12 +455,12 @@ bool CLZOCompression::CompressBuffer(
     }
     if ( !dst_buf || !dst_len ) {
         SetError(LZO_E_ERROR, "bad argument");
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompression::CompressBuffer"));
+        ERR_COMPRESS(35, FormatErrorMessage("CLZOCompression::CompressBuffer"));
         return false;
     }
     if (src_len > kMax_UInt) {
         SetError(LZO_E_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompression::CompressBuffer"));
+        ERR_COMPRESS(36, FormatErrorMessage("CLZOCompression::CompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(dst_size);
@@ -476,7 +479,7 @@ bool CLZOCompression::CompressBuffer(
     if ( dst_size < EstimateCompressionBufferSize(src_len, block_size) ) {
         SetError(LZO_E_OUTPUT_OVERRUN,
                  GetLZOErrorDescription(LZO_E_OUTPUT_OVERRUN));
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompression::CompressBuffer"));
+        ERR_COMPRESS(37, FormatErrorMessage("CLZOCompression::CompressBuffer"));
         return false;
     }
 
@@ -522,7 +525,7 @@ bool CLZOCompression::CompressBuffer(
     }
     // Check on error
     if ( errcode != LZO_E_OK) {
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompression::CompressBuffer"));
+        ERR_COMPRESS(38, FormatErrorMessage("CLZOCompression::CompressBuffer"));
         return false;
     }
     return true;
@@ -547,7 +550,7 @@ bool CLZOCompression::DecompressBuffer(
     }
     if (src_len > kMax_UInt) {
         SetError(LZO_E_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompression::DecompressBuffer"));
+        ERR_COMPRESS(39, FormatErrorMessage("CLZOCompression::DecompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(dst_size);
@@ -604,7 +607,7 @@ bool CLZOCompression::DecompressBuffer(
             memcpy(dst_buf, src_buf, *dst_len);
             return (dst_size >= src_len);
         }
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompression::DecompressBuffer"));
+        ERR_COMPRESS(40, FormatErrorMessage("CLZOCompression::DecompressBuffer"));
         return false;
     }
     return true;
@@ -1015,7 +1018,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
     *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(LZO_E_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompressor::Process"));
+        ERR_COMPRESS(41, FormatErrorMessage("CLZOCompressor::Process"));
         return eStatus_Error;
     }
     if ( !out_size ) {
@@ -1032,7 +1035,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
                                              GetFlags(), &m_FileInfo);
         if (!header_len) {
             SetError(-1, "Cannot write LZO header");
-            ERR_COMPRESS(FormatErrorMessage("LZOCompressor::Process"));
+            ERR_COMPRESS(42, FormatErrorMessage("LZOCompressor::Process"));
             return eStatus_Error;
         }
         m_OutEndPtr += header_len;
@@ -1164,7 +1167,7 @@ bool CLZOCompressor::CompressCache(void)
     int errcode = CompressBlockStream((lzo_bytep)m_InBuf, m_InLen,
                                       (lzo_bytep)m_OutBuf, &out_len);
     if ( errcode != LZO_E_OK ) {
-        ERR_COMPRESS(FormatErrorMessage("CLZOCompressor::CompressCache"));
+        ERR_COMPRESS(43, FormatErrorMessage("CLZOCompressor::CompressCache"));
         return false;
     }
     m_InLen = 0;
@@ -1222,7 +1225,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
     *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(LZO_E_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CLZODecompressor::Process"));
+        ERR_COMPRESS(44, FormatErrorMessage("CLZODecompressor::Process"));
         return eStatus_Error;
     }
     *in_avail = in_len;
@@ -1361,7 +1364,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
         }
     }
     catch (int) {
-        ERR_COMPRESS(FormatErrorMessage("CLZODecompressor::Process"));
+        ERR_COMPRESS(45, FormatErrorMessage("CLZODecompressor::Process"));
         return eStatus_Error;
     }
     return status;
@@ -1438,7 +1441,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Finish(
     // Decompress last block
     if ( m_InLen < m_BlockLen ) {
         SetError(LZO_E_ERROR, "Incomplete data block");
-        ERR_COMPRESS(FormatErrorMessage("CLZODecompressor::DecompressCache"));
+        ERR_COMPRESS(46, FormatErrorMessage("CLZODecompressor::DecompressCache"));
         return eStatus_Error;
     }
     if ( m_BlockLen  &&  !DecompressCache() ) {
@@ -1469,7 +1472,7 @@ bool CLZODecompressor::DecompressCache(void)
                                   (lzo_bytep)m_OutBuf, &out_len,
                                   m_HeaderFlags);
     if ( errcode != LZO_E_OK ) {
-        ERR_COMPRESS(FormatErrorMessage("CLZODecompressor::DecompressCache"));
+        ERR_COMPRESS(47, FormatErrorMessage("CLZODecompressor::DecompressCache"));
         return false;
     }
     m_InLen -= m_BlockLen;

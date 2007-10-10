@@ -33,6 +33,10 @@
 #include "image_io_jpeg.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
+#include <util/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Image
 
 #ifdef HAVE_LIBJPEG
 //
@@ -95,7 +99,7 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
         msg += buffer;
 
 #if JPEG_LIB_VERSION >= 62
-        LOG_POST(Error << msg);
+        LOG_POST_X(12, Error << msg);
         if (ptr->client_data) {
             SJpegErrorInfo* err_info = (SJpegErrorInfo*)ptr->client_data;
             if ( !err_info->message.empty() ) {
@@ -106,7 +110,7 @@ static void s_JpegErrorHandler(j_common_ptr ptr)
         }
     }
     catch (...) {
-        LOG_POST(Error << "error processing error info");
+        LOG_POST_X(13, Error << "error processing error info");
     }
 #else
     if (ptr->is_decompressor) {
@@ -127,7 +131,7 @@ static void s_JpegOutputHandler(j_common_ptr ptr)
     (*ptr->err->format_message)(ptr, buffer);
 
     msg += buffer;
-    LOG_POST(Warning << msg);
+    LOG_POST_X(14, Warning << msg);
 }
 
 
@@ -432,9 +436,9 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
         /// make sure we've processed enough scan lines
         ///
         if (cinfo.output_scanline != image->GetHeight()) {
-            LOG_POST(Error << "Error: image is truncated: processed "
-                     << cinfo.output_scanline << "/" << image->GetHeight()
-                     << " scanlines");
+            LOG_POST_X(15, Error << "Error: image is truncated: processed "
+                           << cinfo.output_scanline << "/" << image->GetHeight()
+                           << " scanlines");
         }
 
         //
@@ -443,16 +447,16 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
         //
         jpeg_finish_decompress(&cinfo);
         if (jpeg_err_info.has_error) {
-            LOG_POST(Error << "Error in finalizing image decompression: "
-                     << jpeg_err_info.message);
+            LOG_POST_X(16, Error << "Error in finalizing image decompression: "
+                           << jpeg_err_info.message);
             jpeg_err_info.has_error = false;
             jpeg_err_info.message.erase();
         }
 
         jpeg_destroy_decompress(&cinfo);
         if (jpeg_err_info.has_error) {
-            LOG_POST(Error << "Error in finalizing image decompression: "
-                     << jpeg_err_info.message);
+            LOG_POST_X(17, Error << "Error in finalizing image decompression: "
+                           << jpeg_err_info.message);
             jpeg_err_info.message.erase();
         }
     }
@@ -464,7 +468,7 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr)
     catch (std::exception& e) {
         // clean up our mess
         jpeg_destroy_decompress(&cinfo);
-        LOG_POST(Error << "error reading JPEG image: " << e.what());
+        LOG_POST_X(18, Error << "error reading JPEG image: " << e.what());
         NCBI_THROW(CImageException, eReadError,
                    "Error reading JPEG image");
     }
@@ -530,13 +534,13 @@ CImage* CImageIOJpeg::ReadImage(CNcbiIstream& istr,
         // clamp our width and height to the image size
         if (x + w >= cinfo.output_width) {
             w = cinfo.output_width - x;
-            LOG_POST(Warning
+            LOG_POST_X(19, Warning
                      << "CImageIOJpeg::ReadImage(): clamped width to " << w);
         }
 
         if (y + h >= cinfo.output_height) {
             h = cinfo.output_height - y;
-            LOG_POST(Warning
+            LOG_POST_X(20, Warning
                      << "CImageIOJpeg::ReadImage(): clamped height to " << h);
         }
 
@@ -702,7 +706,7 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
             quality = 40;
             break;
         default:
-            LOG_POST(Error << "unknown compression type: " << (int)compress);
+            LOG_POST_X(21, Error << "unknown compression type: " << (int)compress);
             break;
         }
         jpeg_set_quality(&cinfo, quality, TRUE);
@@ -751,13 +755,13 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
     // clamp our width and height
     if (x + w >= image.GetWidth()) {
         w = image.GetWidth() - x;
-        LOG_POST(Warning
+        LOG_POST_X(22, Warning
                  << "CImageIOJpeg::WriteImage(): clamped width to " << w);
     }
 
     if (y + h >= image.GetHeight()) {
         h = image.GetHeight() - y;
-        LOG_POST(Warning
+        LOG_POST_X(23, Warning
                  << "CImageIOJpeg::WriteImage(): clamped height to " << h);
     }
 
@@ -799,7 +803,7 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
             quality = 40;
             break;
         default:
-            LOG_POST(Error << "unknown compression type: " << (int)compress);
+            LOG_POST_X(24, Error << "unknown compression type: " << (int)compress);
             break;
         }
         jpeg_set_quality(&cinfo, quality, TRUE);

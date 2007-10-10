@@ -33,6 +33,10 @@
 #include "image_io_png.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
+#include <util/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X   Util_Image
+
 
 #ifdef HAVE_LIBPNG
 //
@@ -75,7 +79,7 @@ static void s_PngWriteErrorHandler(png_structp png_ptr, png_const_charp msg)
 //
 static void s_PngWarningHandler(png_structp png_ptr, png_const_charp msg)
 {
-    LOG_POST(Warning << "Warning in PNG file: " << msg);
+    LOG_POST_X(25, Warning << "Warning in PNG file: " << msg);
 }
 
 
@@ -155,7 +159,7 @@ static void s_PngWriteInit(png_structp& png_ptr,
         png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
         break;
     default:
-        LOG_POST(Error << "unknown compression type: " << (int)compress);
+        LOG_POST_X(26, Error << "unknown compression type: " << (int)compress);
         break;
     }
 
@@ -215,13 +219,13 @@ static void s_PngReadValidate(png_structp png_ptr,
         // clamp our width and height to the image size
         if (x + w >= width) {
             w = width - x;
-            LOG_POST(Warning
+            LOG_POST_X(27, Warning
                      << "CImageIOPng::ReadImage(): clamped width to " << w);
         }
 
         if (y + h >= height) {
             h = height - y;
-            LOG_POST(Warning
+            LOG_POST_X(28, Warning
                      << "CImageIOPng::ReadImage(): clamped height to " << h);
         }
     }

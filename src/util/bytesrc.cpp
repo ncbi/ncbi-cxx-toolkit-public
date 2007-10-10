@@ -36,7 +36,11 @@
 #include <corelib/stream_utils.hpp>
 #include <util/bytesrc.hpp>
 #include <util/util_exception.hpp>
+#include <util/error_codes.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Util_ByteSrc
 
 
 BEGIN_NCBI_SCOPE
@@ -82,8 +86,8 @@ bool CByteSourceReader::EndOfData(void) const
 bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
 {
     if ( size ) {
-        ERR_POST("CByteSourceReader::Pushback: "
-                 "unable to push back " << size << " byte(s)");
+        ERR_POST_X(1, "CByteSourceReader::Pushback: "
+                      "unable to push back " << size << " byte(s)");
         return false;
     }
     return true;

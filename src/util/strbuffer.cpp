@@ -34,7 +34,11 @@
 #include <corelib/ncbi_limits.hpp>
 #include <util/strbuffer.hpp>
 #include <util/bytesrc.hpp>
+#include <util/error_codes.hpp>
 #include <algorithm>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Stream
 
 BEGIN_NCBI_SCOPE
 
@@ -71,8 +75,8 @@ CIStreamBuffer::~CIStreamBuffer(void)
         Close();
     }
     catch ( exception& exc ) {
-        ERR_POST(Warning <<
-                 "~CIStreamBuffer: exception while closing: " << exc.what());
+        ERR_POST_X(1, Warning <<
+                      "~CIStreamBuffer: exception while closing: " << exc.what());
     }
     if ( m_BufferSize ) {
         delete[] m_Buffer;
@@ -699,8 +703,8 @@ COStreamBuffer::~COStreamBuffer(void)
         Close();
     }
     catch ( exception& exc ) {
-        ERR_POST(Warning <<
-                 "~COStreamBuffer: exception while closing: " << exc.what());
+        ERR_POST_X(2, Warning <<
+                      "~COStreamBuffer: exception while closing: " << exc.what());
     }
     delete[] m_Buffer;
 }

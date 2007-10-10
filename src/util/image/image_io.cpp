@@ -33,6 +33,7 @@
 #include <util/image/image_io.hpp>
 #include <util/image/image_exception.hpp>
 #include <corelib/stream_utils.hpp>
+#include <util/error_codes.hpp>
 
 #include "image_io_raw.hpp"
 #include "image_io_bmp.hpp"
@@ -41,6 +42,9 @@
 #include "image_io_png.hpp"
 #include "image_io_sgi.hpp"
 #include "image_io_tiff.hpp"
+
+
+#define NCBI_USE_ERRCODE_X   Util_Image
 
 
 BEGIN_NCBI_SCOPE
@@ -187,7 +191,7 @@ bool CImageIO::ReadImageInfo(CNcbiIstream& istr,
         return res;
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error reading image: " << e.what());
+        LOG_POST_X(3, Error << "Error reading image: " << e.what());
     }
     return false;
 }
@@ -215,7 +219,7 @@ CImage* CImageIO::ReadImage(CNcbiIstream& istr, EType type)
         return handler->ReadImage(istr);
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error reading image: " << e.what());
+        LOG_POST_X(4, Error << "Error reading image: " << e.what());
         return NULL;
     }
     // all other exceptions are explicitly not caught - handler in user code
@@ -247,7 +251,7 @@ CImage* CImageIO::ReadSubImage(CNcbiIstream& istr,
         return handler->ReadImage(istr, x, y, w, h);
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error reading subimage: " << e.what());
+        LOG_POST_X(5, Error << "Error reading subimage: " << e.what());
         return NULL;
     }
     // all other exceptions are explicitly not caught - handler in user code
@@ -267,7 +271,7 @@ bool CImageIO::WriteImage(const CImage& image, const string& file,
         }
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error writing image: " << e.what());
+        LOG_POST_X(6, Error << "Error writing image: " << e.what());
         return false;
     }
 
@@ -285,7 +289,7 @@ bool CImageIO::WriteImage(const CImage& image, CNcbiOstream& ostr,
         return true;
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error writing image: " << e.what());
+        LOG_POST_X(7, Error << "Error writing image: " << e.what());
         return false;
     }
     // all other exceptions are explicitly not caught - handler in user code
@@ -307,7 +311,7 @@ bool CImageIO::WriteSubImage(const CImage& image,
         }
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error writing image: " << e.what());
+        LOG_POST_X(8, Error << "Error writing image: " << e.what());
         return false;
     }
 
@@ -327,7 +331,7 @@ bool CImageIO::WriteSubImage(const CImage& image,
         return true;
     }
     catch (CImageException& e) {
-        LOG_POST(Error << "Error writing image: " << e.what());
+        LOG_POST_X(9, Error << "Error writing image: " << e.what());
         return false;
     }
     // all other exceptions are explicitly not caught - handler in user code

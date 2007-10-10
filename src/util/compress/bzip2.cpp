@@ -32,7 +32,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <util/compress/bzip2.hpp>
+#include <util/error_codes.hpp>
 #include <bzlib.h>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Compress
 
 BEGIN_NCBI_SCOPE
 
@@ -104,13 +108,13 @@ bool CBZip2Compression::CompressBuffer(
     }
     if ( !dst_buf || !dst_len ) {
         SetError(BZ_PARAM_ERROR, "bad argument");
-        ERR_COMPRESS(
+        ERR_COMPRESS(15,
             FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
     if (src_len > kMax_UInt) {
         SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        ERR_COMPRESS(16, FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(dst_size);
@@ -125,7 +129,7 @@ bool CBZip2Compression::CompressBuffer(
     *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK) {
-        ERR_COMPRESS(
+        ERR_COMPRESS(17,
             FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
@@ -150,7 +154,7 @@ bool CBZip2Compression::DecompressBuffer(
     }
     if (src_len > kMax_UInt) {
         SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
+        ERR_COMPRESS(18, FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(dst_size);
@@ -174,7 +178,7 @@ bool CBZip2Compression::DecompressBuffer(
     *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK ) {
-        ERR_COMPRESS(
+        ERR_COMPRESS(19,
             FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
         return false;
     }
@@ -331,7 +335,7 @@ bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
     if ( errcode != BZ_OK ) {
         Close();
         SetError(errcode, GetBZip2ErrorDescription(errcode));
-        ERR_COMPRESS(
+        ERR_COMPRESS(20,
             FormatErrorMessage("CBZip2CompressionFile::Open", false));
         return false;
     };
@@ -363,7 +367,7 @@ long CBZip2CompressionFile::Read(void* buf, size_t len)
             m_DecompressMode = eMode_Decompress;
             SetError(errcode, GetBZip2ErrorDescription(errcode));
             if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
-                ERR_COMPRESS(
+                ERR_COMPRESS(21,
                     FormatErrorMessage("CBZip2CompressionFile::Read", false));
                 return -1;
             } 
@@ -389,7 +393,7 @@ long CBZip2CompressionFile::Write(const void* buf, size_t len)
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
-        ERR_COMPRESS(
+        ERR_COMPRESS(22,
             FormatErrorMessage("CBZip2CompressionFile::Write", false));
         return -1;
     }; 
@@ -419,7 +423,7 @@ bool CBZip2CompressionFile::Close(void)
     }
 
     if ( errcode != BZ_OK ) {
-        ERR_COMPRESS(
+        ERR_COMPRESS(23,
             FormatErrorMessage("CBZip2CompressionFile::Close", false));
         return false;
     }; 
@@ -470,7 +474,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Init"));
+    ERR_COMPRESS(24, FormatErrorMessage("CBZip2Compressor::Init"));
     return eStatus_Error;
 }
 
@@ -484,7 +488,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
     *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Process"));
+        ERR_COMPRESS(25, FormatErrorMessage("CBZip2Compressor::Process"));
         return eStatus_Error;
     }
     if ( !out_size ) {
@@ -507,7 +511,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Process"));
+    ERR_COMPRESS(26, FormatErrorMessage("CBZip2Compressor::Process"));
     return eStatus_Error;
 }
 
@@ -538,7 +542,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     if ( errcode == BZ_FLUSH_OK ) {
         return eStatus_Overflow;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Flush"));
+    ERR_COMPRESS(27, FormatErrorMessage("CBZip2Compressor::Flush"));
     return eStatus_Error;
 }
 
@@ -569,7 +573,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     case BZ_STREAM_END:
         return eStatus_EndOfData;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Finish"));
+    ERR_COMPRESS(28, FormatErrorMessage("CBZip2Compressor::Finish"));
     return eStatus_Error;
 }
 
@@ -583,7 +587,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::End(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::End"));
+    ERR_COMPRESS(29, FormatErrorMessage("CBZip2Compressor::End"));
     return eStatus_Error;
 }
 
@@ -623,7 +627,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Init"));
+    ERR_COMPRESS(30, FormatErrorMessage("CBZip2Decompressor::Init"));
     return eStatus_Error;
 }
 
@@ -637,7 +641,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
     *out_avail = 0;
     if (in_len > kMax_UInt) {
         SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
-        ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Process"));
+        ERR_COMPRESS(31, FormatErrorMessage("CBZip2Decompressor::Process"));
         return eStatus_Error;
     }
     if ( !out_size ) {
@@ -684,7 +688,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
             case BZ_STREAM_END:
                 return eStatus_EndOfData;
             }
-            ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Process"));
+            ERR_COMPRESS(32, FormatErrorMessage("CBZip2Decompressor::Process"));
             return eStatus_Error;
         }
         /* else eMode_ThansparentRead :  see below */
@@ -739,7 +743,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
          errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::End"));
+    ERR_COMPRESS(33, FormatErrorMessage("CBZip2Decompressor::End"));
     return eStatus_Error;
 }
 

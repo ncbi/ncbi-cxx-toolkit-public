@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 const streamsize kCompressionDefaultBufSize = 16*1024;
 
 /// Macro to report errors in compression API.
-#define ERR_COMPRESS(message) ERR_POST(Warning << message)
+#define ERR_COMPRESS(subcode, message) ERR_POST_X(subcode, Warning << message)
 
 // Forward declaration
 class CCompressionFile;

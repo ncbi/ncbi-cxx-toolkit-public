@@ -34,6 +34,10 @@
 #include <util/file_obsolete.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
+#include <util/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Util_File
 
 
 BEGIN_NCBI_SCOPE
@@ -62,7 +66,7 @@ void CFileObsolete::Remove(const string&  mask,
 {
     CDir dir(m_Path);
     if (!dir.Exists()) {
-        ERR_POST(Info << "Directory is not found or access denied:" << m_Path);
+        ERR_POST_X(1, Info << "Directory is not found or access denied:" << m_Path);
         return;
     }
 

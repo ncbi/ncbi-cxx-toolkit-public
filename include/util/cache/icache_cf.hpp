@@ -38,6 +38,10 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <util/cache/icache.hpp>
+#include <util/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Cache
 
 BEGIN_NCBI_SCOPE
 
@@ -99,7 +103,7 @@ public:
                                     kCFParam_keep_versions_drop_all)==0) {
                 kv_policy = ICache::eDropAll;
             } else {
-                LOG_POST(Warning 
+                LOG_POST_X(1, Warning 
                     << "ICache::ClassFactory: Unknown keep_versions" 
                        " policy parameter: "
                     << keep_versions_str);
@@ -160,7 +164,7 @@ public:
                 ts_flag |= ICache::fCheckExpirationAlways;
                 continue;
             }
-            LOG_POST(Warning 
+            LOG_POST_X(2, Warning 
                       << "ICache::ClassFactory: Unknown timeout policy parameter: "
                       << opt_value);
         } // ITERATE
@@ -182,5 +186,8 @@ public:
 };
 
 END_NCBI_SCOPE
+
+#undef NCBI_USE_ERRCODE_X
+
 
 #endif  /* UTIL_EXCEPTION__HPP */

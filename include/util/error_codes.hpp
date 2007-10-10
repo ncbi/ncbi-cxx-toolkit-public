@@ -1,5 +1,5 @@
-#ifndef UTIL_CACHE_THREAD_CLEANER__HPP
-#define UTIL_CACHE_THREAD_CLEANER__HPP
+#ifndef UTIL___ERROR_CODES__HPP
+#define UTIL___ERROR_CODES__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,57 +26,35 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
- *
- * File Description: Cache cleaner (runs a thread, calls purge to remove 
- *                   obsolete thread elements.
+ * Authors:  Pavel Ivanov
  *
  */
 
-#include <util/thread_nonstop.hpp>
-#include <util/error_codes.hpp>
+/// @file error_codes.hpp
+/// Definition of all error codes used in util (xutil.lib).
+///
 
 
-#define NCBI_USE_ERRCODE_X   Util_Cache
+#include <corelib/ncbidiag.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-/// Thread class, peridically calls ICache::Purge to remove obsolete
-/// elements
-///
-class CCacheCleanerThread : public CThreadNonStop
-{
-public:
-    CCacheCleanerThread(ICache* cache,
-                        unsigned run_delay,
-                        unsigned stop_request_poll = 10)
-    : CThreadNonStop(run_delay, stop_request_poll),
-      m_Cache(cache)
-    {}
 
-    virtual void DoJob(void)
-    {
-        try {
-            int timeout = m_Cache->GetTimeout();
-            m_Cache->Purge(timeout);
-        } 
-        catch(exception& ex)
-        {
-            RequestStop();
-            LOG_POST_X(3, Error << "Error when cleaning cache: " 
-                                << ex.what()
-                                << " cleaning thread has been stopped.");
-        }
-    }
-
-private:
-    ICache*  m_Cache;
-};
+NCBI_DEFINE_ERRCODE_X(Util_Thread,       201,  5);
+NCBI_DEFINE_ERRCODE_X(Util_Cache,        202,  3);
+NCBI_DEFINE_ERRCODE_X(Util_LVector,      203,  2);
+NCBI_DEFINE_ERRCODE_X(Util_DNS,          204,  4);
+NCBI_DEFINE_ERRCODE_X(Util_Stream,       205,  2);
+NCBI_DEFINE_ERRCODE_X(Util_ByteSrc,      206,  1);
+NCBI_DEFINE_ERRCODE_X(Util_File,         207,  1);
+NCBI_DEFINE_ERRCODE_X(Util_QParse,       208,  2);
+NCBI_DEFINE_ERRCODE_X(Util_Image,        209, 29);
+NCBI_DEFINE_ERRCODE_X(Util_Compress,     210, 73);
+NCBI_DEFINE_ERRCODE_X(Util_BlobStore,    211,  2);
 
 
 END_NCBI_SCOPE
 
-#undef NCBI_USE_ERRCODE_X
 
-
-#endif
+#endif  /* UTIL___ERROR_CODES__HPP */

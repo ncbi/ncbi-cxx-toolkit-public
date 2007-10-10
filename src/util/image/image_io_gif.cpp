@@ -50,6 +50,9 @@ extern "C" {
 #include "image_io_gif.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
+#include <util/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X   Util_Image
 
 #ifdef HAVE_LIBGIF
 
@@ -305,9 +308,9 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
         case 4:
             {{
-                 LOG_POST(Warning <<
-                          "CImageIOGif::WriteImage(): "
-                          "ignoring alpha channel");
+                 LOG_POST_X(10, Warning <<
+                                "CImageIOGif::WriteImage(): "
+                                "ignoring alpha channel");
                  for ( ;  from_data != end_data;  ) {
                      *red_ptr++   = *from_data++;
                      *green_ptr++ = *from_data++;
@@ -401,7 +404,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
     catch (...) {
         if (fp) {
             if (EGifCloseFile(fp) == GIF_ERROR) {
-                LOG_POST(Error
+                LOG_POST_X(11, Error
                     << "CImageIOGif::WriteImage(): error closing file");
             }
             fp = NULL;

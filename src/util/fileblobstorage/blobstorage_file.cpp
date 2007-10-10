@@ -36,6 +36,10 @@
 #include <corelib/ncbifile.hpp>
 
 #include <util/fileblobstorage/blobstorage_file.hpp>
+#include <util/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Util_BlobStore
 
 BEGIN_NCBI_SCOPE
 
@@ -73,10 +77,10 @@ CBlobStorage_File::~CBlobStorage_File()
     try {
         Reset();
     } catch(exception& ex) {
-        ERR_POST( "An exception caught in ~CBlobStorage_File() :" << 
-                  ex.what());
+        ERR_POST_X(1, "An exception caught in ~CBlobStorage_File() :" << 
+                      ex.what());
     } catch(...) {
-        ERR_POST( "An unknown exception caught in ~CBlobStorage_File() :");
+        ERR_POST_X(2, "An unknown exception caught in ~CBlobStorage_File() :");
     }
 }
 

@@ -37,9 +37,12 @@
 #include <corelib/ncbiapp.hpp>
 #include <util/qparse/query_parse.hpp>
 #include <util/resource_pool.hpp>
+#include <util/error_codes.hpp>
 
 #include <stack>
 
+
+#define NCBI_USE_ERRCODE_X   Util_QParse
 
 USING_NCBI_SCOPE;
 
@@ -118,10 +121,10 @@ public:
             Free();
         } 
         catch (exception & ex) {
-            ERR_POST("Exception in ~CQueryParserEnv()" << ex.what());
+            ERR_POST_X(1, "Exception in ~CQueryParserEnv()" << ex.what());
         }
         catch (...) {
-            ERR_POST("Unknown exception in ~CQueryParserEnv()");
+            ERR_POST_X(2, "Unknown exception in ~CQueryParserEnv()");
         }
         
     }

@@ -32,6 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
+#include <util/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Image
 
 
 BEGIN_NCBI_SCOPE
@@ -237,12 +241,12 @@ CImage* CImage::GetSubImage(size_t x, size_t y, size_t w, size_t h) const
     }
 
     if (x + w >= m_Width) {
-        LOG_POST(Warning << "CImage::GetSubImage(): clamping width to " << w);
+        LOG_POST_X(1, Warning << "CImage::GetSubImage(): clamping width to " << w);
         w = m_Width - x;
     }
 
     if (y + h >= m_Width) {
-        LOG_POST(Warning << "CImage::GetSubImage(): clamping width to " << w);
+        LOG_POST_X(2, Warning << "CImage::GetSubImage(): clamping width to " << w);
         h = m_Height - y;
     }
 

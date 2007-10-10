@@ -34,6 +34,10 @@
 #include <corelib/ncbifile.hpp>
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
+#include <util/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X   Util_Image
+
 
 #ifdef HAVE_LIBTIFF
 
@@ -79,7 +83,7 @@ static void s_TiffWarningHandler(const char* module, const char* fmt,
     string msg = module;
     msg += ": ";
     msg += NStr::FormatVarargs(fmt, args);
-    LOG_POST(Warning << "Warning reading TIFF image: " << msg);
+    LOG_POST_X(29, Warning << "Warning reading TIFF image: " << msg);
 }
 
 

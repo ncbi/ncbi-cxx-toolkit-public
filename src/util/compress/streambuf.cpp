@@ -32,7 +32,11 @@
 #include <ncbi_pch.hpp>
 #include "streambuf.hpp"
 #include <util/compress/stream.hpp>
+#include <util/error_codes.hpp>
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Compress
 
 
 BEGIN_NCBI_SCOPE
@@ -127,10 +131,10 @@ CCompressionStreambuf::~CCompressionStreambuf()
         if ( sp->m_State == CCompressionStreamProcessor::eActive ) {
             Finalize(CCompressionStream::eWrite);
             if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-                ERR_COMPRESS(msg_where << msg_overflow);
+                ERR_COMPRESS(72, msg_where << msg_overflow);
             }
             if ( sp->m_LastStatus == CP::eStatus_Error ) {
-                ERR_COMPRESS(msg_where << msg_error);
+                ERR_COMPRESS(73, msg_where << msg_error);
             }
         }
         sp->m_Processor->End();

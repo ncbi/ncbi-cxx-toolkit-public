@@ -34,6 +34,7 @@
 #include <util/smalldns.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbireg.hpp>
+#include <util/error_codes.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <winsock2.h>
@@ -53,6 +54,9 @@
 #include <errno.h>
 
 
+#define NCBI_USE_ERRCODE_X   Util_DNS
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -65,7 +69,7 @@ CSmallDNS::CSmallDNS(const string& local_hosts_file /* = "./hosts.ini" */)
     
     CNcbiIfstream is(local_hosts_file.c_str());
     if ( !is.good() ) {
-        ERR_POST(Error << "CSmallDNS: cannot open file: " <<local_hosts_file);
+        ERR_POST_X(1, Error << "CSmallDNS: cannot open file: " << local_hosts_file);
         return;
     }
     CNcbiRegistry reg(is);
@@ -75,8 +79,8 @@ CSmallDNS::CSmallDNS(const string& local_hosts_file /* = "./hosts.ini" */)
     ITERATE(list<string>, it, items) {
         string val = reg.Get(section, *it);
         if ( !IsValidIP(val) ) {
-            ERR_POST(Warning << "CSmallDNS: Bad IP address '" << val
-                     << "' for " << *it);
+            ERR_POST_X(2, Warning << "CSmallDNS: Bad IP address '" << val
+                          << "' for " << *it);
         } else {
             m_map[*it] = val;
             m_map[val] = *it;
@@ -131,7 +135,7 @@ string CSmallDNS::GetLocalHost(void)
         errno = 0;
         if ( gethostname(buffer, (int)sizeof(buffer)) == 0 ) {
             if ( buffer[MAXHOSTNAMELEN - 1] ) {
-                ERR_POST(Warning <<
+                ERR_POST_X(3, Warning <<
                     "CSmallDNS: Host name buffer too small");
             } else {
                 char* dot_pos = strstr(buffer, ".");
@@ -141,7 +145,7 @@ string CSmallDNS::GetLocalHost(void)
                 sm_localHostName = buffer;
             }
         } else {
-            ERR_POST(Warning <<
+            ERR_POST_X(4, Warning <<
                 "CSmallDNS: Cannot detect host name, errno:" << errno);
         }
     }
