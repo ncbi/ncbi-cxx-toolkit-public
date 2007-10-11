@@ -85,20 +85,20 @@ void IServer_MessageHandler::OnRead(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
-// IServer_LineMessageHandler implementation
-int IServer_LineMessageHandler::CheckMessage(
-    BUF* buffer, const void * data, size_t size)
+// Server_CheckLineMessage implementation
+int Server_CheckLineMessage(BUF* buffer, const void *data, size_t size,
+                            bool& seen_CR)
 {
     size_t n, skip;
     const char * msg = (const char *) data;
     skip = 0;
-    if (size && m_SeenCR && msg[0] == '\n') {
+    if (size && seen_CR && msg[0] == '\n') {
         ++skip;
     }
-    m_SeenCR = false;
+    seen_CR = false;
     for (n = skip; n < size; ++n) {
         if (msg[n] == '\r' || msg[n] == '\n' || msg[n] == '\0') {
-            m_SeenCR = msg[n] == '\r';
+            seen_CR = msg[n] == '\r';
             break;
         }
     }

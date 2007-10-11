@@ -228,6 +228,9 @@ private:
 };
 
 
+int NCBI_XCONNECT_EXPORT
+Server_CheckLineMessage(BUF* buffer, const void *data, size_t size,
+                        bool& seen_CR);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -241,7 +244,9 @@ public:
     IServer_LineMessageHandler() :
         IServer_MessageHandler(), m_SeenCR(false)
     { }
-    virtual int CheckMessage(BUF* buffer, const void *data, size_t size);
+    virtual int CheckMessage(BUF* buffer, const void *data, size_t size) {
+        return Server_CheckLineMessage(buffer, data, size, m_SeenCR);
+    }
 private:
     bool m_SeenCR;
 };
