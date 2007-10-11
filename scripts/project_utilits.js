@@ -62,6 +62,7 @@ function Tree(oShell, oTask)
     this.IncludeProjectBranch  = this.IncludeRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 
     this.SrcRootBranch         = this.TreeRoot + "\\src";
+    this.SrcDllBranch          = this.TreeRoot + "\\src\\dll";
     this.SrcBuildSystemBranch  = this.TreeRoot + "\\src\\build-system";
     this.SrcProjectBranch      = this.SrcRootBranch + "\\" + BackSlashes(oTask.ProjectName);
 }
@@ -80,6 +81,7 @@ function DumpTree(oTree)
     VerboseEcho("IncludeProjectBranch  = " + oTree.IncludeProjectBranch);
 
     VerboseEcho("SrcRootBranch         = " + oTree.SrcRootBranch);
+    VerboseEcho("SrcDllBranch          = " + oTree.SrcDllBranch);
     VerboseEcho("SrcBuildSystemBranch  = " + oTree.SrcBuildSystemBranch);
     VerboseEcho("SrcProjectBranch      = " + oTree.SrcProjectBranch);
 }
@@ -138,6 +140,7 @@ function CreateTreeStructure(oTree, oTask)
     CreateFolderIfAbsent(oFso, oTree.IncludeProjectBranch  );
 
     CreateFolderIfAbsent(oFso, oTree.SrcRootBranch         );
+    CreateFolderIfAbsent(oFso, oTree.SrcDllBranch          );
     CreateFolderIfAbsent(oFso, oTree.SrcBuildSystemBranch  );
     CreateFolderIfAbsent(oFso, oTree.SrcProjectBranch      );
 }
@@ -148,6 +151,9 @@ function FillTreeStructure(oShell, oTree)
     var temp_dir = oTree.TreeRoot + "\\temp";
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
+    if (oTask.DllBuild) {
+        GetSubtreeFromTree(oShell, oTree, oTask, "src/dll", oTree.SrcDllBranch);
+    }
     // Fill-in infrastructure for the build tree
     //gone; do we need it?
     //GetFileFromTree(oShell, oTree, oTask, "/src/Makefile.in",                                oTree.SrcRootBranch);
@@ -640,5 +646,26 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
         }
     }
     execute(oShell, "copy /Y \"temp\\" + cvs_file + "\" \""+ target_abs_dir + "\"");
+    RemoveFolder(oShell, oFso, "temp");
+}
+
+function GetSubtreeFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
+{
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+
+    // Try to get the file from the pre-built toolkit
+    if (IsFileCopyAllowed()) {
+		var src_folder = BackSlashes(oTask.ToolkitSrcPath + "/" + cvs_rel_path);
+		if ( oFso.FolderExists(src_folder) ) {
+			execute(oShell, "xcopy \"" + src_folder + "\" \"" + target_abs_dir + "\" /S /E");
+			return;
+		}
+    }
+
+    // Get it from SVN (CVS not implemented!)
+    RemoveFolder(oShell, oFso, "temp");
+    var cvs_path = GetCvsTreeRoot() + "/" + cvs_rel_path;
+    execute(oShell, "svn checkout " + cvs_path + " temp");
+	execute(oShell, "xcopy temp \"" + target_abs_dir + "\" /S /E");
     RemoveFolder(oShell, oFso, "temp");
 }

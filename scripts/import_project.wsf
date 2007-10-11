@@ -232,12 +232,22 @@ function RunPtb(oShell, oTree, oTask)
     }
     ptb_command_line += " -nobuildptb";
     ptb_command_line += " -ext -nws -extroot \"";
-    ptb_command_line += oTask.ToolkitPath + "\\lib\\";
+    var lib_dir = oTask.ToolkitPath + "\\lib\\";
     if ( oTask.DllBuild ) {
-        ptb_command_line += "dll";
+        lib_dir += "dll";
     } else {
-        ptb_command_line += "static";
+        lib_dir += "static";
     }
+    if (!oFso.FolderExists(lib_dir)) {
+        lib_dir = oTask.ToolkitPath + "\\";
+        if ( oTask.DllBuild ) {
+            lib_dir += "dll";
+        } else {
+            lib_dir += "static";
+        }
+        lib_dir += "\\lib";
+    }
+    ptb_command_line += lib_dir;
     ptb_command_line += "\" -logfile \"" + oTree.TreeRoot + "\\" + SolutionName(oTask) + "_log.txt\"";
     ptb_command_line += " -conffile \"" + oTree.CompilersBranch + "\\project_tree_builder.ini\"";
     ptb_command_line += " \"" + oTree.TreeRoot;
