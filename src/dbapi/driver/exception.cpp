@@ -587,6 +587,17 @@ CDB_UserHandler_Exception::HandleIt(CDB_Exception* ex)
     if (ex->GetDBErrCode() == 0)
         return true;
 
+    if (ex->GetSeverity() != eDiag_Info) {
+	string msg = string(ex->what()) + 
+		" SERVER: '" + ex->GetServerName() +
+		"' USER: '" + ex->GetUserName() + "'" +
+		(GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+		GetExtraMsg()) + "'"
+		;
+
+	ex->AddBacklog(DIAG_COMPILE_INFO, msg, ex->GetSeverity()); 
+    }
+
     ex->Throw();
 
     return true;
