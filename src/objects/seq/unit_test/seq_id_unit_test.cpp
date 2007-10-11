@@ -339,10 +339,10 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaSwissprot)
     CHECK_EQUAL(id->GetSwissprot().GetAccession(), string("Q7CQJ0"));
     CHECK_EQUAL(id->GetSwissprot().GetName(), string("RS22_SALTY"));
     CHECK( !id->GetSwissprot().IsSetVersion() );
-    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("standard"));
+    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("reviewed"));
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("tr|Q90RT2|Q90RT2_9HIV1")));
-    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("prelim"));
+    CHECK_EQUAL(id->GetSwissprot().GetRelease(), string("unreviewed"));
 
     CHECK_NO_THROW(id.Reset(new CSeq_id("sp|Q7CQJ0.1")));
     CHECK(id->IsSwissprot());
