@@ -1192,10 +1192,11 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 m_Input    = istr;
                 // m_InputFD  = ifd; // would be exhausted
                 m_InputFD  = -1;
+                m_OwnInput = false;
             } else {
                 // parse query from the POST content
                 s_ParsePostQuery(content_type, *pstr, m_Entries);
-                m_Input    = 0;
+                m_Input   =  0;
                 m_InputFD = -1;
             }
         }
