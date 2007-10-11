@@ -162,8 +162,9 @@ Blast4-get-search-strategy-request ::= SEQUENCE {
     request-id              VisibleString
 }
 
--- Return the search strategy (i.e.: object used to submit the search)
-Blast4-get-search-strategy-reply ::= Blast4-queue-search-request
+-- Return the search strategy (i.e.: Blast4-request containing a
+-- Blast4-queue-search-request, an object used to submit the search)
+Blast4-get-search-strategy-reply ::= Blast4-request
 
 -- Fetch parts of a sequences a-la cart.
 -- To retrieve full sequences use Blast4-get-sequences-request,
@@ -234,7 +235,8 @@ Blast4-get-search-results-reply ::= SEQUENCE {
 
     ka-blocks               SEQUENCE OF Blast4-ka-block OPTIONAL,
     search-stats            SEQUENCE OF VisibleString OPTIONAL,
-    pssm                    PssmWithParameters OPTIONAL
+    pssm                    PssmWithParameters OPTIONAL,
+    simple-results          Blast4-simple-results OPTIONAL
 }
 
 Blast4-get-sequences-reply ::= SEQUENCE OF Bioseq
@@ -535,6 +537,65 @@ Blast4-value ::= CHOICE {
     -- Multiple Blast4-parameters of this type are needed to specify masking
     -- locations for multiple queries.
     query-mask              Blast4-mask
+}
+
+-- Complete set of simple Blast results
+Blast4-simple-results ::= SEQUENCE {
+    all-alignments      SEQUENCE OF Blast4-alignments-for-query
+}
+
+-- Alignments for one query, compiled from the raw SeqAlign results
+Blast4-alignments-for-query ::= SEQUENCE {
+
+    -- Query sequence identifier
+    -- (present if query is not a local id in the SeqAlign)
+    query-id            VisibleString,
+
+    -- All the alignments for this query
+    alignments          SEQUENCE OF Blast4-simple-alignment
+}
+
+-- A single alignment
+Blast4-simple-alignment ::= SEQUENCE {
+
+    -- Subject sequence identifier
+    -- (normally a GI from the SeqAlign)
+    subject-id          VisibleString,
+
+    -- E-Value
+    e-value             REAL,
+
+    -- Bit score
+    bit-score           REAL,
+    
+    -- Number of identities
+    num-identities      INTEGER OPTIONAL,
+    
+    -- Full query range covered by this HSP
+    full-query-range    Blast4-range,
+    
+    -- Full subject range covered by this HSP
+    full-subject-range  Blast4-range,
+    
+    -- Alignment segments taken from the original Seq-align
+    -- (including gaps)
+    segments            SEQUENCE OF Blast4-segment OPTIONAL
+}
+
+-- Range on a sequence
+Blast4-range ::= SEQUENCE {
+    is-gap              BOOLEAN,
+    start               INTEGER OPTIONAL,
+    end                 INTEGER OPTIONAL,
+    strand              INTEGER OPTIONAL
+}
+
+-- Segment of an alignment
+--
+Blast4-segment ::= SEQUENCE {
+    length              INTEGER,
+    query-range         Blast4-range,
+    subject-range       Blast4-range    
 }
 
 END
