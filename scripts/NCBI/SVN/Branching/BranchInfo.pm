@@ -31,6 +31,12 @@ sub SetUpstreamAndDownSynchRev
             if $UpstreamPath ne $SameUpstreamPath
     }
 
+    $Self->{BranchPathInfo}->{$BranchDir} =
+        {
+            PathCreationRevision => $Revision,
+            SourceRevisionNumber => $SourceRevisionNumber
+        };
+
     $Self->{LastDownSyncRevisionNumber} ||= $SourceRevisionNumber
 }
 
@@ -100,7 +106,7 @@ sub ModelBranchStructure
                 $ParentNode->{$Name} = {'/' => 1};
 
                 $Self->SetUpstreamAndDownSynchRev($SourcePath,
-                    $BranchDir, $SourceRevisionNumber)
+                    $BranchDir, $SourceRevisionNumber, $Revision)
             }
             elsif (my $DeletedNode = delete $ParentNode->{$Name})
             {
@@ -120,7 +126,7 @@ sub ModelBranchStructure
                 $BranchDir)->{'/'} = 1;
 
             $Self->SetUpstreamAndDownSynchRev($SourcePath,
-                $BranchDir, $SourceRevisionNumber)
+                $BranchDir, $SourceRevisionNumber, $Revision)
         }
     }
 }

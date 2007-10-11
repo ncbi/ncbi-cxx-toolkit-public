@@ -509,15 +509,34 @@ sub DoMerge
 
     my $LastMergeRevision = $BranchInfo->{MergeRevisions}->[0];
 
+    my $BranchPathInfo = $BranchInfo->{BranchPathInfo};
+
     if ($LastMergeRevision and
         $LastMergeRevision->{MergeDirection} ne $Direction)
     {
         # Previous merge was of the opposite direction.
         for my $Path (@BranchPaths)
         {
+            my $PathCreationRevisionNumber =
+                $BranchPathInfo->{$Path}->{PathCreationRevision}->{Number};
+
+            my $LocalLastTargetRev = $LastTargetRev;
+            my $LocalSourceRev = $SourceRev;
+
+            if ($Direction eq 'up')
+            {
+                $LocalSourceRev = $PathCreationRevisionNumber
+                    if $LocalSourceRev < $PathCreationRevisionNumber
+            }
+            else
+            {
+                $LocalLastTargetRev = $PathCreationRevisionNumber
+                    if $LocalLastTargetRev < $PathCreationRevisionNumber
+            }
+
             $Self->{SVN}->RunSubversion('merge',
-                $TargetURL . $Path . '@' . $LastTargetRev,
-                $SourceURL . $Path . '@' . $SourceRev,
+                $TargetURL . $Path . '@' . $LocalLastTargetRev,
+                $SourceURL . $Path . '@' . $LocalSourceRev,
                 $Path)
         }
     }
@@ -527,9 +546,23 @@ sub DoMerge
         # previous merge was of the same direction.
         for my $Path (@BranchPaths)
         {
-            $Self->{SVN}->RunSubversion('merge',
-                "-r$LastSourceRev\:$SourceRev", $SourceURL . $Path,
-                $Path)
+            my $PathCreationRevisionNumber =
+                $BranchPathInfo->{$Path}->{PathCreationRevision}->{Number};
+
+            my $LocalLastSourceRev = $LastSourceRev;
+
+            if ($Direction eq 'up')
+            {
+                $LocalLastSourceRev = $PathCreationRevisionNumber
+                    if $LocalLastSourceRev < $PathCreationRevisionNumber
+            }
+
+            if ($LocalLastSourceRev < $SourceRev)
+            {
+                $Self->{SVN}->RunSubversion('merge',
+                    "-r$LocalLastSourceRev\:$SourceRev",
+                        $SourceURL . $Path, $Path)
+            }
         }
     }
 
