@@ -1854,10 +1854,10 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
     switch (type) {
     case e_Swissprot:
         if (NStr::EqualNocase(typestr, "tr")) {
-            fields[2] = "reviewed";
+            fields[2] = "unreviewed";
         } else {
             _ASSERT(NStr::EqualNocase(typestr, "sp"));
-            fields[2] = "unreviewed";
+            fields[2] = "reviewed";
         }
         break;
 
